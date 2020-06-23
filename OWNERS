@@ -1,0 +1,24 @@
+# TODO: Synchronize OWNERS file with CODEOWNERS
+filters:
+  ".*":
+    approvers:
+     - PK85 
+     - crabtree 
+     - pkosiec 
+     - kfurgol 
+     - tgorgol 
+     - dbadura
+     - akgalwas 
+     - janmedrek 
+     - Szymongib 
+     - franpog859 
+     - Maladie 
+     - kjaksik
+     - koala7659
+  '\.md$|/docs/|^milv\.config\.yaml$':
+    approvers:
+      - documentation-approvers
+    reviewers:
+      - documentation-reviewers
+    labels:
+      - area/documentation
