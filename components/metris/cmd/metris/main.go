@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-
 	"github.com/alecthomas/kong"
 	"github.com/kyma-incubator/compass/components/metris/internal/edp"
 	"github.com/kyma-incubator/compass/components/metris/internal/gardener"

@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
 	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/authn"
 	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/reload"
 	"k8s.io/apiserver/pkg/authentication/authenticator"

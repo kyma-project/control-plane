@@ -7,7 +7,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
 	"github.com/kyma-incubator/compass/components/provisioner/internal/metrics"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"

@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/appinfo"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
