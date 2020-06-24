@@ -12,7 +12,11 @@ spec:
   version: "__VERSION__"
   url: "__URL__"
   components:
-    #- name: "compass"
-    #  namespace: "kcp-system"
+    - name: "istio-gateway"
+      namespace: "istio-system"
+    - name: "provisioner"
+      namespace: "kcp-system"
+    - name: "kyma-environment-broker"
+      namespace: "kcp-system"
     - name: "oidc-kubeconfig-service"
       namespace: "kyma-system"

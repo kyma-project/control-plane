@@ -1,0 +1,22 @@
+global:
+  istio:
+    gateway:
+      name: "compass-istio-gateway"
+      namespace: "compass-system"
+    proxy:
+      port: 15020
+
+  connector:
+    # If secrets do not exist they will be created
+    secrets:
+      rootCA:
+        name: kyma-gateway-certs
+        namespace: istio-system # For Ingress Gateway to work properly the namespace needs to be istio-system
+
+  gateway:
+    enabled: true
+    mtls:
+      host: compass-gateway-mtls
+  connectivity_adapter:
+    mtls:
+      host: adapter-gateway-mtls
