@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -93,7 +94,7 @@ type Config struct {
 }
 
 func main() {
-	log.Info("log to remove")
+	fmt.Println("log to remove")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
