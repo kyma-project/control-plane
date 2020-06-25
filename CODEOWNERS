@@ -26,11 +26,6 @@
 /components/schema-migrator/migrations/provisioner @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
 /tests/provisioner-tests @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
 
-# Connectivity Adapter
-/chart/compass/charts/connectivity-adapter @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
-/components/connectivity-adapter @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
-/tests/connectivity-adapter @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
-
 # Director
 /chart/compass/charts/director @PK85 @crabtree @pkosiec @kfurgol @tgorgol @dbadura @kjaksik
 /chart/compass/templates/director-api-test.yaml @PK85 @crabtree @pkosiec @kfurgol @tgorgol @dbadura @kjaksik
