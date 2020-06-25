@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"testing"
 	"time"
-
 	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director"

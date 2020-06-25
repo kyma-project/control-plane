@@ -5,7 +5,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/stretchr/testify/require"
