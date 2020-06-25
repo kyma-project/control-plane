@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+
 	"github.com/kyma-incubator/compass/components/provisioner/internal/metrics"
 
 	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s"
@@ -126,6 +127,7 @@ func (c *config) String() string {
 }
 
 func main() {
+	fmt.Println("log to remove")
 	formatter := &log.TextFormatter{
 		FullTimestamp: true,
 	}

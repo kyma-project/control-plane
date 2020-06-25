@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/appinfo"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/avs"
@@ -92,6 +93,7 @@ type Config struct {
 }
 
 func main() {
+	log.Info("log to remove")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

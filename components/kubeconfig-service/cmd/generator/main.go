@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
 	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/authn"
 	"github.com/kyma-incubator/compass/components/kubeconfig-service/pkg/reload"
 	"k8s.io/apiserver/pkg/authentication/authenticator"
@@ -19,6 +20,7 @@ import (
 )
 
 func main() {
+	log.Info("log to remove")
 	env.InitConfig()
 	authnCfg := readAuthnConfig()
 	log.Info("Starting kubeconfig-service sever")

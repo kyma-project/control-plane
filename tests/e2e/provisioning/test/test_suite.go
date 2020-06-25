@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"testing"
 	"time"
+
 	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director"
@@ -93,6 +94,7 @@ const (
 )
 
 func newTestSuite(t *testing.T) *Suite {
+	t.Log("log to remove")
 	ctx := context.Background()
 	var azureClient *azure.Interface
 	cfg := &Config{}

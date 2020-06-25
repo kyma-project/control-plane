@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
 	"github.com/alecthomas/kong"
 	"github.com/kyma-incubator/compass/components/metris/internal/edp"
 	"github.com/kyma-incubator/compass/components/metris/internal/gardener"
@@ -33,6 +34,7 @@ type app struct {
 }
 
 func main() {
+	fmt.Println("log to remove")
 	var (
 		err        error
 		homefld    string
