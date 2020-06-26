@@ -14,6 +14,8 @@ spec:
   components:
     - name: "istio-gateway"
       namespace: "istio-system"
+    - name: "postgresql"
+      namespace: "kcp-system"
     - name: "provisioner"
       namespace: "kcp-system"
     - name: "kyma-environment-broker"

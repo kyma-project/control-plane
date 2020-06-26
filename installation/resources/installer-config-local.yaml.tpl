@@ -104,3 +104,16 @@ data:
   gateway.gateway.auditlog.enabled: "true"
   gateway.gateway.auditlog.authMode: "oauth"
   director.deployment.allowJWTSigningNone: "true"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: provisioner-overrides
+  namespace: compass-installer
+  labels:
+    installer: overrides
+    component: provisioner
+    kyma-project.io/installation: ""
+data:
+  global.provisioning.enabled: "true"
+
