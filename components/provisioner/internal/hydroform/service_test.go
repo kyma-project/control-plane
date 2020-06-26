@@ -14,13 +14,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client/mocks"
 	"github.com/kyma-incubator/hydroform/types"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/hydroform/client/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )

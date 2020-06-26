@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/avast/retry-go"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 )
 
 func migrateOperationsInShootProvisioningStage(session dbsession.WriteSession) error {

@@ -5,9 +5,9 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
-	gql "github.com/kyma-incubator/compass/components/provisioner/internal/graphql"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/oauth"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	gql "github.com/kyma-project/control-plane/components/provisioner/internal/graphql"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/oauth"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"

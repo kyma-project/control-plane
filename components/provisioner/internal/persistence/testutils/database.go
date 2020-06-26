@@ -38,7 +38,7 @@ const (
 )
 
 var (
-	SchemaFilePath = os.Getenv("GOPATH") + "/src/github.com/kyma-incubator/compass/components/provisioner/assets/database/provisioner.sql"
+	SchemaFilePath = os.Getenv("GOPATH") + "/src/github.com/kyma-project/control-plane/components/provisioner/assets/database/provisioner.sql"
 )
 
 func makeConnectionString(hostname string, port string) string {
@@ -69,7 +69,6 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 	if err != nil {
 		return nil, "", err
 	}
-
 	req := testcontainers.ContainerRequest{
 		Image:        "postgres:11",
 		SkipReaper:   true,

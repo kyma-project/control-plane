@@ -5,36 +5,36 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util/k8s/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s/mocks"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/operations/queue"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/api/middlewares"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/runtime"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform"
-	hydroformmocks "github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/mocks"
 	"github.com/kyma-incubator/hydroform/types"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/hydroform"
+	hydroformmocks "github.com/kyma-project/control-plane/components/provisioner/internal/hydroform/mocks"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 
-	installationMocks "github.com/kyma-incubator/compass/components/provisioner/internal/installation/mocks"
+	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/installation/release"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/uuid"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 
-	directormock "github.com/kyma-incubator/compass/components/provisioner/internal/director/mocks"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/database"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/persistence/testutils"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning"
-	"github.com/kyma-incubator/compass/components/provisioner/internal/provisioning/persistence/dbsession"
-	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/testutils"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
