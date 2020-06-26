@@ -12,6 +12,8 @@ spec:
   version: "__VERSION__"
   url: "__URL__"
   components:
+    - name: "compass"
+      namespace: "compass-system"
     - name: "istio-gateway"
       namespace: "istio-system"
     - name: "postgresql"
@@ -22,3 +24,5 @@ spec:
       namespace: "kcp-system"
     - name: "oidc-kubeconfig-service"
       namespace: "kyma-system"
+    - name: "metris"
+      namespace: "kcp-system"

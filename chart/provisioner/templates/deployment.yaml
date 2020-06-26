@@ -63,32 +63,32 @@ spec:
             - name: APP_DATABASE_USER
               valueFrom:
                 secretKeyRef:
-                  name: kcp-postgresql
+                  name: postgresql-postgresql
                   key: postgresql-provisioner-username
             - name: APP_DATABASE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: kcp-postgresql
+                  name: postgresql-postgresql
                   key: postgresql-provisioner-password
             - name: APP_DATABASE_HOST
               valueFrom:
                 secretKeyRef:
-                  name: kcp-postgresql
+                  name: postgresql-postgresql
                   key: postgresql-serviceName
             - name: APP_DATABASE_PORT
               valueFrom:
                 secretKeyRef:
-                  name: kcp-postgresql
+                  name: postgresql-postgresql
                   key: postgresql-servicePort
             - name: APP_DATABASE_NAME
               valueFrom:
                 secretKeyRef:
-                  name: kcp-postgresql
+                  name: postgresql-postgresql
                   key: postgresql-provisioner-db-name
             - name: APP_DATABASE_SSL
               valueFrom:
                 secretKeyRef:
-                  name: kcp-postgresql
+                  name: postgresql-postgresql
                   key: postgresql-sslMode
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"

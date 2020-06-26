@@ -64,7 +64,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: compass-installation-config-overrides
+  name: keb-installation-config-overrides
   namespace: compass-installer
   labels:
     component: kyma-environment-broker
@@ -78,15 +78,11 @@ data:
   global.ingress.domainName: "kyma.local"
   global.istio.gateway.name: "compass-istio-gateway"
   global.istio.gateway.namespace: "compass-system"
-  global.externalServicesMock.enabled: "true"
-  gateway.gateway.auditlog.enabled: "true"
-  gateway.gateway.auditlog.authMode: "oauth"
-  director.deployment.allowJWTSigningNone: "true"
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: compass-installation-config-overrides
+  name: provisioner-installation-config-overrides
   namespace: compass-installer
   labels:
     component: provisioner
@@ -116,4 +112,3 @@ metadata:
     kyma-project.io/installation: ""
 data:
   global.provisioning.enabled: "true"
-

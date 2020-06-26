@@ -57,7 +57,7 @@ additionalRuntimeComponents: |-
   - name: "knative-eventing-kafka"
     namespace: "knative-eventing"
 
-kymaVersion: "9c738f01"
+kymaVersion: "1.13.0"
 kymaVersionOnDemand: "false"
 
 enablePlans: "azure,gcp"
@@ -86,10 +86,10 @@ avs:
   oauthPassword: "TBD"
   oauthTokenEndpoint: "TBD"
   oauthUserName: "TBD"
-  internalTesterAccessId: "TBD"
-  externalTesterAccessId: "TBD"
-  groupId: "TBD"
-  parentId: "TBD"
+  internalTesterAccessId: "40"
+  externalTesterAccessId: "40"
+  groupId: "40"
+  parentId: "40"
   # if set - overrides default tester service name
   internalTesterService: ""
   externalTesterService: ""
@@ -180,6 +180,9 @@ global:
     kyma_environment_broker:
       dir:
       version: "PR-1434"
+    schema_migrator:
+      dir:
+      version: "PR-1425"
     tests:
       e2e_provisioning:
         dir:
@@ -187,6 +190,13 @@ global:
 
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
 
+  provisioning:
+    enabled: true
+
+
+  director:
+    port: 3000
+    namespace: "compass-system"
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
     secretName: "compass-gateway-auditlog-secret"

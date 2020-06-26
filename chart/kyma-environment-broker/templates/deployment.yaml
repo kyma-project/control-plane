@@ -123,32 +123,32 @@ spec:
             - name: APP_DATABASE_USER
               valueFrom:
                 secretKeyRef:
-                  name: compass-postgresql
+                  name: postgresql-postgresql
                   key: postgresql-broker-username
             - name: APP_DATABASE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: compass-postgresql
+                  name: postgresql-postgresql
                   key: postgresql-broker-password
             - name: APP_DATABASE_HOST
               valueFrom:
                 secretKeyRef:
-                  name: compass-postgresql
+                  name: postgresql-postgresql
                   key: postgresql-serviceName
             - name: APP_DATABASE_PORT
               valueFrom:
                 secretKeyRef:
-                  name: compass-postgresql
+                  name: postgresql-postgresql
                   key: postgresql-servicePort
             - name: APP_DATABASE_NAME
               valueFrom:
                 secretKeyRef:
-                  name: compass-postgresql
+                  name: postgresql-postgresql
                   key: postgresql-broker-db-name
             - name: APP_DATABASE_SSL
               valueFrom:
                 secretKeyRef:
-                  name: compass-postgresql
+                  name: postgresql-postgresql
                   key: postgresql-sslMode
             - name: APP_SERVICE_MANAGER_OVERRIDE_MODE
               value: "{{ .Values.serviceManager.overrideMode }}"
@@ -255,7 +255,7 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: {{ .Values.global.auditlog.configMapName }}
-                  key: auditlog-url-basic
+                  key: auditlog-url
             - name: APP_AUDITLOG_USER
               valueFrom:
                 secretKeyRef:

@@ -5,6 +5,9 @@ global:
     provisioner:
       dir:
       version: "PR-1425"
+    schema_migrator:
+      dir:
+      version: "PR-1425"
     tests:
       provisioner:
         dir:
