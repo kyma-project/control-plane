@@ -8,7 +8,7 @@ The following table lists all the Installation custom resource (CR) files needed
 
 | File                                     | Description                                                                  |
 | ---------------------------------------- | ---------------------------------------------------------------------------- |
-| `installer-cr-kyma-dependencies.yaml`    | Contains Kyma components that are required for Control Plane installation    |
+| `installer-cr-kyma-dependencies.yaml`    | Contains Kyma components that are required for Control Plane installation.    |
 | `installer-cr-compass-dependencies.yaml` | Contains Compass components that are required for Control Plane installation |
 | `installer-cr.yaml.tpl`                  | Contains components installed by the Control Plane Installer                 |
 
