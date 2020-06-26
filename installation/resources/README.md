@@ -1,5 +1,7 @@
 # Control Plane resources
 
+This document describes all the resources needed for the Control Plane installation. 
+
 ## Installation CRs
 
 The following table lists all the Installation custom resource (CR) files needed for the Control Plane installation:
