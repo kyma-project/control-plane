@@ -65,7 +65,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: keb-installation-config-overrides
-  namespace: compass-installer
+  namespace: kcp-installer
   labels:
     component: kyma-environment-broker
     installer: overrides
@@ -83,7 +83,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: provisioner-installation-config-overrides
-  namespace: compass-installer
+  namespace: kcp-installer
   labels:
     component: provisioner
     installer: overrides
@@ -105,7 +105,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: provisioner-overrides
-  namespace: compass-installer
+  namespace: kcp-installer
   labels:
     installer: overrides
     component: provisioner

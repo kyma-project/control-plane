@@ -12,10 +12,6 @@ spec:
   version: "__VERSION__"
   url: "__URL__"
   components:
-    - name: "compass"
-      namespace: "compass-system"
-    - name: "istio-gateway"
-      namespace: "istio-system"
     - name: "postgresql"
       namespace: "kcp-system"
     - name: "provisioner"
