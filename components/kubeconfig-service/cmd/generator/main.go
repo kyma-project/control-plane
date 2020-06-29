@@ -20,7 +20,6 @@ import (
 )
 
 func main() {
-	log.Info("log to remove")
 	env.InitConfig()
 	authnCfg := readAuthnConfig()
 	log.Info("Starting kubeconfig-service sever")

@@ -34,7 +34,6 @@ type app struct {
 }
 
 func main() {
-	fmt.Println("log to remove")
 	var (
 		err        error
 		homefld    string

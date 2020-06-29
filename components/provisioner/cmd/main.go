@@ -127,7 +127,6 @@ func (c *config) String() string {
 }
 
 func main() {
-	fmt.Println("log to remove")
 	formatter := &log.TextFormatter{
 		FullTimestamp: true,
 	}

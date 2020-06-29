@@ -94,7 +94,6 @@ const (
 )
 
 func newTestSuite(t *testing.T) *Suite {
-	t.Log("log to remove")
 	ctx := context.Background()
 	var azureClient *azure.Interface
 	cfg := &Config{}
