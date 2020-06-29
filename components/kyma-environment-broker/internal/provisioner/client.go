@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/httputil"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
