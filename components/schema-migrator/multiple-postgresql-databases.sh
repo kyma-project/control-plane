@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "test"
+
 for var in POSTGRES_USER POSTGRES_MULTIPLE_DATABASES; do
     if [ -z "${!var}" ] ; then
         echo "ERROR: $var is not set"

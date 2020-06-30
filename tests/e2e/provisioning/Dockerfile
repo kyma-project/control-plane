@@ -1,6 +1,6 @@
 FROM golang:1.14.2-alpine3.11 as builder
 
-ENV SRC_DIR=/go/src/github.com/kyma-incubator/compass/tests/e2e/provisioning
+ENV SRC_DIR=/go/src/github.com/kyma-project/control-plane/tests/e2e/provisioning
 
 WORKDIR $SRC_DIR
 COPY . $SRC_DIR
