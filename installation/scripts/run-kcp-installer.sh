@@ -55,13 +55,14 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 bash ${SCRIPTS_DIR}/build-kcp-installer.sh --vm-driver "${VM_DRIVER}"
-
 if [ -z "$CR_PATH" ]; then
 
     TMPDIR=`mktemp -d "${CURRENT_DIR}/../../temp-XXXXXXXXXX"`
     CR_PATH="${TMPDIR}/installer-cr-local.yaml"
-    bash ${SCRIPTS_DIR}/create-cr.sh --output "${CR_PATH}" --crtpl_path="$CURRENT_DIR/../resources/installer-cr-local.yaml.tpl"
-
+    set -x
+    bash ${SCRIPTS_DIR}/create-cr.sh --crtpl_path "$CURRENT_DIR/../resources/installer-cr-local.yaml.tpl" --output "${CR_PATH}"
+    set +x
+    exit 0
 fi
 
 bash ${SCRIPTS_DIR}/installer.sh --cr "${CR_PATH}" --password "${ADMIN_PASSWORD}"
