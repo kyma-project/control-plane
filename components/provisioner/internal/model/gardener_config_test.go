@@ -197,7 +197,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
-							KubernetesVersion:   false,
+							KubernetesVersion:   true,
 							MachineImageVersion: false,
 						},
 					},
@@ -252,7 +252,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						},
 					},
 					Maintenance: &gardener_types.Maintenance{AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
-						KubernetesVersion:   false,
+						KubernetesVersion:   true,
 						MachineImageVersion: false,
 					},
 					},
@@ -308,7 +308,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
-							KubernetesVersion:   false,
+							KubernetesVersion:   true,
 							MachineImageVersion: false,
 						},
 					},
@@ -364,7 +364,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
-							KubernetesVersion:   false,
+							KubernetesVersion:   true,
 							MachineImageVersion: false,
 						},
 					},
@@ -389,26 +389,28 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 
 func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) GardenerConfig {
 	return GardenerConfig{
-		ID:                     "",
-		ClusterID:              "",
-		Name:                   "cluster",
-		ProjectName:            "project",
-		KubernetesVersion:      "1.15",
-		VolumeSizeGB:           30,
-		DiskType:               "SSD",
-		MachineType:            "machine",
-		Provider:               provider,
-		Purpose:                util.StringPtr("testing"),
-		LicenceType:            nil,
-		Seed:                   "eu",
-		TargetSecret:           "gardener-secret",
-		Region:                 "eu",
-		WorkerCidr:             "10.10.10.10/255",
-		AutoScalerMin:          1,
-		AutoScalerMax:          3,
-		MaxSurge:               30,
-		MaxUnavailable:         1,
-		GardenerProviderConfig: providerCfg,
+		ID:                            "",
+		ClusterID:                     "",
+		Name:                          "cluster",
+		ProjectName:                   "project",
+		KubernetesVersion:             "1.15",
+		VolumeSizeGB:                  30,
+		DiskType:                      "SSD",
+		MachineType:                   "machine",
+		Provider:                      provider,
+		Purpose:                       util.StringPtr("testing"),
+		LicenceType:                   nil,
+		Seed:                          "eu",
+		TargetSecret:                  "gardener-secret",
+		Region:                        "eu",
+		WorkerCidr:                    "10.10.10.10/255",
+		AutoScalerMin:                 1,
+		AutoScalerMax:                 3,
+		MaxSurge:                      30,
+		MaxUnavailable:                1,
+		AutoUpdateKubernetesVersion:   true,
+		AutoUpdateMachineImageVersion: false,
+		GardenerProviderConfig:        providerCfg,
 	}
 }
 

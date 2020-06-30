@@ -6,10 +6,10 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     schema_migrator:
       dir:
-      version: "PR-1461"
+      version: "PR-1475"
     provisioner:
       dir:
-      version: "PR-1461"
+      version: "PR-1475"
     kyma_environment_broker:
       dir:
       version: "PR-1461"
