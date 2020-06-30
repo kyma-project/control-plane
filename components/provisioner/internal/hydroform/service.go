@@ -6,9 +6,9 @@ import (
 
 	"github.com/hashicorp/terraform/states/statefile"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/hydroform/client"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/hydroform/client"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/hydroform/types"
