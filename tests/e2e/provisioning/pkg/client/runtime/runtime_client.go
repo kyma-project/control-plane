@@ -8,7 +8,7 @@ import (
 	"os"
 
 	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-incubator/compass/tests/e2e/provisioning/internal/director"
+	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/director"
 	graphCli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"

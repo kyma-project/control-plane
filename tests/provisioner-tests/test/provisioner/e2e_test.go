@@ -12,8 +12,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit"
-	"github.com/kyma-incubator/compass/tests/provisioner-tests/test/testkit/assertions"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/assertions"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )

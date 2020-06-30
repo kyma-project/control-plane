@@ -13,8 +13,8 @@ FROM alpine:edge
 
 RUN apk --no-cache add ca-certificates curl
 
-COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/e2e/provisioning/test.test .
-COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/e2e/provisioning/licenses ./licenses
+COPY --from=builder /go/src/github.com/kyma-project/control-plane/tests/e2e/provisioning/test.test .
+COPY --from=builder /go/src/github.com/kyma-project/control-plane/tests/e2e/provisioning/licenses ./licenses
 
 LABEL source=git@github.com:kyma-incubator/e2e-provisioning.git
 

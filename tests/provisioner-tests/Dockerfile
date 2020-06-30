@@ -15,8 +15,8 @@ LABEL source=git@github.com:kyma-project/kyma.git
 
 RUN apk --no-cache add ca-certificates curl
 
-COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/provisioner-tests/scripts/entrypoint.sh .
-COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/provisioner-tests/provisioner.test .
-COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/provisioner-tests/licenses ./licenses
+COPY --from=builder /go/src/github.com/kyma-project/control-plane/tests/provisioner-tests/scripts/entrypoint.sh .
+COPY --from=builder /go/src/github.com/kyma-project/control-plane/tests/provisioner-tests/licenses ./licenses
+COPY --from=builder /go/src/github.com/kyma-project/control-plane/tests/provisioner-tests/provisioner.test .
 
 ENTRYPOINT ./entrypoint.sh

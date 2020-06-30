@@ -235,19 +235,30 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0ec3e5ffef4f79e483e2d272aa81af32412c3de9f1889b8dd660bfb4a4a27fa7"
+  digest = "1:7e436ef7dffe74ec30db860e24841c327b55624baa7faa612a822f202a8d750c"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
+    "components/director/pkg/apperrors",
     "components/director/pkg/graphql",
     "components/director/pkg/inputvalidation",
     "components/director/pkg/jsonschema",
     "components/director/pkg/pagination",
+    "components/director/pkg/resource",
     "components/director/pkg/scalar",
     "components/provisioner/pkg/gqlschema",
+    "tests/e2e/provisioning/internal/director",
+    "tests/e2e/provisioning/internal/director/oauth",
+    "tests/e2e/provisioning/internal/gardener",
+    "tests/e2e/provisioning/internal/hyperscaler",
+    "tests/e2e/provisioning/internal/hyperscaler/azure",
+    "tests/e2e/provisioning/internal/provisioner",
+    "tests/e2e/provisioning/pkg/client/broker",
+    "tests/e2e/provisioning/pkg/client/runtime",
+    "tests/e2e/provisioning/pkg/client/v1_client",
   ]
   pruneopts = "UT"
-  revision = "c8c00d22a01b64380d7da84ef6246c9c33b2d41e"
+  revision = "a5249e08b43c7c17405784bce05c7343ddc8265c"
 
 [[projects]]
   digest = "1:49f1c5f12d36c5529f52e6b1aa3ae3673039f186be3115b8254020fafd6aa8eb"
@@ -773,6 +784,15 @@
     "github.com/google/uuid",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
+    "github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/director",
+    "github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/director/oauth",
+    "github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/gardener",
+    "github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/hyperscaler",
+    "github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/hyperscaler/azure",
+    "github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/provisioner",
+    "github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/broker",
+    "github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/runtime",
+    "github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/v1_client",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/machinebox/graphql",
     "github.com/ory/hydra-maester/api/v1alpha1",
