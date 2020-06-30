@@ -60,7 +60,7 @@ if [ -z "$CR_PATH" ]; then
 
     TMPDIR=`mktemp -d "${CURRENT_DIR}/../../temp-XXXXXXXXXX"`
     CR_PATH="${TMPDIR}/installer-cr-local.yaml"
-    bash ${SCRIPTS_DIR}/create-cr.sh --output "${CR_PATH}"
+    bash ${SCRIPTS_DIR}/create-cr.sh --output "${CR_PATH}" --crtpl_path="$CURRENT_DIR/../resources/installer-cr-local.yaml.tpl"
 
 fi
 
