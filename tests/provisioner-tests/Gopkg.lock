@@ -208,7 +208,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:ee38429587dbd18d76a90fa48608397b60c6dc2047c8cf2b52d5bef1040ddcf8"
+  digest = "1:bfa965009e096bf20a3ebf3170b2d4c94bc1eeb98ffd40999b01f5a049aa61d7"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -219,12 +219,6 @@
     "components/director/pkg/pagination",
     "components/director/pkg/scalar",
     "components/provisioner/pkg/gqlschema",
-    "tests/provisioner-tests/test/testkit",
-    "tests/provisioner-tests/test/testkit/assertions",
-    "tests/provisioner-tests/test/testkit/compass/director",
-    "tests/provisioner-tests/test/testkit/compass/director/oauth",
-    "tests/provisioner-tests/test/testkit/compass/provisioner",
-    "tests/provisioner-tests/test/testkit/graphql",
   ]
   pruneopts = "UT"
   revision = "64f737ad7e1db26e2c3e9b71335bd67e69199092"
@@ -764,12 +758,6 @@
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema",
-    "github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit",
-    "github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/assertions",
-    "github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/compass/director",
-    "github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/compass/director/oauth",
-    "github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/compass/provisioner",
-    "github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/graphql",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/machinebox/graphql",
     "github.com/pkg/errors",
