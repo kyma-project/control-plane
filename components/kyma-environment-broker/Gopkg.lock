@@ -429,7 +429,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:5ce6b91c8063fb1acbf93adfd56391968c668cc2e9ec4bc28c797fdcf9228e74"
+  digest = "1:d3505bb0d9b8d3038f9259b8fac2c1b2580bece8dee0ea6c45b22adb4cb07c41"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -440,10 +440,17 @@
     "components/director/pkg/pagination",
     "components/director/pkg/resource",
     "components/director/pkg/scalar",
-    "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
   revision = "aa7a78c76a97e933d932f8c99619e2d9265b768a"
+
+[[projects]]
+  branch = "master"
+  digest = "1:c2c62123d0ab8a81cbd8aff0776ab7fd768a8e13e149951d5cfb2a8b8942f689"
+  name = "github.com/kyma-project/control-plane"
+  packages = ["components/provisioner/pkg/gqlschema"]
+  pruneopts = "UT"
+  revision = "693cd1be6544c533b6ac07ea4559d9b56cdc9320"
 
 [[projects]]
   digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
