@@ -49,10 +49,9 @@ Utility function for joining Avs tag list into string.
 */}}
 {{- define "avs.utils.joinTags" -}}
 {{- $local := dict "first" true -}}
-{{- $data := (printf "%s:\n%s" "tags" .) | fromYaml -}}
-{{- range $tag := $data.tags -}}
+{{- range $k, $v := . -}}
 {{- if not $local.first -}},{{- end -}}
-{{ printf "{%q,%v,%q}" $tag.content $tag.tag_id $tag.tag_name }}
+{{ printf "{%q,%v,%q}" $v.content $v.tag_id $v.tag_name }}
 {{- $_ := set $local "first" false -}}
 {{- end -}}
 {{- end -}}

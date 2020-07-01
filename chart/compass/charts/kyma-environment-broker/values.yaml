@@ -95,15 +95,14 @@ avs:
   externalTesterService: ""
   # List of tags to bind to testers.
   # Example: 
-  # internalTesterTags: |-
-  #   - content: tag-A
-  #     tag_id: 1
-  #     tag_name: value-A
-  #   - content: tag-B
-  #     tag_id: 2
-  #     tag_name: value-B
-  internalTesterTags: ""
-  externalTesterTags: ""
+  #  - content: tag-A
+  #    tag_id: 1
+  #    tag_name: value-A
+  #  - content: tag-B
+  #    tag_id: 2
+  #    tag_name: value-B
+  internalTesterTags: []
+  externalTesterTags: []
 
 lms:
   secretName: "lms-creds"
