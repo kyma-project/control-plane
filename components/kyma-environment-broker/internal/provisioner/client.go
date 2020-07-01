@@ -7,7 +7,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 
-	schema "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
+	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )

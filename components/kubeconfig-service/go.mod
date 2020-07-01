@@ -6,7 +6,7 @@ require (
 	github.com/avast/retry-go v2.6.0+incompatible
 	github.com/gorilla/mux v1.7.4
 	github.com/howeyc/fsnotify v0.9.0
-	github.com/kyma-incubator/compass/components/provisioner v0.0.0-20200610112737-6086a0421bda
+	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20200630093243-cbb19e570cfa
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.6.0
