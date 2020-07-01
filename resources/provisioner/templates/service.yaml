@@ -38,7 +38,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.global.metrics.port }}
+    - port: {{ .Values.metrics.port }}
       protocol: TCP
       name: http-metrics
   selector:
