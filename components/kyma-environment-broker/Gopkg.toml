@@ -19,6 +19,10 @@
   version = "1.4.2"
 
 [[constraint]]
+  revision = "aa1bf97372f98d5cb94f711eb31c3388ae7086e3"
+  name = "github.com/kyma-project/control-plane"
+
+[[constraint]]
   revision = "aa7a78c76a97e933d932f8c99619e2d9265b768a"
   name = "github.com/kyma-incubator/compass"
 
@@ -70,6 +74,8 @@
 [[constraint]]
   name = "gopkg.in/yaml.v2"
   version = "v2.2.8"
+
+
 
 [prune]
   go-tests = true
