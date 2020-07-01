@@ -12,9 +12,5 @@ spec:
   version: "__VERSION__"
   url: "__URL__"
   components:
-    - name: "postgresql"
-      namespace: "kcp-system"
     - name: "oidc-kubeconfig-service"
       namespace: "kyma-system"
-    - name: "metris"
-      namespace: "kcp-system"
