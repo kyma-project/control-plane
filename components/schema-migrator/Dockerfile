@@ -1,5 +1,6 @@
 FROM alpine:3.12.0
 
+
 ARG MIGRATE_VER=4.5.0
 
 WORKDIR /migrate
