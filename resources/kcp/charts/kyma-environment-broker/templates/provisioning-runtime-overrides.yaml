@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: global-overrides
-  namespace: compass-system #TODO: This value is hard coded in the component sources, should be adjustable
-  labels:
-    provisioning-runtime-override: "true"
-data:
-  global.disableLegacyConnectivity: "true"
