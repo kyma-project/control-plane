@@ -21,7 +21,7 @@ DB_USER="usr"
 DB_PWD="pwd"
 DB_PORT="5432"
 DB_SSL_PARAM="disable"
-POSTGRES_MULTIPLE_DATABASES="compass, broker, provisioner"
+POSTGRES_MULTIPLE_DATABASES="broker, provisioner"
 
 function cleanup() {
     echo -e "${GREEN}Cleanup Postgres container and network${NC}"
@@ -48,8 +48,8 @@ docker run -d --name ${POSTGRES_CONTAINER} \
 function migrationUP() {
     echo -e "${GREEN}Run UP migrations ${NC}"
 
-    migration_path=$1
-    db_name=$2
+    local migration_path=$1
+    local db_name=$2
     docker run --rm --network=${NETWORK} \
             -e DB_USER=${DB_USER} \
             -e DB_PASSWORD=${DB_PWD} \
@@ -62,14 +62,14 @@ function migrationUP() {
         ${IMG_NAME}
 
     echo -e "${GREEN}Show schema_migrations table after UP migrations${NC}"
-    docker exec ${POSTGRES_CONTAINER} psql -U usr compass -c "select * from schema_migrations"
+    docker exec ${POSTGRES_CONTAINER} psql --username usr "${db_name}" --command "select * from schema_migrations"
 }
 
 function migrationDOWN() {
     echo -e "${GREEN}Run DOWN migrations ${NC}"
 
-    migration_path=$1
-    db_name=$2
+    local migration_path=$1
+    local db_name=$2
     docker run --rm --network=${NETWORK} \
             -e DB_USER=${DB_USER} \
             -e DB_PASSWORD=${DB_PWD} \
@@ -83,7 +83,7 @@ function migrationDOWN() {
         ${IMG_NAME}
 
     echo -e "${GREEN}Show schema_migrations table after DOWN migrations${NC}"
-    docker exec ${POSTGRES_CONTAINER} psql -U usr compass -c "select * from schema_migrations"
+    docker exec ${POSTGRES_CONTAINER} psql --username usr "${db_name}" --command "select * from schema_migrations"
 }
 
 function migrationProcess() {
@@ -95,6 +95,5 @@ function migrationProcess() {
     migrationDOWN "${path}" "${db}"
 }
 
-migrationProcess "director" "compass"
 migrationProcess "kyma-environment-broker" "broker"
 migrationProcess "provisioner" "provisioner"
