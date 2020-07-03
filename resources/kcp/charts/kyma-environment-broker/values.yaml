@@ -144,7 +144,7 @@ environmentsCleanup:
   scope: "TBD"
 
 e2e:
-  enabled: true
+  enabled: false #TODO: Change it
   provisioning:
     timeout: "105m"
   deprovisioning:
