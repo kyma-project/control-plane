@@ -7,10 +7,12 @@ import (
 )
 
 const (
-	GCPPlanID     = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
-	GCPPlanName   = "gcp"
-	AzurePlanID   = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
-	AzurePlanName = "azure"
+	GCPPlanID         = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
+	GCPPlanName       = "gcp"
+	AzurePlanID       = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	AzurePlanName     = "azure"
+	AzureLitePlanID   = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
+	AzureLitePlanName = "azure_lite"
 )
 
 func AzureRegions() []string {
@@ -34,6 +36,7 @@ type Type struct {
 	AdditionalItems *bool         `json:"additionalItems,omitempty"`
 	UniqueItems     *bool         `json:"uniqueItems,omitempty"`
 }
+
 type RootSchema struct {
 	Schema string `json:"$schema"`
 	Type
@@ -151,6 +154,7 @@ func GCPSchema() []byte {
 	}
 	return bytes
 }
+
 func AzureSchema() []byte {
 	f := new(bool)
 	*f = false
@@ -182,6 +186,72 @@ func AzureSchema() []byte {
 			MachineType: Type{
 				Type: "string",
 				Enum: ToInterfaceSlice([]string{"Standard_D8_v3"}),
+			},
+			Region: Type{
+				Type: "string",
+				Enum: ToInterfaceSlice(AzureRegions()),
+			},
+			Zones: Type{
+				Type: "array",
+				Items: []Type{{
+					Type: "string",
+					//TODO: add enum for zones
+				}},
+			},
+			AutoScalerMin: Type{
+				Type: "integer",
+			},
+			AutoScalerMax: Type{
+				Type: "integer",
+			},
+			MaxSurge: Type{
+				Type: "integer",
+			},
+			MaxUnavailable: Type{
+				Type: "integer",
+			},
+		},
+		Required: []string{"name"},
+	}
+
+	bytes, err := json.Marshal(rs)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
+}
+
+func AzureLiteSchema() []byte {
+	f := new(bool)
+	*f = false
+	t := new(bool)
+	*t = true
+	rs := RootSchema{
+		Schema: "http://json-schema.org/draft-04/schema#",
+		Type: Type{
+			Type: "object",
+		},
+		Properties: ProvisioningProperties{
+			Components: Type{
+				Type: "array",
+				Items: []Type{{
+					Type: "string",
+					Enum: ToInterfaceSlice([]string{"Kiali", "Tracing"}),
+				}},
+				AdditionalItems: f,
+				UniqueItems:     t,
+			},
+			Name: Type{
+				Type: "string",
+			},
+			DiskType: Type{Type: "string"},
+			VolumeSizeGb: Type{
+				Type:    "integer",
+				Minimum: 50,
+			},
+			MachineType: Type{
+				Type: "string",
+				Enum: ToInterfaceSlice([]string{"Standard_D4_v3"}),
 			},
 			Region: Type{
 				Type: "string",
@@ -266,5 +336,23 @@ var Plans = map[string]struct {
 			},
 		},
 		provisioningRawSchema: AzureSchema(),
+	},
+	AzureLitePlanID: {
+		PlanDefinition: domain.ServicePlan{
+			ID:          AzureLitePlanID,
+			Name:        AzureLitePlanName,
+			Description: "Azure Lite",
+			Metadata: &domain.ServicePlanMetadata{
+				DisplayName: "Azure Lite",
+			},
+			Schemas: &domain.ServiceSchemas{
+				Instance: domain.ServiceInstanceSchema{
+					Create: domain.Schema{
+						Parameters: make(map[string]interface{}),
+					},
+				},
+			},
+		},
+		provisioningRawSchema: AzureLiteSchema(),
 	},
 }
