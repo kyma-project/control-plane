@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"gotest.tools/assert"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )

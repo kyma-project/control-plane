@@ -3,7 +3,7 @@ package provisioning
 import (
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
 

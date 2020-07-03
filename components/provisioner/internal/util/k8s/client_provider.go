@@ -1,7 +1,7 @@
 package k8s
 
 import (
-	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"k8s.io/client-go/kubernetes"
 )
 

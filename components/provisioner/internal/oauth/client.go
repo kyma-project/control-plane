@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	v1 "github.com/kubernetes/client-go/kubernetes/typed/core/v1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
