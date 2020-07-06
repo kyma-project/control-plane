@@ -995,7 +995,7 @@ func (ec *executionContext) field_Mutation_upgradeShoot_args(ctx context.Context
 	args["id"] = arg0
 	var arg1 UpgradeShootInput
 	if tmp, ok := rawArgs["config"]; ok {
-		arg1, err = ec.unmarshalNUpgradeShootInput2githubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeShootInput(ctx, tmp)
+		arg1, err = ec.unmarshalNUpgradeShootInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeShootInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2451,7 +2451,7 @@ func (ec *executionContext) _Mutation_upgradeShoot(ctx context.Context, field gr
 	res := resTmp.(*OperationStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
+	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_rollBackUpgradeOperation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4630,7 +4630,7 @@ func (ec *executionContext) unmarshalInputGardenerUpgradeInput(ctx context.Conte
 			}
 		case "providerSpecificConfig":
 			var err error
-			it.ProviderSpecificConfig, err = ec.unmarshalOProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
+			it.ProviderSpecificConfig, err = ec.unmarshalOProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4786,7 +4786,7 @@ func (ec *executionContext) unmarshalInputUpgradeShootInput(ctx context.Context,
 		switch k {
 		case "gardenerConfig":
 			var err error
-			it.GardenerConfig, err = ec.unmarshalNGardenerUpgradeInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerUpgradeInput(ctx, v)
+			it.GardenerConfig, err = ec.unmarshalNGardenerUpgradeInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerUpgradeInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5622,6 +5622,18 @@ func (ec *executionContext) unmarshalNGardenerConfigInput2ᚖgithubᚗcomᚋkyma
 	return &res, err
 }
 
+func (ec *executionContext) unmarshalNGardenerUpgradeInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerUpgradeInput(ctx context.Context, v interface{}) (GardenerUpgradeInput, error) {
+	return ec.unmarshalInputGardenerUpgradeInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNGardenerUpgradeInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerUpgradeInput(ctx context.Context, v interface{}) (*GardenerUpgradeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNGardenerUpgradeInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerUpgradeInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
 	return graphql.UnmarshalInt(v)
 }
@@ -5750,7 +5762,7 @@ func (ec *executionContext) unmarshalNUpgradeRuntimeInput2githubᚗcomᚋkymaᚑ
 	return ec.unmarshalInputUpgradeRuntimeInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNUpgradeShootInput2githubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeShootInput(ctx context.Context, v interface{}) (UpgradeShootInput, error) {
+func (ec *executionContext) unmarshalNUpgradeShootInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeShootInput(ctx context.Context, v interface{}) (UpgradeShootInput, error) {
 	return ec.unmarshalInputUpgradeShootInput(ctx, v)
 }
 
@@ -6309,19 +6321,19 @@ func (ec *executionContext) marshalOProviderSpecificConfig2githubᚗcomᚋkyma�
 	return ec._ProviderSpecificConfig(ctx, sel, &v)
 }
 
-func (ec *executionContext) unmarshalOProviderSpecificInput2githubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (ProviderSpecificInput, error) {
+func (ec *executionContext) unmarshalOProviderSpecificInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (ProviderSpecificInput, error) {
 	return ec.unmarshalInputProviderSpecificInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (*ProviderSpecificInput, error) {
+func (ec *executionContext) unmarshalOProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (*ProviderSpecificInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOProviderSpecificInput2githubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
+	res, err := ec.unmarshalOProviderSpecificInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalORuntimeConfig2githubᚗcomᚋkymaᚑprojectᚋcontrol-planeᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConfig(ctx context.Context, sel ast.SelectionSet, v RuntimeConfig) graphql.Marshaler {
+func (ec *executionContext) marshalORuntimeConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConfig(ctx context.Context, sel ast.SelectionSet, v RuntimeConfig) graphql.Marshaler {
 	return ec._RuntimeConfig(ctx, sel, &v)
 }
 
