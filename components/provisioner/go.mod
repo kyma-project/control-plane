@@ -12,7 +12,6 @@ require (
 	github.com/kubernetes-sigs/service-catalog v0.3.0-beta.2
 	github.com/kubernetes/client-go v11.0.0+incompatible
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283
-	github.com/kyma-incubator/compass/components/provisioner v0.0.0-20200703104319-1c4490318bfd
 	github.com/kyma-incubator/hydroform/install v0.0.0-20200629120139-6648400a8188
 	github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442
 	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200422062252-6074323197a6
@@ -50,4 +49,4 @@ replace (
 
 )
 
-replace github.com/kyma-incubator/compass/components/provisioner => github.com/rafalpotempa/compass/components/provisioner v0.0.0-20200706055442-182b22767ed3
+replace github.com/kyma-project/control-plane/components/provisioner => github.com/rafalpotempa/control-plane/components/provisioner v0.0.0-20200706094311-6819d9c9ae01
