@@ -18,7 +18,6 @@ type provisioningInput struct {
 	runtimeInput gqlschema.RuntimeInput
 }
 
-var providerCredentials = &gqlschema.CredentialsInput{SecretName: "secret_1"}
 
 func newTestProvisioningConfigs() []testCase {
 	return []testCase{
