@@ -104,10 +104,22 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
 	if err != nil {
-		providerSpecificConfig = nil
+		providerSpecificConfig = currentShootCfg.GardenerProviderConfig
 	}
 
 	return model.GardenerConfig{
+		ID:           currentShootCfg.ID,
+		ClusterID:    currentShootCfg.ClusterID,
+		Name:         currentShootCfg.Name,
+		ProjectName:  currentShootCfg.ProjectName,
+		Provider:     currentShootCfg.Provider,
+		Seed:         currentShootCfg.Seed,
+		TargetSecret: currentShootCfg.TargetSecret,
+		Region:       currentShootCfg.Region,
+
+		Purpose:     currentShootCfg.Purpose,
+		LicenceType: currentShootCfg.LicenceType,
+
 		KubernetesVersion:      util.UnwrapStrOrGiveValue(input.KubernetesVersion, currentShootCfg.KubernetesVersion),
 		MachineType:            util.UnwrapStrOrGiveValue(input.MachineType, currentShootCfg.MachineType),
 		DiskType:               util.UnwrapStrOrGiveValue(input.DiskType, currentShootCfg.DiskType),

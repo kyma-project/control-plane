@@ -64,17 +64,11 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 }
 
 func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) dberrors.Error {
-
 	res, err := ws.update("gardener_config").
-		Where(dbr.Eq("id", config.ID)).
-		Set("cluster_id", config.ClusterID).
-		Set("project_name", config.ProjectName).
-		Set("name", config.Name).
+		Where(dbr.Eq("cluster_id", config.ClusterID)).
 		Set("kubernetes_version", config.KubernetesVersion).
 		Set("region", config.Region).
 		Set("provider", config.Provider).
-		Set("seed", config.Seed).
-		Set("target_secret", config.TargetSecret).
 		Set("machine_type", config.MachineType).
 		Set("disk_type", config.DiskType).
 		Set("volume_size_gb", config.VolumeSizeGB).
@@ -87,10 +81,10 @@ func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) 
 		Exec()
 
 	if err != nil {
-		return dberrors.Internal("Failed to update record of configuration for gardener shoot cluster %s: %s", config.Name, err)
+		return dberrors.Internal("Failed to update record of configuration for gardener shoot cluster '%s': %s", config.Name, err)
 	}
 
-	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update record of configuration for gardener shoot cluster %s state: %s", config.Name, err))
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update record of configuration for gardener shoot cluster '%s' state: %s", config.Name, err))
 }
 
 func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error {
