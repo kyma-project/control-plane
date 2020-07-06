@@ -1,4 +1,4 @@
-DELETE FROM operation WHERE operation_type = 'UPGRADE_SHOOT';
+DELETE FROM operation WHERE type = 'UPGRADE_SHOOT';
 
 ALTER TYPE operation_type RENAME TO operation_type_old;
 
