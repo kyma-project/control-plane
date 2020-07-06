@@ -68,6 +68,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 	if input == nil {
 		return model.GardenerConfig{}, apperrors.BadRequest("error: GardenerConfig not provided")
 	}
+}
 
 func (c converter) UgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, cluster model.Cluster) (model.GardenerConfig, error) {
 
@@ -169,7 +170,6 @@ func (c converter) providerSpecificConfigFromUpgradeInput(input *gqlschema.Provi
 	}
 
 	return nil, apperrors.BadRequest("provider config not specified")
-}
 }
 
 func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, apperrors.AppError) {
