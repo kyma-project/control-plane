@@ -215,17 +215,16 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			err = insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
 			require.NoError(t, err)
 
-			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig, Credentials: providerCredentials, KymaConfig: kymaConfig}
+			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig, KymaConfig: kymaConfig}
 
-			//when Provisioning Runtime
+			// when Provisioning Runtime
 			provisionRuntime, err := resolver.ProvisionRuntime(ctx, fullConfig)
-			t.Log(*provisionRuntime.RuntimeID, runtimeID)
 
-			//then
+			// then
 			require.NoError(t, err)
 			require.NotEmpty(t, provisionRuntime)
 
-			//wait for Shoot to update
+			// wait for Shoot to update
 			time.Sleep(2 * syncPeriod)
 
 			list, err := shootInterface.List(metav1.ListOptions{})
@@ -237,15 +236,15 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 				t.Log(shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
 			}
 
-			//then
-			assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
+			// then
+			assert.Contains(t, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"], runtimeID)
 			assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
 			assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
 			assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
 
 			simulateSuccessfulClusterProvisioning(t, shootInterface, secretsInterface, shoot)
 
-			//wait for Shoot to update
+			// wait for Shoot to update
 			time.Sleep(2 * waitPeriod)
 			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 
@@ -285,13 +284,11 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, runtimeFromDB.KymaConfig.ID, runtimeUpgrade.PostUpgradeKymaConfigId)
 
-			// when
-			// Roll Back last upgrade
+			// when Roll Back last upgrade
 			_, err = resolver.RollBackUpgradeOperation(ctx, runtimeID)
 			require.NoError(t, err)
 
-			// then
-			// assert db content
+			// then assert db content
 			runtimeUpgrade, err = readSession.GetRuntimeUpgrade(*upgradeRuntimeOp.ID)
 			require.NoError(t, err)
 			assert.Equal(t, model.UpgradeRolledBack, runtimeUpgrade.State)
@@ -300,8 +297,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, runtimeFromDB.KymaConfig.ID, runtimeUpgrade.PreUpgradeKymaConfigId)
 
-			// when
-			// upgrade shoot
+			// when Upgrade Shoot
 			runtimeBeforeUpgrade, err := readSession.GetCluster(runtimeID)
 			require.NoError(t, err)
 
@@ -322,36 +318,35 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			// assert db content
 			runtimeAfterUpgrade, err := readSession.GetCluster(runtimeID)
 			require.NoError(t, err)
-			shootAfterUpgrade, _ := runtimeAfterUpgrade.GardenerConfig()
+			shootAfterUpgrade := runtimeAfterUpgrade.ClusterConfig
 
 			expectedShootConfig, err := inputConverter.UpgradeShootInputToGardenerConfig(*upgradeShootInput.GardenerConfig, runtimeBeforeUpgrade)
 			require.NoError(t, err)
 			assert.Equal(t, expectedShootConfig, shootAfterUpgrade)
 
-			//when
+			// when
 			deprovisionRuntimeID, err := resolver.DeprovisionRuntime(ctx, runtimeID)
 			require.NoError(t, err)
 			require.NotEmpty(t, deprovisionRuntimeID)
 
-			//when
-			//wait for Shoot to update
+			// when
+			// wait for Shoot to update
 			time.Sleep(waitPeriod)
 			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 
-			//then
+			// then
 			require.NoError(t, err)
 			assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
 
-			//when
+			//when Deprovisioning
 			shoot = removeFinalizers(t, shootInterface, shoot)
 			time.Sleep(4 * waitPeriod)
 			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 
-			//then
+			// then
 			require.Error(t, err)
 			require.Empty(t, shoot)
 
-			// then
 			// assert database content
 			runtimeFromDB, err = readSession.GetCluster(runtimeID)
 			require.NoError(t, err)
