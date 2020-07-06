@@ -41,11 +41,7 @@ func (s *WaitForShootClusterUpgradeStep) TimeLimit() time.Duration {
 
 func (s *WaitForShootClusterUpgradeStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
-	gardenerConfig, ok := cluster.GardenerConfig()
-	if !ok {
-		err := errors.New("failed to convert to GardenerConfig")
-		return operations.StageResult{}, operations.NewNonRecoverableError(err)
-	}
+	gardenerConfig := cluster.ClusterConfig
 
 	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
 	if err != nil {

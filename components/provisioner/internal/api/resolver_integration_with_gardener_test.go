@@ -324,7 +324,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			require.NoError(t, err)
 			shootAfterUpgrade, _ := runtimeAfterUpgrade.GardenerConfig()
 
-			expectedShootConfig, err := inputConverter.UgradeShootInputToGardenerConfig(*upgradeShootInput.GardenerConfig, runtimeBeforeUpgrade)
+			expectedShootConfig, err := inputConverter.UpgradeShootInputToGardenerConfig(*upgradeShootInput.GardenerConfig, runtimeBeforeUpgrade)
 			require.NoError(t, err)
 			assert.Equal(t, expectedShootConfig, shootAfterUpgrade)
 

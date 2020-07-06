@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -18,7 +19,7 @@ import (
 type InputConverter interface {
 	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, apperrors.AppError)
 	KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, apperrors.AppError)
-	UgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, existing model.Cluster) (model.GardenerConfig, apperrors.AppError)
+	UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, existing model.Cluster) (model.GardenerConfig, apperrors.AppError)
 }
 
 func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Provider, gardenerProject string) InputConverter {
@@ -68,35 +69,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 	if input == nil {
 		return model.GardenerConfig{}, apperrors.BadRequest("error: GardenerConfig not provided")
 	}
-}
 
-func (c converter) UgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, cluster model.Cluster) (model.GardenerConfig, error) {
-
-	currentShootCfg, ok := cluster.GardenerConfig()
-	if !ok {
-		return model.GardenerConfig{}, fmt.Errorf("base cluster does not have Gardener configuration")
-	}
-
-	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
-
-	if err == nil {
-		currentShootCfg.GardenerProviderConfig = providerSpecificConfig
-	}
-
-	currentShootCfg.KubernetesVersion = util.UnwrapStrOrGiveValue(input.KubernetesVersion, currentShootCfg.KubernetesVersion)
-	currentShootCfg.MachineType = util.UnwrapStrOrGiveValue(input.MachineType, currentShootCfg.MachineType)
-	currentShootCfg.DiskType = util.UnwrapStrOrGiveValue(input.DiskType, currentShootCfg.DiskType)
-	currentShootCfg.VolumeSizeGB = util.UnwrapIntOrGiveValue(input.VolumeSizeGb, currentShootCfg.VolumeSizeGB)
-	currentShootCfg.WorkerCidr = util.UnwrapStrOrGiveValue(input.WorkerCidr, currentShootCfg.WorkerCidr)
-	currentShootCfg.AutoScalerMin = util.UnwrapIntOrGiveValue(input.AutoScalerMin, currentShootCfg.AutoScalerMin)
-	currentShootCfg.AutoScalerMax = util.UnwrapIntOrGiveValue(input.AutoScalerMax, currentShootCfg.AutoScalerMax)
-	currentShootCfg.MaxSurge = util.UnwrapIntOrGiveValue(input.MaxSurge, currentShootCfg.MaxSurge)
-	currentShootCfg.MaxUnavailable = util.UnwrapIntOrGiveValue(input.MaxUnavailable, currentShootCfg.MaxUnavailable)
-
-	return currentShootCfg, nil
-}
-
-func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
 	if err != nil {
 		return model.GardenerConfig{}, err
@@ -124,6 +97,29 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input gqlschema.Gar
 		ClusterID:              runtimeID,
 		GardenerProviderConfig: providerSpecificConfig,
 	}, nil
+}
+
+func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, cluster model.Cluster) (model.GardenerConfig, apperrors.AppError) {
+
+	currentShootCfg  := cluster.ClusterConfig
+
+	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
+
+	if err == nil {
+		currentShootCfg.GardenerProviderConfig = providerSpecificConfig
+	}
+
+	currentShootCfg.KubernetesVersion = util.UnwrapStrOrGiveValue(input.KubernetesVersion, currentShootCfg.KubernetesVersion)
+	currentShootCfg.MachineType = util.UnwrapStrOrGiveValue(input.MachineType, currentShootCfg.MachineType)
+	currentShootCfg.DiskType = util.UnwrapStrOrGiveValue(input.DiskType, currentShootCfg.DiskType)
+	currentShootCfg.VolumeSizeGB = util.UnwrapIntOrGiveValue(input.VolumeSizeGb, currentShootCfg.VolumeSizeGB)
+	currentShootCfg.WorkerCidr = util.UnwrapStrOrGiveValue(input.WorkerCidr, currentShootCfg.WorkerCidr)
+	currentShootCfg.AutoScalerMin = util.UnwrapIntOrGiveValue(input.AutoScalerMin, currentShootCfg.AutoScalerMin)
+	currentShootCfg.AutoScalerMax = util.UnwrapIntOrGiveValue(input.AutoScalerMax, currentShootCfg.AutoScalerMax)
+	currentShootCfg.MaxSurge = util.UnwrapIntOrGiveValue(input.MaxSurge, currentShootCfg.MaxSurge)
+	currentShootCfg.MaxUnavailable = util.UnwrapIntOrGiveValue(input.MaxUnavailable, currentShootCfg.MaxUnavailable)
+
+	return currentShootCfg, nil
 }
 
 func (c converter) createGardenerClusterName() string {
