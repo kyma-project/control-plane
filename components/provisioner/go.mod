@@ -49,4 +49,4 @@ replace (
 
 )
 
-replace github.com/kyma-project/control-plane/components/provisioner => github.com/rafalpotempa/control-plane/components/provisioner v0.0.0-20200706094311-6819d9c9ae01
+replace github.com/kyma-project/control-plane/components/provisioner => github.com/rafalpotempa/control-plane/components/provisioner v0.0.0-20200706145004-a67d79193a9f
