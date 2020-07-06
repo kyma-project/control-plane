@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
@@ -15,8 +16,8 @@ import (
 )
 
 type InputConverter interface {
-	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, error)
-	KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, error)
+	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, apperrors.AppError)
+	KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, apperrors.AppError)
 }
 
 func NewInputConverter(
@@ -43,8 +44,8 @@ type converter struct {
 	defaultAutoUpdateMachineImageVersion bool
 }
 
-func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, error) {
-	var err error
+func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, apperrors.AppError) {
+	var err apperrors.AppError
 
 	var kymaConfig model.KymaConfig
 	if input.KymaConfig != nil {
@@ -55,7 +56,7 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 	}
 
 	if input.ClusterConfig == nil {
-		return model.Cluster{}, fmt.Errorf("error: ClusterConfig not provided")
+		return model.Cluster{}, apperrors.BadRequest("error: ClusterConfig not provided")
 	}
 
 	gardenerConfig, err := c.gardenerConfigFromInput(runtimeID, input.ClusterConfig.GardenerConfig)
@@ -72,9 +73,9 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 	}, nil
 }
 
-func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.GardenerConfigInput) (model.GardenerConfig, error) {
+func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.GardenerConfigInput) (model.GardenerConfig, apperrors.AppError) {
 	if input == nil {
-		return model.GardenerConfig{}, fmt.Errorf("error: GardenerConfig not provided")
+		return model.GardenerConfig{}, apperrors.BadRequest("error: GardenerConfig not provided")
 	}
 
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
@@ -118,9 +119,9 @@ func (c converter) createGardenerClusterName() string {
 	return name
 }
 
-func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, error) {
+func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, apperrors.AppError) {
 	if input == nil {
-		return nil, errors.New("provider config not specified")
+		return nil, apperrors.Internal("provider config not specified")
 	}
 
 	if input.GcpConfig != nil {
@@ -133,17 +134,17 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 		return model.NewAWSGardenerConfig(input.AwsConfig)
 	}
 
-	return nil, errors.New("provider config not specified")
+	return nil, apperrors.BadRequest("provider config not specified")
 }
 
-func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, error) {
+func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, apperrors.AppError) {
 	kymaRelease, err := c.releaseRepo.GetReleaseByVersion(input.Version)
 	if err != nil {
 		if err.Code() == dberrors.CodeNotFound {
-			return model.KymaConfig{}, errors.Errorf("Kyma Release %s not found", input.Version)
+			return model.KymaConfig{}, apperrors.BadRequest("Kyma Release %s not found", input.Version)
 		}
 
-		return model.KymaConfig{}, errors.WithMessagef(err, "Failed to get Kyma Release with version %s", input.Version)
+		return model.KymaConfig{}, apperrors.Internal("Failed to get Kyma Release with version %s: %s", input.Version, err.Error())
 	}
 
 	var components []model.KymaComponentConfig
