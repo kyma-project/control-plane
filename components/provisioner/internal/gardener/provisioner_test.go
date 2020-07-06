@@ -189,8 +189,8 @@ func TestGardenerProvisioner_UpgradeShoot(t *testing.T) {
 		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, nil, auditLogsPolicyCMName, maintWindowConfigPath)
 
 		// when
-		err := provisionerClient.ProvisionCluster(cluster, operationId)
-		require.NoError(t, err)
+		apperr := provisionerClient.ProvisionCluster(cluster, operationId)
+		require.NoError(t, apperr)
 
 		// then
 		shoot, err := shootClient.Get(clusterName, v1.GetOptions{})
