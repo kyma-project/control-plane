@@ -865,8 +865,6 @@ input UpgradeShootInput {
 input GardenerUpgradeInput {
     kubernetesVersion: String                              # Kubernetes version to be installed on the cluster
     purpose: String                                        # The purpose given to the cluster (development, evaluation, testing, production)
-    autoUpdateKubernetesVersion : Boolean                  # Allow Gardener to automatically update cluster Kuberneters version
-    autoUpdateMachineImageVersion : Boolean                # Allow Gardener to automatically update machine image version
     machineType: String                                    # Type of node machines, varies depending on the target provider
     diskType: String                                       # Disk type, varies depending on the target provider
     volumeSizeGB: Int                                      # Size of the available disk, provided in GB
@@ -874,6 +872,8 @@ input GardenerUpgradeInput {
     autoScalerMax: Int                                     # Maximum number of VMs to create
     maxSurge: Int                                          # Maximum number of VMs created during an update
     maxUnavailable: Int                                    # Maximum number of VMs that can be unavailable during an update
+    autoUpdateKubernetesVersion: Boolean                   # Allow Gardener to automatically update cluster Kuberneters version
+    autoUpdateMachineImageVersion: Boolean                 # Allow Gardener to automatically update machine image version
     providerSpecificConfig: ProviderSpecificInput          # Additional parameters, vary depending on the target provider
 }
 
@@ -4588,18 +4588,6 @@ func (ec *executionContext) unmarshalInputGardenerUpgradeInput(ctx context.Conte
 			if err != nil {
 				return it, err
 			}
-		case "autoUpdateKubernetesVersion":
-			var err error
-			it.AutoUpdateKubernetesVersion, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "autoUpdateMachineImageVersion":
-			var err error
-			it.AutoUpdateMachineImageVersion, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "machineType":
 			var err error
 			it.MachineType, err = ec.unmarshalOString2ᚖstring(ctx, v)
@@ -4639,6 +4627,18 @@ func (ec *executionContext) unmarshalInputGardenerUpgradeInput(ctx context.Conte
 		case "maxUnavailable":
 			var err error
 			it.MaxUnavailable, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "autoUpdateKubernetesVersion":
+			var err error
+			it.AutoUpdateKubernetesVersion, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "autoUpdateMachineImageVersion":
+			var err error
+			it.AutoUpdateMachineImageVersion, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}

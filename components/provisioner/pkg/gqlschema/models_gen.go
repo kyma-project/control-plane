@@ -126,8 +126,6 @@ type GardenerConfigInput struct {
 type GardenerUpgradeInput struct {
 	KubernetesVersion             *string                `json:"kubernetesVersion"`
 	Purpose                       *string                `json:"purpose"`
-	AutoUpdateKubernetesVersion   *bool                  `json:"autoUpdateKubernetesVersion"`
-	AutoUpdateMachineImageVersion *bool                  `json:"autoUpdateMachineImageVersion"`
 	MachineType                   *string                `json:"machineType"`
 	DiskType                      *string                `json:"diskType"`
 	VolumeSizeGb                  *int                   `json:"volumeSizeGB"`
@@ -135,6 +133,8 @@ type GardenerUpgradeInput struct {
 	AutoScalerMax                 *int                   `json:"autoScalerMax"`
 	MaxSurge                      *int                   `json:"maxSurge"`
 	MaxUnavailable                *int                   `json:"maxUnavailable"`
+	AutoUpdateKubernetesVersion   *bool                  `json:"autoUpdateKubernetesVersion"`
+	AutoUpdateMachineImageVersion *bool                  `json:"autoUpdateMachineImageVersion"`
 	ProviderSpecificConfig        *ProviderSpecificInput `json:"providerSpecificConfig"`
 }
 
