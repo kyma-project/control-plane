@@ -143,7 +143,7 @@ func CreateShootUpgradeQueue(
 
 	upgradeClusterExecutor := operations.NewExecutor(
 		factory.NewReadWriteSession(),
-		model.ShootUpgrade,
+		model.UpgradeShoot,
 		upgradeSteps,
 		failure.NewNoopFailureHandler(),
 		directorClient,
