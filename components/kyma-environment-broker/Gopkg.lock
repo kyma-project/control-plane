@@ -255,6 +255,7 @@
     "pkg/apis/core/v1beta1/constants",
     "pkg/client/core/clientset/versioned/scheme",
     "pkg/client/core/clientset/versioned/typed/core/v1beta1",
+    "pkg/client/core/clientset/versioned/typed/core/v1beta1/fake",
     "pkg/utils",
     "pkg/utils/version",
   ]
@@ -1195,6 +1196,7 @@
     "github.com/dlmiddlecote/sqlstats",
     "github.com/gardener/gardener/pkg/apis/core/v1beta1",
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1",
+    "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1/fake",
     "github.com/gocraft/dbr",
     "github.com/google/uuid",
     "github.com/gorilla/handlers",
