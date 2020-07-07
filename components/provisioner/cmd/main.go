@@ -229,6 +229,8 @@ func main() {
 	// Run upgrade queue
 	upgradeQueue.Run(ctx.Done())
 
+	shootUpgradeQueue.Run(ctx.Done())
+
 	gqlCfg := gqlschema.Config{
 		Resolvers: resolver,
 	}

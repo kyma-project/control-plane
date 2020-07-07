@@ -452,7 +452,7 @@ func (r *service) setOperationStarted(
 		StartTimestamp: timestamp,
 		State:          model.InProgress,
 		Message:        message,
-		ClusterID:      runtimeID, // referencja do tab cluster
+		ClusterID:      runtimeID,
 		Stage:          operationStage,
 		LastTransition: &timestamp,
 	}
