@@ -180,6 +180,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 		//given
 		validator := NewValidator(nil)
 
+		newKubernetesVersion := "version2"
 		newMachineType := "new-machine"
 		newDiskType := "papyrus"
 		newVolumeSizeGb := 50
@@ -187,6 +188,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
+				KubernetesVersion:      &newKubernetesVersion,
 				MachineType:            &newMachineType,
 				DiskType:               &newDiskType,
 				VolumeSizeGb:           &newVolumeSizeGb,

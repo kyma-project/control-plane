@@ -181,7 +181,7 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to find shoot cluster to upgrade: %s", dberr.Error())
 	}
 
-	gardenerConfig, err := r.inputConverter.UpgradeShootInputToGardenerConfig(*input.GardenerConfig, cluster)
+	gardenerConfig, err := r.inputConverter.UpgradeShootInputToGardenerConfig(*input.GardenerConfig, cluster.ClusterConfig)
 	if err != nil {
 		return &gqlschema.OperationStatus{}, err.Append("failed to convert GardenerClusterUpgradeConfig: %s", err.Error())
 	}
@@ -398,7 +398,7 @@ func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSessio
 	log.Infof("operation: %+v\ndberror: %+v", operation, dbError)
 
 	if dbError != nil {
-		return model.Operation{}, err.Append("Failed to start operation of Gardener Shoot upgrade %s", dbError.Error())
+		return model.Operation{}, dbError.Append("Failed to start operation of Gardener Shoot upgrade %s", dbError.Error())
 	}
 
 	return operation, nil

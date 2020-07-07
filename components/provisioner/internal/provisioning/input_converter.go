@@ -19,7 +19,7 @@ import (
 type InputConverter interface {
 	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, apperrors.AppError)
 	KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, apperrors.AppError)
-	UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, existing model.Cluster) (model.GardenerConfig, apperrors.AppError)
+	UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, existing model.GardenerConfig) (model.GardenerConfig, apperrors.AppError)
 }
 
 func NewInputConverter(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Provider, gardenerProject string) InputConverter {
@@ -99,41 +99,40 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 	}, nil
 }
 
-func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, cluster model.Cluster) (model.GardenerConfig, apperrors.AppError) {
-	currentShootCfg := cluster.ClusterConfig
+func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, config model.GardenerConfig) (model.GardenerConfig, apperrors.AppError) {
 
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
 	if err != nil {
-		providerSpecificConfig = currentShootCfg.GardenerProviderConfig
+		providerSpecificConfig = config.GardenerProviderConfig
 	}
-	purpose := currentShootCfg.Purpose
 
+	purpose := config.Purpose
 	if input.Purpose != nil {
 		purpose = input.Purpose
 	}
 
 	return model.GardenerConfig{
-		ID:           currentShootCfg.ID,
-		ClusterID:    currentShootCfg.ClusterID,
-		Name:         currentShootCfg.Name,
-		ProjectName:  currentShootCfg.ProjectName,
-		Provider:     currentShootCfg.Provider,
-		Seed:         currentShootCfg.Seed,
-		TargetSecret: currentShootCfg.TargetSecret,
-		Region:       currentShootCfg.Region,
+		ID:           config.ID,
+		ClusterID:    config.ClusterID,
+		Name:         config.Name,
+		ProjectName:  config.ProjectName,
+		Provider:     config.Provider,
+		Seed:         config.Seed,
+		TargetSecret: config.TargetSecret,
+		Region:       config.Region,
 		Purpose:      purpose,
-		LicenceType:  currentShootCfg.LicenceType,
+		LicenceType:  config.LicenceType,
 
-		AutoUpdateKubernetesVersion:   util.UnwrapBoolOrGiveValue(input.AutoUpdateKubernetesVersion, currentShootCfg.AutoUpdateKubernetesVersion),
-		AutoUpdateMachineImageVersion: util.UnwrapBoolOrGiveValue(input.AutoUpdateMachineImageVersion, currentShootCfg.AutoUpdateMachineImageVersion),
-		KubernetesVersion:             util.UnwrapStrOrGiveValue(input.KubernetesVersion, currentShootCfg.KubernetesVersion),
-		MachineType:                   util.UnwrapStrOrGiveValue(input.MachineType, currentShootCfg.MachineType),
-		DiskType:                      util.UnwrapStrOrGiveValue(input.DiskType, currentShootCfg.DiskType),
-		VolumeSizeGB:                  util.UnwrapIntOrGiveValue(input.VolumeSizeGb, currentShootCfg.VolumeSizeGB),
-		AutoScalerMin:                 util.UnwrapIntOrGiveValue(input.AutoScalerMin, currentShootCfg.AutoScalerMin),
-		AutoScalerMax:                 util.UnwrapIntOrGiveValue(input.AutoScalerMax, currentShootCfg.AutoScalerMax),
-		MaxSurge:                      util.UnwrapIntOrGiveValue(input.MaxSurge, currentShootCfg.MaxSurge),
-		MaxUnavailable:                util.UnwrapIntOrGiveValue(input.MaxUnavailable, currentShootCfg.MaxUnavailable),
+		AutoUpdateKubernetesVersion:   util.UnwrapBoolOrGiveValue(input.AutoUpdateKubernetesVersion, config.AutoUpdateKubernetesVersion),
+		AutoUpdateMachineImageVersion: util.UnwrapBoolOrGiveValue(input.AutoUpdateMachineImageVersion, config.AutoUpdateMachineImageVersion),
+		KubernetesVersion:             util.UnwrapStrOrGiveValue(input.KubernetesVersion, config.KubernetesVersion),
+		MachineType:                   util.UnwrapStrOrGiveValue(input.MachineType, config.MachineType),
+		DiskType:                      util.UnwrapStrOrGiveValue(input.DiskType, config.DiskType),
+		VolumeSizeGB:                  util.UnwrapIntOrGiveValue(input.VolumeSizeGb, config.VolumeSizeGB),
+		AutoScalerMin:                 util.UnwrapIntOrGiveValue(input.AutoScalerMin, config.AutoScalerMin),
+		AutoScalerMax:                 util.UnwrapIntOrGiveValue(input.AutoScalerMax, config.AutoScalerMax),
+		MaxSurge:                      util.UnwrapIntOrGiveValue(input.MaxSurge, config.MaxSurge),
+		MaxUnavailable:                util.UnwrapIntOrGiveValue(input.MaxUnavailable, config.MaxUnavailable),
 		GardenerProviderConfig:        providerSpecificConfig,
 	}, nil
 }
