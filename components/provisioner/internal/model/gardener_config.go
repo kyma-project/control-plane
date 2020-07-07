@@ -184,42 +184,7 @@ func (c GCPGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 }
 
 func (c GCPGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-
-	updateWorkerConfig(gardenerConfig, shoot, c.input.Zones)
-
-	//var gcpInfra gcp.InfrastructureConfig
-	//err := json.Unmarshal(shoot.Spec.Provider.InfrastructureConfig.RawExtension.Raw, &gcpInfra)
-	//
-	//if err != nil {
-	//	return fmt.Errorf("error decoding infrastructure config: %s", err.Error())
-	//}
-	//
-	//gcpInfra.Networks.Workers = util.StringPtr(gardenerConfig.WorkerCidr)
-	//gcpInfra.Networks.Worker = gardenerConfig.WorkerCidr
-	//
-	//var gcpControlPlane gcp.ControlPlaneConfig
-	//err = json.Unmarshal(shoot.Spec.Provider.ControlPlaneConfig.RawExtension.Raw, &gcpControlPlane)
-	//
-	//if err != nil {
-	//	return fmt.Errorf("error decoding control plane config: %s", err.Error())
-	//}
-	//
-	//gcpControlPlane.Zone = c.input.Zones[0]
-	//
-	//jsonCPData, err := json.Marshal(gcpControlPlane)
-	//if err != nil {
-	//	return fmt.Errorf("error encoding control plane config: %s", err.Error())
-	//}
-	//
-	//jsonData, err := json.Marshal(gcpInfra)
-	//if err != nil {
-	//	return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
-	//}
-	//
-	//shoot.Spec.Provider.ControlPlaneConfig.RawExtension = apimachineryRuntime.RawExtension{Raw: jsonCPData}
-	//shoot.Spec.Provider.InfrastructureConfig.RawExtension = apimachineryRuntime.RawExtension{Raw: jsonData}
-
-	return nil
+	return updateWorkerConfig(gardenerConfig, shoot, c.input.Zones)
 }
 
 func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
@@ -294,28 +259,7 @@ type AWSGardenerConfig struct {
 }
 
 func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-
-	updateWorkerConfig(gardenerConfig, shoot, c.input.Zones)
-
-	//var azInfra azure.InfrastructureConfig
-	//err := json.Unmarshal(shoot.Spec.Provider.InfrastructureConfig.RawExtension.Raw, &azInfra)
-	//
-	//if err != nil {
-	//	return fmt.Errorf("error decoding infrastructure config: %s", err.Error())
-	//}
-	//
-	//azInfra.Zoned = len(c.input.Zones) > 0
-	//azInfra.Networks.Workers = gardenerConfig.WorkerCidr
-	//azInfra.Networks.VNet.CIDR = &c.input.VnetCidr
-	//
-	//jsonData, err := json.Marshal(azInfra)
-	//if err != nil {
-	//	return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
-	//}
-	//
-	//shoot.Spec.Provider.InfrastructureConfig.RawExtension = apimachineryRuntime.RawExtension{Raw: jsonData}
-
-	return nil
+	return updateWorkerConfig(gardenerConfig, shoot, c.input.Zones)
 }
 
 func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
@@ -383,30 +327,7 @@ func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 }
 
 func (c AWSGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-
-	updateWorkerConfig(gardenerConfig, shoot, []string{c.input.Zone})
-
-	//var awsInfra aws.InfrastructureConfig
-	//err := json.Unmarshal(shoot.Spec.Provider.InfrastructureConfig.RawExtension.Raw, &awsInfra)
-	//
-	//if err != nil {
-	//	return fmt.Errorf("error decoding infrastructure config: %s", err.Error())
-	//}
-	//
-	//awsInfra.Networks.Zones[0].Name = c.input.Zone
-	//awsInfra.Networks.Zones[0].Internal = c.input.InternalCidr
-	//awsInfra.Networks.Zones[0].Public = c.input.PublicCidr
-	//awsInfra.Networks.Zones[0].Workers = gardenerConfig.WorkerCidr
-	//awsInfra.Networks.VPC.CIDR = &c.input.VpcCidr
-	//
-	//jsonData, err := json.Marshal(awsInfra)
-	//if err != nil {
-	//	return fmt.Errorf("error encoding infrastructure config: %s", err.Error())
-	//}
-	//
-	//shoot.Spec.Provider.InfrastructureConfig.RawExtension = apimachineryRuntime.RawExtension{Raw: jsonData}
-
-	return nil
+	return updateWorkerConfig(gardenerConfig, shoot, []string{c.input.Zone})
 }
 
 func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
@@ -454,7 +375,19 @@ func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_typ
 	}
 }
 
-func updateWorkerConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot, zones []string) {
+func updateWorkerConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot, zones []string) apperrors.AppError {
+
+	if gardenerConfig.MachineType == "" {
+		apperrors.Internal("empty machine type provided")
+	}
+
+	if gardenerConfig.DiskType == "" {
+		apperrors.Internal("empty disk type provided")
+	}
+
+	if len(zones) == 0 {
+		apperrors.Internal("worker group zone information is missing")
+	}
 
 	shoot.Spec.Provider.Workers[0].MaxSurge = util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxSurge))
 	shoot.Spec.Provider.Workers[0].MaxUnavailable = util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxUnavailable))
@@ -464,4 +397,6 @@ func updateWorkerConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Sho
 	shoot.Spec.Provider.Workers[0].Maximum = int32(gardenerConfig.AutoScalerMax)
 	shoot.Spec.Provider.Workers[0].Minimum = int32(gardenerConfig.AutoScalerMin)
 	shoot.Spec.Provider.Workers[0].Zones = zones
+
+	return nil
 }

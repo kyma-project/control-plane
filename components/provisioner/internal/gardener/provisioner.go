@@ -83,15 +83,26 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 
 	shoot, err := g.shootClient.Get(upgradeConfig.Name, v1.GetOptions{})
 	if err != nil {
-		apperr := util.K8SErrorToAppError(err)
-		return apperr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, upgradeConfig.Name)
+		appErr := util.K8SErrorToAppError(err)
+		return appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, upgradeConfig.Name)
 	}
 
-	shoot.Spec.Kubernetes.Version = upgradeConfig.KubernetesVersion
-	apperr := upgradeConfig.GardenerProviderConfig.EditShootConfig(upgradeConfig, shoot)
+	if upgradeConfig.KubernetesVersion != "" {
+		shoot.Spec.Kubernetes.Version = upgradeConfig.KubernetesVersion
+	}
 
-	if apperr != nil {
-		return apperr.Append("error updating Gardener shoot configuration")
+	if upgradeConfig.Purpose != nil && *upgradeConfig.Purpose != "" {
+		purpose := gardener_types.ShootPurpose(*upgradeConfig.Purpose)
+		shoot.Spec.Purpose = &purpose
+	}
+
+	shoot.Spec.Maintenance.AutoUpdate.KubernetesVersion = upgradeConfig.AutoUpdateKubernetesVersion
+	shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = upgradeConfig.AutoUpdateMachineImageVersion
+
+	appErr := upgradeConfig.GardenerProviderConfig.EditShootConfig(upgradeConfig, shoot)
+
+	if appErr != nil {
+		return appErr.Append("error while updating Gardener shoot configuration")
 	}
 
 	_, err = g.shootClient.Update(shoot)
