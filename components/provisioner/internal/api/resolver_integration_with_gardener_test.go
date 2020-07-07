@@ -238,7 +238,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			// then
 			assert.Contains(t, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"], runtimeID)
-			assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
+			assert.Contains(t, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"], *provisionRuntime.ID)
 			assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
 			assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
 
