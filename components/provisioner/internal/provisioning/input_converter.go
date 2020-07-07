@@ -100,24 +100,33 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 }
 
 func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, cluster model.Cluster) (model.GardenerConfig, apperrors.AppError) {
-	currentShootCfg := cluster.ClusterConfig
 
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
 	if err != nil {
 		providerSpecificConfig = nil
 	}
 
+	currentShootCfg := cluster.ClusterConfig
+
+	purpose := currentShootCfg.Purpose
+
+	if input.Purpose != nil {
+		purpose = input.Purpose
+	}
+
 	return model.GardenerConfig{
-		KubernetesVersion:      util.UnwrapStrOrGiveValue(input.KubernetesVersion, currentShootCfg.KubernetesVersion),
-		MachineType:            util.UnwrapStrOrGiveValue(input.MachineType, currentShootCfg.MachineType),
-		DiskType:               util.UnwrapStrOrGiveValue(input.DiskType, currentShootCfg.DiskType),
-		VolumeSizeGB:           util.UnwrapIntOrGiveValue(input.VolumeSizeGb, currentShootCfg.VolumeSizeGB),
-		WorkerCidr:             util.UnwrapStrOrGiveValue(input.WorkerCidr, currentShootCfg.WorkerCidr),
-		AutoScalerMin:          util.UnwrapIntOrGiveValue(input.AutoScalerMin, currentShootCfg.AutoScalerMin),
-		AutoScalerMax:          util.UnwrapIntOrGiveValue(input.AutoScalerMax, currentShootCfg.AutoScalerMax),
-		MaxSurge:               util.UnwrapIntOrGiveValue(input.MaxSurge, currentShootCfg.MaxSurge),
-		MaxUnavailable:         util.UnwrapIntOrGiveValue(input.MaxUnavailable, currentShootCfg.MaxUnavailable),
-		GardenerProviderConfig: providerSpecificConfig,
+		Purpose:                       purpose,
+		AutoUpdateKubernetesVersion:   util.UnwrapBoolOrGiveValue(input.AutoUpdateKubernetesVersion, currentShootCfg.AutoUpdateKubernetesVersion),
+		AutoUpdateMachineImageVersion: util.UnwrapBoolOrGiveValue(input.AutoUpdateMachineImageVersion, currentShootCfg.AutoUpdateMachineImageVersion),
+		KubernetesVersion:             util.UnwrapStrOrGiveValue(input.KubernetesVersion, currentShootCfg.KubernetesVersion),
+		MachineType:                   util.UnwrapStrOrGiveValue(input.MachineType, currentShootCfg.MachineType),
+		DiskType:                      util.UnwrapStrOrGiveValue(input.DiskType, currentShootCfg.DiskType),
+		VolumeSizeGB:                  util.UnwrapIntOrGiveValue(input.VolumeSizeGb, currentShootCfg.VolumeSizeGB),
+		AutoScalerMin:                 util.UnwrapIntOrGiveValue(input.AutoScalerMin, currentShootCfg.AutoScalerMin),
+		AutoScalerMax:                 util.UnwrapIntOrGiveValue(input.AutoScalerMax, currentShootCfg.AutoScalerMax),
+		MaxSurge:                      util.UnwrapIntOrGiveValue(input.MaxSurge, currentShootCfg.MaxSurge),
+		MaxUnavailable:                util.UnwrapIntOrGiveValue(input.MaxUnavailable, currentShootCfg.MaxUnavailable),
+		GardenerProviderConfig:        providerSpecificConfig,
 	}, nil
 }
 

@@ -55,6 +55,13 @@ func UnwrapStrOrGiveValue(strPtr *string, value string) string {
 	return *strPtr
 }
 
+func UnwrapBoolOrGiveValue(boolPtr *bool, value bool) bool {
+	if boolPtr == nil {
+		return value
+	}
+	return *boolPtr
+}
+
 func UnwrapIntOrGiveValue(intPtr *int, value int) int {
 	if intPtr == nil {
 		return value
