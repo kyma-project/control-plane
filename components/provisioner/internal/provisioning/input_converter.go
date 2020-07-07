@@ -100,14 +100,12 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 }
 
 func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, cluster model.Cluster) (model.GardenerConfig, apperrors.AppError) {
+	currentShootCfg := cluster.ClusterConfig
 
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
 	if err != nil {
-		providerSpecificConfig = nil
+		providerSpecificConfig = currentShootCfg.GardenerProviderConfig
 	}
-
-	currentShootCfg := cluster.ClusterConfig
-
 	purpose := currentShootCfg.Purpose
 
 	if input.Purpose != nil {
@@ -115,7 +113,17 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 	}
 
 	return model.GardenerConfig{
-		Purpose:                       purpose,
+		ID:           currentShootCfg.ID,
+		ClusterID:    currentShootCfg.ClusterID,
+		Name:         currentShootCfg.Name,
+		ProjectName:  currentShootCfg.ProjectName,
+		Provider:     currentShootCfg.Provider,
+		Seed:         currentShootCfg.Seed,
+		TargetSecret: currentShootCfg.TargetSecret,
+		Region:       currentShootCfg.Region,
+		Purpose:      purpose,
+		LicenceType:  currentShootCfg.LicenceType,
+
 		AutoUpdateKubernetesVersion:   util.UnwrapBoolOrGiveValue(input.AutoUpdateKubernetesVersion, currentShootCfg.AutoUpdateKubernetesVersion),
 		AutoUpdateMachineImageVersion: util.UnwrapBoolOrGiveValue(input.AutoUpdateMachineImageVersion, currentShootCfg.AutoUpdateMachineImageVersion),
 		KubernetesVersion:             util.UnwrapStrOrGiveValue(input.KubernetesVersion, currentShootCfg.KubernetesVersion),

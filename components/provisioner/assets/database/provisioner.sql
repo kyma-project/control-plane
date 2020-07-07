@@ -54,7 +54,7 @@ CREATE TYPE operation_type AS ENUM (
     'UPGRADE',
     'DEPROVISION',
     'RECONNECT_RUNTIME'
-    'UPGRADE_SHOOT'
+    'SHOOT_UPGRADE'
     );
 
 CREATE TABLE operation

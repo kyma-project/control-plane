@@ -386,13 +386,13 @@ func (_m *ReadWriteSession) TransitionOperation(operationID string, message stri
 	return r0
 }
 
-// UpdateKubeconfig provides a mock function with given fields: runtimeID, kubeconfig
-func (_m *ReadWriteSession) UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error {
-	ret := _m.Called(runtimeID, kubeconfig)
+// UpdateGardenerClusterConfig provides a mock function with given fields: config
+func (_m *ReadWriteSession) UpdateGardenerClusterConfig(config model.GardenerConfig) dberrors.Error {
+	ret := _m.Called(config)
 
 	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, string) dberrors.Error); ok {
-		r0 = rf(runtimeID, kubeconfig)
+	if rf, ok := ret.Get(0).(func(model.GardenerConfig) dberrors.Error); ok {
+		r0 = rf(config)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dberrors.Error)
@@ -402,13 +402,13 @@ func (_m *ReadWriteSession) UpdateKubeconfig(runtimeID string, kubeconfig string
 	return r0
 }
 
-// UpdateGardenerClusterConfig provides a mock function with given fields: config
-func (_m *ReadWriteSession) UpdateGardenerClusterConfig(config model.GardenerConfig) dberrors.Error {
-	ret := _m.Called(config)
+// UpdateKubeconfig provides a mock function with given fields: runtimeID, kubeconfig
+func (_m *ReadWriteSession) UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error {
+	ret := _m.Called(runtimeID, kubeconfig)
 
 	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(model.GardenerConfig) dberrors.Error); ok {
-		r0 = rf(config)
+	if rf, ok := ret.Get(0).(func(string, string) dberrors.Error); ok {
+		r0 = rf(runtimeID, kubeconfig)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dberrors.Error)

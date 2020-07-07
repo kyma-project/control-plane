@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
@@ -381,20 +380,22 @@ func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSessio
 	log.Infof("Starting Upgrade of Gardener Shoot operation")
 
 	// 1. update gardener shoot entry in DB
-	err := txSession.UpdateGardenerClusterConfig(gardenerConfig)
-	if err != nil {
-		return model.Operation{}, fmt.Errorf("failed to insert updated Gardener Config: %s", err.Error())
+	dberr := txSession.UpdateGardenerClusterConfig(gardenerConfig)
+	if dberr != nil {
+		return model.Operation{}, dberrors.Internal("Failed to set Shoot Upgrade started: %s", dberr.Error())
 	}
 
 	// 2. execute update on Shoot CR
-	error := r.provisioner.UpgradeCluster(currentCluster.ID, gardenerConfig)
+	err := r.provisioner.UpgradeCluster(currentCluster.ID, gardenerConfig)
 
-	if error != nil {
-		return model.Operation{}, fmt.Errorf("failed to set Gardener Shoot upgrade operation started: %s", error.Error())
+	if err != nil {
+		return model.Operation{}, apperrors.Internal("Failed to upgrade Cluster: %s", err.Error())
 	}
 
 	// 3. start operation for waiting for cluster update
 	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.ShootUpgrade, model.WaitingForShootUpgrade, time.Now(), "Starting Gardener Shoot upgrade")
+
+	log.Infof("operation: %+v\ndberror: %+v", operation, dbError)
 
 	if dbError != nil {
 		return model.Operation{}, err.Append("Failed to start operation of Gardener Shoot upgrade %s", dbError.Error())
@@ -457,6 +458,7 @@ func (r *service) setOperationStarted(
 	}
 
 	err := dbSession.InsertOperation(operation)
+	log.Infof("%+v", err)
 	if err != nil {
 		return model.Operation{}, err.Append("failed to insert operation")
 	}
