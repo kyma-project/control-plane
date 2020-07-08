@@ -251,6 +251,7 @@ type OperationType string
 const (
 	OperationTypeProvision        OperationType = "Provision"
 	OperationTypeUpgrade          OperationType = "Upgrade"
+	OperationTypeUpgradeShoot     OperationType = "UpgradeShoot"
 	OperationTypeDeprovision      OperationType = "Deprovision"
 	OperationTypeReconnectRuntime OperationType = "ReconnectRuntime"
 )
@@ -258,13 +259,14 @@ const (
 var AllOperationType = []OperationType{
 	OperationTypeProvision,
 	OperationTypeUpgrade,
+	OperationTypeUpgradeShoot,
 	OperationTypeDeprovision,
 	OperationTypeReconnectRuntime,
 }
 
 func (e OperationType) IsValid() bool {
 	switch e {
-	case OperationTypeProvision, OperationTypeUpgrade, OperationTypeDeprovision, OperationTypeReconnectRuntime:
+	case OperationTypeProvision, OperationTypeUpgrade, OperationTypeUpgradeShoot, OperationTypeDeprovision, OperationTypeReconnectRuntime:
 		return true
 	}
 	return false

@@ -311,7 +311,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			// then
 			require.NoError(t, err)
 			assert.NotEmpty(t, upgradeShootOp.ID)
-			assert.Equal(t, gqlschema.OperationTypeUpgrade, upgradeShootOp.Operation)
+			assert.Equal(t, gqlschema.OperationTypeUpgradeShoot, upgradeShootOp.Operation)
 			assert.Equal(t, gqlschema.OperationStateInProgress, upgradeShootOp.State)
 			require.NotNil(t, upgradeShootOp.RuntimeID)
 			assert.Equal(t, runtimeID, *upgradeShootOp.RuntimeID)
