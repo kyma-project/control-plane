@@ -134,6 +134,7 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		Region:       config.Region,
 		LicenceType:  config.LicenceType,
 
+		Purpose:                             purpose,
 		KubernetesVersion:                   util.UnwrapStrOrGiveValue(input.KubernetesVersion, config.KubernetesVersion),
 		MachineType:                         util.UnwrapStrOrGiveValue(input.MachineType, config.MachineType),
 		DiskType:                            util.UnwrapStrOrGiveValue(input.DiskType, config.DiskType),
@@ -142,7 +143,6 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		AutoScalerMax:                       util.UnwrapIntOrGiveValue(input.AutoScalerMax, config.AutoScalerMax),
 		MaxSurge:                            util.UnwrapIntOrGiveValue(input.MaxSurge, config.MaxSurge),
 		MaxUnavailable:                      util.UnwrapIntOrGiveValue(input.MaxUnavailable, config.MaxUnavailable),
-		Purpose:                             util.UnwrapStrOrGiveValue(input.Purpose, *config.Purpose),
 		EnableKubernetesVersionAutoUpdate:   util.UnwrapBoolOrGiveValue(input.EnableKubernetesVersionAutoUpdate, config.EnableKubernetesVersionAutoUpdate),
 		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrGiveValue(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
 		GardenerProviderConfig:              providerSpecificConfig,

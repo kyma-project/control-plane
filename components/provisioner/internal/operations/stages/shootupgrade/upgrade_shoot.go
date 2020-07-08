@@ -32,7 +32,7 @@ func NewWaitForShootClusterUpgradeStep(gardenerClient GardenerClient, nextStep m
 }
 
 func (s WaitForShootClusterUpgradeStep) Name() model.OperationStage {
-	return model.UpdatingUpgradeState
+	return model.WaitingForShootUpgrade
 }
 
 func (s *WaitForShootClusterUpgradeStep) TimeLimit() time.Duration {
@@ -43,6 +43,8 @@ func (s *WaitForShootClusterUpgradeStep) Run(cluster model.Cluster, operation mo
 
 	gardenerConfig := cluster.ClusterConfig
 
+	logger.Info("Getting shoot %s", gardenerConfig.Name)
+
 	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err
@@ -51,13 +53,14 @@ func (s *WaitForShootClusterUpgradeStep) Run(cluster model.Cluster, operation mo
 	lastOperation := shoot.Status.LastOperation
 
 	if lastOperation != nil {
+
 		if lastOperation.State == gardencorev1beta1.LastOperationStateSucceeded {
-			logger.Info("Shoot upgrade state updated.")
+			logger.Info("Shoot upgrade operation has completed successfully")
 			return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 		}
 
 		if lastOperation.State == gardencorev1beta1.LastOperationStateFailed {
-			logger.Warningf("Gardener Shoot cluster upgrade failed! Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
+			logger.Warningf("Gardener Shoot cluster upgrade operation failed! Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
 
 			err := errors.New(fmt.Sprintf("Gardener Shoot cluster upgrade failed. Last Shoot state: %s, Shoot description: %s", lastOperation.State, lastOperation.Description))
 
