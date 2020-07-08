@@ -131,7 +131,7 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		Region:       config.Region,
 		LicenceType:  config.LicenceType,
 
-		Purpose:                             purpose,
+		Purpose:                             &purpose,
 		KubernetesVersion:                   util.UnwrapStrOrGiveValue(input.KubernetesVersion, config.KubernetesVersion),
 		MachineType:                         util.UnwrapStrOrGiveValue(input.MachineType, config.MachineType),
 		DiskType:                            util.UnwrapStrOrGiveValue(input.DiskType, config.DiskType),
