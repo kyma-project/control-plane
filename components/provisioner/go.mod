@@ -13,7 +13,7 @@ require (
 	github.com/kubernetes/client-go v11.0.0+incompatible
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283
 	github.com/kyma-incubator/hydroform/install v0.0.0-20200629120139-6648400a8188
-	github.com/kyma-project/control-plane v0.0.0-20200706124954-bf595a4cf1a3 // indirect
+	github.com/kyma-project/control-plane v0.0.0-20200708124242-91698ef058f4 // indirect
 	github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442
 	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200422062252-6074323197a6
 	github.com/lib/pq v1.2.0
@@ -49,4 +49,4 @@ replace (
 	sigs.k8s.io/controller-runtime v0.5.0 => sigs.k8s.io/controller-runtime v0.3.0
 )
 
-replace github.com/kyma-project/control-plane/components/provisioner => github.com/rafalpotempa/control-plane/components/provisioner v0.0.0-20200708080112-1df122a2628c
+replace github.com/kyma-project/control-plane/components/provisioner => github.com/rafalpotempa/control-plane/components/provisioner v0.0.0-20200708134652-828e848e0afd
