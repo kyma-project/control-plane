@@ -690,20 +690,20 @@ type RuntimeConfig {
 type GardenerConfig {
     name: String
     kubernetesVersion: String
-    volumeSizeGB: Int
-    machineType: String
-    region: String
-    provider: String
-    purpose: String
-    licenceType: String
-    seed: String
     targetSecret: String
+    provider: String
+    region: String
+    seed: String
+    machineType: String
     diskType: String
+    volumeSizeGB: Int
     workerCidr: String
     autoScalerMin: Int
     autoScalerMax: Int
     maxSurge: Int
     maxUnavailable: Int
+    purpose: String
+    licenceType: String
     enableKubernetesVersionAutoUpdate: Boolean
     enableMachineImageVersionAutoUpdate: Boolean
     providerSpecificConfig: ProviderSpecificConfig
@@ -814,18 +814,18 @@ input ClusterConfigInput {
 input GardenerConfigInput {
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
     provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
-    purpose: String                                 # Purpose is the purpose class for this cluster
-    licenceType: String                             # LicenceType informs about the licence type of the cluster (TestDevelopmentAndDemo)
     targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
+    region: String!                                 # Region in which the cluster is created
     machineType: String!                            # Type of node machines, varies depending on the target provider
     diskType: String!                               # Disk type, varies depending on the target provider
     volumeSizeGB: Int!                              # Size of the available disk, provided in GB
-    region: String!                                 # Region in which the cluster is created
     workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes
     autoScalerMin: Int!                             # Minimum number of VMs to create
     autoScalerMax: Int!                             # Maximum number of VMs to create
     maxSurge: Int!                                  # Maximum number of VMs created during an update
     maxUnavailable: Int!                            # Maximum number of VMs that can be unavailable during an update
+    purpose: String                                 # Purpose is the purpose class for this cluster
+    licenceType: String                             # LicenceType informs about the licence type of the cluster (TestDevelopmentAndDemo)
     enableKubernetesVersionAutoUpdate: Boolean      # Enable KubernetesVersion AutoUpdate indicates whether the patch Kubernetes version may be automatically updated
     enableMachineImageVersionAutoUpdate: Boolean    # Enable MachineImageVersion AutoUpdate indicates whether the machine image version may be automatically updated
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
@@ -884,18 +884,18 @@ input UpgradeShootInput {
 }
 
 input GardenerUpgradeInput {
-    kubernetesVersion: String                              # Kubernetes version to be installed on the cluster
-    purpose: String                                        # The purpose given to the cluster (development, evaluation, testing, production)
-    machineType: String                                    # Type of node machines, varies depending on the target provider
-    diskType: String                                       # Disk type, varies depending on the target provider
-    volumeSizeGB: Int                                      # Size of the available disk, provided in GB
-    autoScalerMin: Int                                     # Minimum number of VMs to create
-    autoScalerMax: Int                                     # Maximum number of VMs to create
-    maxSurge: Int                                          # Maximum number of VMs created during an update
-    maxUnavailable: Int                                    # Maximum number of VMs that can be unavailable during an update
-    autoUpdateKubernetesVersion: Boolean                   # Allow Gardener to automatically update cluster Kuberneters version
-    autoUpdateMachineImageVersion: Boolean                 # Allow Gardener to automatically update machine image version
-    providerSpecificConfig: ProviderSpecificInput          # Additional parameters, vary depending on the target provider
+    kubernetesVersion: String                     # Kubernetes version to be installed on the cluster
+    machineType: String                           # Type of node machines, varies depending on the target provider
+    diskType: String                              # Disk type, varies depending on the target provider
+    volumeSizeGB: Int                             # Size of the available disk, provided in GB
+    autoScalerMin: Int                            # Minimum number of VMs to create
+    autoScalerMax: Int                            # Maximum number of VMs to create
+    maxSurge: Int                                 # Maximum number of VMs created during an update
+    maxUnavailable: Int                           # Maximum number of VMs that can be unavailable during an update
+    purpose: String                               # The purpose given to the cluster (development, evaluation, testing, production)
+    enableKubernetesVersionAutoUpdate: Boolean    # Enable KubernetesVersion AutoUpdate indicates whether the patch Kubernetes version may be automatically updated
+    enableMachineImageVersionAutoUpdate: Boolean  # Enable MachineImageVersion AutoUpdate indicates whether the machine image version may be automatically updated
+    providerSpecificConfig: ProviderSpecificInput # Additional parameters, vary depending on the target provider
 }
 
 type Mutation {
@@ -1698,7 +1698,7 @@ func (ec *executionContext) _GardenerConfig_kubernetesVersion(ctx context.Contex
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GardenerConfig_volumeSizeGB(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _GardenerConfig_targetSecret(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1717,75 +1717,7 @@ func (ec *executionContext) _GardenerConfig_volumeSizeGB(ctx context.Context, fi
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.VolumeSizeGb, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GardenerConfig_machineType(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GardenerConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MachineType, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GardenerConfig_region(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GardenerConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Region, nil
+		return obj.TargetSecret, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1834,7 +1766,7 @@ func (ec *executionContext) _GardenerConfig_provider(ctx context.Context, field 
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GardenerConfig_purpose(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _GardenerConfig_region(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1853,41 +1785,7 @@ func (ec *executionContext) _GardenerConfig_purpose(ctx context.Context, field g
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Purpose, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GardenerConfig_licenceType(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GardenerConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LicenceType, nil
+		return obj.Region, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1936,7 +1834,7 @@ func (ec *executionContext) _GardenerConfig_seed(ctx context.Context, field grap
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GardenerConfig_targetSecret(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _GardenerConfig_machineType(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1955,7 +1853,7 @@ func (ec *executionContext) _GardenerConfig_targetSecret(ctx context.Context, fi
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TargetSecret, nil
+		return obj.MachineType, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2002,6 +1900,40 @@ func (ec *executionContext) _GardenerConfig_diskType(ctx context.Context, field 
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_volumeSizeGB(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VolumeSizeGb, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _GardenerConfig_workerCidr(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
@@ -2172,6 +2104,74 @@ func (ec *executionContext) _GardenerConfig_maxUnavailable(ctx context.Context, 
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_purpose(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Purpose, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_licenceType(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LicenceType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _GardenerConfig_enableKubernetesVersionAutoUpdate(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
@@ -4569,21 +4569,15 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-		case "purpose":
-			var err error
-			it.Purpose, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "licenceType":
-			var err error
-			it.LicenceType, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "targetSecret":
 			var err error
 			it.TargetSecret, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "region":
+			var err error
+			it.Region, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4602,12 +4596,6 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 		case "volumeSizeGB":
 			var err error
 			it.VolumeSizeGb, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "region":
-			var err error
-			it.Region, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4638,6 +4626,18 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 		case "maxUnavailable":
 			var err error
 			it.MaxUnavailable, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "purpose":
+			var err error
+			it.Purpose, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "licenceType":
+			var err error
+			it.LicenceType, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4683,12 +4683,6 @@ func (ec *executionContext) unmarshalInputGardenerUpgradeInput(ctx context.Conte
 			if err != nil {
 				return it, err
 			}
-		case "purpose":
-			var err error
-			it.Purpose, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "machineType":
 			var err error
 			it.MachineType, err = ec.unmarshalOString2ᚖstring(ctx, v)
@@ -4731,15 +4725,21 @@ func (ec *executionContext) unmarshalInputGardenerUpgradeInput(ctx context.Conte
 			if err != nil {
 				return it, err
 			}
-		case "autoUpdateKubernetesVersion":
+		case "purpose":
 			var err error
-			it.AutoUpdateKubernetesVersion, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			it.Purpose, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "autoUpdateMachineImageVersion":
+		case "enableKubernetesVersionAutoUpdate":
 			var err error
-			it.AutoUpdateMachineImageVersion, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			it.EnableKubernetesVersionAutoUpdate, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "enableMachineImageVersionAutoUpdate":
+			var err error
+			it.EnableMachineImageVersionAutoUpdate, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5132,24 +5132,20 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_name(ctx, field, obj)
 		case "kubernetesVersion":
 			out.Values[i] = ec._GardenerConfig_kubernetesVersion(ctx, field, obj)
-		case "volumeSizeGB":
-			out.Values[i] = ec._GardenerConfig_volumeSizeGB(ctx, field, obj)
-		case "machineType":
-			out.Values[i] = ec._GardenerConfig_machineType(ctx, field, obj)
-		case "region":
-			out.Values[i] = ec._GardenerConfig_region(ctx, field, obj)
-		case "provider":
-			out.Values[i] = ec._GardenerConfig_provider(ctx, field, obj)
-		case "purpose":
-			out.Values[i] = ec._GardenerConfig_purpose(ctx, field, obj)
-		case "licenceType":
-			out.Values[i] = ec._GardenerConfig_licenceType(ctx, field, obj)
-		case "seed":
-			out.Values[i] = ec._GardenerConfig_seed(ctx, field, obj)
 		case "targetSecret":
 			out.Values[i] = ec._GardenerConfig_targetSecret(ctx, field, obj)
+		case "provider":
+			out.Values[i] = ec._GardenerConfig_provider(ctx, field, obj)
+		case "region":
+			out.Values[i] = ec._GardenerConfig_region(ctx, field, obj)
+		case "seed":
+			out.Values[i] = ec._GardenerConfig_seed(ctx, field, obj)
+		case "machineType":
+			out.Values[i] = ec._GardenerConfig_machineType(ctx, field, obj)
 		case "diskType":
 			out.Values[i] = ec._GardenerConfig_diskType(ctx, field, obj)
+		case "volumeSizeGB":
+			out.Values[i] = ec._GardenerConfig_volumeSizeGB(ctx, field, obj)
 		case "workerCidr":
 			out.Values[i] = ec._GardenerConfig_workerCidr(ctx, field, obj)
 		case "autoScalerMin":
@@ -5160,6 +5156,10 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_maxSurge(ctx, field, obj)
 		case "maxUnavailable":
 			out.Values[i] = ec._GardenerConfig_maxUnavailable(ctx, field, obj)
+		case "purpose":
+			out.Values[i] = ec._GardenerConfig_purpose(ctx, field, obj)
+		case "licenceType":
+			out.Values[i] = ec._GardenerConfig_licenceType(ctx, field, obj)
 		case "enableKubernetesVersionAutoUpdate":
 			out.Values[i] = ec._GardenerConfig_enableKubernetesVersionAutoUpdate(ctx, field, obj)
 		case "enableMachineImageVersionAutoUpdate":

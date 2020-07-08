@@ -87,20 +87,20 @@ type GCPProviderConfigInput struct {
 type GardenerConfig struct {
 	Name                                *string                `json:"name"`
 	KubernetesVersion                   *string                `json:"kubernetesVersion"`
-	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
-	MachineType                         *string                `json:"machineType"`
-	Region                              *string                `json:"region"`
-	Provider                            *string                `json:"provider"`
-	Purpose                             *string                `json:"purpose"`
-	LicenceType                         *string                `json:"licenceType"`
-	Seed                                *string                `json:"seed"`
 	TargetSecret                        *string                `json:"targetSecret"`
+	Provider                            *string                `json:"provider"`
+	Region                              *string                `json:"region"`
+	Seed                                *string                `json:"seed"`
+	MachineType                         *string                `json:"machineType"`
 	DiskType                            *string                `json:"diskType"`
+	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
 	WorkerCidr                          *string                `json:"workerCidr"`
 	AutoScalerMin                       *int                   `json:"autoScalerMin"`
 	AutoScalerMax                       *int                   `json:"autoScalerMax"`
 	MaxSurge                            *int                   `json:"maxSurge"`
 	MaxUnavailable                      *int                   `json:"maxUnavailable"`
+	Purpose                             *string                `json:"purpose"`
+	LicenceType                         *string                `json:"licenceType"`
 	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate"`
 	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
 	ProviderSpecificConfig              ProviderSpecificConfig `json:"providerSpecificConfig"`
@@ -108,12 +108,12 @@ type GardenerConfig struct {
 
 type GardenerConfigInput struct {
 	KubernetesVersion                   string                 `json:"kubernetesVersion"`
-	VolumeSizeGb                        int                    `json:"volumeSizeGB"`
-	MachineType                         string                 `json:"machineType"`
-	Region                              string                 `json:"region"`
 	Provider                            string                 `json:"provider"`
 	TargetSecret                        string                 `json:"targetSecret"`
+	Region                              string                 `json:"region"`
+	MachineType                         string                 `json:"machineType"`
 	DiskType                            string                 `json:"diskType"`
+	VolumeSizeGb                        int                    `json:"volumeSizeGB"`
 	WorkerCidr                          string                 `json:"workerCidr"`
 	AutoScalerMin                       int                    `json:"autoScalerMin"`
 	AutoScalerMax                       int                    `json:"autoScalerMax"`
@@ -128,18 +128,18 @@ type GardenerConfigInput struct {
 }
 
 type GardenerUpgradeInput struct {
-	KubernetesVersion             *string                `json:"kubernetesVersion"`
-	Purpose                       *string                `json:"purpose"`
-	MachineType                   *string                `json:"machineType"`
-	DiskType                      *string                `json:"diskType"`
-	VolumeSizeGb                  *int                   `json:"volumeSizeGB"`
-	AutoScalerMin                 *int                   `json:"autoScalerMin"`
-	AutoScalerMax                 *int                   `json:"autoScalerMax"`
-	MaxSurge                      *int                   `json:"maxSurge"`
-	MaxUnavailable                *int                   `json:"maxUnavailable"`
-	AutoUpdateKubernetesVersion   *bool                  `json:"autoUpdateKubernetesVersion"`
-	AutoUpdateMachineImageVersion *bool                  `json:"autoUpdateMachineImageVersion"`
-	ProviderSpecificConfig        *ProviderSpecificInput `json:"providerSpecificConfig"`
+	KubernetesVersion                   *string                `json:"kubernetesVersion"`
+	MachineType                         *string                `json:"machineType"`
+	DiskType                            *string                `json:"diskType"`
+	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
+	AutoScalerMin                       *int                   `json:"autoScalerMin"`
+	AutoScalerMax                       *int                   `json:"autoScalerMax"`
+	MaxSurge                            *int                   `json:"maxSurge"`
+	MaxUnavailable                      *int                   `json:"maxUnavailable"`
+	Purpose                             *string                `json:"purpose"`
+	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate"`
+	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
+	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
 }
 
 type KymaConfig struct {
