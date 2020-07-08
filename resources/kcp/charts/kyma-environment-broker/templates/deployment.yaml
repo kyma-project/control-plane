@@ -279,10 +279,9 @@ spec:
             httpGet:
               path: /healthz
               port: {{ .Values.broker.statusPort }}
-            failureThreshold: 3
             periodSeconds: 10
             timeoutSeconds: 3
-            initialDelaySeconds: 20
+            initialDelaySeconds: 30
           readinessProbe:
             httpGet:
               path: /healthz
