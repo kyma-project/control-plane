@@ -2,7 +2,7 @@
 
 You can set overrides to customize your Kyma Runtime. To provision a cluster with custom overrides, add a Secret or a ConfigMap with a specific label. Kyma Environment Broker uses this Secret and/or ConfigMap to prepare a request to the Runtime Provisioner.
 
-Overrides can be either global or specified for a given component. In the second case, use the `component: {"COMPONENT_NAME"}` label to indicate the component. Create all overrides in the `compass-system` Namespace.
+Overrides can be either global or specified for a given component. In the second case, use the `component: {"COMPONENT_NAME"}` label to indicate the component. Create all overrides in the `kcp-system` Namespace.
 
 See the examples:
 
@@ -14,7 +14,7 @@ See the examples:
       labels:
         provisioning-runtime-override: "true"
       name: global-overrides
-      namespace: compass-system
+      namespace: kcp-system
     data:
       global.disableLegacyConnectivity: "true"
     ```  
@@ -28,7 +28,7 @@ See the examples:
         component: "core"
         provisioning-runtime-override: "true"
       name: core-overrides
-      namespace: compass-system
+      namespace: kcp-system
     data:
       database.password: YWRtaW4xMjMK
     ```  

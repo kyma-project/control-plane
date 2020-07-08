@@ -41,11 +41,11 @@ type Config struct {
 	TenantID             string `default:"d9994f8f-7e46-42a8-b2c1-1bfff8d2fe05"`
 	SkipCertVerification bool   `envconfig:"default=true"`
 
-	ProvisionerURL     string        `default:"http://compass-provisioner.compass-system.svc.cluster.local:3000/graphql"`
+	ProvisionerURL     string        `default:"http://kcp-provisioner.kcp-system.svc.cluster.local:3000/graphql"`
 	ProvisionTimeout   time.Duration `default:"3h"`
 	DeprovisionTimeout time.Duration `default:"1h"`
 	ConfigName         string        `default:"e2e-runtime-config"`
-	DeployNamespace    string        `default:"compass-system"`
+	DeployNamespace    string        `default:"kcp-system"`
 
 	UpgradeTest               bool `envconfig:"default=false"`
 	DummyTest                 bool `default:"false"`
