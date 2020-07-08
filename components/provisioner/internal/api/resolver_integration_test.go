@@ -85,12 +85,12 @@ func newTestProvisioningConfigs() []testCase {
 			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones passed",
 			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bb4",
 			provisioningInput: provisioningInput{
-				config: azureGardenerClusterConfigInput("fix-az-zone-1", "fix-az-zone-2"),
+				config: azureGardenerClusterConfigInput("1", "2"),
 				runtimeInput: gqlschema.RuntimeInput{
 					Name:        "test runtime 2",
 					Description: new(string),
 				}},
-			upgradeShootInput: newAzureUpgradeShootInput(),
+			upgradeShootInput: newUpgradeShootInput(),
 		},
 		{name: "Azure on Gardener (without zones)",
 			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones are empty",
@@ -101,7 +101,7 @@ func newTestProvisioningConfigs() []testCase {
 					Name:        "test runtime 3",
 					Description: new(string),
 				}},
-			upgradeShootInput: newAzureUpgradeShootInput(),
+			upgradeShootInput: newUpgradeShootInput(),
 		},
 		{name: "AWS on Gardener",
 			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct AWS configuration for Gardener",
@@ -121,6 +121,7 @@ func gcpGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 	return gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			KubernetesVersion: "version",
+			Purpose:           util.StringPtr("evaluation"),
 			Provider:          "GCP",
 			TargetSecret:      "secret",
 			Seed:              util.StringPtr("gcp-eu1"),
@@ -135,7 +136,7 @@ func gcpGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 			MaxUnavailable:    2,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				GcpConfig: &gqlschema.GCPProviderConfigInput{
-					Zones: []string{"fix-gcp-zone1", "fix-gcp-zone-2"},
+					Zones: []string{"gcp-zone1", "fix-gcp-zone-2"},
 				},
 			},
 		},
@@ -146,6 +147,7 @@ func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInp
 	return gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			KubernetesVersion: "version",
+			Purpose:           util.StringPtr("evaluation"),
 			Provider:          "Azure",
 			TargetSecret:      "secret",
 			Seed:              util.StringPtr("az-eu1"),
@@ -172,9 +174,10 @@ func awsGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 	return gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			KubernetesVersion: "version",
+			Purpose:           util.StringPtr("evaluation"),
 			Provider:          "AWS",
 			TargetSecret:      "secret",
-			Seed:              nil,
+			Seed:              util.StringPtr("aws-eu1"),
 			Region:            "eu-central-1",
 			MachineType:       "t3-xlarge",
 			DiskType:          "gp2",
@@ -198,6 +201,7 @@ func awsGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 
 func newUpgradeShootInput() gqlschema.UpgradeShootInput {
 	newKubernetesVersion := "version2"
+	newPurpose := "testing"
 	newMachineType := "new-machine"
 	newDiskType := "papyrus"
 	newVolumeSizeGb := 50
@@ -205,6 +209,7 @@ func newUpgradeShootInput() gqlschema.UpgradeShootInput {
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion: &newKubernetesVersion,
+			Purpose:           &newPurpose,
 			MachineType:       &newMachineType,
 			DiskType:          &newDiskType,
 			VolumeSizeGb:      &newVolumeSizeGb,

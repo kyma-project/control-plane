@@ -58,7 +58,7 @@ var mgr ctrl.Manager
 const (
 	namespace  = "default"
 	syncPeriod = 3 * time.Second
-	waitPeriod = 10 * time.Second
+	waitPeriod = 5 * time.Second
 
 	kymaVersion                   = "1.8"
 	kymaSystemNamespace           = "kyma-system"
@@ -235,26 +235,24 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			var shoot *gardener_types.Shoot
 			for _, s := range list.Items {
-				t.Log(s.ClusterName)
 				if s.Annotations["compass.provisioner.kyma-project.io/runtime-id"] == runtimeID {
-					t.Log(s.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
 					shoot = &s
 					break
 				}
 			}
 
 			// then
-			assert.Contains(t, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"], runtimeID)
-			assert.Contains(t, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"], *provisionRuntime.ID)
-			assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
+			assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
+			assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
 			assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
+			assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
 
 			simulateSuccessfulClusterProvisioning(t, shootInterface, secretsInterface, shoot)
 
 			// wait for Shoot to update
 			time.Sleep(2 * waitPeriod)
-			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 
+			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 			require.NoError(t, err)
 			assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
 
