@@ -80,6 +80,8 @@ func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) 
 		Set("auto_scaler_max", config.AutoScalerMax).
 		Set("max_surge", config.MaxSurge).
 		Set("max_unavailable", config.MaxUnavailable).
+		Set("enable_kubernetes_version_auto_update", config.EnableKubernetesVersionAutoUpdate).
+		Set("enable_machine_image_version_auto_update", config.EnableMachineImageVersionAutoUpdate).
 		Set("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Exec()
 

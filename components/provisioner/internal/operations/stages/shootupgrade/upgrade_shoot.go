@@ -43,8 +43,6 @@ func (s *WaitForShootClusterUpgradeStep) Run(cluster model.Cluster, operation mo
 
 	gardenerConfig := cluster.ClusterConfig
 
-	logger.Info("Getting shoot %s", gardenerConfig.Name)
-
 	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err
