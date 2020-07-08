@@ -76,23 +76,25 @@ type ComplexityRoot struct {
 	}
 
 	GardenerConfig struct {
-		AutoScalerMax          func(childComplexity int) int
-		AutoScalerMin          func(childComplexity int) int
-		DiskType               func(childComplexity int) int
-		KubernetesVersion      func(childComplexity int) int
-		LicenceType            func(childComplexity int) int
-		MachineType            func(childComplexity int) int
-		MaxSurge               func(childComplexity int) int
-		MaxUnavailable         func(childComplexity int) int
-		Name                   func(childComplexity int) int
-		Provider               func(childComplexity int) int
-		ProviderSpecificConfig func(childComplexity int) int
-		Purpose                func(childComplexity int) int
-		Region                 func(childComplexity int) int
-		Seed                   func(childComplexity int) int
-		TargetSecret           func(childComplexity int) int
-		VolumeSizeGb           func(childComplexity int) int
-		WorkerCidr             func(childComplexity int) int
+		AutoScalerMax                       func(childComplexity int) int
+		AutoScalerMin                       func(childComplexity int) int
+		DiskType                            func(childComplexity int) int
+		EnableKubernetesVersionAutoUpdate   func(childComplexity int) int
+		EnableMachineImageVersionAutoUpdate func(childComplexity int) int
+		KubernetesVersion                   func(childComplexity int) int
+		LicenceType                         func(childComplexity int) int
+		MachineType                         func(childComplexity int) int
+		MaxSurge                            func(childComplexity int) int
+		MaxUnavailable                      func(childComplexity int) int
+		Name                                func(childComplexity int) int
+		Provider                            func(childComplexity int) int
+		ProviderSpecificConfig              func(childComplexity int) int
+		Purpose                             func(childComplexity int) int
+		Region                              func(childComplexity int) int
+		Seed                                func(childComplexity int) int
+		TargetSecret                        func(childComplexity int) int
+		VolumeSizeGb                        func(childComplexity int) int
+		WorkerCidr                          func(childComplexity int) int
 	}
 
 	KymaConfig struct {
@@ -292,6 +294,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GardenerConfig.DiskType(childComplexity), true
+
+	case "GardenerConfig.enableKubernetesVersionAutoUpdate":
+		if e.complexity.GardenerConfig.EnableKubernetesVersionAutoUpdate == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.EnableKubernetesVersionAutoUpdate(childComplexity), true
+
+	case "GardenerConfig.enableMachineImageVersionAutoUpdate":
+		if e.complexity.GardenerConfig.EnableMachineImageVersionAutoUpdate == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.EnableMachineImageVersionAutoUpdate(childComplexity), true
 
 	case "GardenerConfig.kubernetesVersion":
 		if e.complexity.GardenerConfig.KubernetesVersion == nil {
@@ -674,6 +690,8 @@ type GardenerConfig {
     autoScalerMax: Int
     maxSurge: Int
     maxUnavailable: Int
+    enableKubernetesVersionAutoUpdate: Boolean
+    enableMachineImageVersionAutoUpdate: Boolean
     providerSpecificConfig: ProviderSpecificConfig
 }
 
@@ -793,6 +811,8 @@ input GardenerConfigInput {                   # Gardener project in which the cl
     autoScalerMax: Int!                             # Maximum number of VMs to create
     maxSurge: Int!                                  # Maximum number of VMs created during an update
     maxUnavailable: Int!                            # Maximum number of VMs that can be unavailable during an update
+    enableKubernetesVersionAutoUpdate: Boolean      # Enable KubernetesVersion AutoUpdate indicates whether the patch Kubernetes version may be automatically updated
+    enableMachineImageVersionAutoUpdate: Boolean    # Enable MachineImageVersion AutoUpdate indicates whether the machine image version may be automatically updated
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
 }
@@ -2093,6 +2113,74 @@ func (ec *executionContext) _GardenerConfig_maxUnavailable(ctx context.Context, 
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_enableKubernetesVersionAutoUpdate(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnableKubernetesVersionAutoUpdate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_enableMachineImageVersionAutoUpdate(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnableMachineImageVersionAutoUpdate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _GardenerConfig_providerSpecificConfig(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
@@ -4453,6 +4541,18 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "enableKubernetesVersionAutoUpdate":
+			var err error
+			it.EnableKubernetesVersionAutoUpdate, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "enableMachineImageVersionAutoUpdate":
+			var err error
+			it.EnableMachineImageVersionAutoUpdate, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "providerSpecificConfig":
 			var err error
 			it.ProviderSpecificConfig, err = ec.unmarshalNProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
@@ -4858,6 +4958,10 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_maxSurge(ctx, field, obj)
 		case "maxUnavailable":
 			out.Values[i] = ec._GardenerConfig_maxUnavailable(ctx, field, obj)
+		case "enableKubernetesVersionAutoUpdate":
+			out.Values[i] = ec._GardenerConfig_enableKubernetesVersionAutoUpdate(ctx, field, obj)
+		case "enableMachineImageVersionAutoUpdate":
+			out.Values[i] = ec._GardenerConfig_enableMachineImageVersionAutoUpdate(ctx, field, obj)
 		case "providerSpecificConfig":
 			out.Values[i] = ec._GardenerConfig_providerSpecificConfig(ctx, field, obj)
 		default:

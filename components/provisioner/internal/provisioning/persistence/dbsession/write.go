@@ -53,6 +53,8 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		Pair("auto_scaler_max", config.AutoScalerMax).
 		Pair("max_surge", config.MaxSurge).
 		Pair("max_unavailable", config.MaxUnavailable).
+		Pair("enable_kubernetes_version_auto_update", config.EnableKubernetesVersionAutoUpdate).
+		Pair("enable_machine_image_version_auto_update", config.EnableMachineImageVersionAutoUpdate).
 		Pair("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Exec()
 
