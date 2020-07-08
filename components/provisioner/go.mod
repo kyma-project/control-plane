@@ -47,7 +47,6 @@ replace (
 	k8s.io/apimachinery v0.17.2 => k8s.io/apimachinery v0.15.8-beta.1
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible => k8s.io/client-go v0.15.8-beta.1
 	sigs.k8s.io/controller-runtime v0.5.0 => sigs.k8s.io/controller-runtime v0.3.0
-
 )
 
-replace github.com/kyma-project/control-plane/components/provisioner => github.com/rafalpotempa/control-plane/components/provisioner v0.0.0-20200706202642-b5c8ba792d0e
+replace github.com/kyma-project/control-plane/components/provisioner => github.com/rafalpotempa/control-plane/components/provisioner v0.0.0-20200708080112-1df122a2628c
