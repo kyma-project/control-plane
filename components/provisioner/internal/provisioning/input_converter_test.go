@@ -508,7 +508,13 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 		t.Run(testCase.description, func(t *testing.T) {
 			//given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
-			inputConverter := NewInputConverter(uuidGeneratorMock, readSession, gardenerProject)
+			inputConverter := NewInputConverter(
+				uuidGeneratorMock,
+				readSession,
+				gardenerProject,
+				defaultEnableKubernetesVersionAutoUpdate,
+				defaultEnableMachineImageVersionAutoUpdate,
+			)
 
 			//when
 			shootConfig, err := inputConverter.UpgradeShootInputToGardenerConfig(*testCase.upgradeInput.GardenerConfig, testCase.initialConfig)

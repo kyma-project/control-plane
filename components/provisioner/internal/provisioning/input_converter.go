@@ -118,10 +118,7 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		providerSpecificConfig = config.GardenerProviderConfig
 	}
 
-	purpose := config.Purpose
-	if input.Purpose != nil {
-		purpose = input.Purpose
-	}
+	purpose := util.UnwrapStrOrGiveValue(input.Purpose, *config.Purpose)
 
 	return model.GardenerConfig{
 		ID:           config.ID,

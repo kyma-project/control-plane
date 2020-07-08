@@ -347,7 +347,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		require.Error(t, err)
 
 		//then
-		assert.Contains(t, err.Error(), "Failed to get last operation")
+		assert.Contains(t, err.Error(), "failed to get last operation")
 		sessionFactoryMock.AssertExpectations(t)
 		readWriteSession.AssertExpectations(t)
 	})
