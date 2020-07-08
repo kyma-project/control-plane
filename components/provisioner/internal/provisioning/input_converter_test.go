@@ -370,69 +370,91 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 
 }
 
-func Test_UpgradeShootInputToCluster(t *testing.T) {
+func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 	evaluationPurpose := "evaluation"
 	testingPurpose := "testing"
 
 	readSession := &realeaseMocks.Repository{}
 	readSession.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
 
-	expectedGCPProviderConfig, err := model.NewGCPGardenerConfig(
-		&gqlschema.GCPProviderConfigInput{
-			Zones: []string{"fix-gcp-zone-1", "fix-gcp-zone-2"},
-		},
-	)
-	require.NoError(t, err)
+	initialGCPProviderConfig, _ := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{Zones: []string{"europe-west1-a"}})
+	upgradedGCPProviderConfig, _ := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{Zones: []string{"europe-west1-a", "europe-west1-b"}})
+
+	initialAzureProviderConfig, _ := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{Zones: []string{"1"}})
+	upgradedAzureProviderConfig, _ := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{Zones: []string{"1", "2"}})
 
 	configurations := []struct {
 		description    string
 		upgradeInput   gqlschema.UpgradeShootInput
-		currentConfig  model.GardenerConfig
+		initialConfig  model.GardenerConfig
 		upgradedConfig model.GardenerConfig
 	}{
 		{description: "GCP shoot upgrade",
-			upgradeInput: newUpgradeShootInput(),
-			currentConfig: model.GardenerConfig{
-				KubernetesVersion: "version",
-				VolumeSizeGB:      1,
-				DiskType:          "ssd",
-				MachineType:       "1",
-				Purpose:           &evaluationPurpose,
-				WorkerCidr:        "cidr",
-				AutoScalerMin:     1,
-				AutoScalerMax:     2,
-				MaxSurge:          1,
-				MaxUnavailable:    1,
+			upgradeInput: newGCPUpgradeShootInput(testingPurpose),
+			initialConfig: model.GardenerConfig{
+				KubernetesVersion:      "version",
+				VolumeSizeGB:           1,
+				DiskType:               "ssd",
+				MachineType:            "1",
+				Purpose:                &evaluationPurpose,
+				AutoScalerMin:          1,
+				AutoScalerMax:          2,
+				MaxSurge:               1,
+				MaxUnavailable:         1,
+				GardenerProviderConfig: initialGCPProviderConfig,
 			},
 			upgradedConfig: model.GardenerConfig{
-				KubernetesVersion: "version2",
-				VolumeSizeGB:      50,
-				DiskType:          "papyrus",
-				MachineType:       "new-machine",
-				Purpose:           &testingPurpose,
-				WorkerCidr:        "cidr2",
-				AutoScalerMin:     2,
-				AutoScalerMax:     6,
-				MaxSurge:          2,
-				MaxUnavailable:    1,
+				KubernetesVersion:      "version2",
+				VolumeSizeGB:           50,
+				DiskType:               "papyrus",
+				MachineType:            "new-machine",
+				Purpose:                &testingPurpose,
+				AutoScalerMin:          2,
+				AutoScalerMax:          6,
+				MaxSurge:               2,
+				MaxUnavailable:         1,
+				GardenerProviderConfig: upgradedGCPProviderConfig,
 			},
 		},
 		{description: "Azure shoot upgrade",
-			upgradeInput: newAzureUpgradeShootInput(),
-			currentConfig: model.GardenerConfig{
+			upgradeInput: newAzureUpgradeShootInput(testingPurpose),
+			initialConfig: model.GardenerConfig{
+				KubernetesVersion:      "version",
+				VolumeSizeGB:           1,
+				DiskType:               "ssd",
+				MachineType:            "1",
+				Purpose:                &evaluationPurpose,
+				AutoScalerMin:          1,
+				AutoScalerMax:          2,
+				MaxSurge:               1,
+				MaxUnavailable:         1,
+				GardenerProviderConfig: initialAzureProviderConfig,
+			},
+			upgradedConfig: model.GardenerConfig{
+				KubernetesVersion:      "version2",
+				VolumeSizeGB:           50,
+				DiskType:               "papyrus",
+				MachineType:            "new-machine",
+				Purpose:                &testingPurpose,
+				AutoScalerMin:          2,
+				AutoScalerMax:          6,
+				MaxSurge:               2,
+				MaxUnavailable:         1,
+				GardenerProviderConfig: upgradedAzureProviderConfig,
+			},
+		},
+		{description: "AWS shoot upgrade",
+			upgradeInput: newUpgradeShootInput(testingPurpose),
+			initialConfig: model.GardenerConfig{
 				KubernetesVersion: "version",
 				VolumeSizeGB:      1,
 				DiskType:          "ssd",
 				MachineType:       "1",
 				Purpose:           &evaluationPurpose,
-				WorkerCidr:        "cidr",
 				AutoScalerMin:     1,
 				AutoScalerMax:     2,
 				MaxSurge:          1,
 				MaxUnavailable:    1,
-				GardenerProviderConfig: &model.AzureGardenerConfig{
-					ProviderSpecificConfig: model.ProviderSpecificConfig("config"),
-				},
 			},
 			upgradedConfig: model.GardenerConfig{
 				KubernetesVersion: "version2",
@@ -440,20 +462,11 @@ func Test_UpgradeShootInputToCluster(t *testing.T) {
 				DiskType:          "papyrus",
 				MachineType:       "new-machine",
 				Purpose:           &testingPurpose,
-				WorkerCidr:        "cidr2",
 				AutoScalerMin:     2,
 				AutoScalerMax:     6,
 				MaxSurge:          2,
 				MaxUnavailable:    1,
-				GardenerProviderConfig: &model.AzureGardenerConfig{
-					ProviderSpecificConfig: model.ProviderSpecificConfig("config"),
-				},
 			},
-		},
-		{description: "AWS shoot upgrade",
-			upgradeInput:   gqlschema.UpgradeShootInput{},
-			currentConfig:  model.GardenerConfig{},
-			upgradedConfig: model.GardenerConfig{},
 		},
 	}
 
@@ -461,17 +474,14 @@ func Test_UpgradeShootInputToCluster(t *testing.T) {
 		t.Run(testCase.description, func(t *testing.T) {
 			//given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
-			uuidGeneratorMock.On("New").Return("id").Times(6)
-			uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hyphens")
-
 			inputConverter := NewInputConverter(uuidGeneratorMock, readSession, gardenerProject)
 
 			//when
-			runtimeConfig, err := inputConverter.UpgradeShootInputToGardenerConfig(testCase.upgradeInput, testCase.currentConfig)
+			shootConfig, err := inputConverter.UpgradeShootInputToGardenerConfig(*testCase.upgradeInput.GardenerConfig, testCase.initialConfig)
 
 			//then
 			require.NoError(t, err)
-			assert.Equal(t, testCase.expected, runtimeConfig)
+			assert.Equal(t, testCase.upgradedConfig, shootConfig)
 			uuidGeneratorMock.AssertExpectations(t)
 		})
 	}
@@ -484,20 +494,19 @@ func newInputConverterTester(uuidGenerator uuid.UUIDGenerator, releaseRepo relea
 	}
 }
 
-func newUpgradeShootInput() gqlschema.UpgradeShootInput {
+func newUpgradeShootInput(newPurpose string) gqlschema.UpgradeShootInput {
 	newKubernetesVersion := "version2"
 	newMachineType := "new-machine"
 	newDiskType := "papyrus"
 	newVolumeSizeGb := 50
-	newCidr := "cidr2"
 
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion:      &newKubernetesVersion,
+			Purpose:                &newPurpose,
 			MachineType:            &newMachineType,
 			DiskType:               &newDiskType,
 			VolumeSizeGb:           &newVolumeSizeGb,
-			WorkerCidr:             &newCidr,
 			AutoScalerMin:          util.IntPtr(2),
 			AutoScalerMax:          util.IntPtr(6),
 			MaxSurge:               util.IntPtr(2),
@@ -507,11 +516,21 @@ func newUpgradeShootInput() gqlschema.UpgradeShootInput {
 	}
 }
 
-func newAzureUpgradeShootInput() gqlschema.UpgradeShootInput {
-	input := newUpgradeShootInput()
+func newGCPUpgradeShootInput(newPurpose string) gqlschema.UpgradeShootInput {
+	input := newUpgradeShootInput(newPurpose)
+	input.GardenerConfig.ProviderSpecificConfig = &gqlschema.ProviderSpecificInput{
+		GcpConfig: &gqlschema.GCPProviderConfigInput{
+			Zones: []string{"europe-west1-a", "europe-west1-b"},
+		},
+	}
+	return input
+}
+
+func newAzureUpgradeShootInput(newPurpose string) gqlschema.UpgradeShootInput {
+	input := newUpgradeShootInput(newPurpose)
 	input.GardenerConfig.ProviderSpecificConfig = &gqlschema.ProviderSpecificInput{
 		AzureConfig: &gqlschema.AzureProviderConfigInput{
-			VnetCidr: "cidr2",
+			Zones: []string{"1", "2"},
 		},
 	}
 	return input

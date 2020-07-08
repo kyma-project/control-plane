@@ -50,6 +50,9 @@ func (v *validator) ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) ap
 }
 
 func (v *validator) ValidateUpgradeShootInput(input gqlschema.UpgradeShootInput) apperrors.AppError {
+	if input.GardenerConfig == nil {
+		return apperrors.BadRequest("validation error while starting starting Shoot Upgrade: Gardener Config is missing")
+	}
 
 	return nil
 }

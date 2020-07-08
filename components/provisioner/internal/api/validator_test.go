@@ -184,7 +184,6 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 		newMachineType := "new-machine"
 		newDiskType := "papyrus"
 		newVolumeSizeGb := 50
-		newCidr := "cidr2"
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
@@ -192,7 +191,6 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 				MachineType:            &newMachineType,
 				DiskType:               &newDiskType,
 				VolumeSizeGb:           &newVolumeSizeGb,
-				WorkerCidr:             &newCidr,
 				AutoScalerMin:          util.IntPtr(2),
 				AutoScalerMax:          util.IntPtr(6),
 				MaxSurge:               util.IntPtr(2),

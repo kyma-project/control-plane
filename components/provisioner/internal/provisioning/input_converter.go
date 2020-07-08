@@ -120,8 +120,9 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		Seed:         config.Seed,
 		TargetSecret: config.TargetSecret,
 		Region:       config.Region,
-		Purpose:      purpose,
 		LicenceType:  config.LicenceType,
+
+		Purpose: purpose,
 
 		AutoUpdateKubernetesVersion:   util.UnwrapBoolOrGiveValue(input.AutoUpdateKubernetesVersion, config.AutoUpdateKubernetesVersion),
 		AutoUpdateMachineImageVersion: util.UnwrapBoolOrGiveValue(input.AutoUpdateMachineImageVersion, config.AutoUpdateMachineImageVersion),

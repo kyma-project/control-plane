@@ -201,7 +201,6 @@ func newUpgradeShootInput() gqlschema.UpgradeShootInput {
 	newMachineType := "new-machine"
 	newDiskType := "papyrus"
 	newVolumeSizeGb := 50
-	newCidr := "cidr2"
 
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
@@ -209,7 +208,6 @@ func newUpgradeShootInput() gqlschema.UpgradeShootInput {
 			MachineType:       &newMachineType,
 			DiskType:          &newDiskType,
 			VolumeSizeGb:      &newVolumeSizeGb,
-			WorkerCidr:        &newCidr,
 			AutoScalerMin:     util.IntPtr(2),
 			AutoScalerMax:     util.IntPtr(6),
 			MaxSurge:          util.IntPtr(2),
