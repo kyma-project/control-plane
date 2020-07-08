@@ -245,7 +245,7 @@
   version = "v4.6.0"
 
 [[projects]]
-  digest = "1:a6225e8013cc9da21e7e167463b224af253d23f9524c2eae768c52fb8f138f1c"
+  digest = "1:1444940bf20177aa372c23eaa11428b4f4cfb38895eccaa0857c301502074e42"
   name = "github.com/gardener/gardener"
   packages = [
     "pkg/apis/core",
@@ -1158,7 +1158,7 @@
   revision = "5f6fbceb4c31d35291b2de756aeaae2ddeee3e92"
 
 [[projects]]
-  digest = "1:6b41fd5562bac43f021d440591d881fc6f53c78ba756fe2ec545a50b0dc9d69f"
+  digest = "1:b1f69e0b9cbc600a32b16fc2aba2ecda6126d7cbb2222ba6080f150c2a17eb4e"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     "pkg/client",
@@ -1168,6 +1168,7 @@
     "pkg/internal/log",
     "pkg/internal/objectutil",
     "pkg/log",
+    "pkg/reconcile",
   ]
   pruneopts = "UT"
   revision = "198197fe0fd7553cadd8afcd3338f8ee4b8a7e3f"
@@ -1236,11 +1237,13 @@
     "k8s.io/client-go/kubernetes/fake",
     "k8s.io/client-go/kubernetes/typed/core/v1",
     "k8s.io/client-go/rest",
+    "k8s.io/client-go/testing",
     "k8s.io/client-go/tools/clientcmd",
     "k8s.io/client-go/util/workqueue",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/config",
     "sigs.k8s.io/controller-runtime/pkg/client/fake",
+    "sigs.k8s.io/controller-runtime/pkg/reconcile",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
