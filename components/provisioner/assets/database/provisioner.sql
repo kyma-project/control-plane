@@ -35,6 +35,8 @@ CREATE TABLE gardener_config
     auto_scaler_max integer NOT NULL,
     max_surge integer NOT NULL,
     max_unavailable integer NOT NULL,
+    enable_kubernetes_version_auto_update boolean NOT NULL,
+    enable_machine_image_version_auto_update boolean NOT NULL,
     provider_specific_config jsonb,
     UNIQUE(cluster_id),
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE

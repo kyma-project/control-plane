@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	namespace      = "compass-system"
+	namespace      = "kcp-system"
 	overrideLabel  = "provisioning-runtime-override"
 	componentLabel = "component"
 )
