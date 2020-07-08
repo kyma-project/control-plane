@@ -96,8 +96,8 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 		shoot.Spec.Purpose = &purpose
 	}
 
-	shoot.Spec.Maintenance.AutoUpdate.KubernetesVersion = upgradeConfig.AutoUpdateKubernetesVersion
-	shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = upgradeConfig.AutoUpdateMachineImageVersion
+	shoot.Spec.Maintenance.AutoUpdate.KubernetesVersion = upgradeConfig.EnableKubernetesVersionAutoUpdate
+	shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = upgradeConfig.EnableMachineImageVersionAutoUpdate
 
 	appErr := upgradeConfig.GardenerProviderConfig.EditShootConfig(upgradeConfig, shoot)
 
