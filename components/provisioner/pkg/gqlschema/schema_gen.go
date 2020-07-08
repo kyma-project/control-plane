@@ -739,6 +739,7 @@ type OperationStatus {
 enum OperationType {
     Provision
     Upgrade
+    UpgradeShoot
     Deprovision
     ReconnectRuntime
 }
