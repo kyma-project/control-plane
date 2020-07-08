@@ -458,7 +458,6 @@ func (r *service) setOperationStarted(
 	}
 
 	err := dbSession.InsertOperation(operation)
-	log.Infof("%+v", err)
 	if err != nil {
 		return model.Operation{}, err.Append("failed to insert operation")
 	}
