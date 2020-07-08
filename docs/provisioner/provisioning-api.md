@@ -97,19 +97,20 @@ List of possible configurable `GardenerConfig` values:
 | ------------------------ | :--------------------------------------------------------------------------------------: | ------------ |
 | `name`                   |                                 :heavy_multiplication_x:                                 |              |
 | `kubernetesVersion`      |                                    :heavy_check_mark:                                    | upgrade only |
+| `purpose`                |                                    :heavy_check_mark:                                    |              |
 | `provider`               |                                 :heavy_multiplication_x:                                 |              |
-| `targetSecret`           |                                 :heavy_multiplication_x:                                 | HAP          |
+| `targetSecret`           |                                 :heavy_multiplication_x:                                 |              |
 | `machineType`            |                                    :heavy_check_mark:                                    |              |
 | `volumeSizeGB`           |                                    :heavy_check_mark:                                    |              |
 | `diskType`               |                                    :heavy_check_mark:                                    |              |
 | `region`                 |                                 :heavy_multiplication_x:                                 |              |
 | `seed`                   |                                 :heavy_multiplication_x:                                 |              |
-| `workerCidr`             |                                    :heavy_check_mark:                                    |              |
+| `workerCidr`             |                                 :heavy_multiplication_x:                                 |              |
 | `autoScalerMin`          |                                    :heavy_check_mark:                                    | min. 1       |
 | `autoScalerMax`          |                                    :heavy_check_mark:                                    |              |
 | `maxSurge`               |                                    :heavy_check_mark:                                    |              |
 | `maxUnavailable`         |                                    :heavy_check_mark:                                    |              |
-| `providerSpecificConfig` | Azure :heavy_check_mark: <br/> AWS :heavy_multiplication_x: <br/> GCP :heavy_check_mark: |              |
+| `providerSpecificConfig` | Azure :heavy_check_mark: <br/> AWS :heavy_multiplication_x: <br/> GCP :heavy_check_mark: | only `zones` |
 
 > **Dev notes** (to remove before merge)
 >
