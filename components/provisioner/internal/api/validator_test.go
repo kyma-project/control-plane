@@ -3,6 +3,7 @@ package api
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 	dbMocks "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
@@ -217,6 +218,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 	})
 }
 
