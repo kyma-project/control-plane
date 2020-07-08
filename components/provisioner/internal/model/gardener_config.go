@@ -23,28 +23,28 @@ const (
 )
 
 type GardenerConfig struct {
-	ID                            string
-	ClusterID                     string
-	Name                          string
-	ProjectName                   string
-	KubernetesVersion             string
-	VolumeSizeGB                  int
-	DiskType                      string
-	MachineType                   string
-	Provider                      string
-	Purpose                       *string
-	LicenceType                   *string
-	Seed                          string
-	TargetSecret                  string
-	Region                        string
-	WorkerCidr                    string
-	AutoScalerMin                 int
-	AutoScalerMax                 int
-	MaxSurge                      int
-	MaxUnavailable                int
-	AutoUpdateKubernetesVersion   bool
-	AutoUpdateMachineImageVersion bool
-	GardenerProviderConfig        GardenerProviderConfig
+	ID                                  string
+	ClusterID                           string
+	Name                                string
+	ProjectName                         string
+	KubernetesVersion                   string
+	VolumeSizeGB                        int
+	DiskType                            string
+	MachineType                         string
+	Provider                            string
+	Purpose                             *string
+	LicenceType                         *string
+	Seed                                string
+	TargetSecret                        string
+	Region                              string
+	WorkerCidr                          string
+	AutoScalerMin                       int
+	AutoScalerMax                       int
+	MaxSurge                            int
+	MaxUnavailable                      int
+	EnableKubernetesVersionAutoUpdate   bool
+	EnableMachineImageVersionAutoUpdate bool
+	GardenerProviderConfig              GardenerProviderConfig
 }
 
 func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string) (*gardener_types.Shoot, apperrors.AppError) {
@@ -94,8 +94,8 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			Purpose: purpose,
 			Maintenance: &gardener_types.Maintenance{
 				AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
-					KubernetesVersion:   c.AutoUpdateKubernetesVersion,
-					MachineImageVersion: c.AutoUpdateMachineImageVersion,
+					KubernetesVersion:   c.EnableKubernetesVersionAutoUpdate,
+					MachineImageVersion: c.EnableMachineImageVersionAutoUpdate,
 				},
 			},
 		},

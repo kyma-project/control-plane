@@ -28,8 +28,8 @@ gardener:
   waitingForClusterDeletionTimeout: 4h
   clusterCleanupTimeout: 20m
   clusterCleanupResourceSelector: "https://service-manager."
-  defaultAutoUpdateKubernetesVersion: false
-  defaultAutoUpdateMachineImageVersion: false
+  defaultEnableKubernetesVersionAutoUpdate: false
+  defaultEnableMachineImageVersionAutoUpdate: false
 
 kymaRelease:
   preReleases:

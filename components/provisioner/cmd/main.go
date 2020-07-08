@@ -74,14 +74,14 @@ type config struct {
 	DeprovisioningTimeout queue.DeprovisioningTimeouts
 
 	Gardener struct {
-		Project                              string `envconfig:"default=gardenerProject"`
-		KubeconfigPath                       string `envconfig:"default=./dev/kubeconfig.yaml"`
-		AuditLogsPolicyConfigMap             string `envconfig:"optional"`
-		AuditLogsTenantConfigPath            string `envconfig:"optional"`
-		MaintenanceWindowConfigPath          string `envconfig:"optional"`
-		ClusterCleanupResourceSelector       string `envconfig:"default=https://service-manager."`
-		DefaultAutoUpdateKubernetesVersion   bool   `envconfig:"default=false"`
-		DefaultAutoUpdateMachineImageVersion bool   `envconfig:"default=false"`
+		Project                                    string `envconfig:"default=gardenerProject"`
+		KubeconfigPath                             string `envconfig:"default=./dev/kubeconfig.yaml"`
+		AuditLogsPolicyConfigMap                   string `envconfig:"optional"`
+		AuditLogsTenantConfigPath                  string `envconfig:"optional"`
+		MaintenanceWindowConfigPath                string `envconfig:"optional"`
+		ClusterCleanupResourceSelector             string `envconfig:"default=https://service-manager."`
+		DefaultEnableKubernetesVersionAutoUpdate   bool   `envconfig:"default=false"`
+		DefaultEnableMachineImageVersionAutoUpdate bool   `envconfig:"default=false"`
 	}
 
 	LatestDownloadedReleases int  `envconfig:"default=5"`
@@ -217,8 +217,8 @@ func main() {
 		provisioningQueue,
 		deprovisioningQueue,
 		upgradeQueue,
-		cfg.Gardener.DefaultAutoUpdateKubernetesVersion,
-		cfg.Gardener.DefaultAutoUpdateMachineImageVersion)
+		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
+		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate)
 	validator := api.NewValidator(dbsFactory.NewReadSession())
 
 	resolver := api.NewResolver(provisioningSVC, validator)

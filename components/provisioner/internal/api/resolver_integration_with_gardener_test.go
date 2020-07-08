@@ -76,8 +76,8 @@ const (
 	auditLogTenant       = "e7382275-e835-4549-94e1-3b1101e3a1fa"
 	subAccountId         = "sub-account"
 
-	defaultAutoUpdateKubernetesVersion   = false
-	defaultAutoUpdateMachineImageVersion = false
+	defaultEnableKubernetesVersionAutoUpdate   = false
+	defaultEnableMachineImageVersionAutoUpdate = false
 
 	mockedKubeconfig = `apiVersion: v1
 clusters:
@@ -200,7 +200,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 
-			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project", defaultAutoUpdateKubernetesVersion, defaultAutoUpdateMachineImageVersion)
+			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
 			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue)
