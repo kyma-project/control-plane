@@ -62,7 +62,7 @@ query { runtimeStatus(id: "{RUNTIME_ID}") {
 
 An example response for a successful request looks like this:
 
-```graphql
+```json
 {
   "data": {
     "runtimeStatus": {

@@ -149,7 +149,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     
       A successful call returns the operation status:
     
-      ```graphql
+      ```json
         {
           "data": {
             "provisionRuntime": {
@@ -240,7 +240,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     
       A successful call returns the operation status:
     
-      ```graphql
+      ```json
       {
         "data": {
           "provisionRuntime": {
@@ -338,7 +338,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     
       A successful call returns the operation status:
     
-      ```graphql
+      ```json
       {
         "data": {
           "provisionRuntime": {

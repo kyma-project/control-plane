@@ -24,7 +24,7 @@ query {
 
 A successful call returns a response which includes the status of the (de)provisioning operation (`state`) and the id of the (de)provisioned Runtime (`runtimeID`):
 
-```graphql
+```json
 {
   "data": {
     "runtimeOperationStatus": {

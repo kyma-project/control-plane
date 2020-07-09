@@ -17,7 +17,7 @@ This tutorial shows how to deprovision clusters with Kyma Runtimes.
 
   A successful call returns the ID of the deprovisioning operation:
 
-  ```graphql
+  ```json
   {
     "data": {
       "deprovisionRuntime": "c7e6727f-16b5-4748-ac95-197d8f79d094"
