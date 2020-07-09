@@ -70,6 +70,7 @@ func clusterConfig() string {
 		diskType
 		machineType
 		region
+		purpose
 		provider
 		seed
 		targetSecret
@@ -79,6 +80,8 @@ func clusterConfig() string {
 		autoScalerMax
 		maxSurge
 		maxUnavailable
+		enableKubernetesVersionAutoUpdate
+		enableMachineImageVersionAutoUpdate
 		providerSpecificConfig {
 			%s
 		}

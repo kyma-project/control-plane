@@ -37,6 +37,12 @@ func AssertNotNilAndEqualInt(t *testing.T, expected int, actual *int) {
 	}
 }
 
+func AssertNotNilAndEqualBool(t *testing.T, expected bool, actual *bool) {
+	if !assert.NotNil(t, actual) {
+		assert.Equal(t, expected, *actual)
+	}
+}
+
 func AssertNotNilAndNotEmptyString(t *testing.T, str *string) {
 	if !assert.NotNil(t, str) {
 		assert.NotEmpty(t, *str)
