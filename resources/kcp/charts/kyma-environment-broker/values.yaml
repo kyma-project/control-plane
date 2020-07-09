@@ -125,6 +125,7 @@ ias:
   secret: "TBD"
   identityProvider: "TBD"
   disabled: true
+  tlsRenegotiationEnable: false
 
 edp:
   authURL: "TBD"
