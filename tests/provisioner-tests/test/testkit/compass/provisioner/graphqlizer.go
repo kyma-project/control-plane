@@ -64,6 +64,9 @@ func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		machineType: "{{ .MachineType }}"
 		region: "{{ .Region }}"
 		provider: "{{ .Provider }}"
+		{{- if .Purpose }}
+		purpose: "{{ .Purpose }}"
+		{{- end }}
 		diskType: "{{ .DiskType }}"
 		{{- if .Seed }}
 		seed: "{{ .Seed }}"
@@ -74,6 +77,12 @@ func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
         autoScalerMax: {{ .AutoScalerMax }}
         maxSurge: {{ .MaxSurge }}
 		maxUnavailable: {{ .MaxUnavailable }}
+		{{- if .EnableKubernetesVersionAutoUpdate }}
+		enableKubernetesVersionAutoUpdate: {{ .EnableKubernetesVersionAutoUpdate }}
+		{{- end }}
+		{{- if .EnableMachineImageVersionAutoUpdate }}
+		enableMachineImageVersionAutoUpdate: {{ .EnableMachineImageVersionAutoUpdate }}
+		{{- end }}
 		providerSpecificConfig: {{ ProviderSpecificInputToGraphQL .ProviderSpecificConfig }}
 	}`)
 }
