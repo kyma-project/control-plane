@@ -1,8 +1,8 @@
-# Introduction
+# Provisioning API
 
-The goal of this document is to describe the requirements for the Provisioner component and propose an API. 
+The goal of this document is to describe the requirements for the Runtime Provisioner and propose an API. 
 
-## Requirements
+# Requirements
 
 ## Non-Functional
 
