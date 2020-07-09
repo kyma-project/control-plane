@@ -66,7 +66,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
   </details>
 </div>
 
-> **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.   
+> **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL server is listening.   
 
 ## Steps
 
@@ -352,6 +352,6 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     
 </div>
 
-The operation of provisioning is asynchronous. The operation of provisioning returns the Runtime Operation Status containing the Runtime ID (`provisionRuntime.runtimeID`) and the operation ID (`provisionRuntime.id`). Use the Runtime ID to [check the Runtime Status](08-04-runtime-status.md). Use the provisioning operation ID to [check the Runtime Operation Status](08-03-runtime-operation-status.md) and verify that the provisioning was successful.
+The operation of provisioning is asynchronous. The operation of provisioning returns the Runtime operation status containing the Runtime ID (`provisionRuntime.runtimeID`) and the operation ID (`provisionRuntime.id`). Use the Runtime ID to [check the Runtime status](08-04-runtime-status.md). Use the provisioning operation ID to [check the Runtime operation status](08-03-runtime-operation-status.md) and verify that the provisioning was successful.
 
 > **NOTE:** To see how to provide the labels, see [this](../compass/03-02-labels.md) document. To see an example of label usage, go [here](../../components/director/examples/register-application/register-application.graphql). 

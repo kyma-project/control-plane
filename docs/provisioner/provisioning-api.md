@@ -42,7 +42,7 @@ These operations must be supported:
 These are the basic assumptions for the API design:
 
 - Cluster provisioning and Kyma installation is considered an atomic operation.
-- Provisioning, deprovisioning, upgrade, and Runtime Agent reconnecting is uniquely identified by OperationID.
+- Provisioning, deprovisioning, upgrade, and Runtime Agent reconnecting is uniquely identified by operation ID.
 - Runtime is uniquely identified by RuntimeID.
 - Before you provision the Runtime, register it in Director API. Use RuntimeID returned from Director in Provisioner API.
 - Only one asynchronous operation can be in progress on a given Runtime.  
@@ -73,7 +73,7 @@ These are the basic assumptions for the API design:
 
 Some Kubernetes cluster settings (such as size, memory, and version) are optional and default values are used.
 
-The mutation returns OperationID allowing to retrieve the operation status.
+The mutation returns operation ID which allows you to retrieve the operation status.
 
 ### Upgrade Runtime mutation
 
@@ -85,49 +85,49 @@ The mutation returns OperationID allowing to retrieve the operation status.
 - Kubernetes cluster settings
   - Version
 
-The mutation returns OperationID allowing to retrieve the operation status.
+The mutation returns operation ID which allows you to retrieve the operation status.
 
-### Upgrade Shoot mutation
+### Upgrade Shoot cluster mutation
 
-***upgradeShoot*** mutation upgrades Gardener Shoot cluster configuration, triggering shoot reconciliation.
+***upgradeShoot*** mutation upgrades the Gardener Shoot cluster configuration, triggering Shoot reconciliation.
 
 >**NOTICE:** This operation is dangerous and could potentially damage your Runtime. Use it wisely and with reasonable configuration values. **There is no rollback functionality implemented**, so you would have to get your hands dirty to fix potential failures.
 The object passed to the mutation contains these configurable `GardenerConfig` values:
 
 | Field                                 |                                       Configurable                                       | Note         |
 | ------------------------------------- | :--------------------------------------------------------------------------------------: | ------------ |
-| `kubernetesVersion`                   |                                    :heavy_check_mark:                                    | upgrade only |
-| `purpose`                             |                                    :heavy_check_mark:                                    |              |
-| `machineType`                         |                                    :heavy_check_mark:                                    |              |
-| `volumeSizeGB`                        |                                    :heavy_check_mark:                                    |              |
-| `diskType`                            |                                    :heavy_check_mark:                                    |              |
-| `autoScalerMin`                       |                                    :heavy_check_mark:                                    | min. 1       |
-| `autoScalerMax`                       |                                    :heavy_check_mark:                                    |              |
-| `maxSurge`                            |                                    :heavy_check_mark:                                    |              |
-| `maxUnavailable`                      |                                    :heavy_check_mark:                                    |              |
-| `enableKubernetesVersionAutoUpdate`   |                                    :heavy_check_mark:                                    |              |
-| `enableMachineImageVersionAutoUpdate` |                                    :heavy_check_mark:                                    |              |
-| `providerSpecificConfig`              | Azure :heavy_check_mark: <br/> AWS :heavy_multiplication_x: <br/> GCP :heavy_check_mark: | `zones` only |
+| **kubernetesVersion**                   |                                    :heavy_check_mark:                                    | upgrade only |
+| **purpose**                             |                                    :heavy_check_mark:                                    |              |
+| **machineType**                         |                                    :heavy_check_mark:                                    |              |
+| **volumeSizeGB**                        |                                    :heavy_check_mark:                                    |              |
+| **diskType**                            |                                    :heavy_check_mark:                                    |              |
+| **autoScalerMin**                       |                                    :heavy_check_mark:                                    | min. 1       |
+| **autoScalerMax**                       |                                    :heavy_check_mark:                                    |              |
+| **maxSurge**                            |                                    :heavy_check_mark:                                    |              |
+| **maxUnavailable**                      |                                    :heavy_check_mark:                                    |              |
+| **enableKubernetesVersionAutoUpdate**   |                                    :heavy_check_mark:                                    |              |
+| **enableMachineImageVersionAutoUpdate** |                                    :heavy_check_mark:                                    |              |
+| **providerSpecificConfig**              | Azure :heavy_check_mark: <br/> AWS :heavy_multiplication_x: <br/> GCP :heavy_check_mark: | `zones` only |
 
-The mutation returns OperationID allowing to retrieve the operation status.
+The mutation returns operation ID which allows you to retrieve the operation status.
 
 ### Deprovision Runtime mutation
 
 ***deprovisionRuntime*** mutation deprovisions Runtimes. Pass the RuntimeID as argument. 
 
-The mutation returns OperationID allowing to retrieve the operation status.
+The mutation returns operation ID which allows you to retrieve the operation status.
 
 ### Reconnect Runtime Agent mutation
 
 ***reconnectRuntimeAgent*** mutation reconnects the Runtime Agent. Pass the RuntimeID as argument. 
 
-The mutation returns OperationID allowing to retrieve the operation status.
+The mutation returns operation ID which allows you to retrieve the operation status.
 
 ## Retrieving operation status
 
 ### Operation status query
 
-***runtimeOperationStatus*** query gets the Runtime operation status. The query takes Operation ID as parameter and returns object containing this information:
+***runtimeOperationStatus*** query gets the Runtime operation status. The query takes the operation ID as a parameter and returns an object containing this information:
 
 - Operation type (e.g. Provisioning)
 - Operation status (e.g. InProgress)

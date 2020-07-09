@@ -7,7 +7,7 @@ This tutorial shows how to deprovision clusters with Kyma Runtimes.
 
 ## Steps
 
-> **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.
+> **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL server is listening.
 
   To deprovision a Runtime, make a call to the Runtime Provisioner with a **tenant** header using a mutation like this:  
   
@@ -25,4 +25,4 @@ This tutorial shows how to deprovision clusters with Kyma Runtimes.
   }
   ```
 
-  The operation of deprovisioning is asynchronous. Use the deprovisioning operation ID (`deprovisionRuntime`) to [check the Runtime Operation Status](08-03-runtime-operation-status.md) and verify that the deprovisioning was successful. Use the Runtime ID (`id`) to [check the Runtime Status](08-04-runtime-status.md). 
+  The operation of deprovisioning is asynchronous. Use the deprovisioning operation ID (`deprovisionRuntime`) to [check the Runtime operation status](08-03-runtime-operation-status.md) and verify that the deprovisioning was successful. Use the Runtime ID (`id`) to [check the Runtime status](08-04-runtime-status.md). 
