@@ -118,7 +118,10 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		providerSpecificConfig = config.GardenerProviderConfig
 	}
 
-	purpose := util.UnwrapStrOrGiveValue(input.Purpose, *config.Purpose)
+	purpose := config.Purpose
+	if input.Purpose != nil {
+		purpose = input.Purpose
+	}
 
 	return model.GardenerConfig{
 		ID:           config.ID,
@@ -131,7 +134,7 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		Region:       config.Region,
 		LicenceType:  config.LicenceType,
 
-		Purpose:                             &purpose,
+		Purpose:                             purpose,
 		KubernetesVersion:                   util.UnwrapStrOrGiveValue(input.KubernetesVersion, config.KubernetesVersion),
 		MachineType:                         util.UnwrapStrOrGiveValue(input.MachineType, config.MachineType),
 		DiskType:                            util.UnwrapStrOrGiveValue(input.DiskType, config.DiskType),
