@@ -22,7 +22,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
       * Compute Admin
   - Key generated for your service account, downloaded in the JSON format
   - Gardener service account configuration (`kubeconfig.yaml`) downloaded
-  - Compass with configured Runtime Provisioner and the following [overrides](05-01-app-entry-parameters.md) set up:
+  - [Compass](https://github.com/kyma-incubator/compass) with configured Runtime Provisioner and the following [overrides](05-01-app-entry-parameters.md) set up:
       * Kubeconfig (`provisioner.gardener.kubeconfig`)
       * Gardener project name (`provisioner.gardener.project`)
   

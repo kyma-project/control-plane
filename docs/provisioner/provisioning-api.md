@@ -87,6 +87,30 @@ The mutation returns OperationID allowing to retrieve the operation status.
 
 The mutation returns OperationID allowing to retrieve the operation status.
 
+### Upgrade Shoot mutation
+
+***upgradeShoot*** mutation upgrades Gardener Shoot cluster configuration, triggering shoot reconciliation.
+
+>**NOTICE:** This operation is dangerous and could potentially damage your Runtime. Use it wisely and with reasonable configuration values. **There is no rollback functionality implemented**, so you would have to get your hands dirty to fix potential failures.
+The object passed to the mutation contains these configurable `GardenerConfig` values:
+
+| Field                                 |                                       Configurable                                       | Note         |
+| ------------------------------------- | :--------------------------------------------------------------------------------------: | ------------ |
+| `kubernetesVersion`                   |                                    :heavy_check_mark:                                    | upgrade only |
+| `purpose`                             |                                    :heavy_check_mark:                                    |              |
+| `machineType`                         |                                    :heavy_check_mark:                                    |              |
+| `volumeSizeGB`                        |                                    :heavy_check_mark:                                    |              |
+| `diskType`                            |                                    :heavy_check_mark:                                    |              |
+| `autoScalerMin`                       |                                    :heavy_check_mark:                                    | min. 1       |
+| `autoScalerMax`                       |                                    :heavy_check_mark:                                    |              |
+| `maxSurge`                            |                                    :heavy_check_mark:                                    |              |
+| `maxUnavailable`                      |                                    :heavy_check_mark:                                    |              |
+| `enableKubernetesVersionAutoUpdate`   |                                    :heavy_check_mark:                                    |              |
+| `enableMachineImageVersionAutoUpdate` |                                    :heavy_check_mark:                                    |              |
+| `providerSpecificConfig`              | Azure :heavy_check_mark: <br/> AWS :heavy_multiplication_x: <br/> GCP :heavy_check_mark: | `zones` only |
+
+The mutation returns OperationID allowing to retrieve the operation status.
+
 ### Deprovision Runtime mutation
 
 ***deprovisionRuntime*** mutation deprovisions Runtimes. Pass the RuntimeID as argument. 
