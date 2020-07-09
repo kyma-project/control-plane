@@ -393,7 +393,7 @@ func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSessio
 	}
 
 	// 3. start operation for waiting for cluster update
-	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.UpgradeShoot, model.WaitingForShootUpgrade, time.Now(), "Starting Gardener Shoot upgrade")
+	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.UpgradeShoot, model.WaitingForShootNewVersion, time.Now(), "Starting Gardener Shoot upgrade")
 
 	log.Infof("operation: %+v\ndberror: %+v", operation, dbError)
 
