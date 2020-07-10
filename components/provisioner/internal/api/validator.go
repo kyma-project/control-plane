@@ -62,7 +62,7 @@ func (v *validator) ValidateUpgradeShootInput(input gqlschema.UpgradeShootInput)
 	}
 
 	if config.KubernetesVersion != nil && *config.KubernetesVersion == "" {
-		return apperrors.BadRequest("empty machine type provided")
+		return apperrors.BadRequest("empty kubernetes version provided")
 	}
 
 	if config.DiskType != nil && *config.DiskType == "" {
