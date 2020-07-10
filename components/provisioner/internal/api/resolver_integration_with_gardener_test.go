@@ -199,8 +199,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogPolicyCMName, maintenanceWindowConfigPath)
 
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
+			provider := release.NewReleaseProvider(releaseRepository, nil)
 
-			inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepository, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
+			inputConverter := provisioning.NewInputConverter(uuidGenerator, provider, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
 			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue)

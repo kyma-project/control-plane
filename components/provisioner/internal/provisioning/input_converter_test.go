@@ -34,8 +34,8 @@ const (
 
 func Test_ProvisioningInputToCluster(t *testing.T) {
 
-	readSession := &realeaseMocks.Repository{}
-	readSession.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
+	releaseProvider := &realeaseMocks.Provider{}
+	releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
 
 	gcpGardenerProvider := &gqlschema.GCPProviderConfigInput{Zones: []string{"fix-gcp-zone-1", "fix-gcp-zone-2"}}
 
@@ -286,7 +286,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 
 			inputConverter := NewInputConverter(
 				uuidGeneratorMock,
-				readSession,
+				releaseProvider,
 				gardenerProject,
 				defaultEnableKubernetesVersionAutoUpdate,
 				defaultEnableMachineImageVersionAutoUpdate)
@@ -307,8 +307,8 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 	t.Run("should return error when failed to get kyma release", func(t *testing.T) {
 		// given
 		uuidGeneratorMock := &mocks.UUIDGenerator{}
-		readSession := &realeaseMocks.Repository{}
-		readSession.On("GetReleaseByVersion", kymaVersion).Return(model.Release{}, dberrors.NotFound("error"))
+		releaseProvider := &realeaseMocks.Provider{}
+		releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(model.Release{}, dberrors.NotFound("error"))
 
 		input := gqlschema.ProvisionRuntimeInput{
 			ClusterConfig: &gqlschema.ClusterConfigInput{
@@ -321,7 +321,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 
 		inputConverter := NewInputConverter(
 			uuidGeneratorMock,
-			readSession,
+			releaseProvider,
 			gardenerProject,
 			defaultEnableKubernetesVersionAutoUpdate,
 			defaultEnableMachineImageVersionAutoUpdate)
@@ -406,8 +406,8 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 
 func newInputConverterTester(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Provider) *converter {
 	return &converter{
-		uuidGenerator: uuidGenerator,
-		releaseRepo:   releaseRepo,
+		uuidGenerator:   uuidGenerator,
+		releaseProvider: releaseRepo,
 	}
 }
 

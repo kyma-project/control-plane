@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -22,14 +21,14 @@ type InputConverter interface {
 
 func NewInputConverter(
 	uuidGenerator uuid.UUIDGenerator,
-	releaseRepo release.Provider,
+	releaseProvider release.Provider,
 	gardenerProject string,
 	defaultEnableKubernetesVersionAutoUpdate,
 	defaultEnableMachineImageVersionAutoUpdate bool) InputConverter {
 
 	return &converter{
 		uuidGenerator:                              uuidGenerator,
-		releaseRepo:                                releaseRepo,
+		releaseProvider:                            releaseProvider,
 		gardenerProject:                            gardenerProject,
 		defaultEnableKubernetesVersionAutoUpdate:   defaultEnableKubernetesVersionAutoUpdate,
 		defaultEnableMachineImageVersionAutoUpdate: defaultEnableMachineImageVersionAutoUpdate,
@@ -38,7 +37,7 @@ func NewInputConverter(
 
 type converter struct {
 	uuidGenerator                              uuid.UUIDGenerator
-	releaseRepo                                release.Provider
+	releaseProvider                            release.Provider
 	gardenerProject                            string
 	defaultEnableKubernetesVersionAutoUpdate   bool
 	defaultEnableMachineImageVersionAutoUpdate bool
@@ -138,13 +137,9 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 }
 
 func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, apperrors.AppError) {
-	kymaRelease, err := c.releaseRepo.GetReleaseByVersion(input.Version)
+	kymaRelease, err := c.releaseProvider.GetReleaseByVersion(input.Version)
 	if err != nil {
-		if err.Code() == dberrors.CodeNotFound {
-			return model.KymaConfig{}, apperrors.BadRequest("Kyma Release %s not found", input.Version)
-		}
-
-		return model.KymaConfig{}, apperrors.Internal("Failed to get Kyma Release with version %s: %s", input.Version, err.Error())
+		return model.KymaConfig{}, apperrors.Internal("failed to get Kyma Release with version %s: %s", input.Version, err.Error())
 	}
 
 	var components []model.KymaComponentConfig
