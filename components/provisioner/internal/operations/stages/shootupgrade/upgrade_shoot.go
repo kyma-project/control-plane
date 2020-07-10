@@ -54,7 +54,7 @@ func (s *WaitForShootClusterUpgradeStep) Run(cluster model.Cluster, operation mo
 
 	if lastOperation != nil {
 
-		logger.Info("The last operation is ", lastOperation.Type, " ",lastOperation.Description, " and its state is", lastOperation.State, " ", "and the progress is: ", lastOperation.Progress)
+		logger.Info("The last operation is ", lastOperation.Type, " ", lastOperation.Description, " and its state is", lastOperation.State, " ", "and the progress is: ", lastOperation.Progress)
 
 		if lastOperation.State == gardencorev1beta1.LastOperationStateSucceeded {
 			logger.Info("Shoot upgrade operation has completed successfully")

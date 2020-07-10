@@ -44,7 +44,7 @@ func (s *WaitForShootClusterNewVersionStep) Run(cluster model.Cluster, operation
 	lastOperation := shoot.Status.LastOperation
 
 	if lastOperation != nil {
-		logger.Info("The last operation is ", lastOperation.Type, " ",lastOperation.Description, " and its state is", lastOperation.State, " ", "and the progress is: ", lastOperation.Progress)
+		logger.Info("The last operation is ", lastOperation.Type, " ", lastOperation.Description, " and its state is", lastOperation.State, " ", "and the progress is: ", lastOperation.Progress)
 	}
 
 	logger.Info("Resource version: ", shoot.ObjectMeta.ResourceVersion)
