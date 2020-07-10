@@ -1,8 +1,11 @@
 package shootupgrade
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/sirupsen/logrus"
@@ -41,18 +44,15 @@ func (s *WaitForShootClusterNewVersionStep) Run(cluster model.Cluster, operation
 		return operations.StageResult{}, err
 	}
 
-	lastOperation := shoot.Status.LastOperation
-
-	if lastOperation != nil {
-		logger.Info("The last operation is ", lastOperation.Type, " ", lastOperation.Description, " and its state is", lastOperation.State, " ", "and the progress is: ", lastOperation.Progress)
+	if shoot.Status.LastOperation.State == gardencorev1beta1.LastOperationStateFailed {
+		err := errors.New(fmt.Sprintf("Gardener Shoot cluster upgrade failed. Last Shoot state: %s, Shoot description: %s", shoot.Status.LastOperation.State, shoot.Status.LastOperation.Description))
+		return operations.StageResult{}, operations.NewNonRecoverableError(err)
 	}
-
-	logger.Info("Resource version: ", shoot.ObjectMeta.ResourceVersion)
 
 	if s.initialResourceVersion == "" {
 		s.initialResourceVersion = shoot.ObjectMeta.ResourceVersion
 		logger.Info("Initial resource version: ", s.initialResourceVersion)
-		return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
+		return operations.StageResult{Stage: s.Name(), Delay: 5 * time.Second}, nil
 	}
 
 	if s.initialResourceVersion != shoot.ObjectMeta.ResourceVersion {
@@ -60,5 +60,10 @@ func (s *WaitForShootClusterNewVersionStep) Run(cluster model.Cluster, operation
 		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 	}
 
-	return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
+	return operations.StageResult{Stage: s.Name(), Delay: 5 * time.Second}, nil
+}
+
+// method used only for unit test
+func (s *WaitForShootClusterNewVersionStep) setInitialResourceVersionValue(initialResourceVersionValue string) {
+	s.initialResourceVersion = initialResourceVersionValue
 }
