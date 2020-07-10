@@ -17,12 +17,9 @@ func NewClient(timeoutSec time.Duration, skipCertVerification bool) *http.Client
 }
 
 func NewRenegotiationTLSClient(timeoutSec time.Duration, skipCertVerification bool) *http.Client {
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			Renegotiation:      tls.RenegotiateOnceAsClient,
-			InsecureSkipVerify: skipCertVerification,
-		},
-	}
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig.Renegotiation = tls.RenegotiateOnceAsClient
+	transport.TLSClientConfig.InsecureSkipVerify = skipCertVerification
 
 	return &http.Client{
 		Transport: transport,
