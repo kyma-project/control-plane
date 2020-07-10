@@ -385,7 +385,7 @@ func updateWorkerConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Sho
 		return apperrors.Internal("empty disk type provided")
 	}
 
-	if len(zones) == 0 {
+	if len(zones) == 0 && gardenerConfig.Provider != "Azure" {
 		return apperrors.Internal("worker group zone information is missing")
 	}
 

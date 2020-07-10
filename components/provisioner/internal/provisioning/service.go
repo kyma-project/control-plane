@@ -130,7 +130,7 @@ func (r *service) unregisterFailedRuntime(id, tenant string) {
 	log.Infof("Starting provisioning failed. Unregistering Runtime %s...", id)
 	err := r.directorService.DeleteRuntime(id, tenant)
 	if err != nil {
-		log.Warnf("Failed to unregister failed Runtime %s: %s", id, err.Error())
+		log.Warnf("Failed to unregister failed Runtime '%s': %s", id, err.Error())
 	}
 }
 
@@ -163,7 +163,7 @@ func (r *service) DeprovisionRuntime(id, tenant string) (string, apperrors.AppEr
 }
 
 func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.UpgradeShootInput) (*gqlschema.OperationStatus, apperrors.AppError) {
-	log.Infof("Starting Upgrade of Gardener Shoot for  Runtime %s...", runtimeID)
+	log.Infof("Starting Upgrade of Gardener Shoot for Runtime '%s'...", runtimeID)
 
 	if input.GardenerConfig == nil {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("error: Gardener config is nil")
@@ -387,15 +387,12 @@ func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSessio
 
 	// 2. execute update on Shoot CR
 	err := r.provisioner.UpgradeCluster(currentCluster.ID, gardenerConfig)
-
 	if err != nil {
 		return model.Operation{}, apperrors.Internal("Failed to upgrade Cluster: %s", err.Error())
 	}
 
 	// 3. start operation for waiting for cluster update
 	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.UpgradeShoot, model.WaitingForShootNewVersion, time.Now(), "Starting Gardener Shoot upgrade")
-
-	log.Infof("operation: %+v\ndberror: %+v", operation, dbError)
 
 	if dbError != nil {
 		return model.Operation{}, dbError.Append("Failed to start operation of Gardener Shoot upgrade %s", dbError.Error())
