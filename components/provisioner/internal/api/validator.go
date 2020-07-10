@@ -50,8 +50,23 @@ func (v *validator) ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) ap
 }
 
 func (v *validator) ValidateUpgradeShootInput(input gqlschema.UpgradeShootInput) apperrors.AppError {
-	if input.GardenerConfig == nil {
+
+	config := input.GardenerConfig
+
+	if config == nil {
 		return apperrors.BadRequest("validation error while starting starting Shoot Upgrade: Gardener Config is missing")
+	}
+
+	if config.MachineType != nil && *config.MachineType == "" {
+		return apperrors.Internal("empty machine type provided")
+	}
+
+	if config.DiskType != nil && *config.DiskType == "" {
+		return apperrors.Internal("empty disk type provided")
+	}
+
+	if config.Purpose != nil && *config.Purpose == "" {
+		return apperrors.Internal("empty purpose provided")
 	}
 
 	return nil

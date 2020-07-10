@@ -377,18 +377,6 @@ func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_typ
 
 func updateWorkerConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot, zones []string) apperrors.AppError {
 
-	if gardenerConfig.MachineType == "" {
-		return apperrors.Internal("empty machine type provided")
-	}
-
-	if gardenerConfig.DiskType == "" {
-		return apperrors.Internal("empty disk type provided")
-	}
-
-	if len(zones) == 0 && gardenerConfig.Provider != "Azure" {
-		return apperrors.Internal("worker group zone information is missing")
-	}
-
 	shoot.Spec.Provider.Workers[0].MaxSurge = util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxSurge))
 	shoot.Spec.Provider.Workers[0].MaxUnavailable = util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxUnavailable))
 	shoot.Spec.Provider.Workers[0].Machine.Type = gardenerConfig.MachineType
