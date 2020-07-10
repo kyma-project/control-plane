@@ -33,6 +33,7 @@ type EnvConfig struct {
 		}
 		SupportedSigningAlgs []string `envconfig:"default=RS256"`
 	}
+	LogLevel string `envconfig:"default=info"`
 }
 
 func InitConfig() {
