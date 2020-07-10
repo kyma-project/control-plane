@@ -58,15 +58,19 @@ func (v *validator) ValidateUpgradeShootInput(input gqlschema.UpgradeShootInput)
 	}
 
 	if config.MachineType != nil && *config.MachineType == "" {
-		return apperrors.Internal("empty machine type provided")
+		return apperrors.BadRequest("empty machine type provided")
+	}
+
+	if config.KubernetesVersion != nil && *config.KubernetesVersion == "" {
+		return apperrors.BadRequest("empty machine type provided")
 	}
 
 	if config.DiskType != nil && *config.DiskType == "" {
-		return apperrors.Internal("empty disk type provided")
+		return apperrors.BadRequest("empty disk type provided")
 	}
 
 	if config.Purpose != nil && *config.Purpose == "" {
-		return apperrors.Internal("empty purpose provided")
+		return apperrors.BadRequest("empty purpose provided")
 	}
 
 	return nil
