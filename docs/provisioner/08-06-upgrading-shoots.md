@@ -39,7 +39,7 @@ mutation {
 }
 ```
 
-All the configuration fields are optional here. If you don't include them, their values remain the same as before the upgrade.
+All the `gardenerConfig` fields are optional here. If you don't include them, their values remain the same as before the upgrade.
 
 A successful call returns the ID of the upgrade operation:
 
