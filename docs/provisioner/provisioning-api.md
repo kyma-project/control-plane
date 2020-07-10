@@ -42,7 +42,7 @@ These operations must be supported:
 These are the basic assumptions for the API design:
 
 - Cluster provisioning and Kyma installation is considered an atomic operation.
-- Provisioning, deprovisioning, upgrade, and Runtime Agent reconnecting is uniquely identified by operation ID.
+- Provisioning, deprovisioning, upgrade, and Runtime Agent reconnecting is uniquely identified by the operation ID.
 - Runtime is uniquely identified by RuntimeID.
 - Before you provision the Runtime, register it in Director API. Use RuntimeID returned from Director in Provisioner API.
 - Only one asynchronous operation can be in progress on a given Runtime.  
@@ -73,7 +73,7 @@ These are the basic assumptions for the API design:
 
 Some Kubernetes cluster settings (such as size, memory, and version) are optional and default values are used.
 
-The mutation returns operation ID which allows you to retrieve the operation status.
+The mutation returns the operation ID which allows you to retrieve the operation status.
 
 ### Upgrade Runtime mutation
 
@@ -85,7 +85,7 @@ The mutation returns operation ID which allows you to retrieve the operation sta
 - Kubernetes cluster settings
   - Version
 
-The mutation returns operation ID which allows you to retrieve the operation status.
+The mutation returns the operation ID which allows you to retrieve the operation status.
 
 ### Upgrade Shoot cluster mutation
 
@@ -109,19 +109,19 @@ The object passed to the mutation contains these configurable `GardenerConfig` v
 | **enableMachineImageVersionAutoUpdate** |                                    :heavy_check_mark:                                    |              |
 | **providerSpecificConfig**              | Azure :heavy_check_mark: <br/> AWS :heavy_multiplication_x: <br/> GCP :heavy_check_mark: | `zones` only |
 
-The mutation returns operation ID which allows you to retrieve the operation status.
+The mutation returns the operation ID which allows you to retrieve the operation status.
 
 ### Deprovision Runtime mutation
 
 ***deprovisionRuntime*** mutation deprovisions Runtimes. Pass the RuntimeID as argument. 
 
-The mutation returns operation ID which allows you to retrieve the operation status.
+The mutation returns the operation ID which allows you to retrieve the operation status.
 
 ### Reconnect Runtime Agent mutation
 
 ***reconnectRuntimeAgent*** mutation reconnects the Runtime Agent. Pass the RuntimeID as argument. 
 
-The mutation returns operation ID which allows you to retrieve the operation status.
+The mutation returns the operation ID which allows you to retrieve the operation status.
 
 ## Retrieving operation status
 
