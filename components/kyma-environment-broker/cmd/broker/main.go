@@ -188,7 +188,11 @@ func main() {
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
 	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 
-	bundleBuilder := ias.NewBundleBuilder(httpClient, cfg.IAS)
+	clientHTTPForIAS := httpClient
+	if cfg.IAS.TLSRenegotiationEnable {
+		clientHTTPForIAS = httputil.NewRenegotiationTLSClient(30, cfg.Director.SkipCertVerification)
+	}
+	bundleBuilder := ias.NewBundleBuilder(clientHTTPForIAS, cfg.IAS)
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
 	// application event broker
