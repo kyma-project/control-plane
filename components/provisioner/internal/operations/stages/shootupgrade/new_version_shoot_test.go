@@ -69,7 +69,7 @@ func TestWaitForNewShootClusterVersion_SingleShoot(t *testing.T) {
 			testCase.mockFunc(gardenerClient)
 
 			waitForShootClusterUpgradeStep := NewWaitForShootNewVersionStep(gardenerClient, model.WaitingForShootUpgrade, time.Minute)
-			waitForShootClusterUpgradeStep.addInitialResourceVersionValue(operationID, testCase.initialResourceVersion)
+			addInitialResourceVersionValue(waitForShootClusterUpgradeStep, operationID, testCase.initialResourceVersion)
 			// when
 			result, err := waitForShootClusterUpgradeStep.Run(cluster, model.Operation{ID: operationID}, logrus.New())
 
@@ -185,6 +185,10 @@ func TestWaitForNewShootClusterVersion_ParallelExecution(t *testing.T) {
 			gardenerClient.AssertExpectations(t)
 		})
 	}
+}
+
+func addInitialResourceVersionValue(step *WaitForShootClusterNewVersionStep, operationID, initialResourceVersionValue string) {
+	step.initialResourceVersions.add(operationID, initialResourceVersionValue)
 }
 
 func fixShootOldResourceVersion(name string) *gardener_types.Shoot {
