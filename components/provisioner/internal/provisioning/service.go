@@ -171,7 +171,7 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 
 	session := r.dbSessionFactory.NewReadWriteSession()
 
-	err := r.verifyLastOperationFinished(session, runtimeID) // for given runtime
+	err := r.verifyLastOperationFinished(session, runtimeID)
 	if err != nil {
 		return &gqlschema.OperationStatus{}, err
 	}
@@ -186,7 +186,7 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 		return &gqlschema.OperationStatus{}, err.Append("failed to convert GardenerClusterUpgradeConfig: %s", err.Error())
 	}
 
-	txSession, dbErr := r.dbSessionFactory.NewSessionWithinTransaction() // this it is maybe not necessary
+	txSession, dbErr := r.dbSessionFactory.NewSessionWithinTransaction()
 	if dbErr != nil {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to start database transaction: %s", dbErr.Error())
 	}

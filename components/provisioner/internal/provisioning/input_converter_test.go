@@ -4,9 +4,7 @@ import (
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
 	realeaseMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/release/mocks"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
@@ -524,13 +522,6 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			assert.Equal(t, testCase.upgradedConfig, shootConfig)
 			uuidGeneratorMock.AssertExpectations(t)
 		})
-	}
-}
-
-func newInputConverterTester(uuidGenerator uuid.UUIDGenerator, releaseRepo release.Provider) *converter {
-	return &converter{
-		uuidGenerator: uuidGenerator,
-		releaseRepo:   releaseRepo,
 	}
 }
 
