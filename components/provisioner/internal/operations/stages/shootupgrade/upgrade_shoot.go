@@ -50,11 +50,8 @@ func (s *WaitForShootClusterUpgradeStep) Run(cluster model.Cluster, operation mo
 
 	lastOperation := shoot.Status.LastOperation
 
-	logger.Info("Resource version is: ", shoot.ObjectMeta.ResourceVersion)
-
 	if lastOperation != nil {
 		if lastOperation.State == gardencorev1beta1.LastOperationStateSucceeded {
-			logger.Info("Shoot upgrade operation has completed successfully")
 			return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 		}
 

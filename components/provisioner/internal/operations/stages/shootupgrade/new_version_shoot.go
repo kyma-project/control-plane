@@ -74,22 +74,15 @@ func (s *WaitForShootClusterNewVersionStep) Run(cluster model.Cluster, operation
 	v, ok := s.initialResourceVersions.find(operation.ID)
 	if !ok {
 		s.initialResourceVersions.add(operation.ID, shoot.ObjectMeta.ResourceVersion)
-		logger.Infof("Initial resource version: '%s'", s.initialResourceVersions.at(operation.ID))
 		return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
 	}
 
 	logger.Info("Current resource version: ", shoot.ObjectMeta.ResourceVersion)
 
 	if v != shoot.ObjectMeta.ResourceVersion {
-		logger.Info("Shoot upgrade operation has generated new resource version: ", shoot.ObjectMeta.ResourceVersion)
 		s.initialResourceVersions.deleteFor(operation.ID)
 		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 	}
 
 	return operations.StageResult{Stage: s.Name(), Delay: 5 * time.Second}, nil
-}
-
-// method used only for unit test
-func (s *WaitForShootClusterNewVersionStep) addInitialResourceVersionValue(operationID, initialResourceVersionValue string) {
-	s.initialResourceVersions.add(operationID, initialResourceVersionValue)
 }
