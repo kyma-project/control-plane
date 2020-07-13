@@ -15,8 +15,8 @@ export INSTANCE_ID={SET_INSTANCE_ID}
 2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](./03-05-authorization.md) to verify that provisioning/deprovisioning succeeded:
 
 ```bash
-curl --request GET "https://$BROKER_URL/oauth/v2/service_instances/$INSTANCE_ID \
---header 'X-Broker-API-Version: 2.13' \
+curl --request GET "https://$BROKER_URL/oauth/v2/service_instances/$INSTANCE_ID" \
+--header 'X-Broker-API-Version: 2.14' \
 --header "$AUTHORIZATION_HEADER"
 ```
 
