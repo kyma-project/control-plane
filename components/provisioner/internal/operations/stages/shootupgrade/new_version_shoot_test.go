@@ -124,6 +124,69 @@ func TestWaitForNewShootClusterVersion_SingleShoot(t *testing.T) {
 	}
 }
 
+func TestWaitForNewShootClusterVersion_ParallelExecution(t *testing.T) {
+	cluster1 := model.Cluster{ClusterConfig: model.GardenerConfig{Name: "shoot1"}}
+	cluster2 := model.Cluster{ClusterConfig: model.GardenerConfig{Name: "shoot2"}}
+
+	for _, testCase := range []struct {
+		description                 string
+		mockFunc                    func(gardenerClient *gardener_mocks.GardenerClient)
+		cluster1                    model.Cluster
+		cluster2                    model.Cluster
+		operationsInProgress        initialResourceVersions
+		expectedResourceVersionsMap initialResourceVersions
+	}{
+		{
+			description: "should add new resource version to map",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
+				gardenerClient.On("Get", cluster2.ClusterConfig.Name, mock.Anything).Return(fixShootOldResourceVersion("shoot2"), nil)
+			},
+			cluster1: cluster1,
+			cluster2: cluster2,
+			operationsInProgress: initialResourceVersions{versions: map[string]string{
+				"operation1": "oldVersion",
+			}},
+			expectedResourceVersionsMap: initialResourceVersions{versions: map[string]string{
+				"operation1": "oldVersion",
+				"operation2": "oldVersion",
+			}},
+		},
+		{
+			description: "should remove resource version when step finished",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
+				gardenerClient.On("Get", cluster2.ClusterConfig.Name, mock.Anything).Return(fixShootNewResourceVersion("shoot2"), nil)
+			},
+			cluster1: cluster1,
+			cluster2: cluster2,
+			operationsInProgress: initialResourceVersions{versions: map[string]string{
+				"operation1": "oldVersion",
+				"operation2": "oldVersion",
+			}},
+			expectedResourceVersionsMap: initialResourceVersions{versions: map[string]string{
+				"operation1": "oldVersion",
+			}},
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			// given
+			gardenerClient := &gardener_mocks.GardenerClient{}
+
+			testCase.mockFunc(gardenerClient)
+
+			waitForClusterCreationStep := NewWaitForShootNewVersionStep(gardenerClient, model.FinishedStage, time.Minute)
+			waitForClusterCreationStep.initialResourceVersions = testCase.operationsInProgress
+
+			// when
+			_, err := waitForClusterCreationStep.Run(testCase.cluster2, model.Operation{ID: "operation2"}, logrus.New())
+
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, testCase.expectedResourceVersionsMap, waitForClusterCreationStep.initialResourceVersions)
+			gardenerClient.AssertExpectations(t)
+		})
+	}
+}
+
 func fixShootOldResourceVersion(name string) *gardener_types.Shoot {
 	return fixShootWithResourceVersion(name, oldResourceVersion, &gardener_types.LastOperation{
 		State: gardencorev1beta1.LastOperationStateSucceeded,
