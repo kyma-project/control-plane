@@ -197,6 +197,11 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set shoot upgrade started: %s", error.Error())
 	}
 
+	err = r.provisioner.UpgradeCluster(cluster.ID, gardenerConfig)
+	if err != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to upgrade Cluster: %s", err.Error())
+	}
+
 	dbErr = txSession.Commit()
 	if dbErr != nil {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to commit upgrade transaction: %s", dbErr.Error())
@@ -382,11 +387,6 @@ func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSessio
 	dberr := txSession.UpdateGardenerClusterConfig(gardenerConfig)
 	if dberr != nil {
 		return model.Operation{}, dberrors.Internal("Failed to set Shoot Upgrade started: %s", dberr.Error())
-	}
-
-	err := r.provisioner.UpgradeCluster(currentCluster.ID, gardenerConfig)
-	if err != nil {
-		return model.Operation{}, apperrors.Internal("Failed to upgrade Cluster: %s", err.Error())
 	}
 
 	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.UpgradeShoot, model.WaitingForShootNewVersion, time.Now(), "Starting Gardener Shoot upgrade")
