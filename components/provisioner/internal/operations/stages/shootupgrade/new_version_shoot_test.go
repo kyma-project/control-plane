@@ -53,7 +53,7 @@ func TestWaitForNewShootClusterVersion_SingleShoot(t *testing.T) {
 			initialResourceVersion: oldResourceVersion,
 		},
 		{
-			description: "should return finished stage if cluster upgrade has succeeded",
+			description: "should move to next step if resource version changes",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
 				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootNewResourceVersion(clusterName), nil)
 			},
@@ -69,7 +69,8 @@ func TestWaitForNewShootClusterVersion_SingleShoot(t *testing.T) {
 			testCase.mockFunc(gardenerClient)
 
 			waitForShootClusterUpgradeStep := NewWaitForShootNewVersionStep(gardenerClient, model.WaitingForShootUpgrade, time.Minute)
-			addInitialResourceVersionValue(waitForShootClusterUpgradeStep, operationID, testCase.initialResourceVersion)
+			waitForShootClusterUpgradeStep.initialResourceVersions.add(operationID, testCase.initialResourceVersion)
+
 			// when
 			result, err := waitForShootClusterUpgradeStep.Run(cluster, model.Operation{ID: operationID}, logrus.New())
 
@@ -152,7 +153,7 @@ func TestWaitForNewShootClusterVersion_ParallelExecution(t *testing.T) {
 			}},
 		},
 		{
-			description: "should remove resource version when step finished",
+			description: "should remove resource version from map when step finished",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
 				gardenerClient.On("Get", cluster2.ClusterConfig.Name, mock.Anything).Return(fixShootNewResourceVersion("shoot2"), nil)
 			},
@@ -185,10 +186,6 @@ func TestWaitForNewShootClusterVersion_ParallelExecution(t *testing.T) {
 			gardenerClient.AssertExpectations(t)
 		})
 	}
-}
-
-func addInitialResourceVersionValue(step *WaitForShootClusterNewVersionStep, operationID, initialResourceVersionValue string) {
-	step.initialResourceVersions.add(operationID, initialResourceVersionValue)
 }
 
 func fixShootOldResourceVersion(name string) *gardener_types.Shoot {
