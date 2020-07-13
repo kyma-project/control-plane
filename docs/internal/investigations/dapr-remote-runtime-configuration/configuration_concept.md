@@ -8,7 +8,7 @@ This document describes the concept of passing a configuration to runtimes from 
 
 ## Idea
 
-The main idea is to have a component in Kyma Control Plane (Runtime Director on image), which would communicate with selected Runtimes through Agent and provide a configuration for them. The configuration would be for example an URL and credentials to some external service (e.g. logging service). After sending it to the Runtimes, each of them would have to populate it to desired services and then use a DAPR binding to communicate with them.
+The main idea is to have a component in Kyma Control Plane (Runtime Director on image), which would be a point of communication with Runtimes through Agents and provide a configuration for them. The configuration would be for example an URL and credentials to some external service (e.g. logging service). After sending it to the Runtimes, each of them would have to populate it to desired services and then use a DAPR binding to communicate with them.
 
 ## Example
 
