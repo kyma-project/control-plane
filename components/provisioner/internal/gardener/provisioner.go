@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/avast/retry-go"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/sirupsen/logrus"
 
@@ -105,7 +106,10 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 		return appErr.Append("error while updating Gardener shoot configuration")
 	}
 
-	_, err = g.shootClient.Update(shoot)
+	err = retry.Do(func() error {
+		_, err := g.shootClient.Update(shoot)
+		return err
+	}, retry.Attempts(5))
 	if err != nil {
 		apperr := util.K8SErrorToAppError(err)
 		return apperr.Append("error executing update shoot configuration")
