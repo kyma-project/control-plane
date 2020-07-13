@@ -11,6 +11,8 @@ type GardenerConfig {
     kubernetesVersion: String
     volumeSizeGB: Int
     machineType: String
+    machineImage: String
+    machineImageVersion: String
     region: String
     provider: String
     purpose: String
@@ -133,6 +135,8 @@ input GardenerConfigInput {                   # Gardener project in which the cl
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
     volumeSizeGB: Int!                              # Size of the available disk, provided in GB
     machineType: String!                            # Type of node machines, varies depending on the target provider
+    machineImage: String                            # Machine OS image name
+    machineImageVersion: String                     # Machine OS image version
     region: String!                                 # Region in which the cluster is created
     provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
     purpose: String                                 # Purpose is the purpose class for this cluster

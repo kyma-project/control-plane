@@ -89,6 +89,8 @@ type GardenerConfig struct {
 	KubernetesVersion                   *string                `json:"kubernetesVersion"`
 	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
 	MachineType                         *string                `json:"machineType"`
+	MachineImage                        *string                `json:"machineImage"`
+	MachineImageVersion                 *string                `json:"machineImageVersion"`
 	Region                              *string                `json:"region"`
 	Provider                            *string                `json:"provider"`
 	Purpose                             *string                `json:"purpose"`
@@ -110,6 +112,8 @@ type GardenerConfigInput struct {
 	KubernetesVersion                   string                 `json:"kubernetesVersion"`
 	VolumeSizeGb                        int                    `json:"volumeSizeGB"`
 	MachineType                         string                 `json:"machineType"`
+	MachineImage                        *string                `json:"machineImage"`
+	MachineImageVersion                 *string                `json:"machineImageVersion"`
 	Region                              string                 `json:"region"`
 	Provider                            string                 `json:"provider"`
 	Purpose                             *string                `json:"purpose"`

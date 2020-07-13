@@ -23,6 +23,8 @@ CREATE TABLE gardener_config
     kubernetes_version varchar(256) NOT NULL,
     volume_size_gb varchar(256) NOT NULL,
     machine_type varchar(256) NOT NULL,
+    machine_image varchar(256),
+    machine_image_version varchar(256),
     region varchar(256) NOT NULL,
     provider varchar(256) NOT NULL,
     purpose varchar(256),
