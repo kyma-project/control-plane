@@ -1,7 +1,6 @@
 package shootupgrade
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -12,18 +11,41 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type initialResourceVersions struct {
+	versions map[string]string
+}
+
+func (irv *initialResourceVersions) add(operationID, resourceVersion string) {
+	irv.versions[operationID] = resourceVersion
+}
+
+func (irv *initialResourceVersions) deleteFor(operationID string) {
+	delete(irv.versions, operationID)
+}
+
+func (irv *initialResourceVersions) at(operationID string) string {
+	v, _ := irv.versions[operationID]
+	return v
+}
+
+func (irv *initialResourceVersions) find(operationID string) (string, bool) {
+	v, ok := irv.versions[operationID]
+	return v, ok
+}
+
 type WaitForShootClusterNewVersionStep struct {
-	gardenerClient         GardenerClient
-	nextStep               model.OperationStage
-	timeLimit              time.Duration
-	initialResourceVersion string
+	gardenerClient          GardenerClient
+	nextStep                model.OperationStage
+	timeLimit               time.Duration
+	initialResourceVersions initialResourceVersions
 }
 
 func NewWaitForShootNewVersionStep(gardenerClient GardenerClient, nextStep model.OperationStage, timeLimit time.Duration) *WaitForShootClusterNewVersionStep {
 	return &WaitForShootClusterNewVersionStep{
-		gardenerClient: gardenerClient,
-		nextStep:       nextStep,
-		timeLimit:      timeLimit,
+		gardenerClient:          gardenerClient,
+		nextStep:                nextStep,
+		timeLimit:               timeLimit,
+		initialResourceVersions: initialResourceVersions{versions: make(map[string]string)},
 	}
 }
 
@@ -45,18 +67,22 @@ func (s *WaitForShootClusterNewVersionStep) Run(cluster model.Cluster, operation
 	}
 
 	if shoot.Status.LastOperation.State == gardencorev1beta1.LastOperationStateFailed {
-		err := errors.New(fmt.Sprintf("Gardener Shoot cluster upgrade failed. Last Shoot state: %s, Shoot description: %s", shoot.Status.LastOperation.State, shoot.Status.LastOperation.Description))
+		err := fmt.Errorf(fmt.Sprintf("Gardener Shoot cluster upgrade failed. Last Shoot state: %s, Shoot description: %s", shoot.Status.LastOperation.State, shoot.Status.LastOperation.Description))
 		return operations.StageResult{}, operations.NewNonRecoverableError(err)
 	}
 
-	if s.initialResourceVersion == "" {
-		s.initialResourceVersion = shoot.ObjectMeta.ResourceVersion
-		logger.Info("Initial resource version: ", s.initialResourceVersion)
-		return operations.StageResult{Stage: s.Name(), Delay: 5 * time.Second}, nil
+	v, ok := s.initialResourceVersions.find(operation.ID)
+	if !ok {
+		s.initialResourceVersions.add(operation.ID, shoot.ObjectMeta.ResourceVersion)
+		logger.Infof("Initial resource version: '%s'", s.initialResourceVersions.at(operation.ID))
+		return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
 	}
 
-	if s.initialResourceVersion != shoot.ObjectMeta.ResourceVersion {
+	logger.Info("Current resource version: ", shoot.ObjectMeta.ResourceVersion)
+
+	if v != shoot.ObjectMeta.ResourceVersion {
 		logger.Info("Shoot upgrade operation has generated new resource version: ", shoot.ObjectMeta.ResourceVersion)
+		s.initialResourceVersions.deleteFor(operation.ID)
 		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 	}
 
@@ -64,6 +90,6 @@ func (s *WaitForShootClusterNewVersionStep) Run(cluster model.Cluster, operation
 }
 
 // method used only for unit test
-func (s *WaitForShootClusterNewVersionStep) setInitialResourceVersionValue(initialResourceVersionValue string) {
-	s.initialResourceVersion = initialResourceVersionValue
+func (s *WaitForShootClusterNewVersionStep) addInitialResourceVersionValue(operationID, initialResourceVersionValue string) {
+	s.initialResourceVersions.add(operationID, initialResourceVersionValue)
 }

@@ -22,11 +22,11 @@ const (
 	newResourceVersion = "newVersion"
 )
 
-func TestWaitForNewShootClusterVersion(t *testing.T) {
-
+func TestWaitForNewShootClusterVersion_SingleShoot(t *testing.T) {
 	clusterName := "shootName"
 	runtimeID := "runtimeID"
 	tenant := "tenant"
+	operationID := "operationID"
 
 	cluster := model.Cluster{
 		ID:     runtimeID,
@@ -50,12 +50,11 @@ func TestWaitForNewShootClusterVersion(t *testing.T) {
 			},
 			expectedStage:          model.WaitingForShootNewVersion,
 			expectedDelay:          5 * time.Second,
-			initialResourceVersion: "",
+			initialResourceVersion: oldResourceVersion,
 		},
 		{
 			description: "should return finished stage if cluster upgrade has succeeded",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-
 				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootNewResourceVersion(clusterName), nil)
 			},
 			expectedStage:          model.WaitingForShootUpgrade,
@@ -70,9 +69,9 @@ func TestWaitForNewShootClusterVersion(t *testing.T) {
 			testCase.mockFunc(gardenerClient)
 
 			waitForShootClusterUpgradeStep := NewWaitForShootNewVersionStep(gardenerClient, model.WaitingForShootUpgrade, time.Minute)
-			waitForShootClusterUpgradeStep.setInitialResourceVersionValue(testCase.initialResourceVersion)
+			waitForShootClusterUpgradeStep.addInitialResourceVersionValue(operationID, testCase.initialResourceVersion)
 			// when
-			result, err := waitForShootClusterUpgradeStep.Run(cluster, model.Operation{}, logrus.New())
+			result, err := waitForShootClusterUpgradeStep.Run(cluster, model.Operation{ID: operationID}, logrus.New())
 
 			// then
 			require.NoError(t, err)
