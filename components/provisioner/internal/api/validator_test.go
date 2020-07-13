@@ -181,19 +181,13 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 		//given
 		validator := NewValidator(nil)
 
-		newKubernetesVersion := "version2"
-		newMachineType := "new-machine"
-		newDiskType := "papyrus"
-		purpose := "development"
-		newVolumeSizeGb := 50
-
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      &newKubernetesVersion,
-				MachineType:            &newMachineType,
-				DiskType:               &newDiskType,
-				Purpose:                &purpose,
-				VolumeSizeGb:           &newVolumeSizeGb,
+				KubernetesVersion:      util.StringPtr("version2"),
+				MachineType:            util.StringPtr("new-machine"),
+				DiskType:               util.StringPtr("papyrus"),
+				Purpose:                util.StringPtr("development"),
+				VolumeSizeGb:           util.IntPtr(50),
 				AutoScalerMin:          util.IntPtr(2),
 				AutoScalerMax:          util.IntPtr(6),
 				MaxSurge:               util.IntPtr(2),
@@ -227,19 +221,13 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 		//given
 		validator := NewValidator(nil)
 
-		newKubernetesVersion := "version2"
-		newMachineType := ""
-		purpose := "development"
-		newDiskType := "stone"
-		newVolumeSizeGb := 50
-
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      &newKubernetesVersion,
-				MachineType:            &newMachineType,
-				DiskType:               &newDiskType,
-				VolumeSizeGb:           &newVolumeSizeGb,
-				Purpose:                &purpose,
+				KubernetesVersion:      util.StringPtr("version2"),
+				MachineType:            util.StringPtr(""),
+				DiskType:               util.StringPtr("stone"),
+				Purpose:                util.StringPtr("development"),
+				VolumeSizeGb:           util.IntPtr(50),
 				AutoScalerMin:          util.IntPtr(2),
 				AutoScalerMax:          util.IntPtr(6),
 				MaxSurge:               util.IntPtr(2),
@@ -260,19 +248,13 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 		//given
 		validator := NewValidator(nil)
 
-		newKubernetesVersion := "version2"
-		newMachineType := "time-machine"
-		newDiskType := ""
-		newVolumeSizeGb := 50
-		purpose := "evaluation"
-
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      &newKubernetesVersion,
-				MachineType:            &newMachineType,
-				DiskType:               &newDiskType,
-				VolumeSizeGb:           &newVolumeSizeGb,
-				Purpose:                &purpose,
+				KubernetesVersion:      util.StringPtr("version2"),
+				MachineType:            util.StringPtr("time-machine"),
+				DiskType:               util.StringPtr(""),
+				Purpose:                util.StringPtr("evaluation"),
+				VolumeSizeGb:           util.IntPtr(50),
 				AutoScalerMin:          util.IntPtr(2),
 				AutoScalerMax:          util.IntPtr(6),
 				MaxSurge:               util.IntPtr(2),
@@ -293,19 +275,13 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 		//given
 		validator := NewValidator(nil)
 
-		newKubernetesVersion := "version2"
-		newMachineType := "time-machine"
-		newDiskType := "papyrus"
-		purpose := ""
-		newVolumeSizeGb := 50
-
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      &newKubernetesVersion,
-				MachineType:            &newMachineType,
-				DiskType:               &newDiskType,
-				VolumeSizeGb:           &newVolumeSizeGb,
-				Purpose:                &purpose,
+				KubernetesVersion:      util.StringPtr("version2"),
+				MachineType:            util.StringPtr("time-machine"),
+				DiskType:               util.StringPtr("papyrus"),
+				Purpose:                util.StringPtr(""),
+				VolumeSizeGb:           util.IntPtr(50),
 				AutoScalerMin:          util.IntPtr(2),
 				AutoScalerMax:          util.IntPtr(6),
 				MaxSurge:               util.IntPtr(2),
@@ -326,19 +302,13 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 		//given
 		validator := NewValidator(nil)
 
-		newKubernetesVersion := ""
-		newMachineType := "time-machine"
-		newDiskType := "papyrus"
-		purpose := "evaluation"
-		newVolumeSizeGb := 50
-
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      &newKubernetesVersion,
-				MachineType:            &newMachineType,
-				DiskType:               &newDiskType,
-				VolumeSizeGb:           &newVolumeSizeGb,
-				Purpose:                &purpose,
+				KubernetesVersion:      util.StringPtr(""),
+				MachineType:            util.StringPtr("time-machine"),
+				DiskType:               util.StringPtr("papyrus"),
+				Purpose:                util.StringPtr("evaluation"),
+				VolumeSizeGb:           util.IntPtr(50),
 				AutoScalerMin:          util.IntPtr(2),
 				AutoScalerMax:          util.IntPtr(6),
 				MaxSurge:               util.IntPtr(2),

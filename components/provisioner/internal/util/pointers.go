@@ -55,23 +55,23 @@ func UnwrapInt(intPtr *int) int {
 	return *intPtr
 }
 
-func UnwrapStrOrGiveValue(strPtr *string, value string) string {
+func UnwrapString(strPtr *string, defaultValue string) string {
 	if strPtr == nil {
-		return value
+		return defaultValue
 	}
 	return *strPtr
 }
 
-func UnwrapBoolOrGiveValue(boolPtr *bool, value bool) bool {
+func UnwrapBool(boolPtr *bool, defaultValue bool) bool {
 	if boolPtr == nil {
-		return value
+		return defaultValue
 	}
 	return *boolPtr
 }
 
-func UnwrapIntOrGiveValue(intPtr *int, value int) int {
+func UnwrapIntOrGiveValue(intPtr *int, defaultValue int) int {
 	if intPtr == nil {
-		return value
+		return defaultValue
 	}
 	return *intPtr
 }

@@ -135,16 +135,16 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		LicenceType:  config.LicenceType,
 
 		Purpose:                             purpose,
-		KubernetesVersion:                   util.UnwrapStrOrGiveValue(input.KubernetesVersion, config.KubernetesVersion),
-		MachineType:                         util.UnwrapStrOrGiveValue(input.MachineType, config.MachineType),
-		DiskType:                            util.UnwrapStrOrGiveValue(input.DiskType, config.DiskType),
+		KubernetesVersion:                   util.UnwrapString(input.KubernetesVersion, config.KubernetesVersion),
+		MachineType:                         util.UnwrapString(input.MachineType, config.MachineType),
+		DiskType:                            util.UnwrapString(input.DiskType, config.DiskType),
 		VolumeSizeGB:                        util.UnwrapIntOrGiveValue(input.VolumeSizeGb, config.VolumeSizeGB),
 		AutoScalerMin:                       util.UnwrapIntOrGiveValue(input.AutoScalerMin, config.AutoScalerMin),
 		AutoScalerMax:                       util.UnwrapIntOrGiveValue(input.AutoScalerMax, config.AutoScalerMax),
 		MaxSurge:                            util.UnwrapIntOrGiveValue(input.MaxSurge, config.MaxSurge),
 		MaxUnavailable:                      util.UnwrapIntOrGiveValue(input.MaxUnavailable, config.MaxUnavailable),
-		EnableKubernetesVersionAutoUpdate:   util.UnwrapBoolOrGiveValue(input.EnableKubernetesVersionAutoUpdate, config.EnableKubernetesVersionAutoUpdate),
-		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrGiveValue(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
+		EnableKubernetesVersionAutoUpdate:   util.UnwrapBool(input.EnableKubernetesVersionAutoUpdate, config.EnableKubernetesVersionAutoUpdate),
+		EnableMachineImageVersionAutoUpdate: util.UnwrapBool(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
 		GardenerProviderConfig:              providerSpecificConfig,
 	}, nil
 }

@@ -25,7 +25,7 @@ type ProvisioningTimeouts struct {
 	Installation       time.Duration `envconfig:"default=60m"`
 	Upgrade            time.Duration `envconfig:"default=60m"`
 	ShootUpgrade       time.Duration `envconfig:"default=30m"`
-	ShootRecreate      time.Duration `envconfig:"default=5m"`
+	ShootRefresh       time.Duration `envconfig:"default=5m"`
 	AgentConfiguration time.Duration `envconfig:"default=15m"`
 	AgentConnection    time.Duration `envconfig:"default=15m"`
 }
@@ -137,7 +137,7 @@ func CreateShootUpgradeQueue(
 	shootClient gardener_apis.ShootInterface) OperationQueue {
 
 	waitForShootUpgrade := shootupgrade.NewWaitForShootClusterUpgradeStep(shootClient, model.FinishedStage, timeouts.ShootUpgrade)
-	waitForShootNewVersion := shootupgrade.NewWaitForShootNewVersionStep(shootClient, waitForShootUpgrade.Name(), timeouts.ShootRecreate)
+	waitForShootNewVersion := shootupgrade.NewWaitForShootNewVersionStep(shootClient, waitForShootUpgrade.Name(), timeouts.ShootRefresh)
 
 	upgradeSteps := map[model.OperationStage]operations.Step{
 		model.WaitingForShootUpgrade:    waitForShootUpgrade,

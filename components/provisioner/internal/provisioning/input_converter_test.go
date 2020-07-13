@@ -535,18 +535,13 @@ func newInputConverterTester(uuidGenerator uuid.UUIDGenerator, releaseRepo relea
 }
 
 func newUpgradeShootInput(newPurpose string) gqlschema.UpgradeShootInput {
-	newKubernetesVersion := "version2"
-	newMachineType := "new-machine"
-	newDiskType := "papyrus"
-	newVolumeSizeGb := 50
-
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:      &newKubernetesVersion,
+			KubernetesVersion:      util.StringPtr("version2"),
 			Purpose:                &newPurpose,
-			MachineType:            &newMachineType,
-			DiskType:               &newDiskType,
-			VolumeSizeGb:           &newVolumeSizeGb,
+			MachineType:            util.StringPtr("new-machine"),
+			DiskType:               util.StringPtr("papyrus"),
+			VolumeSizeGb:           util.IntPtr(50),
 			AutoScalerMin:          util.IntPtr(2),
 			AutoScalerMax:          util.IntPtr(6),
 			MaxSurge:               util.IntPtr(2),

@@ -233,13 +233,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			list, err := shootInterface.List(metav1.ListOptions{})
 			require.NoError(t, err)
 
-			var shoot *gardener_types.Shoot
-			for _, s := range list.Items {
-				if s.Annotations["compass.provisioner.kyma-project.io/runtime-id"] == runtimeID {
-					shoot = &s
-					break
-				}
-			}
+			shoot := &list.Items[0]
 
 			// then
 			assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])

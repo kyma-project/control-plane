@@ -200,19 +200,13 @@ func awsGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 }
 
 func newUpgradeShootInput() gqlschema.UpgradeShootInput {
-	newKubernetesVersion := "version2"
-	newPurpose := "testing"
-	newMachineType := "new-machine"
-	newDiskType := "papyrus"
-	newVolumeSizeGb := 50
-
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion: &newKubernetesVersion,
-			Purpose:           &newPurpose,
-			MachineType:       &newMachineType,
-			DiskType:          &newDiskType,
-			VolumeSizeGb:      &newVolumeSizeGb,
+			KubernetesVersion: util.StringPtr("version2"),
+			Purpose:           util.StringPtr("testing"),
+			MachineType:       util.StringPtr("new-machine"),
+			DiskType:          util.StringPtr("papyrus"),
+			VolumeSizeGb:      util.IntPtr(50),
 			AutoScalerMin:     util.IntPtr(2),
 			AutoScalerMax:     util.IntPtr(6),
 			MaxSurge:          util.IntPtr(2),

@@ -379,19 +379,16 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig) (model.Operation, error) {
 	log.Infof("Starting Upgrade of Gardener Shoot operation")
 
-	// 1. update gardener shoot entry in DB
 	dberr := txSession.UpdateGardenerClusterConfig(gardenerConfig)
 	if dberr != nil {
 		return model.Operation{}, dberrors.Internal("Failed to set Shoot Upgrade started: %s", dberr.Error())
 	}
 
-	// 2. execute update on Shoot CR
 	err := r.provisioner.UpgradeCluster(currentCluster.ID, gardenerConfig)
 	if err != nil {
 		return model.Operation{}, apperrors.Internal("Failed to upgrade Cluster: %s", err.Error())
 	}
 
-	// 3. start operation for waiting for cluster update
 	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.UpgradeShoot, model.WaitingForShootNewVersion, time.Now(), "Starting Gardener Shoot upgrade")
 
 	if dbError != nil {
