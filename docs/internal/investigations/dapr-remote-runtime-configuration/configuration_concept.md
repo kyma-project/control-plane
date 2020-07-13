@@ -1,4 +1,4 @@
-# Remote runtimes configuration concept 
+# Passing configuration to runtimes concept
 
 ## Overview
 
@@ -10,9 +10,15 @@ This document describes the concept of passing a configuration to runtimes from 
 
 The main idea is to have a component in Kyma Control Plane (Runtime Director on image), which would communicate with selected Runtimes through Agent and provide a configuration for them. The configuration would be for example an URL and credentials to some external service (e.g. logging service). After sending it to the Runtimes, each of them would have to populate it to desired services and then use a DAPR binding to communicate with them.
 
-## Proof of concept
+## Example
 
-For the POC scenario lets consider integration between Redis services and SKRs. Assume that we have two Redis services on the external cluster/managed service and we want to provide a configuration on the SKRs to allow them to smoothly communicate with those Redis instances.
+Let's consider integration between Redis services and Kyma Runtimes. Assume that we have two Redis services on the external cluster/managed service and we want to provide a configuration on the Kyma Runtimes to allow them to smoothly communicate with those Redis instances.
+
+1. Kyma Control Plane and Runtimes are configured to use Redis service no. 1.
+2. Kyma Control Plane administrator changes configuration to use Redis service no. 2.
+3. Agents from the Runtimes fetches the new configuration and changes DAPR bindings.
+4. DAPR sidecars use a new configuration.
+5. Applications connected to runtime can reach Redis service through the localhost, by using the DAPR sidecar.
 
 ## Drawbacks so far
 
