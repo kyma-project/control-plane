@@ -705,11 +705,11 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
-				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(nil)
 				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(nil)
 				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 				writeSession.On("Commit").Return(dberrors.Internal("error"))
 				writeSession.On("RollbackUnlessCommitted").Return()
+				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(nil)
 			},
 		},
 		{
@@ -719,9 +719,22 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
-				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(apperrors.Internal("error"))
 				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(nil)
+				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 				writeSession.On("RollbackUnlessCommitted").Return()
+				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(apperrors.Internal("error"))
+			},
+		},
+		{
+			description: "should fail to upgrade Shoot when failed to update cluster config",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readWriteSession *sessionMocks.ReadWriteSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
+				sessionFactory.On("NewReadWriteSession").Return(readWriteSession, nil)
+				readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
+				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
+				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(dberrors.Internal("error"))
+				writeSession.On("RollbackUnlessCommitted").Return()
+				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(apperrors.Internal("error: %s", dberrors.Internal("error")))
 			},
 		},
 		{
