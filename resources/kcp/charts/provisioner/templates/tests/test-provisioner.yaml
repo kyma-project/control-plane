@@ -30,10 +30,6 @@ spec:
           value: {{ .Values.tests.gardener.azureSecret }}
         - name: APP_GARDENER_GCP_SECRET
           value: {{ .Values.tests.gardener.gcpSecret }}
-        - name: APP_GCP_CREDENTIALS
-          value: {{ .Values.tests.gcp.credentials }}
-        - name: APP_GCP_PROJECT_NAME
-          value: {{ .Values.tests.gcp.projectName }}
         - name: APP_KYMA_VERSION
           value: {{ .Values.tests.kyma.version }}
         - name: APP_QUERY_LOGGING

@@ -69,3 +69,14 @@ func createInstallationCRURL(kymaVersion string) string {
 func toLowerCase(provider string) string {
 	return strings.ToLower(provider)
 }
+
+func strToPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func boolToPtr(b bool) *bool {
+	return &b
+}

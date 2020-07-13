@@ -9,10 +9,10 @@ global:
       version: "PR-19"
     provisioner:
       dir:
-      version: "PR-19"
+      version: "PR-39"
     kyma_environment_broker:
       dir:
-      version: "PR-36"
+      version: "PR-34"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-27"
@@ -22,7 +22,7 @@ global:
     tests:
       provisioner:
         dir:
-        version: "PR-20"
+        version: "PR-39"
       e2e_provisioning:
         dir:
         version: "PR-36"
