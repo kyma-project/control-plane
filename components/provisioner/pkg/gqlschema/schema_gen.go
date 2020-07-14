@@ -83,6 +83,8 @@ type ComplexityRoot struct {
 		EnableMachineImageVersionAutoUpdate func(childComplexity int) int
 		KubernetesVersion                   func(childComplexity int) int
 		LicenceType                         func(childComplexity int) int
+		MachineImage                        func(childComplexity int) int
+		MachineImageVersion                 func(childComplexity int) int
 		MachineType                         func(childComplexity int) int
 		MaxSurge                            func(childComplexity int) int
 		MaxUnavailable                      func(childComplexity int) int
@@ -322,6 +324,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GardenerConfig.LicenceType(childComplexity), true
+
+	case "GardenerConfig.machineImage":
+		if e.complexity.GardenerConfig.MachineImage == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.MachineImage(childComplexity), true
+
+	case "GardenerConfig.machineImageVersion":
+		if e.complexity.GardenerConfig.MachineImageVersion == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.MachineImageVersion(childComplexity), true
 
 	case "GardenerConfig.machineType":
 		if e.complexity.GardenerConfig.MachineType == nil {
@@ -678,6 +694,8 @@ type GardenerConfig {
     kubernetesVersion: String
     volumeSizeGB: Int
     machineType: String
+    machineImage: String
+    machineImageVersion: String
     region: String
     provider: String
     purpose: String
@@ -800,6 +818,8 @@ input GardenerConfigInput {                   # Gardener project in which the cl
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
     volumeSizeGB: Int!                              # Size of the available disk, provided in GB
     machineType: String!                            # Type of node machines, varies depending on the target provider
+    machineImage: String                            # Machine OS image name
+    machineImageVersion: String                     # Machine OS image version
     region: String!                                 # Region in which the cluster is created
     provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
     purpose: String                                 # Purpose is the purpose class for this cluster
@@ -1693,6 +1713,74 @@ func (ec *executionContext) _GardenerConfig_machineType(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.MachineType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_machineImage(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MachineImage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_machineImageVersion(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MachineImageVersion, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4475,6 +4563,18 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "machineImage":
+			var err error
+			it.MachineImage, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "machineImageVersion":
+			var err error
+			it.MachineImageVersion, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "region":
 			var err error
 			it.Region, err = ec.unmarshalNString2string(ctx, v)
@@ -4934,6 +5034,10 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_volumeSizeGB(ctx, field, obj)
 		case "machineType":
 			out.Values[i] = ec._GardenerConfig_machineType(ctx, field, obj)
+		case "machineImage":
+			out.Values[i] = ec._GardenerConfig_machineImage(ctx, field, obj)
+		case "machineImageVersion":
+			out.Values[i] = ec._GardenerConfig_machineImageVersion(ctx, field, obj)
 		case "region":
 			out.Values[i] = ec._GardenerConfig_region(ctx, field, obj)
 		case "provider":

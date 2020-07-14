@@ -72,6 +72,8 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 		DiskType:                            &config.DiskType,
 		VolumeSizeGb:                        &config.VolumeSizeGB,
 		MachineType:                         &config.MachineType,
+		MachineImage:                        config.MachineImage,
+		MachineImageVersion:                 config.MachineImageVersion,
 		Provider:                            &config.Provider,
 		Purpose:                             config.Purpose,
 		LicenceType:                         config.LicenceType,
