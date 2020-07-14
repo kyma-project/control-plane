@@ -35,7 +35,12 @@ mutation {
         }
       }
     }
-  ) 
+  ) {
+        id 
+        operation 
+        state 
+        message
+    } 
 }
 ```
 
