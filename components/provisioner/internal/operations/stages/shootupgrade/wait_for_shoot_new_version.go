@@ -11,29 +11,29 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type WaitForShootClusterNewVersionStep struct {
+type WaitForShootNewVersionStep struct {
 	gardenerClient GardenerClient
 	nextStep       model.OperationStage
 	timeLimit      time.Duration
 }
 
-func NewWaitForShootNewVersionStep(gardenerClient GardenerClient, nextStep model.OperationStage, timeLimit time.Duration) *WaitForShootClusterNewVersionStep {
-	return &WaitForShootClusterNewVersionStep{
+func NewWaitForShootNewVersionStep(gardenerClient GardenerClient, nextStep model.OperationStage, timeLimit time.Duration) *WaitForShootNewVersionStep {
+	return &WaitForShootNewVersionStep{
 		gardenerClient: gardenerClient,
 		nextStep:       nextStep,
 		timeLimit:      timeLimit,
 	}
 }
 
-func (s WaitForShootClusterNewVersionStep) Name() model.OperationStage {
+func (s WaitForShootNewVersionStep) Name() model.OperationStage {
 	return model.WaitingForShootNewVersion
 }
 
-func (s *WaitForShootClusterNewVersionStep) TimeLimit() time.Duration {
+func (s *WaitForShootNewVersionStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *WaitForShootClusterNewVersionStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
+func (s *WaitForShootNewVersionStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
 	gardenerConfig := cluster.ClusterConfig
 

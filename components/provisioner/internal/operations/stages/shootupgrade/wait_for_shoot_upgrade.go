@@ -17,29 +17,29 @@ type GardenerClient interface {
 	Get(name string, options v1.GetOptions) (*gardener_types.Shoot, error)
 }
 
-type WaitForShootClusterUpgradeStep struct {
+type WaitForShootUpgradeStep struct {
 	gardenerClient GardenerClient
 	nextStep       model.OperationStage
 	timeLimit      time.Duration
 }
 
-func NewWaitForShootClusterUpgradeStep(gardenerClient GardenerClient, nextStep model.OperationStage, timeLimit time.Duration) *WaitForShootClusterUpgradeStep {
-	return &WaitForShootClusterUpgradeStep{
+func NewWaitForShootUpgradeStep(gardenerClient GardenerClient, nextStep model.OperationStage, timeLimit time.Duration) *WaitForShootUpgradeStep {
+	return &WaitForShootUpgradeStep{
 		gardenerClient: gardenerClient,
 		nextStep:       nextStep,
 		timeLimit:      timeLimit,
 	}
 }
 
-func (s WaitForShootClusterUpgradeStep) Name() model.OperationStage {
+func (s WaitForShootUpgradeStep) Name() model.OperationStage {
 	return model.WaitingForShootUpgrade
 }
 
-func (s *WaitForShootClusterUpgradeStep) TimeLimit() time.Duration {
+func (s *WaitForShootUpgradeStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *WaitForShootClusterUpgradeStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
+func (s *WaitForShootUpgradeStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
 	gardenerConfig := cluster.ClusterConfig
 
