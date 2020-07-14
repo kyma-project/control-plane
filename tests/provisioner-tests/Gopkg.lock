@@ -85,20 +85,6 @@
   version = "v5.0.0"
 
 [[projects]]
-  digest = "1:b2f2bf8c3e9cee25f8d34d6812c1e93081d3bf5cb9101ce4a63917799e979b66"
-  name = "github.com/gardener/gardener"
-  packages = [
-    "pkg/apis/core",
-    "pkg/apis/core/v1beta1",
-    "pkg/apis/core/v1beta1/constants",
-    "pkg/utils",
-    "pkg/utils/version",
-  ]
-  pruneopts = "UT"
-  revision = "53f56d6cf6d160a49235573d678d8e66cee2eeaa"
-  version = "v1.7.1"
-
-[[projects]]
   digest = "1:5f7b0c5ddd7f129e3a95b534b624b96aefd0487305af5828620a63a9dc94286f"
   name = "github.com/go-ozzo/ozzo-validation"
   packages = [
@@ -579,7 +565,7 @@
   version = "kubernetes-1.15.2"
 
 [[projects]]
-  digest = "1:843fccb7e91015ccc8193d51e40e72d56da50b50bae3b530f6487d02f119a733"
+  digest = "1:b7a3813f503c2f9b565eb4f4c88ca06531c71b5ce79d557ebc5a68edadbcb72d"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
@@ -612,13 +598,11 @@
     "pkg/util/mergepatch",
     "pkg/util/naming",
     "pkg/util/net",
-    "pkg/util/rand",
     "pkg/util/runtime",
     "pkg/util/sets",
     "pkg/util/strategicpatch",
     "pkg/util/validation",
     "pkg/util/validation/field",
-    "pkg/util/wait",
     "pkg/util/yaml",
     "pkg/version",
     "pkg/watch",
@@ -630,7 +614,7 @@
   version = "kubernetes-1.15.12"
 
 [[projects]]
-  digest = "1:48699246e89ff0a5bff7c132f702088b375cc6ff5968112d9d5874722c4757bb"
+  digest = "1:f0104078dc0b8cfdd1822798671eabe7130f79f4a86e66ca87f107257a8446a5"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -718,7 +702,6 @@
     "plugin/pkg/client/auth/gcp",
     "rest",
     "rest/watch",
-    "restmapper",
     "testing",
     "third_party/forked/golang/template",
     "tools/auth",
@@ -735,7 +718,6 @@
     "util/homedir",
     "util/jsonpath",
     "util/keyutil",
-    "util/retry",
   ]
   pruneopts = "UT"
   revision = "28e1f35180cc417e1776a10a3174a89e36b8adf6"
@@ -759,26 +741,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:01dbe4c86aa758aaa7502784c7e81642f3f0995c0fd6a094a8daaf5cb962ac73"
+  digest = "1:8a5e4720aca8a94c876d960a2b86afcaf98e8ded4b5bd7fe42d920806b292c57"
   name = "k8s.io/utils"
-  packages = [
-    "integer",
-    "pointer",
-  ]
+  packages = ["integer"]
   pruneopts = "UT"
   revision = "861946025e3491219eaccb1bf693e23df70c2fa8"
-
-[[projects]]
-  digest = "1:f1bac985048a793782b66aa7e67f1f539223c6b56caef974133ee7d2f3f3e5bd"
-  name = "sigs.k8s.io/controller-runtime"
-  packages = [
-    "pkg/client",
-    "pkg/client/apiutil",
-    "pkg/controller/controllerutil",
-  ]
-  pruneopts = "UT"
-  revision = "5118ae568d16e0b29bee8b82c58114b50d82574d"
-  version = "v0.6.1"
 
 [[projects]]
   digest = "1:7719608fe0b52a4ece56c2dde37bedd95b938677d1ab0f84b8a7852e4c59f849"
@@ -794,7 +761,6 @@
   input-imports = [
     "github.com/Masterminds/sprig",
     "github.com/avast/retry-go",
-    "github.com/gardener/gardener/pkg/apis/core/v1beta1",
     "github.com/google/uuid",
     "github.com/kisielk/errcheck",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
