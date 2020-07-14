@@ -6,12 +6,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type testShoot struct {
+type TestShoot struct {
 	shoot *gardener_types.Shoot
 }
 
-func NewTestShoot(name string) *testShoot {
-	return &testShoot{
+func NewTestShoot(name string) *TestShoot {
+	return &TestShoot{
 		shoot: &gardener_types.Shoot{
 			TypeMeta: metav1.TypeMeta{},
 			ObjectMeta: metav1.ObjectMeta{
@@ -25,26 +25,26 @@ func NewTestShoot(name string) *testShoot {
 	}
 }
 
-func (ts *testShoot) ToShoot() *gardener_types.Shoot {
+func (ts *TestShoot) ToShoot() *gardener_types.Shoot {
 	return ts.shoot
 }
 
-func (ts *testShoot) WithGeneration(generation int64) *testShoot {
+func (ts *TestShoot) WithGeneration(generation int64) *TestShoot {
 	ts.shoot.Generation = generation
 	return ts
 }
 
-func (ts *testShoot) WithObservedGeneration(generation int64) *testShoot {
+func (ts *TestShoot) WithObservedGeneration(generation int64) *TestShoot {
 	ts.shoot.Status.ObservedGeneration = generation
 	return ts
 }
 
-func (ts *testShoot) WithOperationSucceeded() *testShoot {
+func (ts *TestShoot) WithOperationSucceeded() *TestShoot {
 	ts.shoot.Status.LastOperation.State = gardencorev1beta1.LastOperationStateSucceeded
 	return ts
 }
 
-func (ts *testShoot) WithOperationFailed() *testShoot {
+func (ts *TestShoot) WithOperationFailed() *TestShoot {
 	ts.shoot.Status.LastOperation.State = gardencorev1beta1.LastOperationStateFailed
 	return ts
 }
