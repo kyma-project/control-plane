@@ -1,33 +1,42 @@
 package main
 
 import (
+	"github.com/kyma-project/control-plane/poc/component/internal/handler"
+	"github.com/kyma-project/control-plane/poc/component/internal/store"
+	"github.com/pkg/errors"
+	"github.com/vrischmann/envconfig"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 )
 
-const serverPort = "3000"
+type config struct {
+	Address string `envconfig:"default=127.0.0.1:3001"`
 
-func EchoHandler(writer http.ResponseWriter, request *http.Request) {
-
-	log.Println("Echoing back request made to " + request.URL.Path + " to client (" + request.RemoteAddr + ")")
-
-	writer.Header().Set("Access-Control-Allow-Origin", "*")
-
-	writer.Header().Set("Access-Control-Allow-Headers", "Content-Range, Content-Disposition, Content-Type, ETag")
-
-	err := request.Write(writer)
-	if err != nil {
-		log.Println("error: ", err)
-	}
+	ConfigurationFilePath string `envconfig:"default=hack/config.yaml"`
 }
 
 func main() {
+	cfg := config{}
 
-	log.Println("starting server, listening on port " + serverPort)
+	err := envconfig.InitWithPrefix(&cfg, "APP")
+	exitOnError(err, "while loading app config")
 
-	http.HandleFunc("/", EchoHandler)
-	err := http.ListenAndServe(":"+serverPort, nil)
+
+	rtmStore := store.New(cfg.ConfigurationFilePath)
+	rtmHandler := handler.New(rtmStore)
+	router := mux.NewRouter()
+
+	router.HandleFunc("/runtimes", rtmHandler.List).Methods(http.MethodGet)
+	router.HandleFunc("/runtimes/{runtimeID}", rtmHandler.Get).Methods(http.MethodGet)
+
+	log.Printf("API listening on %s", cfg.Address)
+	err = http.ListenAndServe(cfg.Address, router)
+}
+
+func exitOnError(err error, context string) {
 	if err != nil {
-		log.Println("error: ", err)
+		wrappedError := errors.Wrap(err, context)
+		log.Fatal(wrappedError)
 	}
 }
