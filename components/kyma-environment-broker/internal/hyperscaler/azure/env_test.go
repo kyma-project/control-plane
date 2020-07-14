@@ -83,6 +83,16 @@ func Test_mapRegion(t *testing.T) {
 			wantRegion: "westeurope",
 			wantErr:    false,
 		},
+		{
+			name: "valid azure lite region",
+			args: args{
+				hyperscalerType: hyperscaler.Azure,
+				planID:          broker.AzureLitePlanID,
+				region:          "japaneast",
+			},
+			wantRegion: "japaneast",
+			wantErr:    false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

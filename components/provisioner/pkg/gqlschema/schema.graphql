@@ -14,6 +14,8 @@ type GardenerConfig {
     region: String
     seed: String
     machineType: String
+    machineImage: String
+    machineImageVersion: String
     diskType: String
     volumeSizeGB: Int
     workerCidr: String
@@ -136,6 +138,8 @@ input GardenerConfigInput {
     targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
     region: String!                                 # Region in which the cluster is created
     machineType: String!                            # Type of node machines, varies depending on the target provider
+    machineImage: String                            # Machine OS image name
+    machineImageVersion: String                     # Machine OS image version
     diskType: String!                               # Disk type, varies depending on the target provider
     volumeSizeGB: Int!                              # Size of the available disk, provided in GB
     workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes

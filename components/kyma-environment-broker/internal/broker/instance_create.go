@@ -8,6 +8,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
@@ -172,6 +173,7 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 		logger.Infof("Kyma on demand functionality is disabled. Default Kyma version will be used instead %s", parameters.KymaVersion)
 		parameters.KymaVersion = ""
 	}
+	parameters.LicenceType = b.determineLicenceType(details.PlanID)
 
 	found := b.builderFactory.IsPlanSupport(details.PlanID)
 	if !found {
@@ -225,4 +227,12 @@ func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.Provisio
 	err = errors.New("provisioning operation already exist")
 	msg := fmt.Sprintf("provisioning operation with InstanceID %s already exist", operation.InstanceID)
 	return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusConflict, msg)
+}
+
+func (b *ProvisionEndpoint) determineLicenceType(id string) *string {
+	if id == AzureLitePlanID {
+		return ptr.String(internal.LicenceTypeLite)
+	}
+
+	return nil
 }

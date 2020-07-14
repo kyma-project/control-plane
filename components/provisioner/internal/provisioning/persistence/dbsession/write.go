@@ -41,6 +41,8 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		Pair("kubernetes_version", config.KubernetesVersion).
 		Pair("volume_size_gb", config.VolumeSizeGB).
 		Pair("machine_type", config.MachineType).
+		Pair("machine_image", config.MachineImage).
+		Pair("machine_image_version", config.MachineImageVersion).
 		Pair("region", config.Region).
 		Pair("provider", config.Provider).
 		Pair("purpose", config.Purpose).

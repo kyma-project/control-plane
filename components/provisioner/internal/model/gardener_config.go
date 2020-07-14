@@ -31,6 +31,8 @@ type GardenerConfig struct {
 	VolumeSizeGB                        int
 	DiskType                            string
 	MachineType                         string
+	MachineImage                        *string
+	MachineImageVersion                 *string
 	Provider                            string
 	Purpose                             *string
 	LicenceType                         *string
@@ -56,7 +58,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 		seed = util.StringPtr(c.Seed)
 	}
 	var purpose *gardener_types.ShootPurpose = nil
-	if c.Purpose != nil && *c.Purpose != "" {
+	if notNilOrEmpty(c.Purpose) {
 		p := gardener_types.ShootPurpose(*c.Purpose)
 		purpose = &p
 	}
@@ -358,9 +360,7 @@ func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_typ
 		Name:           "cpu-worker-0",
 		MaxSurge:       util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxSurge)),
 		MaxUnavailable: util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxUnavailable)),
-		Machine: gardener_types.Machine{
-			Type: gardenerConfig.MachineType,
-		},
+		Machine:        getMachineConfig(gardenerConfig),
 		Volume: &gardener_types.Volume{
 			Type: &gardenerConfig.DiskType,
 			Size: fmt.Sprintf("%dGi", gardenerConfig.VolumeSizeGB),
@@ -372,7 +372,6 @@ func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_typ
 }
 
 func updateWorkerConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot, zones []string) apperrors.AppError {
-
 	shoot.Spec.Provider.Workers[0].MaxSurge = util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxSurge))
 	shoot.Spec.Provider.Workers[0].MaxUnavailable = util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxUnavailable))
 	shoot.Spec.Provider.Workers[0].Machine.Type = gardenerConfig.MachineType
@@ -383,4 +382,21 @@ func updateWorkerConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Sho
 	shoot.Spec.Provider.Workers[0].Zones = zones
 
 	return nil
+}
+
+func getMachineConfig(config GardenerConfig) gardener_types.Machine {
+	machine := gardener_types.Machine{
+		Type: config.MachineType,
+	}
+	if notNilOrEmpty(config.MachineImage) && notNilOrEmpty(config.MachineImageVersion) {
+		machine.Image = &gardener_types.ShootMachineImage{
+			Name:    *config.MachineImage,
+			Version: *config.MachineImageVersion,
+		}
+	}
+	return machine
+}
+
+func notNilOrEmpty(str *string) bool {
+	return str != nil && *str != ""
 }

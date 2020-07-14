@@ -92,6 +92,8 @@ type GardenerConfig struct {
 	Region                              *string                `json:"region"`
 	Seed                                *string                `json:"seed"`
 	MachineType                         *string                `json:"machineType"`
+	MachineImage                        *string                `json:"machineImage"`
+	MachineImageVersion                 *string                `json:"machineImageVersion"`
 	DiskType                            *string                `json:"diskType"`
 	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
 	WorkerCidr                          *string                `json:"workerCidr"`
@@ -112,6 +114,8 @@ type GardenerConfigInput struct {
 	TargetSecret                        string                 `json:"targetSecret"`
 	Region                              string                 `json:"region"`
 	MachineType                         string                 `json:"machineType"`
+	MachineImage                        *string                `json:"machineImage"`
+	MachineImageVersion                 *string                `json:"machineImageVersion"`
 	DiskType                            string                 `json:"diskType"`
 	VolumeSizeGb                        int                    `json:"volumeSizeGB"`
 	WorkerCidr                          string                 `json:"workerCidr"`

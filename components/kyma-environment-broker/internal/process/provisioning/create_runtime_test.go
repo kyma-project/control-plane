@@ -69,6 +69,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				Region:            "europe-west4-a",
 				Provider:          "gcp",
 				Purpose:           &shootPurpose,
+				LicenceType:       nil,
 				WorkerCidr:        "10.250.0.0/19",
 				AutoScalerMin:     3,
 				AutoScalerMax:     4,

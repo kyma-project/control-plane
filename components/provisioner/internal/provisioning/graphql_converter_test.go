@@ -61,6 +61,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		project := "Project"
 		disk := "standard"
 		machine := "machine"
+		machineImage := "gardenlinux"
+		machineImageVersion := "25.0.0"
 		region := "region"
 		zones := []string{"fix-gcp-zone-1", "fix-gcp-zone-2"}
 		volume := 256
@@ -97,6 +99,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					ProjectName:                         project,
 					DiskType:                            disk,
 					MachineType:                         machine,
+					MachineImage:                        &machineImage,
+					MachineImageVersion:                 &machineImageVersion,
 					Region:                              region,
 					VolumeSizeGB:                        volume,
 					KubernetesVersion:                   kubeversion,
@@ -139,6 +143,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					Name:                                &clusterName,
 					DiskType:                            &disk,
 					MachineType:                         &machine,
+					MachineImage:                        &machineImage,
+					MachineImageVersion:                 &machineImageVersion,
 					Region:                              &region,
 					VolumeSizeGb:                        &volume,
 					KubernetesVersion:                   &kubeversion,
@@ -176,6 +182,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		project := "Project"
 		disk := "standard"
 		machine := "machine"
+		machineImage := "gardenlinux"
+		machineImageVersion := "25.0.0"
 		region := "region"
 		volume := 256
 		kubeversion := "kubeversion"
@@ -213,6 +221,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					VolumeSizeGB:                        volume,
 					DiskType:                            disk,
 					MachineType:                         machine,
+					MachineImage:                        &machineImage,
+					MachineImageVersion:                 &machineImageVersion,
 					Provider:                            provider,
 					Purpose:                             &purpose,
 					LicenceType:                         &licenceType,
@@ -253,6 +263,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					Name:                                &clusterName,
 					DiskType:                            &disk,
 					MachineType:                         &machine,
+					MachineImage:                        &machineImage,
+					MachineImageVersion:                 &machineImageVersion,
 					Region:                              &region,
 					VolumeSizeGb:                        &volume,
 					KubernetesVersion:                   &kubeversion,

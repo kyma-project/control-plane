@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
@@ -31,6 +32,7 @@ const (
 	instanceID       = "d3d5dca4-5dc8-44ee-a825-755c2a3fb839"
 	existOperationID = "920cbfd9-24e9-4aa2-aa77-879e9aabe140"
 	clusterName      = "cluster-testing"
+	region           = "eu"
 )
 
 func TestProvision_Provision(t *testing.T) {
@@ -100,7 +102,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure"}},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			nil,
@@ -111,7 +113,7 @@ func TestProvision_Provision(t *testing.T) {
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, region), instanceID, domain.ProvisionDetails{
 			ServiceID:     serviceID,
 			PlanID:        planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
@@ -138,7 +140,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure"}},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			nil,
@@ -176,7 +178,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure"}},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			nil,
@@ -218,7 +220,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure"}},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			nil,
@@ -259,7 +261,7 @@ func TestProvision_Provision(t *testing.T) {
 		queue.On("Add", mock.AnythingOfType("string"))
 
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure"}},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -299,7 +301,7 @@ func TestProvision_Provision(t *testing.T) {
 		require.NoError(t, err)
 
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure"}},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
 			nil,
 			nil,
 			nil,
@@ -335,7 +337,7 @@ func TestProvision_Provision(t *testing.T) {
 		queue.On("Add", mock.AnythingOfType("string"))
 
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure"}},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -365,6 +367,48 @@ func TestProvision_Provision(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "", parameters.Parameters.KymaVersion)
 	})
+
+	t.Run("licence type lite should be saved in parameters", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", broker.AzureLitePlanID).Return(true)
+
+		fixValidator, err := broker.NewPlansSchemaValidator()
+		require.NoError(t, err)
+
+		queue := &automock.Queue{}
+		queue.On("Add", mock.AnythingOfType("string"))
+
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
+			memoryStorage.Operations(),
+			memoryStorage.Instances(),
+			queue,
+			factoryBuilder,
+			fixValidator,
+			false,
+			logrus.StandardLogger(),
+		)
+
+		// when
+		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
+			ServiceID:     serviceID,
+			PlanID:        broker.AzureLitePlanID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
+		}, true)
+		assert.NoError(t, err)
+
+		// then
+		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
+		require.NoError(t, err)
+
+		parameters, err := operation.GetProvisioningParameters()
+		assert.NoError(t, err)
+		assert.Equal(t, ptr.String(internal.LicenceTypeLite), parameters.Parameters.LicenceType)
+	})
 }
 
 func fixExistOperation() internal.ProvisioningOperation {
@@ -374,8 +418,8 @@ func fixExistOperation() internal.ProvisioningOperation {
 			InstanceID: instanceID,
 		},
 		ProvisioningParameters: fmt.Sprintf(
-			`{"plan_id":"%s", "service_id": "%s", "ers_context":{"globalaccount_id": "%s", "subaccount_id": "%s"}, "parameters":{"name": "%s"}}`,
-			planID, serviceID, globalAccountID, subAccountID, clusterName),
+			`{"plan_id":"%s", "service_id": "%s", "ers_context":{"globalaccount_id": "%s", "subaccount_id": "%s"}, "parameters":{"name": "%s"}, "platform_region": "%s"}`,
+			planID, serviceID, globalAccountID, subAccountID, clusterName, region),
 	}
 }
 

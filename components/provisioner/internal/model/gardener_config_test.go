@@ -396,6 +396,8 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		VolumeSizeGB:                        30,
 		DiskType:                            "SSD",
 		MachineType:                         "machine",
+		MachineImage:                        util.StringPtr("gardenlinux"),
+		MachineImageVersion:                 util.StringPtr("25.0.0"),
 		Provider:                            provider,
 		Purpose:                             util.StringPtr("testing"),
 		LicenceType:                         nil,
@@ -437,6 +439,10 @@ func fixWorker(zones []string) gardener_types.Worker {
 		MaxUnavailable: util.IntOrStrPtr(intstr.FromInt(1)),
 		Machine: gardener_types.Machine{
 			Type: "machine",
+			Image: &gardener_types.ShootMachineImage{
+				Name:    "gardenlinux",
+				Version: "25.0.0",
+			},
 		},
 		Volume: &gardener_types.Volume{
 			Type: util.StringPtr("SSD"),
