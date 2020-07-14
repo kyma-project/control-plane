@@ -1,25 +1,29 @@
-# Passing configuration to runtimes concept
+# Remote runtime management concept
 
 ## Overview
 
-This document describes the concept of passing a configuration to runtimes from the central point with the usage of [DAPR](https://dapr.io).
+This document describes the concept of runtime management with the usage of [DAPR](https://dapr.io).
+
+## Architecture
 
 ![Concept image](assets/concept.png?raw=true "Concept")
 
-## Idea
+The diagram above shows the future architecture of Kyma environment.
+There are two central places, Compass and Kyma Control Plane along with runtimes which will communicate with them.
 
-The main idea is to have a component in Kyma Control Plane (Runtime Director on image), which would be a point of communication with Runtimes through Agents and provide a configuration for them. The configuration would be for example an URL and credentials to some external service (e.g. logging service). After each runtime fetch the new configuration, the DAPR bindings should be updated and populated to the DAPR sidecars.
+### Compass
+It is responsible for connecting applications to runtimes, along with controlling and monitoring them.
+The System Broker will be responsible for fetching data from different types of runtimes (e.g. Cloud Foundry or customer Kubernetes cluster with service catalog installed on it).  
 
-## Example
+### Kyma Control Plane
+It is responsible for provisioning new Kyma runtimes and providing initial configurations for them. 
+The Runtime Director will be a service that will be responsible for managing and controlling runtimes through runtime agents.
 
-Let's consider integration between Redis services and Kyma Runtimes. Assume that we have two Redis services on the external cluster/managed service and we want to provide a configuration on the Kyma Runtimes to allow them to smoothly communicate with those Redis instances.
+### Runtimes
+The diagram presents some possible runtimes, which will be supported in the future. It includes Cloud Foundry runtime, Customer own cluster with Service Catalog installed, Kyma Managed Runtime, and Kyma Standalone Runtime. 
+Each of them beside Kyma Standalone will have some implementation of Agent, that will communicate with Control Plane.
 
-1. Kyma Control Plane and Runtimes are configured to use Redis service no. 1.
-2. Kyma Control Plane administrator changes configuration to use Redis service no. 2.
-3. Agents from the Runtimes fetches the new configuration and updates DAPR bindings.
-4. DAPR sidecars use a new configuration.
-5. Applications connected to runtime can reach Redis service through the localhost, by using the DAPR sidecar.
+## Kyma Runtime configuration from the Control Plane
+The main idea is to have a component in Kyma Control Plane (Runtime Director on image), which would be a point of communication with Runtimes through Agents to manage them. It would allow also to configure them from one central point.
 
-## Drawbacks so far
-
-- The DAPR sidecars do not reload component config when applied, to do so whole pod has to be restarted (https://github.com/dapr/dapr/issues/1172).
+The configuration could be for example an URL and credentials to some external service (e.g. logging service) which is used by some of the registered Runtimes. After each runtime fetches the new configuration, the DAPR bindings would be updated and populated to the DAPR sidecars.
