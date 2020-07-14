@@ -17,11 +17,11 @@ The System Broker will be responsible for fetching data from different types of 
 
 ### Kyma Control Plane
 The Kyma Control Plane is responsible for managing the Kyma instances. It allows to provision Kyma Runtimes as well as it is a central place where the Kyma instances can fetch their configuration from. 
-The Runtime Director will be a service that will be responsible for managing and controlling runtimes through runtime agents.
+The Runtime Director exposes the API for the Kyma Runtimes configuration. 
 
 ### Runtimes
-The diagram presents some possible runtimes, which will be supported in the future. It includes Cloud Foundry runtime, Customer own cluster with Service Catalog installed, Kyma Managed Runtime, and Kyma Standalone Runtime. 
-Each of them beside Kyma Standalone will have some implementation of Agent, that will communicate with Control Plane.
+The diagram shows possible runtimes, which will be supported. It includes Cloud Foundry runtime, Customer own cluster with Service Catalog installed, Kyma Managed Runtime, and Kyma Standalone Runtime. 
+Each supported Kyma instance has a dedicated agent component that is responsible for handling the communication with the Kyma Central Plane. The agent component fetches the configuration from the Runtime Director and applies it to the desired environment.
 
 ## Kyma Runtime configuration from the Control Plane
 The main idea is to have a component in Kyma Control Plane (Runtime Director on image), which would be a point of communication with Runtimes through Agents to manage them. It would allow also to configure them from one central point.
