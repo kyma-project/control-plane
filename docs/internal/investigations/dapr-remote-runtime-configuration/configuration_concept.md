@@ -16,7 +16,7 @@ It is responsible for connecting applications to runtimes, along with controllin
 The System Broker will be responsible for fetching data from different types of runtimes (e.g. Cloud Foundry or customer Kubernetes cluster with service catalog installed on it).  
 
 ### Kyma Control Plane
-It is responsible for provisioning new Kyma runtimes and providing initial configurations for them. 
+The Kyma Control Plane is responsible for managing the Kyma instances. It allows to provision Kyma Runtimes as well as it is a central place where the Kyma instances can fetch their configuration from. 
 The Runtime Director will be a service that will be responsible for managing and controlling runtimes through runtime agents.
 
 ### Runtimes
