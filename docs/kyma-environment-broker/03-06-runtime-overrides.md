@@ -33,12 +33,12 @@ See the examples:
       database.password: YWRtaW4xMjMK
     ```  
 
-### Disable overrides for specific plans
+## Disable overrides for specific plans
 
-Config Maps and Secrets overrides for customization Kyma Runtime works for all plans but for some kinds of special plans like for example "AzureLite"
-overrides can be disabled. To disable a specific override for a special lite plan use label `default-for-lite: "true"`.
+ConfigMaps and Secrets overrides work for all plans, however, you can disable overrides for specific lite plans, such as `AzureLite`.
+To disable a specific override for a lite plan, use the `default-for-lite: "true"` label.
 
-See the examples:
+See the example:
 
 ```yaml
 apiVersion: v1
@@ -53,4 +53,4 @@ data:
   global.disableLegacyConnectivity: "true"
 ```  
     
-Above ConfigMap activates global override for all plans except SKR provisioned with special plan marked as `lite`.
+This ConfigMap activates a global override for all plans except SKRs provisioned with a special plan marked as `lite`.
