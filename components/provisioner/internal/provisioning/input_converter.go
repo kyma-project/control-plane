@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -162,24 +161,6 @@ func (c converter) createGardenerClusterName() string {
 func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, apperrors.AppError) {
 	if input == nil {
 		return nil, apperrors.Internal("provider config not specified")
-	}
-
-	if input.GcpConfig != nil {
-		return model.NewGCPGardenerConfig(input.GcpConfig)
-	}
-	if input.AzureConfig != nil {
-		return model.NewAzureGardenerConfig(input.AzureConfig)
-	}
-	if input.AwsConfig != nil {
-		return model.NewAWSGardenerConfig(input.AwsConfig)
-	}
-
-	return nil, apperrors.BadRequest("provider config not specified")
-}
-
-func (c converter) providerSpecificConfigFromUpgradeInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, error) {
-	if input == nil {
-		return nil, errors.New("provider config not specified")
 	}
 
 	if input.GcpConfig != nil {
