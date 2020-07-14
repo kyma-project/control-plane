@@ -68,6 +68,9 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		{{- if .Purpose }}
 		purpose: "{{ .Purpose }}",
 		{{- end }}
+		{{- if .LicenceType }}
+		licenceType: "{{ .LicenceType }}",
+		{{- end }}
 		diskType: "{{.DiskType}}",
 		targetSecret: "{{ .TargetSecret }}",
 		workerCidr: "{{ .WorkerCidr }}",

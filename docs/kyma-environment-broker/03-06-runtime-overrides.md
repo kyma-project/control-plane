@@ -32,3 +32,25 @@ See the examples:
     data:
       database.password: YWRtaW4xMjMK
     ```  
+
+## Disable overrides for specific plans
+
+ConfigMaps and Secrets overrides work for all plans, however, you can disable overrides for specific lite plans, such as `AzureLite`.
+To disable a specific override for a lite plan, use the `default-for-lite: "true"` label.
+
+See the example:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    provisioning-runtime-override: "true"
+    default-for-lite: "true"
+  name: global-overrides
+  namespace: compass-system
+data:
+  global.disableLegacyConnectivity: "true"
+```  
+    
+This ConfigMap activates a global override for all plans except SKRs provisioned with a special plan marked as `lite`.

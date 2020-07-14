@@ -9,13 +9,15 @@ import (
 
 func TestSchemaGenerator(t *testing.T) {
 	tests := []struct {
-		name      string
-		generator func() []byte
-		want      string
+		name         string
+		generator    func([]string) []byte
+		machineTypes []string
+		want         string
 	}{
 		{
-			name:      "Azureschema is correct",
-			generator: AzureSchema,
+			name:         "Azure schema is correct",
+			generator:    AzureSchema,
+			machineTypes: []string{"Standard_D8_v3"},
 			want: `{
 			"$schema": "http://json-schema.org/draft-04/schema#",
 			"type": "object",
@@ -75,8 +77,71 @@ func TestSchemaGenerator(t *testing.T) {
 		]
 		}`},
 		{
-			name:      "GCPschema is correct",
-			generator: GCPSchema,
+			name:         "AzureLite schema is correct",
+			generator:    AzureSchema,
+			machineTypes: []string{"Standard_D4_v3"},
+			want: `{
+			"$schema": "http://json-schema.org/draft-04/schema#",
+			"type": "object",
+			"properties": {
+			"components": {
+			"type": "array",
+			"items": [
+		{
+			"type": "string",
+			"enum": ["Kiali", "Tracing"]
+		}
+		],
+			"additionalItems": false,
+			"uniqueItems": true
+		},
+			"name": {
+			"type": "string"
+		},
+			"diskType": {
+			"type": "string"
+		},
+			"volumeSizeGb": {
+			"type": "integer",
+			"minimum": 50
+		},
+			"machineType": {
+			"type": "string",
+			"enum": ["Standard_D4_v3"]
+		},
+			"region": {
+			"type": "string",
+			"enum": [ "centralus", "eastus", "westus2", "northeurope", "uksouth", "japaneast", "southeastasia", "westeurope" ]
+		},
+			"zones": {
+			"type": "array",
+			"items": [
+			{
+			  "type": "string"
+			}
+			]
+		},
+			"autoScalerMin": {
+			"type": "integer"
+		},
+			"autoScalerMax": {
+			"type": "integer"
+		},
+			"maxSurge": {
+			"type": "integer"
+		},
+			"maxUnavailable": {
+			"type": "integer"
+		}
+		},
+			"required": [
+			"name"
+		]
+		}`},
+		{
+			name:         "GCP schema is correct",
+			generator:    GCPSchema,
+			machineTypes: []string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"},
 			want: `{
 			"$schema": "http://json-schema.org/draft-04/schema#",
 			"type": "object",
@@ -174,7 +239,7 @@ func TestSchemaGenerator(t *testing.T) {
 				t.Fail()
 			}
 
-			got := tt.generator()
+			got := tt.generator(tt.machineTypes)
 			var prettyGot bytes.Buffer
 			err = json.Indent(&prettyGot, got, "", "  ")
 			if err != nil {

@@ -25,7 +25,7 @@ func getHyperscalerTypeForPlanID(planID string) (hyperscaler.Type, error) {
 	switch planID {
 	case broker.GCPPlanID:
 		return hyperscaler.GCP, nil
-	case broker.AzurePlanID:
+	case broker.AzurePlanID, broker.AzureLitePlanID:
 		return hyperscaler.Azure, nil
 	default:
 		return "", errors.Errorf("Cannot determine the type of Hyperscaler to use for planID: %s", planID)
