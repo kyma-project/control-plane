@@ -435,8 +435,8 @@ func fixAzureGardenerInput(zones []string) *gqlschema.AzureProviderConfigInput {
 func fixWorker(zones []string) gardener_types.Worker {
 	return gardener_types.Worker{
 		Name:           "cpu-worker-0",
-		MaxSurge:       util.IntOrStrPtr(intstr.FromInt(30)),
-		MaxUnavailable: util.IntOrStrPtr(intstr.FromInt(1)),
+		MaxSurge:       util.IntOrStringPtr(intstr.FromInt(30)),
+		MaxUnavailable: util.IntOrStringPtr(intstr.FromInt(1)),
 		Machine: gardener_types.Machine{
 			Type: "machine",
 			Image: &gardener_types.ShootMachineImage{

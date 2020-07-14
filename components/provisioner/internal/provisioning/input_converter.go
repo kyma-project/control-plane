@@ -105,8 +105,8 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		MaxUnavailable:                      input.MaxUnavailable,
 		Purpose:                             input.Purpose,
 		LicenceType:                         input.LicenceType,
-		EnableKubernetesVersionAutoUpdate:   util.BoolFromPtrOrDefault(input.EnableKubernetesVersionAutoUpdate, c.defaultEnableKubernetesVersionAutoUpdate),
-		EnableMachineImageVersionAutoUpdate: util.BoolFromPtrOrDefault(input.EnableMachineImageVersionAutoUpdate, c.defaultEnableMachineImageVersionAutoUpdate),
+		EnableKubernetesVersionAutoUpdate:   util.UnwrapBoolOrDefault(input.EnableKubernetesVersionAutoUpdate, c.defaultEnableKubernetesVersionAutoUpdate),
+		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, c.defaultEnableMachineImageVersionAutoUpdate),
 		ClusterID:                           runtimeID,
 		GardenerProviderConfig:              providerSpecificConfig,
 	}, nil
@@ -136,16 +136,16 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		LicenceType:  config.LicenceType,
 
 		Purpose:                             purpose,
-		KubernetesVersion:                   util.UnwrapString(input.KubernetesVersion, config.KubernetesVersion),
-		MachineType:                         util.UnwrapString(input.MachineType, config.MachineType),
-		DiskType:                            util.UnwrapString(input.DiskType, config.DiskType),
-		VolumeSizeGB:                        util.UnwrapIntOrGiveValue(input.VolumeSizeGb, config.VolumeSizeGB),
-		AutoScalerMin:                       util.UnwrapIntOrGiveValue(input.AutoScalerMin, config.AutoScalerMin),
-		AutoScalerMax:                       util.UnwrapIntOrGiveValue(input.AutoScalerMax, config.AutoScalerMax),
-		MaxSurge:                            util.UnwrapIntOrGiveValue(input.MaxSurge, config.MaxSurge),
-		MaxUnavailable:                      util.UnwrapIntOrGiveValue(input.MaxUnavailable, config.MaxUnavailable),
-		EnableKubernetesVersionAutoUpdate:   util.UnwrapBool(input.EnableKubernetesVersionAutoUpdate, config.EnableKubernetesVersionAutoUpdate),
-		EnableMachineImageVersionAutoUpdate: util.UnwrapBool(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
+		KubernetesVersion:                   util.UnwrapStrOrDefault(input.KubernetesVersion, config.KubernetesVersion),
+		MachineType:                         util.UnwrapStrOrDefault(input.MachineType, config.MachineType),
+		DiskType:                            util.UnwrapStrOrDefault(input.DiskType, config.DiskType),
+		VolumeSizeGB:                        util.UnwrapIntOrDefault(input.VolumeSizeGb, config.VolumeSizeGB),
+		AutoScalerMin:                       util.UnwrapIntOrDefault(input.AutoScalerMin, config.AutoScalerMin),
+		AutoScalerMax:                       util.UnwrapIntOrDefault(input.AutoScalerMax, config.AutoScalerMax),
+		MaxSurge:                            util.UnwrapIntOrDefault(input.MaxSurge, config.MaxSurge),
+		MaxUnavailable:                      util.UnwrapIntOrDefault(input.MaxUnavailable, config.MaxUnavailable),
+		EnableKubernetesVersionAutoUpdate:   util.UnwrapBoolOrDefault(input.EnableKubernetesVersionAutoUpdate, config.EnableKubernetesVersionAutoUpdate),
+		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
 		GardenerProviderConfig:              providerSpecificConfig,
 	}, nil
 }
@@ -229,5 +229,5 @@ func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput) m
 }
 
 func configEntryFromInput(entry *gqlschema.ConfigEntryInput) model.ConfigEntry {
-	return model.NewConfigEntry(entry.Key, entry.Value, util.BoolFromPtr(entry.Secret))
+	return model.NewConfigEntry(entry.Key, entry.Value, util.UnwrapBoolOrDefault(entry.Secret, false))
 }

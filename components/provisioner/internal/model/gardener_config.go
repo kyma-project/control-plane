@@ -358,8 +358,8 @@ func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_types.Worker {
 	return gardener_types.Worker{
 		Name:           "cpu-worker-0",
-		MaxSurge:       util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxSurge)),
-		MaxUnavailable: util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxUnavailable)),
+		MaxSurge:       util.IntOrStringPtr(intstr.FromInt(gardenerConfig.MaxSurge)),
+		MaxUnavailable: util.IntOrStringPtr(intstr.FromInt(gardenerConfig.MaxUnavailable)),
 		Machine:        getMachineConfig(gardenerConfig),
 		Volume: &gardener_types.Volume{
 			Type: &gardenerConfig.DiskType,
@@ -372,8 +372,8 @@ func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_typ
 }
 
 func updateWorkerConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot, zones []string) apperrors.AppError {
-	shoot.Spec.Provider.Workers[0].MaxSurge = util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxSurge))
-	shoot.Spec.Provider.Workers[0].MaxUnavailable = util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxUnavailable))
+	shoot.Spec.Provider.Workers[0].MaxSurge = util.IntOrStringPtr(intstr.FromInt(gardenerConfig.MaxSurge))
+	shoot.Spec.Provider.Workers[0].MaxUnavailable = util.IntOrStringPtr(intstr.FromInt(gardenerConfig.MaxUnavailable))
 	shoot.Spec.Provider.Workers[0].Machine.Type = gardenerConfig.MachineType
 	shoot.Spec.Provider.Workers[0].Volume.Type = &gardenerConfig.DiskType
 	shoot.Spec.Provider.Workers[0].Volume.Size = fmt.Sprintf("%dGi", gardenerConfig.VolumeSizeGB)

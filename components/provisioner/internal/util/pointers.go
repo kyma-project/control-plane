@@ -6,48 +6,32 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func StringPtr(str string) *string {
-	return &str
-}
-
-func IntPtr(val int) *int {
-	return &val
-}
-
+// BoolPtr returns pointer to given bool
 func BoolPtr(b bool) *bool {
 	return &b
 }
 
-func BoolFromPtr(val *bool) bool {
-	if val == nil {
-		return false
-	}
-
-	return *val
+// IntPtr returns pointer to given int
+func IntPtr(val int) *int {
+	return &val
 }
 
-func BoolFromPtrOrDefault(ptr *bool, def bool) bool {
-	if ptr == nil {
-		return def
-	}
-	return *ptr
+// StringPtr returns pointer to given string
+func StringPtr(str string) *string {
+	return &str
 }
 
-func IntOrStrPtr(intOrStr intstr.IntOrString) *intstr.IntOrString {
+// IntOrStringPtr returns pointer to given int or string
+func IntOrStringPtr(intOrStr intstr.IntOrString) *intstr.IntOrString {
 	return &intOrStr
 }
 
+// TimePtr returns pointer to given time.Time
 func TimePtr(time time.Time) *time.Time {
 	return &time
 }
 
-func UnwrapStr(strPtr *string) string {
-	if strPtr == nil {
-		return ""
-	}
-	return *strPtr
-}
-
+// UnwrapInt returns int value from pointer
 func UnwrapInt(intPtr *int) int {
 	if intPtr == nil {
 		return 0
@@ -55,23 +39,34 @@ func UnwrapInt(intPtr *int) int {
 	return *intPtr
 }
 
-func UnwrapString(strPtr *string, defaultValue string) string {
+// UnwrapStr returns string value from pointer
+func UnwrapStr(strPtr *string) string {
 	if strPtr == nil {
-		return defaultValue
+		return ""
 	}
 	return *strPtr
 }
 
-func UnwrapBool(boolPtr *bool, defaultValue bool) bool {
-	if boolPtr == nil {
-		return defaultValue
+// UnwrapBoolOrDefault returns bool value from pointer or if pointer is nil returns default value
+func UnwrapBoolOrDefault(ptr *bool, def bool) bool {
+	if ptr == nil {
+		return def
 	}
-	return *boolPtr
+	return *ptr
 }
 
-func UnwrapIntOrGiveValue(intPtr *int, defaultValue int) int {
-	if intPtr == nil {
-		return defaultValue
+// UnwrapIntOrDefault returns int value from pointer or if pointer is nil returns default value
+func UnwrapIntOrDefault(ptr *int, def int) int {
+	if ptr == nil {
+		return def
 	}
-	return *intPtr
+	return *ptr
+}
+
+// UnwrapStrOrDefault returns string value from pointer or if pointer is nil returns default value
+func UnwrapStrOrDefault(ptr *string, def string) string {
+	if ptr == nil {
+		return def
+	}
+	return *ptr
 }
