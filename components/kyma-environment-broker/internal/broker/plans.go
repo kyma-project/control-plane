@@ -58,7 +58,7 @@ type ProvisioningProperties struct {
 	MaxUnavailable Type `json:"maxUnavailable"`
 }
 
-func GCPSchema() []byte {
+func GCPSchema(machineTypes []string) []byte {
 	f := new(bool)
 	*f = false
 	t := new(bool)
@@ -88,7 +88,7 @@ func GCPSchema() []byte {
 			},
 			MachineType: Type{
 				Type: "string",
-				Enum: ToInterfaceSlice([]string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"}),
+				Enum: ToInterfaceSlice(machineTypes),
 			},
 			Region: Type{
 				Type: "string",
@@ -155,7 +155,7 @@ func GCPSchema() []byte {
 	return bytes
 }
 
-func AzureSchema() []byte {
+func AzureSchema(machineTypes []string) []byte {
 	f := new(bool)
 	*f = false
 	t := new(bool)
@@ -185,73 +185,7 @@ func AzureSchema() []byte {
 			},
 			MachineType: Type{
 				Type: "string",
-				Enum: ToInterfaceSlice([]string{"Standard_D8_v3"}),
-			},
-			Region: Type{
-				Type: "string",
-				Enum: ToInterfaceSlice(AzureRegions()),
-			},
-			Zones: Type{
-				Type: "array",
-				Items: []Type{{
-					Type: "string",
-					//TODO: add enum for zones
-				}},
-			},
-			AutoScalerMin: Type{
-				Type: "integer",
-			},
-			AutoScalerMax: Type{
-				Type: "integer",
-			},
-			MaxSurge: Type{
-				Type: "integer",
-			},
-			MaxUnavailable: Type{
-				Type: "integer",
-			},
-		},
-		Required: []string{"name"},
-	}
-
-	bytes, err := json.Marshal(rs)
-	if err != nil {
-		panic(err)
-	}
-	return bytes
-}
-
-func AzureLiteSchema() []byte {
-	f := new(bool)
-	*f = false
-	t := new(bool)
-	*t = true
-	rs := RootSchema{
-		Schema: "http://json-schema.org/draft-04/schema#",
-		Type: Type{
-			Type: "object",
-		},
-		Properties: ProvisioningProperties{
-			Components: Type{
-				Type: "array",
-				Items: []Type{{
-					Type: "string",
-					Enum: ToInterfaceSlice([]string{"Kiali", "Tracing"}),
-				}},
-				AdditionalItems: f,
-				UniqueItems:     t,
-			},
-			Name: Type{
-				Type: "string",
-			},
-			DiskType: Type{Type: "string"},
-			VolumeSizeGb: Type{
-				Type:    "integer",
-				Minimum: 50,
-			},
-			MachineType: Type{
-				Type: "string",
-				Enum: ToInterfaceSlice([]string{"Standard_D4_v3"}),
+				Enum: ToInterfaceSlice(machineTypes),
 			},
 			Region: Type{
 				Type: "string",
@@ -317,7 +251,7 @@ var Plans = map[string]struct {
 				},
 			},
 		},
-		provisioningRawSchema: GCPSchema(),
+		provisioningRawSchema: GCPSchema([]string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"}),
 	},
 	AzurePlanID: {
 		PlanDefinition: domain.ServicePlan{
@@ -335,7 +269,7 @@ var Plans = map[string]struct {
 				},
 			},
 		},
-		provisioningRawSchema: AzureSchema(),
+		provisioningRawSchema: AzureSchema([]string{"Standard_D8_v3"}),
 	},
 	AzureLitePlanID: {
 		PlanDefinition: domain.ServicePlan{
@@ -353,6 +287,6 @@ var Plans = map[string]struct {
 				},
 			},
 		},
-		provisioningRawSchema: AzureLiteSchema(),
+		provisioningRawSchema: AzureSchema([]string{"Standard_D4_v3"}),
 	},
 }
