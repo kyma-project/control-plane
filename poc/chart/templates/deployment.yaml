@@ -21,17 +21,30 @@ spec:
     spec:
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
+
       containers:
         - name: {{ .Chart.Name }}
           image: {{ .Values.deployment.image.path }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          env:
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
+            - name: APP_CONFIGURATION_FILE_PATH
+              value: /config/config.yaml
           ports:
             - name: http
               containerPort: {{ .Values.deployment.args.containerPort}}
               protocol: TCP
+          volumeMounts:
+            - mountPath: /config
+              name: rtm-director-config
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}
           {{- end }}
+      volumes:
+        - name: rtm-director-config
+          configMap:
+            name: {{ template "fullname" . }}-config

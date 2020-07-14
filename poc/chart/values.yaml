@@ -13,3 +13,6 @@ deployment:
 
 service:
   port: *port
+
+virtualService:
+  host: runtime-director
