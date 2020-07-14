@@ -1,4 +1,4 @@
-package upgrade-shoot
+package shootupgrade
 
 import (
 	"fmt"
