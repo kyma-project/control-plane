@@ -166,10 +166,10 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 	log.Infof("Starting Upgrade of Gardener Shoot for Runtime '%s'...", runtimeID)
 
 	if input.GardenerConfig == nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("error: Gardener config is nil")
+		return &gqlschema.OperationStatus{}, apperrors.Internal("Error: Gardener config is nil")
 	}
 
-	session := r.dbSessionFactory.NewReadWriteSession()
+	session := r.dbSessionFactory.NewReadSession()
 
 	err := r.verifyLastOperationFinished(session, runtimeID)
 	if err != nil {
@@ -178,33 +178,33 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 
 	cluster, dberr := session.GetCluster(runtimeID)
 	if dberr != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to find shoot cluster to upgrade: %s", dberr.Error())
+		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to find shoot cluster to upgrade in database: %s", dberr.Error())
 	}
 
 	gardenerConfig, err := r.inputConverter.UpgradeShootInputToGardenerConfig(*input.GardenerConfig, cluster.ClusterConfig)
 	if err != nil {
-		return &gqlschema.OperationStatus{}, err.Append("failed to convert GardenerClusterUpgradeConfig: %s", err.Error())
+		return &gqlschema.OperationStatus{}, err.Append("Failed to convert GardenerClusterUpgradeConfig: %s", err.Error())
 	}
 
 	txSession, dbErr := r.dbSessionFactory.NewSessionWithinTransaction()
 	if dbErr != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to start database transaction: %s", dbErr.Error())
+		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to start database transaction: %s", dbErr.Error())
 	}
 	defer txSession.RollbackUnlessCommitted()
 
 	operation, error := r.setGardenerShootUpgradeStarted(txSession, cluster, gardenerConfig)
 	if error != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set shoot upgrade started: %s", error.Error())
+		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to set shoot upgrade started: %s", error.Error())
 	}
 
 	err = r.provisioner.UpgradeCluster(cluster.ID, gardenerConfig)
 	if err != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to upgrade Cluster: %s", err.Error())
+		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to upgrade Cluster: %s", err.Error())
 	}
 
 	dbErr = txSession.Commit()
 	if dbErr != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to commit upgrade transaction: %s", dbErr.Error())
+		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to commit upgrade transaction: %s", dbErr.Error())
 	}
 
 	r.shootUpgradeQueue.Add(operation.ID)

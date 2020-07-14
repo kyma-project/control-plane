@@ -667,7 +667,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 		upgradeShootQueue := &mocks.OperationQueue{}
 		provisioner := &mocks2.Provisioner{}
 
-		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession, nil)
+		sessionFactoryMock.On("NewReadSession").Return(readWriteSession, nil)
 		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSession, nil)
@@ -701,7 +701,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 		{
 			description: "should fail to upgrade Shoot when failed to commit transaction",
 			mockFunc: func(sessionFactory *sessionMocks.Factory, readWriteSession *sessionMocks.ReadWriteSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
-				sessionFactory.On("NewReadWriteSession").Return(readWriteSession, nil)
+				sessionFactory.On("NewReadSession").Return(readWriteSession, nil)
 				readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
@@ -715,7 +715,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 		{
 			description: "should fail to upgrade Shoot when failed to upgrade cluster",
 			mockFunc: func(sessionFactory *sessionMocks.Factory, readWriteSession *sessionMocks.ReadWriteSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
-				sessionFactory.On("NewReadWriteSession").Return(readWriteSession, nil)
+				sessionFactory.On("NewReadSession").Return(readWriteSession, nil)
 				readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
@@ -728,7 +728,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 		{
 			description: "should fail to upgrade Shoot when failed to update cluster config",
 			mockFunc: func(sessionFactory *sessionMocks.Factory, readWriteSession *sessionMocks.ReadWriteSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
-				sessionFactory.On("NewReadWriteSession").Return(readWriteSession, nil)
+				sessionFactory.On("NewReadSession").Return(readWriteSession, nil)
 				readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
@@ -740,7 +740,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 		{
 			description: "should fail to upgrade Shoot when last operation is in progress",
 			mockFunc: func(sessionFactory *sessionMocks.Factory, readWriteSession *sessionMocks.ReadWriteSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
-				sessionFactory.On("NewReadWriteSession").Return(readWriteSession, nil)
+				sessionFactory.On("NewReadSession").Return(readWriteSession, nil)
 				readWriteSession.On("GetLastOperation", runtimeID).Return(model.Operation{State: model.InProgress}, nil)
 			},
 		},
