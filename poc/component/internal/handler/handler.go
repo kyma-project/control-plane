@@ -1,14 +1,14 @@
 package handler
 
 import (
+	"encoding/json"
+	"log"
+	"net/http"
+
+	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/poc/component/pkg/apperror"
 	"github.com/kyma-project/control-plane/poc/component/pkg/model"
 	"github.com/pkg/errors"
-	"log"
-	"github.com/gorilla/mux"
-	"net/http"
-	"encoding/json"
-
 )
 
 const rtmIDKey = "runtimeID"

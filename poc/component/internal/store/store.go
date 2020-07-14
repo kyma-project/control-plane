@@ -2,11 +2,12 @@ package store
 
 import (
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
+
 	"github.com/ghodss/yaml"
 	"github.com/kyma-project/control-plane/poc/component/pkg/apperror"
 	"github.com/kyma-project/control-plane/poc/component/pkg/model"
-	"io/ioutil"
-	"path/filepath"
 )
 
 type storeConfig struct {
