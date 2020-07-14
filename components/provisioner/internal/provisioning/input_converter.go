@@ -113,9 +113,15 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 }
 
 func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, config model.GardenerConfig) (model.GardenerConfig, apperrors.AppError) {
+	var providerSpecificConfig model.GardenerProviderConfig
+	var err apperrors.AppError
 
-	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
-	if err != nil {
+	if input.ProviderSpecificConfig != nil {
+		providerSpecificConfig, err = c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
+		if providerSpecificConfig == nil {
+			return model.GardenerConfig{}, err.Append("error converting provider specific config from input: %s", err)
+		}
+	} else {
 		providerSpecificConfig = config.GardenerProviderConfig
 	}
 

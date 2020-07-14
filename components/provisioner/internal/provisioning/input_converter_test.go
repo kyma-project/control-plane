@@ -419,13 +419,13 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 	initialAzureProviderConfig, _ := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{Zones: []string{"1"}})
 	upgradedAzureProviderConfig, _ := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{Zones: []string{"1", "2"}})
 
-	configurations := []struct {
+	casesWithNoErrors := []struct {
 		description    string
 		upgradeInput   gqlschema.UpgradeShootInput
 		initialConfig  model.GardenerConfig
 		upgradedConfig model.GardenerConfig
 	}{
-		{description: "GCP shoot upgrade",
+		{description: "regular GCP shoot upgrade",
 			upgradeInput: newGCPUpgradeShootInput(testingPurpose),
 			initialConfig: model.GardenerConfig{
 				KubernetesVersion:      "version",
@@ -452,7 +452,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				GardenerProviderConfig: upgradedGCPProviderConfig,
 			},
 		},
-		{description: "Azure shoot upgrade",
+		{description: "regular Azure shoot upgrade",
 			upgradeInput: newAzureUpgradeShootInput(testingPurpose),
 			initialConfig: model.GardenerConfig{
 				KubernetesVersion:      "version",
@@ -479,7 +479,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				GardenerProviderConfig: upgradedAzureProviderConfig,
 			},
 		},
-		{description: "AWS shoot upgrade",
+		{description: "regular AWS shoot upgrade",
 			upgradeInput: newUpgradeShootInput(testingPurpose),
 			initialConfig: model.GardenerConfig{
 				KubernetesVersion: "version",
@@ -504,9 +504,56 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				MaxUnavailable:    1,
 			},
 		},
+		{description: "shoot upgrade with nil values",
+			upgradeInput: newUpgradeShootInputWithNilValues(),
+			initialConfig: model.GardenerConfig{
+				KubernetesVersion: "version",
+				VolumeSizeGB:      1,
+				DiskType:          "ssd",
+				MachineType:       "1",
+				Purpose:           &evaluationPurpose,
+				AutoScalerMin:     1,
+				AutoScalerMax:     2,
+				MaxSurge:          1,
+				MaxUnavailable:    1,
+			},
+			upgradedConfig: model.GardenerConfig{
+				KubernetesVersion: "version",
+				VolumeSizeGB:      1,
+				DiskType:          "ssd",
+				MachineType:       "1",
+				Purpose:           &evaluationPurpose,
+				AutoScalerMin:     1,
+				AutoScalerMax:     2,
+				MaxSurge:          1,
+				MaxUnavailable:    1,
+			},
+		},
 	}
 
-	for _, testCase := range configurations {
+	casesWithErrors := []struct {
+		description   string
+		upgradeInput  gqlschema.UpgradeShootInput
+		initialConfig model.GardenerConfig
+	}{
+		{description: "should return error failed to convert provider specific config",
+			upgradeInput: newUpgradeShootInputWithoutProviderConfig(testingPurpose),
+			initialConfig: model.GardenerConfig{
+				KubernetesVersion:      "version",
+				VolumeSizeGB:           1,
+				DiskType:               "ssd",
+				MachineType:            "1",
+				Purpose:                &evaluationPurpose,
+				AutoScalerMin:          1,
+				AutoScalerMax:          2,
+				MaxSurge:               1,
+				MaxUnavailable:         1,
+				GardenerProviderConfig: initialGCPProviderConfig,
+			},
+		},
+	}
+
+	for _, testCase := range casesWithNoErrors {
 		t.Run(testCase.description, func(t *testing.T) {
 			//given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
@@ -524,6 +571,27 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			//then
 			require.NoError(t, err)
 			assert.Equal(t, testCase.upgradedConfig, shootConfig)
+			uuidGeneratorMock.AssertExpectations(t)
+		})
+	}
+
+	for _, testCase := range casesWithErrors {
+		t.Run(testCase.description, func(t *testing.T) {
+			//given
+			uuidGeneratorMock := &mocks.UUIDGenerator{}
+			inputConverter := NewInputConverter(
+				uuidGeneratorMock,
+				readSession,
+				gardenerProject,
+				defaultEnableKubernetesVersionAutoUpdate,
+				defaultEnableMachineImageVersionAutoUpdate,
+			)
+
+			//when
+			_, err := inputConverter.UpgradeShootInputToGardenerConfig(*testCase.upgradeInput.GardenerConfig, testCase.initialConfig)
+
+			//then
+			require.Error(t, err)
 			uuidGeneratorMock.AssertExpectations(t)
 		})
 	}
@@ -546,6 +614,23 @@ func newUpgradeShootInput(newPurpose string) gqlschema.UpgradeShootInput {
 	}
 }
 
+func newUpgradeShootInputWithNilValues() gqlschema.UpgradeShootInput {
+	return gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			KubernetesVersion:      nil,
+			Purpose:                nil,
+			MachineType:            nil,
+			DiskType:               nil,
+			VolumeSizeGb:           nil,
+			AutoScalerMin:          nil,
+			AutoScalerMax:          nil,
+			MaxSurge:               nil,
+			MaxUnavailable:         nil,
+			ProviderSpecificConfig: nil,
+		},
+	}
+}
+
 func newGCPUpgradeShootInput(newPurpose string) gqlschema.UpgradeShootInput {
 	input := newUpgradeShootInput(newPurpose)
 	input.GardenerConfig.ProviderSpecificConfig = &gqlschema.ProviderSpecificInput{
@@ -562,6 +647,16 @@ func newAzureUpgradeShootInput(newPurpose string) gqlschema.UpgradeShootInput {
 		AzureConfig: &gqlschema.AzureProviderConfigInput{
 			Zones: []string{"1", "2"},
 		},
+	}
+	return input
+}
+
+func newUpgradeShootInputWithoutProviderConfig(newPurpose string) gqlschema.UpgradeShootInput {
+	input := newUpgradeShootInput(newPurpose)
+	input.GardenerConfig.ProviderSpecificConfig = &gqlschema.ProviderSpecificInput{
+		AwsConfig:   nil,
+		AzureConfig: nil,
+		GcpConfig:   nil,
 	}
 	return input
 }
