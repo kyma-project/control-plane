@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the concept of runtime management with the usage of [DAPR](https://dapr.io).
+This document describes the concept of runtime management with the usage of [Dapr](https://dapr.io).
 
 ## Architecture
 
@@ -26,4 +26,4 @@ Each of them beside Kyma Standalone will have some implementation of Agent, that
 ## Kyma Runtime configuration from the Control Plane
 The main idea is to have a component in Kyma Control Plane (Runtime Director on image), which would be a point of communication with Runtimes through Agents to manage them. It would allow also to configure them from one central point.
 
-The configuration could be for example an URL and credentials to some external service (e.g. logging service) which is used by some of the registered Runtimes. After each runtime fetches the new configuration, the DAPR bindings would be updated and populated to the DAPR sidecars.
+The configuration could be for example an URL and credentials to some external service (e.g. logging service) which is used by some of the registered Runtimes. After each runtime fetches the new configuration, the Dapr bindings would be updated and populated to the Dapr sidecars.
