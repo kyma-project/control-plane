@@ -238,18 +238,18 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 	t.Run("Should start Runtime deprovisioning and return operation ID", func(t *testing.T) {
 		//given
 		sessionFactoryMock := &sessionMocks.Factory{}
-		readWriteSession := &sessionMocks.ReadWriteSession{}
+		readSession := &sessionMocks.ReadWriteSession{}
 		provisioner := &mocks2.Provisioner{}
 
 		deprovisioningQueue := &mocks.OperationQueue{}
 
 		deprovisioningQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
 
-		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
-		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
+		sessionFactoryMock.On("NewReadWriteSession").Return(readSession)
+		readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+		readSession.On("GetCluster", runtimeID).Return(cluster, nil)
 		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
-		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+		readSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, deprovisioningQueue, nil, nil)
 
@@ -260,19 +260,19 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		//then
 		assert.Equal(t, operationID, opId)
 		sessionFactoryMock.AssertExpectations(t)
-		readWriteSession.AssertExpectations(t)
+		readSession.AssertExpectations(t)
 		provisioner.AssertExpectations(t)
 	})
 
 	t.Run("Should return error when failed to start deprovisioning", func(t *testing.T) {
 		//given
 		sessionFactoryMock := &sessionMocks.Factory{}
-		readWriteSession := &sessionMocks.ReadWriteSession{}
+		readSession := &sessionMocks.ReadWriteSession{}
 		provisioner := &mocks2.Provisioner{}
 
-		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
-		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
+		sessionFactoryMock.On("NewReadWriteSession").Return(readSession)
+		readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+		readSession.On("GetCluster", runtimeID).Return(cluster, nil)
 		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(model.Operation{}, apperrors.Internal("error"))
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil, nil)
@@ -285,18 +285,18 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		//then
 		assert.Contains(t, err.Error(), "Failed to start deprovisioning")
 		sessionFactoryMock.AssertExpectations(t)
-		readWriteSession.AssertExpectations(t)
+		readSession.AssertExpectations(t)
 		provisioner.AssertExpectations(t)
 	})
 
 	t.Run("Should return error when failed to get cluster", func(t *testing.T) {
 		//given
 		sessionFactoryMock := &sessionMocks.Factory{}
-		readWriteSession := &sessionMocks.ReadWriteSession{}
+		readSession := &sessionMocks.ReadWriteSession{}
 
-		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
-		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-		readWriteSession.On("GetCluster", runtimeID).Return(model.Cluster{}, dberrors.Internal("error"))
+		sessionFactoryMock.On("NewReadWriteSession").Return(readSession)
+		readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+		readSession.On("GetCluster", runtimeID).Return(model.Cluster{}, dberrors.Internal("error"))
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil)
 
@@ -307,7 +307,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		//then
 		assert.Contains(t, err.Error(), "Failed to get cluster")
 		sessionFactoryMock.AssertExpectations(t)
-		readWriteSession.AssertExpectations(t)
+		readSession.AssertExpectations(t)
 	})
 
 	t.Run("Should return error when last operation in progress", func(t *testing.T) {
@@ -315,10 +315,10 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		operation := model.Operation{State: model.InProgress}
 
 		sessionFactoryMock := &sessionMocks.Factory{}
-		readWriteSession := &sessionMocks.ReadWriteSession{}
+		readSession := &sessionMocks.ReadWriteSession{}
 
-		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
-		readWriteSession.On("GetLastOperation", runtimeID).Return(operation, nil)
+		sessionFactoryMock.On("NewReadWriteSession").Return(readSession)
+		readSession.On("GetLastOperation", runtimeID).Return(operation, nil)
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil)
 
@@ -329,16 +329,16 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		//then
 		assert.Contains(t, err.Error(), "previous one is in progress")
 		sessionFactoryMock.AssertExpectations(t)
-		readWriteSession.AssertExpectations(t)
+		readSession.AssertExpectations(t)
 	})
 
 	t.Run("Should return error when failed to get last operation", func(t *testing.T) {
 		//given
 		sessionFactoryMock := &sessionMocks.Factory{}
-		readWriteSession := &sessionMocks.ReadWriteSession{}
+		readSession := &sessionMocks.ReadWriteSession{}
 
-		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
-		readWriteSession.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("error"))
+		sessionFactoryMock.On("NewReadWriteSession").Return(readSession)
+		readSession.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("error"))
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil)
 
@@ -349,7 +349,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		//then
 		assert.Contains(t, err.Error(), "failed to get last operation")
 		sessionFactoryMock.AssertExpectations(t)
-		readWriteSession.AssertExpectations(t)
+		readSession.AssertExpectations(t)
 	})
 }
 
@@ -661,25 +661,25 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 
 	t.Run("Should start runtime provisioning of Gardener cluster and return operation ID", func(t *testing.T) {
 		//given
-		sessionFactoryMock := &sessionMocks.Factory{}
-		readWriteSession := &sessionMocks.ReadWriteSession{}
+		sessionFactory := &sessionMocks.Factory{}
+		readSession := &sessionMocks.ReadSession{}
 		writeSession := &sessionMocks.WriteSessionWithinTransaction{}
 		upgradeShootQueue := &mocks.OperationQueue{}
 		provisioner := &mocks2.Provisioner{}
 
-		sessionFactoryMock.On("NewReadSession").Return(readWriteSession, nil)
-		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
-		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSession, nil)
+		sessionFactory.On("NewReadSession").Return(readSession)
+		readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+		readSession.On("GetCluster", runtimeID).Return(cluster, nil)
+		sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
 		writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(nil)
-		provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(nil)
-		provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil)
-		writeSession.On("Commit").Return(nil)
 		writeSession.On("RollbackUnlessCommitted").Return()
+		provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
 		writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+		provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(nil)
+		writeSession.On("Commit").Return(nil)
 		upgradeShootQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, upgradeShootQueue)
+		service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, provisioner, uuidGenerator, nil, nil, nil, upgradeShootQueue)
 
 		//when
 		operationStatus, err := service.UpgradeGardenerShoot(runtimeID, upgradeShootInput)
@@ -688,60 +688,78 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 		//then
 		assert.Equal(t, runtimeID, *operationStatus.RuntimeID)
 		assert.NotEmpty(t, operationStatus.ID)
-		sessionFactoryMock.AssertExpectations(t)
-		readWriteSession.AssertExpectations(t)
+		sessionFactory.AssertExpectations(t)
+		readSession.AssertExpectations(t)
 		writeSession.AssertExpectations(t)
 		upgradeShootQueue.AssertExpectations(t)
 	})
 
 	for _, testCase := range []struct {
 		description string
-		mockFunc    func(sessionFactory *sessionMocks.Factory, readWriteSession *sessionMocks.ReadWriteSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner)
+		mockFunc    func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner)
 	}{
-		{
-			description: "should fail to upgrade Shoot when failed to commit transaction",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readWriteSession *sessionMocks.ReadWriteSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
-				sessionFactory.On("NewReadSession").Return(readWriteSession, nil)
-				readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-				readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
+		{description: "should fail to upgrade Shoot when failed to commit shoot update",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
+				sessionFactory.On("NewReadSession").Return(readSession)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
+				writeSession.On("RollbackUnlessCommitted").Return()
 				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(nil)
 				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
-				writeSession.On("Commit").Return(dberrors.Internal("error"))
-				writeSession.On("RollbackUnlessCommitted").Return()
+				provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
 				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(nil)
+				writeSession.On("Commit").Return(dberrors.Internal("error"))
 			},
 		},
-		{
-			description: "should fail to upgrade Shoot when failed to upgrade cluster",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readWriteSession *sessionMocks.ReadWriteSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
-				sessionFactory.On("NewReadSession").Return(readWriteSession, nil)
-				readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-				readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
+		{description: "should fail to upgrade Shoot when failed to upgrade cluster",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
+				sessionFactory.On("NewReadSession").Return(readSession)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
+				writeSession.On("RollbackUnlessCommitted").Return()
 				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(nil)
 				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
-				writeSession.On("RollbackUnlessCommitted").Return()
+				provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
 				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(apperrors.Internal("error"))
 			},
 		},
-		{
-			description: "should fail to upgrade Shoot when failed to update cluster config",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readWriteSession *sessionMocks.ReadWriteSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
-				sessionFactory.On("NewReadSession").Return(readWriteSession, nil)
-				readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-				readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
+		{description: "should fail to upgrade Shoot when failed to update gardener cluster config",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
+				sessionFactory.On("NewReadSession").Return(readSession)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
-				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(dberrors.Internal("error"))
 				writeSession.On("RollbackUnlessCommitted").Return()
-				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(apperrors.Internal("error: %s", dberrors.Internal("error")))
+				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(dberrors.Internal("error"))
 			},
 		},
-		{
-			description: "should fail to upgrade Shoot when last operation is in progress",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readWriteSession *sessionMocks.ReadWriteSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
-				sessionFactory.On("NewReadSession").Return(readWriteSession, nil)
-				readWriteSession.On("GetLastOperation", runtimeID).Return(model.Operation{State: model.InProgress}, nil)
+		{description: "should fail to upgrade Shoot when failed to create write session",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
+				sessionFactory.On("NewReadSession").Return(readSession)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
+				sessionFactory.On("NewSessionWithinTransaction").Return(nil, dberrors.Internal("error"))
+			},
+		},
+		{description: "should fail to upgrade Shoot when failed to get cluster",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
+				sessionFactory.On("NewReadSession").Return(readSession)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(model.Cluster{}, dberrors.Internal("error"))
+			},
+		},
+		{description: "should fail to upgrade Shoot when failed to get last operation",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
+				sessionFactory.On("NewReadSession").Return(readSession)
+				readSession.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("error"))
+			},
+		},
+		{description: "should fail to upgrade Shoot when last operation is in progress",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
+				sessionFactory.On("NewReadSession").Return(readSession)
+				readSession.On("GetLastOperation", runtimeID).Return(model.Operation{State: model.InProgress}, nil)
 			},
 		},
 	} {
@@ -749,12 +767,12 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 			//given
 			sessionFactory := &sessionMocks.Factory{}
 			writeSessionWithinTransaction := &sessionMocks.WriteSessionWithinTransaction{}
-			readWriteSession := &sessionMocks.ReadWriteSession{}
+			readSession := &sessionMocks.ReadSession{}
 
 			provisioner := &mocks2.Provisioner{}
 			upgradeShootQueue := &mocks.OperationQueue{}
 
-			testCase.mockFunc(sessionFactory, readWriteSession, writeSessionWithinTransaction, provisioner)
+			testCase.mockFunc(sessionFactory, readSession, writeSessionWithinTransaction, provisioner)
 
 			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, provisioner, uuidGenerator, nil, nil, nil, upgradeShootQueue)
 
@@ -765,7 +783,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 			// then
 			sessionFactory.AssertExpectations(t)
 			writeSessionWithinTransaction.AssertExpectations(t)
-			readWriteSession.AssertExpectations(t)
+			readSession.AssertExpectations(t)
 		})
 	}
 }
