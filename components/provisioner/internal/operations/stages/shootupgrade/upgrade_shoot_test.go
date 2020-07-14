@@ -5,16 +5,14 @@ import (
 	"testing"
 	"time"
 
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	gardener_mocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/deprovisioning/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/testkit"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestWaitForClusterUpgrade(t *testing.T) {
@@ -40,7 +38,10 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		{
 			description: "should continue waiting if cluster is in processing state",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInProcessingState(clusterName), nil)
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(
+					testkit.NewTestShoot(clusterName).
+						WithOperationProcessing().
+						ToShoot(), nil)
 			},
 			expectedStage: model.WaitingForShootUpgrade,
 			expectedDelay: 20 * time.Second,
@@ -48,7 +49,10 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		{
 			description: "should continue waiting if cluster is in pending state",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInPendingState(clusterName), nil)
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(
+					testkit.NewTestShoot(clusterName).
+						WithOperationPending().
+						ToShoot(), nil)
 			},
 			expectedStage: model.WaitingForShootUpgrade,
 			expectedDelay: 20 * time.Second,
@@ -56,7 +60,10 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		{
 			description: "should continue waiting if cluster is in error state - the operation will be retried on Gardener side",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInErrorState(clusterName), nil)
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(
+					testkit.NewTestShoot(clusterName).
+						WithOperationError().
+						ToShoot(), nil)
 			},
 			expectedStage: model.WaitingForShootUpgrade,
 			expectedDelay: 20 * time.Second,
@@ -64,7 +71,10 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		{
 			description: "should continue waiting if last operation not set",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInUnknownState(clusterName), nil)
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(
+					testkit.NewTestShoot(clusterName).
+						WithOperationNil().
+						ToShoot(), nil)
 			},
 			expectedStage: model.WaitingForShootUpgrade,
 			expectedDelay: 20 * time.Second,
@@ -73,7 +83,10 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 			description: "should return finished stage if cluster upgrade has succeeded",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
 
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInSucceededState(clusterName), nil)
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(
+					testkit.NewTestShoot(clusterName).
+						WithOperationSucceeded().
+						ToShoot(), nil)
 			},
 			expectedStage: model.FinishedStage,
 			expectedDelay: 0,
@@ -114,7 +127,10 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		{
 			description: "should return unrecoverable error if Shoot is in failed state",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootInFailedState(clusterName), nil)
+				gardenerClient.On("Get", clusterName, mock.Anything).Return(
+					testkit.NewTestShoot(clusterName).
+						WithOperationFailed().
+						ToShoot(), nil)
 			},
 			unrecoverableError: true,
 			cluster:            cluster,
@@ -137,50 +153,5 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 			require.Equal(t, testCase.unrecoverableError, errors.As(err, &nonRecoverable))
 			gardenerClient.AssertExpectations(t)
 		})
-	}
-}
-
-func fixShootInProcessingState(name string) *gardener_types.Shoot {
-	return fixShoot(name, &gardener_types.LastOperation{
-		State: gardencorev1beta1.LastOperationStateProcessing,
-	})
-}
-
-func fixShootInPendingState(name string) *gardener_types.Shoot {
-	return fixShoot(name, &gardener_types.LastOperation{
-		State: gardencorev1beta1.LastOperationStatePending,
-	})
-}
-
-func fixShootInErrorState(name string) *gardener_types.Shoot {
-	return fixShoot(name, &gardener_types.LastOperation{
-		State: gardencorev1beta1.LastOperationStateError,
-	})
-}
-
-func fixShootInSucceededState(name string) *gardener_types.Shoot {
-	return fixShoot(name, &gardener_types.LastOperation{
-		State: gardencorev1beta1.LastOperationStateSucceeded,
-	})
-}
-
-func fixShootInFailedState(name string) *gardener_types.Shoot {
-	return fixShoot(name, &gardener_types.LastOperation{
-		State: gardencorev1beta1.LastOperationStateFailed,
-	})
-}
-
-func fixShootInUnknownState(name string) *gardener_types.Shoot {
-	return fixShoot(name, nil)
-}
-
-func fixShoot(name string, lastOperation *gardener_types.LastOperation) *gardener_types.Shoot {
-	return &gardener_types.Shoot{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Status: gardener_types.ShootStatus{
-			LastOperation: lastOperation,
-		},
 	}
 }
