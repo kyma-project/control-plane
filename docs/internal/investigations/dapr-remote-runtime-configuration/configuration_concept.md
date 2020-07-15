@@ -4,10 +4,10 @@ This document describes the concept of Runtime management using [Dapr](https://d
 
 ## Architecture
 
-![Concept image](assets/concept.png)
-
 This diagram shows the future architecture of the Kyma environment.
 There are two central places, Compass and Kyma Control Plane, along with Runtimes that communicate with them.
+
+![Concept image](assets/concept.png)
 
 ### Compass
 Compass is responsible for connecting applications to Runtimes, along with controlling and monitoring them.
