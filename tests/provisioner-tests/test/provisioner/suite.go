@@ -36,6 +36,7 @@ import (
 const (
 	ProvisioningTimeout   = 90 * time.Minute
 	UpgradeTimeout        = 90 * time.Minute
+	UpgradeShootTimeout   = 60 * time.Minute
 	DeprovisioningTimeout = 60 * time.Minute
 
 	checkInterval = 10 * time.Second

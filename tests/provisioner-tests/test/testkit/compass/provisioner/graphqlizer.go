@@ -42,6 +42,12 @@ func (g *graphqlizer) RuntimeInputToGraphQL(in gqlschema.RuntimeInput) (string, 
 	}`)
 }
 
+func (g *graphqlizer) UpgradeShootInputToGraphQL(in gqlschema.UpgradeShootInput) (string, error) {
+	return g.genericToGraphQL(in, `{
+		config: {{ GardenerUpgradeInputToGraphQL .GardenerConfig }}
+	}`)
+}
+
 func (g *graphqlizer) UpgradeRuntimeInputToGraphQL(in gqlschema.UpgradeRuntimeInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		kymaConfig: {{ KymaConfigToGraphQL .KymaConfig }}
@@ -73,6 +79,30 @@ func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		{{- end }}
 		targetSecret: "{{ .TargetSecret }}"
 		workerCidr: "{{ .WorkerCidr }}"
+        autoScalerMin: {{ .AutoScalerMin }}
+        autoScalerMax: {{ .AutoScalerMax }}
+        maxSurge: {{ .MaxSurge }}
+		maxUnavailable: {{ .MaxUnavailable }}
+		{{- if .EnableKubernetesVersionAutoUpdate }}
+		enableKubernetesVersionAutoUpdate: {{ .EnableKubernetesVersionAutoUpdate }}
+		{{- end }}
+		{{- if .EnableMachineImageVersionAutoUpdate }}
+		enableMachineImageVersionAutoUpdate: {{ .EnableMachineImageVersionAutoUpdate }}
+		{{- end }}
+		providerSpecificConfig: {{ ProviderSpecificInputToGraphQL .ProviderSpecificConfig }}
+	}`)
+}
+
+func (g *graphqlizer) GardenerUpgradeInputToGraphQL(in gqlschema.GardenerUpgradeInput) (string, error) {
+
+	return g.genericToGraphQL(in, `{
+		kubernetesVersion: "{{ .KubernetesVersion }}"
+		volumeSizeGB: {{ .VolumeSizeGb }}
+		machineType: "{{ .MachineType }}"
+		{{- if .Purpose }}
+		purpose: "{{ .Purpose }}"
+		{{- end }}
+		diskType: "{{ .DiskType }}"
         autoScalerMin: {{ .AutoScalerMin }}
         autoScalerMax: {{ .AutoScalerMax }}
         maxSurge: {{ .MaxSurge }}

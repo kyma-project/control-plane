@@ -14,6 +14,7 @@ const (
 
 type Client interface {
 	ProvisionRuntime(config schema.ProvisionRuntimeInput) (operationStatusID string, runtimeID string, err error)
+	UpgradeShoot(runtimeID string, config schema.UpgradeShootInput) (schema.OperationStatus, error)
 	UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInput) (schema.OperationStatus, error)
 	DeprovisionRuntime(runtimeID string) (string, error)
 	ReconnectRuntimeAgent(runtimeID string) (string, error)
@@ -63,13 +64,30 @@ func (c client) UpgradeRuntime(runtimeID string, config schema.UpgradeRuntimeInp
 		return schema.OperationStatus{}, errors.Wrap(err, "Failed to convert Upgrade Runtime Input to query")
 	}
 
-	query := c.queryProvider.upgradeRuntime(runtimeID, upgradeRuntimeIptGQL)
+	query := c.queryProvider.upgradeKymaRuntime(runtimeID, upgradeRuntimeIptGQL)
 	req := c.newRequest(query)
 
 	var operationStatus schema.OperationStatus
 	err = c.graphQLClient.ExecuteRequest(req, &operationStatus)
 	if err != nil {
 		return schema.OperationStatus{}, errors.Wrap(err, "Failed to upgrade Runtime")
+	}
+	return operationStatus, nil
+}
+
+func (c client) UpgradeShoot(runtimeID string, config schema.UpgradeShootInput) (schema.OperationStatus, error) {
+	upgradeShootInputGQL, err := c.graphqlizer.UpgradeShootInputToGraphQL(config)
+	if err != nil {
+		return schema.OperationStatus{}, errors.Wrap(err, "Failed to convert Upgrade Shoot Input to query")
+	}
+
+	query := c.queryProvider.upgradeGardenerCluster(runtimeID, upgradeShootInputGQL)
+	req := c.newRequest(query)
+
+	var operationStatus schema.OperationStatus
+	err = c.graphQLClient.ExecuteRequest(req, &operationStatus)
+	if err != nil {
+		return schema.OperationStatus{}, errors.Wrap(err, "Failed to upgrade Shoot")
 	}
 	return operationStatus, nil
 }

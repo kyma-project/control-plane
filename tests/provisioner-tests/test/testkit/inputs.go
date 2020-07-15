@@ -67,6 +67,51 @@ func CreateGardenerProvisioningInput(config *TestConfig, version, provider strin
 	}, nil
 }
 
+func CreateGardenerUpgradeInput(config *TestConfig, provider string) *gqlschema.UpgradeShootInput {
+	gardenerInputs := map[string]gqlschema.GardenerConfigInput{
+		GCP: {
+			MachineType:  "n1-standard-4",
+			DiskType:     "pd-standard",
+			Region:       "europe-west4",
+			TargetSecret: config.Gardener.GCPSecret,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				GcpConfig: &gqlschema.GCPProviderConfigInput{
+					Zones: []string{"europe-west4-a", "europe-west4-b", "europe-west4-c"},
+				},
+			},
+		},
+		Azure: {
+			MachineType:  "Standard_D4_v3",
+			DiskType:     "Standard_LRS",
+			Region:       "westeurope",
+			TargetSecret: config.Gardener.AzureSecret,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				AzureConfig: &gqlschema.AzureProviderConfigInput{
+					VnetCidr: "10.250.0.0/19",
+					Zones:    []string{"1", "2", "3"},
+				},
+			},
+		},
+	}
+
+	return &gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			KubernetesVersion:                   strToPtr("1.15.10"),
+			DiskType:                            strToPtr(gardenerInputs[provider].DiskType),
+			VolumeSizeGb:                        intToPtr(50),
+			MachineType:                         strToPtr(gardenerInputs[provider].MachineType),
+			Purpose:                             strToPtr("evaluation"),
+			AutoScalerMin:                       intToPtr(1),
+			AutoScalerMax:                       intToPtr(5),
+			MaxSurge:                            intToPtr(5),
+			MaxUnavailable:                      intToPtr(2),
+			EnableKubernetesVersionAutoUpdate:   boolToPtr(false),
+			EnableMachineImageVersionAutoUpdate: boolToPtr(true),
+			ProviderSpecificConfig:              gardenerInputs[provider].ProviderSpecificConfig,
+		},
+	}
+}
+
 func CreateKymaConfigInput(version string) (*gqlschema.KymaConfigInput, error) {
 	installationCRURL := createInstallationCRURL(version)
 	logrus.Infof("Getting and parsing Kyma modules from Installation CR at: %s", installationCRURL)
