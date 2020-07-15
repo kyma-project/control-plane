@@ -11,7 +11,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/testkit"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"

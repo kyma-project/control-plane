@@ -8,7 +8,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	gardener_mocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/deprovisioning/mocks"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/testkit"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
