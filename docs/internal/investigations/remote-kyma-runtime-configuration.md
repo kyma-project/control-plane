@@ -1,17 +1,17 @@
 # Remote Kyma Runtime configuration
 
 
-We need to configure Dapr sidecars on a Kyma Runtime from one central Kyma Control Plane.
+We need to configure Dapr sidecars in a Kyma Runtime from one central Kyma Control Plane.
 
 The proposed solution is to create one central component that would hold configurations for all Runtimes. Each Runtime will have a new component called Control Plane Runtime Agent that will periodically fetch the configuration and apply it to a Kyma Runtime. However, the Dapr 
-sidecars have an [issue](https://github.com/dapr/dapr/issues/1172) as the whole Pod needs to restart for the configuration to be applied.
+sidecars have an [issue](https://github.com/dapr/dapr/issues/1172) concerning the fact that the whole Pod needs to restart for the configuration to be applied.
 
 ## Solutions
 
 There are a few solutions for this problem:
 
 ### Control Plane Runtime Agent will restart every Pod with a Dapr sidecar
-This solution may be the simplest, but it could add too many responsibilities for one component. A single Control Plane Runtime Agent would fetch the configuration, apply it and then restart all Pods.
+This solution may be the simplest, but it could add too many responsibilities for one component. A single Control Plane Runtime Agent would fetch the configuration, apply it, and then restart all Pods.
 
 Pros:
 - No new components in the Runtime 
