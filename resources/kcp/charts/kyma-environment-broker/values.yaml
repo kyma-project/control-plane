@@ -94,7 +94,7 @@ avs:
   internalTesterService: ""
   externalTesterService: ""
   # List of tags to bind to testers.
-  # Example: 
+  # Example:
   # internalTesterTags: |-
   #   - content: tag-A
   #     tag_id: 1
@@ -157,6 +157,7 @@ e2e:
   gcp:
     configName: "e2e-runtime-config-gcp"
   upgrade:
+    configName: "e2e-upgrade-runtime-config-azure"
     timeout: "100m"
     preUpgradeVersion: ""
     targetVersion: "master-156dc1a5"
