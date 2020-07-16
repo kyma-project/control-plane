@@ -34,7 +34,7 @@ func TestShootUpgrade(t *testing.T) {
 				provisioningInput, err := testkit.CreateGardenerProvisioningInput(&testSuite.config, testSuite.config.Kyma.Version, provider)
 				assertions.RequireNoError(t, err)
 
-				runtimeName := fmt.Sprintf("provisioner-upgrade-shoot-test-%s-%s", strings.ToLower(provider), uuid.New().String()[:4])
+				runtimeName := fmt.Sprintf("provisioner-upgr-sh-test-%s-%s", strings.ToLower(provider), uuid.New().String()[:4])
 				provisioningInput.RuntimeInput.Name = runtimeName
 
 				// Provision runtime
@@ -84,6 +84,7 @@ func TestShootUpgrade(t *testing.T) {
 				runtimeStatus, err = testSuite.ProvisionerClient.RuntimeStatus(runtimeID)
 				assertions.RequireNoError(t, err)
 
+				log.Log("Asserting expected runtime state...")
 				assertions.AssertUpgradedClusterState(t, *upgradeShootConfig.GardenerConfig, *runtimeStatus.RuntimeConfiguration.ClusterConfig)
 
 				// Deprovisioning runtime
