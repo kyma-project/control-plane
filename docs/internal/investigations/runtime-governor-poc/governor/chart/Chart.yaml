@@ -1,4 +1,4 @@
 apiVersion: v1
-description: A Helm chart for Runtime Director
+description: A Helm chart for Runtime Governor
 name: runtime-governor
 version: 0.1.0
