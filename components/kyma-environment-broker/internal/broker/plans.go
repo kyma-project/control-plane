@@ -7,10 +7,12 @@ import (
 )
 
 const (
-	GCPPlanID     = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
-	GCPPlanName   = "gcp"
-	AzurePlanID   = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
-	AzurePlanName = "azure"
+	GCPPlanID         = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
+	GCPPlanName       = "gcp"
+	AzurePlanID       = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	AzurePlanName     = "azure"
+	AzureLitePlanID   = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
+	AzureLitePlanName = "azure_lite"
 )
 
 func AzureRegions() []string {
@@ -34,6 +36,7 @@ type Type struct {
 	AdditionalItems *bool         `json:"additionalItems,omitempty"`
 	UniqueItems     *bool         `json:"uniqueItems,omitempty"`
 }
+
 type RootSchema struct {
 	Schema string `json:"$schema"`
 	Type
@@ -55,7 +58,7 @@ type ProvisioningProperties struct {
 	MaxUnavailable Type `json:"maxUnavailable"`
 }
 
-func GCPSchema() []byte {
+func GCPSchema(machineTypes []string) []byte {
 	f := new(bool)
 	*f = false
 	t := new(bool)
@@ -85,7 +88,7 @@ func GCPSchema() []byte {
 			},
 			MachineType: Type{
 				Type: "string",
-				Enum: ToInterfaceSlice([]string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"}),
+				Enum: ToInterfaceSlice(machineTypes),
 			},
 			Region: Type{
 				Type: "string",
@@ -151,7 +154,8 @@ func GCPSchema() []byte {
 	}
 	return bytes
 }
-func AzureSchema() []byte {
+
+func AzureSchema(machineTypes []string) []byte {
 	f := new(bool)
 	*f = false
 	t := new(bool)
@@ -181,7 +185,7 @@ func AzureSchema() []byte {
 			},
 			MachineType: Type{
 				Type: "string",
-				Enum: ToInterfaceSlice([]string{"Standard_D8_v3"}),
+				Enum: ToInterfaceSlice(machineTypes),
 			},
 			Region: Type{
 				Type: "string",
@@ -247,7 +251,7 @@ var Plans = map[string]struct {
 				},
 			},
 		},
-		provisioningRawSchema: GCPSchema(),
+		provisioningRawSchema: GCPSchema([]string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"}),
 	},
 	AzurePlanID: {
 		PlanDefinition: domain.ServicePlan{
@@ -265,6 +269,24 @@ var Plans = map[string]struct {
 				},
 			},
 		},
-		provisioningRawSchema: AzureSchema(),
+		provisioningRawSchema: AzureSchema([]string{"Standard_D8_v3"}),
+	},
+	AzureLitePlanID: {
+		PlanDefinition: domain.ServicePlan{
+			ID:          AzureLitePlanID,
+			Name:        AzureLitePlanName,
+			Description: "Azure Lite",
+			Metadata: &domain.ServicePlanMetadata{
+				DisplayName: "Azure Lite",
+			},
+			Schemas: &domain.ServiceSchemas{
+				Instance: domain.ServiceInstanceSchema{
+					Create: domain.Schema{
+						Parameters: make(map[string]interface{}),
+					},
+				},
+			},
+		},
+		provisioningRawSchema: AzureSchema([]string{"Standard_D4_v3"}),
 	},
 }

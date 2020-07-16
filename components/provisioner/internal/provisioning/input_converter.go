@@ -90,6 +90,8 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		VolumeSizeGB:                        input.VolumeSizeGb,
 		DiskType:                            input.DiskType,
 		MachineType:                         input.MachineType,
+		MachineImage:                        input.MachineImage,
+		MachineImageVersion:                 input.MachineImageVersion,
 		Provider:                            input.Provider,
 		Purpose:                             input.Purpose,
 		LicenceType:                         input.LicenceType,

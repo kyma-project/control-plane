@@ -12,11 +12,12 @@ type (
 	ProviderID string
 
 	Config struct {
-		URL              string
-		UserSecret       string
-		UserID           string
-		IdentityProvider string
-		Disabled         bool
+		URL                    string
+		UserSecret             string
+		UserID                 string
+		IdentityProvider       string
+		Disabled               bool
+		TLSRenegotiationEnable bool `envconfig:"default=false"`
 	}
 )
 

@@ -61,6 +61,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		project := "Project"
 		disk := "standard"
 		machine := "machine"
+		machineImage := "gardenlinux"
+		machineImageVersion := "25.0.0"
 		region := "region"
 		zones := []string{"fix-gcp-zone-1", "fix-gcp-zone-2"}
 		volume := 256
@@ -76,6 +78,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		autoScMin := 2
 		surge := 1
 		unavailable := 1
+		enableKubernetesVersionAutoUpdate := true
+		enableMachineImageVersionAutoUpdate := false
 
 		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"zones":["fix-gcp-zone-1","fix-gcp-zone-2"]}`)
 		require.NoError(t, err)
@@ -91,24 +95,28 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusDisconnected,
 			RuntimeConfiguration: model.Cluster{
 				ClusterConfig: model.GardenerConfig{
-					Name:                   clusterName,
-					ProjectName:            project,
-					DiskType:               disk,
-					MachineType:            machine,
-					Region:                 region,
-					VolumeSizeGB:           volume,
-					KubernetesVersion:      kubeversion,
-					Provider:               provider,
-					Purpose:                &purpose,
-					LicenceType:            &licenceType,
-					Seed:                   seed,
-					TargetSecret:           secret,
-					WorkerCidr:             cidr,
-					AutoScalerMax:          autoScMax,
-					AutoScalerMin:          autoScMin,
-					MaxSurge:               surge,
-					MaxUnavailable:         unavailable,
-					GardenerProviderConfig: gardenerProviderConfig,
+					Name:                                clusterName,
+					ProjectName:                         project,
+					DiskType:                            disk,
+					MachineType:                         machine,
+					MachineImage:                        &machineImage,
+					MachineImageVersion:                 &machineImageVersion,
+					Region:                              region,
+					VolumeSizeGB:                        volume,
+					KubernetesVersion:                   kubeversion,
+					Provider:                            provider,
+					Purpose:                             &purpose,
+					LicenceType:                         &licenceType,
+					Seed:                                seed,
+					TargetSecret:                        secret,
+					WorkerCidr:                          cidr,
+					AutoScalerMax:                       autoScMax,
+					AutoScalerMin:                       autoScMin,
+					MaxSurge:                            surge,
+					MaxUnavailable:                      unavailable,
+					EnableKubernetesVersionAutoUpdate:   enableKubernetesVersionAutoUpdate,
+					EnableMachineImageVersionAutoUpdate: enableMachineImageVersionAutoUpdate,
+					GardenerProviderConfig:              gardenerProviderConfig,
 				},
 				Kubeconfig: &kubeconfig,
 				KymaConfig: fixKymaConfig(),
@@ -132,22 +140,26 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			},
 			RuntimeConfiguration: &gqlschema.RuntimeConfig{
 				ClusterConfig: &gqlschema.GardenerConfig{
-					Name:              &clusterName,
-					DiskType:          &disk,
-					MachineType:       &machine,
-					Region:            &region,
-					VolumeSizeGb:      &volume,
-					KubernetesVersion: &kubeversion,
-					Provider:          &provider,
-					Purpose:           &purpose,
-					LicenceType:       &licenceType,
-					Seed:              &seed,
-					TargetSecret:      &secret,
-					WorkerCidr:        &cidr,
-					AutoScalerMax:     &autoScMax,
-					AutoScalerMin:     &autoScMin,
-					MaxSurge:          &surge,
-					MaxUnavailable:    &unavailable,
+					Name:                                &clusterName,
+					DiskType:                            &disk,
+					MachineType:                         &machine,
+					MachineImage:                        &machineImage,
+					MachineImageVersion:                 &machineImageVersion,
+					Region:                              &region,
+					VolumeSizeGb:                        &volume,
+					KubernetesVersion:                   &kubeversion,
+					Provider:                            &provider,
+					Purpose:                             &purpose,
+					LicenceType:                         &licenceType,
+					Seed:                                &seed,
+					TargetSecret:                        &secret,
+					WorkerCidr:                          &cidr,
+					AutoScalerMax:                       &autoScMax,
+					AutoScalerMin:                       &autoScMin,
+					MaxSurge:                            &surge,
+					MaxUnavailable:                      &unavailable,
+					EnableKubernetesVersionAutoUpdate:   &enableKubernetesVersionAutoUpdate,
+					EnableMachineImageVersionAutoUpdate: &enableMachineImageVersionAutoUpdate,
 					ProviderSpecificConfig: gqlschema.GCPProviderConfig{
 						Zones: zones,
 					},
@@ -170,6 +182,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		project := "Project"
 		disk := "standard"
 		machine := "machine"
+		machineImage := "gardenlinux"
+		machineImageVersion := "25.0.0"
 		region := "region"
 		volume := 256
 		kubeversion := "kubeversion"
@@ -184,6 +198,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		autoScMin := 2
 		surge := 1
 		unavailable := 1
+		enableKubernetesVersionAutoUpdate := true
+		enableMachineImageVersionAutoUpdate := false
 
 		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"vnetCidr":"10.10.11.11/255"}`)
 		require.NoError(t, err)
@@ -199,24 +215,28 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusDisconnected,
 			RuntimeConfiguration: model.Cluster{
 				ClusterConfig: model.GardenerConfig{
-					Name:                   clusterName,
-					ProjectName:            project,
-					KubernetesVersion:      kubeversion,
-					VolumeSizeGB:           volume,
-					DiskType:               disk,
-					MachineType:            machine,
-					Provider:               provider,
-					Purpose:                &purpose,
-					LicenceType:            &licenceType,
-					Seed:                   seed,
-					TargetSecret:           secret,
-					Region:                 region,
-					WorkerCidr:             cidr,
-					AutoScalerMin:          autoScMin,
-					AutoScalerMax:          autoScMax,
-					MaxSurge:               surge,
-					MaxUnavailable:         unavailable,
-					GardenerProviderConfig: gardenerProviderConfig,
+					Name:                                clusterName,
+					ProjectName:                         project,
+					KubernetesVersion:                   kubeversion,
+					VolumeSizeGB:                        volume,
+					DiskType:                            disk,
+					MachineType:                         machine,
+					MachineImage:                        &machineImage,
+					MachineImageVersion:                 &machineImageVersion,
+					Provider:                            provider,
+					Purpose:                             &purpose,
+					LicenceType:                         &licenceType,
+					Seed:                                seed,
+					TargetSecret:                        secret,
+					Region:                              region,
+					WorkerCidr:                          cidr,
+					AutoScalerMin:                       autoScMin,
+					AutoScalerMax:                       autoScMax,
+					MaxSurge:                            surge,
+					MaxUnavailable:                      unavailable,
+					EnableKubernetesVersionAutoUpdate:   enableKubernetesVersionAutoUpdate,
+					EnableMachineImageVersionAutoUpdate: enableMachineImageVersionAutoUpdate,
+					GardenerProviderConfig:              gardenerProviderConfig,
 				},
 				Kubeconfig: &kubeconfig,
 				KymaConfig: fixKymaConfig(),
@@ -240,22 +260,26 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 			},
 			RuntimeConfiguration: &gqlschema.RuntimeConfig{
 				ClusterConfig: &gqlschema.GardenerConfig{
-					Name:              &clusterName,
-					DiskType:          &disk,
-					MachineType:       &machine,
-					Region:            &region,
-					VolumeSizeGb:      &volume,
-					KubernetesVersion: &kubeversion,
-					Provider:          &provider,
-					Purpose:           &purpose,
-					LicenceType:       &licenceType,
-					Seed:              &seed,
-					TargetSecret:      &secret,
-					WorkerCidr:        &cidr,
-					AutoScalerMax:     &autoScMax,
-					AutoScalerMin:     &autoScMin,
-					MaxSurge:          &surge,
-					MaxUnavailable:    &unavailable,
+					Name:                                &clusterName,
+					DiskType:                            &disk,
+					MachineType:                         &machine,
+					MachineImage:                        &machineImage,
+					MachineImageVersion:                 &machineImageVersion,
+					Region:                              &region,
+					VolumeSizeGb:                        &volume,
+					KubernetesVersion:                   &kubeversion,
+					Provider:                            &provider,
+					Purpose:                             &purpose,
+					LicenceType:                         &licenceType,
+					Seed:                                &seed,
+					TargetSecret:                        &secret,
+					WorkerCidr:                          &cidr,
+					AutoScalerMax:                       &autoScMax,
+					AutoScalerMin:                       &autoScMin,
+					MaxSurge:                            &surge,
+					MaxUnavailable:                      &unavailable,
+					EnableKubernetesVersionAutoUpdate:   &enableKubernetesVersionAutoUpdate,
+					EnableMachineImageVersionAutoUpdate: &enableMachineImageVersionAutoUpdate,
 					ProviderSpecificConfig: gqlschema.AzureProviderConfig{
 						VnetCidr: util.StringPtr("10.10.11.11/255"),
 						Zones:    nil, // Expected empty when no zones specified in input.

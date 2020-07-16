@@ -60,7 +60,7 @@ additionalRuntimeComponents: |-
 kymaVersion: "1.13.0"
 kymaVersionOnDemand: "false"
 
-enablePlans: "azure,gcp"
+enablePlans: "azure,gcp,azure_lite"
 
 gardener:
   project: "kyma-dev" # Gardener project connected to SA for HAP credentials lookup
@@ -125,6 +125,7 @@ ias:
   secret: "TBD"
   identityProvider: "TBD"
   disabled: true
+  tlsRenegotiationEnable: false
 
 edp:
   authURL: "TBD"

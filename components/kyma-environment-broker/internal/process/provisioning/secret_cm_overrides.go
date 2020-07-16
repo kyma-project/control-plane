@@ -18,9 +18,10 @@ import (
 )
 
 const (
-	namespace      = "kcp-system"
-	overrideLabel  = "provisioning-runtime-override"
-	componentLabel = "component"
+	namespace            = "kcp-system"
+	overrideLabel        = "provisioning-runtime-override"
+	componentLabel       = "component"
+	disableOverrideLabel = "default-for-lite"
 )
 
 type OverridesFromSecretsAndConfigStep struct {
@@ -42,6 +43,12 @@ func (s *OverridesFromSecretsAndConfigStep) Name() string {
 }
 
 func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	pp, err := operation.GetProvisioningParameters()
+	if err != nil {
+		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
+		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
+	}
+
 	overrides := make(map[string][]*gqlschema.ConfigEntryInput, 0)
 	globalOverrides := make([]*gqlschema.ConfigEntryInput, 0)
 
@@ -53,6 +60,9 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 	}
 
 	for _, secret := range secretList.Items {
+		if skipOverride(secret.Labels, pp.Parameters) {
+			continue
+		}
 		cName, global := componentName(secret.Labels)
 		for key, value := range secret.Data {
 			if global {
@@ -79,6 +89,9 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 	}
 
 	for _, cm := range configMapList.Items {
+		if skipOverride(cm.Labels, pp.Parameters) {
+			continue
+		}
 		cName, global := componentName(cm.Labels)
 		for key, value := range cm.Data {
 			if global {
@@ -124,4 +137,21 @@ func componentName(labels map[string]string) (string, bool) {
 		}
 	}
 	return "", true
+}
+
+// skipOverride returns true if licenceType is equal "TestDevelopmentAndDemo" and labels map contains "default-for-lite" key
+// which results in a given override will not be used to provision SKR
+func skipOverride(labels map[string]string, parameters internal.ProvisioningParametersDTO) bool {
+	if parameters.LicenceType == nil {
+		return false
+	}
+
+	if *parameters.LicenceType != internal.LicenceTypeLite {
+		return false
+	}
+	if _, ok := labels[disableOverrideLabel]; ok {
+		return true
+	}
+
+	return false
 }
