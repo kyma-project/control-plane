@@ -29,16 +29,37 @@ func AssertOperation(t *testing.T, expectedState gqlschema.OperationState, expec
 }
 
 func AssertUpgradedClusterState(t *testing.T, expected gqlschema.GardenerUpgradeInput, actual gqlschema.GardenerConfig) {
-	assert.Equal(t, expected.KubernetesVersion, actual.KubernetesVersion)
-	assert.Equal(t, expected.MachineType, actual.MachineType)
-	assert.Equal(t, expected.DiskType, actual.DiskType)
-	assert.Equal(t, expected.VolumeSizeGb, actual.VolumeSizeGb)
-	assert.Equal(t, expected.AutoScalerMin, actual.AutoScalerMin)
-	assert.Equal(t, expected.AutoScalerMax, actual.AutoScalerMax)
-	assert.Equal(t, expected.MaxSurge, actual.MaxSurge)
-	assert.Equal(t, expected.MaxUnavailable, actual.MaxUnavailable)
-	assert.Equal(t, expected.Purpose, actual.Purpose)
-	assert.Equal(t, expected.EnableKubernetesVersionAutoUpdate, actual.EnableKubernetesVersionAutoUpdate)
-	assert.Equal(t, expected.EnableMachineImageVersionAutoUpdate, actual.EnableMachineImageVersionAutoUpdate)
-	assert.Equal(t, expected.ProviderSpecificConfig, actual.ProviderSpecificConfig)
+	assertWhenExpectedStringNotNil(t, expected.KubernetesVersion, actual.KubernetesVersion)
+	assertWhenExpectedStringNotNil(t, expected.MachineType, actual.MachineType)
+	assertWhenExpectedStringNotNil(t, expected.DiskType, actual.DiskType)
+	assertWhenExpectedIntNotNil(t, expected.VolumeSizeGb, actual.VolumeSizeGb)
+	assertWhenExpectedIntNotNil(t, expected.AutoScalerMin, actual.AutoScalerMin)
+	assertWhenExpectedIntNotNil(t, expected.AutoScalerMax, actual.AutoScalerMax)
+	assertWhenExpectedIntNotNil(t, expected.MaxSurge, actual.MaxSurge)
+	assertWhenExpectedIntNotNil(t, expected.MaxUnavailable, actual.MaxUnavailable)
+	assertWhenExpectedStringNotNil(t, expected.Purpose, actual.Purpose)
+	assertWhenExpectedBoolNotNil(t, expected.EnableKubernetesVersionAutoUpdate, actual.EnableKubernetesVersionAutoUpdate)
+	assertWhenExpectedBoolNotNil(t, expected.EnableMachineImageVersionAutoUpdate, actual.EnableMachineImageVersionAutoUpdate)
+
+	if expected.ProviderSpecificConfig != nil {
+		assert.Equal(t, expected.ProviderSpecificConfig, actual.ProviderSpecificConfig)
+	}
+}
+
+func assertWhenExpectedStringNotNil(t *testing.T, expected, actual *string) {
+	if expected != nil {
+		assert.Equal(t, expected, actual)
+	}
+}
+
+func assertWhenExpectedIntNotNil(t *testing.T, expected, actual *int) {
+	if expected != nil {
+		assert.Equal(t, expected, actual)
+	}
+}
+
+func assertWhenExpectedBoolNotNil(t *testing.T, expected, actual *bool) {
+	if expected != nil {
+		assert.Equal(t, expected, actual)
+	}
 }

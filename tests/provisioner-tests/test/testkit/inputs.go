@@ -107,7 +107,7 @@ func CreateGardenerUpgradeInput(config *TestConfig, provider string) *gqlschema.
 			MaxUnavailable:                      intToPtr(2),
 			EnableKubernetesVersionAutoUpdate:   boolToPtr(false),
 			EnableMachineImageVersionAutoUpdate: boolToPtr(true),
-			ProviderSpecificConfig:              gardenerInputs[provider].ProviderSpecificConfig,
+			//ProviderSpecificConfig:              gardenerInputs[provider].ProviderSpecificConfig,
 		},
 	}
 }
