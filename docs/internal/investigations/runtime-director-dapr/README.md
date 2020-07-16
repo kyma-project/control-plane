@@ -52,11 +52,21 @@ The Application exposes the following endpoints:
 
 ### Build
 
-To build source code, navigate to `./component` directory and run:
+To build source code, navigate to the `./component` directory and run:
 
 ```bash
 make build-image
 ```
+
+### Run on local machine
+
+To run the app without building Docker image, navigate to the `./component` directory and execute the following command:
+
+```bash
+go run cmd/main.go
+```
+
+The Runtime Director listens on `127.0.0.1:3001`, reloading file from `hack/config.yaml` path.
 
 ## Installation
 
