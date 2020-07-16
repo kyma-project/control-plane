@@ -2,8 +2,6 @@
 
 This directory contains the source code and Helm chart for Kyma Control Plane Runtime Director.
 
-Runtime Director 
-
 ## Overview
 
 Runtime Director exposes a simple REST API that returns Runtime configurations.
@@ -83,7 +81,7 @@ The script will add a proper `runtime-director.{DOMAIN}` entry to `/etc/hosts`.
 ## Configuration
 
 You can use the following environment variables while running the `deploy.sh` script:
- - `LOCAL_ENV` - Does the script run on local environment with Minikube (default: `true`)
+ - `LOCAL_ENV` - a variable that specifies whether the script runs on a local environment with Minikube (default value: `true`)
  - `DOMAIN` - a domain used on a cluster (default value: `kyma.local`)
  - `ISTIO_GATEWAY_NAME` - Istio Gateway name (default value: `compass-istio-gateway`)
  - `ISTIO_GATEWAY_NAMESPACE` - Istio Gateway Namespace (default value: `compass-system`)
