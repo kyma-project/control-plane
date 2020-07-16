@@ -2,6 +2,53 @@
 
 This directory contains source code and Helm chart for Kyma Control Plane Runtime Director.
 
+Runtime Director 
+
+## Overview
+
+Runtime Director exposes simple REST API which returns Runtime configurations.
+The application periodically reloads configuration from a ConfigMap `runtime-director-config` in `kcp-poc` namespace. The configuration file has the following form:
+
+```yaml
+runtimes:
+  - id: "1"
+    data: # arbitrary data
+      foo: bar
+  - id: "2"
+    data: # arbitrary data
+      bar: baz
+```
+
+The application reloads configuration every 10 seconds. 
+
+## API
+
+The Application exposes the following endpoints:
+
+- `GET /runtimes`
+   
+    Returns configuration for all Runtimes.  
+    
+    Possible error codes: `500`
+    
+    Example response:
+    ```json
+    [{"id": "1", "data": {"foo":  "bar"} }, {"id": "2", "data": {"bar":  "baz"}}]    
+    ```
+
+- `GET /runtimes/{runtimeId}`
+   
+    Returns configuration for a given Runtime.  
+    
+    Possible error codes: `404`, `500`
+    
+    Example response:
+    ```json
+    {"id": "1", "data": {"foo":  "bar"} }    
+    ```
+  
+  
+## Development  
 
 ### Build
 
@@ -11,35 +58,34 @@ To build source code, navigate to `./component` directory and run:
 docker build -t {your-username}/kcp-runtime-director:v1 .
 ```
 
-### Install
+## Installation
 
-To install it on Minikube cluster using Helm 3 in `kcp-poc` namespace, run the following command:
+To install Runtime Director on Kubernetes cluster using Helm 3 in `kcp-poc` namespace, run the following command:
 
 ```bash
-./deploy.sh
+LOCAL_ENV=false ./deploy.sh
 ```
 
 The script will add proper an `runtime-director.{DOMAIN}` entry to `/etc/hosts`.
 
-### Configuration
+## Configuration
 
-You can use following environmental variables while running the `deploy.sh` script:
+You can use the following environmental variables while running the `deploy.sh` script:
+ - `LOCAL_ENV` - Does the script run on local environment with Minikube (default: `true`)
  - `DOMAIN` - Used domain on cluster (default: `kyma.local`)
  - `ISTIO_GATEWAY_NAME` - Istio Gateway name (default: `compass-istio-gateway`)
  - `ISTIO_GATEWAY_NAMESPACE` - Istio Gateway namespace (default: `compass-system`)
 
-For example, to set a different domain, run the script with the following command:
+For example, to set a different domain and deploy on Kubernetes cluster, and install run the script with the following way:
 
 ```bash
-DOMAIN=foo.bar ./deploy.sh
+LOCAL_ENV=false DOMAIN=foo.bar ./deploy.sh
 ```
 
-### Test it
+## Verify
+
+To verify if the Runtime Director works properly, execute the following command, which returns all Runtime configurations from the mounted ConfigMap].
 
 ```bash
-curl https://runtime-director.kyma.local/runtimes
-```
-
-```bash
-curl https://runtime-director.kyma.local/runtimes/1
+curl https://runtime-director.${DOMAIN}/runtimes
 ```
