@@ -1,13 +1,13 @@
 # Runtime Director - Proof of concept
 
-This directory contains source code and Helm chart for Kyma Control Plane Runtime Director.
+This directory contains the source code and Helm chart for Kyma Control Plane Runtime Director.
 
 Runtime Director 
 
 ## Overview
 
-Runtime Director exposes simple REST API which returns Runtime configurations.
-The application periodically reloads configuration from a ConfigMap `runtime-director-config` in `kcp-poc` namespace. The configuration file has the following form:
+Runtime Director exposes a simple REST API that returns Runtime configurations.
+The application periodically reloads configuration from the `runtime-director-config` ConfigMap in the `kcp-poc` Namespace. The configuration file has the following form:
 
 ```yaml
 runtimes:
@@ -21,9 +21,11 @@ runtimes:
 
 The application reloads configuration every 10 seconds. 
 
-## API
+## Details 
 
-The Application exposes the following endpoints:
+### API
+
+The application exposes the following endpoints:
 
 - `GET /runtimes`
    
@@ -52,49 +54,49 @@ The Application exposes the following endpoints:
 
 ### Build
 
-To build source code, navigate to the `./component` directory and run:
+To build the source code, navigate to the `./component` directory and run:
 
 ```bash
 make build-image
 ```
 
-### Run on local machine
+### Run on a local machine
 
-To run the app without building Docker image, navigate to the `./component` directory and execute the following command:
+To run the application without building a Docker image, navigate to the `./component` directory and execute the following command:
 
 ```bash
 go run cmd/main.go
 ```
 
-The Runtime Director listens on `127.0.0.1:3001`, reloading file from `hack/config.yaml` path.
+The Runtime Director listens on the `127.0.0.1:3001` port and reloads the configuration file from the `hack/config.yaml` path.
 
 ## Installation
 
-To install Runtime Director on Kubernetes cluster using Helm 3 in `kcp-poc` namespace, run the following command:
+To install Runtime Director on a Kubernetes cluster using Helm 3 in the `kcp-poc` Namespace, run the following command:
 
 ```bash
 LOCAL_ENV=false ./deploy.sh
 ```
 
-The script will add proper an `runtime-director.{DOMAIN}` entry to `/etc/hosts`.
+The script will add a proper `runtime-director.{DOMAIN}` entry to `/etc/hosts`.
 
 ## Configuration
 
-You can use the following environmental variables while running the `deploy.sh` script:
+You can use the following environment variables while running the `deploy.sh` script:
  - `LOCAL_ENV` - Does the script run on local environment with Minikube (default: `true`)
- - `DOMAIN` - Used domain on cluster (default: `kyma.local`)
- - `ISTIO_GATEWAY_NAME` - Istio Gateway name (default: `compass-istio-gateway`)
- - `ISTIO_GATEWAY_NAMESPACE` - Istio Gateway namespace (default: `compass-system`)
+ - `DOMAIN` - a domain used on a cluster (default value: `kyma.local`)
+ - `ISTIO_GATEWAY_NAME` - Istio Gateway name (default value: `compass-istio-gateway`)
+ - `ISTIO_GATEWAY_NAMESPACE` - Istio Gateway Namespace (default value: `compass-system`)
 
-For example, to set a different domain and deploy on Kubernetes cluster, and install run the script with the following way:
+For example, to set a different domain and install Runtime Director on a Kubernetes cluster, run the script in such a way:
 
 ```bash
 LOCAL_ENV=false DOMAIN=foo.bar ./deploy.sh
 ```
 
-## Verify
+## Testing
 
-To verify if the Runtime Director works properly, execute the following command, which returns all Runtime configurations from the mounted ConfigMap].
+To verify if Runtime Director works properly, execute the following command, which returns all Runtime configurations from the mounted ConfigMap:
 
 ```bash
 curl https://runtime-director.${DOMAIN}/runtimes
