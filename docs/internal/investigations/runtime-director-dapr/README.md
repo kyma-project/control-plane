@@ -55,7 +55,7 @@ The Application exposes the following endpoints:
 To build source code, navigate to `./component` directory and run:
 
 ```bash
-docker build -t {your-username}/kcp-runtime-director:v1 .
+make build-image
 ```
 
 ## Installation

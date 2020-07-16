@@ -9,8 +9,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
-	"github.com/kyma-project/control-plane/poc/component/internal/handler"
-	"github.com/kyma-project/control-plane/poc/component/internal/store"
+	"github.com/kyma-project/control-plane/docs/internal/investigations/runtime-director-dapr/component/internal/handler"
+	"github.com/kyma-project/control-plane/docs/internal/investigations/runtime-director-dapr/component/internal/store"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )

@@ -1,8 +1,8 @@
 APP_NAME = runtime-director
-APP_PATH = poc/component
+APP_PATH = docs/internal/investigations/runtime-director-dapr/component
 ENTRYPOINT = cmd/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20200423-1d9d6590
-SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
+SCRIPTS_DIR = $(realpath $(shell pwd)/../../../../../)/scripts
 
 include $(SCRIPTS_DIR)/generic_make_go.mk
 
@@ -17,3 +17,5 @@ resolve-local: ;
 ensure-local: ;
 
 dep-status-local: ;
+
+push-image: ;
