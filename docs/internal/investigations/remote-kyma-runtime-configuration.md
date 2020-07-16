@@ -31,6 +31,7 @@ Cons:
 
 ### Dapr contribution that would allow configuration reloading
 This solution will surely be the most time-consuming. It seems like a really big change to the Dapr ecosystem and the approach to that is still being [discussed](https://github.com/dapr/dapr/issues/1172#issuecomment-610568718). We would have to create a proposal, wait for it to be accepted, and then develop the feature.
+
 Pros:
 - Configuration reload out-of-the-box
 
