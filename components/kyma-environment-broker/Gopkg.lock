@@ -245,7 +245,7 @@
   version = "v4.6.0"
 
 [[projects]]
-  digest = "1:a6225e8013cc9da21e7e167463b224af253d23f9524c2eae768c52fb8f138f1c"
+  digest = "1:e02805fa1257a13418c3b92eed1f77100171ab98febb79a9b6515d88ee594f09"
   name = "github.com/gardener/gardener"
   packages = [
     "pkg/apis/core",
@@ -253,8 +253,13 @@
     "pkg/apis/core/v1alpha1/constants",
     "pkg/apis/core/v1beta1",
     "pkg/apis/core/v1beta1/constants",
+    "pkg/client/core/clientset/versioned",
+    "pkg/client/core/clientset/versioned/fake",
     "pkg/client/core/clientset/versioned/scheme",
+    "pkg/client/core/clientset/versioned/typed/core/v1alpha1",
+    "pkg/client/core/clientset/versioned/typed/core/v1alpha1/fake",
     "pkg/client/core/clientset/versioned/typed/core/v1beta1",
+    "pkg/client/core/clientset/versioned/typed/core/v1beta1/fake",
     "pkg/utils",
     "pkg/utils/version",
   ]
@@ -1194,6 +1199,7 @@
     "github.com/Masterminds/sprig",
     "github.com/dlmiddlecote/sqlstats",
     "github.com/gardener/gardener/pkg/apis/core/v1beta1",
+    "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake",
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1",
     "github.com/gocraft/dbr",
     "github.com/google/uuid",

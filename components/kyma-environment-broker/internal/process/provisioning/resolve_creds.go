@@ -48,7 +48,6 @@ func (s *ResolveCredentialsStep) Name() string {
 func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
 	pp, err := operation.GetProvisioningParameters()
-
 	if err != nil {
 		logger.Error("Aborting after failing to get valid operation provisioning parameters")
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
@@ -59,7 +58,6 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 	}
 
 	hypType, err := getHyperscalerTypeForPlanID(pp.PlanID)
-
 	if err != nil {
 		logger.Error("Aborting after failing to determine the type of Hyperscaler to use for planID: %s", pp.PlanID)
 		return s.operationManager.OperationFailed(operation, err.Error())
@@ -68,7 +66,6 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 	logger.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
 
 	credentials, err := s.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
-
 	if err != nil {
 		errMsg := fmt.Sprintf("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s has failed: %s", pp.ErsContext.GlobalAccountID, hypType, err)
 		logger.Info(errMsg)
@@ -86,14 +83,12 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 
 	pp.Parameters.TargetSecret = &credentials.Name
 	err = operation.SetProvisioningParameters(pp)
-
 	if err != nil {
 		logger.Error("Aborting after failing to save provisioning parameters for operation")
 		return s.operationManager.OperationFailed(operation, err.Error())
 	}
 
 	updatedOperation, err := s.opStorage.UpdateProvisioningOperation(operation)
-
 	if err != nil {
 		return operation, 1 * time.Minute, nil
 	}

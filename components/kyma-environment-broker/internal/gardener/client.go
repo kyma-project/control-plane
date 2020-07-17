@@ -38,6 +38,18 @@ func NewGardenerSecretsInterface(gardenerClusterCfg *restclient.Config, gardener
 	return gardenerClusterClient.CoreV1().Secrets(gardenerNamespace), nil
 }
 
+func NewGardenerShootInterface(gardenerClusterCfg *restclient.Config, gardenerProjectName string) (gardener_apis.ShootInterface, error) {
+
+	gardenerNamespace := fmt.Sprintf("garden-%s", gardenerProjectName)
+
+	gardenerClusterClient, err := gardener_apis.NewForConfig(gardenerClusterCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return gardenerClusterClient.Shoots(gardenerNamespace), nil
+}
+
 func RESTConfig(kubeconfig []byte) (*restclient.Config, error) {
 	return clientcmd.RESTConfigFromKubeConfig(kubeconfig)
 }
