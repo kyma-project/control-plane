@@ -420,7 +420,7 @@ func TestResolver_RollBackUpgradeOperation(t *testing.T) {
 func TestResolver_UpgradeShoot(t *testing.T) {
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 
-	upgradeShootInput := newUpgradeShootInput()
+	upgradeShootInput := NewUpgradeShootInput()
 
 	t.Run("Should start shoot upgrade and return operation id", func(t *testing.T) {
 		//given

@@ -79,7 +79,7 @@ func newTestProvisioningConfigs() []testCase {
 					Name:        "test runtime 1",
 					Description: new(string),
 				}},
-			upgradeShootInput: newUpgradeShootInput(),
+			upgradeShootInput: NewUpgradeShootInput(),
 		},
 		{name: "Azure on Gardener (with zones)",
 			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones passed",
@@ -90,7 +90,7 @@ func newTestProvisioningConfigs() []testCase {
 					Name:        "test runtime 2",
 					Description: new(string),
 				}},
-			upgradeShootInput: newUpgradeShootInput(),
+			upgradeShootInput: NewUpgradeShootInput(),
 		},
 		{name: "Azure on Gardener (without zones)",
 			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones are empty",
@@ -101,7 +101,7 @@ func newTestProvisioningConfigs() []testCase {
 					Name:        "test runtime 3",
 					Description: new(string),
 				}},
-			upgradeShootInput: newUpgradeShootInput(),
+			upgradeShootInput: NewUpgradeShootInput(),
 		},
 		{name: "AWS on Gardener",
 			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct AWS configuration for Gardener",
@@ -112,7 +112,7 @@ func newTestProvisioningConfigs() []testCase {
 					Name:        "test runtime4",
 					Description: new(string),
 				}},
-			upgradeShootInput: newUpgradeShootInput(),
+			upgradeShootInput: NewUpgradeShootInput(),
 		},
 	}
 }
@@ -199,7 +199,7 @@ func awsGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 	}
 }
 
-func newUpgradeShootInput() gqlschema.UpgradeShootInput {
+func NewUpgradeShootInput() gqlschema.UpgradeShootInput {
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion: util.StringPtr("version2"),
@@ -213,16 +213,6 @@ func newUpgradeShootInput() gqlschema.UpgradeShootInput {
 			MaxUnavailable:    util.IntPtr(1),
 		},
 	}
-}
-
-func newAzureUpgradeShootInput() gqlschema.UpgradeShootInput {
-	input := newUpgradeShootInput()
-	input.GardenerConfig.ProviderSpecificConfig = &gqlschema.ProviderSpecificInput{
-		AzureConfig: &gqlschema.AzureProviderConfigInput{
-			VnetCidr: "cidr2",
-		},
-	}
-	return input
 }
 
 func insertDummyReleaseIfNotExist(releaseRepo release.Repository, id, version string) error {
