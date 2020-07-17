@@ -2,11 +2,12 @@ package hyperscaler
 
 import (
 	"fmt"
+
+	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/pkg/errors"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 )
 
 //
@@ -23,7 +24,7 @@ func NewSharedGardenerAccountPool(secretsClient corev1.SecretInterface, shootCli
 
 type SharedAccountPool struct {
 	secretsClient corev1.SecretInterface
-	shootsClient gardener_apis.ShootInterface
+	shootsClient  gardener_apis.ShootInterface
 }
 
 func (sp *SharedAccountPool) SharedCredentials(hyperscalerType Type) (Credentials, error) {
@@ -40,7 +41,6 @@ func (sp *SharedAccountPool) SharedCredentials(hyperscalerType Type) (Credential
 
 	return credentialsFromSecret(&secret, hyperscalerType), nil
 }
-
 
 func (sp *SharedAccountPool) getLeastUsed(secrets []apiv1.Secret) (apiv1.Secret, error) {
 	usageCount := make(map[string]int, len(secrets))

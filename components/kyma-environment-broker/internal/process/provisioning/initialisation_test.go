@@ -2,9 +2,10 @@ package provisioning
 
 import (
 	"encoding/json"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"testing"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"

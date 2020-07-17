@@ -9,13 +9,12 @@ import (
 const (
 	GCPPlanID         = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
 	GCPPlanName       = "gcp"
-	GCPTrialPlanID = "" // TODO: TBD
-	GCPTrialPlanName = "gcp_trial"
+	GCPTrialPlanID    = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
+	GCPTrialPlanName  = "gcp_trial"
 	AzurePlanID       = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
 	AzurePlanName     = "azure"
 	AzureLitePlanID   = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
 	AzureLitePlanName = "azure_lite"
-
 )
 
 func AzureRegions() []string {

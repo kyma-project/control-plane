@@ -2,9 +2,10 @@ package provisioning
 
 import (
 	"errors"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"testing"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 
 	"github.com/stretchr/testify/require"
 
@@ -52,7 +53,6 @@ func TestResolveCredentialsStepHappyPath_Run(t *testing.T) {
 	require.NotNil(t, pp.Parameters.TargetSecret)
 	assert.Equal(t, "gardener-secret-gcp", *pp.Parameters.TargetSecret)
 }
-
 
 func TestResolveCredentialsStepHappyPathTrial_Run(t *testing.T) {
 	// given

@@ -13,15 +13,15 @@ type AccountProvider interface {
 }
 
 type accountProvider struct {
-	compassPool  AccountPool
-	gardenerPool AccountPool
+	compassPool        AccountPool
+	gardenerPool       AccountPool
 	sharedGardenerPool SharedPool
 }
 
 func NewAccountProvider(compassPool AccountPool, gardenerPool AccountPool, sharedGardenerPool SharedPool) AccountProvider {
 	return &accountProvider{
-		compassPool:  compassPool,
-		gardenerPool: gardenerPool,
+		compassPool:        compassPool,
+		gardenerPool:       gardenerPool,
 		sharedGardenerPool: sharedGardenerPool,
 	}
 }
@@ -60,7 +60,6 @@ func (p *accountProvider) GardenerSharedCredentials(hyperscalerType Type) (Crede
 
 	return p.sharedGardenerPool.SharedCredentials(hyperscalerType)
 }
-
 
 func (p *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInput, tenantName string) (string, error) {
 	if len(input.TargetSecret) > 0 {
