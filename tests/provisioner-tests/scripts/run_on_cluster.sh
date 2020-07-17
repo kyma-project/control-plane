@@ -2,11 +2,9 @@
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
-APP_NAME=compass-provisioner-tests
-
 discoverUnsetVar=false
 
-for var in DOCKER_TAG DOCKER_PUSH_REPOSITORY NAMESPACE; do
+for var in DOCKER_TAG DOCKER_PUSH_REPOSITORY NAMESPACE APP_NAME; do
     if [ -z "${!var}" ] ; then
         echo "ERROR: $var is not set"
         discoverUnsetVar=true
