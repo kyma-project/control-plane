@@ -44,25 +44,33 @@ func (ts *TestShoot) InNamespace(namespace string) *TestShoot {
 	return ts
 }
 
-// WithAutoUpdate adds values to shoot.Spec.Maintenance.AutoUpdate KubernetesVersion and MachineImageVersion fields
+// WithKubernetesVersion sets value to shoot.Spec.Kubernetes.Version
+func (ts *TestShoot) WithKubernetesVersion(v string) *TestShoot {
+	ts.shoot.Spec.Kubernetes.Version = v
+	return ts
+}
+
+// WithAutoUpdate sets values of shoot.Spec.Maintenance.AutoUpdate KubernetesVersion and MachineImageVersion fields
 func (ts *TestShoot) WithAutoUpdate(kubernetes, machine bool) *TestShoot {
 	ts.shoot.Spec.Maintenance.AutoUpdate.KubernetesVersion = kubernetes
 	ts.shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = machine
 	return ts
 }
 
+// WithWorkers adds v1beta1 Workers to shoot.Spec.Provider.Workers
+// See also testkit.TestWorker
 func (ts *TestShoot) WithWorkers(workers ...v1beta1.Worker) *TestShoot {
 	ts.shoot.Spec.Provider.Workers = append(ts.shoot.Spec.Provider.Workers, workers...)
 	return ts
 }
 
-// WithGeneration adds value to shoot.Generation field
+// WithGeneration sets value of shoot.Generation field
 func (ts *TestShoot) WithGeneration(generation int64) *TestShoot {
 	ts.shoot.Generation = generation
 	return ts
 }
 
-// WithObservedGeneration adds value to shoot.Status.ObservedGeneration
+// WithObservedGeneration sets value of shoot.Status.ObservedGeneration
 func (ts *TestShoot) WithObservedGeneration(generation int64) *TestShoot {
 	ts.shoot.Status.ObservedGeneration = generation
 	return ts
