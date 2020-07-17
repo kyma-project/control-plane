@@ -57,7 +57,14 @@ func (ts *TestShoot) WithAutoUpdate(kubernetes, machine bool) *TestShoot {
 	return ts
 }
 
-// WithWorkers adds v1beta1 Workers to shoot.Spec.Provider.Workers
+// WithAutoUpdate sets values of shoot.Spec.Maintenance.AutoUpdate KubernetesVersion and MachineImageVersion fields
+func (ts *TestShoot) WithPurpose(purpose string) *TestShoot {
+	p := v1beta1.ShootPurpose(purpose)
+	ts.shoot.Spec.Purpose = &p
+	return ts
+}
+
+// WithWorkers adds v1beta1 Workers to shoot.Spec.Provider.Workers.
 // See also testkit.TestWorker
 func (ts *TestShoot) WithWorkers(workers ...v1beta1.Worker) *TestShoot {
 	ts.shoot.Spec.Provider.Workers = append(ts.shoot.Spec.Provider.Workers, workers...)

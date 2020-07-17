@@ -16,6 +16,7 @@ type TestWorker struct {
 // NewTestWorker creates TestWorker and returns pointer to it, allowing to pipe the constraints
 func NewTestWorker(name string) *TestWorker {
 	return &TestWorker{worker: v1beta1.Worker{
+		Name: name,
 		Machine: v1beta1.Machine{
 			Image: &v1beta1.ShootMachineImage{},
 		},
