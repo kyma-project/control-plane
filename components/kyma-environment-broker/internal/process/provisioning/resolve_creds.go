@@ -23,7 +23,7 @@ type ResolveCredentialsStep struct {
 
 func getHyperscalerTypeForPlanID(planID string) (hyperscaler.Type, error) {
 	switch planID {
-	case broker.GCPPlanID:
+	case broker.GCPPlanID, broker.GCPTrialPlanID:
 		return hyperscaler.GCP, nil
 	case broker.AzurePlanID, broker.AzureLitePlanID:
 		return hyperscaler.Azure, nil
@@ -65,7 +65,13 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 
 	logger.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
 
-	credentials, err := s.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+	var credentials hyperscaler.Credentials
+	if !isTrialPlan(pp.PlanID) {
+		credentials, err = s.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+	} else {
+		logger.Infof("HAP lookup for shared credentials")
+		credentials, err = s.accountProvider.GardenerSharedCredentials(hypType)
+	}
 	if err != nil {
 		errMsg := fmt.Sprintf("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s has failed: %s", pp.ErsContext.GlobalAccountID, hypType, err)
 		logger.Info(errMsg)
@@ -96,4 +102,13 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 	logger.Infof("Resolved %s as target secret name to use for cluster provisioning for global account ID %s on Hyperscaler %s", *pp.Parameters.TargetSecret, pp.ErsContext.GlobalAccountID, hypType)
 
 	return *updatedOperation, 0, nil
+}
+
+func isTrialPlan(planId string) bool {
+	switch planId {
+	case broker.GCPTrialPlanID:
+		return true
+	default:
+		return false
+	}
 }

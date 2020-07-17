@@ -91,7 +91,6 @@ func TestCredentials(t *testing.T) {
 			} else {
 				assert.Equal(t, testcase.expectedCredentialName, credentials.Name)
 				assert.Equal(t, testcase.hyperscalerType, credentials.HyperscalerType)
-				assert.Equal(t, testcase.tenantName, credentials.TenantName)
 				assert.Equal(t, testcase.expectedCredentialName, string(credentials.CredentialData["credentials"]))
 				assert.Equal(t, testcase.expectedError, actualError)
 			}

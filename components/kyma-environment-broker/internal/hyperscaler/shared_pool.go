@@ -38,7 +38,7 @@ func (sp *SharedAccountPool) SharedCredentials(hyperscalerType Type) (Credential
 		return Credentials{}, err
 	}
 
-	return credentialsFromSecret(&secret, hyperscalerType, ""), nil
+	return credentialsFromSecret(&secret, hyperscalerType), nil
 }
 
 
