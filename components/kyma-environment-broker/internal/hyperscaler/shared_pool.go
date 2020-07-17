@@ -10,7 +10,6 @@ import (
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
-//
 type SharedPool interface {
 	SharedCredentials(hyperscalerType Type) (Credentials, error)
 }
