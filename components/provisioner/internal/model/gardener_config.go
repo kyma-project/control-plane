@@ -182,7 +182,7 @@ func (c GCPGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 }
 
 func (c GCPGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-	return updateWorkerConfig(gardenerConfig, shoot, c.input.Zones)
+	return updateShootConfig(gardenerConfig, shoot, c.input.Zones)
 }
 
 func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
@@ -257,7 +257,7 @@ type AWSGardenerConfig struct {
 }
 
 func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-	return updateWorkerConfig(gardenerConfig, shoot, c.input.Zones)
+	return updateShootConfig(gardenerConfig, shoot, c.input.Zones)
 }
 
 func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
@@ -325,7 +325,7 @@ func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 }
 
 func (c AWSGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-	return updateWorkerConfig(gardenerConfig, shoot, []string{c.input.Zone})
+	return updateShootConfig(gardenerConfig, shoot, []string{c.input.Zone})
 }
 
 func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
@@ -371,14 +371,27 @@ func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_typ
 	}
 }
 
-func updateWorkerConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot, zones []string) apperrors.AppError {
-	shoot.Spec.Provider.Workers[0].MaxSurge = util.IntOrStringPtr(intstr.FromInt(gardenerConfig.MaxSurge))
-	shoot.Spec.Provider.Workers[0].MaxUnavailable = util.IntOrStringPtr(intstr.FromInt(gardenerConfig.MaxUnavailable))
-	shoot.Spec.Provider.Workers[0].Machine.Type = gardenerConfig.MachineType
-	shoot.Spec.Provider.Workers[0].Volume.Type = &gardenerConfig.DiskType
-	shoot.Spec.Provider.Workers[0].Volume.Size = fmt.Sprintf("%dGi", gardenerConfig.VolumeSizeGB)
-	shoot.Spec.Provider.Workers[0].Maximum = int32(gardenerConfig.AutoScalerMax)
-	shoot.Spec.Provider.Workers[0].Minimum = int32(gardenerConfig.AutoScalerMin)
+func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot, zones []string) apperrors.AppError {
+
+	if upgradeConfig.KubernetesVersion != "" {
+		shoot.Spec.Kubernetes.Version = upgradeConfig.KubernetesVersion
+	}
+
+	if upgradeConfig.Purpose != nil && *upgradeConfig.Purpose != "" {
+		purpose := gardener_types.ShootPurpose(*upgradeConfig.Purpose)
+		shoot.Spec.Purpose = &purpose
+	}
+
+	shoot.Spec.Maintenance.AutoUpdate.KubernetesVersion = upgradeConfig.EnableKubernetesVersionAutoUpdate
+	shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = upgradeConfig.EnableMachineImageVersionAutoUpdate
+
+	shoot.Spec.Provider.Workers[0].MaxSurge = util.IntOrStringPtr(intstr.FromInt(upgradeConfig.MaxSurge))
+	shoot.Spec.Provider.Workers[0].MaxUnavailable = util.IntOrStringPtr(intstr.FromInt(upgradeConfig.MaxUnavailable))
+	shoot.Spec.Provider.Workers[0].Machine.Type = upgradeConfig.MachineType
+	shoot.Spec.Provider.Workers[0].Volume.Type = &upgradeConfig.DiskType
+	shoot.Spec.Provider.Workers[0].Volume.Size = fmt.Sprintf("%dGi", upgradeConfig.VolumeSizeGB)
+	shoot.Spec.Provider.Workers[0].Maximum = int32(upgradeConfig.AutoScalerMax)
+	shoot.Spec.Provider.Workers[0].Minimum = int32(upgradeConfig.AutoScalerMin)
 	shoot.Spec.Provider.Workers[0].Zones = zones
 
 	return nil

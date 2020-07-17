@@ -88,18 +88,6 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 		return appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, upgradeConfig.Name)
 	}
 
-	if upgradeConfig.KubernetesVersion != "" {
-		shoot.Spec.Kubernetes.Version = upgradeConfig.KubernetesVersion
-	}
-
-	if upgradeConfig.Purpose != nil && *upgradeConfig.Purpose != "" {
-		purpose := gardener_types.ShootPurpose(*upgradeConfig.Purpose)
-		shoot.Spec.Purpose = &purpose
-	}
-
-	shoot.Spec.Maintenance.AutoUpdate.KubernetesVersion = upgradeConfig.EnableKubernetesVersionAutoUpdate
-	shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = upgradeConfig.EnableMachineImageVersionAutoUpdate
-
 	appErr := upgradeConfig.GardenerProviderConfig.EditShootConfig(upgradeConfig, shoot)
 
 	if appErr != nil {
