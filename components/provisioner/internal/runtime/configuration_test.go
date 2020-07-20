@@ -64,8 +64,6 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 
 		//then
 		require.NoError(t, err)
-		configMap, k8serr := k8sClientProvider.fakeClient.CoreV1().ConfigMaps(namespace).Get(AgentConfigurationSecretName, v1.GetOptions{})
-		require.NoError(t, k8serr)
 		secret, k8serr := k8sClientProvider.fakeClient.CoreV1().Secrets(namespace).Get(AgentConfigurationSecretName, v1.GetOptions{})
 		require.NoError(t, k8serr)
 
@@ -76,7 +74,6 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 			assert.Equal(t, token, data["TOKEN"])
 		}
 
-		assertData(configMap.Data)
 		assertData(secret.StringData)
 	})
 
