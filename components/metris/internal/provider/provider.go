@@ -1,55 +1,38 @@
 package provider
 
 import (
-	"context"
 	"fmt"
-	"strings"
 	"sync"
-	"time"
-
-	"github.com/kyma-project/control-plane/components/metris/internal/gardener"
-	"github.com/kyma-project/control-plane/components/metris/internal/provider/azure"
-	"go.uber.org/zap"
 )
 
-type CloudProviderType int
-
-const (
-	AWS CloudProviderType = iota
-	AZURE
-	GCP
+// All registered providers.
+var (
+	providersLock sync.Mutex
+	providers     = make(map[string]Factory)
 )
 
-type Config struct {
-	Type             string        `kong:"help='Provider to fetch metrics from. (azure)',enum='azure',env='PROVIDER_TYPE',required=true,default='azure',hidden=true"`
-	PollInterval     time.Duration `kong:"help='Interval at which metrics are fetch.',env='PROVIDER_POLLINTERVAL',required=true,default='1m'"`
-	Workers          int           `kong:"help='Number of workers to fetch metrics.',env='PROVIDER_WORKERS',required=true,default=10"`
-	Buffer           int           `kong:"help='Number of accounts that the buffer can have.',env='PROVIDER_BUFFER',required=true,default=100"`
-	ClientTraceLevel int           `kong:"help='Provider client trace level (0=disabled, 1=headers, 2=body)',env='PROVIDER_CLIENT_TRACE_LEVEL',default=0"`
-}
+func RegisterProvider(name string, provider Factory) error {
+	providersLock.Lock()
+	defer providersLock.Unlock()
 
-// Provider interface contains all behaviors for a provider.
-type Provider interface {
-	Collect(ctx context.Context, wg *sync.WaitGroup)
-}
-
-// NewProvider Create a new provider from the name.
-func NewProvider(config *Config, accountsChannel chan *gardener.Account, eventsChannel chan<- *[]byte, logger *zap.SugaredLogger) (Provider, error) {
-	logger = logger.With("component", config.Type)
-
-	switch strings.ToLower(config.Type) {
-	case AZURE.String():
-		logger.Debug("initializing provider")
-		return azure.NewAzureProvider(config.Workers, config.PollInterval, accountsChannel, eventsChannel, logger, config.ClientTraceLevel), nil
-	default:
-		return nil, fmt.Errorf("provider %s undefined", config.Type)
+	if _, exists := providers[name]; exists {
+		return fmt.Errorf("Provider %s is already registered", name)
 	}
+
+	providers[name] = provider
+
+	return nil
 }
 
-func getSupportedProviders() []string {
-	return []string{"aws", "azure", "gcp"}
-}
+// NewProvider returns a registered provider base on the type.
+func NewProvider(name string, config *Config) (Provider, error) {
+	providersLock.Lock()
+	defer providersLock.Unlock()
 
-func (p CloudProviderType) String() string {
-	return getSupportedProviders()[p]
+	p, ok := providers[name]
+	if !ok {
+		return nil, fmt.Errorf("no provider found with name %s", name)
+	}
+
+	return p(config), nil
 }
