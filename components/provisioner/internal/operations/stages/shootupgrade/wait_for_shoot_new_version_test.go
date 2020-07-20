@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_mocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/deprovisioning/mocks"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -128,32 +126,4 @@ func TestWaitForNewShootVersion(t *testing.T) {
 			gardenerClient.AssertExpectations(t)
 		})
 	}
-}
-
-type testShoot struct {
-	shoot *gardener_types.Shoot
-}
-
-func (ts *testShoot) toShoot() *gardener_types.Shoot {
-	return ts.shoot
-}
-
-func (ts *testShoot) withGeneration(generation int64) *testShoot {
-	ts.shoot.Generation = generation
-	return ts
-}
-
-func (ts *testShoot) withObservedGeneration(generation int64) *testShoot {
-	ts.shoot.Status.ObservedGeneration = generation
-	return ts
-}
-
-func (ts *testShoot) withOperationSucceeded() *testShoot {
-	ts.shoot.Status.LastOperation.State = gardencorev1beta1.LastOperationStateSucceeded
-	return ts
-}
-
-func (ts *testShoot) withOperationFailed() *testShoot {
-	ts.shoot.Status.LastOperation.State = gardencorev1beta1.LastOperationStateFailed
-	return ts
 }
