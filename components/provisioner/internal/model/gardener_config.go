@@ -385,6 +385,11 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	shoot.Spec.Maintenance.AutoUpdate.KubernetesVersion = upgradeConfig.EnableKubernetesVersionAutoUpdate
 	shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = upgradeConfig.EnableMachineImageVersionAutoUpdate
 
+	if len(shoot.Spec.Provider.Workers) == 0 {
+		return apperrors.Internal("no worker groups assigned to Gardener shoot '%s'", shoot.Name)
+	}
+
+	// We support only single working group during provisioning
 	shoot.Spec.Provider.Workers[0].MaxSurge = util.IntOrStringPtr(intstr.FromInt(upgradeConfig.MaxSurge))
 	shoot.Spec.Provider.Workers[0].MaxUnavailable = util.IntOrStringPtr(intstr.FromInt(upgradeConfig.MaxUnavailable))
 	shoot.Spec.Provider.Workers[0].Machine.Type = upgradeConfig.MachineType
@@ -393,7 +398,6 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	shoot.Spec.Provider.Workers[0].Maximum = int32(upgradeConfig.AutoScalerMax)
 	shoot.Spec.Provider.Workers[0].Minimum = int32(upgradeConfig.AutoScalerMin)
 	shoot.Spec.Provider.Workers[0].Zones = zones
-
 	return nil
 }
 

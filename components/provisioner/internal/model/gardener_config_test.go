@@ -457,6 +457,28 @@ func TestEditShootConfig(t *testing.T) {
 			assert.Equal(t, testCase.expectedShoot, testCase.initialShoot)
 		})
 	}
+
+	for _, testCase := range []struct {
+		description   string
+		upgradeConfig GardenerConfig
+		initialShoot  *gardener_types.Shoot
+	}{
+		{description: "should return error when no worker groups are assigned to shoot",
+			upgradeConfig: fixGardenerConfig("az", azureProviderConfig),
+			initialShoot:  testkit.NewTestShoot("shoot").ToShoot(),
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			// given
+			gardenerProviderConfig := testCase.upgradeConfig.GardenerProviderConfig
+
+			// when
+			err := gardenerProviderConfig.EditShootConfig(testCase.upgradeConfig, testCase.initialShoot)
+
+			// then
+			require.Error(t, err)
+		})
+	}
 }
 
 func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) GardenerConfig {
