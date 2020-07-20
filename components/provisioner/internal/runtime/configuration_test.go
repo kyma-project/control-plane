@@ -29,7 +29,7 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 	tenant := "tenant"
 	token := "shdfv7123ygfbw832b"
 
-	namespace := "kcp-system"
+	namespace := "compass-system"
 
 	cluster := model.Cluster{
 		ID:     runtimeID,
