@@ -17,12 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	oldGeneration = 1
-	newGeneration = 2
 )
 
 func TestWaitForNewShootVersion(t *testing.T) {
@@ -138,21 +132,6 @@ func TestWaitForNewShootVersion(t *testing.T) {
 
 type testShoot struct {
 	shoot *gardener_types.Shoot
-}
-
-func newTestShoot(name string) *testShoot {
-	return &testShoot{
-		shoot: &gardener_types.Shoot{
-			TypeMeta: metav1.TypeMeta{},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
-			},
-			Spec: gardener_types.ShootSpec{},
-			Status: gardener_types.ShootStatus{
-				LastOperation: &gardener_types.LastOperation{},
-			},
-		},
-	}
 }
 
 func (ts *testShoot) toShoot() *gardener_types.Shoot {
