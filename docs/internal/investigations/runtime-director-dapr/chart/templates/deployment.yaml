@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      release: {{ .Release.Name }}
+  strategy:
+    {{- toYaml .Values.deployment.strategy | nindent 4 }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+    spec:
+      nodeSelector:
+        {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
+
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.deployment.image.path }}
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          env:
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
+            - name: APP_CONFIGURATION_FILE_PATH
+              value: /config/config.yaml
+          ports:
+            - name: http
+              containerPort: {{ .Values.deployment.args.containerPort}}
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /config
+              name: rtm-director-config
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+      volumes:
+        - name: rtm-director-config
+          configMap:
+            name: {{ template "fullname" . }}-config
