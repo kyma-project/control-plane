@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -34,6 +35,10 @@ func (v *validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeIn
 
 	if input.RuntimeInput == nil {
 		return apperrors.BadRequest("validation error while starting Runtime provisioning: runtime input is missing")
+	}
+
+	if err := v.validateMachineImage(input.ClusterConfig.GardenerConfig); err != nil {
+		return err.Append("validation error while starting Runtime provisioning")
 	}
 
 	return nil
@@ -85,6 +90,13 @@ func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) ap
 		return apperrors.BadRequest("error: Kyma components list does not contain Compass Runtime Agent")
 	}
 
+	return nil
+}
+
+func (v *validator) validateMachineImage(input *gqlschema.GardenerConfigInput) apperrors.AppError {
+	if util.NotNilOrEmpty(input.MachineImageVersion) && util.IsNilOrEmpty(input.MachineImage) {
+		return apperrors.BadRequest("error: Machine Image Version passed while Machine Image is empty")
+	}
 	return nil
 }
 

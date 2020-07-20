@@ -36,23 +36,23 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 		Description: new(string),
 	}
 
+	kymaConfig := &gqlschema.KymaConfigInput{
+		Version: "1.5",
+		Components: []*gqlschema.ComponentConfigurationInput{
+			{
+				Component:     "core",
+				Configuration: nil,
+			},
+			{
+				Component:     "compass-runtime-agent",
+				Configuration: nil,
+			},
+		},
+	}
+
 	t.Run("Should return nil when config is correct", func(t *testing.T) {
 		//given
 		validator := NewValidator(nil)
-
-		kymaConfig := &gqlschema.KymaConfigInput{
-			Version: "1.5",
-			Components: []*gqlschema.ComponentConfigurationInput{
-				{
-					Component:     "core",
-					Configuration: nil,
-				},
-				{
-					Component:     "compass-runtime-agent",
-					Configuration: nil,
-				},
-			},
-		}
 
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
@@ -97,6 +97,26 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
 			ClusterConfig: clusterConfig,
+			KymaConfig:    kymaConfig,
+		}
+
+		//when
+		err := validator.ValidateProvisioningInput(config)
+
+		//then
+		require.Error(t, err)
+	})
+
+	t.Run("should return error when machine image version is set, but machine image is empty", func(t *testing.T) {
+		//given
+		validator := NewValidator(nil)
+
+		testClusterConfig := clusterConfig
+		testClusterConfig.GardenerConfig.MachineImageVersion = util.StringPtr("24.3")
+
+		config := gqlschema.ProvisionRuntimeInput{
+			RuntimeInput:  runtimeInput,
+			ClusterConfig: testClusterConfig,
 			KymaConfig:    kymaConfig,
 		}
 
