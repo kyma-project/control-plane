@@ -4,23 +4,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sirupsen/logrus"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
 //go:generate mockery -name=Step -output=automock -outpkg=automock -case=underscore
 
 func TestSkipStepWillSkip(t *testing.T) {
 
-	//Given
+	// Given
 	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
 	skipID := "test"
@@ -32,10 +29,10 @@ func TestSkipStepWillSkip(t *testing.T) {
 
 	skipStep := NewSkipStep(memoryStorage.Operations(), skipID, mockStep)
 
-	//When
-
+	// When
 	returnedOperation, time, err := skipStep.Run(operation, log)
-	//Then
+
+	// Then
 	mockStep.AssertExpectations(t)
 	require.NoError(t, err)
 	assert.Equal(t, skipTime, time)
@@ -44,7 +41,7 @@ func TestSkipStepWillSkip(t *testing.T) {
 
 func TestSkipStepWillNotSkip(t *testing.T) {
 
-	//Given
+	// Given
 	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
 	skipID := "test"
@@ -57,10 +54,10 @@ func TestSkipStepWillNotSkip(t *testing.T) {
 
 	skipStep := NewSkipStep(memoryStorage.Operations(), skipID, mockStep)
 
-	//When
+	// When
 	returnedOperation, time, err := skipStep.Run(operation, log)
 
-	//Then
+	// Then
 	mockStep.AssertExpectations(t)
 	require.NoError(t, err)
 	assert.Equal(t, skipTime, time)
