@@ -10,11 +10,16 @@ For more information on KCP and its components, read the [documentation](./docs)
 ## Prerequisites
 
 - [Docker](https://www.docker.com/get-started)
-- [Minikube](https://github.com/kubernetes/minikube) 1.0.1
-- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) 1.12.5
+- [Minikube](https://github.com/kubernetes/minikube) 1.6.2
+- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) 1.16.3
 - [Kyma CLI](https://github.com/kyma-project/cli) stable
 
 ## Installation
+
+### Dependencies
+
+Kyma Control Plane depends on [Kyma](https://github.com/kyma-project/kyma) and [Compass](https://github.com/kyma-incubator/compass).
+For local development and CI integration jobs, a fixed Kyma and Compass versions are used. To change Kyma or Compass version, see the [`README.md`](./installation/resources/README.md) in the `installation/resources` directory. 
 
 ### Local installation with Kyma
 
