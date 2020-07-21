@@ -68,38 +68,12 @@ func CreateGardenerProvisioningInput(config *TestConfig, version, provider strin
 }
 
 func CreateGardenerUpgradeInput(config *TestConfig, provider string) *gqlschema.UpgradeShootInput {
-	gardenerInputs := map[string]gqlschema.GardenerConfigInput{
-		GCP: {
-			MachineType:  "n1-standard-4",
-			DiskType:     "pd-standard",
-			Region:       "europe-west4",
-			TargetSecret: config.Gardener.GCPSecret,
-			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-				GcpConfig: &gqlschema.GCPProviderConfigInput{
-					Zones: []string{"europe-west4-a", "europe-west4-b", "europe-west4-c"},
-				},
-			},
-		},
-		Azure: {
-			MachineType:  "Standard_D4_v3",
-			DiskType:     "Standard_LRS",
-			Region:       "westeurope",
-			TargetSecret: config.Gardener.AzureSecret,
-			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-				AzureConfig: &gqlschema.AzureProviderConfigInput{
-					VnetCidr: "10.250.0.0/19",
-					Zones:    []string{"1", "2", "3"},
-				},
-			},
-		},
-	}
-
 	return &gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:                   strToPtr("1.15.10"),
-			DiskType:                            strToPtr(gardenerInputs[provider].DiskType),
+			KubernetesVersion:                   strToPtr("1.15.11"),
+			DiskType:                            strToPtr("Premium_LRS"),
 			VolumeSizeGb:                        intToPtr(50),
-			MachineType:                         strToPtr(gardenerInputs[provider].MachineType),
+			MachineType:                         strToPtr("Standard_D8_v3"),
 			Purpose:                             strToPtr("evaluation"),
 			AutoScalerMin:                       intToPtr(1),
 			AutoScalerMax:                       intToPtr(5),
@@ -107,7 +81,12 @@ func CreateGardenerUpgradeInput(config *TestConfig, provider string) *gqlschema.
 			MaxUnavailable:                      intToPtr(2),
 			EnableKubernetesVersionAutoUpdate:   boolToPtr(false),
 			EnableMachineImageVersionAutoUpdate: boolToPtr(true),
-			//ProviderSpecificConfig:              gardenerInputs[provider].ProviderSpecificConfig,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				AzureConfig: &gqlschema.AzureProviderConfigInput{
+					VnetCidr: "10.250.0.0/19",
+					Zones:    []string{"1", "2", "3"},
+				},
+			},
 		},
 	}
 }
