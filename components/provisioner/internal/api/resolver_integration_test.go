@@ -217,7 +217,7 @@ func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 			},
 			{
 				Component: runtimeAgentComponent,
-				Namespace: compassSystemNamespace,
+				Namespace: kcpSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
 					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
@@ -274,7 +274,7 @@ func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
 			},
 			{
 				Component: runtimeAgentComponent,
-				Namespace: compassSystemNamespace,
+				Namespace: kcpSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),

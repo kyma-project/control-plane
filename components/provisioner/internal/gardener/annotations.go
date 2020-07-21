@@ -21,8 +21,8 @@ func (s KymaInstallationState) String() string {
 }
 
 const (
-	operationIdAnnotation string = "compass.provisioner.kyma-project.io/operation-id"
-	runtimeIdAnnotation   string = "compass.provisioner.kyma-project.io/runtime-id"
+	operationIdAnnotation string = "kcp.provisioner.kyma-project.io/operation-id"
+	runtimeIdAnnotation   string = "kcp.provisioner.kyma-project.io/runtime-id"
 )
 
 func annotate(shoot *gardener_types.Shoot, annotation, value string) {

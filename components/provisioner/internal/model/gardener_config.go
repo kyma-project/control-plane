@@ -19,7 +19,7 @@ const (
 	SubAccountLabel = "subaccount"
 	AccountLabel    = "account"
 
-	LicenceTypeAnnotation = "compass.provisioner.kyma-project.io/licence-type"
+	LicenceTypeAnnotation = "kcp.provisioner.kyma-project.io/licence-type"
 )
 
 type GardenerConfig struct {

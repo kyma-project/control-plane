@@ -59,7 +59,7 @@ type config struct {
 	CredentialsNamespace         string `envconfig:"default=compass-system"`
 	DirectorURL                  string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
 	SkipDirectorCertVerification bool   `envconfig:"default=false"`
-	OauthCredentialsSecretName   string `envconfig:"default=compass-provisioner-credentials"`
+	OauthCredentialsSecretName   string `envconfig:"default=kcp-provisioner-credentials"`
 
 	Database struct {
 		User     string `envconfig:"default=postgres"`

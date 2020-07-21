@@ -63,7 +63,7 @@ const (
 	kymaVersion                   = "1.8"
 	kymaSystemNamespace           = "kyma-system"
 	kymaIntegrationNamespace      = "kyma-integration"
-	compassSystemNamespace        = "compass-system"
+	kcpSystemNamespace            = "kcp-system"
 	clusterEssentialsComponent    = "cluster-essentials"
 	rafterComponent               = "rafter"
 	coreComponent                 = "core"
@@ -174,8 +174,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	for _, config := range clusterConfigurations {
 		t.Run(config.description, func(t *testing.T) {
-			fakeK8sClient.CoreV1().Secrets(compassSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
-			fakeK8sClient.CoreV1().ConfigMaps(compassSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
+			fakeK8sClient.CoreV1().Secrets(kcpSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
+			fakeK8sClient.CoreV1().ConfigMaps(kcpSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
 
 			directorServiceMock.Calls = nil
 			directorServiceMock.ExpectedCalls = nil
@@ -229,8 +229,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			shoot := &list.Items[0]
 
-			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
-			assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
+			assert.Equal(t, config.runtimeID, shoot.Annotations["kcp.provisioner.kyma-project.io/runtime-id"])
+			assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["kcp.provisioner.kyma-project.io/operation-id"])
 			assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
 			assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
 
@@ -241,7 +241,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
 
 			require.NoError(t, err)
-			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
+			assert.Equal(t, config.runtimeID, shoot.Annotations["kcp.provisioner.kyma-project.io/runtime-id"])
 
 			// when checking Runtime Status
 			runtimeStatusProvisioned, err := resolver.RuntimeStatus(ctx, *provisionRuntime.RuntimeID)
@@ -303,7 +303,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			//then
 			require.NoError(t, err)
-			assert.Equal(t, config.runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
+			assert.Equal(t, config.runtimeID, shoot.Annotations["kcp.provisioner.kyma-project.io/runtime-id"])
 
 			//when
 			shoot = removeFinalizers(t, shootInterface, shoot)
@@ -333,7 +333,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "shoot-with-unknown-id",
 				Annotations: map[string]string{
-					"compass.provisioner.kyma-project.io/runtime-id": "fbed9b28-473c-4b3e-88a3-803d94d38785",
+					"kcp.provisioner.kyma-project.io/runtime-id": "fbed9b28-473c-4b3e-88a3-803d94d38785",
 				},
 			},
 			Spec: gardener_types.ShootSpec{},

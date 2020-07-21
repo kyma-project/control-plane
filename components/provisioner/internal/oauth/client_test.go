@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	namespace  = "compass-system"
-	secretName = "compass-provisioner-registration"
+	namespace  = "kcp-system"
+	secretName = "kcp-provisioner-registration"
 )
 
 func TestOauthClient_GetAuthorizationToken(t *testing.T) {
