@@ -33,7 +33,7 @@ You can also specify Kyma version, such as 1.6 or newer:
 ./installation/cmd/run.sh {version}
 ```
 
-### Testing
+## Testing
 
 Kyma Control Plane, as a part of Kyma, uses [Octopus](https://github.com/kyma-incubator/octopus/blob/master/README.md) for testing. To run the Kyma Control Plane tests, run:
 
