@@ -63,7 +63,7 @@ func (p *secretsAccountPool) Credentials(hyperscalerType Type, tenantName string
 		return credentialsFromSecret(secret, hyperscalerType), nil
 	}
 
-	labelSelector = fmt.Sprintf("!tenantName, hyperscalerType=%s", hyperscalerType)
+	labelSelector = fmt.Sprintf("shared!=true, !tenantName, hyperscalerType=%s", hyperscalerType)
 	// lock so that only one thread can fetch an unassigned secret and assign it (update secret with tenantName)
 	p.mux.Lock()
 	defer p.mux.Unlock()
