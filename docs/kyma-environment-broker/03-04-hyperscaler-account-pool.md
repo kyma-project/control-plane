@@ -27,3 +27,22 @@ metadata:
     tenant-name: ${TENANT_NAME}
     hyperscaler-type: ${HYPERSCALER_TYPE}
 ```
+
+
+## Shared Credentials
+
+For a certain type of Runtimes KEB can use the same credentials for multiple tenants.
+In such a case Secret with credentials needs to be labeled differently by adding the **shared** label set to **true**. Shared credentials will not be assigned to any tenant.
+
+This is an example of a Kubernetes Secret that stores shared credentials:
+
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${SECRET_NAME}
+  labels:
+    hyperscaler-type: ${HYPERSCALER_TYPE}
+    shared: "true"
+```
