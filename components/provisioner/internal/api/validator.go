@@ -30,15 +30,15 @@ func NewValidator(readSession dbsession.ReadSession) Validator {
 
 func (v *validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) apperrors.AppError {
 	if err := v.validateKymaConfig(input.KymaConfig); err != nil {
-		return err.Append("validation error while starting Runtime provisioning")
+		return err.Append("Kyma config validation error while starting Runtime provisioning")
 	}
 
 	if input.RuntimeInput == nil {
-		return apperrors.BadRequest("validation error while starting Runtime provisioning: runtime input is missing")
+		return apperrors.BadRequest("runtime input validation error while starting Runtime provisioning: runtime input is missing")
 	}
 
-	if err := v.validateMachineImage(input.ClusterConfig.GardenerConfig); err != nil {
-		return err.Append("validation error while starting Runtime provisioning")
+	if err := v.validateClusterConfig(input.ClusterConfig); err != nil {
+		return err.Append("Cluster config validatin error while starting Runtime provisioning")
 	}
 
 	return nil
@@ -93,10 +93,17 @@ func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) ap
 	return nil
 }
 
-func (v *validator) validateMachineImage(input *gqlschema.GardenerConfigInput) apperrors.AppError {
-	if util.NotNilOrEmpty(input.MachineImageVersion) && util.IsNilOrEmpty(input.MachineImage) {
+func (v *validator) validateClusterConfig(clusterConfig *gqlschema.ClusterConfigInput) apperrors.AppError {
+	if clusterConfig == nil || clusterConfig.GardenerConfig == nil {
+		return apperrors.BadRequest("error: Cluster config with Gardener config not provided")
+	}
+
+	if util.NotNilOrEmpty(clusterConfig.GardenerConfig.MachineImageVersion) &&
+		util.IsNilOrEmpty(clusterConfig.GardenerConfig.MachineImage) {
+
 		return apperrors.BadRequest("error: Machine Image Version passed while Machine Image is empty")
 	}
+
 	return nil
 }
 
