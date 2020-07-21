@@ -168,7 +168,7 @@ func newTestAccountPool() AccountPool {
 			Name: "secret6", Namespace: testNamespace,
 			Labels: map[string]string{
 				"hyperscalerType": "gcp",
-				"shared": "true",
+				"shared":          "true",
 			},
 		},
 		Data: map[string][]byte{
