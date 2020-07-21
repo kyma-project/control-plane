@@ -38,7 +38,7 @@ func (v *validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeIn
 	}
 
 	if err := v.validateClusterConfig(input.ClusterConfig); err != nil {
-		return err.Append("Cluster config validatin error while starting Runtime provisioning")
+		return err.Append("Cluster config validation error while starting Runtime provisioning")
 	}
 
 	return nil
@@ -98,12 +98,17 @@ func (v *validator) validateClusterConfig(clusterConfig *gqlschema.ClusterConfig
 		return apperrors.BadRequest("error: Cluster config with Gardener config not provided")
 	}
 
-	if util.NotNilOrEmpty(clusterConfig.GardenerConfig.MachineImageVersion) &&
-		util.IsNilOrEmpty(clusterConfig.GardenerConfig.MachineImage) {
-
-		return apperrors.BadRequest("error: Machine Image Version passed while Machine Image is empty")
+	if err := v.validateMachineImage(*clusterConfig.GardenerConfig); err != nil {
+		return err
 	}
 
+	return nil
+}
+
+func (v *validator) validateMachineImage(gardenerConfig gqlschema.GardenerConfigInput) apperrors.AppError {
+	if util.NotNilOrEmpty(gardenerConfig.MachineImageVersion) && util.IsNilOrEmpty(gardenerConfig.MachineImage) {
+		return apperrors.BadRequest("error: Machine Image Version passed while Machine Image is empty")
+	}
 	return nil
 }
 
