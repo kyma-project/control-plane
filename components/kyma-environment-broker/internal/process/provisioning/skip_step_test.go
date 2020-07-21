@@ -36,6 +36,7 @@ func TestSkipStepWillSkip(t *testing.T) {
 
 	returnedOperation, time, err := skipStep.Run(operation, log)
 	//Then
+	mockStep.AssertExpectations(t)
 	require.NoError(t, err)
 	assert.Equal(t, skipTime, time)
 	assert.Equal(t, operation, returnedOperation)
@@ -52,7 +53,6 @@ func TestSkipStepWillNotSkip(t *testing.T) {
 	var skipTime time.Duration = 10
 
 	mockStep := &automock.Step{}
-	mockStep.On("Name").Return("Test")
 	mockStep.On("Run", operation, log).Return(anotherOperation, skipTime, nil)
 
 	skipStep := NewSkipStep(memoryStorage.Operations(), skipID, mockStep)
@@ -61,9 +61,11 @@ func TestSkipStepWillNotSkip(t *testing.T) {
 	returnedOperation, time, err := skipStep.Run(operation, log)
 
 	//Then
+	mockStep.AssertExpectations(t)
 	require.NoError(t, err)
 	assert.Equal(t, skipTime, time)
 	assert.Equal(t, anotherOperation, returnedOperation)
+
 }
 
 func fixOperationWithPlanID(t *testing.T, planID string) internal.ProvisioningOperation {
