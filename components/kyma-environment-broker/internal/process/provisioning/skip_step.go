@@ -12,14 +12,14 @@ import (
 )
 
 type SkipStep struct {
-	skipID           string
+	planID           string
 	step             Step
 	operationManager *process.ProvisionOperationManager
 }
 
-func NewSkipStep(os storage.Operations, skipID string, step Step) *SkipStep {
+func NewSkipStep(os storage.Operations, planID string, step Step) *SkipStep {
 	return &SkipStep{
-		skipID:           skipID,
+		planID:           planID,
 		step:             step,
 		operationManager: process.NewProvisionOperationManager(os),
 	}
@@ -35,8 +35,8 @@ func (s *SkipStep) Run(operation internal.ProvisioningOperation, log logrus.Fiel
 		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-	if pp.PlanID == s.skipID {
-		log.Infof("Skipping step %s for the trial version", s.Name())
+	if pp.PlanID == s.planID {
+		log.Infof("Skipping step %s", s.Name())
 		return operation, 0, nil
 	}
 
