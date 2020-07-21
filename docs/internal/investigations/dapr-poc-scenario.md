@@ -1,6 +1,5 @@
 # Dapr Proof of Concept scenario
 
-
 This document describes the scenario that will be developed to prove that [Dapr](https://dapr.io/) sidecars can be configured from a central place.
 
 ## Reasons

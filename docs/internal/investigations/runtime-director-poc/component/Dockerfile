@@ -1,6 +1,6 @@
 FROM golang:1.14.4-alpine3.12 as builder
 
-ENV BASE_APP_DIR /go/src/github.com/kyma-project/control-plane/poc/component
+ENV BASE_APP_DIR /go/src/github.com/kyma-project/control-plane/docs/internal/investigations/runtime-director-poc/component
 WORKDIR ${BASE_APP_DIR}
 
 #

@@ -3,5 +3,8 @@
 This folder contains internal documentation, such as proposals, investigations, and standards agreed upon by the Development Team.
 
 - [Custom configuration of provisioned Runtimes](./investigations/provisioning-custom-configuration.md)
-- [Compass as a separate component](./proposals/separate-compass.md)
 - [Runtime upgrade and rollback with the Runtime Provisioner](./runtime-upgrade.md)
+- [Dapr: Remote Runtime management concept](./investigations/dapr-remote-kyma-runtime-configuration.md)
+- [Dapr: Sidecars limitations](./investigations/dapr-sidecars-limitations.md)
+- [Dapr: Proof of Concept scenario](./investigations/dapr-poc-scenario.md)
+- [Runtime Director - Proof of concept](./investigations/runtime-director-poc/README.md)

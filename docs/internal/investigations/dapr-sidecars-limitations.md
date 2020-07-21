@@ -1,5 +1,4 @@
-# Remote Kyma Runtime configuration
-
+# Dapr sidecars limitations 
 
 We need to configure Dapr sidecars in a Kyma Runtime from one central Kyma Control Plane.
 

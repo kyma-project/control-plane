@@ -30,3 +30,4 @@ Each supported Kyma instance has a dedicated Agent component that is responsible
 The main idea is to have a component in Kyma Control Plane that will be a point of communication for Agents to manage the Runtimes. This component would be the image of Runtime Director. It would also allow for configuring Runtimes from one central place.
 
 For example, the configuration could be passed as an URL with credentials to some external service, such as logging service which is used by some of the registered Runtimes. In the case of managed Kyma Runtimes, after each Runtime fetches the new configuration, the Dapr bindings would be updated and populated to the Dapr sidecars.
+
