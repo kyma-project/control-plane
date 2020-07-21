@@ -39,7 +39,6 @@ func TestSkipStepWillSkip(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, skipTime, time)
 	assert.Equal(t, operation, returnedOperation)
-
 }
 
 func TestSkipStepWillNotSkip(t *testing.T) {
@@ -65,7 +64,6 @@ func TestSkipStepWillNotSkip(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, skipTime, time)
 	assert.Equal(t, anotherOperation, returnedOperation)
-
 }
 
 func fixOperationWithPlanID(t *testing.T, planID string) internal.ProvisioningOperation {
