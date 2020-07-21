@@ -234,7 +234,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:60593a5847aa8492eae07f6c8d86a4dc41acaf0fe15808de1128ccedd927f065"
+  digest = "1:d3505bb0d9b8d3038f9259b8fac2c1b2580bece8dee0ea6c45b22adb4cb07c41"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -261,8 +261,8 @@
   name = "github.com/kyma-project/kyma"
   packages = ["components/kyma-operator/pkg/apis/installer/v1alpha1"]
   pruneopts = "UT"
-  revision = "5eee35eeecc1161a1a9ac29d2d464cda7db71f1c"
-  version = "1.12.0"
+  revision = "6e80a312e0a244470f87c82e397ed6f3c88244b0"
+  version = "1.13.0"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
