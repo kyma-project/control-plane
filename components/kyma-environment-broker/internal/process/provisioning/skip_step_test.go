@@ -20,14 +20,13 @@ func TestSkipStepWillSkip(t *testing.T) {
 	// Given
 	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
-	skipID := "test"
-	operation := fixOperationWithPlanID(t, skipID)
+	operation := fixOperationWithPlanID(t, TrialPlanID)
 	var skipTime time.Duration = 0
 
 	mockStep := &automock.Step{}
 	mockStep.On("Name").Return("Test")
 
-	skipStep := NewSkipStep(memoryStorage.Operations(), skipID, mockStep)
+	skipStep := NewSkipStep(memoryStorage.Operations(), mockStep)
 
 	// When
 	returnedOperation, time, err := skipStep.Run(operation, log)
@@ -44,7 +43,6 @@ func TestSkipStepWillNotSkip(t *testing.T) {
 	// Given
 	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
-	skipID := "test"
 	operation := fixOperationWithPlanID(t, "another")
 	anotherOperation := fixOperationWithPlanID(t, "not skipped")
 	var skipTime time.Duration = 10
@@ -52,7 +50,7 @@ func TestSkipStepWillNotSkip(t *testing.T) {
 	mockStep := &automock.Step{}
 	mockStep.On("Run", operation, log).Return(anotherOperation, skipTime, nil)
 
-	skipStep := NewSkipStep(memoryStorage.Operations(), skipID, mockStep)
+	skipStep := NewSkipStep(memoryStorage.Operations(), mockStep)
 
 	// When
 	returnedOperation, time, err := skipStep.Run(operation, log)

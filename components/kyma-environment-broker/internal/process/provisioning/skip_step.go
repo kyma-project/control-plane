@@ -10,15 +10,15 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
+const TrialPlanID = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
+
 type SkipStep struct {
-	planID           string
 	step             Step
 	operationManager *process.ProvisionOperationManager
 }
 
-func NewSkipStep(os storage.Operations, planID string, step Step) *SkipStep {
+func NewSkipStep(os storage.Operations, step Step) *SkipStep {
 	return &SkipStep{
-		planID:           planID,
 		step:             step,
 		operationManager: process.NewProvisionOperationManager(os),
 	}
@@ -34,7 +34,7 @@ func (s *SkipStep) Run(operation internal.ProvisioningOperation, log logrus.Fiel
 		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-	if pp.PlanID == s.planID {
+	if pp.PlanID == TrialPlanID {
 		log.Infof("Skipping step %s", s.Name())
 		return operation, 0, nil
 	}

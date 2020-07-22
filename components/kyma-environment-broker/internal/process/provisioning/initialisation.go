@@ -67,6 +67,15 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	pp, err := operation.GetProvisioningParameters()
+	if err != nil {
+		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
+		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
+	}
+	if pp.PlanID == TrialPlanID {
+		s.externalEvalCreator.disabled = true
+	}
+
 	inst, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:
