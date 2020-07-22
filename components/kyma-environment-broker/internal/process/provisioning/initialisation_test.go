@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
@@ -33,7 +34,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 	// given
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationRuntimeStatus(t)
+	operation := fixOperationRuntimeStatus(t, broker.GCPPlanID)
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
@@ -84,7 +85,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 	assert.Equal(t, inDB.Avs.AVSEvaluationExternalId, idh.id)
 }
 
-func fixOperationRuntimeStatus(t *testing.T) internal.ProvisioningOperation {
+func fixOperationRuntimeStatus(t *testing.T, planId string) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ID:                     statusOperationID,
@@ -93,13 +94,13 @@ func fixOperationRuntimeStatus(t *testing.T) internal.ProvisioningOperation {
 			Description:            "",
 			UpdatedAt:              time.Now(),
 		},
-		ProvisioningParameters: fixProvisioningParametersRuntimeStatus(t),
+		ProvisioningParameters: fixProvisioningParametersRuntimeStatus(t, planId),
 	}
 }
 
-func fixProvisioningParametersRuntimeStatus(t *testing.T) string {
+func fixProvisioningParametersRuntimeStatus(t *testing.T, planId string) string {
 	parameters := internal.ProvisioningParameters{
-		PlanID:    broker.GCPPlanID,
+		PlanID:    planId,
 		ServiceID: "",
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: statusGlobalAccountID,

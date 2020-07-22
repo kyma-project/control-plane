@@ -33,7 +33,6 @@ func HyperscalerTypeFromProviderString(provider string) (Type, error) {
 type Credentials struct {
 	Name            string
 	HyperscalerType Type
-	TenantName      string
 	CredentialData  map[string][]byte
 }
 
@@ -61,10 +60,10 @@ func (p *secretsAccountPool) Credentials(hyperscalerType Type, tenantName string
 		return Credentials{}, err
 	}
 	if secret != nil {
-		return credentialsFromSecret(secret, hyperscalerType, tenantName), nil
+		return credentialsFromSecret(secret, hyperscalerType), nil
 	}
 
-	labelSelector = fmt.Sprintf("!tenantName, hyperscalerType=%s", hyperscalerType)
+	labelSelector = fmt.Sprintf("shared!=true, !tenantName, hyperscalerType=%s", hyperscalerType)
 	// lock so that only one thread can fetch an unassigned secret and assign it (update secret with tenantName)
 	p.mux.Lock()
 	defer p.mux.Unlock()
@@ -84,7 +83,7 @@ func (p *secretsAccountPool) Credentials(hyperscalerType Type, tenantName string
 		return Credentials{}, errors.Wrapf(err, "accountPool error while updating secret with tenantName: %s", tenantName)
 	}
 
-	return credentialsFromSecret(updatedSecret, hyperscalerType, tenantName), nil
+	return credentialsFromSecret(updatedSecret, hyperscalerType), nil
 }
 
 func getK8SSecret(secretsClient corev1.SecretInterface, labelSelector string) (*apiv1.Secret, error) {
@@ -104,11 +103,10 @@ func getK8SSecret(secretsClient corev1.SecretInterface, labelSelector string) (*
 	return nil, nil
 }
 
-func credentialsFromSecret(secret *apiv1.Secret, hyperscalerType Type, tenantName string) Credentials {
+func credentialsFromSecret(secret *apiv1.Secret, hyperscalerType Type) Credentials {
 	return Credentials{
 		Name:            secret.Name,
 		HyperscalerType: hyperscalerType,
-		TenantName:      tenantName,
 		CredentialData:  secret.Data,
 	}
 }
