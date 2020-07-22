@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +22,7 @@ func TestSkipStepWillSkip(t *testing.T) {
 	// Given
 	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
-	operation := fixOperationWithPlanID(t, TrialPlanID)
+	operation := fixOperationWithPlanID(t, broker.TrialPlanID)
 	var skipTime time.Duration = 0
 
 	mockStep := &automock.Step{}

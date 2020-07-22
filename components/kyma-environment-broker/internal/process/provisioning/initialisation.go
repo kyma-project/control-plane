@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -72,7 +74,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-	if pp.PlanID == TrialPlanID {
+	if pp.PlanID == broker.TrialPlanID {
 		s.externalEvalCreator.disabled = true
 	}
 

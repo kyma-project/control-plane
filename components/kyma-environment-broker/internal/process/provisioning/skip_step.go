@@ -3,14 +3,14 @@ package provisioning
 import (
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
-
-const TrialPlanID = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
 
 type SkipStep struct {
 	step             Step
@@ -34,7 +34,7 @@ func (s *SkipStep) Run(operation internal.ProvisioningOperation, log logrus.Fiel
 		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-	if pp.PlanID == TrialPlanID {
+	if pp.PlanID == broker.TrialPlanID {
 		log.Infof("Skipping step %s", s.Name())
 		return operation, 0, nil
 	}
