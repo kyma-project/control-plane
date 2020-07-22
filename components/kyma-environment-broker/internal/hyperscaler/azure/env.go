@@ -54,7 +54,7 @@ func mapRegion(credentials hyperscaler.Credentials, parameters internal.Provisio
 			return "", fmt.Errorf("supplied region \"%v\" is not a valid region for Azure", region)
 		}
 
-	case broker.GCPPlanID:
+	case broker.GCPPlanID, broker.TrialPlanID:
 		if azureRegion, mappingExists := gcpToAzureRegionMapping()[region]; mappingExists {
 			region = azureRegion
 			break
