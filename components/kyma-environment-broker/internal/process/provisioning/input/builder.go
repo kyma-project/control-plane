@@ -80,7 +80,7 @@ func (f *InputBuilderFactory) ForPlan(planID, kymaVersion string) (internal.Prov
 	case broker.AzureLitePlanID:
 		provider = &cloudProvider.AzureLiteInput{}
 	case broker.TrialPlanID:
-		provider = &cloudProvider.GcpTrialInput{}
+		provider = &cloudProvider.TrialInput{}
 	// insert cases for other providers like AWS or GCP
 	default:
 		return nil, errors.Errorf("case with plan %s is not supported", planID)
