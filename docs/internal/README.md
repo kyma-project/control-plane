@@ -7,4 +7,4 @@ This folder contains internal documentation, such as proposals, investigations, 
 - [Dapr: Remote Runtime management concept](./investigations/dapr-remote-kyma-runtime-configuration.md)
 - [Reloading Dapr sidecars configuration](./investigations/reloading-dapr-sidecars-config.md)
 - [Dapr: Proof of Concept scenario](./investigations/dapr-poc-scenario.md)
-- [Runtime Director - Proof of concept](./investigations/runtime-director-poc/README.md)
+- [Runtime Director - Proof of concept](./investigations/runtime-governor-poc/README.md)

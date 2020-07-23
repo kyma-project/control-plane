@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/ghodss/yaml"
-	"github.com/kyma-project/control-plane/docs/internal/investigations/runtime-director-poc/component/pkg/apperror"
-	"github.com/kyma-project/control-plane/docs/internal/investigations/runtime-director-poc/component/pkg/model"
+	"github.com/kyma-project/control-plane/docs/internal/investigations/runtime-governor-poc/component/pkg/apperror"
+	"github.com/kyma-project/control-plane/docs/internal/investigations/runtime-governor-poc/component/pkg/model"
 )
 
 type storeConfig struct {

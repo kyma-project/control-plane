@@ -1,11 +1,11 @@
-# Runtime Director - Proof of concept
+# Runtime Governor - Proof of concept
 
-This directory contains the source code and Helm chart for Kyma Control Plane Runtime Director.
+This directory contains the source code and Helm chart for Kyma Control Plane Runtime Governor.
 
 ## Overview
 
-Runtime Director exposes a simple REST API that returns Runtime configurations.
-The application periodically reloads configuration from the `runtime-director-config` ConfigMap in the `kcp-poc` Namespace. The configuration file has the following form:
+Runtime Governor exposes a simple REST API that returns Runtime configurations.
+The application periodically reloads configuration from the `runtime-governor-config` ConfigMap in the `kcp-poc` Namespace. The configuration file has the following form:
 
 ```yaml
 runtimes:
@@ -66,17 +66,17 @@ To run the application without building a Docker image, navigate to the `./compo
 go run cmd/main.go
 ```
 
-The Runtime Director listens on the `127.0.0.1:3001` port and reloads the configuration file from the `hack/config.yaml` path.
+The Runtime Governor listens on the `127.0.0.1:3001` port and reloads the configuration file from the `hack/config.yaml` path.
 
 ## Installation
 
-To install Runtime Director on a Kubernetes cluster using Helm 3 in the `kcp-poc` Namespace, run the following command:
+To install Runtime Governor on a Kubernetes cluster using Helm 3 in the `kcp-poc` Namespace, run the following command:
 
 ```bash
 LOCAL_ENV=false ./deploy.sh
 ```
 
-The script will add a proper `runtime-director.{DOMAIN}` entry to `/etc/hosts`.
+The script will add a proper `runtime-governor.{DOMAIN}` entry to `/etc/hosts`.
 
 ## Configuration
 
@@ -86,7 +86,7 @@ You can use the following environment variables while running the `deploy.sh` sc
  - `ISTIO_GATEWAY_NAME` - Istio Gateway name (default value: `compass-istio-gateway`)
  - `ISTIO_GATEWAY_NAMESPACE` - Istio Gateway Namespace (default value: `compass-system`)
 
-For example, to set a different domain and install Runtime Director on a Kubernetes cluster, run the script in such a way:
+For example, to set a different domain and install Runtime Governor on a Kubernetes cluster, run the script in such a way:
 
 ```bash
 LOCAL_ENV=false DOMAIN=foo.bar ./deploy.sh
@@ -94,8 +94,8 @@ LOCAL_ENV=false DOMAIN=foo.bar ./deploy.sh
 
 ## Testing
 
-To verify if Runtime Director works properly, execute the following command, which returns all Runtime configurations from the mounted ConfigMap:
+To verify if Runtime Governor works properly, execute the following command, which returns all Runtime configurations from the mounted ConfigMap:
 
 ```bash
-curl https://runtime-director.${DOMAIN}/runtimes
+curl https://runtime-governor.${DOMAIN}/runtimes
 ```
