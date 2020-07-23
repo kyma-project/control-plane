@@ -42,7 +42,31 @@ func AssertUpgradedClusterState(t *testing.T, expected gqlschema.GardenerUpgrade
 	assertWhenExpectedBoolNotNil(t, expected.EnableMachineImageVersionAutoUpdate, actual.EnableMachineImageVersionAutoUpdate)
 
 	if expected.ProviderSpecificConfig != nil {
-		assert.Equal(t, expected.ProviderSpecificConfig, actual.ProviderSpecificConfig)
+
+		if expected.ProviderSpecificConfig.AzureConfig != nil {
+			azureConfig, ok := actual.ProviderSpecificConfig.(*gqlschema.AzureProviderConfig)
+			require.True(t, ok)
+
+			AssertNotNilAndEqualString(t, expected.ProviderSpecificConfig.AzureConfig.VnetCidr, azureConfig.VnetCidr)
+			assert.ElementsMatch(t, expected.ProviderSpecificConfig.AzureConfig.Zones, azureConfig.Zones)
+		}
+
+		if expected.ProviderSpecificConfig.AwsConfig != nil {
+			awsConfig, ok := actual.ProviderSpecificConfig.(*gqlschema.AWSProviderConfig)
+			require.True(t, ok)
+
+			AssertNotNilAndEqualString(t, expected.ProviderSpecificConfig.AwsConfig.VpcCidr, awsConfig.VpcCidr)
+			AssertNotNilAndEqualString(t, expected.ProviderSpecificConfig.AwsConfig.Zone, awsConfig.Zone)
+			AssertNotNilAndEqualString(t, expected.ProviderSpecificConfig.AwsConfig.InternalCidr, awsConfig.InternalCidr)
+			AssertNotNilAndEqualString(t, expected.ProviderSpecificConfig.AwsConfig.PublicCidr, awsConfig.PublicCidr)
+		}
+
+		if expected.ProviderSpecificConfig.GcpConfig != nil {
+			gcpConfig, ok := actual.ProviderSpecificConfig.(*gqlschema.GCPProviderConfig)
+			require.True(t, ok)
+
+			assert.ElementsMatch(t, expected.ProviderSpecificConfig.GcpConfig.Zones, gcpConfig.Zones)
+		}
 	}
 }
 
