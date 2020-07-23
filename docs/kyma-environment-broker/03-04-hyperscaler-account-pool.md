@@ -1,4 +1,7 @@
-# Hyperscaler Account Pool
+---
+title: Hyperscaler Account Pool
+type: Details
+---
 
 To provision clusters through Gardener using the Runtime Provisioner, the Kyma Environment Broker (KEB) requires a hyperscaler (GCP, Azure, AWS, etc.) account/subscription. Managing the available hyperscaler accounts is not in the scope of the KEB. Instead, the available accounts are handled by the Hyperscaler Account Pool (HAP). 
 
