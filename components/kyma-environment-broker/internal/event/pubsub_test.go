@@ -2,13 +2,13 @@ package event_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"sync"
 )
 
 func TestPubSub(t *testing.T) {
