@@ -75,10 +75,10 @@ EOF
 
 echo ""
 echo "------------------------"
-echo "Waiting 15 seconds for pod to start..."
+echo "Waiting 30 seconds for pod to start..."
 echo "------------------------"
 echo ""
 
-sleep 15
+sleep 20
 
 kubectl -n $NAMESPACE logs -l testing.kyma-project.io/def-name=$APP_NAME -c tests -f
