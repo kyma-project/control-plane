@@ -23,7 +23,7 @@ type ResolveCredentialsStep struct {
 
 func getHyperscalerTypeForPlanID(planID string) (hyperscaler.Type, error) {
 	switch planID {
-	case broker.GCPPlanID:
+	case broker.GCPPlanID, broker.TrialPlanID:
 		return hyperscaler.GCP, nil
 	case broker.AzurePlanID, broker.AzureLitePlanID:
 		return hyperscaler.Azure, nil
@@ -48,7 +48,6 @@ func (s *ResolveCredentialsStep) Name() string {
 func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
 	pp, err := operation.GetProvisioningParameters()
-
 	if err != nil {
 		logger.Error("Aborting after failing to get valid operation provisioning parameters")
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
@@ -59,7 +58,6 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 	}
 
 	hypType, err := getHyperscalerTypeForPlanID(pp.PlanID)
-
 	if err != nil {
 		logger.Error("Aborting after failing to determine the type of Hyperscaler to use for planID: %s", pp.PlanID)
 		return s.operationManager.OperationFailed(operation, err.Error())
@@ -67,8 +65,13 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 
 	logger.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
 
-	credentials, err := s.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
-
+	var credentials hyperscaler.Credentials
+	if !isTrialPlan(pp.PlanID) {
+		credentials, err = s.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+	} else {
+		logger.Infof("HAP lookup for shared credentials")
+		credentials, err = s.accountProvider.GardenerSharedCredentials(hypType)
+	}
 	if err != nil {
 		errMsg := fmt.Sprintf("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s has failed: %s", pp.ErsContext.GlobalAccountID, hypType, err)
 		logger.Info(errMsg)
@@ -86,14 +89,12 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 
 	pp.Parameters.TargetSecret = &credentials.Name
 	err = operation.SetProvisioningParameters(pp)
-
 	if err != nil {
 		logger.Error("Aborting after failing to save provisioning parameters for operation")
 		return s.operationManager.OperationFailed(operation, err.Error())
 	}
 
 	updatedOperation, err := s.opStorage.UpdateProvisioningOperation(operation)
-
 	if err != nil {
 		return operation, 1 * time.Minute, nil
 	}
@@ -101,4 +102,13 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 	logger.Infof("Resolved %s as target secret name to use for cluster provisioning for global account ID %s on Hyperscaler %s", *pp.Parameters.TargetSecret, pp.ErsContext.GlobalAccountID, hypType)
 
 	return *updatedOperation, 0, nil
+}
+
+func isTrialPlan(planId string) bool {
+	switch planId {
+	case broker.TrialPlanID:
+		return true
+	default:
+		return false
+	}
 }

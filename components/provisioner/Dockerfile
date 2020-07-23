@@ -20,20 +20,13 @@ RUN apk add -U --no-cache ca-certificates && update-ca-certificates
 
 RUN go build -v -o main ./cmd/
 RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
-RUN wget https://github.com/kyma-incubator/terraform-provider-gardener/releases/download/v0.0.3/terraform-provider-gardener-linux-amd64
-
 
 FROM alpine:3.12.0
 LABEL source = git@github.com:kyma-project/control-plane.git
 
-# Hydroform needs write permissions
-RUN mkdir /app && chmod 777 /app
 WORKDIR /app
 
 COPY --from=builder /app /app
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /go/src/github.com/kyma-project/control-plane/components/provisioner/terraform-provider-gardener-linux-amd64 /.terraform.d/plugins/linux_amd64/terraform-provider-gardener
-
-RUN chmod +x /.terraform.d/plugins/linux_amd64/terraform-provider-gardener
 
 CMD ["/app/main"]

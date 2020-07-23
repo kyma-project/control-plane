@@ -14,23 +14,23 @@ func TestGardenerSecretNamePreAssigned(t *testing.T) {
 
 	pool := newTestAccountPool()
 
-	accountProvider := NewAccountProvider(nil, pool)
+	accountProvider := NewAccountProvider(nil, pool, nil)
 
 	configInput := &gqlschema.GardenerConfigInput{
 		TargetSecret: "pre-assigned-secret",
 	}
 
 	secretName, err := accountProvider.GardenerSecretName(configInput, defaultTenant)
+	require.NoError(t, err)
 
 	assert.Equal(t, "pre-assigned-secret", secretName)
-	assert.Nil(t, err)
 }
 
 func TestGardenerSecretNamePool(t *testing.T) {
 
 	pool := newTestAccountPool()
 
-	accountProvider := NewAccountProvider(nil, pool)
+	accountProvider := NewAccountProvider(nil, pool, nil)
 
 	configInput := &gqlschema.GardenerConfigInput{
 		Provider:     "AWS",
@@ -38,16 +38,16 @@ func TestGardenerSecretNamePool(t *testing.T) {
 	}
 
 	secretName, err := accountProvider.GardenerSecretName(configInput, defaultTenant)
+	require.NoError(t, err)
 
 	assert.Equal(t, "secret5", secretName)
-	assert.Nil(t, err)
 }
 
 func TestGardenerSecretNameError(t *testing.T) {
 
 	pool := newTestAccountPool()
 
-	accountProvider := NewAccountProvider(nil, pool)
+	accountProvider := NewAccountProvider(nil, pool, nil)
 
 	configInput := &gqlschema.GardenerConfigInput{
 		Provider:     "bogus",
@@ -65,7 +65,7 @@ func TestGardenerSecretNameNotFound(t *testing.T) {
 
 	pool := newTestAccountPool()
 
-	accountProvider := NewAccountProvider(nil, pool)
+	accountProvider := NewAccountProvider(nil, pool, nil)
 
 	configInput := &gqlschema.GardenerConfigInput{
 		Provider:     "azure",
@@ -90,8 +90,9 @@ func TestHyperscalerTypeFromProvisionInputGardenerGCP(t *testing.T) {
 	}
 
 	hyperscalerType, err := HyperscalerTypeFromProvisionInput(input)
+	require.NoError(t, err)
+
 	assert.Equal(t, hyperscalerType, GCP)
-	assert.Nil(t, err)
 }
 
 func TestHyperscalerTypeFromProvisionInputGardenerAWS(t *testing.T) {
@@ -105,8 +106,9 @@ func TestHyperscalerTypeFromProvisionInputGardenerAWS(t *testing.T) {
 	}
 
 	hyperscalerType, err := HyperscalerTypeFromProvisionInput(input)
+	require.NoError(t, err)
+
 	assert.Equal(t, hyperscalerType, AWS)
-	assert.Nil(t, err)
 }
 
 func TestHyperscalerTypeFromProvisionInputGardenerAZURE(t *testing.T) {
@@ -120,8 +122,9 @@ func TestHyperscalerTypeFromProvisionInputGardenerAZURE(t *testing.T) {
 	}
 
 	hyperscalerType, err := HyperscalerTypeFromProvisionInput(input)
+	require.NoError(t, err)
+
 	assert.Equal(t, hyperscalerType, Azure)
-	assert.Nil(t, err)
 }
 
 func TestHyperscalerTypeFromProvisionInputGardenerError(t *testing.T) {
@@ -166,4 +169,14 @@ func TestHyperscalerTypeFromProvisionInputError(t *testing.T) {
 	require.Error(t, err)
 
 	assert.Equal(t, err.Error(), "can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig.GardenerConfig not specified (was nil)")
+}
+
+func TestGardenerSharedCredentials_Error(t *testing.T) {
+
+	accountProvider := NewAccountProvider(nil, nil, nil)
+
+	_, err := accountProvider.GardenerSharedCredentials(Type("gcp"))
+	require.Error(t, err)
+
+	assert.Contains(t, err.Error(), "Gardener Shared Account pool is not configured")
 }

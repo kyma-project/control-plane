@@ -20,4 +20,12 @@ spec:
             port:
               number: {{ .Values.config.servicePort }}
             host: {{ template "oidc-kubeconfig-service.fullname" . }}
+      corsPolicy:
+        allowHeaders:
+        - authorization
+        - content-type
+        allowMethods:
+        - GET
+        allowOrigin:
+        - '*'
 {{- end }}

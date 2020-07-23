@@ -25,7 +25,7 @@ global:
         version: "PR-54"
       e2e_provisioning:
         dir:
-        version: "PR-36"
+        version: "PR-65"
   isLocalEnv: false
   oauth2:
     host: oauth2

@@ -18,6 +18,7 @@ import (
 type InputConverter interface {
 	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, apperrors.AppError)
 	KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, apperrors.AppError)
+	UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, existing model.GardenerConfig) (model.GardenerConfig, apperrors.AppError)
 }
 
 func NewInputConverter(
@@ -88,25 +89,69 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		Name:                                c.createGardenerClusterName(),
 		ProjectName:                         c.gardenerProject,
 		KubernetesVersion:                   input.KubernetesVersion,
-		VolumeSizeGB:                        input.VolumeSizeGb,
-		DiskType:                            input.DiskType,
+		Provider:                            input.Provider,
+		Region:                              input.Region,
+		Seed:                                util.UnwrapStr(input.Seed),
+		TargetSecret:                        input.TargetSecret,
 		MachineType:                         input.MachineType,
 		MachineImage:                        input.MachineImage,
 		MachineImageVersion:                 input.MachineImageVersion,
-		Provider:                            input.Provider,
-		Purpose:                             input.Purpose,
-		LicenceType:                         input.LicenceType,
-		Seed:                                util.UnwrapStr(input.Seed),
-		TargetSecret:                        input.TargetSecret,
+		DiskType:                            input.DiskType,
+		VolumeSizeGB:                        input.VolumeSizeGb,
 		WorkerCidr:                          input.WorkerCidr,
-		Region:                              input.Region,
 		AutoScalerMin:                       input.AutoScalerMin,
 		AutoScalerMax:                       input.AutoScalerMax,
 		MaxSurge:                            input.MaxSurge,
 		MaxUnavailable:                      input.MaxUnavailable,
-		EnableKubernetesVersionAutoUpdate:   util.BoolFromPtrOrDefault(input.EnableKubernetesVersionAutoUpdate, c.defaultEnableKubernetesVersionAutoUpdate),
-		EnableMachineImageVersionAutoUpdate: util.BoolFromPtrOrDefault(input.EnableMachineImageVersionAutoUpdate, c.defaultEnableMachineImageVersionAutoUpdate),
+		Purpose:                             input.Purpose,
+		LicenceType:                         input.LicenceType,
+		EnableKubernetesVersionAutoUpdate:   util.UnwrapBoolOrDefault(input.EnableKubernetesVersionAutoUpdate, c.defaultEnableKubernetesVersionAutoUpdate),
+		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, c.defaultEnableMachineImageVersionAutoUpdate),
 		ClusterID:                           runtimeID,
+		GardenerProviderConfig:              providerSpecificConfig,
+	}, nil
+}
+
+func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, config model.GardenerConfig) (model.GardenerConfig, apperrors.AppError) {
+	var providerSpecificConfig model.GardenerProviderConfig
+	var err apperrors.AppError
+
+	if input.ProviderSpecificConfig != nil {
+		providerSpecificConfig, err = c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
+		if providerSpecificConfig == nil {
+			return model.GardenerConfig{}, err.Append("error converting provider specific config from input: %s", err)
+		}
+	} else {
+		providerSpecificConfig = config.GardenerProviderConfig
+	}
+
+	purpose := config.Purpose
+	if input.Purpose != nil {
+		purpose = input.Purpose
+	}
+
+	return model.GardenerConfig{
+		ID:           config.ID,
+		ClusterID:    config.ClusterID,
+		Name:         config.Name,
+		ProjectName:  config.ProjectName,
+		Provider:     config.Provider,
+		Seed:         config.Seed,
+		TargetSecret: config.TargetSecret,
+		Region:       config.Region,
+		LicenceType:  config.LicenceType,
+
+		Purpose:                             purpose,
+		KubernetesVersion:                   util.UnwrapStrOrDefault(input.KubernetesVersion, config.KubernetesVersion),
+		MachineType:                         util.UnwrapStrOrDefault(input.MachineType, config.MachineType),
+		DiskType:                            util.UnwrapStrOrDefault(input.DiskType, config.DiskType),
+		VolumeSizeGB:                        util.UnwrapIntOrDefault(input.VolumeSizeGb, config.VolumeSizeGB),
+		AutoScalerMin:                       util.UnwrapIntOrDefault(input.AutoScalerMin, config.AutoScalerMin),
+		AutoScalerMax:                       util.UnwrapIntOrDefault(input.AutoScalerMax, config.AutoScalerMax),
+		MaxSurge:                            util.UnwrapIntOrDefault(input.MaxSurge, config.MaxSurge),
+		MaxUnavailable:                      util.UnwrapIntOrDefault(input.MaxUnavailable, config.MaxUnavailable),
+		EnableKubernetesVersionAutoUpdate:   util.UnwrapBoolOrDefault(input.EnableKubernetesVersionAutoUpdate, config.EnableKubernetesVersionAutoUpdate),
+		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
 		GardenerProviderConfig:              providerSpecificConfig,
 	}, nil
 }
@@ -190,5 +235,5 @@ func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput) m
 }
 
 func configEntryFromInput(entry *gqlschema.ConfigEntryInput) model.ConfigEntry {
-	return model.NewConfigEntry(entry.Key, entry.Value, util.BoolFromPtr(entry.Secret))
+	return model.NewConfigEntry(entry.Key, entry.Value, util.UnwrapBoolOrDefault(entry.Secret, false))
 }
