@@ -1,4 +1,4 @@
-# Remote Runtime management concept
+# Runtime Governor - Concept
 
 This document describes the concept of Runtime management using [Dapr](https://dapr.io).
 
