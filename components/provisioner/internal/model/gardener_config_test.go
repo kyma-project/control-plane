@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/require"
@@ -94,7 +95,6 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 			assert.Equal(t, testCase.expectedProviderSpecificConfig, providerSpecificConfig)
 		})
 	}
-
 }
 
 func Test_AsMap_Error(t *testing.T) {
@@ -148,8 +148,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 		providerConfig        GardenerProviderConfig
 		expectedShootTemplate *gardener_types.Shoot
 	}{
-		{
-			description:    "should convert to Shoot template with GCP provider",
+		{description: "should convert to Shoot template with GCP provider",
 			provider:       "gcp",
 			providerConfig: gcpGardenerProvider,
 			expectedShootTemplate: &gardener_types.Shoot{
@@ -204,8 +203,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				},
 			},
 		},
-		{
-			description:    "should convert to Shoot template with Azure provider when zones passed",
+		{description: "should convert to Shoot template with Azure provider when zones passed",
 			provider:       "az",
 			providerConfig: azureGardenerProvider,
 			expectedShootTemplate: &gardener_types.Shoot{
@@ -259,8 +257,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				},
 			},
 		},
-		{
-			description:    "should convert to Shoot template with Azure provider with no zones passed",
+		{description: "should convert to Shoot template with Azure provider with no zones passed",
 			provider:       "az",
 			providerConfig: azureNoZonesGardenerProvider,
 			expectedShootTemplate: &gardener_types.Shoot{
@@ -315,8 +312,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				},
 			},
 		},
-		{
-			description:    "should convert to Shoot template with AWS provider",
+		{description: "should convert to Shoot template with AWS provider",
 			provider:       "aws",
 			providerConfig: awsGardenerProvider,
 			expectedShootTemplate: &gardener_types.Shoot{
@@ -387,6 +383,104 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 
 }
 
+func TestEditShootConfig(t *testing.T) {
+	zones := []string{"fix-zone-1", "fix-zone-2"}
+
+	initialShoot := testkit.NewTestShoot("shoot").
+		WithAutoUpdate(false, false).
+		WithWorkers(testkit.NewTestWorker("peon").ToWorker()).
+		ToShoot()
+
+	expectedShoot := testkit.NewTestShoot("shoot").
+		WithKubernetesVersion("1.15").
+		WithAutoUpdate(true, false).
+		WithPurpose("testing").
+		WithWorkers(
+			testkit.NewTestWorker("peon").
+				WithMachineType("machine").
+				WithVolume("SSD", 30).
+				WithMinMax(1, 3).
+				WithMaxSurge(30).
+				WithMaxUnavailable(1).
+				WithZones("fix-zone-1", "fix-zone-2").
+				ToWorker()).
+		ToShoot()
+
+	awsProviderConfig, err := NewAWSGardenerConfig(fixAWSGardenerInput())
+	require.NoError(t, err)
+
+	azureProviderConfig, err := NewAzureGardenerConfig(fixAzureGardenerInput(zones))
+	require.NoError(t, err)
+
+	gcpProviderConfig, err := NewGCPGardenerConfig(fixGCPGardenerInput(zones))
+	require.NoError(t, err)
+
+	for _, testCase := range []struct {
+		description   string
+		provider      string
+		upgradeConfig GardenerConfig
+		initialShoot  *gardener_types.Shoot
+		expectedShoot *gardener_types.Shoot
+	}{
+		{description: "should edit AWS shoot template",
+			provider:      "aws",
+			upgradeConfig: fixGardenerConfig("aws", awsProviderConfig),
+			initialShoot:  initialShoot.DeepCopy(),
+			expectedShoot: func(s *gardener_types.Shoot) *gardener_types.Shoot {
+				shoot := s.DeepCopy()
+				shoot.Spec.Provider.Workers[0].Zones = []string{"zone"}
+				return shoot
+			}(expectedShoot), // fix of zones for AWS
+		},
+		{description: "should edit Azure shoot template",
+			provider:      "az",
+			upgradeConfig: fixGardenerConfig("az", azureProviderConfig),
+			initialShoot:  initialShoot.DeepCopy(),
+			expectedShoot: expectedShoot.DeepCopy(),
+		},
+		{description: "should edit GCP shoot template",
+			provider:      "gcp",
+			upgradeConfig: fixGardenerConfig("gcp", gcpProviderConfig),
+			initialShoot:  initialShoot.DeepCopy(),
+			expectedShoot: expectedShoot.DeepCopy(),
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			// given
+			gardenerProviderConfig := testCase.upgradeConfig.GardenerProviderConfig
+
+			// when
+			gardenerProviderConfig.EditShootConfig(testCase.upgradeConfig, testCase.initialShoot)
+
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, testCase.expectedShoot, testCase.initialShoot)
+		})
+	}
+
+	for _, testCase := range []struct {
+		description   string
+		upgradeConfig GardenerConfig
+		initialShoot  *gardener_types.Shoot
+	}{
+		{description: "should return error when no worker groups are assigned to shoot",
+			upgradeConfig: fixGardenerConfig("az", azureProviderConfig),
+			initialShoot:  testkit.NewTestShoot("shoot").ToShoot(),
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			// given
+			gardenerProviderConfig := testCase.upgradeConfig.GardenerProviderConfig
+
+			// when
+			err := gardenerProviderConfig.EditShootConfig(testCase.upgradeConfig, testCase.initialShoot)
+
+			// then
+			require.Error(t, err)
+		})
+	}
+}
+
 func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) GardenerConfig {
 	return GardenerConfig{
 		ID:                                  "",
@@ -436,8 +530,8 @@ func fixAzureGardenerInput(zones []string) *gqlschema.AzureProviderConfigInput {
 func fixWorker(zones []string) gardener_types.Worker {
 	return gardener_types.Worker{
 		Name:           "cpu-worker-0",
-		MaxSurge:       util.IntOrStrPtr(intstr.FromInt(30)),
-		MaxUnavailable: util.IntOrStrPtr(intstr.FromInt(1)),
+		MaxSurge:       util.IntOrStringPtr(intstr.FromInt(30)),
+		MaxUnavailable: util.IntOrStringPtr(intstr.FromInt(1)),
 		Machine: gardener_types.Machine{
 			Type: "machine",
 			Image: &gardener_types.ShootMachineImage{

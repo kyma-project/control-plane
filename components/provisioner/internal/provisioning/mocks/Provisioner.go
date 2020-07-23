@@ -52,3 +52,19 @@ func (_m *Provisioner) ProvisionCluster(cluster model.Cluster, operationId strin
 
 	return r0
 }
+
+// UpgradeCluster provides a mock function with given fields: clusterID, upgradeConfig
+func (_m *Provisioner) UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError {
+	ret := _m.Called(clusterID, upgradeConfig)
+
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string, model.GardenerConfig) apperrors.AppError); ok {
+		r0 = rf(clusterID, upgradeConfig)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(apperrors.AppError)
+		}
+	}
+
+	return r0
+}
