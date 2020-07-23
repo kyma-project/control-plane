@@ -147,11 +147,20 @@ func TestSchemaInitializer(t *testing.T) {
 			// when
 			stats, err := psqlStorage.Instances().GetInstanceStats()
 			require.NoError(t, err)
+			numberOfInstancesA, err := psqlStorage.Instances().GetNumberOfInstancesForGlobalAccountID("A")
+			require.NoError(t, err)
+			numberOfInstancesC, err := psqlStorage.Instances().GetNumberOfInstancesForGlobalAccountID("C")
+			require.NoError(t, err)
+
 			t.Logf("%+v", stats)
+
+			// then
 			assert.Equal(t, internal.InstanceStats{
 				TotalNumberOfInstances: 3,
 				PerGlobalAccountID:     map[string]int{"A": 2, "C": 1},
 			}, stats)
+			assert.Equal(t, 2, numberOfInstancesA)
+			assert.Equal(t, 1, numberOfInstancesC)
 
 		})
 
