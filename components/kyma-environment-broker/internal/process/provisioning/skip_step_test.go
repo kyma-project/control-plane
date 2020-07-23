@@ -17,7 +17,7 @@ import (
 
 //go:generate mockery -name=Step -output=automock -outpkg=automock -case=underscore
 
-func TestSkipStepWillSkip(t *testing.T) {
+func TestSkipStepShouldSkip(t *testing.T) {
 
 	// Given
 	memoryStorage := storage.NewMemoryStorage()
@@ -40,7 +40,7 @@ func TestSkipStepWillSkip(t *testing.T) {
 	assert.Equal(t, operation, returnedOperation)
 }
 
-func TestSkipStepWillNotSkip(t *testing.T) {
+func TestSkipStepShouldNotSkip(t *testing.T) {
 
 	// Given
 	memoryStorage := storage.NewMemoryStorage()
