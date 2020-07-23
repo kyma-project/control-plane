@@ -229,6 +229,45 @@ func TestSchemaGenerator(t *testing.T) {
 			"name"
 		]
 		}`},
+		{
+			name:         "Trial schema is correct",
+			generator:    TrialSchema,
+			machineTypes: []string{"n1-standard-4"},
+			want: `{
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string",
+              "enum": [
+                "europe-west4",
+                "us-east4"
+              ]
+            },
+            "zones": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "europe-west4-a",
+                    "europe-west4-b",
+                    "europe-west4-c",
+                    "us-east4-a",
+                    "us-east4-b",
+                    "us-east4-c"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

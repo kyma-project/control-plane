@@ -47,17 +47,17 @@ type RootSchema struct {
 }
 
 type ProvisioningProperties struct {
-	Components     Type `json:"components"`
-	Name           Type `json:"name"`
-	DiskType       Type `json:"diskType"`
-	VolumeSizeGb   Type `json:"volumeSizeGb"`
-	MachineType    Type `json:"machineType"`
-	Region         Type `json:"region"`
-	Zones          Type `json:"zones"`
-	AutoScalerMin  Type `json:"autoScalerMin"`
-	AutoScalerMax  Type `json:"autoScalerMax"`
-	MaxSurge       Type `json:"maxSurge"`
-	MaxUnavailable Type `json:"maxUnavailable"`
+	Components     *Type `json:"components,omitempty"`
+	Name           *Type `json:"name,omitempty"`
+	DiskType       *Type `json:"diskType,omitempty"`
+	VolumeSizeGb   *Type `json:"volumeSizeGb,omitempty"`
+	MachineType    *Type `json:"machineType,omitempty"`
+	Region         *Type `json:"region,omitempty"`
+	Zones          *Type `json:"zones,omitempty"`
+	AutoScalerMin  *Type `json:"autoScalerMin,omitempty"`
+	AutoScalerMax  *Type `json:"autoScalerMax,omitempty"`
+	MaxSurge       *Type `json:"maxSurge,omitempty"`
+	MaxUnavailable *Type `json:"maxUnavailable,omitempty"`
 }
 
 func GCPSchema(machineTypes []string) []byte {
@@ -72,7 +72,7 @@ func GCPSchema(machineTypes []string) []byte {
 			Type: "object",
 		},
 		Properties: ProvisioningProperties{
-			Components: Type{
+			Components: &Type{
 				Type: "array",
 				Items: []Type{{
 					Type: "string",
@@ -81,18 +81,18 @@ func GCPSchema(machineTypes []string) []byte {
 				AdditionalItems: f,
 				UniqueItems:     t,
 			},
-			Name: Type{
+			Name: &Type{
 				Type: "string",
 			},
-			DiskType: Type{Type: "string"},
-			VolumeSizeGb: Type{
+			DiskType: &Type{Type: "string"},
+			VolumeSizeGb: &Type{
 				Type: "integer",
 			},
-			MachineType: Type{
+			MachineType: &Type{
 				Type: "string",
 				Enum: ToInterfaceSlice(machineTypes),
 			},
-			Region: Type{
+			Region: &Type{
 				Type: "string",
 				Enum: ToInterfaceSlice([]string{
 					"asia-south1", "asia-southeast1",
@@ -106,7 +106,7 @@ func GCPSchema(machineTypes []string) []byte {
 					"us-east4",
 					"northamerica-northeast1", "southamerica-east1"}),
 			},
-			Zones: Type{
+			Zones: &Type{
 				Type: "array",
 				Items: []Type{{
 					Type: "string",
@@ -134,16 +134,16 @@ func GCPSchema(machineTypes []string) []byte {
 						"southamerica-east1-a", "southamerica-east1-b", "southamerica-east1-c"}),
 				}},
 			},
-			AutoScalerMin: Type{
+			AutoScalerMin: &Type{
 				Type: "integer",
 			},
-			AutoScalerMax: Type{
+			AutoScalerMax: &Type{
 				Type: "integer",
 			},
-			MaxSurge: Type{
+			MaxSurge: &Type{
 				Type: "integer",
 			},
-			MaxUnavailable: Type{
+			MaxUnavailable: &Type{
 				Type: "integer",
 			},
 		},
@@ -168,7 +168,7 @@ func AzureSchema(machineTypes []string) []byte {
 			Type: "object",
 		},
 		Properties: ProvisioningProperties{
-			Components: Type{
+			Components: &Type{
 				Type: "array",
 				Items: []Type{{
 					Type: "string",
@@ -177,39 +177,39 @@ func AzureSchema(machineTypes []string) []byte {
 				AdditionalItems: f,
 				UniqueItems:     t,
 			},
-			Name: Type{
+			Name: &Type{
 				Type: "string",
 			},
-			DiskType: Type{Type: "string"},
-			VolumeSizeGb: Type{
+			DiskType: &Type{Type: "string"},
+			VolumeSizeGb: &Type{
 				Type:    "integer",
 				Minimum: 50,
 			},
-			MachineType: Type{
+			MachineType: &Type{
 				Type: "string",
 				Enum: ToInterfaceSlice(machineTypes),
 			},
-			Region: Type{
+			Region: &Type{
 				Type: "string",
 				Enum: ToInterfaceSlice(AzureRegions()),
 			},
-			Zones: Type{
+			Zones: &Type{
 				Type: "array",
 				Items: []Type{{
 					Type: "string",
 					//TODO: add enum for zones
 				}},
 			},
-			AutoScalerMin: Type{
+			AutoScalerMin: &Type{
 				Type: "integer",
 			},
-			AutoScalerMax: Type{
+			AutoScalerMax: &Type{
 				Type: "integer",
 			},
-			MaxSurge: Type{
+			MaxSurge: &Type{
 				Type: "integer",
 			},
-			MaxUnavailable: Type{
+			MaxUnavailable: &Type{
 				Type: "integer",
 			},
 		},
@@ -235,17 +235,17 @@ func TrialSchema(machineTypes []string) []byte {
 			Type: "object",
 		},
 		Properties: ProvisioningProperties{
-			Name: Type{
+			Name: &Type{
 				Type: "string",
 			},
-			Region: Type{
+			Region: &Type{
 				Type: "string",
 				Enum: ToInterfaceSlice([]string{
 					"europe-west4",
 					"us-east4",
 				}),
 			},
-			Zones: Type{
+			Zones: &Type{
 				Type: "array",
 				Items: []Type{{
 					Type: "string",
@@ -258,7 +258,6 @@ func TrialSchema(machineTypes []string) []byte {
 		},
 		Required: []string{"name"},
 	}
-
 	bytes, err := json.Marshal(rs)
 	if err != nil {
 		panic(err)
