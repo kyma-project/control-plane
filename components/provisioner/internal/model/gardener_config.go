@@ -58,7 +58,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 		seed = util.StringPtr(c.Seed)
 	}
 	var purpose *gardener_types.ShootPurpose = nil
-	if notNilOrEmpty(c.Purpose) {
+	if util.NotNilOrEmpty(c.Purpose) {
 		p := gardener_types.ShootPurpose(*c.Purpose)
 		purpose = &p
 	}
@@ -405,15 +405,13 @@ func getMachineConfig(config GardenerConfig) gardener_types.Machine {
 	machine := gardener_types.Machine{
 		Type: config.MachineType,
 	}
-	if notNilOrEmpty(config.MachineImage) && notNilOrEmpty(config.MachineImageVersion) {
+	if util.NotNilOrEmpty(config.MachineImage) {
 		machine.Image = &gardener_types.ShootMachineImage{
-			Name:    *config.MachineImage,
-			Version: *config.MachineImageVersion,
+			Name: *config.MachineImage,
+		}
+		if util.NotNilOrEmpty(config.MachineImageVersion) {
+			machine.Image.Version = *config.MachineImageVersion
 		}
 	}
 	return machine
-}
-
-func notNilOrEmpty(str *string) bool {
-	return str != nil && *str != ""
 }

@@ -25,3 +25,11 @@ func StartWithLetter(str string) string {
 	}
 	return str
 }
+
+func NotNilOrEmpty(str *string) bool {
+	return str != nil && *str != ""
+}
+
+func IsNilOrEmpty(str *string) bool {
+	return !NotNilOrEmpty(str)
+}
