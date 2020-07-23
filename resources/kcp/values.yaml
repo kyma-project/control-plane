@@ -6,10 +6,10 @@ global:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-48"
+      version: "aa13b18e"
     provisioner:
       dir:
-      version: "PR-71"
+      version: "aa13b18e"
     kyma_environment_broker:
       dir:
       version: "PR-37"
@@ -22,7 +22,7 @@ global:
     tests:
       provisioner:
         dir:
-        version: "PR-39"
+        version: "PR-54"
       e2e_provisioning:
         dir:
         version: "PR-65"
