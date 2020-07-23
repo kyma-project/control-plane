@@ -2,6 +2,7 @@ package event_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -14,16 +15,23 @@ func TestPubSub(t *testing.T) {
 	// given
 	var gotEventAList1 []eventA
 	var gotEventAList2 []eventA
+	var mu sync.Mutex
 	handlerA1 := func(ctx context.Context, ev interface{}) error {
+		mu.Lock()
+		defer mu.Unlock()
 		gotEventAList1 = append(gotEventAList1, ev.(eventA))
 		return nil
 	}
 	handlerA2 := func(ctx context.Context, ev interface{}) error {
+		mu.Lock()
+		defer mu.Unlock()
 		gotEventAList2 = append(gotEventAList2, ev.(eventA))
 		return nil
 	}
 	var gotEventBList []eventB
 	handlerB := func(ctx context.Context, ev interface{}) error {
+		mu.Lock()
+		defer mu.Unlock()
 		gotEventBList = append(gotEventBList, ev.(eventB))
 		return nil
 	}

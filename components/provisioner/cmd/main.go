@@ -191,6 +191,8 @@ func main() {
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, installationService, directorClient, shootClient, 5*time.Minute)
 
+	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient)
+
 	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
 	shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
 	exitOnError(err, "Failed to create Shoot controller.")
@@ -217,12 +219,12 @@ func main() {
 		provisioningQueue,
 		deprovisioningQueue,
 		upgradeQueue,
+		shootUpgradeQueue,
 		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
 		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate)
+
 	validator := api.NewValidator(dbsFactory.NewReadSession())
-
 	resolver := api.NewResolver(provisioningSVC, validator)
-
 	logger := log.WithField("Component", "Artifact Downloader")
 	downloader := release.NewArtifactsDownloader(releaseRepository, cfg.LatestDownloadedReleases, cfg.DownloadPreReleases, httpClient, fileDownloader, logger)
 
@@ -238,6 +240,8 @@ func main() {
 
 	// Run upgrade queue
 	upgradeQueue.Run(ctx.Done())
+
+	shootUpgradeQueue.Run(ctx.Done())
 
 	gqlCfg := gqlschema.Config{
 		Resolvers: resolver,
@@ -288,14 +292,14 @@ func main() {
 	}()
 
 	if cfg.EnqueueInProgressOperations {
-		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningQueue, upgradeQueue)
+		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue)
 		exitOnError(err, "Failed to enqueue in progress operations")
 	}
 
 	wg.Wait()
 }
 
-func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningQueue, upgradeQueue queue.OperationQueue) error {
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue queue.OperationQueue) error {
 	readSession := dbFactory.NewReadSession()
 
 	var inProgressOps []model.Operation
@@ -333,6 +337,10 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue,
 
 		if op.Type == model.Upgrade {
 			upgradeQueue.Add(op.ID)
+		}
+
+		if op.Type == model.UpgradeShoot {
+			shootUpgradeQueue.Add(op.ID)
 		}
 	}
 

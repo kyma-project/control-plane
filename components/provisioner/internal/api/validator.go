@@ -14,6 +14,7 @@ const RuntimeAgent = "compass-runtime-agent"
 type Validator interface {
 	ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) apperrors.AppError
 	ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) apperrors.AppError
+	ValidateUpgradeShootInput(input gqlschema.UpgradeShootInput) apperrors.AppError
 	ValidateTenant(runtimeID, tenant string) apperrors.AppError
 	ValidateTenantForOperation(operationID, tenant string) apperrors.AppError
 }
@@ -48,6 +49,33 @@ func (v *validator) ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) ap
 	err := v.validateKymaConfig(input.KymaConfig)
 	if err != nil {
 		return err.Append("validation error while starting Runtime upgrade")
+	}
+
+	return nil
+}
+
+func (v *validator) ValidateUpgradeShootInput(input gqlschema.UpgradeShootInput) apperrors.AppError {
+
+	config := input.GardenerConfig
+
+	if config == nil {
+		return apperrors.BadRequest("validation error while starting starting Shoot Upgrade: Gardener Config is missing")
+	}
+
+	if config.MachineType != nil && *config.MachineType == "" {
+		return apperrors.BadRequest("empty machine type provided")
+	}
+
+	if config.KubernetesVersion != nil && *config.KubernetesVersion == "" {
+		return apperrors.BadRequest("empty kubernetes version provided")
+	}
+
+	if config.DiskType != nil && *config.DiskType == "" {
+		return apperrors.BadRequest("empty disk type provided")
+	}
+
+	if config.Purpose != nil && *config.Purpose == "" {
+		return apperrors.BadRequest("empty purpose provided")
 	}
 
 	return nil

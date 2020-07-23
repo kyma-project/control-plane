@@ -3,6 +3,7 @@ package api
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 	dbMocks "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
@@ -191,6 +192,157 @@ func TestValidator_ValidateUpgradeInput(t *testing.T) {
 
 		//then
 		require.Error(t, err)
+	})
+}
+
+func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
+
+	t.Run("Should return nil when input is correct", func(t *testing.T) {
+		//given
+		validator := NewValidator(nil)
+
+		input := gqlschema.UpgradeShootInput{
+			GardenerConfig: &gqlschema.GardenerUpgradeInput{
+				KubernetesVersion:      util.StringPtr("version2"),
+				MachineType:            util.StringPtr("new-machine"),
+				DiskType:               util.StringPtr("papyrus"),
+				Purpose:                util.StringPtr("development"),
+				VolumeSizeGb:           util.IntPtr(50),
+				AutoScalerMin:          util.IntPtr(2),
+				AutoScalerMax:          util.IntPtr(6),
+				MaxSurge:               util.IntPtr(2),
+				MaxUnavailable:         util.IntPtr(1),
+				ProviderSpecificConfig: nil,
+			},
+		}
+
+		//when
+		err := validator.ValidateUpgradeShootInput(input)
+
+		//then
+		require.NoError(t, err)
+	})
+
+	t.Run("Should return error when Gardener config input not provided", func(t *testing.T) {
+		//given
+		validator := NewValidator(nil)
+
+		config := gqlschema.UpgradeShootInput{}
+
+		//when
+		err := validator.ValidateUpgradeShootInput(config)
+
+		//then
+		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
+	})
+
+	t.Run("Should return error when Gardener config input provide empty value for machine type", func(t *testing.T) {
+		//given
+		validator := NewValidator(nil)
+
+		input := gqlschema.UpgradeShootInput{
+			GardenerConfig: &gqlschema.GardenerUpgradeInput{
+				KubernetesVersion:      util.StringPtr("version2"),
+				MachineType:            util.StringPtr(""),
+				DiskType:               util.StringPtr("stone"),
+				Purpose:                util.StringPtr("development"),
+				VolumeSizeGb:           util.IntPtr(50),
+				AutoScalerMin:          util.IntPtr(2),
+				AutoScalerMax:          util.IntPtr(6),
+				MaxSurge:               util.IntPtr(2),
+				MaxUnavailable:         util.IntPtr(1),
+				ProviderSpecificConfig: nil,
+			},
+		}
+
+		//when
+		err := validator.ValidateUpgradeShootInput(input)
+
+		//then
+		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
+	})
+
+	t.Run("Should return error when Gardener config input provide empty value for disk type", func(t *testing.T) {
+		//given
+		validator := NewValidator(nil)
+
+		input := gqlschema.UpgradeShootInput{
+			GardenerConfig: &gqlschema.GardenerUpgradeInput{
+				KubernetesVersion:      util.StringPtr("version2"),
+				MachineType:            util.StringPtr("time-machine"),
+				DiskType:               util.StringPtr(""),
+				Purpose:                util.StringPtr("evaluation"),
+				VolumeSizeGb:           util.IntPtr(50),
+				AutoScalerMin:          util.IntPtr(2),
+				AutoScalerMax:          util.IntPtr(6),
+				MaxSurge:               util.IntPtr(2),
+				MaxUnavailable:         util.IntPtr(1),
+				ProviderSpecificConfig: nil,
+			},
+		}
+
+		//when
+		err := validator.ValidateUpgradeShootInput(input)
+
+		//then
+		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
+	})
+
+	t.Run("Should return error when Gardener config input provide empty value for purpose", func(t *testing.T) {
+		//given
+		validator := NewValidator(nil)
+
+		input := gqlschema.UpgradeShootInput{
+			GardenerConfig: &gqlschema.GardenerUpgradeInput{
+				KubernetesVersion:      util.StringPtr("version2"),
+				MachineType:            util.StringPtr("time-machine"),
+				DiskType:               util.StringPtr("papyrus"),
+				Purpose:                util.StringPtr(""),
+				VolumeSizeGb:           util.IntPtr(50),
+				AutoScalerMin:          util.IntPtr(2),
+				AutoScalerMax:          util.IntPtr(6),
+				MaxSurge:               util.IntPtr(2),
+				MaxUnavailable:         util.IntPtr(1),
+				ProviderSpecificConfig: nil,
+			},
+		}
+
+		//when
+		err := validator.ValidateUpgradeShootInput(input)
+
+		//then
+		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
+	})
+
+	t.Run("Should return error when Gardener config input provide empty value for kubernetes version", func(t *testing.T) {
+		//given
+		validator := NewValidator(nil)
+
+		input := gqlschema.UpgradeShootInput{
+			GardenerConfig: &gqlschema.GardenerUpgradeInput{
+				KubernetesVersion:      util.StringPtr(""),
+				MachineType:            util.StringPtr("time-machine"),
+				DiskType:               util.StringPtr("papyrus"),
+				Purpose:                util.StringPtr("evaluation"),
+				VolumeSizeGb:           util.IntPtr(50),
+				AutoScalerMin:          util.IntPtr(2),
+				AutoScalerMax:          util.IntPtr(6),
+				MaxSurge:               util.IntPtr(2),
+				MaxUnavailable:         util.IntPtr(1),
+				ProviderSpecificConfig: nil,
+			},
+		}
+
+		//when
+		err := validator.ValidateUpgradeShootInput(input)
+
+		//then
+		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 	})
 }
 

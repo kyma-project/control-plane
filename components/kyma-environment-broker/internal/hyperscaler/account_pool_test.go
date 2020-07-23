@@ -78,6 +78,10 @@ func TestCredentials(t *testing.T) {
 		{"No Available credential for tenant5, Azure returns error",
 			"tenant5", Azure, "",
 			"accountPool failed to find unassigned secret for hyperscalerType: azure"},
+
+		{"No Available credential for tenant6, GCP returns error - ignore secret with label shared=true",
+			"tenant6", GCP, "",
+			"accountPool failed to find unassigned secret for hyperscalerType: gcp"},
 	}
 	for _, testcase := range testcases {
 
@@ -91,7 +95,6 @@ func TestCredentials(t *testing.T) {
 			} else {
 				assert.Equal(t, testcase.expectedCredentialName, credentials.Name)
 				assert.Equal(t, testcase.hyperscalerType, credentials.HyperscalerType)
-				assert.Equal(t, testcase.tenantName, credentials.TenantName)
 				assert.Equal(t, testcase.expectedCredentialName, string(credentials.CredentialData["credentials"]))
 				assert.Equal(t, testcase.expectedError, actualError)
 			}
@@ -160,8 +163,20 @@ func newTestAccountPool() AccountPool {
 			"credentials": []byte("secret5"),
 		},
 	}
+	secret6 := &corev1.Secret{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name: "secret6", Namespace: testNamespace,
+			Labels: map[string]string{
+				"hyperscalerType": "gcp",
+				"shared":          "true",
+			},
+		},
+		Data: map[string][]byte{
+			"credentials": []byte("secret6"),
+		},
+	}
 
-	mockClient := fake.NewSimpleClientset(secret1, secret2, secret3, secret4, secret5)
+	mockClient := fake.NewSimpleClientset(secret1, secret2, secret3, secret4, secret5, secret6)
 	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
 	pool := NewAccountPool(mockSecrets)
 	return pool

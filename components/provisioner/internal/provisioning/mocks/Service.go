@@ -160,6 +160,31 @@ func (_m *Service) RuntimeStatus(id string) (*gqlschema.RuntimeStatus, apperrors
 	return r0, r1
 }
 
+// UpgradeGardenerShoot provides a mock function with given fields: id, input
+func (_m *Service) UpgradeGardenerShoot(id string, input gqlschema.UpgradeShootInput) (*gqlschema.OperationStatus, apperrors.AppError) {
+	ret := _m.Called(id, input)
+
+	var r0 *gqlschema.OperationStatus
+	if rf, ok := ret.Get(0).(func(string, gqlschema.UpgradeShootInput) *gqlschema.OperationStatus); ok {
+		r0 = rf(id, input)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*gqlschema.OperationStatus)
+		}
+	}
+
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string, gqlschema.UpgradeShootInput) apperrors.AppError); ok {
+		r1 = rf(id, input)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(apperrors.AppError)
+		}
+	}
+
+	return r0, r1
+}
+
 // UpgradeRuntime provides a mock function with given fields: id, config
 func (_m *Service) UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, apperrors.AppError) {
 	ret := _m.Called(id, config)
