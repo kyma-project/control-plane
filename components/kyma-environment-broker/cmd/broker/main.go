@@ -230,7 +230,7 @@ func main() {
 		},
 		{
 			weight: 1,
-			step: provisioning.NewSkipStep(db.Operations(),
+			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
 				provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
 			disabled: cfg.LMS.Disabled,
 		},
@@ -241,7 +241,7 @@ func main() {
 		},
 		{
 			weight: 2,
-			step: provisioning.NewSkipStep(db.Operations(),
+			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
 				provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
 		{
@@ -258,7 +258,7 @@ func main() {
 		},
 		{
 			weight: 4,
-			step: provisioning.NewSkipStep(db.Operations(),
+			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
 				provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
 			disabled: cfg.LMS.Disabled,
 		},

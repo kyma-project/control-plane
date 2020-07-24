@@ -17,7 +17,7 @@ import (
 
 //go:generate mockery -name=Step -output=automock -outpkg=automock -case=underscore
 
-func TestSkipStepShouldSkip(t *testing.T) {
+func TestSkipForTrialPlanStepShouldSkip(t *testing.T) {
 
 	// Given
 	memoryStorage := storage.NewMemoryStorage()
@@ -28,7 +28,7 @@ func TestSkipStepShouldSkip(t *testing.T) {
 	mockStep := &automock.Step{}
 	mockStep.On("Name").Return("Test")
 
-	skipStep := NewSkipStep(memoryStorage.Operations(), mockStep)
+	skipStep := NewSkipForTrialPlanStep(memoryStorage.Operations(), mockStep)
 
 	// When
 	returnedOperation, time, err := skipStep.Run(operation, log)
@@ -40,7 +40,7 @@ func TestSkipStepShouldSkip(t *testing.T) {
 	assert.Equal(t, operation, returnedOperation)
 }
 
-func TestSkipStepShouldNotSkip(t *testing.T) {
+func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 
 	// Given
 	memoryStorage := storage.NewMemoryStorage()
@@ -52,7 +52,7 @@ func TestSkipStepShouldNotSkip(t *testing.T) {
 	mockStep := &automock.Step{}
 	mockStep.On("Run", operation, log).Return(anotherOperation, skipTime, nil)
 
-	skipStep := NewSkipStep(memoryStorage.Operations(), mockStep)
+	skipStep := NewSkipForTrialPlanStep(memoryStorage.Operations(), mockStep)
 
 	// When
 	returnedOperation, time, err := skipStep.Run(operation, log)
