@@ -62,6 +62,7 @@ func (eea *ExternalEvalAssistant) ProvideCheckType() string {
 func (eea *ExternalEvalAssistant) IsAlreadyDeleted(lifecycleData internal.AvsLifecycleData) bool {
 	return lifecycleData.AVSExternalEvaluationDeleted
 }
+
 func (eea *ExternalEvalAssistant) GetEvaluationId(lifecycleData internal.AvsLifecycleData) int64 {
 	return lifecycleData.AVSEvaluationExternalId
 }

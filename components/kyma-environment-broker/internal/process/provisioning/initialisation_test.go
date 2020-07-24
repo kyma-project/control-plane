@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -60,7 +61,9 @@ func TestInitialisationStep_Run(t *testing.T) {
 	mockAvsServer := newMockAvsServer(t, idh, false)
 	defer mockAvsServer.Close()
 	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
-	avsDel := avs.NewDelegator(avsConfig, memoryStorage.Operations())
+	avsClient, err := avs.NewClient(context.TODO(), avsConfig)
+	assert.NoError(t, err)
+	avsDel := avs.NewDelegator(avsClient, avsConfig, memoryStorage.Operations())
 	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
 	externalEvalCreator := NewExternalEvalCreator(avsDel, false, externalEvalAssistant)
 	iasType := NewIASType(nil, true)

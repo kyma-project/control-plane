@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -41,7 +42,9 @@ func TestInternalEvaluationStep_Run(t *testing.T) {
 	mockAvsServer := newMockAvsServer(t, idh, true)
 	defer mockAvsServer.Close()
 	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
-	avsDel := avs.NewDelegator(avsConfig, memoryStorage.Operations())
+	avsClient, err := avs.NewClient(context.TODO(), avsConfig)
+	assert.NoError(t, err)
+	avsDel := avs.NewDelegator(avsClient, avsConfig, memoryStorage.Operations())
 	internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
 	ies := NewInternalEvaluationStep(avsDel, internalEvalAssistant)
 
@@ -84,7 +87,9 @@ func TestInternalEvaluationStep_WhenOperationIsRepeatedWithIdPresent(t *testing.
 	mockAvsServer := newMockAvsServer(t, idh, true)
 	defer mockAvsServer.Close()
 	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
-	avsDel := avs.NewDelegator(avsConfig, memoryStorage.Operations())
+	avsClient, err := avs.NewClient(context.TODO(), avsConfig)
+	assert.NoError(t, err)
+	avsDel := avs.NewDelegator(avsClient, avsConfig, memoryStorage.Operations())
 	internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
 	ies := NewInternalEvaluationStep(avsDel, internalEvalAssistant)
 

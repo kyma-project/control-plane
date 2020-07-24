@@ -185,7 +185,9 @@ func main() {
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
 
-	avsDel := avs.NewDelegator(cfg.Avs, db.Operations())
+	avsClient, err := avs.NewClient(ctx, cfg.Avs)
+	fatalOnError(err)
+	avsDel := avs.NewDelegator(avsClient, cfg.Avs, db.Operations())
 	externalEvalAssistant := avs.NewExternalEvalAssistant(cfg.Avs)
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
 	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
