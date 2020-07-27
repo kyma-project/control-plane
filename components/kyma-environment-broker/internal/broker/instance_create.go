@@ -180,7 +180,7 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 		return ersContext, parameters, errors.Errorf("the plan ID not known, planID: %s", details.PlanID)
 	}
 
-	if details.PlanID == TrialPlanID {
+	if IsTrialPlan(details.PlanID) {
 		count, err := b.instanceStorage.GetNumberOfInstancesForGlobalAccountID(ersContext.GlobalAccountID)
 		if err != nil {
 			return ersContext, parameters, errors.Wrap(err, "while checking if a trial Kyma instance exists for given global account")
