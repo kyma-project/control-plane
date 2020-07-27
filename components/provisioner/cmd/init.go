@@ -57,7 +57,7 @@ func newProvisioningService(
 }
 
 func newDirectorClient(config config) (director.DirectorClient, error) {
-	secretsRepo, err := newSecretsInterface(config.CredentialsNamespace)
+	secretsRepo, err := newSecretsInterface(config.OauthCredentialsNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create secrets interface")
 	}
