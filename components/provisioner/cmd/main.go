@@ -56,7 +56,7 @@ type config struct {
 	Address                      string `envconfig:"default=127.0.0.1:3000"`
 	APIEndpoint                  string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint        string `envconfig:"default=/graphql"`
-	CredentialsNamespace         string `envconfig:"default=compass-system"`
+	CredentialsNamespace         string `envconfig:"default=kcp-system"`
 	DirectorURL                  string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
 	SkipDirectorCertVerification bool   `envconfig:"default=false"`
 	OauthCredentialsSecretName   string `envconfig:"default=kcp-provisioner-credentials"`
