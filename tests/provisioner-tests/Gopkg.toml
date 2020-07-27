@@ -9,8 +9,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-project/control-plane"
-  branch = "upgrade-cluster-config"
-  source = "github.com/rafalpotempa/control-plane"
+  revision = "4b7ff4ebf897334e1138be81baf1aee453146e98"
 
 [[constraint]]
   name = "github.com/Masterminds/sprig"
