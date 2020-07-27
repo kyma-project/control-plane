@@ -3,11 +3,10 @@ package provisioning
 import (
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
