@@ -1,6 +1,6 @@
 # Runtime Governor - Proof of Concept
 
-This document describes the scenario that will be developed to prove that [Dapr](https://dapr.io/) sidecars can be configured from a central place.
+This document describes the scenario that Runtimes can be configured from a central place via [Dapr](https://dapr.io/) sidecars located in the runtime, according to the [Runtime Governor concept](../runtime-governor-concept.md).
 
 ## Reasons
 
