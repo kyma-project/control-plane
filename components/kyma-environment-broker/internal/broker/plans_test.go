@@ -229,11 +229,18 @@ func TestSchemaGenerator(t *testing.T) {
 			"name"
 		]
 		}`},
-		{
-			name:         "Trial schema is correct",
-			generator:    TrialSchema,
-			machineTypes: []string{"n1-standard-4"},
-			want: `{
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.generator(tt.machineTypes)
+			validateSchema(t, got, tt.want)
+
+		})
+	}
+}
+
+func TestTrialSchemaGenerator(t *testing.T) {
+	want := `{
           "$schema": "http://json-schema.org/draft-04/schema#",
           "type": "object",
           "properties": {
@@ -267,27 +274,27 @@ func TestSchemaGenerator(t *testing.T) {
           "required": [
             "name"
           ]
-        }`},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var prettyWant bytes.Buffer
-			err := json.Indent(&prettyWant, []byte(tt.want), "", "  ")
-			if err != nil {
-				t.Error(err)
-				t.Fail()
-			}
+        }`
 
-			got := tt.generator(tt.machineTypes)
-			var prettyGot bytes.Buffer
-			err = json.Indent(&prettyGot, got, "", "  ")
-			if err != nil {
-				t.Error(err)
-				t.Fail()
-			}
-			if !reflect.DeepEqual(string(prettyGot.String()), prettyWant.String()) {
-				t.Errorf("Schema() = \n######### GOT ###########%v\n######### ENDGOT ########, want \n##### WANT #####%v\n##### ENDWANT #####", prettyGot.String(), prettyWant.String())
-			}
-		})
+	got := TrialSchema()
+	validateSchema(t, got, want)
+}
+
+func validateSchema(t *testing.T, got []byte, want string) {
+	var prettyWant bytes.Buffer
+	err := json.Indent(&prettyWant, []byte(want), "", "  ")
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+
+	var prettyGot bytes.Buffer
+	err = json.Indent(&prettyGot, got, "", "  ")
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+	if !reflect.DeepEqual(string(prettyGot.String()), prettyWant.String()) {
+		t.Errorf("Schema() = \n######### GOT ###########%v\n######### ENDGOT ########, want \n##### WANT #####%v\n##### ENDWANT #####", prettyGot.String(), prettyWant.String())
 	}
 }

@@ -223,7 +223,7 @@ func AzureSchema(machineTypes []string) []byte {
 	return bytes
 }
 
-func TrialSchema(machineTypes []string) []byte {
+func TrialSchema() []byte {
 	schema := `{
           "$schema": "http://json-schema.org/draft-04/schema#",
           "type": "object",
@@ -348,7 +348,7 @@ var Plans = map[string]struct {
 				},
 			},
 		},
-		provisioningRawSchema: TrialSchema([]string{"n1-standard-4"}),
+		provisioningRawSchema: TrialSchema(),
 	},
 }
 
