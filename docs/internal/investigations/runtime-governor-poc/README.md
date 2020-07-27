@@ -56,3 +56,7 @@ Pros:
 
 Cons:
 - Tremendous amount of work needed
+
+## Related resources
+
+For implementation details of the Runtime Governor, see the [README.md](./governor/README.md) document.
