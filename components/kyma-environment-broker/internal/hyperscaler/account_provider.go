@@ -8,19 +8,21 @@ import (
 //go:generate mockery -name=AccountProvider -output=automock -outpkg=automock -case=underscore
 type AccountProvider interface {
 	GardenerCredentials(hyperscalerType Type, tenantName string) (Credentials, error)
+	GardenerSharedCredentials(hyperscalerType Type) (Credentials, error)
 	GardenerSecretName(input *gqlschema.GardenerConfigInput, tenantName string) (string, error)
 }
 
 type accountProvider struct {
-	compassPool  AccountPool
-	gardenerPool AccountPool
+	compassPool        AccountPool
+	gardenerPool       AccountPool
+	sharedGardenerPool SharedPool
 }
 
-func NewAccountProvider(compassPool AccountPool, gardenerPool AccountPool) AccountProvider {
-
+func NewAccountProvider(compassPool AccountPool, gardenerPool AccountPool, sharedGardenerPool SharedPool) AccountProvider {
 	return &accountProvider{
-		compassPool:  compassPool,
-		gardenerPool: gardenerPool,
+		compassPool:        compassPool,
+		gardenerPool:       gardenerPool,
+		sharedGardenerPool: sharedGardenerPool,
 	}
 }
 
@@ -50,23 +52,30 @@ func (p *accountProvider) GardenerCredentials(hyperscalerType Type, tenantName s
 	return p.gardenerPool.Credentials(hyperscalerType, tenantName)
 }
 
-func (p *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInput, tenantName string) (string, error) {
+func (p *accountProvider) GardenerSharedCredentials(hyperscalerType Type) (Credentials, error) {
+	if p.sharedGardenerPool == nil {
+		return Credentials{},
+			errors.New("failed to get shared Gardener Credentials. Gardener Shared Account pool is not configured")
+	}
 
+	return p.sharedGardenerPool.SharedCredentials(hyperscalerType)
+}
+
+func (p *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInput, tenantName string) (string, error) {
 	if len(input.TargetSecret) > 0 {
 		return input.TargetSecret, nil
 	}
 
 	hyperscalerType, err := HyperscalerTypeFromProviderString(input.Provider)
-
 	if err != nil {
 		return "", err
 	}
 
 	credential, err := p.GardenerCredentials(hyperscalerType, tenantName)
-
 	if err != nil {
 		return "", err
 	}
+
 	return credential.Name, nil
 
 }

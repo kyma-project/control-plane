@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -13,6 +14,7 @@ const RuntimeAgent = "compass-runtime-agent"
 type Validator interface {
 	ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) apperrors.AppError
 	ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) apperrors.AppError
+	ValidateUpgradeShootInput(input gqlschema.UpgradeShootInput) apperrors.AppError
 	ValidateTenant(runtimeID, tenant string) apperrors.AppError
 	ValidateTenantForOperation(operationID, tenant string) apperrors.AppError
 }
@@ -29,11 +31,15 @@ func NewValidator(readSession dbsession.ReadSession) Validator {
 
 func (v *validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) apperrors.AppError {
 	if err := v.validateKymaConfig(input.KymaConfig); err != nil {
-		return err.Append("validation error while starting Runtime provisioning")
+		return err.Append("Kyma config validation error while starting Runtime provisioning")
 	}
 
 	if input.RuntimeInput == nil {
-		return apperrors.BadRequest("validation error while starting Runtime provisioning: runtime input is missing")
+		return apperrors.BadRequest("runtime input validation error while starting Runtime provisioning: runtime input is missing")
+	}
+
+	if err := v.validateClusterConfig(input.ClusterConfig); err != nil {
+		return err.Append("Cluster config validation error while starting Runtime provisioning")
 	}
 
 	return nil
@@ -43,6 +49,33 @@ func (v *validator) ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) ap
 	err := v.validateKymaConfig(input.KymaConfig)
 	if err != nil {
 		return err.Append("validation error while starting Runtime upgrade")
+	}
+
+	return nil
+}
+
+func (v *validator) ValidateUpgradeShootInput(input gqlschema.UpgradeShootInput) apperrors.AppError {
+
+	config := input.GardenerConfig
+
+	if config == nil {
+		return apperrors.BadRequest("validation error while starting starting Shoot Upgrade: Gardener Config is missing")
+	}
+
+	if config.MachineType != nil && *config.MachineType == "" {
+		return apperrors.BadRequest("empty machine type provided")
+	}
+
+	if config.KubernetesVersion != nil && *config.KubernetesVersion == "" {
+		return apperrors.BadRequest("empty kubernetes version provided")
+	}
+
+	if config.DiskType != nil && *config.DiskType == "" {
+		return apperrors.BadRequest("empty disk type provided")
+	}
+
+	if config.Purpose != nil && *config.Purpose == "" {
+		return apperrors.BadRequest("empty purpose provided")
 	}
 
 	return nil
@@ -85,6 +118,25 @@ func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) ap
 		return apperrors.BadRequest("error: Kyma components list does not contain Compass Runtime Agent")
 	}
 
+	return nil
+}
+
+func (v *validator) validateClusterConfig(clusterConfig *gqlschema.ClusterConfigInput) apperrors.AppError {
+	if clusterConfig == nil || clusterConfig.GardenerConfig == nil {
+		return apperrors.BadRequest("error: Cluster config with Gardener config not provided")
+	}
+
+	if err := v.validateMachineImage(*clusterConfig.GardenerConfig); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (v *validator) validateMachineImage(gardenerConfig gqlschema.GardenerConfigInput) apperrors.AppError {
+	if util.NotNilOrEmpty(gardenerConfig.MachineImageVersion) && util.IsNilOrEmpty(gardenerConfig.MachineImage) {
+		return apperrors.BadRequest("error: Machine Image Version passed while Machine Image is empty")
+	}
 	return nil
 }
 

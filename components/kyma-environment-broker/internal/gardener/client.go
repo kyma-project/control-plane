@@ -28,7 +28,7 @@ func NewGardenerClusterConfig(kubeconfigPath string) (*restclient.Config, error)
 
 func NewGardenerSecretsInterface(gardenerClusterCfg *restclient.Config, gardenerProjectName string) (corev1.SecretInterface, error) {
 
-	gardenerNamespace := fmt.Sprintf("garden-%s", gardenerProjectName)
+	gardenerNamespace := gardenerNamespace(gardenerProjectName)
 
 	gardenerClusterClient, err := kubernetes.NewForConfig(gardenerClusterCfg)
 	if err != nil {
@@ -36,6 +36,18 @@ func NewGardenerSecretsInterface(gardenerClusterCfg *restclient.Config, gardener
 	}
 
 	return gardenerClusterClient.CoreV1().Secrets(gardenerNamespace), nil
+}
+
+func NewGardenerShootInterface(gardenerClusterCfg *restclient.Config, gardenerProjectName string) (gardener_apis.ShootInterface, error) {
+
+	gardenerNamespace := gardenerNamespace(gardenerProjectName)
+
+	gardenerClusterClient, err := gardener_apis.NewForConfig(gardenerClusterCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return gardenerClusterClient.Shoots(gardenerNamespace), nil
 }
 
 func RESTConfig(kubeconfig []byte) (*restclient.Config, error) {
@@ -49,4 +61,8 @@ func NewClient(config *restclient.Config) (*gardener_apis.CoreV1beta1Client, err
 	}
 
 	return clientset, nil
+}
+
+func gardenerNamespace(projectName string) string {
+	return fmt.Sprintf("garden-%s", projectName)
 }

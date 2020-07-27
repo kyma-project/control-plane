@@ -1,21 +1,25 @@
 package deprovisioning
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+
+	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
-var evalIdsHolder []int64
-var parentEvalIdHolder map[int64]int64 = make(map[int64]int64)
+var (
+	evalIdsHolder      []int64
+	parentEvalIdHolder = make(map[int64]int64)
+)
 
 const (
 	internalEvalId = int64(1234)
@@ -41,7 +45,9 @@ func TestAvsEvaluationsRemovalStep_Run(t *testing.T) {
 	mockAvsServer := newMockAvsServer(t)
 	defer mockAvsServer.Close()
 	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
-	avsDel := avs.NewDelegator(avsConfig, memoryStorage.Operations())
+	avsClient, err := avs.NewClient(context.TODO(), avsConfig)
+	assert.NoError(t, err)
+	avsDel := avs.NewDelegator(avsClient, avsConfig, memoryStorage.Operations())
 	internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
 	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
 	step := NewAvsEvaluationsRemovalStep(avsDel, memoryStorage.Operations(), externalEvalAssistant, internalEvalAssistant)
@@ -122,7 +128,7 @@ func avsConfig(mockOauthServer *httptest.Server, mockAvsServer *httptest.Server)
 		ExternalTesterAccessId: 5678,
 		ExternalTesterService:  "dummy",
 		ExternalTesterTags: []*avs.Tag{
-			&avs.Tag{
+			{
 				Content:      "dummy",
 				TagClassId:   123,
 				TagClassName: "dummy",

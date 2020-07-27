@@ -15,6 +15,8 @@ import (
 )
 
 func TestRuntimeUpgrade(t *testing.T) {
+	t.Parallel()
+
 	globalLog := logrus.WithField("TestId", testSuite.TestId)
 
 	globalLog.Infof("Starting Compass Provisioner Upgrade tests on Gardener")
