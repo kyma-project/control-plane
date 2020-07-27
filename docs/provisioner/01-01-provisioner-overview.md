@@ -3,7 +3,7 @@ title: Overview
 type: Overview
 ---
 
-The Runtime Provisioner is a Compass component responsible for provisioning, installing, and deprovisioning clusters with Kyma (Kyma Runtimes). The relationship between clusters and Runtimes is 1:1. The Runtime Provisioner is registered in the Director as an Integration System.
+The Runtime Provisioner is a Kyma Control Plane component responsible for provisioning, installing, and deprovisioning clusters with Kyma (Kyma Runtimes). The relationship between clusters and Runtimes is 1:1. The Runtime Provisioner is registered in the Compass Director as an Integration System.
 
 It allows you to provision the clusters in the following ways:
 - [through Gardener](08-02-provisioning-gardener.md) on:
@@ -22,7 +22,7 @@ Find the specification of the API [here](https://github.com/kyma-project/control
 To access the Runtime Provisioner, forward the port that the GraphQL Server is listening on:
 
 ```bash
-kubectl -n compass-system port-forward svc/compass-provisioner 3000:3000
+kubectl -n kcp-system port-forward svc/kcp-provisioner 3000:3000
 ```
 
 When making a call to the Runtime Provisioner, make sure to attach a tenant header to the request.
