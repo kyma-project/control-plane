@@ -11,7 +11,7 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/kubernetes-sigs/service-catalog v0.3.0-beta.2
 	github.com/kubernetes/client-go v11.0.0+incompatible
-	github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283
+	github.com/kyma-incubator/compass/components/director v0.0.0-20200727090009-e854b465dd51
 	github.com/kyma-incubator/hydroform/install v0.0.0-20200629120139-6648400a8188
 	github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442
 	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200422062252-6074323197a6
