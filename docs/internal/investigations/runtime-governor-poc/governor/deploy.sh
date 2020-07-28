@@ -24,7 +24,7 @@ helm install kcp-poc -n kcp-poc ./chart \
 
 if [[ "$LOCAL_ENV" == "true" ]]; then
   echo "Adding entries to /etc/hosts..."
-  sudo sh -c 'echo "\n$(minikube ip) runtime-director.kyma.local" >> /etc/hosts'
+  sudo sh -c 'echo "\n$(minikube ip) runtime-governor.kyma.local" >> /etc/hosts'
 fi
 
 
