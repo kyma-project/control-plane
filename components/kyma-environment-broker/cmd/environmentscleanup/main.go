@@ -46,7 +46,8 @@ func main() {
 	dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 	prometheus.MustRegister(dbStatsCollector)
 
-	svc := environmentscleanup.NewService(shootClient, brokerClient, db.Instances(), cfg.MaxAgeHours, cfg.LabelSelector)
+	logger := log.New()
+	svc := environmentscleanup.NewService(shootClient, brokerClient, db.Instances(), logger, cfg.MaxAgeHours, cfg.LabelSelector)
 	err = svc.PerformCleanup()
 	if err != nil {
 		fatalOnError(err)
