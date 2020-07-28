@@ -96,18 +96,18 @@ The object passed to the mutation contains these configurable `GardenerConfig` v
 
 | Field                                 |                                       Configurable                                       | Note         |
 | ------------------------------------- | :--------------------------------------------------------------------------------------: | ------------ |
-| **kubernetesVersion**                   |                                    :heavy_check_mark:                                    | upgrade only |
-| **purpose**                             |                                    :heavy_check_mark:                                    |              |
-| **machineType**                         |                                    :heavy_check_mark:                                    |              |
-| **volumeSizeGB**                        |                                    :heavy_check_mark:                                    |              |
-| **diskType**                            |                                    :heavy_check_mark:                                    |              |
-| **autoScalerMin**                       |                                    :heavy_check_mark:                                    | min. 1       |
-| **autoScalerMax**                       |                                    :heavy_check_mark:                                    |              |
-| **maxSurge**                            |                                    :heavy_check_mark:                                    |              |
-| **maxUnavailable**                      |                                    :heavy_check_mark:                                    |              |
-| **enableKubernetesVersionAutoUpdate**   |                                    :heavy_check_mark:                                    |              |
-| **enableMachineImageVersionAutoUpdate** |                                    :heavy_check_mark:                                    |              |
-| **providerSpecificConfig**              | Azure :heavy_check_mark: <br/> AWS :heavy_multiplication_x: <br/> GCP :heavy_check_mark: | `zones` only |
+| **kubernetesVersion**                   |                                    ✅                                    | upgrade only |
+| **purpose**                             |                                    ✅                                    |              |
+| **machineType**                         |                                    ✅                                    |              |
+| **volumeSizeGB**                        |                                    ✅                                    |              |
+| **diskType**                            |                                    ✅                                    |              |
+| **autoScalerMin**                       |                                    ✅                                    | min. 1       |
+| **autoScalerMax**                       |                                    ✅                                    |              |
+| **maxSurge**                            |                                    ✅                                    |              |
+| **maxUnavailable**                      |                                    ✅                                    |              |
+| **enableKubernetesVersionAutoUpdate**   |                                    ✅                                    |              |
+| **enableMachineImageVersionAutoUpdate** |                                    ✅                                    |              |
+| **providerSpecificConfig**              | Azure ✅ <br/> AWS ⛔️ <br/> GCP ✅ | `zones` only |
 
 The mutation returns the operation ID which allows you to retrieve the operation status.
 
