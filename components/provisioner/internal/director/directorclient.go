@@ -184,7 +184,7 @@ func (cc *directorClient) RuntimeExists(id, tenant string) (bool, apperrors.AppE
 func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition graphql.RuntimeStatusCondition, tenant string) apperrors.AppError {
 	// TODO: Set StatusCondition without getting the Runtime
 	//       It'll be possible after this issue implementation:
-	//       - https://github.com/kyma-project/control-plane/issues/1186
+	//       - https://github.com/kyma-incubator/compass/issues/1186
 	runtime, err := cc.GetRuntime(id, tenant)
 	if err != nil {
 		log.Errorf("Failed to get Runtime by ID: %s", err.Error())
