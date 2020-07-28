@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/machinebox/graphql"
+	"github.com/kyma-project/control-plane/components/provisioner/third_party/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 )
 

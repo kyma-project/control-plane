@@ -10,7 +10,7 @@ import (
 	gql "github.com/kyma-project/control-plane/components/provisioner/internal/graphql"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/oauth"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	gcli "github.com/machinebox/graphql"
+	gcli "github.com/kyma-project/control-plane/components/provisioner/third_party/machinebox/graphql"
 	log "github.com/sirupsen/logrus"
 )
 

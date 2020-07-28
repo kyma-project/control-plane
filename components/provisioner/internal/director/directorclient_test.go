@@ -11,7 +11,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gql "github.com/kyma-project/control-plane/components/provisioner/internal/graphql"
-	gcli "github.com/machinebox/graphql"
+	gcli "github.com/kyma-project/control-plane/components/provisioner/third_party/machinebox/graphql"
 
 	"fmt"
 	"testing"
