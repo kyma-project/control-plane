@@ -13,7 +13,51 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 )
+
+func TestShouldEnableComponents(t *testing.T) {
+	// given
+
+	// One base component: dex
+	// Two optional components: Kiali and Tracing
+	// The test checks, if EnableComponent method adds an optional component
+	optionalComponentsDisablers := runtime.ComponentsDisablers{
+		"kiali":   runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
+		"tracing": runtime.NewGenericComponentDisabler("tracing", "kyma-system"),
+		"backup":  runtime.NewGenericComponentDisabler("backup", "kyma-system"),
+	}
+	componentsProvider := &automock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
+		Return([]v1alpha1.KymaComponent{
+			{Name: "kiali", Namespace: "kyma-system"},
+			{Name: "tracing", Namespace: "kyma-system"},
+			{Name: "backup", Namespace: "kyma-system"},
+			{Name: "dex", Namespace: "kyma-system"},
+		}, nil)
+
+	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), componentsProvider, Config{}, "not-important")
+	assert.NoError(t, err)
+	creator, err := builder.ForPlan(broker.AzurePlanID, "")
+	require.NoError(t, err)
+
+	// when
+	creator.EnableComponent("kiali")
+	input, err := creator.Create()
+	require.NoError(t, err)
+
+	// then
+	assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
+		Component: "kiali",
+		Namespace: "kyma-system",
+	})
+	assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
+		Component: "dex",
+		Namespace: "kyma-system",
+	})
+	assert.Len(t, input.KymaConfig.Components, 2)
+}
 
 func TestInputBuilderFactoryOverrides(t *testing.T) {
 	t.Run("should append overrides for the same components multiple times", func(t *testing.T) {
@@ -102,7 +146,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 
 	optComponentsSvc := &automock.OptionalComponentService{}
 	defer optComponentsSvc.AssertExpectations(t)
-	optComponentsSvc.On("ComputeComponentsToDisable", []string(nil)).Return(toDisableComponents)
+	optComponentsSvc.On("ComputeComponentsToDisable", []string{}).Return(toDisableComponents)
 	optComponentsSvc.On("ExecuteDisablers", mappedComponentList, toDisableComponents[0]).Return(mappedComponentList, nil)
 
 	config := Config{
@@ -176,7 +220,7 @@ func dummyOptionalComponentServiceMock(inputComponentList []v1alpha1.KymaCompone
 	mappedComponentList := mapToGQLComponentConfigurationInput(inputComponentList)
 
 	optComponentsSvc := &automock.OptionalComponentService{}
-	optComponentsSvc.On("ComputeComponentsToDisable", []string(nil)).Return([]string{})
+	optComponentsSvc.On("ComputeComponentsToDisable", []string{}).Return([]string{})
 	optComponentsSvc.On("ExecuteDisablers", mappedComponentList).Return(mappedComponentList, nil)
 	return optComponentsSvc
 }
@@ -191,4 +235,16 @@ func assertContainsAllOverrides(t *testing.T, gotOverrides []*gqlschema.ConfigEn
 	for _, o := range expected {
 		assert.Contains(t, gotOverrides, o)
 	}
+}
+
+func assertComponentExists(t *testing.T,
+	components []*gqlschema.ComponentConfigurationInput,
+	expected gqlschema.ComponentConfigurationInput) {
+
+	for _, component := range components {
+		if component.Namespace == expected.Namespace && component.Component == expected.Component {
+			return
+		}
+	}
+	assert.Failf(t, "component list does not contain %s/%s", expected.Namespace, expected.Component)
 }

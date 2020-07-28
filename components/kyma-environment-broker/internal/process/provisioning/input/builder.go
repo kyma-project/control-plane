@@ -99,6 +99,7 @@ func (f *InputBuilderFactory) ForPlan(planID, kymaVersion string) (internal.Prov
 		mutex:                     nsync.NewNamedMutex(),
 		hyperscalerInputProvider:  provider,
 		optionalComponentsService: f.optComponentsSvc,
+		enabledComponents:         map[string]struct{}{},
 	}, nil
 }
 

@@ -111,3 +111,18 @@ func (_m *ProvisionInputCreator) SetLabel(k string, v string) internal.Provision
 
 	return r0
 }
+
+func (_m *ProvisionInputCreator) EnableComponent(k string) internal.ProvisionInputCreator {
+	ret := _m.Called(k)
+
+	var r0 internal.ProvisionInputCreator
+	if rf, ok := ret.Get(0).(func(string) internal.ProvisionInputCreator); ok {
+		r0 = rf(k)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(internal.ProvisionInputCreator)
+		}
+	}
+
+	return r0
+}

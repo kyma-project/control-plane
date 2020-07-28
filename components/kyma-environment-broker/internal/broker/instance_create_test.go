@@ -128,7 +128,6 @@ func TestProvision_Provision(t *testing.T) {
 
 	t.Run("more than one trial is not allowed", func(t *testing.T) {
 		// given
-		// #setup memory storage
 		memoryStorage := storage.NewMemoryStorage()
 		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
 		assert.NoError(t, err)
@@ -143,7 +142,6 @@ func TestProvision_Provision(t *testing.T) {
 		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", broker.TrialPlanID).Return(true)
 
-		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite", broker.TrialPlanName}},
 			memoryStorage.Operations(),
@@ -169,7 +167,6 @@ func TestProvision_Provision(t *testing.T) {
 
 	t.Run("provision trial", func(t *testing.T) {
 		// given
-		// #setup memory storage
 		memoryStorage := storage.NewMemoryStorage()
 		memoryStorage.Instances().Insert(internal.Instance{
 			InstanceID:      instanceID,
@@ -184,7 +181,6 @@ func TestProvision_Provision(t *testing.T) {
 		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", broker.TrialPlanID).Return(true)
 
-		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "trial"}},
 			memoryStorage.Operations(),
