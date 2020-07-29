@@ -40,12 +40,12 @@ This table lists the environment variables, their descriptions, and default valu
 
 | Parameter | Description | Default value |
 |-----------|-------------|---------------|
-| **APP_ADDRESS** | Provisioner address with the port | `127.0.0.1:3000` |
+| **APP_ADDRESS** | Runtime Provisioner's address with the port | `127.0.0.1:3000` |
 | **APP_API_ENDPOINT** | Endpoint for the GraphQL API | `/graphql` |
 | **APP_PLAYGROUND_API_ENDPOINT** | Endpoint for the API playground | `/graphql` |
 | **APP_DIRECTOR_URL** | Director URL | `https://compass-gateway-auth-oauth.kyma.local/director/graphql` |
 | **APP_SKIP_DIRECTOR_CERT_VERIFICATION** | Flag to skip certificate verification for Director | `false` |
-| **APP_OAUTH_CREDENTIALS_NAMESPACE** | Namespace where Director credentials are stored | `kcp-system` |
+| **APP_OAUTH_CREDENTIALS_NAMESPACE** | Namespace where the Director credentials are stored | `kcp-system` |
 | **APP_OAUTH_CREDENTIALS_SECRET_NAME** | Runtime Provisioner credentials | `kcp-provisioner-credentials` |
 | **APP_DATABASE_USER** | Database username | `postgres` |
 | **APP_DATABASE_PASSWORD** | Database user password | `password` |
