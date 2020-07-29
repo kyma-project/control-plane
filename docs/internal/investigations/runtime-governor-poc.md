@@ -175,4 +175,4 @@ Cons:
 
 ## Related resources
 
-For implementation details of the Runtime Governor, see the [README.md](./runtime-governor-poc/governor/README.md) document.
+For implementation details of the Runtime Governor, see the [README.md](./runtime-governor-poc/governor/component/README.md) document.
