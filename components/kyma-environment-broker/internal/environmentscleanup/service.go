@@ -50,10 +50,18 @@ func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, instan
 
 func (s *Service) PerformCleanup() error {
 	var result *multierror.Error
+	formatFunc := func(i []error) string {
+		var s []string
+		for _, v := range i {
+			s = append(s, v.Error())
+		}
+		return strings.Join(s, ", ")
+	}
+
 	shootsToDelete, err := s.getShootsToDelete(s.LabelSelector)
 	if err != nil {
 		s.logger.Error(errors.Wrap(err, "while getting shoots to delete"))
-		result = multierror.Append(result, err)
+		return err
 	}
 
 	var runtimeIDsToDelete []string
@@ -69,13 +77,15 @@ func (s *Service) PerformCleanup() error {
 	s.logger.Infof("Runtime IDs to process: %v", runtimeIDsToDelete)
 
 	if len(runtimeIDsToDelete) == 0 {
-		return result.ErrorOrNil()
+		return nil
 	}
 
 	instancesToDelete, err := s.getInstancesForRuntimes(runtimeIDsToDelete)
 	if err != nil {
 		s.logger.Error(errors.Wrap(err, "while getting instance IDs for Runtimes"))
 		result = multierror.Append(result, err)
+		result.ErrorFormat = formatFunc
+		return result
 	}
 
 	for _, instance := range instancesToDelete {
@@ -87,13 +97,7 @@ func (s *Service) PerformCleanup() error {
 		}
 	}
 	if result != nil {
-		result.ErrorFormat = func(i []error) string {
-			var s []string
-			for _, v := range i {
-				s = append(s, v.Error())
-			}
-			return strings.Join(s, ", ")
-		}
+		result.ErrorFormat = formatFunc
 	}
 	return result.ErrorOrNil()
 }
