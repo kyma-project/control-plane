@@ -38,10 +38,8 @@ func (s *EnableForTrialPlanStep) Run(operation internal.ProvisioningOperation, l
 	}
 	if broker.IsTrialPlan(pp.PlanID) {
 		log.Infof("Enabling step %s", s.Name())
-		//return operation, 0, nil
 		return s.step.Run(operation, log)
 	}
 
-	//return s.step.Run(operation, log)
 	return operation, 0, nil
 }
