@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	namespace  = "compass-system"
+	namespace  = "kcp-system"
 	secretName = "compass-broker-registration"
 )
 
