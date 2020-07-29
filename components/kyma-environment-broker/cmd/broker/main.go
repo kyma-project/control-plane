@@ -163,7 +163,7 @@ func main() {
 		"BackupInt":               runtime.NewGenericComponentDisabler("backup-init", "kyma-system"),
 		"Backup":                  runtime.NewGenericComponentDisabler("backup", "kyma-system"),
 		"KnativeProvisionerNatss": runtime.NewGenericComponentDisabler("knative-provisioner-natss", "knative-eventing"),
-		"NatssStreaming":          runtime.NewGenericComponentDisabler("nats-streaming", "natss"),
+		"NatsStreaming":           runtime.NewGenericComponentDisabler("nats-streaming", "natss"),
 	}
 	optComponentsSvc := runtime.NewOptionalComponentsService(optionalComponentsDisablers)
 
@@ -243,6 +243,16 @@ func main() {
 			weight: 2,
 			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
 				provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+		},
+		{
+			weight: 2,
+			step: provisioning.NewEnableForTrialPlanStep(db.Operations(),
+				provisioning.NewNatsStreamingStep(db.Operations())),
+		},
+		{
+			weight: 2,
+			step: provisioning.NewEnableForTrialPlanStep(db.Operations(),
+				provisioning.NewKnativeProvisionerNatssStep(db.Operations())),
 		},
 		{
 			weight: 2,
