@@ -1,4 +1,4 @@
-# Runtime Governor - Proof of concept
+# Runtime Governor component - Implementation details
 
 This directory contains the source code and Helm chart for the Kyma Control Plane Runtime Governor.
 
