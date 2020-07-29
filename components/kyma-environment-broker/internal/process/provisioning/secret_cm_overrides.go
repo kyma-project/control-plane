@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/sirupsen/logrus"
 	coreV1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -60,7 +61,7 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 	}
 
 	for _, secret := range secretList.Items {
-		if skipOverride(secret.Labels, pp.Parameters) {
+		if skipOverride(secret.Labels, pp) {
 			continue
 		}
 		cName, global := componentName(secret.Labels)
@@ -89,7 +90,7 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 	}
 
 	for _, cm := range configMapList.Items {
-		if skipOverride(cm.Labels, pp.Parameters) {
+		if skipOverride(cm.Labels, pp) {
 			continue
 		}
 		cName, global := componentName(cm.Labels)
@@ -141,12 +142,17 @@ func componentName(labels map[string]string) (string, bool) {
 
 // skipOverride returns true if licenceType is equal "TestDevelopmentAndDemo" and labels map contains "default-for-lite" key
 // which results in a given override will not be used to provision SKR
-func skipOverride(labels map[string]string, parameters internal.ProvisioningParametersDTO) bool {
-	if parameters.LicenceType == nil {
+func skipOverride(labels map[string]string, pp internal.ProvisioningParameters) bool {
+	// use default Kyma values for Trial
+	if broker.IsTrialPlan(pp.PlanID) {
+		return true
+	}
+
+	if pp.Parameters.LicenceType == nil {
 		return false
 	}
 
-	if *parameters.LicenceType != internal.LicenceTypeLite {
+	if *pp.Parameters.LicenceType != internal.LicenceTypeLite {
 		return false
 	}
 	if _, ok := labels[disableOverrideLabel]; ok {
