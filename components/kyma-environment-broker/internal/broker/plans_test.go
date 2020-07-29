@@ -240,7 +240,7 @@ func TestSchemaGenerator(t *testing.T) {
 }
 
 func TestTrialSchemaGenerator(t *testing.T) {
-	want := `{
+	wantGcp := `{
           "$schema": "http://json-schema.org/draft-04/schema#",
           "type": "object",
           "properties": {
@@ -276,8 +276,38 @@ func TestTrialSchemaGenerator(t *testing.T) {
           ]
         }`
 
-	got := TrialSchema()
-	validateSchema(t, got, want)
+	gotGcp := GcpTrialSchema()
+	validateSchema(t, gotGcp, wantGcp)
+
+	wantAzure := `{
+	             "$schema": "http://json-schema.org/draft-04/schema#",
+	             "type": "object",
+	             "properties": {
+	               "name": {
+	                 "type": "string"
+	               },
+	               "region": {
+	                 "type": "string",
+	                 "enum": [
+	   				"eastus",
+	   				"westeurope"
+	                 ]
+	               },
+	               "zones": {
+	                 "type": "array",
+	                 "items": [
+	                   {
+	                     "type": "string"
+	                   }
+	                 ]
+	               }
+	             },
+	             "required": [
+	               "name"
+	             ]
+	           }`
+	gotAzure := AzureTrialSchema()
+	validateSchema(t, gotAzure, wantAzure)
 }
 
 func validateSchema(t *testing.T, got []byte, want string) {

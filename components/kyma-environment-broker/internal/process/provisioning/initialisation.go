@@ -74,7 +74,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-	if pp.PlanID == broker.TrialPlanID {
+	if pp.PlanID == broker.GcpTrialPlanID {
 		s.externalEvalCreator.disabled = true
 	}
 
