@@ -100,7 +100,7 @@ The object passed to the mutation contains these configurable `GardenerConfig` v
 | **kubernetesVersion**                   | ✅                                  | upgrade only   |
 | **purpose**                             | ✅                                  |                |
 | **machineType**                         | ✅                                  |                |
-| **volumeSizeGB**                        | ✅                                  | min.35GB       |
+| **volumeSizeGB**                        | ✅                                  | min. 35GB       |
 | **diskType**                            | ✅                                  |                |
 | **autoScalerMin**                       | ✅                                  | min. 1         |
 | **autoScalerMax**                       | ✅                                  |                |
