@@ -96,7 +96,7 @@ The mutation returns the operation ID which allows you to retrieve the operation
 The object passed to the mutation contains these configurable `GardenerConfig` values:
 
 | Field                                   |      Configurable                   | Note           |
-| --------------------------------------- | :---------------------------------: | :------------: |
+| --------------------------------------- | :---------------------------------: | -------------- |
 | **kubernetesVersion**                   | ✅                                  | upgrade only   |
 | **purpose**                             | ✅                                  |                |
 | **machineType**                         | ✅                                  |                |
