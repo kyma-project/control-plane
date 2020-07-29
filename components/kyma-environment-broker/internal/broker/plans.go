@@ -223,6 +223,47 @@ func AzureSchema(machineTypes []string) []byte {
 	return bytes
 }
 
+func TrialSchema() []byte {
+	schema := `{
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string",
+              "enum": [
+                "europe-west4",
+                "us-east4"
+              ]
+            },
+            "zones": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "europe-west4-a",
+                    "europe-west4-b",
+                    "europe-west4-c",
+                    "us-east4-a",
+                    "us-east4-b",
+                    "us-east4-c"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }`
+
+	bytes := []byte(schema)
+	return bytes
+}
+
 func ToInterfaceSlice(input []string) []interface{} {
 	interfaces := make([]interface{}, len(input))
 	for i, item := range input {
@@ -291,4 +332,31 @@ var Plans = map[string]struct {
 		},
 		provisioningRawSchema: AzureSchema([]string{"Standard_D4_v3"}),
 	},
+	TrialPlanID: {
+		PlanDefinition: domain.ServicePlan{
+			ID:          TrialPlanID,
+			Name:        TrialPlanName,
+			Description: "Trial",
+			Metadata: &domain.ServicePlanMetadata{
+				DisplayName: "Trial",
+			},
+			Schemas: &domain.ServiceSchemas{
+				Instance: domain.ServiceInstanceSchema{
+					Create: domain.Schema{
+						Parameters: make(map[string]interface{}),
+					},
+				},
+			},
+		},
+		provisioningRawSchema: TrialSchema(),
+	},
+}
+
+func IsTrialPlan(planId string) bool {
+	switch planId {
+	case TrialPlanID:
+		return true
+	default:
+		return false
+	}
 }

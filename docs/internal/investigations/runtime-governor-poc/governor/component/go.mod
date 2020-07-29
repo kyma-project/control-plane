@@ -1,4 +1,4 @@
-module github.com/kyma-project/control-plane/docs/internal/investigations/runtime-director-dapr/component
+module github.com/kyma-project/control-plane/docs/internal/investigations/runtime-governor-poc/governor/component
 
 go 1.14
 

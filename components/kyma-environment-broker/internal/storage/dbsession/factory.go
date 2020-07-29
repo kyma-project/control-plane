@@ -26,6 +26,7 @@ type ReadSession interface {
 	GetLMSTenant(name, region string) (dbmodel.LMSTenantDTO, dberr.Error)
 	GetOperationStats() ([]dbmodel.OperationStatEntry, error)
 	GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error)
+	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
 }
 
 //go:generate mockery -name=WriteSession

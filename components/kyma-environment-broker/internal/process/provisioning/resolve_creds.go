@@ -66,7 +66,7 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 	logger.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
 
 	var credentials hyperscaler.Credentials
-	if !isTrialPlan(pp.PlanID) {
+	if !broker.IsTrialPlan(pp.PlanID) {
 		credentials, err = s.accountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
 	} else {
 		logger.Infof("HAP lookup for shared credentials")
@@ -102,13 +102,4 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 	logger.Infof("Resolved %s as target secret name to use for cluster provisioning for global account ID %s on Hyperscaler %s", *pp.Parameters.TargetSecret, pp.ErsContext.GlobalAccountID, hypType)
 
 	return *updatedOperation, 0, nil
-}
-
-func isTrialPlan(planId string) bool {
-	switch planId {
-	case broker.TrialPlanID:
-		return true
-	default:
-		return false
-	}
 }

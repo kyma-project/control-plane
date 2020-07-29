@@ -174,3 +174,15 @@ func (r readSession) GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStat
 		postsql.InstancesTableName)).Load(&rows)
 	return rows, err
 }
+
+func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error) {
+	var res struct {
+		Total int
+	}
+	err := r.session.Select("count(*) as total").
+		From(postsql.InstancesTableName).
+		Where(dbr.Eq("global_account_id", globalAccountID)).
+		LoadOne(&res)
+
+	return res.Total, err
+}

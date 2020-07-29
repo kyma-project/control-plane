@@ -148,8 +148,12 @@ func fixInstance() internal.Instance {
 }
 
 func fixProvisioningParameters(t *testing.T) string {
+	return fixProvisioningParametersWithPlanID(t, broker.GCPPlanID)
+}
+
+func fixProvisioningParametersWithPlanID(t *testing.T, planID string) string {
 	parameters := internal.ProvisioningParameters{
-		PlanID:    broker.GCPPlanID,
+		PlanID:    planID,
 		ServiceID: "",
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,

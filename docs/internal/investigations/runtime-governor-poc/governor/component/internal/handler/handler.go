@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/kyma-project/control-plane/docs/internal/investigations/runtime-director-dapr/component/pkg/apperror"
-	"github.com/kyma-project/control-plane/docs/internal/investigations/runtime-director-dapr/component/pkg/model"
+	"github.com/kyma-project/control-plane/docs/internal/investigations/runtime-governor-poc/governor/component/pkg/apperror"
+	"github.com/kyma-project/control-plane/docs/internal/investigations/runtime-governor-poc/governor/component/pkg/model"
 	"github.com/pkg/errors"
 )
 

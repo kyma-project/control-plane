@@ -1,7 +1,7 @@
 deployment:
   image:
     pullPolicy: IfNotPresent
-    path: pkosiec/kcp-runtime-director:v1
+    path: pkosiec/kcp-runtime-governor:v1
   resources: {}
   args:
     containerPort: &port 3000
@@ -15,4 +15,4 @@ service:
   port: *port
 
 virtualService:
-  host: runtime-director
+  host: runtime-governor
