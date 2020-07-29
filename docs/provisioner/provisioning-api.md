@@ -92,22 +92,27 @@ The mutation returns the operation ID which allows you to retrieve the operation
 ***upgradeShoot*** mutation upgrades the Gardener Shoot cluster configuration, triggering Shoot reconciliation.
 
 >**NOTICE:** This operation is dangerous and could potentially damage your Runtime. Use it wisely and with reasonable configuration values. **There is no rollback functionality implemented**, so you would have to get your hands dirty to fix potential failures.
+
 The object passed to the mutation contains these configurable `GardenerConfig` values:
 
-| Field                                 |                                       Configurable                                       | Note         |
-| ------------------------------------- | :--------------------------------------------------------------------------------------: | ------------ |
-| **kubernetesVersion**                   |                                    :heavy_check_mark:                                    | upgrade only |
-| **purpose**                             |                                    :heavy_check_mark:                                    |              |
-| **machineType**                         |                                    :heavy_check_mark:                                    |              |
-| **volumeSizeGB**                        |                                    :heavy_check_mark:                                    |              |
-| **diskType**                            |                                    :heavy_check_mark:                                    |              |
-| **autoScalerMin**                       |                                    :heavy_check_mark:                                    | min. 1       |
-| **autoScalerMax**                       |                                    :heavy_check_mark:                                    |              |
-| **maxSurge**                            |                                    :heavy_check_mark:                                    |              |
-| **maxUnavailable**                      |                                    :heavy_check_mark:                                    |              |
-| **enableKubernetesVersionAutoUpdate**   |                                    :heavy_check_mark:                                    |              |
-| **enableMachineImageVersionAutoUpdate** |                                    :heavy_check_mark:                                    |              |
-| **providerSpecificConfig**              | Azure :heavy_check_mark: <br/> AWS :heavy_multiplication_x: <br/> GCP :heavy_check_mark: | `zones` only |
+| Field                                   |      Configurable                   | Note           |
+| --------------------------------------- | :---------------------------------: | -------------- |
+| **kubernetesVersion**                   | ✅                                  | upgrade only   |
+| **purpose**                             | ✅                                  |                |
+| **machineType**                         | ✅                                  |                |
+| **volumeSizeGB**                        | ✅                                  | min. 35GB       |
+| **diskType**                            | ✅                                  |                |
+| **autoScalerMin**                       | ✅                                  | min. 1         |
+| **autoScalerMax**                       | ✅                                  |                |
+| **maxSurge**                            | ✅                                  |                |
+| **maxUnavailable**                      | ✅                                  |                |
+| **enableKubernetesVersionAutoUpdate**   | ✅                                  |                |
+| **enableMachineImageVersionAutoUpdate** | ✅                                  |                |
+| **providerSpecificConfig**              | Azure ✅ <br/> AWS ⛔️ <br/> GCP ✅  | for GCP and AWS: `zones`* only <br> for Azure: `zones`* and `vnetCidr` (required) |
+
+_*Zones can only be added to the existing ones, they cannot replace the existing zones._
+
+> **CAUTION:** You must adhere to the minimal values specified. Passing too small a volumeSize can damage the cluster irrevocably. 
 
 The mutation returns the operation ID which allows you to retrieve the operation status.
 
