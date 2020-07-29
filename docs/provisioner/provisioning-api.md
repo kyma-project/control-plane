@@ -108,7 +108,7 @@ The object passed to the mutation contains these configurable `GardenerConfig` v
 | **maxUnavailable**                      |                                    ✅                                    |              |
 | **enableKubernetesVersionAutoUpdate**   |                                    ✅                                    |              |
 | **enableMachineImageVersionAutoUpdate** |                                    ✅                                    |              |
-| **providerSpecificConfig**              | Azure ✅ <br/> AWS ⛔️ <br/> GCP ✅                                       | for GCP and AWS: `zones` only* <br> for Azure: `zones`* and `vnetCidr` (required) |
+| **providerSpecificConfig**              | Azure ✅ <br/> AWS ⛔️ <br/> GCP ✅                                       | for GCP and AWS: `zones`* only <br> for Azure: `zones`* and `vnetCidr` (required) |
 
 _*Zones can only be added to the existing ones, they cannot replace the existing zones._
 
