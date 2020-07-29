@@ -95,20 +95,20 @@ The mutation returns the operation ID which allows you to retrieve the operation
 
 The object passed to the mutation contains these configurable `GardenerConfig` values:
 
-| Field                                 |                                       Configurable                         | Note         |
-| ------------------------------------- | :------------------------------------------------------------------------: | ------------ |
-| **kubernetesVersion**                   |                                    ✅                                    | upgrade only |
-| **purpose**                             |                                    ✅                                    |              |
-| **machineType**                         |                                    ✅                                    |              |
-| **volumeSizeGB**                        |                                    ✅                                    | min.35GB     |
-| **diskType**                            |                                    ✅                                    |              |
-| **autoScalerMin**                       |                                    ✅                                    | min. 1       |
-| **autoScalerMax**                       |                                    ✅                                    |              |
-| **maxSurge**                            |                                    ✅                                    |              |
-| **maxUnavailable**                      |                                    ✅                                    |              |
-| **enableKubernetesVersionAutoUpdate**   |                                    ✅                                    |              |
-| **enableMachineImageVersionAutoUpdate** |                                    ✅                                    |              |
-| **providerSpecificConfig**              | Azure ✅ <br/> AWS ⛔️ <br/> GCP ✅                                       | for GCP and AWS: `zones`* only <br> for Azure: `zones`* and `vnetCidr` (required) |
+| Field                                   |      Configurable                   | Note         |
+| --------------------------------------- | :---------------------------------: | ------------ |
+| **kubernetesVersion**                   | :✅:                                | upgrade only |
+| **purpose**                             | :✅:                                |              |
+| **machineType**                         | :✅:                                |              |
+| **volumeSizeGB**                        | :✅:                                | min.35GB     |
+| **diskType**                            | :✅:                                |              |
+| **autoScalerMin**                       | :✅:                                | min. 1       |
+| **autoScalerMax**                       | :✅:                                |              |
+| **maxSurge**                            | :✅:                                |              |
+| **maxUnavailable**                      | :✅:                                |              |
+| **enableKubernetesVersionAutoUpdate**   | :✅:                                |              |
+| **enableMachineImageVersionAutoUpdate** | :✅:                                |              |
+| **providerSpecificConfig**              | Azure ✅ <br/> AWS ⛔️ <br/> GCP ✅  | for GCP and AWS: `zones`* only <br> for Azure: `zones`* and `vnetCidr` (required) |
 
 _*Zones can only be added to the existing ones, they cannot replace the existing zones._
 
