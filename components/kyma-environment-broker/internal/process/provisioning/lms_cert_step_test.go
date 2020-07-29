@@ -227,6 +227,10 @@ func (c *simpleInputCreator) AssertOverride(t *testing.T, component string, cei 
 	assert.Failf(t, "Overrides assert failed", "Expected component override not found: %+v", cei)
 }
 
+func (c *simpleInputCreator) AssertNoOverrides(t *testing.T) {
+	assert.Empty(t, c.overrides)
+}
+
 func (c *simpleInputCreator) AssertLabel(t *testing.T, key, expectedValue string) {
 	value, found := c.labels[key]
 	require.True(t, found)
