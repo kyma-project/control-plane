@@ -14,6 +14,7 @@ type Instances interface {
 	Update(instance internal.Instance) error
 	Delete(instanceID string) error
 	GetInstanceStats() (internal.InstanceStats, error)
+	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
 }
 
 type Operations interface {
