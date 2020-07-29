@@ -186,7 +186,7 @@ func fixProvisioningParametersWithPlanID(t *testing.T, planID string) string {
 func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	optComponentsSvc := &inputAutomock.OptionalComponentService{}
 
-	optComponentsSvc.On("ComputeComponentsToDisable", []string(nil)).Return([]string{})
+	optComponentsSvc.On("ComputeComponentsToDisable", []string{}).Return([]string{})
 	optComponentsSvc.On("ExecuteDisablers", internal.ComponentConfigurationInputList{
 		{
 			Component:     "to-remove-component",

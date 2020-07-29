@@ -26,6 +26,15 @@ type RuntimeInput struct {
 	hyperscalerInputProvider  HyperscalerInputProvider
 	optionalComponentsService OptionalComponentService
 	provisioningParameters    internal.ProvisioningParametersDTO
+
+	enabledComponents map[string]struct{}
+}
+
+func (r *RuntimeInput) EnableComponent(componentName string) internal.ProvisionInputCreator {
+	r.mutex.Lock("enabledComponents")
+	defer r.mutex.Unlock("enabledComponents")
+	r.enabledComponents[componentName] = struct{}{}
+	return r
 }
 
 func (r *RuntimeInput) SetProvisioningParameters(params internal.ProvisioningParametersDTO) internal.ProvisionInputCreator {
@@ -127,7 +136,15 @@ func (r *RuntimeInput) applyProvisioningParameters() error {
 }
 
 func (r *RuntimeInput) disableNotSelectedComponents() error {
-	toDisable := r.optionalComponentsService.ComputeComponentsToDisable(r.provisioningParameters.OptionalComponentsToInstall)
+	r.mutex.Lock("enabledComponents")
+	defer r.mutex.Unlock("enabledComponents")
+
+	componentsToInstall := []string{}
+	componentsToInstall = append(componentsToInstall, r.provisioningParameters.OptionalComponentsToInstall...)
+	for name := range r.enabledComponents {
+		componentsToInstall = append(componentsToInstall, name)
+	}
+	toDisable := r.optionalComponentsService.ComputeComponentsToDisable(componentsToInstall)
 
 	filterOut, err := r.optionalComponentsService.ExecuteDisablers(r.input.KymaConfig.Components, toDisable...)
 	if err != nil {

@@ -139,7 +139,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}, nil
 }
 
-func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, logger logrus.FieldLogger) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
+func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, l logrus.FieldLogger) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
 	var ersContext internal.ERSContext
 	var parameters internal.ProvisioningParametersDTO
 
@@ -160,6 +160,7 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	}
 
 	ersContext, err = b.extractERSContext(details)
+	logger := l.WithField("globalAccountID", ersContext.GlobalAccountID)
 	if err != nil {
 		return ersContext, parameters, errors.Wrap(err, "while extracting ers context")
 	}
@@ -187,7 +188,7 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 		}
 
 		if count > 0 {
-			b.log.WithField("globalAccountID", ersContext.GlobalAccountID).Info("Provisioning Trial SKR rejected, such instance was already created")
+			logger.Info("Provisioning Trial SKR rejected, such instance was already created for this Global Account")
 			return ersContext, parameters, errors.Errorf("The Trial Kyma was created for the global account, but there is only one allowed")
 		}
 	}
