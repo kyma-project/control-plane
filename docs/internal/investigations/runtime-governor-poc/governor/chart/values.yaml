@@ -14,5 +14,10 @@ deployment:
 service:
   port: *port
 
-virtualService:
-  host: runtime-governor
+redis1:
+  host: 127.0.0.1:6379
+  password: "P@ssw0rd"
+
+redis2:
+  host: 127.0.0.1:6379
+  password: "P@ssw0rd"

@@ -1,11 +1,11 @@
 # Runtime Governor component - Implementation details
 
-This directory contains the source code and Helm chart for Kyma Control Plane Runtime Governor.
+This directory contains the source code and Helm chart for the Kyma Control Plane Runtime Governor.
 
 ## Overview
 
 Runtime Governor exposes a simple REST API that returns Runtime configurations.
-The application periodically reloads configuration from the `runtime-governor-config` ConfigMap in the `kcp-poc` Namespace. The configuration file has the following form:
+The application periodically reloads configuration from the `runtime-governor-config` ConfigMap in the `cp-poc` Namespace. The configuration file has the following form:
 
 ```yaml
 runtimes:
