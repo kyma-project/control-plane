@@ -63,7 +63,7 @@ const (
 	kymaVersion                   = "1.8"
 	kymaSystemNamespace           = "kyma-system"
 	kymaIntegrationNamespace      = "kyma-integration"
-	kcpSystemNamespace            = "kcp-system"
+	compassSystemNamespace        = "compass-system"
 	clusterEssentialsComponent    = "cluster-essentials"
 	rafterComponent               = "rafter"
 	coreComponent                 = "core"
@@ -180,8 +180,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			runtimeInput := config.provisioningInput.runtimeInput
 			upgradeShootInput := config.upgradeShootInput
 
-			fakeK8sClient.CoreV1().Secrets(kcpSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
-			fakeK8sClient.CoreV1().ConfigMaps(kcpSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
+			fakeK8sClient.CoreV1().Secrets(compassSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
+			fakeK8sClient.CoreV1().ConfigMaps(compassSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
 
 			directorServiceMock.Calls = nil
 			directorServiceMock.ExpectedCalls = nil
