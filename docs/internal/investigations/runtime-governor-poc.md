@@ -85,7 +85,7 @@ You can watch the installation progress by looking at the statuses of Pods that 
 watch kubectl --context=k3d-runtime1 get po --all-namespaces
 ```
 
-In order to deploy the second Runtime, please run all the previous steps using the `runtime2` scripts.
+In order to deploy the second Runtime, run all the previous steps using the `runtime2` scripts.
 
 ### Use case scenario
 
