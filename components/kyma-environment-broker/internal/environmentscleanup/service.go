@@ -32,15 +32,17 @@ type Service struct {
 	gardenerService GardenerClient
 	brokerService   BrokerClient
 	instanceStorage storage.Instances
+	logger          *log.Logger
 	MaxShootAge     time.Duration
 	LabelSelector   string
 }
 
-func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, instanceStorage storage.Instances, maxShootAge time.Duration, labelSelector string) *Service {
+func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, instanceStorage storage.Instances, logger *log.Logger, maxShootAge time.Duration, labelSelector string) *Service {
 	return &Service{
 		gardenerService: gardenerClient,
 		brokerService:   brokerClient,
 		instanceStorage: instanceStorage,
+		logger:          logger,
 		MaxShootAge:     maxShootAge,
 		LabelSelector:   labelSelector,
 	}
@@ -48,10 +50,18 @@ func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, instan
 
 func (s *Service) PerformCleanup() error {
 	var result *multierror.Error
+	formatFunc := func(i []error) string {
+		var s []string
+		for _, v := range i {
+			s = append(s, v.Error())
+		}
+		return strings.Join(s, ", ")
+	}
+
 	shootsToDelete, err := s.getShootsToDelete(s.LabelSelector)
 	if err != nil {
-		log.Error(errors.Wrap(err, "while getting shoots to delete"))
-		result = multierror.Append(result, err)
+		s.logger.Error(errors.Wrap(err, "while getting shoots to delete"))
+		return err
 	}
 
 	var runtimeIDsToDelete []string
@@ -59,36 +69,35 @@ func (s *Service) PerformCleanup() error {
 		runtimeID, ok := shoot.Annotations[shootAnnotationRuntimeId]
 		if !ok {
 			err = errors.New(fmt.Sprintf("shoot %q has no runtime-id annotation", shoot.Name))
-			log.Error(err)
-			result = multierror.Append(result, err)
+			s.logger.Error(err)
 			continue
 		}
 		runtimeIDsToDelete = append(runtimeIDsToDelete, runtimeID)
 	}
-	log.Infof("Runtime IDs to process: %v", runtimeIDsToDelete)
+	s.logger.Infof("Runtime IDs to process: %v", runtimeIDsToDelete)
+
+	if len(runtimeIDsToDelete) == 0 {
+		return nil
+	}
 
 	instancesToDelete, err := s.getInstancesForRuntimes(runtimeIDsToDelete)
 	if err != nil {
-		log.Error(errors.Wrap(err, "while getting instance IDs for Runtimes"))
+		s.logger.Error(errors.Wrap(err, "while getting instance IDs for Runtimes"))
 		result = multierror.Append(result, err)
+		result.ErrorFormat = formatFunc
+		return result
 	}
 
 	for _, instance := range instancesToDelete {
-		log.Infof("Triggering environment deprovisioning for instance ID %q", instance.InstanceID)
+		s.logger.Infof("Triggering environment deprovisioning for instance ID %q", instance.InstanceID)
 		currentErr := s.triggerEnvironmentDeprovisioning(instance)
 		if currentErr != nil {
-			log.Error(errors.Wrapf(currentErr, "while triggering deprovisioning for instance ID %q", instance.InstanceID))
+			s.logger.Error(errors.Wrapf(currentErr, "while triggering deprovisioning for instance ID %q", instance.InstanceID))
 			result = multierror.Append(result, currentErr)
 		}
 	}
 	if result != nil {
-		result.ErrorFormat = func(i []error) string {
-			var s []string
-			for _, v := range i {
-				s = append(s, v.Error())
-			}
-			return strings.Join(s, ", ")
-		}
+		result.ErrorFormat = formatFunc
 	}
 	return result.ErrorOrNil()
 }
