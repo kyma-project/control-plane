@@ -7,14 +7,16 @@ import (
 )
 
 const (
-	GCPPlanID         = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
-	GCPPlanName       = "gcp"
-	TrialPlanID       = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
-	TrialPlanName     = "trial"
-	AzurePlanID       = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
-	AzurePlanName     = "azure"
-	AzureLitePlanID   = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
-	AzureLitePlanName = "azure_lite"
+	GCPPlanID          = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
+	GCPPlanName        = "gcp"
+	GcpTrialPlanID     = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
+	GcpTrialPlanName   = "gcp_trial"
+	AzurePlanID        = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	AzurePlanName      = "azure"
+	AzureLitePlanID    = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
+	AzureLitePlanName  = "azure_lite"
+	AzureTrialPlanID   = "70479a4b-ee23-4f6f-958c-1646e8fe5301"
+	AzureTrialPlanName = "azure_trial"
 )
 
 func AzureRegions() []string {
@@ -223,7 +225,7 @@ func AzureSchema(machineTypes []string) []byte {
 	return bytes
 }
 
-func TrialSchema() []byte {
+func GcpTrialSchema() []byte {
 	schema := `{
           "$schema": "http://json-schema.org/draft-04/schema#",
           "type": "object",
@@ -251,6 +253,39 @@ func TrialSchema() []byte {
                     "us-east4-b",
                     "us-east4-c"
                   ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }`
+
+	bytes := []byte(schema)
+	return bytes
+}
+
+func AzureTrialSchema() []byte {
+	schema := `{
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string",
+              "enum": [
+				"eastus",
+				"westeurope"
+              ]
+            },
+            "zones": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "string"
                 }
               ]
             }
@@ -332,13 +367,13 @@ var Plans = map[string]struct {
 		},
 		provisioningRawSchema: AzureSchema([]string{"Standard_D4_v3"}),
 	},
-	TrialPlanID: {
+	GcpTrialPlanID: {
 		PlanDefinition: domain.ServicePlan{
-			ID:          TrialPlanID,
-			Name:        TrialPlanName,
-			Description: "Trial",
+			ID:          GcpTrialPlanID,
+			Name:        GcpTrialPlanName,
+			Description: "GCP Trial",
 			Metadata: &domain.ServicePlanMetadata{
-				DisplayName: "Trial",
+				DisplayName: "GCP Trial",
 			},
 			Schemas: &domain.ServiceSchemas{
 				Instance: domain.ServiceInstanceSchema{
@@ -348,13 +383,31 @@ var Plans = map[string]struct {
 				},
 			},
 		},
-		provisioningRawSchema: TrialSchema(),
+		provisioningRawSchema: GcpTrialSchema(),
+	},
+	AzureTrialPlanID: {
+		PlanDefinition: domain.ServicePlan{
+			ID:          AzureTrialPlanID,
+			Name:        AzureTrialPlanName,
+			Description: "Azure Trial",
+			Metadata: &domain.ServicePlanMetadata{
+				DisplayName: "Azure Trial",
+			},
+			Schemas: &domain.ServiceSchemas{
+				Instance: domain.ServiceInstanceSchema{
+					Create: domain.Schema{
+						Parameters: make(map[string]interface{}),
+					},
+				},
+			},
+		},
+		provisioningRawSchema: AzureTrialSchema(),
 	},
 }
 
 func IsTrialPlan(planId string) bool {
 	switch planId {
-	case TrialPlanID:
+	case GcpTrialPlanID, AzureTrialPlanID:
 		return true
 	default:
 		return false

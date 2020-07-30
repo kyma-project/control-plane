@@ -12,8 +12,8 @@ const (
 )
 
 type (
-	GcpInput   struct{}
-	TrialInput struct{}
+	GcpInput      struct{}
+	GcpTrialInput struct{}
 )
 
 func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
@@ -46,7 +46,7 @@ func (p *GcpInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params i
 	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, params.Zones)
 }
 
-func (p *TrialInput) Defaults() *gqlschema.ClusterConfigInput {
+func (p *GcpTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       "pd-standard",
@@ -68,7 +68,7 @@ func (p *TrialInput) Defaults() *gqlschema.ClusterConfigInput {
 	}
 }
 
-func (p *TrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
+func (p *GcpTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
 	if params.Region != nil && params.Zones == nil {
 		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(*params.Region))
 	}

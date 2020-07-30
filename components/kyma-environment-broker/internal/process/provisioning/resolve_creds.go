@@ -23,9 +23,9 @@ type ResolveCredentialsStep struct {
 
 func getHyperscalerTypeForPlanID(planID string) (hyperscaler.Type, error) {
 	switch planID {
-	case broker.GCPPlanID, broker.TrialPlanID:
+	case broker.GCPPlanID, broker.GcpTrialPlanID:
 		return hyperscaler.GCP, nil
-	case broker.AzurePlanID, broker.AzureLitePlanID:
+	case broker.AzurePlanID, broker.AzureLitePlanID, broker.AzureTrialPlanID:
 		return hyperscaler.Azure, nil
 	default:
 		return "", errors.Errorf("Cannot determine the type of Hyperscaler to use for planID: %s", planID)

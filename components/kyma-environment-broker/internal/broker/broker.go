@@ -12,10 +12,11 @@ const (
 )
 
 var planIDsMapping = map[string]string{
-	AzurePlanName:     AzurePlanID,
-	AzureLitePlanName: AzureLitePlanID,
-	GCPPlanName:       GCPPlanID,
-	TrialPlanName:     TrialPlanID,
+	AzurePlanName:      AzurePlanID,
+	AzureLitePlanName:  AzureLitePlanID,
+	AzureTrialPlanName: AzureTrialPlanID,
+	GCPPlanName:        GCPPlanID,
+	GcpTrialPlanName:   GcpTrialPlanID,
 }
 
 type KymaEnvironmentBroker struct {

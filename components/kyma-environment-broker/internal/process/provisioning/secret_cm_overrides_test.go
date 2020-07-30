@@ -138,7 +138,7 @@ func TestOverridesFromSecretsAndConfigStep_Run(t *testing.T) {
 
 		operation := internal.ProvisioningOperation{
 			InputCreator:           inputCreator,
-			ProvisioningParameters: fmt.Sprintf(`{"plan_id":"%s"}`, broker.TrialPlanID),
+			ProvisioningParameters: fmt.Sprintf(`{"plan_id":"%s"}`, broker.GcpTrialPlanID),
 		}
 
 		step := NewOverridesFromSecretsAndConfigStep(context.TODO(), client, memoryStorage.Operations())

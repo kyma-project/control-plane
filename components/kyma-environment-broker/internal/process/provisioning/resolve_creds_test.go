@@ -59,7 +59,7 @@ func TestResolveCredentialsStepHappyPathTrial_Run(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationRuntimeStatus(t, broker.TrialPlanID)
+	operation := fixOperationRuntimeStatus(t, broker.GcpTrialPlanID)
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
