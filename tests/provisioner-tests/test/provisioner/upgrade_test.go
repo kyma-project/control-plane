@@ -19,7 +19,7 @@ func TestRuntimeUpgrade(t *testing.T) {
 
 	globalLog := logrus.WithField("TestId", testSuite.TestId)
 
-	globalLog.Infof("Starting Compass Provisioner Upgrade tests on Gardener")
+	globalLog.Infof("Starting Kyma Control Plane Runtime Provisioner tests of Runtime Upgrade on Gardener")
 	wg := &sync.WaitGroup{}
 
 	for _, provider := range testSuite.gardenerProviders {

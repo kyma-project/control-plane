@@ -12,7 +12,7 @@ if [[ "${discoverUnsetVar}" = true ]] ; then
     exit 1
 fi
 
-kubectl -n compass-system port-forward svc/compass-provisioner 3000:3000 &
+kubectl -n kcp-system port-forward svc/kcp-provisioner 3000:3000 &
 PORT_FWD_PID=$!
 
 export APP_INTERNAL_PROVISIONER_URL=http://localhost:3000/graphql

@@ -56,10 +56,10 @@ type config struct {
 	Address                      string `envconfig:"default=127.0.0.1:3000"`
 	APIEndpoint                  string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint        string `envconfig:"default=/graphql"`
-	CredentialsNamespace         string `envconfig:"default=compass-system"`
 	DirectorURL                  string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
 	SkipDirectorCertVerification bool   `envconfig:"default=false"`
-	OauthCredentialsSecretName   string `envconfig:"default=compass-provisioner-credentials"`
+	OauthCredentialsNamespace    string `envconfig:"default=kcp-system"`
+	OauthCredentialsSecretName   string `envconfig:"default=kcp-provisioner-credentials"`
 
 	Database struct {
 		User     string `envconfig:"default=postgres"`
@@ -96,8 +96,8 @@ type config struct {
 }
 
 func (c *config) String() string {
-	return fmt.Sprintf("Address: %s, APIEndpoint: %s, CredentialsNamespace: %s, "+
-		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s, "+
+	return fmt.Sprintf("Address: %s, APIEndpoint: %s, DirectorURL: %s, "+
+		"SkipDirectorCertVerification: %v, OauthCredentialsNamespace: %s, OauthCredentialsSecretName: %s, "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
 		"ProvisioningTimeoutClusterCreation: %s "+
@@ -108,8 +108,8 @@ func (c *config) String() string {
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, SupportOnDemandReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s",
-		c.Address, c.APIEndpoint, c.CredentialsNamespace,
-		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName,
+		c.Address, c.APIEndpoint, c.DirectorURL,
+		c.SkipDirectorCertVerification, c.OauthCredentialsNamespace, c.OauthCredentialsSecretName,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
 		c.ProvisioningTimeout.ClusterCreation.String(),

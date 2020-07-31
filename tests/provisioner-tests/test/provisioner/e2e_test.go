@@ -25,7 +25,7 @@ func Test_E2E_Gardener(t *testing.T) {
 
 	globalLog := logrus.WithField("TestId", testSuite.TestId)
 
-	globalLog.Infof("Starting Compass Provisioner tests on Gardener")
+	globalLog.Infof("Starting Kyma Control Plane Runtime Provisioner tests on Gardener")
 	wg := &sync.WaitGroup{}
 
 	for _, provider := range testSuite.gardenerProviders {
