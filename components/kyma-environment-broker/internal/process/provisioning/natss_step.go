@@ -38,5 +38,8 @@ func (s *NatsStreamingStep) Run(operation internal.ProvisioningOperation, log lo
 	}
 	log.Debugf(NatsStreamingStepName + "Provisioning parameters from operation: %v", parameters)
 
+	// TODO finish the implementation
+	//
+
 	return operation, 0, nil
 }

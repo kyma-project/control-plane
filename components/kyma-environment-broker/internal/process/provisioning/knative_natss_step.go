@@ -38,5 +38,8 @@ func (s *KnativeProvisionerNatssStep) Run(operation internal.ProvisioningOperati
 	}
 	log.Debugf(KnativeProvisionerNatssStepName + "Provisioning parameters from operation: %v", parameters)
 
+	// TODO finish the implementation
+	//
+
 	return operation, 0, nil
 }
