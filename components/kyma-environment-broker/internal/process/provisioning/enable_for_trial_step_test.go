@@ -65,4 +65,3 @@ func TestEnableForTrialPlanStepShouldNotEnable(t *testing.T) {
 	assert.Equal(t, runTime, time)
 	assert.Equal(t, operation, returnedOperation)
 }
-

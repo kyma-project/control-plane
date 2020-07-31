@@ -36,7 +36,7 @@ func (s *KnativeProvisionerNatssStep) Run(operation internal.ProvisioningOperati
 		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-	log.Debugf(KnativeProvisionerNatssStepName + "Provisioning parameters from operation: %v", parameters)
+	log.Debugf(KnativeProvisionerNatssStepName+"Provisioning parameters from operation: %v", parameters)
 
 	// TODO finish the implementation
 	//

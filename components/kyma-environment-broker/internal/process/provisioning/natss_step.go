@@ -36,7 +36,7 @@ func (s *NatsStreamingStep) Run(operation internal.ProvisioningOperation, log lo
 		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-	log.Debugf(NatsStreamingStepName + "Provisioning parameters from operation: %v", parameters)
+	log.Debugf(NatsStreamingStepName+"Provisioning parameters from operation: %v", parameters)
 
 	// TODO finish the implementation
 	//
