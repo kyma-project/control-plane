@@ -112,6 +112,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 	}
 
 	if operation.ProvisionerOperationID == "NEVER_CREATED" {
+		log.Infof("instance id %q has never reached create runtime step")
 		return s.operationManager.OperationSucceeded(operation, fmt.Sprintf("runtime was never created"))
 	}
 
