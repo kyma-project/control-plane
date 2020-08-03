@@ -19,7 +19,7 @@ The provisioning process contains the following steps:
 |----------------------------------------|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
 | Initialization                         | Provisioning             | Starts the provisioning process and asks the Director for the Dashboard URL if the provisioning in Gardener is finished.                                | @jasiu001 (Team Gopher)       |
 | Resolve_Target_Secret                  | Hyperscaler Account Pool | Provides the name of a Gardener Secret that contains  Hypescaler account credentials used during cluster provisioning.                                | @koala7659 (Team Framefrog)      |
-| AVS_Configuration_Step                 | AvS                      | Sets up external and internal monitoring of Kyma Runtime.                                      | @abbi-guarav     |
+| AVS_Configuration_Step                 | AvS                      | Sets up external and internal monitoring of Kyma Runtime.                                      | @jasiu001 (Team Gopher)     |
 | Create_LMS_Tenant                      | LMS                      | Requests a tenant in the LMS system or provides a tenant ID if it was created before.                                                              | @piotrmiskiewicz (Team Gopher) |
 | IAS_Registration                       | Identity Authentication Service | Registers a new ServiceProvider on IAS, generates client ID and Secret, and inserts them to Grafana overrides. This step is not required and can be disabled. | @jasiu001 (Team Gopher) |
 | EDP_Registration                       | Event Data Platform      | Registers an SKR on Event Data Platform with the necessary parameters. This step is not required and can be disabled. | @jasiu001 (Team Gopher) |
@@ -41,7 +41,7 @@ The deprovisioning process contains the following steps:
 |------------------------------|----------------|-------------|----------------------------------------------------------------------------------------|-----------|
 | Deprovision_Initialization   | Deprovisioning | Done        | Initializes the `DeprovisioningOperation` instance with data fetched from the `ProvisioningOperation`. | @polskikiel (Team Gopher) |
 | Deprovision Azure Event Hubs | Event Hub      | In progress | Deletes the Azure Event Hub Namespace.                                                  | @montaro (Team SkyDivingTunas)   |
-| De-provision_AVS_Evaluations | AvS            | Done        | Removes external and internal monitoring of Kyma Runtime.                                                  | @abbi-guarav  |
+| De-provision_AVS_Evaluations | AvS            | Done        | Removes external and internal monitoring of Kyma Runtime.                                                  | @jasiu001 (Team Gopher)  |
 | IAS_Deregistration           | Identity Authentication Service | Done | Removes the ServiceProvider from IAS. | @jasiu001 (Team Gopher) |
 | EDP_Deregistration           | Event Data Platform | Done | Removes all entries about SKR from Event Data Platform. | @jasiu001 (Team Gopher) |
 | Remove_Runtime               | Deprovisioning | Done        | Triggers deprovisioning of a Runtime in the Runtime Provisioner. | @polskikiel (Team Gopher) |
