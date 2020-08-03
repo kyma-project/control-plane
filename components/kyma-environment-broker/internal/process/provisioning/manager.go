@@ -99,7 +99,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 		}
 	}
 
-	logrus.Infof("Operation %q got status %s. Process finished.", operation.ID, processedOperation.State)
+	logrus.Warnf("Operation %q got status %s. All steps finished.", operation.ID, processedOperation.State)
 	return 0, nil
 }
 
