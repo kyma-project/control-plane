@@ -267,8 +267,7 @@ func mapDirectorErrorToProvisionerError(egErr gcli.ExtendedError) apperrors.AppE
 	if !ok {
 		return apperrors.Internal("Failed to cast the error code from the error response. Original error: %v", egErr)
 	}
-	directorErrorCode := directorApperrors.ErrorType(errorCode)
-	switch directorErrorCode {
+	switch directorApperrors.ErrorType(errorCode) {
 	case directorApperrors.InternalError, directorApperrors.UnknownError:
 		return apperrors.Internal(egErr.Error())
 	case directorApperrors.Unauthorized, directorApperrors.InsufficientScopes:
