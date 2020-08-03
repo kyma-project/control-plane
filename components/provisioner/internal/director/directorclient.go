@@ -263,11 +263,12 @@ func mapDirectorErrorToProvisionerError(egErr gcli.ExtendedError) apperrors.AppE
 	if !present {
 		return apperrors.Internal("Failed to read the error code from the error response. Original error: %v", egErr)
 	}
-	errorCode, ok := errorCodeValue.(directorApperrors.ErrorType)
+	errorCode, ok := errorCodeValue.(float64)
 	if !ok {
 		return apperrors.Internal("Failed to cast the error code from the error response. Original error: %v", egErr)
 	}
-	switch errorCode {
+	directorErrorCode := directorApperrors.ErrorType(errorCode)
+	switch directorErrorCode {
 	case directorApperrors.InternalError, directorApperrors.UnknownError:
 		return apperrors.Internal(egErr.Error())
 	case directorApperrors.Unauthorized, directorApperrors.InsufficientScopes:
