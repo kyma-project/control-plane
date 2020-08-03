@@ -315,8 +315,8 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 			Namespace: "knative-eventing",
 		},
 	}
-
-	optComponentsSvc.On("ComputeComponentsToDisable", []string{}).Return([]string{})
+	// "KnativeEventingKafka"
+	optComponentsSvc.On("ComputeComponentsToDisable", []string{"KnativeEventingKafka"}).Return([]string{})
 	optComponentsSvc.On("ExecuteDisablers", mock.Anything).Return(componentConfigurationInputList, nil)
 
 	kymaComponentList := []v1alpha1.KymaComponent{
