@@ -111,7 +111,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		LicenceType:                         input.LicenceType,
 		EnableKubernetesVersionAutoUpdate:   util.UnwrapBoolOrDefault(input.EnableKubernetesVersionAutoUpdate, c.defaultEnableKubernetesVersionAutoUpdate),
 		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, c.defaultEnableMachineImageVersionAutoUpdate),
-		AllowPrivilegedContainers:           c.shouldAllowPrivilegedContainers(tillerYaml),
+		AllowPrivilegedContainers:           util.UnwrapBoolOrDefault(input.AllowPrivilegedContainers, c.shouldAllowPrivilegedContainers(tillerYaml)),
 		ClusterID:                           runtimeID,
 		GardenerProviderConfig:              providerSpecificConfig,
 	}, nil

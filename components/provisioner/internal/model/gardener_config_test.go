@@ -506,6 +506,7 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		MaxUnavailable:                      1,
 		EnableKubernetesVersionAutoUpdate:   true,
 		EnableMachineImageVersionAutoUpdate: false,
+		AllowPrivilegedContainers:           true,
 		GardenerProviderConfig:              providerCfg,
 	}
 }
