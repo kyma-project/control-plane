@@ -127,31 +127,6 @@ func TestOverridesFromSecretsAndConfigStep_Run(t *testing.T) {
 		assert.Equal(t, time.Duration(0), repeat)
 	})
 
-	t.Run("should skip all overrides for trial", func(t *testing.T) {
-		// Given
-		sch := runtime.NewScheme()
-		require.NoError(t, coreV1.AddToScheme(sch))
-		client := fake.NewFakeClientWithScheme(sch, fixResources()...)
-
-		memoryStorage := storage.NewMemoryStorage()
-		inputCreator := &simpleInputCreator{}
-
-		operation := internal.ProvisioningOperation{
-			InputCreator:           inputCreator,
-			ProvisioningParameters: fmt.Sprintf(`{"plan_id":"%s"}`, broker.GcpTrialPlanID),
-		}
-
-		step := NewOverridesFromSecretsAndConfigStep(context.TODO(), client, memoryStorage.Operations())
-
-		// When
-		operation, repeat, err := step.Run(operation, logrus.New())
-
-		// Then
-		assert.NoError(t, err)
-		// do not expect any overrides on ProvisionInputCreator
-		inputCreator.AssertNoOverrides(t)
-		assert.Equal(t, time.Duration(0), repeat)
-	})
 }
 
 func fixResources() []runtime.Object {
