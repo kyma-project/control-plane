@@ -147,7 +147,7 @@ func (r *Reconciler) getAuditLogTenant(seed string) (string, error) {
 
 	defer file.Close()
 
-	var data map[string]string
+	data := make(map[string]string)
 	if err := json.NewDecoder(file).Decode(&data); err != nil {
 		return "", err
 	}
