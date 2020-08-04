@@ -936,15 +936,15 @@ func TestDirectorClient_MapDirectorErrors(t *testing.T) {
 			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
 		},
 		{
-			"Should map Director Unauthorized Error to Provisioner Forbidden Error",
-			map[string]interface{}{"error_code": float64(directorApperrors.Unauthorized)},
+			"Should map Director Insufficient Scopes Error to Provisioner Forbidden Error",
+			map[string]interface{}{"error_code": float64(directorApperrors.InsufficientScopes)},
 			apperrors.CodeForbidden,
 			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
 		},
 		{
-			"Should map Director Insufficient Scopes Error to Provisioner Forbidden Error",
-			map[string]interface{}{"error_code": float64(directorApperrors.InsufficientScopes)},
-			apperrors.CodeForbidden,
+			"Should map Director Unauthorized Error to Provisioner Bad Gateway Error",
+			map[string]interface{}{"error_code": float64(directorApperrors.Unauthorized)},
+			apperrors.CodeBadGateway,
 			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
 		},
 		{

@@ -270,8 +270,10 @@ func mapDirectorErrorToProvisionerError(egErr gcli.ExtendedError) apperrors.AppE
 	switch directorApperrors.ErrorType(errorCode) {
 	case directorApperrors.InternalError, directorApperrors.UnknownError:
 		return apperrors.Internal(egErr.Error())
-	case directorApperrors.Unauthorized, directorApperrors.InsufficientScopes:
+	case directorApperrors.InsufficientScopes:
 		return apperrors.Forbidden(egErr.Error())
+	case directorApperrors.Unauthorized:
+		return apperrors.BadGateway(egErr.Error())
 	case directorApperrors.NotFound, directorApperrors.NotUnique, directorApperrors.InvalidData,
 		directorApperrors.TenantRequired, directorApperrors.TenantNotFound, directorApperrors.InvalidOperation:
 		return apperrors.BadRequest(egErr.Error())
