@@ -67,8 +67,6 @@ github.com/PuerkitoBio/urlesc v0.0.0-20160726150825-5bd2802263f2/go.mod h1:uGdko
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
-github.com/Szymongib/hydroform/install v0.0.0-20200804110425-c9e33591cc5d h1:c7Ivphp9ClztZxXQrobIggm67P5uEpNX3flLTDtlLUs=
-github.com/Szymongib/hydroform/install v0.0.0-20200804110425-c9e33591cc5d/go.mod h1:cu0KmMDfLm1nY+lkRWhckdjeo+lzUsI4YkLCkRc3zWY=
 github.com/agnivade/levenshtein v1.0.1/go.mod h1:CURSv5d9Uaml+FovSIICkLbAUZ9S4RqaHDIsdSBg7lM=
 github.com/agnivade/levenshtein v1.0.3 h1:M5ZnqLOoZR8ygVq0FfkXsNOKzMCk0xRiow0R5+5VkQ0=
 github.com/agnivade/levenshtein v1.0.3/go.mod h1:4SFRZbbXWLF4MU1T9Qg0pGgH3Pjs+t6ie5efyrwRJXs=
@@ -480,6 +478,8 @@ github.com/kyma-incubator/compass v0.0.0-20200421071627-8604d53a20a2/go.mod h1:Q
 github.com/kyma-incubator/compass/components/director v0.0.0-20200421071627-8604d53a20a2/go.mod h1:C41YpM1c0uzB8mzfFifxmsljBvhhycUxHg/kkUospDo=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283 h1:yQNZGjjcqS9557xdwpfPj6H1LiG+Wq6LgCpVsu4wWLI=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200506060219-a2a2a07e1283/go.mod h1:ZcUC6E1u/IwP7JfozHmHnmN6u6ZA5gEa95gDB0ZO3hk=
+github.com/kyma-incubator/hydroform/install v0.0.0-20200804124659-c8798d521f06 h1:Y0mEmItKYvSMqdeTWH0YC2epGVyb9gc7TPVtRrfCrUU=
+github.com/kyma-incubator/hydroform/install v0.0.0-20200804124659-c8798d521f06/go.mod h1:cu0KmMDfLm1nY+lkRWhckdjeo+lzUsI4YkLCkRc3zWY=
 github.com/kyma-project/kyma v0.5.1-0.20191031094708-0559e17e7979/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/kyma-project/kyma v0.5.1-0.20191106070956-5aa08d114ca0/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
 github.com/kyma-project/kyma v0.5.1-0.20200317154738-0bb20217c2cb/go.mod h1:cfj5AQwIOmmoXLZUhW3bIiaB66Z6vgjCYu7TRK3+1lc=
