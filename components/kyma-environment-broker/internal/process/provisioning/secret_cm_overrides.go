@@ -143,11 +143,6 @@ func componentName(labels map[string]string) (string, bool) {
 // skipOverride returns true if licenceType is equal "TestDevelopmentAndDemo" and labels map contains "default-for-lite" key
 // which results in a given override will not be used to provision SKR
 func skipOverride(labels map[string]string, pp internal.ProvisioningParameters) bool {
-	// use default Kyma values for Trial
-	if broker.IsTrialPlan(pp.PlanID) {
-		return true
-	}
-
 	if pp.Parameters.LicenceType == nil {
 		return false
 	}
