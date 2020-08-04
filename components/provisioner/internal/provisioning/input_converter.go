@@ -60,7 +60,11 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 		return model.Cluster{}, apperrors.BadRequest("error: ClusterConfig not provided")
 	}
 
-	gardenerConfig, err := c.gardenerConfigFromInput(runtimeID, input.ClusterConfig.GardenerConfig)
+	gardenerConfig, err := c.gardenerConfigFromInput(
+		runtimeID,
+		input.ClusterConfig.GardenerConfig,
+		kymaConfig.Release.TillerYAML,
+	)
 	if err != nil {
 		return model.Cluster{}, err
 	}
@@ -74,7 +78,7 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 	}, nil
 }
 
-func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.GardenerConfigInput) (model.GardenerConfig, apperrors.AppError) {
+func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.GardenerConfigInput, tillerYaml string) (model.GardenerConfig, apperrors.AppError) {
 	if input == nil {
 		return model.GardenerConfig{}, apperrors.BadRequest("error: GardenerConfig not provided")
 	}
@@ -107,6 +111,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		LicenceType:                         input.LicenceType,
 		EnableKubernetesVersionAutoUpdate:   util.UnwrapBoolOrDefault(input.EnableKubernetesVersionAutoUpdate, c.defaultEnableKubernetesVersionAutoUpdate),
 		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, c.defaultEnableMachineImageVersionAutoUpdate),
+		AllowPrivilegedContainers:           c.shouldAllowPrivilegedContainers(tillerYaml),
 		ClusterID:                           runtimeID,
 		GardenerProviderConfig:              providerSpecificConfig,
 	}, nil
@@ -131,15 +136,16 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 	}
 
 	return model.GardenerConfig{
-		ID:           config.ID,
-		ClusterID:    config.ClusterID,
-		Name:         config.Name,
-		ProjectName:  config.ProjectName,
-		Provider:     config.Provider,
-		Seed:         config.Seed,
-		TargetSecret: config.TargetSecret,
-		Region:       config.Region,
-		LicenceType:  config.LicenceType,
+		ID:                        config.ID,
+		ClusterID:                 config.ClusterID,
+		Name:                      config.Name,
+		ProjectName:               config.ProjectName,
+		Provider:                  config.Provider,
+		Seed:                      config.Seed,
+		TargetSecret:              config.TargetSecret,
+		Region:                    config.Region,
+		LicenceType:               config.LicenceType,
+		AllowPrivilegedContainers: config.AllowPrivilegedContainers,
 
 		Purpose:                             purpose,
 		KubernetesVersion:                   util.UnwrapStrOrDefault(input.KubernetesVersion, config.KubernetesVersion),
@@ -182,6 +188,10 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 	}
 
 	return nil, apperrors.BadRequest("provider config not specified")
+}
+
+func (c converter) shouldAllowPrivilegedContainers(tillerYaml string) bool {
+	return tillerYaml != ""
 }
 
 func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, apperrors.AppError) {
