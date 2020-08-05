@@ -1,6 +1,7 @@
 package hyperscaler
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 )
@@ -10,6 +11,8 @@ type AccountProvider interface {
 	GardenerCredentials(hyperscalerType Type, tenantName string) (Credentials, error)
 	GardenerSharedCredentials(hyperscalerType Type) (Credentials, error)
 	GardenerSecretName(input *gqlschema.GardenerConfigInput, tenantName string) (string, error)
+	GetNumberOfUsedSubscriptions(hyperscalerType Type, tenantName string, trial bool) (int, error)
+	ReleaseSubscription(hyperscalerType Type, tenantName string) error
 }
 
 type accountProvider struct {
@@ -24,6 +27,19 @@ func NewAccountProvider(compassPool AccountPool, gardenerPool AccountPool, share
 		gardenerPool:       gardenerPool,
 		sharedGardenerPool: sharedGardenerPool,
 	}
+}
+
+func HyperscalerTypeForPlanID(planID string) (Type, error) {
+
+	switch planID {
+	case broker.GCPPlanID, broker.GcpTrialPlanID:
+		return GCP, nil
+	case broker.AzurePlanID, broker.AzureLitePlanID, broker.AzureTrialPlanID:
+		return Azure, nil
+	default:
+		return "", errors.Errorf("Cannot determine the type of Hyperscaler to use for planID: %s", planID)
+	}
+
 }
 
 func HyperscalerTypeFromProvisionInput(input *gqlschema.ProvisionRuntimeInput) (Type, error) {
@@ -77,5 +93,32 @@ func (p *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInpu
 	}
 
 	return credential.Name, nil
+}
 
+func (p *accountProvider) GetNumberOfUsedSubscriptions(hyperscalerType Type, tenantName string, trial bool) (int, error) {
+
+	if trial {
+		return 0, nil
+		//if p.sharedGardenerPool == nil {
+		//	return 0, errors.New("failed to get number of used subscription for tenant. Shared Account pool is not configured")
+		//}
+		// not implemented
+	} else {
+		if p.gardenerPool == nil {
+			return 0, errors.New("failed to get number of used subscription for tenant. Gardener Account pool is not configured")
+		}
+
+		return p.gardenerPool.CountSubscriptionUsages(hyperscalerType, tenantName)
+	}
+
+	return 0, nil
+}
+
+func (p *accountProvider) ReleaseSubscription(hyperscalerType Type, tenantName string) error {
+	if p.gardenerPool == nil {
+		return errors.New("failed to release subscription for tenant. Gardener Account pool is not configured")
+	}
+
+
+	return p.gardenerPool.ReleaseSubscription(hyperscalerType, tenantName)
 }

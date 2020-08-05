@@ -2,6 +2,8 @@ package deprovisioning
 
 import (
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -22,13 +24,15 @@ type RemoveRuntimeStep struct {
 	operationManager  *process.DeprovisionOperationManager
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
+	accountProvider   hyperscaler.AccountProvider
 }
 
-func NewRemoveRuntimeStep(os storage.Operations, is storage.Instances, cli provisioner.Client) *RemoveRuntimeStep {
+func NewRemoveRuntimeStep(os storage.Operations, is storage.Instances, cli provisioner.Client, accountProvider hyperscaler.AccountProvider) *RemoveRuntimeStep {
 	return &RemoveRuntimeStep{
 		operationManager:  process.NewDeprovisionOperationManager(os),
 		instanceStorage:   is,
 		provisionerClient: cli,
+		accountProvider:   accountProvider,
 	}
 }
 
@@ -60,6 +64,41 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 
 	var provisionerResponse string
 	if operation.ProvisionerOperationID == "" {
+
+		//err := releaseSubscription (&operation)
+
+		// mark subscription to be released with cleanup job if this is the
+		// the only cluster for this GlobalAccountID (tenant)
+		pp, err := operation.GetProvisioningParameters()
+		if err != nil {
+			// if the parameters are incorrect, there is no reason to retry the operation
+			// a new request has to be issued by the user
+			errorMessage := fmt.Sprintf("Aborting deprovisioning after failing to get valid operation provisioning parameters: %v", err)
+			log.Errorf(errorMessage)
+			return operation, 0, nil
+		}
+
+		if !broker.IsTrialPlan(pp.PlanID) {
+			hypType, err := hyperscaler.HyperscalerTypeForPlanID(pp.PlanID)
+			if err != nil {
+				log.Errorf("Aborting deprovisioning after failing to determine the type of Hyperscaler to use for planID: %s", pp.PlanID)
+				return operation, 0, nil
+			}
+			// combine both of them
+			usedSubscriptions, err := s.accountProvider.GetNumberOfUsedSubscriptions(hypType, instance.GlobalAccountID, false)
+
+			if err != nil {
+				log.Errorf("Aborting deprovisioning after failing to determine number of used %s subscriptions by tenant: %s", hypType, instance.GlobalAccountID)
+				return operation, 0, nil
+			}
+
+			if usedSubscriptions == 1 {
+				s.accountProvider.ReleaseSubscription(hypType, instance.GlobalAccountID)
+			}
+
+		}
+
+
 		provisionerResponse, err = s.provisionerClient.DeprovisionRuntime(instance.GlobalAccountID, instance.RuntimeID)
 		if err != nil {
 			log.Errorf("unable to deprovision runtime: %s", err)
@@ -79,3 +118,7 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 	// return repeat mode (1 sec) to start the initialization step which will now check the runtime status
 	return operation, 1 * time.Second, nil
 }
+
+//func (s *RemoveRuntimeStep) releaseSubscription () {
+//
+//}

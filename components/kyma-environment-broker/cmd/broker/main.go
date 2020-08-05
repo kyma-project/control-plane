@@ -176,7 +176,7 @@ func main() {
 	fatalOnError(err)
 	gardenerShoots, err := gardener.NewGardenerShootInterface(gardenerClusterConfig, cfg.Gardener.Project)
 
-	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
+	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets, gardenerShoots)
 	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecrets, gardenerShoots)
 	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool, gardenerSharedPool)
 
@@ -305,7 +305,11 @@ func main() {
 		},
 		{
 			weight: 10,
-			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient),
+			step:   deprovisioning.NewReleaseCredentialsStep(db.Operations(), db.Instances(), provisionerClient),
+		},
+		{
+			weight: 10,
+			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient, accountProvider),
 		},
 	}
 	for _, step := range deprovisioningSteps {
