@@ -42,7 +42,7 @@ type DirectorClientConfig struct {
 func (c TestConfig) String() string {
 	return fmt.Sprintf("InternalProvisionerURL=%s, Tenant=%s, "+
 		"GardenerProviders=%v GardenerAzureSecret=%v, GardenerGCPSecret=%v, "+
-		"DirectorClientURL=%s, DirectorClientNamespace=%s, DirectorClientOauthCredentialsSecretName=%s, " +
+		"DirectorClientURL=%s, DirectorClientNamespace=%s, DirectorClientOauthCredentialsSecretName=%s, "+
 		"KuberentesVersion=%s, QueryLogging=%v",
 		c.InternalProvisionerURL, c.Tenant,
 		c.Gardener.Providers, c.Gardener.AzureSecret, c.Gardener.GCPSecret,
