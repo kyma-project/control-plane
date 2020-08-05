@@ -1,6 +1,9 @@
 package director
 
 import (
+	"errors"
+
+	directorApperrors "github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/oauth"
 	oauthmocks "github.com/kyma-project/control-plane/components/provisioner/internal/oauth/mocks"
@@ -11,7 +14,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gql "github.com/kyma-project/control-plane/components/provisioner/internal/graphql"
-	gcli "github.com/machinebox/graphql"
+	gcli "github.com/kyma-project/control-plane/components/provisioner/third_party/machinebox/graphql"
 
 	"fmt"
 	"testing"
@@ -86,7 +89,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 
 		expectedID := runtimeTestingID
 
-		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*CreateRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
@@ -177,7 +180,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(validToken, nil)
 
-		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*CreateRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
@@ -204,7 +207,7 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 		mockedOAuthClient := &oauthmocks.Client{}
 		mockedOAuthClient.On("GetAuthorizationToken").Return(validToken, nil)
 
-		gqlClient := gql.NewQueryAssertClient(t, true, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, errors.New("error"), []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*CreateRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
@@ -237,7 +240,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 			Description: &responseDescription,
 		}
 
-		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*DeleteRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
@@ -325,7 +328,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 		mockedOAuthClient.On("GetAuthorizationToken").Return(validToken, nil)
 
 		// given
-		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*DeleteRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
@@ -343,7 +346,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 
 	t.Run("Should return error when Director fails to delete Runtime", func(t *testing.T) {
 		// given
-		gqlClient := gql.NewQueryAssertClient(t, true, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, errors.New("error"), []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*DeleteRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
@@ -377,7 +380,7 @@ func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
 			Description: &responseDescription,
 		}
 
-		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*DeleteRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
@@ -418,7 +421,7 @@ func TestDirectorClient_GetConnectionToken(t *testing.T) {
 			},
 		}
 
-		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*OneTimeTokenResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
@@ -487,7 +490,7 @@ func TestDirectorClient_GetConnectionToken(t *testing.T) {
 
 	t.Run("Should return error when Director call returns nil reponse", func(t *testing.T) {
 		//given
-		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*OneTimeTokenResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
@@ -526,7 +529,7 @@ func TestDirectorClient_GetRuntime(t *testing.T) {
 			},
 		}
 
-		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*GetRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
@@ -574,7 +577,7 @@ func TestDirectorClient_GetRuntime(t *testing.T) {
 
 	t.Run("should return error when Director returns nil response", func(t *testing.T) {
 		//given
-		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*GetRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
@@ -601,7 +604,7 @@ func TestDirectorClient_GetRuntime(t *testing.T) {
 
 	t.Run("should return error when Director fails to get Runtime", func(t *testing.T) {
 		//given
-		gqlClient := gql.NewQueryAssertClient(t, true, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, errors.New("error"), []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*GetRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
@@ -649,7 +652,7 @@ func TestDirectorClient_UpdateRuntime(t *testing.T) {
 			Name: runtimeTestingName,
 		}
 
-		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*UpdateRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
@@ -714,7 +717,7 @@ func TestDirectorClient_UpdateRuntime(t *testing.T) {
 			StatusCondition: &conditionConnectoed,
 		}
 
-		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*UpdateRuntimeResponse)
 			require.True(t, ok)
 			assert.Empty(t, cfg.Result)
@@ -781,7 +784,7 @@ func TestDirectorClient_SetRuntimeStatusCondition(t *testing.T) {
 			cfg.Result = expectedUpdateResponse
 		}
 
-		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedFirstRequest, expectedSecondRequest}, getFunction, updateFunction)
+		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedFirstRequest, expectedSecondRequest}, getFunction, updateFunction)
 
 		token := oauth.Token{
 			AccessToken: validTokenValue,
@@ -820,7 +823,7 @@ func TestDirectorClient_SetRuntimeStatusCondition(t *testing.T) {
 			cfg.Result = expectedUpdateResponse
 		}
 
-		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedFirstRequest, expectedSecondRequest}, getFunction, updateFunction)
+		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedFirstRequest, expectedSecondRequest}, getFunction, updateFunction)
 
 		token := oauth.Token{
 			AccessToken: validTokenValue,
@@ -865,7 +868,7 @@ func TestDirectorClient_SetRuntimeStatusCondition(t *testing.T) {
 			cfg.Result = nil
 		}
 
-		gqlClient := gql.NewQueryAssertClient(t, false, []*gcli.Request{expectedFirstRequest, expectedSecondRequest}, getFunction, updateFunction)
+		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedFirstRequest, expectedSecondRequest}, getFunction, updateFunction)
 
 		token := oauth.Token{
 			AccessToken: validTokenValue,
@@ -883,4 +886,145 @@ func TestDirectorClient_SetRuntimeStatusCondition(t *testing.T) {
 		//then
 		require.Error(t, err)
 	})
+}
+
+type testGraphQLError struct {
+	Message         string
+	ErrorExtensions map[string]interface{}
+}
+
+func (e testGraphQLError) Error() string {
+	return "graphql: " + e.Message
+}
+func (e testGraphQLError) Extensions() map[string]interface{} {
+	return e.ErrorExtensions
+}
+
+func TestDirectorClient_MapDirectorErrors(t *testing.T) {
+	// given
+	expectedRequest := gcli.NewRequest(expectedRegisterRuntimeQuery)
+	expectedRequest.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", validTokenValue))
+	expectedRequest.Header.Set(TenantHeader, tenantValue)
+
+	inputDescription := "runtime description"
+	runtimeInput := &gqlschema.RuntimeInput{
+		Name:        runtimeTestingName,
+		Description: &inputDescription,
+	}
+
+	token := oauth.Token{
+		AccessToken: validTokenValue,
+		Expiration:  futureExpirationTime,
+	}
+
+	var testcases = []struct {
+		description             string
+		directorErrorExtensions map[string]interface{}
+		provisionerErrorCode    apperrors.ErrCode
+		provisionerErrorMessage string
+	}{
+		{
+			"Should map Director Internal Error to Provisioner Internal Error",
+			map[string]interface{}{"error_code": float64(directorApperrors.InternalError)},
+			apperrors.CodeInternal,
+			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
+		},
+		{
+			"Should map Director Unknown Error to Provisioner Internal Error",
+			map[string]interface{}{"error_code": float64(directorApperrors.UnknownError)},
+			apperrors.CodeInternal,
+			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
+		},
+		{
+			"Should map Director Insufficient Scopes Error to Provisioner Bad Gateway Error",
+			map[string]interface{}{"error_code": float64(directorApperrors.InsufficientScopes)},
+			apperrors.CodeBadGateway,
+			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
+		},
+		{
+			"Should map Director Unauthorized Error to Provisioner Bad Gateway Error",
+			map[string]interface{}{"error_code": float64(directorApperrors.Unauthorized)},
+			apperrors.CodeBadGateway,
+			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
+		},
+		{
+			"Should map Director Not Found Error to Provisioner Bad Request Error",
+			map[string]interface{}{"error_code": float64(directorApperrors.NotFound)},
+			apperrors.CodeBadRequest,
+			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
+		},
+		{
+			"Should map Director Not Unique Error to Provisioner Bad Request Error",
+			map[string]interface{}{"error_code": float64(directorApperrors.NotUnique)},
+			apperrors.CodeBadRequest,
+			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
+		},
+		{
+			"Should map Director Invalid Data Error to Provisioner Bad Request Error",
+			map[string]interface{}{"error_code": float64(directorApperrors.InvalidData)},
+			apperrors.CodeBadRequest,
+			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
+		},
+		{
+			"Should map Director Tenant Required Error to Provisioner Bad Request Error",
+			map[string]interface{}{"error_code": float64(directorApperrors.TenantRequired)},
+			apperrors.CodeBadRequest,
+			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
+		},
+		{
+			"Should map Director Tenant Not Found Error to Provisioner Bad Request Error",
+			map[string]interface{}{"error_code": float64(directorApperrors.TenantNotFound)},
+			apperrors.CodeBadRequest,
+			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
+		},
+		{
+			"Should map Director Invalid Operation Error to Provisioner Bad Request Error",
+			map[string]interface{}{"error_code": float64(directorApperrors.InvalidOperation)},
+			apperrors.CodeBadRequest,
+			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
+		},
+		{
+			"Should return Internal Error if failed to find error code in the Director Error",
+			map[string]interface{}{"something_else": float64(directorApperrors.InvalidOperation)},
+			apperrors.CodeInternal,
+			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, Failed to read the error code from the error response. Original error: graphql: some error",
+		},
+		{
+			"Should return Internal Error if failed to cast error code from the Director Error",
+			map[string]interface{}{"error_code": "not a float64"},
+			apperrors.CodeInternal,
+			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, Failed to cast the error code from the error response. Original error: graphql: some error",
+		},
+		{
+			"Should return Internal Error if failed to recognize the Director Error code",
+			map[string]interface{}{"error_code": float64(123)},
+			apperrors.CodeInternal,
+			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, Did not recognize the error code from the error response. Original error: graphql: some error",
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.description, func(t *testing.T) {
+			// given
+			directorError := &testGraphQLError{
+				Message:         "some error",
+				ErrorExtensions: testcase.directorErrorExtensions,
+			}
+
+			gqlClient := gql.NewQueryAssertClient(t, directorError, []*gcli.Request{expectedRequest})
+
+			mockedOAuthClient := &oauthmocks.Client{}
+			mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+			directorClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+
+			// when
+			_, err := directorClient.CreateRuntime(runtimeInput, tenantValue)
+
+			// then
+			require.Error(t, err)
+			assert.Equal(t, testcase.provisionerErrorCode, err.Code())
+			assert.Equal(t, testcase.provisionerErrorMessage, err.Error())
+		})
+	}
 }
