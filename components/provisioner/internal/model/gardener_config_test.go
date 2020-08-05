@@ -188,7 +188,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					},
 					Purpose: &purpose,
 					Kubernetes: gardener_types.Kubernetes{
-						AllowPrivilegedContainers: util.BoolPtr(true),
+						AllowPrivilegedContainers: util.BoolPtr(false),
 						Version:                   "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
@@ -243,7 +243,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					},
 					Purpose: &purpose,
 					Kubernetes: gardener_types.Kubernetes{
-						AllowPrivilegedContainers: util.BoolPtr(true),
+						AllowPrivilegedContainers: util.BoolPtr(false),
 						Version:                   "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
@@ -297,7 +297,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					},
 					Purpose: &purpose,
 					Kubernetes: gardener_types.Kubernetes{
-						AllowPrivilegedContainers: util.BoolPtr(true),
+						AllowPrivilegedContainers: util.BoolPtr(false),
 						Version:                   "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
@@ -352,7 +352,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					},
 					Purpose: &purpose,
 					Kubernetes: gardener_types.Kubernetes{
-						AllowPrivilegedContainers: util.BoolPtr(true),
+						AllowPrivilegedContainers: util.BoolPtr(false),
 						Version:                   "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
@@ -506,7 +506,7 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		MaxUnavailable:                      1,
 		EnableKubernetesVersionAutoUpdate:   true,
 		EnableMachineImageVersionAutoUpdate: false,
-		AllowPrivilegedContainers:           true,
+		AllowPrivilegedContainers:           false,
 		GardenerProviderConfig:              providerCfg,
 	}
 }

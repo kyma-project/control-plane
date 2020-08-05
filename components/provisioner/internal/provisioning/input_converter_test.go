@@ -20,6 +20,7 @@ import (
 
 const (
 	kymaVersion                                = "1.5"
+	kymaVersionWithoutTiller                   = "1.14"
 	clusterEssentialsComponent                 = "cluster-essentials"
 	coreComponent                              = "core"
 	rafterComponent                            = "rafter"
@@ -34,6 +35,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 
 	readSession := &realeaseMocks.Repository{}
 	readSession.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
+	readSession.On("GetReleaseByVersion", kymaVersionWithoutTiller).Return(fixKymaReleaseWithoutTiller(), nil)
 
 	gcpGardenerProvider := &gqlschema.GCPProviderConfigInput{Zones: []string{"fix-gcp-zone-1", "fix-gcp-zone-2"}}
 
@@ -180,6 +182,19 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		}
 	}
 
+	gardenerAzureGQLInputWithoutTiller := createGQLRuntimeInputAzure(nil)
+	gardenerAzureGQLInputWithoutTiller.KymaConfig.Version = kymaVersionWithoutTiller
+	expectedGardenerAzureRuntimeConfigWithoutTiller := expectedGardenerAzureRuntimeConfig(nil)
+	expectedGardenerAzureRuntimeConfigWithoutTiller.ClusterConfig.AllowPrivilegedContainers = false
+	expectedGardenerAzureRuntimeConfigWithoutTiller.KymaConfig.Release = fixKymaReleaseWithoutTiller()
+
+	gardenerAzureGQLInputWithNoTillerButAllowedPrivilegedContainers := createGQLRuntimeInputAzure(nil)
+	gardenerAzureGQLInputWithNoTillerButAllowedPrivilegedContainers.ClusterConfig.GardenerConfig.AllowPrivilegedContainers = util.BoolPtr(true)
+	gardenerAzureGQLInputWithNoTillerButAllowedPrivilegedContainers.KymaConfig.Version = kymaVersionWithoutTiller
+	expectedGardenerAzureRuntimeConfigWithNoTillerButAllowedPrivilegedContainers := expectedGardenerAzureRuntimeConfig(nil)
+	expectedGardenerAzureRuntimeConfigWithNoTillerButAllowedPrivilegedContainers.ClusterConfig.AllowPrivilegedContainers = true
+	expectedGardenerAzureRuntimeConfigWithNoTillerButAllowedPrivilegedContainers.KymaConfig.Release = fixKymaReleaseWithoutTiller()
+
 	awsGardenerProvider := &gqlschema.AWSProviderConfigInput{
 		Zone:         "zone",
 		InternalCidr: "cidr",
@@ -274,6 +289,16 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			input:       createGQLRuntimeInputAzure(gardenerZones),
 			expected:    expectedGardenerAzureRuntimeConfig(gardenerZones),
 			description: "Should create proper runtime config struct with Gardener input for Azure provider with zones passed",
+		},
+		{
+			input:       gardenerAzureGQLInputWithoutTiller,
+			expected:    expectedGardenerAzureRuntimeConfigWithoutTiller,
+			description: "Should not allow privileged containers if Tiller is not present",
+		},
+		{
+			input:       gardenerAzureGQLInputWithNoTillerButAllowedPrivilegedContainers,
+			expected:    expectedGardenerAzureRuntimeConfigWithNoTillerButAllowedPrivilegedContainers,
+			description: "Should allow privileged containers if requested even when Tiller is not present",
 		},
 		{
 			input:       gardenerAWSGQLInput,
