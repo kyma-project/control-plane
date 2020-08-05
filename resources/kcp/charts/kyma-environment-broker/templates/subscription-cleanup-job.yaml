@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Chart.Name }}-subscription-cleanup-job
+spec:
+  schedule: "*/10 * * * *"
+  template:
+    metadata:
+    spec:
+      serviceAccountName: {{ .Chart.Name }}-certs-setup-job
+      containers:
+      - image: agalwas/subscription-cleanup-job
+        name: subscription-cleanup-job
+        volumeMounts:
+          - mountPath: /gardener/kubeconfig
+            name: gardener-kubeconfig
+            readOnly: true
+        resources: {}
+      restartPolicy: OnFailure
+      volumes:
+      - name: gardener-kubeconfig
+        secret:
+          secretName: {{ .Values.gardener.secretName }}
+status: {}
