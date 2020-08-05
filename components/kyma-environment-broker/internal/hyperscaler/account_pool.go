@@ -43,6 +43,7 @@ type AccountPool interface {
 	Credentials(hyperscalerType Type, tenantName string) (Credentials, error)
 	ReleaseSubscription(hyperscalerType Type, tenantName string) error
 	CountSubscriptionUsages(hyperscalerType Type, tenantName string) (int, error)
+	IsSubscriptionAlreadyReleased(hyperscalerType Type, tenantName string) (bool, error)
 }
 
 func NewAccountPool(secretsClient corev1.SecretInterface, shootsClient gardener_apis.ShootInterface) AccountPool {
@@ -58,46 +59,53 @@ type secretsAccountPool struct {
 	mux           sync.Mutex
 }
 
-// just label secret as "released"
-func (p *secretsAccountPool) ReleaseSubscription(hyperscalerType Type, tenantName string) error {
+func (p *secretsAccountPool) IsSubscriptionAlreadyReleased(hyperscalerType Type, tenantName string) (bool, error) {
 
-	labelSelector := fmt.Sprintf("shared!=true, tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
-
-	p.mux.Lock()
-	defer p.mux.Unlock()
+	labelSelector := fmt.Sprintf("shared!=true, released=true, tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
 
 	secret, err := getK8SSecret(p.secretsClient, labelSelector)
 
 	if err != nil {
-		return errors.Wrapf(err, "Could not find secret used by the tenant %s to release subscription", tenantName)
+		return false, errors.Wrapf(err, "Could not find secret used by the tenant %s and hyperscaler %s", tenantName)
 	}
 
+	if secret != nil {
+		return true, nil
+	}
 
-	/*
-	labelSelector = fmt.Sprintf("shared!=true, !tenantName, !released, hyperscalerType=%s", hyperscalerType)
-		// lock so that only one thread can fetch an unassigned secret and assign it (update secret with tenantName)
-		p.mux.Lock()
-		defer p.mux.Unlock()
-		secret, err = getK8SSecret(p.secretsClient, labelSelector)
+	return false, nil
+}
 
-		if err != nil {
-			return Credentials{}, err
-		}
+// just label secret as "released". This can be already marked as relesed if this step is beeing repeated
+func (p *secretsAccountPool) ReleaseSubscription(hyperscalerType Type, tenantName string) error {
 
-		if secret == nil {
-			return Credentials{}, errors.Errorf("accountPool failed to find unassigned secret for hyperscalerType: %s", hyperscalerType)
-		}
+	released, err  := p.IsSubscriptionAlreadyReleased (hyperscalerType, tenantName)
 
-		secret.Labels["tenantName"] = tenantName
-		updatedSecret, err := p.secretsClient.Update(secret)
-		if err != nil {
-			return Credentials{}, errors.Wrapf(err, "accountPool error while updating secret with tenantName: %s", tenantName)
-		}
+	if err != nil  {
+		return errors.Wrapf(err, "Could not determine if subscription for tenant %s is already releaseds: ", tenantName)
+	}
 
-		return credentialsFromSecret(updatedSecret, hyperscalerType), nil
+	if released == true {
+		return nil
+	}
 
+	p.mux.Lock()
+	defer p.mux.Unlock()
 
-	*/
+	labelSelector := fmt.Sprintf("shared!=true, tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
+
+	secret, err := getK8SSecret(p.secretsClient, labelSelector)
+
+	if err != nil {
+		return errors.Wrapf(err, "accountPool failed to find secret used by the tenant %s and hyperscaler %s to release subscription", tenantName, hyperscalerType)
+	}
+
+	secret.Labels["released"] = "true"
+
+	_, err = p.secretsClient.Update(secret)
+	if err != nil {
+		return errors.Wrapf(err, "accountPool failed to update secret with released label for tenant and hyperscaler: %s", tenantName, hyperscalerType)
+	}
 
 	return nil
 }
@@ -117,9 +125,12 @@ func (p *secretsAccountPool) CountSubscriptionUsages(hyperscalerType Type, tenan
 
 	shootlist, err :=  p.shootsClient.List(metav1.ListOptions{FieldSelector: fselector})
 
-	// make it better
-	if err != nil || shootlist == nil || len(shootlist.Items) == 0 {
-		return 0, errors.Wrapf(err, "Could not find shoot using secret: %s", secret.Name)
+	if err != nil {
+		return 0, errors.Wrapf(err, "Error while finding Gardener shoots using secret: %s", secret.Name)
+	}
+
+	if shootlist == nil || len(shootlist.Items) == 0 {
+		return 0, nil
 	}
 
 	subscriptions := 0

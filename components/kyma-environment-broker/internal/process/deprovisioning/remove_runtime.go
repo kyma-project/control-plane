@@ -65,10 +65,6 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 	var provisionerResponse string
 	if operation.ProvisionerOperationID == "" {
 
-		//err := releaseSubscription (&operation)
-
-		// mark subscription to be released with cleanup job if this is the
-		// the only cluster for this GlobalAccountID (tenant)
 		pp, err := operation.GetProvisioningParameters()
 		if err != nil {
 			// if the parameters are incorrect, there is no reason to retry the operation
@@ -84,18 +80,12 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 				log.Errorf("Aborting deprovisioning after failing to determine the type of Hyperscaler to use for planID: %s", pp.PlanID)
 				return operation, 0, nil
 			}
-			// combine both of them
-			usedSubscriptions, err := s.accountProvider.GetNumberOfUsedSubscriptions(hypType, instance.GlobalAccountID, false)
 
+			err = s.accountProvider.ReleaseGardenerSecretForLastCluster(hypType, instance.GlobalAccountID)
 			if err != nil {
-				log.Errorf("Aborting deprovisioning after failing to determine number of used %s subscriptions by tenant: %s", hypType, instance.GlobalAccountID)
-				return operation, 0, nil
+				log.Errorf("unable to release subscription runtime: %s", err)
+				return operation, 10 * time.Second, nil
 			}
-
-			if usedSubscriptions == 1 {
-				s.accountProvider.ReleaseSubscription(hypType, instance.GlobalAccountID)
-			}
-
 		}
 
 

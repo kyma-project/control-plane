@@ -11,8 +11,7 @@ type AccountProvider interface {
 	GardenerCredentials(hyperscalerType Type, tenantName string) (Credentials, error)
 	GardenerSharedCredentials(hyperscalerType Type) (Credentials, error)
 	GardenerSecretName(input *gqlschema.GardenerConfigInput, tenantName string) (string, error)
-	GetNumberOfUsedSubscriptions(hyperscalerType Type, tenantName string, trial bool) (int, error)
-	ReleaseSubscription(hyperscalerType Type, tenantName string) error
+	ReleaseGardenerSecretForLastCluster(hyperscalerType Type, tenantName string) error
 }
 
 type accountProvider struct {
@@ -95,30 +94,20 @@ func (p *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInpu
 	return credential.Name, nil
 }
 
-func (p *accountProvider) GetNumberOfUsedSubscriptions(hyperscalerType Type, tenantName string, trial bool) (int, error) {
 
-	if trial {
-		return 0, nil
-		//if p.sharedGardenerPool == nil {
-		//	return 0, errors.New("failed to get number of used subscription for tenant. Shared Account pool is not configured")
-		//}
-		// not implemented
-	} else {
-		if p.gardenerPool == nil {
-			return 0, errors.New("failed to get number of used subscription for tenant. Gardener Account pool is not configured")
-		}
-
-		return p.gardenerPool.CountSubscriptionUsages(hyperscalerType, tenantName)
-	}
-
-	return 0, nil
-}
-
-func (p *accountProvider) ReleaseSubscription(hyperscalerType Type, tenantName string) error {
+func (p *accountProvider) ReleaseGardenerSecretForLastCluster(hyperscalerType Type, tenantName string) error {
 	if p.gardenerPool == nil {
 		return errors.New("failed to release subscription for tenant. Gardener Account pool is not configured")
 	}
 
+	usedSubscriptions, err := p.gardenerPool.CountSubscriptionUsages(hyperscalerType, tenantName)
 
-	return p.gardenerPool.ReleaseSubscription(hyperscalerType, tenantName)
+	if err != nil {
+		return errors.Wrapf(err,"Cannot determine number of used %s subscriptions by tenant: %s", hyperscalerType, tenantName)
+	}
+
+	if usedSubscriptions == 1 {
+		p.gardenerPool.ReleaseSubscription(hyperscalerType, tenantName)
+	}
+	return nil
 }

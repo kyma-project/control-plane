@@ -303,10 +303,10 @@ func main() {
 			step:     deprovisioning.NewIASDeregistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
 		},
-		{
-			weight: 10,
-			step:   deprovisioning.NewReleaseCredentialsStep(db.Operations(), db.Instances(), provisionerClient),
-		},
+		//{
+		//	weight: 10,
+		//	step:   deprovisioning.NewReleaseCredentialsStep(db.Operations(), db.Instances(), provisionerClient),
+		//},
 		{
 			weight: 10,
 			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient, accountProvider),
