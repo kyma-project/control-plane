@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 )
 
@@ -36,10 +37,21 @@ func (s *NatsStreamingStep) Run(operation internal.ProvisioningOperation, log lo
 		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-	log.Debugf(NatsStreamingStepName+"Provisioning parameters from operation: %v", parameters)
+	log.Infof(NatsStreamingStepName+"Provisioning parameters from operation: %v", parameters)
 
 	// TODO finish the implementation
 	//
+	// append installation overrides
+	operation.InputCreator.AppendOverrides("nats-streaming", getNatsStreamingOverrides())
 
 	return operation, 0, nil
+}
+
+func getNatsStreamingOverrides() []*gqlschema.ConfigEntryInput {
+	return []*gqlschema.ConfigEntryInput{
+		{
+			Key:   "global.natsStreaming.persistence.enabled",
+			Value: "false",
+		},
+	}
 }
