@@ -2,6 +2,8 @@ package deprovisioning
 
 import (
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -25,14 +27,16 @@ type InitialisationStep struct {
 	operationStorage  storage.Provisioning
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
+	accountProvider   hyperscaler.AccountProvider
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, accountProvider hyperscaler.AccountProvider) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:  process.NewDeprovisionOperationManager(os),
 		operationStorage:  os,
 		instanceStorage:   is,
 		provisionerClient: pc,
+		accountProvider:   accountProvider,
 	}
 }
 
@@ -86,7 +90,7 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 		}
 		log.Info("instance being removed, check operation status")
 		operation.RuntimeID = instance.RuntimeID
-		return s.checkRuntimeStatus(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
+		return s.checkRuntimeStatus(operation, instance, parameters.PlanID, log.WithField("runtimeID", instance.RuntimeID))
 	case dberr.IsNotFound(err):
 		return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned")
 	default:
@@ -105,7 +109,7 @@ func setAvsIds(deprovisioningOperation *internal.DeprovisioningOperation, provis
 	}
 }
 
-func (s *InitialisationStep) checkRuntimeStatus(operation internal.DeprovisioningOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+func (s *InitialisationStep) checkRuntimeStatus(operation internal.DeprovisioningOperation, instance *internal.Instance, planID string, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout))
@@ -124,7 +128,23 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
-		return s.operationManager.OperationSucceeded(operation, msg)
+		{
+			if !broker.IsTrialPlan(planID) {
+				hypType, err := hyperscaler.HyperscalerTypeForPlanID(planID)
+				if err != nil {
+					log.Errorf("after successful deprovisioning failing to hyperscaler release subscription - determine the type of Hyperscaler to use for planID: %s", planID)
+					return operation, 0, nil
+				}
+
+				err = s.accountProvider.ReleaseGardenerSecretForLastCluster(hypType, instance.GlobalAccountID)
+				if err != nil {
+					log.Errorf("after successful deprovisioning failed to release hyperscaler subscription: %s", err)
+					return operation, 10 * time.Second, nil
+				}
+			}
+			return s.operationManager.OperationSucceeded(operation, msg)
+		}
+
 	case gqlschema.OperationStateInProgress:
 		return operation, 1 * time.Minute, nil
 	case gqlschema.OperationStatePending:

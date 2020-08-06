@@ -49,7 +49,7 @@ type AccountPool interface {
 func NewAccountPool(secretsClient corev1.SecretInterface, shootsClient gardener_apis.ShootInterface) AccountPool {
 	return &secretsAccountPool{
 		secretsClient: secretsClient,
-		shootsClient: shootsClient,
+		shootsClient:  shootsClient,
 	}
 }
 
@@ -79,9 +79,9 @@ func (p *secretsAccountPool) IsSubscriptionAlreadyReleased(hyperscalerType Type,
 // just label secret as "released". This can be already marked as relesed if this step is beeing repeated
 func (p *secretsAccountPool) ReleaseSubscription(hyperscalerType Type, tenantName string) error {
 
-	released, err  := p.IsSubscriptionAlreadyReleased (hyperscalerType, tenantName)
+	released, err := p.IsSubscriptionAlreadyReleased(hyperscalerType, tenantName)
 
-	if err != nil  {
+	if err != nil {
 		return errors.Wrapf(err, "Could not determine if subscription for tenant %s is already releaseds: ", tenantName)
 	}
 
@@ -123,7 +123,7 @@ func (p *secretsAccountPool) CountSubscriptionUsages(hyperscalerType Type, tenan
 	// now let's check how many shoots are using this secret
 	fselector := fields.SelectorFromSet(fields.Set{fieldSecretBindingName: secret.Name}).String()
 
-	shootlist, err :=  p.shootsClient.List(metav1.ListOptions{FieldSelector: fselector})
+	shootlist, err := p.shootsClient.List(metav1.ListOptions{FieldSelector: fselector})
 
 	if err != nil {
 		return 0, errors.Wrapf(err, "Error while finding Gardener shoots using secret: %s", secret.Name)

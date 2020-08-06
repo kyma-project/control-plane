@@ -278,7 +278,7 @@ func main() {
 		}
 	}
 
-	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient)
+	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider)
 	deprovisionManager.InitStep(deprovisioningInit)
 	deprovisioningSteps := []struct {
 		disabled bool
@@ -303,13 +303,9 @@ func main() {
 			step:     deprovisioning.NewIASDeregistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
 		},
-		//{
-		//	weight: 10,
-		//	step:   deprovisioning.NewReleaseCredentialsStep(db.Operations(), db.Instances(), provisionerClient),
-		//},
 		{
 			weight: 10,
-			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient, accountProvider),
+			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient),
 		},
 	}
 	for _, step := range deprovisioningSteps {

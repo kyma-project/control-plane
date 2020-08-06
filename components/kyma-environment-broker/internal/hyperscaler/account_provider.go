@@ -94,16 +94,25 @@ func (p *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInpu
 	return credential.Name, nil
 }
 
-
 func (p *accountProvider) ReleaseGardenerSecretForLastCluster(hyperscalerType Type, tenantName string) error {
 	if p.gardenerPool == nil {
 		return errors.New("failed to release subscription for tenant. Gardener Account pool is not configured")
 	}
 
+	released, err := p.gardenerPool.IsSubscriptionAlreadyReleased(hyperscalerType, tenantName)
+
+	if err != nil {
+		return err
+	}
+
+	if released {
+		return nil
+	}
+
 	usedSubscriptions, err := p.gardenerPool.CountSubscriptionUsages(hyperscalerType, tenantName)
 
 	if err != nil {
-		return errors.Wrapf(err,"Cannot determine number of used %s subscriptions by tenant: %s", hyperscalerType, tenantName)
+		return errors.Wrapf(err, "Cannot determine number of used %s subscriptions by tenant: %s", hyperscalerType, tenantName)
 	}
 
 	if usedSubscriptions == 1 {
