@@ -9,7 +9,7 @@ spec:
     spec:
       serviceAccountName: {{ .Chart.Name }}-certs-setup-job
       containers:
-      - image: agalwas/subscription-cleanup-job
+      - image: agalwas/subscription-cleanup-job:latest
         name: subscription-cleanup-job
         volumeMounts:
           - mountPath: /gardener/kubeconfig
