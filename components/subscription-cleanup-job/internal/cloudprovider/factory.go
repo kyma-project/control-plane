@@ -18,7 +18,7 @@ func New(hyperscalerType model.HyperscalerType, secretData map[string][]byte) (R
 		}
 	case model.Azure:
 		{
-			return NewAzureResourcesCleaner(secretData), nil
+			return NewAzureResourcesCleaner(secretData)
 		}
 	default:
 		return nil, errors.New(fmt.Sprintf("unknown hyperscaler type"))
