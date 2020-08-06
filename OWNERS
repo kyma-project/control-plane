@@ -2,17 +2,16 @@
 filters:
   ".*":
     approvers:
-     - PK85 
-     - crabtree 
-     - pkosiec 
-     - kfurgol 
-     - tgorgol 
+     - PK85
+     - crabtree  
+     - kfurgol
+     - tgorgol
      - dbadura
-     - akgalwas 
-     - janmedrek 
-     - Szymongib 
-     - franpog859 
-     - Maladie 
+     - akgalwas
+     - janmedrek
+     - Szymongib
+     - franpog859
+     - Maladie
      - kjaksik
      - koala7659
   '\.md$|/docs/|^milv\.config\.yaml$':
