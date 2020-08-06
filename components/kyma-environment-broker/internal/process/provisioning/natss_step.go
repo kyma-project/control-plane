@@ -38,12 +38,7 @@ func (s *NatsStreamingStep) Run(operation internal.ProvisioningOperation, log lo
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 	log.Infof(NatsStreamingStepName+"Provisioning parameters from operation: %v", parameters)
-
-	// TODO finish the implementation
-	//
-	// append installation overrides
 	operation.InputCreator.AppendOverrides("nats-streaming", getNatsStreamingOverrides())
-
 	return operation, 0, nil
 }
 

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -59,12 +57,6 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 		log.Errorf(errorMessage)
 		return operation, 0, nil
 	}
-	// TODO
-	if broker.IsTrialPlan(pp.PlanID) {
-		log.Infof("Skipping step %s", s.Name())
-		return operation, 0, nil
-	}
-	//
 	log.Infof("HAP lookup for credentials to deprovision cluster for global account ID %s on Hyperscaler %s",
 		pp.ErsContext.GlobalAccountID, hypType)
 
