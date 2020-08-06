@@ -1,24 +1,34 @@
-apiVersion: batch/v1
-kind: Job
+apiVersion: batch/v1beta1
+kind: CronJob
 metadata:
-  name: {{ .Chart.Name }}-subscription-cleanup-job
+  name: { .Chart.Name }}-subscription-cleanup-job
 spec:
-  schedule: "*/10 * * * *"
-  template:
+  jobTemplate:
     metadata:
+      name: { .Chart.Name }}-subscription-cleanup-job
     spec:
-      serviceAccountName: {{ .Chart.Name }}-certs-setup-job
-      containers:
-      - image: agalwas/subscription-cleanup-job:latest
-        name: subscription-cleanup-job
-        volumeMounts:
-          - mountPath: /gardener/kubeconfig
-            name: gardener-kubeconfig
-            readOnly: true
-        resources: {}
-      restartPolicy: OnFailure
-      volumes:
-      - name: gardener-kubeconfig
-        secret:
-          secretName: {{ .Values.gardener.secretName }}
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: “false”
+        spec:
+          containers:
+            - image: agalwas/subscription-cleanup-job:latest
+              name: { .Chart.Name }}-subscription-cleanup-job
+              env:
+                - name: APP_GARDENER_PROJECT
+                  value: {{ .Values.gardener.project }}
+                - name: APP_GARDENER_KUBECONFIG_PATH
+                  value: {{ .Values.gardener.kubeconfigPath }}
+              volumeMounts:
+                - mountPath: /gardener/kubeconfig
+                  name: gardener-kubeconfig
+                  readOnly: true
+              resources: {}
+          restartPolicy: OnFailure
+          volumes:
+            - name: gardener-kubeconfig
+              secret:
+                secretName: {{ .Values.gardener.secretName }}
+  schedule: '*/10 * * * *'
 status: {}
