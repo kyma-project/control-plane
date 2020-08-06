@@ -37,6 +37,6 @@ func (s *KnativeProvisionerNatssStep) Run(operation internal.ProvisioningOperati
 		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-	log.Infof(knativeProvisionerNatssStepName+"Provisioning for PlanID: %s", parameters.PlanID)
+	log.Infof(knativeProvisionerNatssStepName+": Provisioning for PlanID: %s", parameters.PlanID)
 	return operation, 0, nil
 }

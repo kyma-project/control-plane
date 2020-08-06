@@ -38,7 +38,7 @@ func (s *NatsStreamingStep) Run(operation internal.ProvisioningOperation, log lo
 		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-	log.Infof(natsStreamingStepName+"Provisioning for PlanID: %s", parameters.PlanID)
+	log.Infof(natsStreamingStepName+": Provisioning for PlanID: %s", parameters.PlanID)
 	operation.InputCreator.AppendOverrides(KymaComponentNameNatsStreaming, getNatsStreamingOverrides())
 	return operation, 0, nil
 }
