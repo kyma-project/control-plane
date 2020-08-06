@@ -203,7 +203,7 @@ func TestReleaseGardenerSecretForLastCluster_AlreadyReleased(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestReleaseGardenerSecretForManyClusters(t *testing.T) {
+func TestReleaseGardenerSecretForMultipleClusters(t *testing.T) {
 
 	pool := newTestAccountPoolWithMultipleShoots()
 
@@ -214,7 +214,7 @@ func TestReleaseGardenerSecretForManyClusters(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestReleaseGardenerSecretForManyClusters_ErrorNoPool(t *testing.T) {
+func TestReleaseGardenerSecretForMultipleClusters_ErrorNoPool(t *testing.T) {
 
 	accountProvider := NewAccountProvider(nil, nil, nil)
 
@@ -239,10 +239,23 @@ func TestReleaseGardenerSecret_ErrorBadTenant(t *testing.T) {
 	assert.Contains(t, err.Error(), "accountPool failed to find subscription secret used by the tenant tenantX and hyperscaler azure")
 }
 
+func TestReleaseGardenerSecret_ErrorBadHyperscaler(t *testing.T) {
+
+	pool := newTestAccountPoolWithSingleShoot()
+
+	accountProvider := NewAccountProvider(nil, pool, nil)
+
+	err := accountProvider.ReleaseGardenerSecretForLastCluster(Type("azureX"), "tenant1")
+
+	require.Error(t, err)
+
+	assert.Contains(t, err.Error(), "accountPool failed to find subscription secret used by the tenant tenant1 and hyperscaler azureX")
+}
+
 // stange case but it should pass anyway
 func TestReleaseGardenerSecret_NoShoots(t *testing.T) {
 
-	pool := newTestAccountPool()
+	pool := newTestAccountPoolNoValidShoots()
 
 	accountProvider := NewAccountProvider(nil, pool, nil)
 

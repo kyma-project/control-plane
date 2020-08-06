@@ -327,3 +327,62 @@ func newTestAccountPoolWithMultipleShoots() AccountPool {
 	pool := NewAccountPool(mockSecrets, mockShoots)
 	return pool
 }
+
+func newTestAccountPoolNoValidShoots() AccountPool {
+	var testNamespace = "test-namespace"
+
+	secret1 := &corev1.Secret{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name: "secret1", Namespace: testNamespace,
+			Labels: map[string]string{
+				"tenantName":      "tenant1",
+				"hyperscalerType": "azure",
+			},
+		},
+		Data: map[string][]byte{
+			"credentials": []byte("secret1"),
+		},
+	}
+
+	shoot1 := &gardener_types.Shoot{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name:      "shoot1",
+			Namespace: testNamespace,
+		},
+		Spec: gardener_types.ShootSpec{
+			SecretBindingName: "secret1",
+		},
+		Status: gardener_types.ShootStatus{
+			LastOperation: &gardener_types.LastOperation{
+				State:          gardener_types.LastOperationStatePending,
+				Type:           gardener_types.LastOperationTypeDelete,
+			},
+		},
+	}
+
+	shoot2 := &gardener_types.Shoot{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name:      "shoot2",
+			Namespace: testNamespace,
+		},
+		Spec: gardener_types.ShootSpec{
+			SecretBindingName: "secret1",
+		},
+		Status: gardener_types.ShootStatus{
+			LastOperation: &gardener_types.LastOperation{
+				State:          gardener_types.LastOperationStateFailed,
+				Type:           gardener_types.LastOperationTypeReconcile,
+			},
+		},
+	}
+
+	mockClient := fake.NewSimpleClientset(secret1)
+	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
+
+	gardenerFake := gardener_fake.NewSimpleClientset(shoot1, shoot2)
+	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
+
+	pool := NewAccountPool(mockSecrets, mockShoots)
+
+	return pool
+}

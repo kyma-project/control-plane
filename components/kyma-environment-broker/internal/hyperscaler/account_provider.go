@@ -114,7 +114,7 @@ func (p *accountProvider) ReleaseGardenerSecretForLastCluster(hyperscalerType Ty
 		return errors.Wrapf(err, "Cannot determine number of used %s subscriptions by tenant: %s", hyperscalerType, tenantName)
 	}
 
-	if usedSubscriptions == 1 {
+	if usedSubscriptions == 1 || usedSubscriptions == 0 {
 		return p.gardenerPool.ReleaseSubscription(hyperscalerType, tenantName)
 	}
 
