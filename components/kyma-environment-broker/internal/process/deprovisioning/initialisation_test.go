@@ -1,10 +1,12 @@
 package deprovisioning
 
 import (
+	"github.com/stretchr/testify/mock"
 	"testing"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	hyperscalerMocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/automock"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -40,6 +42,10 @@ func TestInitialisationStep_Run(t *testing.T) {
 	err = memoryStorage.Instances().Insert(instance)
 	assert.NoError(t, err)
 
+	accountProviderMock := &hyperscalerMocks.AccountProvider{}
+
+	accountProviderMock.On("ReleaseGardenerSecretForLastCluster", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+
 	provisionerClient := &provisionerAutomock.Client{}
 	provisionerClient.On("RuntimeOperationStatus", fixGlobalAccountID, fixProvisionerOperationID).Return(gqlschema.OperationStatus{
 		ID:        ptr.String(fixProvisionerOperationID),
@@ -49,7 +55,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		RuntimeID: nil,
 	}, nil)
 
-	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
+	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock)
 
 	// when
 	operation, repeat, err := step.Run(operation, log)
@@ -81,7 +87,7 @@ func fixProvisioningOperation() internal.ProvisioningOperation {
 			Description:            "",
 			UpdatedAt:              time.Now(),
 		},
-		ProvisioningParameters: `{"ers_context":{"globalaccount_id":"1"}}`,
+		ProvisioningParameters: `{"plan_id":"4deee563-e5ec-4731-b9b1-53b42d855f0c","ers_context":{"globalaccount_id":"1"}}`,
 	}
 }
 

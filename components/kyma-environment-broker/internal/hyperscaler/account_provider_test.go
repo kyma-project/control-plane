@@ -180,3 +180,85 @@ func TestGardenerSharedCredentials_Error(t *testing.T) {
 
 	assert.Contains(t, err.Error(), "Gardener Shared Account pool is not configured")
 }
+
+func TestReleaseGardenerSecretForLastCluster(t *testing.T) {
+
+	pool := newTestAccountPoolWithSingleShoot()
+
+	accountProvider := NewAccountProvider(nil, pool, nil)
+
+	err := accountProvider.ReleaseGardenerSecretForLastCluster(Type("azure"), "tenant1")
+
+	require.NoError(t, err)
+}
+
+func TestReleaseGardenerSecretForLastCluster_AlreadyReleased(t *testing.T) {
+
+	pool := newTestAccountPoolWithSingleShootReleased()
+
+	accountProvider := NewAccountProvider(nil, pool, nil)
+
+	err := accountProvider.ReleaseGardenerSecretForLastCluster(Type("azure"), "tenant1")
+
+	require.NoError(t, err)
+}
+
+func TestReleaseGardenerSecretForManyClusters(t *testing.T) {
+
+	pool := newTestAccountPoolWithMultipleShoots()
+
+	accountProvider := NewAccountProvider(nil, pool, nil)
+
+	err := accountProvider.ReleaseGardenerSecretForLastCluster(Type("azure"), "tenant1")
+
+	require.NoError(t, err)
+}
+
+func TestReleaseGardenerSecretForManyClusters_ErrorNoPool(t *testing.T) {
+
+	accountProvider := NewAccountProvider(nil, nil, nil)
+
+	err := accountProvider.ReleaseGardenerSecretForLastCluster(Type("gcp"), "tenant1")
+
+	require.Error(t, err)
+
+	assert.Contains(t, err.Error(), "failed to release subscription for tenant. Gardener Account pool is not configured")
+}
+
+
+func TestReleaseGardenerSecret_ErrorBadTenant(t *testing.T) {
+
+	pool := newTestAccountPoolWithSingleShoot()
+
+	accountProvider := NewAccountProvider(nil, pool, nil)
+
+	err := accountProvider.ReleaseGardenerSecretForLastCluster(Type("azure"), "tenantX")
+
+	require.Error(t, err)
+
+	assert.Contains(t, err.Error(), "accountPool failed to find subscription secret used by the tenant tenantX and hyperscaler azure")
+}
+
+// stange case but it should pass anyway
+func TestReleaseGardenerSecret_NoShoots(t *testing.T) {
+
+	pool := newTestAccountPool()
+
+	accountProvider := NewAccountProvider(nil, pool, nil)
+
+	err := accountProvider.ReleaseGardenerSecretForLastCluster(Type("azure"), "tenant1")
+
+	require.NoError(t, err)
+}
+
+//func newShoot(name, secret string) *gardener_types.Shoot {
+//	return &gardener_types.Shoot{
+//		ObjectMeta: machineryv1.ObjectMeta{
+//			Name:      name,
+//			Namespace: testNamespace,
+//		},
+//		Spec: gardener_types.ShootSpec{
+//			SecretBindingName: secret,
+//		},
+//	}
+//}

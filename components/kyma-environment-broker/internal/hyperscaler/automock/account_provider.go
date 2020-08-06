@@ -75,3 +75,17 @@ func (_m *AccountProvider) GardenerSharedCredentials(hyperscalerType hyperscaler
 
 	return r0, r1
 }
+
+// ReleaseGardenerSecretForLastCluster provides a mock function with given fields: hyperscalerType, tenantName
+func (_m *AccountProvider) ReleaseGardenerSecretForLastCluster(hyperscalerType hyperscaler.Type, tenantName string) error {
+	ret := _m.Called(hyperscalerType, tenantName)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(hyperscaler.Type, string) error); ok {
+		r0 = rf(hyperscalerType, tenantName)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}

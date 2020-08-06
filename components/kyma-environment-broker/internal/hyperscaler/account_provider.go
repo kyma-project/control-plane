@@ -38,7 +38,6 @@ func HyperscalerTypeForPlanID(planID string) (Type, error) {
 	default:
 		return "", errors.Errorf("Cannot determine the type of Hyperscaler to use for planID: %s", planID)
 	}
-
 }
 
 func HyperscalerTypeFromProvisionInput(input *gqlschema.ProvisionRuntimeInput) (Type, error) {
@@ -116,7 +115,8 @@ func (p *accountProvider) ReleaseGardenerSecretForLastCluster(hyperscalerType Ty
 	}
 
 	if usedSubscriptions == 1 {
-		p.gardenerPool.ReleaseSubscription(hyperscalerType, tenantName)
+		return p.gardenerPool.ReleaseSubscription(hyperscalerType, tenantName)
 	}
+
 	return nil
 }

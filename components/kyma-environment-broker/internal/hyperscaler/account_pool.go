@@ -61,12 +61,24 @@ type secretsAccountPool struct {
 
 func (p *secretsAccountPool) IsSubscriptionAlreadyReleased(hyperscalerType Type, tenantName string) (bool, error) {
 
-	labelSelector := fmt.Sprintf("shared!=true, released=true, tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
+	labelSelector := fmt.Sprintf("tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
 
 	secret, err := getK8SSecret(p.secretsClient, labelSelector)
 
 	if err != nil {
-		return false, errors.Wrapf(err, "Could not find secret used by the tenant %s and hyperscaler %s", tenantName)
+		return false, errors.Wrapf(err, "error while looking for a secret used by the tenant %s and hyperscaler %s", tenantName, hyperscalerType)
+	}
+
+	if secret == nil {
+		return false, errors.Errorf("accountPool failed to find subscription secret used by the tenant %s and hyperscaler %s", tenantName, hyperscalerType)
+	}
+
+	labelSelector = fmt.Sprintf("shared!=true, released=true, tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
+
+	secret, err = getK8SSecret(p.secretsClient, labelSelector)
+
+	if err != nil {
+		return false, errors.Wrapf(err, "error while looking for a secret used by the tenant %s and hyperscaler %s", tenantName, hyperscalerType)
 	}
 
 	if secret != nil {
@@ -79,16 +91,6 @@ func (p *secretsAccountPool) IsSubscriptionAlreadyReleased(hyperscalerType Type,
 // just label secret as "released". This can be already marked as relesed if this step is beeing repeated
 func (p *secretsAccountPool) ReleaseSubscription(hyperscalerType Type, tenantName string) error {
 
-	released, err := p.IsSubscriptionAlreadyReleased(hyperscalerType, tenantName)
-
-	if err != nil {
-		return errors.Wrapf(err, "Could not determine if subscription for tenant %s is already releaseds: ", tenantName)
-	}
-
-	if released == true {
-		return nil
-	}
-
 	p.mux.Lock()
 	defer p.mux.Unlock()
 
@@ -96,7 +98,7 @@ func (p *secretsAccountPool) ReleaseSubscription(hyperscalerType Type, tenantNam
 
 	secret, err := getK8SSecret(p.secretsClient, labelSelector)
 
-	if err != nil {
+	if err != nil || secret == nil {
 		return errors.Wrapf(err, "accountPool failed to find secret used by the tenant %s and hyperscaler %s to release subscription", tenantName, hyperscalerType)
 	}
 
@@ -104,7 +106,7 @@ func (p *secretsAccountPool) ReleaseSubscription(hyperscalerType Type, tenantNam
 
 	_, err = p.secretsClient.Update(secret)
 	if err != nil {
-		return errors.Wrapf(err, "accountPool failed to update secret with released label for tenant and hyperscaler: %s", tenantName, hyperscalerType)
+		return errors.Wrapf(err, "accountPool failed to update secret with released label for tenant: %s and hyperscaler: %s", tenantName, hyperscalerType)
 	}
 
 	return nil
@@ -116,8 +118,8 @@ func (p *secretsAccountPool) CountSubscriptionUsages(hyperscalerType Type, tenan
 
 	secret, err := getK8SSecret(p.secretsClient, labelSelector)
 
-	if err != nil {
-		return 0, errors.Wrapf(err, "Could not find secret used by the tenant %s to count subscription usage", tenantName)
+	if err != nil || secret == nil {
+		return 0, errors.Wrapf(err, "Could not find secret used by the tenant %s and hyperscaler %s to count subscription usage", tenantName, hyperscalerType)
 	}
 
 	// now let's check how many shoots are using this secret
@@ -134,7 +136,7 @@ func (p *secretsAccountPool) CountSubscriptionUsages(hyperscalerType Type, tenan
 	}
 
 	subscriptions := 0
-	// count only clusters that are in good shape
+	// count only such clusters that are in good shape
 	for _, s := range shootlist.Items {
 
 		if s.Status.LastOperation != nil {
