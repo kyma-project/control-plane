@@ -1,9 +1,10 @@
 package deprovisioning
 
 import (
-	"github.com/stretchr/testify/mock"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	hyperscalerMocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/automock"

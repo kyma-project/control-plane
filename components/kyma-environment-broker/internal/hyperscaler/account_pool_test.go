@@ -210,8 +210,8 @@ func newTestAccountPoolWithSingleShoot() AccountPool {
 		},
 		Status: gardener_types.ShootStatus{
 			LastOperation: &gardener_types.LastOperation{
-				State:          gardener_types.LastOperationStateSucceeded,
-				Type:           gardener_types.LastOperationTypeReconcile,
+				State: gardener_types.LastOperationStateSucceeded,
+				Type:  gardener_types.LastOperationTypeReconcile,
 			},
 		},
 	}
@@ -236,7 +236,7 @@ func newTestAccountPoolWithSingleShootReleased() AccountPool {
 			Labels: map[string]string{
 				"tenantName":      "tenant1",
 				"hyperscalerType": "azure",
-				"released": "true",
+				"released":        "true",
 			},
 		},
 		Data: map[string][]byte{
@@ -254,8 +254,8 @@ func newTestAccountPoolWithSingleShootReleased() AccountPool {
 		},
 		Status: gardener_types.ShootStatus{
 			LastOperation: &gardener_types.LastOperation{
-				State:          gardener_types.LastOperationStateSucceeded,
-				Type:           gardener_types.LastOperationTypeReconcile,
+				State: gardener_types.LastOperationStateSucceeded,
+				Type:  gardener_types.LastOperationTypeReconcile,
 			},
 		},
 	}
@@ -296,8 +296,8 @@ func newTestAccountPoolWithMultipleShoots() AccountPool {
 		},
 		Status: gardener_types.ShootStatus{
 			LastOperation: &gardener_types.LastOperation{
-				State:          gardener_types.LastOperationStateSucceeded,
-				Type:           gardener_types.LastOperationTypeReconcile,
+				State: gardener_types.LastOperationStateSucceeded,
+				Type:  gardener_types.LastOperationTypeReconcile,
 			},
 		},
 	}
@@ -312,8 +312,8 @@ func newTestAccountPoolWithMultipleShoots() AccountPool {
 		},
 		Status: gardener_types.ShootStatus{
 			LastOperation: &gardener_types.LastOperation{
-				State:          gardener_types.LastOperationStateSucceeded,
-				Type:           gardener_types.LastOperationTypeReconcile,
+				State: gardener_types.LastOperationStateSucceeded,
+				Type:  gardener_types.LastOperationTypeReconcile,
 			},
 		},
 	}
@@ -354,8 +354,8 @@ func newTestAccountPoolNoValidShoots() AccountPool {
 		},
 		Status: gardener_types.ShootStatus{
 			LastOperation: &gardener_types.LastOperation{
-				State:          gardener_types.LastOperationStatePending,
-				Type:           gardener_types.LastOperationTypeDelete,
+				State: gardener_types.LastOperationStatePending,
+				Type:  gardener_types.LastOperationTypeDelete,
 			},
 		},
 	}
@@ -370,8 +370,8 @@ func newTestAccountPoolNoValidShoots() AccountPool {
 		},
 		Status: gardener_types.ShootStatus{
 			LastOperation: &gardener_types.LastOperation{
-				State:          gardener_types.LastOperationStateFailed,
-				Type:           gardener_types.LastOperationTypeReconcile,
+				State: gardener_types.LastOperationStateFailed,
+				Type:  gardener_types.LastOperationTypeReconcile,
 			},
 		},
 	}

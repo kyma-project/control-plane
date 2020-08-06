@@ -225,7 +225,6 @@ func TestReleaseGardenerSecretForMultipleClusters_ErrorNoPool(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed to release subscription for tenant. Gardener Account pool is not configured")
 }
 
-
 func TestReleaseGardenerSecret_ErrorBadTenant(t *testing.T) {
 
 	pool := newTestAccountPoolWithSingleShoot()
