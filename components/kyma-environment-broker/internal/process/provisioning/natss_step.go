@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	NatsStreamingStepName = "NatsStreaming"
+	KymaComponentNameNatsStreaming = "nats-streaming"
+	natsStreamingStepName          = "NatsStreaming"
 )
 
 type NatsStreamingStep struct {
@@ -28,7 +29,7 @@ func NewNatsStreamingStep(os storage.Operations) *NatsStreamingStep {
 }
 
 func (s *NatsStreamingStep) Name() string {
-	return NatsStreamingStepName
+	return natsStreamingStepName
 }
 
 func (s *NatsStreamingStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
@@ -37,8 +38,8 @@ func (s *NatsStreamingStep) Run(operation internal.ProvisioningOperation, log lo
 		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-	log.Infof(NatsStreamingStepName+"Provisioning parameters from operation: %v", parameters)
-	operation.InputCreator.AppendOverrides("nats-streaming", getNatsStreamingOverrides())
+	log.Infof(natsStreamingStepName+"Provisioning for PlanID: %s", parameters.PlanID)
+	operation.InputCreator.AppendOverrides(KymaComponentNameNatsStreaming, getNatsStreamingOverrides())
 	return operation, 0, nil
 }
 

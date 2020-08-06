@@ -162,9 +162,9 @@ func main() {
 		// TODO(workaround until #1049): following components should be always disabled and user should not be able to enable them in provisioning request. This implies following components cannot be specified under the plan schema definition.
 		"BackupInt":               runtime.NewGenericComponentDisabler("backup-init", "kyma-system"),
 		"Backup":                  runtime.NewGenericComponentDisabler("backup", "kyma-system"),
-		"KnativeEventingKafka":    runtime.NewGenericComponentDisabler("knative-eventing-kafka", "knative-eventing"),
-		"KnativeProvisionerNatss": runtime.NewGenericComponentDisabler("knative-provisioner-natss", "knative-eventing"),
-		"NatsStreaming":           runtime.NewGenericComponentDisabler("nats-streaming", "natss"),
+		"KnativeEventingKafka":    runtime.NewGenericComponentDisabler(provisioning.KymaComponentNameKnativeEventingKafka, "knative-eventing"),
+		"KnativeProvisionerNatss": runtime.NewGenericComponentDisabler(provisioning.KymaComponentNameKnativeProvisionerNatss, "knative-eventing"),
+		"NatsStreaming":           runtime.NewGenericComponentDisabler(provisioning.KymaComponentNameNatsStreaming, "natss"),
 	}
 	optComponentsSvc := runtime.NewOptionalComponentsService(optionalComponentsDisablers)
 
