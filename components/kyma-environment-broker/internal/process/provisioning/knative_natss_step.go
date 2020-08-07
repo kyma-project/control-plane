@@ -11,7 +11,7 @@ import (
 
 const (
 	KymaComponentNameKnativeProvisionerNatss = "knative-provisioner-natss"
-	knativeProvisionerNatssStepName          = "KnativeProvisionerNatss"
+	KebComponentNameKnativeProvisionerNatss  = "KnativeProvisionerNatss"
 )
 
 type KnativeProvisionerNatssStep struct {
@@ -28,7 +28,7 @@ func NewKnativeProvisionerNatssStep(os storage.Operations) *KnativeProvisionerNa
 }
 
 func (s *KnativeProvisionerNatssStep) Name() string {
-	return knativeProvisionerNatssStepName
+	return "Provision Knative Nats Streaming"
 }
 
 func (s *KnativeProvisionerNatssStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
@@ -37,6 +37,7 @@ func (s *KnativeProvisionerNatssStep) Run(operation internal.ProvisioningOperati
 		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-	log.Infof(knativeProvisionerNatssStepName+": Provisioning for PlanID: %s", parameters.PlanID)
+	log.Infof("Provisioning for PlanID: %s", parameters.PlanID)
+	operation.InputCreator.EnableComponent(KebComponentNameKnativeProvisionerNatss)
 	return operation, 0, nil
 }

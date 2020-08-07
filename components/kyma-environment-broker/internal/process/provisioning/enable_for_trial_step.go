@@ -37,8 +37,7 @@ func (s *EnableForTrialPlanStep) Run(operation internal.ProvisioningOperation, l
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 	if broker.IsTrialPlan(pp.PlanID) {
-		log.Infof("Enabling step %s", s.Name())
-		operation.InputCreator.EnableComponent(s.step.Name())
+		log.Infof("Running step %s", s.Name())
 		return s.step.Run(operation, log)
 	}
 
