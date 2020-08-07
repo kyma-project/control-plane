@@ -86,7 +86,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 				return 0, err
 			}
 			if operation.State != domain.InProgress {
-				logStep.Infof("Operation %q got status %s. Process finished.", operation.ID, operation.State)
+				logStep.Infof("Operation %q got status %s. Process finished on step %q.", operation.ID, operation.State, step.Name())
 				return 0, nil
 			}
 			if when == 0 {
@@ -99,7 +99,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 		}
 	}
 
-	logrus.Infof("Operation %q got status %s. Process finished.", operation.ID, operation.State)
+	logOperation.Infof("Operation %q got status %s. Process finished.", operation.ID, operation.State)
 	return 0, nil
 }
 
