@@ -75,7 +75,7 @@ func TestOnDemand_DownloadRelease(t *testing.T) {
 				httpClient: newTestClient(func(req *http.Request) *http.Response {
 					assert.Contains(t, req.URL.String(), kymaVersion)
 
-					if strings.HasSuffix(req.URL.String(), "installer.yaml") {
+					if strings.HasSuffix(req.URL.String(), "kyma-installer-cluster.yaml") {
 						return installerResponse()
 					}
 					if strings.HasSuffix(req.URL.String(), "tiller.yaml") {
@@ -96,7 +96,7 @@ func TestOnDemand_DownloadRelease(t *testing.T) {
 				httpClient: newTestClient(func(req *http.Request) *http.Response {
 					assert.Contains(t, req.URL.String(), kymaVersion)
 
-					if strings.HasSuffix(req.URL.String(), "installer.yaml") {
+					if strings.HasSuffix(req.URL.String(), "kyma-installer-cluster.yaml") {
 						return installerResponse()
 					}
 					if strings.HasSuffix(req.URL.String(), "tiller.yaml") {

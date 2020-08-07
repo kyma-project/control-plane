@@ -12,8 +12,8 @@ const (
 	onDemandTillerFileFormat    = "https://storage.googleapis.com/kyma-development-artifacts/%s/tiller.yaml"
 	onDemandInstallerFileFormat = "https://storage.googleapis.com/kyma-development-artifacts/%s/kyma-installer-cluster.yaml"
 
-	releaseInstallerFileFormat = "https://some-url/%s/installer.yaml" // TODO: use proper URL when it will be known
-	releaseTillerFileFormat    = "https://some-url/%s/tiller.yaml"    //
+	releaseInstallerFileFormat = "https://storage.googleapis.com/kyma-prow-artifacts/%s/kyma-installer-cluster.yaml"
+	releaseTillerFileFormat    = "https://storage.googleapis.com/kyma-prow-artifacts/%s/tiller.yaml"
 )
 
 type TextFileDownloader interface {
@@ -34,8 +34,7 @@ func NewGCSDownloader(downloader TextFileDownloader) *GCSDownloader {
 }
 
 func (o *GCSDownloader) DownloadRelease(version string) (model.Release, error) {
-	tillerURL := fmt.Sprintf(releaseTillerFileFormat, version) // TODO: will new Releases still contain Tiller? If yes should we install it?
-	// TODO: make sure RCs will be stored in the same bucket
+	tillerURL := fmt.Sprintf(releaseTillerFileFormat, version)
 	installerURL := fmt.Sprintf(releaseInstallerFileFormat, version)
 
 	if o.isOnDemandVersion(version) {
