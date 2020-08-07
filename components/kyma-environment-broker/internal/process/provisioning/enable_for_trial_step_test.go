@@ -33,7 +33,6 @@ func TestEnableForTrialPlanStepShouldEnable(t *testing.T) {
 	returnedOperation, time, err := enableStep.Run(operation, log)
 
 	// Then
-	simpleInputCreator.AssertEnabledComponent(t, mockStep.Name())
 	mockStep.AssertExpectations(t)
 	require.NoError(t, err)
 	assert.Equal(t, runTime, time)

@@ -42,6 +42,7 @@ func TestNatssWithInitialOverrides(t *testing.T) {
 
 	// Then
 	require.NoError(t, err)
+	simpleInputCreator.AssertEnabledComponent(t, KebComponentNameNatsStreaming)
 	ovrs := simpleInputCreator.overrides[KymaComponentNameNatsStreaming]
 	assert.Equal(t, &cei, ovrs[0])
 	assert.Equal(t, &ceo, ovrs[1])
@@ -66,6 +67,7 @@ func TestNatssWithEmptyOverrides(t *testing.T) {
 
 	// Then
 	require.NoError(t, err)
+	simpleInputCreator.AssertEnabledComponent(t, KebComponentNameNatsStreaming)
 	simpleInputCreator.AssertOverride(t, KymaComponentNameNatsStreaming, ceo)
 	assert.Equal(t, runTime, time)
 	assert.Equal(t, operation, returnedOperation)
