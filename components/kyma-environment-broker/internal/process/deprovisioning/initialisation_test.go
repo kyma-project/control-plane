@@ -60,6 +60,43 @@ func TestInitialisationStep_Run(t *testing.T) {
 	assert.Equal(t, domain.Succeeded, operation.State)
 }
 
+func TestInitialisationStep_Run_ShouldDeleteInstanceWhenRuntimeNotExist(t *testing.T) {
+	// given
+	log := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+
+	operation := fixDeprovisioningOperation()
+	operation.ProvisionerOperationID = ""
+	err := memoryStorage.Operations().InsertDeprovisioningOperation(operation)
+	assert.NoError(t, err)
+
+	provisioningOperation := fixProvisioningOperation()
+	err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+	assert.NoError(t, err)
+
+	instance := fixInstanceRuntimeStatus()
+	instance.RuntimeID = ""
+	instance.RuntimeNotExist = true
+	err = memoryStorage.Instances().Insert(instance)
+	assert.NoError(t, err)
+
+	provisionerClient := &provisionerAutomock.Client{}
+
+	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
+
+	// when
+	operation, repeat, err := step.Run(operation, log)
+
+	// then
+	assert.NoError(t, err)
+	assert.Equal(t, time.Duration(0), repeat)
+	assert.Equal(t, domain.Succeeded, operation.State)
+
+	inst, err := memoryStorage.Instances().GetByID(operation.InstanceID)
+	assert.Error(t, err)
+	assert.Nil(t, inst)
+}
+
 func fixDeprovisioningOperation() internal.DeprovisioningOperation {
 	return internal.DeprovisioningOperation{
 		Operation: internal.Operation{

@@ -53,13 +53,15 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 	}
 
 	if instance.RuntimeID == "" {
-		log.Warn("Runtime not exist")
-		operation.ProvisionerOperationID = "NEVER_CREATED"
-		operation, repeat, err := s.operationManager.UpdateOperation(operation)
-		if repeat != 0 {
-			log.Errorf("cannot save operation ID from provisioner: %s", err)
-			return operation, 5 * time.Second, nil
+		log.Warnf("Runtime does not exist for instance id %q", instance.InstanceID)
+		// this happens when provisioning process fails and Create_Runtime step was never reached
+		instance.RuntimeNotExist = true
+		err := s.instanceStorage.Update(*instance)
+		if err != nil {
+			log.Errorf("cannot update instance: %s", err)
+			return operation, 10 * time.Second, nil
 		}
+		// return repeat mode (1 sec) to start the initialization step which will finish process
 		return operation, 1 * time.Second, nil
 	}
 	log = log.WithField("runtimeID", instance.RuntimeID)

@@ -61,6 +61,7 @@ type Instance struct {
 
 	DashboardURL           string
 	ProvisioningParameters string
+	RuntimeNotExist        bool
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

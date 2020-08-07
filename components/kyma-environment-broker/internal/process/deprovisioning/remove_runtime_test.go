@@ -40,6 +40,41 @@ func TestRemoveRuntimeStep_Run(t *testing.T) {
 	instance, err := memoryStorage.Instances().GetByID(result.InstanceID)
 	assert.NoError(t, err)
 	assert.Equal(t, instance.RuntimeID, fixRuntimeID)
+	assert.False(t, instance.RuntimeNotExist)
+}
+
+func TestRemoveRuntimeStep_Run_ShouldMarkInstanceWhenRuntimeNotExist(t *testing.T) {
+	// given
+	log := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+
+	operation := fixOperationRemoveRuntime()
+	err := memoryStorage.Operations().InsertDeprovisioningOperation(operation)
+	assert.NoError(t, err)
+
+	fixedInstance := fixInstanceRuntimeStatus()
+	fixedInstance.RuntimeID = ""
+	err = memoryStorage.Instances().Insert(fixedInstance)
+	assert.NoError(t, err)
+
+	provisionerClient := &provisionerAutomock.Client{}
+	provisionerClient.On("DeprovisionRuntime", fixGlobalAccountID, fixRuntimeID).Return(fixProvisionerOperationID, nil)
+
+	step := NewRemoveRuntimeStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
+
+	// when
+	entry := log.WithFields(logrus.Fields{"step": "TEST"})
+	result, repeat, err := step.Run(operation, entry)
+
+	// then
+	assert.NoError(t, err)
+	assert.Equal(t, 1*time.Second, repeat)
+	assert.Equal(t, "", result.ProvisionerOperationID)
+	assert.Equal(t, "", result.RuntimeID)
+
+	instance, err := memoryStorage.Instances().GetByID(result.InstanceID)
+	assert.NoError(t, err)
+	assert.True(t, instance.RuntimeNotExist)
 }
 
 func fixOperationRemoveRuntime() internal.DeprovisioningOperation {

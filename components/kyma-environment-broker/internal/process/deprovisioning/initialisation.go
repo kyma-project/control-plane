@@ -82,6 +82,10 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 	switch {
 	case err == nil:
 		if operation.ProvisionerOperationID == "" {
+			if instance.RuntimeNotExist {
+				// happens when Remove_Runtime step could not be performed, because Runtime was never created in provisioning process
+				return s.operationManager.OperationSucceeded(operation, fmt.Sprintf("runtime was never created"))
+			}
 			return operation, 0, nil
 		}
 		log.Info("runtime being removed, check operation status")
@@ -109,11 +113,6 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout))
-	}
-
-	if operation.ProvisionerOperationID == "NEVER_CREATED" {
-		log.Infof("instance id %q has never reached create runtime step")
-		return s.operationManager.OperationSucceeded(operation, fmt.Sprintf("runtime was never created"))
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
