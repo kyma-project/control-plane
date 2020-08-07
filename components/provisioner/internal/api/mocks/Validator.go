@@ -77,3 +77,19 @@ func (_m *Validator) ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) a
 
 	return r0
 }
+
+// ValidateUpgradeShootInput provides a mock function with given fields: input
+func (_m *Validator) ValidateUpgradeShootInput(input gqlschema.UpgradeShootInput) apperrors.AppError {
+	ret := _m.Called(input)
+
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(gqlschema.UpgradeShootInput) apperrors.AppError); ok {
+		r0 = rf(input)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(apperrors.AppError)
+		}
+	}
+
+	return r0
+}

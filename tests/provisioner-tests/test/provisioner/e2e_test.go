@@ -21,9 +21,11 @@ import (
 // TODO: Consider fetching logs from Provisioner on error (or from created Runtime)
 
 func Test_E2E_Gardener(t *testing.T) {
+	t.Parallel()
+
 	globalLog := logrus.WithField("TestId", testSuite.TestId)
 
-	globalLog.Infof("Starting Compass Provisioner tests on Gardener")
+	globalLog.Infof("Starting Kyma Control Plane Runtime Provisioner tests on Gardener")
 	wg := &sync.WaitGroup{}
 
 	for _, provider := range testSuite.gardenerProviders {

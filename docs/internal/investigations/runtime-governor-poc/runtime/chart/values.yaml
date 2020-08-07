@@ -1,0 +1,16 @@
+deployment:
+    image:
+      pullPolicy: Always
+      path: crabtree/agent-dapr:1
+    resources: {}
+    securityContext: # Set on container level
+      runAsUser: 2000
+      allowPrivilegeEscalation: false
+    strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+    nodeSelector: {}
+
+agent:
+  governorURL: "https://runtime-governor.local.kyma.dev"
+  runtimeID: "1"
+  interval: 10s
+  

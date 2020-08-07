@@ -21,8 +21,11 @@ func (s KymaInstallationState) String() string {
 }
 
 const (
-	operationIdAnnotation string = "compass.provisioner.kyma-project.io/operation-id"
-	runtimeIdAnnotation   string = "compass.provisioner.kyma-project.io/runtime-id"
+	runtimeIDAnnotation   string = "kcp.provisioner.kyma-project.io/runtime-id"
+	operationIDAnnotation string = "kcp.provisioner.kyma-project.io/operation-id"
+
+	legacyRuntimeIDAnnotation   string = "compass.provisioner.kyma-project.io/runtime-id"
+	legacyOperationIDAnnotation string = "compass.provisioner.kyma-project.io/operation-id"
 )
 
 func annotate(shoot *gardener_types.Shoot, annotation, value string) {
@@ -34,10 +37,10 @@ func annotate(shoot *gardener_types.Shoot, annotation, value string) {
 }
 
 func getRuntimeId(shoot gardener_types.Shoot) string {
-	runtimeId, found := shoot.Annotations[runtimeIdAnnotation]
+	runtimeID, found := shoot.Annotations[runtimeIDAnnotation]
 	if !found {
 		return ""
 	}
 
-	return runtimeId
+	return runtimeID
 }

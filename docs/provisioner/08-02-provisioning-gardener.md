@@ -22,7 +22,8 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
       * Compute Admin
   - Key generated for your service account, downloaded in the JSON format
   - Gardener service account configuration (`kubeconfig.yaml`) downloaded
-  - Compass with configured Runtime Provisioner and the following [overrides](05-01-app-entry-parameters.md) set up:
+  - [Compass](https://github.com/kyma-incubator/compass)  
+  - [Kyma Control Plane](https://github.com/kyma-project/control-plane) with configured Runtime Provisioner and the following [overrides](05-01-app-entry-parameters.md) set up:
       * Kubeconfig (`provisioner.gardener.kubeconfig`)
       * Gardener project name (`provisioner.gardener.project`)
   
@@ -40,9 +41,10 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     * Directory ID (Tenant ID)
     * Client secret (application password)
   - Gardener service account configuration (`kubeconfig.yaml`) downloaded
-  - Compass with configured Runtime Provisioner and the following [overrides](05-01-app-entry-parameters.md) set up:
-    * Kubeconfig (`provisioner.gardener.kubeconfig`)
-    * Gardener project name (`provisioner.gardener.project`)
+  - [Compass](https://github.com/kyma-incubator/compass)  
+  - [Kyma Control Plane](https://github.com/kyma-project/control-plane) with configured Runtime Provisioner and the following [overrides](05-01-app-entry-parameters.md) set up:
+      * Kubeconfig (`provisioner.gardener.kubeconfig`)
+      * Gardener project name (`provisioner.gardener.project`)
 
   </details>
   
@@ -57,16 +59,17 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     * Secrete Access Key
     * Access Key ID
   - Gardener service account configuration (`kubeconfig.yaml`) downloaded
-  - Compass with configured Runtime Provisioner and the following [overrides](05-01-app-entry-parameters.md) set up:
-    * Kubeconfig (`provisioner.gardener.kubeconfig`)
-    * Gardener project name (`provisioner.gardener.project`)
+  - [Compass](https://github.com/kyma-incubator/compass)  
+  - [Kyma Control Plane](https://github.com/kyma-project/control-plane) with configured Runtime Provisioner and the following [overrides](05-01-app-entry-parameters.md) set up:
+      * Kubeconfig (`provisioner.gardener.kubeconfig`)
+      * Gardener project name (`provisioner.gardener.project`)
   
   > **NOTE:** To get the AWS IAM policy, access your project on Gardener, navigate to the **Secrets** tab, click on the help icon on the AWS card, and copy the JSON policy. 
     
   </details>
 </div>
 
-> **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL Server is listening.   
+> **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL server is listening.   
 
 ## Steps
 
@@ -149,7 +152,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     
       A successful call returns the operation status:
     
-      ```graphql
+      ```json
         {
           "data": {
             "provisionRuntime": {
@@ -240,7 +243,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     
       A successful call returns the operation status:
     
-      ```graphql
+      ```json
       {
         "data": {
           "provisionRuntime": {
@@ -338,7 +341,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     
       A successful call returns the operation status:
     
-      ```graphql
+      ```json
       {
         "data": {
           "provisionRuntime": {
@@ -352,6 +355,6 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     
 </div>
 
-The operation of provisioning is asynchronous. The operation of provisioning returns the Runtime Operation Status containing the Runtime ID (`provisionRuntime.runtimeID`) and the operation ID (`provisionRuntime.id`). Use the Runtime ID to [check the Runtime Status](08-04-runtime-status.md). Use the provisioning operation ID to [check the Runtime Operation Status](08-03-runtime-operation-status.md) and verify that the provisioning was successful.
+The operation of provisioning is asynchronous. The operation of provisioning returns the Runtime operation status containing the Runtime ID (`provisionRuntime.runtimeID`) and the operation ID (`provisionRuntime.id`). Use the Runtime ID to [check the Runtime status](08-04-runtime-status.md). Use the provisioning operation ID to [check the Runtime operation status](08-03-runtime-operation-status.md) and verify that the provisioning was successful.
 
 > **NOTE:** To see how to provide the labels, see [this](../compass/03-02-labels.md) document. To see an example of label usage, go [here](../../components/director/examples/register-application/register-application.graphql). 

@@ -26,9 +26,9 @@ spec:
             - mountPath: /gardener/kubeconfig
               name: gardener-kubeconfig
               readOnly: true
-            - name: config-volume
-              configMap:
-                name: {{ include "kyma-env-broker.fullname" . }}
+            - mountPath: /config
+              name: config-volume
+              readOnly: true
           env:
             - name: APP_PROVISION_TIMEOUT
               value: "{{ .Values.e2e.provisioning.timeout }}"
@@ -57,7 +57,7 @@ spec:
             - name: APP_PROVISIONER_URL
               value: "{{ .Values.provisioner.URL }}"
             - name: APP_CONFIG_NAME
-              value: "{{ .Values.e2e.azure.configName }}"
+              value: "{{ .Values.e2e.upgrade.configName }}"
             - name: APP_DEPLOY_NAMESPACE
               value: "kcp-system"
             - name: APP_DIRECTOR_URL #TODO: Prepare for external Compass
@@ -140,7 +140,7 @@ spec:
             - name: APP_PROVISIONER_URL
               value: "{{ .Values.provisioner.URL }}"
             - name: APP_CONFIG_NAME
-              value: "{{ .Values.e2e.azure.configName }}"
+              value: "{{ .Values.e2e.upgrade.configName }}"
             - name: APP_DEPLOY_NAMESPACE
               value: "kcp-system"
             - name: APP_DIRECTOR_URL #TODO: Prepare for external Compass

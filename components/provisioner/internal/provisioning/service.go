@@ -26,6 +26,7 @@ type Service interface {
 	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, apperrors.AppError)
 	UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, apperrors.AppError)
 	DeprovisionRuntime(id, tenant string) (string, apperrors.AppError)
+	UpgradeGardenerShoot(id string, input gqlschema.UpgradeShootInput) (*gqlschema.OperationStatus, apperrors.AppError)
 	ReconnectRuntimeAgent(id string) (string, apperrors.AppError)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, apperrors.AppError)
 	RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, apperrors.AppError)
@@ -36,6 +37,7 @@ type Service interface {
 type Provisioner interface {
 	ProvisionCluster(cluster model.Cluster, operationId string) apperrors.AppError
 	DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, apperrors.AppError)
+	UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError
 }
 
 type service struct {
@@ -50,6 +52,7 @@ type service struct {
 	provisioningQueue   queue.OperationQueue
 	deprovisioningQueue queue.OperationQueue
 	upgradeQueue        queue.OperationQueue
+	shootUpgradeQueue   queue.OperationQueue
 }
 
 func NewProvisioningService(
@@ -62,6 +65,8 @@ func NewProvisioningService(
 	provisioningQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
 	upgradeQueue queue.OperationQueue,
+	shootUpgradeQueue queue.OperationQueue,
+
 ) Service {
 	return &service{
 		inputConverter:      inputConverter,
@@ -73,6 +78,7 @@ func NewProvisioningService(
 		provisioningQueue:   provisioningQueue,
 		deprovisioningQueue: deprovisioningQueue,
 		upgradeQueue:        upgradeQueue,
+		shootUpgradeQueue:   shootUpgradeQueue,
 	}
 }
 
@@ -124,7 +130,7 @@ func (r *service) unregisterFailedRuntime(id, tenant string) {
 	log.Infof("Starting provisioning failed. Unregistering Runtime %s...", id)
 	err := r.directorService.DeleteRuntime(id, tenant)
 	if err != nil {
-		log.Warnf("Failed to unregister failed Runtime %s: %s", id, err.Error())
+		log.Warnf("Failed to unregister failed Runtime '%s': %s", id, err.Error())
 	}
 }
 
@@ -156,10 +162,60 @@ func (r *service) DeprovisionRuntime(id, tenant string) (string, apperrors.AppEr
 	return operation.ID, nil
 }
 
+func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.UpgradeShootInput) (*gqlschema.OperationStatus, apperrors.AppError) {
+	log.Infof("Starting Upgrade of Gardener Shoot for Runtime '%s'...", runtimeID)
+
+	if input.GardenerConfig == nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("Error: Gardener config is nil")
+	}
+
+	session := r.dbSessionFactory.NewReadSession()
+
+	err := r.verifyLastOperationFinished(session, runtimeID)
+	if err != nil {
+		return &gqlschema.OperationStatus{}, err
+	}
+
+	cluster, dberr := session.GetCluster(runtimeID)
+	if dberr != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to find shoot cluster to upgrade in database: %s", dberr.Error())
+	}
+
+	gardenerConfig, err := r.inputConverter.UpgradeShootInputToGardenerConfig(*input.GardenerConfig, cluster.ClusterConfig)
+	if err != nil {
+		return &gqlschema.OperationStatus{}, err.Append("Failed to convert GardenerClusterUpgradeConfig: %s", err.Error())
+	}
+
+	txSession, dbErr := r.dbSessionFactory.NewSessionWithinTransaction()
+	if dbErr != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to start database transaction: %s", dbErr.Error())
+	}
+	defer txSession.RollbackUnlessCommitted()
+
+	operation, error := r.setGardenerShootUpgradeStarted(txSession, cluster, gardenerConfig)
+	if error != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to set shoot upgrade started: %s", error.Error())
+	}
+
+	err = r.provisioner.UpgradeCluster(cluster.ID, gardenerConfig)
+	if err != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to upgrade Cluster: %s", err.Error())
+	}
+
+	dbErr = txSession.Commit()
+	if dbErr != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to commit upgrade transaction: %s", dbErr.Error())
+	}
+
+	r.shootUpgradeQueue.Add(operation.ID)
+
+	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
+}
+
 func (r *service) verifyLastOperationFinished(session dbsession.ReadSession, runtimeId string) apperrors.AppError {
 	lastOperation, dberr := session.GetLastOperation(runtimeId)
 	if dberr != nil {
-		return apperrors.Internal("Failed to get last operation: %s", dberr.Error())
+		return apperrors.Internal("failed to get last operation: %s", dberr.Error())
 	}
 
 	if lastOperation.State == model.InProgress {
@@ -320,6 +376,23 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 	operation, err := r.setOperationStarted(dbSession, runtimeID, model.Provision, model.WaitingForClusterDomain, timestamp, "Provisioning started")
 	if err != nil {
 		return model.Operation{}, err.Append("Failed to set provisioning started: %s")
+	}
+
+	return operation, nil
+}
+
+func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig) (model.Operation, error) {
+	log.Infof("Starting Upgrade of Gardener Shoot operation")
+
+	dberr := txSession.UpdateGardenerClusterConfig(gardenerConfig)
+	if dberr != nil {
+		return model.Operation{}, dberrors.Internal("Failed to set Shoot Upgrade started: %s", dberr.Error())
+	}
+
+	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.UpgradeShoot, model.WaitingForShootNewVersion, time.Now(), "Starting Gardener Shoot upgrade")
+
+	if dbError != nil {
+		return model.Operation{}, dbError.Append("Failed to start operation of Gardener Shoot upgrade %s", dbError.Error())
 	}
 
 	return operation, nil

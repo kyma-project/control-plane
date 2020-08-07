@@ -42,6 +42,12 @@ func (g *graphqlizer) RuntimeInputToGraphQL(in gqlschema.RuntimeInput) (string, 
 	}`)
 }
 
+func (g *graphqlizer) UpgradeShootInputToGraphQL(in gqlschema.UpgradeShootInput) (string, error) {
+	return g.genericToGraphQL(in, `{
+		gardenerConfig: {{ GardenerUpgradeInputToGraphQL .GardenerConfig }}
+	}`)
+}
+
 func (g *graphqlizer) UpgradeRuntimeInputToGraphQL(in gqlschema.UpgradeRuntimeInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		kymaConfig: {{ KymaConfigToGraphQL .KymaConfig }}
@@ -84,6 +90,48 @@ func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		enableMachineImageVersionAutoUpdate: {{ .EnableMachineImageVersionAutoUpdate }}
 		{{- end }}
 		providerSpecificConfig: {{ ProviderSpecificInputToGraphQL .ProviderSpecificConfig }}
+	}`)
+}
+
+func (g *graphqlizer) GardenerUpgradeInputToGraphQL(in gqlschema.GardenerUpgradeInput) (string, error) {
+
+	return g.genericToGraphQL(in, `{
+		{{- if .KubernetesVersion }}
+		kubernetesVersion: "{{ .KubernetesVersion }}"
+        {{- end }}
+		{{- if .VolumeSizeGb }}
+		volumeSizeGB: {{ .VolumeSizeGb }}
+        {{- end }}
+        {{- if .MachineType }}
+		machineType: "{{ .MachineType }}"
+		{{- end }}
+		{{- if .Purpose }}
+		purpose: "{{ .Purpose }}"
+		{{- end }}
+		{{- if .DiskType }}
+		diskType: "{{ .DiskType }}"
+		{{- end }}
+		{{- if .AutoScalerMin }}	
+        autoScalerMin: {{ .AutoScalerMin }}
+		{{- end }}
+		{{- if .AutoScalerMax }}
+        autoScalerMax: {{ .AutoScalerMax }}
+		{{- end }}
+		{{- if .MaxSurge }}
+        maxSurge: {{ .MaxSurge }}
+		{{- end }}
+		{{- if .MaxUnavailable }}
+		maxUnavailable: {{ .MaxUnavailable }}
+		{{- end }}
+		{{- if .EnableKubernetesVersionAutoUpdate }}
+		enableKubernetesVersionAutoUpdate: {{ .EnableKubernetesVersionAutoUpdate }}
+		{{- end }}
+		{{- if .EnableMachineImageVersionAutoUpdate }}
+		enableMachineImageVersionAutoUpdate: {{ .EnableMachineImageVersionAutoUpdate }}
+		{{- end }}
+		{{- if .ProviderSpecificConfig }}
+		providerSpecificConfig: {{ ProviderSpecificInputToGraphQL .ProviderSpecificConfig }}
+        {{- end }}
 	}`)
 }
 
@@ -207,6 +255,7 @@ func (g *graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, er
 	fm["ProviderSpecificInputToGraphQL"] = g.ProviderSpecificInputToGraphQL
 	fm["AzureProviderConfigInputToGraphQL"] = g.AzureProviderConfigInputToGraphQL
 	fm["GcpProviderConfigInputToGraphQL"] = g.GcpProviderConfigInputToGraphQL
+	fm["GardenerUpgradeInputToGraphQL"] = g.GardenerUpgradeInputToGraphQL
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {

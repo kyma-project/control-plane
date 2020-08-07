@@ -148,8 +148,12 @@ func fixInstance() internal.Instance {
 }
 
 func fixProvisioningParameters(t *testing.T) string {
+	return fixProvisioningParametersWithPlanID(t, broker.GCPPlanID)
+}
+
+func fixProvisioningParametersWithPlanID(t *testing.T, planID string) string {
 	parameters := internal.ProvisioningParameters{
-		PlanID:    broker.GCPPlanID,
+		PlanID:    planID,
 		ServiceID: "",
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,
@@ -182,7 +186,7 @@ func fixProvisioningParameters(t *testing.T) string {
 func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	optComponentsSvc := &inputAutomock.OptionalComponentService{}
 
-	optComponentsSvc.On("ComputeComponentsToDisable", []string(nil)).Return([]string{})
+	optComponentsSvc.On("ComputeComponentsToDisable", []string{}).Return([]string{})
 	optComponentsSvc.On("ExecuteDisablers", internal.ComponentConfigurationInputList{
 		{
 			Component:     "to-remove-component",

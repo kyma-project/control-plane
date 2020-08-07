@@ -59,7 +59,7 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, component
 
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	switch planID {
-	case broker.GCPPlanID, broker.AzurePlanID, broker.AzureLitePlanID:
+	case broker.GCPPlanID, broker.AzurePlanID, broker.AzureLitePlanID, broker.GcpTrialPlanID, broker.AzureTrialPlanID:
 		return true
 	default:
 		return false
@@ -79,6 +79,10 @@ func (f *InputBuilderFactory) ForPlan(planID, kymaVersion string) (internal.Prov
 		provider = &cloudProvider.AzureInput{}
 	case broker.AzureLitePlanID:
 		provider = &cloudProvider.AzureLiteInput{}
+	case broker.GcpTrialPlanID:
+		provider = &cloudProvider.GcpTrialInput{}
+	case broker.AzureTrialPlanID:
+		provider = &cloudProvider.AzureTrialInput{}
 	// insert cases for other providers like AWS or GCP
 	default:
 		return nil, errors.Errorf("case with plan %s is not supported", planID)
@@ -97,6 +101,7 @@ func (f *InputBuilderFactory) ForPlan(planID, kymaVersion string) (internal.Prov
 		mutex:                     nsync.NewNamedMutex(),
 		hyperscalerInputProvider:  provider,
 		optionalComponentsService: f.optComponentsSvc,
+		enabledComponents:         map[string]struct{}{},
 	}, nil
 }
 

@@ -45,7 +45,7 @@ func CreateGardenerProvisioningInput(config *TestConfig, version, provider strin
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				KubernetesVersion:                   "1.15.10",
+				KubernetesVersion:                   config.KubernetesVersion,
 				DiskType:                            gardenerInputs[provider].DiskType,
 				VolumeSizeGb:                        35,
 				MachineType:                         gardenerInputs[provider].MachineType,
@@ -65,6 +65,30 @@ func CreateGardenerProvisioningInput(config *TestConfig, version, provider strin
 		},
 		KymaConfig: kymaConfigInput,
 	}, nil
+}
+
+func CreateGardenerUpgradeInput(config *TestConfig, provider string) *gqlschema.UpgradeShootInput {
+	return &gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			KubernetesVersion:                   strToPtr("1.15.11"),
+			DiskType:                            strToPtr("Premium_LRS"),
+			VolumeSizeGb:                        intToPtr(50),
+			MachineType:                         strToPtr("Standard_D8_v3"),
+			Purpose:                             strToPtr("evaluation"),
+			AutoScalerMin:                       intToPtr(1),
+			AutoScalerMax:                       intToPtr(5),
+			MaxSurge:                            intToPtr(5),
+			MaxUnavailable:                      intToPtr(2),
+			EnableKubernetesVersionAutoUpdate:   boolToPtr(false),
+			EnableMachineImageVersionAutoUpdate: boolToPtr(true),
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				AzureConfig: &gqlschema.AzureProviderConfigInput{
+					VnetCidr: "10.250.0.0/19",
+					Zones:    []string{"1", "2", "3"},
+				},
+			},
+		},
+	}
 }
 
 func CreateKymaConfigInput(version string) (*gqlschema.KymaConfigInput, error) {

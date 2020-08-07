@@ -70,6 +70,10 @@ func toLowerCase(provider string) string {
 	return strings.ToLower(provider)
 }
 
+func intToPtr(i int) *int {
+	return &i
+}
+
 func strToPtr(s string) *string {
 	if s == "" {
 		return nil

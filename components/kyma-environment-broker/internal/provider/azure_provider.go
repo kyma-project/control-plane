@@ -10,8 +10,9 @@ const (
 )
 
 type (
-	AzureInput     struct{}
-	AzureLiteInput struct{}
+	AzureInput      struct{}
+	AzureLiteInput  struct{}
+	AzureTrialInput struct{}
 )
 
 func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
@@ -65,5 +66,32 @@ func (p *AzureLiteInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *AzureLiteInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
+	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, params.Zones)
+}
+
+func (p *AzureTrialInput) Defaults() *gqlschema.ClusterConfigInput {
+	return &gqlschema.ClusterConfigInput{
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			DiskType:       "Standard_LRS",
+			VolumeSizeGb:   50,
+			MachineType:    "Standard_D4_v3",
+			Region:         DefaultAzureRegion,
+			Provider:       "azure",
+			WorkerCidr:     "10.250.0.0/19",
+			AutoScalerMin:  3,
+			AutoScalerMax:  3,
+			MaxSurge:       1,
+			MaxUnavailable: 1,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				AzureConfig: &gqlschema.AzureProviderConfigInput{
+					VnetCidr: "10.250.0.0/19",
+					Zones:    []string{"1", "2", "3"},
+				},
+			},
+		},
+	}
+}
+
+func (p *AzureTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
 	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, params.Zones)
 }

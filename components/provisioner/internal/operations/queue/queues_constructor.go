@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/failure"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/deprovisioning"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/shootupgrade"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/upgrade"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
@@ -23,6 +24,8 @@ type ProvisioningTimeouts struct {
 	ClusterCreation    time.Duration `envconfig:"default=60m"`
 	Installation       time.Duration `envconfig:"default=60m"`
 	Upgrade            time.Duration `envconfig:"default=60m"`
+	ShootUpgrade       time.Duration `envconfig:"default=30m"`
+	ShootRefresh       time.Duration `envconfig:"default=5m"`
 	AgentConfiguration time.Duration `envconfig:"default=15m"`
 	AgentConnection    time.Duration `envconfig:"default=15m"`
 }
@@ -125,4 +128,29 @@ func CreateDeprovisioningQueue(
 	)
 
 	return NewQueue(deprovisioningExecutor)
+}
+
+func CreateShootUpgradeQueue(
+	timeouts ProvisioningTimeouts,
+	factory dbsession.Factory,
+	directorClient director.DirectorClient,
+	shootClient gardener_apis.ShootInterface) OperationQueue {
+
+	waitForShootUpgrade := shootupgrade.NewWaitForShootUpgradeStep(shootClient, model.FinishedStage, timeouts.ShootUpgrade)
+	waitForShootNewVersion := shootupgrade.NewWaitForShootNewVersionStep(shootClient, waitForShootUpgrade.Name(), timeouts.ShootRefresh)
+
+	upgradeSteps := map[model.OperationStage]operations.Step{
+		model.WaitingForShootUpgrade:    waitForShootUpgrade,
+		model.WaitingForShootNewVersion: waitForShootNewVersion,
+	}
+
+	upgradeClusterExecutor := operations.NewExecutor(
+		factory.NewReadWriteSession(),
+		model.UpgradeShoot,
+		upgradeSteps,
+		failure.NewNoopFailureHandler(),
+		directorClient,
+	)
+
+	return NewQueue(upgradeClusterExecutor)
 }

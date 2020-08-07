@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler"
@@ -19,7 +21,7 @@ func TestResolveCredentialsStepHappyPath_Run(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationRuntimeStatus(t)
+	operation := fixOperationRuntimeStatus(t, broker.GCPPlanID)
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
@@ -32,7 +34,44 @@ func TestResolveCredentialsStepHappyPath_Run(t *testing.T) {
 	accountProviderMock.On("GardenerCredentials", hyperscaler.GCP, statusGlobalAccountID).Return(hyperscaler.Credentials{
 		Name:            "gardener-secret-gcp",
 		HyperscalerType: "gcp",
-		TenantName:      statusGlobalAccountID,
+		CredentialData:  map[string][]byte{},
+	}, nil)
+
+	step := NewResolveCredentialsStep(memoryStorage.Operations(), accountProviderMock)
+
+	// when
+	operation, repeat, err := step.Run(operation, log)
+
+	assert.NoError(t, err)
+
+	pp, err := operation.GetProvisioningParameters()
+
+	// then
+	assert.NoError(t, err)
+	assert.Equal(t, time.Duration(0), repeat)
+	assert.Empty(t, operation.State)
+	require.NotNil(t, pp.Parameters.TargetSecret)
+	assert.Equal(t, "gardener-secret-gcp", *pp.Parameters.TargetSecret)
+}
+
+func TestResolveCredentialsStepHappyPathTrial_Run(t *testing.T) {
+	// given
+	log := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+
+	operation := fixOperationRuntimeStatus(t, broker.GcpTrialPlanID)
+	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
+	assert.NoError(t, err)
+
+	instance := fixInstanceRuntimeStatus()
+	err = memoryStorage.Instances().Insert(instance)
+	assert.NoError(t, err)
+
+	accountProviderMock := &hyperscalerMocks.AccountProvider{}
+
+	accountProviderMock.On("GardenerSharedCredentials", hyperscaler.GCP).Return(hyperscaler.Credentials{
+		Name:            "gardener-secret-gcp",
+		HyperscalerType: "gcp",
 		CredentialData:  map[string][]byte{},
 	}, nil)
 
@@ -58,7 +97,7 @@ func TestResolveCredentialsStepRetry_Run(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationRuntimeStatus(t)
+	operation := fixOperationRuntimeStatus(t, broker.GCPPlanID)
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 

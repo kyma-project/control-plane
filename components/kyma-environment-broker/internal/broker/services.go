@@ -46,10 +46,12 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 		}
 		p := plan.PlanDefinition
 		err := json.Unmarshal(plan.provisioningRawSchema, &p.Schemas.Instance.Create.Parameters)
-		b.addComponentsToSchema(&p.Schemas.Instance.Create.Parameters)
-		if err != nil {
-			b.log.Errorf("Could not decode provisioning schema: %s", err)
-			return nil, err
+		if !IsTrialPlan(p.ID) {
+			b.addComponentsToSchema(&p.Schemas.Instance.Create.Parameters)
+			if err != nil {
+				b.log.Errorf("Could not decode provisioning schema: %s", err)
+				return nil, err
+			}
 		}
 		availableServicePlans = append(availableServicePlans, p)
 	}

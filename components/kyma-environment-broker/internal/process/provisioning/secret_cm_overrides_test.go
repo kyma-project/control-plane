@@ -5,12 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -125,6 +124,7 @@ func TestOverridesFromSecretsAndConfigStep_Run(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, time.Duration(0), repeat)
 	})
+
 }
 
 func fixResources() []runtime.Object {

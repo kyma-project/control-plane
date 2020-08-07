@@ -174,16 +174,20 @@ func main() {
 	//
 	gardenerSecrets, err := gardener.NewGardenerSecretsInterface(gardenerClusterConfig, cfg.Gardener.Project)
 	fatalOnError(err)
+	gardenerShoots, err := gardener.NewGardenerShootInterface(gardenerClusterConfig, cfg.Gardener.Project)
 
 	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
-	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool)
+	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecrets, gardenerShoots)
+	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool, gardenerSharedPool)
 
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, runtimeProvider, cfg.Provisioning, cfg.KymaVersion)
 	fatalOnError(err)
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
 
-	avsDel := avs.NewDelegator(cfg.Avs, db.Operations())
+	avsClient, err := avs.NewClient(ctx, cfg.Avs)
+	fatalOnError(err)
+	avsDel := avs.NewDelegator(avsClient, cfg.Avs, db.Operations())
 	externalEvalAssistant := avs.NewExternalEvalAssistant(cfg.Avs)
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
 	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
@@ -225,8 +229,9 @@ func main() {
 			disabled: cfg.Avs.Disabled,
 		},
 		{
-			weight:   1,
-			step:     provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory),
+			weight: 1,
+			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
+				provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
 			disabled: cfg.LMS.Disabled,
 		},
 		{
@@ -236,7 +241,8 @@ func main() {
 		},
 		{
 			weight: 2,
-			step:   provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
+			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
+				provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
 		{
 			weight: 2,
@@ -251,8 +257,9 @@ func main() {
 			step:   provisioning.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog),
 		},
 		{
-			weight:   4,
-			step:     provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory),
+			weight: 4,
+			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
+				provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
 			disabled: cfg.LMS.Disabled,
 		},
 		{

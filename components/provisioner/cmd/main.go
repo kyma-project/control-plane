@@ -56,10 +56,10 @@ type config struct {
 	Address                      string `envconfig:"default=127.0.0.1:3000"`
 	APIEndpoint                  string `envconfig:"default=/graphql"`
 	PlaygroundAPIEndpoint        string `envconfig:"default=/graphql"`
-	CredentialsNamespace         string `envconfig:"default=compass-system"`
 	DirectorURL                  string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
 	SkipDirectorCertVerification bool   `envconfig:"default=false"`
-	OauthCredentialsSecretName   string `envconfig:"default=compass-provisioner-credentials"`
+	OauthCredentialsNamespace    string `envconfig:"default=kcp-system"`
+	OauthCredentialsSecretName   string `envconfig:"default=kcp-provisioner-credentials"`
 
 	Database struct {
 		User     string `envconfig:"default=postgres"`
@@ -95,8 +95,8 @@ type config struct {
 }
 
 func (c *config) String() string {
-	return fmt.Sprintf("Address: %s, APIEndpoint: %s, CredentialsNamespace: %s, "+
-		"DirectorURL: %s, SkipDirectorCertVerification: %v, OauthCredentialsSecretName: %s, "+
+	return fmt.Sprintf("Address: %s, APIEndpoint: %s, DirectorURL: %s, "+
+		"SkipDirectorCertVerification: %v, OauthCredentialsNamespace: %s, OauthCredentialsSecretName: %s, "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
 		"ProvisioningTimeoutClusterCreation: %s "+
@@ -107,8 +107,8 @@ func (c *config) String() string {
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s",
-		c.Address, c.APIEndpoint, c.CredentialsNamespace,
-		c.DirectorURL, c.SkipDirectorCertVerification, c.OauthCredentialsSecretName,
+		c.Address, c.APIEndpoint, c.DirectorURL,
+		c.SkipDirectorCertVerification, c.OauthCredentialsNamespace, c.OauthCredentialsSecretName,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
 		c.ProvisioningTimeout.ClusterCreation.String(),
@@ -190,6 +190,8 @@ func main() {
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, installationService, directorClient, shootClient, 5*time.Minute)
 
+	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient)
+
 	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
 	shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
 	exitOnError(err, "Failed to create Shoot controller.")
@@ -215,12 +217,12 @@ func main() {
 		provisioningQueue,
 		deprovisioningQueue,
 		upgradeQueue,
+		shootUpgradeQueue,
 		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
 		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate)
+
 	validator := api.NewValidator(dbsFactory.NewReadSession())
-
 	resolver := api.NewResolver(provisioningSVC, validator)
-
 	logger := log.WithField("Component", "Artifact Downloader")
 	downloader := release.NewArtifactsDownloader(releaseRepository, cfg.LatestDownloadedReleases, cfg.DownloadPreReleases, httpClient, fileDownloader, logger)
 
@@ -236,6 +238,8 @@ func main() {
 
 	// Run upgrade queue
 	upgradeQueue.Run(ctx.Done())
+
+	shootUpgradeQueue.Run(ctx.Done())
 
 	gqlCfg := gqlschema.Config{
 		Resolvers: resolver,
@@ -286,14 +290,14 @@ func main() {
 	}()
 
 	if cfg.EnqueueInProgressOperations {
-		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningQueue, upgradeQueue)
+		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue)
 		exitOnError(err, "Failed to enqueue in progress operations")
 	}
 
 	wg.Wait()
 }
 
-func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningQueue, upgradeQueue queue.OperationQueue) error {
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue queue.OperationQueue) error {
 	readSession := dbFactory.NewReadSession()
 
 	var inProgressOps []model.Operation
@@ -331,6 +335,10 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue,
 
 		if op.Type == model.Upgrade {
 			upgradeQueue.Add(op.ID)
+		}
+
+		if op.Type == model.UpgradeShoot {
+			shootUpgradeQueue.Add(op.ID)
 		}
 	}
 

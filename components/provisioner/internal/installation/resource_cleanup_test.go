@@ -291,7 +291,7 @@ func fixClusterServiceBrokerList() *v1beta1.ClusterServiceBrokerList {
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      ClusterBrokerNameProvidingClusterServiceClasses,
-					Namespace: "compass-system",
+					Namespace: "kcp-system",
 				},
 				Spec: v1beta1.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
@@ -302,7 +302,7 @@ func fixClusterServiceBrokerList() *v1beta1.ClusterServiceBrokerList {
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      ClusterBrokerNameNotProvidingClusterServiceClasses,
-					Namespace: "compass-system",
+					Namespace: "kcp-system",
 				},
 				Spec: v1beta1.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
@@ -372,7 +372,7 @@ func newTestCR() []runtime.Object {
 		&v1beta1.ClusterServiceBroker{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      ClusterBrokerNameProvidingClusterServiceClasses,
-				Namespace: "compass-system",
+				Namespace: "kcp-system",
 			},
 			Spec: v1beta1.ClusterServiceBrokerSpec{
 				CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{

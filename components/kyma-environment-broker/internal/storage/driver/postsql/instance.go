@@ -62,6 +62,17 @@ func (s *Instance) FindAllInstancesForRuntimes(runtimeIdList []string) ([]intern
 	return instances, nil
 }
 
+func (s *Instance) GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error) {
+	sess := s.NewReadSession()
+	var result int
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		count, err := sess.GetNumberOfInstancesForGlobalAccountID(globalAccountID)
+		result = count
+		return err == nil, nil
+	})
+	return result, err
+}
+
 // TODO: Wrap retries in single method WithRetries
 func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	sess := s.NewReadSession()
