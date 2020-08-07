@@ -130,6 +130,12 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
 		{
+
+			// TODO:
+			//After moving from POC into Production phase
+			//Move the code retated to relesing subscription into the pool into separate step executed independently after runtime
+			//is sucessfully  deprovisioned
+
 			if !broker.IsTrialPlan(planID) {
 				hypType, err := hyperscaler.HyperscalerTypeForPlanID(planID)
 				if err != nil {
