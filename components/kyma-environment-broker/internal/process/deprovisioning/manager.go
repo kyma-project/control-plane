@@ -87,11 +87,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 			}
 			if operation.State != domain.InProgress {
 				if operation.RuntimeID == "" && operation.State == domain.Succeeded {
-					if when == 0 {
-						logStep.Info("Process operation successful")
-						continue
-					}
-					logStep.Infof("Operation %q has no runtime ID.", operation.ID)
+					logStep.Infof("Operation %q has no runtime ID. Process finished.", operation.ID)
 					return when, nil
 				}
 				logStep.Infof("Operation %q got status %s. Process finished on step %q.", operation.ID, operation.State, step.Name())
