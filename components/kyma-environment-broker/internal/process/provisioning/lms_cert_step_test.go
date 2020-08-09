@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -109,54 +110,54 @@ func TestCertStep_TenantNotReadyTimeout(t *testing.T) {
 	})
 }
 
-//func TestLmsStepsHappyPath(t *testing.T) {
-//	// given
-//	lmsClient := lms.NewFakeClient(0)
-//	opRepo := storage.NewMemoryStorage().Operations()
-//	tRepo := storage.NewMemoryStorage().LMSTenants()
-//	certStep := NewLmsCertificatesStep(lmsClient, opRepo, false)
-//	tManager := lms.NewTenantManager(tRepo, lmsClient, fixLogger())
-//	tenantStep := NewProvideLmsTenantStep(tManager, opRepo, "eu", false)
-//
-//	inputCreator := newInputCreator()
-//	operation := internal.ProvisioningOperation{
-//		Lms:                    internal.LMS{},
-//		ProvisioningParameters: `{"Parameters": {"name":"Awesome Lms"}}`,
-//		InputCreator:           inputCreator,
-//	}
-//	opRepo.InsertProvisioningOperation(operation)
-//
-//	// when
-//	op, when, err := tenantStep.Run(operation, fixLogger())
-//
-//	// then
-//	require.NoError(t, err)
-//	require.Zero(t, when)
-//	assert.NotEmpty(t, op.Lms.TenantID)
-//
-//	// when
-//	op, when, err = certStep.Run(op, fixLogger())
-//
-//	// then
-//	require.NoError(t, err)
-//	require.Zero(t, when)
-//	lmsClient.IsCertRequestedForTenant(op.Lms.TenantID)
-//
-//	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-//		Key: "fluent-bit.conf.Output.forward.enabled", Value: "true"})
-//	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-//		Key: "fluent-bit.backend.forward.host", Value: fmt.Sprintf("forward.%s", lms.FakeLmsHost)})
-//	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-//		Key: "fluent-bit.backend.forward.port", Value: "8443"})
-//	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-//		Key: "fluent-bit.backend.forward.tls.ca", Value: "Y2VydC1jYS1wYXlsb2Fk"})
-//	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-//		Key: "fluent-bit.backend.forward.tls.cert", Value: "c2lnbmVkLWNlcnQtcGF5bG9hZA=="})
-//	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-//		Key: "fluent-bit.backend.forward.tls.key", Value: "cHJpdmF0ZS1rZXk="})
-//
-//	inputCreator.AssertLabel(t, "operator_lmsUrl", fmt.Sprintf("https://kibana.%s", lms.FakeLmsHost))
-//}
+func TestLmsStepsHappyPath(t *testing.T) {
+	// given
+	lmsClient := lms.NewFakeClient(0)
+	opRepo := storage.NewMemoryStorage().Operations()
+	tRepo := storage.NewMemoryStorage().LMSTenants()
+	certStep := NewLmsCertificatesStep(lmsClient, opRepo, false)
+	tManager := lms.NewTenantManager(tRepo, lmsClient, fixLogger())
+	tenantStep := NewProvideLmsTenantStep(tManager, opRepo, "eu", false)
+
+	inputCreator := newInputCreator()
+	operation := internal.ProvisioningOperation{
+		Lms:                    internal.LMS{},
+		ProvisioningParameters: `{"Parameters": {"name":"Awesome Lms"}}`,
+		InputCreator:           inputCreator,
+	}
+	opRepo.InsertProvisioningOperation(operation)
+
+	// when
+	op, when, err := tenantStep.Run(operation, fixLogger())
+
+	// then
+	require.NoError(t, err)
+	require.Zero(t, when)
+	assert.NotEmpty(t, op.Lms.TenantID)
+
+	// when
+	op, when, err = certStep.Run(op, fixLogger())
+
+	// then
+	require.NoError(t, err)
+	require.Zero(t, when)
+	lmsClient.IsCertRequestedForTenant(op.Lms.TenantID)
+
+	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
+		Key: "fluent-bit.conf.Output.forward.enabled", Value: "true"})
+	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
+		Key: "fluent-bit.backend.forward.host", Value: fmt.Sprintf("forward.%s", lms.FakeLmsHost)})
+	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
+		Key: "fluent-bit.backend.forward.port", Value: "8443"})
+	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
+		Key: "fluent-bit.backend.forward.tls.ca", Value: "Y2VydC1jYS1wYXlsb2Fk"})
+	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
+		Key: "fluent-bit.backend.forward.tls.cert", Value: "c2lnbmVkLWNlcnQtcGF5bG9hZA=="})
+	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
+		Key: "fluent-bit.backend.forward.tls.key", Value: "cHJpdmF0ZS1rZXk="})
+
+	inputCreator.AssertLabel(t, "operator_lmsUrl", fmt.Sprintf("https://kibana.%s", lms.FakeLmsHost))
+}
 
 func newFakeClientWithTenant(timeToReady time.Duration) (*lms.FakeClient, string) {
 	lmsClient := lms.NewFakeClient(timeToReady)

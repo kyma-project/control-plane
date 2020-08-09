@@ -42,7 +42,6 @@ func (s *provideLmsTenantStep) Name() string {
 }
 
 func (s *provideLmsTenantStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	return s.operationManager.OperationFailed(operation, "FORCE FAILURE")
 	if operation.Lms.TenantID != "" {
 		return operation, 0, nil
 	}
