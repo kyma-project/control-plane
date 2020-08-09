@@ -67,6 +67,7 @@ func TestInitialisationStep_Run_ShouldDeleteInstanceWhenRuntimeNotExist(t *testi
 
 	operation := fixDeprovisioningOperation()
 	operation.ProvisionerOperationID = ""
+	operation.State = domain.Succeeded
 	err := memoryStorage.Operations().InsertDeprovisioningOperation(operation)
 	assert.NoError(t, err)
 
@@ -76,7 +77,6 @@ func TestInitialisationStep_Run_ShouldDeleteInstanceWhenRuntimeNotExist(t *testi
 
 	instance := fixInstanceRuntimeStatus()
 	instance.RuntimeID = ""
-	instance.RuntimeNotExist = true
 	err = memoryStorage.Instances().Insert(instance)
 	assert.NoError(t, err)
 

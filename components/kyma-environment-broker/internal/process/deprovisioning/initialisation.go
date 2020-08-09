@@ -82,10 +82,6 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 	switch {
 	case err == nil:
 		if operation.ProvisionerOperationID == "" {
-			if instance.RuntimeNotExist {
-				// happens when Remove_Runtime step could not be performed, because Runtime was never created in provisioning process
-				return s.operationManager.OperationSucceeded(operation, fmt.Sprintf("runtime was never created"))
-			}
 			return operation, 0, nil
 		}
 		log.Info("runtime being removed, check operation status")
