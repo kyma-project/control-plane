@@ -10,17 +10,15 @@ import (
 	"github.com/pkg/errors"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 type Type string
 
 const (
-	GCP                    Type = "gcp"
-	Azure                  Type = "azure"
-	AWS                    Type = "aws"
-	fieldSecretBindingName      = "spec.secretBindingName"
+	GCP   Type = "gcp"
+	Azure Type = "azure"
+	AWS   Type = "aws"
 )
 
 func HyperscalerTypeFromProviderString(provider string) (Type, error) {
@@ -123,28 +121,26 @@ func (p *secretsAccountPool) CountSubscriptionUsages(hyperscalerType Type, tenan
 		return 0, errors.Wrapf(err, "Could not find secret used by the tenant %s and hyperscaler %s to count subscription usage", tenantName, hyperscalerType)
 	}
 
-	// now let's check how many shoots are using this secret
-	fselector := fields.SelectorFromSet(fields.Set{fieldSecretBindingName: secret.Name}).String()
-
-	shootlist, err := p.shootsClient.List(metav1.ListOptions{FieldSelector: fselector})
-
+	shootlist, err := p.shootsClient.List(metav1.ListOptions{})
 	if err != nil {
-		return 0, errors.Wrapf(err, "Error while finding Gardener shoots using secret: %s", secret.Name)
+		return 0, errors.Wrap(err, "Error while listing Gardener shoots ")
 	}
 
-	if shootlist == nil || len(shootlist.Items) == 0 {
-		return 0, nil
-	}
-
-	subscriptions := 0
-	// count only such clusters that are in good shape
-	for _, s := range shootlist.Items {
-
+	includeShootFunc := func(s v1beta1.Shoot) bool {
 		if s.Status.LastOperation != nil {
 			if (s.Status.LastOperation.Type == v1beta1.LastOperationTypeCreate || s.Status.LastOperation.Type == v1beta1.LastOperationTypeReconcile || s.Status.LastOperation.Type == v1beta1.LastOperationTypeMigrate) &&
 				(s.Status.LastOperation.State == v1beta1.LastOperationStateProcessing || s.Status.LastOperation.State == v1beta1.LastOperationStatePending || s.Status.LastOperation.State == v1beta1.LastOperationStateSucceeded) {
-				subscriptions++
+				return true
 			}
+		}
+
+		return false
+	}
+
+	subscriptions := 0
+	for _, shoot := range shootlist.Items {
+		if shoot.Spec.SecretBindingName == secret.Name && includeShootFunc(shoot) {
+			subscriptions++
 		}
 	}
 
