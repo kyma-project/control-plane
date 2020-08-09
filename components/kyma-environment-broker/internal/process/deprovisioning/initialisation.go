@@ -20,7 +20,7 @@ import (
 
 const (
 	// the time after which the operation is marked as expired
-	CheckStatusTimeout = 3 * time.Hour
+	CheckStatusTimeout = 5 * time.Hour
 )
 
 type InitialisationStep struct {
