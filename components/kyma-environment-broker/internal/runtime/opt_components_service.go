@@ -17,13 +17,13 @@ type ComponentsDisablers map[string]ComponentDisabler
 
 // OptionalComponentsService provides functionality for executing component disablers
 type OptionalComponentsService struct {
-	registered         map[string]ComponentDisabler
+	registered map[string]ComponentDisabler
 }
 
 // NewOptionalComponentsService returns new instance of ResourceSupervisorAggregator
 func NewOptionalComponentsService(initialList ComponentsDisablers) *OptionalComponentsService {
 	return &OptionalComponentsService{
-		registered:         initialList,
+		registered: initialList,
 	}
 }
 

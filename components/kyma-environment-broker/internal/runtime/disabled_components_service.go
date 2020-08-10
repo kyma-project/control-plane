@@ -26,4 +26,3 @@ func (f *DisabledComponentsService) DisableComponents(components internal.Compon
 
 	return filterOut, nil
 }
-

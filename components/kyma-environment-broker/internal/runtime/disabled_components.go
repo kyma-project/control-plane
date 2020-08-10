@@ -1,29 +1,34 @@
 package runtime
 
-import "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
+)
 
-// DisabledComponentsPerPlan provides a functionality to remove components per plan
+// DisabledComponentsPerPlan provides a list of the components to remove per plan
 // more specifically it's map[PLAN_ID or SELECTOR][COMPONENT_NAME]
 //
 // Components located under the AllPlansSelector will be removed from any plan
-//
 
-func DisabledComponentsPerPlan() map[string]map[string]struct{}{
+func DisabledComponentsPerPlan() map[string]map[string]struct{} {
 	return map[string]map[string]struct{}{
 		broker.AllPlansSelector: {
-			"backup":                    {},
-			"backup-init":               {},
+			components.Backup:     {},
+			components.BackupInit: {},
 		},
 		broker.GCPPlanID: {
-			"nats-streaming":            {},
-			"knative-provisioner-natss": {},
+			components.NatssStreaming:          {},
+			components.KnativeProvisionerNatss: {},
 		},
 		broker.AzurePlanID: {
-			"nats-streaming":            {},
-			"knative-provisioner-natss": {},
+			components.NatssStreaming:          {},
+			components.KnativeProvisionerNatss: {},
 		},
+		broker.AzureLitePlanID: {
+			components.NatssStreaming:          {},
+			components.KnativeProvisionerNatss: {},
+		},
+		broker.AzureTrialPlanID: {},
+		broker.GcpTrialPlanID:   {},
 	}
 }
-
-
-

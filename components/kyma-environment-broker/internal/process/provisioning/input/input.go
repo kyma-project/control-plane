@@ -1,7 +1,6 @@
 package input
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -31,7 +30,7 @@ type RuntimeInput struct {
 	enabledComponents  map[string]struct{}
 	disabledComponents map[string]struct{}
 
-	disableSvc runtime.DisabledComponentsService
+	componentsDisabler ComponentsDisabler
 }
 
 func (r *RuntimeInput) EnableComponent(componentName string) internal.ProvisionInputCreator {
@@ -98,7 +97,7 @@ func (r *RuntimeInput) Create() (gqlschema.ProvisionRuntimeInput, error) {
 			execute: r.applyProvisioningParameters,
 		},
 		{
-			name:    "force disabling components",
+			name:    "disabling components",
 			execute: r.disableComponents,
 		},
 		{
@@ -165,13 +164,7 @@ func (r *RuntimeInput) resolveOptionalComponents() error {
 }
 
 func (r *RuntimeInput) disableComponents() error {
-	//for i, c := range r.input.KymaConfig.Components {
-	//	if _, ok := r.disabledComponents[c.DisabledComponentsPerPlan]; ok {
-	//		r.input.KymaConfig.Components = append(r.input.KymaConfig.Components[:i], r.input.KymaConfig.Components[i+1:]...)
-	//	}
-	//}
-
-	filterOut, err := r.disableSvc.ExecuteDisablers(r.input.KymaConfig.Components)
+	filterOut, err := r.componentsDisabler.DisableComponents(r.input.KymaConfig.Components)
 	if err != nil {
 		return err
 	}

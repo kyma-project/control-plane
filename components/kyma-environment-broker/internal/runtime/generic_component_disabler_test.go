@@ -9,7 +9,7 @@ import (
 
 func TestGenericComponentDisabler(t *testing.T) {
 	type toDisable struct {
-		Name      string
+		Name string
 	}
 	tests := []struct {
 		name            string
@@ -20,7 +20,7 @@ func TestGenericComponentDisabler(t *testing.T) {
 		{
 			name: "Disable component if the name and namespace match with predicate",
 			toDisable: toDisable{
-				Name:      "ory",
+				Name: "ory",
 			},
 			givenComponents: []*string{
 				ptrStr("dex"),
@@ -33,7 +33,7 @@ func TestGenericComponentDisabler(t *testing.T) {
 		{
 			name: "Disable component if name does not match",
 			toDisable: toDisable{
-				Name:      "not-valid",
+				Name: "not-valid",
 			},
 			givenComponents: []*string{
 				ptrStr("dex"),

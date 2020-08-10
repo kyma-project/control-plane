@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
+
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
@@ -60,8 +62,8 @@ func Test_HappyPath(t *testing.T) {
 	// then
 	ensureOperationSuccessful(t, op, when, err)
 	allOverridesFound := ensureOverrides(t, provisionRuntimeInput)
-	assert.True(t, allOverridesFound[componentNameKnativeEventing], "overrides for %s were not found", componentNameKnativeEventing)
-	assert.True(t, allOverridesFound[KymaComponentNameKnativeEventingKafka], "overrides for %s were not found", KymaComponentNameKnativeEventingKafka)
+	assert.True(t, allOverridesFound[components.KnativeEventing], "overrides for %s were not found", components.KnativeEventing)
+	assert.True(t, allOverridesFound[components.KnativeEventingKafka], "overrides for %s were not found", components.KnativeEventingKafka)
 	assert.Equal(t, namespaceClient.Tags, tags)
 }
 
@@ -236,14 +238,14 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 	t.Helper()
 
 	allOverridesFound := map[string]bool{
-		componentNameKnativeEventing:          false,
-		KymaComponentNameKnativeEventingKafka: false,
+		components.KnativeEventing:      false,
+		components.KnativeEventingKafka: false,
 	}
 
 	kymaConfig := provisionRuntimeInput.KymaConfig
 	for _, component := range kymaConfig.Components {
 		switch component.Component {
-		case componentNameKnativeEventing:
+		case components.KnativeEventing:
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "knative-eventing.channel.default.apiVersion",
 				Value:  "knativekafka.kyma-project.io/v1alpha1",
@@ -254,8 +256,8 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 				Value:  "KafkaChannel",
 				Secret: nil,
 			})
-			allOverridesFound[componentNameKnativeEventing] = true
-		case KymaComponentNameKnativeEventingKafka:
+			allOverridesFound[components.KnativeEventing] = true
+		case components.KnativeEventingKafka:
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "kafka.brokers.hostname",
 				Value:  "name",
@@ -291,7 +293,7 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 				Value:  kafkaProvider,
 				Secret: ptr.Bool(true),
 			})
-			allOverridesFound[KymaComponentNameKnativeEventingKafka] = true
+			allOverridesFound[components.KnativeEventingKafka] = true
 		}
 	}
 
@@ -307,11 +309,11 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 			Configuration: nil,
 		},
 		{
-			Component: componentNameKnativeEventing,
+			Component: components.KnativeEventing,
 			Namespace: "knative-eventing",
 		},
 		{
-			Component: KymaComponentNameKnativeEventingKafka,
+			Component: components.KnativeEventingKafka,
 			Namespace: "knative-eventing",
 		},
 	}
@@ -325,11 +327,11 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 			Namespace: "kyma-system",
 		},
 		{
-			Name:      componentNameKnativeEventing,
+			Name:      components.KnativeEventing,
 			Namespace: "knative-eventing",
 		},
 		{
-			Name:      KymaComponentNameKnativeEventingKafka,
+			Name:      components.KnativeEventingKafka,
 			Namespace: "knative-eventing",
 		},
 	}

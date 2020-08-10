@@ -112,11 +112,8 @@ func (f *InputBuilderFactory) ForPlan(planID, kymaVersion string) (internal.Prov
 		mutex:                     nsync.NewNamedMutex(),
 		hyperscalerInputProvider:  provider,
 		optionalComponentsService: f.optComponentsSvc,
+		componentsDisabler:        runtime.NewDisabledComponentsService(disabledComponents),
 		enabledComponents:         map[string]struct{}{},
-		// #1
-		disabledComponents: disabledComponents,
-		// #2
-		disableSvc: *runtime.NewDisabledComponentsService(disabledComponents)
 	}, nil
 }
 

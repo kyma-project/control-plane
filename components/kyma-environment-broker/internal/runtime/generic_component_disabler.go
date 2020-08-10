@@ -4,7 +4,7 @@ import "github.com/kyma-project/control-plane/components/kyma-environment-broker
 
 // GenericComponentDisabler provides functionality for removing configured component from given list
 type GenericComponentDisabler struct {
-	componentName      string
+	componentName string
 }
 
 // NewOptionalComponent returns new instance of GenericComponentDisabler
