@@ -7,6 +7,8 @@ import (
 )
 
 const (
+	AllPlansSelector = "all_plans"
+
 	GCPPlanID          = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
 	GCPPlanName        = "gcp"
 	GcpTrialPlanID     = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"

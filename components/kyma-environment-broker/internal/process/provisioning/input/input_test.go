@@ -24,9 +24,9 @@ func TestShouldEnableComponents(t *testing.T) {
 	// Two optional components: Kiali and Tracing
 	// The test checks, if EnableComponent method adds an optional component
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"kiali":   runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
-		"tracing": runtime.NewGenericComponentDisabler("tracing", "kyma-system"),
-		"backup":  runtime.NewGenericComponentDisabler("backup", "kyma-system"),
+		"kiali":   runtime.NewOptionalComponent("kiali", "kyma-system"),
+		"tracing": runtime.NewOptionalComponent("tracing", "kyma-system"),
+		"backup":  runtime.NewOptionalComponent("backup", "kyma-system"),
 	}
 	componentsProvider := &automock.ComponentListProvider{}
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).

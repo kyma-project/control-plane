@@ -1,6 +1,7 @@
 package input
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -27,7 +28,10 @@ type RuntimeInput struct {
 	optionalComponentsService OptionalComponentService
 	provisioningParameters    internal.ProvisioningParametersDTO
 
-	enabledComponents map[string]struct{}
+	enabledComponents  map[string]struct{}
+	disabledComponents map[string]struct{}
+
+	disableSvc runtime.DisabledComponentsService
 }
 
 func (r *RuntimeInput) EnableComponent(componentName string) internal.ProvisionInputCreator {
@@ -94,8 +98,12 @@ func (r *RuntimeInput) Create() (gqlschema.ProvisionRuntimeInput, error) {
 			execute: r.applyProvisioningParameters,
 		},
 		{
+			name:    "force disabling components",
+			execute: r.disableComponents,
+		},
+		{
 			name:    "disabling optional components that were not selected",
-			execute: r.disableNotSelectedComponents,
+			execute: r.resolveOptionalComponents,
 		},
 		{
 			name:    "applying components overrides",
@@ -135,7 +143,7 @@ func (r *RuntimeInput) applyProvisioningParameters() error {
 	return nil
 }
 
-func (r *RuntimeInput) disableNotSelectedComponents() error {
+func (r *RuntimeInput) resolveOptionalComponents() error {
 	r.mutex.Lock("enabledComponents")
 	defer r.mutex.Unlock("enabledComponents")
 
@@ -149,6 +157,23 @@ func (r *RuntimeInput) disableNotSelectedComponents() error {
 	filterOut, err := r.optionalComponentsService.ExecuteDisablers(r.input.KymaConfig.Components, toDisable...)
 	if err != nil {
 		return errors.Wrapf(err, "while disabling components %v", toDisable)
+	}
+
+	r.input.KymaConfig.Components = filterOut
+
+	return nil
+}
+
+func (r *RuntimeInput) disableComponents() error {
+	//for i, c := range r.input.KymaConfig.Components {
+	//	if _, ok := r.disabledComponents[c.DisabledComponentsPerPlan]; ok {
+	//		r.input.KymaConfig.Components = append(r.input.KymaConfig.Components[:i], r.input.KymaConfig.Components[i+1:]...)
+	//	}
+	//}
+
+	filterOut, err := r.disableSvc.ExecuteDisablers(r.input.KymaConfig.Components)
+	if err != nil {
+		return err
 	}
 
 	r.input.KymaConfig.Components = filterOut

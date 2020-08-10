@@ -3,7 +3,6 @@ package runtime_test
 import (
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/stretchr/testify/assert"
 )
@@ -11,48 +10,45 @@ import (
 func TestGenericComponentDisabler(t *testing.T) {
 	type toDisable struct {
 		Name      string
-		Namespace string
 	}
 	tests := []struct {
 		name            string
-		givenComponents internal.ComponentConfigurationInputList
-		expComponents   internal.ComponentConfigurationInputList
+		givenComponents []*string
+		expComponents   []*string
 		toDisable       toDisable
 	}{
 		{
 			name: "Disable component if the name and namespace match with predicate",
 			toDisable: toDisable{
 				Name:      "ory",
-				Namespace: "ory-system",
 			},
-			givenComponents: internal.ComponentConfigurationInputList{
-				{Component: "dex", Namespace: "kyma-system"},
-				{Component: "ory", Namespace: "ory-system"},
+			givenComponents: []*string{
+				ptrStr("dex"),
+				ptrStr("ory"),
 			},
-			expComponents: internal.ComponentConfigurationInputList{
-				{Component: "dex", Namespace: "kyma-system"},
+			expComponents: []*string{
+				ptrStr("dex"),
 			},
 		},
 		{
-			name: "Disable component if only name match with predicate but namespace not",
+			name: "Disable component if name does not match",
 			toDisable: toDisable{
-				Name:      "ory",
-				Namespace: "wrong-namespace-name",
+				Name:      "not-valid",
 			},
-			givenComponents: internal.ComponentConfigurationInputList{
-				{Component: "dex", Namespace: "kyma-system"},
-				{Component: "ory", Namespace: "ory-system"},
+			givenComponents: []*string{
+				ptrStr("dex"),
+				ptrStr("ory"),
 			},
-			expComponents: internal.ComponentConfigurationInputList{
-				{Component: "dex", Namespace: "kyma-system"},
-				{Component: "ory", Namespace: "ory-system"},
+			expComponents: []*string{
+				ptrStr("dex"),
+				ptrStr("ory"),
 			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// given
-			sut := runtime.NewGenericComponentDisabler(test.toDisable.Name, test.toDisable.Namespace)
+			sut := runtime.NewOptionalComponent(test.toDisable.Name)
 
 			// when
 			modifiedComponents := sut.Disable(test.givenComponents)
@@ -61,4 +57,8 @@ func TestGenericComponentDisabler(t *testing.T) {
 			assert.EqualValues(t, test.expComponents, modifiedComponents)
 		})
 	}
+}
+
+func ptrStr(s string) *string {
+	return &s
 }
