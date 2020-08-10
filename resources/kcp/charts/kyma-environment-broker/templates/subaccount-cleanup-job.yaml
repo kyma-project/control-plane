@@ -1,0 +1,219 @@
+{{ if .Values.subaccountCleanup.enabled }}
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: "kcp-subaccount-cleaner-v1.0"
+spec:
+  schedule: "{{ .Values.subaccountCleanup.schedule }}"
+  failedJobsHistoryLimit: 5
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 60
+  jobTemplate:
+    metadata:
+      labels:
+        cronjob: subaccount-cleaner-v1.0
+    spec:
+      template:
+        metadata:
+          labels:
+            cronjob: subaccount-cleaner-v1.0
+        spec:
+          containers:
+            - name: cleaner
+              image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-subaccount-cleanup-job:{{ .Values.global.images.kyma_environments_subaccount_cleanup_job.version }}"
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: APP_CLIENT_VERSION
+                  value: "v1.0"
+                - name: APP_CIS_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.cis.secretName }}
+                      key: id
+                - name: APP_CIS_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.cis.secretName }}
+                      key: secret
+                - name: APP_CIS_AUTH_URL
+                  value: {{ .Values.cis.authURL }}
+                - name: APP_CIS_EVENT_SERVICE_URL
+                  value: {{ .Values.cis.eventServiceURL }}
+                - name: APP_DATABASE_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-broker-username
+                - name: APP_DATABASE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-broker-password
+                - name: APP_DATABASE_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-serviceName
+                - name: APP_DATABASE_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-servicePort
+                - name: APP_DATABASE_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-broker-db-name
+                - name: APP_DATABASE_SSL
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-sslMode
+                - name: APP_BROKER_URL
+                  value: "https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}"
+                - name: APP_BROKER_TOKEN_URL
+                  value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
+                - name: APP_BROKER_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.kebClient.secretName }}
+                      key: client_id
+                - name: APP_BROKER_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.kebClient.secretName }}
+                      key: client_secret
+                - name: APP_BROKER_SCOPE
+                  value: {{ .Values.kebClient.scope }}
+              command:
+                - "/bin/sh"
+              args:
+                - "-c"
+                - "./accountcleanup; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+            - name: cloudsql-proxy
+              image: gcr.io/cloudsql-docker/gce-proxy:1.14
+              command:
+                - /bin/sh
+              args:
+                - -c
+                - "trap 'exit 0' SIGINT; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json"
+              volumeMounts:
+                - name: cloudsql-instance-credentials
+                  mountPath: /secrets/cloudsql-instance-credentials
+                  readOnly: true
+          restartPolicy: Never
+          shareProcessNamespace: true
+          volumes:
+            - name: cloudsql-instance-credentials
+              secret:
+                secretName: cloudsql-instance-credentials
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: "kcp-subaccount-cleaner-v2.0"
+spec:
+  schedule: "{{ .Values.subaccountCleanup.schedule }}"
+  failedJobsHistoryLimit: 5
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 60
+  jobTemplate:
+    metadata:
+      labels:
+        cronjob: subaccount-cleaner-v2.0
+    spec:
+      template:
+        metadata:
+          labels:
+            cronjob: subaccount-cleaner-v2.0
+        spec:
+          containers:
+            - name: cleaner
+              image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-subaccount-cleanup-job:{{ .Values.global.images.kyma_environments_subaccount_cleanup_job.version }}"
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: APP_CLIENT_VERSION
+                  value: "v2.0"
+                - name: APP_CIS_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.cis.secretName }}
+                      key: id
+                - name: APP_CIS_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.cis.secretName }}
+                      key: secret
+                - name: APP_CIS_AUTH_URL
+                  value: {{ .Values.cis.authURL }}
+                - name: APP_CIS_EVENT_SERVICE_URL
+                  value: {{ .Values.cis.eventServiceURL }}
+                - name: APP_DATABASE_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-broker-username
+                - name: APP_DATABASE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-broker-password
+                - name: APP_DATABASE_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-serviceName
+                - name: APP_DATABASE_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-servicePort
+                - name: APP_DATABASE_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-broker-db-name
+                - name: APP_DATABASE_SSL
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-sslMode
+                - name: APP_BROKER_URL
+                  value: "https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}"
+                - name: APP_BROKER_TOKEN_URL
+                  value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
+                - name: APP_BROKER_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.kebClient.secretName }}
+                      key: client_id
+                - name: APP_BROKER_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.kebClient.secretName }}
+                      key: client_secret
+                - name: APP_BROKER_SCOPE
+                  value: {{ .Values.kebClient.scope }}
+              command:
+                - "/bin/sh"
+              args:
+                - "-c"
+                - "./accountcleanup; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+            - name: cloudsql-proxy
+              image: gcr.io/cloudsql-docker/gce-proxy:1.14
+              command:
+                - /bin/sh
+              args:
+                - -c
+                - "trap 'exit 0' SIGINT; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json"
+              volumeMounts:
+                - name: cloudsql-instance-credentials
+                  mountPath: /secrets/cloudsql-instance-credentials
+                  readOnly: true
+          restartPolicy: Never
+          shareProcessNamespace: true
+          volumes:
+            - name: cloudsql-instance-credentials
+              secret:
+                secretName: cloudsql-instance-credentials
+{{ end }}

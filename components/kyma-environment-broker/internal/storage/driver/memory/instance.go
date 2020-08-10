@@ -83,6 +83,20 @@ func (s *Instance) FindAllInstancesForRuntimes(runtimeIdList []string) ([]intern
 	return instances, nil
 }
 
+func (s *Instance) FindAllInstancesForSubAccounts(subAccountslist []string) ([]internal.Instance, error) {
+	var instances []internal.Instance
+
+	for _, subAccount := range subAccountslist {
+		for _, inst := range s.instances {
+			if inst.SubAccountID == subAccount {
+				instances = append(instances, inst)
+			}
+		}
+	}
+
+	return instances, nil
+}
+
 func (s *Instance) GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error) {
 	numberOfInstances := 0
 	for _, inst := range s.instances {

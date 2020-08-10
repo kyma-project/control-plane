@@ -62,6 +62,27 @@ func (s *Instance) FindAllInstancesForRuntimes(runtimeIdList []string) ([]intern
 	return instances, nil
 }
 
+func (s *Instance) FindAllInstancesForSubAccounts(subAccountslist []string) ([]internal.Instance, error) {
+	sess := s.NewReadSession()
+	var (
+		instances []internal.Instance
+		lastErr   dberr.Error
+	)
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		instances, lastErr = sess.FindAllInstancesForSubAccounts(subAccountslist)
+		if lastErr != nil {
+			log.Warn(errors.Wrapf(lastErr, "while fetching instances by subaccount list").Error())
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, lastErr
+	}
+
+	return instances, nil
+}
+
 func (s *Instance) GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error) {
 	sess := s.NewReadSession()
 	var result int

@@ -23,7 +23,7 @@ const (
 	deprovisionTmpl = "%s%s/%s?service_id=%s&plan_id=%s"
 )
 
-type Config struct {
+type ClientConfig struct {
 	URL          string
 	TokenURL     string
 	ClientID     string
@@ -32,11 +32,11 @@ type Config struct {
 }
 
 type Client struct {
-	brokerConfig Config
+	brokerConfig ClientConfig
 	httpClient   *http.Client
 }
 
-func NewClient(ctx context.Context, config Config) *Client {
+func NewClient(ctx context.Context, config ClientConfig) *Client {
 	cfg := clientcredentials.Config{
 		ClientID:     config.ClientID,
 		ClientSecret: config.ClientSecret,

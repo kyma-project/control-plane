@@ -83,8 +83,9 @@ func TestSchemaInitializer(t *testing.T) {
 			require.NotNil(t, brokerStorage)
 
 			testData := "test"
+			instanceData := instanceData{val: testData}
 
-			fixInstance := fixInstance(testData)
+			fixInstance := fixInstance(instanceData)
 			err = brokerStorage.Instances().Insert(*fixInstance)
 			require.NoError(t, err)
 
@@ -136,9 +137,10 @@ func TestSchemaInitializer(t *testing.T) {
 
 			// populate database with samples
 			fixInstances := []internal.Instance{
-				fixInstanceWithGAID("A1", "A"),
-				fixInstanceWithGAID("A2", "A"),
-				fixInstanceWithGAID("C1", "C")}
+				*fixInstance(instanceData{val: "A1", globalAccountID: "A"}),
+				*fixInstance(instanceData{val: "A2", globalAccountID: "A"}),
+				*fixInstance(instanceData{val: "C1", globalAccountID: "C"}),
+			}
 			for _, i := range fixInstances {
 				err = psqlStorage.Instances().Insert(i)
 				require.NoError(t, err)
@@ -178,7 +180,7 @@ func TestSchemaInitializer(t *testing.T) {
 			require.NotNil(t, psqlStorage)
 
 			// populate database with samples
-			fixInstances := []internal.Instance{*fixInstance("A1"), *fixInstance("B1"), *fixInstance("C1")}
+			fixInstances := []internal.Instance{*fixInstance(instanceData{val: "A1"}), *fixInstance(instanceData{val: "B1"}), *fixInstance(instanceData{val: "C1"})}
 			for _, i := range fixInstances {
 				err = psqlStorage.Instances().Insert(i)
 				require.NoError(t, err)
@@ -222,6 +224,44 @@ func TestSchemaInitializer(t *testing.T) {
 			assertEqualOperation(t, fixDeprovisionOp[1], out[3])
 			assertEqualOperation(t, fixProvisionOp[2], out[4])
 			assertEqualOperation(t, fixDeprovisionOp[2], out[5])
+		})
+
+		t.Run("Should fetch instances based on subaccount list", func(t *testing.T) {
+			// given
+			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			require.NoError(t, err)
+			defer containerCleanupFunc()
+
+			err = InitTestDBTables(t, cfg.ConnectionURL())
+			require.NoError(t, err)
+
+			psqlStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			require.NoError(t, err)
+			require.NotNil(t, psqlStorage)
+
+			// populate database with samples
+			subaccountList := []string{"sa1", "sa2", "sa3"}
+			fixInstances := []internal.Instance{
+				*fixInstance(instanceData{val: "1", subAccountID: subaccountList[0]}),
+				*fixInstance(instanceData{val: "2", subAccountID: "someSU"}),
+				*fixInstance(instanceData{val: "3", subAccountID: subaccountList[1]}),
+				*fixInstance(instanceData{val: "4", subAccountID: subaccountList[2]}),
+			}
+			for _, i := range fixInstances {
+				err = psqlStorage.Instances().Insert(i)
+				require.NoError(t, err)
+			}
+
+			// when
+			out, err := psqlStorage.Instances().FindAllInstancesForSubAccounts(subaccountList)
+
+			// then
+			require.NoError(t, err)
+			require.Len(t, out, 3)
+
+			require.Contains(t, []string{"1", "3", "4"}, out[0].InstanceID)
+			require.Contains(t, []string{"1", "3", "4"}, out[1].InstanceID)
+			require.Contains(t, []string{"1", "3", "4"}, out[2].InstanceID)
 		})
 	})
 
@@ -561,33 +601,41 @@ func assertEqualOperation(t *testing.T, want interface{}, got internal.InstanceW
 	}
 }
 
-func fixInstance(testData string) *internal.Instance {
-	return &internal.Instance{
-		InstanceID:             testData,
-		RuntimeID:              testData,
-		GlobalAccountID:        testData,
-		SubAccountID:           testData,
-		ServiceID:              testData,
-		ServiceName:            testData,
-		ServicePlanID:          testData,
-		ServicePlanName:        testData,
-		DashboardURL:           testData,
-		ProvisioningParameters: testData,
-	}
+type instanceData struct {
+	val             string
+	globalAccountID string
+	subAccountID    string
 }
 
-func fixInstanceWithGAID(testData, globalAccountID string) internal.Instance {
-	return internal.Instance{
-		InstanceID:             testData,
-		RuntimeID:              testData,
-		GlobalAccountID:        globalAccountID,
-		SubAccountID:           testData,
-		ServiceID:              testData,
-		ServiceName:            testData,
-		ServicePlanID:          testData,
-		ServicePlanName:        testData,
-		DashboardURL:           testData,
-		ProvisioningParameters: testData,
+func fixInstance(testData instanceData) *internal.Instance {
+	var (
+		gaid string
+		suid string
+	)
+
+	if testData.globalAccountID != "" {
+		gaid = testData.globalAccountID
+	} else {
+		gaid = testData.val
+	}
+
+	if testData.subAccountID != "" {
+		suid = testData.subAccountID
+	} else {
+		suid = testData.val
+	}
+
+	return &internal.Instance{
+		InstanceID:             testData.val,
+		RuntimeID:              testData.val,
+		GlobalAccountID:        gaid,
+		SubAccountID:           suid,
+		ServiceID:              testData.val,
+		ServiceName:            testData.val,
+		ServicePlanID:          testData.val,
+		ServicePlanName:        testData.val,
+		DashboardURL:           testData.val,
+		ProvisioningParameters: testData.val,
 	}
 }
 
