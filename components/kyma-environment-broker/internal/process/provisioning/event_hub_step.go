@@ -24,10 +24,10 @@ const (
 
 	kafkaPort = "9093"
 
-	k8sSecretNamespace                = "knative-eventing"
-	componentNameKnativeEventing      = "knative-eventing"
-	componentNameKnativeEventingKafka = "knative-eventing-kafka"
-	kafkaProvider                     = "azure"
+	k8sSecretNamespace                    = "knative-eventing"
+	componentNameKnativeEventing          = "knative-eventing"
+	KymaComponentNameKnativeEventingKafka = "knative-eventing-kafka"
+	kafkaProvider                         = "azure"
 
 	// prefix is added before the created Azure resources
 	// to satisfy Azure naming validation: https://docs.microsoft.com/en-us/rest/api/servicebus/create-namespace
@@ -61,6 +61,8 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
 	hypType := hyperscaler.Azure
+
+	operation.InputCreator.EnableComponent("KnativeEventingKafka")
 
 	// parse provisioning parameters
 	pp, err := operation.GetProvisioningParameters()
@@ -142,7 +144,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 
 	// append installation overrides
 	operation.InputCreator.AppendOverrides(componentNameKnativeEventing, getKnativeEventingOverrides())
-	operation.InputCreator.AppendOverrides(componentNameKnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, kafkaPort, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
+	operation.InputCreator.AppendOverrides(KymaComponentNameKnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, kafkaPort, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
 
 	return operation, 0, nil
 }
