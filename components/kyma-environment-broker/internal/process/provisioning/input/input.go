@@ -27,16 +27,14 @@ type RuntimeInput struct {
 	optionalComponentsService OptionalComponentService
 	provisioningParameters    internal.ProvisioningParametersDTO
 
-	enabledComponents  map[string]struct{}
-	disabledComponents map[string]struct{}
-
-	componentsDisabler ComponentsDisabler
+	componentsDisabler        ComponentsDisabler
+	enabledOptionalComponents map[string]struct{}
 }
 
-func (r *RuntimeInput) EnableComponent(componentName string) internal.ProvisionInputCreator {
-	r.mutex.Lock("enabledComponents")
-	defer r.mutex.Unlock("enabledComponents")
-	r.enabledComponents[componentName] = struct{}{}
+func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.ProvisionInputCreator {
+	r.mutex.Lock("enabledOptionalComponents")
+	defer r.mutex.Unlock("enabledOptionalComponents")
+	r.enabledOptionalComponents[componentName] = struct{}{}
 	return r
 }
 
@@ -143,12 +141,12 @@ func (r *RuntimeInput) applyProvisioningParameters() error {
 }
 
 func (r *RuntimeInput) resolveOptionalComponents() error {
-	r.mutex.Lock("enabledComponents")
-	defer r.mutex.Unlock("enabledComponents")
+	r.mutex.Lock("enabledOptionalComponents")
+	defer r.mutex.Unlock("enabledOptionalComponents")
 
 	componentsToInstall := []string{}
 	componentsToInstall = append(componentsToInstall, r.provisioningParameters.OptionalComponentsToInstall...)
-	for name := range r.enabledComponents {
+	for name := range r.enabledOptionalComponents {
 		componentsToInstall = append(componentsToInstall, name)
 	}
 	toDisable := r.optionalComponentsService.ComputeComponentsToDisable(componentsToInstall)

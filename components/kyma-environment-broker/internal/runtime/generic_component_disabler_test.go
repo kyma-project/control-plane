@@ -3,6 +3,8 @@ package runtime_test
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/stretchr/testify/assert"
 )
@@ -13,8 +15,8 @@ func TestGenericComponentDisabler(t *testing.T) {
 	}
 	tests := []struct {
 		name            string
-		givenComponents []*string
-		expComponents   []*string
+		givenComponents internal.ComponentConfigurationInputList
+		expComponents   internal.ComponentConfigurationInputList
 		toDisable       toDisable
 	}{
 		{
@@ -22,12 +24,12 @@ func TestGenericComponentDisabler(t *testing.T) {
 			toDisable: toDisable{
 				Name: "ory",
 			},
-			givenComponents: []*string{
-				ptrStr("dex"),
-				ptrStr("ory"),
+			givenComponents: internal.ComponentConfigurationInputList{
+				{Component: "dex"},
+				{Component: "ory"},
 			},
-			expComponents: []*string{
-				ptrStr("dex"),
+			expComponents: internal.ComponentConfigurationInputList{
+				{Component: "dex"},
 			},
 		},
 		{
@@ -35,20 +37,20 @@ func TestGenericComponentDisabler(t *testing.T) {
 			toDisable: toDisable{
 				Name: "not-valid",
 			},
-			givenComponents: []*string{
-				ptrStr("dex"),
-				ptrStr("ory"),
+			givenComponents: internal.ComponentConfigurationInputList{
+				{Component: "dex"},
+				{Component: "ory"},
 			},
-			expComponents: []*string{
-				ptrStr("dex"),
-				ptrStr("ory"),
+			expComponents: internal.ComponentConfigurationInputList{
+				{Component: "dex"},
+				{Component: "ory"},
 			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// given
-			sut := runtime.NewOptionalComponent(test.toDisable.Name)
+			sut := runtime.NewGenericComponentDisabler(test.toDisable.Name)
 
 			// when
 			modifiedComponents := sut.Disable(test.givenComponents)

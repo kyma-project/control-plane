@@ -4,7 +4,6 @@ package components
 const (
 	KnativeEventing         = "knative-eventing"
 	KnativeEventingKafka    = "knative-eventing-kafka"
-	KnativeEventingNatss    = "knative-eventing-natss"
 	KnativeProvisionerNatss = "knative-provisioner-natss"
 	NatssStreaming          = "natss-streaming"
 	Kiali                   = "kiali"

@@ -183,7 +183,7 @@ type simpleInputCreator struct {
 	enabledComponents []string
 }
 
-func (c *simpleInputCreator) EnableComponent(name string) internal.ProvisionInputCreator {
+func (c *simpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionInputCreator {
 	c.enabledComponents = append(c.enabledComponents, name)
 	return c
 }

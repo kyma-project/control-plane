@@ -159,9 +159,8 @@ func main() {
 	//
 	// Using map is intentional - we ensure that component name is not duplicated.
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		components.Kiali:                runtime.NewGenericComponentDisabler(components.Kiali),
-		components.Tracing:              runtime.NewGenericComponentDisabler(components.Tracing),
-		components.KnativeEventingKafka: runtime.NewGenericComponentDisabler(components.KnativeEventingKafka),
+		components.Kiali:   runtime.NewGenericComponentDisabler(components.Kiali),
+		components.Tracing: runtime.NewGenericComponentDisabler(components.Tracing),
 	}
 	optComponentsSvc := runtime.NewOptionalComponentsService(optionalComponentsDisablers)
 

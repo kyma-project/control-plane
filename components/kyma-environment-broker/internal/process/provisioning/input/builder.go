@@ -99,9 +99,12 @@ func (f *InputBuilderFactory) ForPlan(planID, kymaVersion string) (internal.Prov
 
 	initInput, err := f.initInput(provider, kymaVersion)
 	if err != nil {
-		return &RuntimeInput{}, errors.Wrap(err, "while initialization input")
+		return nil, errors.Wrap(err, "while initialization input")
 	}
 
+	if _, ok := f.disabledComponentsPerPlan[planID]; !ok {
+		return nil, errors.New("every plan should be specified in the disabled components map")
+	}
 	disabledComponents := mergeMaps(f.disabledComponentsPerPlan[broker.AllPlansSelector], f.disabledComponentsPerPlan[planID])
 
 	return &RuntimeInput{
@@ -113,7 +116,7 @@ func (f *InputBuilderFactory) ForPlan(planID, kymaVersion string) (internal.Prov
 		hyperscalerInputProvider:  provider,
 		optionalComponentsService: f.optComponentsSvc,
 		componentsDisabler:        runtime.NewDisabledComponentsService(disabledComponents),
-		enabledComponents:         map[string]struct{}{},
+		enabledOptionalComponents: map[string]struct{}{},
 	}, nil
 }
 

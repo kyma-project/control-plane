@@ -8,7 +8,8 @@ import (
 // DisabledComponentsPerPlan provides a list of the components to remove per plan
 // more specifically it's map[PLAN_ID or SELECTOR][COMPONENT_NAME]
 //
-// Components located under the AllPlansSelector will be removed from any plan
+// Components located under the AllPlansSelector will be removed from every plan
+// All plans must be specified
 
 func DisabledComponentsPerPlan() map[string]map[string]struct{} {
 	return map[string]map[string]struct{}{
@@ -28,7 +29,11 @@ func DisabledComponentsPerPlan() map[string]map[string]struct{} {
 			components.NatssStreaming:          {},
 			components.KnativeProvisionerNatss: {},
 		},
-		broker.AzureTrialPlanID: {},
-		broker.GcpTrialPlanID:   {},
+		broker.AzureTrialPlanID: {
+			components.KnativeEventingKafka: {},
+		},
+		broker.GcpTrialPlanID: {
+			components.KnativeEventingKafka: {},
+		},
 	}
 }

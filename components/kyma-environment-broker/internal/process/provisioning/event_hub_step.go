@@ -62,8 +62,6 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 
 	hypType := hyperscaler.Azure
 
-	operation.InputCreator.EnableComponent("KnativeEventingKafka")
-
 	// parse provisioning parameters
 	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
