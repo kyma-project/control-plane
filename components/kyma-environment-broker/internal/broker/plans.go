@@ -3,6 +3,8 @@ package broker
 import (
 	"encoding/json"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
+
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
@@ -80,7 +82,7 @@ func GCPSchema(machineTypes []string) []byte {
 				Type: "array",
 				Items: []Type{{
 					Type: "string",
-					Enum: ToInterfaceSlice([]string{"Kiali", "Tracing"}),
+					Enum: ToInterfaceSlice([]string{components.Kiali, components.Tracing}),
 				}},
 				AdditionalItems: f,
 				UniqueItems:     t,
@@ -176,7 +178,7 @@ func AzureSchema(machineTypes []string) []byte {
 				Type: "array",
 				Items: []Type{{
 					Type: "string",
-					Enum: ToInterfaceSlice([]string{"Kiali", "Tracing"}),
+					Enum: ToInterfaceSlice([]string{components.Kiali, components.Tracing}),
 				}},
 				AdditionalItems: f,
 				UniqueItems:     t,
