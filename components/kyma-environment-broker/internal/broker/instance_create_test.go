@@ -360,7 +360,7 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Empty(t, response.OperationData)
 	})
 
-	t.Run("return error on adding KnativeProvisionerNatss and NatssStreaming to list of components", func(t *testing.T) {
+	t.Run("return error on adding KnativeProvisionerNatss and NatsStreaming to list of components", func(t *testing.T) {
 		// given
 		// #setup memory storage
 		memoryStorage := storage.NewMemoryStorage()
@@ -391,7 +391,7 @@ func TestProvision_Provision(t *testing.T) {
 			PlanID:    planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{
 								"name": "%s",
-								"components": ["KnativeProvisionerNatss", "NatssStreaming"]
+								"components": ["KnativeProvisionerNatss", "NatsStreaming"]
 								}`, clusterName)),
 			RawContext: json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
 		}, true)

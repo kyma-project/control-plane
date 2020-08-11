@@ -87,7 +87,6 @@ type config struct {
 
 	LatestDownloadedReleases int  `envconfig:"default=5"`
 	DownloadPreReleases      bool `envconfig:"default=true"`
-	SupportOnDemandReleases  bool `envconfig:"default=false"`
 
 	EnqueueInProgressOperations bool `envconfig:"default=true"`
 
@@ -107,7 +106,7 @@ func (c *config) String() string {
 		"DeprovisioningTimeoutClusterDeletion: %s, DeprovisioningTimeoutWaitingForClusterDeletion: %s "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
 		"ForceAllowPrivilegedContainers: %t, "+
-		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, SupportOnDemandReleases: %v, "+
+		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s",
 		c.Address, c.APIEndpoint, c.DirectorURL,
@@ -120,7 +119,7 @@ func (c *config) String() string {
 		c.DeprovisioningTimeout.ClusterDeletion.String(), c.DeprovisioningTimeout.WaitingForClusterDeletion.String(),
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
 		c.Gardener.ForceAllowPrivilegedContainers,
-		c.LatestDownloadedReleases, c.DownloadPreReleases, c.SupportOnDemandReleases,
+		c.LatestDownloadedReleases, c.DownloadPreReleases,
 		c.EnqueueInProgressOperations,
 		c.LogLevel)
 }
@@ -208,10 +207,9 @@ func main() {
 	fileDownloader := release.NewFileDownloader(httpClient)
 
 	releaseRepository := release.NewReleaseRepository(connection, uuid.NewUUIDGenerator())
-	var releaseProvider release.Provider = releaseRepository
-	if cfg.SupportOnDemandReleases {
-		releaseProvider = release.NewOnDemandWrapper(fileDownloader, releaseRepository)
-	}
+	gcsDownloader := release.NewGCSDownloader(fileDownloader)
+
+	releaseProvider := release.NewReleaseProvider(releaseRepository, gcsDownloader)
 
 	provisioningSVC := newProvisioningService(
 		cfg.Gardener.Project,

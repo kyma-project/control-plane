@@ -25,6 +25,8 @@ const (
 	tillerFormat      = "https://raw.githubusercontent.com/kyma-project/kyma/%s/installation/resources/tiller.yaml"
 )
 
+// Deprecated
+// Should be removed or switched to fetching from GCS bucket after version 1.14 is no longer supported
 func NewArtifactsDownloader(
 	repository Repository,
 	latestReleases int,
@@ -42,6 +44,8 @@ func NewArtifactsDownloader(
 	}
 }
 
+// Deprecated
+// Should be removed or switched to fetching from GCS bucket after version 1.14 is no longer supported
 type artifactsDownloader struct {
 	repository         Repository
 	latestReleases     int

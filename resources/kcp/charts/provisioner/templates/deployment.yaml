@@ -132,8 +132,6 @@ spec:
               value: {{ .Values.gardener.forceAllowPrivilegedContainers | quote }}
             - name: APP_LATEST_DOWNLOADED_RELEASES
               value: "5"
-            - name: APP_SUPPORT_ON_DEMAND_RELEASES
-              value: {{ .Values.kymaRelease.onDemand.enabled | quote }}
             - name: APP_DOWNLOAD_PRE_RELEASES
               value: {{ .Values.kymaRelease.preReleases.enabled | quote }}
             - name: APP_LOG_LEVEL

@@ -61,7 +61,7 @@ func Test_HappyPath(t *testing.T) {
 	ensureOperationSuccessful(t, op, when, err)
 	allOverridesFound := ensureOverrides(t, provisionRuntimeInput)
 	assert.True(t, allOverridesFound[componentNameKnativeEventing], "overrides for %s were not found", componentNameKnativeEventing)
-	assert.True(t, allOverridesFound[componentNameKnativeEventingKafka], "overrides for %s were not found", componentNameKnativeEventingKafka)
+	assert.True(t, allOverridesFound[KymaComponentNameKnativeEventingKafka], "overrides for %s were not found", KymaComponentNameKnativeEventingKafka)
 	assert.Equal(t, namespaceClient.Tags, tags)
 }
 
@@ -236,8 +236,8 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 	t.Helper()
 
 	allOverridesFound := map[string]bool{
-		componentNameKnativeEventing:      false,
-		componentNameKnativeEventingKafka: false,
+		componentNameKnativeEventing:          false,
+		KymaComponentNameKnativeEventingKafka: false,
 	}
 
 	kymaConfig := provisionRuntimeInput.KymaConfig
@@ -255,7 +255,7 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 				Secret: nil,
 			})
 			allOverridesFound[componentNameKnativeEventing] = true
-		case componentNameKnativeEventingKafka:
+		case KymaComponentNameKnativeEventingKafka:
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "kafka.brokers.hostname",
 				Value:  "name",
@@ -291,7 +291,7 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 				Value:  kafkaProvider,
 				Secret: ptr.Bool(true),
 			})
-			allOverridesFound[componentNameKnativeEventingKafka] = true
+			allOverridesFound[KymaComponentNameKnativeEventingKafka] = true
 		}
 	}
 
@@ -311,12 +311,12 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 			Namespace: "knative-eventing",
 		},
 		{
-			Component: componentNameKnativeEventingKafka,
+			Component: KymaComponentNameKnativeEventingKafka,
 			Namespace: "knative-eventing",
 		},
 	}
-
-	optComponentsSvc.On("ComputeComponentsToDisable", []string{}).Return([]string{})
+	// "KnativeEventingKafka"
+	optComponentsSvc.On("ComputeComponentsToDisable", []string{"KnativeEventingKafka"}).Return([]string{})
 	optComponentsSvc.On("ExecuteDisablers", mock.Anything).Return(componentConfigurationInputList, nil)
 
 	kymaComponentList := []v1alpha1.KymaComponent{
@@ -329,7 +329,7 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 			Namespace: "knative-eventing",
 		},
 		{
-			Name:      componentNameKnativeEventingKafka,
+			Name:      KymaComponentNameKnativeEventingKafka,
 			Namespace: "knative-eventing",
 		},
 	}
