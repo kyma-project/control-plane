@@ -58,15 +58,18 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 		}
 	}
 
-	if input.ClusterConfig == nil {
-		return model.Cluster{}, apperrors.BadRequest("error: ClusterConfig not provided")
+	if input.ClusterConfig == nil || input.ClusterConfig.GardenerConfig == nil {
+		return model.Cluster{}, apperrors.BadRequest("error: ClusterConfig not provided or GardenerConfig not provided")
 	}
+
+	gardenerConfigAllowPrivilegedContainers := c.shouldAllowPrivilegedContainers(
+		input.ClusterConfig.GardenerConfig.AllowPrivilegedContainers,
+		kymaConfig.Release.TillerYAML)
 
 	gardenerConfig, err := c.gardenerConfigFromInput(
 		runtimeID,
 		input.ClusterConfig.GardenerConfig,
-		kymaConfig.Release.TillerYAML,
-	)
+		gardenerConfigAllowPrivilegedContainers)
 	if err != nil {
 		return model.Cluster{}, err
 	}
@@ -80,11 +83,7 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 	}, nil
 }
 
-func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.GardenerConfigInput, tillerYaml string) (model.GardenerConfig, apperrors.AppError) {
-	if input == nil {
-		return model.GardenerConfig{}, apperrors.BadRequest("error: GardenerConfig not provided")
-	}
-
+func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.GardenerConfigInput, allowPrivilegedContainers bool) (model.GardenerConfig, apperrors.AppError) {
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
 	if err != nil {
 		return model.GardenerConfig{}, err
@@ -113,7 +112,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		LicenceType:                         input.LicenceType,
 		EnableKubernetesVersionAutoUpdate:   util.UnwrapBoolOrDefault(input.EnableKubernetesVersionAutoUpdate, c.defaultEnableKubernetesVersionAutoUpdate),
 		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, c.defaultEnableMachineImageVersionAutoUpdate),
-		AllowPrivilegedContainers:           c.shouldAllowPrivilegedContainers(input.AllowPrivilegedContainers, tillerYaml),
+		AllowPrivilegedContainers:           allowPrivilegedContainers,
 		ClusterID:                           runtimeID,
 		GardenerProviderConfig:              providerSpecificConfig,
 	}, nil
