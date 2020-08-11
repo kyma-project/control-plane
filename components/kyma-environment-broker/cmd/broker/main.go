@@ -165,7 +165,7 @@ func main() {
 	optComponentsSvc := runtime.NewOptionalComponentsService(optionalComponentsDisablers)
 
 	// Provides a list of disabled components per plan
-	disabledComponentsProvider := &runtime.DisabledComponentsProvider{}
+	disabledComponentsProvider := runtime.NewDisabledComponentsProvider()
 
 	runtimeProvider := runtime.NewComponentsListProvider(cfg.ManagedRuntimeComponentsYAMLFilePath)
 

@@ -341,7 +341,7 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	componentsProvider.On("AllComponents", kymaVersion).Return(kymaComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
-	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, &runtime.DisabledComponentsProvider{}, componentsProvider, input.Config{}, kymaVersion)
+	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{}, kymaVersion)
 	assert.NoError(t, err)
 
 	creator, err := ibf.ForPlan(broker.GCPPlanID, "")

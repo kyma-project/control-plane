@@ -37,7 +37,7 @@ func TestShouldEnableComponents(t *testing.T) {
 			{Name: "dex"},
 		}, nil)
 
-	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), &runtime.DisabledComponentsProvider{}, componentsProvider, Config{}, "not-important")
+	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 	assert.NoError(t, err)
 	creator, err := builder.ForPlan(broker.AzurePlanID, "")
 	require.NoError(t, err)
@@ -67,7 +67,7 @@ func TestShouldDisableComponents(t *testing.T) {
 			{Name: components.Backup},
 		}, nil)
 
-	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), &runtime.DisabledComponentsProvider{}, componentsProvider, Config{}, "not-important")
+	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 	assert.NoError(t, err)
 	creator, err := builder.ForPlan(broker.AzurePlanID, "")
 	require.NoError(t, err)
@@ -97,7 +97,7 @@ func TestDisabledComponentsForPlanNotExist(t *testing.T) {
 			{Name: components.Backup},
 		}, nil)
 
-	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), &runtime.DisabledComponentsProvider{}, componentsProvider, Config{}, "not-important")
+	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 	assert.NoError(t, err)
 	// when
 	_, err = builder.ForPlan("invalid-plan", "")
@@ -122,7 +122,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, &runtime.DisabledComponentsProvider{}, componentsProvider, Config{}, "not-important")
+		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
 		creator, err := builder.ForPlan(broker.AzurePlanID, "")
 		require.NoError(t, err)
@@ -159,7 +159,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-		builder, err := NewInputBuilderFactory(optComponentsSvc, &runtime.DisabledComponentsProvider{}, componentsProvider, Config{}, "not-important")
+		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
 		creator, err := builder.ForPlan(broker.AzurePlanID, "")
 		require.NoError(t, err)
@@ -201,7 +201,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(inputComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
-	factory, err := NewInputBuilderFactory(optComponentsSvc, &runtime.DisabledComponentsProvider{}, componentsProvider, config, "1.10.0")
+	factory, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, config, "1.10.0")
 	assert.NoError(t, err)
 
 	// when

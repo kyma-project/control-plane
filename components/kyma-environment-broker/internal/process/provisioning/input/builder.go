@@ -25,7 +25,8 @@ type (
 	}
 
 	DisabledComponentsProvider interface {
-		DisabledComponentsPerPlan() map[string]map[string]struct{}
+		DisabledComponentsPerPlan(planID string) (map[string]struct{}, error)
+		DisabledForAll() map[string]struct{}
 	}
 
 	HyperscalerInputProvider interface {
@@ -44,12 +45,12 @@ type (
 )
 
 type InputBuilderFactory struct {
-	kymaVersion               string
-	config                    Config
-	optComponentsSvc          OptionalComponentService
-	fullComponentsList        internal.ComponentConfigurationInputList
-	componentsProvider        ComponentListProvider
-	disabledComponentsPerPlan map[string]map[string]struct{}
+	kymaVersion                string
+	config                     Config
+	optComponentsSvc           OptionalComponentService
+	fullComponentsList         internal.ComponentConfigurationInputList
+	componentsProvider         ComponentListProvider
+	disabledComponentsProvider DisabledComponentsProvider
 }
 
 func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledComponentsProvider DisabledComponentsProvider, componentsListProvider ComponentListProvider, config Config,
@@ -61,12 +62,12 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 	}
 
 	return &InputBuilderFactory{
-		config:                    config,
-		kymaVersion:               defaultKymaVersion,
-		optComponentsSvc:          optComponentsSvc,
-		fullComponentsList:        mapToGQLComponentConfigurationInput(components),
-		componentsProvider:        componentsListProvider,
-		disabledComponentsPerPlan: disabledComponentsProvider.DisabledComponentsPerPlan(),
+		config:                     config,
+		kymaVersion:                defaultKymaVersion,
+		optComponentsSvc:           optComponentsSvc,
+		fullComponentsList:         mapToGQLComponentConfigurationInput(components),
+		componentsProvider:         componentsListProvider,
+		disabledComponentsProvider: disabledComponentsProvider,
 	}, nil
 }
 
@@ -106,10 +107,11 @@ func (f *InputBuilderFactory) ForPlan(planID, kymaVersion string) (internal.Prov
 		return nil, errors.Wrap(err, "while initialization input")
 	}
 
-	if _, ok := f.disabledComponentsPerPlan[planID]; !ok {
-		return nil, errors.New("every plan should be specified in the disabled components map")
+	disabledForPlan, err := f.disabledComponentsProvider.DisabledComponentsPerPlan(planID)
+	if err != nil {
+		return nil, errors.Wrap(err, "every supported plan should be specified in the disabled components map")
 	}
-	disabledComponents := mergeMaps(f.disabledComponentsPerPlan[broker.AllPlansSelector], f.disabledComponentsPerPlan[planID])
+	disabledComponents := mergeMaps(disabledForPlan, f.disabledComponentsProvider.DisabledForAll())
 
 	return &RuntimeInput{
 		input:                     initInput,

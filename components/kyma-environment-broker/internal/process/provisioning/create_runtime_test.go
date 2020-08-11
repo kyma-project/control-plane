@@ -222,7 +222,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	componentsProvider.On("AllComponents", kymaVersion).Return(kymaComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
-	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, &runtime.DisabledComponentsProvider{}, componentsProvider, input.Config{
+	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{
 		KubernetesVersion:           k8sVersion,
 		DefaultGardenerShootPurpose: shootPurpose,
 	}, kymaVersion)
