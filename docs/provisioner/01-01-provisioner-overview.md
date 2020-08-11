@@ -6,14 +6,14 @@ type: Overview
 The Runtime Provisioner is a Kyma Control Plane component responsible for provisioning, installing, and deprovisioning clusters with Kyma (Kyma Runtimes). The relationship between clusters and Runtimes is 1:1. The Runtime Provisioner is registered in Compass in the Director as an Integration System.
 
 It allows you to provision the clusters in the following ways:
-- [through Gardener](08-02-provisioning-gardener.md) on:
+- [through Gardener](#tutorials-provision-clusters-through-gardener) on:
     * GCP
     * Microsoft Azure
     * Amazon Web Services (AWS).
 
-During the operation of provisioning, you can pass a list of Kyma components you want installed on the provisioned Runtime with their custom configuration, as well as a custom Runtime configuration. To install a customized version of a given component, you can also provide an [external URL as the installation source](https://kyma-project.io/docs/#configuration-install-components-from-user-defined-ur-ls) for the component. See the [provisioning tutorial](08-02-provisioning-gardener.md) for more details.
+During the operation of provisioning, you can pass a list of Kyma components you want installed on the provisioned Runtime with their custom configuration, as well as a custom Runtime configuration. To install a customized version of a given component, you can also provide an [external URL as the installation source](/root/kyma#configuration-install-components-from-user-defined-ur-ls) for the component. See the [provisioning tutorial](#tutorials-provision-clusters-through-gardener) for more details.
 
-Note that the operations of provisioning and deprovisioning are asynchronous. The operation of provisioning returns the Runtime Operation Status containing the Runtime ID and the operation ID. The operation of deprovisioning returns the operation ID. You can use the operation ID to [check the Runtime Operation Status](08-03-runtime-operation-status.md) and the Runtime ID to [check the Runtime Status](08-04-runtime-status.md).
+Note that the operations of provisioning and deprovisioning are asynchronous. The operation of provisioning returns the Runtime Operation Status containing the Runtime ID and the operation ID. The operation of deprovisioning returns the operation ID. You can use the operation ID to [check the Runtime Operation Status](#tutorials-check-runtime-operation-status) and the Runtime ID to [check the Runtime Status](#tutorials-check-runtime-status).
 
 The Runtime Provisioner exposes an API to manage cluster provisioning, installation, and deprovisioning.
 
