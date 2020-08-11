@@ -126,20 +126,21 @@ func (p *secretsAccountPool) CountSubscriptionUsages(hyperscalerType Type, tenan
 		return 0, errors.Wrap(err, "Error while listing Gardener shoots ")
 	}
 
-	includeShootFunc := func(s v1beta1.Shoot) bool {
-		if s.Status.LastOperation != nil {
-			if (s.Status.LastOperation.Type == v1beta1.LastOperationTypeCreate || s.Status.LastOperation.Type == v1beta1.LastOperationTypeReconcile || s.Status.LastOperation.Type == v1beta1.LastOperationTypeMigrate) &&
-				(s.Status.LastOperation.State == v1beta1.LastOperationStateProcessing || s.Status.LastOperation.State == v1beta1.LastOperationStatePending || s.Status.LastOperation.State == v1beta1.LastOperationStateSucceeded) {
-				return true
-			}
-		}
-
-		return false
-	}
+	// TODO: consider whether we need to take shoot state into account. It seems that we should not release subscription if there is more that one shoot in deprovisioning state.
+	//includeShootFunc := func(s v1beta1.Shoot) bool {
+	//	if s.Status.LastOperation != nil {
+	//		if (s.Status.LastOperation.Type == v1beta1.LastOperationTypeCreate || s.Status.LastOperation.Type == v1beta1.LastOperationTypeReconcile || s.Status.LastOperation.Type == v1beta1.LastOperationTypeMigrate) &&
+	//			(s.Status.LastOperation.State == v1beta1.LastOperationStateProcessing || s.Status.LastOperation.State == v1beta1.LastOperationStatePending || s.Status.LastOperation.State == v1beta1.LastOperationStateSucceeded) {
+	//			return true
+	//		}
+	//	}
+	//
+	//	return false
+	//}
 
 	subscriptions := 0
 	for _, shoot := range shootlist.Items {
-		if shoot.Spec.SecretBindingName == secret.Name && includeShootFunc(shoot) {
+		if shoot.Spec.SecretBindingName == secret.Name {
 			subscriptions++
 		}
 	}
