@@ -30,6 +30,7 @@ gardener:
   clusterCleanupResourceSelector: "https://service-manager."
   defaultEnableKubernetesVersionAutoUpdate: false
   defaultEnableMachineImageVersionAutoUpdate: false
+  forceAllowPrivilegedContainers: false
 
 kymaRelease:
   preReleases:

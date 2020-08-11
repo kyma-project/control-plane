@@ -29,6 +29,7 @@ const (
 	gardenerProject                            = "gardener-project"
 	defaultEnableKubernetesVersionAutoUpdate   = false
 	defaultEnableMachineImageVersionAutoUpdate = false
+	forceAllowPrivilegedContainers             = false
 )
 
 func Test_ProvisioningInputToCluster(t *testing.T) {
@@ -319,7 +320,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				readSession,
 				gardenerProject,
 				defaultEnableKubernetesVersionAutoUpdate,
-				defaultEnableMachineImageVersionAutoUpdate)
+				defaultEnableMachineImageVersionAutoUpdate,
+				forceAllowPrivilegedContainers)
 
 			//when
 			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input, tenant, subAccountId)
@@ -330,6 +332,39 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			uuidGeneratorMock.AssertExpectations(t)
 		})
 	}
+
+	t.Run("Should use force allow privileged containers if equals true even if everything else says false", func(t *testing.T) {
+		// given
+		gardenerAzureGQLInput := createGQLRuntimeInputAzure(nil)
+		gardenerAzureGQLInput.KymaConfig.Version = kymaVersionWithoutTiller
+		gardenerAzureGQLInput.ClusterConfig.GardenerConfig.AllowPrivilegedContainers = util.BoolPtr(false)
+
+		expectedGardenerAzureRuntimeConfig := expectedGardenerAzureRuntimeConfig(nil)
+		expectedGardenerAzureRuntimeConfig.KymaConfig.Release = fixKymaReleaseWithoutTiller()
+		expectedGardenerAzureRuntimeConfig.ClusterConfig.AllowPrivilegedContainers = true
+
+		uuidGeneratorMock := &mocks.UUIDGenerator{}
+		uuidGeneratorMock.On("New").Return("id").Times(6)
+		uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hyphens")
+
+		forceAllowPrivilegedContainers := true
+
+		inputConverter := NewInputConverter(
+			uuidGeneratorMock,
+			readSession,
+			gardenerProject,
+			defaultEnableKubernetesVersionAutoUpdate,
+			defaultEnableMachineImageVersionAutoUpdate,
+			forceAllowPrivilegedContainers)
+
+		// when
+		runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", gardenerAzureGQLInput, tenant, subAccountId)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, expectedGardenerAzureRuntimeConfig, runtimeConfig)
+		uuidGeneratorMock.AssertExpectations(t)
+	})
 }
 
 func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
@@ -354,7 +389,8 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			readSession,
 			gardenerProject,
 			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate)
+			defaultEnableMachineImageVersionAutoUpdate,
+			forceAllowPrivilegedContainers)
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
@@ -373,7 +409,8 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			nil,
 			gardenerProject,
 			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate)
+			defaultEnableMachineImageVersionAutoUpdate,
+			forceAllowPrivilegedContainers)
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
@@ -396,7 +433,8 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			nil,
 			gardenerProject,
 			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate)
+			defaultEnableMachineImageVersionAutoUpdate,
+			forceAllowPrivilegedContainers)
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
@@ -422,7 +460,8 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			nil,
 			gardenerProject,
 			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate)
+			defaultEnableMachineImageVersionAutoUpdate,
+			forceAllowPrivilegedContainers)
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
@@ -591,6 +630,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				gardenerProject,
 				defaultEnableKubernetesVersionAutoUpdate,
 				defaultEnableMachineImageVersionAutoUpdate,
+				forceAllowPrivilegedContainers,
 			)
 
 			//when
@@ -613,6 +653,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				gardenerProject,
 				defaultEnableKubernetesVersionAutoUpdate,
 				defaultEnableMachineImageVersionAutoUpdate,
+				forceAllowPrivilegedContainers,
 			)
 
 			//when
@@ -732,5 +773,14 @@ func fixGQLConfigEntryInput(key, val string, secret *bool) *gqlschema.ConfigEntr
 		Key:    key,
 		Value:  val,
 		Secret: secret,
+	}
+}
+
+func fixKymaReleaseWithoutTiller() model.Release {
+	return model.Release{
+		Id:            "e829b1b5-2e82-426d-91b0-f94978c0c140",
+		Version:       kymaVersionWithoutTiller,
+		TillerYAML:    "",
+		InstallerYAML: "installer yaml",
 	}
 }

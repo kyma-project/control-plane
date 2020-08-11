@@ -46,11 +46,12 @@ func newProvisioningService(
 	upgradeQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
 	defaultEnableKubernetesVersionAutoUpdate,
-	defaultEnableMachineImageVersionAutoUpdate bool) provisioning.Service {
+	defaultEnableMachineImageVersionAutoUpdate,
+	forceAllowPrivilegedContainers bool) provisioning.Service {
 
 	uuidGenerator := uuid.NewUUIDGenerator()
 
-	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
+	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
 	graphQLConverter := provisioning.NewGraphQLConverter()
 
 	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue)
