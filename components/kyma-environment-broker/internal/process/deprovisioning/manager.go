@@ -90,7 +90,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 					logStep.Infof("Operation %q has no runtime ID. Process finished.", operation.ID)
 					return when, nil
 				}
-				logStep.Infof("Operation %q got status %s. Process finished on step %q.", operation.ID, operation.State, step.Name())
+				logStep.Infof("Operation %q got status %s. Process finished.", operation.ID, operation.State)
 				return 0, nil
 			}
 			if when == 0 {
@@ -103,7 +103,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 		}
 	}
 
-	logOperation.Infof("Operation %q got status %s. Process finished.", operation.ID, operation.State)
+	logOperation.Infof("Operation %q got status %s. All steps finished.", operation.ID, operation.State)
 	return 0, nil
 }
 

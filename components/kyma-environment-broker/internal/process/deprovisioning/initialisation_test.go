@@ -9,7 +9,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -24,77 +23,80 @@ const (
 )
 
 func TestInitialisationStep_Run(t *testing.T) {
-	// given
-	log := logrus.New()
-	memoryStorage := storage.NewMemoryStorage()
+	t.Run("Should mark operation as Succeeded when runtime deprovisioning was successful", func(t *testing.T) {
+		// given
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixDeprovisioningOperation()
-	err := memoryStorage.Operations().InsertDeprovisioningOperation(operation)
-	assert.NoError(t, err)
+		operation := fixDeprovisioningOperation()
+		err := memoryStorage.Operations().InsertDeprovisioningOperation(operation)
+		assert.NoError(t, err)
 
-	provisioningOperation := fixProvisioningOperation()
-	err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
-	assert.NoError(t, err)
+		provisioningOperation := fixProvisioningOperation()
+		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		assert.NoError(t, err)
 
-	instance := fixInstanceRuntimeStatus()
-	err = memoryStorage.Instances().Insert(instance)
-	assert.NoError(t, err)
+		instance := fixInstanceRuntimeStatus()
+		err = memoryStorage.Instances().Insert(instance)
+		assert.NoError(t, err)
 
-	provisionerClient := &provisionerAutomock.Client{}
-	provisionerClient.On("RuntimeOperationStatus", fixGlobalAccountID, fixProvisionerOperationID).Return(gqlschema.OperationStatus{
-		ID:        ptr.String(fixProvisionerOperationID),
-		Operation: "",
-		State:     gqlschema.OperationStateSucceeded,
-		Message:   nil,
-		RuntimeID: nil,
-	}, nil)
+		provisionerClient := &provisionerAutomock.Client{}
+		provisionerClient.On("RuntimeOperationStatus", fixGlobalAccountID, fixProvisionerOperationID).Return(gqlschema.OperationStatus{
+			ID:        ptr.String(fixProvisionerOperationID),
+			Operation: "",
+			State:     gqlschema.OperationStateSucceeded,
+			Message:   nil,
+			RuntimeID: nil,
+		}, nil)
 
-	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
 
-	// when
-	operation, repeat, err := step.Run(operation, log)
+		// when
+		operation, repeat, err := step.Run(operation, log)
 
-	// then
-	assert.NoError(t, err)
-	assert.Equal(t, time.Duration(0), repeat)
-	assert.Equal(t, domain.Succeeded, operation.State)
-}
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, time.Duration(0), repeat)
+		assert.Equal(t, domain.Succeeded, operation.State)
+	})
 
-func TestInitialisationStep_Run_ShouldDeleteInstanceWhenRuntimeNotExist(t *testing.T) {
-	// given
-	log := logrus.New()
-	memoryStorage := storage.NewMemoryStorage()
+	t.Run("Should delete instance when operation has succeeded due to runtime not existing", func(t *testing.T) {
+		// given
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixDeprovisioningOperation()
-	operation.ProvisionerOperationID = ""
-	operation.State = domain.Succeeded
-	err := memoryStorage.Operations().InsertDeprovisioningOperation(operation)
-	assert.NoError(t, err)
+		operation := fixDeprovisioningOperation()
+		operation.ProvisionerOperationID = ""
+		operation.State = domain.Succeeded
+		err := memoryStorage.Operations().InsertDeprovisioningOperation(operation)
+		assert.NoError(t, err)
 
-	provisioningOperation := fixProvisioningOperation()
-	err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
-	assert.NoError(t, err)
+		provisioningOperation := fixProvisioningOperation()
+		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		assert.NoError(t, err)
 
-	instance := fixInstanceRuntimeStatus()
-	instance.RuntimeID = ""
-	err = memoryStorage.Instances().Insert(instance)
-	assert.NoError(t, err)
+		instance := fixInstanceRuntimeStatus()
+		instance.RuntimeID = ""
+		err = memoryStorage.Instances().Insert(instance)
+		assert.NoError(t, err)
 
-	provisionerClient := &provisionerAutomock.Client{}
+		provisionerClient := &provisionerAutomock.Client{}
 
-	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
 
-	// when
-	operation, repeat, err := step.Run(operation, log)
+		// when
+		operation, repeat, err := step.Run(operation, log)
 
-	// then
-	assert.NoError(t, err)
-	assert.Equal(t, time.Duration(0), repeat)
-	assert.Equal(t, domain.Succeeded, operation.State)
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, time.Duration(0), repeat)
+		assert.Equal(t, domain.Succeeded, operation.State)
 
-	inst, err := memoryStorage.Instances().GetByID(operation.InstanceID)
-	assert.Error(t, err)
-	assert.Nil(t, inst)
+		inst, err := memoryStorage.Instances().GetByID(operation.InstanceID)
+		assert.Error(t, err)
+		assert.Nil(t, inst)
+	})
+
 }
 
 func fixDeprovisioningOperation() internal.DeprovisioningOperation {
