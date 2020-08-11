@@ -24,6 +24,10 @@ type (
 		DisableComponents(components internal.ComponentConfigurationInputList) (internal.ComponentConfigurationInputList, error)
 	}
 
+	DisabledComponentsProvider interface {
+		DisabledComponentsPerPlan() map[string]map[string]struct{}
+	}
+
 	HyperscalerInputProvider interface {
 		Defaults() *gqlschema.ClusterConfigInput
 		ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO)
@@ -48,7 +52,7 @@ type InputBuilderFactory struct {
 	disabledComponentsPerPlan map[string]map[string]struct{}
 }
 
-func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, componentsListProvider ComponentListProvider, config Config,
+func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledComponentsProvider DisabledComponentsProvider, componentsListProvider ComponentListProvider, config Config,
 	defaultKymaVersion string) (CreatorForPlan, error) {
 
 	components, err := componentsListProvider.AllComponents(defaultKymaVersion)
@@ -62,7 +66,7 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, component
 		optComponentsSvc:          optComponentsSvc,
 		fullComponentsList:        mapToGQLComponentConfigurationInput(components),
 		componentsProvider:        componentsListProvider,
-		disabledComponentsPerPlan: runtime.DisabledComponentsPerPlan(),
+		disabledComponentsPerPlan: disabledComponentsProvider.DisabledComponentsPerPlan(),
 	}, nil
 }
 

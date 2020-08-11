@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
@@ -339,7 +341,7 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	componentsProvider.On("AllComponents", kymaVersion).Return(kymaComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
-	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, componentsProvider, input.Config{}, kymaVersion)
+	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, &runtime.DisabledComponentsProvider{}, componentsProvider, input.Config{}, kymaVersion)
 	assert.NoError(t, err)
 
 	creator, err := ibf.ForPlan(broker.GCPPlanID, "")

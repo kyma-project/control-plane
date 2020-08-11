@@ -3,6 +3,8 @@ package input
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input/automock"
 
@@ -18,7 +20,7 @@ func TestInputBuilderFactory_IsPlanSupport(t *testing.T) {
 	componentsProvider.On("AllComponents", "1.10").Return([]v1alpha1.KymaComponent{}, nil)
 	defer componentsProvider.AssertExpectations(t)
 
-	ibf, err := NewInputBuilderFactory(nil, componentsProvider, Config{}, "1.10")
+	ibf, err := NewInputBuilderFactory(nil, &runtime.DisabledComponentsProvider{}, componentsProvider, Config{}, "1.10")
 	assert.NoError(t, err)
 
 	// when/then
@@ -35,7 +37,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		componentsProvider.On("AllComponents", "1.10").Return([]v1alpha1.KymaComponent{}, nil).Once()
 		defer componentsProvider.AssertExpectations(t)
 
-		ibf, err := NewInputBuilderFactory(nil, componentsProvider, Config{}, "1.10")
+		ibf, err := NewInputBuilderFactory(nil, &runtime.DisabledComponentsProvider{}, componentsProvider, Config{}, "1.10")
 		assert.NoError(t, err)
 
 		// when
@@ -53,7 +55,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		componentsProvider.On("AllComponents", "PR-1").Return([]v1alpha1.KymaComponent{}, nil).Once()
 		defer componentsProvider.AssertExpectations(t)
 
-		ibf, err := NewInputBuilderFactory(nil, componentsProvider, Config{}, "1.10")
+		ibf, err := NewInputBuilderFactory(nil, &runtime.DisabledComponentsProvider{}, componentsProvider, Config{}, "1.10")
 		assert.NoError(t, err)
 
 		// when

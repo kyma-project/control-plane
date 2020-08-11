@@ -11,7 +11,9 @@ import (
 // Components located under the AllPlansSelector will be removed from every plan
 // All plans must be specified
 
-func DisabledComponentsPerPlan() map[string]map[string]struct{} {
+type DisabledComponentsProvider struct{}
+
+func (*DisabledComponentsProvider) DisabledComponentsPerPlan() map[string]map[string]struct{} {
 	return map[string]map[string]struct{}{
 		broker.AllPlansSelector: {
 			components.Backup:     {},
