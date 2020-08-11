@@ -48,9 +48,15 @@ func (ac azureResourceCleaner) Do() error {
 	for _, resourceGroup := range resourceGroups.Values() {
 		if resourceGroup.Name != nil {
 			log.Infof("Deleting resource group '%s'", *resourceGroup.Name)
-			_, err := ac.azureClient.Delete(ctx, *resourceGroup.Name)
+			future, err := ac.azureClient.Delete(ctx, *resourceGroup.Name)
 			if err != nil {
 				log.Errorf("failed to init resource group '%s' deletion", resourceGroup.Name)
+				continue
+			}
+
+			err = future.WaitForCompletionRef(ctx, ac.azureClient.Client)
+			if err != nil {
+				log.Errorf("failed to remove resource group '%s', : ", resourceGroup.Name, err.Error())
 			}
 		}
 	}
