@@ -15,7 +15,7 @@ func NewDisabledComponentsService(disabledComponents map[string]struct{}) *Disab
 	}
 }
 
-// ExecuteDisablers executes disablers on given input and returns modified list.
+// DisableComponents executes disablers on given input and returns modified list.
 //
 // BE AWARE: in current implementation the input is also modified.
 func (f *DisabledComponentsService) DisableComponents(components internal.ComponentConfigurationInputList) (internal.ComponentConfigurationInputList, error) {

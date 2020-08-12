@@ -7,7 +7,7 @@ type GenericComponentDisabler struct {
 	componentName string
 }
 
-// NewOptionalComponent returns new instance of GenericComponentDisabler
+// NewGenericComponentDisabler returns new instance of GenericComponentDisabler
 func NewGenericComponentDisabler(name string) *GenericComponentDisabler {
 	return &GenericComponentDisabler{componentName: name}
 }
