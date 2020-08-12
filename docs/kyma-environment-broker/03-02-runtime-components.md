@@ -13,16 +13,26 @@
 
 3. KEB composes the final list of components by removing components that were not selected by the user. It also adds the proper global and components overrides and sends the whole provisioning information to the Runtime Provisioner.
 
+>**NOTE**: List of the component names are defined [here](../../components/kyma-environment-broker/internal/runtime/components). Use them in implementation.
+
+## Disabled components
+
+To disable a component per a given [plan](03-01-service-description.md) add it to the disabled components list defined [here](../../components/kyma-environment-broker/internal/runtime/disabled_components.go).
+
+To disable a component for all plans add it under the AllPlansSelector.
+
 ## Optional components
 
-This section presents how to add or remove the possibility to disable components, which makes them either optional or required during the Kyma installation. Currently, the optional components are as follows:
+The optional component is by default disabled but can be enabled on the runtime by specifying it in the [provisioning request](08-01-provisioning-kyma-environment.md).
+
+Currently, the optional components are as follows:
 
 * Kiali
 * Tracing
 
-### Add the option to disable components
+### Add the optional component
 
-If you want to add the possibility to disable components and make them optional during Kyma installation, you can do it in two ways.
+If you want to add the optional component, you can do it in two ways.
 
 * If disabling a given component only means to remove it from the installation list, use the generic disabler:
 
@@ -50,11 +60,11 @@ This interface allows you to easily register the disabler in the [`cmd/broker/ma
 //
 // Using map is intentional - we ensure that component name is not duplicated.
 optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"Kiali":      runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
-		"Tracing":     runtime.NewGenericComponentDisabler("tracing", "kyma-system"),
+		"Kiali":      runtime.NewGenericComponentDisabler(components.Kiali),
+		"Tracing":     runtime.NewGenericComponentDisabler(components.Tracing),
 }
 ```
 
-### Remove the option to disable components
+### Remove the optional component
 
 If you want to remove the option to disable components and make them required during Kyma installation, remove a given entry from the **optionalComponentsDisablers** list in the [`cmd/broker/main.go`](./cmd/broker/main.go) file.
