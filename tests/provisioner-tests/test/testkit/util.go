@@ -36,6 +36,31 @@ func WaitForFunction(interval, timeout time.Duration, isDone func() bool) error 
 	}
 }
 
+func IsTillerPresent(httpClient http.Client, kymaVersion string) (bool, error) {
+	tillerYAMLURL := fmt.Sprintf("https://storage.googleapis.com/kyma-prow-artifacts/%s/tiller.yaml", kymaVersion)
+
+	resp, err := httpClient.Get(tillerYAMLURL)
+	if err != nil {
+		return false, errors.Wrapf(err, "while executing get request on url: %q", url)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return false, nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return false, errors.Errorf("received unexpected http status %d", resp.StatusCode)
+	}
+
+	reqBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return false, errors.Wrap(err, "while reading body")
+	}
+
+	return string(reqBody) != "", nil
+}
+
 func GetAndParseInstallerCR(installationCRURL string) ([]*gqlschema.ComponentConfigurationInput, error) {
 	resp, err := http.Get(installationCRURL)
 	if err != nil {

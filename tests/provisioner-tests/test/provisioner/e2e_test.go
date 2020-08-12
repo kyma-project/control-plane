@@ -45,6 +45,10 @@ func Test_E2E_Gardener(t *testing.T) {
 				runtimeName := fmt.Sprintf("provisioner-test-%s-%s", strings.ToLower(provider), uuid.New().String()[:4])
 				provisioningInput.RuntimeInput.Name = runtimeName
 
+				// Check if privileged containers should be allowed
+				shouldPrivilegedContainersBeAllowed, err := testkit.IsTillerPresent(testSuite.HttpClient, testSuite.config.Kyma.Version)
+				assertions.RequireNoError(t, err)
+
 				// Provision runtime
 				log.Log("Starting provisioning...")
 				provisioningOperationID, runtimeID, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
@@ -74,7 +78,7 @@ func Test_E2E_Gardener(t *testing.T) {
 
 				// Asserting Gardener Configuration
 				log.Log("Verifying configuration...")
-				assertGardenerRuntimeConfiguration(t, provisioningInput, runtimeStatus)
+				assertGardenerRuntimeConfiguration(t, provisioningInput, runtimeStatus, shouldPrivilegedContainersBeAllowed)
 
 				// Check Runtime labels and status in Director
 				log.Log("Checking Runtime labels and status in Director...")
@@ -159,7 +163,7 @@ func ensureClusterIsDeprovisioned(runtimeId string) {
 	}
 }
 
-func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntimeInput, status gqlschema.RuntimeStatus) {
+func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntimeInput, status gqlschema.RuntimeStatus, shouldPrivilegedContainersBeAllowed bool) {
 	assert.NotEmpty(t, status)
 	assertRuntimeConfiguration(t, status)
 
@@ -179,6 +183,7 @@ func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionR
 	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.AutoScalerMin, gardenerConfig.AutoScalerMin)
 	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.AutoScalerMax, gardenerConfig.AutoScalerMax)
 	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.MaxSurge, gardenerConfig.MaxSurge)
+	assertions.AssertNotNilAndEqualBool(t, shouldPrivilegedContainersBeAllowed, gardenerConfig.AllowPrivilegedContainers)
 
 	require.NotNil(t, input.ClusterConfig.GardenerConfig.Purpose)
 	assertions.AssertNotNilAndEqualString(t, *input.ClusterConfig.GardenerConfig.Purpose, gardenerConfig.Purpose)
@@ -186,7 +191,6 @@ func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionR
 	assertions.AssertNotNilAndEqualBool(t, *input.ClusterConfig.GardenerConfig.EnableKubernetesVersionAutoUpdate, gardenerConfig.EnableKubernetesVersionAutoUpdate)
 	require.NotNil(t, input.ClusterConfig.GardenerConfig.EnableMachineImageVersionAutoUpdate)
 	assertions.AssertNotNilAndEqualBool(t, *input.ClusterConfig.GardenerConfig.EnableMachineImageVersionAutoUpdate, gardenerConfig.EnableMachineImageVersionAutoUpdate)
-	assert.NotNil(t, input.ClusterConfig.GardenerConfig.AllowPrivilegedContainers)
 
 	verifyProviderConfig(t, *input.ClusterConfig.GardenerConfig.ProviderSpecificConfig, status.RuntimeConfiguration.ClusterConfig)
 }
