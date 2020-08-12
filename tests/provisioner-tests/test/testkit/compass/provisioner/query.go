@@ -90,6 +90,7 @@ func clusterConfig() string {
 		maxUnavailable
 		enableKubernetesVersionAutoUpdate
 		enableMachineImageVersionAutoUpdate
+		allowPrivilegedContainers
 		providerSpecificConfig {
 			%s
 		}

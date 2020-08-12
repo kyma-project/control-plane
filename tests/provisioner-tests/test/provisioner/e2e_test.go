@@ -186,6 +186,7 @@ func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionR
 	assertions.AssertNotNilAndEqualBool(t, *input.ClusterConfig.GardenerConfig.EnableKubernetesVersionAutoUpdate, gardenerConfig.EnableKubernetesVersionAutoUpdate)
 	require.NotNil(t, input.ClusterConfig.GardenerConfig.EnableMachineImageVersionAutoUpdate)
 	assertions.AssertNotNilAndEqualBool(t, *input.ClusterConfig.GardenerConfig.EnableMachineImageVersionAutoUpdate, gardenerConfig.EnableMachineImageVersionAutoUpdate)
+	assert.NotNil(t, input.ClusterConfig.GardenerConfig.AllowPrivilegedContainers)
 
 	verifyProviderConfig(t, *input.ClusterConfig.GardenerConfig.ProviderSpecificConfig, status.RuntimeConfiguration.ClusterConfig)
 }
