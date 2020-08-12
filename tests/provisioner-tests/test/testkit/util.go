@@ -41,7 +41,7 @@ func IsTillerPresent(httpClient http.Client, kymaVersion string) (bool, error) {
 
 	resp, err := httpClient.Get(tillerYAMLURL)
 	if err != nil {
-		return false, errors.Wrapf(err, "while executing get request on url: %q", url)
+		return false, errors.Wrapf(err, "while executing get request on url: %q", tillerYAMLURL)
 	}
 	defer resp.Body.Close()
 
