@@ -20,7 +20,7 @@ import (
 
 const (
 	kymaVersion                                = "1.5"
-	kymaVersionWithoutTiller                   = "1.14"
+	kymaVersionWithoutTiller                   = "1.15"
 	clusterEssentialsComponent                 = "cluster-essentials"
 	coreComponent                              = "core"
 	rafterComponent                            = "rafter"
