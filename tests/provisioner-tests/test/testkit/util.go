@@ -3,10 +3,13 @@ package testkit
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	gqlschema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
@@ -43,7 +46,7 @@ func IsTillerPresent(httpClient http.Client, kymaVersion string) (bool, error) {
 	if err != nil {
 		return false, errors.Wrapf(err, "while executing get request on url: %q", tillerYAMLURL)
 	}
-	defer resp.Body.Close()
+	defer closeBody(resp.Body)
 
 	if resp.StatusCode == http.StatusNotFound {
 		return false, nil
@@ -89,6 +92,12 @@ func GetAndParseInstallerCR(installationCRURL string) ([]*gqlschema.ComponentCon
 
 func createInstallationCRURL(kymaVersion string) string {
 	return fmt.Sprintf("https://raw.githubusercontent.com/kyma-project/kyma/%s/installation/resources/installer-cr-cluster-runtime.yaml.tpl", kymaVersion)
+}
+
+func closeBody(closer io.ReadCloser) {
+	if err := closer.Close(); err != nil {
+		logrus.Warnf("failed to close read closer: %v", err)
+	}
 }
 
 func toLowerCase(provider string) string {
