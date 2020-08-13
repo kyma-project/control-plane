@@ -11,10 +11,11 @@ COPY ./go.sum ${BASE_APP_DIR}/go.sum
 # Run go mod download first to take advantage of Docker caching
 RUN apk add git && go mod download
 
-COPY ./internal/ ${BASE_APP_DIR}/internal/
-COPY ./pkg/ ${BASE_APP_DIR}/pkg/
-COPY ./cmd/ ${BASE_APP_DIR}/cmd
 COPY ./licenses ${BASE_APP_DIR}/licenses
+COPY ./cmd/ ${BASE_APP_DIR}/cmd
+COPY ./third_party/ ${BASE_APP_DIR}/third_party
+COPY ./pkg/ ${BASE_APP_DIR}/pkg/
+COPY ./internal/ ${BASE_APP_DIR}/internal/
 
 RUN apk add -U --no-cache ca-certificates && update-ca-certificates
 

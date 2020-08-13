@@ -1,8 +1,12 @@
-# Runtime provisioning and deprovisioning
+---
+title: Runtime provisioning and deprovisioning
+type: Details
+---
 
 Kyma Environment Broker allows you to configure Runtime provisioning and deprovisioning processes.
 
 Both provisioning and deprovisioning operation consist of several steps. Each step is represented by a separate file. As every step can be re-launched multiple times, for each step, you should determine a behavior in case of a processing failure. It can either:
+
 - Return an error, which interrupts the entire provisioning or deprovisioning process, or
 - Repeat the entire operation after the specified period.
 
@@ -45,7 +49,6 @@ The deprovisioning process contains the following steps:
 | IAS_Deregistration           | Identity Authentication Service | Done | Removes the ServiceProvider from IAS. | @jasiu001 (Team Gopher) |
 | EDP_Deregistration           | Event Data Platform | Done | Removes all entries about SKR from Event Data Platform. | @jasiu001 (Team Gopher) |
 | Remove_Runtime               | Deprovisioning | Done        | Triggers deprovisioning of a Runtime in the Runtime Provisioner. | @polskikiel (Team Gopher) |
-
 
 ## Add provisioning or deprovisioning step
 
@@ -104,7 +107,7 @@ You can configure Runtime provisioning and deprovisioning processes by providing
     }
     ```
 
-    By saving data in the storage, you can check if you already have the necessary data and avoid time-consuming processes.       You should always return the modified operation from the method.
+    By saving data in the storage, you can check if you already have the necessary data and avoid time-consuming processes. You should always return the modified operation from the method.
 
     See the example of the step implementation:
 
@@ -241,7 +244,7 @@ You can configure Runtime provisioning and deprovisioning processes by providing
     }
     ```
 
-    By saving data in the storage, you can check if you already have the necessary data and avoid time-consuming processes.       You should always return the modified operation from the method.
+    By saving data in the storage, you can check if you already have the necessary data and avoid time-consuming processes. You should always return the modified operation from the method.
 
     See the example of the step implementation:
 

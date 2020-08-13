@@ -2,7 +2,6 @@ package provisioning
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -127,31 +125,6 @@ func TestOverridesFromSecretsAndConfigStep_Run(t *testing.T) {
 		assert.Equal(t, time.Duration(0), repeat)
 	})
 
-	t.Run("should skip all overrides for trial", func(t *testing.T) {
-		// Given
-		sch := runtime.NewScheme()
-		require.NoError(t, coreV1.AddToScheme(sch))
-		client := fake.NewFakeClientWithScheme(sch, fixResources()...)
-
-		memoryStorage := storage.NewMemoryStorage()
-		inputCreator := &simpleInputCreator{}
-
-		operation := internal.ProvisioningOperation{
-			InputCreator:           inputCreator,
-			ProvisioningParameters: fmt.Sprintf(`{"plan_id":"%s"}`, broker.GcpTrialPlanID),
-		}
-
-		step := NewOverridesFromSecretsAndConfigStep(context.TODO(), client, memoryStorage.Operations())
-
-		// When
-		operation, repeat, err := step.Run(operation, logrus.New())
-
-		// Then
-		assert.NoError(t, err)
-		// do not expect any overrides on ProvisionInputCreator
-		inputCreator.AssertNoOverrides(t)
-		assert.Equal(t, time.Duration(0), repeat)
-	})
 }
 
 func fixResources() []runtime.Object {

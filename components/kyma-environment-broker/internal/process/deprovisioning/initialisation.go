@@ -89,7 +89,7 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 		if operation.ProvisionerOperationID == "" {
 			return operation, 0, nil
 		}
-		log.Info("instance being removed, check operation status")
+		log.Info("runtime being removed, check operation status")
 		operation.RuntimeID = instance.RuntimeID
 		return s.checkRuntimeStatus(operation, instance, parameters.PlanID, log.WithField("runtimeID", instance.RuntimeID))
 	case dberr.IsNotFound(err):

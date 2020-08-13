@@ -162,8 +162,9 @@ func main() {
 		// TODO(workaround until #1049): following components should be always disabled and user should not be able to enable them in provisioning request. This implies following components cannot be specified under the plan schema definition.
 		"BackupInt":               runtime.NewGenericComponentDisabler("backup-init", "kyma-system"),
 		"Backup":                  runtime.NewGenericComponentDisabler("backup", "kyma-system"),
-		"KnativeProvisionerNatss": runtime.NewGenericComponentDisabler("knative-provisioner-natss", "knative-eventing"),
-		"NatssStreaming":          runtime.NewGenericComponentDisabler("nats-streaming", "natss"),
+		"KnativeEventingKafka":    runtime.NewGenericComponentDisabler(provisioning.KymaComponentNameKnativeEventingKafka, "knative-eventing"),
+		"KnativeProvisionerNatss": runtime.NewGenericComponentDisabler(provisioning.KymaComponentNameKnativeProvisionerNatss, "knative-eventing"),
+		"NatsStreaming":           runtime.NewGenericComponentDisabler(provisioning.KymaComponentNameNatsStreaming, "natss"),
 	}
 	optComponentsSvc := runtime.NewOptionalComponentsService(optionalComponentsDisablers)
 
@@ -246,6 +247,16 @@ func main() {
 		},
 		{
 			weight: 2,
+			step: provisioning.NewEnableForTrialPlanStep(db.Operations(),
+				provisioning.NewNatsStreamingStep(db.Operations())),
+		},
+		{
+			weight: 2,
+			step: provisioning.NewEnableForTrialPlanStep(db.Operations(),
+				provisioning.NewKnativeProvisionerNatssStep(db.Operations())),
+		},
+		{
+			weight: 2,
 			step:   provisioning.NewOverridesFromSecretsAndConfigStep(ctx, cli, db.Operations()),
 		},
 		{
@@ -291,7 +302,8 @@ func main() {
 		},
 		{
 			weight: 1,
-			step:   deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
+			step: deprovisioning.NewSkipForTrialPlanStep(db.Operations(),
+				deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
 		{
 			weight:   1,

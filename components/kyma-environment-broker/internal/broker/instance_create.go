@@ -242,8 +242,8 @@ func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.Provisio
 	return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusConflict, msg)
 }
 
-func (b *ProvisionEndpoint) determineLicenceType(id string) *string {
-	if id == AzureLitePlanID {
+func (b *ProvisionEndpoint) determineLicenceType(planId string) *string {
+	if planId == AzureLitePlanID || IsTrialPlan(planId) {
 		return ptr.String(internal.LicenceTypeLite)
 	}
 

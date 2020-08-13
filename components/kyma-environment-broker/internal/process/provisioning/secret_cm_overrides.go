@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/sirupsen/logrus"
 	coreV1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -143,11 +142,6 @@ func componentName(labels map[string]string) (string, bool) {
 // skipOverride returns true if licenceType is equal "TestDevelopmentAndDemo" and labels map contains "default-for-lite" key
 // which results in a given override will not be used to provision SKR
 func skipOverride(labels map[string]string, pp internal.ProvisioningParameters) bool {
-	// use default Kyma values for Trial
-	if broker.IsTrialPlan(pp.PlanID) {
-		return true
-	}
-
 	if pp.Parameters.LicenceType == nil {
 		return false
 	}

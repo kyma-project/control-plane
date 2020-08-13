@@ -1,5 +1,7 @@
-# Environments Cleanup
-
+---
+title: Environments Cleanup
+type: Details
+---
 
 Environments Cleanup is an application that cleans up environments that do not meet requirements in a given Gardener project.
 
