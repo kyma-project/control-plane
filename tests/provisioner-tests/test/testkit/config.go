@@ -16,7 +16,7 @@ type TestConfig struct {
 	DirectorClient DirectorClientConfig
 	Kyma           KymaConfig
 
-	KubernetesVersion string `envconfig:"default=1.17.8"`
+	KubernetesVersion        string `envconfig:"default=1.17.8"`
 	UpgradeKubernetesVersion string `envconfig:"default=1.18.5"`
 
 	QueryLogging bool `envconfig:"default=false"`
