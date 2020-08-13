@@ -224,13 +224,11 @@
   revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
 
 [[projects]]
-  branch = "64-set-allow-priviliged-containers-flag"
   digest = "1:2dda1c8bbb29ee26a84fe0029c41ea8238b9e90d3e6824205dc53c7589310c60"
   name = "github.com/kyma-project/control-plane"
   packages = ["components/provisioner/pkg/gqlschema"]
   pruneopts = "UT"
-  revision = "7e1cf8d1cffbfac40e7b458ebdcfb0e67691f73f"
-  source = "https://github.com/franpog859/control-plane"
+  revision = "4d92f7abdf8eb8e9ad24a152a05433ca1d2f7bd1"
 
 [[projects]]
   digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
