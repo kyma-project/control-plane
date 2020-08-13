@@ -1,6 +1,6 @@
 # Runtime components
 
-[Kyma Environment Broker](../../components/kyma-environment-broker) (KEB) serves the functionality of composing the list of components that are installed in a Runtime. The diagram and steps describe the KEB workflow in terms of calculating and processing Runtime components:
+[Kyma Environment Broker](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker) (KEB) serves the functionality of composing the list of components that are installed in a Runtime. The diagram and steps describe the KEB workflow in terms of calculating and processing Runtime components:
 
 ![runtime-components-architecture](assets/runtime-components.svg)
 
@@ -13,11 +13,11 @@
 
 3. KEB composes the final list of components by removing components that were not selected by the user. It also adds the proper global and components overrides and sends the whole provisioning information to the Runtime Provisioner.
 
->**NOTE**: List of the component names are defined [here](../../components/kyma-environment-broker/internal/runtime/components). Use them in implementation.
+There is a defined [list of the component names](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/runtime/components). Use these names in your implementation.
 
 ## Disabled components
 
-To disable a component for a given [plan](03-01-service-description.md), add it to the [disabled components list](../../components/kyma-environment-broker/internal/runtime/disabled_components.go).
+To disable a component for a given [plan](03-01-service-description.md), add it to the [disabled components list](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/runtime/disabled_components.go).
 
 To disable a component for all plans, add its name under the **AllPlansSelector** parameter.
 
@@ -47,7 +47,7 @@ type OptionalComponentDisabler interface {
 	Disable(components internal.ComponentConfigurationInputList) internal.ComponentConfigurationInputList
 ```
 
->**NOTE**: Check the [CustomDisablerExample](../../components/kyma-environment-broker/internal/runtime/custom_disabler_example.go) as an example of custom service for disabling components.
+>**NOTE**: Check the [CustomDisablerExample](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/runtime/custom_disabler_example.go) as an example of custom service for disabling components.
 
 In each method, the framework injects the  **components** parameter which is a list of components that are sent to the Runtime Provisioner. The implemented method is responsible for disabling component and as a result, returns a modified list. 
   
