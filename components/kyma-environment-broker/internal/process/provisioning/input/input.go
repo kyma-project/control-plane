@@ -27,13 +27,14 @@ type RuntimeInput struct {
 	optionalComponentsService OptionalComponentService
 	provisioningParameters    internal.ProvisioningParametersDTO
 
-	enabledComponents map[string]struct{}
+	componentsDisabler        ComponentsDisabler
+	enabledOptionalComponents map[string]struct{}
 }
 
-func (r *RuntimeInput) EnableComponent(componentName string) internal.ProvisionInputCreator {
-	r.mutex.Lock("enabledComponents")
-	defer r.mutex.Unlock("enabledComponents")
-	r.enabledComponents[componentName] = struct{}{}
+func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.ProvisionInputCreator {
+	r.mutex.Lock("enabledOptionalComponents")
+	defer r.mutex.Unlock("enabledOptionalComponents")
+	r.enabledOptionalComponents[componentName] = struct{}{}
 	return r
 }
 
@@ -94,8 +95,12 @@ func (r *RuntimeInput) Create() (gqlschema.ProvisionRuntimeInput, error) {
 			execute: r.applyProvisioningParameters,
 		},
 		{
+			name:    "disabling components",
+			execute: r.disableComponents,
+		},
+		{
 			name:    "disabling optional components that were not selected",
-			execute: r.disableNotSelectedComponents,
+			execute: r.resolveOptionalComponents,
 		},
 		{
 			name:    "applying components overrides",
@@ -135,13 +140,13 @@ func (r *RuntimeInput) applyProvisioningParameters() error {
 	return nil
 }
 
-func (r *RuntimeInput) disableNotSelectedComponents() error {
-	r.mutex.Lock("enabledComponents")
-	defer r.mutex.Unlock("enabledComponents")
+func (r *RuntimeInput) resolveOptionalComponents() error {
+	r.mutex.Lock("enabledOptionalComponents")
+	defer r.mutex.Unlock("enabledOptionalComponents")
 
 	componentsToInstall := []string{}
 	componentsToInstall = append(componentsToInstall, r.provisioningParameters.OptionalComponentsToInstall...)
-	for name := range r.enabledComponents {
+	for name := range r.enabledOptionalComponents {
 		componentsToInstall = append(componentsToInstall, name)
 	}
 	toDisable := r.optionalComponentsService.ComputeComponentsToDisable(componentsToInstall)
@@ -149,6 +154,17 @@ func (r *RuntimeInput) disableNotSelectedComponents() error {
 	filterOut, err := r.optionalComponentsService.ExecuteDisablers(r.input.KymaConfig.Components, toDisable...)
 	if err != nil {
 		return errors.Wrapf(err, "while disabling components %v", toDisable)
+	}
+
+	r.input.KymaConfig.Components = filterOut
+
+	return nil
+}
+
+func (r *RuntimeInput) disableComponents() error {
+	filterOut, err := r.componentsDisabler.DisableComponents(r.input.KymaConfig.Components)
+	if err != nil {
+		return err
 	}
 
 	r.input.KymaConfig.Components = filterOut

@@ -21,7 +21,7 @@ type ProvisionInputCreator interface {
 	AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
 	AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
 	Create() (gqlschema.ProvisionRuntimeInput, error)
-	EnableComponent(componentName string) ProvisionInputCreator
+	EnableOptionalComponent(componentName string) ProvisionInputCreator
 }
 
 type LMSTenant struct {

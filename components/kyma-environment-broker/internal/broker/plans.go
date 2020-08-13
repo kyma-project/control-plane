@@ -3,10 +3,14 @@ package broker
 import (
 	"encoding/json"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
+
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
 const (
+	AllPlansSelector = "all_plans"
+
 	GCPPlanID          = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
 	GCPPlanName        = "gcp"
 	GcpTrialPlanID     = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
@@ -78,7 +82,7 @@ func GCPSchema(machineTypes []string) []byte {
 				Type: "array",
 				Items: []Type{{
 					Type: "string",
-					Enum: ToInterfaceSlice([]string{"Kiali", "Tracing"}),
+					Enum: ToInterfaceSlice([]string{components.Kiali, components.Tracing}),
 				}},
 				AdditionalItems: f,
 				UniqueItems:     t,
@@ -174,7 +178,7 @@ func AzureSchema(machineTypes []string) []byte {
 				Type: "array",
 				Items: []Type{{
 					Type: "string",
-					Enum: ToInterfaceSlice([]string{"Kiali", "Tracing"}),
+					Enum: ToInterfaceSlice([]string{components.Kiali, components.Tracing}),
 				}},
 				AdditionalItems: f,
 				UniqueItems:     t,
