@@ -17,15 +17,14 @@
 
 ## Disabled components
 
-To disable a component per a given [plan](03-01-service-description.md) add it to the disabled components list defined [here](../../components/kyma-environment-broker/internal/runtime/disabled_components.go).
+To disable a component for a given [plan](03-01-service-description.md), add it to the [disabled components list](../../components/kyma-environment-broker/internal/runtime/disabled_components.go).
 
-To disable a component for all plans add it under the AllPlansSelector.
+To disable a component for all plans, add its name under the **AllPlansSelector** parameter.
 
 ## Optional components
 
-The optional component is by default disabled but can be enabled on the runtime by specifying it in the [provisioning request](08-01-provisioning-kyma-environment.md).
+An optional component is a component that is disabled by default but can be enabled in the [provisioning request](08-01-provisioning-kyma-environment.md). Currently, the optional components are:
 
-Currently, the optional components are as follows:
 
 * Kiali
 * Tracing
