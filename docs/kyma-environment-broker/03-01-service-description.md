@@ -31,7 +31,7 @@ These are the provisioning parameters that you can configure:
 
 ### Provider-specific parameters
 
-These are the provider-specific provisioning parameters that you can configure:
+These are the provisioning parameters for Azure that you can configure:
 
 <div tabs name="plans" group="plans">
   <details>
@@ -89,6 +89,9 @@ These are the provider-specific provisioning parameters that you can configure:
      
   </details>
   </div>
+  
+These are the provisioning parameters for GCP that you can configure:
+  
   <div tabs name="plans" group="plans">
   <details>
     <summary label="plan">
@@ -125,4 +128,3 @@ These are the provider-specific provisioning parameters that you can configure:
      
   </details>
 </div>
-

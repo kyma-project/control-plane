@@ -17,8 +17,7 @@ There is a defined [list of the component names](https://github.com/kyma-project
 
 ## Disabled components
 
-To disable a component for a given [plan](03-01-service-description.md), add it to the [disabled components list](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/runtime/disabled_components.go).
-
+To disable a component for a [specific plan](#details-service-description-service-plans), add it to the [disabled components list](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/runtime/disabled_components.go).
 To disable a component for all plans, add its name under the **AllPlansSelector** parameter.
 
 ## Optional components
