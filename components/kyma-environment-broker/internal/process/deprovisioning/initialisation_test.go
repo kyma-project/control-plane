@@ -45,7 +45,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 	accountProviderMock := &hyperscalerMocks.AccountProvider{}
 
-	accountProviderMock.On("ReleaseGardenerSecretForLastCluster", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	accountProviderMock.On("MarkUnusedGardenerSecretAsDirty", mock.Anything, mock.AnythingOfType("string")).Return(nil)
 
 	provisionerClient := &provisionerAutomock.Client{}
 	provisionerClient.On("RuntimeOperationStatus", fixGlobalAccountID, fixProvisionerOperationID).Return(gqlschema.OperationStatus{

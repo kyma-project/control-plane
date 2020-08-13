@@ -181,96 +181,59 @@ func TestGardenerSharedCredentials_Error(t *testing.T) {
 	assert.Contains(t, err.Error(), "Gardener Shared Account pool is not configured")
 }
 
-func TestReleaseGardenerSecretForLastCluster(t *testing.T) {
+func TestMarkUnusedGardenerSecretAsDirty(t *testing.T) {
 
-	pool := newTestAccountPoolWithSingleShoot()
+	t.Run("should mark secret as dirty if unused", func(t *testing.T) {
+		// TODO: assert the secret was modified
+		pool := newTestAccountPoolWithoutShoots()
 
-	accountProvider := NewAccountProvider(nil, pool, nil)
+		accountProvider := NewAccountProvider(nil, pool, nil)
 
-	err := accountProvider.ReleaseGardenerSecretForLastCluster(Type("azure"), "tenant1")
+		err := accountProvider.MarkUnusedGardenerSecretAsDirty(Type("azure"), "tenant1")
 
-	require.NoError(t, err)
+		require.NoError(t, err)
+	})
+
+	t.Run("should not mark secret as dirty if used by a cluster", func(t *testing.T) {
+		// TODO: assert the secret wasn't modified
+		pool := newTestAccountPoolWithSingleShoot()
+
+		accountProvider := NewAccountProvider(nil, pool, nil)
+
+		err := accountProvider.MarkUnusedGardenerSecretAsDirty(Type("azure"), "tenant1")
+
+		require.NoError(t, err)
+	})
+
+	t.Run("should not modify a secret if marked as dirty", func(t *testing.T) {
+		// TODO: assert the secret wasn't modified
+		pool := newTestAccountPoolWithSecretDirty()
+
+		accountProvider := NewAccountProvider(nil, pool, nil)
+
+		err := accountProvider.MarkUnusedGardenerSecretAsDirty(Type("azure"), "tenant1")
+
+		require.NoError(t, err)
+	})
+
+	t.Run("should not mark secret as dirty if used by multiple cluster", func(t *testing.T) {
+		// TODO: assert the secret wasn't modified
+		pool := newTestAccountPoolWithShootsUsingSecret()
+
+		accountProvider := NewAccountProvider(nil, pool, nil)
+
+		err := accountProvider.MarkUnusedGardenerSecretAsDirty(Type("azure"), "tenant1")
+
+		require.NoError(t, err)
+	})
+
+	t.Run("should return error if failed to read secrets for particular hyperscaler type", func(t *testing.T) {
+		accountProvider := NewAccountProvider(nil, nil, nil)
+
+		err := accountProvider.MarkUnusedGardenerSecretAsDirty(Type("gcp"), "tenant1")
+
+		require.Error(t, err)
+
+		assert.Contains(t, err.Error(), "failed to release subscription for tenant. Gardener Account pool is not configured")
+	})
 }
-
-func TestReleaseGardenerSecretForLastCluster_AlreadyReleased(t *testing.T) {
-
-	pool := newTestAccountPoolWithSingleShootReleased()
-
-	accountProvider := NewAccountProvider(nil, pool, nil)
-
-	err := accountProvider.ReleaseGardenerSecretForLastCluster(Type("azure"), "tenant1")
-
-	require.NoError(t, err)
-}
-
-func TestReleaseGardenerSecretForMultipleClusters(t *testing.T) {
-
-	pool := newTestAccountPoolWithMultipleShoots()
-
-	accountProvider := NewAccountProvider(nil, pool, nil)
-
-	err := accountProvider.ReleaseGardenerSecretForLastCluster(Type("azure"), "tenant1")
-
-	require.NoError(t, err)
-}
-
-func TestReleaseGardenerSecretForMultipleClusters_ErrorNoPool(t *testing.T) {
-
-	accountProvider := NewAccountProvider(nil, nil, nil)
-
-	err := accountProvider.ReleaseGardenerSecretForLastCluster(Type("gcp"), "tenant1")
-
-	require.Error(t, err)
-
-	assert.Contains(t, err.Error(), "failed to release subscription for tenant. Gardener Account pool is not configured")
-}
-
-func TestReleaseGardenerSecret_ErrorBadTenant(t *testing.T) {
-
-	pool := newTestAccountPoolWithSingleShoot()
-
-	accountProvider := NewAccountProvider(nil, pool, nil)
-
-	err := accountProvider.ReleaseGardenerSecretForLastCluster(Type("azure"), "tenantX")
-
-	require.Error(t, err)
-
-	assert.Contains(t, err.Error(), "accountPool failed to find subscription secret used by the tenant tenantX and hyperscaler azure")
-}
-
-func TestReleaseGardenerSecret_ErrorBadHyperscaler(t *testing.T) {
-
-	pool := newTestAccountPoolWithSingleShoot()
-
-	accountProvider := NewAccountProvider(nil, pool, nil)
-
-	err := accountProvider.ReleaseGardenerSecretForLastCluster(Type("azureX"), "tenant1")
-
-	require.Error(t, err)
-
-	assert.Contains(t, err.Error(), "accountPool failed to find subscription secret used by the tenant tenant1 and hyperscaler azureX")
-}
-
-// stange case but it should pass anyway
-func TestReleaseGardenerSecret_NoShoots(t *testing.T) {
-
-	pool := newTestAccountPoolNoValidShoots()
-
-	accountProvider := NewAccountProvider(nil, pool, nil)
-
-	err := accountProvider.ReleaseGardenerSecretForLastCluster(Type("azure"), "tenant1")
-
-	require.NoError(t, err)
-}
-
-//func newShoot(name, secret string) *gardener_types.Shoot {
-//	return &gardener_types.Shoot{
-//		ObjectMeta: machineryv1.ObjectMeta{
-//			Name:      name,
-//			Namespace: testNamespace,
-//		},
-//		Spec: gardener_types.ShootSpec{
-//			SecretBindingName: secret,
-//		},
-//	}
-//}

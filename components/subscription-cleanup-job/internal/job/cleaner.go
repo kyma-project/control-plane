@@ -67,7 +67,7 @@ func (p *cleaner) returnSecretToThePool(secret apiv1.Secret) error {
 		return err
 	}
 
-	delete(s.Labels, "released")
+	delete(s.Labels, "dirty")
 	delete(s.Labels, "tenantName")
 
 	_, err = p.secretsClient.Update(s)
@@ -79,7 +79,7 @@ func (p *cleaner) returnSecretToThePool(secret apiv1.Secret) error {
 }
 
 func (p *cleaner) getSecretsToRelease() ([]apiv1.Secret, error) {
-	labelSelector := fmt.Sprintf("released=true")
+	labelSelector := fmt.Sprintf("dirty=true")
 
 	return getK8SSecrets(p.secretsClient, labelSelector)
 }

@@ -233,7 +233,7 @@ func newTestAccountPoolWithSingleShoot() AccountPool {
 	return pool
 }
 
-func newTestAccountPoolWithSingleShootReleased() AccountPool {
+func newTestAccountPoolWithSecretDirty() AccountPool {
 	var testNamespace = "test-namespace"
 
 	secret1 := &corev1.Secret{
@@ -242,7 +242,7 @@ func newTestAccountPoolWithSingleShootReleased() AccountPool {
 			Labels: map[string]string{
 				"tenantName":      "tenant1",
 				"hyperscalerType": "azure",
-				"released":        "true",
+				"dirty":           "true",
 			},
 		},
 		Data: map[string][]byte{
@@ -276,7 +276,7 @@ func newTestAccountPoolWithSingleShootReleased() AccountPool {
 	return pool
 }
 
-func newTestAccountPoolWithMultipleShoots() AccountPool {
+func newTestAccountPoolWithShootsUsingSecret() AccountPool {
 	var testNamespace = "test-namespace"
 
 	secret1 := &corev1.Secret{
@@ -334,7 +334,7 @@ func newTestAccountPoolWithMultipleShoots() AccountPool {
 	return pool
 }
 
-func newTestAccountPoolNoValidShoots() AccountPool {
+func newTestAccountPoolWithoutShoots() AccountPool {
 	var testNamespace = "test-namespace"
 
 	secret1 := &corev1.Secret{
@@ -350,42 +350,10 @@ func newTestAccountPoolNoValidShoots() AccountPool {
 		},
 	}
 
-	shoot1 := &gardener_types.Shoot{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "shoot1",
-			Namespace: testNamespace,
-		},
-		Spec: gardener_types.ShootSpec{
-			SecretBindingName: "secret1",
-		},
-		Status: gardener_types.ShootStatus{
-			LastOperation: &gardener_types.LastOperation{
-				State: gardener_types.LastOperationStatePending,
-				Type:  gardener_types.LastOperationTypeDelete,
-			},
-		},
-	}
-
-	shoot2 := &gardener_types.Shoot{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "shoot2",
-			Namespace: testNamespace,
-		},
-		Spec: gardener_types.ShootSpec{
-			SecretBindingName: "secret1",
-		},
-		Status: gardener_types.ShootStatus{
-			LastOperation: &gardener_types.LastOperation{
-				State: gardener_types.LastOperationStateFailed,
-				Type:  gardener_types.LastOperationTypeReconcile,
-			},
-		},
-	}
-
 	mockClient := fake.NewSimpleClientset(secret1)
 	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
 
-	gardenerFake := gardener_fake.NewSimpleClientset(shoot1, shoot2)
+	gardenerFake := gardener_fake.NewSimpleClientset()
 	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 
 	pool := NewAccountPool(mockSecrets, mockShoots)

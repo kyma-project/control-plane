@@ -11,7 +11,7 @@ type AccountProvider interface {
 	GardenerCredentials(hyperscalerType Type, tenantName string) (Credentials, error)
 	GardenerSharedCredentials(hyperscalerType Type) (Credentials, error)
 	GardenerSecretName(input *gqlschema.GardenerConfigInput, tenantName string) (string, error)
-	ReleaseGardenerSecretForLastCluster(hyperscalerType Type, tenantName string) error
+	MarkUnusedGardenerSecretAsDirty(hyperscalerType Type, tenantName string) error
 }
 
 type accountProvider struct {
@@ -93,29 +93,28 @@ func (p *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInpu
 	return credential.Name, nil
 }
 
-func (p *accountProvider) ReleaseGardenerSecretForLastCluster(hyperscalerType Type, tenantName string) error {
+func (p *accountProvider) MarkUnusedGardenerSecretAsDirty(hyperscalerType Type, tenantName string) error {
 	if p.gardenerPool == nil {
 		return errors.New("failed to release subscription for tenant. Gardener Account pool is not configured")
 	}
 
-	released, err := p.gardenerPool.IsSubscriptionAlreadyReleased(hyperscalerType, tenantName)
-
+	dirty, err := p.gardenerPool.IsSecretDirty(hyperscalerType, tenantName)
 	if err != nil {
 		return err
 	}
 
-	if released {
+	if dirty {
 		return nil
 	}
 
-	usedSubscriptions, err := p.gardenerPool.CountSubscriptionUsages(hyperscalerType, tenantName)
+	secretUsed, err := p.gardenerPool.IsSecretUsed(hyperscalerType, tenantName)
 
 	if err != nil {
-		return errors.Wrapf(err, "Cannot determine number of used %s subscriptions by tenant: %s", hyperscalerType, tenantName)
+		return errors.Wrapf(err, "Cannot determine whether %s secret is used for tenant: %s", hyperscalerType, tenantName)
 	}
 
-	if usedSubscriptions == 1 || usedSubscriptions == 0 {
-		return p.gardenerPool.ReleaseSubscription(hyperscalerType, tenantName)
+	if !secretUsed {
+		return p.gardenerPool.MarkSecretAsDirty(hyperscalerType, tenantName)
 	}
 
 	return nil

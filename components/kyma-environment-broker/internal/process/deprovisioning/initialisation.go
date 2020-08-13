@@ -143,7 +143,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 					return operation, 0, nil
 				}
 
-				err = s.accountProvider.ReleaseGardenerSecretForLastCluster(hypType, instance.GlobalAccountID)
+				err = s.accountProvider.MarkUnusedGardenerSecretAsDirty(hypType, instance.GlobalAccountID)
 				if err != nil {
 					log.Errorf("after successful deprovisioning failed to release hyperscaler subscription: %s", err)
 					return operation, 10 * time.Second, nil
