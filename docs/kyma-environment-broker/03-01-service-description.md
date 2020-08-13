@@ -90,6 +90,8 @@ These are the provider-specific provisioning parameters that you can configure:
 | providerSpecificConfig.AzureConfig.VnetCidr | string | Provides configuration variables specific for Azure. | No | `10.250.0.0/19` |
      
   </details>
+  </div>
+  <div tabs name="plans" group="plans">
   <details>
     <summary label="plan">
     GCP
