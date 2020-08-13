@@ -1,6 +1,8 @@
 package deprovisioning
 
 import (
+	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"testing"
 	"time"
 
@@ -118,6 +120,8 @@ func fixDeprovisioningOperation() internal.DeprovisioningOperation {
 }
 
 func fixProvisioningOperation() internal.ProvisioningOperation {
+	planID := broker.AzurePlanID
+
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ID:                     fixOperationID,
@@ -126,7 +130,7 @@ func fixProvisioningOperation() internal.ProvisioningOperation {
 			Description:            "",
 			UpdatedAt:              time.Now(),
 		},
-		ProvisioningParameters: `{"ers_context":{"globalaccount_id":"1"}}`,
+		ProvisioningParameters: fmt.Sprintf(`{"ers_context":{"globalaccount_id":"1"},"plan_id":"%s"}`, planID),
 	}
 }
 
