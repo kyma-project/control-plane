@@ -1,4 +1,7 @@
-# Service description
+---
+title: Service description
+type: Details
+---
 
 Kyma Environment Broker (KEB) is compatible with the [Open Service Broker API](https://www.openservicebrokerapi.org/) (OSBA) specification. It provides a ServiceClass that provisions Kyma Runtime on a cluster.
 

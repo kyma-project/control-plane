@@ -69,6 +69,7 @@ func TestShootUpgrade(t *testing.T) {
 				log.Log("Starting shoot upgrade...")
 
 				upgradeOperationStatus, err := testSuite.ProvisionerClient.UpgradeShoot(runtimeID, *upgradeShootConfig)
+				assertions.RequireNoError(t, err)
 
 				upgradeOperationStatus, err = testSuite.WaitUntilOperationIsFinished(UpgradeShootTimeout, *upgradeOperationStatus.ID)
 				assertions.RequireNoError(t, err)

@@ -25,7 +25,8 @@ func NewInputConverter(
 	releaseProvider release.Provider,
 	gardenerProject string,
 	defaultEnableKubernetesVersionAutoUpdate,
-	defaultEnableMachineImageVersionAutoUpdate bool) InputConverter {
+	defaultEnableMachineImageVersionAutoUpdate,
+	forceAllowPrivilegedContainers bool) InputConverter {
 
 	return &converter{
 		uuidGenerator:                              uuidGenerator,
@@ -33,6 +34,7 @@ func NewInputConverter(
 		gardenerProject:                            gardenerProject,
 		defaultEnableKubernetesVersionAutoUpdate:   defaultEnableKubernetesVersionAutoUpdate,
 		defaultEnableMachineImageVersionAutoUpdate: defaultEnableMachineImageVersionAutoUpdate,
+		forceAllowPrivilegedContainers:             forceAllowPrivilegedContainers,
 	}
 }
 
@@ -42,6 +44,7 @@ type converter struct {
 	gardenerProject                            string
 	defaultEnableKubernetesVersionAutoUpdate   bool
 	defaultEnableMachineImageVersionAutoUpdate bool
+	forceAllowPrivilegedContainers             bool
 }
 
 func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, apperrors.AppError) {
@@ -55,11 +58,18 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 		}
 	}
 
-	if input.ClusterConfig == nil {
-		return model.Cluster{}, apperrors.BadRequest("error: ClusterConfig not provided")
+	if input.ClusterConfig == nil || input.ClusterConfig.GardenerConfig == nil {
+		return model.Cluster{}, apperrors.BadRequest("error: ClusterConfig not provided or GardenerConfig not provided")
 	}
 
-	gardenerConfig, err := c.gardenerConfigFromInput(runtimeID, input.ClusterConfig.GardenerConfig)
+	gardenerConfigAllowPrivilegedContainers := c.shouldAllowPrivilegedContainers(
+		input.ClusterConfig.GardenerConfig.AllowPrivilegedContainers,
+		kymaConfig.Release.TillerYAML)
+
+	gardenerConfig, err := c.gardenerConfigFromInput(
+		runtimeID,
+		input.ClusterConfig.GardenerConfig,
+		gardenerConfigAllowPrivilegedContainers)
 	if err != nil {
 		return model.Cluster{}, err
 	}
@@ -73,11 +83,7 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 	}, nil
 }
 
-func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.GardenerConfigInput) (model.GardenerConfig, apperrors.AppError) {
-	if input == nil {
-		return model.GardenerConfig{}, apperrors.BadRequest("error: GardenerConfig not provided")
-	}
-
+func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.GardenerConfigInput, allowPrivilegedContainers bool) (model.GardenerConfig, apperrors.AppError) {
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
 	if err != nil {
 		return model.GardenerConfig{}, err
@@ -106,9 +112,18 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		LicenceType:                         input.LicenceType,
 		EnableKubernetesVersionAutoUpdate:   util.UnwrapBoolOrDefault(input.EnableKubernetesVersionAutoUpdate, c.defaultEnableKubernetesVersionAutoUpdate),
 		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, c.defaultEnableMachineImageVersionAutoUpdate),
+		AllowPrivilegedContainers:           allowPrivilegedContainers,
 		ClusterID:                           runtimeID,
 		GardenerProviderConfig:              providerSpecificConfig,
 	}, nil
+}
+
+func (c converter) shouldAllowPrivilegedContainers(inputAllowPrivilegedContainers *bool, tillerYaml string) bool {
+	if c.forceAllowPrivilegedContainers {
+		return true
+	}
+	isTillerPresent := tillerYaml != ""
+	return util.UnwrapBoolOrDefault(inputAllowPrivilegedContainers, isTillerPresent)
 }
 
 func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, config model.GardenerConfig) (model.GardenerConfig, apperrors.AppError) {
@@ -130,15 +145,16 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 	}
 
 	return model.GardenerConfig{
-		ID:           config.ID,
-		ClusterID:    config.ClusterID,
-		Name:         config.Name,
-		ProjectName:  config.ProjectName,
-		Provider:     config.Provider,
-		Seed:         config.Seed,
-		TargetSecret: config.TargetSecret,
-		Region:       config.Region,
-		LicenceType:  config.LicenceType,
+		ID:                        config.ID,
+		ClusterID:                 config.ClusterID,
+		Name:                      config.Name,
+		ProjectName:               config.ProjectName,
+		Provider:                  config.Provider,
+		Seed:                      config.Seed,
+		TargetSecret:              config.TargetSecret,
+		Region:                    config.Region,
+		LicenceType:               config.LicenceType,
+		AllowPrivilegedContainers: config.AllowPrivilegedContainers,
 
 		Purpose:                             purpose,
 		KubernetesVersion:                   util.UnwrapStrOrDefault(input.KubernetesVersion, config.KubernetesVersion),

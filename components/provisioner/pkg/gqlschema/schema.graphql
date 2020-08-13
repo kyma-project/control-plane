@@ -27,6 +27,7 @@ type GardenerConfig {
     licenceType: String
     enableKubernetesVersionAutoUpdate: Boolean
     enableMachineImageVersionAutoUpdate: Boolean
+    allowPrivilegedContainers: Boolean
     providerSpecificConfig: ProviderSpecificConfig
 }
 
@@ -151,6 +152,7 @@ input GardenerConfigInput {
     licenceType: String                             # LicenceType informs about the licence type of the cluster (TestDevelopmentAndDemo)
     enableKubernetesVersionAutoUpdate: Boolean      # Enable KubernetesVersion AutoUpdate indicates whether the patch Kubernetes version may be automatically updated
     enableMachineImageVersionAutoUpdate: Boolean    # Enable MachineImageVersion AutoUpdate indicates whether the machine image version may be automatically updated
+    allowPrivilegedContainers: Boolean              # Allow Privileged Containers indicates whether privileged containers are allowed in the Shoot
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
 }

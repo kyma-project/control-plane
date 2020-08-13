@@ -1,8 +1,11 @@
-# Runtime components
+---
+title: Runtime components
+type: Details
+---
 
-[Kyma Environment Broker](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker) (KEB) serves the functionality of composing the list of components that are installed in a Runtime. The diagram and steps describe the KEB workflow in terms of calculating and processing Runtime components:
+[Kyma Environment Broker](https://github.com/kyma-project/control-plane/tree/master/components/kyma-environment-broker) (KEB) serves the functionality of composing the list of components that are installed in a Runtime. The diagram and steps describe the KEB workflow in terms of calculating and processing Runtime components:
 
-![runtime-components-architecture](assets/runtime-components.svg)
+![runtime-components-architecture](./assets/runtime-components.svg)
 
 1. During KEB initialization, the broker reads two files that contain lists of components to be installed in a Runtime:  
 
@@ -50,7 +53,7 @@ type OptionalComponentDisabler interface {
 
 In each method, the framework injects the  **components** parameter which is a list of components that are sent to the Runtime Provisioner. The implemented method is responsible for disabling component and as a result, returns a modified list. 
   
-This interface allows you to easily register the disabler in the [`cmd/broker/main.go`](./cmd/broker/main.go) file by adding a new entry in the **optionalComponentsDisablers** list:
+This interface allows you to easily register the disabler in the [`cmd/broker/main.go`](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/cmd/broker/main.go) file by adding a new entry in the **optionalComponentsDisablers** list:
 
 ```go
 // Register disabler. Convention:
@@ -65,4 +68,4 @@ optionalComponentsDisablers := runtime.ComponentsDisablers{
 
 ### Remove the optional component
 
-If you want to remove the option to disable components and make them required during Kyma installation, remove a given entry from the **optionalComponentsDisablers** list in the [`cmd/broker/main.go`](./cmd/broker/main.go) file.
+If you want to remove the option to disable components and make them required during Kyma installation, remove a given entry from the **optionalComponentsDisablers** list in the [`cmd/broker/main.go`](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/cmd/broker/main.go) file.

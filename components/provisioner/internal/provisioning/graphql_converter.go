@@ -87,6 +87,7 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 		MaxUnavailable:                      &config.MaxUnavailable,
 		EnableKubernetesVersionAutoUpdate:   &config.EnableKubernetesVersionAutoUpdate,
 		EnableMachineImageVersionAutoUpdate: &config.EnableMachineImageVersionAutoUpdate,
+		AllowPrivilegedContainers:           &config.AllowPrivilegedContainers,
 		ProviderSpecificConfig:              providerSpecificConfig,
 	}
 }
