@@ -45,10 +45,6 @@ func Test_E2E_Gardener(t *testing.T) {
 				runtimeName := fmt.Sprintf("provisioner-test-%s-%s", strings.ToLower(provider), uuid.New().String()[:4])
 				provisioningInput.RuntimeInput.Name = runtimeName
 
-				// Check if privileged containers should be allowed
-				shouldPrivilegedContainersBeAllowed, err := testkit.IsTillerPresent(testSuite.HttpClient, testSuite.config.Kyma.Version)
-				assertions.RequireNoError(t, err)
-
 				// Provision runtime
 				log.Log("Starting provisioning...")
 				provisioningOperationID, runtimeID, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
@@ -78,7 +74,7 @@ func Test_E2E_Gardener(t *testing.T) {
 
 				// Asserting Gardener Configuration
 				log.Log("Verifying configuration...")
-				assertGardenerRuntimeConfiguration(t, provisioningInput, runtimeStatus, shouldPrivilegedContainersBeAllowed)
+				assertGardenerRuntimeConfiguration(t, provisioningInput, runtimeStatus)
 
 				// Check Runtime labels and status in Director
 				log.Log("Checking Runtime labels and status in Director...")
@@ -163,7 +159,7 @@ func ensureClusterIsDeprovisioned(runtimeId string) {
 	}
 }
 
-func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntimeInput, status gqlschema.RuntimeStatus, shouldPrivilegedContainersBeAllowed bool) {
+func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionRuntimeInput, status gqlschema.RuntimeStatus) {
 	assert.NotEmpty(t, status)
 	assertRuntimeConfiguration(t, status)
 
@@ -183,6 +179,9 @@ func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionR
 	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.AutoScalerMin, gardenerConfig.AutoScalerMin)
 	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.AutoScalerMax, gardenerConfig.AutoScalerMax)
 	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.MaxSurge, gardenerConfig.MaxSurge)
+
+	shouldPrivilegedContainersBeAllowed, err := testkit.IsTillerPresent(testSuite.HttpClient, testSuite.config.Kyma.Version)
+	assertions.RequireNoError(t, err)
 	assertions.AssertNotNilAndEqualBool(t, shouldPrivilegedContainersBeAllowed, gardenerConfig.AllowPrivilegedContainers)
 
 	require.NotNil(t, input.ClusterConfig.GardenerConfig.Purpose)
