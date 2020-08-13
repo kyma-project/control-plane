@@ -26,6 +26,9 @@ const (
 )
 
 func TestInitialisationStep_Run(t *testing.T) {
+	accountProviderMock := &hyperscalerMocks.AccountProvider{}
+	accountProviderMock.On("MarkUnusedGardenerSecretAsDirty", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+
 	t.Run("Should mark operation as Succeeded when runtime deprovisioning was successful", func(t *testing.T) {
 		// given
 		log := logrus.New()
@@ -51,9 +54,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 			Message:   nil,
 			RuntimeID: nil,
 		}, nil)
-
-		accountProviderMock := &hyperscalerMocks.AccountProvider{}
-		accountProviderMock.On("MarkUnusedGardenerSecretAsDirty", mock.Anything, mock.AnythingOfType("string")).Return(nil)
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock)
 
@@ -88,7 +88,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		provisionerClient := &provisionerAutomock.Client{}
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock)
 
 		// when
 		operation, repeat, err := step.Run(operation, log)
