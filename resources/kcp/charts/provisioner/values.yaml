@@ -1,7 +1,7 @@
 deployment:
   replicaCount: 1
   image:
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   resources: {}
   securityContext: # Set on container level
     runAsUser: 2000
