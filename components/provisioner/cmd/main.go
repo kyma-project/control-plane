@@ -82,6 +82,7 @@ type config struct {
 		ClusterCleanupResourceSelector             string `envconfig:"default=https://service-manager."`
 		DefaultEnableKubernetesVersionAutoUpdate   bool   `envconfig:"default=false"`
 		DefaultEnableMachineImageVersionAutoUpdate bool   `envconfig:"default=false"`
+		ForceAllowPrivilegedContainers             bool   `envconfig:"default=false"`
 	}
 
 	LatestDownloadedReleases int  `envconfig:"default=5"`
@@ -104,6 +105,7 @@ func (c *config) String() string {
 		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
 		"DeprovisioningTimeoutClusterDeletion: %s, DeprovisioningTimeoutWaitingForClusterDeletion: %s "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
+		"ForceAllowPrivilegedContainers: %t, "+
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s",
@@ -116,6 +118,7 @@ func (c *config) String() string {
 		c.ProvisioningTimeout.AgentConfiguration.String(), c.ProvisioningTimeout.AgentConnection.String(),
 		c.DeprovisioningTimeout.ClusterDeletion.String(), c.DeprovisioningTimeout.WaitingForClusterDeletion.String(),
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
+		c.Gardener.ForceAllowPrivilegedContainers,
 		c.LatestDownloadedReleases, c.DownloadPreReleases,
 		c.EnqueueInProgressOperations,
 		c.LogLevel)
@@ -219,7 +222,8 @@ func main() {
 		upgradeQueue,
 		shootUpgradeQueue,
 		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
-		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate)
+		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate,
+		cfg.Gardener.ForceAllowPrivilegedContainers)
 
 	validator := api.NewValidator(dbsFactory.NewReadSession())
 	resolver := api.NewResolver(provisioningSVC, validator)

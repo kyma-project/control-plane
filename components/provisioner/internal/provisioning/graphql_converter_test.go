@@ -80,6 +80,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		unavailable := 1
 		enableKubernetesVersionAutoUpdate := true
 		enableMachineImageVersionAutoUpdate := false
+		allowPrivilegedContainers := true
 
 		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"zones":["fix-gcp-zone-1","fix-gcp-zone-2"]}`)
 		require.NoError(t, err)
@@ -116,6 +117,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      unavailable,
 					EnableKubernetesVersionAutoUpdate:   enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: enableMachineImageVersionAutoUpdate,
+					AllowPrivilegedContainers:           allowPrivilegedContainers,
 					GardenerProviderConfig:              gardenerProviderConfig,
 				},
 				Kubeconfig: &kubeconfig,
@@ -160,6 +162,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      &unavailable,
 					EnableKubernetesVersionAutoUpdate:   &enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: &enableMachineImageVersionAutoUpdate,
+					AllowPrivilegedContainers:           &allowPrivilegedContainers,
 					ProviderSpecificConfig: gqlschema.GCPProviderConfig{
 						Zones: zones,
 					},
@@ -200,6 +203,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		unavailable := 1
 		enableKubernetesVersionAutoUpdate := true
 		enableMachineImageVersionAutoUpdate := false
+		allowPrivilegedContainers := true
 
 		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"vnetCidr":"10.10.11.11/255"}`)
 		require.NoError(t, err)
@@ -236,6 +240,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      unavailable,
 					EnableKubernetesVersionAutoUpdate:   enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: enableMachineImageVersionAutoUpdate,
+					AllowPrivilegedContainers:           allowPrivilegedContainers,
 					GardenerProviderConfig:              gardenerProviderConfig,
 				},
 				Kubeconfig: &kubeconfig,
@@ -280,6 +285,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      &unavailable,
 					EnableKubernetesVersionAutoUpdate:   &enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: &enableMachineImageVersionAutoUpdate,
+					AllowPrivilegedContainers:           &allowPrivilegedContainers,
 					ProviderSpecificConfig: gqlschema.AzureProviderConfig{
 						VnetCidr: util.StringPtr("10.10.11.11/255"),
 						Zones:    nil, // Expected empty when no zones specified in input.

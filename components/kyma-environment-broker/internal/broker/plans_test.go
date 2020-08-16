@@ -27,7 +27,7 @@ func TestSchemaGenerator(t *testing.T) {
 			"items": [
 		{
 			"type": "string",
-			"enum": ["Kiali", "Tracing"]
+			"enum": ["kiali", "tracing"]
 		}
 		],
 			"additionalItems": false,
@@ -89,7 +89,7 @@ func TestSchemaGenerator(t *testing.T) {
 			"items": [
 		{
 			"type": "string",
-			"enum": ["Kiali", "Tracing"]
+			"enum": ["kiali", "tracing"]
 		}
 		],
 			"additionalItems": false,
@@ -151,7 +151,7 @@ func TestSchemaGenerator(t *testing.T) {
 			"items": [
 		{
 			"type": "string",
-			"enum": ["Kiali", "Tracing"]
+			"enum": ["kiali", "tracing"]
 		}
 		],
 			"additionalItems": false,
