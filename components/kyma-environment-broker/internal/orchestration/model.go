@@ -32,13 +32,13 @@ const TargetAll = "all"
 // When a RuntimeTarget defines multiple fields, all should match to any given runtime to be selected (i.e. the terms are AND-ed).
 type RuntimeTarget struct {
 	// Valid values: "all"
-	Target string
+	Target string `json:"target,omitempty"`
 	// Regex pattern to match against the runtime's GlobalAccount field. E.g. CA50125541TID000000000741207136, CA.*
-	GlobalAccount string
+	GlobalAccount string `json:"globalAccount,omitempty"`
 	// Regex pattern to match against the runtime's SubAccount field. E.g. 0d20e315-d0b4-48a2-9512-49bc8eb03cd1
-	SubAccount string
+	SubAccount string `json:"subAccount,omitempty"`
 	// Regex pattern to match against the shoot cluster's Region field (not SCP platform-region). E.g. "europe|eu-"
-	Region string
+	Region string `json:"region,omitempty"`
 }
 
 // RuntimeResolver given an input slice of target specs to include and exclude, resolves and returns a list of unique Runtime objects.
@@ -68,18 +68,18 @@ const (
 
 // ParallelOrchestrationSpec
 type ParallelOrchestrationSpec struct {
-	Workers int
+	Workers int `json:"workers"`
 }
 
 // OrchestrationStrategySpec is the strategy part common for all orchestration trigger/status API
 type OrchestrationStrategySpec struct {
-	Type     OrchestrationStrategyType
-	Schedule OrchestrationScheduleType
-	Parallel ParallelOrchestrationSpec
+	Type     OrchestrationStrategyType `json:"type"`
+	Schedule OrchestrationScheduleType `json:"schedule,omitempty"`
+	Parallel ParallelOrchestrationSpec `json:"parallel,omitempty"`
 }
 
 // TargetSpec is the targets part common for all orchestration trigger/status API
 type TargetSpec struct {
-	Include []RuntimeTarget
-	Exclude []RuntimeTarget
+	Include []RuntimeTarget `json:"include"`
+	Exclude []RuntimeTarget `json:"exclude,omitempty"`
 }
