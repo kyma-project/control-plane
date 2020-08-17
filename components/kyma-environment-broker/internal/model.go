@@ -126,7 +126,7 @@ type DeprovisioningOperation struct {
 }
 
 // Orchestration holds all information about an orchestration.
-// Orchestration is the roll-out of a specific operation (KymaUpgradeOperation, ClusterUpgradeOperation)
+// Orchestration is the roll-out of performing operations of a specific type (KymaUpgradeOperation, ClusterUpgradeOperation)
 // on specific targets of SKRs.
 type Orchestration struct {
 	OrchestrationID   string
