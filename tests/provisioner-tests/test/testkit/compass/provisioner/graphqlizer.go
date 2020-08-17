@@ -89,6 +89,9 @@ func (g *graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		{{- if .EnableMachineImageVersionAutoUpdate }}
 		enableMachineImageVersionAutoUpdate: {{ .EnableMachineImageVersionAutoUpdate }}
 		{{- end }}
+		{{- if .AllowPrivilegedContainers }}
+		allowPrivilegedContainers: {{ .AllowPrivilegedContainers }}
+		{{- end }}
 		providerSpecificConfig: {{ ProviderSpecificInputToGraphQL .ProviderSpecificConfig }}
 	}`)
 }

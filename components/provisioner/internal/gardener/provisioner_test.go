@@ -57,8 +57,10 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		// then
 		shoot, err := shootClient.Get(clusterName, v1.GetOptions{})
 		require.NoError(t, err)
-		assertAnnotation(t, shoot, operationIdAnnotation, operationId)
-		assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
+		assertAnnotation(t, shoot, operationIDAnnotation, operationId)
+		assertAnnotation(t, shoot, runtimeIDAnnotation, runtimeId)
+		assertAnnotation(t, shoot, legacyOperationIDAnnotation, operationId)
+		assertAnnotation(t, shoot, legacyRuntimeIDAnnotation, runtimeId)
 		assert.Equal(t, "", shoot.Labels[model.SubAccountLabel])
 
 		require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig)

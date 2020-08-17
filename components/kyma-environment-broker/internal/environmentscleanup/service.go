@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	shootAnnotationRuntimeId = "compass.provisioner.kyma-project.io/runtime-id"
+	shootAnnotationRuntimeId = "kcp.provisioner.kyma-project.io/runtime-id"
 )
 
 //go:generate mockery -name=GardenerClient -output=automock

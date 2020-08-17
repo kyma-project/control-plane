@@ -102,7 +102,7 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 			"volume_size_gb", "disk_type", "machine_type", "machine_image", "machine_image_version",
 			"provider", "purpose", "seed", "target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
 			"max_surge", "max_unavailable", "enable_kubernetes_version_auto_update",
-			"enable_machine_image_version_auto_update", "provider_specific_config").
+			"enable_machine_image_version_auto_update", "allow_privileged_containers", "provider_specific_config").
 		From("gardener_config").
 		Join("cluster", "gardener_config.cluster_id=cluster.id").
 		Where(dbr.Eq("name", name)).
@@ -256,7 +256,7 @@ func (r readSession) getGardenerConfig(runtimeID string) (model.GardenerConfig, 
 			"volume_size_gb", "disk_type", "machine_type", "machine_image", "machine_image_version", "provider", "purpose", "seed",
 			"target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
 			"max_surge", "max_unavailable", "enable_kubernetes_version_auto_update",
-			"enable_machine_image_version_auto_update", "provider_specific_config").
+			"enable_machine_image_version_auto_update", "allow_privileged_containers", "provider_specific_config").
 		From("cluster").
 		Join("gardener_config", "cluster.id=gardener_config.cluster_id").
 		Where(dbr.Eq("cluster.id", runtimeID)).

@@ -18,7 +18,7 @@ func TestShootUpgrade(t *testing.T) {
 
 	globalLog := logrus.WithField("TestId", testSuite.TestId)
 
-	globalLog.Infof("Starting Compass Provisioner Upgrade Shoot tests on Gardener")
+	globalLog.Infof("Starting Kyma Control Plane Runtime Provisioner tests of Shoot Upgrade on Gardener")
 	wg := &sync.WaitGroup{}
 
 	for _, provider := range testSuite.gardenerProviders {
@@ -69,6 +69,7 @@ func TestShootUpgrade(t *testing.T) {
 				log.Log("Starting shoot upgrade...")
 
 				upgradeOperationStatus, err := testSuite.ProvisionerClient.UpgradeShoot(runtimeID, *upgradeShootConfig)
+				assertions.RequireNoError(t, err)
 
 				upgradeOperationStatus, err = testSuite.WaitUntilOperationIsFinished(UpgradeShootTimeout, *upgradeOperationStatus.ID)
 				assertions.RequireNoError(t, err)

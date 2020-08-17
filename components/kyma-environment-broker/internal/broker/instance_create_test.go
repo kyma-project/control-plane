@@ -355,12 +355,12 @@ func TestProvision_Provision(t *testing.T) {
 		}, true)
 
 		// then
-		assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "Kiali", "Tracing"`)
+		assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "kiali", "tracing"`)
 		assert.False(t, response.IsAsync)
 		assert.Empty(t, response.OperationData)
 	})
 
-	t.Run("return error on adding KnativeProvisionerNatss and NatssStreaming to list of components", func(t *testing.T) {
+	t.Run("return error on adding KnativeProvisionerNatss and NatsStreaming to list of components", func(t *testing.T) {
 		// given
 		// #setup memory storage
 		memoryStorage := storage.NewMemoryStorage()
@@ -391,13 +391,13 @@ func TestProvision_Provision(t *testing.T) {
 			PlanID:    planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{
 								"name": "%s",
-								"components": ["KnativeProvisionerNatss", "NatssStreaming"]
+								"components": ["KnativeProvisionerNatss", "NatsStreaming"]
 								}`, clusterName)),
 			RawContext: json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
 		}, true)
 
 		// then
-		assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "Kiali", "Tracing", components: No additional items allowed on array`)
+		assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "kiali", "tracing", components: No additional items allowed on array`)
 		assert.False(t, response.IsAsync)
 		assert.Empty(t, response.OperationData)
 	})
@@ -551,6 +551,48 @@ func TestProvision_Provision(t *testing.T) {
 		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
 			ServiceID:     serviceID,
 			PlanID:        broker.AzureLitePlanID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
+		}, true)
+		assert.NoError(t, err)
+
+		// then
+		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
+		require.NoError(t, err)
+
+		parameters, err := operation.GetProvisioningParameters()
+		assert.NoError(t, err)
+		assert.Equal(t, ptr.String(internal.LicenceTypeLite), parameters.Parameters.LicenceType)
+	})
+
+	t.Run("licence type lite should be saved in parameters for Trial Plan", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", broker.GcpTrialPlanID).Return(true)
+
+		fixValidator, err := broker.NewPlansSchemaValidator()
+		require.NoError(t, err)
+
+		queue := &automock.Queue{}
+		queue.On("Add", mock.AnythingOfType("string"))
+
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite", "gcp_trial"}},
+			memoryStorage.Operations(),
+			memoryStorage.Instances(),
+			queue,
+			factoryBuilder,
+			fixValidator,
+			false,
+			logrus.StandardLogger(),
+		)
+
+		// when
+		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
+			ServiceID:     serviceID,
+			PlanID:        broker.GcpTrialPlanID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
 			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
 		}, true)

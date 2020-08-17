@@ -64,8 +64,10 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		}
 	}
 
-	annotate(shootTemplate, operationIdAnnotation, operationId)
-	annotate(shootTemplate, runtimeIdAnnotation, cluster.ID)
+	annotate(shootTemplate, runtimeIDAnnotation, cluster.ID)
+	annotate(shootTemplate, operationIDAnnotation, operationId)
+	annotate(shootTemplate, legacyRuntimeIDAnnotation, cluster.ID)
+	annotate(shootTemplate, legacyOperationIDAnnotation, operationId)
 
 	if g.policyConfigMapName != "" {
 		g.applyAuditConfig(shootTemplate)
@@ -118,14 +120,16 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	}
 
 	if shoot.DeletionTimestamp != nil {
-		annotate(shoot, operationIdAnnotation, operationId)
+		annotate(shoot, operationIDAnnotation, operationId)
+		annotate(shoot, legacyOperationIDAnnotation, operationId)
 		message := fmt.Sprintf("Cluster %s with id %s already scheduled for deletion.", cluster.ClusterConfig.Name, cluster.ID)
 		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.WaitForClusterDeletion, shoot.DeletionTimestamp.Time), nil
 	}
 
 	deletionTime := time.Now()
 
-	annotate(shoot, operationIdAnnotation, operationId)
+	annotate(shoot, operationIDAnnotation, operationId)
+	annotate(shoot, legacyOperationIDAnnotation, operationId)
 
 	annotateWithConfirmDeletion(shoot)
 

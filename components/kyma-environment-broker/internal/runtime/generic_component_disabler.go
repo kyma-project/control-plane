@@ -1,19 +1,15 @@
 package runtime
 
-import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-)
+import "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
 // GenericComponentDisabler provides functionality for removing configured component from given list
 type GenericComponentDisabler struct {
-	componentName      string
-	componentNamespace string
+	componentName string
 }
 
 // NewGenericComponentDisabler returns new instance of GenericComponentDisabler
-func NewGenericComponentDisabler(name string, namespace string) *GenericComponentDisabler {
-	return &GenericComponentDisabler{componentName: name, componentNamespace: namespace}
+func NewGenericComponentDisabler(name string) *GenericComponentDisabler {
+	return &GenericComponentDisabler{componentName: name}
 }
 
 // Disable removes component form given lists. Filtering without allocating.
@@ -22,7 +18,7 @@ func NewGenericComponentDisabler(name string, namespace string) *GenericComponen
 func (g *GenericComponentDisabler) Disable(components internal.ComponentConfigurationInputList) internal.ComponentConfigurationInputList {
 	filterOut := components[:0]
 	for _, component := range components {
-		if !g.shouldRemove(component) {
+		if !g.shouldRemove(component.Component) {
 			filterOut = append(filterOut, component)
 		}
 	}
@@ -34,9 +30,6 @@ func (g *GenericComponentDisabler) Disable(components internal.ComponentConfigur
 	return filterOut
 }
 
-func (g *GenericComponentDisabler) shouldRemove(in *gqlschema.ComponentConfigurationInput) bool {
-	if in == nil {
-		return false
-	}
-	return in.Component == g.componentName && in.Namespace == g.componentNamespace
+func (g *GenericComponentDisabler) shouldRemove(in string) bool {
+	return in == g.componentName
 }

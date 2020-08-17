@@ -39,25 +39,26 @@ func newProvisioningService(
 	gardenerProject string,
 	provisioner provisioning.Provisioner,
 	dbsFactory dbsession.Factory,
-	releaseRepo release.Provider,
+	releaseProvider release.Provider,
 	directorService director.DirectorClient,
 	provisioningQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
 	upgradeQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
 	defaultEnableKubernetesVersionAutoUpdate,
-	defaultEnableMachineImageVersionAutoUpdate bool) provisioning.Service {
+	defaultEnableMachineImageVersionAutoUpdate,
+	forceAllowPrivilegedContainers bool) provisioning.Service {
 
 	uuidGenerator := uuid.NewUUIDGenerator()
 
-	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseRepo, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
+	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseProvider, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
 	graphQLConverter := provisioning.NewGraphQLConverter()
 
 	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue)
 }
 
 func newDirectorClient(config config) (director.DirectorClient, error) {
-	secretsRepo, err := newSecretsInterface(config.CredentialsNamespace)
+	secretsRepo, err := newSecretsInterface(config.OauthCredentialsNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create secrets interface")
 	}

@@ -9,14 +9,9 @@ import (
 
 //go:generate mockery -name=Repository
 type Repository interface {
-	Provider
+	GetReleaseByVersion(version string) (model.Release, dberrors.Error)
 	ReleaseExists(version string) (bool, dberrors.Error)
 	SaveRelease(artifacts model.Release) (model.Release, dberrors.Error)
-}
-
-//go:generate mockery -name=Provider
-type Provider interface {
-	GetReleaseByVersion(version string) (model.Release, dberrors.Error)
 }
 
 func NewReleaseRepository(connection *dbr.Connection, generator uuid.UUIDGenerator) *releaseRepository {

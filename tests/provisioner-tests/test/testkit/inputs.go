@@ -45,7 +45,7 @@ func CreateGardenerProvisioningInput(config *TestConfig, version, provider strin
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				KubernetesVersion:                   "1.15.10",
+				KubernetesVersion:                   config.KubernetesVersion,
 				DiskType:                            gardenerInputs[provider].DiskType,
 				VolumeSizeGb:                        35,
 				MachineType:                         gardenerInputs[provider].MachineType,

@@ -25,7 +25,7 @@ func Test_E2E_Gardener(t *testing.T) {
 
 	globalLog := logrus.WithField("TestId", testSuite.TestId)
 
-	globalLog.Infof("Starting Compass Provisioner tests on Gardener")
+	globalLog.Infof("Starting Kyma Control Plane Runtime Provisioner tests on Gardener")
 	wg := &sync.WaitGroup{}
 
 	for _, provider := range testSuite.gardenerProviders {
@@ -179,6 +179,10 @@ func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionR
 	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.AutoScalerMin, gardenerConfig.AutoScalerMin)
 	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.AutoScalerMax, gardenerConfig.AutoScalerMax)
 	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.MaxSurge, gardenerConfig.MaxSurge)
+
+	shouldPrivilegedContainersBeAllowed, err := testkit.IsTillerPresent(testSuite.HttpClient, testSuite.config.Kyma.Version)
+	assertions.RequireNoError(t, err)
+	assertions.AssertNotNilAndEqualBool(t, shouldPrivilegedContainersBeAllowed, gardenerConfig.AllowPrivilegedContainers)
 
 	require.NotNil(t, input.ClusterConfig.GardenerConfig.Purpose)
 	assertions.AssertNotNilAndEqualString(t, *input.ClusterConfig.GardenerConfig.Purpose, gardenerConfig.Purpose)
