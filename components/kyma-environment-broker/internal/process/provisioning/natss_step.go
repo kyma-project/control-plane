@@ -3,16 +3,13 @@ package provisioning
 import (
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	KymaComponentNameNatsStreaming = "nats-streaming"
-	KebComponentNameNatsStreaming  = "NatsStreaming"
 )
 
 type NatsStreamingStep struct {
@@ -22,7 +19,7 @@ type NatsStreamingStep struct {
 // ensure the interface is implemented
 var _ Step = (*NatsStreamingStep)(nil)
 
-func NewNatsStreamingStep(os storage.Operations) *NatsStreamingStep {
+func NewNatsStreamingOverridesStep(os storage.Operations) *NatsStreamingStep {
 	return &NatsStreamingStep{
 		operationManager: process.NewProvisionOperationManager(os),
 	}
@@ -39,8 +36,7 @@ func (s *NatsStreamingStep) Run(operation internal.ProvisioningOperation, log lo
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 	log.Infof("Provisioning for PlanID: %s", parameters.PlanID)
-	operation.InputCreator.EnableComponent(KebComponentNameNatsStreaming)
-	operation.InputCreator.AppendOverrides(KymaComponentNameNatsStreaming, getNatsStreamingOverrides())
+	operation.InputCreator.AppendOverrides(components.NatssStreaming, getNatsStreamingOverrides())
 	return operation, 0, nil
 }
 

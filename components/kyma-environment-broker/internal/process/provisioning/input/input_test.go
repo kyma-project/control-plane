@@ -3,6 +3,8 @@ package input
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input/automock"
@@ -22,41 +24,84 @@ func TestShouldEnableComponents(t *testing.T) {
 
 	// One base component: dex
 	// Two optional components: Kiali and Tracing
-	// The test checks, if EnableComponent method adds an optional component
+	// The test checks, if EnableOptionalComponent method adds an optional component
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"kiali":   runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
-		"tracing": runtime.NewGenericComponentDisabler("tracing", "kyma-system"),
-		"backup":  runtime.NewGenericComponentDisabler("backup", "kyma-system"),
+		components.Kiali:   runtime.NewGenericComponentDisabler(components.Kiali),
+		components.Tracing: runtime.NewGenericComponentDisabler(components.Tracing),
 	}
 	componentsProvider := &automock.ComponentListProvider{}
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
 		Return([]v1alpha1.KymaComponent{
-			{Name: "kiali", Namespace: "kyma-system"},
-			{Name: "tracing", Namespace: "kyma-system"},
-			{Name: "backup", Namespace: "kyma-system"},
-			{Name: "dex", Namespace: "kyma-system"},
+			{Name: components.Kiali},
+			{Name: components.Tracing},
+			{Name: "dex"},
 		}, nil)
 
-	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), componentsProvider, Config{}, "not-important")
+	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 	assert.NoError(t, err)
 	creator, err := builder.ForPlan(broker.AzurePlanID, "")
 	require.NoError(t, err)
 
 	// when
-	creator.EnableComponent("kiali")
+	creator.EnableOptionalComponent(components.Kiali)
 	input, err := creator.Create()
 	require.NoError(t, err)
 
 	// then
 	assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
-		Component: "kiali",
-		Namespace: "kyma-system",
+		Component: components.Kiali,
 	})
 	assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
 		Component: "dex",
-		Namespace: "kyma-system",
 	})
 	assert.Len(t, input.KymaConfig.Components, 2)
+}
+func TestShouldDisableComponents(t *testing.T) {
+	// given
+	optionalComponentsDisablers := runtime.ComponentsDisablers{}
+	componentsProvider := &automock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
+		Return([]v1alpha1.KymaComponent{
+			{Name: components.Kiali},
+			{Name: components.Tracing},
+			{Name: components.Backup},
+		}, nil)
+
+	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+	assert.NoError(t, err)
+	creator, err := builder.ForPlan(broker.AzurePlanID, "")
+	require.NoError(t, err)
+
+	// when
+	input, err := creator.Create()
+	require.NoError(t, err)
+
+	// then
+	assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
+		Component: components.Tracing,
+	})
+	assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
+		Component: components.Kiali,
+	})
+	assert.Len(t, input.KymaConfig.Components, 2)
+}
+
+func TestDisabledComponentsForPlanNotExist(t *testing.T) {
+	// given
+	optionalComponentsDisablers := runtime.ComponentsDisablers{}
+	componentsProvider := &automock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
+		Return([]v1alpha1.KymaComponent{
+			{Name: components.Kiali},
+			{Name: components.Tracing},
+			{Name: components.Backup},
+		}, nil)
+
+	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+	assert.NoError(t, err)
+	// when
+	_, err = builder.ForPlan("invalid-plan", "")
+	require.Error(t, err)
 }
 
 func TestInputBuilderFactoryOverrides(t *testing.T) {
@@ -77,7 +122,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, componentsProvider, Config{}, "not-important")
+		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
 		creator, err := builder.ForPlan(broker.AzurePlanID, "")
 		require.NoError(t, err)
@@ -114,7 +159,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-		builder, err := NewInputBuilderFactory(optComponentsSvc, componentsProvider, Config{}, "not-important")
+		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
 		creator, err := builder.ForPlan(broker.AzurePlanID, "")
 		require.NoError(t, err)
@@ -156,7 +201,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(inputComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
-	factory, err := NewInputBuilderFactory(optComponentsSvc, componentsProvider, config, "1.10.0")
+	factory, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, config, "1.10.0")
 	assert.NoError(t, err)
 
 	// when
@@ -242,9 +287,9 @@ func assertComponentExists(t *testing.T,
 	expected gqlschema.ComponentConfigurationInput) {
 
 	for _, component := range components {
-		if component.Namespace == expected.Namespace && component.Component == expected.Component {
+		if component.Component == expected.Component {
 			return
 		}
 	}
-	assert.Failf(t, "component list does not contain %s/%s", expected.Namespace, expected.Component)
+	assert.Failf(t, "component list does not contain %s", expected.Component)
 }

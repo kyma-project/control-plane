@@ -1,7 +1,7 @@
 deployment:
   replicaCount: 1
   image:
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   resources: {}
   securityContext: # Set on container level
     runAsUser: 2000
@@ -30,6 +30,7 @@ gardener:
   clusterCleanupResourceSelector: "https://service-manager."
   defaultEnableKubernetesVersionAutoUpdate: false
   defaultEnableMachineImageVersionAutoUpdate: false
+  forceAllowPrivilegedContainers: false
 
 kymaRelease:
   preReleases:

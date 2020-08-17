@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -31,19 +33,18 @@ func TestNatssWithInitialOverrides(t *testing.T) {
 	log := logrus.New()
 	operation := fixOperationWithPlanID(t, "any")
 	simpleInputCreator := newInputCreator()
-	simpleInputCreator.AppendOverrides(KymaComponentNameNatsStreaming, []*gqlschema.ConfigEntryInput{&cei})
+	simpleInputCreator.AppendOverrides(components.NatssStreaming, []*gqlschema.ConfigEntryInput{&cei})
 	operation.InputCreator = simpleInputCreator
 	var runTime time.Duration = 0
 
-	step := NewNatsStreamingStep(memoryStorage.Operations())
+	step := NewNatsStreamingOverridesStep(memoryStorage.Operations())
 
 	// When
 	returnedOperation, time, err := step.Run(operation, log)
 
 	// Then
 	require.NoError(t, err)
-	simpleInputCreator.AssertEnabledComponent(t, KebComponentNameNatsStreaming)
-	ovrs := simpleInputCreator.overrides[KymaComponentNameNatsStreaming]
+	ovrs := simpleInputCreator.overrides[components.NatssStreaming]
 	assert.Equal(t, &cei, ovrs[0])
 	assert.Equal(t, &ceo, ovrs[1])
 	assert.Equal(t, runTime, time)
@@ -60,15 +61,14 @@ func TestNatssWithEmptyOverrides(t *testing.T) {
 	operation.InputCreator = simpleInputCreator
 	var runTime time.Duration = 0
 
-	step := NewNatsStreamingStep(memoryStorage.Operations())
+	step := NewNatsStreamingOverridesStep(memoryStorage.Operations())
 
 	// When
 	returnedOperation, time, err := step.Run(operation, log)
 
 	// Then
 	require.NoError(t, err)
-	simpleInputCreator.AssertEnabledComponent(t, KebComponentNameNatsStreaming)
-	simpleInputCreator.AssertOverride(t, KymaComponentNameNatsStreaming, ceo)
+	simpleInputCreator.AssertOverride(t, components.NatssStreaming, ceo)
 	assert.Equal(t, runTime, time)
 	assert.Equal(t, operation, returnedOperation)
 }

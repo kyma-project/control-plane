@@ -180,6 +180,10 @@ func assertGardenerRuntimeConfiguration(t *testing.T, input gqlschema.ProvisionR
 	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.AutoScalerMax, gardenerConfig.AutoScalerMax)
 	assertions.AssertNotNilAndEqualInt(t, input.ClusterConfig.GardenerConfig.MaxSurge, gardenerConfig.MaxSurge)
 
+	shouldPrivilegedContainersBeAllowed, err := testkit.IsTillerPresent(testSuite.HttpClient, testSuite.config.Kyma.Version)
+	assertions.RequireNoError(t, err)
+	assertions.AssertNotNilAndEqualBool(t, shouldPrivilegedContainersBeAllowed, gardenerConfig.AllowPrivilegedContainers)
+
 	require.NotNil(t, input.ClusterConfig.GardenerConfig.Purpose)
 	assertions.AssertNotNilAndEqualString(t, *input.ClusterConfig.GardenerConfig.Purpose, gardenerConfig.Purpose)
 	require.NotNil(t, input.ClusterConfig.GardenerConfig.EnableKubernetesVersionAutoUpdate)

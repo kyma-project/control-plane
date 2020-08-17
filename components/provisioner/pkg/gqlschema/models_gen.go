@@ -105,6 +105,7 @@ type GardenerConfig struct {
 	LicenceType                         *string                `json:"licenceType"`
 	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate"`
 	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
+	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
 	ProviderSpecificConfig              ProviderSpecificConfig `json:"providerSpecificConfig"`
 }
 
@@ -127,6 +128,7 @@ type GardenerConfigInput struct {
 	LicenceType                         *string                `json:"licenceType"`
 	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate"`
 	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
+	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
 	Seed                                *string                `json:"seed"`
 }
