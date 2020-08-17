@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 )
@@ -17,9 +19,11 @@ import (
 type Client struct {
 	httpClient *http.Client
 	avsConfig  Config
+
+	log logrus.FieldLogger
 }
 
-func NewClient(ctx context.Context, avsConfig Config) (*Client, error) {
+func NewClient(ctx context.Context, avsConfig Config, log logrus.FieldLogger) (*Client, error) {
 	config, initialToken, err := createInitialToken(avsConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating oauth config and token")
@@ -28,6 +32,7 @@ func NewClient(ctx context.Context, avsConfig Config) (*Client, error) {
 	return &Client{
 		httpClient: config.Client(ctx, initialToken),
 		avsConfig:  avsConfig,
+		log:        log,
 	}, nil
 }
 
@@ -96,8 +101,13 @@ func (c *Client) RemoveReferenceFromParentEval(evaluationId int64) error {
 		return nil
 	}
 
-	if response != nil {
-		defer response.Body.Close()
+	if response != nil && response.Body != nil {
+		defer func() {
+			err := response.Body.Close()
+			if err != nil {
+				c.log.Errorf("while closing body: %v")
+			}
+		}()
 		var responseObject avsNonSuccessResp
 		err := json.NewDecoder(response.Body).Decode(&responseObject)
 		if err != nil {

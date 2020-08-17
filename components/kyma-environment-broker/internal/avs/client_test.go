@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
@@ -30,7 +32,7 @@ func TestClient_CreateEvaluation(t *testing.T) {
 		client, err := NewClient(context.TODO(), Config{
 			OauthTokenEndpoint: fmt.Sprintf("%s/oauth/token", mockServer.URL),
 			ApiEndpoint:        fmt.Sprintf("%s/api/v2/evaluationmetadata", mockServer.URL),
-		})
+		}, logrus.New())
 		assert.NoError(t, err)
 
 		// When
@@ -52,7 +54,7 @@ func TestClient_CreateEvaluation(t *testing.T) {
 		client, err := NewClient(context.TODO(), Config{
 			OauthTokenEndpoint: fmt.Sprintf("%s/oauth/token", mockServer.URL),
 			ApiEndpoint:        fmt.Sprintf("%s/api/v2/evaluationmetadata", mockServer.URL),
-		})
+		}, logrus.New())
 		assert.NoError(t, err)
 
 		// When
@@ -75,7 +77,7 @@ func TestClient_CreateEvaluation(t *testing.T) {
 			OauthTokenEndpoint: fmt.Sprintf("%s/oauth/token", mockServer.URL),
 			ApiEndpoint:        fmt.Sprintf("%s/api/v2/evaluationmetadata", mockServer.URL),
 			ParentId:           parentEvaluationID,
-		})
+		}, logrus.New())
 		assert.NoError(t, err)
 
 		// When
@@ -98,7 +100,7 @@ func TestClient_DeleteEvaluation(t *testing.T) {
 			OauthTokenEndpoint: fmt.Sprintf("%s/oauth/token", mockServer.URL),
 			ApiEndpoint:        fmt.Sprintf("%s/api/v2/evaluationmetadata", mockServer.URL),
 			ParentId:           parentEvaluationID,
-		})
+		}, logrus.New())
 		assert.NoError(t, err)
 
 		_, err = client.CreateEvaluation(&BasicEvaluationCreateRequest{
@@ -122,7 +124,7 @@ func TestClient_DeleteEvaluation(t *testing.T) {
 			OauthTokenEndpoint: fmt.Sprintf("%s/oauth/token", mockServer.URL),
 			ApiEndpoint:        fmt.Sprintf("%s/api/v2/evaluationmetadata", mockServer.URL),
 			ParentId:           parentEvaluationID,
-		})
+		}, logrus.New())
 		assert.NoError(t, err)
 
 		_, err = client.CreateEvaluation(&BasicEvaluationCreateRequest{
@@ -147,7 +149,7 @@ func TestClient_RemoveReferenceFromParentEval(t *testing.T) {
 		OauthTokenEndpoint: fmt.Sprintf("%s/oauth/token", mockServer.URL),
 		ApiEndpoint:        fmt.Sprintf("%s/api/v2/evaluationmetadata", mockServer.URL),
 		ParentId:           parentEvaluationID,
-	})
+	}, logrus.New())
 	assert.NoError(t, err)
 
 	_, err = client.CreateEvaluation(&BasicEvaluationCreateRequest{
@@ -161,6 +163,22 @@ func TestClient_RemoveReferenceFromParentEval(t *testing.T) {
 	// Then
 	assert.NoError(t, err)
 	assert.Empty(t, server.evaluation[evaluationID])
+}
+
+func TestClient_RemoveReferenceFromParentEval_WrongApiURLError(t *testing.T) {
+	// Given
+	server := newServer(t)
+	mockServer := fixHTTPServer(server)
+	client, err := NewClient(context.TODO(), Config{
+		OauthTokenEndpoint: fmt.Sprintf("%s/oauth/token", mockServer.URL),
+		ApiEndpoint:        fmt.Sprintf("%s/api/v2/evaluationmetadata", "http://not-existing"),
+		ParentId:           parentEvaluationID,
+	}, logrus.New())
+	assert.NoError(t, err)
+
+	// When
+	err = client.RemoveReferenceFromParentEval(evaluationID)
+	assert.Error(t, err)
 }
 
 type server struct {

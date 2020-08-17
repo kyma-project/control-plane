@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -61,7 +63,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 	mockAvsServer := newMockAvsServer(t, idh, false)
 	defer mockAvsServer.Close()
 	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
-	avsClient, err := avs.NewClient(context.TODO(), avsConfig)
+	avsClient, err := avs.NewClient(context.TODO(), avsConfig, logrus.New())
 	assert.NoError(t, err)
 	avsDel := avs.NewDelegator(avsClient, avsConfig, memoryStorage.Operations())
 	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
