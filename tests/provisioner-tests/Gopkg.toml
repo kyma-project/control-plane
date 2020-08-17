@@ -9,8 +9,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kyma-project/control-plane"
-  source = "https://github.com/franpog859/control-plane"
-  branch = "64-set-allow-priviliged-containers-flag"
+  revision = "4d92f7abdf8eb8e9ad24a152a05433ca1d2f7bd1"
 
 [[constraint]]
   name = "github.com/Masterminds/sprig"
