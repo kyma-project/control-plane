@@ -19,34 +19,38 @@ const (
 	SubAccountLabel = "subaccount"
 	AccountLabel    = "account"
 
-	LicenceTypeAnnotation = "compass.provisioner.kyma-project.io/licence-type"
+	LicenceTypeAnnotation = "kcp.provisioner.kyma-project.io/licence-type"
 )
 
 type GardenerConfig struct {
-	ID                     string
-	ClusterID              string
-	Name                   string
-	ProjectName            string
-	KubernetesVersion      string
-	VolumeSizeGB           int
-	DiskType               string
-	MachineType            string
-	Provider               string
-	Purpose                *string
-	LicenceType            *string
-	Seed                   string
-	TargetSecret           string
-	Region                 string
-	WorkerCidr             string
-	AutoScalerMin          int
-	AutoScalerMax          int
-	MaxSurge               int
-	MaxUnavailable         int
-	GardenerProviderConfig GardenerProviderConfig
+	ID                                  string
+	ClusterID                           string
+	Name                                string
+	ProjectName                         string
+	KubernetesVersion                   string
+	VolumeSizeGB                        int
+	DiskType                            string
+	MachineType                         string
+	MachineImage                        *string
+	MachineImageVersion                 *string
+	Provider                            string
+	Purpose                             *string
+	LicenceType                         *string
+	Seed                                string
+	TargetSecret                        string
+	Region                              string
+	WorkerCidr                          string
+	AutoScalerMin                       int
+	AutoScalerMax                       int
+	MaxSurge                            int
+	MaxUnavailable                      int
+	EnableKubernetesVersionAutoUpdate   bool
+	EnableMachineImageVersionAutoUpdate bool
+	AllowPrivilegedContainers           bool
+	GardenerProviderConfig              GardenerProviderConfig
 }
 
 func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string) (*gardener_types.Shoot, apperrors.AppError) {
-	allowPrivlagedContainers := true
 	enableBasicAuthentication := false
 
 	var seed *string = nil
@@ -54,7 +58,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 		seed = util.StringPtr(c.Seed)
 	}
 	var purpose *gardener_types.ShootPurpose = nil
-	if c.Purpose != nil && *c.Purpose != "" {
+	if util.NotNilOrEmpty(c.Purpose) {
 		p := gardener_types.ShootPurpose(*c.Purpose)
 		purpose = &p
 	}
@@ -79,7 +83,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			SeedName:          seed,
 			Region:            c.Region,
 			Kubernetes: gardener_types.Kubernetes{
-				AllowPrivilegedContainers: &allowPrivlagedContainers,
+				AllowPrivilegedContainers: &c.AllowPrivilegedContainers,
 				Version:                   c.KubernetesVersion,
 				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 					EnableBasicAuthentication: &enableBasicAuthentication,
@@ -92,8 +96,8 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			Purpose: purpose,
 			Maintenance: &gardener_types.Maintenance{
 				AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
-					KubernetesVersion:   false,
-					MachineImageVersion: false,
+					KubernetesVersion:   c.EnableKubernetesVersionAutoUpdate,
+					MachineImageVersion: c.EnableMachineImageVersionAutoUpdate,
 				},
 			},
 		},
@@ -118,6 +122,7 @@ type GardenerProviderConfig interface {
 	RawJSON() string
 	AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig
 	ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError
+	EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError
 }
 
 func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig, apperrors.AppError) { //TODO: change to detect Provider correctly
@@ -174,6 +179,10 @@ func (c *GCPGardenerConfig) AsMap() (map[string]interface{}, apperrors.AppError)
 
 func (c GCPGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
 	return gqlschema.GCPProviderConfig{Zones: c.input.Zones}
+}
+
+func (c GCPGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
+	return updateShootConfig(gardenerConfig, shoot, c.input.Zones)
 }
 
 func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
@@ -247,6 +256,10 @@ type AWSGardenerConfig struct {
 	input *gqlschema.AWSProviderConfigInput `db:"-"`
 }
 
+func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
+	return updateShootConfig(gardenerConfig, shoot, c.input.Zones)
+}
+
 func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 	shoot.Spec.CloudProfileName = "az"
 
@@ -311,6 +324,10 @@ func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 	}
 }
 
+func (c AWSGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
+	return updateShootConfig(gardenerConfig, shoot, []string{c.input.Zone})
+}
+
 func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 	shoot.Spec.CloudProfileName = "aws"
 
@@ -341,11 +358,9 @@ func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_types.Worker {
 	return gardener_types.Worker{
 		Name:           "cpu-worker-0",
-		MaxSurge:       util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxSurge)),
-		MaxUnavailable: util.IntOrStrPtr(intstr.FromInt(gardenerConfig.MaxUnavailable)),
-		Machine: gardener_types.Machine{
-			Type: gardenerConfig.MachineType,
-		},
+		MaxSurge:       util.IntOrStringPtr(intstr.FromInt(gardenerConfig.MaxSurge)),
+		MaxUnavailable: util.IntOrStringPtr(intstr.FromInt(gardenerConfig.MaxUnavailable)),
+		Machine:        getMachineConfig(gardenerConfig),
 		Volume: &gardener_types.Volume{
 			Type: &gardenerConfig.DiskType,
 			Size: fmt.Sprintf("%dGi", gardenerConfig.VolumeSizeGB),
@@ -354,4 +369,49 @@ func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_typ
 		Minimum: int32(gardenerConfig.AutoScalerMin),
 		Zones:   zones,
 	}
+}
+
+func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot, zones []string) apperrors.AppError {
+
+	if upgradeConfig.KubernetesVersion != "" {
+		shoot.Spec.Kubernetes.Version = upgradeConfig.KubernetesVersion
+	}
+
+	if upgradeConfig.Purpose != nil && *upgradeConfig.Purpose != "" {
+		purpose := gardener_types.ShootPurpose(*upgradeConfig.Purpose)
+		shoot.Spec.Purpose = &purpose
+	}
+
+	shoot.Spec.Maintenance.AutoUpdate.KubernetesVersion = upgradeConfig.EnableKubernetesVersionAutoUpdate
+	shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = upgradeConfig.EnableMachineImageVersionAutoUpdate
+
+	if len(shoot.Spec.Provider.Workers) == 0 {
+		return apperrors.Internal("no worker groups assigned to Gardener shoot '%s'", shoot.Name)
+	}
+
+	// We support only single working group during provisioning
+	shoot.Spec.Provider.Workers[0].MaxSurge = util.IntOrStringPtr(intstr.FromInt(upgradeConfig.MaxSurge))
+	shoot.Spec.Provider.Workers[0].MaxUnavailable = util.IntOrStringPtr(intstr.FromInt(upgradeConfig.MaxUnavailable))
+	shoot.Spec.Provider.Workers[0].Machine.Type = upgradeConfig.MachineType
+	shoot.Spec.Provider.Workers[0].Volume.Type = &upgradeConfig.DiskType
+	shoot.Spec.Provider.Workers[0].Volume.Size = fmt.Sprintf("%dGi", upgradeConfig.VolumeSizeGB)
+	shoot.Spec.Provider.Workers[0].Maximum = int32(upgradeConfig.AutoScalerMax)
+	shoot.Spec.Provider.Workers[0].Minimum = int32(upgradeConfig.AutoScalerMin)
+	shoot.Spec.Provider.Workers[0].Zones = zones
+	return nil
+}
+
+func getMachineConfig(config GardenerConfig) gardener_types.Machine {
+	machine := gardener_types.Machine{
+		Type: config.MachineType,
+	}
+	if util.NotNilOrEmpty(config.MachineImage) {
+		machine.Image = &gardener_types.ShootMachineImage{
+			Name: *config.MachineImage,
+		}
+		if util.NotNilOrEmpty(config.MachineImageVersion) {
+			machine.Image.Version = *config.MachineImageVersion
+		}
+	}
+	return machine
 }

@@ -83,6 +83,16 @@ func (s *Instance) FindAllInstancesForRuntimes(runtimeIdList []string) ([]intern
 	return instances, nil
 }
 
+func (s *Instance) GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error) {
+	numberOfInstances := 0
+	for _, inst := range s.instances {
+		if inst.GlobalAccountID == globalAccountID {
+			numberOfInstances++
+		}
+	}
+	return numberOfInstances, nil
+}
+
 func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	inst, ok := s.instances[instanceID]
 	if !ok {

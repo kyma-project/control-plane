@@ -6,13 +6,14 @@ import (
 	"os"
 	"time"
 
+	"github.com/avast/retry-go"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/mitchellh/mapstructure"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/sirupsen/logrus"
 	v12 "k8s.io/api/core/v1"
 
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -63,8 +64,10 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		}
 	}
 
-	annotate(shootTemplate, operationIdAnnotation, operationId)
-	annotate(shootTemplate, runtimeIdAnnotation, cluster.ID)
+	annotate(shootTemplate, runtimeIDAnnotation, cluster.ID)
+	annotate(shootTemplate, operationIDAnnotation, operationId)
+	annotate(shootTemplate, legacyRuntimeIDAnnotation, cluster.ID)
+	annotate(shootTemplate, legacyOperationIDAnnotation, operationId)
 
 	if g.policyConfigMapName != "" {
 		g.applyAuditConfig(shootTemplate)
@@ -74,6 +77,32 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	if k8serr != nil {
 		appError := util.K8SErrorToAppError(k8serr)
 		return appError.Append("error creating Shoot for %s cluster: %s", cluster.ID)
+	}
+
+	return nil
+}
+
+func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError {
+
+	shoot, err := g.shootClient.Get(upgradeConfig.Name, v1.GetOptions{})
+	if err != nil {
+		appErr := util.K8SErrorToAppError(err)
+		return appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, upgradeConfig.Name)
+	}
+
+	appErr := upgradeConfig.GardenerProviderConfig.EditShootConfig(upgradeConfig, shoot)
+
+	if appErr != nil {
+		return appErr.Append("error while updating Gardener shoot configuration")
+	}
+
+	err = retry.Do(func() error {
+		_, err := g.shootClient.Update(shoot)
+		return err
+	}, retry.Attempts(5))
+	if err != nil {
+		apperr := util.K8SErrorToAppError(err)
+		return apperr.Append("error executing update shoot configuration")
 	}
 
 	return nil
@@ -91,14 +120,16 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	}
 
 	if shoot.DeletionTimestamp != nil {
-		annotate(shoot, operationIdAnnotation, operationId)
+		annotate(shoot, operationIDAnnotation, operationId)
+		annotate(shoot, legacyOperationIDAnnotation, operationId)
 		message := fmt.Sprintf("Cluster %s with id %s already scheduled for deletion.", cluster.ClusterConfig.Name, cluster.ID)
 		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.WaitForClusterDeletion, shoot.DeletionTimestamp.Time), nil
 	}
 
 	deletionTime := time.Now()
 
-	annotate(shoot, operationIdAnnotation, operationId)
+	annotate(shoot, operationIDAnnotation, operationId)
+	annotate(shoot, legacyOperationIDAnnotation, operationId)
 
 	annotateWithConfirmDeletion(shoot)
 

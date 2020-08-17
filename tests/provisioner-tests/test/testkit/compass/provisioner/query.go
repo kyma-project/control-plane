@@ -12,9 +12,17 @@ func (qp queryProvider) provisionRuntime(config string) string {
 }`, config, operationStatusData())
 }
 
-func (qp queryProvider) upgradeRuntime(runtimeID string, config string) string {
+func (qp queryProvider) upgradeKymaRuntime(runtimeID string, config string) string {
 	return fmt.Sprintf(`mutation {
-	result: upgradeRuntime(id: "%s", config: %s) {
+	result: upgradeKymaRuntime(id: "%s", config: %s) {
+    	%s
+  	}
+}`, runtimeID, config, operationStatusData())
+}
+
+func (qp queryProvider) upgradeGardenerCluster(runtimeID string, config string) string {
+	return fmt.Sprintf(`mutation {
+	result: upgradeShoot(id: "%s", config: %s) {
     	%s
   	}
 }`, runtimeID, config, operationStatusData())
@@ -70,6 +78,7 @@ func clusterConfig() string {
 		diskType
 		machineType
 		region
+		purpose
 		provider
 		seed
 		targetSecret
@@ -79,6 +88,9 @@ func clusterConfig() string {
 		autoScalerMax
 		maxSurge
 		maxUnavailable
+		enableKubernetesVersionAutoUpdate
+		enableMachineImageVersionAutoUpdate
+		allowPrivilegedContainers
 		providerSpecificConfig {
 			%s
 		}

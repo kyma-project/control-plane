@@ -6,6 +6,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
+
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/appinfo"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
@@ -120,7 +127,7 @@ func main() {
 	// create kubernetes client
 	k8sCfg, err := config.GetConfig()
 	fatalOnError(err)
-	cli, err := client.New(k8sCfg, client.Options{})
+	cli, err := initClient(k8sCfg)
 	fatalOnError(err)
 
 	// create director client on the base of graphQL client and OAuth client
@@ -152,38 +159,43 @@ func main() {
 	//
 	// Using map is intentional - we ensure that component name is not duplicated.
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"Kiali":   runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
-		"Tracing": runtime.NewGenericComponentDisabler("tracing", "kyma-system"),
-		// TODO(workaround until #1049): following components should be always disabled and user should not be able to enable them in provisioning request. This implies following components cannot be specified under the plan schema definition.
-		"BackupInt":               runtime.NewGenericComponentDisabler("backup-init", "kyma-system"),
-		"Backup":                  runtime.NewGenericComponentDisabler("backup", "kyma-system"),
-		"KnativeProvisionerNatss": runtime.NewGenericComponentDisabler("knative-provisioner-natss", "knative-eventing"),
-		"NatssStreaming":          runtime.NewGenericComponentDisabler("nats-streaming", "natss"),
+		components.Kiali:   runtime.NewGenericComponentDisabler(components.Kiali),
+		components.Tracing: runtime.NewGenericComponentDisabler(components.Tracing),
 	}
 	optComponentsSvc := runtime.NewOptionalComponentsService(optionalComponentsDisablers)
+
+	disabledComponentsProvider := runtime.NewDisabledComponentsProvider()
 
 	runtimeProvider := runtime.NewComponentsListProvider(cfg.ManagedRuntimeComponentsYAMLFilePath)
 
 	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
 	fatalOnError(err)
-	//
 	gardenerSecrets, err := gardener.NewGardenerSecretsInterface(gardenerClusterConfig, cfg.Gardener.Project)
+	fatalOnError(err)
+	gardenerShoots, err := gardener.NewGardenerShootInterface(gardenerClusterConfig, cfg.Gardener.Project)
 	fatalOnError(err)
 
 	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
-	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool)
+	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecrets, gardenerShoots)
+	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool, gardenerSharedPool)
 
-	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, runtimeProvider, cfg.Provisioning, cfg.KymaVersion)
+	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider, cfg.Provisioning, cfg.KymaVersion)
 	fatalOnError(err)
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
 
-	avsDel := avs.NewDelegator(cfg.Avs, db.Operations())
+	avsClient, err := avs.NewClient(ctx, cfg.Avs)
+	fatalOnError(err)
+	avsDel := avs.NewDelegator(avsClient, cfg.Avs, db.Operations())
 	externalEvalAssistant := avs.NewExternalEvalAssistant(cfg.Avs)
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
 	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 
-	bundleBuilder := ias.NewBundleBuilder(httpClient, cfg.IAS)
+	clientHTTPForIAS := httpClient
+	if cfg.IAS.TLSRenegotiationEnable {
+		clientHTTPForIAS = httputil.NewRenegotiationTLSClient(30, cfg.Director.SkipCertVerification)
+	}
+	bundleBuilder := ias.NewBundleBuilder(clientHTTPForIAS, cfg.IAS)
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
 	// application event broker
@@ -216,8 +228,9 @@ func main() {
 			disabled: cfg.Avs.Disabled,
 		},
 		{
-			weight:   1,
-			step:     provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory),
+			weight: 1,
+			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
+				provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
 			disabled: cfg.LMS.Disabled,
 		},
 		{
@@ -227,7 +240,13 @@ func main() {
 		},
 		{
 			weight: 2,
-			step:   provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
+			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
+				provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+		},
+		{
+			weight: 2,
+			step: provisioning.NewEnableForTrialPlanStep(db.Operations(),
+				provisioning.NewNatsStreamingOverridesStep(db.Operations())),
 		},
 		{
 			weight: 2,
@@ -242,8 +261,9 @@ func main() {
 			step:   provisioning.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog),
 		},
 		{
-			weight:   4,
-			step:     provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory),
+			weight: 4,
+			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
+				provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
 			disabled: cfg.LMS.Disabled,
 		},
 		{
@@ -275,7 +295,8 @@ func main() {
 		},
 		{
 			weight: 1,
-			step:   deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
+			step: deprovisioning.NewSkipForTrialPlanStep(db.Operations(),
+				deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
 		{
 			weight:   1,
@@ -369,6 +390,27 @@ func processOperationsInProgressByType(opType dbmodel.OperationType, op storage.
 		log.Infof("Resuming the processing of %s operation ID: %s", opType, operation.ID)
 	}
 	return nil
+}
+
+func initClient(cfg *rest.Config) (client.Client, error) {
+	mapper, err := apiutil.NewDiscoveryRESTMapper(cfg)
+	if err != nil {
+		err = wait.Poll(time.Second, time.Minute, func() (bool, error) {
+			mapper, err = apiutil.NewDiscoveryRESTMapper(cfg)
+			if err != nil {
+				return false, nil
+			}
+			return true, nil
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "while waiting for client mapper")
+		}
+	}
+	cli, err := client.New(cfg, client.Options{Mapper: mapper})
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating a client")
+	}
+	return cli, nil
 }
 
 func fatalOnError(err error) {

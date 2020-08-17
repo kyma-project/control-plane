@@ -4,8 +4,8 @@ go 1.13
 
 require (
 	github.com/avast/retry-go v2.6.0+incompatible
+	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gorilla/mux v1.7.4
-	github.com/howeyc/fsnotify v0.9.0
 	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20200702142454-d5c043eb0dbe
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1

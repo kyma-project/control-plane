@@ -3,14 +3,24 @@ package broker
 import (
 	"encoding/json"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
+
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
 const (
-	GCPPlanID     = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
-	GCPPlanName   = "gcp"
-	AzurePlanID   = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
-	AzurePlanName = "azure"
+	AllPlansSelector = "all_plans"
+
+	GCPPlanID          = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
+	GCPPlanName        = "gcp"
+	GcpTrialPlanID     = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
+	GcpTrialPlanName   = "gcp_trial"
+	AzurePlanID        = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	AzurePlanName      = "azure"
+	AzureLitePlanID    = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
+	AzureLitePlanName  = "azure_lite"
+	AzureTrialPlanID   = "70479a4b-ee23-4f6f-958c-1646e8fe5301"
+	AzureTrialPlanName = "azure_trial"
 )
 
 func AzureRegions() []string {
@@ -34,6 +44,7 @@ type Type struct {
 	AdditionalItems *bool         `json:"additionalItems,omitempty"`
 	UniqueItems     *bool         `json:"uniqueItems,omitempty"`
 }
+
 type RootSchema struct {
 	Schema string `json:"$schema"`
 	Type
@@ -55,7 +66,7 @@ type ProvisioningProperties struct {
 	MaxUnavailable Type `json:"maxUnavailable"`
 }
 
-func GCPSchema() []byte {
+func GCPSchema(machineTypes []string) []byte {
 	f := new(bool)
 	*f = false
 	t := new(bool)
@@ -71,7 +82,7 @@ func GCPSchema() []byte {
 				Type: "array",
 				Items: []Type{{
 					Type: "string",
-					Enum: ToInterfaceSlice([]string{"Kiali", "Tracing"}),
+					Enum: ToInterfaceSlice([]string{components.Kiali, components.Tracing}),
 				}},
 				AdditionalItems: f,
 				UniqueItems:     t,
@@ -85,7 +96,7 @@ func GCPSchema() []byte {
 			},
 			MachineType: Type{
 				Type: "string",
-				Enum: ToInterfaceSlice([]string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"}),
+				Enum: ToInterfaceSlice(machineTypes),
 			},
 			Region: Type{
 				Type: "string",
@@ -151,7 +162,8 @@ func GCPSchema() []byte {
 	}
 	return bytes
 }
-func AzureSchema() []byte {
+
+func AzureSchema(machineTypes []string) []byte {
 	f := new(bool)
 	*f = false
 	t := new(bool)
@@ -166,7 +178,7 @@ func AzureSchema() []byte {
 				Type: "array",
 				Items: []Type{{
 					Type: "string",
-					Enum: ToInterfaceSlice([]string{"Kiali", "Tracing"}),
+					Enum: ToInterfaceSlice([]string{components.Kiali, components.Tracing}),
 				}},
 				AdditionalItems: f,
 				UniqueItems:     t,
@@ -181,7 +193,7 @@ func AzureSchema() []byte {
 			},
 			MachineType: Type{
 				Type: "string",
-				Enum: ToInterfaceSlice([]string{"Standard_D8_v3"}),
+				Enum: ToInterfaceSlice(machineTypes),
 			},
 			Region: Type{
 				Type: "string",
@@ -217,6 +229,80 @@ func AzureSchema() []byte {
 	return bytes
 }
 
+func GcpTrialSchema() []byte {
+	schema := `{
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string",
+              "enum": [
+                "europe-west4",
+                "us-east4"
+              ]
+            },
+            "zones": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "europe-west4-a",
+                    "europe-west4-b",
+                    "europe-west4-c",
+                    "us-east4-a",
+                    "us-east4-b",
+                    "us-east4-c"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }`
+
+	bytes := []byte(schema)
+	return bytes
+}
+
+func AzureTrialSchema() []byte {
+	schema := `{
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string",
+              "enum": [
+				"eastus",
+				"westeurope"
+              ]
+            },
+            "zones": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }`
+
+	bytes := []byte(schema)
+	return bytes
+}
+
 func ToInterfaceSlice(input []string) []interface{} {
 	interfaces := make([]interface{}, len(input))
 	for i, item := range input {
@@ -247,7 +333,7 @@ var Plans = map[string]struct {
 				},
 			},
 		},
-		provisioningRawSchema: GCPSchema(),
+		provisioningRawSchema: GCPSchema([]string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"}),
 	},
 	AzurePlanID: {
 		PlanDefinition: domain.ServicePlan{
@@ -265,6 +351,69 @@ var Plans = map[string]struct {
 				},
 			},
 		},
-		provisioningRawSchema: AzureSchema(),
+		provisioningRawSchema: AzureSchema([]string{"Standard_D8_v3"}),
 	},
+	AzureLitePlanID: {
+		PlanDefinition: domain.ServicePlan{
+			ID:          AzureLitePlanID,
+			Name:        AzureLitePlanName,
+			Description: "Azure Lite",
+			Metadata: &domain.ServicePlanMetadata{
+				DisplayName: "Azure Lite",
+			},
+			Schemas: &domain.ServiceSchemas{
+				Instance: domain.ServiceInstanceSchema{
+					Create: domain.Schema{
+						Parameters: make(map[string]interface{}),
+					},
+				},
+			},
+		},
+		provisioningRawSchema: AzureSchema([]string{"Standard_D4_v3"}),
+	},
+	GcpTrialPlanID: {
+		PlanDefinition: domain.ServicePlan{
+			ID:          GcpTrialPlanID,
+			Name:        GcpTrialPlanName,
+			Description: "GCP Trial",
+			Metadata: &domain.ServicePlanMetadata{
+				DisplayName: "GCP Trial",
+			},
+			Schemas: &domain.ServiceSchemas{
+				Instance: domain.ServiceInstanceSchema{
+					Create: domain.Schema{
+						Parameters: make(map[string]interface{}),
+					},
+				},
+			},
+		},
+		provisioningRawSchema: GcpTrialSchema(),
+	},
+	AzureTrialPlanID: {
+		PlanDefinition: domain.ServicePlan{
+			ID:          AzureTrialPlanID,
+			Name:        AzureTrialPlanName,
+			Description: "Azure Trial",
+			Metadata: &domain.ServicePlanMetadata{
+				DisplayName: "Azure Trial",
+			},
+			Schemas: &domain.ServiceSchemas{
+				Instance: domain.ServiceInstanceSchema{
+					Create: domain.Schema{
+						Parameters: make(map[string]interface{}),
+					},
+				},
+			},
+		},
+		provisioningRawSchema: AzureTrialSchema(),
+	},
+}
+
+func IsTrialPlan(planId string) bool {
+	switch planId {
+	case GcpTrialPlanID, AzureTrialPlanID:
+		return true
+	default:
+		return false
+	}
 }

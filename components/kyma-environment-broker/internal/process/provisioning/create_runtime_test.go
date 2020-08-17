@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input"
@@ -69,6 +71,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				Region:            "europe-west4-a",
 				Provider:          "gcp",
 				Purpose:           &shootPurpose,
+				LicenceType:       nil,
 				WorkerCidr:        "10.250.0.0/19",
 				AutoScalerMin:     3,
 				AutoScalerMax:     4,
@@ -147,8 +150,12 @@ func fixInstance() internal.Instance {
 }
 
 func fixProvisioningParameters(t *testing.T) string {
+	return fixProvisioningParametersWithPlanID(t, broker.GCPPlanID)
+}
+
+func fixProvisioningParametersWithPlanID(t *testing.T, planID string) string {
 	parameters := internal.ProvisioningParameters{
-		PlanID:    broker.GCPPlanID,
+		PlanID:    planID,
 		ServiceID: "",
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,
@@ -181,7 +188,7 @@ func fixProvisioningParameters(t *testing.T) string {
 func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	optComponentsSvc := &inputAutomock.OptionalComponentService{}
 
-	optComponentsSvc.On("ComputeComponentsToDisable", []string(nil)).Return([]string{})
+	optComponentsSvc.On("ComputeComponentsToDisable", []string{}).Return([]string{})
 	optComponentsSvc.On("ExecuteDisablers", internal.ComponentConfigurationInputList{
 		{
 			Component:     "to-remove-component",
@@ -215,7 +222,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	componentsProvider.On("AllComponents", kymaVersion).Return(kymaComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
-	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, componentsProvider, input.Config{
+	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{
 		KubernetesVersion:           k8sVersion,
 		DefaultGardenerShootPurpose: shootPurpose,
 	}, kymaVersion)

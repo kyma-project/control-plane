@@ -23,6 +23,8 @@ CREATE TABLE gardener_config
     kubernetes_version varchar(256) NOT NULL,
     volume_size_gb varchar(256) NOT NULL,
     machine_type varchar(256) NOT NULL,
+    machine_image varchar(256),
+    machine_image_version varchar(256),
     region varchar(256) NOT NULL,
     provider varchar(256) NOT NULL,
     purpose varchar(256),
@@ -35,6 +37,9 @@ CREATE TABLE gardener_config
     auto_scaler_max integer NOT NULL,
     max_surge integer NOT NULL,
     max_unavailable integer NOT NULL,
+    enable_kubernetes_version_auto_update boolean NOT NULL,
+    enable_machine_image_version_auto_update boolean NOT NULL,
+    allow_privileged_containers boolean NOT NULL,
     provider_specific_config jsonb,
     UNIQUE(cluster_id),
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE
@@ -53,7 +58,8 @@ CREATE TYPE operation_type AS ENUM (
     'PROVISION',
     'UPGRADE',
     'DEPROVISION',
-    'RECONNECT_RUNTIME'
+    'RECONNECT_RUNTIME',
+    'UPGRADE_SHOOT'
     );
 
 CREATE TABLE operation

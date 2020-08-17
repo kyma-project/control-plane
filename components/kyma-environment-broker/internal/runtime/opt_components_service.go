@@ -7,17 +7,17 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
 
-// OptionalComponentDisabler disables component form the given list and returns modified list
-type OptionalComponentDisabler interface {
+// ComponentDisabler disables component form the given list and returns modified list
+type ComponentDisabler interface {
 	Disable(components internal.ComponentConfigurationInputList) internal.ComponentConfigurationInputList
 }
 
 // ComponentsDisablers represents type for defining components disabler list
-type ComponentsDisablers map[string]OptionalComponentDisabler
+type ComponentsDisablers map[string]ComponentDisabler
 
 // OptionalComponentsService provides functionality for executing component disablers
 type OptionalComponentsService struct {
-	registered map[string]OptionalComponentDisabler
+	registered map[string]ComponentDisabler
 }
 
 // NewOptionalComponentsService returns new instance of ResourceSupervisorAggregator

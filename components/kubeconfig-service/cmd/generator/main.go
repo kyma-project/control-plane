@@ -23,6 +23,7 @@ func main() {
 	env.InitConfig()
 	authnCfg := readAuthnConfig()
 	log.Info("Starting kubeconfig-service sever")
+	setupLogLevel()
 
 	fileWatcherCtx, fileWatcherCtxCancel := context.WithCancel(context.Background())
 
@@ -64,6 +65,16 @@ func main() {
 	case <-term:
 		log.Info("Received SIGTERM, exiting gracefully...")
 		fileWatcherCtxCancel()
+	}
+}
+
+func setupLogLevel() {
+	logLevel, err := log.ParseLevel(env.Config.LogLevel)
+	if err == nil {
+		log.SetLevel(logLevel)
+	} else {
+		log.Error(err, ". Defaulting to \"info\"")
+		log.SetLevel(log.InfoLevel)
 	}
 }
 

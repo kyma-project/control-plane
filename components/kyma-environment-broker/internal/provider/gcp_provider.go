@@ -11,7 +11,10 @@ const (
 	DefaultGCPRegion = "europe-west4"
 )
 
-type GcpInput struct{}
+type (
+	GcpInput      struct{}
+	GcpTrialInput struct{}
+)
 
 func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
@@ -36,6 +39,36 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *GcpInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
+	if params.Region != nil && params.Zones == nil {
+		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(*params.Region))
+	}
+
+	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, params.Zones)
+}
+
+func (p *GcpTrialInput) Defaults() *gqlschema.ClusterConfigInput {
+	return &gqlschema.ClusterConfigInput{
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			DiskType:       "pd-standard",
+			VolumeSizeGb:   30,
+			MachineType:    "n1-standard-4",
+			Region:         DefaultGCPRegion,
+			Provider:       "gcp",
+			WorkerCidr:     "10.250.0.0/19",
+			AutoScalerMin:  3,
+			AutoScalerMax:  3,
+			MaxSurge:       1,
+			MaxUnavailable: 1,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				GcpConfig: &gqlschema.GCPProviderConfigInput{
+					Zones: ZonesForGCPRegion(DefaultGCPRegion),
+				},
+			},
+		},
+	}
+}
+
+func (p *GcpTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
 	if params.Region != nil && params.Zones == nil {
 		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(*params.Region))
 	}

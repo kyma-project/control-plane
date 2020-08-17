@@ -181,7 +181,8 @@ func (r *ComponentsListProvider) getInstallerYamlURL(kymaVersion string) string 
 // source: https://github.com/kyma-project/test-infra/blob/master/docs/prow/prow-architecture.md#generate-development-artifacts
 func (r *ComponentsListProvider) isOnDemandRelease(version string) bool {
 	isOnDemandVersion := strings.HasPrefix(version, "PR-") ||
-		strings.HasPrefix(version, "master-")
+		strings.HasPrefix(version, "master-") ||
+		strings.EqualFold(version, "master")
 	return isOnDemandVersion
 }
 

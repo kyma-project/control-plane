@@ -8,6 +8,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
@@ -138,7 +139,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}, nil
 }
 
-func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, logger logrus.FieldLogger) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
+func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, l logrus.FieldLogger) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
 	var ersContext internal.ERSContext
 	var parameters internal.ProvisioningParametersDTO
 
@@ -159,6 +160,7 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	}
 
 	ersContext, err = b.extractERSContext(details)
+	logger := l.WithField("globalAccountID", ersContext.GlobalAccountID)
 	if err != nil {
 		return ersContext, parameters, errors.Wrap(err, "while extracting ers context")
 	}
@@ -172,10 +174,23 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 		logger.Infof("Kyma on demand functionality is disabled. Default Kyma version will be used instead %s", parameters.KymaVersion)
 		parameters.KymaVersion = ""
 	}
+	parameters.LicenceType = b.determineLicenceType(details.PlanID)
 
 	found := b.builderFactory.IsPlanSupport(details.PlanID)
 	if !found {
 		return ersContext, parameters, errors.Errorf("the plan ID not known, planID: %s", details.PlanID)
+	}
+
+	if IsTrialPlan(details.PlanID) {
+		count, err := b.instanceStorage.GetNumberOfInstancesForGlobalAccountID(ersContext.GlobalAccountID)
+		if err != nil {
+			return ersContext, parameters, errors.Wrap(err, "while checking if a trial Kyma instance exists for given global account")
+		}
+
+		if count > 0 {
+			logger.Info("Provisioning Trial SKR rejected, such instance was already created for this Global Account")
+			return ersContext, parameters, errors.Errorf("The Trial Kyma was created for the global account, but there is only one allowed")
+		}
 	}
 
 	return ersContext, parameters, nil
@@ -225,4 +240,12 @@ func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.Provisio
 	err = errors.New("provisioning operation already exist")
 	msg := fmt.Sprintf("provisioning operation with InstanceID %s already exist", operation.InstanceID)
 	return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusConflict, msg)
+}
+
+func (b *ProvisionEndpoint) determineLicenceType(planId string) *string {
+	if planId == AzureLitePlanID || IsTrialPlan(planId) {
+		return ptr.String(internal.LicenceTypeLite)
+	}
+
+	return nil
 }

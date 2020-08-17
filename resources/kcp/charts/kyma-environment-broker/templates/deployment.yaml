@@ -103,6 +103,8 @@ spec:
               value: "{{ .Values.ias.identityProvider }}"
             - name: APP_IAS_DISABLED
               value: "{{ .Values.ias.disabled }}"
+            - name: APP_IAS_TLS_RENEGOTIATION_ENABLE
+              value: "{{ .Values.ias.tlsRenegotiationEnable }}"
             - name: APP_EDP_AUTH_URL
               value: "{{ .Values.edp.authURL }}"
             - name: APP_EDP_ADMIN_URL
@@ -279,10 +281,16 @@ spec:
             httpGet:
               path: /healthz
               port: {{ .Values.broker.statusPort }}
-            failureThreshold: 3
             periodSeconds: 10
             timeoutSeconds: 3
-            initialDelaySeconds: 20
+            initialDelaySeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.broker.statusPort }}
+            periodSeconds: 5
+            timeoutSeconds: 2
+            initialDelaySeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:

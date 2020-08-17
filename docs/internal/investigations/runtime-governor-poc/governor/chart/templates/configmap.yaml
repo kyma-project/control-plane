@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+data:
+  config.yaml: |-
+    runtimes:
+      - id: "1"
+        data:
+          kind: "Component"
+          apiVersion: "dapr.io/v1alpha1"
+          metadata:
+            name: "statestore"
+            namespace: "{{ .Release.Namespace }}"
+            annotations:
+              kcp-res-version: "1"
+          spec:
+            type: "state.redis"
+            metadata:
+            - name: "redisHost"
+              value: {{.Values.redis1.host}}
+            - name: "redisPassword"
+              value: {{.Values.redis1.password}}
+            - name: "selector"
+              value: "daprTest=test"
+      - id: "2"
+        data:
+          kind: "Component"
+          apiVersion: "dapr.io/v1alpha1"
+          metadata:
+            name: "statestore"
+            namespace: "{{ .Release.Namespace }}"
+            annotations:
+              kcp-res-version: "1"
+          spec:
+            type: "state.redis"
+            metadata:
+            - name: "redisHost"
+              value: {{.Values.redis2.host}}
+            - name: "redisPassword"
+              value: {{.Values.redis2.password}}
+            - name: "selector"
+              value: "daprTest=test"

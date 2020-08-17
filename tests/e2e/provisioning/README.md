@@ -67,11 +67,11 @@ You can configure the test execution by using the following environment variable
 | **APP_RUNTIME_UUA_INSTANCE_NAMESPACE** | Specifies the Namespace of the UUA instance which is provisioned in the Runtime. | `kyma-system` |
 | **APP_TENANT_ID** | Specifies TenantID which is used in the test. | None |
 | **APP_DIRECTOR_URL** | Specifies the Director URL. | `http://compass-director.compass-system.svc.cluster.local:3000/graphql` |
-| **APP_DIRECTOR_NAMESPACE** | Specifies the Director Namespace. | `compass-system` |
+| **APP_DIRECTOR_NAMESPACE** | Specifies the Director Namespace. | `kcp-system` |
 | **APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME** | Specifies the name of the Secret created by the Integration System. | `compass-kyma-environment-broker-credentials` |
 | **APP_SKIP_CERT_VERIFICATION** | Specifies whether TLS checks the presented certificates. | `false` |
 | **APP_DUMMY_TEST** | Specifies if test should success without any action. | `false` |
 | **APP_CLEANUP_PHASE** | Specifies if the test executes the cleanup phase. | `false` |
 | **APP_TEST_AZURE_EVENT_HUBS_ENABLED** | Specifies if the test should test the infrastructure in Azure Event Hubs. | `true` |
 | **APP_CONFIG_NAME** | Specifies the name of the ConfigMap and Secret created in the test. | `e2e-runtime-config` |
-| **APP_DEPLOY_NAMESPACE** | Specifies the Namespace of the ConfigMap and Secret created in the test. | `compass-system` |
+| **APP_DEPLOY_NAMESPACE** | Specifies the Namespace of the ConfigMap and Secret created in the test. | `kcp-system` |

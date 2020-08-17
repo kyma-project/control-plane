@@ -245,7 +245,7 @@
   version = "v4.6.0"
 
 [[projects]]
-  digest = "1:1444940bf20177aa372c23eaa11428b4f4cfb38895eccaa0857c301502074e42"
+  digest = "1:e02805fa1257a13418c3b92eed1f77100171ab98febb79a9b6515d88ee594f09"
   name = "github.com/gardener/gardener"
   packages = [
     "pkg/apis/core",
@@ -253,7 +253,11 @@
     "pkg/apis/core/v1alpha1/constants",
     "pkg/apis/core/v1beta1",
     "pkg/apis/core/v1beta1/constants",
+    "pkg/client/core/clientset/versioned",
+    "pkg/client/core/clientset/versioned/fake",
     "pkg/client/core/clientset/versioned/scheme",
+    "pkg/client/core/clientset/versioned/typed/core/v1alpha1",
+    "pkg/client/core/clientset/versioned/typed/core/v1alpha1/fake",
     "pkg/client/core/clientset/versioned/typed/core/v1beta1",
     "pkg/client/core/clientset/versioned/typed/core/v1beta1/fake",
     "pkg/utils",
@@ -1196,6 +1200,7 @@
     "github.com/Masterminds/sprig",
     "github.com/dlmiddlecote/sqlstats",
     "github.com/gardener/gardener/pkg/apis/core/v1beta1",
+    "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake",
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1",
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1/fake",
     "github.com/gocraft/dbr",
@@ -1241,6 +1246,7 @@
     "k8s.io/client-go/tools/clientcmd",
     "k8s.io/client-go/util/workqueue",
     "sigs.k8s.io/controller-runtime/pkg/client",
+    "sigs.k8s.io/controller-runtime/pkg/client/apiutil",
     "sigs.k8s.io/controller-runtime/pkg/client/config",
     "sigs.k8s.io/controller-runtime/pkg/client/fake",
     "sigs.k8s.io/controller-runtime/pkg/reconcile",

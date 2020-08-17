@@ -26,6 +26,16 @@ type RuntimeInput struct {
 	hyperscalerInputProvider  HyperscalerInputProvider
 	optionalComponentsService OptionalComponentService
 	provisioningParameters    internal.ProvisioningParametersDTO
+
+	componentsDisabler        ComponentsDisabler
+	enabledOptionalComponents map[string]struct{}
+}
+
+func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.ProvisionInputCreator {
+	r.mutex.Lock("enabledOptionalComponents")
+	defer r.mutex.Unlock("enabledOptionalComponents")
+	r.enabledOptionalComponents[componentName] = struct{}{}
+	return r
 }
 
 func (r *RuntimeInput) SetProvisioningParameters(params internal.ProvisioningParametersDTO) internal.ProvisionInputCreator {
@@ -85,8 +95,12 @@ func (r *RuntimeInput) Create() (gqlschema.ProvisionRuntimeInput, error) {
 			execute: r.applyProvisioningParameters,
 		},
 		{
+			name:    "disabling components",
+			execute: r.disableComponents,
+		},
+		{
 			name:    "disabling optional components that were not selected",
-			execute: r.disableNotSelectedComponents,
+			execute: r.resolveOptionalComponents,
 		},
 		{
 			name:    "applying components overrides",
@@ -117,18 +131,40 @@ func (r *RuntimeInput) applyProvisioningParameters() error {
 	updateString(&r.input.ClusterConfig.GardenerConfig.MachineType, r.provisioningParameters.MachineType)
 	updateString(&r.input.ClusterConfig.GardenerConfig.TargetSecret, r.provisioningParameters.TargetSecret)
 	updateString(r.input.ClusterConfig.GardenerConfig.Purpose, r.provisioningParameters.Purpose)
+	if r.provisioningParameters.LicenceType != nil {
+		r.input.ClusterConfig.GardenerConfig.LicenceType = r.provisioningParameters.LicenceType
+	}
 
 	r.hyperscalerInputProvider.ApplyParameters(r.input.ClusterConfig, r.provisioningParameters)
 
 	return nil
 }
 
-func (r *RuntimeInput) disableNotSelectedComponents() error {
-	toDisable := r.optionalComponentsService.ComputeComponentsToDisable(r.provisioningParameters.OptionalComponentsToInstall)
+func (r *RuntimeInput) resolveOptionalComponents() error {
+	r.mutex.Lock("enabledOptionalComponents")
+	defer r.mutex.Unlock("enabledOptionalComponents")
+
+	componentsToInstall := []string{}
+	componentsToInstall = append(componentsToInstall, r.provisioningParameters.OptionalComponentsToInstall...)
+	for name := range r.enabledOptionalComponents {
+		componentsToInstall = append(componentsToInstall, name)
+	}
+	toDisable := r.optionalComponentsService.ComputeComponentsToDisable(componentsToInstall)
 
 	filterOut, err := r.optionalComponentsService.ExecuteDisablers(r.input.KymaConfig.Components, toDisable...)
 	if err != nil {
 		return errors.Wrapf(err, "while disabling components %v", toDisable)
+	}
+
+	r.input.KymaConfig.Components = filterOut
+
+	return nil
+}
+
+func (r *RuntimeInput) disableComponents() error {
+	filterOut, err := r.componentsDisabler.DisableComponents(r.input.KymaConfig.Components)
+	if err != nil {
+		return err
 	}
 
 	r.input.KymaConfig.Components = filterOut

@@ -67,15 +67,11 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 	case existingOperation != nil && !dberr.IsNotFound(errStorage):
 		logger = logger.WithField("operationID", existingOperation.ID)
 		if existingOperation.State == domain.Failed {
-			// reprocess operation again
-			existingOperation.State = domain.InProgress
-			_, err = b.operationsStorage.UpdateDeprovisioningOperation(*existingOperation)
+			err := b.reprocessOperation(existingOperation)
 			if err != nil {
-				return domain.DeprovisionServiceSpec{}, errors.New("cannot update existing operation")
+				return domain.DeprovisionServiceSpec{}, errors.Wrap(err, "while reprocessing operation")
 			}
-
 			logger.Info("Reprocessing failed deprovisioning of runtime")
-
 			b.queue.Add(existingOperation.ID)
 		}
 		// return existing operation
@@ -105,4 +101,14 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		IsAsync:       true,
 		OperationData: operationID,
 	}, nil
+}
+
+func (b *DeprovisionEndpoint) reprocessOperation(operation *internal.DeprovisioningOperation) error {
+	operation.State = domain.InProgress
+	operation.ProvisionerOperationID = ""
+	_, err := b.operationsStorage.UpdateDeprovisioningOperation(*operation)
+	if err != nil {
+		return errors.New("cannot update existing operation")
+	}
+	return nil
 }

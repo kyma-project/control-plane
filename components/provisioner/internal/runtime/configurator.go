@@ -74,22 +74,7 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 		StringData: configurationData,
 	}
 
-	configMap := &core.ConfigMap{
-		ObjectMeta: meta.ObjectMeta{
-			Name:      AgentConfigurationSecretName,
-			Namespace: namespace,
-		},
-		Data: configurationData,
-	}
-
-	// Creating Config Map is deprecated
-	// It should be removed when Kyma older than 1.12 is no longer supported
-	_, k8serr := k8sClient.CoreV1().ConfigMaps(namespace).Create(configMap)
-	if k8serr != nil {
-		return util.K8SErrorToAppError(k8serr).Append("error creating Config Map on Runtime")
-	}
-
-	_, k8serr = k8sClient.CoreV1().Secrets(namespace).Create(secret)
+	_, k8serr := k8sClient.CoreV1().Secrets(namespace).Create(secret)
 	if k8serr != nil {
 		return util.K8SErrorToAppError(k8serr).Append("error creating Secret on Runtime")
 	}

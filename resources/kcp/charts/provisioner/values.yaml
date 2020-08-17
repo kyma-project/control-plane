@@ -1,7 +1,7 @@
 deployment:
   replicaCount: 1
   image:
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   resources: {}
   securityContext: # Set on container level
     runAsUser: 2000
@@ -28,6 +28,9 @@ gardener:
   waitingForClusterDeletionTimeout: 4h
   clusterCleanupTimeout: 20m
   clusterCleanupResourceSelector: "https://service-manager."
+  defaultEnableKubernetesVersionAutoUpdate: false
+  defaultEnableMachineImageVersionAutoUpdate: false
+  forceAllowPrivilegedContainers: false
 
 kymaRelease:
   preReleases:
@@ -55,5 +58,7 @@ tests:
     azureSecret: "" # Name of Gardener secret for Azure
     gcpSecret: "" # Name of Gardener secret for GCP
   kyma:
-    version: "1.12.0"
+    version: "1.14.0"
+  kubernetes:
+    version: "1.18.5"
   queryLogging: false

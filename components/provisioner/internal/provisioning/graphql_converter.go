@@ -67,23 +67,28 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 	}
 
 	return &gqlschema.GardenerConfig{
-		Name:                   &config.Name,
-		KubernetesVersion:      &config.KubernetesVersion,
-		DiskType:               &config.DiskType,
-		VolumeSizeGb:           &config.VolumeSizeGB,
-		MachineType:            &config.MachineType,
-		Provider:               &config.Provider,
-		Purpose:                config.Purpose,
-		LicenceType:            config.LicenceType,
-		Seed:                   &config.Seed,
-		TargetSecret:           &config.TargetSecret,
-		WorkerCidr:             &config.WorkerCidr,
-		Region:                 &config.Region,
-		AutoScalerMin:          &config.AutoScalerMin,
-		AutoScalerMax:          &config.AutoScalerMax,
-		MaxSurge:               &config.MaxSurge,
-		MaxUnavailable:         &config.MaxUnavailable,
-		ProviderSpecificConfig: providerSpecificConfig,
+		Name:                                &config.Name,
+		KubernetesVersion:                   &config.KubernetesVersion,
+		DiskType:                            &config.DiskType,
+		VolumeSizeGb:                        &config.VolumeSizeGB,
+		MachineType:                         &config.MachineType,
+		MachineImage:                        config.MachineImage,
+		MachineImageVersion:                 config.MachineImageVersion,
+		Provider:                            &config.Provider,
+		Purpose:                             config.Purpose,
+		LicenceType:                         config.LicenceType,
+		Seed:                                &config.Seed,
+		TargetSecret:                        &config.TargetSecret,
+		WorkerCidr:                          &config.WorkerCidr,
+		Region:                              &config.Region,
+		AutoScalerMin:                       &config.AutoScalerMin,
+		AutoScalerMax:                       &config.AutoScalerMax,
+		MaxSurge:                            &config.MaxSurge,
+		MaxUnavailable:                      &config.MaxUnavailable,
+		EnableKubernetesVersionAutoUpdate:   &config.EnableKubernetesVersionAutoUpdate,
+		EnableMachineImageVersionAutoUpdate: &config.EnableMachineImageVersionAutoUpdate,
+		AllowPrivilegedContainers:           &config.AllowPrivilegedContainers,
+		ProviderSpecificConfig:              providerSpecificConfig,
 	}
 }
 
@@ -132,6 +137,8 @@ func (c graphQLConverter) operationTypeToGraphQLType(operationType model.Operati
 		return gqlschema.OperationTypeDeprovision
 	case model.Upgrade:
 		return gqlschema.OperationTypeUpgrade
+	case model.UpgradeShoot:
+		return gqlschema.OperationTypeUpgradeShoot
 	case model.ReconnectRuntime:
 		return gqlschema.OperationTypeReconnectRuntime
 	default:

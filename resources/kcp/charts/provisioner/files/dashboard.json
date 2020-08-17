@@ -74,7 +74,7 @@
       "pluginVersion": "6.7.3",
       "targets": [
         {
-          "expr": "SUM(compass_provisioner_in_progress_provision_operations_total)",
+          "expr": "SUM(kcp_provisioner_in_progress_provision_operations_total)",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -140,7 +140,7 @@
       "pluginVersion": "6.7.3",
       "targets": [
         {
-          "expr": "SUM(compass_provisioner_in_progress_deprovision_operations_total)",
+          "expr": "SUM(kcp_provisioner_in_progress_deprovision_operations_total)",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -204,7 +204,7 @@
       "pluginVersion": "6.7.3",
       "targets": [
         {
-          "expr": "SUM(compass_provisioner_in_progress_upgrade_operations_total)",
+          "expr": "SUM(kcp_provisioner_in_progress_upgrade_operations_total)",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -1187,8 +1187,8 @@
       {
         "current": {
           "selected": false,
-          "text": "compass-provisioner-metrics",
-          "value": "compass-provisioner-metrics"
+          "text": "kcp-provisioner-metrics",
+          "value": "kcp-provisioner-metrics"
         },
         "hide": 2,
         "label": null,
@@ -1196,11 +1196,11 @@
         "options": [
           {
             "selected": true,
-            "text": "compass-provisioner-metrics",
-            "value": "compass-provisioner-metrics"
+            "text": "kcp-provisioner-metrics",
+            "value": "kcp-provisioner-metrics"
           }
         ],
-        "query": "compass-provisioner-metrics",
+        "query": "kcp-provisioner-metrics",
         "skipUrlSync": false,
         "type": "constant"
       }

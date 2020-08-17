@@ -34,7 +34,7 @@ KEB binary allows you to override some configuration parameters. You can specify
 | **APP_PROVISIONING_AZURE_SECRET_NAME** | Defines the name of the Secret which holds credentials to Azure. | None |
 | **APP_AUTH_USERNAME** | Specifies the Kyma Environment Service Broker authentication username. | None |
 | **APP_AUTH_PASSWORD** | Specifies the Kyma Environment Service Broker authentication password. | None |
-| **APP_DIRECTOR_NAMESPACE** | Specifies the Namespace in which Director is deployed. | `compass-system` |
+| **APP_DIRECTOR_NAMESPACE** | Specifies the Namespace in which Director is deployed. | `kcp-system` |
 | **APP_DIRECTOR_URL** | Specifies the Director's URL. | `http://compass-director.compass-system.svc.cluster.local:3000/graphql` |
 | **APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME** | Specifies the name of the Secret created by the Integration System. | `compass-kyma-environment-broker-credentials` |
 | **APP_DIRECTOR_SKIP_CERT_VERIFICATION** | Specifies whether TLS checks the presented certificates. | `false` |

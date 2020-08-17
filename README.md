@@ -2,18 +2,25 @@
 
 ## Overview
 
-> **:warning: WARNING:** This repo is in a very early stage. Use it at your own risk.
+>**CAUTION:** This repository is in a very early stage. Use it at your own risk.
 
-Kyma Control Plane is a central system to manage Kyma Runtimes.
+Kyma Control Plane (KCP) is a central system to manage Kyma Runtimes.
+
+For more information on KCP and its components, read the [documentation](https://kyma-project.io/docs/control-plane/).
 
 ## Prerequisites
 
 - [Docker](https://www.docker.com/get-started)
-- [Minikube](https://github.com/kubernetes/minikube) 1.0.1
-- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) 1.12.5
+- [Minikube](https://github.com/kubernetes/minikube) 1.6.2
+- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) 1.16.3
 - [Kyma CLI](https://github.com/kyma-project/cli) stable
 
 ## Installation
+
+### Dependencies
+
+Kyma Control Plane depends on [Kyma](https://github.com/kyma-project/kyma) and [Compass](https://github.com/kyma-incubator/compass).
+For local development and CI integration jobs, fixed Kyma and Compass versions are used. To change Kyma or Compass version, see the [`README.md`](./installation/resources/README.md) in the `installation/resources` directory. 
 
 ### Local installation with Kyma
 
@@ -27,7 +34,7 @@ You can also specify Kyma version, such as 1.6 or newer:
 ./installation/cmd/run.sh {version}
 ```
 
-### Testing
+## Testing
 
 Kyma Control Plane, as a part of Kyma, uses [Octopus](https://github.com/kyma-incubator/octopus/blob/master/README.md) for testing. To run the Kyma Control Plane tests, run:
 

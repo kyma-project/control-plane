@@ -1,10 +1,9 @@
 package provisioning
 
 import (
+	"fmt"
 	"testing"
 	"time"
-
-	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
@@ -171,14 +170,21 @@ func newFakeClientWithTenant(timeToReady time.Duration) (*lms.FakeClient, string
 
 func newInputCreator() *simpleInputCreator {
 	return &simpleInputCreator{
-		overrides: make(map[string][]*gqlschema.ConfigEntryInput, 0),
-		labels:    make(map[string]string),
+		overrides:         make(map[string][]*gqlschema.ConfigEntryInput, 0),
+		labels:            make(map[string]string),
+		enabledComponents: []string{},
 	}
 }
 
 type simpleInputCreator struct {
-	overrides map[string][]*gqlschema.ConfigEntryInput
-	labels    map[string]string
+	overrides         map[string][]*gqlschema.ConfigEntryInput
+	labels            map[string]string
+	enabledComponents []string
+}
+
+func (c *simpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionInputCreator {
+	c.enabledComponents = append(c.enabledComponents, name)
+	return c
 }
 
 func (c *simpleInputCreator) SetLabel(key, val string) internal.ProvisionInputCreator {
@@ -220,10 +226,18 @@ func (c *simpleInputCreator) AssertOverride(t *testing.T, component string, cei 
 	assert.Failf(t, "Overrides assert failed", "Expected component override not found: %+v", cei)
 }
 
+func (c *simpleInputCreator) AssertNoOverrides(t *testing.T) {
+	assert.Empty(t, c.overrides)
+}
+
 func (c *simpleInputCreator) AssertLabel(t *testing.T, key, expectedValue string) {
 	value, found := c.labels[key]
 	require.True(t, found)
 	assert.Equal(t, expectedValue, value)
+}
+
+func (c *simpleInputCreator) AssertEnabledComponent(t *testing.T, componentName string) {
+	assert.Contains(t, c.enabledComponents, componentName)
 }
 
 type asserter interface {

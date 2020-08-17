@@ -85,42 +85,67 @@ type GCPProviderConfigInput struct {
 }
 
 type GardenerConfig struct {
-	Name                   *string                `json:"name"`
-	KubernetesVersion      *string                `json:"kubernetesVersion"`
-	VolumeSizeGb           *int                   `json:"volumeSizeGB"`
-	MachineType            *string                `json:"machineType"`
-	Region                 *string                `json:"region"`
-	Provider               *string                `json:"provider"`
-	Purpose                *string                `json:"purpose"`
-	LicenceType            *string                `json:"licenceType"`
-	Seed                   *string                `json:"seed"`
-	TargetSecret           *string                `json:"targetSecret"`
-	DiskType               *string                `json:"diskType"`
-	WorkerCidr             *string                `json:"workerCidr"`
-	AutoScalerMin          *int                   `json:"autoScalerMin"`
-	AutoScalerMax          *int                   `json:"autoScalerMax"`
-	MaxSurge               *int                   `json:"maxSurge"`
-	MaxUnavailable         *int                   `json:"maxUnavailable"`
-	ProviderSpecificConfig ProviderSpecificConfig `json:"providerSpecificConfig"`
+	Name                                *string                `json:"name"`
+	KubernetesVersion                   *string                `json:"kubernetesVersion"`
+	TargetSecret                        *string                `json:"targetSecret"`
+	Provider                            *string                `json:"provider"`
+	Region                              *string                `json:"region"`
+	Seed                                *string                `json:"seed"`
+	MachineType                         *string                `json:"machineType"`
+	MachineImage                        *string                `json:"machineImage"`
+	MachineImageVersion                 *string                `json:"machineImageVersion"`
+	DiskType                            *string                `json:"diskType"`
+	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
+	WorkerCidr                          *string                `json:"workerCidr"`
+	AutoScalerMin                       *int                   `json:"autoScalerMin"`
+	AutoScalerMax                       *int                   `json:"autoScalerMax"`
+	MaxSurge                            *int                   `json:"maxSurge"`
+	MaxUnavailable                      *int                   `json:"maxUnavailable"`
+	Purpose                             *string                `json:"purpose"`
+	LicenceType                         *string                `json:"licenceType"`
+	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate"`
+	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
+	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
+	ProviderSpecificConfig              ProviderSpecificConfig `json:"providerSpecificConfig"`
 }
 
 type GardenerConfigInput struct {
-	KubernetesVersion      string                 `json:"kubernetesVersion"`
-	VolumeSizeGb           int                    `json:"volumeSizeGB"`
-	MachineType            string                 `json:"machineType"`
-	Region                 string                 `json:"region"`
-	Provider               string                 `json:"provider"`
-	Purpose                *string                `json:"purpose"`
-	LicenceType            *string                `json:"licenceType"`
-	TargetSecret           string                 `json:"targetSecret"`
-	DiskType               string                 `json:"diskType"`
-	WorkerCidr             string                 `json:"workerCidr"`
-	AutoScalerMin          int                    `json:"autoScalerMin"`
-	AutoScalerMax          int                    `json:"autoScalerMax"`
-	MaxSurge               int                    `json:"maxSurge"`
-	MaxUnavailable         int                    `json:"maxUnavailable"`
-	ProviderSpecificConfig *ProviderSpecificInput `json:"providerSpecificConfig"`
-	Seed                   *string                `json:"seed"`
+	KubernetesVersion                   string                 `json:"kubernetesVersion"`
+	Provider                            string                 `json:"provider"`
+	TargetSecret                        string                 `json:"targetSecret"`
+	Region                              string                 `json:"region"`
+	MachineType                         string                 `json:"machineType"`
+	MachineImage                        *string                `json:"machineImage"`
+	MachineImageVersion                 *string                `json:"machineImageVersion"`
+	DiskType                            string                 `json:"diskType"`
+	VolumeSizeGb                        int                    `json:"volumeSizeGB"`
+	WorkerCidr                          string                 `json:"workerCidr"`
+	AutoScalerMin                       int                    `json:"autoScalerMin"`
+	AutoScalerMax                       int                    `json:"autoScalerMax"`
+	MaxSurge                            int                    `json:"maxSurge"`
+	MaxUnavailable                      int                    `json:"maxUnavailable"`
+	Purpose                             *string                `json:"purpose"`
+	LicenceType                         *string                `json:"licenceType"`
+	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate"`
+	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
+	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
+	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
+	Seed                                *string                `json:"seed"`
+}
+
+type GardenerUpgradeInput struct {
+	KubernetesVersion                   *string                `json:"kubernetesVersion"`
+	MachineType                         *string                `json:"machineType"`
+	DiskType                            *string                `json:"diskType"`
+	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
+	AutoScalerMin                       *int                   `json:"autoScalerMin"`
+	AutoScalerMax                       *int                   `json:"autoScalerMax"`
+	MaxSurge                            *int                   `json:"maxSurge"`
+	MaxUnavailable                      *int                   `json:"maxUnavailable"`
+	Purpose                             *string                `json:"purpose"`
+	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate"`
+	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
+	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
 }
 
 type KymaConfig struct {
@@ -182,6 +207,10 @@ type UpgradeRuntimeInput struct {
 	KymaConfig *KymaConfigInput `json:"kymaConfig"`
 }
 
+type UpgradeShootInput struct {
+	GardenerConfig *GardenerUpgradeInput `json:"gardenerConfig"`
+}
+
 type OperationState string
 
 const (
@@ -232,6 +261,7 @@ type OperationType string
 const (
 	OperationTypeProvision        OperationType = "Provision"
 	OperationTypeUpgrade          OperationType = "Upgrade"
+	OperationTypeUpgradeShoot     OperationType = "UpgradeShoot"
 	OperationTypeDeprovision      OperationType = "Deprovision"
 	OperationTypeReconnectRuntime OperationType = "ReconnectRuntime"
 )
@@ -239,13 +269,14 @@ const (
 var AllOperationType = []OperationType{
 	OperationTypeProvision,
 	OperationTypeUpgrade,
+	OperationTypeUpgradeShoot,
 	OperationTypeDeprovision,
 	OperationTypeReconnectRuntime,
 }
 
 func (e OperationType) IsValid() bool {
 	switch e {
-	case OperationTypeProvision, OperationTypeUpgrade, OperationTypeDeprovision, OperationTypeReconnectRuntime:
+	case OperationTypeProvision, OperationTypeUpgrade, OperationTypeUpgradeShoot, OperationTypeDeprovision, OperationTypeReconnectRuntime:
 		return true
 	}
 	return false

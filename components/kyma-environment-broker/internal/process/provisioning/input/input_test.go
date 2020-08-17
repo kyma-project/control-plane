@@ -3,6 +3,8 @@ package input
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input/automock"
@@ -13,7 +15,94 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 )
+
+func TestShouldEnableComponents(t *testing.T) {
+	// given
+
+	// One base component: dex
+	// Two optional components: Kiali and Tracing
+	// The test checks, if EnableOptionalComponent method adds an optional component
+	optionalComponentsDisablers := runtime.ComponentsDisablers{
+		components.Kiali:   runtime.NewGenericComponentDisabler(components.Kiali),
+		components.Tracing: runtime.NewGenericComponentDisabler(components.Tracing),
+	}
+	componentsProvider := &automock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
+		Return([]v1alpha1.KymaComponent{
+			{Name: components.Kiali},
+			{Name: components.Tracing},
+			{Name: "dex"},
+		}, nil)
+
+	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+	assert.NoError(t, err)
+	creator, err := builder.ForPlan(broker.AzurePlanID, "")
+	require.NoError(t, err)
+
+	// when
+	creator.EnableOptionalComponent(components.Kiali)
+	input, err := creator.Create()
+	require.NoError(t, err)
+
+	// then
+	assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
+		Component: components.Kiali,
+	})
+	assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
+		Component: "dex",
+	})
+	assert.Len(t, input.KymaConfig.Components, 2)
+}
+func TestShouldDisableComponents(t *testing.T) {
+	// given
+	optionalComponentsDisablers := runtime.ComponentsDisablers{}
+	componentsProvider := &automock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
+		Return([]v1alpha1.KymaComponent{
+			{Name: components.Kiali},
+			{Name: components.Tracing},
+			{Name: components.Backup},
+		}, nil)
+
+	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+	assert.NoError(t, err)
+	creator, err := builder.ForPlan(broker.AzurePlanID, "")
+	require.NoError(t, err)
+
+	// when
+	input, err := creator.Create()
+	require.NoError(t, err)
+
+	// then
+	assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
+		Component: components.Tracing,
+	})
+	assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
+		Component: components.Kiali,
+	})
+	assert.Len(t, input.KymaConfig.Components, 2)
+}
+
+func TestDisabledComponentsForPlanNotExist(t *testing.T) {
+	// given
+	optionalComponentsDisablers := runtime.ComponentsDisablers{}
+	componentsProvider := &automock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
+		Return([]v1alpha1.KymaComponent{
+			{Name: components.Kiali},
+			{Name: components.Tracing},
+			{Name: components.Backup},
+		}, nil)
+
+	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+	assert.NoError(t, err)
+	// when
+	_, err = builder.ForPlan("invalid-plan", "")
+	require.Error(t, err)
+}
 
 func TestInputBuilderFactoryOverrides(t *testing.T) {
 	t.Run("should append overrides for the same components multiple times", func(t *testing.T) {
@@ -33,7 +122,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, componentsProvider, Config{}, "not-important")
+		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
 		creator, err := builder.ForPlan(broker.AzurePlanID, "")
 		require.NoError(t, err)
@@ -70,7 +159,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-		builder, err := NewInputBuilderFactory(optComponentsSvc, componentsProvider, Config{}, "not-important")
+		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
 		creator, err := builder.ForPlan(broker.AzurePlanID, "")
 		require.NoError(t, err)
@@ -102,7 +191,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 
 	optComponentsSvc := &automock.OptionalComponentService{}
 	defer optComponentsSvc.AssertExpectations(t)
-	optComponentsSvc.On("ComputeComponentsToDisable", []string(nil)).Return(toDisableComponents)
+	optComponentsSvc.On("ComputeComponentsToDisable", []string{}).Return(toDisableComponents)
 	optComponentsSvc.On("ExecuteDisablers", mappedComponentList, toDisableComponents[0]).Return(mappedComponentList, nil)
 
 	config := Config{
@@ -112,7 +201,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(inputComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
-	factory, err := NewInputBuilderFactory(optComponentsSvc, componentsProvider, config, "1.10.0")
+	factory, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, config, "1.10.0")
 	assert.NoError(t, err)
 
 	// when
@@ -139,6 +228,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	assert.Equal(t, "azure-secret", input.ClusterConfig.GardenerConfig.TargetSecret)
 	require.NotNil(t, input.ClusterConfig.GardenerConfig.Purpose)
 	assert.Equal(t, "development", *input.ClusterConfig.GardenerConfig.Purpose)
+	assert.Nil(t, input.ClusterConfig.GardenerConfig.LicenceType)
 	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
 	assert.Equal(t, &gqlschema.Labels{
 		"label1": "value1",
@@ -175,7 +265,7 @@ func dummyOptionalComponentServiceMock(inputComponentList []v1alpha1.KymaCompone
 	mappedComponentList := mapToGQLComponentConfigurationInput(inputComponentList)
 
 	optComponentsSvc := &automock.OptionalComponentService{}
-	optComponentsSvc.On("ComputeComponentsToDisable", []string(nil)).Return([]string{})
+	optComponentsSvc.On("ComputeComponentsToDisable", []string{}).Return([]string{})
 	optComponentsSvc.On("ExecuteDisablers", mappedComponentList).Return(mappedComponentList, nil)
 	return optComponentsSvc
 }
@@ -190,4 +280,16 @@ func assertContainsAllOverrides(t *testing.T, gotOverrides []*gqlschema.ConfigEn
 	for _, o := range expected {
 		assert.Contains(t, gotOverrides, o)
 	}
+}
+
+func assertComponentExists(t *testing.T,
+	components []*gqlschema.ComponentConfigurationInput,
+	expected gqlschema.ComponentConfigurationInput) {
+
+	for _, component := range components {
+		if component.Component == expected.Component {
+			return
+		}
+	}
+	assert.Failf(t, "component list does not contain %s", expected.Component)
 }

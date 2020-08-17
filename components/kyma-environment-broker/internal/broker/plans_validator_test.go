@@ -16,12 +16,17 @@ func TestNewPlansSchemaValidatorErrors(t *testing.T) {
 		"missing name, not valid components list": {
 			againstPlans: []string{GCPPlanID, AzurePlanID},
 			inputJSON:    `{"components": ["wrong component name"]}`,
-			expErr:       `(root): name is required, components.0: components.0 must be one of the following: "Kiali", "Tracing"`,
+			expErr:       `(root): name is required, components.0: components.0 must be one of the following: "kiali", "tracing"`,
 		},
 		"missing name, not valid machine type": {
 			againstPlans: []string{AzurePlanID},
 			inputJSON:    `{"name": "wrong-machType", "machineType": "WrongName"}`,
 			expErr:       `machineType: machineType must be one of the following: "Standard_D8_v3"`,
+		},
+		"missing name, not valid region": {
+			againstPlans: []string{GcpTrialPlanID},
+			inputJSON:    `{"region": "munich"}`,
+			expErr:       `(root): name is required, region: region must be one of the following: "europe-west4", "us-east4"`,
 		},
 	}
 	for tN, tC := range tests {
@@ -50,7 +55,7 @@ func TestNewPlansSchemaValidatorSuccess(t *testing.T) {
 	validator, err := NewPlansSchemaValidator()
 	require.NoError(t, err)
 
-	for _, id := range []string{GCPPlanID, AzurePlanID} {
+	for _, id := range []string{GCPPlanID, AzurePlanID, GcpTrialPlanID, AzureTrialPlanID} {
 		// when
 		result, err := validator[id].ValidateString(validJSON)
 		require.NoError(t, err)

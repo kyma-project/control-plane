@@ -4,6 +4,10 @@ import (
 	"reflect"
 )
 
+const (
+	LicenceTypeLite = "TestDevelopmentAndDemo"
+)
+
 type ProvisioningParameters struct {
 	PlanID     string                    `json:"plan_id"`
 	ServiceID  string                    `json:"service_id"`
@@ -23,6 +27,9 @@ func (p ProvisioningParameters) IsEqual(input ProvisioningParameters) bool {
 	if p.ServiceID != input.ServiceID {
 		return false
 	}
+	if p.PlatformRegion != input.PlatformRegion {
+		return false
+	}
 
 	if !reflect.DeepEqual(p.ErsContext, input.ErsContext) {
 		return false
@@ -35,12 +42,16 @@ func (p ProvisioningParameters) IsEqual(input ProvisioningParameters) bool {
 }
 
 type ProvisioningParametersDTO struct {
-	Name                        string   `json:"name"`
-	TargetSecret                *string  `json:"targetSecret"`
-	VolumeSizeGb                *int     `json:"volumeSizeGb"`
-	MachineType                 *string  `json:"machineType"`
-	Region                      *string  `json:"region"`
-	Purpose                     *string  `json:"purpose"`
+	Name         string  `json:"name"`
+	TargetSecret *string `json:"targetSecret"`
+	VolumeSizeGb *int    `json:"volumeSizeGb"`
+	MachineType  *string `json:"machineType"`
+	Region       *string `json:"region"`
+	Purpose      *string `json:"purpose"`
+	// LicenceType - based on this parameter, some options can be enabled/disabled when preparing the input
+	// for the provisioner e.g. use default overrides for SKR instead overrides from resource
+	// with "provisioning-runtime-override" label when LicenceType is "TestDevelopmentAndDemo"
+	LicenceType                 *string  `json:"licence_type"`
 	Zones                       []string `json:"zones"`
 	AutoScalerMin               *int     `json:"autoScalerMin"`
 	AutoScalerMax               *int     `json:"autoScalerMax"`

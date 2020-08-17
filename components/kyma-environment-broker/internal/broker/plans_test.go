@@ -9,13 +9,15 @@ import (
 
 func TestSchemaGenerator(t *testing.T) {
 	tests := []struct {
-		name      string
-		generator func() []byte
-		want      string
+		name         string
+		generator    func([]string) []byte
+		machineTypes []string
+		want         string
 	}{
 		{
-			name:      "Azureschema is correct",
-			generator: AzureSchema,
+			name:         "Azure schema is correct",
+			generator:    AzureSchema,
+			machineTypes: []string{"Standard_D8_v3"},
 			want: `{
 			"$schema": "http://json-schema.org/draft-04/schema#",
 			"type": "object",
@@ -25,7 +27,7 @@ func TestSchemaGenerator(t *testing.T) {
 			"items": [
 		{
 			"type": "string",
-			"enum": ["Kiali", "Tracing"]
+			"enum": ["kiali", "tracing"]
 		}
 		],
 			"additionalItems": false,
@@ -75,8 +77,9 @@ func TestSchemaGenerator(t *testing.T) {
 		]
 		}`},
 		{
-			name:      "GCPschema is correct",
-			generator: GCPSchema,
+			name:         "AzureLite schema is correct",
+			generator:    AzureSchema,
+			machineTypes: []string{"Standard_D4_v3"},
 			want: `{
 			"$schema": "http://json-schema.org/draft-04/schema#",
 			"type": "object",
@@ -86,7 +89,69 @@ func TestSchemaGenerator(t *testing.T) {
 			"items": [
 		{
 			"type": "string",
-			"enum": ["Kiali", "Tracing"]
+			"enum": ["kiali", "tracing"]
+		}
+		],
+			"additionalItems": false,
+			"uniqueItems": true
+		},
+			"name": {
+			"type": "string"
+		},
+			"diskType": {
+			"type": "string"
+		},
+			"volumeSizeGb": {
+			"type": "integer",
+			"minimum": 50
+		},
+			"machineType": {
+			"type": "string",
+			"enum": ["Standard_D4_v3"]
+		},
+			"region": {
+			"type": "string",
+			"enum": [ "centralus", "eastus", "westus2", "northeurope", "uksouth", "japaneast", "southeastasia", "westeurope" ]
+		},
+			"zones": {
+			"type": "array",
+			"items": [
+			{
+			  "type": "string"
+			}
+			]
+		},
+			"autoScalerMin": {
+			"type": "integer"
+		},
+			"autoScalerMax": {
+			"type": "integer"
+		},
+			"maxSurge": {
+			"type": "integer"
+		},
+			"maxUnavailable": {
+			"type": "integer"
+		}
+		},
+			"required": [
+			"name"
+		]
+		}`},
+		{
+			name:         "GCP schema is correct",
+			generator:    GCPSchema,
+			machineTypes: []string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"},
+			want: `{
+			"$schema": "http://json-schema.org/draft-04/schema#",
+			"type": "object",
+			"properties": {
+			"components": {
+			"type": "array",
+			"items": [
+		{
+			"type": "string",
+			"enum": ["kiali", "tracing"]
 		}
 		],
 			"additionalItems": false,
@@ -167,23 +232,99 @@ func TestSchemaGenerator(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var prettyWant bytes.Buffer
-			err := json.Indent(&prettyWant, []byte(tt.want), "", "  ")
-			if err != nil {
-				t.Error(err)
-				t.Fail()
-			}
+			got := tt.generator(tt.machineTypes)
+			validateSchema(t, got, tt.want)
 
-			got := tt.generator()
-			var prettyGot bytes.Buffer
-			err = json.Indent(&prettyGot, got, "", "  ")
-			if err != nil {
-				t.Error(err)
-				t.Fail()
-			}
-			if !reflect.DeepEqual(string(prettyGot.String()), prettyWant.String()) {
-				t.Errorf("Schema() = \n######### GOT ###########%v\n######### ENDGOT ########, want \n##### WANT #####%v\n##### ENDWANT #####", prettyGot.String(), prettyWant.String())
-			}
 		})
+	}
+}
+
+func TestTrialSchemaGenerator(t *testing.T) {
+	wantGcp := `{
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string",
+              "enum": [
+                "europe-west4",
+                "us-east4"
+              ]
+            },
+            "zones": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "europe-west4-a",
+                    "europe-west4-b",
+                    "europe-west4-c",
+                    "us-east4-a",
+                    "us-east4-b",
+                    "us-east4-c"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }`
+
+	gotGcp := GcpTrialSchema()
+	validateSchema(t, gotGcp, wantGcp)
+
+	wantAzure := `{
+	             "$schema": "http://json-schema.org/draft-04/schema#",
+	             "type": "object",
+	             "properties": {
+	               "name": {
+	                 "type": "string"
+	               },
+	               "region": {
+	                 "type": "string",
+	                 "enum": [
+	   				"eastus",
+	   				"westeurope"
+	                 ]
+	               },
+	               "zones": {
+	                 "type": "array",
+	                 "items": [
+	                   {
+	                     "type": "string"
+	                   }
+	                 ]
+	               }
+	             },
+	             "required": [
+	               "name"
+	             ]
+	           }`
+	gotAzure := AzureTrialSchema()
+	validateSchema(t, gotAzure, wantAzure)
+}
+
+func validateSchema(t *testing.T, got []byte, want string) {
+	var prettyWant bytes.Buffer
+	err := json.Indent(&prettyWant, []byte(want), "", "  ")
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+
+	var prettyGot bytes.Buffer
+	err = json.Indent(&prettyGot, got, "", "  ")
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+	if !reflect.DeepEqual(string(prettyGot.String()), prettyWant.String()) {
+		t.Errorf("Schema() = \n######### GOT ###########%v\n######### ENDGOT ########, want \n##### WANT #####%v\n##### ENDWANT #####", prettyGot.String(), prettyWant.String())
 	}
 }

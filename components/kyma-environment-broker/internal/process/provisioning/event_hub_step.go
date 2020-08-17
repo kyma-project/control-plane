@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
+
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/sirupsen/logrus"
 
@@ -24,10 +26,8 @@ const (
 
 	kafkaPort = "9093"
 
-	k8sSecretNamespace                = "knative-eventing"
-	componentNameKnativeEventing      = "knative-eventing"
-	componentNameKnativeEventingKafka = "knative-eventing-kafka"
-	kafkaProvider                     = "azure"
+	k8sSecretNamespace = "knative-eventing"
+	kafkaProvider      = "azure"
 
 	// prefix is added before the created Azure resources
 	// to satisfy Azure naming validation: https://docs.microsoft.com/en-us/rest/api/servicebus/create-namespace
@@ -141,8 +141,8 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	kafkaPassword := *accessKeys.PrimaryConnectionString
 
 	// append installation overrides
-	operation.InputCreator.AppendOverrides(componentNameKnativeEventing, getKnativeEventingOverrides())
-	operation.InputCreator.AppendOverrides(componentNameKnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, kafkaPort, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
+	operation.InputCreator.AppendOverrides(components.KnativeEventing, getKnativeEventingOverrides())
+	operation.InputCreator.AppendOverrides(components.KnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, kafkaPort, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
 
 	return operation, 0, nil
 }

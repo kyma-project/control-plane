@@ -1,8 +1,11 @@
 package environmentscleanup
 
 import (
+	"bytes"
 	"testing"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -40,8 +43,9 @@ func TestService_PerformCleanup(t *testing.T) {
 			InstanceID: "second-instance",
 			RuntimeID:  "some-runtime-id",
 		})
+		logger := logrus.New()
 
-		svc := NewService(gcMock, bcMock, memoryStorage.Instances(), maxShootAge, shootLabelSelector)
+		svc := NewService(gcMock, bcMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
 
 		// when
 		err := svc.PerformCleanup()
@@ -58,8 +62,9 @@ func TestService_PerformCleanup(t *testing.T) {
 		gcMock.On("List", mock.AnythingOfType("v1.ListOptions")).Return(&v1beta1.ShootList{}, errors.New("failed to reach gardener"))
 		bcMock := &mocks.BrokerClient{}
 		memoryStorage := storage.NewMemoryStorage()
+		logger := logrus.New()
 
-		svc := NewService(gcMock, bcMock, memoryStorage.Instances(), maxShootAge, shootLabelSelector)
+		svc := NewService(gcMock, bcMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
 
 		// when
 		err := svc.PerformCleanup()
@@ -81,8 +86,9 @@ func TestService_PerformCleanup(t *testing.T) {
 			InstanceID: "some-instance-id",
 			RuntimeID:  "not-matching-id",
 		})
+		logger := logrus.New()
 
-		svc := NewService(gcMock, bcMock, memoryStorage.Instances(), maxShootAge, shootLabelSelector)
+		svc := NewService(gcMock, bcMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
 
 		// when
 		err := svc.PerformCleanup()
@@ -105,8 +111,9 @@ func TestService_PerformCleanup(t *testing.T) {
 			InstanceID: fixInstanceID,
 			RuntimeID:  fixRuntimeID,
 		})
+		logger := logrus.New()
 
-		svc := NewService(gcMock, bcMock, memoryStorage.Instances(), maxShootAge, shootLabelSelector)
+		svc := NewService(gcMock, bcMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
 
 		// when
 		err := svc.PerformCleanup()
@@ -117,7 +124,7 @@ func TestService_PerformCleanup(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("should return error when shoot has no runtime id", func(t *testing.T) {
+	t.Run("should pass when shoot has no runtime id", func(t *testing.T) {
 		// given
 		gcMock := &mocks.GardenerClient{}
 		creationTime, parseErr := time.Parse(time.RFC3339, "2020-01-02T10:00:00-05:00")
@@ -148,7 +155,15 @@ func TestService_PerformCleanup(t *testing.T) {
 			RuntimeID:  fixRuntimeID,
 		})
 
-		svc := NewService(gcMock, bcMock, memoryStorage.Instances(), maxShootAge, shootLabelSelector)
+		var actualLog bytes.Buffer
+		logger := logrus.New()
+		logger.SetFormatter(&logrus.TextFormatter{
+			DisableTimestamp: true,
+		})
+		logger.SetOutput(&actualLog)
+		shouldContain := "has no runtime-id annotation"
+
+		svc := NewService(gcMock, bcMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
 
 		// when
 		err := svc.PerformCleanup()
@@ -156,7 +171,8 @@ func TestService_PerformCleanup(t *testing.T) {
 		// then
 		bcMock.AssertExpectations(t)
 		gcMock.AssertExpectations(t)
-		assert.Error(t, err)
+		assert.Contains(t, actualLog.String(), shouldContain)
+		assert.NoError(t, err)
 	})
 }
 

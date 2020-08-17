@@ -34,15 +34,17 @@ import (
 )
 
 const (
-	ProvisioningTimeout   = 90 * time.Minute
+	ProvisioningTimeout   = 180 * time.Minute
 	UpgradeTimeout        = 90 * time.Minute
-	DeprovisioningTimeout = 60 * time.Minute
+	UpgradeShootTimeout   = 35 * time.Minute
+	DeprovisioningTimeout = 240 * time.Minute
 
 	checkInterval = 10 * time.Second
 )
 
 type TestSuite struct {
 	TestId            string
+	HttpClient        http.Client
 	ProvisionerClient provisioner.Client
 	DirectorClient    director.Client
 
@@ -58,6 +60,7 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 	// TODO: Sleep ensures that the Istio Sidecar is up before running the tests. We can consider adding some health endpoint in the service to avoid hardcoded sleep.
 	time.Sleep(15 * time.Second)
 
+	httpClient := newHTTPClient(true)
 	provisionerClient := provisioner.NewProvisionerClient(config.InternalProvisionerURL, config.Tenant, config.QueryLogging)
 	directorClient, err := newDirectorClient(config)
 	if err != nil {
@@ -69,6 +72,7 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 	return &TestSuite{
 		TestId: testId,
 
+		HttpClient:        httpClient,
 		ProvisionerClient: provisionerClient,
 		DirectorClient:    directorClient,
 
@@ -100,6 +104,15 @@ func newDirectorClient(config testkit.TestConfig) (director.Client, error) {
 	oauthClient := oauth.NewOauthClient(httpClient, secretClient, config.DirectorClient.OauthCredentialsSecretName)
 
 	return director.NewDirectorClient(oauthClient, *graphQLClient, config.Tenant, logrus.WithField("service", "director_client")), nil
+}
+
+func newHTTPClient(skipCertVerification bool) http.Client {
+	return http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: skipCertVerification},
+		},
+		Timeout: 30 * time.Second,
+	}
 }
 
 func (ts *TestSuite) Setup() error {

@@ -58,7 +58,7 @@ spec:
               value: "0.0.0.0:{{ .Values.global.provisioner.graphql.port }}"
             - name: APP_API_ENDPOINT
               value: "/graphql"
-            - name: APP_CREDENTIALS_NAMESPACE
+            - name: APP_OAUTH_CREDENTIALS_NAMESPACE
               value: {{ .Release.Namespace }}
             - name: APP_DATABASE_USER
               valueFrom:
@@ -124,10 +124,14 @@ spec:
               value: {{ .Values.gardener.maintenanceWindowConfigPath }}
             - name: APP_GARDENER_CLUSTER_CLEANUP_RESOURCE_SELECTOR
               value: {{ .Values.gardener.clusterCleanupResourceSelector }}
+            - name: APP_GARDENER_DEFAULT_ENABLE_KUBERNETES_VERSION_AUTO_UPDATE
+              value: {{ .Values.gardener.defaultEnableKubernetesVersionAutoUpdate | quote }}
+            - name: APP_GARDENER_DEFAULT_ENABLE_MACHINE_IMAGE_VERSION_AUTO_UPDATE
+              value: {{ .Values.gardener.defaultEnableMachineImageVersionAutoUpdate | quote }}
+            - name: APP_GARDENER_FORCE_ALLOW_PRIVILEGED_CONTAINERS
+              value: {{ .Values.gardener.forceAllowPrivilegedContainers | quote }}
             - name: APP_LATEST_DOWNLOADED_RELEASES
               value: "5"
-            - name: APP_SUPPORT_ON_DEMAND_RELEASES
-              value: {{ .Values.kymaRelease.onDemand.enabled | quote }}
             - name: APP_DOWNLOAD_PRE_RELEASES
               value: {{ .Values.kymaRelease.preReleases.enabled | quote }}
             - name: APP_LOG_LEVEL

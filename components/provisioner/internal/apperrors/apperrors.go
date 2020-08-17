@@ -3,6 +3,7 @@ package apperrors
 import "fmt"
 
 const (
+	CodeBadGateway ErrCode = 502
 	CodeInternal   ErrCode = 500
 	CodeForbidden  ErrCode = 403
 	CodeBadRequest ErrCode = 400
@@ -23,6 +24,10 @@ type appError struct {
 
 func errorf(code ErrCode, format string, a ...interface{}) AppError {
 	return appError{code: code, message: fmt.Sprintf(format, a...)}
+}
+
+func BadGateway(format string, a ...interface{}) AppError {
+	return errorf(CodeBadGateway, format, a...)
 }
 
 func Internal(format string, a ...interface{}) AppError {
