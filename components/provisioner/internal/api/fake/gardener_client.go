@@ -1,6 +1,7 @@
 package fake
 
 import (
+	"context"
 	"testing"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -42,7 +43,7 @@ func (f fakeShootsInterface) Create(shoot *gardener_types.Shoot) (*gardener_type
 		return nil, err
 	}
 
-	create, err := f.client.Create(unstructuredShoot, metav1.CreateOptions{})
+	create, err := f.client.Create(context.Background(), unstructuredShoot, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +57,7 @@ func (f *fakeShootsInterface) Update(shoot *gardener_types.Shoot) (*gardener_typ
 	if err != nil {
 		return nil, err
 	}
-	updated, err := f.client.Update(obj, metav1.UpdateOptions{})
+	updated, err := f.client.Update(context.Background(), obj, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +69,8 @@ func (f *fakeShootsInterface) UpdateStatus(*gardener_types.Shoot) (*gardener_typ
 	return nil, nil
 }
 
-func (f *fakeShootsInterface) Delete(name string, options *metav1.DeleteOptions) error {
-	return f.client.Delete(name, options)
+func (f *fakeShootsInterface) Delete(name string, options metav1.DeleteOptions) error {
+	return f.client.Delete(context.Background(), name, options)
 }
 
 func (f *fakeShootsInterface) DeleteCollection(_ *metav1.DeleteOptions, _ metav1.ListOptions) error {
@@ -77,7 +78,7 @@ func (f *fakeShootsInterface) DeleteCollection(_ *metav1.DeleteOptions, _ metav1
 }
 
 func (f *fakeShootsInterface) Get(name string, options metav1.GetOptions) (*gardener_types.Shoot, error) {
-	obj, err := f.client.Get(name, options)
+	obj, err := f.client.Get(context.Background(), name, options)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +86,7 @@ func (f *fakeShootsInterface) Get(name string, options metav1.GetOptions) (*gard
 	return fromUnstructured(obj)
 }
 func (f *fakeShootsInterface) List(opts metav1.ListOptions) (*gardener_types.ShootList, error) {
-	list, err := f.client.List(opts)
+	list, err := f.client.List(context.Background(), opts)
 	if err != nil {
 		return nil, err
 	}

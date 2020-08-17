@@ -1,6 +1,7 @@
 package installation
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -65,7 +66,7 @@ func (s *serviceCatalogClient) PerformCleanup(resourceSelector string) error {
 func (s *serviceCatalogClient) listClusterServiceBroker(options metav1.ListOptions) (*v1beta1.ClusterServiceBrokerList, error) {
 	result := &v1beta1.ClusterServiceBrokerList{}
 	err := wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
-		csbList, err := s.client.ServicecatalogV1beta1().ClusterServiceBrokers().List(options)
+		csbList, err := s.client.ServicecatalogV1beta1().ClusterServiceBrokers().List(context.Background(), options)
 		if err != nil {
 			logrus.Errorf("while listing ClusterServiceBrokers: %s", err.Error())
 			return false, nil
@@ -79,7 +80,7 @@ func (s *serviceCatalogClient) listClusterServiceBroker(options metav1.ListOptio
 func (s *serviceCatalogClient) listClusterServiceClass(options metav1.ListOptions) (*v1beta1.ClusterServiceClassList, error) {
 	result := &v1beta1.ClusterServiceClassList{}
 	err := wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
-		cscList, err := s.client.ServicecatalogV1beta1().ClusterServiceClasses().List(options)
+		cscList, err := s.client.ServicecatalogV1beta1().ClusterServiceClasses().List(context.Background(), options)
 		if err != nil {
 			logrus.Errorf("while listing ClusterServiceClasses: %s", err.Error())
 			return false, nil
@@ -93,7 +94,7 @@ func (s *serviceCatalogClient) listClusterServiceClass(options metav1.ListOption
 func (s *serviceCatalogClient) listServiceInstance(options metav1.ListOptions) (*v1beta1.ServiceInstanceList, error) {
 	result := &v1beta1.ServiceInstanceList{}
 	err := wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
-		siList, err := s.client.ServicecatalogV1beta1().ServiceInstances(metav1.NamespaceAll).List(options)
+		siList, err := s.client.ServicecatalogV1beta1().ServiceInstances(metav1.NamespaceAll).List(context.Background(), options)
 		if err != nil {
 			logrus.Errorf("while listing ServiceInstances: %s", err.Error())
 			return false, nil
@@ -162,7 +163,7 @@ func (s *serviceCatalogClient) deleteServiceInstances(serviceInstances []v1beta1
 		logrus.Debugf("trying to delete ServiceInstance %q", serviceInstance.Name)
 
 		_ = wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
-			if err := s.client.ServicecatalogV1beta1().ServiceInstances(serviceInstance.Namespace).Delete(serviceInstance.Name, &metav1.DeleteOptions{}); err != nil {
+			if err := s.client.ServicecatalogV1beta1().ServiceInstances(serviceInstance.Namespace).Delete(context.Background(), serviceInstance.Name, metav1.DeleteOptions{}); err != nil {
 				logrus.Errorf("while removing ServiceInstance %s: %s", serviceInstance.Name, err.Error())
 				if apiErrors.IsNotFound(err) {
 					return true, nil

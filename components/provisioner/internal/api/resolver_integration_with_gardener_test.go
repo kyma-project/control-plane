@@ -180,8 +180,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			runtimeInput := config.provisioningInput.runtimeInput
 			upgradeShootInput := config.upgradeShootInput
 
-			fakeK8sClient.CoreV1().Secrets(compassSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
-			fakeK8sClient.CoreV1().ConfigMaps(compassSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
+			fakeK8sClient.CoreV1().Secrets(compassSystemNamespace).Delete(context.Background(), runtimeConfig.AgentConfigurationSecretName, metav1.DeleteOptions{})
+			fakeK8sClient.CoreV1().ConfigMaps(compassSystemNamespace).Delete(context.Background(), runtimeConfig.AgentConfigurationSecretName, metav1.DeleteOptions{})
 
 			directorServiceMock.Calls = nil
 			directorServiceMock.ExpectedCalls = nil
@@ -462,7 +462,7 @@ func createKubeconfigSecret(t *testing.T, s v1core.SecretInterface, shootName st
 		},
 		Data: map[string][]byte{"kubeconfig": []byte(mockedKubeconfig)},
 	}
-	_, err := s.Create(secret)
+	_, err := s.Create(context.Background(), secret, metav1.CreateOptions{})
 
 	require.NoError(t, err)
 }

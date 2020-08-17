@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"context"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
@@ -64,7 +65,7 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 
 		//then
 		require.NoError(t, err)
-		secret, k8serr := k8sClientProvider.fakeClient.CoreV1().Secrets(namespace).Get(AgentConfigurationSecretName, v1.GetOptions{})
+		secret, k8serr := k8sClientProvider.fakeClient.CoreV1().Secrets(namespace).Get(context.Background(), AgentConfigurationSecretName, v1.GetOptions{})
 		require.NoError(t, k8serr)
 
 		assertData := func(data map[string]string) {
