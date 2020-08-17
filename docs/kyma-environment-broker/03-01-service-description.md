@@ -36,13 +36,13 @@ These are the provisioning parameters that you can configure:
 
 These are the provisioning parameters for Azure that you can configure:
 
-<div tabs name="plans" group="plans">
+<div tabs name="azure-plans" group="azure-plans">
   <details>
-    <summary label="plan">
-    Azure
-    </summary>
+  <summary label="azure-plan">
+  Azure
+  </summary>
      
-| Parameter name | Type | Description | Required | Default value |
+| Parameter Name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
 | **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D8_v3` |
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
@@ -56,9 +56,9 @@ These are the provisioning parameters for Azure that you can configure:
 
   </details>
   <details>
-    <summary label="plan">
-    Azure Lite
-    </summary>
+  <summary label="azure-lite-plan">
+  Azure Lite
+  </summary>
     
 | Parameter Name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
@@ -74,9 +74,9 @@ These are the provisioning parameters for Azure that you can configure:
      
   </details>
   <details>
-    <summary label="plan">
-    Azure Trial
-    </summary>
+  <summary label="azure-trial-plan">
+  Azure Trial
+  </summary>
     
 | Parameter Name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
@@ -91,15 +91,15 @@ These are the provisioning parameters for Azure that you can configure:
 | **providerSpecificConfig.AzureConfig.VnetCidr** | string | Provides configuration variables specific for Azure. | No | `10.250.0.0/19` |
      
   </details>
-  </div>
+</div>
   
 These are the provisioning parameters for GCP that you can configure:
   
-  <div tabs name="plans" group="plans">
+<div tabs name="gcp-plans" group="gcp-plans">
   <details>
-    <summary label="plan">
-    GCP
-    </summary>
+  <summary label="gcp-plan">
+  GCP
+  </summary>
     
 | Parameter Name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
@@ -114,9 +114,9 @@ These are the provisioning parameters for GCP that you can configure:
      
   </details>
   <details>
-    <summary label="plan">
-    GCP Trial
-    </summary>
+  <summary label="gcp-trial-plan">
+  GCP Trial
+  </summary>
     
 | Parameter Name | Type  | Description |  Required  | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
