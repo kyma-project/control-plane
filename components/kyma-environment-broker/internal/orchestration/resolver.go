@@ -1,4 +1,4 @@
-package core
+package orchestration
 
 import (
 	"regexp"
@@ -200,10 +200,13 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 		}
 
 		runtime := Runtime{
-			instanceOpStatus.Instance,
-			shoot.Name,
-			shoot.Spec.Maintenance.TimeWindow.Begin,
-			shoot.Spec.Maintenance.TimeWindow.End,
+			InstanceID:             instanceOpStatus.InstanceID,
+			RuntimeID:              instanceOpStatus.RuntimeID,
+			GlobalAccountID:        instanceOpStatus.GlobalAccountID,
+			SubAccountID:           instanceOpStatus.SubAccountID,
+			ShootName:              shoot.Name,
+			MaintenanceWindowBegin: shoot.Spec.Maintenance.TimeWindow.Begin,
+			MaintenanceWindowEnd:   shoot.Spec.Maintenance.TimeWindow.End,
 		}
 		runtimes = append(runtimes, runtime)
 	}

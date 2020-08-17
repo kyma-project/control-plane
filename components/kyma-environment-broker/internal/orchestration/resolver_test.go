@@ -1,4 +1,4 @@
-package core
+package orchestration
 
 import (
 	"database/sql"
@@ -17,7 +17,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/core/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 )
 
