@@ -23,6 +23,11 @@ const (
 	AzureTrialPlanName = "azure_trial"
 )
 
+type TrialCloudRegion string
+
+const Europe TrialCloudRegion = "europe"
+const Us TrialCloudRegion = "us"
+
 func AzureRegions() []string {
 	return []string{
 		"centralus",
@@ -229,75 +234,33 @@ func AzureSchema(machineTypes []string) []byte {
 	return bytes
 }
 
-func GcpTrialSchema() []byte {
+func TrialSchema() []byte {
 	schema := `{
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "region": {
-              "type": "string",
-              "enum": [
-                "europe-west4",
-                "us-east4"
-              ]
-            },
-            "zones": {
-              "type": "array",
-              "items": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "europe-west4-a",
-                    "europe-west4-b",
-                    "europe-west4-c",
-                    "us-east4-a",
-                    "us-east4-b",
-                    "us-east4-c"
-                  ]
-                }
-              ]
-            }
-          },
-          "required": [
-            "name"
-          ]
-        }`
-
-	bytes := []byte(schema)
-	return bytes
-}
-
-func AzureTrialSchema() []byte {
-	schema := `{
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "region": {
-              "type": "string",
-              "enum": [
-				"eastus",
-				"westeurope"
-              ]
-            },
-            "zones": {
-              "type": "array",
-              "items": [
-                {
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "required": [
-            "name"
-          ]
-        }`
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string",
+      "enum": [
+        "europe",
+        "us"
+      ]
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "Azure",
+        "Gcp"
+      ]
+    }
+  },
+  "required": [
+    "name"
+  ]
+}`
 
 	bytes := []byte(schema)
 	return bytes
@@ -371,13 +334,13 @@ var Plans = map[string]struct {
 		},
 		provisioningRawSchema: AzureSchema([]string{"Standard_D4_v3"}),
 	},
-	GcpTrialPlanID: {
+	TrialPlanID: {
 		PlanDefinition: domain.ServicePlan{
-			ID:          GcpTrialPlanID,
-			Name:        GcpTrialPlanName,
-			Description: "GCP Trial",
+			ID:          TrialPlanID,
+			Name:        TrialPlanName,
+			Description: "Trial",
 			Metadata: &domain.ServicePlanMetadata{
-				DisplayName: "GCP Trial",
+				DisplayName: "Trial",
 			},
 			Schemas: &domain.ServiceSchemas{
 				Instance: domain.ServiceInstanceSchema{
@@ -387,31 +350,13 @@ var Plans = map[string]struct {
 				},
 			},
 		},
-		provisioningRawSchema: GcpTrialSchema(),
-	},
-	AzureTrialPlanID: {
-		PlanDefinition: domain.ServicePlan{
-			ID:          AzureTrialPlanID,
-			Name:        AzureTrialPlanName,
-			Description: "Azure Trial",
-			Metadata: &domain.ServicePlanMetadata{
-				DisplayName: "Azure Trial",
-			},
-			Schemas: &domain.ServiceSchemas{
-				Instance: domain.ServiceInstanceSchema{
-					Create: domain.Schema{
-						Parameters: make(map[string]interface{}),
-					},
-				},
-			},
-		},
-		provisioningRawSchema: AzureTrialSchema(),
+		provisioningRawSchema: TrialSchema(),
 	},
 }
 
 func IsTrialPlan(planId string) bool {
 	switch planId {
-	case GcpTrialPlanID, AzureTrialPlanID:
+	case TrialPlanID:
 		return true
 	default:
 		return false

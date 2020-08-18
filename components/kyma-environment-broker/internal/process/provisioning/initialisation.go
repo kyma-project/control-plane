@@ -74,7 +74,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-	if pp.PlanID == broker.GcpTrialPlanID {
+	if pp.PlanID == broker.TrialPlanID {
 		s.externalEvalCreator.disabled = true
 	}
 
@@ -112,7 +112,7 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 	}
 
 	log.Infof("create input creator for %q plan ID", pp.PlanID)
-	creator, err := s.inputBuilder.ForPlan(pp.PlanID, kymaVersion)
+	creator, err := s.inputBuilder.Create(pp)
 	switch {
 	case err == nil:
 		operation.InputCreator = creator

@@ -3,6 +3,8 @@ package provider
 import (
 	"fmt"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
@@ -10,6 +12,11 @@ import (
 const (
 	DefaultGCPRegion = "europe-west4"
 )
+
+var europeGcp = "europe-west4"
+var usGcp = "us-east4"
+
+var toGCPSpecific = map[string]*string{string(broker.Europe): &europeGcp, string(broker.Us): &usGcp}
 
 type (
 	GcpInput      struct{}
@@ -69,6 +76,10 @@ func (p *GcpTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *GcpTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
+	if params.Region != nil {
+		updateString(&input.GardenerConfig.Region, toGCPSpecific[*params.Region])
+	}
+
 	if params.Region != nil && params.Zones == nil {
 		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(*params.Region))
 	}

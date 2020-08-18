@@ -228,7 +228,13 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	}, kymaVersion)
 	assert.NoError(t, err)
 
-	creator, err := ibf.ForPlan(broker.GCPPlanID, "")
+	pp := internal.ProvisioningParameters{
+		PlanID: broker.GCPPlanID,
+		Parameters: internal.ProvisioningParametersDTO{
+			KymaVersion: "",
+		},
+	}
+	creator, err := ibf.Create(pp)
 	if err != nil {
 		t.Errorf("cannot create input creator for %q plan", broker.GCPPlanID)
 	}

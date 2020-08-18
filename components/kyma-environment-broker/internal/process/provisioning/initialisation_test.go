@@ -103,12 +103,32 @@ func fixOperationRuntimeStatus(t *testing.T, planId string) internal.Provisionin
 	}
 }
 
+func fixOperationRuntimeStatusWithProvider(t *testing.T, planId string, provider internal.TrialCloudProvider) internal.ProvisioningOperation {
+	return internal.ProvisioningOperation{
+		Operation: internal.Operation{
+			ID:                     statusOperationID,
+			InstanceID:             statusInstanceID,
+			ProvisionerOperationID: statusProvisionerOperationID,
+			Description:            "",
+			UpdatedAt:              time.Now(),
+		},
+		ProvisioningParameters: fixProvisioningParametersRuntimeStatusWithProvider(t, planId, &provider),
+	}
+}
+
 func fixProvisioningParametersRuntimeStatus(t *testing.T, planId string) string {
+	return fixProvisioningParametersRuntimeStatusWithProvider(t, planId, nil)
+}
+
+func fixProvisioningParametersRuntimeStatusWithProvider(t *testing.T, planId string, provider *internal.TrialCloudProvider) string {
 	parameters := internal.ProvisioningParameters{
 		PlanID:    planId,
 		ServiceID: "",
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: statusGlobalAccountID,
+		},
+		Parameters: internal.ProvisioningParametersDTO{
+			Provider: provider,
 		},
 	}
 

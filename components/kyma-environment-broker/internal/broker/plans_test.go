@@ -240,74 +240,36 @@ func TestSchemaGenerator(t *testing.T) {
 }
 
 func TestTrialSchemaGenerator(t *testing.T) {
-	wantGcp := `{
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "region": {
-              "type": "string",
-              "enum": [
-                "europe-west4",
-                "us-east4"
-              ]
-            },
-            "zones": {
-              "type": "array",
-              "items": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "europe-west4-a",
-                    "europe-west4-b",
-                    "europe-west4-c",
-                    "us-east4-a",
-                    "us-east4-b",
-                    "us-east4-c"
-                  ]
-                }
-              ]
-            }
-          },
-          "required": [
-            "name"
-          ]
-        }`
+	want := `{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string",
+      "enum": [
+        "europe",
+        "us"
+      ]
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "Azure",
+        "Gcp"
+      ]
+    }
+  },
+  "required": [
+    "name"
+  ]
+}`
 
-	gotGcp := GcpTrialSchema()
-	validateSchema(t, gotGcp, wantGcp)
+	got := TrialSchema()
+	validateSchema(t, got, want)
 
-	wantAzure := `{
-	             "$schema": "http://json-schema.org/draft-04/schema#",
-	             "type": "object",
-	             "properties": {
-	               "name": {
-	                 "type": "string"
-	               },
-	               "region": {
-	                 "type": "string",
-	                 "enum": [
-	   				"eastus",
-	   				"westeurope"
-	                 ]
-	               },
-	               "zones": {
-	                 "type": "array",
-	                 "items": [
-	                   {
-	                     "type": "string"
-	                   }
-	                 ]
-	               }
-	             },
-	             "required": [
-	               "name"
-	             ]
-	           }`
-	gotAzure := AzureTrialSchema()
-	validateSchema(t, gotAzure, wantAzure)
 }
 
 func validateSchema(t *testing.T, got []byte, want string) {

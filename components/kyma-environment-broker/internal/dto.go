@@ -41,6 +41,11 @@ func (p ProvisioningParameters) IsEqual(input ProvisioningParameters) bool {
 	return true
 }
 
+type TrialCloudProvider string
+
+const Gcp TrialCloudProvider = "GCP"
+const Azure TrialCloudProvider = "Azure"
+
 type ProvisioningParametersDTO struct {
 	Name         string  `json:"name"`
 	TargetSecret *string `json:"targetSecret"`
@@ -59,6 +64,8 @@ type ProvisioningParametersDTO struct {
 	MaxUnavailable              *int     `json:"maxUnavailable"`
 	OptionalComponentsToInstall []string `json:"components"`
 	KymaVersion                 string   `json:"kymaVersion"`
+	//Provider - used in Trial plan to determine which cloud provider to use during provisioning
+	Provider *TrialCloudProvider `json:"provider"`
 }
 
 type ERSContext struct {

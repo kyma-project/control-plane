@@ -2,12 +2,18 @@ package provider
 
 import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
 const (
 	DefaultAzureRegion = "westeurope"
 )
+
+var europeAzure = "westeurope"
+var usAzure = "eastus"
+
+var toAzureSpecific = map[string]*string{string(broker.Europe): &europeAzure, string(broker.Us): &usAzure}
 
 type (
 	AzureInput      struct{}
@@ -93,5 +99,9 @@ func (p *AzureTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *AzureTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
+	if params.Region != nil {
+		updateString(&input.GardenerConfig.Region, toAzureSpecific[*params.Region])
+	}
+
 	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, params.Zones)
 }
