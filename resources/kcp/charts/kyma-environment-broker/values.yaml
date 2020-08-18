@@ -153,7 +153,7 @@ cis:
 
 kebClient:
   scope: "TBD"
-  secretName: "kcp-kyma-environment-broker-oauth"
+  secretName: "TBD"
 
 environmentsCleanup:
   schedule: "0 0 * * *"
