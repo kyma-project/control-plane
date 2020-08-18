@@ -105,7 +105,7 @@ func (f *InputBuilderFactory) Create(pp internal.ProvisioningParameters) (intern
 		return nil, errors.Wrap(err, "while initialization input")
 	}
 
-	disabledForPlan, err := f.disabledComponentsProvider.DisabledComponentsPerPlan(planID)
+	disabledForPlan, err := f.disabledComponentsProvider.DisabledComponentsPerPlan(pp.PlanID)
 	if err != nil {
 		return nil, errors.Wrap(err, "every supported plan should be specified in the disabled components map")
 	}

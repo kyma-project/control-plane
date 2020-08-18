@@ -11,16 +11,14 @@ import (
 const (
 	AllPlansSelector = "all_plans"
 
-	GCPPlanID          = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
-	GCPPlanName        = "gcp"
-	GcpTrialPlanID     = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
-	GcpTrialPlanName   = "gcp_trial"
-	AzurePlanID        = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
-	AzurePlanName      = "azure"
-	AzureLitePlanID    = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
-	AzureLitePlanName  = "azure_lite"
-	AzureTrialPlanID   = "70479a4b-ee23-4f6f-958c-1646e8fe5301"
-	AzureTrialPlanName = "azure_trial"
+	GCPPlanID         = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
+	GCPPlanName       = "gcp"
+	AzurePlanID       = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	AzurePlanName     = "azure"
+	AzureLitePlanID   = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
+	AzureLitePlanName = "azure_lite"
+	TrialPlanID       = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
+	TrialPlanName     = "trial"
 )
 
 type TrialCloudRegion string

@@ -3,6 +3,8 @@ package input
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
