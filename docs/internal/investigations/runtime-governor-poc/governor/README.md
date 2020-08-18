@@ -78,10 +78,12 @@ The script adds a proper `runtime-governor.{DOMAIN}` entry to `/etc/hosts`.
 ## Configuration
 
 You can use the following environment variables while running the `deploy.sh` script:
- - **LOCAL_ENV** - a variable that specifies whether the script runs on a local environment with Minikube (default value: `true`)
- - **DOMAIN** - a domain used on a cluster (default value: `kyma.local`)
- - **ISTIO_GATEWAY_NAME** - Istio Gateway name (default value: `compass-istio-gateway`)
- - **ISTIO_GATEWAY_NAMESPACE** - Istio Gateway Namespace (default value: `compass-system`)
+| **Environment variable** | **Description** | **Default value** |
+|--------------------------|-----------------|-------------------|
+| **LOCAL_ENV** | Variable that specifies whether the script runs on a local environment with Minikube. | `true` |
+| **DOMAIN** | Domain used for the cluster. | `kyma.local` |
+| **ISTIO_GATEWAY_NAME** | Istio Gateway name. | `compass-istio-gateway` |
+| **ISTIO_GATEWAY_NAMESPACE** | Istio Gateway Namespace. | `compass-system` |
 
 For example, to set a different domain and install Runtime Governor on a Kubernetes cluster, run the script in such a way:
 
