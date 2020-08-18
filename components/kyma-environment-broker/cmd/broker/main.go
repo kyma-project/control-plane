@@ -97,6 +97,11 @@ type Config struct {
 	EDP edp.Config
 
 	AuditLog auditlog.Config
+
+	VersionConfig struct {
+		Namespace string `envconfig:"namespace"`
+		Name      string `envconfig:"name"`
+	}
 }
 
 func main() {
@@ -210,7 +215,8 @@ func main() {
 
 	// define steps
 	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),
-		provisionerClient, directorClient, inputFactory, externalEvalCreator, iasTypeSetter, cfg.Provisioning.Timeout)
+		provisionerClient, directorClient, inputFactory, externalEvalCreator, iasTypeSetter, cfg.Provisioning.Timeout,
+		provisioning.NewConfigMapKymaVersionConfigurator(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs))
 	provisionManager.InitStep(provisioningInit)
 
 	provisioningSteps := []struct {

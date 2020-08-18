@@ -33,15 +33,20 @@ type DirectorClient interface {
 	SetLabel(accountID, runtimeID, key, value string) error
 }
 
+type KymaVersionConfigurator interface {
+	ForGlobalAccount(string) (string, bool, error)
+}
+
 type InitialisationStep struct {
-	operationManager    *process.ProvisionOperationManager
-	instanceStorage     storage.Instances
-	provisionerClient   provisioner.Client
-	directorClient      DirectorClient
-	inputBuilder        input.CreatorForPlan
-	externalEvalCreator *ExternalEvalCreator
-	iasType             *IASType
-	provisioningTimeout time.Duration
+	operationManager        *process.ProvisionOperationManager
+	instanceStorage         storage.Instances
+	provisionerClient       provisioner.Client
+	directorClient          DirectorClient
+	inputBuilder            input.CreatorForPlan
+	externalEvalCreator     *ExternalEvalCreator
+	iasType                 *IASType
+	provisioningTimeout     time.Duration
+	kymaVersionConfigurator KymaVersionConfigurator
 }
 
 func NewInitialisationStep(os storage.Operations,
@@ -51,16 +56,18 @@ func NewInitialisationStep(os storage.Operations,
 	b input.CreatorForPlan,
 	avsExternalEvalCreator *ExternalEvalCreator,
 	iasType *IASType,
-	timeout time.Duration) *InitialisationStep {
+	timeout time.Duration,
+	configurator KymaVersionConfigurator) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:    process.NewProvisionOperationManager(os),
-		instanceStorage:     is,
-		provisionerClient:   pc,
-		directorClient:      dc,
-		inputBuilder:        b,
-		externalEvalCreator: avsExternalEvalCreator,
-		iasType:             iasType,
-		provisioningTimeout: timeout,
+		operationManager:        process.NewProvisionOperationManager(os),
+		instanceStorage:         is,
+		provisionerClient:       pc,
+		directorClient:          dc,
+		inputBuilder:            b,
+		externalEvalCreator:     avsExternalEvalCreator,
+		iasType:                 iasType,
+		provisioningTimeout:     timeout,
+		kymaVersionConfigurator: configurator,
 	}
 }
 
@@ -103,12 +110,9 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 
-	var kymaVersion string
-	if pp.Parameters.KymaVersion == "" {
-		log.Info("input builder setting up to work with default Kyma version")
-	} else {
-		kymaVersion = pp.Parameters.KymaVersion
-		log.Infof("setting up input builder to work with %s Kyma version", kymaVersion)
+	kymaVersion, err := s.provideKymaVersion(pp, log)
+	if err != nil {
+		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	}
 
 	log.Infof("create input creator for %q plan ID", pp.PlanID)
@@ -124,6 +128,26 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 		log.Errorf("cannot create input creator for plan %s: %s", pp.PlanID, err)
 		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
 	}
+}
+
+func (s *InitialisationStep) provideKymaVersion(pp internal.ProvisioningParameters, log logrus.FieldLogger) (string, error) {
+	var kymaVersion string
+	if pp.Parameters.KymaVersion == "" {
+		ver, found, err := s.kymaVersionConfigurator.ForGlobalAccount(pp.ErsContext.GlobalAccountID)
+		if err != nil {
+			return "", err
+		}
+		if found {
+			log.Infof("input builder setting up to work with configured Kyma version %s per global account", ver)
+			return ver, nil
+		}
+		log.Info("input builder setting up to work with default Kyma version")
+	} else {
+		kymaVersion = pp.Parameters.KymaVersion
+		log.Infof("setting up input builder to work with %s Kyma version provided by the provisioning parameters", kymaVersion)
+	}
+
+	return kymaVersion, nil
 }
 
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
