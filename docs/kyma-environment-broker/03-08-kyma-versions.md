@@ -16,10 +16,10 @@ data:
   3e64ebae-38b5-46a0-b1ed-9ccee153a0ae: "1.15-rc1"
 ```
 
-The ConfigMap contains entries per Global Account. The key is a Global Account ID, the value is the version.
-If the global account is not configured in the ConfigMap, the default value will be used.
+The ConfigMap contains default versions for Global Account. The key is a Global Account ID, the value is the version.
+If the global account is not configured in the ConfigMap, the default value set by APP_KYMA_VERSION environment variable is be used.
 
-A user can specify Kyma version using a provisioning parameter `kymaVersion`, for example:
+A user can also specify Kyma version using a provisioning parameter `kymaVersion`, for example:
 
 ```bash
    export VERSION=1.15
