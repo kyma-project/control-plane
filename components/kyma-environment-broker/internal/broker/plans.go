@@ -251,7 +251,7 @@ func TrialSchema() []byte {
       "type": "string",
       "enum": [
         "Azure",
-        "Gcp"
+        "GCP"
       ]
     }
   },

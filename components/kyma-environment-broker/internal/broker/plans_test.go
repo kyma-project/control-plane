@@ -258,7 +258,7 @@ func TestTrialSchemaGenerator(t *testing.T) {
       "type": "string",
       "enum": [
         "Azure",
-        "Gcp"
+        "GCP"
       ]
     }
   },
