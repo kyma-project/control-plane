@@ -99,8 +99,8 @@ type Config struct {
 	AuditLog auditlog.Config
 
 	VersionConfig struct {
-		Namespace string `envconfig:"namespace"`
-		Name      string `envconfig:"name"`
+		Namespace string
+		Name      string
 	}
 }
 

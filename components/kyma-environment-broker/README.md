@@ -44,3 +44,6 @@ KEB binary allows you to override some configuration parameters. You can specify
 | **APP_DATABASE_PORT** | Defines the database port. | `5432` |
 | **APP_DATABASE_NAME** | Defines the database name. | `broker` |
 | **APP_DATABASE_SSL** | Specifies the SSL Mode for PostgrSQL. See all the possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html).  | `disable`|
+| **APP_KYMA_VERSION** | Specifies the default Kyma Version. | None |
+| **APP_VERSION_CONFIG_NAMESPACE** | Defines the namespace with the ConfigMap containing Kyma versions per Global Account configuration | None |
+| **APP_VERSION_CONFIG_NAME** | Defines the namespace with the ConfigMap containing Kyma versions per Global Account configuration | None |
