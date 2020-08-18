@@ -138,15 +138,22 @@ edp:
   secretName: "edp-creds"
 
 cis:
-  authURL: "TBD"
-  eventServiceURL: "TBD"
-  id: "TBD"
-  secret: "TBD"
-  secretName: "cis-creds"
+  v1:
+    authURL: "TBD"
+    eventServiceURL: "TBD"
+    id: "TBD"
+    secret: "TBD"
+    secretName: "cis-creds-v1"
+  v2:
+    authURL: "TBD"
+    eventServiceURL: "TBD"
+    id: "TBD"
+    secret: "TBD"
+    secretName: "cis-creds-v2"
 
 kebClient:
-  secretName: "TBD"
   scope: "TBD"
+  secretName: "TBD"
 
 environmentsCleanup:
   schedule: "0 0 * * *"

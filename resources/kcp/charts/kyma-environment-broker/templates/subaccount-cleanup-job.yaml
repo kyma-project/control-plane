@@ -28,17 +28,17 @@ spec:
                 - name: APP_CIS_CLIENT_ID
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.cis.secretName }}
+                      name: {{ .Values.cis.v1.secretName }}
                       key: id
                 - name: APP_CIS_CLIENT_SECRET
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.cis.secretName }}
+                      name: {{ .Values.cis.v1.secretName }}
                       key: secret
                 - name: APP_CIS_AUTH_URL
-                  value: {{ .Values.cis.authURL }}
+                  value: {{ .Values.cis.v1.authURL }}
                 - name: APP_CIS_EVENT_SERVICE_URL
-                  value: {{ .Values.cis.eventServiceURL }}
+                  value: {{ .Values.cis.v1.eventServiceURL }}
                 - name: APP_DATABASE_USER
                   valueFrom:
                     secretKeyRef:
@@ -137,17 +137,17 @@ spec:
                 - name: APP_CIS_CLIENT_ID
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.cis.secretName }}
+                      name: {{ .Values.cis.v2.secretName }}
                       key: id
                 - name: APP_CIS_CLIENT_SECRET
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.cis.secretName }}
+                      name: {{ .Values.cis.v2.secretName }}
                       key: secret
                 - name: APP_CIS_AUTH_URL
-                  value: {{ .Values.cis.authURL }}
+                  value: {{ .Values.cis.v2.authURL }}
                 - name: APP_CIS_EVENT_SERVICE_URL
-                  value: {{ .Values.cis.eventServiceURL }}
+                  value: {{ .Values.cis.v2.eventServiceURL }}
                 - name: APP_DATABASE_USER
                   valueFrom:
                     secretKeyRef:
