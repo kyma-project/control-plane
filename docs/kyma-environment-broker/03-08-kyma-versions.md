@@ -39,5 +39,6 @@ A user can also specify Kyma version using a provisioning parameter `kymaVersion
            \"kymaVersion\": \"$VERSION"
        }
    }"
-   ```
+```
+The `kymaVersion` provisioning parameter overrides settings described before.
 This feature is enabled by the APP_ENABLE_ON_DEMAND_VERSION environment variable.
