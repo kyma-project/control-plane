@@ -105,7 +105,7 @@ per Global Account.
 
 These are the provisioning parameters for Trial Plan that you can configure:
   
-<div tabs name="gcp-plans" group="gcp-plans">
+<div tabs name="trial-plan" group="trial-plan">
   <details>
   <summary label="trial-plan">
   Trial Plan
