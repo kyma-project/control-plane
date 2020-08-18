@@ -41,10 +41,10 @@ func (c *ConfigMapKymaVersionConfigurator) ForGlobalAccount(gaid string) (string
 
 	switch {
 	case apierr.IsNotFound(err):
-		c.log.Infof("Kyma Version per Global Acocunt configuration not found")
+		c.log.Infof("Kyma Version per Global Acocunt configuration %s/%s not found", c.namespace, c.name)
 		return "", false, nil
 	case err != nil:
-		return "", false, errors.Wrap(err, "while getting ")
+		return "", false, errors.Wrap(err, "while getting kyma version config map")
 	}
 
 	ver, found := config.Data[gaid]
