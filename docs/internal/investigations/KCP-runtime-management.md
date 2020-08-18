@@ -26,7 +26,7 @@ As shown in the diagram, these Runtimes will be supported:
 - managed Kyma Runtime
 - standalone Kyma Runtime
 
-Each supported Kyma instance has a dedicated Runtime Agent component that is responsible for handling the communication with the Kyma Control Plane. The Runtime Agent component fetches the configuration from the Runtime Governor and applies it to the desired environment.
+Each supported Kyma instance has a dedicated Runtime Agent component that is responsible for handling the communication with Kyma Control Plane. The Runtime Agent component fetches the configuration from the Runtime Governor and applies it to the desired environment.
 
 ## Managing Runtimes configuration in Kyma Control Plane
 
