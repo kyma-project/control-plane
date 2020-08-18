@@ -4,7 +4,7 @@ type: Details
 ---
 
 Kyma Environment Broker is configured with a default Kyma Version (the APP_KYMA_VERSION environment variable). 
-You can configure a version per Global Account using a config map, for example:
+You can also specify a default version per Global Account using a config map, for example:
 
 ```yaml
 apiVersion: v1
