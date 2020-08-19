@@ -89,7 +89,7 @@ spec:
                 - "/bin/sh"
               args:
                 - "-c"
-                - "./accountcleanup; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+                - "./bin/accountcleanup; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
             - name: cloudsql-proxy
               image: gcr.io/cloudsql-docker/gce-proxy:1.14
               command:
@@ -198,7 +198,7 @@ spec:
                 - "/bin/sh"
               args:
                 - "-c"
-                - "./accountcleanup; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+                - "./bin/accountcleanup; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
             - name: cloudsql-proxy
               image: gcr.io/cloudsql-docker/gce-proxy:1.14
               command:
