@@ -3,8 +3,8 @@ title: Configure Kyma version
 type: Details
 ---
 
-Kyma Environment Broker is configured with a default Kyma Version (the APP_KYMA_VERSION environment variable). 
-You can also specify a default version per Global Account using a config map, for example:
+Kyma Environment Broker is configured with a default Kyma version specified in the **APP_KYMA_VERSION** environment variable. This means, that each Kyma Runtime provisioned by the Kyma Environment Broker in a given global account, is installed in the default Kyma version.
+You can also specify a different Kyma version for a global account using a ConfigMap. See the example:
 
 ```yaml
 apiVersion: v1
@@ -16,10 +16,9 @@ data:
   3e64ebae-38b5-46a0-b1ed-9ccee153a0ae: "1.15-rc1"
 ```
 
-The ConfigMap contains default versions for Global Account. The key is a Global Account ID, the value is the version.
-If the global account is not configured in the ConfigMap, the default value set by APP_KYMA_VERSION environment variable is be used.
+This ConfigMap contains a default version for a global account. The **3e64ebae-38b5-46a0-b1ed-9ccee153a0ae** parameter is a global account ID, and the value is the Kyma version specified for this global account.
 
-A user can also specify Kyma version using a provisioning parameter `kymaVersion`, for example:
+You can also specify a Kyma version using the **kymaVersion** provisioning parameter, for example:
 
 ```bash
    export VERSION=1.15
@@ -40,5 +39,5 @@ A user can also specify Kyma version using a provisioning parameter `kymaVersion
        }
    }"
 ```
-The `kymaVersion` provisioning parameter overrides settings described before.
-This feature is enabled by the APP_ENABLE_ON_DEMAND_VERSION environment variable.
+The **kymaVersion** provisioning parameter overrides the default settings.
+This feature is enabled by the **APP_ENABLE_ON_DEMAND_VERSION** environment variable.
