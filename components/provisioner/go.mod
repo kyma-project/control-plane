@@ -5,33 +5,32 @@ go 1.13
 require (
 	github.com/99designs/gqlgen v0.9.3
 	github.com/avast/retry-go v2.6.0+incompatible
-	github.com/gardener/gardener v0.35.0
+	github.com/gardener/gardener v1.8.1
 	github.com/gocraft/dbr/v2 v2.6.3
 	github.com/google/uuid v1.1.1
-	github.com/gorilla/mux v1.7.3
+	github.com/gorilla/mux v1.7.4
 	github.com/kubernetes-sigs/service-catalog v0.3.0
-	github.com/kubernetes/client-go v11.0.0+incompatible
-	github.com/kyma-incubator/compass/components/director v0.0.0-20200727090009-e854b465dd51
-	github.com/kyma-incubator/hydroform/install v0.0.0-20200804124659-c8798d521f06
-	github.com/kyma-project/kyma v0.5.1-0.20200323195746-ee2b142b8442
-	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200422062252-6074323197a6
-	github.com/lib/pq v1.2.0
+	github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b
+	github.com/kyma-incubator/hydroform/install v0.0.0-20200817114824-fd8c8876066c
+	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200819084904-3cb5e7b9aa9f
+	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20200817094157-8392259f5be1
+	github.com/lib/pq v1.7.0
 	github.com/matryer/is v1.2.0
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.6.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.9.1
-	github.com/sirupsen/logrus v1.4.2
-	github.com/stretchr/testify v1.5.1
+	github.com/sirupsen/logrus v1.6.0
+	github.com/stretchr/testify v1.6.1
 	github.com/testcontainers/testcontainers-go v0.3.1
 	github.com/vektah/gqlparser v1.2.0
-	github.com/vrischmann/envconfig v1.2.0
+	github.com/vrischmann/envconfig v1.3.0
 	gotest.tools v2.2.0+incompatible
-	k8s.io/api v0.18.4
-	k8s.io/apimachinery v0.18.4
+	k8s.io/api v0.18.8
+	k8s.io/apimachinery v0.18.8
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
-	sigs.k8s.io/controller-runtime v0.6.0
+	sigs.k8s.io/controller-runtime v0.6.2
 )
 
 replace (
@@ -40,5 +39,5 @@ replace (
 	github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
 	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
-	k8s.io/client-go => k8s.io/client-go v0.18.4
+	k8s.io/client-go => k8s.io/client-go v0.18.8
 )

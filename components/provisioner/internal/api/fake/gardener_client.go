@@ -69,8 +69,11 @@ func (f *fakeShootsInterface) UpdateStatus(*gardener_types.Shoot) (*gardener_typ
 	return nil, nil
 }
 
-func (f *fakeShootsInterface) Delete(name string, options metav1.DeleteOptions) error {
-	return f.client.Delete(context.Background(), name, options)
+func (f *fakeShootsInterface) Delete(name string, options *metav1.DeleteOptions) error {
+	if options == nil {
+		options = &metav1.DeleteOptions{}
+	}
+	return f.client.Delete(context.Background(), name, *options)
 }
 
 func (f *fakeShootsInterface) DeleteCollection(_ *metav1.DeleteOptions, _ metav1.ListOptions) error {

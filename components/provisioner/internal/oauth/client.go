@@ -12,10 +12,10 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 //go:generate mockery -name=Client
