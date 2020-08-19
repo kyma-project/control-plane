@@ -41,7 +41,7 @@ Make sure that you have all these tools installed before you start using the `ru
 - [Helm 3](https://helm.sh/)
 - watch (`brew install watch`)
 
-> **TIP:** Some shells automatically escape some characters when copying and pasting commands. Always check the command before running it.
+> **CAUTION:** Some shells automatically escape some characters when copying and pasting commands. Always check the command before running it.
 
 ### Control Plane deployment
 
@@ -53,7 +53,7 @@ To deploy the Control Plane cluster, run the following command:
 ./setup-cp.sh
 ```
 
-You can watch the installation progress by looking at the statuses of the Pods that are deployed in the cluster:
+You can watch the installation progress by checking the statuses of the Pods that are deployed in the cluster:
 
 ```bash
 watch kubectl --context=k3d-governor get po --all-namespaces
@@ -69,7 +69,7 @@ To deploy the first Runtime, run the following command. It creates the cluster a
 ./setup-runtime1.sh
 ```
 
-You can watch the installation progress by looking at the statuses of Pods that are deployed in the cluster. At this stage, there should be a NodeApp Pod deployed, but the Dapr sidecar should not be injected yet.
+You can watch the installation progress by checking the statuses of Pods that are deployed in the cluster. At this stage, there should be a NodeApp Pod deployed, but the Dapr sidecar should not be injected yet.
 
 ```bash
 watch kubectl --context=k3d-runtime1 get po --all-namespaces
@@ -81,7 +81,7 @@ Next, deploy the Runtime Agent component using the following command. It will de
 ./setup-runtime1-agent.sh
 ```
 
-You can watch the installation progress by looking at the statuses of Pods that are deployed in the cluster. After a successful deployment of the Runtime Agent component, it fetches the configuration and applies it to the cluster. The NodeApp Pod should be recreated with the injected Dapr sidecar.
+You can watch the installation progress by checking the statuses of Pods that are deployed in the cluster. After a successful deployment of the Runtime Agent component, it fetches the configuration and applies it to the cluster. The NodeApp Pod should be recreated with the injected Dapr sidecar.
 
 ```bash
 watch kubectl --context=k3d-runtime1 get po --all-namespaces
