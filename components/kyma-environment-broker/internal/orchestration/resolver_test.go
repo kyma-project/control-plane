@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"database/sql"
+	"fmt"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -24,237 +25,74 @@ import (
 const (
 	shootNamespace = "garden-kyma"
 
-	runtime1GlobalAccountID = "f8576376-603b-40a8-9225-0edc65052463"
-	runtime1SubAccountID    = "b9ea5e77-c9ba-4af1-83a7-f2cf957353c1"
-	runtime1ID              = "b7634bc8-da1f-4343-8513-0241bf81ecb2"
-	runtime1InstanceID      = "c27be958-cd7e-4bbc-a3ef-33e81212bfb4"
+	globalAccountID1 = "f8576376-603b-40a8-9225-0edc65052463"
+	globalAccountID2 = "cb4d9447-8a6c-47d4-a2cd-48fa8121a91e"
+	globalAccountID3 = "cb4d9447-8a6c-47d4-a2cd-48fa8121a91e"
 
-	runtime2GlobalAccountID = "f8576376-603b-40a8-9225-0edc65052463"
-	runtime2SubAccountID    = "15a296bd-da4a-408d-a76e-60fcf4a30014"
-	runtime2ID              = "61bd315c-89d0-4462-acc5-174ea3162493"
-	runtime2InstanceID      = "6395faea-4dbb-4913-b715-f15c8cb62280"
-
-	runtime3GlobalAccountID = "cb4d9447-8a6c-47d4-a2cd-48fa8121a91e"
-	runtime3SubAccountID    = "e08dbc3c-45ac-489a-8963-dc7c75527367"
-	runtime3ID              = "7ba68c2a-0f63-4941-967d-30a9d3c30c0a"
-	runtime3InstanceID      = "a115079e-3ea4-4a60-8ec8-26f3b9d16583"
-
-	runtime4GlobalAccountID = "51b8c950-7ce3-4382-8670-99ae9549eabf"
-	runtime4SubAccountID    = "74cb2f93-4a30-4ff9-9cd0-4242f2d8227d"
-	runtime4ID              = "2cc9f953-5979-4efd-a2cd-ca60a125bf4a"
-	runtime4InstanceID      = "f89cfee8-2506-472c-ae92-d00697672917"
+	region1 = "westeurope"
+	region2 = "centralus"
+	region3 = "uksouth"
 )
 
-var shoot1 = gardenerapi.Shoot{
-	ObjectMeta: metav1.ObjectMeta{
-		Name:      "shoot1",
-		Namespace: shootNamespace,
-		Labels: map[string]string{
-			globalAccountLabel: runtime1GlobalAccountID,
-			subAccountLabel:    runtime1SubAccountID,
-		},
-		Annotations: map[string]string{
-			runtimeIDAnnotation: runtime1ID,
-		},
-	},
-	Spec: gardenerapi.ShootSpec{
-		Region: "westeurope",
-		Maintenance: &gardenerapi.Maintenance{
-			TimeWindow: &gardenerapi.MaintenanceTimeWindow{
-				Begin: "030000+0000",
-				End:   "040000+0000",
+var shoot1 = fixShoot(1, globalAccountID1, region1)
+var instance1 = fixInstanceWithOperation(1, globalAccountID1, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
+
+var shoot2 = fixShoot(2, globalAccountID1, region2)
+var instance2 = fixInstanceWithOperation(2, globalAccountID1, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
+
+var shoot3 = fixShoot(3, globalAccountID2, region3)
+var instance3 = fixInstanceWithOperation(3, globalAccountID2, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
+
+var shoot4 = fixShoot(4, globalAccountID3, region1)
+var instance4 = fixInstanceWithOperation(4, globalAccountID3, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
+var instance4Deprovisioning = fixInstanceWithOperation(4, globalAccountID3, string(dbmodel.OperationTypeDeprovision), string(brokerapi.InProgress))
+
+var instance5Failed = fixInstanceWithOperation(5, globalAccountID3, string(dbmodel.OperationTypeProvision), string(brokerapi.Failed))
+
+var instance6Provisioning = fixInstanceWithOperation(6, globalAccountID3, string(dbmodel.OperationTypeProvision), string(brokerapi.InProgress))
+
+var instance7 = fixInstanceWithOperation(7, globalAccountID1, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
+
+func fixShoot(id int, globalAccountID, region string) gardenerapi.Shoot {
+	return gardenerapi.Shoot{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("shoot%d", id),
+			Namespace: shootNamespace,
+			Labels: map[string]string{
+				globalAccountLabel: globalAccountID,
+				subAccountLabel:    fmt.Sprintf("subaccount-id-%d", id),
+			},
+			Annotations: map[string]string{
+				runtimeIDAnnotation: fmt.Sprintf("runtime-id-%d", id),
 			},
 		},
-	},
-}
-
-var instance1 = internal.InstanceWithOperation{
-	Instance: internal.Instance{
-		InstanceID:      runtime1InstanceID,
-		RuntimeID:       runtime1ID,
-		GlobalAccountID: runtime1GlobalAccountID,
-		SubAccountID:    runtime1SubAccountID,
-	},
-	Type: sql.NullString{
-		String: string(dbmodel.OperationTypeProvision),
-	},
-	State: sql.NullString{
-		String: string(brokerapi.Succeeded),
-	},
-}
-
-var shoot2 = gardenerapi.Shoot{
-	ObjectMeta: metav1.ObjectMeta{
-		Name:      "shoot2",
-		Namespace: shootNamespace,
-		Labels: map[string]string{
-			globalAccountLabel: runtime2GlobalAccountID,
-			subAccountLabel:    runtime2SubAccountID,
-		},
-		Annotations: map[string]string{
-			runtimeIDAnnotation: runtime2ID,
-		},
-	},
-	Spec: gardenerapi.ShootSpec{
-		Region: "centralus",
-		Maintenance: &gardenerapi.Maintenance{
-			TimeWindow: &gardenerapi.MaintenanceTimeWindow{
-				Begin: "040000+0000",
-				End:   "050000+0000",
+		Spec: gardenerapi.ShootSpec{
+			Region: region,
+			Maintenance: &gardenerapi.Maintenance{
+				TimeWindow: &gardenerapi.MaintenanceTimeWindow{
+					Begin: "030000+0000",
+					End:   "040000+0000",
+				},
 			},
 		},
-	},
+	}
 }
 
-var instance2 = internal.InstanceWithOperation{
-	Instance: internal.Instance{
-		InstanceID:      runtime2InstanceID,
-		RuntimeID:       runtime2ID,
-		GlobalAccountID: runtime2GlobalAccountID,
-		SubAccountID:    runtime2SubAccountID,
-	},
-	Type: sql.NullString{
-		String: string(dbmodel.OperationTypeProvision),
-	},
-	State: sql.NullString{
-		String: string(brokerapi.Succeeded),
-	},
-}
-
-var shoot3 = gardenerapi.Shoot{
-	ObjectMeta: metav1.ObjectMeta{
-		Name:      "shoot3",
-		Namespace: shootNamespace,
-		Labels: map[string]string{
-			globalAccountLabel: runtime3GlobalAccountID,
-			subAccountLabel:    runtime3SubAccountID,
+func fixInstanceWithOperation(id int, globalAccountID, opType, opState string) internal.InstanceWithOperation {
+	return internal.InstanceWithOperation{
+		Instance: internal.Instance{
+			InstanceID:      fmt.Sprintf("instance-id-%d", id),
+			RuntimeID:       fmt.Sprintf("runtime-id-%d", id),
+			GlobalAccountID: globalAccountID,
+			SubAccountID:    fmt.Sprintf("subaccount-id-%d", id),
 		},
-		Annotations: map[string]string{
-			runtimeIDAnnotation: runtime3ID,
+		Type: sql.NullString{
+			String: opType,
 		},
-	},
-	Spec: gardenerapi.ShootSpec{
-		Region: "uksouth",
-		Maintenance: &gardenerapi.Maintenance{
-			TimeWindow: &gardenerapi.MaintenanceTimeWindow{
-				Begin: "150000+0000",
-				End:   "160000+0000",
-			},
+		State: sql.NullString{
+			String: opState,
 		},
-	},
-}
-
-var instance3 = internal.InstanceWithOperation{
-	Instance: internal.Instance{
-		InstanceID:      runtime3InstanceID,
-		RuntimeID:       runtime3ID,
-		GlobalAccountID: runtime3GlobalAccountID,
-		SubAccountID:    runtime3SubAccountID,
-	},
-	Type: sql.NullString{
-		String: string(dbmodel.OperationTypeProvision),
-	},
-	State: sql.NullString{
-		String: string(brokerapi.Succeeded),
-	},
-}
-
-var shoot4 = gardenerapi.Shoot{
-	ObjectMeta: metav1.ObjectMeta{
-		Name:      "shoot4",
-		Namespace: shootNamespace,
-		Labels: map[string]string{
-			globalAccountLabel: runtime4GlobalAccountID,
-			subAccountLabel:    runtime4SubAccountID,
-		},
-		Annotations: map[string]string{
-			runtimeIDAnnotation: runtime4ID,
-		},
-	},
-	Spec: gardenerapi.ShootSpec{
-		Region: "westeurope",
-		Maintenance: &gardenerapi.Maintenance{
-			TimeWindow: &gardenerapi.MaintenanceTimeWindow{
-				Begin: "030000+0000",
-				End:   "040000+0000",
-			},
-		},
-	},
-}
-
-var instance4 = internal.InstanceWithOperation{
-	Instance: internal.Instance{
-		InstanceID:      runtime4InstanceID,
-		RuntimeID:       runtime4ID,
-		GlobalAccountID: runtime4GlobalAccountID,
-		SubAccountID:    runtime4SubAccountID,
-	},
-	Type: sql.NullString{
-		String: string(dbmodel.OperationTypeProvision),
-	},
-	State: sql.NullString{
-		String: string(brokerapi.Succeeded),
-	},
-}
-
-var instance4Deprovisioning = internal.InstanceWithOperation{
-	Instance: internal.Instance{
-		InstanceID:      runtime4InstanceID,
-		RuntimeID:       runtime4ID,
-		GlobalAccountID: runtime4GlobalAccountID,
-		SubAccountID:    runtime4SubAccountID,
-	},
-	Type: sql.NullString{
-		String: string(dbmodel.OperationTypeDeprovision),
-	},
-	State: sql.NullString{
-		String: string(brokerapi.InProgress),
-	},
-}
-
-var instance5Failed = internal.InstanceWithOperation{
-	Instance: internal.Instance{
-		InstanceID:      "bbedf05a-6943-4999-ba45-4895314cf847",
-		RuntimeID:       "d80162bf-b8cd-4402-833e-2576f88bc086",
-		GlobalAccountID: "6590826c-5a42-4755-ad94-6e26381af2fa",
-		SubAccountID:    "ed68cee6-2bd6-47c0-9f45-cf9f97b2f724",
-	},
-	Type: sql.NullString{
-		String: string(dbmodel.OperationTypeProvision),
-	},
-	State: sql.NullString{
-		String: string(brokerapi.Failed),
-	},
-}
-
-var instance6Provisioning = internal.InstanceWithOperation{
-	Instance: internal.Instance{
-		InstanceID:      "a6620ef5-a7ff-4673-bbc8-17eeb8fb2d65",
-		RuntimeID:       "b662223a-640c-45f9-a29a-173af464d10b",
-		GlobalAccountID: "9228d730-98ce-44c5-be2c-f93abcc97e29",
-		SubAccountID:    "f6c2602a-7e8a-44d9-9fa1-96b541a931b5",
-	},
-	Type: sql.NullString{
-		String: string(dbmodel.OperationTypeProvision),
-	},
-	State: sql.NullString{
-		String: string(brokerapi.InProgress),
-	},
-}
-
-var instance7 = internal.InstanceWithOperation{
-	Instance: internal.Instance{
-		InstanceID:      "e2f20cdd-33a7-49fa-ab03-052bebe3d670",
-		RuntimeID:       "42611fd0-ee5b-4c5c-8728-1da08b4332bf",
-		GlobalAccountID: "2cf17ad3-5d1e-4fb0-bc4d-cd2481b9103a",
-		SubAccountID:    "4dea272f-23bf-4db6-a657-a140b3cdd783",
-	},
-	Type: sql.NullString{
-		String: string(dbmodel.OperationTypeProvision),
-	},
-	State: sql.NullString{
-		String: string(brokerapi.Succeeded),
-	},
+	}
 }
 
 type expectedRuntime struct {
@@ -337,8 +175,8 @@ func assertRuntimeTargets(t *testing.T, expectedRuntimes []expectedRuntime, runt
 		assert.Equal(t, e.instance.GlobalAccountID, r.GlobalAccountID)
 		assert.Equal(t, e.instance.SubAccountID, r.SubAccountID)
 		assert.Equal(t, e.shoot.Name, r.ShootName)
-		assert.Equal(t, e.shoot.Spec.Maintenance.TimeWindow.Begin, r.MaintenanceWindowBegin)
-		assert.Equal(t, e.shoot.Spec.Maintenance.TimeWindow.End, r.MaintenanceWindowEnd)
+		assert.Equal(t, e.shoot.Spec.Maintenance.TimeWindow.Begin, r.MaintenanceWindowBegin.Format(maintenanceWindowFormat))
+		assert.Equal(t, e.shoot.Spec.Maintenance.TimeWindow.End, r.MaintenanceWindowEnd.Format(maintenanceWindowFormat))
 	}
 }
 
@@ -351,14 +189,14 @@ func TestResolver_Resolve_IncludeAll(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(
-		[]RuntimeTarget{
+	runtimes, err := resolver.Resolve(TargetSpec{
+		Include: []RuntimeTarget{
 			{
 				Target: TargetAll,
 			},
 		},
-		nil,
-	)
+		Exclude: nil,
+	})
 
 	// then
 	assert.Nil(t, err)
@@ -374,19 +212,19 @@ func TestResolver_Resolve_IncludeAllExcludeOne(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(
-		[]RuntimeTarget{
+	runtimes, err := resolver.Resolve(TargetSpec{
+		Include: []RuntimeTarget{
 			{
 				Target: TargetAll,
 			},
 		},
-		[]RuntimeTarget{
+		Exclude: []RuntimeTarget{
 			{
-				GlobalAccount: runtime2GlobalAccountID,
-				SubAccount:    runtime2SubAccountID,
+				GlobalAccount: expectedRuntime2.instance.GlobalAccountID,
+				SubAccount:    expectedRuntime2.instance.SubAccountID,
 			},
 		},
-	)
+	})
 
 	// then
 	assert.Nil(t, err)
@@ -402,18 +240,18 @@ func TestResolver_Resolve_ExcludeAll(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(
-		[]RuntimeTarget{
+	runtimes, err := resolver.Resolve(TargetSpec{
+		Include: []RuntimeTarget{
 			{
 				Target: TargetAll,
 			},
 		},
-		[]RuntimeTarget{
+		Exclude: []RuntimeTarget{
 			{
 				Target: TargetAll,
 			},
 		},
-	)
+	})
 
 	// then
 	assert.Nil(t, err)
@@ -429,15 +267,15 @@ func TestResolver_Resolve_IncludeOne(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(
-		[]RuntimeTarget{
+	runtimes, err := resolver.Resolve(TargetSpec{
+		Include: []RuntimeTarget{
 			{
-				GlobalAccount: runtime2GlobalAccountID,
-				SubAccount:    runtime2SubAccountID,
+				GlobalAccount: expectedRuntime2.instance.GlobalAccountID,
+				SubAccount:    expectedRuntime2.instance.SubAccountID,
 			},
 		},
-		nil,
-	)
+		Exclude: nil,
+	})
 
 	// then
 	assert.Nil(t, err)
@@ -453,14 +291,14 @@ func TestResolver_Resolve_IncludeTenant(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(
-		[]RuntimeTarget{
+	runtimes, err := resolver.Resolve(TargetSpec{
+		Include: []RuntimeTarget{
 			{
-				GlobalAccount: runtime1GlobalAccountID,
+				GlobalAccount: globalAccountID1,
 			},
 		},
-		nil,
-	)
+		Exclude: nil,
+	})
 
 	// then
 	assert.Nil(t, err)
@@ -476,14 +314,14 @@ func TestResolver_Resolve_IncludeRegion(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(
-		[]RuntimeTarget{
+	runtimes, err := resolver.Resolve(TargetSpec{
+		Include: []RuntimeTarget{
 			{
 				Region: "europe|eu|uk",
 			},
 		},
-		nil,
-	)
+		Exclude: nil,
+	})
 
 	// then
 	assert.Nil(t, err)
@@ -505,14 +343,14 @@ func TestResolver_Resolve_GardenerFailure(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(
-		[]RuntimeTarget{
+	runtimes, err := resolver.Resolve(TargetSpec{
+		Include: []RuntimeTarget{
 			{
 				Target: TargetAll,
 			},
 		},
-		nil,
-	)
+		Exclude: nil,
+	})
 
 	// then
 	assert.NotNil(t, err)
@@ -532,14 +370,14 @@ func TestResolver_Resolve_StorageFailure(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(
-		[]RuntimeTarget{
+	runtimes, err := resolver.Resolve(TargetSpec{
+		Include: []RuntimeTarget{
 			{
 				Target: TargetAll,
 			},
 		},
-		nil,
-	)
+		Exclude: nil,
+	})
 
 	// then
 	assert.NotNil(t, err)

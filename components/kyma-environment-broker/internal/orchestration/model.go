@@ -12,10 +12,10 @@ type Runtime struct {
 	SubAccountID    string `json:"subaccountId"`
 	// The corresponding shoot cluster's .metadata.name value
 	ShootName string `json:"shootName"`
-	// The corresponding shoot cluster's .spec.maintenance.timeWindow.Begin value, in "HHMMSS+[TZ HHMM]" format, e.g. "040000+0000"
-	MaintenanceWindowBegin string `json:"maintenanceWindowBegin"`
-	// The corresponding shoot cluster's .spec.maintenance.timeWindow.End value, in "HHMMSS+[TZ HHMM]" format, e.g. "040000+0000"
-	MaintenanceWindowEnd string `json:"maintenanceWindowEnd"`
+	// The corresponding shoot cluster's .spec.maintenance.timeWindow.Begin value, which is in in "HHMMSS+[HHMM TZ]" format, e.g. "040000+0000"
+	MaintenanceWindowBegin time.Time `json:"maintenanceWindowBegin"`
+	// The corresponding shoot cluster's .spec.maintenance.timeWindow.End value, which is in "HHMMSS+[HHMM TZ]" format, e.g. "040000+0000"
+	MaintenanceWindowEnd time.Time `json:"maintenanceWindowEnd"`
 }
 
 // RuntimeOperation encapsulates a Runtime object and an operation ID for the OrchestrationStrategy to execute.
@@ -43,39 +43,39 @@ type RuntimeTarget struct {
 
 // RuntimeResolver given an input slice of target specs to include and exclude, resolves and returns a list of unique Runtime objects.
 type RuntimeResolver interface {
-	Resolve(include []RuntimeTarget, exclude []RuntimeTarget) ([]Runtime, error)
+	Resolve(targets TargetSpec) ([]Runtime, error)
 }
 
-// OrchestrationStrategy interface encapsulates the strategy how the orchestration is performed.
-type OrchestrationStrategy interface {
+// Strategy interface encapsulates the strategy how the orchestration is performed.
+type Strategy interface {
 	// Execute invokes operation managers' Execute(operationID string) method for each operation according to the encapsulated strategy.
 	Execute(operations []RuntimeOperation) (time.Duration, error)
 }
 
-type OrchestrationStrategyType string
+type StrategyType string
 
 const (
-	ParallelStrategy OrchestrationStrategyType = "parallel"
-	CanaryStrategy   OrchestrationStrategyType = "canary"
+	ParallelStrategy StrategyType = "parallel"
+	CanaryStrategy   StrategyType = "canary"
 )
 
-type OrchestrationScheduleType string
+type ScheduleType string
 
 const (
-	Immediate         OrchestrationScheduleType = "immediate"
-	MaintenanceWindow OrchestrationScheduleType = "maintenanceWindow"
+	Immediate         ScheduleType = "immediate"
+	MaintenanceWindow ScheduleType = "maintenanceWindow"
 )
 
-// ParallelOrchestrationSpec
-type ParallelOrchestrationSpec struct {
+// ParallelStrategySpec defines parameters for the parallel orchestration strategy
+type ParallelStrategySpec struct {
 	Workers int `json:"workers"`
 }
 
-// OrchestrationStrategySpec is the strategy part common for all orchestration trigger/status API
-type OrchestrationStrategySpec struct {
-	Type     OrchestrationStrategyType `json:"type"`
-	Schedule OrchestrationScheduleType `json:"schedule,omitempty"`
-	Parallel ParallelOrchestrationSpec `json:"parallel,omitempty"`
+// StrategySpec is the strategy part common for all orchestration trigger/status API
+type StrategySpec struct {
+	Type     StrategyType         `json:"type"`
+	Schedule ScheduleType         `json:"schedule,omitempty"`
+	Parallel ParallelStrategySpec `json:"parallel,omitempty"`
 }
 
 // TargetSpec is the targets part common for all orchestration trigger/status API

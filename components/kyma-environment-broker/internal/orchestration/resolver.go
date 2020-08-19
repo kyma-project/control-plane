@@ -3,6 +3,7 @@ package orchestration
 import (
 	"regexp"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -45,9 +46,10 @@ type GardenerRuntimeResolver struct {
 }
 
 const (
-	globalAccountLabel  = "account"
-	subAccountLabel     = "subaccount"
-	runtimeIDAnnotation = "compass.provisioner.kyma-project.io/runtime-id"
+	globalAccountLabel      = "account"
+	subAccountLabel         = "subaccount"
+	runtimeIDAnnotation     = "kcp.provisioner.kyma-project.io/runtime-id"
+	maintenanceWindowFormat = "150405-0700"
 )
 
 // NewGardenerRuntimeResolver constructs a GardenerRuntimeResolver with the mandatory input parameters.
@@ -62,7 +64,7 @@ func NewGardenerRuntimeResolver(gardenerClient gardenerclient.CoreV1beta1Interfa
 }
 
 // Resolve given an input slice of target specs to include and exclude, returns back a list of unique Runtime objects
-func (resolver *GardenerRuntimeResolver) Resolve(include []RuntimeTarget, exclude []RuntimeTarget) ([]Runtime, error) {
+func (resolver *GardenerRuntimeResolver) Resolve(targets TargetSpec) ([]Runtime, error) {
 	runtimeIncluded := map[string]bool{}
 	runtimeExcluded := map[string]bool{}
 	runtimes := []Runtime{}
@@ -76,7 +78,7 @@ func (resolver *GardenerRuntimeResolver) Resolve(include []RuntimeTarget, exclud
 	}
 
 	// Assemble IDs of runtimes to exclude
-	for _, rt := range exclude {
+	for _, rt := range targets.Exclude {
 		runtimesToExclude, err := resolver.resolveRuntimeTarget(rt, shoots)
 		if err != nil {
 			return nil, err
@@ -87,7 +89,7 @@ func (resolver *GardenerRuntimeResolver) Resolve(include []RuntimeTarget, exclud
 	}
 
 	// Include runtimes which are not excluded
-	for _, rt := range include {
+	for _, rt := range targets.Include {
 		runtimesToAdd, err := resolver.resolveRuntimeTarget(rt, shoots)
 		if err != nil {
 			return nil, err
@@ -199,14 +201,24 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 			continue
 		}
 
+		maintenanceWindowBegin, err := time.Parse(maintenanceWindowFormat, shoot.Spec.Maintenance.TimeWindow.Begin)
+		if err != nil {
+			resolver.logger.Errorf("Failed to parse maintenanceWindowBegin value %s of shoot %s ", shoot.Spec.Maintenance.TimeWindow.Begin, shoot.Name)
+			continue
+		}
+		maintenanceWindowEnd, err := time.Parse(maintenanceWindowFormat, shoot.Spec.Maintenance.TimeWindow.End)
+		if err != nil {
+			resolver.logger.Errorf("Failed to parse maintenanceWindowEnd value %s of shoot %s ", shoot.Spec.Maintenance.TimeWindow.End, shoot.Name)
+			continue
+		}
 		runtime := Runtime{
 			InstanceID:             instanceOpStatus.InstanceID,
 			RuntimeID:              instanceOpStatus.RuntimeID,
 			GlobalAccountID:        instanceOpStatus.GlobalAccountID,
 			SubAccountID:           instanceOpStatus.SubAccountID,
 			ShootName:              shoot.Name,
-			MaintenanceWindowBegin: shoot.Spec.Maintenance.TimeWindow.Begin,
-			MaintenanceWindowEnd:   shoot.Spec.Maintenance.TimeWindow.End,
+			MaintenanceWindowBegin: maintenanceWindowBegin,
+			MaintenanceWindowEnd:   maintenanceWindowEnd,
 		}
 		runtimes = append(runtimes, runtime)
 	}
