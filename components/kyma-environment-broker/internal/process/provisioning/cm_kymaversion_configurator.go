@@ -48,5 +48,6 @@ func (c *ConfigMapKymaVersionConfigurator) ForGlobalAccount(gaid string) (string
 	}
 
 	ver, found := config.Data[gaid]
+	c.log.Infof("%v", config.Data)
 	return ver, found, nil
 }
