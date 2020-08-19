@@ -41,7 +41,7 @@ These are the provisioning parameters for Azure that you can configure:
   Azure
   </summary>
      
-| Parameter Name | Type | Description | Required | Default value |
+| Parameter name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
 | **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D8_v3` |
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
@@ -59,7 +59,7 @@ These are the provisioning parameters for Azure that you can configure:
   Azure Lite
   </summary>
     
-| Parameter Name | Type | Description | Required | Default value |
+| Parameter name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
 | **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D4_v3` |
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
@@ -82,7 +82,7 @@ These are the provisioning parameters for GCP that you can configure:
   GCP
   </summary>
     
-| Parameter Name | Type | Description | Required | Default value |
+| Parameter name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
 | **machineType** | string | Specifies the provider-specific virtual machine type. | No | `n1-standard-4` |
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `30` |
