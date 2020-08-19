@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.0 // indirect
 	github.com/huandu/xstrings v1.3.0 // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200807110214-4424c47ecd1c
-	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20200811114541-f6b8d4af5071
+	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20200819110923-1c7da9ea4eca
 	github.com/kyma-project/kyma v0.5.1-0.20200416091733-68742a10ec23
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.4.0 // indirect
