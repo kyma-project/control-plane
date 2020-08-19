@@ -7,5 +7,5 @@ This folder contains internal documentation, such as proposals, investigations, 
 - [Hyperscaler Account Pool API design](./proposals/hyperscaler-account-pool-api-design.md)
 - [Provisioning API design](./proposals/provisioning-api.md)
 - [Runtime upgrade and rollback with the Runtime Provisioner](./runtime-upgrade.md)
-- [Runtime Governor - Concept](./investigations/runtime-governor-concept.md)
-- [Runtime Governor - Proof of Concept](./investigations/runtime-governor-poc.md)
+- [KCP Runtime management - concept](./investigations/KCP-runtime-management.md)
+- [Runtime Governor - Proof of Concept](./investigations/runtime-governor-poc/README.md)

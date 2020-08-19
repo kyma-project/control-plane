@@ -1,8 +1,6 @@
-# Runtime Governor component - Implementation details
+# Runtime Governor component - implementation details
 
-This directory contains the source code and Helm chart for the Kyma Control Plane Runtime Governor.
-
-## Overview
+This directory contains the source code and Helm chart for the Runtime Governor.
 
 Runtime Governor exposes a simple REST API that returns Runtime configurations.
 The application periodically reloads configuration from the `runtime-governor-config` ConfigMap in the `cp-poc` Namespace. The configuration file has the following form:
@@ -17,37 +15,36 @@ runtimes:
       bar: baz
 ```
 
-The application reloads configuration every 10 seconds. 
+The application reloads configuration every 10 seconds.
 
-## Details 
+## Details
 
 ### API
 
 The application exposes the following endpoints:
 
 - `GET /runtimes`
-   
+
     Returns configuration for all Runtimes.  
-    
+
     Possible error codes: `500`
-    
+
     Example response:
     ```json
     [{"id": "1", "data": {"foo":  "bar"} }, {"id": "2", "data": {"bar":  "baz"}}]    
     ```
 
 - `GET /runtimes/{runtimeId}`
-   
+
     Returns configuration for a given Runtime.  
-    
+
     Possible error codes: `404`, `500`
-    
+
     Example response:
     ```json
     {"id": "1", "data": {"foo":  "bar"} }    
     ```
-  
-  
+
 ## Development  
 
 ### Build
@@ -60,7 +57,7 @@ make build-image
 
 ### Run on a local machine
 
-To run the application without building a Docker image, navigate to the `./component` directory and execute the following command:
+To run the application without building a Docker image, navigate to the `./component` directory and run the following command:
 
 ```bash
 go run cmd/main.go
@@ -76,15 +73,17 @@ To install Runtime Governor on a Kubernetes cluster using Helm 3 in the `kcp-poc
 LOCAL_ENV=false ./deploy.sh
 ```
 
-The script will add a proper `runtime-governor.{DOMAIN}` entry to `/etc/hosts`.
+The script adds a proper `runtime-governor.{DOMAIN}` entry to `/etc/hosts`.
 
 ## Configuration
 
 You can use the following environment variables while running the `deploy.sh` script:
- - `LOCAL_ENV` - a variable that specifies whether the script runs on a local environment with Minikube (default value: `true`)
- - `DOMAIN` - a domain used on a cluster (default value: `kyma.local`)
- - `ISTIO_GATEWAY_NAME` - Istio Gateway name (default value: `compass-istio-gateway`)
- - `ISTIO_GATEWAY_NAMESPACE` - Istio Gateway Namespace (default value: `compass-system`)
+| **Environment variable** | **Description** | **Default value** |
+|--------------------------|-----------------|-------------------|
+| **LOCAL_ENV** | Variable that specifies whether the script runs on a local environment with Minikube. | `true` |
+| **DOMAIN** | Domain used for the cluster. | `kyma.local` |
+| **ISTIO_GATEWAY_NAME** | Istio Gateway name. | `compass-istio-gateway` |
+| **ISTIO_GATEWAY_NAMESPACE** | Istio Gateway Namespace. | `compass-system` |
 
 For example, to set a different domain and install Runtime Governor on a Kubernetes cluster, run the script in such a way:
 
@@ -94,7 +93,7 @@ LOCAL_ENV=false DOMAIN=foo.bar ./deploy.sh
 
 ## Testing
 
-To verify if Runtime Governor works properly, execute the following command, which returns all Runtime configurations from the mounted ConfigMap:
+To verify if Runtime Governor works properly, run the following command that returns all Runtime configurations from the mounted ConfigMap:
 
 ```bash
 curl https://runtime-governor.${DOMAIN}/runtimes
