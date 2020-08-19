@@ -26,11 +26,11 @@ As it's the Proof of Concept stage, we can use some temporary solutions, such as
 
 The diagram depicts the initial configuration of the components that will be deployed:
 
-![Initial Architecture Diagram](./assets/governor-poc-stage-1.svg)
+![Initial Architecture Diagram](../assets/governor-poc-stage-1.svg)
 
 After the successful reconfiguration, the architecture looks as follows:
 
-![Architecture Diagram after reconfiguration](./assets/governor-poc-stage-2.svg)
+![Architecture Diagram after reconfiguration](../assets/governor-poc-stage-2.svg)
 
 ### Prerequisites
 
@@ -175,4 +175,4 @@ Cons:
 
 ## Related resources
 
-For implementation details of the Runtime Governor, see [this document](./runtime-governor-poc/governor/README.md).
+For implementation details of the Runtime Governor, see [this document](./governor/README.md).
