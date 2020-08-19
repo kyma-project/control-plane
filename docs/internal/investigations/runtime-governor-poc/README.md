@@ -50,7 +50,7 @@ In the first step, deploy the Control Plane cluster. It hosts the Runtime Govern
 To deploy the Control Plane cluster, run the following command:
 
 ```bash
-./setup-cp.sh
+./setup-governor.sh
 ```
 
 You can watch the installation progress by checking the statuses of the Pods that are deployed in the cluster:
@@ -117,9 +117,12 @@ docker run --network=cpnet --rm --entrypoint curl curlimages/curl -iv http://${$
 To prove that the Runtime configuration can be dynamically reloaded, change the configuration for Runtime 2 to point to the Redis 1 instance. To do so, run the following command:
 
 ```bash
-CP_IPADDR=$(docker inspect k3d-governor-server-0 --format='{{json .NetworkSettings.Networks.cpnet.IPAddress}}'); REDIS1_PASSWORD=$(kubectl --context=k3d-governor get secret -n redis1-system redis -ojsonpath='{.data.redis-password}' | base64 -d) helm --kube-context=k3d-governor upgrade -i cp-governor -n cp-poc ./governor/chart \
-  --set redis1.host=${CP_IPADDR//\"}:30000 --set redis1.password=$REDIS1_PASSWORD \
-  --set redis2.host=${CP_IPADDR//\"}:30000 --set redis2.password=$REDIS1_PASSWORD
+helm --kube-context=k3d-governor upgrade -i cp-governor -n cp-poc ./governor/chart \
+  --set runtime2Revision=2 \
+  --set redis1.host=${$(docker inspect k3d-governor-server-0 --format='{{json .NetworkSettings.Networks.cpnet.IPAddress}}')//\"}:30000 \
+  --set redis1.password=$(kubectl --context=k3d-governor get secret -n redis1-system redis -ojsonpath='{.data.redis-password}' | base64 -d) \
+  --set redis2.host=${$(docker inspect k3d-governor-server-0 --format='{{json .NetworkSettings.Networks.cpnet.IPAddress}}')//\"}:30000 \
+  --set redis2.password=$(kubectl --context=k3d-governor get secret -n redis1-system redis -ojsonpath='{.data.redis-password}' | base64 -d)
 ```
 
 You can watch how the configuration is reloaded by the Runtime Agent in Runtime 2, and observe that the NodeApp Pod was restarted.

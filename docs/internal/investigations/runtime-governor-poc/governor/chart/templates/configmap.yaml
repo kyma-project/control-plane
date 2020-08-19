@@ -17,7 +17,7 @@ data:
             name: "statestore"
             namespace: "{{ .Release.Namespace }}"
             annotations:
-              kcp-res-version: "1"
+              kcp-res-version: "{{.Values.runtime1Revision}}"
           spec:
             type: "state.redis"
             metadata:
@@ -35,7 +35,7 @@ data:
             name: "statestore"
             namespace: "{{ .Release.Namespace }}"
             annotations:
-              kcp-res-version: "1"
+              kcp-res-version: "{{.Values.runtime2Revision}}"
           spec:
             type: "state.redis"
             metadata:
