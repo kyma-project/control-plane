@@ -4,7 +4,7 @@ metadata:
   labels:
     rafter.kyma-project.io/view-context: control-plane
     rafter.kyma-project.io/group-name: control-plane
-    rafter.kyma-project.io/order: "1"
+    rafter.kyma-project.io/order: "2"
   name: kyma-environment-broker
 spec:
   displayName: "Kyma Environment Broker"

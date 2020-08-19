@@ -4,7 +4,7 @@
 
 The `docs` folder contains documentation on Kyma Control Plane (KCP) and its components.
 
-The documents are arranged in the fixed order that follows the [content strategy](https://kyma-project.io/community/guidelines/content/#content-strategy-content-strategy-documentation-types). Read about these components in more detail:
+Start with the overarching [KCP documentation](./kyma-control-plane) where you can find general information on KCP. The documents are arranged in the fixed order that follows the [content strategy](https://kyma-project.io/community/guidelines/content/#content-strategy-content-strategy-documentation-types). Then, read about these components in more detail:
 * [Kyma Environment Broker](./kyma-environment-broker)
 * [Runtime Provisioner](./provisioner)
 
@@ -14,6 +14,7 @@ The directory has the following structure:
 
 ```                                   
   ├── internal                   # Internal documentation, such as investigations, proposals, and standards
+  ├── kyma-control-plane         # Overarching documentation for Kyma Control Plane                                     
   ├── kyma-environment-broker    # Documentation for the Kyma Environment Broker component                                     
   └── provisioner                # Documentation for the Runtime Provisioner component     
 ```
