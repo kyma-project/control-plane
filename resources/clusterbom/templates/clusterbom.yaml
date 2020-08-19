@@ -1,0 +1,27 @@
+apiVersion: "hub.k8s.sap.com/v1"
+kind: ClusterBom
+metadata:
+  name: 
+    {{- if .Release.Name | contains "-" -}}
+      {{ fail ".Release.Name cannot contain \"-\" character" }}
+    {{- else -}}
+      {{ .Release.Name }}
+    {{- end -}}
+  namespace: {{ .Release.Namespace }}
+spec:
+  secretRef: {{ .Release.Name | trunc 13 | trimSuffix "-" }}.kubeconfig
+  applicationConfigs:
+  - id: kyma
+    configType: helm
+    readyRequirements:
+      jobs:
+      - name: kyma-initializer-retrieve-info
+        namespace: kyma-installer
+    typeSpecificData:
+      catalogAccess:
+        chartName: "kyma"
+        repo: "sap-incubator"
+        chartVersion: "0.5.0-1.14.0"    
+      installName: "kyma"
+      installTimeout: 1000
+      namespace: "default"

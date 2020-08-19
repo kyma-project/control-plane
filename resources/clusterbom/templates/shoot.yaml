@@ -1,0 +1,75 @@
+kind: Shoot
+apiVersion: core.gardener.cloud/v1beta1
+metadata:
+  name: {{ .Release.Name | trunc 13 | trimSuffix "-" }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  addons:
+    kubernetesDashboard:
+      enabled: true
+      authenticationMode: token
+    nginxIngress:
+      enabled: false
+      externalTrafficPolicy: Cluster
+  cloudProfileName: az
+  dns:
+    domain: {{ .Release.Name | trunc 13 | trimSuffix "-" }}.{{ .Release.Namespace | trimPrefix "garden-" }}.shoot.canary.k8s-hana.ondemand.com
+  hibernation: {}
+  kubernetes:
+    allowPrivilegedContainers: true
+    kubeAPIServer:
+      enableBasicAuthentication: false
+    kubeControllerManager:
+      nodeCIDRMaskSize: 24
+    kubeProxy:
+      mode: IPTables
+    kubelet:
+      failSwapOn: true
+      kubeReserved:
+        cpu: 80m
+        memory: 1Gi
+    version: 1.16.12
+  maintenance:
+    autoUpdate:
+      kubernetesVersion: false
+      machineImageVersion: false
+    timeWindow:
+      begin: 220000+0000
+      end: 230000+0000
+  networking:
+    nodes: 10.250.0.0/19
+    pods: 100.96.0.0/11
+    services: 100.64.0.0/13
+    type: calico
+  provider:
+    type: azure
+    infrastructureConfig:
+      apiVersion: azure.provider.extensions.gardener.cloud/v1alpha1
+      kind: InfrastructureConfig
+      networks:
+        vnet:
+          cidr: 10.250.0.0/16
+        workers: 10.250.0.0/16
+      zoned: true
+    workers:
+      - name: cpu-worker-0
+        machine:
+          type: Standard_D4_v3
+          image:
+            name: gardenlinux
+            version: 27.1.0
+        maximum: 2
+        minimum: 2
+        maxSurge: 1
+        maxUnavailable: 0
+        volume:
+          type: Standard_LRS
+          size: 50Gi
+        zones:
+          - '3'
+        systemComponents:
+          allow: true
+  purpose: testing
+  region: northeurope
+  secretBindingName: my-azure-secret
+  seedName: az-us1
