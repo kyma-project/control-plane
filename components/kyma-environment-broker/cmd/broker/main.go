@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
+
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -157,31 +159,27 @@ func main() {
 	//
 	// Using map is intentional - we ensure that component name is not duplicated.
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		"Kiali":   runtime.NewGenericComponentDisabler("kiali", "kyma-system"),
-		"Tracing": runtime.NewGenericComponentDisabler("tracing", "kyma-system"),
-		// TODO(workaround until #1049): following components should be always disabled and user should not be able to enable them in provisioning request. This implies following components cannot be specified under the plan schema definition.
-		"BackupInt":               runtime.NewGenericComponentDisabler("backup-init", "kyma-system"),
-		"Backup":                  runtime.NewGenericComponentDisabler("backup", "kyma-system"),
-		"KnativeEventingKafka":    runtime.NewGenericComponentDisabler(provisioning.KymaComponentNameKnativeEventingKafka, "knative-eventing"),
-		"KnativeProvisionerNatss": runtime.NewGenericComponentDisabler(provisioning.KymaComponentNameKnativeProvisionerNatss, "knative-eventing"),
-		"NatsStreaming":           runtime.NewGenericComponentDisabler(provisioning.KymaComponentNameNatsStreaming, "natss"),
+		components.Kiali:   runtime.NewGenericComponentDisabler(components.Kiali),
+		components.Tracing: runtime.NewGenericComponentDisabler(components.Tracing),
 	}
 	optComponentsSvc := runtime.NewOptionalComponentsService(optionalComponentsDisablers)
+
+	disabledComponentsProvider := runtime.NewDisabledComponentsProvider()
 
 	runtimeProvider := runtime.NewComponentsListProvider(cfg.ManagedRuntimeComponentsYAMLFilePath)
 
 	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
 	fatalOnError(err)
-	//
 	gardenerSecrets, err := gardener.NewGardenerSecretsInterface(gardenerClusterConfig, cfg.Gardener.Project)
 	fatalOnError(err)
 	gardenerShoots, err := gardener.NewGardenerShootInterface(gardenerClusterConfig, cfg.Gardener.Project)
+	fatalOnError(err)
 
 	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
 	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecrets, gardenerShoots)
 	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool, gardenerSharedPool)
 
-	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, runtimeProvider, cfg.Provisioning, cfg.KymaVersion)
+	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider, cfg.Provisioning, cfg.KymaVersion)
 	fatalOnError(err)
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
@@ -248,12 +246,7 @@ func main() {
 		{
 			weight: 2,
 			step: provisioning.NewEnableForTrialPlanStep(db.Operations(),
-				provisioning.NewNatsStreamingStep(db.Operations())),
-		},
-		{
-			weight: 2,
-			step: provisioning.NewEnableForTrialPlanStep(db.Operations(),
-				provisioning.NewKnativeProvisionerNatssStep(db.Operations())),
+				provisioning.NewNatsStreamingOverridesStep(db.Operations())),
 		},
 		{
 			weight: 2,

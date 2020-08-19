@@ -78,6 +78,7 @@ const (
 
 	defaultEnableKubernetesVersionAutoUpdate   = false
 	defaultEnableMachineImageVersionAutoUpdate = false
+	forceAllowPrivilegedContainers             = false
 
 	mockedKubeconfig = `apiVersion: v1
 clusters:
@@ -207,7 +208,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 			provider := release.NewReleaseProvider(releaseRepository, nil)
 
-			inputConverter := provisioning.NewInputConverter(uuidGenerator, provider, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
+			inputConverter := provisioning.NewInputConverter(uuidGenerator, provider, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
 			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue)

@@ -17,6 +17,9 @@ spec:
         credentialName: {{ .Values.global.istio.gateway.name }}-certs
       hosts:
         - "*.{{ .Values.global.ingress.domainName }}"
+{{- with .Values.gateway.additionalDomainNames }}
+{{- tpl . $ | nindent 8 }}
+{{- end }}
     - port:
         number: 80
         name: http
@@ -25,4 +28,7 @@ spec:
         httpsRedirect: true # automatic 301 redirect from http to https
       hosts:
         - "*.{{.Values.global.ingress.domainName}}"
+{{- with .Values.gateway.additionalDomainNames }}
+{{- tpl . $ | nindent 8 }}
+{{- end -}}
 {{- end -}}

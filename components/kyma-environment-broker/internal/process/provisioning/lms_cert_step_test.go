@@ -1,10 +1,9 @@
 package provisioning
 
 import (
+	"fmt"
 	"testing"
 	"time"
-
-	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
@@ -183,7 +182,7 @@ type simpleInputCreator struct {
 	enabledComponents []string
 }
 
-func (c *simpleInputCreator) EnableComponent(name string) internal.ProvisionInputCreator {
+func (c *simpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionInputCreator {
 	c.enabledComponents = append(c.enabledComponents, name)
 	return c
 }

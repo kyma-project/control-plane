@@ -128,6 +128,8 @@ spec:
               value: {{ .Values.gardener.defaultEnableKubernetesVersionAutoUpdate | quote }}
             - name: APP_GARDENER_DEFAULT_ENABLE_MACHINE_IMAGE_VERSION_AUTO_UPDATE
               value: {{ .Values.gardener.defaultEnableMachineImageVersionAutoUpdate | quote }}
+            - name: APP_GARDENER_FORCE_ALLOW_PRIVILEGED_CONTAINERS
+              value: {{ .Values.gardener.forceAllowPrivilegedContainers | quote }}
             - name: APP_LATEST_DOWNLOADED_RELEASES
               value: "5"
             - name: APP_DOWNLOAD_PRE_RELEASES
