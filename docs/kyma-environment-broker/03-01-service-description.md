@@ -14,7 +14,7 @@ The supported plans are as follows:
 | `azure` | Installs Kyma Runtime on the Azure cluster. |
 | `azure_lite` | Installs Kyma Lite on the Azure cluster. |
 | `gcp` | Installs Kyma Runtime on the GCP cluster. |
-| `trial` | Installs Kyma Trial on chosen infrastructure. |
+| `trial` | Installs Kyma Trial on the chosen infrastructure. |
 
 ## Provisioning parameters
 
@@ -97,25 +97,25 @@ These are the provisioning parameters for GCP that you can configure:
  </div>
 
      
-## Trial Plan
+## Trial plan
 
-Trial Plan allows the user to choose the provider where they want to install Kyma. Trial features are that Kyma will be
-uninstalled, and the cluster will be deprovisioned after 30 days. Apart from that it's possible to provision only one Kyma
-per Global Account.
+Trial plan allows you to install Kyma on the infrastructure provided by any provider you choose. The Trial plan assumptions are as follows:
+- Kyma is uninstalled after 30 days and the Kyma cluster is deprovisioned after this time.
+- It's possible to provision only one Kyma Runtime per global account.
 
-These are the provisioning parameters for Trial Plan that you can configure:
+These are the provisioning parameters for the Trial plan that you can configure:
   
 <div tabs name="trial-plan" group="trial-plan">
   <details>
   <summary label="trial-plan">
-  Trial Plan
+  Trial plan
   </summary>
     
-| Parameter Name | Type | Description | Required | Possible values| Default value |  
+| Parameter name | Type | Description | Required | Possible values| Default value |  
 | ---------------|-------|-------------|----------|---------------|---------------|  
-| **name** | string | Specifies the name of the runtime. | Yes | Any string| None |  
+| **name** | string | Specifies the name of the Kyma Runtime. | Yes | Any string| None |  
 | **region** | int | Defines the cluster region. | No | `europe`,`us` | `europe` |  
-| **provider** | string | Specifies the cloud provider used while provisioning. | No | `Azure`, `GCP` | `Azure` |
+| **provider** | string | Specifies the cloud provider used during provisioning. | No | `Azure`, `GCP` | `Azure` |
  
  </details>
  </div>
