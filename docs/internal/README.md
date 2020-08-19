@@ -8,4 +8,4 @@ This folder contains internal documentation, such as proposals, investigations, 
 - [Provisioning API design](./proposals/provisioning-api.md)
 - [Runtime upgrade and rollback with the Runtime Provisioner](./runtime-upgrade.md)
 - [KCP Runtime management - concept](./investigations/KCP-runtime-management.md)
-- [Runtime Governor - Proof of Concept](./investigations/runtime-governor-poc/runtime-governor-poc.md)
+- [Runtime Governor - Proof of Concept](./investigations/runtime-governor-poc/README.md)
