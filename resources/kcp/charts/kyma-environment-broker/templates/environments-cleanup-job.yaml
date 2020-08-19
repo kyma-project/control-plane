@@ -76,12 +76,12 @@ spec:
                 valueFrom:
                   secretKeyRef:
                     key: client_id
-                    name: {{.Values.kebClient.secretName}}
+                    name: {{ include "kyma-env-broker.fullname" . }}-oauth
               - name: APP_BROKER_CLIENT_SECRET
                 valueFrom:
                   secretKeyRef:
                     key: client_secret
-                    name: {{.Values.kebClient.secretName}}
+                    name: {{ include "kyma-env-broker.fullname" . }}-oauth
               - name: APP_BROKER_SCOPE
                 value: {{.Values.kebClient.scope}}
             command:

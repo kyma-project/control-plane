@@ -152,8 +152,7 @@ cis:
     secretName: "cis-creds-v2"
 
 kebClient:
-  scope: "TBD"
-  secretName: "kcp-kyma-environment-broker-oauth"
+  scope: "broker:write"
 
 environmentsCleanup:
   schedule: "0 0 * * *"

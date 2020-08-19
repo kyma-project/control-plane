@@ -76,12 +76,12 @@ spec:
                 - name: APP_BROKER_CLIENT_ID
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.kebClient.secretName }}
+                      name: {{ include "kyma-env-broker.fullname" . }}-oauth
                       key: client_id
                 - name: APP_BROKER_CLIENT_SECRET
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.kebClient.secretName }}
+                      name: {{ include "kyma-env-broker.fullname" . }}-oauth
                       key: client_secret
                 - name: APP_BROKER_SCOPE
                   value: {{ .Values.kebClient.scope }}
@@ -185,12 +185,12 @@ spec:
                 - name: APP_BROKER_CLIENT_ID
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.kebClient.secretName }}
+                      name: {{ include "kyma-env-broker.fullname" . }}-oauth
                       key: client_id
                 - name: APP_BROKER_CLIENT_SECRET
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.kebClient.secretName }}
+                      name: {{ include "kyma-env-broker.fullname" . }}-oauth
                       key: client_secret
                 - name: APP_BROKER_SCOPE
                   value: {{ .Values.kebClient.scope }}
