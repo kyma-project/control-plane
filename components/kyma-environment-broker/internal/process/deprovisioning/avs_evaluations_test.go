@@ -45,7 +45,7 @@ func TestAvsEvaluationsRemovalStep_Run(t *testing.T) {
 	mockAvsServer := newMockAvsServer(t)
 	defer mockAvsServer.Close()
 	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
-	avsClient, err := avs.NewClient(context.TODO(), avsConfig)
+	avsClient, err := avs.NewClient(context.TODO(), avsConfig, logrus.New())
 	assert.NoError(t, err)
 	avsDel := avs.NewDelegator(avsClient, avsConfig, memoryStorage.Operations())
 	internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
