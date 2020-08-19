@@ -99,7 +99,7 @@ These are the provisioning parameters for GCP that you can configure:
      
 ## Trial Plan
 
-Trial Plan allows the user to choose the provider where they want to install Kyma. Trial drawbacks are that Kyma will be
+Trial Plan allows the user to choose the provider where they want to install Kyma. Trial features are that Kyma will be
 uninstalled, and the cluster will be deprovisioned after 30 days. Apart from that it's possible to provision only one Kyma
 per Global Account.
 
@@ -111,11 +111,11 @@ These are the provisioning parameters for Trial Plan that you can configure:
   Trial Plan
   </summary>
     
-| Parameter Name | Type | Description | Required | Possible values| Default value |
-| ---------------|-------|-------------|:----------:|---------------|
-| **name** | string | Specifies the provider-specific virtual machine type. | No | Any string| `n1-standard-4` |
-| **region** | int | Specifies the size of the root volume. | No | `europe`,`us` | `30` |
-| **provider** | string | Defines the cluster region. | No | `Azure`, `GCP` | `europe-west4` |
+| Parameter Name | Type | Description | Required | Possible values| Default value |  
+| ---------------|-------|-------------|----------|---------------|---------------|  
+| **name** | string | Specifies the name of the runtime. | Yes | Any string| None |  
+| **region** | int | Defines the cluster region. | No | `europe`,`us` | `europe` |  
+| **provider** | string | Specifies the cloud provider used while provisioning. | No | `Azure`, `GCP` | `Azure` |
  
  </details>
  </div>
