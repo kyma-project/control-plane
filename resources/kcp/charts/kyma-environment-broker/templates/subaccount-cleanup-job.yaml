@@ -18,6 +18,12 @@ spec:
           labels:
             cronjob: subaccount-cleaner-v1.0
         spec:
+          restartPolicy: Never
+          shareProcessNamespace: true
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
           containers:
             - name: cleaner
               image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-subaccount-cleanup-job:{{ .Values.global.images.kyma_environments_subaccount_cleanup_job.version }}"
@@ -89,24 +95,34 @@ spec:
                 - "/bin/sh"
               args:
                 - "-c"
-                - "./bin/accountcleanup; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
-            - name: cloudsql-proxy
-              image: gcr.io/cloudsql-docker/gce-proxy:1.14
-              command:
-                - /bin/sh
-              args:
-                - -c
-                - "trap 'exit 0' SIGINT; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json"
+                - "sleep 20; ./bin/accountcleanup; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+              {{if eq .Values.global.database.embedded.enabled false}}
               volumeMounts:
                 - name: cloudsql-instance-credentials
                   mountPath: /secrets/cloudsql-instance-credentials
                   readOnly: true
-          restartPolicy: Never
-          shareProcessNamespace: true
+              {{ end }}
+
+            {{- if eq .Values.global.database.embedded.enabled false }}
+            - name: cloudsql-proxy
+              image: gcr.io/cloudsql-docker/gce-proxy:1.16
+              command: ["/cloud_sql_proxy",
+                        "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                        "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
+              volumeMounts:
+                - name: cloudsql-instance-credentials
+                  mountPath: /secrets/cloudsql-instance-credentials
+                  readOnly: true
+              {{- with .Values.deployment.securityContext }}
+              securityContext:
+                {{ toYaml . | nindent 16 }}
+              {{- end }}
+
           volumes:
             - name: cloudsql-instance-credentials
               secret:
                 secretName: cloudsql-instance-credentials
+            {{end}}
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -127,6 +143,12 @@ spec:
           labels:
             cronjob: subaccount-cleaner-v2.0
         spec:
+          restartPolicy: Never
+          shareProcessNamespace: true
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
           containers:
             - name: cleaner
               image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-subaccount-cleanup-job:{{ .Values.global.images.kyma_environments_subaccount_cleanup_job.version }}"
@@ -198,22 +220,32 @@ spec:
                 - "/bin/sh"
               args:
                 - "-c"
-                - "./bin/accountcleanup; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+                - "sleep 20; ./bin/accountcleanup; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+              {{if eq .Values.global.database.embedded.enabled false}}
+              volumeMounts:
+              - name: cloudsql-instance-credentials
+                mountPath: /secrets/cloudsql-instance-credentials
+                readOnly: true
+              {{ end }}
+
+            {{- if eq .Values.global.database.embedded.enabled false }}
             - name: cloudsql-proxy
-              image: gcr.io/cloudsql-docker/gce-proxy:1.14
-              command:
-                - /bin/sh
-              args:
-                - -c
-                - "trap 'exit 0' SIGINT; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json"
+              image: gcr.io/cloudsql-docker/gce-proxy:1.16
+              command: ["/cloud_sql_proxy",
+                        "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                        "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
               volumeMounts:
                 - name: cloudsql-instance-credentials
                   mountPath: /secrets/cloudsql-instance-credentials
                   readOnly: true
-          restartPolicy: Never
-          shareProcessNamespace: true
+              {{- with .Values.deployment.securityContext }}
+              securityContext:
+                {{ toYaml . | nindent 16 }}
+              {{- end }}
+
           volumes:
             - name: cloudsql-instance-credentials
               secret:
                 secretName: cloudsql-instance-credentials
+            {{end}}
 {{ end }}
