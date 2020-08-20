@@ -110,6 +110,8 @@ These are the steps that are skipped during the Trial plan provisioning:
 - `Request_LMS_Certificates`
 - `AVS External Evaluation` (part of the post actions during `Initialisation` step)
 
+### Provisioning parameters
+
 These are the provisioning parameters for the Trial plan that you can configure:
   
 <div tabs name="trial-plan" group="trial-plan">
