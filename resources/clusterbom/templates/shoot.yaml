@@ -1,45 +1,24 @@
 kind: Shoot
 apiVersion: core.gardener.cloud/v1beta1
 metadata:
-  name: {{ .Release.Name | trunc 13 | trimSuffix "-" }}
-  namespace: {{ .Release.Namespace }}
+  name: {shoot-name}
 spec:
-  addons:
-    kubernetesDashboard:
-      enabled: true
-      authenticationMode: token
-    nginxIngress:
-      enabled: false
-      externalTrafficPolicy: Cluster
   cloudProfileName: az
-  dns:
-    domain: {{ .Release.Name | trunc 13 | trimSuffix "-" }}.{{ .Release.Namespace | trimPrefix "garden-" }}.shoot.canary.k8s-hana.ondemand.com
-  hibernation: {}
   kubernetes:
     allowPrivilegedContainers: true
     kubeAPIServer:
       enableBasicAuthentication: false
-    kubeControllerManager:
-      nodeCIDRMaskSize: 24
-    kubeProxy:
-      mode: IPTables
-    kubelet:
-      failSwapOn: true
-      kubeReserved:
-        cpu: 80m
-        memory: 1Gi
     version: 1.16.12
   maintenance:
     autoUpdate:
       kubernetesVersion: false
       machineImageVersion: false
     timeWindow:
+      # standard SAP maintenance window for Europe
       begin: 220000+0000
-      end: 230000+0000
+      end: 020000+0000
   networking:
     nodes: 10.250.0.0/19
-    pods: 100.96.0.0/11
-    services: 100.64.0.0/13
     type: calico
   provider:
     type: azure
@@ -52,24 +31,30 @@ spec:
         workers: 10.250.0.0/16
       zoned: true
     workers:
+        # those depend on the desired workload, default Kyma SKR values are used for this worker group
       - name: cpu-worker-0
         machine:
-          type: Standard_D4_v3
+          type: Standard_D8_v3
           image:
             name: gardenlinux
             version: 27.1.0
-        maximum: 2
-        minimum: 2
-        maxSurge: 1
-        maxUnavailable: 0
+        maximum: 10
+        minimum: 3
+        maxSurge: 4
+        maxUnavailable: 1
         volume:
           type: Standard_LRS
           size: 50Gi
         zones:
+          - '1'
+          - '2'
           - '3'
         systemComponents:
           allow: true
-  purpose: testing
-  region: northeurope
-  secretBindingName: my-azure-secret
-  seedName: az-us1
+  # this is just an indicator of cluster purpose, not really affecting it's behaviour
+  purpose: development
+  # examples: northeurope, westeurope, centralus, westus2
+  region: {cluster-region}
+  secretBindingName: {gardener-secret-name}
+  # examples: az-us1 az-eu1 az-us2 az-eu2, best to match region
+  seedName: {gardener-seed}

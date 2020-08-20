@@ -1,15 +1,9 @@
 apiVersion: "hub.k8s.sap.com/v1"
 kind: ClusterBom
 metadata:
-  name: 
-    {{- if .Release.Name | contains "-" -}}
-      {{ fail ".Release.Name cannot contain \"-\" character" }}
-    {{- else -}}
-      {{ .Release.Name }}
-    {{- end -}}
-  namespace: {{ .Release.Namespace }}
+  name: {shoot-name}
 spec:
-  secretRef: {{ .Release.Name | trunc 13 | trimSuffix "-" }}.kubeconfig
+  secretRef: {shoot-name}.kubeconfig
   applicationConfigs:
   - id: kyma
     configType: helm
