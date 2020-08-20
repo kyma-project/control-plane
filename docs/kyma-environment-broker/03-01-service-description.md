@@ -103,11 +103,12 @@ Trial plan allows you to install Kyma on the infrastructure provided by any prov
 - Kyma is uninstalled after 30 days and the Kyma cluster is deprovisioned after this time.
 - It's possible to provision only one Kyma Runtime per global account.
 
-Since the Trial plan is not meant to be used in production, it skips some of the [provisioning](./03-03-runtime-provisioning-and-deprovisioning.md#provisioning)
+To reduce the cost the Trial plan skips some of the [provisioning](./03-03-runtime-provisioning-and-deprovisioning.md#provisioning)
 steps.The skipped steps are:
 - `Create_LMS_Tenant`
 - `Provision_Azure_Event_Hubs`
 - `Request_LMS_Certificates`
+
 Apart from these steps it also doesn't create the AVS External Evaluation
 
 These are the provisioning parameters for the Trial plan that you can configure:
