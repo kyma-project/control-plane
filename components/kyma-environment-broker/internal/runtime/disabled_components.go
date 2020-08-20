@@ -24,15 +24,15 @@ func NewDisabledComponentsProvider() DisabledComponentsProvider {
 			components.BackupInit: {},
 		},
 		broker.GCPPlanID: {
-			components.NatssStreaming:          {},
+			components.NatsStreaming:           {},
 			components.KnativeProvisionerNatss: {},
 		},
 		broker.AzurePlanID: {
-			components.NatssStreaming:          {},
+			components.NatsStreaming:           {},
 			components.KnativeProvisionerNatss: {},
 		},
 		broker.AzureLitePlanID: {
-			components.NatssStreaming:          {},
+			components.NatsStreaming:           {},
 			components.KnativeProvisionerNatss: {},
 		},
 		broker.AzureTrialPlanID: {

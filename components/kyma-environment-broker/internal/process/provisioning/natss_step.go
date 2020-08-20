@@ -36,7 +36,7 @@ func (s *NatsStreamingStep) Run(operation internal.ProvisioningOperation, log lo
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 	log.Infof("Provisioning for PlanID: %s", parameters.PlanID)
-	operation.InputCreator.AppendOverrides(components.NatssStreaming, getNatsStreamingOverrides())
+	operation.InputCreator.AppendOverrides(components.NatsStreaming, getNatsStreamingOverrides())
 	return operation, 0, nil
 }
 
