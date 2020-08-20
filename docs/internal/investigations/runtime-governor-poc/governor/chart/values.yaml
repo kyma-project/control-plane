@@ -21,3 +21,6 @@ redis1:
 redis2:
   host: 127.0.0.1:6379
   password: "P@ssw0rd"
+
+runtime1Revision: 1
+runtime2Revision: 1
