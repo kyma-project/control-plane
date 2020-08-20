@@ -99,12 +99,12 @@ These are the provisioning parameters for GCP that you can configure:
      
 ## Trial plan
 
-Trial plan allows you to install Kyma on the infrastructure provided by any provider you choose. The Trial plan assumptions are as follows:
+Trial plan allows you to install Kyma either on Azure or GCP. The Trial plan assumptions are as follows:
 - Kyma is uninstalled after 30 days and the Kyma cluster is deprovisioned after this time.
 - It's possible to provision only one Kyma Runtime per global account.
 
-To reduce the cost the Trial plan skips some of the [provisioning](./03-03-runtime-provisioning-and-deprovisioning.md#provisioning)
-steps.The skipped steps are:
+To reduce the cost, the Trial plan skips some of the [provisioning steps](./03-03-runtime-provisioning-and-deprovisioning.md#provisioning)
+These are the steps that are skipped during the Trial plan provisioning:
 - `Create_LMS_Tenant`
 - `Provision_Azure_Event_Hubs`
 - `Request_LMS_Certificates`
