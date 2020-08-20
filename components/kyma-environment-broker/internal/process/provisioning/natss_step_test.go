@@ -33,7 +33,7 @@ func TestNatssWithInitialOverrides(t *testing.T) {
 	log := logrus.New()
 	operation := fixOperationWithPlanID(t, "any")
 	simpleInputCreator := newInputCreator()
-	simpleInputCreator.AppendOverrides(components.NatssStreaming, []*gqlschema.ConfigEntryInput{&cei})
+	simpleInputCreator.AppendOverrides(components.NatsStreaming, []*gqlschema.ConfigEntryInput{&cei})
 	operation.InputCreator = simpleInputCreator
 	var runTime time.Duration = 0
 
@@ -44,7 +44,7 @@ func TestNatssWithInitialOverrides(t *testing.T) {
 
 	// Then
 	require.NoError(t, err)
-	ovrs := simpleInputCreator.overrides[components.NatssStreaming]
+	ovrs := simpleInputCreator.overrides[components.NatsStreaming]
 	assert.Equal(t, &cei, ovrs[0])
 	assert.Equal(t, &ceo, ovrs[1])
 	assert.Equal(t, runTime, time)
@@ -68,7 +68,7 @@ func TestNatssWithEmptyOverrides(t *testing.T) {
 
 	// Then
 	require.NoError(t, err)
-	simpleInputCreator.AssertOverride(t, components.NatssStreaming, ceo)
+	simpleInputCreator.AssertOverride(t, components.NatsStreaming, ceo)
 	assert.Equal(t, runTime, time)
 	assert.Equal(t, operation, returnedOperation)
 }
