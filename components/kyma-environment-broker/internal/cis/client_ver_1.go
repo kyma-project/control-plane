@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -16,7 +15,7 @@ import (
 
 const (
 	eventServicePathVer1 = "%s/public/rest/v2/events"
-	eventTypeVer1        = "SUBACCOUNT_DELETION"
+	eventTypeVer1        = "MASTER_SUBACCOUNT_DELETION"
 	defaultPageSizeVer1  = "1000"
 )
 
@@ -33,7 +32,6 @@ func NewClientVer1(ctx context.Context, config Config, log logrus.FieldLogger) *
 		TokenURL:     config.AuthURL,
 	}
 	httpClientOAuth := cfg.Client(ctx)
-	httpClientOAuth.Timeout = 30 * time.Second
 
 	if config.PageSize == "" {
 		config.PageSize = defaultPageSizeVer1

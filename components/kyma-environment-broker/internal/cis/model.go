@@ -14,7 +14,7 @@ type CisResponse struct {
 }
 
 type EventDataVer1 struct {
-	SubAccount string `json:"tenantName"`
+	SubAccount string `json:"subaccountGuid"`
 }
 
 type EventVer1 struct {

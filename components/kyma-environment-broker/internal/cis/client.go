@@ -41,7 +41,6 @@ func NewClient(ctx context.Context, config Config, log logrus.FieldLogger) *Clie
 		TokenURL:     config.AuthURL,
 	}
 	httpClientOAuth := cfg.Client(ctx)
-	httpClientOAuth.Timeout = 30 * time.Second
 
 	if config.PageSize == "" {
 		config.PageSize = defaultPageSize

@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// go test --tags="cis" -v
 func TestSubAccountCleanup(t *testing.T) {
 	ctx := context.Background()
 
