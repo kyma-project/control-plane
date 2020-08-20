@@ -108,6 +108,7 @@ These are the steps that are skipped during the Trial plan provisioning:
 - `Create_LMS_Tenant`
 - `Provision_Azure_Event_Hubs`
 - `Request_LMS_Certificates`
+- `AVS External Evaluation` (part of the post actions during `Initialisation` step)
 
 Apart from these steps it also doesn't create the AVS External Evaluation
 
