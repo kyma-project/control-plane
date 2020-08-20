@@ -14,7 +14,7 @@ The supported plans are as follows:
 | `azure` | Installs Kyma Runtime on the Azure cluster. |
 | `azure_lite` | Installs Kyma Lite on the Azure cluster. |
 | `gcp` | Installs Kyma Runtime on the GCP cluster. |
-| `trial` | Installs Kyma Trial on the chosen infrastructure. |
+| `trial` | Installs Kyma Trial on Azure or GCP. |
 
 ## Provisioning parameters
 
