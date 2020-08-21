@@ -81,7 +81,7 @@ func (p *GcpTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, par
 	}
 
 	if params.Region != nil && params.Zones == nil {
-		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(*params.Region))
+		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(*toGCPSpecific[*params.Region]))
 	}
 
 	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, params.Zones)
