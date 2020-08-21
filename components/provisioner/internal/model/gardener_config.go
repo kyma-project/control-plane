@@ -69,6 +69,10 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 	}
 
 	shoot := &gardener_types.Shoot{
+		TypeMeta: v1.TypeMeta{
+			Kind:       "Shoot",
+			APIVersion: "core.gardener.cloud/v1beta1",
+		},
 		ObjectMeta: v1.ObjectMeta{
 			Name:      c.Name,
 			Namespace: namespace,

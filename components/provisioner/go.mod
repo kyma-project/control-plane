@@ -29,6 +29,7 @@ require (
 	github.com/vrischmann/envconfig v1.2.0
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.17.2
+	k8s.io/apiextensions-apiserver v0.0.0-20190918201827-3de75813f604
 	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible // tag kubernetes-1.15.6
 	sigs.k8s.io/controller-runtime v0.5.0
