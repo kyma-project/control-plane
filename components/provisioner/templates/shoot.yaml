@@ -10,7 +10,7 @@ metadata:
 spec:
   cloudProfileName: az
   kubernetes:
-    allowPrivilegedContainers: false
+    allowPrivilegedContainers: true
     kubeAPIServer:
       enableBasicAuthentication: false
     version: 1.16.12

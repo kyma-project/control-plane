@@ -152,6 +152,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 			provider:       "gcp",
 			providerConfig: gcpGardenerProvider,
 			expectedShootTemplate: &gardener_types.Shoot{
+				TypeMeta: v1.TypeMeta{
+					Kind:       "Shoot",
+					APIVersion: "core.gardener.cloud/v1beta1",
+				},
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "cluster",
 					Namespace: "gardener-namespace",
@@ -207,6 +211,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 			provider:       "az",
 			providerConfig: azureGardenerProvider,
 			expectedShootTemplate: &gardener_types.Shoot{
+				TypeMeta: v1.TypeMeta{
+					Kind:       "Shoot",
+					APIVersion: "core.gardener.cloud/v1beta1",
+				},
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "cluster",
 					Namespace: "gardener-namespace",
@@ -261,6 +269,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 			provider:       "az",
 			providerConfig: azureNoZonesGardenerProvider,
 			expectedShootTemplate: &gardener_types.Shoot{
+				TypeMeta: v1.TypeMeta{
+					Kind:       "Shoot",
+					APIVersion: "core.gardener.cloud/v1beta1",
+				},
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "cluster",
 					Namespace: "gardener-namespace",
@@ -316,6 +328,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 			provider:       "aws",
 			providerConfig: awsGardenerProvider,
 			expectedShootTemplate: &gardener_types.Shoot{
+				TypeMeta: v1.TypeMeta{
+					Kind:       "Shoot",
+					APIVersion: "core.gardener.cloud/v1beta1",
+				},
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "cluster",
 					Namespace: "gardener-namespace",

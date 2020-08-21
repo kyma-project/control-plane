@@ -4,3 +4,4 @@ vendor
 /licenses
 /.hydroform
 /dev
+/templates-rendered

@@ -8,7 +8,7 @@ import (
 
 func TestGenerateShootTemplate(t *testing.T) {
 
-	expectedTemplate := []byte(`apiVersion: core.gardener.cloud/v1beta1
+	expectedTemplate := `apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
   creationTimestamp: null
@@ -20,7 +20,7 @@ metadata:
 spec:
   cloudProfileName: az
   kubernetes:
-    allowPrivilegedContainers: false
+    allowPrivilegedContainers: true
     kubeAPIServer:
       enableBasicAuthentication: false
     version: 1.16.12
@@ -73,10 +73,10 @@ status:
   hibernated: false
   technicalID: ""
   uid: ""
-`)
+`
 
 	template, err := GenerateShootTemplate()
 	require.NoError(t, err)
 
-	assert.Equal(t, expectedTemplate, template)
+	assert.Equal(t, expectedTemplate, string(template))
 }

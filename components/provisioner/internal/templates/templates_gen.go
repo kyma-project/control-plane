@@ -66,8 +66,8 @@ func defaultGardenerConfig() (model.GardenerConfig, error) {
 		AutoScalerMax:                       10,
 		MaxSurge:                            4,
 		MaxUnavailable:                      1,
-		EnableKubernetesVersionAutoUpdate:   false, // TODO
-		EnableMachineImageVersionAutoUpdate: false, // TODO
+		EnableKubernetesVersionAutoUpdate:   false,
+		EnableMachineImageVersionAutoUpdate: false,
 		AllowPrivilegedContainers:           true,	// TODO: change when removing tiller
 		GardenerProviderConfig:              defaultAzureConifg,
 	}
