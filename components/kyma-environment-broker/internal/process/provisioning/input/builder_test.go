@@ -3,6 +3,8 @@ package input
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -26,8 +28,7 @@ func TestInputBuilderFactory_IsPlanSupport(t *testing.T) {
 	// when/then
 	assert.True(t, ibf.IsPlanSupport(broker.GCPPlanID))
 	assert.True(t, ibf.IsPlanSupport(broker.AzurePlanID))
-	assert.True(t, ibf.IsPlanSupport(broker.GcpTrialPlanID))
-	assert.True(t, ibf.IsPlanSupport(broker.AzureTrialPlanID))
+	assert.True(t, ibf.IsPlanSupport(broker.TrialPlanID))
 }
 
 func TestInputBuilderFactory_ForPlan(t *testing.T) {
@@ -39,9 +40,10 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "1.10")
 		assert.NoError(t, err)
+		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 
 		// when
-		input, err := ibf.ForPlan(broker.GCPPlanID, "")
+		input, err := ibf.Create(pp)
 
 		// Then
 		assert.NoError(t, err)
@@ -57,12 +59,22 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "1.10")
 		assert.NoError(t, err)
+		pp := fixProvisioningParameters(broker.GCPPlanID, "PR-1")
 
 		// when
-		input, err := ibf.ForPlan(broker.GCPPlanID, "PR-1")
+		input, err := ibf.Create(pp)
 
 		// Then
 		assert.NoError(t, err)
 		assert.IsType(t, &RuntimeInput{}, input)
 	})
+}
+
+func fixProvisioningParameters(planID, kymaVersion string) internal.ProvisioningParameters {
+	return internal.ProvisioningParameters{
+		PlanID: planID,
+		Parameters: internal.ProvisioningParametersDTO{
+			KymaVersion: kymaVersion,
+		},
+	}
 }

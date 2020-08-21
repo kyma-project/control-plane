@@ -35,10 +35,7 @@ func NewDisabledComponentsProvider() DisabledComponentsProvider {
 			components.NatsStreaming:           {},
 			components.KnativeProvisionerNatss: {},
 		},
-		broker.AzureTrialPlanID: {
-			components.KnativeEventingKafka: {},
-		},
-		broker.GcpTrialPlanID: {
+		broker.TrialPlanID: {
 			components.KnativeEventingKafka: {},
 		},
 	}

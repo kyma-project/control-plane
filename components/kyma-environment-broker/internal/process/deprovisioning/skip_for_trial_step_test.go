@@ -31,7 +31,7 @@ func TestSkipForTrialPlanStepShouldSkip(t *testing.T) {
 	log := logrus.New()
 	wantSkipTime := time.Duration(0)
 	givenStorage := storage.NewMemoryStorage()
-	wantOperation := fixOperationWithPlanID(t, broker.GcpTrialPlanID)
+	wantOperation := fixOperationWithPlanID(t, broker.TrialPlanID)
 
 	mockStep := new(automock.Step)
 	mockStep.On("Name").Return("Test")

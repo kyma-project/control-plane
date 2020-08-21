@@ -17,7 +17,7 @@ func TestEnableForTrialPlanStepShouldEnable(t *testing.T) {
 	// Given
 	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
-	operation := fixOperationWithPlanID(t, broker.GcpTrialPlanID)
+	operation := fixOperationWithPlanID(t, broker.TrialPlanID)
 	simpleInputCreator := newInputCreator()
 	operation.InputCreator = simpleInputCreator
 	anotherOperation := fixOperationWithPlanID(t, "enabled")
