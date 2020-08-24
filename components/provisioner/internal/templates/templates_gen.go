@@ -6,15 +6,26 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"k8s.io/apimachinery/pkg/runtime"
+	"strings"
 )
 
 const namespaceTemplate = "garden-{{ .ProjectName }}"
 
-// TODO: missing maintenance window
-// TODO: add gcp and aws as an option
+func GenerateShootTemplate(provider string) ([]byte, error) {
+	var gardenerConfig model.GardenerConfig
+	var err error
 
-func GenerateShootTemplate() ([]byte, error) {
-	gardenerConfig, err := defaultGardenerConfig()
+	switch strings.ToLower(provider) {
+	case "azure":
+		gardenerConfig, err = defaultGardenerAzureConfig()
+		break
+	case "gcp":
+		panic("unimplemented")
+	case "aws":
+		panic("unimplemented")
+	default:
+		err = fmt.Errorf("error: unsupported provider %s. Must be one of: azure, gcp, aws", provider)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("error when creating default GardenerConfig: %s", err.Error())
 	}
@@ -40,7 +51,7 @@ func GenerateShootTemplate() ([]byte, error) {
 }
 
 
-func defaultGardenerConfig() (model.GardenerConfig, error) {
+func defaultGardenerAzureConfig() (model.GardenerConfig, error) {
 	azureConfigInput := gqlschema.AzureProviderConfigInput{
 		VnetCidr: "10.250.0.0/16",
 		Zones:    []string{"1", "2", "3"},
@@ -60,7 +71,6 @@ func defaultGardenerConfig() (model.GardenerConfig, error) {
 		MachineImageVersion:                 util.StringPtr("27.1.0"),
 		Provider:                            "azure",
 		Purpose:                             util.StringPtr("development"),
-		LicenceType:                         nil, // TODO: ??
 		WorkerCidr:                          "10.250.0.0/16",
 		AutoScalerMin:                       3,
 		AutoScalerMax:                       10,

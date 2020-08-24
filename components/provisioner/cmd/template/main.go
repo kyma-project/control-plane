@@ -24,6 +24,11 @@ func main() {
 			Aliases: []string{"gen"},
 			Usage:   "Generate Shoot template",
 			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name: "provider",
+					Value: "azure",
+					Usage: "Underlying cloud provider for Gardener to use",
+				},
 				&cli.PathFlag{
 					Name: "out",
 					Aliases: []string{"o"},
@@ -34,7 +39,7 @@ func main() {
 			Action: func(c *cli.Context) error {
 				outPath := c.Path("out")
 				fmt.Printf("\nGenerating Shoot template in '%s'...\n", outPath)
-				return generateShootTemplate(outPath)
+				return generateShootTemplate(c.String("provider"), outPath)
 			},
 		},
 		{
@@ -44,7 +49,6 @@ func main() {
 				&cli.StringFlag{
 					Name: "shoot",
 					Value: "my-shoot",
-					Required: true,
 					Usage: "Name of the Shoot",
 				},
 				&cli.StringFlag{
@@ -94,11 +98,10 @@ func main() {
 	if err != nil {
 		exitOnError(err, "error")
 	}
-
 }
 
-func generateShootTemplate(outPath string) error {
-	shootTemplate, err := templates.GenerateShootTemplate()
+func generateShootTemplate(provider, outPath string) error {
+	shootTemplate, err := templates.GenerateShootTemplate(provider)
 	if err != nil {
 		return fmt.Errorf("error when generating Shoot tamplate: %s", err.Error())
 	}
@@ -128,14 +131,14 @@ func renderTemplates(inDir, outPathDir string, values templates.Values) error {
 
 		content, err := ioutil.ReadFile(path.Join(inDir, file.Name()))
 		if err != nil {
-			// TODO: just log fail?
 			return fmt.Errorf("error while reading %s file: %s", file.Name(), err.Error())
 		}
 
 		rendered, err := templates.RenderTemplate(string(content), values)
 		if err != nil {
-			// TODO: just log fail?
-			return fmt.Errorf("error while rendering %s file: %s", file.Name(), err.Error())
+			// If failed to render, the fail may not be template - log error and continue
+			fmt.Printf("\nerror while rendering %s file: %s\n", file.Name(), err.Error())
+			continue
 		}
 
 		err = ioutil.WriteFile(path.Join(outPathDir, file.Name()), rendered, os.ModePerm)
