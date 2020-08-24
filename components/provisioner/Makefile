@@ -1,6 +1,6 @@
 APP_NAME = provisioner
 APP_PATH = components/provisioner
-ENTRYPOINT = cmd/main.go
+ENTRYPOINT = cmd/provisioner/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-kubebuilder2:v20200506-76a53983
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 DOCKER_SOCKET = /var/run/docker.sock
@@ -48,6 +48,7 @@ check-templates:
 		exit 1; \
 	fi;
 
+$(eval $(call buildpack-mount,check-templates))
 
 # We have to override test-local and errcheck, because we need to run provisioner with database
 #as docker container connected with custom network and the buildpack container itsefl has to be connected to the network
