@@ -69,8 +69,8 @@ clean-up:
 
 check-templates:
 	@echo regenerate template
-	go run ./cmd/template generate
-	@if [ -z "$$(git status -s templates)" ]; then \
+	@go run ./cmd/template generate
+	@if [ ! -z "$$(git status -s templates)" ]; then \
 		echo -e "${RED}✗ regenerating templates modified './templates' directory${NC}"; \
 		git status -s git status -s templates; \
 		exit 1; \
