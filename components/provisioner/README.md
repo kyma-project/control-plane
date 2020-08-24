@@ -26,6 +26,10 @@ After you introduce changes in the GraphQL schema, run the `gqlgen.sh` script.
 
 For tests to run properly, update the database schema in `./assets/database/provisioner.sql`. Provide the new migration in the Schema Migrator component in `migrations/provisioner`.
 
+### Templates
+
+With any changes to the Provisioner the `shoot.yaml` template need to be maintained. After adjusting values, [the template need to be regenerated](./templates/README.md). 
+
 ### Run Provisioner
 
 To run the Runtime Provisioner, use the following command:
