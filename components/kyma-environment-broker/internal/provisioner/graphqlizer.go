@@ -190,6 +190,12 @@ func (g *Graphqlizer) marshal(obj interface{}) string {
 	return out
 }
 
+func (g *Graphqlizer) UpgradeRuntimeInputToGraphQL(in gqlschema.UpgradeRuntimeInput) (string, error) {
+	return g.genericToGraphQL(in, `{
+		kymaConfig: {{ KymaConfigToGraphQL .KymaConfig }}
+	}`)
+}
+
 func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, error) {
 	fm := sprig.TxtFuncMap()
 	fm["marshal"] = g.marshal
