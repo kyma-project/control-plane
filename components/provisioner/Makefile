@@ -10,9 +10,9 @@ export PIPELINE_BUILD
 
 include $(SCRIPTS_DIR)/generic_make_go.mk
 
-.PHONY: gqlgen check-gqlgen testing-with-database-network clean-up mod-verify go-mod-check
+.PHONY: gqlgen check-gqlgen testing-with-database-network clean-up mod-verify go-mod-check check-templates
 
-verify:: gqlgen check-gqlgen testing-with-database-network mod-verify go-mod-check
+verify:: gqlgen check-gqlgen testing-with-database-network mod-verify go-mod-check check-templates
 
 resolve-local:
 	GO111MODULE=on go mod vendor -v
@@ -66,3 +66,12 @@ testing-with-database-network:
 
 clean-up:
 	@docker network rm $(TESTING_DB_NETWORK)
+
+check-templates:
+	@echo regenerate template
+	go run ./cmd/template generate
+	@if [ -z "$$(git status -s templates)" ]; then \
+		echo -e "${RED}✗ regenerating templates modified './templates' directory${NC}"; \
+		git status -s git status -s templates; \
+		exit 1; \
+	fi;

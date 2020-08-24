@@ -1,9 +1,10 @@
 package templates
 
 import (
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGenerateShootTemplate(t *testing.T) {
@@ -75,8 +76,17 @@ status:
   uid: ""
 `
 
-	template, err := GenerateShootTemplate()
+	template, err := GenerateShootTemplate("azure")
 	require.NoError(t, err)
 
 	assert.Equal(t, expectedTemplate, string(template))
+}
+
+func TestGenerateShootTemplate_Error(t *testing.T) {
+
+	t.Run("should return error if provider not supported", func(t *testing.T) {
+		_, err := GenerateShootTemplate("not-a-provider")
+		require.Error(t, err)
+	})
+
 }

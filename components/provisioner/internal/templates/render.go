@@ -7,10 +7,10 @@ import (
 )
 
 type Values struct {
-	ShootName string
-	ProjectName string
+	ShootName          string
+	ProjectName        string
 	GardenerSecretName string
-	Region string
+	Region             string
 }
 
 // TODO: test
@@ -28,4 +28,3 @@ func RenderTemplate(text string, values Values) ([]byte, error) {
 
 	return buffer.Bytes(), nil
 }
-

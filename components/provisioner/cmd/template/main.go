@@ -2,16 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/templates"
-	log "github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
 	"io/ioutil"
 	"os"
 	"path"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/templates"
+	log "github.com/sirupsen/logrus"
+	"github.com/urfave/cli/v2"
 )
 
 const (
-	templatesDir = "templates"
+	templatesDir      = "templates"
 	shootTemplateName = "shoot.yaml"
 )
 
@@ -25,15 +26,15 @@ func main() {
 			Usage:   "Generate Shoot template",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
-					Name: "provider",
+					Name:  "provider",
 					Value: "azure",
 					Usage: "Underlying cloud provider for Gardener to use",
 				},
 				&cli.PathFlag{
-					Name: "out",
+					Name:    "out",
 					Aliases: []string{"o"},
-					Value: path.Join(templatesDir, shootTemplateName),
-					Usage: "Output file to which Shoot template will be saved",
+					Value:   path.Join(templatesDir, shootTemplateName),
+					Usage:   "Output file to which Shoot template will be saved",
 				},
 			},
 			Action: func(c *cli.Context) error {
@@ -43,39 +44,39 @@ func main() {
 			},
 		},
 		{
-			Name:    "render",
-			Usage:   "Render templates with provided values",
+			Name:  "render",
+			Usage: "Render templates with provided values",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
-					Name: "shoot",
+					Name:  "shoot",
 					Value: "my-shoot",
 					Usage: "Name of the Shoot",
 				},
 				&cli.StringFlag{
-					Name: "project",
+					Name:     "project",
 					Required: true,
-					Usage: "Name of the Gardener project",
+					Usage:    "Name of the Gardener project",
 				},
 				&cli.StringFlag{
-					Name: "secret",
+					Name:     "secret",
 					Required: true,
-					Usage: "Name of the Gardener secret",
+					Usage:    "Name of the Gardener secret",
 				},
 				&cli.StringFlag{
-					Name: "region",
+					Name:  "region",
 					Value: "westeurope",
 					Usage: "Region in which cluster should be deployed. One of: northeurope, westeurope, centralus, westus2",
 				},
 				&cli.PathFlag{
-					Name: "dir",
+					Name:  "dir",
 					Value: templatesDir,
 					Usage: "Directory containing the templates",
 				},
 				&cli.PathFlag{
-					Name: "out",
+					Name:    "out",
 					Aliases: []string{"o"},
-					Value: "templates-rendered",
-					Usage: "Output directory to which resources will be rendered",
+					Value:   "templates-rendered",
+					Usage:   "Output directory to which resources will be rendered",
 				},
 			},
 			Action: func(c *cli.Context) error {
@@ -165,4 +166,3 @@ func exitOnError(err error, context string) {
 		log.Fatal(wrappedError)
 	}
 }
-

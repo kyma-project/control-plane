@@ -2,11 +2,12 @@ package templates
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"k8s.io/apimachinery/pkg/runtime"
-	"strings"
 )
 
 const namespaceTemplate = "garden-{{ .ProjectName }}"
@@ -50,7 +51,6 @@ func GenerateShootTemplate(provider string) ([]byte, error) {
 	return marshalled, nil
 }
 
-
 func defaultGardenerAzureConfig() (model.GardenerConfig, error) {
 	azureConfigInput := gqlschema.AzureProviderConfigInput{
 		VnetCidr: "10.250.0.0/16",
@@ -78,7 +78,7 @@ func defaultGardenerAzureConfig() (model.GardenerConfig, error) {
 		MaxUnavailable:                      1,
 		EnableKubernetesVersionAutoUpdate:   false,
 		EnableMachineImageVersionAutoUpdate: false,
-		AllowPrivilegedContainers:           true,	// TODO: change when removing tiller
+		AllowPrivilegedContainers:           true, // TODO: change when removing tiller
 		GardenerProviderConfig:              defaultAzureConifg,
 	}
 
