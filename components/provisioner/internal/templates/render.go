@@ -13,7 +13,6 @@ type Values struct {
 	Region             string
 }
 
-// TODO: test
 func RenderTemplate(text string, values Values) ([]byte, error) {
 	templ, err := template.New("").Parse(text)
 	if err != nil {
