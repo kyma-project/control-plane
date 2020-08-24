@@ -5,7 +5,7 @@ const (
 	KnativeEventing         = "knative-eventing"
 	KnativeEventingKafka    = "knative-eventing-kafka"
 	KnativeProvisionerNatss = "knative-provisioner-natss"
-	NatssStreaming          = "natss-streaming"
+	NatsStreaming           = "nats-streaming"
 	Kiali                   = "kiali"
 	Tracing                 = "tracing"
 	Backup                  = "backup"

@@ -17,7 +17,7 @@ type JSONSchemaValidator interface {
 type PlansSchemaValidator map[string]JSONSchemaValidator
 
 func NewPlansSchemaValidator() (PlansSchemaValidator, error) {
-	planIDs := []string{GCPPlanID, AzurePlanID, AzureLitePlanID, GcpTrialPlanID, AzureTrialPlanID}
+	planIDs := []string{GCPPlanID, AzurePlanID, AzureLitePlanID, TrialPlanID}
 	validators := PlansSchemaValidator{}
 
 	for _, id := range planIDs {

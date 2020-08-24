@@ -125,6 +125,19 @@ type DeprovisioningOperation struct {
 	RuntimeID              string           `json:"runtime_id"`
 }
 
+// Orchestration holds all information about an orchestration.
+// Orchestration performs operations of a specific type (KymaUpgradeOperation, ClusterUpgradeOperation)
+// on specific targets of SKRs.
+type Orchestration struct {
+	OrchestrationID   string
+	State             string
+	Description       string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	Parameters        sql.NullString
+	RuntimeOperations sql.NullString
+}
+
 // OperationStats provide number of operations per type and state
 type OperationStats struct {
 	Provisioning   map[domain.LastOperationState]int

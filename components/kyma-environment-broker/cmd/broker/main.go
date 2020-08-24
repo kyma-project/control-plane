@@ -184,7 +184,7 @@ func main() {
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
 
-	avsClient, err := avs.NewClient(ctx, cfg.Avs)
+	avsClient, err := avs.NewClient(ctx, cfg.Avs, logs)
 	fatalOnError(err)
 	avsDel := avs.NewDelegator(avsClient, cfg.Avs, db.Operations())
 	externalEvalAssistant := avs.NewExternalEvalAssistant(cfg.Avs)
@@ -320,10 +320,10 @@ func main() {
 	}
 
 	// run queues
-	provisionQueue := process.NewQueue(provisionManager)
+	provisionQueue := process.NewQueue(provisionManager, logs)
 	provisionQueue.Run(ctx.Done())
 
-	deprovisionQueue := process.NewQueue(deprovisionManager)
+	deprovisionQueue := process.NewQueue(deprovisionManager, logs)
 	deprovisionQueue.Run(ctx.Done())
 
 	if !cfg.DisableProcessOperationsInProgress {

@@ -343,8 +343,14 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 
 	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{}, kymaVersion)
 	assert.NoError(t, err)
+	pp := internal.ProvisioningParameters{
+		PlanID: broker.GCPPlanID,
+		Parameters: internal.ProvisioningParametersDTO{
+			KymaVersion: "",
+		},
+	}
 
-	creator, err := ibf.ForPlan(broker.GCPPlanID, "")
+	creator, err := ibf.Create(pp)
 	if err != nil {
 		t.Errorf("cannot create input creator for %q plan", broker.GCPPlanID)
 	}

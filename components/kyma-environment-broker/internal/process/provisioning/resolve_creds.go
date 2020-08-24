@@ -21,15 +21,33 @@ type ResolveCredentialsStep struct {
 	tenant           string
 }
 
-func getHyperscalerTypeForPlanID(planID string) (hyperscaler.Type, error) {
-	switch planID {
-	case broker.GCPPlanID, broker.GcpTrialPlanID:
+func getHyperscalerType(pp internal.ProvisioningParameters) (hyperscaler.Type, error) {
+	switch pp.PlanID {
+	case broker.GCPPlanID:
 		return hyperscaler.GCP, nil
-	case broker.AzurePlanID, broker.AzureLitePlanID, broker.AzureTrialPlanID:
+	case broker.AzurePlanID, broker.AzureLitePlanID:
 		return hyperscaler.Azure, nil
+	case broker.TrialPlanID:
+		return forTrialProvider(pp.Parameters.Provider)
 	default:
-		return "", errors.Errorf("Cannot determine the type of Hyperscaler to use for planID: %s", planID)
+		return "", errors.Errorf("Cannot determine the type of Hyperscaler to use for planID: %s", pp.PlanID)
 	}
+}
+
+func forTrialProvider(provider *internal.TrialCloudProvider) (hyperscaler.Type, error) {
+	if provider == nil {
+		return hyperscaler.Azure, nil
+	}
+
+	switch *provider {
+	case internal.Azure:
+		return hyperscaler.Azure, nil
+	case internal.Gcp:
+		return hyperscaler.GCP, nil
+	default:
+		return "", errors.Errorf("Cannot determine the type of Hyperscaler to use for provider: %s", string(*provider))
+	}
+
 }
 
 func NewResolveCredentialsStep(os storage.Operations, accountProvider hyperscaler.AccountProvider) *ResolveCredentialsStep {
@@ -57,7 +75,7 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 		return operation, 0, nil
 	}
 
-	hypType, err := getHyperscalerTypeForPlanID(pp.PlanID)
+	hypType, err := getHyperscalerType(pp)
 	if err != nil {
 		logger.Error("Aborting after failing to determine the type of Hyperscaler to use for planID: %s", pp.PlanID)
 		return s.operationManager.OperationFailed(operation, err.Error())

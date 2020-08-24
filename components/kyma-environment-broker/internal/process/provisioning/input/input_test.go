@@ -39,7 +39,9 @@ func TestShouldEnableComponents(t *testing.T) {
 
 	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 	assert.NoError(t, err)
-	creator, err := builder.ForPlan(broker.AzurePlanID, "")
+
+	pp := fixProvisioningParameters(broker.AzurePlanID, "")
+	creator, err := builder.Create(pp)
 	require.NoError(t, err)
 
 	// when
@@ -58,6 +60,8 @@ func TestShouldEnableComponents(t *testing.T) {
 }
 func TestShouldDisableComponents(t *testing.T) {
 	// given
+	pp := fixProvisioningParameters(broker.AzurePlanID, "")
+
 	optionalComponentsDisablers := runtime.ComponentsDisablers{}
 	componentsProvider := &automock.ComponentListProvider{}
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
@@ -69,7 +73,7 @@ func TestShouldDisableComponents(t *testing.T) {
 
 	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 	assert.NoError(t, err)
-	creator, err := builder.ForPlan(broker.AzurePlanID, "")
+	creator, err := builder.Create(pp)
 	require.NoError(t, err)
 
 	// when
@@ -88,6 +92,8 @@ func TestShouldDisableComponents(t *testing.T) {
 
 func TestDisabledComponentsForPlanNotExist(t *testing.T) {
 	// given
+	pp := fixProvisioningParameters("invalid-plan", "")
+
 	optionalComponentsDisablers := runtime.ComponentsDisablers{}
 	componentsProvider := &automock.ComponentListProvider{}
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
@@ -100,11 +106,13 @@ func TestDisabledComponentsForPlanNotExist(t *testing.T) {
 	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 	assert.NoError(t, err)
 	// when
-	_, err = builder.ForPlan("invalid-plan", "")
+	_, err = builder.Create(pp)
 	require.Error(t, err)
 }
 
 func TestInputBuilderFactoryOverrides(t *testing.T) {
+	pp := fixProvisioningParameters(broker.AzurePlanID, "")
+
 	t.Run("should append overrides for the same components multiple times", func(t *testing.T) {
 		// given
 		var (
@@ -124,7 +132,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 
 		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
-		creator, err := builder.ForPlan(broker.AzurePlanID, "")
+		creator, err := builder.Create(pp)
 		require.NoError(t, err)
 
 		// when
@@ -161,7 +169,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 
 		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
-		creator, err := builder.ForPlan(broker.AzurePlanID, "")
+		creator, err := builder.Create(pp)
 		require.NoError(t, err)
 
 		// when
@@ -203,9 +211,10 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 
 	factory, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, config, "1.10.0")
 	assert.NoError(t, err)
+	pp := fixProvisioningParameters(broker.AzurePlanID, "")
 
 	// when
-	builder, err := factory.ForPlan(broker.AzurePlanID, "")
+	builder, err := factory.Create(pp)
 
 	// then
 	require.NoError(t, err)

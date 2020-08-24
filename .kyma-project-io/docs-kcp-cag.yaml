@@ -4,13 +4,13 @@ metadata:
   labels:
     rafter.kyma-project.io/view-context: control-plane
     rafter.kyma-project.io/group-name: control-plane
-    rafter.kyma-project.io/order: "3"
-  name: runtime-provisioner
+    rafter.kyma-project.io/order: "1"
+  name: kyma-control-plane
 spec:
-  displayName: "Runtime Provisioner"
-  description: "Overall documentation for Runtime Provisioner"
+  displayName: "Kyma Control Plane"
+  description: "Overall documentation for Kyma Control Plane"
   sources:
     - type: markdown
       name: docs
       mode: package
-      filter: /docs/provisioner/
+      filter: /docs/kyma-control-plane/

@@ -36,7 +36,7 @@ type (
 
 	CreatorForPlan interface {
 		IsPlanSupport(planID string) bool
-		ForPlan(planID, kymaVersion string) (internal.ProvisionInputCreator, error)
+		Create(parameters internal.ProvisioningParameters) (internal.ProvisionInputCreator, error)
 	}
 
 	ComponentListProvider interface {
@@ -73,41 +73,39 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	switch planID {
-	case broker.GCPPlanID, broker.AzurePlanID, broker.AzureLitePlanID, broker.GcpTrialPlanID, broker.AzureTrialPlanID:
+	case broker.GCPPlanID, broker.AzurePlanID, broker.AzureLitePlanID, broker.TrialPlanID:
 		return true
 	default:
 		return false
 	}
 }
 
-func (f *InputBuilderFactory) ForPlan(planID, kymaVersion string) (internal.ProvisionInputCreator, error) {
-	if !f.IsPlanSupport(planID) {
-		return nil, errors.Errorf("plan %s in not supported", planID)
+func (f *InputBuilderFactory) Create(pp internal.ProvisioningParameters) (internal.ProvisionInputCreator, error) {
+	if !f.IsPlanSupport(pp.PlanID) {
+		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}
 
 	var provider HyperscalerInputProvider
-	switch planID {
+	switch pp.PlanID {
 	case broker.GCPPlanID:
 		provider = &cloudProvider.GcpInput{}
 	case broker.AzurePlanID:
 		provider = &cloudProvider.AzureInput{}
 	case broker.AzureLitePlanID:
 		provider = &cloudProvider.AzureLiteInput{}
-	case broker.GcpTrialPlanID:
-		provider = &cloudProvider.GcpTrialInput{}
-	case broker.AzureTrialPlanID:
-		provider = &cloudProvider.AzureTrialInput{}
+	case broker.TrialPlanID:
+		provider = f.forTrialPlan(pp.Parameters.Provider)
 	// insert cases for other providers like AWS or GCP
 	default:
-		return nil, errors.Errorf("case with plan %s is not supported", planID)
+		return nil, errors.Errorf("case with plan %s is not supported", pp.PlanID)
 	}
 
-	initInput, err := f.initInput(provider, kymaVersion)
+	initInput, err := f.initInput(provider, pp.Parameters.KymaVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "while initialization input")
 	}
 
-	disabledForPlan, err := f.disabledComponentsProvider.DisabledComponentsPerPlan(planID)
+	disabledForPlan, err := f.disabledComponentsProvider.DisabledComponentsPerPlan(pp.PlanID)
 	if err != nil {
 		return nil, errors.Wrap(err, "every supported plan should be specified in the disabled components map")
 	}
@@ -126,6 +124,19 @@ func (f *InputBuilderFactory) ForPlan(planID, kymaVersion string) (internal.Prov
 	}, nil
 }
 
+func (f *InputBuilderFactory) forTrialPlan(provider *internal.TrialCloudProvider) HyperscalerInputProvider {
+	if provider == nil {
+		return &cloudProvider.AzureTrialInput{}
+	}
+
+	switch *provider {
+	case internal.Gcp:
+		return &cloudProvider.GcpTrialInput{}
+	default:
+		return &cloudProvider.AzureTrialInput{}
+	}
+
+}
 func (f *InputBuilderFactory) initInput(provider HyperscalerInputProvider, kymaVersion string) (gqlschema.ProvisionRuntimeInput, error) {
 	var (
 		version    string

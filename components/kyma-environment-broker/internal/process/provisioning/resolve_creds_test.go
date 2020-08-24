@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 
 	"github.com/stretchr/testify/require"
@@ -54,12 +56,51 @@ func TestResolveCredentialsStepHappyPath_Run(t *testing.T) {
 	assert.Equal(t, "gardener-secret-gcp", *pp.Parameters.TargetSecret)
 }
 
-func TestResolveCredentialsStepHappyPathTrial_Run(t *testing.T) {
+func TestResolveCredentialsStepHappyPathTrialDefaultProvider_Run(t *testing.T) {
 	// given
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationRuntimeStatus(t, broker.GcpTrialPlanID)
+	operation := fixOperationRuntimeStatus(t, broker.TrialPlanID)
+	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
+	assert.NoError(t, err)
+
+	instance := fixInstanceRuntimeStatus()
+	err = memoryStorage.Instances().Insert(instance)
+	assert.NoError(t, err)
+
+	accountProviderMock := &hyperscalerMocks.AccountProvider{}
+
+	accountProviderMock.On("GardenerSharedCredentials", hyperscaler.Azure).Return(hyperscaler.Credentials{
+		Name:            "gardener-secret-azure",
+		HyperscalerType: "azure",
+		CredentialData:  map[string][]byte{},
+	}, nil)
+
+	step := NewResolveCredentialsStep(memoryStorage.Operations(), accountProviderMock)
+
+	// when
+	operation, repeat, err := step.Run(operation, log)
+
+	assert.NoError(t, err)
+
+	pp, err := operation.GetProvisioningParameters()
+
+	// then
+	assert.NoError(t, err)
+	assert.Equal(t, time.Duration(0), repeat)
+	assert.Empty(t, operation.State)
+	require.NotNil(t, pp.Parameters.TargetSecret)
+	assert.Equal(t, "gardener-secret-azure", *pp.Parameters.TargetSecret)
+}
+
+func TestResolveCredentialsStepHappyPathTrialGivenProvider_Run(t *testing.T) {
+	// given
+	log := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+
+	operation := fixOperationRuntimeStatusWithProvider(t, broker.TrialPlanID, internal.Gcp)
+
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
