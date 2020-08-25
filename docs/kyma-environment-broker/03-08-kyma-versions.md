@@ -13,7 +13,7 @@ metadata:
   name: kyma-versions
   namespace: "kcp-system"
 data:
-  3e64ebae-38b5-46a0-b1ed-9ccee153a0ae: "1.15-rc1"
+  3e64ebae-38b5-46a0-b1ed-9ccee153a0ae: "1.15.0-rc1"
 ```
 
 This ConfigMap contains a default version for a global account. The **3e64ebae-38b5-46a0-b1ed-9ccee153a0ae** parameter is a global account ID, and the value is the Kyma version specified for this global account.
