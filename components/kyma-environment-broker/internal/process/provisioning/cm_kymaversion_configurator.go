@@ -32,7 +32,7 @@ func NewConfigMapKymaVersionConfigurator(ctx context.Context,
 	}
 }
 
-func (c *ConfigMapKymaVersionConfigurator) ForGlobalAccount(gaid string) (string, bool, error) {
+func (c *ConfigMapKymaVersionConfigurator) ForGlobalAccount(gaID string) (string, bool, error) {
 	config := &v1.ConfigMap{}
 	err := c.k8sClient.Get(c.ctx, client.ObjectKey{
 		Namespace: c.namespace,
@@ -47,7 +47,6 @@ func (c *ConfigMapKymaVersionConfigurator) ForGlobalAccount(gaid string) (string
 		return "", false, errors.Wrap(err, "while getting kyma version config map")
 	}
 
-	ver, found := config.Data[gaid]
-	c.log.Infof("%v", config.Data)
+	ver, found := config.Data[gaID]
 	return ver, found, nil
 }
