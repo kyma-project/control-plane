@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type KymaVersionConfigurator struct {
+type kymaVersionConfigurator struct {
 	ctx       context.Context
 	k8sClient client.Client
 
@@ -21,9 +21,9 @@ type KymaVersionConfigurator struct {
 }
 
 func NewKymaVersionConfigurator(ctx context.Context,
-	cli client.Client, namespace, name string, log logrus.FieldLogger) *KymaVersionConfigurator {
+	cli client.Client, namespace, name string, log logrus.FieldLogger) KymaVersionConfigurator {
 
-	return &KymaVersionConfigurator{
+	return &kymaVersionConfigurator{
 		ctx:       ctx,
 		namespace: namespace,
 		name:      name,
@@ -32,7 +32,7 @@ func NewKymaVersionConfigurator(ctx context.Context,
 	}
 }
 
-func (c *KymaVersionConfigurator) ForGlobalAccount(gaID string) (string, bool, error) {
+func (c *kymaVersionConfigurator) ForGlobalAccount(gaID string) (string, bool, error) {
 	config := &v1.ConfigMap{}
 	err := c.k8sClient.Get(c.ctx, client.ObjectKey{
 		Namespace: c.namespace,
