@@ -20,7 +20,7 @@ type KymaVersionConfigurator struct {
 	log logrus.FieldLogger
 }
 
-func NewConfigMapKymaVersionConfigurator(ctx context.Context,
+func NewKymaVersionConfigurator(ctx context.Context,
 	cli client.Client, namespace, name string, log logrus.FieldLogger) *KymaVersionConfigurator {
 
 	return &KymaVersionConfigurator{
