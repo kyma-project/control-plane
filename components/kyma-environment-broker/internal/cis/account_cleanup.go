@@ -42,13 +42,13 @@ func (ac *SubAccountCleanupService) Run() error {
 		return errors.Wrap(err, "while fetching subaccounts by client")
 	}
 
-	subaccountsDoses := chunk(ac.chunksAmount, subaccounts)
-	chunks := len(subaccountsDoses)
+	subaccountsBatch := chunk(ac.chunksAmount, subaccounts)
+	chunks := len(subaccountsBatch)
 	errCh := make(chan error)
 	done := make(chan struct{})
 	var isDone bool
 
-	for _, chunk := range subaccountsDoses {
+	for _, chunk := range subaccountsBatch {
 		go ac.executeDeprovisioning(chunk, done, errCh)
 	}
 
@@ -64,21 +64,21 @@ func (ac *SubAccountCleanupService) Run() error {
 		}
 	}
 
-	ac.log.Info("SubAccount cleanup service finished")
+	ac.log.Info("SubAccount cleanup process finished")
 	return nil
 }
 
 func (ac *SubAccountCleanupService) executeDeprovisioning(subaccounts []string, done chan<- struct{}, errCh chan<- error) {
 	instances, err := ac.storage.FindAllInstancesForSubAccounts(subaccounts)
 	if err != nil {
-		errCh <- errors.Wrap(err, "while finding all instances by sub accounts")
+		errCh <- errors.Wrap(err, "while finding all instances by subaccounts")
 		return
 	}
 
 	for _, instance := range instances {
 		operation, err := ac.brokerClient.Deprovision(instance)
 		if err != nil {
-			errCh <- errors.Wrapf(err, "error occurs during deprovisioning instance with ID %s", instance.InstanceID)
+			errCh <- errors.Wrapf(err, "error occurred during deprovisioning instance with ID %s", instance.InstanceID)
 			continue
 		}
 		ac.log.Infof("deprovisioning for instance %s (SubAccountID: %s) was triggered, operation: %s", instance.InstanceID, instance.SubAccountID, operation)

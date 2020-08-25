@@ -21,5 +21,5 @@ func (fbc *FakeBrokerClient) Deprovision(instance internal.Instance) (string, er
 		return "", errors.Wrapf(err, "fake broker client cannot remove instance with ID: %s", instance.InstanceID)
 	}
 
-	return "", nil
+	return "061ced07-6225-43ea-b574-03ca78d5b1bc", nil
 }
