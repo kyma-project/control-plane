@@ -33,7 +33,7 @@ func TestConfigMapKymaVersionConfigurator_ForGlobalAccount(t *testing.T) {
 		},
 	})
 
-	svc := NewConfigMapKymaVersionConfigurator(context.TODO(), client, namespace, cmName, logrus.New())
+	svc := NewKymaVersionConfigurator(context.TODO(), client, namespace, cmName, logrus.New())
 
 	// when
 	v1, found1, err := svc.ForGlobalAccount("ga-001")
