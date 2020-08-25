@@ -21,6 +21,7 @@ const (
 
 	provisionRuntimeID            = "4e268c0f-d053-4ab7-b167-6dbc0a0e09a6"
 	provisionRuntimeOperationID   = "c89f7862-0ef9-4d4e-bc82-afbc5ac98b8d"
+	upgradeRuntimeOperationID     = "74f47e0a-9a76-4336-9974-70705500a981"
 	deprovisionRuntimeOperationID = "f9f7b734-7538-419c-8ac1-37060c60531a"
 )
 
@@ -105,6 +106,51 @@ func TestClient_DeprovisionRuntime(t *testing.T) {
 		assert.Equal(t, "", operationId)
 
 		assert.Equal(t, provisionRuntimeID, tr.getRuntime().runtimeID)
+	})
+}
+
+func TestClient_UpgradeRuntime(t *testing.T) {
+	t.Run("should trigger upgrade", func(t *testing.T) {
+		// given
+		tr := &testResolver{t: t, runtime: &testRuntime{}}
+		testServer := fixHTTPServer(tr)
+		defer testServer.Close()
+
+		client := NewProvisionerClient(testServer.URL, false)
+		operation, err := client.ProvisionRuntime(testAccountID, testSubAccountID, fixProvisionRuntimeInput())
+		assert.NoError(t, err)
+
+		// when
+		status, err := client.UpgradeRuntime(testAccountID, *operation.RuntimeID, fixUpgradeRuntimeInput("1.14.0"))
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, ptr.String(upgradeRuntimeOperationID), status.ID)
+		assert.Equal(t, schema.OperationStateInProgress, status.State)
+		assert.Equal(t, schema.OperationTypeUpgrade, status.Operation)
+		assert.Equal(t, ptr.String(provisionRuntimeID), status.RuntimeID)
+	})
+
+	t.Run("provisioner should return error", func(t *testing.T) {
+		// given
+		tr := &testResolver{t: t, runtime: &testRuntime{}}
+		testServer := fixHTTPServer(tr)
+		defer testServer.Close()
+
+		client := NewProvisionerClient(testServer.URL, false)
+		operation, err := client.ProvisionRuntime(testAccountID, testSubAccountID, fixProvisionRuntimeInput())
+		assert.NoError(t, err)
+
+		tr.failed = true
+
+		// when
+		status, err := client.UpgradeRuntime(testAccountID, *operation.RuntimeID, fixUpgradeRuntimeInput("1.14.0"))
+
+		// Then
+		assert.Error(t, err)
+		assert.Empty(t, status)
+
+		assert.Equal(t, "", tr.getRuntime().upgradeOperationID)
 	})
 }
 
@@ -197,6 +243,7 @@ type testRuntime struct {
 	name                   string
 	runtimeID              string
 	provisionOperationID   string
+	upgradeOperationID     string
 	deprovisionOperationID string
 }
 
@@ -267,7 +314,22 @@ func (tmr *testMutationResolver) ProvisionRuntime(_ context.Context, config sche
 }
 
 func (tmr testMutationResolver) UpgradeRuntime(_ context.Context, id string, config schema.UpgradeRuntimeInput) (*schema.OperationStatus, error) {
-	return nil, nil
+	tmr.t.Log("UpgradeTuntime testMutationResolver")
+
+	if tmr.failed {
+		return nil, fmt.Errorf("upgrade runtime failed for version %s", id)
+	}
+
+	if tmr.runtime.runtimeID == id {
+		tmr.runtime.upgradeOperationID = upgradeRuntimeOperationID
+	}
+
+	return &schema.OperationStatus{
+		ID:        ptr.String(tmr.runtime.upgradeOperationID),
+		State:     schema.OperationStateInProgress,
+		Operation: schema.OperationTypeUpgrade,
+		RuntimeID: ptr.String(tmr.runtime.runtimeID),
+	}, nil
 }
 
 func (tmr testMutationResolver) DeprovisionRuntime(_ context.Context, id string) (string, error) {
@@ -354,4 +416,22 @@ func fixProvisionRuntimeInput() schema.ProvisionRuntimeInput {
 			},
 		},
 	}
+}
+
+func fixUpgradeRuntimeInput(kymaVersion string) schema.UpgradeRuntimeInput {
+	return schema.UpgradeRuntimeInput{KymaConfig: &schema.KymaConfigInput{
+		Version: kymaVersion,
+		Configuration: []*schema.ConfigEntryInput{
+			{
+				Key:   "a.config.key",
+				Value: "a.config.value",
+			},
+		},
+		Components: []*schema.ComponentConfigurationInput{
+			{
+				Component: "test-component",
+				Namespace: "test-namespace",
+			},
+		},
+	}}
 }

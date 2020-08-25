@@ -23,6 +23,7 @@ const (
 type Client interface {
 	ProvisionRuntime(accountID, subAccountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error)
 	DeprovisionRuntime(accountID, runtimeID string) (string, error)
+	UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (schema.OperationStatus, error)
 	ReconnectRuntimeAgent(accountID, runtimeID string) (string, error)
 	RuntimeOperationStatus(accountID, operationID string) (schema.OperationStatus, error)
 }
@@ -79,6 +80,24 @@ func (c *client) DeprovisionRuntime(accountID, runtimeID string) (string, error)
 		return "", errors.Wrap(err, "Failed to deprovision Runtime")
 	}
 	return operationId, nil
+}
+
+func (c *client) UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (schema.OperationStatus, error) {
+	upgradeRuntimeIptGQL, err := c.graphqlizer.UpgradeRuntimeInputToGraphQL(config)
+	if err != nil {
+		return schema.OperationStatus{}, errors.Wrap(err, "Failed to convert Upgrade Runtime Input to query")
+	}
+
+	query := c.queryProvider.upgradeRuntime(runtimeID, upgradeRuntimeIptGQL)
+	req := gcli.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
+
+	var res schema.OperationStatus
+	err = c.executeRequest(req, &res)
+	if err != nil {
+		return schema.OperationStatus{}, errors.Wrap(err, "Failed to upgrade Runtime")
+	}
+	return res, nil
 }
 
 func (c *client) ReconnectRuntimeAgent(accountID, runtimeID string) (string, error) {

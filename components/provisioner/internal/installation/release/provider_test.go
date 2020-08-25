@@ -62,13 +62,6 @@ func TestReleaseProvider_GetReleaseByVersion(t *testing.T) {
 
 func TestReleaseProvider_GetReleaseByVersionError(t *testing.T) {
 
-	//release := model.Release{
-	//	Id:            "abcd-efgh",
-	//	Version:      kymaVersion,
-	//	TillerYAML:    "tiller",
-	//	InstallerYAML: "installer",
-	//}
-
 	t.Run("should return error then failed to get release from database", func(t *testing.T) {
 		// given
 		repo := &mocks.Repository{}

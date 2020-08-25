@@ -65,7 +65,7 @@ func TestShootUpgrade(t *testing.T) {
 				_, err = k8sClient.ServerVersion()
 				assertions.RequireNoError(t, err)
 
-				upgradeShootConfig := testkit.CreateGardenerUpgradeInput(&testSuite.config, provider)
+				upgradeShootConfig := testkit.CreateGardenerUpgradeInput(&testSuite.config)
 				log.Log("Starting shoot upgrade...")
 
 				upgradeOperationStatus, err := testSuite.ProvisionerClient.UpgradeShoot(runtimeID, *upgradeShootConfig)

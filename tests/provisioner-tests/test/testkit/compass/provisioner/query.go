@@ -14,7 +14,7 @@ func (qp queryProvider) provisionRuntime(config string) string {
 
 func (qp queryProvider) upgradeKymaRuntime(runtimeID string, config string) string {
 	return fmt.Sprintf(`mutation {
-	result: upgradeKymaRuntime(id: "%s", config: %s) {
+	result: upgradeRuntime(id: "%s", config: %s) {
     	%s
   	}
 }`, runtimeID, config, operationStatusData())
