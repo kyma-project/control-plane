@@ -226,6 +226,16 @@ func fixTables() map[string]string {
 			created_at TIMESTAMPTZ NOT NULL,
 			updated_at TIMESTAMPTZ NOT NULL
 			)`, postsql.OperationTableName),
+		postsql.OrchestrationTableName: fmt.Sprintf(
+			`CREATE TABLE IF NOT EXISTS %s (
+			orchestration_id varchar(255) PRIMARY KEY,
+			state varchar(32) NOT NULL,
+			description text,
+			parameters text NOT NULL,
+			runtime_operations text,
+			created_at TIMESTAMPTZ NOT NULL,
+			updated_at TIMESTAMPTZ NOT NULL
+			)`, postsql.OrchestrationTableName),
 		postsql.LMSTenantTableName: fmt.Sprintf(
 			`CREATE TABLE IF NOT EXISTS %s (
 			id varchar(255) PRIMARY KEY,

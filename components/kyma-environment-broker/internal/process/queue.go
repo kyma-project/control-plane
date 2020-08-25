@@ -9,10 +9,6 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
-const (
-	workersAmount = 5
-)
-
 type Executor interface {
 	Execute(operationID string) (time.Duration, error)
 }
@@ -35,7 +31,11 @@ func (q *Queue) Add(processId string) {
 	q.queue.Add(processId)
 }
 
-func (q *Queue) Run(stop <-chan struct{}) {
+func (q *Queue) ShutDown() {
+	q.queue.ShutDown()
+}
+
+func (q *Queue) Run(stop <-chan struct{}, workersAmount int) {
 	var waitGroup sync.WaitGroup
 
 	for i := 0; i < workersAmount; i++ {

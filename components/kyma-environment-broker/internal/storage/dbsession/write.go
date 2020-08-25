@@ -105,6 +105,58 @@ func (ws writeSession) InsertOperation(op dbmodel.OperationDTO) dberr.Error {
 	return nil
 }
 
+func (ws writeSession) InsertOrchestration(o internal.Orchestration) dberr.Error {
+	_, err := ws.insertInto(postsql.OrchestrationTableName).
+		Pair("orchestration_id", o.OrchestrationID).
+		Pair("created_at", o.CreatedAt).
+		Pair("updated_at", o.UpdatedAt).
+		Pair("description", o.Description).
+		Pair("state", o.State).
+		Pair("parameters", o.Parameters).
+		Pair("runtime_operations", o.RuntimeOperations).
+		Exec()
+
+	if err != nil {
+		if err, ok := err.(*pq.Error); ok {
+			if err.Code == UniqueViolationErrorCode {
+				return dberr.AlreadyExists("Orchestration with id %s already exist", o.OrchestrationID)
+			}
+		}
+		return dberr.Internal("Failed to insert record to orchestration table: %s", err)
+	}
+
+	return nil
+}
+
+func (ws writeSession) UpdateOrchestration(o internal.Orchestration) dberr.Error {
+	res, err := ws.update(postsql.OrchestrationTableName).
+		Where(dbr.Eq("orchestration_id", o.OrchestrationID)).
+		Set("created_at", o.CreatedAt).
+		Set("updated_at", o.UpdatedAt).
+		Set("description", o.Description).
+		Set("state", o.State).
+		Set("parameters", o.Parameters).
+		Set("runtime_operations", o.RuntimeOperations).
+		Exec()
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return dberr.NotFound("Cannot find Orchestration with ID:'%s'", o.OrchestrationID)
+		}
+		return dberr.Internal("Failed to update record to Orchestration table: %s", err)
+	}
+	rAffected, e := res.RowsAffected()
+	if e != nil {
+		// the optimistic locking requires numbers of rows affected
+		return dberr.Internal("the DB driver does not support RowsAffected operation")
+	}
+	if rAffected == int64(0) {
+		return dberr.NotFound("Cannot find Orchestration with ID:'%s'", o.OrchestrationID)
+	}
+
+	return nil
+}
+
 func (ws writeSession) InsertLMSTenant(dto dbmodel.LMSTenantDTO) dberr.Error {
 	_, err := ws.insertInto(postsql.LMSTenantTableName).
 		Pair("id", dto.ID).

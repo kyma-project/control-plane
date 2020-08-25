@@ -13,11 +13,12 @@ import (
 )
 
 const (
-	schemaName         = "public"
-	InstancesTableName = "instances"
-	OperationTableName = "operations"
-	LMSTenantTableName = "lms_tenants"
-	connectionRetries  = 10
+	schemaName             = "public"
+	InstancesTableName     = "instances"
+	OperationTableName     = "operations"
+	OrchestrationTableName = "orchestrations"
+	LMSTenantTableName     = "lms_tenants"
+	connectionRetries      = 10
 )
 
 // InitializeDatabase opens database connection and initializes schema if it does not exist

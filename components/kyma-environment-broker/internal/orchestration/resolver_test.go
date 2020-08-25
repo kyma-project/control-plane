@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -155,7 +157,7 @@ func newInstanceListerMock() *automock.InstanceLister {
 	return lister
 }
 
-func lookupRuntime(runtimeID string, runtimes []Runtime) *Runtime {
+func lookupRuntime(runtimeID string, runtimes []internal.Runtime) *internal.Runtime {
 	for _, r := range runtimes {
 		if r.RuntimeID == runtimeID {
 			return &r
@@ -165,8 +167,8 @@ func lookupRuntime(runtimeID string, runtimes []Runtime) *Runtime {
 	return nil
 }
 
-func assertRuntimeTargets(t *testing.T, expectedRuntimes []expectedRuntime, runtimes []Runtime) {
-	assert.Equal(t, len(expectedRuntimes), len(runtimes))
+func assertRuntimeTargets(t *testing.T, expectedRuntimes []expectedRuntime, runtimes []internal.Runtime) {
+	require.Equal(t, len(expectedRuntimes), len(runtimes))
 
 	for _, e := range expectedRuntimes {
 		r := lookupRuntime(e.instance.RuntimeID, runtimes)
@@ -189,10 +191,10 @@ func TestResolver_Resolve_IncludeAll(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(TargetSpec{
-		Include: []RuntimeTarget{
+	runtimes, err := resolver.Resolve(internal.TargetSpec{
+		Include: []internal.RuntimeTarget{
 			{
-				Target: TargetAll,
+				Target: internal.TargetAll,
 			},
 		},
 		Exclude: nil,
@@ -212,13 +214,13 @@ func TestResolver_Resolve_IncludeAllExcludeOne(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(TargetSpec{
-		Include: []RuntimeTarget{
+	runtimes, err := resolver.Resolve(internal.TargetSpec{
+		Include: []internal.RuntimeTarget{
 			{
-				Target: TargetAll,
+				Target: internal.TargetAll,
 			},
 		},
-		Exclude: []RuntimeTarget{
+		Exclude: []internal.RuntimeTarget{
 			{
 				GlobalAccount: expectedRuntime2.instance.GlobalAccountID,
 				SubAccount:    expectedRuntime2.instance.SubAccountID,
@@ -240,15 +242,15 @@ func TestResolver_Resolve_ExcludeAll(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(TargetSpec{
-		Include: []RuntimeTarget{
+	runtimes, err := resolver.Resolve(internal.TargetSpec{
+		Include: []internal.RuntimeTarget{
 			{
-				Target: TargetAll,
+				Target: internal.TargetAll,
 			},
 		},
-		Exclude: []RuntimeTarget{
+		Exclude: []internal.RuntimeTarget{
 			{
-				Target: TargetAll,
+				Target: internal.TargetAll,
 			},
 		},
 	})
@@ -267,8 +269,8 @@ func TestResolver_Resolve_IncludeOne(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(TargetSpec{
-		Include: []RuntimeTarget{
+	runtimes, err := resolver.Resolve(internal.TargetSpec{
+		Include: []internal.RuntimeTarget{
 			{
 				GlobalAccount: expectedRuntime2.instance.GlobalAccountID,
 				SubAccount:    expectedRuntime2.instance.SubAccountID,
@@ -282,6 +284,29 @@ func TestResolver_Resolve_IncludeOne(t *testing.T) {
 	assertRuntimeTargets(t, []expectedRuntime{expectedRuntime2}, runtimes)
 }
 
+func TestResolver_Resolve_IncludeRuntime(t *testing.T) {
+	// given
+	client := newFakeGardenerClient()
+	lister := newInstanceListerMock()
+	defer lister.AssertExpectations(t)
+	logger := logger.NewLogDummy()
+	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
+
+	// when
+	runtimes, err := resolver.Resolve(internal.TargetSpec{
+		Include: []internal.RuntimeTarget{
+			{
+				RuntimeID: "runtime-id-1",
+			},
+		},
+		Exclude: nil,
+	})
+
+	// then
+	assert.Nil(t, err)
+	assertRuntimeTargets(t, []expectedRuntime{expectedRuntime1}, runtimes)
+}
+
 func TestResolver_Resolve_IncludeTenant(t *testing.T) {
 	// given
 	client := newFakeGardenerClient()
@@ -291,8 +316,8 @@ func TestResolver_Resolve_IncludeTenant(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(TargetSpec{
-		Include: []RuntimeTarget{
+	runtimes, err := resolver.Resolve(internal.TargetSpec{
+		Include: []internal.RuntimeTarget{
 			{
 				GlobalAccount: globalAccountID1,
 			},
@@ -314,8 +339,8 @@ func TestResolver_Resolve_IncludeRegion(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(TargetSpec{
-		Include: []RuntimeTarget{
+	runtimes, err := resolver.Resolve(internal.TargetSpec{
+		Include: []internal.RuntimeTarget{
 			{
 				Region: "europe|eu|uk",
 			},
@@ -343,10 +368,10 @@ func TestResolver_Resolve_GardenerFailure(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(TargetSpec{
-		Include: []RuntimeTarget{
+	runtimes, err := resolver.Resolve(internal.TargetSpec{
+		Include: []internal.RuntimeTarget{
 			{
-				Target: TargetAll,
+				Target: internal.TargetAll,
 			},
 		},
 		Exclude: nil,
@@ -370,10 +395,10 @@ func TestResolver_Resolve_StorageFailure(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(TargetSpec{
-		Include: []RuntimeTarget{
+	runtimes, err := resolver.Resolve(internal.TargetSpec{
+		Include: []internal.RuntimeTarget{
 			{
-				Target: TargetAll,
+				Target: internal.TargetAll,
 			},
 		},
 		Exclude: nil,

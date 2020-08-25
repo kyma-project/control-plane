@@ -4,6 +4,7 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"math/rand"
 	"sort"
@@ -461,6 +462,48 @@ func TestSchemaInitializer(t *testing.T) {
 			// then
 			assertError(t, dberr.CodeAlreadyExists, err)
 		})
+	})
+
+	t.Run("Orchestrations", func(t *testing.T) {
+		containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+		require.NoError(t, err)
+		defer containerCleanupFunc()
+
+		now := time.Now()
+
+		const fixID = "test"
+		givenOrchestration := internal.Orchestration{
+			OrchestrationID:   fixID,
+			State:             "test",
+			Description:       "test",
+			CreatedAt:         now,
+			UpdatedAt:         now,
+			Parameters:        sql.NullString{String: "test", Valid: true},
+			RuntimeOperations: sql.NullString{Valid: false},
+		}
+
+		err = InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+
+		brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+		require.NoError(t, err)
+
+		svc := brokerStorage.Orchestration()
+
+		err = svc.InsertOrchestration(givenOrchestration)
+		require.NoError(t, err)
+
+		// when
+		gotOrchestration, err := svc.GetOrchestrationByID(fixID)
+		require.NoError(t, err)
+		assert.Equal(t, givenOrchestration.Parameters, gotOrchestration.Parameters)
+
+		gotOrchestration.Description = "new modified description 1"
+		err = svc.UpdateOrchestration(givenOrchestration)
+		require.NoError(t, err)
+
+		err = svc.InsertOrchestration(givenOrchestration)
+		assertError(t, dberr.CodeAlreadyExists, err)
 	})
 
 	t.Run("LMS Tenants", func(t *testing.T) {
