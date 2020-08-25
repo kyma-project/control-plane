@@ -21,7 +21,7 @@ import (
 // This is temporary solution until the upgrade endpoint will be implemented in KEB itself
 
 const (
-	releaseInstallerURLFormat  = "https://github.com/kyma-project/kyma/releases/download/%s/kyma-installer-cluster.yaml"
+	releaseInstallerURLFormat  = "https://storage.googleapis.com/kyma-prow-artifacts/%s/kyma-installer-cluster.yaml"
 	onDemandInstallerURLFormat = "https://storage.googleapis.com/kyma-development-artifacts/%s/kyma-installer-cluster.yaml"
 )
 
