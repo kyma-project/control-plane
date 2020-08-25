@@ -67,10 +67,10 @@ func CreateGardenerProvisioningInput(config *TestConfig, version, provider strin
 	}, nil
 }
 
-func CreateGardenerUpgradeInput(config *TestConfig, provider string) *gqlschema.UpgradeShootInput {
+func CreateGardenerUpgradeInput(config *TestConfig) *gqlschema.UpgradeShootInput {
 	return &gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:                   strToPtr("1.15.11"),
+			KubernetesVersion:                   strToPtr(config.UpgradeKubernetesVersion),
 			DiskType:                            strToPtr("Premium_LRS"),
 			VolumeSizeGb:                        intToPtr(50),
 			MachineType:                         strToPtr("Standard_D8_v3"),

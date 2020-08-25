@@ -70,6 +70,8 @@ func (e *Executor) Execute(operationID string) ProcessingResult {
 		return ProcessingResult{Requeue: true, Delay: defaultDelay}
 	}
 
+	log = log.WithField("ShootName", cluster.ClusterConfig.Name)
+
 	if operation.Type == e.operation {
 		requeue, delay, err := e.process(operation, cluster, log)
 		if err != nil {

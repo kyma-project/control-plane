@@ -131,7 +131,7 @@ spec:
             - name: APP_GARDENER_FORCE_ALLOW_PRIVILEGED_CONTAINERS
               value: {{ .Values.gardener.forceAllowPrivilegedContainers | quote }}
             - name: APP_LATEST_DOWNLOADED_RELEASES
-              value: "5"
+              value: "10"
             - name: APP_DOWNLOAD_PRE_RELEASES
               value: {{ .Values.kymaRelease.preReleases.enabled | quote }}
             - name: APP_LOG_LEVEL

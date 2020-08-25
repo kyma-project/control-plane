@@ -59,6 +59,8 @@ tests:
     gcpSecret: "" # Name of Gardener secret for GCP
   kyma:
     version: "1.14.0"
+    preUpgradeVersion: "1.13.0"
   kubernetes:
     version: "1.18.5"
+    upgradeVersion: "1.18.5"
   queryLogging: false

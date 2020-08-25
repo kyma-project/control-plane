@@ -9,7 +9,7 @@ global:
       version: "PR-109"
     provisioner:
       dir:
-      version: "PR-109"
+      version: "PR-124"
     kyma_environment_broker:
       dir:
       version: "PR-160"
@@ -22,7 +22,7 @@ global:
     tests:
       provisioner:
         dir:
-        version: "PR-126"
+        version: "PR-124"
       e2e_provisioning:
         dir:
         version: "PR-160"

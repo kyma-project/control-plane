@@ -20,7 +20,8 @@ COPY ./internal/ ${BASE_APP_DIR}/internal/
 RUN apk add -U --no-cache ca-certificates && update-ca-certificates
 
 RUN go build -v -o main ./cmd/
-RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
+RUN mkdir /app && mv ./main /app/main
+RUN mv ./licenses /app/licenses
 
 FROM alpine:3.12.0
 LABEL source = git@github.com:kyma-project/control-plane.git
