@@ -90,8 +90,8 @@ func TestSubAccountCleanupService_Run(t *testing.T) {
 
 		// Then
 		assert.NoError(t, err)
-		log.AssertLogged(t, logrus.WarnLevel, "part of deprovisioning process failed with error: error occurs during deprovisioning instance with ID ad6af000-e647-44ea-a3bb-db8672d5bc7e: cannot deprovision")
-		log.AssertLogged(t, logrus.WarnLevel, "part of deprovisioning process failed with error: error occurs during deprovisioning instance with ID 07d368f2-c294-47e7-8d66-20b73ef46342: cannot deprovision")
+		log.AssertLogged(t, logrus.WarnLevel, "part of deprovisioning process failed with error: error occurred during deprovisioning instance with ID ad6af000-e647-44ea-a3bb-db8672d5bc7e: cannot deprovision")
+		log.AssertLogged(t, logrus.WarnLevel, "part of deprovisioning process failed with error: error occurred during deprovisioning instance with ID 07d368f2-c294-47e7-8d66-20b73ef46342: cannot deprovision")
 	})
 
 	t.Run("process should return with error", func(t *testing.T) {
