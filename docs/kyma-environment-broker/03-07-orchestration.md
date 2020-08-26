@@ -21,7 +21,7 @@ type Orchestration struct {
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 	Parameters        Parameters
-	RuntimeOperations RuntimeOperation
+	RuntimeOperations []RuntimeOperation
 }
 ```
 ```
@@ -30,8 +30,16 @@ type Parameters struct {
 	Strategy internal.StrategySpec `json:"strategy,omitempty"`
 }
 
-type UpgradeOrchestrationResponseDTO struct {
+type RuntimeOperation struct {
 	OperationID string `json:"operation_id"`
+    InstanceID      string `json:"instanceId"`
+	RuntimeID       string `json:"runtimeId"`
+	GlobalAccountID string `json:"globalAccountId"`
+	SubAccountID    string `json:"subaccountId"`
+    Status      string `json:"status,omitempty"`
+	ShootName string `json:"shootName"`
+	MaintenanceWindowBegin time.Time `json:"maintenanceWindowBegin"`
+	MaintenanceWindowEnd time.Time `json:"maintenanceWindowEnd"`
 }
 ```
 
