@@ -11,72 +11,75 @@ The handlers are as follows:
 
 - `GET /orchestrations/{orchestration_id}`
 
-**Responds** with the orchestration object using struct: 
+**Responds** with the [orchestration](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/model.go) object. 
+Check the below example. 
 
 ```
-type Orchestration struct {
-	OrchestrationID   string
-	State             string
-	Description       string
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
-	Parameters        Parameters
-	RuntimeOperations []RuntimeOperation
-}
-```
-```
-type Parameters struct {
-	Targets  internal.TargetSpec   `json:"targets"`
-	Strategy internal.StrategySpec `json:"strategy,omitempty"`
-}
-
-type RuntimeOperation struct {
-	OperationID string `json:"operation_id"`
-    InstanceID      string `json:"instanceId"`
-	RuntimeID       string `json:"runtimeId"`
-	GlobalAccountID string `json:"globalAccountId"`
-	SubAccountID    string `json:"subaccountId"`
-    Status      string `json:"status,omitempty"`
-	ShootName string `json:"shootName"`
-	MaintenanceWindowBegin time.Time `json:"maintenanceWindowBegin"`
-	MaintenanceWindowEnd time.Time `json:"maintenanceWindowEnd"`
+{
+  "state": "InProgress",
+  "description": "Blabla bla",
+  "parameters": {
+    "targets": {
+      "include": [
+        {
+          "target": "all",
+        },
+      ],
+      "exclude": [
+        {
+          "runtimeID": "uuid",
+          "globalAccountId": "uuid",
+          "subAccountId": "uuid",
+          "region": "region",
+        },
+      ],
+    },
+    "strategy": ...
+  }
+  "runtimeOperations": [
+    {
+      "instanceID": "054ac2c2-318f-45dd-855c-eee41513d40d",
+      "runtimeID": "44a57cbd-5271-4d68-8cf9-9dabbb9f1c44",
+      "globalAccountID": "",
+      "subAccountID": "",
+      "clusterName": "c-084befc"
+      "operationID": "f683e77c-7d24-4aee-91af-4208bcfc480f",
+      "state": "InProgress" / "Pending" / "Succeeded" / "Failed"
+    }
+    [...]
+  ]
 }
 ```
 
 - `POST /upgrade/kyma`
 
-With the following **body**:
+Specified with the following **body**:
 
 ```
-type UpgradeOrchestrationDTO struct {
-	Targets  internal.TargetSpec   `json:"targets"`
-	Strategy internal.StrategySpec `json:"strategy,omitempty"`
-}
-```
-```
-type StrategySpec struct {
-	Type     StrategyType         `json:"type"`
-	Schedule ScheduleType         `json:"schedule,omitempty"`
-	Parallel ParallelStrategySpec `json:"parallel,omitempty"`
-}
-type TargetSpec struct {
-	Include []RuntimeTarget `json:"include"`
-	Exclude []RuntimeTarget `json:"exclude,omitempty"`
-}
-type RuntimeTarget struct {
-	// Valid values: "all"
-	Target string `json:"target,omitempty"`
-	GlobalAccount string `json:"globalAccount,omitempty"`
-	SubAccount string `json:"subAccount,omitempty"`
-	Region string `json:"region,omitempty"`
-	RuntimeID string `json:"runtimeId,omitempty"`
+{
+  "targets": {
+    "include": [
+      { "target": "all" }
+    ],
+    "exclude": [
+      {"globalAccount": "....", "subAccount": "..."},
+    ]
+  },
+  "strategy": {
+    "schedule": "immediate" | "maintenanceWindow",
+    "parallel": {
+      "workers": 4,
+    }
+  }
 }
 ```
 
-**Responds** with newly created orchestrationID using the following struct:
+You can find its structure [here](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/model.go).
+
+**Responds** with newly created orchestrationID:
 
 ```
-type UpgradeOrchestrationResponseDTO struct {
-	OrchestrationID string `json:"orchestration_id"`
+{
+  "orchestration_id": "uuid"
 }
 ```
