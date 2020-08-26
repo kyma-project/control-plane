@@ -273,6 +273,10 @@ spec:
                 configMapKeyRef:
                   name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-tenant
+            - name: APP_VERSION_CONFIG_NAMESPACE
+              value: "{{ .Release.Namespace }}"
+            - name: APP_VERSION_CONFIG_NAME
+              value: "kyma-versions"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

@@ -97,6 +97,11 @@ type Config struct {
 	EDP edp.Config
 
 	AuditLog auditlog.Config
+
+	VersionConfig struct {
+		Namespace string
+		Name      string
+	}
 }
 
 func main() {
@@ -209,8 +214,10 @@ func main() {
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 
 	// define steps
+	kymaVersionConfigurator := provisioning.NewKymaVersionConfigurator(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
 	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),
-		provisionerClient, directorClient, inputFactory, externalEvalCreator, iasTypeSetter, cfg.Provisioning.Timeout)
+		provisionerClient, directorClient, inputFactory, externalEvalCreator, iasTypeSetter, cfg.Provisioning.Timeout,
+		kymaVersionConfigurator)
 	provisionManager.InitStep(provisioningInit)
 
 	provisioningSteps := []struct {
