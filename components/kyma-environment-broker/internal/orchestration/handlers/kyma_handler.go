@@ -32,10 +32,10 @@ func NewKymaOrchestrationHandler(db storage.Orchestration, executor process.Exec
 
 func (h *kymaHandler) AttachRoutes(router *mux.Router) {
 	router.HandleFunc("/orchestrations/{orchestration_id}", h.getUpgradeKymaOrchestrationsHandler).Methods(http.MethodGet)
-	router.HandleFunc("/kyma/upgrade", h.upgradeKymaOrchestrationHandler).Methods(http.MethodPost)
+	router.HandleFunc("/upgrade/kyma", h. getOrchestration).Methods(http.MethodPost)
 }
 
-func (h *kymaHandler) getUpgradeKymaOrchestrationsHandler(w http.ResponseWriter, r *http.Request) {
+func (h *kymaHandler) getOrchestration(w http.ResponseWriter, r *http.Request) {
 	orchestrationID := mux.Vars(r)["orchestration_id"]
 
 	o, err := h.db.GetByID(orchestrationID)
@@ -47,7 +47,7 @@ func (h *kymaHandler) getUpgradeKymaOrchestrationsHandler(w http.ResponseWriter,
 	writeResponse(w, http.StatusOK, o)
 }
 
-func (h *kymaHandler) upgradeKymaOrchestrationHandler(w http.ResponseWriter, r *http.Request) {
+func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request) {
 	dto := orchestration.Parameters{}
 
 	decoder := json.NewDecoder(r.Body)

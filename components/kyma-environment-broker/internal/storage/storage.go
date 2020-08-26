@@ -15,7 +15,7 @@ type BrokerStorage interface {
 	Provisioning() Provisioning
 	Deprovisioning() Deprovisioning
 	LMSTenants() LMSTenants
-	Orchestration() Orchestration
+	Orchestrations() Orchestrations
 }
 
 func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, *dbr.Connection, error) {
