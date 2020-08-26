@@ -5,5 +5,5 @@ metadata:
 spec:
   grantTypes:
     - "client_credentials"
-  scope: "broker:write"
+  scope: {{ .Values.kebClient.scope }}
   secretName: {{ include "kyma-env-broker.fullname" . }}-oauth

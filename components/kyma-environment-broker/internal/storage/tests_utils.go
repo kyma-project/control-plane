@@ -117,7 +117,7 @@ func InitTestDBTables(t *testing.T, connectionURL string) error {
 		return err
 	}
 
-	for name, v := range fixTables() {
+	for name, v := range FixTables() {
 		if _, err := connection.Exec(v); err != nil {
 			t.Logf("Cannot create table %s", name)
 			return err
@@ -195,7 +195,7 @@ func EnsureTestNetworkForDB(t *testing.T, ctx context.Context) (func(), error) {
 	return cleanupFunc, nil
 }
 
-func fixTables() map[string]string {
+func FixTables() map[string]string {
 	return map[string]string{
 		postsql.InstancesTableName: fmt.Sprintf(
 			`CREATE TABLE IF NOT EXISTS %s (

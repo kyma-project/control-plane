@@ -137,12 +137,31 @@ edp:
   secret: "TBD"
   secretName: "edp-creds"
 
+cis:
+  v1:
+    authURL: "TBD"
+    eventServiceURL: "TBD"
+    id: "TBD"
+    secret: "TBD"
+    secretName: "cis-creds-v1"
+  v2:
+    authURL: "TBD"
+    eventServiceURL: "TBD"
+    id: "TBD"
+    secret: "TBD"
+    secretName: "cis-creds-v2"
+
+kebClient:
+  scope: "broker:write"
+
 environmentsCleanup:
   schedule: "0 0 * * *"
   maxAge: "24h"
   labelSelector: "owner.do-not-delete!=true"
-  secretName: "TBD"
-  scope: "TBD"
+
+subaccountCleanup:
+  enabled: "false"
+  schedule: "0 1 * * *"
 
 e2e:
   enabled: true

@@ -19,6 +19,7 @@ type Factory interface {
 type ReadSession interface {
 	FindAllInstancesJoinedWithOperation(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, dberr.Error)
 	FindAllInstancesForRuntimes(runtimeIdList []string) ([]internal.Instance, dberr.Error)
+	FindAllInstancesForSubAccounts(subAccountslist []string) ([]internal.Instance, dberr.Error)
 	GetInstanceByID(instanceID string) (internal.Instance, dberr.Error)
 	GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.Error)
 	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error)

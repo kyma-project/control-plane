@@ -27,7 +27,7 @@ func TestClient_Deprovision(t *testing.T) {
 		testServer := fixHTTPServer(false)
 		defer testServer.Close()
 
-		config := Config{
+		config := ClientConfig{
 			URL: testServer.URL,
 		}
 		client := NewClient(context.Background(), config)
@@ -52,7 +52,7 @@ func TestClient_Deprovision(t *testing.T) {
 		testServer := fixHTTPServer(true)
 		defer testServer.Close()
 
-		config := Config{
+		config := ClientConfig{
 			URL: testServer.URL,
 		}
 		client := NewClient(context.Background(), config)

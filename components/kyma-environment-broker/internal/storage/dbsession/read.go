@@ -73,6 +73,24 @@ func (r readSession) FindAllInstancesForRuntimes(runtimeIdList []string) ([]inte
 	return instances, nil
 }
 
+func (r readSession) FindAllInstancesForSubAccounts(subAccountslist []string) ([]internal.Instance, dberr.Error) {
+	var instances []internal.Instance
+
+	err := r.session.
+		Select("*").
+		From(postsql.InstancesTableName).
+		Where("sub_account_id IN ?", subAccountslist).
+		LoadOne(&instances)
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return []internal.Instance{}, nil
+		}
+		return []internal.Instance{}, dberr.Internal("Failed to get Instances: %s", err)
+	}
+	return instances, nil
+}
+
 func (r readSession) GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.Error) {
 	condition := dbr.Eq("id", opID)
 	operation, err := r.getOperation(condition)

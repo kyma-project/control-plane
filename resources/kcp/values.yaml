@@ -15,7 +15,10 @@ global:
       version: "PR-132"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-83"
+      version: "PR-131"
+    kyma_environments_subaccount_cleanup_job:
+      dir:
+      version: "PR-131"
     metris:
       dir:
       version: "PR-20"

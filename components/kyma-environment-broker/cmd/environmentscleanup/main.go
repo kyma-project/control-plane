@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/dlmiddlecote/sqlstats"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/environmentscleanup"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/environmentscleanup/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pkg/errors"
@@ -21,7 +21,7 @@ type config struct {
 	LabelSelector string        `envconfig:"default=owner.do-not-delete!=true"`
 	Gardener      gardener.Config
 	Database      storage.Config
-	Broker        broker.Config
+	Broker        broker.ClientConfig
 }
 
 func main() {

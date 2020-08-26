@@ -76,14 +76,14 @@ spec:
                 valueFrom:
                   secretKeyRef:
                     key: client_id
-                    name: {{.Values.environmentsCleanup.secretName}}
+                    name: {{ include "kyma-env-broker.fullname" . }}-oauth
               - name: APP_BROKER_CLIENT_SECRET
                 valueFrom:
                   secretKeyRef:
                     key: client_secret
-                    name: {{.Values.environmentsCleanup.secretName}}
+                    name: {{ include "kyma-env-broker.fullname" . }}-oauth
               - name: APP_BROKER_SCOPE
-                value: {{.Values.environmentsCleanup.scope}}
+                value: {{.Values.kebClient.scope}}
             command:
               - bin/sh
             args:
