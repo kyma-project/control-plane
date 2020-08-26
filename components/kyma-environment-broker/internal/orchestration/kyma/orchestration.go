@@ -1,6 +1,7 @@
 package kyma
 
 import (
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -62,18 +63,55 @@ func (u *upgradeKymaOrchestration) Execute(orchestrationID string) (time.Duratio
 		if err != nil {
 			return 0, errors.Wrap(err, "while resolving targets")
 		}
-		for range runtimes {
+		for _, r := range runtimes {
 			// TODO(upgrade): Insert UpgradeKymaOperation to DB; write unit test for o.State cases
 			id := uuid.New().String()
-			operations = append(operations, internal.RuntimeOperation{OperationID: id})
+			operations = append(operations, internal.RuntimeOperation{
+				Runtime:     r,
+				OperationID: id,
+				Status:      internal.InProgress,
+			})
 		}
 	}
 
-	strategy := orchestration.NewInstantOrchestrationStrategy(process.NewQueue(u.kymaUpgradeExecutor, u.log), u.log)
+	// TODO(upgrade): update orchestration in storage with runtime operation set
+	// TODO(upgrade): support many strategies
+	strategy := orchestration.NewInstantOrchestrationStrategy(u.kymaUpgradeExecutor, u.log)
 	_, err = strategy.Execute(operations, dto.Strategy)
 	if err != nil {
 		return 0, errors.Wrap(err, "while executing instant upgrade strategy")
 	}
 
+	// TODO(upgrade): check UpgradeKymaOperations in the loop to assert orchestration state
+	result, err := u.checkOperationsResults(operations)
+	if err != nil {
+		return 0, errors.Wrap(err, "while checking operations results")
+	}
+	state := internal.Failed
+	if result {
+		state = internal.Succeeded
+	}
+	err = u.updateOrchestration(*o, state, operations)
+	if err != nil {
+		return 0, errors.Wrap(err, "while updating orchestration")
+	}
+
 	return 0, nil
+}
+
+func (u *upgradeKymaOrchestration) updateOrchestration(o internal.Orchestration, state string, ops []internal.RuntimeOperation) error {
+	result, err := json.Marshal(&ops)
+	if err != nil {
+		return errors.Wrap(err, "while un-marshalling runtime operations")
+	}
+	o.RuntimeOperations = sql.NullString{
+		String: string(result),
+		Valid:  true,
+	}
+	o.State = state
+	return u.db.UpdateOrchestration(o)
+}
+
+func (u *upgradeKymaOrchestration) checkOperationsResults(ops []internal.RuntimeOperation) (bool, error) {
+	return true, nil
 }

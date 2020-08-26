@@ -31,17 +31,17 @@ func NewKymaOrchestrationHandler(db storage.Orchestration, executor process.Exec
 }
 
 func (h *kymaHandler) AttachRoutes(router *mux.Router) {
-	router.HandleFunc("/orchestration/kyma/upgrade", h.upgradeKymaOrchestrationHandler).Methods(http.MethodGet)
-	router.HandleFunc("/orchestration/kyma/upgrade", h.upgradeKymaOrchestrationHandler).Methods(http.MethodPost)
+	router.HandleFunc("/orchestrations/{orchestration_id}", h.getUpgradeKymaOrchestrationsHandler).Methods(http.MethodGet)
+	router.HandleFunc("/kyma/upgrade", h.upgradeKymaOrchestrationHandler).Methods(http.MethodPost)
 }
 
 func (h *kymaHandler) getUpgradeKymaOrchestrationsHandler(w http.ResponseWriter, r *http.Request) {
-	operationID := mux.Vars(r)["operation_id"]
+	orchestrationID := mux.Vars(r)["orchestration_id"]
 
-	o, err := h.db.GetOrchestrationByID(operationID)
+	o, err := h.db.GetOrchestrationByID(orchestrationID)
 	if err != nil {
-		h.log.Errorf("while getting orchestration %s: %v", operationID, err)
-		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting orchestration %s", operationID))
+		h.log.Errorf("while getting orchestration %s: %v", orchestrationID, err)
+		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting orchestration %s", orchestrationID))
 	}
 
 	writeResponse(w, http.StatusOK, o)

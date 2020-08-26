@@ -368,7 +368,7 @@ func main() {
 	//gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
 	//fatalOnError(err)
 	//runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient, "default", db.Instances(), logs)
-	//kymaUpgradeOrchestration := kyma.NewUpgradeKymaOrchestration(db.Orchestration(), runtimeResolver, nil, logs)
+	//kymaUpgradeOrchestration := kyma.NewUpgradeKymaOrchestration(db.Orchestration(), nil, runtimeResolver, logs)
 	//orchestrationHandler := orchestrate.NewOrchestrationHandler(db.Orchestration(), kymaUpgradeOrchestration, logs)
 
 	// create OSB API endpoints

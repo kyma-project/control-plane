@@ -3,6 +3,8 @@ package kyma_test
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -72,14 +74,14 @@ func TestUpgradeKymaOrchestration_Execute_InProgressWithRuntimeOperations(t *tes
 	ops, err := json.Marshal(&operations)
 	require.NoError(t, err)
 
-	err = store.Orchestration().InsertOrchestration(
-		internal.Orchestration{
-			OrchestrationID: id,
-			State:           internal.InProgress,
-			RuntimeOperations: sql.NullString{
-				String: string(ops),
-				Valid:  true,
-			}})
+	givenO := internal.Orchestration{
+		OrchestrationID: id,
+		State:           internal.InProgress,
+		RuntimeOperations: sql.NullString{
+			String: string(ops),
+			Valid:  true,
+		}}
+	err = store.Orchestration().InsertOrchestration(givenO)
 	require.NoError(t, err)
 
 	svc := kyma.NewUpgradeKymaOrchestration(store.Orchestration(), nil, resolver, logrus.New())
@@ -87,4 +89,9 @@ func TestUpgradeKymaOrchestration_Execute_InProgressWithRuntimeOperations(t *tes
 	// when
 	_, err = svc.Execute(id)
 	require.NoError(t, err)
+
+	o, err := store.Orchestration().GetOrchestrationByID(id)
+	require.NoError(t, err)
+
+	assert.Equal(t, internal.Succeeded, o.State)
 }

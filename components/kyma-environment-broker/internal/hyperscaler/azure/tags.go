@@ -4,7 +4,7 @@ const (
 	// Azure tags used to identify the Kyma runtime
 	TagSubAccountID = "SubAccountID"
 	TagInstanceID   = "InstanceID"
-	TagOperationID  = "OperationID"
+	TagOperationID  = "OrchestrationID"
 )
 
 // Tags type represents Azure tags acceptable by the Azure client

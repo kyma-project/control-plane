@@ -8,5 +8,5 @@ type UpgradeOrchestrationDTO struct {
 }
 
 type UpgradeOrchestrationResponseDTO struct {
-	OrchestrationID string `json:"orchestration_id"`
+	OrchestrationID string `json:"operation_id"`
 }
