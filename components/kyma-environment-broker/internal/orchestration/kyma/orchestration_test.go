@@ -3,9 +3,9 @@ package kyma_test
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/automock"
