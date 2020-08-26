@@ -29,7 +29,7 @@ func TestUpgradeKymaOrchestration_Execute_Empty(t *testing.T) {
 	}).Return([]internal.Runtime{}, nil)
 
 	id := "id"
-	err := store.Orchestration().InsertOrchestration(internal.Orchestration{OrchestrationID: id})
+	err := store.Orchestration().Insert(internal.Orchestration{OrchestrationID: id})
 	require.NoError(t, err)
 
 	svc := kyma.NewUpgradeKymaOrchestration(store.Orchestration(), nil, resolver, logrus.New())
@@ -47,7 +47,7 @@ func TestUpgradeKymaOrchestration_Execute_InProgress(t *testing.T) {
 	defer resolver.AssertExpectations(t)
 
 	id := "id"
-	err := store.Orchestration().InsertOrchestration(internal.Orchestration{OrchestrationID: id, State: internal.InProgress})
+	err := store.Orchestration().Insert(internal.Orchestration{OrchestrationID: id, State: internal.InProgress})
 	require.NoError(t, err)
 
 	svc := kyma.NewUpgradeKymaOrchestration(store.Orchestration(), nil, resolver, logrus.New())
@@ -81,7 +81,7 @@ func TestUpgradeKymaOrchestration_Execute_InProgressWithRuntimeOperations(t *tes
 			String: string(ops),
 			Valid:  true,
 		}}
-	err = store.Orchestration().InsertOrchestration(givenO)
+	err = store.Orchestration().Insert(givenO)
 	require.NoError(t, err)
 
 	svc := kyma.NewUpgradeKymaOrchestration(store.Orchestration(), nil, resolver, logrus.New())
@@ -90,7 +90,7 @@ func TestUpgradeKymaOrchestration_Execute_InProgressWithRuntimeOperations(t *tes
 	_, err = svc.Execute(id)
 	require.NoError(t, err)
 
-	o, err := store.Orchestration().GetOrchestrationByID(id)
+	o, err := store.Orchestration().GetByID(id)
 	require.NoError(t, err)
 
 	assert.Equal(t, internal.Succeeded, o.State)

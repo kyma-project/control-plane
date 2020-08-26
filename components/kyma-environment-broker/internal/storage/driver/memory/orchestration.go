@@ -19,14 +19,14 @@ func NewOrchestration() *orchestration {
 	}
 }
 
-func (s *orchestration) InsertOrchestration(orchestration internal.Orchestration) error {
+func (s *orchestration) Insert(orchestration internal.Orchestration) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.orchestrations[orchestration.OrchestrationID] = orchestration
 
 	return nil
 }
-func (s *orchestration) GetOrchestrationByID(orchestrationID string) (*internal.Orchestration, error) {
+func (s *orchestration) GetByID(orchestrationID string) (*internal.Orchestration, error) {
 	inst, ok := s.orchestrations[orchestrationID]
 	if !ok {
 		return nil, dberr.NotFound("orchestration with id %s not exist", orchestrationID)
@@ -34,7 +34,7 @@ func (s *orchestration) GetOrchestrationByID(orchestrationID string) (*internal.
 
 	return &inst, nil
 }
-func (s *orchestration) UpdateOrchestration(orchestration internal.Orchestration) error {
+func (s *orchestration) Update(orchestration internal.Orchestration) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.orchestrations[orchestration.OrchestrationID]; !ok {

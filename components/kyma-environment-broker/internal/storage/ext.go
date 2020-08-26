@@ -41,9 +41,9 @@ type Deprovisioning interface {
 }
 
 type Orchestration interface {
-	InsertOrchestration(orchestration internal.Orchestration) error
-	UpdateOrchestration(orchestration internal.Orchestration) error
-	GetOrchestrationByID(orchestrationID string) (*internal.Orchestration, error)
+	Insert(orchestration internal.Orchestration) error
+	Update(orchestration internal.Orchestration) error
+	GetByID(orchestrationID string) (*internal.Orchestration, error)
 }
 
 type LMSTenants interface {

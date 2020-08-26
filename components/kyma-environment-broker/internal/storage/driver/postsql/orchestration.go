@@ -19,8 +19,8 @@ func NewOrchestration(sess dbsession.Factory) *orchestration {
 	}
 }
 
-func (s *orchestration) InsertOrchestration(orchestration internal.Orchestration) error {
-	_, err := s.GetOrchestrationByID(orchestration.OrchestrationID)
+func (s *orchestration) Insert(orchestration internal.Orchestration) error {
+	_, err := s.GetByID(orchestration.OrchestrationID)
 	if err == nil {
 		return dberr.AlreadyExists("orchestration with id %s already exist", orchestration.OrchestrationID)
 	}
@@ -35,7 +35,7 @@ func (s *orchestration) InsertOrchestration(orchestration internal.Orchestration
 		return true, nil
 	})
 }
-func (s *orchestration) GetOrchestrationByID(orchestrationID string) (*internal.Orchestration, error) {
+func (s *orchestration) GetByID(orchestrationID string) (*internal.Orchestration, error) {
 	sess := s.NewReadSession()
 	orchestration := internal.Orchestration{}
 	var lastErr dberr.Error
@@ -55,7 +55,7 @@ func (s *orchestration) GetOrchestrationByID(orchestrationID string) (*internal.
 	}
 	return &orchestration, nil
 }
-func (s *orchestration) UpdateOrchestration(orchestration internal.Orchestration) error {
+func (s *orchestration) Update(orchestration internal.Orchestration) error {
 	sess := s.NewWriteSession()
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {

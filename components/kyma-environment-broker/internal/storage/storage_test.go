@@ -490,19 +490,19 @@ func TestSchemaInitializer(t *testing.T) {
 
 		svc := brokerStorage.Orchestration()
 
-		err = svc.InsertOrchestration(givenOrchestration)
+		err = svc.Insert(givenOrchestration)
 		require.NoError(t, err)
 
 		// when
-		gotOrchestration, err := svc.GetOrchestrationByID(fixID)
+		gotOrchestration, err := svc.GetByID(fixID)
 		require.NoError(t, err)
 		assert.Equal(t, givenOrchestration.Parameters, gotOrchestration.Parameters)
 
 		gotOrchestration.Description = "new modified description 1"
-		err = svc.UpdateOrchestration(givenOrchestration)
+		err = svc.Update(givenOrchestration)
 		require.NoError(t, err)
 
-		err = svc.InsertOrchestration(givenOrchestration)
+		err = svc.Insert(givenOrchestration)
 		assertError(t, dberr.CodeAlreadyExists, err)
 	})
 

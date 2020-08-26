@@ -38,7 +38,7 @@ func (h *kymaHandler) AttachRoutes(router *mux.Router) {
 func (h *kymaHandler) getUpgradeKymaOrchestrationsHandler(w http.ResponseWriter, r *http.Request) {
 	orchestrationID := mux.Vars(r)["orchestration_id"]
 
-	o, err := h.db.GetOrchestrationByID(orchestrationID)
+	o, err := h.db.GetByID(orchestrationID)
 	if err != nil {
 		h.log.Errorf("while getting orchestration %s: %v", orchestrationID, err)
 		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting orchestration %s", orchestrationID))
@@ -48,7 +48,7 @@ func (h *kymaHandler) getUpgradeKymaOrchestrationsHandler(w http.ResponseWriter,
 }
 
 func (h *kymaHandler) upgradeKymaOrchestrationHandler(w http.ResponseWriter, r *http.Request) {
-	dto := orchestration.UpgradeOrchestrationDTO{}
+	dto := orchestration.Parameters{}
 
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&dto)
@@ -82,7 +82,7 @@ func (h *kymaHandler) upgradeKymaOrchestrationHandler(w http.ResponseWriter, r *
 		UpdatedAt: now,
 	}
 
-	err = h.db.InsertOrchestration(o)
+	err = h.db.Insert(o)
 	if err != nil {
 		h.log.Errorf("while inserting operation to storage: %v", err)
 		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while inserting operation to storage"))

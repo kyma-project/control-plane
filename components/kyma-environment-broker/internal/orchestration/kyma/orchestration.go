@@ -32,12 +32,12 @@ func NewUpgradeKymaOrchestration(db storage.Orchestration, kymaUpgradeExecutor p
 
 // Execute reconciles runtimes for a given orchestration
 func (u *upgradeKymaOrchestration) Execute(orchestrationID string) (time.Duration, error) {
-	o, err := u.db.GetOrchestrationByID(orchestrationID)
+	o, err := u.db.GetByID(orchestrationID)
 	if err != nil {
 		return 0, errors.Wrapf(err, "while getting orchestration %s", orchestrationID)
 	}
 
-	dto := orchestration.UpgradeOrchestrationDTO{}
+	dto := orchestration.Parameters{}
 	if o.Parameters.Valid {
 		err = json.Unmarshal([]byte(o.Parameters.String), &dto)
 		if err != nil {
@@ -109,7 +109,7 @@ func (u *upgradeKymaOrchestration) updateOrchestration(o internal.Orchestration,
 		Valid:  true,
 	}
 	o.State = state
-	return u.db.UpdateOrchestration(o)
+	return u.db.Update(o)
 }
 
 func (u *upgradeKymaOrchestration) checkOperationsResults(ops []internal.RuntimeOperation) (bool, error) {
