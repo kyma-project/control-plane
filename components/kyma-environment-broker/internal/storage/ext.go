@@ -40,7 +40,7 @@ type Deprovisioning interface {
 	UpdateDeprovisioningOperation(operation internal.DeprovisioningOperation) (*internal.DeprovisioningOperation, error)
 }
 
-type Orchestration interface {
+type Orchestrations interface {
 	Insert(orchestration internal.Orchestration) error
 	Update(orchestration internal.Orchestration) error
 	GetByID(orchestrationID string) (*internal.Orchestration, error)

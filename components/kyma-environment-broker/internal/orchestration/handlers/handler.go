@@ -12,13 +12,13 @@ type Handler interface {
 }
 
 type handler struct {
-	db  storage.Orchestration
+	db  storage.Orchestrations
 	log logrus.FieldLogger
 
 	handlers []Handler
 }
 
-func NewOrchestrationHandler(db storage.Orchestration, executor process.Executor, log logrus.FieldLogger) Handler {
+func NewOrchestrationHandler(db storage.Orchestrations, executor process.Executor, log logrus.FieldLogger) Handler {
 	return &handler{
 		db:  db,
 		log: log,

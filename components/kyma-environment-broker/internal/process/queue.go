@@ -14,16 +14,18 @@ type Executor interface {
 }
 
 type Queue struct {
-	queue    workqueue.RateLimitingInterface
-	executor Executor
-	log      logrus.FieldLogger
+	queue     workqueue.RateLimitingInterface
+	executor  Executor
+	waitGroup sync.WaitGroup
+	log       logrus.FieldLogger
 }
 
 func NewQueue(executor Executor, log logrus.FieldLogger) *Queue {
 	return &Queue{
-		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "operations"),
-		executor: executor,
-		log:      log,
+		queue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "operations"),
+		executor:  executor,
+		waitGroup: sync.WaitGroup{},
+		log:       log,
 	}
 }
 
@@ -35,16 +37,18 @@ func (q *Queue) ShutDown() {
 	q.queue.ShutDown()
 }
 
-func (q *Queue) Run(stop <-chan struct{}, workersAmount int) {
-	var waitGroup sync.WaitGroup
+func (q *Queue) Wait() {
+	q.waitGroup.Wait()
+}
 
+func (q *Queue) Run(stop <-chan struct{}, workersAmount int) {
 	for i := 0; i < workersAmount; i++ {
-		createWorker(q.queue, q.executor.Execute, stop, &waitGroup, q.log)
+		q.waitGroup.Add(1)
+		createWorker(q.queue, q.executor.Execute, stop, &q.waitGroup, q.log)
 	}
 }
 
 func createWorker(queue workqueue.RateLimitingInterface, process func(id string) (time.Duration, error), stopCh <-chan struct{}, waitGroup *sync.WaitGroup, log logrus.FieldLogger) {
-	waitGroup.Add(1)
 	go func() {
 		wait.Until(worker(queue, process, log), time.Second, stopCh)
 		waitGroup.Done()
@@ -60,7 +64,8 @@ func worker(queue workqueue.RateLimitingInterface, process func(key string) (tim
 				if quit {
 					return true
 				}
-				log = log.WithField("operationID", key)
+				id := key.(string)
+				log = log.WithField("operationID", id)
 				defer func() {
 					if err := recover(); err != nil {
 						log.Errorf("panic error from process: %v", err)
@@ -68,9 +73,9 @@ func worker(queue workqueue.RateLimitingInterface, process func(key string) (tim
 					queue.Done(key)
 				}()
 
-				when, err := process(key.(string))
+				when, err := process(id)
 				if err == nil && when != 0 {
-					log.Infof("Adding %q item after %s", key.(string), when)
+					log.Infof("Adding %q item after %s", id, when)
 					queue.AddAfter(key, when)
 					return false
 				}

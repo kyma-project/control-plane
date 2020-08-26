@@ -1,5 +1,3 @@
-// +build database_integration
-
 package storage
 
 import (
@@ -488,7 +486,7 @@ func TestSchemaInitializer(t *testing.T) {
 		brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
 		require.NoError(t, err)
 
-		svc := brokerStorage.Orchestration()
+		svc := brokerStorage.Orchestrations()
 
 		err = svc.Insert(givenOrchestration)
 		require.NoError(t, err)

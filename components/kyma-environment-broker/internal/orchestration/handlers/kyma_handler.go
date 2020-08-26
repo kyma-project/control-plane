@@ -17,12 +17,12 @@ import (
 )
 
 type kymaHandler struct {
-	db    storage.Orchestration
+	db    storage.Orchestrations
 	queue *process.Queue
 	log   logrus.FieldLogger
 }
 
-func NewKymaOrchestrationHandler(db storage.Orchestration, executor process.Executor, log logrus.FieldLogger) *kymaHandler {
+func NewKymaOrchestrationHandler(db storage.Orchestrations, executor process.Executor, log logrus.FieldLogger) *kymaHandler {
 	return &kymaHandler{
 		db:    db,
 		log:   log,
@@ -31,8 +31,8 @@ func NewKymaOrchestrationHandler(db storage.Orchestration, executor process.Exec
 }
 
 func (h *kymaHandler) AttachRoutes(router *mux.Router) {
-	router.HandleFunc("/orchestrations/{orchestration_id}", h.getUpgradeKymaOrchestrationsHandler).Methods(http.MethodGet)
-	router.HandleFunc("/upgrade/kyma", h. getOrchestration).Methods(http.MethodPost)
+	router.HandleFunc("/orchestrations/{orchestration_id}", h.createOrchestration).Methods(http.MethodGet)
+	router.HandleFunc("/upgrade/kyma", h.getOrchestration).Methods(http.MethodPost)
 }
 
 func (h *kymaHandler) getOrchestration(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +90,7 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 
 	h.queue.Add(o.OrchestrationID)
 
-	response := orchestration.UpgradeOrchestrationResponseDTO{OrchestrationID: o.OrchestrationID}
+	response := orchestration.UpgradeResponse{OrchestrationID: o.OrchestrationID}
 
 	writeResponse(w, http.StatusAccepted, response)
 }

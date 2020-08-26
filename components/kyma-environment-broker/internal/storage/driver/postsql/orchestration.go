@@ -13,7 +13,7 @@ type orchestration struct {
 	dbsession.Factory
 }
 
-func NewOrchestration(sess dbsession.Factory) *orchestration {
+func NewOrchestrations(sess dbsession.Factory) *orchestration {
 	return &orchestration{
 		Factory: sess,
 	}

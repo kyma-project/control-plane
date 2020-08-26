@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -29,10 +30,10 @@ func TestUpgradeKymaOrchestration_Execute_Empty(t *testing.T) {
 	}).Return([]internal.Runtime{}, nil)
 
 	id := "id"
-	err := store.Orchestration().Insert(internal.Orchestration{OrchestrationID: id})
+	err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id})
 	require.NoError(t, err)
 
-	svc := kyma.NewUpgradeKymaOrchestration(store.Orchestration(), nil, resolver, logrus.New())
+	svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), nil, resolver, logrus.New())
 
 	// when
 	_, err = svc.Execute(id)
@@ -47,10 +48,10 @@ func TestUpgradeKymaOrchestration_Execute_InProgress(t *testing.T) {
 	defer resolver.AssertExpectations(t)
 
 	id := "id"
-	err := store.Orchestration().Insert(internal.Orchestration{OrchestrationID: id, State: internal.InProgress})
+	err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, State: internal.InProgress})
 	require.NoError(t, err)
 
-	svc := kyma.NewUpgradeKymaOrchestration(store.Orchestration(), nil, resolver, logrus.New())
+	svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), nil, resolver, logrus.New())
 
 	// when
 	_, err = svc.Execute(id)
@@ -81,17 +82,23 @@ func TestUpgradeKymaOrchestration_Execute_InProgressWithRuntimeOperations(t *tes
 			String: string(ops),
 			Valid:  true,
 		}}
-	err = store.Orchestration().Insert(givenO)
+	err = store.Orchestrations().Insert(givenO)
 	require.NoError(t, err)
 
-	svc := kyma.NewUpgradeKymaOrchestration(store.Orchestration(), nil, resolver, logrus.New())
+	svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), &testExecutor{}, resolver, logrus.New())
 
 	// when
 	_, err = svc.Execute(id)
 	require.NoError(t, err)
 
-	o, err := store.Orchestration().GetByID(id)
+	o, err := store.Orchestrations().GetByID(id)
 	require.NoError(t, err)
 
 	assert.Equal(t, internal.Succeeded, o.State)
+}
+
+type testExecutor struct{}
+
+func (t *testExecutor) Execute(opID string) (time.Duration, error) {
+	return 0, nil
 }

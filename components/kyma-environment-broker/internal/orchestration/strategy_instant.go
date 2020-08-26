@@ -1,7 +1,6 @@
 package orchestration
 
 import (
-	"context"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -27,15 +26,20 @@ func (p *InstantOrchestrationStrategy) Execute(operations []internal.RuntimeOper
 	if len(operations) == 0 {
 		return 0, nil
 	}
-	ctx := context.Background()
+	stopCh := make(chan struct{})
+
+	workers := 1
+	if strategySpec.Parallel.Workers != 0 {
+		workers = strategySpec.Parallel.Workers
+	}
 
 	q := process.NewQueue(p.executor, p.log)
-	q.Run(ctx.Done(), strategySpec.Parallel.Workers)
+	q.Run(stopCh, workers)
+	defer q.ShutDown()
+
 	for _, op := range operations {
 		q.Add(op.OperationID)
 	}
-	// shutdown will terminate queue as soon as every key will be processed
-	q.ShutDown()
 
 	return 0, nil
 }

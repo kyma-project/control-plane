@@ -7,6 +7,6 @@ type Parameters struct {
 	Strategy internal.StrategySpec `json:"strategy,omitempty"`
 }
 
-type OrchestrationSpec struct {
+type UpgradeResponse struct {
 	OrchestrationID string `json:"orchestration_id"`
 }

@@ -28,6 +28,7 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []internal.RuntimeOpe
 	defer cancel()
 
 	q := process.NewQueue(p.operationExecutor, p.log)
+
 	q.Run(ctx.Done(), strategySpec.Parallel.Workers)
 	defer q.ShutDown()
 
@@ -46,8 +47,6 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []internal.RuntimeOpe
 		}
 		q.Add(op.OperationID)
 	}
-
-	ctx.Done()
 
 	return 0, nil
 }

@@ -34,28 +34,28 @@ func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, *dbr.Conn
 	fact := dbsession.NewFactory(connection)
 
 	return storage{
-		instance:      postgres.NewInstance(fact),
-		operation:     postgres.NewOperation(fact),
-		lmsTenants:    postgres.NewLMSTenants(fact),
-		orchestration: postgres.NewOrchestration(fact),
+		instance:       postgres.NewInstance(fact),
+		operation:      postgres.NewOperation(fact),
+		lmsTenants:     postgres.NewLMSTenants(fact),
+		orchestrations: postgres.NewOrchestrations(fact),
 	}, connection, nil
 }
 
 func NewMemoryStorage() BrokerStorage {
 	op := memory.NewOperation()
 	return storage{
-		operation:     op,
-		instance:      memory.NewInstance(op),
-		lmsTenants:    memory.NewLMSTenants(),
-		orchestration: memory.NewOrchestration(),
+		operation:      op,
+		instance:       memory.NewInstance(op),
+		lmsTenants:     memory.NewLMSTenants(),
+		orchestrations: memory.NewOrchestrations(),
 	}
 }
 
 type storage struct {
-	instance      Instances
-	operation     Operations
-	lmsTenants    LMSTenants
-	orchestration Orchestration
+	instance       Instances
+	operation      Operations
+	lmsTenants     LMSTenants
+	orchestrations Orchestrations
 }
 
 func (s storage) Instances() Instances {
@@ -78,6 +78,6 @@ func (s storage) LMSTenants() LMSTenants {
 	return s.lmsTenants
 }
 
-func (s storage) Orchestration() Orchestration {
-	return s.orchestration
+func (s storage) Orchestrations() Orchestrations {
+	return s.orchestrations
 }

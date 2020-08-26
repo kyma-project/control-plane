@@ -13,7 +13,7 @@ type orchestration struct {
 	orchestrations map[string]internal.Orchestration
 }
 
-func NewOrchestration() *orchestration {
+func NewOrchestrations() *orchestration {
 	return &orchestration{
 		orchestrations: make(map[string]internal.Orchestration, 0),
 	}
