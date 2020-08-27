@@ -15,6 +15,7 @@ type operations struct {
 
 	provisioningOperations   map[string]internal.ProvisioningOperation
 	deprovisioningOperations map[string]internal.DeprovisioningOperation
+	upgradeKymaOperations    map[string]internal.UpgradeKymaOperation
 }
 
 // NewOperation creates in-memory storage for OSB operations.
@@ -121,6 +122,54 @@ func (s *operations) UpdateDeprovisioningOperation(op internal.DeprovisioningOpe
 	return &op, nil
 }
 
+func (s *operations) InsertUpgradeKymaOperation(operation internal.UpgradeKymaOperation) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	id := operation.ID
+	if _, exists := s.upgradeKymaOperations[id]; exists {
+		return dberr.AlreadyExists("instance operation with id %s already exist", id)
+	}
+
+	s.upgradeKymaOperations[id] = operation
+	return nil
+}
+
+func (s *operations) GetUpgradeKymaOperationByID(operationID string) (*internal.UpgradeKymaOperation, error) {
+	op, exists := s.upgradeKymaOperations[operationID]
+	if !exists {
+		return nil, dberr.NotFound("instance upgrade_kyma operation with id %s not found", operationID)
+	}
+	return &op, nil
+}
+
+func (s *operations) GetUpgradeKymaOperationByInstanceID(instanceID string) (*internal.UpgradeKymaOperation, error) {
+	for _, op := range s.upgradeKymaOperations {
+		if op.InstanceID == instanceID {
+			return &op, nil
+		}
+	}
+
+	return nil, dberr.NotFound("instance upgrade_kyma operation with instanceID %s not found", instanceID)
+}
+
+func (s *operations) UpdateUpgradeKymaOperation(op internal.UpgradeKymaOperation) (*internal.UpgradeKymaOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	oldOp, exists := s.upgradeKymaOperations[op.ID]
+	if !exists {
+		return nil, dberr.NotFound("instance operation with id %s not found", op.ID)
+	}
+	if oldOp.Version != op.Version {
+		return nil, dberr.Conflict("unable to update upgrade_kyma operation with id %s (for instance id %s) - conflict", op.ID, op.InstanceID)
+	}
+	op.Version = op.Version + 1
+	s.upgradeKymaOperations[op.ID] = op
+
+	return &op, nil
+}
+
 func (s *operations) GetOperationByID(operationID string) (*internal.Operation, error) {
 	var res *internal.Operation
 
@@ -131,6 +180,10 @@ func (s *operations) GetOperationByID(operationID string) (*internal.Operation, 
 	deprovisionOp, exists := s.deprovisioningOperations[operationID]
 	if exists {
 		res = &deprovisionOp.Operation
+	}
+	upgradeKymaOp, exists := s.upgradeKymaOperations[operationID]
+	if exists {
+		res = &upgradeKymaOp.Operation
 	}
 	if res == nil {
 		return nil, dberr.NotFound("instance operation with id %s not found", operationID)

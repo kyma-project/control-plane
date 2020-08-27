@@ -125,8 +125,16 @@ type DeprovisioningOperation struct {
 	RuntimeID              string           `json:"runtime_id"`
 }
 
+// UpgradeKymaOperation holds all information about upgrade Kyma operation
+type UpgradeKymaOperation struct {
+	Operation `json:"-"`
+
+	SubAccountID string `json:"-"`
+	RuntimeID    string `json:"runtime_id"`
+}
+
 // Orchestration holds all information about an orchestration.
-// Orchestration performs operations of a specific type (KymaUpgradeOperation, ClusterUpgradeOperation)
+// Orchestration performs operations of a specific type (UpgradeKymaOperation, UpgradeClusterOperation)
 // on specific targets of SKRs.
 type Orchestration struct {
 	OrchestrationID   string

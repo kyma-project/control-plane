@@ -21,6 +21,7 @@ type Instances interface {
 type Operations interface {
 	Provisioning
 	Deprovisioning
+	UpgradeKyma
 
 	GetOperationByID(operationID string) (*internal.Operation, error)
 	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]internal.Operation, error)
@@ -46,6 +47,13 @@ type Orchestrations interface {
 	Update(orchestration internal.Orchestration) error
 	GetByID(orchestrationID string) (*internal.Orchestration, error)
 	ListAll() ([]internal.Orchestration, error)
+}
+
+type UpgradeKyma interface {
+	InsertUpgradeKymaOperation(operation internal.UpgradeKymaOperation) error
+	GetUpgradeKymaOperationByID(operationID string) (*internal.UpgradeKymaOperation, error)
+	GetUpgradeKymaOperationByInstanceID(instanceID string) (*internal.UpgradeKymaOperation, error)
+	UpdateUpgradeKymaOperation(operation internal.UpgradeKymaOperation) (*internal.UpgradeKymaOperation, error)
 }
 
 type LMSTenants interface {
