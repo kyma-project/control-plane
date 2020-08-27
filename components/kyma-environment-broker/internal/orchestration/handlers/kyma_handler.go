@@ -53,7 +53,7 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		h.log.Errorf("while decoding request body: %v", err)
-		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while decoding request body"))
+		writeErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while decoding request body"))
 	}
 
 	dto.Targets, err = h.resolveTargets(dto.Targets)
