@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO(upgrade): Cover scenario when resolve returns runtimes or cover it in strategy_*_test.go
 func TestUpgradeKymaOrchestration_Execute_Empty(t *testing.T) {
 	// given
 	store := storage.NewMemoryStorage()

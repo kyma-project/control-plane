@@ -1,3 +1,5 @@
+// +build database_integration
+
 package storage
 
 import (
@@ -36,7 +38,7 @@ func TestSchemaInitializer(t *testing.T) {
 			defer containerCleanupFunc()
 
 			// when
-			connection, err := postsql.InitializeDatabase(cfg.ConnectionURL(), logrus.New())
+			connection, err := postsql.InitializeDatabase(cfg.ConnectionURL(), 1, logrus.New())
 
 			require.NoError(t, err)
 			require.NotNil(t, connection)
@@ -56,7 +58,7 @@ func TestSchemaInitializer(t *testing.T) {
 			connString := "bad connection string"
 
 			// when
-			connection, err := postsql.InitializeDatabase(connString, logrus.New())
+			connection, err := postsql.InitializeDatabase(connString, 1, logrus.New())
 
 			// then
 			assert.Error(t, err)

@@ -18,11 +18,15 @@ type BrokerStorage interface {
 	Orchestrations() Orchestrations
 }
 
+const (
+	connectionRetries = 10
+)
+
 func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, *dbr.Connection, error) {
 	log.Infof("Setting DB connection pool params: connectionMaxLifetime=%s "+
 		"maxIdleConnections=%d maxOpenConnections=%d", cfg.ConnMaxLifetime, cfg.MaxIdleConns, cfg.MaxOpenConns)
 
-	connection, err := postsql.InitializeDatabase(cfg.ConnectionURL(), log)
+	connection, err := postsql.InitializeDatabase(cfg.ConnectionURL(), connectionRetries, log)
 	if err != nil {
 		return nil, nil, err
 	}

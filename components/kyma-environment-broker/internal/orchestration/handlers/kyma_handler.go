@@ -108,7 +108,7 @@ func (h *kymaHandler) resolveTargets(targets internal.TargetSpec) (internal.Targ
 			return internal.TargetSpec{}, errors.New("runtimeId must be specified in the included target")
 		}
 	}
-	// TODO(upgrade): exclude not supported for now, change that after switching to bulk
+	// TODO(upgrade): exclude not supported until bulk
 	targets.Exclude = nil
 
 	return targets, nil

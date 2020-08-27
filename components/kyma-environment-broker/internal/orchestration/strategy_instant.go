@@ -21,7 +21,6 @@ func NewInstantOrchestrationStrategy(executor process.Executor, log logrus.Field
 	}
 }
 
-// TODO(upgrade): write tests with UpgradeKymaManager (executor) injected to strategy
 func (p *InstantOrchestrationStrategy) Execute(operations []internal.RuntimeOperation, strategySpec internal.StrategySpec) (time.Duration, error) {
 	if len(operations) == 0 {
 		return 0, nil
@@ -35,11 +34,11 @@ func (p *InstantOrchestrationStrategy) Execute(operations []internal.RuntimeOper
 
 	q := process.NewQueue(p.executor, p.log)
 	q.Run(stopCh, workers)
-	defer q.ShutDown()
 
 	for _, op := range operations {
 		q.Add(op.OperationID)
 	}
+	q.ShutDown()
 
 	return 0, nil
 }

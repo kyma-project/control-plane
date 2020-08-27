@@ -15,7 +15,7 @@ type ParallelOrchestrationStrategy struct {
 	log               logrus.FieldLogger
 }
 
-// TODO(upgrade): Finish implementation and write test; unused for now
+// TODO(upgrade): Finish implementation and write tests; unused for now
 func NewParallelOrchestrationStrategy(operationExecutor process.Executor, log logrus.FieldLogger) Strategy {
 	return &ParallelOrchestrationStrategy{
 		operationExecutor: operationExecutor,
@@ -30,7 +30,6 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []internal.RuntimeOpe
 	q := process.NewQueue(p.operationExecutor, p.log)
 
 	q.Run(ctx.Done(), strategySpec.Parallel.Workers)
-	defer q.ShutDown()
 
 	isMaintenanceWindowMode := strategySpec.Schedule == internal.MaintenanceWindow
 
@@ -47,6 +46,7 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []internal.RuntimeOpe
 		}
 		q.Add(op.OperationID)
 	}
+	q.ShutDown()
 
 	return 0, nil
 }

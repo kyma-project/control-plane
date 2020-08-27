@@ -18,12 +18,11 @@ const (
 	OperationTableName     = "operations"
 	OrchestrationTableName = "orchestrations"
 	LMSTenantTableName     = "lms_tenants"
-	connectionRetries      = 10
 )
 
 // InitializeDatabase opens database connection and initializes schema if it does not exist
-func InitializeDatabase(connectionURL string, log logrus.FieldLogger) (*dbr.Connection, error) {
-	connection, err := WaitForDatabaseAccess(connectionURL, connectionRetries, log)
+func InitializeDatabase(connectionURL string, retries int, log logrus.FieldLogger) (*dbr.Connection, error) {
+	connection, err := WaitForDatabaseAccess(connectionURL, retries, log)
 	if err != nil {
 		return nil, err
 	}
