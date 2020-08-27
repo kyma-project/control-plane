@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"time"
 
 	"github.com/google/uuid"
@@ -137,8 +138,10 @@ func (u *upgradeKymaManager) updateOrchestration(o *internal.Orchestration, stat
 	o.Description = description
 	err := u.db.Update(*o)
 	if err != nil {
-		u.log.Errorf("while updating orchestration: %v", err)
-		return time.Minute, nil
+		if !dberr.IsNotFound(err) {
+			u.log.Errorf("while updating orchestration: %v", err)
+			return time.Minute, nil
+		}
 	}
 	return 0, nil
 }
