@@ -59,8 +59,12 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 	state := internal.Succeeded
 	desc := fmt.Sprintf("scheduled %d operations", len(operations))
 
-	if err = u.updateOrchestration(o, state, desc, operations); err != nil {
+	repeat, err := u.updateOrchestration(o, state, desc, operations)
+	if err != nil {
 		return 0, errors.Wrap(err, "while updating orchestration")
+	}
+	if repeat != 0 {
+		return repeat, nil
 	}
 	if len(operations) == 0 {
 		return 0, nil
@@ -81,12 +85,12 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 	if !result {
 		state = internal.Failed
 	}
-	err = u.updateOrchestration(o, state, desc, operations)
+	repeat, err = u.updateOrchestration(o, state, desc, operations)
 	if err != nil {
 		return 0, errors.Wrap(err, "while updating orchestration")
 	}
 
-	return 0, nil
+	return repeat, nil
 }
 
 func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, dto orchestration.Parameters) ([]internal.RuntimeOperation, error) {
@@ -118,21 +122,25 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, dto or
 	return operations, nil
 }
 
-func (u *upgradeKymaManager) updateOrchestration(o *internal.Orchestration, state, description string, ops []internal.RuntimeOperation) error {
+func (u *upgradeKymaManager) updateOrchestration(o *internal.Orchestration, state, description string, ops []internal.RuntimeOperation) (time.Duration, error) {
 	if len(ops) > 0 {
 		result, err := json.Marshal(&ops)
 		if err != nil {
-			return errors.Wrap(err, "while un-marshalling runtime operations")
+			return 0, errors.Wrap(err, "while un-marshalling runtime operations")
 		}
 		o.RuntimeOperations = sql.NullString{
 			String: string(result),
 			Valid:  true,
 		}
 	}
-
 	o.State = state
 	o.Description = description
-	return u.db.Update(*o)
+	err := u.db.Update(*o)
+	if err != nil {
+		u.log.Errorf("while updating orchestration: %v", err)
+		return time.Minute, nil
+	}
+	return 0, nil
 }
 
 func (u *upgradeKymaManager) checkOperationsResults(ops []internal.RuntimeOperation) (bool, error) {

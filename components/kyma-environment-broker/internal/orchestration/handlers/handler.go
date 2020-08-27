@@ -12,16 +12,11 @@ type Handler interface {
 }
 
 type handler struct {
-	db  storage.Orchestrations
-	log logrus.FieldLogger
-
 	handlers []Handler
 }
 
 func NewOrchestrationHandler(db storage.Orchestrations, executor process.Executor, log logrus.FieldLogger) Handler {
 	return &handler{
-		db:  db,
-		log: log,
 		handlers: []Handler{
 			NewKymaOrchestrationHandler(db, executor, log),
 		},

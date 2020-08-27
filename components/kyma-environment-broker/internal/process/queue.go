@@ -37,10 +37,6 @@ func (q *Queue) ShutDown() {
 	q.queue.ShutDown()
 }
 
-func (q *Queue) Wait() {
-	q.waitGroup.Wait()
-}
-
 func (q *Queue) Run(stop <-chan struct{}, workersAmount int) {
 	for i := 0; i < workersAmount; i++ {
 		q.waitGroup.Add(1)

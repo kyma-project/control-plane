@@ -50,8 +50,7 @@ func (h *kymaHandler) getOrchestration(w http.ResponseWriter, r *http.Request) {
 func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request) {
 	dto := orchestration.Parameters{}
 
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&dto)
+	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		h.log.Errorf("while decoding request body: %v", err)
 		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while decoding request body"))
@@ -60,7 +59,7 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 	dto.Targets, err = h.resolveTargets(dto.Targets)
 	if err != nil {
 		h.log.Errorf("while resolving targets: %v", err)
-		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while resolving targets"))
+		writeErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while resolving targets"))
 	}
 
 	params, err := json.Marshal(dto)
