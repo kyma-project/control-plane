@@ -58,17 +58,21 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 		return 0, errors.Wrap(err, "while resolving operations")
 	}
 
-	state := internal.Succeeded
+	state := internal.InProgress
 	desc := fmt.Sprintf("scheduled %d operations", len(operations))
 
+	isFinished := len(operations) == 0 || dto.Dry
+	if isFinished {
+		state = internal.Succeeded
+	}
+
 	repeat, err := u.updateOrchestration(o, state, desc, operations)
-	if err != nil {
+	switch {
+	case err != nil:
 		return 0, errors.Wrap(err, "while updating orchestration")
-	}
-	if repeat != 0 {
+	case repeat != 0:
 		return repeat, nil
-	}
-	if len(operations) == 0 {
+	case isFinished:
 		return 0, nil
 	}
 
@@ -79,6 +83,7 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 		return 0, errors.Wrap(err, "while executing instant upgrade strategy")
 	}
 
+	state = internal.Succeeded
 	// TODO(upgrade): check UpgradeKymaOperations in the loop to assert orchestration state
 	result, err := u.checkOperationsResults(operations)
 	if err != nil {
