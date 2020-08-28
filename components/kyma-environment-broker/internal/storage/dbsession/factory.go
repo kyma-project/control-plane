@@ -28,16 +28,19 @@ type ReadSession interface {
 	GetOperationStats() ([]dbmodel.OperationStatEntry, error)
 	GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
+	GetOrchestrationByID(oID string) (internal.Orchestration, dberr.Error)
 }
 
 //go:generate mockery -name=WriteSession
 type WriteSession interface {
 	InsertInstance(instance internal.Instance) dberr.Error
-	InsertOperation(dto dbmodel.OperationDTO) dberr.Error
 	UpdateInstance(instance internal.Instance) dberr.Error
-	UpdateOperation(instance dbmodel.OperationDTO) dberr.Error
-	InsertLMSTenant(dto dbmodel.LMSTenantDTO) dberr.Error
 	DeleteInstance(instanceID string) dberr.Error
+	InsertOperation(dto dbmodel.OperationDTO) dberr.Error
+	UpdateOperation(instance dbmodel.OperationDTO) dberr.Error
+	InsertOrchestration(o internal.Orchestration) dberr.Error
+	UpdateOrchestration(o internal.Orchestration) dberr.Error
+	InsertLMSTenant(dto dbmodel.LMSTenantDTO) dberr.Error
 }
 
 type Transaction interface {

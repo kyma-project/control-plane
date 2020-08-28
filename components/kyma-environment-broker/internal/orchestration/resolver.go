@@ -64,10 +64,10 @@ func NewGardenerRuntimeResolver(gardenerClient gardenerclient.CoreV1beta1Interfa
 }
 
 // Resolve given an input slice of target specs to include and exclude, returns back a list of unique Runtime objects
-func (resolver *GardenerRuntimeResolver) Resolve(targets TargetSpec) ([]Runtime, error) {
+func (resolver *GardenerRuntimeResolver) Resolve(targets internal.TargetSpec) ([]internal.Runtime, error) {
 	runtimeIncluded := map[string]bool{}
 	runtimeExcluded := map[string]bool{}
-	runtimes := []Runtime{}
+	runtimes := []internal.Runtime{}
 	shoots, err := resolver.getAllShoots()
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing gardener shoots in namespace %s", resolver.gardenerNamespace)
@@ -149,8 +149,8 @@ func (resolver *GardenerRuntimeResolver) getInstanceOperationStatus(runtimeID st
 	return resolver.instanceOperations[runtimeID]
 }
 
-func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, shoots []gardenerapi.Shoot) ([]Runtime, error) {
-	runtimes := []Runtime{}
+func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt internal.RuntimeTarget, shoots []gardenerapi.Shoot) ([]internal.Runtime, error) {
+	runtimes := []internal.Runtime{}
 
 	// Iterate over all shoots. Evaluate target specs. If multiple are specified, all must match for a given shoot.
 	for _, shoot := range shoots {
@@ -169,6 +169,24 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 		}
 		if instanceOpStatus.provisionState != brokerapi.Succeeded || instanceOpStatus.deprovisionState != "" {
 			resolver.logger.Infof("Skipping Shoot %s (runtimeID: %s, instanceID %s) due to provisioning/deprovisioning state: %s/%s", shoot.Name, runtimeID, instanceOpStatus.InstanceID, instanceOpStatus.provisionState, instanceOpStatus.deprovisionState)
+			continue
+		}
+		maintenanceWindowBegin, err := time.Parse(maintenanceWindowFormat, shoot.Spec.Maintenance.TimeWindow.Begin)
+		if err != nil {
+			resolver.logger.Errorf("Failed to parse maintenanceWindowBegin value %s of shoot %s ", shoot.Spec.Maintenance.TimeWindow.Begin, shoot.Name)
+			continue
+		}
+		maintenanceWindowEnd, err := time.Parse(maintenanceWindowFormat, shoot.Spec.Maintenance.TimeWindow.End)
+		if err != nil {
+			resolver.logger.Errorf("Failed to parse maintenanceWindowEnd value %s of shoot %s ", shoot.Spec.Maintenance.TimeWindow.End, shoot.Name)
+			continue
+		}
+
+		// Match exact shoot by runtimeID
+		if rt.RuntimeID != "" {
+			if rt.RuntimeID == runtimeID {
+				runtimes = append(runtimes, resolver.runtimeFromOperationStatus(instanceOpStatus, shoot.Name, maintenanceWindowBegin, maintenanceWindowEnd))
+			}
 			continue
 		}
 
@@ -197,31 +215,24 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 		}
 
 		// Check if target: all is specified
-		if rt.Target != "" && rt.Target != TargetAll {
+		if rt.Target != "" && rt.Target != internal.TargetAll {
 			continue
 		}
 
-		maintenanceWindowBegin, err := time.Parse(maintenanceWindowFormat, shoot.Spec.Maintenance.TimeWindow.Begin)
-		if err != nil {
-			resolver.logger.Errorf("Failed to parse maintenanceWindowBegin value %s of shoot %s ", shoot.Spec.Maintenance.TimeWindow.Begin, shoot.Name)
-			continue
-		}
-		maintenanceWindowEnd, err := time.Parse(maintenanceWindowFormat, shoot.Spec.Maintenance.TimeWindow.End)
-		if err != nil {
-			resolver.logger.Errorf("Failed to parse maintenanceWindowEnd value %s of shoot %s ", shoot.Spec.Maintenance.TimeWindow.End, shoot.Name)
-			continue
-		}
-		runtime := Runtime{
-			InstanceID:             instanceOpStatus.InstanceID,
-			RuntimeID:              instanceOpStatus.RuntimeID,
-			GlobalAccountID:        instanceOpStatus.GlobalAccountID,
-			SubAccountID:           instanceOpStatus.SubAccountID,
-			ShootName:              shoot.Name,
-			MaintenanceWindowBegin: maintenanceWindowBegin,
-			MaintenanceWindowEnd:   maintenanceWindowEnd,
-		}
-		runtimes = append(runtimes, runtime)
+		runtimes = append(runtimes, resolver.runtimeFromOperationStatus(instanceOpStatus, shoot.Name, maintenanceWindowBegin, maintenanceWindowEnd))
 	}
 
 	return runtimes, nil
+}
+
+func (*GardenerRuntimeResolver) runtimeFromOperationStatus(opStatus *instanceOperationStatus, shootName string, windowBegin, windowEnd time.Time) internal.Runtime {
+	return internal.Runtime{
+		InstanceID:             opStatus.InstanceID,
+		RuntimeID:              opStatus.RuntimeID,
+		GlobalAccountID:        opStatus.GlobalAccountID,
+		SubAccountID:           opStatus.SubAccountID,
+		ShootName:              shootName,
+		MaintenanceWindowBegin: windowBegin,
+		MaintenanceWindowEnd:   windowEnd,
+	}
 }

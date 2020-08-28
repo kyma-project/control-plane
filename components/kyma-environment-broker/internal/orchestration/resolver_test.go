@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -34,24 +36,204 @@ const (
 	region3 = "uksouth"
 )
 
-var shoot1 = fixShoot(1, globalAccountID1, region1)
-var instance1 = fixInstanceWithOperation(1, globalAccountID1, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
+func TestResolver_Resolve(t *testing.T) {
+	client := newFakeGardenerClient()
+	lister := newInstanceListerMock()
+	defer lister.AssertExpectations(t)
+	logger := logger.NewLogDummy()
+	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
-var shoot2 = fixShoot(2, globalAccountID1, region2)
-var instance2 = fixInstanceWithOperation(2, globalAccountID1, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
+	expectedRuntime1 := expectedRuntime{
+		shoot:    &shoot1,
+		instance: &instance1.Instance,
+	}
+	expectedRuntime2 := expectedRuntime{
+		shoot:    &shoot2,
+		instance: &instance2.Instance,
+	}
+	expectedRuntime3 := expectedRuntime{
+		shoot:    &shoot3,
+		instance: &instance3.Instance,
+	}
 
-var shoot3 = fixShoot(3, globalAccountID2, region3)
-var instance3 = fixInstanceWithOperation(3, globalAccountID2, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
+	for tn, tc := range map[string]struct {
+		Target           internal.TargetSpec
+		ExpectedRuntimes []expectedRuntime
+	}{
+		"IncludeAll": {
+			Target: internal.TargetSpec{
+				Include: []internal.RuntimeTarget{
+					{
+						Target: internal.TargetAll,
+					},
+				},
+				Exclude: nil,
+			},
+			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime2, expectedRuntime3},
+		},
+		"IncludeAllExcludeOne": {
+			Target: internal.TargetSpec{
+				Include: []internal.RuntimeTarget{
+					{
+						Target: internal.TargetAll,
+					},
+				},
+				Exclude: []internal.RuntimeTarget{
+					{
+						GlobalAccount: expectedRuntime2.instance.GlobalAccountID,
+						SubAccount:    expectedRuntime2.instance.SubAccountID,
+					},
+				},
+			},
+			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime3},
+		},
+		"ExcludeAll": {
+			Target: internal.TargetSpec{
+				Include: []internal.RuntimeTarget{
+					{
+						Target: internal.TargetAll,
+					},
+				},
+				Exclude: []internal.RuntimeTarget{
+					{
+						Target: internal.TargetAll,
+					},
+				},
+			},
+			ExpectedRuntimes: []expectedRuntime{},
+		},
+		"IncludeOne": {
+			Target: internal.TargetSpec{
+				Include: []internal.RuntimeTarget{
+					{
+						GlobalAccount: expectedRuntime2.instance.GlobalAccountID,
+						SubAccount:    expectedRuntime2.instance.SubAccountID,
+					},
+				},
+				Exclude: nil,
+			},
+			ExpectedRuntimes: []expectedRuntime{expectedRuntime2},
+		},
+		"IncludeRuntime": {
+			Target: internal.TargetSpec{
+				Include: []internal.RuntimeTarget{
+					{
+						RuntimeID: "runtime-id-1",
+					},
+				},
+				Exclude: nil,
+			},
+			ExpectedRuntimes: []expectedRuntime{expectedRuntime1},
+		},
+		"IncludeTenant": {
+			Target: internal.TargetSpec{
+				Include: []internal.RuntimeTarget{
+					{
+						GlobalAccount: globalAccountID1,
+					},
+				},
+				Exclude: nil,
+			},
+			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime2},
+		},
+		"IncludeRegion": {
+			Target: internal.TargetSpec{
+				Include: []internal.RuntimeTarget{
+					{
+						Region: "europe|eu|uk",
+					},
+				},
+				Exclude: nil,
+			},
+			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime3},
+		},
+	} {
+		t.Run(tn, func(t *testing.T) {
+			// when
+			runtimes, err := resolver.Resolve(tc.Target)
 
-var shoot4 = fixShoot(4, globalAccountID3, region1)
-var instance4 = fixInstanceWithOperation(4, globalAccountID3, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
-var instance4Deprovisioning = fixInstanceWithOperation(4, globalAccountID3, string(dbmodel.OperationTypeDeprovision), string(brokerapi.InProgress))
+			// then
+			assert.Nil(t, err)
 
-var instance5Failed = fixInstanceWithOperation(5, globalAccountID3, string(dbmodel.OperationTypeProvision), string(brokerapi.Failed))
+			if len(tc.ExpectedRuntimes) != 0 {
+				assertRuntimeTargets(t, tc.ExpectedRuntimes, runtimes)
+			} else {
+				assert.Empty(t, runtimes)
+			}
+		})
+	}
+}
 
-var instance6Provisioning = fixInstanceWithOperation(6, globalAccountID3, string(dbmodel.OperationTypeProvision), string(brokerapi.InProgress))
+func TestResolver_Resolve_GardenerFailure(t *testing.T) {
+	// given
+	fake := &k8stesting.Fake{}
+	client := &gardenerclient_fake.FakeCoreV1beta1{
+		Fake: fake,
+	}
+	fake.AddReactor("list", "shoots", func(action k8stesting.Action) (bool, runtime.Object, error) {
+		return true, nil, errors.New("Fake gardener client failure")
+	})
+	lister := newInstanceListerMock()
+	defer lister.AssertExpectations(t)
+	logger := logger.NewLogDummy()
+	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
-var instance7 = fixInstanceWithOperation(7, globalAccountID1, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
+	// when
+	runtimes, err := resolver.Resolve(internal.TargetSpec{
+		Include: []internal.RuntimeTarget{
+			{
+				Target: internal.TargetAll,
+			},
+		},
+		Exclude: nil,
+	})
+
+	// then
+	assert.NotNil(t, err)
+	assert.Len(t, runtimes, 0)
+}
+
+func TestResolver_Resolve_StorageFailure(t *testing.T) {
+	// given
+	client := newFakeGardenerClient()
+	lister := &automock.InstanceLister{}
+	lister.On("FindAllJoinedWithOperations", mock.Anything).Return(
+		nil,
+		errors.New("Mock storage failure"),
+	)
+	defer lister.AssertExpectations(t)
+	logger := logger.NewLogDummy()
+	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
+
+	// when
+	runtimes, err := resolver.Resolve(internal.TargetSpec{
+		Include: []internal.RuntimeTarget{
+			{
+				Target: internal.TargetAll,
+			},
+		},
+		Exclude: nil,
+	})
+
+	// then
+	assert.NotNil(t, err)
+	assert.Len(t, runtimes, 0)
+}
+
+var (
+	shoot1                  = fixShoot(1, globalAccountID1, region1)
+	shoot2                  = fixShoot(2, globalAccountID1, region2)
+	shoot3                  = fixShoot(3, globalAccountID2, region3)
+	shoot4                  = fixShoot(4, globalAccountID3, region1)
+	instance1               = fixInstanceWithOperation(1, globalAccountID1, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
+	instance2               = fixInstanceWithOperation(2, globalAccountID1, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
+	instance3               = fixInstanceWithOperation(3, globalAccountID2, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
+	instance4               = fixInstanceWithOperation(4, globalAccountID3, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
+	instance4Deprovisioning = fixInstanceWithOperation(4, globalAccountID3, string(dbmodel.OperationTypeDeprovision), string(brokerapi.InProgress))
+	instance5Failed         = fixInstanceWithOperation(5, globalAccountID3, string(dbmodel.OperationTypeProvision), string(brokerapi.Failed))
+	instance6Provisioning   = fixInstanceWithOperation(6, globalAccountID3, string(dbmodel.OperationTypeProvision), string(brokerapi.InProgress))
+	instance7               = fixInstanceWithOperation(7, globalAccountID1, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
+)
 
 func fixShoot(id int, globalAccountID, region string) gardenerapi.Shoot {
 	return gardenerapi.Shoot{
@@ -100,23 +282,6 @@ type expectedRuntime struct {
 	instance *internal.Instance
 }
 
-var expectedRuntime1 = expectedRuntime{
-	shoot:    &shoot1,
-	instance: &instance1.Instance,
-}
-var expectedRuntime2 = expectedRuntime{
-	shoot:    &shoot2,
-	instance: &instance2.Instance,
-}
-var expectedRuntime3 = expectedRuntime{
-	shoot:    &shoot3,
-	instance: &instance3.Instance,
-}
-var expectedRuntime4 = expectedRuntime{
-	shoot:    &shoot4,
-	instance: &instance4.Instance,
-}
-
 func newFakeGardenerClient() *gardenerclient_fake.FakeCoreV1beta1 {
 	fake := &k8stesting.Fake{}
 	client := &gardenerclient_fake.FakeCoreV1beta1{
@@ -155,7 +320,7 @@ func newInstanceListerMock() *automock.InstanceLister {
 	return lister
 }
 
-func lookupRuntime(runtimeID string, runtimes []Runtime) *Runtime {
+func lookupRuntime(runtimeID string, runtimes []internal.Runtime) *internal.Runtime {
 	for _, r := range runtimes {
 		if r.RuntimeID == runtimeID {
 			return &r
@@ -165,8 +330,8 @@ func lookupRuntime(runtimeID string, runtimes []Runtime) *Runtime {
 	return nil
 }
 
-func assertRuntimeTargets(t *testing.T, expectedRuntimes []expectedRuntime, runtimes []Runtime) {
-	assert.Equal(t, len(expectedRuntimes), len(runtimes))
+func assertRuntimeTargets(t *testing.T, expectedRuntimes []expectedRuntime, runtimes []internal.Runtime) {
+	require.Equal(t, len(expectedRuntimes), len(runtimes))
 
 	for _, e := range expectedRuntimes {
 		r := lookupRuntime(e.instance.RuntimeID, runtimes)
@@ -178,208 +343,4 @@ func assertRuntimeTargets(t *testing.T, expectedRuntimes []expectedRuntime, runt
 		assert.Equal(t, e.shoot.Spec.Maintenance.TimeWindow.Begin, r.MaintenanceWindowBegin.Format(maintenanceWindowFormat))
 		assert.Equal(t, e.shoot.Spec.Maintenance.TimeWindow.End, r.MaintenanceWindowEnd.Format(maintenanceWindowFormat))
 	}
-}
-
-func TestResolver_Resolve_IncludeAll(t *testing.T) {
-	// given
-	client := newFakeGardenerClient()
-	lister := newInstanceListerMock()
-	defer lister.AssertExpectations(t)
-	logger := logger.NewLogDummy()
-	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
-
-	// when
-	runtimes, err := resolver.Resolve(TargetSpec{
-		Include: []RuntimeTarget{
-			{
-				Target: TargetAll,
-			},
-		},
-		Exclude: nil,
-	})
-
-	// then
-	assert.Nil(t, err)
-	assertRuntimeTargets(t, []expectedRuntime{expectedRuntime1, expectedRuntime2, expectedRuntime3}, runtimes)
-}
-
-func TestResolver_Resolve_IncludeAllExcludeOne(t *testing.T) {
-	// given
-	client := newFakeGardenerClient()
-	lister := newInstanceListerMock()
-	defer lister.AssertExpectations(t)
-	logger := logger.NewLogDummy()
-	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
-
-	// when
-	runtimes, err := resolver.Resolve(TargetSpec{
-		Include: []RuntimeTarget{
-			{
-				Target: TargetAll,
-			},
-		},
-		Exclude: []RuntimeTarget{
-			{
-				GlobalAccount: expectedRuntime2.instance.GlobalAccountID,
-				SubAccount:    expectedRuntime2.instance.SubAccountID,
-			},
-		},
-	})
-
-	// then
-	assert.Nil(t, err)
-	assertRuntimeTargets(t, []expectedRuntime{expectedRuntime1, expectedRuntime3}, runtimes)
-}
-
-func TestResolver_Resolve_ExcludeAll(t *testing.T) {
-	// given
-	client := newFakeGardenerClient()
-	lister := newInstanceListerMock()
-	defer lister.AssertExpectations(t)
-	logger := logger.NewLogDummy()
-	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
-
-	// when
-	runtimes, err := resolver.Resolve(TargetSpec{
-		Include: []RuntimeTarget{
-			{
-				Target: TargetAll,
-			},
-		},
-		Exclude: []RuntimeTarget{
-			{
-				Target: TargetAll,
-			},
-		},
-	})
-
-	// then
-	assert.Nil(t, err)
-	assert.Len(t, runtimes, 0)
-}
-
-func TestResolver_Resolve_IncludeOne(t *testing.T) {
-	// given
-	client := newFakeGardenerClient()
-	lister := newInstanceListerMock()
-	defer lister.AssertExpectations(t)
-	logger := logger.NewLogDummy()
-	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
-
-	// when
-	runtimes, err := resolver.Resolve(TargetSpec{
-		Include: []RuntimeTarget{
-			{
-				GlobalAccount: expectedRuntime2.instance.GlobalAccountID,
-				SubAccount:    expectedRuntime2.instance.SubAccountID,
-			},
-		},
-		Exclude: nil,
-	})
-
-	// then
-	assert.Nil(t, err)
-	assertRuntimeTargets(t, []expectedRuntime{expectedRuntime2}, runtimes)
-}
-
-func TestResolver_Resolve_IncludeTenant(t *testing.T) {
-	// given
-	client := newFakeGardenerClient()
-	lister := newInstanceListerMock()
-	defer lister.AssertExpectations(t)
-	logger := logger.NewLogDummy()
-	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
-
-	// when
-	runtimes, err := resolver.Resolve(TargetSpec{
-		Include: []RuntimeTarget{
-			{
-				GlobalAccount: globalAccountID1,
-			},
-		},
-		Exclude: nil,
-	})
-
-	// then
-	assert.Nil(t, err)
-	assertRuntimeTargets(t, []expectedRuntime{expectedRuntime1, expectedRuntime2}, runtimes)
-}
-
-func TestResolver_Resolve_IncludeRegion(t *testing.T) {
-	// given
-	client := newFakeGardenerClient()
-	lister := newInstanceListerMock()
-	defer lister.AssertExpectations(t)
-	logger := logger.NewLogDummy()
-	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
-
-	// when
-	runtimes, err := resolver.Resolve(TargetSpec{
-		Include: []RuntimeTarget{
-			{
-				Region: "europe|eu|uk",
-			},
-		},
-		Exclude: nil,
-	})
-
-	// then
-	assert.Nil(t, err)
-	assertRuntimeTargets(t, []expectedRuntime{expectedRuntime1, expectedRuntime3}, runtimes)
-}
-
-func TestResolver_Resolve_GardenerFailure(t *testing.T) {
-	// given
-	fake := &k8stesting.Fake{}
-	client := &gardenerclient_fake.FakeCoreV1beta1{
-		Fake: fake,
-	}
-	fake.AddReactor("list", "shoots", func(action k8stesting.Action) (bool, runtime.Object, error) {
-		return true, nil, errors.New("Fake gardener client failure")
-	})
-	lister := newInstanceListerMock()
-	defer lister.AssertExpectations(t)
-	logger := logger.NewLogDummy()
-	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
-
-	// when
-	runtimes, err := resolver.Resolve(TargetSpec{
-		Include: []RuntimeTarget{
-			{
-				Target: TargetAll,
-			},
-		},
-		Exclude: nil,
-	})
-
-	// then
-	assert.NotNil(t, err)
-	assert.Len(t, runtimes, 0)
-}
-
-func TestResolver_Resolve_StorageFailure(t *testing.T) {
-	// given
-	client := newFakeGardenerClient()
-	lister := &automock.InstanceLister{}
-	lister.On("FindAllJoinedWithOperations", mock.Anything).Return(
-		nil,
-		errors.New("Mock storage failure"),
-	)
-	defer lister.AssertExpectations(t)
-	logger := logger.NewLogDummy()
-	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
-
-	// when
-	runtimes, err := resolver.Resolve(TargetSpec{
-		Include: []RuntimeTarget{
-			{
-				Target: TargetAll,
-			},
-		},
-		Exclude: nil,
-	})
-
-	// then
-	assert.NotNil(t, err)
-	assert.Len(t, runtimes, 0)
 }

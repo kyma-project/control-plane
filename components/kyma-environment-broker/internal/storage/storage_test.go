@@ -4,6 +4,7 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"math/rand"
 	"sort"
@@ -37,7 +38,7 @@ func TestSchemaInitializer(t *testing.T) {
 			defer containerCleanupFunc()
 
 			// when
-			connection, err := postsql.InitializeDatabase(cfg.ConnectionURL(), logrus.New())
+			connection, err := postsql.InitializeDatabase(cfg.ConnectionURL(), 1, logrus.New())
 
 			require.NoError(t, err)
 			require.NotNil(t, connection)
@@ -57,7 +58,7 @@ func TestSchemaInitializer(t *testing.T) {
 			connString := "bad connection string"
 
 			// when
-			connection, err := postsql.InitializeDatabase(connString, logrus.New())
+			connection, err := postsql.InitializeDatabase(connString, 1, logrus.New())
 
 			// then
 			assert.Error(t, err)
@@ -501,6 +502,48 @@ func TestSchemaInitializer(t *testing.T) {
 			// then
 			assertError(t, dberr.CodeAlreadyExists, err)
 		})
+	})
+
+	t.Run("Orchestrations", func(t *testing.T) {
+		containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+		require.NoError(t, err)
+		defer containerCleanupFunc()
+
+		now := time.Now()
+
+		const fixID = "test"
+		givenOrchestration := internal.Orchestration{
+			OrchestrationID:   fixID,
+			State:             "test",
+			Description:       "test",
+			CreatedAt:         now,
+			UpdatedAt:         now,
+			Parameters:        sql.NullString{String: "test", Valid: true},
+			RuntimeOperations: sql.NullString{Valid: false},
+		}
+
+		err = InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+
+		brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+		require.NoError(t, err)
+
+		svc := brokerStorage.Orchestrations()
+
+		err = svc.Insert(givenOrchestration)
+		require.NoError(t, err)
+
+		// when
+		gotOrchestration, err := svc.GetByID(fixID)
+		require.NoError(t, err)
+		assert.Equal(t, givenOrchestration.Parameters, gotOrchestration.Parameters)
+
+		gotOrchestration.Description = "new modified description 1"
+		err = svc.Update(givenOrchestration)
+		require.NoError(t, err)
+
+		err = svc.Insert(givenOrchestration)
+		assertError(t, dberr.CodeAlreadyExists, err)
 	})
 
 	t.Run("LMS Tenants", func(t *testing.T) {

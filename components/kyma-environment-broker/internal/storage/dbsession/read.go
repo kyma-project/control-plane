@@ -105,6 +105,20 @@ func (r readSession) GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.
 	return operation, nil
 }
 
+func (r readSession) GetOrchestrationByID(oID string) (internal.Orchestration, dberr.Error) {
+	condition := dbr.Eq("orchestration_id", oID)
+	operation, err := r.getOrchestration(condition)
+	if err != nil {
+		switch {
+		case dberr.IsNotFound(err):
+			return internal.Orchestration{}, dberr.NotFound("for ID: %s %s", oID, err)
+		default:
+			return internal.Orchestration{}, err
+		}
+	}
+	return operation, nil
+}
+
 func (r readSession) GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
 	stateCondition := dbr.Eq("state", domain.InProgress)
 	typeCondition := dbr.Eq("type", operationType)
@@ -157,6 +171,24 @@ func (r readSession) getOperation(condition dbr.Builder) (dbmodel.OperationDTO, 
 			return dbmodel.OperationDTO{}, dberr.NotFound("cannot find operation: %s", err)
 		}
 		return dbmodel.OperationDTO{}, dberr.Internal("Failed to get operation: %s", err)
+	}
+	return operation, nil
+}
+
+func (r readSession) getOrchestration(condition dbr.Builder) (internal.Orchestration, dberr.Error) {
+	var operation internal.Orchestration
+
+	err := r.session.
+		Select("*").
+		From(postsql.OrchestrationTableName).
+		Where(condition).
+		LoadOne(&operation)
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return internal.Orchestration{}, dberr.NotFound("cannot find operation: %s", err)
+		}
+		return internal.Orchestration{}, dberr.Internal("Failed to get operation: %s", err)
 	}
 	return operation, nil
 }

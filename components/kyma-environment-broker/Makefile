@@ -12,7 +12,7 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 
 .DEFAULT_GOAL := custom-verify
 
-custom-verify: testing-with-database-network test-integration check-imports check-fmt
+custom-verify: testing-with-database-network check-imports check-fmt
 
 verify:: custom-verify build-image push-image
 

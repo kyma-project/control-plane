@@ -147,9 +147,9 @@ func main() {
 	if cfg.DbInMemory {
 		db = storage.NewMemoryStorage()
 	} else {
-		storage, conn, err := storage.NewFromConfig(cfg.Database, logs.WithField("service", "storage"))
+		store, conn, err := storage.NewFromConfig(cfg.Database, logs.WithField("service", "storage"))
 		fatalOnError(err)
-		db = storage
+		db = store
 		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 		prometheus.MustRegister(dbStatsCollector)
 	}
@@ -327,11 +327,12 @@ func main() {
 	}
 
 	// run queues
+	const workersAmount = 5
 	provisionQueue := process.NewQueue(provisionManager, logs)
-	provisionQueue.Run(ctx.Done())
+	provisionQueue.Run(ctx.Done(), workersAmount)
 
 	deprovisionQueue := process.NewQueue(deprovisionManager, logs)
-	deprovisionQueue.Run(ctx.Done())
+	deprovisionQueue.Run(ctx.Done(), workersAmount)
 
 	if !cfg.DisableProcessOperationsInProgress {
 		err = processOperationsInProgressByType(dbmodel.OperationTypeProvision, db.Operations(), provisionQueue, logs)
@@ -370,6 +371,13 @@ func main() {
 	// create metrics endpoint
 	router.Handle("/metrics", promhttp.Handler())
 
+	// TODO(upgrade): uncomment and inject upgradeKymaManager populated with steps
+	//gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
+	//fatalOnError(err)
+	//runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient, "default", db.Instances(), logs)
+	//kymaUpgradeOrchestration := kyma.NewUpgradeKymaOrchestration(db.Orchestration(), nil, runtimeResolver, logs)
+	//orchestrationHandler := orchestrate.NewOrchestrationHandler(db.Orchestration(), kymaUpgradeOrchestration, logs)
+
 	// create OSB API endpoints
 	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
 	for _, prefix := range []string{
@@ -378,6 +386,8 @@ func main() {
 	} {
 		route := router.PathPrefix(prefix).Subrouter()
 		broker.AttachRoutes(route, kymaEnvBroker, logger)
+		// TODO(upgrade)
+		//orchestrationHandler.AttachRoutes(router)
 	}
 	svr := handlers.CustomLoggingHandler(os.Stdout, router, func(writer io.Writer, params handlers.LogFormatterParams) {
 		logs.Infof("Call handled: method=%s url=%s statusCode=%d size=%d", params.Request.Method, params.URL.Path, params.StatusCode, params.Size)

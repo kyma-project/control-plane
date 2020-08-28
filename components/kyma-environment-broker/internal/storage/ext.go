@@ -41,6 +41,12 @@ type Deprovisioning interface {
 	UpdateDeprovisioningOperation(operation internal.DeprovisioningOperation) (*internal.DeprovisioningOperation, error)
 }
 
+type Orchestrations interface {
+	Insert(orchestration internal.Orchestration) error
+	Update(orchestration internal.Orchestration) error
+	GetByID(orchestrationID string) (*internal.Orchestration, error)
+}
+
 type LMSTenants interface {
 	FindTenantByName(name, region string) (internal.LMSTenant, bool, error)
 	InsertTenant(tenant internal.LMSTenant) error
