@@ -7,3 +7,27 @@ spec:
     - "client_credentials"
   scope: {{ .Values.kebClient.scope }}
   secretName: {{ include "kyma-env-broker.fullname" . }}-oauth
+
+---
+
+apiVersion: hydra.ory.sh/v1alpha1
+kind: OAuth2Client
+metadata:
+  name: {{ include "kyma-env-broker.fullname" . }}-upgrade-read
+spec:
+  grantTypes:
+    - "client_credentials"
+  scope: "broker-upgrade:read"
+  secretName: {{ include "kyma-env-broker.fullname" . }}-oauth-upgrade-read
+
+---
+
+apiVersion: hydra.ory.sh/v1alpha1
+kind: OAuth2Client
+metadata:
+  name: {{ include "kyma-env-broker.fullname" . }}-upgrade-write
+spec:
+  grantTypes:
+    - "client_credentials"
+  scope: "broker-upgrade:write"
+  secretName: {{ include "kyma-env-broker.fullname" . }}-oauth-upgrade-write
