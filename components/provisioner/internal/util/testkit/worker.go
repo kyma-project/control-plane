@@ -43,7 +43,7 @@ func (tw *TestWorker) WithMachineType(t string) *TestWorker {
 // WithVolume sets value of worker.Volume Type and Size
 func (tw *TestWorker) WithVolume(vType string, size int) *TestWorker {
 	tw.worker.Volume.Type = util.StringPtr(vType)
-	tw.worker.Volume.Size = fmt.Sprintf("%dGi", size)
+	tw.worker.Volume.VolumeSize = fmt.Sprintf("%dGi", size)
 	return tw
 }
 

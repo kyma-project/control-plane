@@ -203,9 +203,10 @@ func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 	}
 
 	shoot.Spec.Provider = gardener_types.Provider{
+
 		Type:                 "gcp",
-		ControlPlaneConfig:   &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonCPData}},
-		InfrastructureConfig: &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonData}},
+		ControlPlaneConfig:   &apimachineryRuntime.RawExtension{Raw: jsonCPData},
+		InfrastructureConfig: &apimachineryRuntime.RawExtension{Raw: jsonData},
 		Workers:              workers,
 	}
 
@@ -279,8 +280,8 @@ func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, sh
 
 	shoot.Spec.Provider = gardener_types.Provider{
 		Type:                 "azure",
-		ControlPlaneConfig:   &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonCPData}},
-		InfrastructureConfig: &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonData}},
+		ControlPlaneConfig:   &apimachineryRuntime.RawExtension{Raw: jsonCPData},
+		InfrastructureConfig: &apimachineryRuntime.RawExtension{Raw: jsonData},
 		Workers:              workers,
 	}
 
@@ -347,8 +348,8 @@ func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 
 	shoot.Spec.Provider = gardener_types.Provider{
 		Type:                 "aws",
-		ControlPlaneConfig:   &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonCPData}},
-		InfrastructureConfig: &gardener_types.ProviderConfig{RawExtension: apimachineryRuntime.RawExtension{Raw: jsonData}},
+		ControlPlaneConfig:   &apimachineryRuntime.RawExtension{Raw: jsonCPData},
+		InfrastructureConfig: &apimachineryRuntime.RawExtension{Raw: jsonData},
 		Workers:              workers,
 	}
 
@@ -362,8 +363,8 @@ func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_typ
 		MaxUnavailable: util.IntOrStringPtr(intstr.FromInt(gardenerConfig.MaxUnavailable)),
 		Machine:        getMachineConfig(gardenerConfig),
 		Volume: &gardener_types.Volume{
-			Type: &gardenerConfig.DiskType,
-			Size: fmt.Sprintf("%dGi", gardenerConfig.VolumeSizeGB),
+			Type:       &gardenerConfig.DiskType,
+			VolumeSize: fmt.Sprintf("%dGi", gardenerConfig.VolumeSizeGB),
 		},
 		Maximum: int32(gardenerConfig.AutoScalerMax),
 		Minimum: int32(gardenerConfig.AutoScalerMin),
@@ -394,7 +395,7 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	shoot.Spec.Provider.Workers[0].MaxUnavailable = util.IntOrStringPtr(intstr.FromInt(upgradeConfig.MaxUnavailable))
 	shoot.Spec.Provider.Workers[0].Machine.Type = upgradeConfig.MachineType
 	shoot.Spec.Provider.Workers[0].Volume.Type = &upgradeConfig.DiskType
-	shoot.Spec.Provider.Workers[0].Volume.Size = fmt.Sprintf("%dGi", upgradeConfig.VolumeSizeGB)
+	shoot.Spec.Provider.Workers[0].Volume.VolumeSize = fmt.Sprintf("%dGi", upgradeConfig.VolumeSizeGB)
 	shoot.Spec.Provider.Workers[0].Maximum = int32(upgradeConfig.AutoScalerMax)
 	shoot.Spec.Provider.Workers[0].Minimum = int32(upgradeConfig.AutoScalerMin)
 	shoot.Spec.Provider.Workers[0].Zones = zones
@@ -410,7 +411,7 @@ func getMachineConfig(config GardenerConfig) gardener_types.Machine {
 			Name: *config.MachineImage,
 		}
 		if util.NotNilOrEmpty(config.MachineImageVersion) {
-			machine.Image.Version = *config.MachineImageVersion
+			machine.Image.Version = config.MachineImageVersion
 		}
 	}
 	return machine
