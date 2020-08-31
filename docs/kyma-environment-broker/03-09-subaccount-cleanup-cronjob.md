@@ -4,37 +4,39 @@ type: Details
 ---
 
 Each SKR instance in Kyma Environment Broker (KEB) database belongs to a global account and to a subaccount.
-Subaccount Cleanup is an application which periodically calls the CIS service and notifies about SUBACCOUNT_DELETE events. 
+Subaccount Cleanup is an application that periodically calls the CIS service and notifies about `SUBACCOUNT_DELETE` events. 
 Based on these events, Subaccount Cleanup triggers the deprovisioning action on the SKR instance to which a given subaccount belongs.
 
 ## Details
 
-The Subaccount Cleanup process is divided into several steps:
+The Subaccount Cleanup workflow is divided into several steps:
 
-1. Fetch SUBACCOUNT_DELETE events from the CIS service.
+1. Fetch `SUBACCOUNT_DELETE` events from the CIS service.
 
     a. CIS client makes a call to the CIS service and as a response, it gets a list of events divided into pages. 
 
     b. CIS client fetches the rest of the events by making a call to each page one by one.
 
-    c. A subaccount is taken from each event and kept in an array.
+    c. A subaccount ID is taken from each event and kept in an array.
 
     d. When the CIS client ends its workflow, it displays logs with information on how many subaccounts were fetched.
 
-2. Find all instances in the KEB database based on the fetched subaccounts.
-
-    a. The subaccounts pool is divided into pieces. For each piece, a query is made to the database to fetch instances.
+2. Find all instances in the KEB database based on the fetched subaccount IDs.
+   The subaccounts pool is divided into pieces. For each piece, a query is made to the database to fetch instances.
 
 3. Trigger the deprovisioning operation for each instance found in step 2.
-Logs inform about the status of each triggered action:
-```deprovisioning for instance <InstanceID> (SubAccountID: <SubAccountID>) was triggered, operation: <OperationID>```
-Subaccount Cleanup also uses logs to inform about the end of the deprovisioning operation.
+   
+   Logs inform about the status of each triggered action:
+    ```
+    deprovisioning for instance <InstanceID> (SubAccountID: <SubAccountID>) was triggered, operation: <OperationID>
+    ```
+   Subaccount Cleanup also uses logs to inform about the end of the deprovisioning operation.
 
 ## Prerequisites
 
 Subaccount Cleanup requires access to:
-- CIS service to receive all SUBACCOUNT_DELETE events
-- Database to get the instance ID for each subaccount from the SUBACCOUNT_DELETE event
+- CIS service to receive all `SUBACCOUNT_DELETE` events
+- Database to get the instance ID for each subaccount ID from the `SUBACCOUNT_DELETE` event
 - Kyma Environment Broker to trigger SKR instance deprovisioning
 
 ## Configuration
