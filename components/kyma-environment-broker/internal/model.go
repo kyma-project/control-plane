@@ -138,8 +138,8 @@ type UpgradeKymaOperation struct {
 
 	InputCreator UpgradeKymaInputCreator `json:"-"`
 
-	SubAccountID           string `json:"-"`
-	RuntimeID              string `json:"runtime_id"`
+	SubAccountID string `json:"-"`
+	RuntimeID    string `json:"runtime_id"`
 }
 
 // Orchestration holds all information about an orchestration.

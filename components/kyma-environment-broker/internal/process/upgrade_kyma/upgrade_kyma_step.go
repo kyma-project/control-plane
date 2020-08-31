@@ -24,8 +24,8 @@ type UpgradeKymaStep struct {
 
 func NewUpgradeKymaStep(os storage.Operations, cli provisioner.Client, desiredKymaVersion string) *UpgradeKymaStep {
 	return &UpgradeKymaStep{
-		operationManager:  process.NewUpgradeKymaOperationManager(os),
-		provisionerClient: nil,
+		operationManager:   process.NewUpgradeKymaOperationManager(os),
+		provisionerClient:  nil,
 		desiredKymaVersion: desiredKymaVersion,
 	}
 }

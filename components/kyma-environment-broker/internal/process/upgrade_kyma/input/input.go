@@ -8,7 +8,7 @@ import (
 
 type UpgradeKymaInput struct {
 	input gqlschema.UpgradeRuntimeInput
-	mutex           *nsync.NamedMutex
+	mutex *nsync.NamedMutex
 
 	desiredKymaVersion string
 }

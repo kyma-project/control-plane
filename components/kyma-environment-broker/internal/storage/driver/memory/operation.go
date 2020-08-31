@@ -23,6 +23,7 @@ func NewOperation() *operations {
 	return &operations{
 		provisioningOperations:   make(map[string]internal.ProvisioningOperation, 0),
 		deprovisioningOperations: make(map[string]internal.DeprovisioningOperation, 0),
+		upgradeKymaOperations:    make(map[string]internal.UpgradeKymaOperation, 0),
 	}
 }
 

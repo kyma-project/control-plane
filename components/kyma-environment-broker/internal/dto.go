@@ -69,7 +69,6 @@ type ProvisioningParametersDTO struct {
 }
 
 type UpgradeKymaParameters struct {
-
 }
 
 type ERSContext struct {
