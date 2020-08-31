@@ -119,6 +119,19 @@ func (r readSession) GetOrchestrationByID(oID string) (internal.Orchestration, d
 	return operation, nil
 }
 
+func (r readSession) ListOrchestrations() ([]internal.Orchestration, dberr.Error) {
+	var orchestrations []internal.Orchestration
+
+	_, err := r.session.
+		Select("*").
+		From(postsql.OrchestrationTableName).
+		Load(&orchestrations)
+	if err != nil {
+		return nil, dberr.Internal("Failed to get orchestrations: %s", err)
+	}
+	return orchestrations, nil
+}
+
 func (r readSession) GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
 	stateCondition := dbr.Eq("state", domain.InProgress)
 	typeCondition := dbr.Eq("type", operationType)

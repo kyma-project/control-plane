@@ -55,6 +55,28 @@ func (s *orchestration) GetByID(orchestrationID string) (*internal.Orchestration
 	}
 	return &orchestration, nil
 }
+
+func (s *orchestration) ListAll() ([]internal.Orchestration, error) {
+	sess := s.NewReadSession()
+	orchestrations := make([]internal.Orchestration, 0)
+	var lastErr dberr.Error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		orchestrations, lastErr = sess.ListOrchestrations()
+		if lastErr != nil {
+			if dberr.IsNotFound(lastErr) {
+				return false, dberr.NotFound("Orchestrations not exist")
+			}
+			log.Warn(errors.Wrapf(lastErr, "while getting orchestration").Error())
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, lastErr
+	}
+	return orchestrations, nil
+}
+
 func (s *orchestration) Update(orchestration internal.Orchestration) error {
 	sess := s.NewWriteSession()
 	var lastErr dberr.Error

@@ -31,8 +31,9 @@ func NewKymaOrchestrationHandler(db storage.Orchestrations, executor process.Exe
 }
 
 func (h *kymaHandler) AttachRoutes(router *mux.Router) {
-	router.HandleFunc("/orchestrations/{orchestration_id}", h.createOrchestration).Methods(http.MethodGet)
-	router.HandleFunc("/upgrade/kyma", h.getOrchestration).Methods(http.MethodPost)
+	router.HandleFunc("/orchestrations/{orchestration_id}", h.getOrchestration).Methods(http.MethodGet)
+	router.HandleFunc("/orchestrations", h.listOrchestration).Methods(http.MethodGet)
+	router.HandleFunc("/upgrade/kyma", h.createOrchestration).Methods(http.MethodPost)
 }
 
 func (h *kymaHandler) getOrchestration(w http.ResponseWriter, r *http.Request) {
@@ -42,6 +43,16 @@ func (h *kymaHandler) getOrchestration(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.log.Errorf("while getting orchestration %s: %v", orchestrationID, err)
 		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting orchestration %s", orchestrationID))
+	}
+
+	writeResponse(w, http.StatusOK, o)
+}
+
+func (h *kymaHandler) listOrchestration(w http.ResponseWriter, r *http.Request) {
+	o, err := h.db.ListAll()
+	if err != nil {
+		h.log.Errorf("while getting orchestrations: %v", err)
+		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting orchestration"))
 	}
 
 	writeResponse(w, http.StatusOK, o)

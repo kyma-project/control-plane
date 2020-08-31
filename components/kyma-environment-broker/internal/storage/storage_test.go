@@ -544,6 +544,10 @@ func TestSchemaInitializer(t *testing.T) {
 
 		err = svc.Insert(givenOrchestration)
 		assertError(t, dberr.CodeAlreadyExists, err)
+
+		l, err := svc.ListAll()
+		require.NoError(t, err)
+		assert.Len(t, l, 1)
 	})
 
 	t.Run("LMS Tenants", func(t *testing.T) {
