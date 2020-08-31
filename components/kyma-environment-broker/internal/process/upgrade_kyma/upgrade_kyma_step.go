@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -36,14 +37,20 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", UpgradeKymaTimeout))
 	}
 
-	input, err := s.createUpgradeKymaInput(operation, "some-params")
+	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
-		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgrade_kyma input")
+		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
+	}
+
+
+	requestInput, err := s.createUpgradeKymaInput(operation, pp)
+	if err != nil {
+		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeKyma input")
 	}
 
 	var provisionerResponse gqlschema.OperationStatus
 	if operation.ProvisionerOperationID == "" {
-		provisionerResponse, err := s.provisionerClient.UpgradeRuntime("GLOBAL_ACCOUNT_ID", "SUBACCOUNT_ID", input)
+		provisionerResponse, err := s.provisionerClient.UpgradeRuntime(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID, requestInput)
 		if err != nil {
 			log.Errorf("call to provisioner failed: %s", err)
 			return operation, 5 * time.Second, nil
@@ -59,24 +66,23 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 		}
 	}
 
-	if provisionerResponse.RuntimeID == nil {
-		provisionerResponse, err = s.provisionerClient.RuntimeOperationStatus("GLOBAL_ACCOUNT_ID", operation.ProvisionerOperationID)
-		if err != nil {
-			log.Errorf("call to provisioner about operation status failed: %s", err)
-			return operation, 1 * time.Minute, nil
-		}
-	}
-	if provisionerResponse.RuntimeID == nil {
-		return operation, 1 * time.Minute, nil
-	}
+
 	log = log.WithField("runtimeID", *provisionerResponse.RuntimeID)
 	log.Infof("call to provisioner succeeded", *provisionerResponse.RuntimeID)
 
+	log.Infof("kymaUpgrade for runtime id %q process initiated successfully", *provisionerResponse.RuntimeID)
+	// return repeat mode (1 sec) to start the initialization step which will now check the runtime status
+	return operation, 1 * time.Second, nil
 }
 
-func (s *UpgradeKymaStep) createUpgradeKymaInput(operation internal.UpgradeKymaOperation, parameters string) (gqlschema.UpgradeRuntimeInput, error) {
+func (s *UpgradeKymaStep) createUpgradeKymaInput(operation internal.UpgradeKymaOperation, parameters internal.ProvisioningParameters) (gqlschema.UpgradeRuntimeInput, error) {
 	var request gqlschema.UpgradeRuntimeInput
-	// TODO: implement InputProvider or extend existing one and use it
+
+
+	request, err := operation.InputCreator.Create()
+	if err != nil {
+		return request, errors.Wrap(err, "while building upgradeRuntimeInput for provisioner")
+	}
 
 	return request, nil
 }

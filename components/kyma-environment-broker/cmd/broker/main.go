@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -218,6 +219,7 @@ func main() {
 	// setup operation managers
 	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
+	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), eventBroker, logs.WithField("upgradeKyma", "manager"))
 
 	// define steps
 	kymaVersionConfigurator := provisioning.NewKymaVersionConfigurator(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
@@ -329,6 +331,24 @@ func main() {
 	for _, step := range deprovisioningSteps {
 		if !step.disabled {
 			deprovisionManager.AddStep(step.weight, step.step)
+		}
+	}
+
+	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient)
+	upgradeKymaManager.InitStep(upgradeKymaInit)
+	upgradeKymaSteps := []struct {
+		disabled bool
+		weight   int
+		step     upgrade_kyma.Step
+	}{
+		{
+			weight: 1,
+			step: upgrade_kyma.NewUpgradeKymaStep(db.Operations(), provisionerClient),
+		},
+	}
+	for _, step := range upgradeKymaSteps {
+		if !step.disabled {
+			upgradeKymaManager.AddStep(step.weight, step.step)
 		}
 	}
 

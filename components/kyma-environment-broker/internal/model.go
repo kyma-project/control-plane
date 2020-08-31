@@ -24,6 +24,10 @@ type ProvisionInputCreator interface {
 	EnableOptionalComponent(componentName string) ProvisionInputCreator
 }
 
+type UpgradeKymaInputCreation interface {
+	Create() (gqlschema.UpgradeRuntimeInput, error)
+}
+
 type LMSTenant struct {
 	ID        string
 	Name      string
@@ -129,8 +133,12 @@ type DeprovisioningOperation struct {
 type UpgradeKymaOperation struct {
 	Operation `json:"-"`
 
-	SubAccountID string `json:"-"`
-	RuntimeID    string `json:"runtime_id"`
+	ProvisioningParameters string `json:"provisioning_parameters"`
+
+	InputCreator UpgradeKymaInputCreation `json:"-"`
+
+	SubAccountID           string `json:"-"`
+	RuntimeID              string `json:"runtime_id"`
 }
 
 // Orchestration holds all information about an orchestration.
@@ -311,6 +319,27 @@ func (do *DeprovisioningOperation) GetProvisioningParameters() (ProvisioningPara
 }
 
 func (do *DeprovisioningOperation) SetProvisioningParameters(parameters ProvisioningParameters) error {
+	params, err := json.Marshal(parameters)
+	if err != nil {
+		return errors.Wrap(err, "while marshaling provisioning parameters")
+	}
+
+	do.ProvisioningParameters = string(params)
+	return nil
+}
+
+func (do *UpgradeKymaOperation) GetProvisioningParameters() (ProvisioningParameters, error) {
+	var pp ProvisioningParameters
+
+	err := json.Unmarshal([]byte(do.ProvisioningParameters), &pp)
+	if err != nil {
+		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
+	}
+
+	return pp, nil
+}
+
+func (do *UpgradeKymaOperation) SetProvisioningParameters(parameters ProvisioningParameters) error {
 	params, err := json.Marshal(parameters)
 	if err != nil {
 		return errors.Wrap(err, "while marshaling provisioning parameters")
