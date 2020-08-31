@@ -8,6 +8,10 @@ type Parameters struct {
 	Dry      bool                  `json:"dry,omitempty"`
 }
 
+type StatusResponse struct {
+	Orchestration internal.Orchestration `json:"orchestration"`
+}
+
 type UpgradeResponse struct {
 	OrchestrationID string `json:"orchestration_id"`
 }
