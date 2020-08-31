@@ -180,7 +180,7 @@ func newTestSuite(t *testing.T) *Suite {
 	}
 
 	if suite.IsUpgradeTest {
-		suite.upgradeSuite = newUpgradeSuite(t, *cfg, suite)
+		suite.upgradeSuite = newUpgradeSuite(t, ctx, oAuth2Config, cfg.Broker, log)
 	}
 
 	return suite
