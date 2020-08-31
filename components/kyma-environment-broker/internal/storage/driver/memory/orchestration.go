@@ -26,6 +26,7 @@ func (s *orchestration) Insert(orchestration internal.Orchestration) error {
 
 	return nil
 }
+
 func (s *orchestration) GetByID(orchestrationID string) (*internal.Orchestration, error) {
 	inst, ok := s.orchestrations[orchestrationID]
 	if !ok {
@@ -34,6 +35,16 @@ func (s *orchestration) GetByID(orchestrationID string) (*internal.Orchestration
 
 	return &inst, nil
 }
+
+func (s *orchestration) ListAll() ([]internal.Orchestration, error) {
+	result := make([]internal.Orchestration, 0)
+	for _, o := range s.orchestrations {
+		result = append(result, o)
+	}
+
+	return result, nil
+}
+
 func (s *orchestration) Update(orchestration internal.Orchestration) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -41,7 +52,6 @@ func (s *orchestration) Update(orchestration internal.Orchestration) error {
 		return dberr.NotFound("orchestration with id %s not exist", orchestration.OrchestrationID)
 
 	}
-
 	s.orchestrations[orchestration.OrchestrationID] = orchestration
 
 	return nil

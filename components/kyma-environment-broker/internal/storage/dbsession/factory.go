@@ -29,6 +29,7 @@ type ReadSession interface {
 	GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
 	GetOrchestrationByID(oID string) (internal.Orchestration, dberr.Error)
+	ListOrchestrations() ([]internal.Orchestration, dberr.Error)
 }
 
 //go:generate mockery -name=WriteSession
