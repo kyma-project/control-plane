@@ -56,7 +56,6 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 	if err != nil {
 		return s.operationManager.OperationFailed(operation, "cannot get provisioning parameters from operation")
 	}
-	operation.SubAccountID = parameters.ErsContext.SubAccountID
 
 	err = operation.SetProvisioningParameters(parameters)
 	if err != nil {
@@ -70,7 +69,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		if operation.ProvisionerOperationID == "" {
 			return operation, 0, nil // upgrade not started, go to next step
 		}
-		log.Infof("kyma being upgraded for runtime id %q, check operation status", instance.RuntimeID)
+		log.Infof("runtime being upgraded, check operation status")
 		operation.RuntimeID = instance.RuntimeID
 		return s.checkRuntimeStatus(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
 	case dberr.IsNotFound(err):

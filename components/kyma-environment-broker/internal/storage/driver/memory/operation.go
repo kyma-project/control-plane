@@ -138,7 +138,7 @@ func (s *operations) InsertUpgradeKymaOperation(operation internal.UpgradeKymaOp
 func (s *operations) GetUpgradeKymaOperationByID(operationID string) (*internal.UpgradeKymaOperation, error) {
 	op, exists := s.upgradeKymaOperations[operationID]
 	if !exists {
-		return nil, dberr.NotFound("instance upgrade_kyma operation with id %s not found", operationID)
+		return nil, dberr.NotFound("instance upgradeKyma operation with id %s not found", operationID)
 	}
 	return &op, nil
 }
@@ -150,7 +150,7 @@ func (s *operations) GetUpgradeKymaOperationByInstanceID(instanceID string) (*in
 		}
 	}
 
-	return nil, dberr.NotFound("instance upgrade_kyma operation with instanceID %s not found", instanceID)
+	return nil, dberr.NotFound("instance upgradeKyma operation with instanceID %s not found", instanceID)
 }
 
 func (s *operations) UpdateUpgradeKymaOperation(op internal.UpgradeKymaOperation) (*internal.UpgradeKymaOperation, error) {
@@ -162,7 +162,7 @@ func (s *operations) UpdateUpgradeKymaOperation(op internal.UpgradeKymaOperation
 		return nil, dberr.NotFound("instance operation with id %s not found", op.ID)
 	}
 	if oldOp.Version != op.Version {
-		return nil, dberr.Conflict("unable to update upgrade_kyma operation with id %s (for instance id %s) - conflict", op.ID, op.InstanceID)
+		return nil, dberr.Conflict("unable to update upgradeKyma operation with id %s (for instance id %s) - conflict", op.ID, op.InstanceID)
 	}
 	op.Version = op.Version + 1
 	s.upgradeKymaOperations[op.ID] = op

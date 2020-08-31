@@ -24,7 +24,8 @@ type ProvisionInputCreator interface {
 	EnableOptionalComponent(componentName string) ProvisionInputCreator
 }
 
-type UpgradeKymaInputCreation interface {
+type UpgradeKymaInputCreator interface {
+	SetDesiredKymaVersion(kymaVersion string) UpgradeKymaInputCreator
 	Create() (gqlschema.UpgradeRuntimeInput, error)
 }
 
@@ -135,7 +136,7 @@ type UpgradeKymaOperation struct {
 
 	ProvisioningParameters string `json:"provisioning_parameters"`
 
-	InputCreator UpgradeKymaInputCreation `json:"-"`
+	InputCreator UpgradeKymaInputCreator `json:"-"`
 
 	SubAccountID           string `json:"-"`
 	RuntimeID              string `json:"runtime_id"`

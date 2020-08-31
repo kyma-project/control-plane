@@ -343,7 +343,7 @@ func main() {
 	}{
 		{
 			weight: 1,
-			step: upgrade_kyma.NewUpgradeKymaStep(db.Operations(), provisionerClient),
+			step: upgrade_kyma.NewUpgradeKymaStep(db.Operations(), provisionerClient, cfg.KymaVersion),
 		},
 	}
 	for _, step := range upgradeKymaSteps {
