@@ -16,6 +16,7 @@ type Config struct {
 	DefaultGardenerShootPurpose string        `envconfig:"default=development"`
 	MachineImage                string        `envconfig:"optional"`
 	MachineImageVersion         string        `envconfig:"optional"`
+	TrialRegionConfigMapName    string        `envconfig:"default=trial-region-config"`
 }
 
 type RuntimeInput struct {
@@ -27,7 +28,7 @@ type RuntimeInput struct {
 
 	hyperscalerInputProvider  HyperscalerInputProvider
 	optionalComponentsService OptionalComponentService
-	provisioningParameters    internal.ProvisioningParametersDTO
+	provisioningParameters    internal.ProvisioningParameters
 
 	componentsDisabler        ComponentsDisabler
 	enabledOptionalComponents map[string]struct{}
@@ -40,7 +41,7 @@ func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.Pr
 	return r
 }
 
-func (r *RuntimeInput) SetProvisioningParameters(params internal.ProvisioningParametersDTO) internal.ProvisionInputCreator {
+func (r *RuntimeInput) SetProvisioningParameters(params internal.ProvisioningParameters) internal.ProvisionInputCreator {
 	r.provisioningParameters = params
 	return r
 }
@@ -122,19 +123,20 @@ func (r *RuntimeInput) Create() (gqlschema.ProvisionRuntimeInput, error) {
 }
 
 func (r *RuntimeInput) applyProvisioningParameters() error {
-	updateString(&r.input.RuntimeInput.Name, &r.provisioningParameters.Name)
+	params := r.provisioningParameters.Parameters
+	updateString(&r.input.RuntimeInput.Name, &params.Name)
 
-	updateInt(&r.input.ClusterConfig.GardenerConfig.MaxUnavailable, r.provisioningParameters.MaxUnavailable)
-	updateInt(&r.input.ClusterConfig.GardenerConfig.MaxSurge, r.provisioningParameters.MaxSurge)
-	updateInt(&r.input.ClusterConfig.GardenerConfig.AutoScalerMin, r.provisioningParameters.AutoScalerMin)
-	updateInt(&r.input.ClusterConfig.GardenerConfig.AutoScalerMax, r.provisioningParameters.AutoScalerMax)
-	updateInt(&r.input.ClusterConfig.GardenerConfig.VolumeSizeGb, r.provisioningParameters.VolumeSizeGb)
-	updateString(&r.input.ClusterConfig.GardenerConfig.Region, r.provisioningParameters.Region)
-	updateString(&r.input.ClusterConfig.GardenerConfig.MachineType, r.provisioningParameters.MachineType)
-	updateString(&r.input.ClusterConfig.GardenerConfig.TargetSecret, r.provisioningParameters.TargetSecret)
-	updateString(r.input.ClusterConfig.GardenerConfig.Purpose, r.provisioningParameters.Purpose)
-	if r.provisioningParameters.LicenceType != nil {
-		r.input.ClusterConfig.GardenerConfig.LicenceType = r.provisioningParameters.LicenceType
+	updateInt(&r.input.ClusterConfig.GardenerConfig.MaxUnavailable, params.MaxUnavailable)
+	updateInt(&r.input.ClusterConfig.GardenerConfig.MaxSurge, params.MaxSurge)
+	updateInt(&r.input.ClusterConfig.GardenerConfig.AutoScalerMin, params.AutoScalerMin)
+	updateInt(&r.input.ClusterConfig.GardenerConfig.AutoScalerMax, params.AutoScalerMax)
+	updateInt(&r.input.ClusterConfig.GardenerConfig.VolumeSizeGb, params.VolumeSizeGb)
+	updateString(&r.input.ClusterConfig.GardenerConfig.Region, params.Region)
+	updateString(&r.input.ClusterConfig.GardenerConfig.MachineType, params.MachineType)
+	updateString(&r.input.ClusterConfig.GardenerConfig.TargetSecret, params.TargetSecret)
+	updateString(r.input.ClusterConfig.GardenerConfig.Purpose, params.Purpose)
+	if params.LicenceType != nil {
+		r.input.ClusterConfig.GardenerConfig.LicenceType = params.LicenceType
 	}
 
 	r.hyperscalerInputProvider.ApplyParameters(r.input.ClusterConfig, r.provisioningParameters)
@@ -147,7 +149,7 @@ func (r *RuntimeInput) resolveOptionalComponents() error {
 	defer r.mutex.Unlock("enabledOptionalComponents")
 
 	componentsToInstall := []string{}
-	componentsToInstall = append(componentsToInstall, r.provisioningParameters.OptionalComponentsToInstall...)
+	componentsToInstall = append(componentsToInstall, r.provisioningParameters.Parameters.OptionalComponentsToInstall...)
 	for name := range r.enabledOptionalComponents {
 		componentsToInstall = append(componentsToInstall, name)
 	}

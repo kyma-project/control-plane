@@ -81,11 +81,11 @@ func (_m *ProvisionInputCreator) SetOverrides(component string, overrides []*gql
 }
 
 // SetProvisioningParameters provides a mock function with given fields: params
-func (_m *ProvisionInputCreator) SetProvisioningParameters(params internal.ProvisioningParametersDTO) internal.ProvisionInputCreator {
+func (_m *ProvisionInputCreator) SetProvisioningParameters(params internal.ProvisioningParameters) internal.ProvisionInputCreator {
 	ret := _m.Called(params)
 
 	var r0 internal.ProvisionInputCreator
-	if rf, ok := ret.Get(0).(func(internal.ProvisioningParametersDTO) internal.ProvisionInputCreator); ok {
+	if rf, ok := ret.Get(0).(func(internal.ProvisioningParameters) internal.ProvisionInputCreator); ok {
 		r0 = rf(params)
 	} else {
 		if ret.Get(0) != nil {

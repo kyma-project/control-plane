@@ -108,7 +108,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 func (s *CreateRuntimeStep) createProvisionInput(operation internal.ProvisioningOperation, parameters internal.ProvisioningParameters) (gqlschema.ProvisionRuntimeInput, error) {
 	var request gqlschema.ProvisionRuntimeInput
 
-	operation.InputCreator.SetProvisioningParameters(parameters.Parameters)
+	operation.InputCreator.SetProvisioningParameters(parameters)
 	operation.InputCreator.SetLabel(brokerKeyPrefix+"instance_id", operation.InstanceID)
 	operation.InputCreator.SetLabel(globalKeyPrefix+"subaccount_id", parameters.ErsContext.SubAccountID)
 	request, err := operation.InputCreator.Create()

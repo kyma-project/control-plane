@@ -37,7 +37,7 @@ func TestShouldEnableComponents(t *testing.T) {
 			{Name: "dex"},
 		}, nil)
 
-	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
 
 	pp := fixProvisioningParameters(broker.AzurePlanID, "")
@@ -71,7 +71,7 @@ func TestShouldDisableComponents(t *testing.T) {
 			{Name: components.Backup},
 		}, nil)
 
-	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
 	creator, err := builder.Create(pp)
 	require.NoError(t, err)
@@ -103,7 +103,7 @@ func TestDisabledComponentsForPlanNotExist(t *testing.T) {
 			{Name: components.Backup},
 		}, nil)
 
-	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
 	// when
 	_, err = builder.Create(pp)
@@ -130,7 +130,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		creator, err := builder.Create(pp)
 		require.NoError(t, err)
@@ -167,7 +167,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		creator, err := builder.Create(pp)
 		require.NoError(t, err)
@@ -211,7 +211,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(inputComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
-	factory, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, config, "1.10.0")
+	factory, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, config, "1.10.0", fixTrialRegionMapping())
 	assert.NoError(t, err)
 	pp := fixProvisioningParameters(broker.AzurePlanID, "")
 
@@ -223,10 +223,12 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 
 	// when
 	input, err := builder.
-		SetProvisioningParameters(internal.ProvisioningParametersDTO{
-			Name:         "azure-cluster",
-			TargetSecret: ptr.String("azure-secret"),
-			Purpose:      ptr.String("development"),
+		SetProvisioningParameters(internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{
+				Name:         "azure-cluster",
+				TargetSecret: ptr.String("azure-secret"),
+				Purpose:      ptr.String("development"),
+			},
 		}).
 		SetLabel("label1", "value1").
 		AppendOverrides("keb", kebOverrides).Create()
@@ -248,6 +250,58 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	}, input.RuntimeInput.Labels)
 
 	assertOverrides(t, "keb", input.KymaConfig.Components, kebOverrides)
+}
+
+func TestInputBuilderFactoryForAzureTrialPlan(t *testing.T) {
+	// given
+	var (
+		inputComponentList  = fixKymaComponentList()
+		mappedComponentList = mapToGQLComponentConfigurationInput(inputComponentList)
+		toDisableComponents = []string{}
+	)
+
+	optComponentsSvc := &automock.OptionalComponentService{}
+	defer optComponentsSvc.AssertExpectations(t)
+	optComponentsSvc.On("ComputeComponentsToDisable", []string{}).Return(toDisableComponents)
+	optComponentsSvc.On("ExecuteDisablers", mappedComponentList, mock.Anything).Return(mappedComponentList, nil)
+
+	config := Config{
+		URL: "",
+	}
+	componentsProvider := &automock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(inputComponentList, nil)
+	defer componentsProvider.AssertExpectations(t)
+
+	factory, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, config, "1.10.0", fixTrialRegionMapping())
+	assert.NoError(t, err)
+	cp := internal.Azure
+	pp := internal.ProvisioningParameters{
+		PlanID: broker.TrialPlanID,
+		Parameters: internal.ProvisioningParametersDTO{
+			Name:     "azureTrial001",
+			Provider: &cp,
+		},
+		PlatformRegion: "cf-eu",
+	}
+
+	// when
+	builder, err := factory.Create(pp)
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	input, err := builder.SetProvisioningParameters(pp).Create()
+
+	// then
+	require.NoError(t, err)
+	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
+	assert.Equal(t, "azureTrial001", input.RuntimeInput.Name)
+	assert.Equal(t, "azure", input.ClusterConfig.GardenerConfig.Provider)
+	require.NotNil(t, input.ClusterConfig.GardenerConfig.Purpose)
+	assert.Nil(t, input.ClusterConfig.GardenerConfig.LicenceType)
+
+	assert.Equal(t, "westeurope", input.ClusterConfig.GardenerConfig.Region)
 }
 
 func assertOverrides(t *testing.T, componentName string, components internal.ComponentConfigurationInputList, overrides []*gqlschema.ConfigEntryInput) {

@@ -15,12 +15,19 @@ const (
 
 var europeGcp = "europe-west4"
 var usGcp = "us-east4"
+var asiaGcp = "asia-southeast1"
 
-var toGCPSpecific = map[string]*string{string(broker.Europe): &europeGcp, string(broker.Us): &usGcp}
+var toGCPSpecific = map[string]*string{
+	string(broker.Europe): &europeGcp,
+	string(broker.Us):     &usGcp,
+	string(broker.Asia):   &asiaGcp,
+}
 
 type (
 	GcpInput      struct{}
-	GcpTrialInput struct{}
+	GcpTrialInput struct {
+		PlatformRegionMapping map[string]string
+	}
 )
 
 func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
@@ -43,12 +50,12 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 	}
 }
 
-func (p *GcpInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
-	if params.Region != nil && params.Zones == nil {
-		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(*params.Region))
+func (p *GcpInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
+	if pp.Parameters.Region != nil && pp.Parameters.Zones == nil {
+		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(*pp.Parameters.Region))
 	}
 
-	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, params.Zones)
+	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, pp.Parameters.Zones)
 }
 
 func (p *GcpTrialInput) Defaults() *gqlschema.ClusterConfigInput {
@@ -71,16 +78,31 @@ func (p *GcpTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 	}
 }
 
-func (p *GcpTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
+func (p *GcpTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
+	params := pp.Parameters
+	var region string
+
+	// if there is a platform region - use it
+	if pp.PlatformRegion != "" {
+		abstractRegion, found := p.PlatformRegionMapping[pp.PlatformRegion]
+		if found {
+			region = *toGCPSpecific[abstractRegion]
+		}
+	}
+
+	// if the user provides a region - use this one
 	if params.Region != nil {
-		updateString(&input.GardenerConfig.Region, toGCPSpecific[*params.Region])
+		region = *toGCPSpecific[*params.Region]
 	}
 
-	if params.Region != nil && params.Zones == nil {
-		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(*toGCPSpecific[*params.Region]))
+	// region is not empty - it means override the default one
+	var zones []string
+	if region != "" {
+		updateString(&input.GardenerConfig.Region, &region)
+		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(region))
 	}
 
-	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, params.Zones)
+	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, zones)
 }
 
 func ZonesForGCPRegion(region string) []string {
