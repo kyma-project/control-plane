@@ -34,4 +34,6 @@ require (
 replace (
 	github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible => k8s.io/client-go v0.15.8-beta.1
+
+	github.com/kyma-project/control-plane => github.com/rafalpotempa/control-plane v0.0.0-20200901103802-0dc495e8c3f5
 )
