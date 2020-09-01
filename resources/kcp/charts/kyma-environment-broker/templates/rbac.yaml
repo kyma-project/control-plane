@@ -13,6 +13,9 @@ rules:
   - apiGroups: ["*"]
     resources: ["configmaps"]
     verbs: ["list", "get"]
+  - apiGroups: ["core.gardener.cloud"]
+    resources: ["shoots"]
+    verbs: ["list", "get"]
 
 ---
 kind: RoleBinding

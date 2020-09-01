@@ -78,7 +78,7 @@ func TestUpgradeKymaManager_Execute_DryRun(t *testing.T) {
 	resolver.On("Resolve", internal.TargetSpec{}).Return([]internal.Runtime{}, nil).Once()
 
 	p := orchestration.Parameters{
-		Dry: true,
+		DryRun: true,
 	}
 	serialized, err := json.Marshal(p)
 	require.NoError(t, err)

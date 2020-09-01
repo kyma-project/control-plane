@@ -15,10 +15,10 @@ type handler struct {
 	handlers []Handler
 }
 
-func NewOrchestrationHandler(db storage.Orchestrations, executor process.Executor, log logrus.FieldLogger) Handler {
+func NewOrchestrationHandler(db storage.Orchestrations, kymaQueue *process.Queue, log logrus.FieldLogger) Handler {
 	return &handler{
 		handlers: []Handler{
-			NewKymaOrchestrationHandler(db, executor, log),
+			NewKymaOrchestrationHandler(db, kymaQueue, log),
 		},
 	}
 }
