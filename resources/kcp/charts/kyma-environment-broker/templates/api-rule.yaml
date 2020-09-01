@@ -27,7 +27,7 @@ spec:
         - handler: oauth2_introspection
           config:
             required_scope: ["broker-upgrade:write"]
-    - path: /orchestrations/.*
+    - path: /orchestrations.*
       methods: ["GET"]
       accessStrategies:
         - handler: oauth2_introspection
