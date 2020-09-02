@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -43,8 +45,12 @@ func (h *kymaHandler) getOrchestration(w http.ResponseWriter, r *http.Request) {
 
 	o, err := h.db.GetByID(orchestrationID)
 	if err != nil {
+		status := http.StatusInternalServerError
+		if dberr.IsNotFound(err) {
+			status = http.StatusNotFound
+		}
 		h.log.Errorf("while getting orchestration %s: %v", orchestrationID, err)
-		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting orchestration %s", orchestrationID))
+		writeErrorResponse(w, status, errors.Wrapf(err, "while getting orchestration %s", orchestrationID))
 		return
 	}
 
