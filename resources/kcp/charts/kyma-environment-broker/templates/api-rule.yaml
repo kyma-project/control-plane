@@ -21,3 +21,15 @@ spec:
         - handler: oauth2_introspection
           config:
             required_scope: ["cld:read"]
+    - path: /upgrade/.*
+      methods: ["POST"]
+      accessStrategies:
+        - handler: oauth2_introspection
+          config:
+            required_scope: ["broker-upgrade:write"]
+    - path: /orchestrations.*
+      methods: ["GET"]
+      accessStrategies:
+        - handler: oauth2_introspection
+          config:
+            required_scope: ["broker-upgrade:read"]
