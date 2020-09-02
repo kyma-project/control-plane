@@ -14,25 +14,28 @@ import (
 
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
+	"sync"
 )
 
 type Client struct {
-	httpClient *http.Client
-	avsConfig  Config
+	httpClient      *http.Client
+	httpClientMutex sync.Mutex
+
+	avsConfig Config
 
 	log logrus.FieldLogger
+
+	cancellationCtx context.Context
 }
 
 func NewClient(ctx context.Context, avsConfig Config, log logrus.FieldLogger) (*Client, error) {
-	config, initialToken, err := createInitialToken(avsConfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating oauth config and token")
-	}
 
 	return &Client{
-		httpClient: config.Client(ctx, initialToken),
+		httpClient: nil, // http client is lazy initialized
 		avsConfig:  avsConfig,
 		log:        log,
+
+		cancellationCtx: ctx,
 	}, nil
 }
 
@@ -159,7 +162,11 @@ func (c *Client) deleteRequest(absoluteURL string) (*http.Response, error) {
 }
 
 func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetToken bool) (*http.Response, error) {
-	response, err := c.httpClient.Do(request)
+	httpClient, err := c.getHttpClient()
+	if err != nil {
+		return &http.Response{}, err
+	}
+	response, err := httpClient.Do(request)
 	if err != nil {
 		return &http.Response{}, errors.Wrap(err, "while executing request by http client")
 	}
@@ -191,4 +198,18 @@ func responseBody(resp *http.Response) string {
 		return ""
 	}
 	return string(bodyBytes)
+}
+
+func (c *Client) getHttpClient() (*http.Client, error) {
+	c.httpClientMutex.Lock()
+	defer c.httpClientMutex.Unlock()
+
+	if c.httpClient == nil {
+		config, initialToken, err := createInitialToken(c.avsConfig)
+		if err != nil {
+			return nil, errors.Wrap(err, "while creating oauth config and token")
+		}
+		c.httpClient = config.Client(c.cancellationCtx, initialToken)
+	}
+	return c.httpClient, nil
 }
