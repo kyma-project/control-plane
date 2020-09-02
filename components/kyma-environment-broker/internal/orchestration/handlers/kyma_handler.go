@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -19,14 +21,16 @@ import (
 type kymaHandler struct {
 	db    storage.Orchestrations
 	queue *process.Queue
+	conv  Converter
 	log   logrus.FieldLogger
 }
 
-func NewKymaOrchestrationHandler(db storage.Orchestrations, executor process.Executor, log logrus.FieldLogger) *kymaHandler {
+func NewKymaOrchestrationHandler(db storage.Orchestrations, q *process.Queue, log logrus.FieldLogger) *kymaHandler {
 	return &kymaHandler{
 		db:    db,
 		log:   log,
-		queue: process.NewQueue(executor, log),
+		conv:  Converter{},
+		queue: q,
 	}
 }
 
@@ -41,21 +45,41 @@ func (h *kymaHandler) getOrchestration(w http.ResponseWriter, r *http.Request) {
 
 	o, err := h.db.GetByID(orchestrationID)
 	if err != nil {
+		status := http.StatusInternalServerError
+		if dberr.IsNotFound(err) {
+			status = http.StatusNotFound
+		}
 		h.log.Errorf("while getting orchestration %s: %v", orchestrationID, err)
-		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting orchestration %s", orchestrationID))
+		writeErrorResponse(w, status, errors.Wrapf(err, "while getting orchestration %s", orchestrationID))
+		return
 	}
 
-	writeResponse(w, http.StatusOK, o)
+	response, err := h.conv.OrchestrationToDTO(o)
+	if err != nil {
+		h.log.Errorf("while converting orchestration: %v", err)
+		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting orchestration"))
+		return
+	}
+
+	writeResponse(w, http.StatusOK, response)
 }
 
 func (h *kymaHandler) listOrchestration(w http.ResponseWriter, r *http.Request) {
-	o, err := h.db.ListAll()
+	orchestrations, err := h.db.ListAll()
 	if err != nil {
 		h.log.Errorf("while getting orchestrations: %v", err)
-		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting orchestration"))
+		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting orchestrations"))
+		return
 	}
 
-	writeResponse(w, http.StatusOK, o)
+	response, err := h.conv.OrchestrationListToDTO(orchestrations)
+	if err != nil {
+		h.log.Errorf("while converting orchestrations: %v", err)
+		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting orchestrations"))
+		return
+	}
+
+	writeResponse(w, http.StatusOK, response)
 }
 
 func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request) {
@@ -65,18 +89,21 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		h.log.Errorf("while decoding request body: %v", err)
 		writeErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while decoding request body"))
+		return
 	}
 
 	dto.Targets, err = h.resolveTargets(dto.Targets)
 	if err != nil {
 		h.log.Errorf("while resolving targets: %v", err)
 		writeErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while resolving targets"))
+		return
 	}
 
 	params, err := json.Marshal(dto)
 	if err != nil {
 		h.log.Errorf("while encoding request params: %v", err)
 		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while encoding request params"))
+		return
 	}
 
 	now := time.Now()
@@ -94,8 +121,9 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 
 	err = h.db.Insert(o)
 	if err != nil {
-		h.log.Errorf("while inserting operation to storage: %v", err)
-		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while inserting operation to storage"))
+		h.log.Errorf("while inserting orchestration to storage: %v", err)
+		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while inserting orchestration to storage"))
+		return
 	}
 
 	h.queue.Add(o.OrchestrationID)
@@ -139,6 +167,10 @@ func writeResponse(w http.ResponseWriter, code int, object interface{}) {
 	}
 }
 
+type errObj struct {
+	Error string `json:"error"`
+}
+
 func writeErrorResponse(w http.ResponseWriter, code int, err error) {
-	writeResponse(w, code, err.Error())
+	writeResponse(w, code, errObj{Error: err.Error()})
 }

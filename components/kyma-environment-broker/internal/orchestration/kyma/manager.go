@@ -35,16 +35,17 @@ func NewUpgradeKymaManager(db storage.Orchestrations, kymaUpgradeExecutor proces
 
 // Execute reconciles runtimes for a given orchestration
 func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, error) {
+	u.log.Infof("Processing orchestration %s", orchestrationID)
 	o, err := u.db.GetByID(orchestrationID)
 	if err != nil {
-		return 0, errors.Wrapf(err, "while getting orchestration %s", orchestrationID)
+		return u.failOrchestration(o, errors.Wrap(err, "while getting orchestration"))
 	}
 
 	dto := orchestration.Parameters{}
 	if o.Parameters.Valid {
 		err = json.Unmarshal([]byte(o.Parameters.String), &dto)
 		if err != nil {
-			return 0, errors.Wrap(err, "while unmarshalling parameters")
+			return u.failOrchestration(o, errors.Wrap(err, "while unmarshalling parameters"))
 		}
 	}
 
@@ -55,20 +56,24 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 
 	operations, err := u.resolveOperations(o, dto)
 	if err != nil {
-		return 0, errors.Wrap(err, "while resolving operations")
+		return u.failOrchestration(o, errors.Wrap(err, "while resolving operations"))
 	}
 
-	state := internal.Succeeded
+	state := internal.InProgress
 	desc := fmt.Sprintf("scheduled %d operations", len(operations))
 
+	isFinished := len(operations) == 0 || dto.DryRun
+	if isFinished {
+		state = internal.Succeeded
+	}
+
 	repeat, err := u.updateOrchestration(o, state, desc, operations)
-	if err != nil {
-		return 0, errors.Wrap(err, "while updating orchestration")
-	}
-	if repeat != 0 {
+	switch {
+	case err != nil:
+		return u.failOrchestration(o, errors.Wrap(err, "while updating orchestration"))
+	case repeat != 0:
 		return repeat, nil
-	}
-	if len(operations) == 0 {
+	case isFinished:
 		return 0, nil
 	}
 
@@ -79,6 +84,7 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 		return 0, errors.Wrap(err, "while executing instant upgrade strategy")
 	}
 
+	state = internal.Succeeded
 	// TODO(upgrade): check UpgradeKymaOperations in the loop to assert orchestration state
 	result, err := u.checkOperationsResults(operations)
 	if err != nil {
@@ -91,6 +97,7 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 	if err != nil {
 		return 0, errors.Wrap(err, "while updating orchestration")
 	}
+	u.log.Infof("Finished processing orchestration %s", orchestrationID)
 
 	return repeat, nil
 }
@@ -122,6 +129,11 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, dto or
 	}
 
 	return operations, nil
+}
+
+func (u *upgradeKymaManager) failOrchestration(o *internal.Orchestration, err error) (time.Duration, error) {
+	u.log.Errorf("orchestration %s failed: %s", o.OrchestrationID, err)
+	return u.updateOrchestration(o, internal.Failed, err.Error(), nil)
 }
 
 func (u *upgradeKymaManager) updateOrchestration(o *internal.Orchestration, state, description string, ops []internal.RuntimeOperation) (time.Duration, error) {
