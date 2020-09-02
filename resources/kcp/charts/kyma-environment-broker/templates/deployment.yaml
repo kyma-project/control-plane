@@ -17,6 +17,8 @@ spec:
       labels:
         app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/app-config.yaml") . | sha256sum }}
     spec:
       {{ if .Values.global.isLocalEnv }}
       # HostAliases are used by Pod to resolve kyma.local domain
