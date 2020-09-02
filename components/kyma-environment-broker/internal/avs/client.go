@@ -12,9 +12,10 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"sync"
+
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
-	"sync"
 )
 
 type Client struct {
