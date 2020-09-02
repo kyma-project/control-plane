@@ -63,6 +63,8 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		kubernetesVersion: "{{.KubernetesVersion}}",
 		volumeSizeGB: {{.VolumeSizeGb }},
 		machineType: "{{.MachineType}}",
+		machineImage: "{{.MachineImage}}",
+		machineImageVersion: "{{.MachineImageVersion}}",
 		region: "{{.Region}}",
 		provider: "{{ .Provider }}",
 		{{- if .Purpose }}

@@ -203,7 +203,9 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	optComponentsSvc.On("ExecuteDisablers", mappedComponentList, toDisableComponents[0]).Return(mappedComponentList, nil)
 
 	config := Config{
-		URL: "",
+		URL:                 "",
+		MachineImageVersion: "1.0.23",
+		MachineImage:        "machine-image",
 	}
 	componentsProvider := &automock.ComponentListProvider{}
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(inputComponentList, nil)
@@ -236,6 +238,8 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	assert.Equal(t, "azure", input.ClusterConfig.GardenerConfig.Provider)
 	assert.Equal(t, "azure-secret", input.ClusterConfig.GardenerConfig.TargetSecret)
 	require.NotNil(t, input.ClusterConfig.GardenerConfig.Purpose)
+	assert.Equal(t, "1.0.23", *input.ClusterConfig.GardenerConfig.MachineImageVersion)
+	assert.Equal(t, "machine-image", *input.ClusterConfig.GardenerConfig.MachineImage)
 	assert.Equal(t, "development", *input.ClusterConfig.GardenerConfig.Purpose)
 	assert.Nil(t, input.ClusterConfig.GardenerConfig.LicenceType)
 	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
