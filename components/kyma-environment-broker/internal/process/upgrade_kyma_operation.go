@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/sirupsen/logrus"
 )
 
 type UpgradeKymaOperationManager struct {
@@ -38,6 +39,19 @@ func (om *UpgradeKymaOperationManager) OperationFailed(operation internal.Upgrad
 	}
 
 	return updatedOperation, 0, errors.New(description)
+}
+
+// RetryOperation retries an operation for at maxTime in retryInterval steps and fails the operation if retrying failed
+func (om *UpgradeKymaOperationManager) RetryOperation(operation internal.UpgradeKymaOperation, errorMessage string, retryInterval time.Duration, maxTime time.Duration, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	since := time.Since(operation.UpdatedAt)
+
+	log.Infof("Retry Operation was triggered with message: %s", errorMessage)
+	log.Infof("Retrying for %s in %s steps", maxTime.String(), retryInterval.String())
+	if since < maxTime {
+		return operation, retryInterval, nil
+	}
+	log.Errorf("Aborting after %s of failing retries", maxTime.String())
+	return om.OperationFailed(operation, errorMessage)
 }
 
 // UpdateOperation updates a given operation

@@ -11,7 +11,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -116,7 +116,7 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 	}
 
 	log.Infof("create input creator for %q plan ID", pp.PlanID)
-	creator, err := s.inputBuilder.Create(pp)
+	creator, err := s.inputBuilder.NewProvisionInputCreator(pp)
 	switch {
 	case err == nil:
 		operation.InputCreator = creator

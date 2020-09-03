@@ -25,7 +25,7 @@ type UpgradeKymaStep struct {
 func NewUpgradeKymaStep(os storage.Operations, cli provisioner.Client, desiredKymaVersion string) *UpgradeKymaStep {
 	return &UpgradeKymaStep{
 		operationManager:   process.NewUpgradeKymaOperationManager(os),
-		provisionerClient:  nil,
+		provisionerClient:  cli,
 		desiredKymaVersion: desiredKymaVersion,
 	}
 }
@@ -45,22 +45,23 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 
+	// assemble Kyma desired state
 	requestInput, err := s.createUpgradeKymaInput(operation, s.desiredKymaVersion)
 	if err != nil {
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeKyma input")
 	}
 
+
 	var provisionerResponse gqlschema.OperationStatus
 	if operation.ProvisionerOperationID == "" {
+		// trigger upgradeRuntime mutation
 		provisionerResponse, err := s.provisionerClient.UpgradeRuntime(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID, requestInput)
 		if err != nil {
 			log.Errorf("call to provisioner failed: %s", err)
 			return operation, 5 * time.Second, nil
 		}
 		operation.ProvisionerOperationID = *provisionerResponse.ID
-		if provisionerResponse.RuntimeID != nil {
-			operation.RuntimeID = *provisionerResponse.RuntimeID
-		}
+
 		operation, repeat := s.operationManager.UpdateOperation(operation)
 		if repeat != 0 {
 			log.Errorf("cannot save operation ID from provisioner")

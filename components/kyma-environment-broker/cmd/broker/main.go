@@ -34,8 +34,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -343,7 +343,7 @@ func main() {
 	}{
 		{
 			weight: 1,
-			step:   upgrade_kyma.NewUpgradeKymaStep(db.Operations(), provisionerClient, cfg.KymaVersion),
+			step:   upgrade_kyma.NewUpgradeKymaStep(db.Operations(), db.Instances(), provisionerClient, cfg.KymaVersion),
 		},
 	}
 	for _, step := range upgradeKymaSteps {

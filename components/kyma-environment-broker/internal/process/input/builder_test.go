@@ -8,7 +8,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/stretchr/testify/assert"
@@ -45,7 +45,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 
 		// when
-		input, err := ibf.Create(pp)
+		input, err := ibf.NewProvisionInputCreator(pp)
 
 		// Then
 		assert.NoError(t, err)
@@ -65,11 +65,29 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		pp := fixProvisioningParameters(broker.GCPPlanID, "PR-1")
 
 		// when
-		input, err := ibf.Create(pp)
+		input, err := ibf.NewProvisionInputCreator(pp)
 
 		// Then
 		assert.NoError(t, err)
 		assert.IsType(t, &RuntimeInput{}, input)
+	})
+
+	t.Run("should build UpgradeKymaInput with default version Kyma components", func(t *testing.T) {
+		// given
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", "1.10").Return([]v1alpha1.KymaComponent{}, nil).Once()
+		defer componentsProvider.AssertExpectations(t)
+
+		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "1.10")
+		assert.NoError(t, err)
+		pp := fixProvisioningParameters(broker.GCPPlanID, "")
+
+		// when
+		input, err := ibf.NewUpgradeKymaInputCreator(pp)
+
+		// Then
+		assert.NoError(t, err)
+		assert.IsType(t, &UpgradeKymaInput{}, input)
 	})
 }
 

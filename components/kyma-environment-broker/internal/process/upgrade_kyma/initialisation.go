@@ -1,6 +1,7 @@
 package upgrade_kyma
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -25,6 +26,8 @@ type InitialisationStep struct {
 	operationStorage  storage.Provisioning
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
+
+	desiredKymaVersion string
 }
 
 func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client) *InitialisationStep {
@@ -79,6 +82,24 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		return operation, 1 * time.Second, nil
 	}
 
+}
+
+func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	pp, err := operation.GetProvisioningParameters()
+	if err != nil {
+		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
+		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
+	}
+
+	log.Infof("create upgrade input creator for plan ID %q", pp.PlanID)
+	return operation, time.Second, nil
+}
+
+func (s *InitialisationStep) getDesiredKymaVersion() (string, error) {
+	if s.desiredKymaVersion == "" {
+		return "", errors.New("desired Kyma version was not set")
+	}
+	return s.desiredKymaVersion, nil
 }
 
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {

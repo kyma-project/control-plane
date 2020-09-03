@@ -7,7 +7,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -41,7 +41,7 @@ func TestShouldEnableComponents(t *testing.T) {
 	assert.NoError(t, err)
 
 	pp := fixProvisioningParameters(broker.AzurePlanID, "")
-	creator, err := builder.Create(pp)
+	creator, err := builder.NewProvisionInputCreator(pp)
 	require.NoError(t, err)
 
 	// when
@@ -73,7 +73,7 @@ func TestShouldDisableComponents(t *testing.T) {
 
 	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
-	creator, err := builder.Create(pp)
+	creator, err := builder.NewProvisionInputCreator(pp)
 	require.NoError(t, err)
 
 	// when
@@ -106,7 +106,7 @@ func TestDisabledComponentsForPlanNotExist(t *testing.T) {
 	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
 	// when
-	_, err = builder.Create(pp)
+	_, err = builder.NewProvisionInputCreator(pp)
 	require.Error(t, err)
 }
 
@@ -132,7 +132,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 
 		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
-		creator, err := builder.Create(pp)
+		creator, err := builder.NewProvisionInputCreator(pp)
 		require.NoError(t, err)
 
 		// when
@@ -169,7 +169,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 
 		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
-		creator, err := builder.Create(pp)
+		creator, err := builder.NewProvisionInputCreator(pp)
 		require.NoError(t, err)
 
 		// when
@@ -216,7 +216,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	pp := fixProvisioningParameters(broker.AzurePlanID, "")
 
 	// when
-	builder, err := factory.Create(pp)
+	builder, err := factory.NewProvisionInputCreator(pp)
 
 	// then
 	require.NoError(t, err)

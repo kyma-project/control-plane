@@ -26,8 +26,8 @@ import (
 	hyperscalerautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/azure"
 	azuretesting "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/azure/testing"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input"
-	inputAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
+	inputAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
@@ -350,7 +350,7 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 		},
 	}
 
-	creator, err := ibf.Create(pp)
+	creator, err := ibf.NewProvisionInputCreator(pp)
 	if err != nil {
 		t.Errorf("cannot create input creator for %q plan", broker.GCPPlanID)
 	}

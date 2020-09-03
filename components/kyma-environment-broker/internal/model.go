@@ -25,7 +25,10 @@ type ProvisionInputCreator interface {
 }
 
 type UpgradeKymaInputCreator interface {
-	SetDesiredKymaVersion(kymaVersion string) UpgradeKymaInputCreator
+	SetProvisioningParameters(params ProvisioningParametersDTO) UpgradeKymaInputCreator
+	AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) UpgradeKymaInputCreator
+	AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) UpgradeKymaInputCreator
+	EnableOptionalComponent(componentName string) UpgradeKymaInputCreator
 	Create() (gqlschema.UpgradeRuntimeInput, error)
 }
 
