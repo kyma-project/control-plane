@@ -27,7 +27,7 @@ A successful call returns the orchestration object:
    ```json
     {
       "state": "InProgress",
-      "description": "Blabla bla",
+      "description": "scheduled 5 operations",
       "parameters": {
         "targets": {
           "include": [
@@ -74,7 +74,7 @@ A successful call returns a list of all orchestrations:
    ```json
     [{
       "state": "InProgress",
-      "description": "Blabla bla",
+      "description": "scheduled 5 operations",
       "parameters": {
         "targets": {
           "include": [

@@ -1,126 +1,29 @@
-2. Implement this interface in your upgrade step:
+# Documentation
 
-    ```go
-    type Step interface {
-        Name() string
-        Run(operation internal.UpgradeOperation, logger logrus.FieldLogger) (internal.UpgradeOperation, time.Duration, error)
-    }
-    ```
+## Overview
 
-    - `Name()` method returns the name of the step that is used in logs.
-    - `Run()` method implements the functionality of the step. The method receives operations as an argument to which it can add appropriate overrides or save other used variables.
+The `docs` folder contains documentation on Kyma Control Plane (KCP) and its components. The documents are arranged in the fixed order that follows the [content strategy](https://kyma-project.io/community/guidelines/content/#content-strategy-content-strategy-documentation-types).
 
+Start with the overarching [KCP documentation](./kyma-control-plane) where you can find general information on KCP. Then, read about these components in more detail:
+* [Kyma Environment Broker](./kyma-environment-broker)
+* [Runtime Provisioner](./provisioner)
 
-    If your functionality contains long-term processes, you can store data in the storage.
-    To do this, add this field to the upgrade operation in which you want to save data:
+### Docs structure
 
-    ```go
-    type UpgradeOperation struct {
-        Operation `json:"-"`
+The directory has the following structure:
 
-        // add additional data here
-    }
-    ```
+```                                   
+  ├── internal                   # Internal documentation, such as investigations, proposals, and standards
+  ├── kyma-control-plane         # Overarching documentation for Kyma Control Plane                                     
+  ├── kyma-environment-broker    # Documentation for the Kyma Environment Broker component                                     
+  └── provisioner                # Documentation for the Runtime Provisioner component     
+```
 
-    By saving data in the storage, you can check if you already have the necessary data and avoid time-consuming processes. You should always return the modified operation from the method.
+## Development
 
-    See the example of the step implementation:
+Follow these basic rules when you add a new document to the official documentation:
 
-    ```go
-    package upgrade
-
-    import (
-        "encoding/json"
-        "net/http"
-        "time"
-
-        "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-        "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-        "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-
-        "github.com/sirupsen/logrus"
-    )
-
-    type HelloWorldStep struct {
-        operationStorage storage.Operations
-        client           *http.Client
-    }
-
-    type ExternalBodyResponse struct {
-        data  string
-        token string
-    }
-
-    func NewHelloWorldStep(operationStorage storage.Operations, client *http.Client) *HelloWorldStep {
-        return &HelloWorldStep{
-            operationStorage: operationStorage,
-            client:           client,
-        }
-    }
-
-    func (s *HelloWorldStep) Name() string {
-        return "Hello_World"
-    }
-
-    // Your step can be repeated in case any other step fails, even if your step has already done its job
-    func (s *HelloWorldStep) Run(operation internal.UpgradeOperation, log *logrus.Entry) (internal.UpgradeOperation, time.Duration, error) {
-        log.Info("Start step")
-
-        // Check whether your step should be run or if its job has been done in the previous iteration
-        // All non-save operation data are empty (e.g. InputCreator overrides)
-
-        // Add your logic here
-
-        // Add a call to an external service (optional)
-        response, err := s.client.Get("http://example.com")
-        if err != nil {
-            // Error during a call to an external service may be temporary so you should return time.Duration
-            // All steps will be repeated in X seconds/minutes
-            return operation, 1 * time.Second, nil
-        }
-        defer response.Body.Close()
-
-        body := ExternalBodyResponse{}
-        err = json.NewDecoder(response.Body).Decode(&body)
-        if err != nil {
-            log.Errorf("error: %s", err)
-            // Handle a process failure by returning an error or time.Duration
-        }
-
-        // If a call or any other action is time-consuming, you can save the result in the operation
-        // If you need an extra field in the UpgradeOperation structure, add it first
-        // in the step below; beforehand, you can check if a given value already exists in the operation
-        operation.HelloWorlds = body.data
-        updatedOperation, err := s.operationStorage.UpdateUpgradeOperation(operation)
-        if err != nil {
-            log.Errorf("error: %s", err)
-            // Handle a process failure by returning an error or time.Duration
-        }
-
-        // If your step finishes with data which should be added to override used during the Runtime upgrade,
-        // add an extra value to operation.InputCreator, then return the updated version of the Application
-        updatedOperation.InputCreator.SetOverrides("component-name", []*gqlschema.ConfigEntryInput{
-            {
-                Key:   "some.key",
-                Value: body.token,
-            },
-        })
-
-        // Return the updated version of the Application
-        return *updatedOperation, 0, nil
-    }
-    ```
-
-3. Add the step to the [`/cmd/broker/main.go`](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/cmd/broker/main.go) file:
-
-    ```go
-    upgradeSteps := []struct {
-   		weight   int
-   		step     upgrade_kyma.Step
-   	}{
-   		{
-   			weight: 1,
-   			step:   upgrade_kyma.NewHelloWorldStep(db.Operations(), &http.Client{}),
-   		},
-    }
-    ```
+1. Get familiar with the [Content Strategy](https://github.com/kyma-project/community/blob/master/guidelines/content-guidelines/01-content-strategy.md) to learn about the official approach to content development.
+2. Follow the [Contribution Guide](https://github.com/kyma-project/community/blob/master/contributing/02-contributing.md) for the general contribution rules and process.
+3. Make use of the [templates](https://github.com/kyma-project/community/tree/master/guidelines/templates) to structure your documents properly.
+4. Be compliant with the writing [guidelines](https://github.com/kyma-project/community/blob/master/guidelines/content-guidelines) to contribute high-quality and standardized content.
