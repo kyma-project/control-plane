@@ -1,0 +1,66 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: {{ template "fullname" . }}
+spec:
+  gateways:
+  - {{ .Values.global.istio.gateway.name }}.{{ .Values.global.istio.gateway.namespace }}.svc.cluster.local
+  hosts:
+  - {{ .Values.host }}.{{ .Values.global.ingress.domainName }}
+  http:
+  - corsPolicy:
+      allowHeaders:
+      - Authorization
+      - Content-Type
+      allowMethods: ["GET", "PUT", "DELETE"]
+      allowOrigin: ["*"]
+    match:
+    - uri:
+        regex: /oauth/([^/]+/)?v2/.*
+    route:
+    - destination:
+        host: {{ .Values.global.oathkeeper.host }}
+        port:
+          number: {{ .Values.global.oathkeeper.port }}
+  - corsPolicy:
+      allowHeaders:
+      - Authorization
+      - Content-Type
+      allowMethods: ["GET"]
+      allowOrigin: ["*"]
+    match:
+    - uri:
+        regex: /info/runtimes
+    route:
+    - destination:
+        host: {{ .Values.global.oathkeeper.host }}
+        port:
+          number: {{ .Values.global.oathkeeper.port }}
+  - corsPolicy:
+      allowHeaders:
+      - Authorization
+      - Content-Type
+      allowMethods: ["POST"]
+      allowOrigin: ["*"]
+    match:
+    - uri:
+        regex: /upgrade/.*
+    route:
+    - destination:
+        host: {{ .Values.global.oathkeeper.host }}
+        port:
+          number: {{ .Values.global.oathkeeper.port }}
+  - corsPolicy:
+      allowHeaders:
+      - Authorization
+      - Content-Type
+      allowMethods: ["GET"]
+      allowOrigin: ["*"]
+    match:
+    - uri:
+        regex: /orchestrations.*
+    route:
+    - destination:
+        host: {{ .Values.global.oathkeeper.host }}
+        port:
+          number: {{ .Values.global.oathkeeper.port }}
