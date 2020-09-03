@@ -9,12 +9,10 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/sirupsen/logrus"
-
 	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )
 
@@ -26,7 +24,7 @@ type Client struct {
 
 	log logrus.FieldLogger
 
-	cancellationCtx context.Context
+	ctx context.Context
 }
 
 func NewClient(ctx context.Context, avsConfig Config, log logrus.FieldLogger) (*Client, error) {
@@ -36,7 +34,7 @@ func NewClient(ctx context.Context, avsConfig Config, log logrus.FieldLogger) (*
 		avsConfig:  avsConfig,
 		log:        log,
 
-		cancellationCtx: ctx,
+		ctx: ctx,
 	}, nil
 }
 
@@ -210,7 +208,7 @@ func (c *Client) getHttpClient() (*http.Client, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "while creating oauth config and token")
 		}
-		c.httpClient = config.Client(c.cancellationCtx, initialToken)
+		c.httpClient = config.Client(c.ctx, initialToken)
 	}
 	return c.httpClient, nil
 }
