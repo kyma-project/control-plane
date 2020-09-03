@@ -213,6 +213,38 @@ func (s *operations) GetOperationsInProgressByType(opType dbmodel.OperationType)
 	return ops, nil
 }
 
+func (s *operations) GetAllOperationsForIDs(opIdList []string) ([]internal.Operation, error) {
+	ops := make([]internal.Operation, 0)
+	for _, opID := range opIdList {
+		for _, op := range s.upgradeKymaOperations {
+			if op.Operation.ID == opID {
+				ops = append(ops, op.Operation)
+			}
+		}
+	}
+
+	for _, opID := range opIdList {
+		for _, op := range s.provisioningOperations {
+			if op.Operation.ID == opID {
+				ops = append(ops, op.Operation)
+			}
+		}
+	}
+
+	for _, opID := range opIdList {
+		for _, op := range s.deprovisioningOperations {
+			if op.Operation.ID == opID {
+				ops = append(ops, op.Operation)
+			}
+		}
+	}
+	if len(ops) == 0 {
+		return nil, dberr.NotFound("operations with ids from list %+q not exist", opIdList)
+	}
+
+	return ops, nil
+}
+
 func (s *operations) GetOperationStats() (internal.OperationStats, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

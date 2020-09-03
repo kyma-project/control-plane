@@ -8,6 +8,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
+	orchestrate "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/kyma"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 
@@ -404,14 +407,13 @@ func main() {
 	// create metrics endpoint
 	router.Handle("/metrics", promhttp.Handler())
 
-	//gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
-	//fatalOnError(err)
-	//runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient, "default", db.Instances(), logs)
-	// TODO(upgrade): uncomment and inject upgradeKymaManager populated with steps
-	//upgradeKymaManager := kyma.NewUpgradeKymaManager(db.Orchestrations(), nil, runtimeResolver, logs)
-	//kymaQueue := process.NewQueue(upgradeKymaManager, logs)
-	//kymaQueue.Run(ctx.Done(), workersAmount)
-	//orchestrationHandler := orchestrate.NewOrchestrationHandler(db.Orchestrations(), kymaQueue, logs)
+	gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
+	fatalOnError(err)
+	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient, "default", db.Instances(), logs)
+	orchestrateKymaManager := kyma.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(), upgradeKymaManager, runtimeResolver, logs)
+	kymaQueue := process.NewQueue(orchestrateKymaManager, logs)
+	kymaQueue.Run(ctx.Done(), workersAmount)
+	orchestrationHandler := orchestrate.NewOrchestrationHandler(db.Orchestrations(), kymaQueue, logs)
 
 	// create OSB API endpoints
 	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
@@ -422,8 +424,8 @@ func main() {
 		route := router.PathPrefix(prefix).Subrouter()
 		broker.AttachRoutes(route, kymaEnvBroker, logger)
 	}
-	// TODO(upgrade): uncomment
-	//orchestrationHandler.AttachRoutes(router)
+
+	orchestrationHandler.AttachRoutes(router)
 	svr := handlers.CustomLoggingHandler(os.Stdout, router, func(writer io.Writer, params handlers.LogFormatterParams) {
 		logs.Infof("Call handled: method=%s url=%s statusCode=%d size=%d", params.Request.Method, params.URL.Path, params.StatusCode, params.Size)
 	})

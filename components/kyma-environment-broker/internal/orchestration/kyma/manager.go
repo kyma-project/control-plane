@@ -6,37 +6,39 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 type upgradeKymaManager struct {
-	db                  storage.Orchestrations
-	resolver            orchestration.RuntimeResolver
-	kymaUpgradeExecutor process.Executor
-	log                 logrus.FieldLogger
+	orchestrationStorage storage.Orchestrations
+	operationStorage     storage.Operations
+	resolver             orchestration.RuntimeResolver
+	kymaUpgradeExecutor  process.Executor
+	log                  logrus.FieldLogger
 }
 
-func NewUpgradeKymaManager(db storage.Orchestrations, kymaUpgradeExecutor process.Executor, resolver orchestration.RuntimeResolver, log logrus.FieldLogger) process.Executor {
+func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, kymaUpgradeExecutor process.Executor, resolver orchestration.RuntimeResolver, log logrus.FieldLogger) process.Executor {
 	return &upgradeKymaManager{
-		db:                  db,
-		resolver:            resolver,
-		kymaUpgradeExecutor: kymaUpgradeExecutor,
-		log:                 log,
+		orchestrationStorage: orchestrationStorage,
+		operationStorage:     operationStorage,
+		resolver:             resolver,
+		kymaUpgradeExecutor:  kymaUpgradeExecutor,
+		log:                  log,
 	}
 }
 
 // Execute reconciles runtimes for a given orchestration
 func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, error) {
 	u.log.Infof("Processing orchestration %s", orchestrationID)
-	o, err := u.db.GetByID(orchestrationID)
+	o, err := u.orchestrationStorage.GetByID(orchestrationID)
 	if err != nil {
 		return u.failOrchestration(o, errors.Wrap(err, "while getting orchestration"))
 	}
@@ -118,8 +120,25 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, dto or
 			return nil, errors.Wrap(err, "while resolving targets")
 		}
 		for _, r := range runtimes {
-			// TODO(upgrade): Insert UpgradeKymaOperation to DB
 			id := uuid.New().String()
+			op := internal.UpgradeKymaOperation{
+				Operation: internal.Operation{
+					ID:          id,
+					Version:     0,
+					CreatedAt:   time.Now(),
+					UpdatedAt:   time.Now(),
+					InstanceID:  r.InstanceID,
+					State:       domain.InProgress,
+					Description: "Operation created",
+				},
+				SubAccountID: r.SubAccountID,
+				RuntimeID:    r.RuntimeID,
+				DryRun:       dto.DryRun,
+			}
+			err := u.operationStorage.InsertUpgradeKymaOperation(op)
+			if err != nil {
+				u.log.Errorf("while inserting UpgradeKymaOperation for runtime id %q", r.RuntimeID)
+			}
 
 			operations = append(operations, internal.RuntimeOperation{
 				Runtime:     r,
@@ -150,7 +169,7 @@ func (u *upgradeKymaManager) updateOrchestration(o *internal.Orchestration, stat
 	}
 	o.State = state
 	o.Description = description
-	err := u.db.Update(*o)
+	err := u.orchestrationStorage.Update(*o)
 	if err != nil {
 		if !dberr.IsNotFound(err) {
 			u.log.Errorf("while updating orchestration: %v", err)
@@ -161,5 +180,25 @@ func (u *upgradeKymaManager) updateOrchestration(o *internal.Orchestration, stat
 }
 
 func (u *upgradeKymaManager) checkOperationsResults(ops []internal.RuntimeOperation) (bool, error) {
+	// get all operation IDs to process
+	var operationIDList []string
+	for _, op := range ops {
+		operationIDList = append(operationIDList, op.OperationID)
+	}
+
+	// get operation status for each processed operation
+	for len(operationIDList) != 0 {
+		operations, err := u.operationStorage.GetAllOperationsForIDs(operationIDList)
+		if err != nil {
+			return false, err
+		}
+		// loop over operations, remove IDs which were succeeded or failed
+		for i, op := range operations {
+			if op.State != domain.InProgress {
+				operationIDList = append(operationIDList[:i], operationIDList[i+1:]...)
+			}
+		}
+	}
+
 	return true, nil
 }

@@ -47,6 +47,11 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeKyma input")
 	}
 
+	if operation.DryRun {
+		log.Infof("[DRY_RUN]: %v", requestInput)
+		return s.operationManager.OperationSucceeded(operation, "dry run succeeded")
+	}
+
 	var provisionerResponse gqlschema.OperationStatus
 	if operation.ProvisionerOperationID == "" {
 		// trigger upgradeRuntime mutation

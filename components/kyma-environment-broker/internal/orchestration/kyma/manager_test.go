@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 
 	"github.com/stretchr/testify/assert"
 
@@ -34,7 +35,7 @@ func TestUpgradeKymaManager_Execute_Empty(t *testing.T) {
 	err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id})
 	require.NoError(t, err)
 
-	svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), nil, resolver, logrus.New())
+	svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, logrus.New())
 
 	// when
 	_, err = svc.Execute(id)
@@ -57,7 +58,7 @@ func TestUpgradeKymaManager_Execute_InProgress(t *testing.T) {
 	err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, State: internal.InProgress})
 	require.NoError(t, err)
 
-	svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), nil, resolver, logrus.New())
+	svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, logrus.New())
 
 	// when
 	_, err = svc.Execute(id)
@@ -90,7 +91,7 @@ func TestUpgradeKymaManager_Execute_DryRun(t *testing.T) {
 	}})
 	require.NoError(t, err)
 
-	svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), nil, resolver, logrus.New())
+	svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, logrus.New())
 
 	// when
 	_, err = svc.Execute(id)
@@ -119,6 +120,26 @@ func TestUpgradeKymaManager_Execute_InProgressWithRuntimeOperations(t *testing.T
 	ops, err := json.Marshal(&operations)
 	require.NoError(t, err)
 
+	upgradeOperation := internal.UpgradeKymaOperation{
+		Operation: internal.Operation{
+			ID:                     id,
+			Version:                0,
+			CreatedAt:              time.Now(),
+			UpdatedAt:              time.Now(),
+			InstanceID:             "",
+			ProvisionerOperationID: "",
+			State:                  domain.Succeeded,
+			Description:            "operation created",
+		},
+		ProvisioningParameters: "",
+		InputCreator:           nil,
+		SubAccountID:           "sub",
+		RuntimeID:              id,
+		DryRun:                 false,
+	}
+	err = store.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+	require.NoError(t, err)
+
 	givenO := internal.Orchestration{
 		OrchestrationID: id,
 		State:           internal.InProgress,
@@ -129,7 +150,7 @@ func TestUpgradeKymaManager_Execute_InProgressWithRuntimeOperations(t *testing.T
 	err = store.Orchestrations().Insert(givenO)
 	require.NoError(t, err)
 
-	svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), &testExecutor{}, resolver, logrus.New())
+	svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), &testExecutor{}, resolver, logrus.New())
 
 	// when
 	_, err = svc.Execute(id)

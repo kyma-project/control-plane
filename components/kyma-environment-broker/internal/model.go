@@ -136,6 +136,7 @@ type UpgradeKymaOperation struct {
 
 	SubAccountID string `json:"-"`
 	RuntimeID    string `json:"runtime_id"`
+	DryRun       bool   `json:"dry_run"`
 }
 
 // Orchestration holds all information about an orchestration.
