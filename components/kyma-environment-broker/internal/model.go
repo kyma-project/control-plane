@@ -17,19 +17,12 @@ type ProvisionInputCreator interface {
 	SetProvisioningParameters(params ProvisioningParameters) ProvisionInputCreator
 	SetLabel(key, value string) ProvisionInputCreator
 	// Deprecated, use: AppendOverrides
-	SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
-	AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
-	AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
-	Create() (gqlschema.ProvisionRuntimeInput, error)
-	EnableOptionalComponent(componentName string) ProvisionInputCreator
-}
-
-type UpgradeKymaInputCreator interface {
-	SetProvisioningParameters(params ProvisioningParametersDTO) UpgradeKymaInputCreator
-	AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) UpgradeKymaInputCreator
-	AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) UpgradeKymaInputCreator
-	EnableOptionalComponent(componentName string) UpgradeKymaInputCreator
-	Create() (gqlschema.UpgradeRuntimeInput, error)
+	SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator
+	AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator
+	AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator
+	CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntimeInput, error)
+	CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInput, error)
+	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 }
 
 type LMSTenant struct {
@@ -115,7 +108,7 @@ type ProvisioningOperation struct {
 	ProvisioningParameters string `json:"provisioning_parameters"`
 
 	// following fields are not stored in the storage
-	InputCreator ProvisionInputCreator `json:"-"`
+	InputCreator ProvisionerInputCreator `json:"-"`
 
 	Avs AvsLifecycleData `json:"avs"`
 
@@ -139,7 +132,7 @@ type UpgradeKymaOperation struct {
 
 	ProvisioningParameters string `json:"provisioning_parameters"`
 
-	InputCreator UpgradeKymaInputCreator `json:"-"`
+	InputCreator ProvisionerInputCreator `json:"-"`
 
 	SubAccountID string `json:"-"`
 	RuntimeID    string `json:"runtime_id"`

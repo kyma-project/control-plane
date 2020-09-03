@@ -334,7 +334,7 @@ func main() {
 		}
 	}
 
-	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient)
+	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, inputFactory)
 	upgradeKymaManager.InitStep(upgradeKymaInit)
 	upgradeKymaSteps := []struct {
 		disabled bool
@@ -342,8 +342,12 @@ func main() {
 		step     upgrade_kyma.Step
 	}{
 		{
-			weight: 1,
-			step:   upgrade_kyma.NewUpgradeKymaStep(db.Operations(), db.Instances(), provisionerClient, cfg.KymaVersion),
+			weight: 2,
+			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(ctx, cli, db.Operations()),
+		},
+		{
+			weight: 10,
+			step:   upgrade_kyma.NewUpgradeKymaStep(db.Operations(), provisionerClient),
 		},
 	}
 	for _, step := range upgradeKymaSteps {
@@ -359,6 +363,9 @@ func main() {
 
 	deprovisionQueue := process.NewQueue(deprovisionManager, logs)
 	deprovisionQueue.Run(ctx.Done(), workersAmount)
+
+	upgradeKymaQueue := process.NewQueue(upgradeKymaManager, logs)
+	upgradeKymaQueue.Run(ctx.Done(), workersAmount)
 
 	if !cfg.DisableProcessOperationsInProgress {
 		err = processOperationsInProgressByType(dbmodel.OperationTypeProvision, db.Operations(), provisionQueue, logs)

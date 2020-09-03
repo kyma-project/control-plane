@@ -1,4 +1,4 @@
-package provisioning
+package upgrade_kyma
 
 import (
 	"context"
@@ -66,7 +66,7 @@ func TestOverridesFromSecretsAndConfigStep_Run(t *testing.T) {
 				Value: "test8abc",
 			},
 		}).Return(nil).Once()
-		operation := internal.ProvisioningOperation{
+		operation := internal.UpgradeKymaOperation{
 			InputCreator:           inputCreatorMock,
 			ProvisioningParameters: `{}`,
 		}
@@ -110,7 +110,7 @@ func TestOverridesFromSecretsAndConfigStep_Run(t *testing.T) {
 				Value: "test8abc",
 			},
 		}).Return(nil).Once()
-		operation := internal.ProvisioningOperation{
+		operation := internal.UpgradeKymaOperation{
 			InputCreator:           inputCreatorMock,
 			ProvisioningParameters: `{"parameters": {"licence_type": "TestDevelopmentAndDemo"}}`,
 		}

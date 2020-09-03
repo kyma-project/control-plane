@@ -13,6 +13,8 @@ import (
 )
 
 //go:generate mockery -name=ComponentListProvider -output=automock -outpkg=automock -case=underscore
+//go:generate mockery -name=CreatorForPlan -output=automock -outpkg=automock -case=underscore
+//go:generate mockery -name=ComponentsDisabler -output=automock -outpkg=automock -case=underscore
 
 type (
 	OptionalComponentService interface {
@@ -36,8 +38,8 @@ type (
 
 	CreatorForPlan interface {
 		IsPlanSupport(planID string) bool
-		NewProvisionInputCreator(parameters internal.ProvisioningParameters) (internal.ProvisionInputCreator, error)
-		NewUpgradeKymaInputCreator(parameters internal.ProvisioningParameters) (internal.UpgradeKymaInputCreator, error)
+		NewProvisionRuntimeInputCreator(parameters internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error)
+		NewUpgradeRuntimeInputCreator(parameters internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error)
 	}
 
 	ComponentListProvider interface {
@@ -83,7 +85,7 @@ func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	}
 }
 
-func (f *InputBuilderFactory) NewProvisionInputCreator(pp internal.ProvisioningParameters) (internal.ProvisionInputCreator, error) {
+func (f *InputBuilderFactory) NewProvisionRuntimeInputCreator(pp internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error) {
 	if !f.IsPlanSupport(pp.PlanID) {
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}
@@ -105,7 +107,7 @@ func (f *InputBuilderFactory) NewProvisionInputCreator(pp internal.ProvisioningP
 
 	initInput, err := f.initProvisionRuntimeInput(provider, pp.Parameters.KymaVersion)
 	if err != nil {
-		return nil, errors.Wrap(err, "while initialization input")
+		return nil, errors.Wrap(err, "while initializing ProvisionRuntimeInput")
 	}
 
 	disabledForPlan, err := f.disabledComponentsProvider.DisabledComponentsPerPlan(pp.PlanID)
@@ -115,7 +117,7 @@ func (f *InputBuilderFactory) NewProvisionInputCreator(pp internal.ProvisioningP
 	disabledComponents := mergeMaps(disabledForPlan, f.disabledComponentsProvider.DisabledForAll())
 
 	return &RuntimeInput{
-		input:                     initInput,
+		provisionRuntimeInput:     initInput,
 		overrides:                 make(map[string][]*gqlschema.ConfigEntryInput, 0),
 		globalOverrides:           make([]*gqlschema.ConfigEntryInput, 0),
 		labels:                    make(map[string]string),
@@ -182,14 +184,14 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 	return provisionInput, nil
 }
 
-func (f *InputBuilderFactory) NewUpgradeKymaInputCreator(pp internal.ProvisioningParameters) (internal.UpgradeKymaInputCreator, error) {
+func (f *InputBuilderFactory) NewUpgradeRuntimeInputCreator(pp internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error) {
 	if !f.IsPlanSupport(pp.PlanID) {
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}
 
 	upgradeKymaInput, err := f.initUpgradeRuntimeInput(f.kymaVersion)
 	if err != nil {
-		return nil, errors.Wrap(err, "while initializing upgrade input")
+		return nil, errors.Wrap(err, "while initializing UpgradeRuntimeInput")
 	}
 
 	disabledForPlan, err := f.disabledComponentsProvider.DisabledComponentsPerPlan(pp.PlanID)
@@ -198,8 +200,8 @@ func (f *InputBuilderFactory) NewUpgradeKymaInputCreator(pp internal.Provisionin
 	}
 	disabledComponents := mergeMaps(disabledForPlan, f.disabledComponentsProvider.DisabledForAll())
 
-	return &UpgradeKymaInput{
-		input:                     upgradeKymaInput,
+	return &RuntimeInput{
+		upgradeRuntimeInput:       upgradeKymaInput,
 		mutex:                     nsync.NewNamedMutex(),
 		overrides:                 make(map[string][]*gqlschema.ConfigEntryInput, 0),
 		globalOverrides:           make([]*gqlschema.ConfigEntryInput, 0),
@@ -216,8 +218,8 @@ func (f *InputBuilderFactory) initUpgradeRuntimeInput(kymaVersion string) (gqlsc
 
 	return gqlschema.UpgradeRuntimeInput{
 		KymaConfig: &gqlschema.KymaConfigInput{
-			Version:       kymaVersion,
-			Components:    f.fullComponentsList.DeepCopy(),
+			Version:    kymaVersion,
+			Components: f.fullComponentsList.DeepCopy(),
 		},
 	}, nil
 }

@@ -58,7 +58,7 @@ func Test_HappyPath(t *testing.T) {
 	op.UpdatedAt = time.Now()
 	op, when, err := step.Run(op, fixLogger())
 	require.NoError(t, err)
-	provisionRuntimeInput, err := op.InputCreator.Create()
+	provisionRuntimeInput, err := op.InputCreator.CreateProvisionRuntimeInput()
 	require.NoError(t, err)
 
 	// then
@@ -302,7 +302,7 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 	return allOverridesFound
 }
 
-func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
+func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 	optComponentsSvc := &inputAutomock.OptionalComponentService{}
 	componentConfigurationInputList := internal.ComponentConfigurationInputList{
 		{
@@ -350,7 +350,7 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 		},
 	}
 
-	creator, err := ibf.NewProvisionInputCreator(pp)
+	creator, err := ibf.NewProvisionRuntimeInputCreator(pp)
 	if err != nil {
 		t.Errorf("cannot create input creator for %q plan", broker.GCPPlanID)
 	}

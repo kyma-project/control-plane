@@ -111,7 +111,7 @@ func (s *CreateRuntimeStep) createProvisionInput(operation internal.Provisioning
 	operation.InputCreator.SetProvisioningParameters(parameters)
 	operation.InputCreator.SetLabel(brokerKeyPrefix+"instance_id", operation.InstanceID)
 	operation.InputCreator.SetLabel(globalKeyPrefix+"subaccount_id", parameters.ErsContext.SubAccountID)
-	request, err := operation.InputCreator.Create()
+	request, err := operation.InputCreator.CreateProvisionRuntimeInput()
 	if err != nil {
 		return request, errors.Wrap(err, "while building input for provisioner")
 	}

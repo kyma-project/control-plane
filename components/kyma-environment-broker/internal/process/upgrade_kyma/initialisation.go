@@ -1,12 +1,13 @@
 package upgrade_kyma
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -26,16 +27,16 @@ type InitialisationStep struct {
 	operationStorage  storage.Provisioning
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
-
-	desiredKymaVersion string
+	inputBuilder      input.CreatorForPlan
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:  process.NewUpgradeKymaOperationManager(os),
 		operationStorage:  os,
 		instanceStorage:   is,
 		provisionerClient: pc,
+		inputBuilder:      b,
 	}
 }
 
@@ -70,13 +71,15 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 	switch {
 	case err == nil:
 		if operation.ProvisionerOperationID == "" {
-			return operation, 0, nil // upgrade not started, go to next step
+			log.Info("provisioner operation ID is empty, initialize upgrade runtime input request")
+			return s.initializeUpgradeRuntimeRequest(operation, log)
 		}
 		log.Infof("runtime being upgraded, check operation status")
 		operation.RuntimeID = instance.RuntimeID
 		return s.checkRuntimeStatus(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
 	case dberr.IsNotFound(err):
-		return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned")
+		log.Info("instance not exist")
+		return s.operationManager.OperationFailed(operation, "instance was not found")
 	default:
 		log.Errorf("unable to get instance from storage: %s", err)
 		return operation, 1 * time.Second, nil
@@ -91,15 +94,19 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 
-	log.Infof("create upgrade input creator for plan ID %q", pp.PlanID)
-	return operation, time.Second, nil
-}
-
-func (s *InitialisationStep) getDesiredKymaVersion() (string, error) {
-	if s.desiredKymaVersion == "" {
-		return "", errors.New("desired Kyma version was not set")
+	log.Infof("create provisioner input creator for plan ID %q", pp.PlanID)
+	creator, err := s.inputBuilder.NewUpgradeRuntimeInputCreator(pp)
+	switch {
+	case err == nil:
+		operation.InputCreator = creator
+		return operation, 0, nil // go to next step
+	case kebError.IsTemporaryError(err):
+		log.Errorf("cannot create upgrade runtime input creator at the moment for plan %s: %s", pp.PlanID, err)
+		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
+	default:
+		log.Errorf("cannot create input creator for plan %s: %s", pp.PlanID, err)
+		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
 	}
-	return s.desiredKymaVersion, nil
 }
 
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {

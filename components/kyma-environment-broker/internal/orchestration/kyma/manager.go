@@ -120,6 +120,7 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, dto or
 		for _, r := range runtimes {
 			// TODO(upgrade): Insert UpgradeKymaOperation to DB
 			id := uuid.New().String()
+
 			operations = append(operations, internal.RuntimeOperation{
 				Runtime:     r,
 				OperationID: id,

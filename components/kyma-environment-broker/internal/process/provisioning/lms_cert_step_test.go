@@ -182,34 +182,38 @@ type simpleInputCreator struct {
 	enabledComponents []string
 }
 
-func (c *simpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionInputCreator {
+func (c *simpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionerInputCreator {
 	c.enabledComponents = append(c.enabledComponents, name)
 	return c
 }
 
-func (c *simpleInputCreator) SetLabel(key, val string) internal.ProvisionInputCreator {
+func (c *simpleInputCreator) SetLabel(key, val string) internal.ProvisionerInputCreator {
 	c.labels[key] = val
 	return c
 }
 
-func (c *simpleInputCreator) SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionInputCreator {
+func (c *simpleInputCreator) SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	return c
 }
 
-func (c *simpleInputCreator) Create() (gqlschema.ProvisionRuntimeInput, error) {
+func (c *simpleInputCreator) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntimeInput, error) {
 	return gqlschema.ProvisionRuntimeInput{}, nil
+}
+
+func (c *simpleInputCreator) CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInput, error) {
+	return gqlschema.UpgradeRuntimeInput{}, nil
 }
 
 func (c *simpleInputCreator) SetProvisioningParameters(params internal.ProvisioningParameters) internal.ProvisionInputCreator {
 	return c
 }
 
-func (c *simpleInputCreator) AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionInputCreator {
+func (c *simpleInputCreator) AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	c.overrides[component] = append(c.overrides[component], overrides...)
 	return c
 }
 
-func (c *simpleInputCreator) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) internal.ProvisionInputCreator {
+func (c *simpleInputCreator) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	return c
 }
 

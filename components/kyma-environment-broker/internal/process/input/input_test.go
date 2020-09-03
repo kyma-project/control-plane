@@ -20,74 +20,150 @@ import (
 )
 
 func TestShouldEnableComponents(t *testing.T) {
-	// given
+	t.Run("When creating ProvisionRuntimeInput", func(t *testing.T) {
+		// given
 
-	// One base component: dex
-	// Two optional components: Kiali and Tracing
-	// The test checks, if EnableOptionalComponent method adds an optional component
-	optionalComponentsDisablers := runtime.ComponentsDisablers{
-		components.Kiali:   runtime.NewGenericComponentDisabler(components.Kiali),
-		components.Tracing: runtime.NewGenericComponentDisabler(components.Tracing),
-	}
-	componentsProvider := &automock.ComponentListProvider{}
-	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
-		Return([]v1alpha1.KymaComponent{
-			{Name: components.Kiali},
-			{Name: components.Tracing},
-			{Name: "dex"},
-		}, nil)
+		// One base component: dex
+		// Two optional components: Kiali and Tracing
+		// The test checks, if EnableOptionalComponent method adds an optional component
+		optionalComponentsDisablers := runtime.ComponentsDisablers{
+			components.Kiali:   runtime.NewGenericComponentDisabler(components.Kiali),
+			components.Tracing: runtime.NewGenericComponentDisabler(components.Tracing),
+		}
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
+			Return([]v1alpha1.KymaComponent{
+				{Name: components.Kiali},
+				{Name: components.Tracing},
+				{Name: "dex"},
+			}, nil)
 
-	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
-	assert.NoError(t, err)
+		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+		assert.NoError(t, err)
 
-	pp := fixProvisioningParameters(broker.AzurePlanID, "")
-	creator, err := builder.NewProvisionInputCreator(pp)
-	require.NoError(t, err)
+		pp := fixProvisioningParameters(broker.AzurePlanID, "")
+		creator, err := builder.NewProvisionRuntimeInputCreator(pp)
+		require.NoError(t, err)
 
-	// when
-	creator.EnableOptionalComponent(components.Kiali)
-	input, err := creator.Create()
-	require.NoError(t, err)
+		// when
+		creator.EnableOptionalComponent(components.Kiali)
+		input, err := creator.CreateProvisionRuntimeInput()
+		require.NoError(t, err)
 
-	// then
-	assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
-		Component: components.Kiali,
+		// then
+		assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
+			Component: components.Kiali,
+		})
+		assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
+			Component: "dex",
+		})
+		assert.Len(t, input.KymaConfig.Components, 2)
 	})
-	assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
-		Component: "dex",
+
+	t.Run("When creating UpgradeRuntimeInput", func(t *testing.T) {
+		// given
+
+		// One base component: dex
+		// Two optional components: Kiali and Tracing
+		// The test checks, if EnableOptionalComponent method adds an optional component
+		optionalComponentsDisablers := runtime.ComponentsDisablers{
+			components.Kiali:   runtime.NewGenericComponentDisabler(components.Kiali),
+			components.Tracing: runtime.NewGenericComponentDisabler(components.Tracing),
+		}
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
+			Return([]v1alpha1.KymaComponent{
+				{Name: components.Kiali},
+				{Name: components.Tracing},
+				{Name: "dex"},
+			}, nil)
+
+		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+		assert.NoError(t, err)
+
+		pp := fixProvisioningParameters(broker.AzurePlanID, "1.14.0")
+		creator, err := builder.NewUpgradeRuntimeInputCreator(pp)
+		require.NoError(t, err)
+
+		// when
+		creator.EnableOptionalComponent(components.Kiali)
+		input, err := creator.CreateUpgradeRuntimeInput()
+		require.NoError(t, err)
+
+		// then
+		assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
+			Component: components.Kiali,
+		})
+		assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
+			Component: "dex",
+		})
+		assert.Len(t, input.KymaConfig.Components, 2)
 	})
-	assert.Len(t, input.KymaConfig.Components, 2)
 }
 func TestShouldDisableComponents(t *testing.T) {
-	// given
-	pp := fixProvisioningParameters(broker.AzurePlanID, "")
+	t.Run("When creating ProvisionRuntimeInput", func(t *testing.T) {
+		// given
+		pp := fixProvisioningParameters(broker.AzurePlanID, "")
 
-	optionalComponentsDisablers := runtime.ComponentsDisablers{}
-	componentsProvider := &automock.ComponentListProvider{}
-	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
-		Return([]v1alpha1.KymaComponent{
-			{Name: components.Kiali},
-			{Name: components.Tracing},
-			{Name: components.Backup},
-		}, nil)
+		optionalComponentsDisablers := runtime.ComponentsDisablers{}
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
+			Return([]v1alpha1.KymaComponent{
+				{Name: components.Kiali},
+				{Name: components.Tracing},
+				{Name: components.Backup},
+			}, nil)
 
-	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
-	assert.NoError(t, err)
-	creator, err := builder.NewProvisionInputCreator(pp)
-	require.NoError(t, err)
+		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+		assert.NoError(t, err)
+		creator, err := builder.NewProvisionRuntimeInputCreator(pp)
+		require.NoError(t, err)
 
-	// when
-	input, err := creator.Create()
-	require.NoError(t, err)
+		// when
+		input, err := creator.CreateProvisionRuntimeInput()
+		require.NoError(t, err)
 
-	// then
-	assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
-		Component: components.Tracing,
+		// then
+		assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
+			Component: components.Tracing,
+		})
+		assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
+			Component: components.Kiali,
+		})
+		assert.Len(t, input.KymaConfig.Components, 2)
 	})
-	assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
-		Component: components.Kiali,
+
+	t.Run("When creating UpgradeRuntimeInput", func(t *testing.T) {
+		// given
+		pp := fixProvisioningParameters(broker.AzurePlanID, "1.14.0")
+
+		optionalComponentsDisablers := runtime.ComponentsDisablers{}
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
+			Return([]v1alpha1.KymaComponent{
+				{Name: components.Kiali},
+				{Name: components.Tracing},
+				{Name: components.Backup},
+			}, nil)
+
+		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+		assert.NoError(t, err)
+		creator, err := builder.NewUpgradeRuntimeInputCreator(pp)
+		require.NoError(t, err)
+
+		// when
+		input, err := creator.CreateUpgradeRuntimeInput()
+		require.NoError(t, err)
+
+		// then
+		assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
+			Component: components.Tracing,
+		})
+		assertComponentExists(t, input.KymaConfig.Components, gqlschema.ComponentConfigurationInput{
+			Component: components.Kiali,
+		})
+		assert.Len(t, input.KymaConfig.Components, 2)
 	})
-	assert.Len(t, input.KymaConfig.Components, 2)
 }
 
 func TestDisabledComponentsForPlanNotExist(t *testing.T) {
@@ -106,13 +182,11 @@ func TestDisabledComponentsForPlanNotExist(t *testing.T) {
 	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 	assert.NoError(t, err)
 	// when
-	_, err = builder.NewProvisionInputCreator(pp)
+	_, err = builder.NewProvisionRuntimeInputCreator(pp)
 	require.Error(t, err)
 }
 
 func TestInputBuilderFactoryOverrides(t *testing.T) {
-	pp := fixProvisioningParameters(broker.AzurePlanID, "")
-
 	t.Run("should append overrides for the same components multiple times", func(t *testing.T) {
 		// given
 		var (
@@ -127,12 +201,14 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 				{Key: "key-4", Value: "matata", Secret: ptr.Bool(true)},
 			}
 		)
+
+		pp := fixProvisioningParameters(broker.AzurePlanID, "")
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
 		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
-		creator, err := builder.NewProvisionInputCreator(pp)
+		creator, err := builder.NewProvisionRuntimeInputCreator(pp)
 		require.NoError(t, err)
 
 		// when
@@ -141,7 +217,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 			AppendOverrides("keb", overridesA2)
 
 		// then
-		out, err := creator.Create()
+		out, err := creator.CreateProvisionRuntimeInput()
 		require.NoError(t, err)
 
 		overriddenComponent, found := find(out.KymaConfig.Components, "keb")
@@ -150,7 +226,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		assertContainsAllOverrides(t, overriddenComponent.Configuration, overridesA1, overridesA1)
 	})
 
-	t.Run("should append global overrides", func(t *testing.T) {
+	t.Run("should append global overrides for ProvisionRuntimeInput", func(t *testing.T) {
 		// given
 		var (
 			optComponentsSvc = dummyOptionalComponentServiceMock(fixKymaComponentList())
@@ -167,9 +243,10 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
+		pp := fixProvisioningParameters(broker.AzurePlanID, "")
 		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
-		creator, err := builder.NewProvisionInputCreator(pp)
+		creator, err := builder.NewProvisionRuntimeInputCreator(pp)
 		require.NoError(t, err)
 
 		// when
@@ -178,7 +255,42 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 			AppendGlobalOverrides(overridesA2)
 
 		// then
-		out, err := creator.Create()
+		out, err := creator.CreateProvisionRuntimeInput()
+		require.NoError(t, err)
+
+		assertContainsAllOverrides(t, out.KymaConfig.Configuration, overridesA1, overridesA1)
+	})
+
+	t.Run("should append global overrides for UpgradeRuntimeInput", func(t *testing.T) {
+		// given
+		var (
+			optComponentsSvc = dummyOptionalComponentServiceMock(fixKymaComponentList())
+
+			overridesA1 = []*gqlschema.ConfigEntryInput{
+				{Key: "key-1", Value: "pico"},
+				{Key: "key-2", Value: "bello"},
+			}
+			overridesA2 = []*gqlschema.ConfigEntryInput{
+				{Key: "key-3", Value: "hakuna"},
+				{Key: "key-4", Value: "matata", Secret: ptr.Bool(true)},
+			}
+		)
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+
+		pp := fixProvisioningParameters(broker.AzurePlanID, "1.14.0")
+		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+		assert.NoError(t, err)
+		creator, err := builder.NewUpgradeRuntimeInputCreator(pp)
+		require.NoError(t, err)
+
+		// when
+		creator.
+			AppendGlobalOverrides(overridesA1).
+			AppendGlobalOverrides(overridesA2)
+
+		// then
+		out, err := creator.CreateUpgradeRuntimeInput()
 		require.NoError(t, err)
 
 		assertContainsAllOverrides(t, out.KymaConfig.Configuration, overridesA1, overridesA1)
@@ -214,7 +326,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	pp := fixProvisioningParameters(broker.AzurePlanID, "")
 
 	// when
-	builder, err := factory.NewProvisionInputCreator(pp)
+	builder, err := factory.NewProvisionRuntimeInputCreator(pp)
 
 	// then
 	require.NoError(t, err)
@@ -227,7 +339,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 			Purpose:      ptr.String("development"),
 		}).
 		SetLabel("label1", "value1").
-		AppendOverrides("keb", kebOverrides).Create()
+		AppendOverrides("keb", kebOverrides).CreateProvisionRuntimeInput()
 
 	// then
 	require.NoError(t, err)

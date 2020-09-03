@@ -115,8 +115,8 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	}
 
-	log.Infof("create input creator for %q plan ID", pp.PlanID)
-	creator, err := s.inputBuilder.NewProvisionInputCreator(pp)
+	log.Infof("create provisioner input creator for %q plan ID", pp.PlanID)
+	creator, err := s.inputBuilder.NewProvisionRuntimeInputCreator(pp)
 	switch {
 	case err == nil:
 		operation.InputCreator = creator
