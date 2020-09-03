@@ -3,9 +3,10 @@ title: Check orchestration status
 type: Tutorials
 ---
 
-This tutorial shows how to check the orchestration status for the cluster and Kyma orchestrations.
+This tutorial shows how to check the orchestration status for the cluster and Kyma orchestrations. You can either:
+- Fetch a single orchestration.
+- Fetch all orchestrations.
 
-There are two ways to fetch the orchestration status.
 
 ## Fetch a single orchestration
 
@@ -15,7 +16,7 @@ There are two ways to fetch the orchestration status.
    export ORCHESTRATION_ID={OBTAINED_ORCHESTRATION_ID}
    ```
 
-2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](#details-authorization) to verify that orchestration succeeded.
+2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](#details-authorization) to verify that the orchestration succeeded.
 
    ```bash
    curl --request GET "https://$BROKER_URL/orchestrations/$ORCHESTRATION_ID--header "$AUTHORIZATION_HEADER""
@@ -62,13 +63,13 @@ A successful call returns the orchestration object:
 
 ## Fetch all orchestrations
 
-1. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](#details-authorization) to verify that orchestration succeeded.
+1. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](#details-authorization) to verify that the orchestration succeeded.
 
    ```bash
    curl --request GET "https://$BROKER_URL/orchestrations --header "$AUTHORIZATION_HEADER""
    ```
 
-A successful call returns the orchestration a list of orchestrations:
+A successful call returns a list of all orchestrations:
 
    ```json
     [{

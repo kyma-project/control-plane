@@ -8,7 +8,7 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
 ## Prerequisites
 
 - Compass with:
-  * Runtime Provisioner [configured](/control-plane/runtime-provisioner/#tutorials-provision-clusters-through-gardener) for Azure provider
+  * Runtime Provisioner [configured](/control-plane/runtime-provisioner/#tutorials-provision-clusters-through-gardener) for Azure
   * Kyma Environment Broker configured and chosen [overrides](#details-set-overrides-for-kyma-runtime) set up
 
 ## Steps
@@ -19,7 +19,7 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
    export RUNTIME_ID={RUNTIME_ID}
    ```
 
-2. Get the [access token](#details-authorization). Export this variable based on the token you got from the OAuth client:
+2. [Get the access token](#details-authorization). Export this variable based on the token you got from the OAuth client:
 
    ```bash
    export AUTHORIZATION_HEADER="Authorization: Bearer $ACCESS_TOKEN"
@@ -27,7 +27,7 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
 
 3. Make a call to the Kyma Environment Broker to orchestrate the upgrade.
 
->**NOTE:** **dry** parameter specified to in the request body to `true` causes that upgrade is executed in a fake mode. It means that actions are not executed against selected runtimes but the Orchestration status is still available.
+>**NOTE:** The **dry** parameter specified in the request body is set to `true`. This causes that the upgrade is executed in a fake mode. It means that all actions are not executed against selected Runtimes but the Orchestration status is still available.
 
    ```bash
    curl --request POST "https://$BROKER_URL/upgrade/kyma" \
@@ -51,4 +51,4 @@ A successful call returns the orchestration ID:
    }
    ```
 
-4. Check the operation status as described [here](#tutorials-check-orchestration-status).
+4. [Check the operation status](#tutorials-check-orchestration-status).
