@@ -12,6 +12,7 @@ spec:
       allowHeaders:
       - Authorization
       - Content-Type
+      - X-Broker-API-Version
       allowMethods: ["GET", "PUT", "DELETE"]
       allowOrigin: ["*"]
     match:
