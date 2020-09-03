@@ -77,7 +77,7 @@ func (f *fakeShootsInterface) DeleteCollection(_ context.Context, _ metav1.Delet
 	return nil
 }
 
-func (f *fakeShootsInterface) Get(ctx context.Context, name string, options metav1.GetOptions) (*gardener_types.Shoot, error) {
+func (f *fakeShootsInterface) Get(name string, options metav1.GetOptions) (*gardener_types.Shoot, error) {
 	obj, err := f.client.Get(ctx, name, options)
 	if err != nil {
 		return nil, err
