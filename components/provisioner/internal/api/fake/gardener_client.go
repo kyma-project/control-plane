@@ -1,6 +1,7 @@
 package fake
 
 import (
+	"context"
 	"testing"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -29,7 +30,7 @@ type fakeShootsInterface struct {
 	client dynamic.ResourceInterface
 }
 
-func (f fakeShootsInterface) Create(shoot *gardener_types.Shoot) (*gardener_types.Shoot, error) {
+func (f fakeShootsInterface) Create(ctx context.Context, shoot *gardener_types.Shoot, options metav1.CreateOptions) (*gardener_types.Shoot, error) {
 	addTypeMeta(shoot)
 
 	shoot.SetFinalizers([]string{"finalizer"})
@@ -42,7 +43,7 @@ func (f fakeShootsInterface) Create(shoot *gardener_types.Shoot) (*gardener_type
 		return nil, err
 	}
 
-	create, err := f.client.Create(unstructuredShoot, metav1.CreateOptions{})
+	create, err := f.client.Create(ctx, unstructuredShoot, options)
 	if err != nil {
 		return nil, err
 	}
@@ -50,13 +51,13 @@ func (f fakeShootsInterface) Create(shoot *gardener_types.Shoot) (*gardener_type
 	return fromUnstructured(create)
 }
 
-func (f *fakeShootsInterface) Update(shoot *gardener_types.Shoot) (*gardener_types.Shoot, error) {
+func (f *fakeShootsInterface) Update(ctx context.Context, shoot *gardener_types.Shoot) (*gardener_types.Shoot, error) {
 	obj, err := toUnstructured(shoot)
 
 	if err != nil {
 		return nil, err
 	}
-	updated, err := f.client.Update(obj, metav1.UpdateOptions{})
+	updated, err := f.client.Update(context.Background(), obj, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -64,28 +65,28 @@ func (f *fakeShootsInterface) Update(shoot *gardener_types.Shoot) (*gardener_typ
 	return fromUnstructured(updated)
 }
 
-func (f *fakeShootsInterface) UpdateStatus(*gardener_types.Shoot) (*gardener_types.Shoot, error) {
+func (f *fakeShootsInterface) UpdateStatus(_ context.Context, _ *gardener_types.Shoot) (*gardener_types.Shoot, error) {
 	return nil, nil
 }
 
-func (f *fakeShootsInterface) Delete(name string, options *metav1.DeleteOptions) error {
-	return f.client.Delete(name, options)
+func (f *fakeShootsInterface) Delete(ctx context.Context, name string, options metav1.DeleteOptions) error {
+	return f.client.Delete(ctx, name, options)
 }
 
-func (f *fakeShootsInterface) DeleteCollection(_ *metav1.DeleteOptions, _ metav1.ListOptions) error {
+func (f *fakeShootsInterface) DeleteCollection(_ context.Context, _ metav1.DeleteOptions, _ metav1.ListOptions) error {
 	return nil
 }
 
-func (f *fakeShootsInterface) Get(name string, options metav1.GetOptions) (*gardener_types.Shoot, error) {
-	obj, err := f.client.Get(name, options)
+func (f *fakeShootsInterface) Get(ctx context.Context, name string, options metav1.GetOptions) (*gardener_types.Shoot, error) {
+	obj, err := f.client.Get(ctx, name, options)
 	if err != nil {
 		return nil, err
 	}
 
 	return fromUnstructured(obj)
 }
-func (f *fakeShootsInterface) List(opts metav1.ListOptions) (*gardener_types.ShootList, error) {
-	list, err := f.client.List(opts)
+func (f *fakeShootsInterface) List(ctx context.Context, options metav1.ListOptions) (*gardener_types.ShootList, error) {
+	list, err := f.client.List(ctx, options)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package oauth
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -47,7 +48,7 @@ func (c *oauthClient) GetAuthorizationToken() (Token, apperrors.AppError) {
 }
 
 func (c *oauthClient) getCredentials() (credentials, apperrors.AppError) {
-	secret, err := c.secretsClient.Get(c.secretName, metav1.GetOptions{})
+	secret, err := c.secretsClient.Get(context.Background(), c.secretName, metav1.GetOptions{})
 
 	if err != nil {
 		return credentials{}, util.K8SErrorToAppError(err)

@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -77,7 +78,7 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 		return operations.StageResult{}, fmt.Errorf("error: failed to create Compass Connection client: %s", err.Error())
 	}
 
-	compassConnCR, err := compassConnClient.Get(defaultCompassConnectionName, v1meta.GetOptions{})
+	compassConnCR, err := compassConnClient.Get(context.Background(), defaultCompassConnectionName, v1meta.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			logger.Infof("Compass Connection not yet found on cluster")
