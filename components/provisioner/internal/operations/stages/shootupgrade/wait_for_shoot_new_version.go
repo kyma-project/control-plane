@@ -1,6 +1,7 @@
 package shootupgrade
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -37,7 +38,7 @@ func (s *WaitForShootNewVersionStep) Run(cluster model.Cluster, operation model.
 
 	gardenerConfig := cluster.ClusterConfig
 
-	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
+	shoot, err := s.gardenerClient.Get(context.Background(), gardenerConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err
 	}

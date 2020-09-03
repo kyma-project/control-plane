@@ -1,6 +1,7 @@
 package deprovisioning
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -60,7 +61,7 @@ func (s *WaitForClusterDeletionStep) Run(cluster model.Cluster, operation model.
 }
 
 func (s *WaitForClusterDeletionStep) shootExists(gardenerClusterName string, logger logrus.FieldLogger) (bool, error) {
-	_, err := s.gardenerClient.Get(gardenerClusterName, v1.GetOptions{})
+	_, err := s.gardenerClient.Get(context.Background(), gardenerClusterName, v1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return false, nil
