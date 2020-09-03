@@ -95,7 +95,7 @@ func (f *InputBuilderFactory) Create(pp internal.ProvisioningParameters) (intern
 		provider = &cloudProvider.AzureLiteInput{}
 	case broker.TrialPlanID:
 		provider = f.forTrialPlan(pp.Parameters.Provider)
-	// insert cases for other providers like AWS or GCP
+		// insert cases for other providers like AWS or GCP
 	default:
 		return nil, errors.Errorf("case with plan %s is not supported", pp.PlanID)
 	}
@@ -166,9 +166,12 @@ func (f *InputBuilderFactory) initInput(provider HyperscalerInputProvider, kymaV
 
 	provisionInput.ClusterConfig.GardenerConfig.KubernetesVersion = f.config.KubernetesVersion
 	provisionInput.ClusterConfig.GardenerConfig.Purpose = &f.config.DefaultGardenerShootPurpose
-	provisionInput.ClusterConfig.GardenerConfig.MachineImage = &f.config.MachineImage
-	provisionInput.ClusterConfig.GardenerConfig.MachineImageVersion = &f.config.MachineImageVersion
-
+	if f.config.MachineImage != "" {
+		provisionInput.ClusterConfig.GardenerConfig.MachineImage = &f.config.MachineImage
+	}
+	if f.config.MachineImageVersion != "" {
+		provisionInput.ClusterConfig.GardenerConfig.MachineImageVersion = &f.config.MachineImageVersion
+	}
 	return provisionInput, nil
 }
 
