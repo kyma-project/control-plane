@@ -176,7 +176,7 @@ func (r readSession) GetAllOperationsForIDs(opIDlist []string) ([]dbmodel.Operat
 	_, err := r.session.
 		Select("*").
 		From(postsql.OperationTableName).
-		Where("operation_id IN ?", opIDlist).
+		Where("id IN ?", opIDlist).
 		Load(&operations)
 	if err != nil {
 		return nil, dberr.Internal("Failed to get operations: %s", err)
