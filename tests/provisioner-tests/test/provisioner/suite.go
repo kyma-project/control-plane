@@ -26,7 +26,7 @@ import (
 	v1client "k8s.io/client-go/kubernetes/typed/core/v1"
 
 	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit"
-	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/compass/provisioner"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/control-plane/provisioner"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
