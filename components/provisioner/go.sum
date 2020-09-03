@@ -777,10 +777,6 @@ github.com/prometheus/procfs v0.0.8/go.mod h1:7Qr8sr6344vo1JqZ6HhLceV9o3AJ1Ff+Gx
 github.com/prometheus/procfs v0.0.11 h1:DhHlBtkHWPYi8O2y31JkK0TF+DGM+51OopZjH/Ia5qI=
 github.com/prometheus/procfs v0.0.11/go.mod h1:lV6e/gmhEcM9IjHGsFOCxxuZ+z1YqCvr4OA4YeYWdaU=
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
-github.com/rafalpotempa/control-plane v0.0.0-20200902112740-2b317b8e47b2 h1:64cbJucmV5Wiqm5M8L5rmy9vB2y5D2+0fl38nDZ8mPE=
-github.com/rafalpotempa/control-plane v0.0.0-20200902112740-2b317b8e47b2/go.mod h1:R3Ag4tuIa4YqYG5bWJUOu+H+tMpcwLyqoyPMExga4AA=
-github.com/rafalpotempa/control-plane v0.0.0-20200903070332-bbc2bfc01f4f h1:u+owyaXGH2CJ6aF2g5L/q2KGX5fSTnkO6Q56Y7xR0tM=
-github.com/rafalpotempa/control-plane v0.0.0-20200903070332-bbc2bfc01f4f/go.mod h1:R3Ag4tuIa4YqYG5bWJUOu+H+tMpcwLyqoyPMExga4AA=
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/robfig/cron v1.2.0/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=

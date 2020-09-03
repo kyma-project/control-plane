@@ -21,7 +21,7 @@ type DeleteClusterStep struct {
 //go:generate mockery -name=GardenerClient
 type GardenerClient interface {
 	Get(ctx context.Context, name string, options v1.GetOptions) (*gardener_types.Shoot, error)
-	Delete(ctx context.Context, name string, options *v1.DeleteOptions) error
+	Delete(ctx context.Context, name string, options v1.DeleteOptions) error
 }
 
 func NewDeleteClusterStep(gardenerClient GardenerClient, nextStep model.OperationStage, timeLimit time.Duration) *DeleteClusterStep {
