@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -16,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUpgradeKymaOrchestration_Execute_Empty(t *testing.T) {
+func TestUpgradeKymaManager_Execute_Empty(t *testing.T) {
 	// given
 	store := storage.NewMemoryStorage()
 
@@ -37,9 +39,14 @@ func TestUpgradeKymaOrchestration_Execute_Empty(t *testing.T) {
 	// when
 	_, err = svc.Execute(id)
 	require.NoError(t, err)
+
+	o, err := store.Orchestrations().GetByID(id)
+	require.NoError(t, err)
+
+	assert.Equal(t, internal.Succeeded, o.State)
 }
 
-func TestUpgradeKymaOrchestration_Execute_InProgress(t *testing.T) {
+func TestUpgradeKymaManager_Execute_InProgress(t *testing.T) {
 	// given
 	store := storage.NewMemoryStorage()
 
@@ -55,9 +62,47 @@ func TestUpgradeKymaOrchestration_Execute_InProgress(t *testing.T) {
 	// when
 	_, err = svc.Execute(id)
 	require.NoError(t, err)
+
+	o, err := store.Orchestrations().GetByID(id)
+	require.NoError(t, err)
+
+	assert.Equal(t, internal.Succeeded, o.State)
 }
 
-func TestUpgradeKymaOrchestration_Execute_InProgressWithRuntimeOperations(t *testing.T) {
+func TestUpgradeKymaManager_Execute_DryRun(t *testing.T) {
+	// given
+	store := storage.NewMemoryStorage()
+
+	resolver := &automock.RuntimeResolver{}
+	defer resolver.AssertExpectations(t)
+	resolver.On("Resolve", internal.TargetSpec{}).Return([]internal.Runtime{}, nil).Once()
+
+	p := orchestration.Parameters{
+		DryRun: true,
+	}
+	serialized, err := json.Marshal(p)
+	require.NoError(t, err)
+
+	id := "id"
+	err = store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, Parameters: sql.NullString{
+		String: string(serialized),
+		Valid:  true,
+	}})
+	require.NoError(t, err)
+
+	svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), nil, resolver, logrus.New())
+
+	// when
+	_, err = svc.Execute(id)
+	require.NoError(t, err)
+
+	o, err := store.Orchestrations().GetByID(id)
+	require.NoError(t, err)
+
+	assert.Equal(t, internal.Succeeded, o.State)
+}
+
+func TestUpgradeKymaManager_Execute_InProgressWithRuntimeOperations(t *testing.T) {
 	// given
 	store := storage.NewMemoryStorage()
 

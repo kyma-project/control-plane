@@ -371,12 +371,14 @@ func main() {
 	// create metrics endpoint
 	router.Handle("/metrics", promhttp.Handler())
 
-	// TODO(upgrade): uncomment and inject upgradeKymaManager populated with steps
 	//gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
 	//fatalOnError(err)
 	//runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient, "default", db.Instances(), logs)
-	//kymaUpgradeOrchestration := kyma.NewUpgradeKymaOrchestration(db.Orchestration(), nil, runtimeResolver, logs)
-	//orchestrationHandler := orchestrate.NewOrchestrationHandler(db.Orchestration(), kymaUpgradeOrchestration, logs)
+	// TODO(upgrade): uncomment and inject upgradeKymaManager populated with steps
+	//upgradeKymaManager := kyma.NewUpgradeKymaManager(db.Orchestrations(), nil, runtimeResolver, logs)
+	//kymaQueue := process.NewQueue(upgradeKymaManager, logs)
+	//kymaQueue.Run(ctx.Done(), workersAmount)
+	//orchestrationHandler := orchestrate.NewOrchestrationHandler(db.Orchestrations(), kymaQueue, logs)
 
 	// create OSB API endpoints
 	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
@@ -386,9 +388,9 @@ func main() {
 	} {
 		route := router.PathPrefix(prefix).Subrouter()
 		broker.AttachRoutes(route, kymaEnvBroker, logger)
-		// TODO(upgrade)
-		//orchestrationHandler.AttachRoutes(router)
 	}
+	// TODO(upgrade): uncomment
+	//orchestrationHandler.AttachRoutes(router)
 	svr := handlers.CustomLoggingHandler(os.Stdout, router, func(writer io.Writer, params handlers.LogFormatterParams) {
 		logs.Infof("Call handled: method=%s url=%s statusCode=%d size=%d", params.Request.Method, params.URL.Path, params.StatusCode, params.Size)
 	})
