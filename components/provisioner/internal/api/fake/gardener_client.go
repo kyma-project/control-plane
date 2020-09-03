@@ -51,13 +51,13 @@ func (f fakeShootsInterface) Create(ctx context.Context, shoot *gardener_types.S
 	return fromUnstructured(create)
 }
 
-func (f *fakeShootsInterface) Update(ctx context.Context, shoot *gardener_types.Shoot) (*gardener_types.Shoot, error) {
+func (f *fakeShootsInterface) Update(ctx context.Context, shoot *gardener_types.Shoot, options metav1.UpdateOptions) (*gardener_types.Shoot, error) {
 	obj, err := toUnstructured(shoot)
 
 	if err != nil {
 		return nil, err
 	}
-	updated, err := f.client.Update(context.Background(), obj, metav1.UpdateOptions{})
+	updated, err := f.client.Update(context.Background(), obj, options)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (f *fakeShootsInterface) Update(ctx context.Context, shoot *gardener_types.
 	return fromUnstructured(updated)
 }
 
-func (f *fakeShootsInterface) UpdateStatus(_ context.Context, _ *gardener_types.Shoot) (*gardener_types.Shoot, error) {
+func (f *fakeShootsInterface) UpdateStatus(_ context.Context, _ *gardener_types.Shoot, _ metav1.UpdateOptions) (*gardener_types.Shoot, error) {
 	return nil, nil
 }
 
@@ -93,10 +93,10 @@ func (f *fakeShootsInterface) List(ctx context.Context, options metav1.ListOptio
 
 	return listFromUnstructured(list)
 }
-func (f *fakeShootsInterface) Watch(_ metav1.ListOptions) (watch.Interface, error) {
+func (f *fakeShootsInterface) Watch(_ context.Context, _ metav1.ListOptions) (watch.Interface, error) {
 	return nil, nil
 }
-func (f *fakeShootsInterface) Patch(_ context.Context, _ string, pt types.PatchType, _ []byte, _ ...string) (result *gardener_types.Shoot, err error) {
+func (f *fakeShootsInterface) Patch(_ context.Context, _ string, _ types.PatchType, _ []byte, _ metav1.PatchOptions, _ ...string) (result *gardener_types.Shoot, err error) {
 	return nil, nil
 }
 

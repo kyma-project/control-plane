@@ -43,4 +43,4 @@ replace (
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible => k8s.io/client-go v0.18.8
 )
 
-replace github.com/kyma-project/control-plane => github.com/rafalpotempa/control-plane v0.0.0-20200903081031-4a946aa926db
+replace github.com/kyma-project/control-plane => github.com/rafalpotempa/control-plane v0.0.0-20200903082609-3c784a9a689c

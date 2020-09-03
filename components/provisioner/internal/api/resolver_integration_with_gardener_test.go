@@ -181,8 +181,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			runtimeInput := config.provisioningInput.runtimeInput
 			upgradeShootInput := config.upgradeShootInput
 
-			fakeK8sClient.CoreV1().Secrets(compassSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
-			fakeK8sClient.CoreV1().ConfigMaps(compassSystemNamespace).Delete(runtimeConfig.AgentConfigurationSecretName, &metav1.DeleteOptions{})
+			fakeK8sClient.CoreV1().Secrets(compassSystemNamespace).Delete(context.Background(), runtimeConfig.AgentConfigurationSecretName, metav1.DeleteOptions{})
+			fakeK8sClient.CoreV1().ConfigMaps(compassSystemNamespace).Delete(context.Background(), runtimeConfig.AgentConfigurationSecretName, metav1.DeleteOptions{})
 
 			directorServiceMock.Calls = nil
 			directorServiceMock.ExpectedCalls = nil
@@ -232,7 +232,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			// wait for Shoot to update
 			time.Sleep(2 * syncPeriod)
 
-			list, err := shootInterface.List(metav1.ListOptions{})
+			list, err := shootInterface.List(context.Background(), metav1.ListOptions{})
 			require.NoError(t, err)
 
 			shoot := &list.Items[0]
@@ -250,7 +250,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			// wait for Shoot to update
 			time.Sleep(2 * waitPeriod)
 
-			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
+			shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
 			require.NoError(t, err)
 			assert.Equal(t, runtimeID, shoot.Annotations["kcp.provisioner.kyma-project.io/runtime-id"])
 			assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
@@ -336,7 +336,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			// when
 			// wait for Shoot to update
 			time.Sleep(waitPeriod)
-			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
+			shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
 
 			// then
 			require.NoError(t, err)
@@ -346,7 +346,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			//when Deprovisioning
 			shoot = removeFinalizers(t, shootInterface, shoot)
 			time.Sleep(4 * waitPeriod)
-			shoot, err = shootInterface.Get(shoot.Name, metav1.GetOptions{})
+			shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
 
 			// then
 			require.Error(t, err)
@@ -366,7 +366,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		installationServiceMock.Calls = nil
 		installationServiceMock.ExpectedCalls = nil
 
-		_, err := shootInterface.Create(&gardener_types.Shoot{
+		_, err := shootInterface.Create(context.Background(), &gardener_types.Shoot{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "shoot-with-unknown-id",
 				Annotations: map[string]string{
@@ -378,10 +378,10 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			Status: gardener_types.ShootStatus{
 				LastOperation: &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded},
 			},
-		})
+		}, metav1.CreateOptions{})
 		require.NoError(t, err)
 
-		_, err = shootInterface.Create(&gardener_types.Shoot{
+		_, err = shootInterface.Create(context.Background(), &gardener_types.Shoot{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "shoot-without-id",
 			},
@@ -389,7 +389,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			Status: gardener_types.ShootStatus{
 				LastOperation: &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded},
 			},
-		})
+		}, metav1.CreateOptions{})
 		require.NoError(t, err)
 
 		// when
@@ -432,7 +432,7 @@ func testDeprovisioningTimeouts() queue.DeprovisioningTimeouts {
 func removeFinalizers(t *testing.T, shootInterface gardener_apis.ShootInterface, shoot *gardener_types.Shoot) *gardener_types.Shoot {
 	shoot.SetFinalizers([]string{})
 
-	update, err := shootInterface.Update(shoot)
+	update, err := shootInterface.Update(context.Background(), shoot, metav1.UpdateOptions{})
 	require.NoError(t, err)
 	return update
 }
@@ -450,7 +450,7 @@ func simulateDNSAdmissionPluginRun(shoot *gardener_types.Shoot) {
 func setShootStatusToSuccessful(t *testing.T, f gardener_apis.ShootInterface, shoot *gardener_types.Shoot) {
 	shoot.Status.LastOperation = &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded}
 
-	_, err := f.Update(shoot)
+	_, err := f.Update(context.Background(), shoot, metav1.UpdateOptions{})
 
 	require.NoError(t, err)
 }
@@ -463,7 +463,7 @@ func createKubeconfigSecret(t *testing.T, s v1core.SecretInterface, shootName st
 		},
 		Data: map[string][]byte{"kubeconfig": []byte(mockedKubeconfig)},
 	}
-	_, err := s.Create(secret)
+	_, err := s.Create(context.Background(), secret, metav1.CreateOptions{})
 
 	require.NoError(t, err)
 }

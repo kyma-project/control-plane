@@ -1,6 +1,7 @@
 package gardener
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"testing"
@@ -55,7 +56,7 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		require.NoError(t, apperr)
 
 		// then
-		shoot, err := shootClient.Get(clusterName, v1.GetOptions{})
+		shoot, err := shootClient.Get(context.Background(), clusterName, v1.GetOptions{})
 		require.NoError(t, err)
 		assertAnnotation(t, shoot, operationIDAnnotation, operationId)
 		assertAnnotation(t, shoot, runtimeIDAnnotation, runtimeId)
@@ -113,7 +114,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		assert.Equal(t, runtimeId, operation.ClusterID)
 		assert.Equal(t, model.Deprovision, operation.Type)
 
-		_, err := shootClient.Get(clusterName, v1.GetOptions{})
+		_, err := shootClient.Get(context.Background(), clusterName, v1.GetOptions{})
 		assert.NoError(t, err)
 	})
 
@@ -142,7 +143,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		assert.Equal(t, runtimeId, operation.ClusterID)
 		assert.Equal(t, model.Deprovision, operation.Type)
 
-		_, err := shootClient.Get(clusterName, v1.GetOptions{})
+		_, err := shootClient.Get(context.Background(), clusterName, v1.GetOptions{})
 		assert.Error(t, err)
 		assert.True(t, errors.IsNotFound(err))
 	})
@@ -187,7 +188,7 @@ func TestGardenerProvisioner_UpgradeCluster(t *testing.T) {
 		require.NoError(t, apperr)
 
 		// then
-		shoot, err := shootClient.Get(clusterName, v1.GetOptions{})
+		shoot, err := shootClient.Get(context.Background(), clusterName, v1.GetOptions{})
 		require.NoError(t, err)
 
 		assert.Equal(t, expectedShoot, shoot)
