@@ -55,7 +55,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 	var provisionerResponse gqlschema.OperationStatus
 	if operation.ProvisionerOperationID == "" {
 		// trigger upgradeRuntime mutation
-		provisionerResponse, err := s.provisionerClient.UpgradeRuntime(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID, requestInput)
+		provisionerResponse, err := s.provisionerClient.UpgradeRuntime(pp.ErsContext.GlobalAccountID, operation.RuntimeID, requestInput)
 		if err != nil {
 			log.Errorf("call to provisioner failed: %s", err)
 			return operation, 5 * time.Second, nil

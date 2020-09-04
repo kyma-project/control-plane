@@ -38,7 +38,7 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	assert.NoError(t, err)
 
 	provisionerClient := &provisionerAutomock.Client{}
-	provisionerClient.On("UpgradeRuntime", fixGlobalAccountID, fixSubAccountID, gqlschema.UpgradeRuntimeInput{
+	provisionerClient.On("UpgradeRuntime", fixGlobalAccountID, fixRuntimeID, gqlschema.UpgradeRuntimeInput{
 		KymaConfig: &gqlschema.KymaConfigInput{
 			Version: kymaVersion,
 			Components: []*gqlschema.ComponentConfigurationInput{
@@ -85,6 +85,7 @@ func fixUpgradeKymaOperationWithInputCreator(t *testing.T) internal.UpgradeKymaO
 			Description: "",
 			UpdatedAt:   time.Now(),
 		},
+		RuntimeID: fixRuntimeID,
 		ProvisioningParameters: fixRawProvisioningParameters(t),
 		InputCreator:           fixInputCreator(t),
 	}
