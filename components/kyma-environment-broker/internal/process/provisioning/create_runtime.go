@@ -7,10 +7,10 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -59,10 +59,14 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 	var provisionerResponse gqlschema.OperationStatus
 	if operation.ProvisionerOperationID == "" {
 		provisionerResponse, err := s.provisionerClient.ProvisionRuntime(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID, requestInput)
-		if err != nil {
+		switch {
+		case kebError.IsTemporaryError(err):
 			log.Errorf("call to provisioner failed: %s", err)
 			return operation, 5 * time.Second, nil
+		case err != nil:
+			return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create provisioning input")
 		}
+
 		operation.ProvisionerOperationID = *provisionerResponse.ID
 		if provisionerResponse.RuntimeID != nil {
 			operation.RuntimeID = *provisionerResponse.RuntimeID
@@ -113,7 +117,7 @@ func (s *CreateRuntimeStep) createProvisionInput(operation internal.Provisioning
 	operation.InputCreator.SetLabel(globalKeyPrefix+"subaccount_id", parameters.ErsContext.SubAccountID)
 	request, err := operation.InputCreator.Create()
 	if err != nil {
-		return request, errors.Wrap(err, "while building input for provisioner")
+		return request, fmt.Errorf("while building input for provisioner: %w", err)
 	}
 
 	return request, nil

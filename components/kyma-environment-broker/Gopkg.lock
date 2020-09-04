@@ -485,6 +485,14 @@
   version = "v0.2.2"
 
 [[projects]]
+  digest = "1:e12fc8ddc9d2f7221386c11460999819c8d39b5c18285470919bf90b52ce344c"
+  name = "github.com/matryer/is"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "94c589d890bea635baca9098f809a91f8dd2072e"
+  version = "v1.4.0"
+
+[[projects]]
   digest = "1:ff5ebae34cfbf047d505ee150de27e60570e8c394b3b8fdbb720ff6ac71985fc"
   name = "github.com/matttproud/golang_protobuf_extensions"
   packages = ["pbutil"]
@@ -1213,6 +1221,7 @@
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/lib/pq",
     "github.com/machinebox/graphql",
+    "github.com/matryer/is",
     "github.com/pivotal-cf/brokerapi/v7/domain",
     "github.com/pivotal-cf/brokerapi/v7/domain/apiresponses",
     "github.com/pivotal-cf/brokerapi/v7/handlers",

@@ -31,3 +31,7 @@ func IsTemporaryError(err error) bool {
 	})
 	return ok && nfe.Temporary()
 }
+
+type PermanentError struct {
+	message string
+}

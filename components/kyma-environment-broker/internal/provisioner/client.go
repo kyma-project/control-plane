@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"reflect"
 
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 
+	gcli "github.com/kyma-project/control-plane/components/kyma-environment-broker/third_party/machinebox/graphql"
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
 
@@ -63,7 +64,7 @@ func (c *client) ProvisionRuntime(accountID, subAccountID string, config schema.
 	var response schema.OperationStatus
 	err = c.executeRequest(req, &response)
 	if err != nil {
-		return schema.OperationStatus{}, errors.Wrap(err, "Failed to provision Runtime")
+		return schema.OperationStatus{}, errors.Wrapf(err, "failed to provision a Runtime")
 	}
 
 	return response, nil
@@ -77,7 +78,7 @@ func (c *client) DeprovisionRuntime(accountID, runtimeID string) (string, error)
 	var operationId string
 	err := c.executeRequest(req, &operationId)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to deprovision Runtime")
+		return "", fmt.Errorf("Failed to deprovision Runtime: %w", err)
 	}
 	return operationId, nil
 }
@@ -95,7 +96,7 @@ func (c *client) UpgradeRuntime(accountID, runtimeID string, config schema.Upgra
 	var res schema.OperationStatus
 	err = c.executeRequest(req, &res)
 	if err != nil {
-		return schema.OperationStatus{}, errors.Wrap(err, "Failed to upgrade Runtime")
+		return schema.OperationStatus{}, fmt.Errorf("Failed to upgrade Runtime: %w", err)
 	}
 	return res, nil
 }
@@ -137,9 +138,26 @@ func (c *client) executeRequest(req *gcli.Request, respDestination interface{}) 
 
 	wrapper := &graphQLResponseWrapper{Result: respDestination}
 	err := c.graphQLClient.Run(context.TODO(), req, wrapper)
+	if ee, ok := err.(gcli.ExtendedError); ok {
+		code, found := ee.Extensions()["error_code"]
+		if found {
+			errCode := code.(float64)
+			if errCode >= 400 && errCode < 500 {
+				return err
+			}
+		}
+	}
 	if err != nil {
-		return errors.Wrap(err, "Failed to execute request")
+		return kebError.AsTemporaryError(err, "failed to execute the request")
 	}
 
 	return nil
+}
+
+type BadRequestError struct {
+	err error
+}
+
+func (e BadRequestError) Error() string {
+	return fmt.Sprintf("bad request error: %s", e.err.Error())
 }
