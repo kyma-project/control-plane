@@ -85,7 +85,7 @@ func fixUpgradeKymaOperationWithInputCreator(t *testing.T) internal.UpgradeKymaO
 			Description: "",
 			UpdatedAt:   time.Now(),
 		},
-		RuntimeID: fixRuntimeID,
+		RuntimeID:              fixRuntimeID,
 		ProvisioningParameters: fixRawProvisioningParameters(t),
 		InputCreator:           fixInputCreator(t),
 	}
