@@ -68,9 +68,6 @@ type ProvisioningParametersDTO struct {
 	Provider *TrialCloudProvider `json:"provider"`
 }
 
-type UpgradeKymaParameters struct {
-}
-
 type ERSContext struct {
 	TenantID        string                  `json:"tenant_id"`
 	SubAccountID    string                  `json:"subaccount_id"`

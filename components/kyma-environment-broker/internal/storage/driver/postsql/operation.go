@@ -408,11 +408,11 @@ func (s *operations) GetOperationStats() (internal.OperationStats, error) {
 	return result, nil
 }
 
-func (s *operations) GetAllOperationsForIDs(operationIDList []string) ([]internal.Operation, error) {
+func (s *operations) GetOperationsForIDs(operationIDList []string) ([]internal.Operation, error) {
 	session := s.NewReadSession()
 	operations := make([]dbmodel.OperationDTO, 0)
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		dto, err := session.GetAllOperationsForIDs(operationIDList)
+		dto, err := session.GetOperationsForIDs(operationIDList)
 		if err != nil {
 			log.Warn(errors.Wrapf(err, "while getting Operations from the storage").Error())
 			return false, nil

@@ -170,7 +170,7 @@ func (r readSession) GetOperationByTypeAndInstanceID(inID string, opType dbmodel
 	return operation, nil
 }
 
-func (r readSession) GetAllOperationsForIDs(opIDlist []string) ([]dbmodel.OperationDTO, dberr.Error) {
+func (r readSession) GetOperationsForIDs(opIDlist []string) ([]dbmodel.OperationDTO, dberr.Error) {
 	var operations []dbmodel.OperationDTO
 
 	_, err := r.session.

@@ -95,7 +95,7 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 	}
 
 	log.Infof("create provisioner input creator for plan ID %q", pp.PlanID)
-	creator, err := s.inputBuilder.NewUpgradeRuntimeInputCreator(pp)
+	creator, err := s.inputBuilder.CreateUpgradeInput(pp)
 	switch {
 	case err == nil:
 		operation.InputCreator = creator

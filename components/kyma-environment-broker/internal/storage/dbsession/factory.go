@@ -24,7 +24,7 @@ type ReadSession interface {
 	GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.Error)
 	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
 	GetOperationByTypeAndInstanceID(inID string, opType dbmodel.OperationType) (dbmodel.OperationDTO, dberr.Error)
-	GetAllOperationsForIDs(opIdList []string) ([]dbmodel.OperationDTO, dberr.Error)
+	GetOperationsForIDs(opIdList []string) ([]dbmodel.OperationDTO, dberr.Error)
 	GetLMSTenant(name, region string) (dbmodel.LMSTenantDTO, dberr.Error)
 	GetOperationStats() ([]dbmodel.OperationStatEntry, error)
 	GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error)

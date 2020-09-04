@@ -38,8 +38,8 @@ type (
 
 	CreatorForPlan interface {
 		IsPlanSupport(planID string) bool
-		NewProvisionRuntimeInputCreator(parameters internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error)
-		NewUpgradeRuntimeInputCreator(parameters internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error)
+		CreateProvisionInput(parameters internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error)
+		CreateUpgradeInput(parameters internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error)
 	}
 
 	ComponentListProvider interface {
@@ -85,7 +85,7 @@ func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	}
 }
 
-func (f *InputBuilderFactory) NewProvisionRuntimeInputCreator(pp internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error) {
+func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error) {
 	if !f.IsPlanSupport(pp.PlanID) {
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}
@@ -184,7 +184,7 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 	return provisionInput, nil
 }
 
-func (f *InputBuilderFactory) NewUpgradeRuntimeInputCreator(pp internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error) {
+func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error) {
 	if !f.IsPlanSupport(pp.PlanID) {
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}

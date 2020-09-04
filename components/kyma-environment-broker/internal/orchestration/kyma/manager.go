@@ -188,7 +188,7 @@ func (u *upgradeKymaManager) checkOperationsResults(ops []internal.RuntimeOperat
 
 	// get operation status for each processed operation
 	for len(operationIDList) != 0 {
-		operations, err := u.operationStorage.GetAllOperationsForIDs(operationIDList)
+		operations, err := u.operationStorage.GetOperationsForIDs(operationIDList)
 		if err != nil {
 			return false, err
 		}

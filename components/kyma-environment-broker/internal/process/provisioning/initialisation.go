@@ -116,7 +116,7 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 	}
 
 	log.Infof("create provisioner input creator for %q plan ID", pp.PlanID)
-	creator, err := s.inputBuilder.NewProvisionRuntimeInputCreator(pp)
+	creator, err := s.inputBuilder.CreateProvisionInput(pp)
 	switch {
 	case err == nil:
 		operation.InputCreator = creator

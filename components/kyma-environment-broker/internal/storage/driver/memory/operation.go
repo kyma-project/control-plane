@@ -213,7 +213,7 @@ func (s *operations) GetOperationsInProgressByType(opType dbmodel.OperationType)
 	return ops, nil
 }
 
-func (s *operations) GetAllOperationsForIDs(opIdList []string) ([]internal.Operation, error) {
+func (s *operations) GetOperationsForIDs(opIdList []string) ([]internal.Operation, error) {
 	ops := make([]internal.Operation, 0)
 	for _, opID := range opIdList {
 		for _, op := range s.upgradeKymaOperations {

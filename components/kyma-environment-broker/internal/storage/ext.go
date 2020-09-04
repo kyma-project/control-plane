@@ -26,7 +26,7 @@ type Operations interface {
 	GetOperationByID(operationID string) (*internal.Operation, error)
 	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]internal.Operation, error)
 	GetOperationStats() (internal.OperationStats, error)
-	GetAllOperationsForIDs(operationIDList []string) ([]internal.Operation, error)
+	GetOperationsForIDs(operationIDList []string) ([]internal.Operation, error)
 }
 
 type Provisioning interface {

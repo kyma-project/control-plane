@@ -87,7 +87,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		provisionerClient := &provisionerAutomock.Client{}
 		inputBuilder := &automock.CreatorForPlan{}
-		inputBuilder.On("NewUpgradeRuntimeInputCreator", fixProvisioningParameters()).Return(&input.RuntimeInput{}, nil)
+		inputBuilder.On("CreateUpgradeInput", fixProvisioningParameters()).Return(&input.RuntimeInput{}, nil)
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, inputBuilder)
 
@@ -96,7 +96,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		// then
 		assert.NoError(t, err)
-		inputBuilder.AssertNumberOfCalls(t, "NewUpgradeRuntimeInputCreator", 1)
+		inputBuilder.AssertNumberOfCalls(t, "CreateUpgradeInput", 1)
 		assert.Equal(t, time.Duration(0), repeat)
 		assert.NotNil(t, op.InputCreator)
 	})

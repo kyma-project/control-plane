@@ -42,7 +42,7 @@ func TestShouldEnableComponents(t *testing.T) {
 		assert.NoError(t, err)
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "")
-		creator, err := builder.NewProvisionRuntimeInputCreator(pp)
+		creator, err := builder.CreateProvisionInput(pp)
 		require.NoError(t, err)
 
 		// when
@@ -82,7 +82,7 @@ func TestShouldEnableComponents(t *testing.T) {
 		assert.NoError(t, err)
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "1.14.0")
-		creator, err := builder.NewUpgradeRuntimeInputCreator(pp)
+		creator, err := builder.CreateUpgradeInput(pp)
 		require.NoError(t, err)
 
 		// when
@@ -116,7 +116,7 @@ func TestShouldDisableComponents(t *testing.T) {
 
 		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
-		creator, err := builder.NewProvisionRuntimeInputCreator(pp)
+		creator, err := builder.CreateProvisionInput(pp)
 		require.NoError(t, err)
 
 		// when
@@ -148,7 +148,7 @@ func TestShouldDisableComponents(t *testing.T) {
 
 		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
-		creator, err := builder.NewUpgradeRuntimeInputCreator(pp)
+		creator, err := builder.CreateUpgradeInput(pp)
 		require.NoError(t, err)
 
 		// when
@@ -182,7 +182,7 @@ func TestDisabledComponentsForPlanNotExist(t *testing.T) {
 	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 	assert.NoError(t, err)
 	// when
-	_, err = builder.NewProvisionRuntimeInputCreator(pp)
+	_, err = builder.CreateProvisionInput(pp)
 	require.Error(t, err)
 }
 
@@ -208,7 +208,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 
 		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
-		creator, err := builder.NewProvisionRuntimeInputCreator(pp)
+		creator, err := builder.CreateProvisionInput(pp)
 		require.NoError(t, err)
 
 		// when
@@ -246,7 +246,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		pp := fixProvisioningParameters(broker.AzurePlanID, "")
 		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
-		creator, err := builder.NewProvisionRuntimeInputCreator(pp)
+		creator, err := builder.CreateProvisionInput(pp)
 		require.NoError(t, err)
 
 		// when
@@ -281,7 +281,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		pp := fixProvisioningParameters(broker.AzurePlanID, "1.14.0")
 		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
 		assert.NoError(t, err)
-		creator, err := builder.NewUpgradeRuntimeInputCreator(pp)
+		creator, err := builder.CreateUpgradeInput(pp)
 		require.NoError(t, err)
 
 		// when
@@ -326,7 +326,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	pp := fixProvisioningParameters(broker.AzurePlanID, "")
 
 	// when
-	builder, err := factory.NewProvisionRuntimeInputCreator(pp)
+	builder, err := factory.CreateProvisionInput(pp)
 
 	// then
 	require.NoError(t, err)
