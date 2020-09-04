@@ -7,21 +7,18 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit"
 	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/assertions"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRuntimeUpgrade(t *testing.T) {
 	t.Parallel()
 
-	globalLog := logrus.WithFields(
-		logrus.Fields{
-			"TestID":   testSuite.TestID,
-			"TestType": "upgrade-runtime",
-		})
+	globalLog := logrus.WithField("TestID", testSuite.TestID)
 
 	globalLog.Infof("Starting Kyma Control Plane Runtime Provisioner tests of Runtime Upgrade on Gardener")
 	wg := &sync.WaitGroup{}
@@ -33,7 +30,10 @@ func TestRuntimeUpgrade(t *testing.T) {
 			defer testSuite.Recover()
 
 			t.Run(provider, func(t *testing.T) {
-				log := NewLogger(t, fmt.Sprintf("Provider=%s", provider))
+				log := testkit.NewLogger(t,
+					fmt.Sprintf("Provider=%s", provider),
+					fmt.Sprintf("TestType=upgrade-runtime"),
+				)
 
 				// Create provisioning input
 				provisioningInput, err := testkit.CreateGardenerProvisioningInput(&testSuite.config, testSuite.config.Kyma.PreUpgradeVersion, provider)
@@ -46,14 +46,14 @@ func TestRuntimeUpgrade(t *testing.T) {
 				log.Log("Starting provisioning...")
 				provisioningOperationID, runtimeID, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
 				assertions.RequireNoError(t, err, "Error while starting Runtime provisioning")
-				defer ensureClusterIsDeprovisioned(runtimeID)
+				defer ensureClusterIsDeprovisioned(runtimeID, log)
 
 				log.AddField(fmt.Sprintf("RuntimeId=%s", runtimeID))
 				log.AddField(fmt.Sprintf("ProvisioningOperationId=%s", provisioningOperationID))
 
 				// Wait for provisioning to finish
 				log.Log("Waiting for provisioning to finish...")
-				provisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationID)
+				provisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationID, log)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtimeID, provisioningOperationStatus)
 				log.Log("Provisioning finished.")
@@ -83,7 +83,7 @@ func TestRuntimeUpgrade(t *testing.T) {
 				log.AddField(fmt.Sprintf("UpgradeOperationId=%s", *upgradeOperationStatus.ID))
 
 				log.Log("Waiting for upgrade to finish...")
-				upgradeOperationStatus, err = testSuite.WaitUntilOperationIsFinished(UpgradeTimeout, *upgradeOperationStatus.ID)
+				upgradeOperationStatus, err = testSuite.WaitUntilOperationIsFinished(UpgradeTimeout, *upgradeOperationStatus.ID, log)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeUpgrade, runtimeID, upgradeOperationStatus)
 				log.Log("Upgrade finished.")
@@ -107,7 +107,7 @@ func TestRuntimeUpgrade(t *testing.T) {
 				assertions.AssertOperationInProgress(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
 
 				log.Log("Waiting for deprovisioning to finish...")
-				deprovisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationID)
+				deprovisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationID, log)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
 				log.Log("Deprovisioning finished.")
