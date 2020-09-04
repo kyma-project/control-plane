@@ -1,6 +1,7 @@
 package provisioner
 
 import (
+	"context"
 	"crypto/tls"
 	"io/ioutil"
 	"math/rand"
@@ -178,7 +179,7 @@ func (ts *TestSuite) KubernetesClientFromRawConfig(t *testing.T, rawConfig strin
 }
 
 func (ts *TestSuite) removeCredentialsSecret(secretName string) error {
-	return ts.secretsClient.Delete(secretName, &v1meta.DeleteOptions{})
+	return ts.secretsClient.Delete(context.Background(), secretName, v1meta.DeleteOptions{})
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyz123456789"
