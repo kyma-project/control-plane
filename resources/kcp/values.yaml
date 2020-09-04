@@ -6,13 +6,13 @@ global:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-109"
+      version: "407700d9"
     provisioner:
       dir:
       version: "PR-168"
     kyma_environment_broker:
       dir:
-      version: "PR-162"
+      version: "PR-172"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-131"
@@ -117,6 +117,10 @@ global:
 
   metris:
     enabled: false
+
+  oathkeeper:
+    host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
+    port: 4455
 
 pairing-adapter:
   enabled: false
