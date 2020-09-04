@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -409,7 +410,8 @@ func main() {
 
 	gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
 	fatalOnError(err)
-	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient, cfg.Gardener.Project, db.Instances(), logs)
+	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
+	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, db.Instances(), logs)
 	orchestrateKymaManager := kyma.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(), upgradeKymaManager, runtimeResolver, logs)
 	kymaQueue := process.NewQueue(orchestrateKymaManager, logs)
 	kymaQueue.Run(ctx.Done(), workersAmount)
