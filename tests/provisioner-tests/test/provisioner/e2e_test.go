@@ -23,7 +23,11 @@ import (
 func Test_E2E_Gardener(t *testing.T) {
 	t.Parallel()
 
-	globalLog := logrus.WithField("TestId", testSuite.TestId)
+	globalLog := logrus.WithFields(
+		logrus.Fields{
+			"TestID":   testSuite.TestID,
+			"TestType": "end-to-end",
+		})
 
 	globalLog.Infof("Starting Kyma Control Plane Runtime Provisioner tests on Gardener")
 	wg := &sync.WaitGroup{}
@@ -51,8 +55,8 @@ func Test_E2E_Gardener(t *testing.T) {
 				assertions.RequireNoError(t, err, "Error while starting Runtime provisioning")
 				defer ensureClusterIsDeprovisioned(runtimeID)
 
-				log.AddField(fmt.Sprintf("RuntimeId=%s", runtimeID))
-				log.AddField(fmt.Sprintf("ProvisioningOperationId=%s", provisioningOperationID))
+				log.AddField(fmt.Sprintf("RuntimeID=%s", runtimeID))
+				log.AddField(fmt.Sprintf("ProvisioningOperationID=%s", provisioningOperationID))
 
 				// Get provisioning Operation Status
 				log.Log("Getting operation status...")

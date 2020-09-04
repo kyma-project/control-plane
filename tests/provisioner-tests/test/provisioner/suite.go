@@ -43,7 +43,7 @@ const (
 )
 
 type TestSuite struct {
-	TestId            string
+	TestID            string
 	HttpClient        http.Client
 	ProvisionerClient provisioner.Client
 	DirectorClient    director.Client
@@ -70,7 +70,7 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 	testId := randStringBytes(8)
 
 	return &TestSuite{
-		TestId: testId,
+		TestID: testId,
 
 		HttpClient:        httpClient,
 		ProvisionerClient: provisionerClient,

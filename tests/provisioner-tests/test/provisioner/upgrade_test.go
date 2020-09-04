@@ -17,7 +17,11 @@ import (
 func TestRuntimeUpgrade(t *testing.T) {
 	t.Parallel()
 
-	globalLog := logrus.WithField("TestId", testSuite.TestId)
+	globalLog := logrus.WithFields(
+		logrus.Fields{
+			"TestID":   testSuite.TestID,
+			"TestType": "upgrade-runtime",
+		})
 
 	globalLog.Infof("Starting Kyma Control Plane Runtime Provisioner tests of Runtime Upgrade on Gardener")
 	wg := &sync.WaitGroup{}

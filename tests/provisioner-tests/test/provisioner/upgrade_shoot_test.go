@@ -16,7 +16,11 @@ import (
 func TestShootUpgrade(t *testing.T) {
 	t.Parallel()
 
-	globalLog := logrus.WithField("TestId", testSuite.TestId)
+	globalLog := logrus.WithFields(
+		logrus.Fields{
+			"TestID":   testSuite.TestID,
+			"TestType": "upgrade-shoot",
+		})
 
 	globalLog.Infof("Starting Kyma Control Plane Runtime Provisioner tests of Shoot Upgrade on Gardener")
 	wg := &sync.WaitGroup{}
@@ -30,11 +34,12 @@ func TestShootUpgrade(t *testing.T) {
 			t.Run(provider, func(t *testing.T) {
 				log := NewLogger(t, fmt.Sprintf("Provider=%s", provider))
 
+				// Provisioning runtime
 				// Create provisioning input
 				provisioningInput, err := testkit.CreateGardenerProvisioningInput(&testSuite.config, testSuite.config.Kyma.Version, provider)
 				assertions.RequireNoError(t, err)
 
-				runtimeName := fmt.Sprintf("provisioner-upgr-sh-test-%s-%s", strings.ToLower(provider), uuid.New().String()[:4])
+				runtimeName := fmt.Sprintf("provisioner-test-%s-%s", strings.ToLower(provider), uuid.New().String()[:4])
 				provisioningInput.RuntimeInput.Name = runtimeName
 
 				// Provision runtime
@@ -43,8 +48,8 @@ func TestShootUpgrade(t *testing.T) {
 				assertions.RequireNoError(t, err, "Error while starting Runtime provisioning")
 				defer ensureClusterIsDeprovisioned(runtimeID)
 
-				log.AddField(fmt.Sprintf("RuntimeId=%s", runtimeID))
-				log.AddField(fmt.Sprintf("ProvisioningOperationId=%s", provisioningOperationID))
+				log.AddField(fmt.Sprintf("RuntimeID=%s", runtimeID))
+				log.AddField(fmt.Sprintf("ProvisioningOperationID=%s", provisioningOperationID))
 
 				// Wait for provisioning to finish
 				log.Log("Waiting for provisioning to finish...")
