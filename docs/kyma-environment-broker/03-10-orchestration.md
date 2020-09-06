@@ -7,7 +7,7 @@ Orchestration is a mechanism that allows you to upgrade Kyma Runtimes.
 
 To create an orchestration, [send a request to the proper KEB handler](#tutorials-upgrade-kyma-runtime-using-keb).
 
-After sending the request, the orchestration is processed by KymaUpgradeManager which resolves Shoots in the Gardener cluster and filters them using input provided in the request body.
+After sending the request, the orchestration is processed by `KymaUpgradeManager` which lists Shoots (Kyma Runtimes) in the Gardener cluster and filters the Runtime IDs that you have specified for the upgrade in the request body.
 
 Then, the `KymaUpgradeManager` proceeds with the orchestration and performs the [upgrade steps](#details-runtime-operations) logic on the Runtimes that you have specified. 
 
