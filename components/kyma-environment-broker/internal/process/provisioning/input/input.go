@@ -14,6 +14,8 @@ type Config struct {
 	Timeout                     time.Duration `envconfig:"default=12h"`
 	KubernetesVersion           string        `envconfig:"default=1.16.9"`
 	DefaultGardenerShootPurpose string        `envconfig:"default=development"`
+	MachineImage                string        `envconfig:optional`
+	MachineImageVersion         string        `envconfig:optional`
 }
 
 type RuntimeInput struct {
