@@ -2,6 +2,7 @@ package release
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
