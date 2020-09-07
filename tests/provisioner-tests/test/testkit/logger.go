@@ -28,7 +28,7 @@ func (l Logger) Log(msg string) {
 func (l Logger) Logf(format string, msg ...interface{}) {
 	format = strings.Join([]string{format, "%s"}, "\t")
 	msg = append(msg, l.joinedFields)
-	l.t.Logf(format, msg)
+	l.t.Logf(format, msg...)
 }
 
 func (l Logger) Error(msg string) {
@@ -38,7 +38,7 @@ func (l Logger) Error(msg string) {
 func (l Logger) Errorf(format string, msg ...interface{}) {
 	format = strings.Join([]string{format, "%s"}, "\t")
 	msg = append(msg, l.joinedFields)
-	l.t.Errorf(format, msg)
+	l.t.Errorf(format, msg...)
 }
 
 func (l *Logger) AddField(field string) {
