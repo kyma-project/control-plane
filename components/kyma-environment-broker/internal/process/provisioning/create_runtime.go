@@ -85,7 +85,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		return operation, 1 * time.Minute, nil
 	}
 	log = log.WithField("runtimeID", *provisionerResponse.RuntimeID)
-	log.Infof("call to provisioner succeeded", *provisionerResponse.RuntimeID)
+	log.Infof("call to provisioner succeeded, got operation ID %q", *provisionerResponse.ID)
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	if err != nil {

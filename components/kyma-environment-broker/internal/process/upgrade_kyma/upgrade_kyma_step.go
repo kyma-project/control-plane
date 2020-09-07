@@ -80,7 +80,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 		return operation, 1 * time.Minute, nil
 	}
 	log = log.WithField("runtimeID", *provisionerResponse.RuntimeID)
-	log.Infof("call to provisioner succeeded", *provisionerResponse.RuntimeID)
+	log.Infof("call to provisioner succeeded, got operation ID %q", *provisionerResponse.ID)
 
 	log.Infof("kyma upgrade process initiated successfully")
 	// return repeat mode (1 sec) to start the initialization step which will now check the runtime status
