@@ -1,5 +1,5 @@
 ---
-title: Runtime provisioning and deprovisioning
+title: Runtime operations
 type: Details
 ---
 
@@ -50,7 +50,7 @@ The deprovisioning process contains the following steps:
 | EDP_Deregistration           | Event Data Platform | Done | Removes all entries about SKR from Event Data Platform. | @jasiu001 (Team Gopher) |
 | Remove_Runtime               | Deprovisioning | Done        | Triggers deprovisioning of a Runtime in the Runtime Provisioner. | @polskikiel (Team Gopher) |
 
-## Deprovisioning
+## Upgrade
 
 Each upgrade step is responsible for a separate part of upgrading Runtime dependencies. To properly upgrade the Runtime, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialization](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/process/kyma_upgrade/initialisation.go) step.
 
@@ -62,7 +62,7 @@ The upgrade process contains the following steps:
 | Overrides_From_Secrets_And_Config_Step  | Upgrade | Done        | Builds an input configuration for the Provisioner. | @ksputo (Team Gopher) |
 | Upgrade_Runtime              | Upgrade | Done        | Triggers upgrading of a Runtime in the Runtime Provisioner. | @ksputo (Team Gopher) |
 
-## Add/provide additional steps
+## Provide additional steps
 
 You can configure Runtime operations by providing additional steps. To add a new step, follow these tutorials:
 
