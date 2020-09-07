@@ -27,7 +27,7 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
 
 3. Make a call to the Kyma Environment Broker to orchestrate the upgrade.
 
->**NOTE:** The **dry** parameter specified in the request body is set to `true`. This causes that the upgrade is executed in a fake mode. It means that all actions are not executed against selected Runtimes but the Orchestration status is still available.
+>**NOTE:** The **dry** parameter specified in the request body is set to `true`. As a result, the upgrade is executed in a fake mode. It means that all actions are not executed against selected Runtimes but the Orchestration status is still available.
 
    ```bash
    curl --request POST "https://$BROKER_URL/upgrade/kyma" \
