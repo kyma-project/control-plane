@@ -439,10 +439,6 @@ func (tmr testMutationResolver) DeprovisionRuntime(_ context.Context, id string)
 func (tmr testMutationResolver) RollBackUpgradeOperation(_ context.Context, id string) (*schema.RuntimeStatus, error) {
 	return nil, nil
 }
-//
-//func (tmr testMutationResolver) UpgradeShoot(ctx context.Context, id string, config schema.UpgradeShootInput) (*schema.OperationStatus, error) {
-//	return nil, nil
-//}
 
 func (tmr testMutationResolver) ReconnectRuntimeAgent(_ context.Context, id string) (string, error) {
 	tmr.t.Log("ReconnectRuntimeAgent testMutationResolver")
