@@ -43,7 +43,7 @@ func Test_E2E_Upgrade(t *testing.T) {
 	require.NoError(t, err)
 
 	ts.log.Infof("Starting upgrade runtime with ID: %s", runtimeID)
-	orchestrationID, err := ts.upgradeSuite.upgradeClient.UpgradeRuntime("e31590e0-3c32-4445-a4a7-4a90eb28e859")
+	orchestrationID, err := ts.upgradeSuite.upgradeClient.UpgradeRuntime(runtimeID)
 	require.NoError(t, err, "failed to upgrade Runtime")
 
 	ts.log.Infof("Waiting for upgrade to finish for orchestrationID: %s", orchestrationID)

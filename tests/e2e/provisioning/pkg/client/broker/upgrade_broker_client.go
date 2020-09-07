@@ -75,7 +75,7 @@ func (c *UpgradeClient) UpgradeRuntime(runtimeID string) (string, error) {
 
 func (c *UpgradeClient) FetchRuntimeID(instanceID string) (string, error) {
 	var runtimeID string
-	err := wait.Poll(3*time.Second, 60*time.Second, func() (bool, error) {
+	err := wait.Poll(3*time.Second, 1*time.Minute, func() (bool, error) {
 		id, permanentError, err := c.fetchRuntimeID(instanceID)
 		if err != nil && permanentError {
 			return true, errors.Wrap(err, "cannot fetch runtimeID")
