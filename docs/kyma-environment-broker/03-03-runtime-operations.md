@@ -3,16 +3,14 @@ title: Runtime operations
 type: Details
 ---
 
-Kyma Environment Broker allows you to configure Runtime provisioning and deprovisioning processes.
+Kyma Environment Broker allows you to configure operations that you can run on a Runtime. Each operation consists of several steps and each step is represented by a separate file. As every step can be re-launched multiple times, for each step, you should determine a behavior in case of a processing failure. It can either:
 
-Both provisioning and deprovisioning operation consist of several steps. Each step is represented by a separate file. As every step can be re-launched multiple times, for each step, you should determine a behavior in case of a processing failure. It can either:
-
-- Return an error, which interrupts the entire provisioning or deprovisioning process, or
+- Return an error, which interrupts the entire process, or
 - Repeat the entire operation after the specified period.
 
-The provisioning and deprovisioning timeouts for processing an operation are set to `24h`.
+The timeout for processing an operation is set to `24h`.
 
-> **NOTE:** It's important to have lower timeouts for the Kyma installation in the Runtime Provisioner .
+> **NOTE:** It's important to set lower timeouts for the Kyma installation in the Runtime Provisioner.
 
 ## Provisioning
 
@@ -59,8 +57,8 @@ The upgrade process contains the following steps:
 | Name                         | Domain         | Status      | Description                                                                            | Owner     |
 |------------------------------|----------------|-------------|----------------------------------------------------------------------------------------|-----------|
 | Upgrade_Kyma_Initialisation  | Upgrade | Done        | Initializes the `UpgradeOperation` instance with data fetched from the `ProvisioningOperation`. | @ksputo (Team Gopher) |
-| Overrides_From_Secrets_And_Config_Step  | Upgrade | Done        | Builds an input configuration for the Provisioner. | @ksputo (Team Gopher) |
-| Upgrade_Runtime              | Upgrade | Done        | Triggers upgrading of a Runtime in the Runtime Provisioner. | @ksputo (Team Gopher) |
+| Overrides_From_Secrets_And_Config_Step  | Upgrade | Done        | Builds an input configuration that is passed as overrides to Runtime Provisioner. | @ksputo (Team Gopher) |
+| Upgrade_Runtime              | Upgrade | Done        | Triggers the upgrade of a Runtime in Runtime Provisioner. | @ksputo (Team Gopher) |
 
 ## Provide additional steps
 
