@@ -126,12 +126,12 @@ These are the provisioning parameters for the Trial plan that you can configure:
 | **region** | string | Defines the cluster region. | No | `europe`,`us`, `asia` | Calculated from the platform region |  
 | **provider** | string | Specifies the cloud provider used during provisioning. | No | `Azure`, `GCP` | `Azure` |
  
- </details>
- </div>
-
 The **region** parameter is optional. If not specified, the region is calculated from platform region specified in this path:
 ```shell
 /oauth/{platform-region}/v2/service_instances/{instance_id}
 ```
-The mapping between the platform region and the provider region (Azure or GCP) is defined in the configuration file in the **APP_TRIAL_REGION_MAPPING_FILE_PATH** environment variable.
-If the platform region is not defined, the default value is `europe`.
+The mapping between the platform region and the provider region (Azure or GCP) is defined in the configuration file in the **APP_TRIAL_REGION_MAPPING_FILE_PATH** environment variable. If the platform region is not defined, the default value is `europe`.
+
+ </details>
+ </div>
+
