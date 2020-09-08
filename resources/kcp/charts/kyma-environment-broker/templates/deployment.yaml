@@ -247,6 +247,8 @@ spec:
               value: "{{ .Values.kymaVersionOnDemand }}"
             - name: APP_MANAGED_RUNTIME_COMPONENTS_YAML_FILE_PATH
               value: /config/additionalRuntimeComponents.yaml
+            - name: APP_TRIAL_REGION_MAPPING_FILE_PATH
+              value: /config/trialRegionMapping.yaml
             - name: APP_GARDENER_PROJECT
               value: {{ .Values.gardener.project }}
             - name: APP_GARDENER_KUBECONFIG_PATH

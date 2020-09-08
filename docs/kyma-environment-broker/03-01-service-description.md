@@ -103,7 +103,7 @@ Trial plan allows you to install Kyma either on Azure or GCP. The Trial plan ass
 - Kyma is uninstalled after 30 days and the Kyma cluster is deprovisioned after this time.
 - It's possible to provision only one Kyma Runtime per global account.
 
-To reduce the costs, the Trial plan skips some of the [provisioning steps](./03-03-runtime-provisioning-and-deprovisioning.md#provisioning)
+To reduce the costs, the Trial plan skips some of the [provisioning steps](./03-03-runtime-provisioning-and-deprovisioning.md#provisioning).
 These are the steps that are skipped during the Trial plan provisioning:
 - `Create_LMS_Tenant`
 - `Provision_Azure_Event_Hubs`
@@ -123,8 +123,15 @@ These are the provisioning parameters for the Trial plan that you can configure:
 | Parameter name | Type | Description | Required | Possible values| Default value |  
 | ---------------|-------|-------------|----------|---------------|---------------|  
 | **name** | string | Specifies the name of the Kyma Runtime. | Yes | Any string| None |  
-| **region** | int | Defines the cluster region. | No | `europe`,`us` | `europe` |  
+| **region** | string | Defines the cluster region. | No | `europe`,`us`, `asia` | Calculated from the platform region |  
 | **provider** | string | Specifies the cloud provider used during provisioning. | No | `Azure`, `GCP` | `Azure` |
  
+The **region** parameter is optional. If not specified, the region is calculated from platform region specified in this path:
+```shell
+/oauth/{platform-region}/v2/service_instances/{instance_id}
+```
+The mapping between the platform region and the provider region (Azure or GCP) is defined in the configuration file in the **APP_TRIAL_REGION_MAPPING_FILE_PATH** environment variable. If the platform region is not defined, the default value is `europe`.
+
  </details>
  </div>
+

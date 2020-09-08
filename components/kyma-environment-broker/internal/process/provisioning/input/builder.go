@@ -31,7 +31,7 @@ type (
 
 	HyperscalerInputProvider interface {
 		Defaults() *gqlschema.ClusterConfigInput
-		ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO)
+		ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParameters)
 	}
 
 	CreatorForPlan interface {
@@ -51,10 +51,11 @@ type InputBuilderFactory struct {
 	fullComponentsList         internal.ComponentConfigurationInputList
 	componentsProvider         ComponentListProvider
 	disabledComponentsProvider DisabledComponentsProvider
+	trialPlatformRegionMapping map[string]string
 }
 
 func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledComponentsProvider DisabledComponentsProvider, componentsListProvider ComponentListProvider, config Config,
-	defaultKymaVersion string) (CreatorForPlan, error) {
+	defaultKymaVersion string, trialPlatformRegionMapping map[string]string) (CreatorForPlan, error) {
 
 	components, err := componentsListProvider.AllComponents(defaultKymaVersion)
 	if err != nil {
@@ -68,6 +69,7 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 		fullComponentsList:         mapToGQLComponentConfigurationInput(components),
 		componentsProvider:         componentsListProvider,
 		disabledComponentsProvider: disabledComponentsProvider,
+		trialPlatformRegionMapping: trialPlatformRegionMapping,
 	}, nil
 }
 
@@ -131,12 +133,17 @@ func (f *InputBuilderFactory) forTrialPlan(provider *internal.TrialCloudProvider
 
 	switch *provider {
 	case internal.Gcp:
-		return &cloudProvider.GcpTrialInput{}
+		return &cloudProvider.GcpTrialInput{
+			PlatformRegionMapping: f.trialPlatformRegionMapping,
+		}
 	default:
-		return &cloudProvider.AzureTrialInput{}
+		return &cloudProvider.AzureTrialInput{
+			PlatformRegionMapping: f.trialPlatformRegionMapping,
+		}
 	}
 
 }
+
 func (f *InputBuilderFactory) initInput(provider HyperscalerInputProvider, kymaVersion string) (gqlschema.ProvisionRuntimeInput, error) {
 	var (
 		version    string

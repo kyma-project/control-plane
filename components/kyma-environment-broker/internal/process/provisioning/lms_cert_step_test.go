@@ -200,7 +200,7 @@ func (c *simpleInputCreator) Create() (gqlschema.ProvisionRuntimeInput, error) {
 	return gqlschema.ProvisionRuntimeInput{}, nil
 }
 
-func (c *simpleInputCreator) SetProvisioningParameters(params internal.ProvisioningParametersDTO) internal.ProvisionInputCreator {
+func (c *simpleInputCreator) SetProvisioningParameters(params internal.ProvisioningParameters) internal.ProvisionInputCreator {
 	return c
 }
 

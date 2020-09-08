@@ -225,7 +225,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{
 		KubernetesVersion:           k8sVersion,
 		DefaultGardenerShootPurpose: shootPurpose,
-	}, kymaVersion)
+	}, kymaVersion, fixTrialRegionMapping())
 	assert.NoError(t, err)
 
 	pp := internal.ProvisioningParameters{
@@ -240,4 +240,8 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	}
 
 	return creator
+}
+
+func fixTrialRegionMapping() map[string]string {
+	return map[string]string{}
 }

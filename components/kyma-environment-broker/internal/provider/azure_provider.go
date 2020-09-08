@@ -12,13 +12,20 @@ const (
 
 var europeAzure = "westeurope"
 var usAzure = "eastus"
+var asiaAzure = "southeastasia"
 
-var toAzureSpecific = map[string]*string{string(broker.Europe): &europeAzure, string(broker.Us): &usAzure}
+var toAzureSpecific = map[string]*string{
+	string(broker.Europe): &europeAzure,
+	string(broker.Us):     &usAzure,
+	string(broker.Asia):   &asiaAzure,
+}
 
 type (
 	AzureInput      struct{}
 	AzureLiteInput  struct{}
-	AzureTrialInput struct{}
+	AzureTrialInput struct {
+		PlatformRegionMapping map[string]string
+	}
 )
 
 func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
@@ -43,8 +50,8 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 	}
 }
 
-func (p *AzureInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
-	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, params.Zones)
+func (p *AzureInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
+	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, pp.Parameters.Zones)
 }
 
 func (p *AzureLiteInput) Defaults() *gqlschema.ClusterConfigInput {
@@ -69,8 +76,8 @@ func (p *AzureLiteInput) Defaults() *gqlschema.ClusterConfigInput {
 	}
 }
 
-func (p *AzureLiteInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
-	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, params.Zones)
+func (p *AzureLiteInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
+	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, pp.Parameters.Zones)
 }
 
 func (p *AzureTrialInput) Defaults() *gqlschema.ClusterConfigInput {
@@ -95,7 +102,18 @@ func (p *AzureTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 	}
 }
 
-func (p *AzureTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO) {
+func (p *AzureTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
+	params := pp.Parameters
+
+	// read platform region if exists
+	if pp.PlatformRegion != "" {
+		abstractRegion, found := p.PlatformRegionMapping[pp.PlatformRegion]
+		if found {
+			r := toAzureSpecific[abstractRegion]
+			updateString(&input.GardenerConfig.Region, r)
+		}
+	}
+
 	if params.Region != nil {
 		updateString(&input.GardenerConfig.Region, toAzureSpecific[*params.Region])
 	}

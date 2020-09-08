@@ -23,8 +23,11 @@ const (
 
 type TrialCloudRegion string
 
-const Europe TrialCloudRegion = "europe"
-const Us TrialCloudRegion = "us"
+const (
+	Europe TrialCloudRegion = "europe"
+	Us     TrialCloudRegion = "us"
+	Asia   TrialCloudRegion = "asia"
+)
 
 func AzureRegions() []string {
 	return []string{
