@@ -37,9 +37,7 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 			MaxSurge:       4,
 			MaxUnavailable: 1,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-				GcpConfig: &gqlschema.GCPProviderConfigInput{
-					Zones: ZonesForGCPRegion(DefaultGCPRegion),
-				},
+				GcpConfig: &gqlschema.GCPProviderConfigInput{},
 			},
 		},
 	}
@@ -67,9 +65,7 @@ func (p *GcpTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 			MaxSurge:       1,
 			MaxUnavailable: 1,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-				GcpConfig: &gqlschema.GCPProviderConfigInput{
-					Zones: ZonesForGCPRegion(DefaultGCPRegion),
-				},
+				GcpConfig: &gqlschema.GCPProviderConfigInput{},
 			},
 		},
 	}
