@@ -8,7 +8,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -19,147 +18,151 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUpgradeKymaManager_Execute_Empty(t *testing.T) {
-	// given
-	store := storage.NewMemoryStorage()
+func TestUpgradeKymaManager_Execute(t *testing.T) {
+	t.Run("Empty", func(t *testing.T) {
+		// given
+		store := storage.NewMemoryStorage()
 
-	resolver := &automock.RuntimeResolver{}
-	defer resolver.AssertExpectations(t)
+		resolver := &automock.RuntimeResolver{}
+		defer resolver.AssertExpectations(t)
 
-	resolver.On("Resolve", internal.TargetSpec{
-		Include: nil,
-		Exclude: nil,
-	}).Return([]internal.Runtime{}, nil)
+		resolver.On("Resolve", internal.TargetSpec{
+			Include: nil,
+			Exclude: nil,
+		}).Return([]internal.Runtime{}, nil)
 
-	id := "id"
-	err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id})
-	require.NoError(t, err)
+		id := "id"
+		err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id})
+		require.NoError(t, err)
 
-	svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, logrus.New())
+		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, logrus.New())
 
-	// when
-	_, err = svc.Execute(id)
-	require.NoError(t, err)
+		// when
+		_, err = svc.Execute(id)
+		require.NoError(t, err)
 
-	o, err := store.Orchestrations().GetByID(id)
-	require.NoError(t, err)
+		o, err := store.Orchestrations().GetByID(id)
+		require.NoError(t, err)
 
-	assert.Equal(t, internal.Succeeded, o.State)
-}
+		assert.Equal(t, internal.Succeeded, o.State)
+	})
+	t.Run("InProgress", func(t *testing.T) {
+		// given
+		store := storage.NewMemoryStorage()
 
-func TestUpgradeKymaManager_Execute_InProgress(t *testing.T) {
-	// given
-	store := storage.NewMemoryStorage()
+		resolver := &automock.RuntimeResolver{}
+		defer resolver.AssertExpectations(t)
 
-	resolver := &automock.RuntimeResolver{}
-	defer resolver.AssertExpectations(t)
+		id := "id"
+		err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, State: internal.InProgress})
+		require.NoError(t, err)
 
-	id := "id"
-	err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, State: internal.InProgress})
-	require.NoError(t, err)
+		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, logrus.New())
 
-	svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, logrus.New())
+		// when
+		_, err = svc.Execute(id)
+		require.NoError(t, err)
 
-	// when
-	_, err = svc.Execute(id)
-	require.NoError(t, err)
+		o, err := store.Orchestrations().GetByID(id)
+		require.NoError(t, err)
 
-	o, err := store.Orchestrations().GetByID(id)
-	require.NoError(t, err)
+		assert.Equal(t, internal.Succeeded, o.State)
 
-	assert.Equal(t, internal.Succeeded, o.State)
-}
+	})
 
-func TestUpgradeKymaManager_Execute_DryRun(t *testing.T) {
-	// given
-	store := storage.NewMemoryStorage()
+	t.Run("DryRun", func(t *testing.T) {
+		// given
+		store := storage.NewMemoryStorage()
 
-	resolver := &automock.RuntimeResolver{}
-	defer resolver.AssertExpectations(t)
-	resolver.On("Resolve", internal.TargetSpec{}).Return([]internal.Runtime{}, nil).Once()
+		resolver := &automock.RuntimeResolver{}
+		defer resolver.AssertExpectations(t)
+		resolver.On("Resolve", internal.TargetSpec{}).Return([]internal.Runtime{}, nil).Once()
 
-	p := orchestration.Parameters{
-		DryRun: true,
-	}
-	serialized, err := json.Marshal(p)
-	require.NoError(t, err)
+		p := orchestration.Parameters{
+			DryRun: true,
+		}
+		serialized, err := json.Marshal(p)
+		require.NoError(t, err)
 
-	id := "id"
-	err = store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, Parameters: sql.NullString{
-		String: string(serialized),
-		Valid:  true,
-	}})
-	require.NoError(t, err)
-
-	svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, logrus.New())
-
-	// when
-	_, err = svc.Execute(id)
-	require.NoError(t, err)
-
-	o, err := store.Orchestrations().GetByID(id)
-	require.NoError(t, err)
-
-	assert.Equal(t, internal.Succeeded, o.State)
-}
-
-func TestUpgradeKymaManager_Execute_InProgressWithRuntimeOperations(t *testing.T) {
-	// given
-	store := storage.NewMemoryStorage()
-
-	resolver := &automock.RuntimeResolver{}
-	defer resolver.AssertExpectations(t)
-
-	id := "id"
-	operations := []internal.RuntimeOperation{{
-		Runtime: internal.Runtime{
-			RuntimeID: id,
-		},
-		OperationID: id,
-	}}
-	ops, err := json.Marshal(&operations)
-	require.NoError(t, err)
-
-	upgradeOperation := internal.UpgradeKymaOperation{
-		Operation: internal.Operation{
-			ID:                     id,
-			Version:                0,
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Now(),
-			InstanceID:             "",
-			ProvisionerOperationID: "",
-			State:                  domain.Succeeded,
-			Description:            "operation created",
-		},
-		ProvisioningParameters: "",
-		InputCreator:           nil,
-		SubAccountID:           "sub",
-		RuntimeID:              id,
-		DryRun:                 false,
-	}
-	err = store.Operations().InsertUpgradeKymaOperation(upgradeOperation)
-	require.NoError(t, err)
-
-	givenO := internal.Orchestration{
-		OrchestrationID: id,
-		State:           internal.InProgress,
-		RuntimeOperations: sql.NullString{
-			String: string(ops),
+		id := "id"
+		err = store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, Parameters: sql.NullString{
+			String: string(serialized),
 			Valid:  true,
+		}})
+		require.NoError(t, err)
+
+		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, logrus.New())
+
+		// when
+		_, err = svc.Execute(id)
+		require.NoError(t, err)
+
+		o, err := store.Orchestrations().GetByID(id)
+		require.NoError(t, err)
+
+		assert.Equal(t, internal.Succeeded, o.State)
+
+	})
+
+	t.Run("InProgressWithRuntimeOperations", func(t *testing.T) {
+		// given
+		store := storage.NewMemoryStorage()
+
+		resolver := &automock.RuntimeResolver{}
+		defer resolver.AssertExpectations(t)
+
+		id := "id"
+		operations := []internal.RuntimeOperation{{
+			Runtime: internal.Runtime{
+				RuntimeID: id,
+			},
+			OperationID: id,
 		}}
-	err = store.Orchestrations().Insert(givenO)
-	require.NoError(t, err)
+		ops, err := json.Marshal(&operations)
+		require.NoError(t, err)
 
-	svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), &testExecutor{}, resolver, logrus.New())
+		upgradeOperation := internal.UpgradeKymaOperation{
+			Operation: internal.Operation{
+				ID:                     id,
+				Version:                0,
+				CreatedAt:              time.Now(),
+				UpdatedAt:              time.Now(),
+				InstanceID:             "",
+				ProvisionerOperationID: "",
+				State:                  domain.Succeeded,
+				Description:            "operation created",
+			},
+			ProvisioningParameters: "",
+			InputCreator:           nil,
+			SubAccountID:           "sub",
+			RuntimeID:              id,
+			DryRun:                 false,
+		}
+		err = store.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		require.NoError(t, err)
 
-	// when
-	_, err = svc.Execute(id)
-	require.NoError(t, err)
+		givenO := internal.Orchestration{
+			OrchestrationID: id,
+			State:           internal.InProgress,
+			RuntimeOperations: sql.NullString{
+				String: string(ops),
+				Valid:  true,
+			}}
+		err = store.Orchestrations().Insert(givenO)
+		require.NoError(t, err)
 
-	o, err := store.Orchestrations().GetByID(id)
-	require.NoError(t, err)
+		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), &testExecutor{}, resolver, logrus.New())
 
-	assert.Equal(t, internal.Succeeded, o.State)
+		// when
+		_, err = svc.Execute(id)
+		require.NoError(t, err)
+
+		o, err := store.Orchestrations().GetByID(id)
+		require.NoError(t, err)
+
+		assert.Equal(t, internal.Succeeded, o.State)
+
+	})
 }
 
 type testExecutor struct{}

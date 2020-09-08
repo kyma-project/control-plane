@@ -64,7 +64,7 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 	state := internal.InProgress
 	desc := fmt.Sprintf("scheduled %d operations", len(operations))
 
-	isFinished := len(operations) == 0 || dto.DryRun
+	isFinished := len(operations) == 0
 	if isFinished {
 		state = internal.Succeeded
 	}
@@ -87,15 +87,14 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 	}
 
 	state = internal.Succeeded
-	// TODO(upgrade): check UpgradeKymaOperations in the loop to assert orchestration state
-	result, err := u.checkOperationsResults(operations)
+	processedOps, result, err := u.CheckOperationsResults(operations)
 	if err != nil {
 		return 0, errors.Wrap(err, "while checking operations results")
 	}
 	if !result {
 		state = internal.Failed
 	}
-	repeat, err = u.updateOrchestration(o, state, desc, operations)
+	repeat, err = u.updateOrchestration(o, state, desc, processedOps)
 	if err != nil {
 		return 0, errors.Wrap(err, "while updating orchestration")
 	}
@@ -179,26 +178,38 @@ func (u *upgradeKymaManager) updateOrchestration(o *internal.Orchestration, stat
 	return 0, nil
 }
 
-func (u *upgradeKymaManager) checkOperationsResults(ops []internal.RuntimeOperation) (bool, error) {
+func (u *upgradeKymaManager) CheckOperationsResults(ops []internal.RuntimeOperation) ([]internal.RuntimeOperation, bool, error) {
 	// get all operation IDs to process
 	var operationIDList []string
+	runtimeOperations := make(map[string]internal.RuntimeOperation)
 	for _, op := range ops {
-		operationIDList = append(operationIDList, op.OperationID)
+		if len(op.OperationID) != 0 {
+			operationIDList = append(operationIDList, op.OperationID)
+			runtimeOperations[op.OperationID] = op
+		}
 	}
 
 	// get operation status for each processed operation
 	for len(operationIDList) != 0 {
 		operations, err := u.operationStorage.GetOperationsForIDs(operationIDList)
 		if err != nil {
-			return false, err
+			return []internal.RuntimeOperation{}, false, err
 		}
 		// loop over operations, remove IDs which were succeeded or failed
 		for i, op := range operations {
 			if op.State != domain.InProgress {
 				operationIDList = append(operationIDList[:i], operationIDList[i+1:]...)
+				runtimeOp := runtimeOperations[op.ID]
+				runtimeOp.Status = string(op.State)
+				runtimeOperations[op.ID] = runtimeOp
 			}
 		}
 	}
 
-	return true, nil
+	result := make([]internal.RuntimeOperation, 0)
+	for _, op := range runtimeOperations {
+		result = append(result, op)
+	}
+
+	return result, true, nil
 }
