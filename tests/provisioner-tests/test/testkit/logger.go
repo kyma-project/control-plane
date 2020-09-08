@@ -22,21 +22,21 @@ func NewLogger(t *testing.T, fields ...string) *Logger {
 }
 
 func (l Logger) Log(msg string) {
-	l.t.Logf("%s   %s", msg, l.joinedFields)
+	l.t.Logf("%s %s", msg, l.joinedFields)
 }
 
 func (l Logger) Logf(format string, msg ...interface{}) {
-	format = strings.Join([]string{format, "%s"}, "\t")
+	format = strings.Join([]string{format, "%s"}, " ")
 	msg = append(msg, l.joinedFields)
 	l.t.Logf(format, msg...)
 }
 
 func (l Logger) Error(msg string) {
-	l.t.Errorf("%s\t%s", msg, l.joinedFields)
+	l.t.Errorf("%s %s", msg, l.joinedFields)
 }
 
 func (l Logger) Errorf(format string, msg ...interface{}) {
-	format = strings.Join([]string{format, "%s"}, "\t")
+	format = strings.Join([]string{format, "%s"}, " ")
 	msg = append(msg, l.joinedFields)
 	l.t.Errorf(format, msg...)
 }

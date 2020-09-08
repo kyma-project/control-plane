@@ -48,3 +48,5 @@ KEB binary allows you to override some configuration parameters. You can specify
 | **APP_ENABLE_ON_DEMAND_VERSION** | If set to `true`, a user can specify a Kyma version in a provisioning request. | `false` |
 | **APP_VERSION_CONFIG_NAMESPACE** | Defines the Namespace with the ConfigMap that contains Kyma versions for global accounts configuration. | None |
 | **APP_VERSION_CONFIG_NAME** | Defines the name of the ConfigMap that contains Kyma versions for global accounts configuration. | None |
+| **APP_PROVISIONING_MACHINE_IMAGE** | Defines the Gardener machine image used in a provisioned node. | None |
+| **APP_PROVISIONING_MACHINE_IMAGE_VERSION** | Defines the Gardener image version used in a provisioned cluster. | None |

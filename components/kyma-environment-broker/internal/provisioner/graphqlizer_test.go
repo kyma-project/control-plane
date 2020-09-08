@@ -123,6 +123,80 @@ func TestKymaConfigToGraphQLOnlyKymaVersion(t *testing.T) {
 	assert.Equal(t, expRender, gotRender)
 }
 
+func Test_GardenerConfigInputToGraphQL(t *testing.T) {
+	// given
+	sut := Graphqlizer{}
+	exp := `{
+		kubernetesVersion: "1.18",
+		volumeSizeGB: 50,
+		machineType: "Standard_D4_v3",
+		region: "europe",
+		provider: "Azure",
+		diskType: "Standard_LRS",
+		targetSecret: "scr",
+		workerCidr: "10.250.0.0/19",
+        autoScalerMin: 0,
+        autoScalerMax: 0,
+        maxSurge: 0,
+		maxUnavailable: 0,
+	}`
+
+	// when
+	got, err := sut.GardenerConfigInputToGraphQL(gqlschema.GardenerConfigInput{
+		Region:            "europe",
+		VolumeSizeGb:      50,
+		WorkerCidr:        "10.250.0.0/19",
+		Provider:          "Azure",
+		DiskType:          "Standard_LRS",
+		TargetSecret:      "scr",
+		MachineType:       "Standard_D4_v3",
+		KubernetesVersion: "1.18",
+	})
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, exp, got)
+}
+
+func Test_GardenerConfigInputToGraphQLWithMachineImage(t *testing.T) {
+	// given
+	sut := Graphqlizer{}
+	exp := `{
+		kubernetesVersion: "1.18",
+		volumeSizeGB: 50,
+		machineType: "Standard_D4_v3",
+		machineImage: "coreos",
+		machineImageVersion: "255.0",
+		region: "europe",
+		provider: "Azure",
+		diskType: "Standard_LRS",
+		targetSecret: "scr",
+		workerCidr: "10.250.0.0/19",
+        autoScalerMin: 0,
+        autoScalerMax: 0,
+        maxSurge: 0,
+		maxUnavailable: 0,
+	}`
+
+	// when
+	got, err := sut.GardenerConfigInputToGraphQL(gqlschema.GardenerConfigInput{
+		Region:              "europe",
+		VolumeSizeGb:        50,
+		WorkerCidr:          "10.250.0.0/19",
+		Provider:            "Azure",
+		DiskType:            "Standard_LRS",
+		TargetSecret:        "scr",
+		MachineType:         "Standard_D4_v3",
+		KubernetesVersion:   "1.18",
+		MachineImage:        strPrt("coreos"),
+		MachineImageVersion: strPrt("255.0"),
+	})
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, exp, got)
+}
+
 func Test_LabelsToGQL(t *testing.T) {
 
 	sut := Graphqlizer{}
@@ -220,4 +294,8 @@ func TestGCPProviderConfigInputToGraphQL(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, expected, got)
+}
+
+func strPrt(s string) *string {
+	return &s
 }

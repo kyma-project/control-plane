@@ -46,7 +46,7 @@ These are the provisioning parameters for Azure that you can configure:
 | **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D8_v3` |
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
 | **region** | string | Defines the cluster region. | No | `westeurope` |
-| **zones** | string | Defines the list of zones in which the Runtime Provisioner creates the cluster. | No | `["1", "2", "3"]` |
+| **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `[]` |
 | **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
 | **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `10` |
 | **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
@@ -64,7 +64,7 @@ These are the provisioning parameters for Azure that you can configure:
 | **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D4_v3` |
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
 | **region** | string | Defines the cluster region. | No | `westeurope` |
-| **zones** | string | Defines the list of zones in which the Runtime Provisioner creates the cluster. | No | `["1", "2", "3"]` |
+| **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `[]` |
 | **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
 | **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `4` |
 | **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
@@ -87,7 +87,7 @@ These are the provisioning parameters for GCP that you can configure:
 | **machineType** | string | Specifies the provider-specific virtual machine type. | No | `n1-standard-4` |
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `30` |
 | **region** | string | Defines the cluster region. | No | `europe-west4` |
-| **zones** | string | Defines the list of zones in which the Runtime Provisioner creates the cluster. | No | `["a", "b", "c"]` |
+| **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `[]` |
 | **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
 | **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `4` |
 | **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |

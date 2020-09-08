@@ -366,6 +366,10 @@ func (tmr testMutationResolver) ReconnectRuntimeAgent(_ context.Context, id stri
 	return "", nil
 }
 
+func (tqr testMutationResolver) UpgradeShoot(ctx context.Context, id string, config schema.UpgradeShootInput) (*schema.OperationStatus, error) {
+	return nil, nil
+}
+
 type testQueryResolver struct {
 	t       *testing.T
 	runtime *testRuntime
