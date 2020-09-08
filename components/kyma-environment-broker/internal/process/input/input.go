@@ -28,7 +28,7 @@ type RuntimeInput struct {
 
 	hyperscalerInputProvider  HyperscalerInputProvider
 	optionalComponentsService OptionalComponentService
-	provisioningParameters    internal.ProvisioningParametersDTO
+	provisioningParameters    internal.ProvisioningParameters
 
 	componentsDisabler        ComponentsDisabler
 	enabledOptionalComponents map[string]struct{}
@@ -41,7 +41,7 @@ func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.Pr
 	return r
 }
 
-func (r *RuntimeInput) SetProvisioningParameters(params internal.ProvisioningParametersDTO) internal.ProvisionerInputCreator {
+func (r *RuntimeInput) SetProvisioningParameters(params internal.ProvisioningParameters) internal.ProvisionerInputCreator {
 	r.provisioningParameters = params
 	return r
 }
@@ -153,19 +153,20 @@ func (r *RuntimeInput) CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInpu
 }
 
 func (r *RuntimeInput) applyProvisioningParameters() error {
-	updateString(&r.provisionRuntimeInput.RuntimeInput.Name, &r.provisioningParameters.Name)
+	params := r.provisioningParameters.Parameters
+	updateString(&r.provisionRuntimeInput.RuntimeInput.Name, &params.Name)
 
-	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.MaxUnavailable, r.provisioningParameters.MaxUnavailable)
-	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.MaxSurge, r.provisioningParameters.MaxSurge)
-	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMin, r.provisioningParameters.AutoScalerMin)
-	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax, r.provisioningParameters.AutoScalerMax)
-	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.VolumeSizeGb, r.provisioningParameters.VolumeSizeGb)
-	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Region, r.provisioningParameters.Region)
-	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.MachineType, r.provisioningParameters.MachineType)
-	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.TargetSecret, r.provisioningParameters.TargetSecret)
-	updateString(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Purpose, r.provisioningParameters.Purpose)
-	if r.provisioningParameters.LicenceType != nil {
-		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.LicenceType = r.provisioningParameters.LicenceType
+	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.MaxUnavailable, params.MaxUnavailable)
+	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.MaxSurge, params.MaxSurge)
+	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMin, params.AutoScalerMin)
+	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax, params.AutoScalerMax)
+	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.VolumeSizeGb, params.VolumeSizeGb)
+	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Region, params.Region)
+	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.MachineType, params.MachineType)
+	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.TargetSecret, params.TargetSecret)
+	updateString(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Purpose, params.Purpose)
+	if params.LicenceType != nil {
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.LicenceType = params.LicenceType
 	}
 
 	r.hyperscalerInputProvider.ApplyParameters(r.provisionRuntimeInput.ClusterConfig, r.provisioningParameters)
@@ -178,7 +179,7 @@ func (r *RuntimeInput) resolveOptionalComponentsForProvisionRuntime() error {
 	defer r.mutex.Unlock("enabledOptionalComponents")
 
 	componentsToInstall := []string{}
-	componentsToInstall = append(componentsToInstall, r.provisioningParameters.OptionalComponentsToInstall...)
+	componentsToInstall = append(componentsToInstall, r.provisioningParameters.Parameters.OptionalComponentsToInstall...)
 	for name := range r.enabledOptionalComponents {
 		componentsToInstall = append(componentsToInstall, name)
 	}
@@ -199,7 +200,7 @@ func (r *RuntimeInput) resolveOptionalComponentsForUpgradeRuntime() error {
 	defer r.mutex.Unlock("enabledOptionalComponents")
 
 	componentsToInstall := []string{}
-	componentsToInstall = append(componentsToInstall, r.provisioningParameters.OptionalComponentsToInstall...)
+	componentsToInstall = append(componentsToInstall, r.provisioningParameters.Parameters.OptionalComponentsToInstall...)
 	for name := range r.enabledOptionalComponents {
 		componentsToInstall = append(componentsToInstall, name)
 	}

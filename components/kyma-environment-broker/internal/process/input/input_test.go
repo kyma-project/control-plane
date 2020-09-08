@@ -38,7 +38,7 @@ func TestShouldEnableComponents(t *testing.T) {
 				{Name: "dex"},
 			}, nil)
 
-		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "")
@@ -78,7 +78,7 @@ func TestShouldEnableComponents(t *testing.T) {
 				{Name: "dex"},
 			}, nil)
 
-		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "1.14.0")
@@ -114,7 +114,7 @@ func TestShouldDisableComponents(t *testing.T) {
 				{Name: components.Backup},
 			}, nil)
 
-		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		creator, err := builder.CreateProvisionInput(pp)
 		require.NoError(t, err)
@@ -146,7 +146,7 @@ func TestShouldDisableComponents(t *testing.T) {
 				{Name: components.Backup},
 			}, nil)
 
-		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		creator, err := builder.CreateUpgradeInput(pp)
 		require.NoError(t, err)
@@ -179,7 +179,7 @@ func TestDisabledComponentsForPlanNotExist(t *testing.T) {
 			{Name: components.Backup},
 		}, nil)
 
-	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
 	// when
 	_, err = builder.CreateProvisionInput(pp)
@@ -206,7 +206,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		creator, err := builder.CreateProvisionInput(pp)
 		require.NoError(t, err)
@@ -244,7 +244,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "")
-		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		creator, err := builder.CreateProvisionInput(pp)
 		require.NoError(t, err)
@@ -279,7 +279,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "1.14.0")
-		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important")
+		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		creator, err := builder.CreateUpgradeInput(pp)
 		require.NoError(t, err)
@@ -321,7 +321,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(inputComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
-	factory, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, config, "1.10.0")
+	factory, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, config, "1.10.0", fixTrialRegionMapping())
 	assert.NoError(t, err)
 	pp := fixProvisioningParameters(broker.AzurePlanID, "")
 
@@ -333,10 +333,12 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 
 	// when
 	input, err := builder.
-		SetProvisioningParameters(internal.ProvisioningParametersDTO{
-			Name:         "azure-cluster",
-			TargetSecret: ptr.String("azure-secret"),
-			Purpose:      ptr.String("development"),
+		SetProvisioningParameters(internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{
+				Name:         "azure-cluster",
+				TargetSecret: ptr.String("azure-secret"),
+				Purpose:      ptr.String("development"),
+			},
 		}).
 		SetLabel("label1", "value1").
 		AppendOverrides("keb", kebOverrides).CreateProvisionRuntimeInput()

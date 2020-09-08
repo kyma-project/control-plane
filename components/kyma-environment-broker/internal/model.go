@@ -13,9 +13,9 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
-type ProvisionInputCreator interface {
-	SetProvisioningParameters(params ProvisioningParameters) ProvisionInputCreator
-	SetLabel(key, value string) ProvisionInputCreator
+type ProvisionerInputCreator interface {
+	SetProvisioningParameters(params ProvisioningParameters) ProvisionerInputCreator
+	SetLabel(key, value string) ProvisionerInputCreator
 	// Deprecated, use: AppendOverrides
 	SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator
 	AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator
