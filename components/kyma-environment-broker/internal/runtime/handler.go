@@ -2,8 +2,13 @@ package runtime
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
 	"github.com/pkg/errors"
 
@@ -25,26 +30,38 @@ func NewHandler() *Handler {
 	return &Handler{}
 }
 
+type InstancesPage struct {
+	Data       []internal.Instance `json:"Data"`
+	PageInfo   *pagination.Page    `json:"PageInfo"`
+	TotalCount int                 `json:"TotalCount"`
+}
+
 func (h *Handler) AttachRoutes(router *mux.Router) {
 	router.HandleFunc("/runtimes", h.getRuntimes)
 }
 
 func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
-	limit, offset, err := getParams(req)
+	limit, offset, err := h.getParams(req)
 	if err != nil {
 		writeErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
 	}
 
-	instances, err := h.db.List(limit, offset)
+	instances, pageInfo, totalCount, err := h.db.List(limit, offset)
+
+	page := InstancesPage{
+		Data:       instances,
+		PageInfo:   pageInfo,
+		TotalCount: totalCount,
+	}
 	if err != nil {
 		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching instances"))
 		return
 	}
 
-	writeResponse(w, http.StatusOK, instances)
+	writeResponse(w, http.StatusOK, page)
 }
 
-func getParams(req *http.Request) (int, string, error) {
+func (h *Handler) getParams(req *http.Request) (int, string, error) {
 	params := req.URL.Query()
 
 	limitStr, ok := params["limit"]
@@ -52,11 +69,14 @@ func getParams(req *http.Request) (int, string, error) {
 		return 0, "", errors.New("limit has to be one parameter")
 	}
 	if !ok {
-		limitStr[0] = "0"
+		limitStr[0] = string(h.defaultMaxPage)
 	}
 	limit, err := strconv.Atoi(limitStr[0])
 	if err != nil {
 		return 0, "", errors.New("limit has to be an integer")
+	}
+	if limit > h.defaultMaxPage {
+		return 0, "", errors.New(fmt.Sprintf("limit is bigger than maxPage(%d)", h.defaultMaxPage))
 	}
 
 	offset, ok := params["offset"]

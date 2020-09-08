@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"sync"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -144,6 +146,6 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 	return internal.InstanceStats{}, fmt.Errorf("not implemented")
 }
 
-func (s *Instance) List(limit int, cursor string) ([]internal.Instance, error) {
-	return []internal.Instance{}, nil
+func (s *Instance) List(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error) {
+	return []internal.Instance{}, nil, 0, nil
 }
