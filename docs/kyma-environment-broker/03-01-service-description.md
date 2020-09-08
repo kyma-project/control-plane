@@ -129,9 +129,9 @@ These are the provisioning parameters for the Trial plan that you can configure:
  </details>
  </div>
 
-The region is an optional parameter. If not set, the region is calculated from platform region specified in the path:
+The **region** parameter is optional. If not specified, the region is calculated from platform region specified in this path:
 ```shell
 /oauth/{platform-region}/v2/service_instances/{instance_id}
 ```
-The mapping between platform region and the provider (Azure or GCP) region is defined in a configuration file (**APP_TRIAL_REGION_MAPPING_FILE_PATH** environment variable).
+The mapping between the platform region and the provider region (Azure or GCP) is defined in the configuration file in the **APP_TRIAL_REGION_MAPPING_FILE_PATH** environment variable.
 If the platform region is not defined, the default value is `europe`.
