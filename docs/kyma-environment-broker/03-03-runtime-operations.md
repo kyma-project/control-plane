@@ -8,8 +8,6 @@ Kyma Environment Broker allows you to configure operations that you can run on a
 - Return an error, which interrupts the entire process, or
 - Repeat the entire operation after the specified period.
 
-The timeout for processing an operation is set to `24h`.
-
 > **NOTE:** It's important to set lower timeouts for the Kyma installation in the Runtime Provisioner.
 
 ## Provisioning
@@ -31,6 +29,8 @@ The provisioning process contains the following steps:
 | Request_LMS_Certificates               | LMS                      | Checks if the LMS tenant is ready and requests certificates. The step configures Fluent Bit in a Kyma Runtime. It requires the Create_LMS_Tenant step to be completed beforehand. The step does not fail the provisioning operation. | @piotrmiskiewicz (Team Gopher) |
 | Create_Runtime                         | Provisioning             | Triggers provisioning of a Runtime in the Runtime Provisioner.                                                                                                       | @jasiu001 (Team Gopher)        |
 
+>**NOTE:** The timeout for processing this operation is set to `24h`.
+
 ## Deprovisioning
 
 Each deprovisioning step is responsible for a separate part of cleaning Runtime dependencies. To properly deprovision all Runtime dependencies, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialization](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/process/deprovisioning/initialisation.go#L46) step.
@@ -48,6 +48,8 @@ The deprovisioning process contains the following steps:
 | EDP_Deregistration           | Event Data Platform | Done | Removes all entries about SKR from Event Data Platform. | @jasiu001 (Team Gopher) |
 | Remove_Runtime               | Deprovisioning | Done        | Triggers deprovisioning of a Runtime in the Runtime Provisioner. | @polskikiel (Team Gopher) |
 
+>**NOTE:** The timeout for processing this operation is set to `24h`.
+
 ## Upgrade
 
 Each upgrade step is responsible for a separate part of upgrading Runtime dependencies. To properly upgrade the Runtime, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialization](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/process/kyma_upgrade/initialisation.go) step.
@@ -59,6 +61,8 @@ The upgrade process contains the following steps:
 | Upgrade_Kyma_Initialisation  | Upgrade | Done        | Initializes the `UpgradeOperation` instance with data fetched from the `ProvisioningOperation`. | @ksputo (Team Gopher) |
 | Overrides_From_Secrets_And_Config_Step  | Upgrade | Done        | Builds an input configuration that is passed as overrides to Runtime Provisioner. | @ksputo (Team Gopher) |
 | Upgrade_Runtime              | Upgrade | Done        | Triggers the upgrade of a Runtime in Runtime Provisioner. | @ksputo (Team Gopher) |
+
+>**NOTE:** The timeout for processing this operation is set to `3h`.
 
 ## Provide additional steps
 
