@@ -9,5 +9,10 @@ Orchestration is a mechanism that allows you to upgrade Kyma Runtimes. To create
 
 >**NOTE:** For now, you can upgrade only one Runtime in a single request in KEB.
 
-To check the status of the orchestration, use one of the `GET` endpoints.
-Use Swagger to [check how to consume the Kyma Orchestration API](https://app.swaggerhub.com/apis/kempski/kyma-orchestration_api/0.1).
+Orchestration API consist of the following handlers:
+
+- **GET** `/orchestrations` - exposes data about a single orchestration status.
+- **GET** `/orchestrations/{orchestration_id}` - exposes data about all the orchestrations.
+- **POST** `/upgrade/kyma` - schedules the orchestration of the Kyma upgrade. Requires specifying a request body.
+
+For more details about API check the [Swagger schema](https://app.swaggerhub.com/apis/kempski/kyma-orchestration_api/0.1).
