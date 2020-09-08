@@ -165,7 +165,6 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 	})
 }
 
-
 type testExecutor struct{}
 
 func (t *testExecutor) Execute(opID string) (time.Duration, error) {
