@@ -164,7 +164,7 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt internal.Runtim
 		}
 		instanceOpStatus := resolver.getInstanceOperationStatus(runtimeID)
 		if instanceOpStatus == nil {
-			resolver.logger.Errorf("Couldn't find InstaceOperationStatus for runtimeID %s", runtimeID)
+			resolver.logger.Errorf("Couldn't find InstanceOperationStatus for runtimeID %s", runtimeID)
 			continue
 		}
 		if instanceOpStatus.provisionState != brokerapi.Succeeded || instanceOpStatus.deprovisionState != "" {
