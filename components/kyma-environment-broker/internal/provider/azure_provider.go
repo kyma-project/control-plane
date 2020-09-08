@@ -37,7 +37,6 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "10.250.0.0/19",
-					Zones:    []string{"1", "2", "3"},
 				},
 			},
 		},
@@ -64,7 +63,6 @@ func (p *AzureLiteInput) Defaults() *gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "10.250.0.0/19",
-					Zones:    []string{"1", "2", "3"},
 				},
 			},
 		},
@@ -91,7 +89,6 @@ func (p *AzureTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "10.250.0.0/19",
-					Zones:    []string{"1", "2", "3"},
 				},
 			},
 		},
