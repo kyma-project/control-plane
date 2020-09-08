@@ -434,6 +434,7 @@ func main() {
 		broker.AttachRoutes(route, kymaEnvBroker, logger)
 	}
 
+	runtimeHandler.AttachRoutes(router)
 	orchestrationHandler.AttachRoutes(router)
 	svr := handlers.CustomLoggingHandler(os.Stdout, router, func(writer io.Writer, params handlers.LogFormatterParams) {
 		logs.Infof("Call handled: method=%s url=%s statusCode=%d size=%d", params.Request.Method, params.URL.Path, params.StatusCode, params.Size)

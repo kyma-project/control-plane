@@ -293,10 +293,10 @@ func (r readSession) ListInstances(limit int, cursor string) ([]internal.Instanc
 			return nil, errors.Wrap(err, "while converting offset and limit to SQL statement")
 		}
 
-		stmt := fmt.Sprintf("SELECT * FROM %s %s", postsql.InstancesTableName, order)
-		dupa := r.session.SelectBySql(stmt)
+		stmtWithPagination := fmt.Sprintf("SELECT * FROM %s %s", postsql.InstancesTableName, order)
+		execStmt := r.session.SelectBySql(stmtWithPagination)
 
-		_, err = dupa.Load(&instances)
+		_, err = execStmt.Load(&instances)
 		if err != nil {
 			return nil, errors.Wrap(err, "while fetching instances")
 		}
