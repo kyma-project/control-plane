@@ -3,6 +3,9 @@ package dbsession
 import (
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/pkg/errors"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
@@ -278,4 +281,22 @@ func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID stri
 		LoadOne(&res)
 
 	return res.Total, err
+}
+
+func (r readSession) ListInstances(limit int, cursor string) ([]internal.Instance, error) {
+
+	offset, err := pagination.DecodeOffsetCursor(cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while decoding offset cursor")
+	}
+
+	order, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(limit, offset, postsql.InstancesTableName)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting offset and limit to SQL statement")
+	}
+
+	stmt := fmt.Sprintf("SELECT * FROM %S %S", postsql.InstancesTableName, order)
+	r.session.SelectBySql(stmt)
+
+	return []internal.Instance{}, nil
 }
