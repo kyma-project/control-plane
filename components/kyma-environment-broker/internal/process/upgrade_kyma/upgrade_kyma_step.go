@@ -1,6 +1,7 @@
 package upgrade_kyma
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -48,7 +49,11 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 	}
 
 	if operation.DryRun {
-		log.Infof("[DRY_RUN]: %v", requestInput)
+		inputJSON, err := json.MarshalIndent(requestInput, "", "  ")
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
+		log.Infof("[DRY_RUN]: %s\n", string(inputJSON))
 		return s.operationManager.OperationSucceeded(operation, "dry run succeeded")
 	}
 
