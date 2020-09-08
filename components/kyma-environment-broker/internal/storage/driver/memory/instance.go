@@ -143,3 +143,7 @@ func (s *Instance) Update(instance internal.Instance) error {
 func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 	return internal.InstanceStats{}, fmt.Errorf("not implemented")
 }
+
+func (s *Instance) List(limit int, cursor string) ([]internal.Instance, error) {
+	return []internal.Instance{}, nil
+}

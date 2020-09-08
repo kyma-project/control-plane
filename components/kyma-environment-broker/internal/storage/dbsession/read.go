@@ -3,9 +3,6 @@ package dbsession
 import (
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-	"github.com/pkg/errors"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
@@ -283,20 +280,43 @@ func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID stri
 	return res.Total, err
 }
 
-func (r readSession) ListInstances(limit int, cursor string) ([]internal.Instance, error) {
+func (r readSession) ListInstances(limit int, cursor string) ([]internal.Instance, dberr.Error) {
+	/*	var instances []internal.InstanceWithOperation
 
-	offset, err := pagination.DecodeOffsetCursor(cursor)
-	if err != nil {
-		return nil, errors.Wrap(err, "while decoding offset cursor")
-	}
+		offset, err := pagination.DecodeOffsetCursor(cursor)
+		if err != nil {
+			return nil, errors.Wrap(err, "while decoding offset cursor")
+		}
 
-	order, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(limit, offset, postsql.InstancesTableName)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting offset and limit to SQL statement")
-	}
+		order, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(limit, offset, postsql.InstancesTableName)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting offset and limit to SQL statement")
+		}
 
-	stmt := fmt.Sprintf("SELECT * FROM %S %S", postsql.InstancesTableName, order)
-	r.session.SelectBySql(stmt)
+		stmt := fmt.Sprintf("SELECT * FROM %s %s", postsql.InstancesTableName, order)
+		dupa := r.session.SelectBySql(stmt)
 
+		_, err = dupa.Load(&instances)
+		if err != nil {
+			return nil, errors.Wrap(err, "while fetching instances")
+		}
+
+		totalCount, err := g.getTotalCount(persist, query, args)
+		if err != nil {
+			return nil, -1, err
+		}
+
+		hasNextPage := false
+		endCursor := ""
+		if totalCount > offset+dest.Len() {
+			hasNextPage = true
+			endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
+		}
+		return &pagination.Page{
+			StartCursor: cursor,
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		}, totalCount, nil
+	*/
 	return []internal.Instance{}, nil
 }

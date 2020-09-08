@@ -173,3 +173,7 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 	}
 	return result, nil
 }
+
+func (s *Instance) List(limit int, cursor string) ([]internal.Instance, error) {
+	return []internal.Instance{}, nil
+}
