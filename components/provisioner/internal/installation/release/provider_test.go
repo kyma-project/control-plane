@@ -58,6 +58,28 @@ func TestReleaseProvider_GetReleaseByVersion(t *testing.T) {
 		downloader.AssertExpectations(t)
 	})
 
+	t.Run("should get artifacts from database on conflict", func(t *testing.T) {
+		// given
+		repo := &mocks.Repository{}
+		repo.On("GetReleaseByVersion", kymaVersion).Return(model.Release{}, dberrors.NotFound("error")).Once()
+		repo.On("SaveRelease", release).Return(model.Release{}, dberrors.AlreadyExists("error"))
+		repo.On("GetReleaseByVersion", kymaVersion).Return(release, nil).Once()
+
+		downloader := &mocks.ReleaseDownloader{}
+		downloader.On("DownloadRelease", kymaVersion).Return(release, nil)
+
+		relProvider := NewReleaseProvider(repo, downloader)
+
+		// when
+		providedRel, err := relProvider.GetReleaseByVersion(kymaVersion)
+		require.NoError(t, err)
+
+		// then
+		assert.Equal(t, release, providedRel)
+		repo.AssertExpectations(t)
+		downloader.AssertExpectations(t)
+	})
+
 }
 
 func TestReleaseProvider_GetReleaseByVersionError(t *testing.T) {

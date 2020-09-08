@@ -3,6 +3,8 @@ package release
 import (
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 )
@@ -49,9 +51,15 @@ func (rp *ReleaseProvider) downloadRelease(version string) (model.Release, error
 		return model.Release{}, err
 	}
 
-	release, err = rp.repository.SaveRelease(release)
-	if err != nil {
-		return model.Release{}, fmt.Errorf("failed to save Kyma release artifacts for version %s: %s", version, err.Error())
+	release, dberr := rp.repository.SaveRelease(release)
+	if dberr != nil {
+		// The Artifacts could have been saved by different thread while this one was downloading them
+		// In such case return artifacts from DB
+		if dberr.Code() == dberrors.CodeAlreadyExists {
+			log.Warnf("Artifacts for %s version already exist: %s. Fetching artifacts from database.", version, dberr.Error())
+			return rp.repository.GetReleaseByVersion(version)
+		}
+		return model.Release{}, fmt.Errorf("failed to save Kyma release artifacts for version %s: %s", version, dberr.Error())
 	}
 	return release, nil
 }
