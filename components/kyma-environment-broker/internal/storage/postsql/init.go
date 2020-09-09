@@ -18,6 +18,7 @@ const (
 	OperationTableName     = "operations"
 	OrchestrationTableName = "orchestrations"
 	LMSTenantTableName     = "lms_tenants"
+	InstancesIDName        = "instance_id"
 )
 
 // InitializeDatabase opens database connection and initializes schema if it does not exist

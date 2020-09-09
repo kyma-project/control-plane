@@ -290,12 +290,13 @@ func (r readSession) ListInstances(limit int, cursor string) ([]internal.Instanc
 		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while decoding offset cursor")
 	}
 
-	order, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(limit, offset, postsql.InstancesTableName)
+	order, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(limit, offset, postsql.InstancesIDName)
 	if err != nil {
 		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while converting offset and limit to SQL statement")
 	}
 
 	stmtWithPagination := fmt.Sprintf("SELECT * FROM %s %s", postsql.InstancesTableName, order)
+
 	execStmt := r.session.SelectBySql(stmtWithPagination)
 
 	_, err = execStmt.Load(&instances)

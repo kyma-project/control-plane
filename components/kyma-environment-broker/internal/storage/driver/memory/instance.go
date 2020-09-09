@@ -2,6 +2,7 @@ package memory
 
 import (
 	"database/sql"
+	"sort"
 	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -147,5 +148,43 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 }
 
 func (s *Instance) List(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error) {
-	return []internal.Instance{}, nil, 0, nil
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var toReturn []internal.Instance
+
+	offset, err := pagination.DecodeOffsetCursor(cursor)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	keys := getSortedKeys(s.instances)
+
+	for i := offset; i < offset+limit; i++ {
+		toReturn = append(toReturn, s.instances[keys[offset]])
+	}
+
+	hasNextPage := false
+	endCursor := ""
+	if len(s.instances) > offset+len(toReturn) {
+		hasNextPage = true
+		endCursor = pagination.EncodeNextOffsetCursor(offset, limit)
+	}
+
+	return toReturn,
+		&pagination.Page{
+			StartCursor: cursor,
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		},
+		len(s.instances),
+		nil
+}
+
+func getSortedKeys(instances map[string]internal.Instance) []string {
+	keys := make([]string, 0, len(instances))
+	for k := range instances {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+
 }
