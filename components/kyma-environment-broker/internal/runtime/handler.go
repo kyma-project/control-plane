@@ -70,12 +70,10 @@ func (h *Handler) getParams(req *http.Request) (int, string, error) {
 	var err error
 
 	params := req.URL.Query()
-	h.log.Printf("A")
 	limitArr, ok := params["limit"]
 	if len(limitArr) > 1 {
 		return 0, "", errors.New("limit has to be one parameter")
 	}
-	h.log.Printf("B")
 
 	if !ok {
 		limit = h.defaultMaxPage
@@ -86,12 +84,10 @@ func (h *Handler) getParams(req *http.Request) (int, string, error) {
 		}
 	}
 
-	h.log.Printf("C")
 	if limit > h.defaultMaxPage {
 		return 0, "", errors.New(fmt.Sprintf("limit is bigger than maxPage(%d)", h.defaultMaxPage))
 	}
 
-	h.log.Printf("D")
 	cursorArr, ok := params["cursor"]
 	if len(cursorArr) > 1 {
 		return 0, "", errors.New("cursor has to be one parameter")
