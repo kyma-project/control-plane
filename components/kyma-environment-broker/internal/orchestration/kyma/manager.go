@@ -87,7 +87,7 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 	}
 
 	state = internal.Succeeded
-	processedOps, result, err := u.CheckOperationsResults(operations)
+	processedOps, result, err := u.checkOperationsResults(operations)
 	if err != nil {
 		return 0, errors.Wrap(err, "while checking operations results")
 	}
@@ -178,7 +178,7 @@ func (u *upgradeKymaManager) updateOrchestration(o *internal.Orchestration, stat
 	return 0, nil
 }
 
-func (u *upgradeKymaManager) CheckOperationsResults(ops []internal.RuntimeOperation) ([]internal.RuntimeOperation, bool, error) {
+func (u *upgradeKymaManager) checkOperationsResults(ops []internal.RuntimeOperation) ([]internal.RuntimeOperation, bool, error) {
 	// get all operation IDs to process
 	var operationIDList []string
 	runtimeOperations := make(map[string]internal.RuntimeOperation)

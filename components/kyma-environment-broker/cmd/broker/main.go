@@ -13,6 +13,7 @@ import (
 	orchestrate "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/kyma"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -191,10 +192,10 @@ func main() {
 	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecrets, gardenerShoots)
 	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool, gardenerSharedPool)
 
-	//regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)
-	//fatalOnError(err)
-	//logs.Infof("Platform region mapping for trial: %v", regions)
-	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider, cfg.Provisioning, cfg.KymaVersion, nil)
+	regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)
+	fatalOnError(err)
+	logs.Infof("Platform region mapping for trial: %v", regions)
+	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider, cfg.Provisioning, cfg.KymaVersion, regions)
 	fatalOnError(err)
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
