@@ -30,10 +30,10 @@ func TestRuntimeUpgrade(t *testing.T) {
 			defer testSuite.Recover()
 
 			t.Run(provider, func(t *testing.T) {
-				log := testkit.NewLogger(t,
-					fmt.Sprintf("Provider=%s", provider),
-					fmt.Sprintf("TestType=upgrade-runtime"),
-				)
+				log := testkit.NewLogger(t, logrus.Fields{
+					"Provider": provider,
+					"TestType": "upgrade-runtime",
+				})
 
 				// Create provisioning input
 				provisioningInput, err := testkit.CreateGardenerProvisioningInput(&testSuite.config, testSuite.config.Kyma.PreUpgradeVersion, provider)
@@ -48,8 +48,8 @@ func TestRuntimeUpgrade(t *testing.T) {
 				assertions.RequireNoError(t, err, "Error while starting Runtime provisioning")
 				defer ensureClusterIsDeprovisioned(runtimeID, log)
 
-				log.AddField(fmt.Sprintf("RuntimeId=%s", runtimeID))
-				log.AddField(fmt.Sprintf("ProvisioningOperationId=%s", provisioningOperationID))
+				log.WithField("RuntimeID", runtimeID)
+				log.WithField("ProvisioningOperationID", provisioningOperationID)
 
 				// Wait for provisioning to finish
 				log.Log("Waiting for provisioning to finish...")
@@ -80,7 +80,7 @@ func TestRuntimeUpgrade(t *testing.T) {
 				assertions.RequireNoError(t, err, "Error while starting Runtime upgrade")
 				require.NotNil(t, upgradeOperationStatus.ID)
 
-				log.AddField(fmt.Sprintf("UpgradeOperationId=%s", *upgradeOperationStatus.ID))
+				log.WithField("UpgradeOperationID", *upgradeOperationStatus.ID)
 
 				log.Log("Waiting for upgrade to finish...")
 				upgradeOperationStatus, err = testSuite.WaitUntilOperationIsFinished(UpgradeTimeout, *upgradeOperationStatus.ID, log)
@@ -99,7 +99,7 @@ func TestRuntimeUpgrade(t *testing.T) {
 				deprovisioningOperationID, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeID)
 				assertions.RequireNoError(t, err)
 
-				log.AddField(fmt.Sprintf("DeprovisioningOperationId=%s", deprovisioningOperationID))
+				log.WithField("DeprovisioningOperationID", deprovisioningOperationID)
 
 				// Get provisioning Operation Status
 				deprovisioningOperationStatus, err := testSuite.ProvisionerClient.RuntimeOperationStatus(deprovisioningOperationID)

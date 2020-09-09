@@ -29,11 +29,10 @@ func TestShootUpgrade(t *testing.T) {
 			defer testSuite.Recover()
 
 			t.Run(provider, func(t *testing.T) {
-				log := testkit.NewLogger(
-					t,
-					fmt.Sprintf("Provider=%s", provider),
-					fmt.Sprintf("TestType=upgrade-shoot"),
-				)
+				log := testkit.NewLogger(t, logrus.Fields{
+					"Provider": provider,
+					"TestType": "upgrade-shoot",
+				})
 
 				// Provisioning runtime
 				// Create provisioning input
@@ -49,8 +48,8 @@ func TestShootUpgrade(t *testing.T) {
 				assertions.RequireNoError(t, err, "Error while starting Runtime provisioning")
 				defer ensureClusterIsDeprovisioned(runtimeID, log)
 
-				log.AddField(fmt.Sprintf("RuntimeID=%s", runtimeID))
-				log.AddField(fmt.Sprintf("ProvisioningOperationID=%s", provisioningOperationID))
+				log.WithField("RuntimeID", runtimeID)
+				log.WithField("ProvisioningOperationID", provisioningOperationID)
 
 				// Wait for provisioning to finish
 				log.Log("Waiting for provisioning to finish...")
@@ -99,7 +98,7 @@ func TestShootUpgrade(t *testing.T) {
 				deprovisioningOperationID, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeID)
 				assertions.RequireNoError(t, err)
 
-				log.AddField(fmt.Sprintf("DeprovisioningOperationId=%s", deprovisioningOperationID))
+				log.WithField("DeprovisioningOperationID", deprovisioningOperationID)
 
 				// Get deprovisioning Operation Status
 				deprovisioningOperationStatus, err := testSuite.ProvisionerClient.RuntimeOperationStatus(deprovisioningOperationID)

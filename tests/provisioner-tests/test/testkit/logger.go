@@ -1,47 +1,50 @@
 package testkit
 
 import (
+	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Logger struct {
-	t            *testing.T
-	fields       []string
-	joinedFields string
+	t *testing.T
+	l *logrus.Entry
 }
 
-func NewLogger(t *testing.T, fields ...string) *Logger {
-	joinedFields := strings.Join(fields, " ")
-
+func NewLogger(t *testing.T, fields logrus.Fields) *Logger {
 	return &Logger{
-		t:            t,
-		fields:       fields,
-		joinedFields: joinedFields,
+		t: t,
+		l: logrus.WithFields(fields),
 	}
 }
 
 func (l Logger) Log(msg string) {
-	l.t.Logf("%s %s", msg, l.joinedFields)
+	l.l.Info(msg)
 }
 
 func (l Logger) Logf(format string, msg ...interface{}) {
-	format = strings.Join([]string{format, "%s"}, " ")
-	msg = append(msg, l.joinedFields)
-	l.t.Logf(format, msg...)
+	l.l.Infof(format, msg...)
 }
 
 func (l Logger) Error(msg string) {
-	l.t.Errorf("%s %s", msg, l.joinedFields)
+	l.t.Errorf("%s %s", l.joinedFields(), msg)
 }
 
 func (l Logger) Errorf(format string, msg ...interface{}) {
-	format = strings.Join([]string{format, "%s"}, " ")
-	msg = append(msg, l.joinedFields)
-	l.t.Errorf(format, msg...)
+	msg = append(msg, l.joinedFields())
+	l.t.Errorf("%s %s", l.joinedFields(), fmt.Sprintf(format, msg...))
 }
 
-func (l *Logger) AddField(field string) {
-	l.fields = append(l.fields, field)
-	l.joinedFields = strings.Join(l.fields, " ")
+func (l *Logger) WithField(key string, value interface{}) {
+	l.l.WithField(key, value)
+}
+
+func (l Logger) joinedFields() string {
+	fields := []string{}
+	for key, value := range l.l.Data {
+		fields = append(fields, fmt.Sprintf("%s=%s", key, value))
+	}
+	return strings.Join(fields, " ")
 }

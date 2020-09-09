@@ -34,11 +34,10 @@ func Test_E2E_Gardener(t *testing.T) {
 			defer testSuite.Recover()
 
 			t.Run(provider, func(t *testing.T) {
-				log := testkit.NewLogger(
-					t,
-					fmt.Sprintf("Provider=%s", provider),
-					fmt.Sprintf("TestType=end-to-end"),
-				)
+				log := testkit.NewLogger(t, logrus.Fields{
+					"Provider": provider,
+					"TestType": "end-to-end",
+				})
 
 				// Provisioning runtime
 				// Create provisioning input
@@ -54,8 +53,8 @@ func Test_E2E_Gardener(t *testing.T) {
 				assertions.RequireNoError(t, err, "Error while starting Runtime provisioning")
 				defer ensureClusterIsDeprovisioned(runtimeID, log)
 
-				log.AddField(fmt.Sprintf("RuntimeID=%s", runtimeID))
-				log.AddField(fmt.Sprintf("ProvisioningOperationID=%s", provisioningOperationID))
+				log.WithField("RuntimeID", runtimeID)
+				log.WithField("ProvisioningOperationID", provisioningOperationID)
 
 				// Get provisioning Operation Status
 				log.Log("Getting operation status...")
@@ -99,7 +98,7 @@ func Test_E2E_Gardener(t *testing.T) {
 				deprovisioningOperationID, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeID)
 				assertions.RequireNoError(t, err)
 
-				log.AddField(fmt.Sprintf("DeprovisioningOperationId=%s", deprovisioningOperationID))
+				log.WithField("DeprovisioningOperationID", deprovisioningOperationID)
 
 				// Get provisioning Operation Status
 				deprovisioningOperationStatus, err := testSuite.ProvisionerClient.RuntimeOperationStatus(deprovisioningOperationID)
