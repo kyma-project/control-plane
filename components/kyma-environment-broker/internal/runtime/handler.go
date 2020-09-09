@@ -14,20 +14,22 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 )
 
 type Handler struct {
 	db             storage.Instances
-	queue          *process.Queue
 	log            logrus.FieldLogger
 	defaultMaxPage int
 }
 
-func NewHandler() *Handler {
-	return &Handler{}
+func NewHandler(db storage.Instances, log logrus.FieldLogger, defaultMaxPage int) *Handler {
+	return &Handler{
+		db:             db,
+		log:            log,
+		defaultMaxPage: defaultMaxPage,
+	}
 }
 
 type InstancesPage struct {
@@ -63,11 +65,12 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 
 func (h *Handler) getParams(req *http.Request) (int, string, error) {
 	params := req.URL.Query()
-
+	h.log.Printf("A")
 	limitStr, ok := params["limit"]
 	if len(limitStr) > 1 {
 		return 0, "", errors.New("limit has to be one parameter")
 	}
+	h.log.Printf("B")
 	if !ok {
 		limitStr[0] = string(h.defaultMaxPage)
 	}
@@ -75,10 +78,12 @@ func (h *Handler) getParams(req *http.Request) (int, string, error) {
 	if err != nil {
 		return 0, "", errors.New("limit has to be an integer")
 	}
+	h.log.Printf("C")
 	if limit > h.defaultMaxPage {
 		return 0, "", errors.New(fmt.Sprintf("limit is bigger than maxPage(%d)", h.defaultMaxPage))
 	}
 
+	h.log.Printf("D")
 	offset, ok := params["offset"]
 	if len(offset) > 1 {
 		return 0, "", errors.New("offset has to be one parameter")
