@@ -27,7 +27,7 @@ func NewOperation(sess dbsession.Factory) *operations {
 	}
 }
 
-// InsertProvisioningOperation insert new operation
+// InsertProvisioningOperation insert new ProvisioningOperation to storage
 func (s *operations) InsertProvisioningOperation(operation internal.ProvisioningOperation) error {
 	session := s.NewWriteSession()
 	dto, err := provisioningOperationToDTO(&operation)
@@ -132,7 +132,7 @@ func (s *operations) UpdateProvisioningOperation(op internal.ProvisioningOperati
 	return &op, lastErr
 }
 
-// InsertProvisioningOperation insert new operation
+// InsertDeprovisioningOperation insert new DeprovisioningOperation to storage
 func (s *operations) InsertDeprovisioningOperation(operation internal.DeprovisioningOperation) error {
 	session := s.NewWriteSession()
 
@@ -153,7 +153,7 @@ func (s *operations) InsertDeprovisioningOperation(operation internal.Deprovisio
 	return lastErr
 }
 
-// GetProvisioningOperationByID fetches the ProvisioningOperation by given ID, returns error if not found
+// GetDeprovisioningOperationByID fetches the DeprovisioningOperation by given ID, returns error if not found
 func (s *operations) GetDeprovisioningOperationByID(operationID string) (*internal.DeprovisioningOperation, error) {
 	session := s.NewReadSession()
 	operation := dbmodel.OperationDTO{}
@@ -181,7 +181,7 @@ func (s *operations) GetDeprovisioningOperationByID(operationID string) (*intern
 	return ret, nil
 }
 
-// GetProvisioningOperationByInstanceID fetches the ProvisioningOperation by given instanceID, returns error if not found
+// GetDeprovisioningOperationByInstanceID fetches the DeprovisioningOperation by given instanceID, returns error if not found
 func (s *operations) GetDeprovisioningOperationByInstanceID(instanceID string) (*internal.DeprovisioningOperation, error) {
 	session := s.NewReadSession()
 	operation := dbmodel.OperationDTO{}
@@ -209,7 +209,7 @@ func (s *operations) GetDeprovisioningOperationByInstanceID(instanceID string) (
 	return ret, nil
 }
 
-// UpdateProvisioningOperation updates ProvisioningOperation, fails if not exists or optimistic locking failure occurs.
+// UpdateDeprovisioningOperation updates DeprovisioningOperation, fails if not exists or optimistic locking failure occurs.
 func (s *operations) UpdateDeprovisioningOperation(operation internal.DeprovisioningOperation) (*internal.DeprovisioningOperation, error) {
 	session := s.NewWriteSession()
 	operation.UpdatedAt = time.Now()
@@ -240,7 +240,7 @@ func (s *operations) UpdateDeprovisioningOperation(operation internal.Deprovisio
 	return &operation, lastErr
 }
 
-// InsertUpgradeKymaOperation insert new operation
+// InsertUpgradeKymaOperation insert new UpgradeKymaOperation to storage
 func (s *operations) InsertUpgradeKymaOperation(operation internal.UpgradeKymaOperation) error {
 	session := s.NewWriteSession()
 	dto, err := upgradeKymaOperationToDTO(&operation)
@@ -287,7 +287,7 @@ func (s *operations) GetUpgradeKymaOperationByID(operationID string) (*internal.
 	return ret, nil
 }
 
-// GetProvisioningOperationByInstanceID fetches the ProvisioningOperation by given instanceID, returns error if not found
+// GetUpgradeKymaOperationByInstanceID fetches the UpgradeKymaOperation by given instanceID, returns error if not found
 func (s *operations) GetUpgradeKymaOperationByInstanceID(instanceID string) (*internal.UpgradeKymaOperation, error) {
 	session := s.NewReadSession()
 	operation := dbmodel.OperationDTO{}
