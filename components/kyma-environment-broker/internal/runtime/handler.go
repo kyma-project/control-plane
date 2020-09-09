@@ -43,12 +43,13 @@ func (h *Handler) AttachRoutes(router *mux.Router) {
 }
 
 func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
-	limit, offset, err := h.getParams(req)
+	limit, cursor, err := h.getParams(req)
 	if err != nil {
 		writeErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
+		return
 	}
 
-	instances, pageInfo, totalCount, err := h.db.List(limit, offset)
+	instances, pageInfo, totalCount, err := h.db.List(limit, cursor)
 
 	page := InstancesPage{
 		Data:       instances,
@@ -64,31 +65,44 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 }
 
 func (h *Handler) getParams(req *http.Request) (int, string, error) {
+	var limit int
+	var cursor string
+	var err error
+
 	params := req.URL.Query()
 	h.log.Printf("A")
-	limitStr, ok := params["limit"]
-	if len(limitStr) > 1 {
+	limitArr, ok := params["limit"]
+	if len(limitArr) > 1 {
 		return 0, "", errors.New("limit has to be one parameter")
 	}
 	h.log.Printf("B")
+
 	if !ok {
-		limitStr[0] = string(h.defaultMaxPage)
+		limit = h.defaultMaxPage
+	} else {
+		limit, err = strconv.Atoi(limitArr[0])
+		if err != nil {
+			return 0, "", errors.New("limit has to be an integer")
+		}
 	}
-	limit, err := strconv.Atoi(limitStr[0])
-	if err != nil {
-		return 0, "", errors.New("limit has to be an integer")
-	}
+
 	h.log.Printf("C")
 	if limit > h.defaultMaxPage {
 		return 0, "", errors.New(fmt.Sprintf("limit is bigger than maxPage(%d)", h.defaultMaxPage))
 	}
 
 	h.log.Printf("D")
-	offset, ok := params["offset"]
-	if len(offset) > 1 {
-		return 0, "", errors.New("offset has to be one parameter")
+	cursorArr, ok := params["cursor"]
+	if len(cursorArr) > 1 {
+		return 0, "", errors.New("cursor has to be one parameter")
 	}
-	return limit, offset[0], nil
+	if !ok {
+		cursor = ""
+	} else {
+		cursor = cursorArr[0]
+	}
+
+	return limit, cursor, nil
 }
 
 func writeResponse(w http.ResponseWriter, code int, object interface{}) {
