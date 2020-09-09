@@ -2,7 +2,6 @@ package provisioner
 
 import (
 	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/graphql"
-	"github.com/prometheus/common/log"
 
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"
@@ -53,7 +52,6 @@ func (c client) ProvisionRuntime(config schema.ProvisionRuntimeInput) (operation
 	if err != nil {
 		return "", "", errors.Wrap(err, "Failed to provision Runtime")
 	}
-	log.Info(operationStatus.ID, operationStatus.RuntimeID)
 	if operationStatus.ID == nil || operationStatus.RuntimeID == nil {
 		return "", "", errors.New("Failed to receive proper Operation Status response")
 	}
