@@ -11,8 +11,8 @@ Orchestration is a mechanism that allows you to upgrade Kyma Runtimes. To create
 
 Orchestration API consist of the following handlers:
 
-- **GET** `/orchestrations` - exposes data about a single orchestration status.
-- **GET** `/orchestrations/{orchestration_id}` - exposes data about all orchestrations.
-- **POST** `/upgrade/kyma` - schedules the orchestration. It requires specifying a request body.
+- `GET /orchestrations` - exposes data about a single orchestration status.
+- `GET /orchestrations/{orchestration_id}` - exposes data about all orchestrations.
+- `POST /upgrade/kyma` - schedules the orchestration. It requires specifying a request body.
 
 For more details about the API, check the [Swagger schema](https://app.swaggerhub.com/apis/kempski/kyma-orchestration_api/0.1).
