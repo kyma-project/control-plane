@@ -176,14 +176,5 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 }
 
 func (s *Instance) List(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error) {
-	/*instances, page, totalCount, err := s.NewReadSession().ListInstances(limit, cursor)
-	if err != nil {
-		return runtime.InstancesPage{}, err
-	}
-	return runtime.InstancesPage{
-		Data:       instances,
-		PageInfo:   page,
-		TotalCount: totalCount,
-	}, nil*/
 	return s.NewReadSession().ListInstances(limit, cursor)
 }

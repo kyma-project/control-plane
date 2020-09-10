@@ -398,7 +398,7 @@ func main() {
 	// create info endpoints
 	respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)
 	runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), cfg.DefaultRequestRegion, respWriter)
-	runtimeHandler := runtime.NewHandler(db.Instances(), logrus.New(), 100)
+	runtimeHandler := runtime.NewHandler(db.Instances(), db.Operations(), logrus.New(), 900, runtime.NewConverter())
 	router.Handle("/info/runtimes", runtimesInfoHandler)
 
 	// create metrics endpoint

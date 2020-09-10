@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/pkg/errors"
 
@@ -18,24 +20,49 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	limitParam  = "limit"
+	cursorParam = "cursor"
+)
+
+type Converter interface {
+	InstancesAndOperationsToDTO(internal.Instance, *internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation) dto
+}
+
 type Handler struct {
-	db             storage.Instances
-	log            logrus.FieldLogger
+	instancesDb  storage.Instances
+	operationsDb storage.Operations
+	log          logrus.FieldLogger
+	converter    Converter
+
 	defaultMaxPage int
 }
 
-func NewHandler(db storage.Instances, log logrus.FieldLogger, defaultMaxPage int) *Handler {
+func NewHandler(instanceDb storage.Instances, operationDb storage.Operations, log logrus.FieldLogger, defaultMaxPage int, converter Converter) *Handler {
 	return &Handler{
-		db:             db,
+		instancesDb:    instanceDb,
+		operationsDb:   operationDb,
 		log:            log,
+		converter:      converter,
 		defaultMaxPage: defaultMaxPage,
 	}
 }
 
-type InstancesPage struct {
-	Data       []internal.Instance `json:"Data"`
-	PageInfo   *pagination.Page    `json:"PageInfo"`
-	TotalCount int                 `json:"TotalCount"`
+type dto struct {
+	InstanceID          string `json:"instanceId"`
+	RuntimeID           string `json:"runtimeId"`
+	GlobalAccountID     string `json:"globalAccountId"`
+	SubAccountID        string `json:"subaccountId"`
+	ShootName           string `json:"shootName"`
+	ProvisioningState   string `json:"provisioningState"`
+	DeprovisioningState string `json:"deprovisioningState"`
+	UpgradeState        string `json:"upgradeState"`
+}
+
+type RuntimesPage struct {
+	Data       []dto            `json:"Data"`
+	PageInfo   *pagination.Page `json:"PageInfo"`
+	TotalCount int              `json:"TotalCount"`
 }
 
 func (h *Handler) AttachRoutes(router *mux.Router) {
@@ -43,25 +70,50 @@ func (h *Handler) AttachRoutes(router *mux.Router) {
 }
 
 func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
+	var toReturn []dto
 	limit, cursor, err := h.getParams(req)
 	if err != nil {
 		writeErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
 		return
 	}
 
-	instances, pageInfo, totalCount, err := h.db.List(limit, cursor)
-
-	page := InstancesPage{
-		Data:       instances,
-		PageInfo:   pageInfo,
-		TotalCount: totalCount,
-	}
+	instances, pageInfo, totalCount, err := h.instancesDb.List(limit, cursor)
 	if err != nil {
 		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching instances"))
 		return
 	}
+	for _, instance := range instances {
+		pOpr, dOpr, ukOpr, err := h.getOperationsForInstance(instance)
+		if err != nil {
+			writeErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching operations for instance"))
+			return
+		}
+		dto := h.converter.InstancesAndOperationsToDTO(instance, pOpr, dOpr, ukOpr)
+		toReturn = append(toReturn, dto)
+	}
 
+	page := RuntimesPage{
+		Data:       toReturn,
+		PageInfo:   pageInfo,
+		TotalCount: totalCount,
+	}
 	writeResponse(w, http.StatusOK, page)
+}
+
+func (h *Handler) getOperationsForInstance(instance internal.Instance) (*internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation, error) {
+	pOpr, err := h.operationsDb.GetProvisioningOperationByInstanceID(instance.InstanceID)
+	if err != nil && !dberr.IsNotFound(err) {
+		return nil, nil, nil, err
+	}
+	dOpr, err := h.operationsDb.GetDeprovisioningOperationByInstanceID(instance.InstanceID)
+	if err != nil && !dberr.IsNotFound(err) {
+		return nil, nil, nil, err
+	}
+	ukOpr, err := h.operationsDb.GetUpgradeKymaOperationByInstanceID(instance.InstanceID)
+	if err != nil && !dberr.IsNotFound(err) {
+		return nil, nil, nil, err
+	}
+	return pOpr, dOpr, ukOpr, nil
 }
 
 func (h *Handler) getParams(req *http.Request) (int, string, error) {
@@ -70,7 +122,7 @@ func (h *Handler) getParams(req *http.Request) (int, string, error) {
 	var err error
 
 	params := req.URL.Query()
-	limitArr, ok := params["limit"]
+	limitArr, ok := params[limitParam]
 	if len(limitArr) > 1 {
 		return 0, "", errors.New("limit has to be one parameter")
 	}
@@ -88,7 +140,7 @@ func (h *Handler) getParams(req *http.Request) (int, string, error) {
 		return 0, "", errors.New(fmt.Sprintf("limit is bigger than maxPage(%d)", h.defaultMaxPage))
 	}
 
-	cursorArr, ok := params["cursor"]
+	cursorArr, ok := params[cursorParam]
 	if len(cursorArr) > 1 {
 		return 0, "", errors.New("cursor has to be one parameter")
 	}

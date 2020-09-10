@@ -33,7 +33,7 @@ type ReadSession interface {
 	GetOrchestrationByID(oID string) (internal.Orchestration, dberr.Error)
 	ListOrchestrationsByState(state string) ([]internal.Orchestration, dberr.Error)
 	ListOrchestrations() ([]internal.Orchestration, dberr.Error)
-	ListInstances(limit int, cursor string) ([]internal.InstanceWithOperation, *pagination.Page, int, error)
+	ListInstances(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error)
 }
 
 //go:generate mockery -name=WriteSession
