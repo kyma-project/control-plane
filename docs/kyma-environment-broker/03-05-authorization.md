@@ -54,10 +54,12 @@ metadata:
 spec:
   grantTypes:
     - "client_credentials"
-  scope: "broker:write"
+  scope: "$SCOPE"
   secretName: $CLIENT_NAME
 EOF
 ```
+
+> **NOTE:** The valid scopes are `broker:write`, `broker-upgrade:read`, `broker-upgrade:write`, and `cld:read`.
 
 3. Export the credentials of the created client as environment variables. Run:
 

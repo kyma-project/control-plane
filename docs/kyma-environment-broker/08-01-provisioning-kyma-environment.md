@@ -37,7 +37,6 @@ This tutorial shows how to provision Kyma Runtime on Azure using Kyma Environmen
    --header 'X-Broker-API-Version: 2.14' \
    --header 'Content-Type: application/json' \
    --header "$AUTHORIZATION_HEADER" \
-   --header 'Content-Type: application/json' \
    --data-raw "{
        \"service_id\": \"47c9dcbf-ff30-448e-ab36-d3bad66ba281\",
        \"plan_id\": \"4deee563-e5ec-4731-b9b1-53b42d855f0c\",
