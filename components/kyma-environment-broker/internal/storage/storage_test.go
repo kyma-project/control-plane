@@ -264,6 +264,55 @@ func TestSchemaInitializer(t *testing.T) {
 			require.Contains(t, []string{"1", "3", "4"}, out[1].InstanceID)
 			require.Contains(t, []string{"1", "3", "4"}, out[2].InstanceID)
 		})
+
+		t.Run("should list instances based on offset and cursor", func(t *testing.T) {
+			// given
+			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			require.NoError(t, err)
+			defer containerCleanupFunc()
+
+			err = InitTestDBTables(t, cfg.ConnectionURL())
+			require.NoError(t, err)
+
+			psqlStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			require.NoError(t, err)
+			require.NotNil(t, psqlStorage)
+
+			// populate database with samples
+			fixInstances := []internal.Instance{
+				*fixInstance(instanceData{val: "1"}),
+				*fixInstance(instanceData{val: "2"}),
+				*fixInstance(instanceData{val: "3"}),
+				*fixInstance(instanceData{val: "4"}),
+			}
+			for _, i := range fixInstances {
+				err = psqlStorage.Instances().Insert(i)
+				require.NoError(t, err)
+			}
+			// when
+			out, page, count, err := psqlStorage.Instances().List(2, "")
+
+			// then
+			require.NoError(t, err)
+			require.Len(t, out, 2)
+			require.Equal(t, 4, count)
+			require.True(t, page.HasNextPage)
+
+			assert.Equal(t, fixInstances[0].InstanceID, out[0].InstanceID)
+			assert.Equal(t, fixInstances[1].InstanceID, out[1].InstanceID)
+
+			// when
+			out, page, count, err = psqlStorage.Instances().List(2, page.EndCursor)
+
+			// then
+			require.NoError(t, err)
+			require.Len(t, out, 2)
+			require.Equal(t, 4, count)
+			require.False(t, page.HasNextPage)
+
+			assert.Equal(t, fixInstances[2].InstanceID, out[0].InstanceID)
+			assert.Equal(t, fixInstances[3].InstanceID, out[1].InstanceID)
+		})
 	})
 
 	t.Run("Operations", func(t *testing.T) {
