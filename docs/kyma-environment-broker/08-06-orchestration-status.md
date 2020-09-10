@@ -63,7 +63,7 @@ A successful call returns the orchestration object:
 
 ## Fetch all orchestrations
 
-1. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](#details-authorization) to verify that the orchestration succeeded.
+Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](#details-authorization) to verify that the orchestration succeeded.
 
    ```bash
    curl --request GET "https://$BROKER_URL/orchestrations --header "$AUTHORIZATION_HEADER""
