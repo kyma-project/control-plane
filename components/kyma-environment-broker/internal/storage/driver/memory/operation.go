@@ -54,7 +54,6 @@ func (s *operations) GetProvisioningOperationByInstanceID(instanceID string) (*i
 			return &op, nil
 		}
 	}
-
 	return nil, dberr.NotFound("instance provisioning operation with instanceID %s not found", instanceID)
 }
 

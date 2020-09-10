@@ -20,19 +20,25 @@ type readSession struct {
 	session *dbr.Session
 }
 
-func (r readSession) FindAllInstancesJoinedWithOperation(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, dberr.Error) {
-	var instances []internal.InstanceWithOperation
+func (r readSession) getInstancesJoinedWithOperationQuery() string {
 	join := fmt.Sprintf("%s.instance_id = %s.instance_id", postsql.InstancesTableName, postsql.OperationTableName)
 	stmt := r.session.
 		Select("instances.instance_id, instances.runtime_id, instances.global_account_id, instances.service_id, instances.service_plan_id, instances.dashboard_url, instances.provisioning_parameters, instances.created_at, instances.updated_at, instances.deleted_at, instances.sub_account_id, instances.service_name, instances.service_plan_name, operations.state, operations.description, operations.type").
 		From(postsql.InstancesTableName).
 		LeftJoin(postsql.OperationTableName, join)
+	return stmt.Query
+}
 
+func (r readSession) FindAllInstancesJoinedWithOperation(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, dberr.Error) {
+	var instances []internal.InstanceWithOperation
+
+	stmt := r.getInstancesJoinedWithOperationQuery()
+	execStmt := r.session.SelectBySql(stmt)
 	for _, p := range prct {
-		p.ApplyToPostgres(stmt)
+		p.ApplyToPostgres(execStmt)
 	}
 
-	if _, err := stmt.Load(&instances); err != nil {
+	if _, err := execStmt.Load(&instances); err != nil {
 		return nil, dberr.Internal("Failed to fetch all instances: %s", err)
 	}
 
@@ -282,8 +288,8 @@ func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID stri
 	return res.Total, err
 }
 
-func (r readSession) ListInstances(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error) {
-	var instances []internal.Instance
+func (r readSession) ListInstances(limit int, cursor string) ([]internal.InstanceWithOperation, *pagination.Page, int, error) {
+	var instances []internal.InstanceWithOperation
 
 	offset, err := pagination.DecodeOffsetCursor(cursor)
 	if err != nil {
@@ -295,7 +301,8 @@ func (r readSession) ListInstances(limit int, cursor string) ([]internal.Instanc
 		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while converting offset and limit to SQL statement")
 	}
 
-	stmtWithPagination := fmt.Sprintf("SELECT * FROM %s %s", postsql.InstancesTableName, order)
+	stmt := r.getInstancesJoinedWithOperationQuery()
+	stmtWithPagination := fmt.Sprintf("%s %s", stmt, order)
 
 	execStmt := r.session.SelectBySql(stmtWithPagination)
 

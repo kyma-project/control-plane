@@ -2,7 +2,6 @@ package memory
 
 import (
 	"database/sql"
-	"sort"
 	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -28,6 +27,18 @@ func NewInstance(operations *operations) *Instance {
 	}
 }
 func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, error) {
+	instances, err := s.getJoinedWithOperation()
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range prct {
+		p.ApplyToInMemory(instances)
+	}
+
+	return instances, nil
+}
+
+func (s *Instance) getJoinedWithOperation() ([]internal.InstanceWithOperation, error) {
 	var instances []internal.InstanceWithOperation
 	// simulate left join without grouping on column
 	for id, v := range s.instances {
@@ -60,11 +71,6 @@ func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]i
 			instances = append(instances, internal.InstanceWithOperation{Instance: v})
 		}
 	}
-
-	for _, p := range prct {
-		p.ApplyToInMemory(instances)
-	}
-
 	return instances, nil
 }
 
@@ -147,24 +153,32 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 	return internal.InstanceStats{}, fmt.Errorf("not implemented")
 }
 
-func (s *Instance) List(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error) {
+func (s *Instance) List(limit int, cursor string) ([]internal.InstanceWithOperation, *pagination.Page, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	var toReturn []internal.Instance
+	var toReturn []internal.InstanceWithOperation
 
 	offset, err := pagination.DecodeOffsetCursor(cursor)
 	if err != nil {
 		return nil, nil, 0, err
 	}
-	keys := getSortedKeys(s.instances)
+	instances, err := s.getJoinedWithOperation()
+	if err != nil {
+		return nil, nil, 0, err
+	}
+
+	instanceID := func(i1, i2 *internal.InstanceWithOperation) bool {
+		return i1.InstanceID < i2.InstanceID
+	}
+	internal.By(instanceID).Sort(instances)
 
 	for i := offset; i < offset+limit; i++ {
-		toReturn = append(toReturn, s.instances[keys[offset]])
+		toReturn = append(toReturn, instances[i])
 	}
 
 	hasNextPage := false
 	endCursor := ""
-	if len(s.instances) > offset+len(toReturn) {
+	if len(instances) > offset+len(toReturn) {
 		hasNextPage = true
 		endCursor = pagination.EncodeNextOffsetCursor(offset, limit)
 	}
@@ -175,16 +189,6 @@ func (s *Instance) List(limit int, cursor string) ([]internal.Instance, *paginat
 			EndCursor:   endCursor,
 			HasNextPage: hasNextPage,
 		},
-		len(s.instances),
+		len(instances),
 		nil
-}
-
-func getSortedKeys(instances map[string]internal.Instance) []string {
-	keys := make([]string, 0, len(instances))
-	for k := range instances {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
-
 }

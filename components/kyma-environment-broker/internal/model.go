@@ -3,6 +3,7 @@ package internal
 import (
 	"database/sql"
 	"encoding/json"
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -89,6 +90,38 @@ type Operation struct {
 	ProvisionerOperationID string
 	State                  domain.LastOperationState
 	Description            string
+}
+
+type By func(p1, p2 *InstanceWithOperation) bool
+
+// Sort is a method on the function type, By, that sorts the argument slice according to the function.
+func (by By) Sort(instances []InstanceWithOperation) {
+	ps := &InstanceWithOperationsSorter{
+		instances: instances,
+		by:        by, // The Sort method's receiver is the function (closure) that defines the sort order.
+	}
+	sort.Sort(ps)
+}
+
+// planetSorter joins a By function and a slice of Planets to be sorted.
+type InstanceWithOperationsSorter struct {
+	instances []InstanceWithOperation
+	by        func(p1, p2 *InstanceWithOperation) bool // Closure used in the Less method.
+}
+
+// Len is part of sort.Interface.
+func (s *InstanceWithOperationsSorter) Len() int {
+	return len(s.instances)
+}
+
+// Swap is part of sort.Interface.
+func (s *InstanceWithOperationsSorter) Swap(i, j int) {
+	s.instances[i], s.instances[j] = s.instances[j], s.instances[i]
+}
+
+// Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
+func (s *InstanceWithOperationsSorter) Less(i, j int) bool {
+	return s.by(&s.instances[i], &s.instances[j])
 }
 
 type InstanceWithOperation struct {
