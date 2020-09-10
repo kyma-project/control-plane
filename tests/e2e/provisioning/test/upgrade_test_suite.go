@@ -1,48 +1,36 @@
 package test
 
 import (
+	"context"
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/provisioner"
+	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/broker"
+
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/vrischmann/envconfig"
 )
 
 type UpgradeConfig struct {
-	ManagedRuntimeComponentsYAMLPath string
-	UpgradeTimeout                   time.Duration `default:"3h"`
-	PreUpgradeKymaVersion            string        `envconfig:"optional"` // If empty default version should be used
-	UpgradeKymaVersion               string
+	UpgradeTimeout time.Duration `default:"3h"`
 }
 
 type UpgradeSuite struct {
-	upgradeClient *provisioner.RuntimeUpgradeClient
+	upgradeClient *broker.UpgradeClient
 
 	UpgradeTimeout time.Duration
-
-	PreUpgradeKymaVersion string
-	UpgradeKymaVersion    string
 }
 
-func newUpgradeSuite(t *testing.T, baseConfig Config, suite *Suite) *UpgradeSuite {
+func newUpgradeSuite(t *testing.T, ctx context.Context, oAuthConfig broker.BrokerOAuthConfig, config broker.Config, log logrus.FieldLogger) *UpgradeSuite {
 	cfg := &UpgradeConfig{}
 	err := envconfig.InitWithPrefix(cfg, "APP")
 	require.NoError(t, err)
 
-	log := logrus.New()
-
-	httpClient := newHTTPClient(baseConfig.SkipCertVerification)
-	provisionerClient := provisioner.NewProvisionerClient(baseConfig.ProvisionerURL, baseConfig.TenantID, log.WithField("service", "provisioner_client"), httpClient)
-	componentsProvider := provisioner.NewComponentsListProvider(cfg.ManagedRuntimeComponentsYAMLPath)
-
-	upgradeClient := provisioner.NewRuntimeUpgradeClient(suite.directorClient, provisionerClient, componentsProvider, baseConfig.TenantID, suite.InstanceID, log.WithField("service", "upgrade_client"))
+	upgradeClient := broker.NewUpgradeClient(ctx, oAuthConfig, config, log)
 
 	return &UpgradeSuite{
-		upgradeClient:         upgradeClient,
-		UpgradeTimeout:        cfg.UpgradeTimeout,
-		PreUpgradeKymaVersion: cfg.PreUpgradeKymaVersion,
-		UpgradeKymaVersion:    cfg.UpgradeKymaVersion,
+		upgradeClient:  upgradeClient,
+		UpgradeTimeout: cfg.UpgradeTimeout,
 	}
 }
