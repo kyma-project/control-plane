@@ -13,15 +13,16 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
-type ProvisionInputCreator interface {
-	SetProvisioningParameters(params ProvisioningParameters) ProvisionInputCreator
-	SetLabel(key, value string) ProvisionInputCreator
+type ProvisionerInputCreator interface {
+	SetProvisioningParameters(params ProvisioningParameters) ProvisionerInputCreator
+	SetLabel(key, value string) ProvisionerInputCreator
 	// Deprecated, use: AppendOverrides
-	SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
-	AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
-	AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
-	Create() (gqlschema.ProvisionRuntimeInput, error)
-	EnableOptionalComponent(componentName string) ProvisionInputCreator
+	SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator
+	AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator
+	AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator
+	CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntimeInput, error)
+	CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInput, error)
+	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 }
 
 type LMSTenant struct {
@@ -107,7 +108,7 @@ type ProvisioningOperation struct {
 	ProvisioningParameters string `json:"provisioning_parameters"`
 
 	// following fields are not stored in the storage
-	InputCreator ProvisionInputCreator `json:"-"`
+	InputCreator ProvisionerInputCreator `json:"-"`
 
 	Avs AvsLifecycleData `json:"avs"`
 
@@ -125,8 +126,21 @@ type DeprovisioningOperation struct {
 	RuntimeID              string           `json:"runtime_id"`
 }
 
+// UpgradeKymaOperation holds all information about upgrade Kyma operation
+type UpgradeKymaOperation struct {
+	Operation `json:"-"`
+
+	ProvisioningParameters string `json:"provisioning_parameters"`
+
+	InputCreator ProvisionerInputCreator `json:"-"`
+
+	SubAccountID string `json:"-"`
+	RuntimeID    string `json:"runtime_id"`
+	DryRun       bool   `json:"dry_run"`
+}
+
 // Orchestration holds all information about an orchestration.
-// Orchestration performs operations of a specific type (KymaUpgradeOperation, ClusterUpgradeOperation)
+// Orchestration performs operations of a specific type (UpgradeKymaOperation, UpgradeClusterOperation)
 // on specific targets of SKRs.
 type Orchestration struct {
 	OrchestrationID   string
@@ -303,6 +317,27 @@ func (do *DeprovisioningOperation) GetProvisioningParameters() (ProvisioningPara
 }
 
 func (do *DeprovisioningOperation) SetProvisioningParameters(parameters ProvisioningParameters) error {
+	params, err := json.Marshal(parameters)
+	if err != nil {
+		return errors.Wrap(err, "while marshaling provisioning parameters")
+	}
+
+	do.ProvisioningParameters = string(params)
+	return nil
+}
+
+func (do *UpgradeKymaOperation) GetProvisioningParameters() (ProvisioningParameters, error) {
+	var pp ProvisioningParameters
+
+	err := json.Unmarshal([]byte(do.ProvisioningParameters), &pp)
+	if err != nil {
+		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
+	}
+
+	return pp, nil
+}
+
+func (do *UpgradeKymaOperation) SetProvisioningParameters(parameters ProvisioningParameters) error {
 	params, err := json.Marshal(parameters)
 	if err != nil {
 		return errors.Wrap(err, "while marshaling provisioning parameters")

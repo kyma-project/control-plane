@@ -103,7 +103,7 @@ You can configure Runtime provisioning and deprovisioning processes by providing
         NewFieldFromCustomStep string `json:"new_field_from_custom_step"`    
 
         // These fields are not stored in the storage
-        InputCreator ProvisionInputCreator `json:"-"`
+        InputCreator ProvisionerInputCreator `json:"-"`
     }
     ```
 

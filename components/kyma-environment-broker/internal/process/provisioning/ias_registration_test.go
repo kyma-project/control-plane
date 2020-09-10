@@ -50,7 +50,7 @@ func TestIASRegistration_Run(t *testing.T) {
 		bundleBuilder.On("NewBundle", iasInstanceID, inputID).Return(bundle, nil).Once()
 	}
 
-	inputCreatorMock := &provisioningAutomock.ProvisionInputCreator{}
+	inputCreatorMock := &provisioningAutomock.ProvisionerInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
 	inputCreatorMock.On("AppendOverrides", "monitoring", []*gqlschema.ConfigEntryInput{
 		{

@@ -24,3 +24,9 @@ type DeprovisioningStepProcessed struct {
 	OldOperation internal.DeprovisioningOperation
 	Operation    internal.DeprovisioningOperation
 }
+
+type UpgradeKymaStepProcessed struct {
+	StepProcessed
+	OldOperation internal.UpgradeKymaOperation
+	Operation    internal.UpgradeKymaOperation
+}

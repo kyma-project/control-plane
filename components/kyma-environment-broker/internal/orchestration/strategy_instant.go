@@ -38,7 +38,6 @@ func (p *InstantOrchestrationStrategy) Execute(operations []internal.RuntimeOper
 	for _, op := range operations {
 		q.Add(op.OperationID)
 	}
-	q.ShutDown()
 
 	return 0, nil
 }

@@ -85,7 +85,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		return operation, 1 * time.Minute, nil
 	}
 	log = log.WithField("runtimeID", *provisionerResponse.RuntimeID)
-	log.Infof("call to provisioner succeeded", *provisionerResponse.RuntimeID)
+	log.Infof("call to provisioner succeeded, got operation ID %q", *provisionerResponse.ID)
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	if err != nil {
@@ -111,7 +111,7 @@ func (s *CreateRuntimeStep) createProvisionInput(operation internal.Provisioning
 	operation.InputCreator.SetProvisioningParameters(parameters)
 	operation.InputCreator.SetLabel(brokerKeyPrefix+"instance_id", operation.InstanceID)
 	operation.InputCreator.SetLabel(globalKeyPrefix+"subaccount_id", parameters.ErsContext.SubAccountID)
-	request, err := operation.InputCreator.Create()
+	request, err := operation.InputCreator.CreateProvisionRuntimeInput()
 	if err != nil {
 		return request, errors.Wrap(err, "while building input for provisioner")
 	}

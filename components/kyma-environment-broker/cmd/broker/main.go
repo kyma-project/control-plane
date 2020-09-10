@@ -2,12 +2,18 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
+	orchestrate "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/kyma"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -33,8 +39,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -44,7 +50,6 @@ import (
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -218,6 +223,7 @@ func main() {
 	// setup operation managers
 	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
+	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), eventBroker, logs.WithField("upgradeKyma", "manager"))
 
 	// define steps
 	kymaVersionConfigurator := provisioning.NewKymaVersionConfigurator(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
@@ -332,6 +338,28 @@ func main() {
 		}
 	}
 
+	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, inputFactory)
+	upgradeKymaManager.InitStep(upgradeKymaInit)
+	upgradeKymaSteps := []struct {
+		disabled bool
+		weight   int
+		step     upgrade_kyma.Step
+	}{
+		{
+			weight: 2,
+			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(ctx, cli, db.Operations()),
+		},
+		{
+			weight: 10,
+			step:   upgrade_kyma.NewUpgradeKymaStep(db.Operations(), provisionerClient),
+		},
+	}
+	for _, step := range upgradeKymaSteps {
+		if !step.disabled {
+			upgradeKymaManager.AddStep(step.weight, step.step)
+		}
+	}
+
 	// run queues
 	const workersAmount = 5
 	provisionQueue := process.NewQueue(provisionManager, logs)
@@ -339,6 +367,9 @@ func main() {
 
 	deprovisionQueue := process.NewQueue(deprovisionManager, logs)
 	deprovisionQueue.Run(ctx.Done(), workersAmount)
+
+	upgradeKymaQueue := process.NewQueue(upgradeKymaManager, logs)
+	upgradeKymaQueue.Run(ctx.Done(), workersAmount)
 
 	if !cfg.DisableProcessOperationsInProgress {
 		err = processOperationsInProgressByType(dbmodel.OperationTypeProvision, db.Operations(), provisionQueue, logs)
@@ -377,14 +408,14 @@ func main() {
 	// create metrics endpoint
 	router.Handle("/metrics", promhttp.Handler())
 
-	//gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
-	//fatalOnError(err)
-	//runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient, "default", db.Instances(), logs)
-	// TODO(upgrade): uncomment and inject upgradeKymaManager populated with steps
-	//upgradeKymaManager := kyma.NewUpgradeKymaManager(db.Orchestrations(), nil, runtimeResolver, logs)
-	//kymaQueue := process.NewQueue(upgradeKymaManager, logs)
-	//kymaQueue.Run(ctx.Done(), workersAmount)
-	//orchestrationHandler := orchestrate.NewOrchestrationHandler(db.Orchestrations(), kymaQueue, logs)
+	gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
+	fatalOnError(err)
+	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
+	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, db.Instances(), logs)
+	orchestrateKymaManager := kyma.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(), upgradeKymaManager, runtimeResolver, logs)
+	kymaQueue := process.NewQueue(orchestrateKymaManager, logs)
+	kymaQueue.Run(ctx.Done(), workersAmount)
+	orchestrationHandler := orchestrate.NewOrchestrationHandler(db.Orchestrations(), kymaQueue, logs)
 
 	// create OSB API endpoints
 	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
@@ -395,8 +426,8 @@ func main() {
 		route := router.PathPrefix(prefix).Subrouter()
 		broker.AttachRoutes(route, kymaEnvBroker, logger)
 	}
-	// TODO(upgrade): uncomment
-	//orchestrationHandler.AttachRoutes(router)
+
+	orchestrationHandler.AttachRoutes(router)
 	svr := handlers.CustomLoggingHandler(os.Stdout, router, func(writer io.Writer, params handlers.LogFormatterParams) {
 		logs.Infof("Call handled: method=%s url=%s statusCode=%d size=%d", params.Request.Method, params.URL.Path, params.StatusCode, params.Size)
 	})

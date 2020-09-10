@@ -24,7 +24,7 @@ func (eea *ExternalEvalAssistant) CreateBasicEvaluationRequest(operations intern
 	return newBasicEvaluationCreateRequest(operations, eea, configForModel, url)
 }
 
-func (eea *ExternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionInputCreator, evaluationId int64) {
+func (eea *ExternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionerInputCreator, evaluationId int64) {
 	//do nothing
 }
 

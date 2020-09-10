@@ -12,6 +12,8 @@ const (
 	OperationTypeDeprovision OperationType = "deprovision"
 	// OperationTypeUndefined means undefined OperationType
 	OperationTypeUndefined OperationType = ""
+	// OperationTypeUpgradeKyma means upgrade Kyma OperationType
+	OperationTypeUpgradeKyma OperationType = "upgradeKyma"
 )
 
 type OperationDTO struct {
