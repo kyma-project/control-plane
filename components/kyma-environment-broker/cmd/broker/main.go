@@ -242,8 +242,9 @@ func main() {
 			step:   provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
 		},
 		{
-			weight:   1,
-			step:     provisioning.NewInternalEvaluationStep(avsDel, internalEvalAssistant),
+			weight: 1,
+			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
+				provisioning.NewInternalEvaluationStep(avsDel, internalEvalAssistant)),
 			disabled: cfg.Avs.Disabled,
 		},
 		{
@@ -310,7 +311,8 @@ func main() {
 	}{
 		{
 			weight: 1,
-			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
+			step: deprovisioning.NewSkipForTrialPlanStep(db.Operations(),
+				deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant)),
 		},
 		{
 			weight: 1,
