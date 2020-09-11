@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/pkg/httphelpers"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
 	"github.com/google/uuid"
@@ -50,36 +52,36 @@ func (h *kymaHandler) getOrchestration(w http.ResponseWriter, r *http.Request) {
 			status = http.StatusNotFound
 		}
 		h.log.Errorf("while getting orchestration %s: %v", orchestrationID, err)
-		writeErrorResponse(w, status, errors.Wrapf(err, "while getting orchestration %s", orchestrationID))
+		httphelpers.WriteErrorResponse(w, status, errors.Wrapf(err, "while getting orchestration %s", orchestrationID))
 		return
 	}
 
 	response, err := h.conv.OrchestrationToDTO(o)
 	if err != nil {
 		h.log.Errorf("while converting orchestration: %v", err)
-		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting orchestration"))
+		httphelpers.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting orchestration"))
 		return
 	}
 
-	writeResponse(w, http.StatusOK, response)
+	httphelpers.WriteResponse(w, http.StatusOK, response)
 }
 
 func (h *kymaHandler) listOrchestration(w http.ResponseWriter, r *http.Request) {
 	orchestrations, err := h.db.ListAll()
 	if err != nil {
 		h.log.Errorf("while getting orchestrations: %v", err)
-		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting orchestrations"))
+		httphelpers.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting orchestrations"))
 		return
 	}
 
 	response, err := h.conv.OrchestrationListToDTO(orchestrations)
 	if err != nil {
 		h.log.Errorf("while converting orchestrations: %v", err)
-		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting orchestrations"))
+		httphelpers.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting orchestrations"))
 		return
 	}
 
-	writeResponse(w, http.StatusOK, response)
+	httphelpers.WriteResponse(w, http.StatusOK, response)
 }
 
 func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request) {
@@ -88,14 +90,14 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		h.log.Errorf("while decoding request body: %v", err)
-		writeErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while decoding request body"))
+		httphelpers.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while decoding request body"))
 		return
 	}
 
 	params, err := json.Marshal(dto)
 	if err != nil {
 		h.log.Errorf("while encoding request params: %v", err)
-		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while encoding request params"))
+		httphelpers.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while encoding request params"))
 		return
 	}
 
@@ -115,7 +117,7 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 	err = h.db.Insert(o)
 	if err != nil {
 		h.log.Errorf("while inserting orchestration to storage: %v", err)
-		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while inserting orchestration to storage"))
+		httphelpers.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while inserting orchestration to storage"))
 		return
 	}
 
@@ -123,7 +125,7 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 
 	response := orchestration.UpgradeResponse{OrchestrationID: o.OrchestrationID}
 
-	writeResponse(w, http.StatusAccepted, response)
+	httphelpers.WriteResponse(w, http.StatusAccepted, response)
 }
 
 func writeResponse(w http.ResponseWriter, code int, object interface{}) {

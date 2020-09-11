@@ -1,10 +1,11 @@
 package runtime
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/pkg/httphelpers"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
@@ -17,7 +18,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -71,19 +71,19 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 	var toReturn []dto
 	limit, cursor, err := h.getParams(req)
 	if err != nil {
-		writeErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
+		httphelpers.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
 		return
 	}
 
 	instances, pageInfo, totalCount, err := h.instancesDb.List(limit, cursor)
 	if err != nil {
-		writeErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching instances"))
+		httphelpers.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching instances"))
 		return
 	}
 	for _, instance := range instances {
 		pOpr, dOpr, ukOpr, err := h.getOperationsForInstance(instance)
 		if err != nil {
-			writeErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching operations for instance"))
+			httphelpers.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching operations for instance"))
 			return
 		}
 		dto := h.converter.InstancesAndOperationsToDTO(instance, pOpr, dOpr, ukOpr)
@@ -95,7 +95,7 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 		PageInfo:   pageInfo,
 		TotalCount: totalCount,
 	}
-	writeResponse(w, http.StatusOK, page)
+	httphelpers.WriteResponse(w, http.StatusOK, page)
 }
 
 func (h *Handler) getOperationsForInstance(instance internal.Instance) (*internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation, error) {
@@ -149,27 +149,4 @@ func (h *Handler) getParams(req *http.Request) (int, string, error) {
 	}
 
 	return limit, cursor, nil
-}
-
-func writeResponse(w http.ResponseWriter, code int, object interface{}) {
-	data, err := json.Marshal(object)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	_, err = w.Write(data)
-	if err != nil {
-		logrus.Warnf("could not write response %s", string(data))
-	}
-}
-
-type errObj struct {
-	Error string `json:"error"`
-}
-
-func writeErrorResponse(w http.ResponseWriter, code int, err error) {
-	writeResponse(w, code, errObj{Error: err.Error()})
 }
