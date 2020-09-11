@@ -26,7 +26,7 @@ const (
 )
 
 type Converter interface {
-	InstancesAndOperationsToDTO(internal.Instance, *internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation) dto
+	InstancesAndOperationsToDTO(internal.Instance, *internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation) runtimeDTO
 }
 
 type Handler struct {
@@ -46,7 +46,7 @@ func NewHandler(instanceDb storage.Instances, operationDb storage.Operations, de
 	}
 }
 
-type dto struct {
+type runtimeDTO struct {
 	InstanceID          string `json:"instanceId"`
 	RuntimeID           string `json:"runtimeId"`
 	GlobalAccountID     string `json:"globalAccountId"`
@@ -58,7 +58,7 @@ type dto struct {
 }
 
 type RuntimesPage struct {
-	Data       []dto            `json:"Data"`
+	Data       []runtimeDTO     `json:"Data"`
 	PageInfo   *pagination.Page `json:"PageInfo"`
 	TotalCount int              `json:"TotalCount"`
 }
@@ -68,7 +68,7 @@ func (h *Handler) AttachRoutes(router *mux.Router) {
 }
 
 func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
-	var toReturn []dto
+	var toReturn []runtimeDTO
 	limit, cursor, err := h.getParams(req)
 	if err != nil {
 		httphelpers.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))

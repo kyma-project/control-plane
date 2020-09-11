@@ -14,8 +14,8 @@ func NewConverter() *converter {
 }
 
 func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr *internal.ProvisioningOperation,
-	dOpr *internal.DeprovisioningOperation, ukOpr *internal.UpgradeKymaOperation) dto {
-	toReturn := dto{
+	dOpr *internal.DeprovisioningOperation, ukOpr *internal.UpgradeKymaOperation) runtimeDTO {
+	toReturn := runtimeDTO{
 		InstanceID:      instance.InstanceID,
 		RuntimeID:       instance.RuntimeID,
 		GlobalAccountID: instance.GlobalAccountID,

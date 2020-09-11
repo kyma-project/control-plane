@@ -2,7 +2,6 @@ package dbsession
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/pkg/errors"
@@ -27,7 +26,6 @@ func (r readSession) getInstancesJoinedWithOperationStatement() *dbr.SelectStmt 
 		Select("instances.instance_id, instances.runtime_id, instances.global_account_id, instances.service_id, instances.service_plan_id, instances.dashboard_url, instances.provisioning_parameters, instances.created_at, instances.updated_at, instances.deleted_at, instances.sub_account_id, instances.service_name, instances.service_plan_name, operations.state, operations.description, operations.type").
 		From(postsql.InstancesTableName).
 		LeftJoin(postsql.OperationTableName, join)
-	log.Printf("QUERY %+v", stmt)
 	return stmt
 }
 
