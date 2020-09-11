@@ -171,8 +171,8 @@ func (s *Instance) List(limit int, cursor string) ([]internal.Instance, *paginat
 	}
 	keys := getSortedKeys(s.instances)
 
-	for i := offset; i < offset+limit; i++ {
-		toReturn = append(toReturn, s.instances[keys[offset]])
+	for i := offset; i < offset+limit && i < len(keys); i++ {
+		toReturn = append(toReturn, s.instances[keys[i]])
 	}
 
 	hasNextPage := false
