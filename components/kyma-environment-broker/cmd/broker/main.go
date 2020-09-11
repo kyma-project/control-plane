@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -113,6 +114,7 @@ type Config struct {
 	}
 
 	TrialRegionMappingFilePath string
+	MaxPaginationPage          string `envconfig:"default=100"`
 }
 
 func main() {
@@ -398,7 +400,6 @@ func main() {
 	// create info endpoints
 	respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)
 	runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), cfg.DefaultRequestRegion, respWriter)
-	runtimeHandler := runtime.NewHandler(db.Instances(), db.Operations(), logrus.New(), 900, runtime.NewConverter())
 	router.Handle("/info/runtimes", runtimesInfoHandler)
 
 	// create metrics endpoint
@@ -434,11 +435,16 @@ func main() {
 		broker.AttachRoutes(route, kymaEnvBroker, logger)
 	}
 
-	runtimeHandler.AttachRoutes(router)
 	orchestrationHandler.AttachRoutes(router)
 	svr := handlers.CustomLoggingHandler(os.Stdout, router, func(writer io.Writer, params handlers.LogFormatterParams) {
 		logs.Infof("Call handled: method=%s url=%s statusCode=%d size=%d", params.Request.Method, params.URL.Path, params.StatusCode, params.Size)
 	})
+
+	// create list runtimes endpoint
+	maxPage, err := strconv.Atoi(cfg.MaxPaginationPage)
+	fatalOnError(err)
+	runtimeHandler := runtime.NewHandler(db.Instances(), db.Operations(), maxPage, runtime.NewConverter())
+	runtimeHandler.AttachRoutes(router)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
 }

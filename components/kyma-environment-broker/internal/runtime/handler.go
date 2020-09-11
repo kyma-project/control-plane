@@ -32,17 +32,15 @@ type Converter interface {
 type Handler struct {
 	instancesDb  storage.Instances
 	operationsDb storage.Operations
-	log          logrus.FieldLogger
 	converter    Converter
 
 	defaultMaxPage int
 }
 
-func NewHandler(instanceDb storage.Instances, operationDb storage.Operations, log logrus.FieldLogger, defaultMaxPage int, converter Converter) *Handler {
+func NewHandler(instanceDb storage.Instances, operationDb storage.Operations, defaultMaxPage int, converter Converter) *Handler {
 	return &Handler{
 		instancesDb:    instanceDb,
 		operationsDb:   operationDb,
-		log:            log,
 		converter:      converter,
 		defaultMaxPage: defaultMaxPage,
 	}
