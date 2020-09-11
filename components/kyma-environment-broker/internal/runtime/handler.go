@@ -11,8 +11,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-
 	"github.com/pkg/errors"
 
 	"github.com/gorilla/mux"
@@ -44,23 +42,6 @@ func NewHandler(instanceDb storage.Instances, operationDb storage.Operations, de
 		converter:      converter,
 		defaultMaxPage: defaultMaxPage,
 	}
-}
-
-type runtimeDTO struct {
-	InstanceID          string `json:"instanceId"`
-	RuntimeID           string `json:"runtimeId"`
-	GlobalAccountID     string `json:"globalAccountId"`
-	SubAccountID        string `json:"subaccountId"`
-	ShootName           string `json:"shootName"`
-	ProvisioningState   string `json:"provisioningState"`
-	DeprovisioningState string `json:"deprovisioningState"`
-	UpgradeState        string `json:"upgradeState"`
-}
-
-type RuntimesPage struct {
-	Data       []runtimeDTO     `json:"Data"`
-	PageInfo   *pagination.Page `json:"PageInfo"`
-	TotalCount int              `json:"TotalCount"`
 }
 
 func (h *Handler) AttachRoutes(router *mux.Router) {
