@@ -25,7 +25,10 @@ func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr
 		ServicePlanID:    instance.ServicePlanID,
 		ServicePlanName:  instance.ServicePlanName,
 		Status: runtimeStatus{
-			CreatedAt: instance.CreatedAt,
+			CreatedAt:      instance.CreatedAt,
+			Provisioning:   &operation{},
+			Deprovisioning: &operation{},
+			UpgradingKyma:  &operation{},
 		},
 	}
 
@@ -37,7 +40,6 @@ func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr
 		toReturn.Status.Provisioning.State = string(pOpr.State)
 		toReturn.Status.Provisioning.Description = pOpr.Description
 	}
-
 	if dOpr != nil {
 		toReturn.Status.DeletedAt = &instance.DeletedAt
 		toReturn.Status.Deprovisioning.State = string(dOpr.State)
