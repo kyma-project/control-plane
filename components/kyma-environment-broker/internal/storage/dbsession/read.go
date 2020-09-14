@@ -170,6 +170,20 @@ func (r readSession) GetOperationByTypeAndInstanceID(inID string, opType dbmodel
 	return operation, nil
 }
 
+func (r readSession) GetOperationsForIDs(opIDlist []string) ([]dbmodel.OperationDTO, dberr.Error) {
+	var operations []dbmodel.OperationDTO
+
+	_, err := r.session.
+		Select("*").
+		From(postsql.OperationTableName).
+		Where("id IN ?", opIDlist).
+		Load(&operations)
+	if err != nil {
+		return nil, dberr.Internal("Failed to get operations: %s", err)
+	}
+	return operations, nil
+}
+
 func (r readSession) getOperation(condition dbr.Builder) (dbmodel.OperationDTO, dberr.Error) {
 	var operation dbmodel.OperationDTO
 

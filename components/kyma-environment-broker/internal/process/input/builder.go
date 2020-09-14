@@ -13,6 +13,8 @@ import (
 )
 
 //go:generate mockery -name=ComponentListProvider -output=automock -outpkg=automock -case=underscore
+//go:generate mockery -name=CreatorForPlan -output=automock -outpkg=automock -case=underscore
+//go:generate mockery -name=ComponentsDisabler -output=automock -outpkg=automock -case=underscore
 
 type (
 	OptionalComponentService interface {
@@ -31,12 +33,13 @@ type (
 
 	HyperscalerInputProvider interface {
 		Defaults() *gqlschema.ClusterConfigInput
-		ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParametersDTO)
+		ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParameters)
 	}
 
 	CreatorForPlan interface {
 		IsPlanSupport(planID string) bool
-		Create(parameters internal.ProvisioningParameters) (internal.ProvisionInputCreator, error)
+		CreateProvisionInput(parameters internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error)
+		CreateUpgradeInput(parameters internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error)
 	}
 
 	ComponentListProvider interface {
@@ -51,10 +54,11 @@ type InputBuilderFactory struct {
 	fullComponentsList         internal.ComponentConfigurationInputList
 	componentsProvider         ComponentListProvider
 	disabledComponentsProvider DisabledComponentsProvider
+	trialPlatformRegionMapping map[string]string
 }
 
 func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledComponentsProvider DisabledComponentsProvider, componentsListProvider ComponentListProvider, config Config,
-	defaultKymaVersion string) (CreatorForPlan, error) {
+	defaultKymaVersion string, trialPlatformRegionMapping map[string]string) (CreatorForPlan, error) {
 
 	components, err := componentsListProvider.AllComponents(defaultKymaVersion)
 	if err != nil {
@@ -68,6 +72,7 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 		fullComponentsList:         mapToGQLComponentConfigurationInput(components),
 		componentsProvider:         componentsListProvider,
 		disabledComponentsProvider: disabledComponentsProvider,
+		trialPlatformRegionMapping: trialPlatformRegionMapping,
 	}, nil
 }
 
@@ -80,7 +85,7 @@ func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	}
 }
 
-func (f *InputBuilderFactory) Create(pp internal.ProvisioningParameters) (internal.ProvisionInputCreator, error) {
+func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error) {
 	if !f.IsPlanSupport(pp.PlanID) {
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}
@@ -100,9 +105,9 @@ func (f *InputBuilderFactory) Create(pp internal.ProvisioningParameters) (intern
 		return nil, errors.Errorf("case with plan %s is not supported", pp.PlanID)
 	}
 
-	initInput, err := f.initInput(provider, pp.Parameters.KymaVersion)
+	initInput, err := f.initProvisionRuntimeInput(provider, pp.Parameters.KymaVersion)
 	if err != nil {
-		return nil, errors.Wrap(err, "while initialization input")
+		return nil, errors.Wrap(err, "while initializing ProvisionRuntimeInput")
 	}
 
 	disabledForPlan, err := f.disabledComponentsProvider.DisabledComponentsPerPlan(pp.PlanID)
@@ -112,7 +117,7 @@ func (f *InputBuilderFactory) Create(pp internal.ProvisioningParameters) (intern
 	disabledComponents := mergeMaps(disabledForPlan, f.disabledComponentsProvider.DisabledForAll())
 
 	return &RuntimeInput{
-		input:                     initInput,
+		provisionRuntimeInput:     initInput,
 		overrides:                 make(map[string][]*gqlschema.ConfigEntryInput, 0),
 		globalOverrides:           make([]*gqlschema.ConfigEntryInput, 0),
 		labels:                    make(map[string]string),
@@ -131,13 +136,17 @@ func (f *InputBuilderFactory) forTrialPlan(provider *internal.TrialCloudProvider
 
 	switch *provider {
 	case internal.Gcp:
-		return &cloudProvider.GcpTrialInput{}
+		return &cloudProvider.GcpTrialInput{
+			PlatformRegionMapping: f.trialPlatformRegionMapping,
+		}
 	default:
-		return &cloudProvider.AzureTrialInput{}
+		return &cloudProvider.AzureTrialInput{
+			PlatformRegionMapping: f.trialPlatformRegionMapping,
+		}
 	}
 
 }
-func (f *InputBuilderFactory) initInput(provider HyperscalerInputProvider, kymaVersion string) (gqlschema.ProvisionRuntimeInput, error) {
+func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInputProvider, kymaVersion string) (gqlschema.ProvisionRuntimeInput, error) {
 	var (
 		version    string
 		components internal.ComponentConfigurationInputList
@@ -173,6 +182,46 @@ func (f *InputBuilderFactory) initInput(provider HyperscalerInputProvider, kymaV
 		provisionInput.ClusterConfig.GardenerConfig.MachineImageVersion = &f.config.MachineImageVersion
 	}
 	return provisionInput, nil
+}
+
+func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error) {
+	if !f.IsPlanSupport(pp.PlanID) {
+		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
+	}
+
+	upgradeKymaInput, err := f.initUpgradeRuntimeInput(f.kymaVersion)
+	if err != nil {
+		return nil, errors.Wrap(err, "while initializing UpgradeRuntimeInput")
+	}
+
+	disabledForPlan, err := f.disabledComponentsProvider.DisabledComponentsPerPlan(pp.PlanID)
+	if err != nil {
+		return nil, errors.Wrap(err, "every supported plan should be specified in the disabled components map")
+	}
+	disabledComponents := mergeMaps(disabledForPlan, f.disabledComponentsProvider.DisabledForAll())
+
+	return &RuntimeInput{
+		upgradeRuntimeInput:       upgradeKymaInput,
+		mutex:                     nsync.NewNamedMutex(),
+		overrides:                 make(map[string][]*gqlschema.ConfigEntryInput, 0),
+		globalOverrides:           make([]*gqlschema.ConfigEntryInput, 0),
+		optionalComponentsService: f.optComponentsSvc,
+		componentsDisabler:        runtime.NewDisabledComponentsService(disabledComponents),
+		enabledOptionalComponents: map[string]struct{}{},
+	}, nil
+}
+
+func (f *InputBuilderFactory) initUpgradeRuntimeInput(kymaVersion string) (gqlschema.UpgradeRuntimeInput, error) {
+	if kymaVersion == "" {
+		return gqlschema.UpgradeRuntimeInput{}, errors.New("desired kymaVersion cannot be empty")
+	}
+
+	return gqlschema.UpgradeRuntimeInput{
+		KymaConfig: &gqlschema.KymaConfigInput{
+			Version:    kymaVersion,
+			Components: f.fullComponentsList.DeepCopy(),
+		},
+	}, nil
 }
 
 func mapToGQLComponentConfigurationInput(kymaComponents []v1alpha1.KymaComponent) internal.ComponentConfigurationInputList {

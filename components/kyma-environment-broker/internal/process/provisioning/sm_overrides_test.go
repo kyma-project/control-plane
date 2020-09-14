@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//go:generate mockery -name=ProvisionInputCreator -dir=../../ -output=automock -outpkg=automock -case=underscore
+//go:generate mockery -name=ProvisionerInputCreator -dir=../../ -output=automock -outpkg=automock -case=underscore
 
 func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 	ts := SMOverrideTestSuite{}
@@ -71,7 +71,7 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 	for tN, tC := range tests {
 		t.Run(tN, func(t *testing.T) {
 			// given
-			inputCreatorMock := &automock.ProvisionInputCreator{}
+			inputCreatorMock := &automock.ProvisionerInputCreator{}
 			inputCreatorMock.On("AppendOverrides", "service-manager-proxy", tC.expCredentialsValues).
 				Return(nil).Once()
 

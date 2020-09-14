@@ -30,7 +30,7 @@ func (iec *InternalEvalAssistant) CreateBasicEvaluationRequest(operations intern
 	return newBasicEvaluationCreateRequest(operations, iec, configForModel, url)
 }
 
-func (iec *InternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionInputCreator, evaluationId int64) {
+func (iec *InternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionerInputCreator, evaluationId int64) {
 	inputCreator.AppendOverrides(ComponentName, []*gqlschema.ConfigEntryInput{
 		{
 			Key:   EvaluationIdKey,

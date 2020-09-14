@@ -29,7 +29,7 @@ func TestOverridesFromSecretsAndConfigStep_Run(t *testing.T) {
 
 		memoryStorage := storage.NewMemoryStorage()
 
-		inputCreatorMock := &automock.ProvisionInputCreator{}
+		inputCreatorMock := &automock.ProvisionerInputCreator{}
 		defer inputCreatorMock.AssertExpectations(t)
 		inputCreatorMock.On("AppendOverrides", "core", []*gqlschema.ConfigEntryInput{
 			{
@@ -89,7 +89,7 @@ func TestOverridesFromSecretsAndConfigStep_Run(t *testing.T) {
 
 		memoryStorage := storage.NewMemoryStorage()
 
-		inputCreatorMock := &automock.ProvisionInputCreator{}
+		inputCreatorMock := &automock.ProvisionerInputCreator{}
 		defer inputCreatorMock.AssertExpectations(t)
 		inputCreatorMock.On("AppendOverrides", "core", []*gqlschema.ConfigEntryInput{
 			{

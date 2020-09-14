@@ -69,7 +69,7 @@ return "fooBar"
 	svc := NewAuditLogOverridesStep(repo, cfg)
 	svc.fs = mm
 
-	inputCreatorMock := &automock.ProvisionInputCreator{}
+	inputCreatorMock := &automock.ProvisionerInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
 	expectedOverride := `
 [INPUT]

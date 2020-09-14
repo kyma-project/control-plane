@@ -9,8 +9,8 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input"
-	inputAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
+	inputAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -185,7 +185,7 @@ func fixProvisioningParametersWithPlanID(t *testing.T, planID string) string {
 	return string(rawParameters)
 }
 
-func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
+func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 	optComponentsSvc := &inputAutomock.OptionalComponentService{}
 
 	optComponentsSvc.On("ComputeComponentsToDisable", []string{}).Return([]string{})
@@ -225,7 +225,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{
 		KubernetesVersion:           k8sVersion,
 		DefaultGardenerShootPurpose: shootPurpose,
-	}, kymaVersion)
+	}, kymaVersion, fixTrialRegionMapping())
 	assert.NoError(t, err)
 
 	pp := internal.ProvisioningParameters{
@@ -234,10 +234,14 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 			KymaVersion: "",
 		},
 	}
-	creator, err := ibf.Create(pp)
+	creator, err := ibf.CreateProvisionInput(pp)
 	if err != nil {
 		t.Errorf("cannot create input creator for %q plan", broker.GCPPlanID)
 	}
 
 	return creator
+}
+
+func fixTrialRegionMapping() map[string]string {
+	return map[string]string{}
 }

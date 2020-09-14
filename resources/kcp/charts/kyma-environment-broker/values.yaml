@@ -57,6 +57,11 @@ additionalRuntimeComponents: |-
   - name: "knative-eventing-kafka"
     namespace: "knative-eventing"
 
+trialRegionsMapping: |-
+  cf-eu10: europe
+  cf-us10: us
+  cf-apj21: asia
+
 kymaVersion: "1.13.0"
 kymaVersionOnDemand: "false"
 
@@ -182,5 +187,3 @@ e2e:
   upgrade:
     configName: "e2e-upgrade-runtime-config-azure"
     timeout: "100m"
-    preUpgradeVersion: ""
-    targetVersion: "master-156dc1a5"

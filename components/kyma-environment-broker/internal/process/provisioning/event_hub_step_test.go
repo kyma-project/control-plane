@@ -26,8 +26,8 @@ import (
 	hyperscalerautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/azure"
 	azuretesting "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/azure/testing"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input"
-	inputAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
+	inputAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
@@ -58,7 +58,7 @@ func Test_HappyPath(t *testing.T) {
 	op.UpdatedAt = time.Now()
 	op, when, err := step.Run(op, fixLogger())
 	require.NoError(t, err)
-	provisionRuntimeInput, err := op.InputCreator.Create()
+	provisionRuntimeInput, err := op.InputCreator.CreateProvisionRuntimeInput()
 	require.NoError(t, err)
 
 	// then
@@ -302,7 +302,7 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 	return allOverridesFound
 }
 
-func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
+func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 	optComponentsSvc := &inputAutomock.OptionalComponentService{}
 	componentConfigurationInputList := internal.ComponentConfigurationInputList{
 		{
@@ -341,7 +341,7 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	componentsProvider.On("AllComponents", kymaVersion).Return(kymaComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
-	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{}, kymaVersion)
+	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{}, kymaVersion, fixTrialRegionMapping())
 	assert.NoError(t, err)
 	pp := internal.ProvisioningParameters{
 		PlanID: broker.GCPPlanID,
@@ -350,7 +350,7 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 		},
 	}
 
-	creator, err := ibf.Create(pp)
+	creator, err := ibf.CreateProvisionInput(pp)
 	if err != nil {
 		t.Errorf("cannot create input creator for %q plan", broker.GCPPlanID)
 	}

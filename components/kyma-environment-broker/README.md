@@ -50,3 +50,4 @@ KEB binary allows you to override some configuration parameters. You can specify
 | **APP_VERSION_CONFIG_NAME** | Defines the name of the ConfigMap that contains Kyma versions for global accounts configuration. | None |
 | **APP_PROVISIONING_MACHINE_IMAGE** | Defines the Gardener machine image used in a provisioned node. | None |
 | **APP_PROVISIONING_MACHINE_IMAGE_VERSION** | Defines the Gardener image version used in a provisioned cluster. | None |
+| **APP_TRIAL_REGION_MAPPING_FILE_PATH** | Defines a path to the file which contains a mapping between the platform region and the Trial plan region. | None |
