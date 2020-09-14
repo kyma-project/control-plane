@@ -3,17 +3,15 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ template "metris.fullname" . }}
-  {{- if .Values.metrics.serviceMonitor.namespace }}
-  namespace: {{ .Values.metrics.serviceMonitor.namespace }}
-  {{- else }}
-  namespace: {{ .Release.Namespace }}
-  {{- end }}
+{{- with .Values.metrics.serviceMonitor.namespace }}
+  namespace: {{ . }}
+{{- end }}
   labels:
     app: {{ .Chart.Name }}
 {{ include "metris.labels" . | indent 4 }}
-    {{- if .Values.metrics.serviceMonitor.additionalLabels }}
-{{ toYaml .Values.metrics.serviceMonitor.additionalLabels | indent 4 }}
-    {{- end }}
+{{- with .Values.metrics.serviceMonitor.additionalLabels }}
+{{ toYaml . | indent 4 }}
+{{- end }}
 spec:
   endpoints:
     - port: metrics

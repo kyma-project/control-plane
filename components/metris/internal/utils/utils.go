@@ -4,28 +4,19 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
-	"go.uber.org/zap"
+	"github.com/kyma-project/control-plane/components/metris/internal/log"
 )
 
-func TrackTime(name string, start time.Time, logger *zap.SugaredLogger) {
-	elapsed := time.Since(start)
-	logger.Debugf("%s took %s", name, elapsed)
-}
+// ExitHandler returns when a signals is caught.
+func ExitHandler(stop <-chan struct{}) error {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
+	select {
+	case sig := <-c:
+		log.Named("exit-handler").With("signal", sig).Info("shutting down")
+	case <-stop:
+	}
 
-// SetupSignalHandler registers for SIGTERM and SIGINT, a context is returned
-// which is cancel when a signals is caught.
-func SetupSignalHandler(shutdown func()) {
-	sigbuf := 2
-	signals := []os.Signal{os.Interrupt, syscall.SIGTERM}
-	c := make(chan os.Signal, sigbuf)
-	signal.Notify(c, signals...)
-
-	go func() {
-		<-c
-		shutdown()
-		<-c
-		os.Exit(1)
-	}()
+	return nil
 }

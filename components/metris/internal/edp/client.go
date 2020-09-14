@@ -8,43 +8,21 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/metris/internal/metrics"
+	"github.com/kyma-project/control-plane/components/metris/internal/log"
 	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
 	"k8s.io/client-go/util/workqueue"
 )
 
-// type Event []byte
-
-type Config struct {
-	URL               string        `kong:"help='EDP base URL',env='EDP_URL',default='https://input.yevents.io',required=true"`
-	Token             string        `kong:"help='EDP source token',placeholder='SECRET',env='EDP_TOKEN',required=true"`
-	Namespace         string        `kong:"help='EDP Namespace',env='EDP_NAMESPACE',required=true"`
-	DataStream        string        `kong:"help='EDP data stream name',env='EDP_DATASTREAM_NAME',required=true"`
-	DataStreamVersion string        `kong:"help='EDP data stream version',env='EDP_DATASTREAM_VERSION',required=true"`
-	DataStreamEnv     string        `kong:"help='EDP data stream environment',env='EDP_DATASTREAM_ENV',required=true"`
-	Timeout           time.Duration `kong:"help='Time limit for requests made by the EDP client',env='EDP_TIMEOUT',required=true,default='30s'"`
-	Buffer            int           `kong:"help='Number of events that the buffer can have.',env='EDP_BUFFER',required=true,default=100"`
-	Workers           int           `kong:"help='Number of workers to send metrics.',env='EDP_WORKERS',required=true,default=5"`
-	EventRetry        int           `kong:"help='Number of retries for sending event.',env='EDP_RETRY',required=true,default=5"`
-}
-
-type Client struct {
-	config        *Config
-	httpClient    *http.Client
-	logger        *zap.SugaredLogger
-	queue         workqueue.RateLimitingInterface
-	eventsChannel <-chan *[]byte
-}
-
 var (
-	ErrEventInvalidRequest    = errors.New("invalid request")
-	ErrEventMissingParameters = errors.New("namespace, dataStream or dataTenant not found")
+	ErrEventInvalidRequest    = errors.New("invalid request")                                     // 400
+	ErrEventMissingParameters = errors.New("namespace, dataStream or dataTenant not found")       // 404
+	ErrEventPayloadTooLarge   = errors.New("payload too large, maximum allowed data size is 1MB") // 413
 	ErrEventUnknown           = errors.New("unknown error")
-	ErrEventUnmarshal         = errors.New("unmarshal error")
+	ErrEventMarshal           = errors.New("marshal error")
 	ErrEventHTTPRequest       = errors.New("HTTP request error")
 
 	rateLimiterBaseDelay      = 5 * time.Second
@@ -62,7 +40,8 @@ var (
 	}
 )
 
-func NewClient(c *Config, httpClient *http.Client, eventsChannel <-chan *[]byte, logger *zap.SugaredLogger) *Client {
+// NewClient constructs a EDP client from the provided config.
+func NewClient(c *Config, httpClient *http.Client, eventsChannel <-chan *Event, logger log.Logger) *Client {
 	if httpClient == nil {
 		httpClient = defaultHTTPClient
 		httpClient.Timeout = c.Timeout
@@ -74,20 +53,31 @@ func NewClient(c *Config, httpClient *http.Client, eventsChannel <-chan *[]byte,
 	return &Client{
 		config:        c,
 		httpClient:    httpClient,
-		queue:         workqueue.NewNamedRateLimitingQueue(ratelimiter, "edp-events"),
-		logger:        logger.With("component", "edp"),
+		queue:         workqueue.NewNamedRateLimitingQueue(ratelimiter, "events"),
+		logger:        logger,
 		eventsChannel: eventsChannel,
 	}
 }
 
-func (c *Client) Run(parentCtx context.Context, parentwg *sync.WaitGroup) {
-	c.logger.Debug("starting ingester")
+// Start starts worker processes, which wait for event to process from the queue.
+func (c *Client) Start(ctx context.Context) {
+	c.logger.Info("ingester started")
 
-	ctx, cancel := context.WithCancel(parentCtx)
-	defer cancel()
+	// start the event handler
+	go func() {
+		for {
+			select {
+			case event := <-c.eventsChannel:
+				c.logger.Debug("event received")
+				c.queue.Add(event)
+			case <-ctx.Done():
+				c.logger.Debug("event queue shutting down")
+				c.queue.ShutDown()
 
-	parentwg.Add(1)
-	defer parentwg.Done()
+				return
+			}
+		}
+	}()
 
 	var wg sync.WaitGroup
 
@@ -102,48 +92,33 @@ func (c *Client) Run(parentCtx context.Context, parentwg *sync.WaitGroup) {
 			for {
 				event, quit := c.queue.Get()
 				if quit {
-					workerlogger.Debugf("shutting down")
+					workerlogger.Debug("worker stopped")
 					return
 				}
 
-				c.handleErr(
-					c.Write(ctx, event.(*[]byte), workerlogger),
-					event.(*[]byte), workerlogger,
-				)
+				c.handleErr(c.Write(ctx, event.(*Event), workerlogger), event.(*Event), workerlogger)
 
 				c.queue.Done(event)
 			}
 		}(i)
 	}
 
-	go func() {
-		for {
-			select {
-			case event := <-c.eventsChannel:
-				c.queue.Add(event)
-			case <-ctx.Done():
-				c.queue.ShutDown()
-				return
-			}
-		}
-	}()
-
 	wg.Wait()
-	c.logger.Debug("stopping ingester")
+	c.logger.Info("ingester stopped")
 }
 
-// handleErr checks if an error happened and requeue to retry sending the event
-func (c *Client) handleErr(err error, event *[]byte, logger *zap.SugaredLogger) {
+// handleErr checks if an error happened and requeue the event.
+func (c *Client) handleErr(err error, event *Event, logger log.Logger) {
 	if err == nil {
 		// if no error, clear number of queue history
 		c.queue.Forget(event)
+
 		return
 	}
 
 	// if the error is an unmarshall one, we remove it from the queue
-	if errors.Is(err, ErrEventUnmarshal) {
+	if errors.Is(err, ErrEventMarshal) {
 		logger.Error(err)
-		c.queue.Done(event)
 
 		return
 	}
@@ -152,11 +127,10 @@ func (c *Client) handleErr(err error, event *[]byte, logger *zap.SugaredLogger) 
 
 	// retries X times, then stops trying
 	if failures < c.config.EventRetry {
+		// RateLimiter `When` method increase the failure count, so it can't be used
 		nextsend := when(failures)
-		logger.With(
-			"error", err,
-			"event", string(*event),
-		).Warnf("error sending event, requeuing in %s (%d/%d)", nextsend, failures, c.config.EventRetry)
+
+		logger.With("error", err, "event", *event.Data).Errorf("error sending event, requeuing in %s (%d/%d)", nextsend, failures, c.config.EventRetry)
 
 		// Re-enqueue the event
 		c.queue.AddRateLimited(event)
@@ -164,88 +138,66 @@ func (c *Client) handleErr(err error, event *[]byte, logger *zap.SugaredLogger) 
 		return
 	}
 
+	logger.With("error", err, "event", fmt.Sprintf("%+v", event.Data)).Errorf("failed %d times to send the event, removing it out of the queue", c.config.EventRetry)
 	c.queue.Forget(event)
-	logger.With(
-		"error", err,
-		"event", string(*event),
-	).Errorf("failed %d times to send the event, removing it out of the queue", c.config.EventRetry)
 }
 
-// Write sends a batch of samples(json) to EDP
-func (c *Client) Write(parentctx context.Context, data *[]byte, logger *zap.SugaredLogger) error {
-	ctx, cancel := context.WithCancel(parentctx)
-	defer cancel()
+// Write sends events(json) to EDP server.
+func (c *Client) Write(parentctx context.Context, event *Event, logger log.Logger) error {
+	metricTimer := prometheus.NewTimer(sentEventDuration)
+	defer metricTimer.ObserveDuration()
 
-	// try to unmarshal json data submitted
-	var events map[string]json.RawMessage
+	datatenant := event.Datatenant
 
-	err := json.Unmarshal(*data, &events)
+	eventdata, err := json.Marshal(event)
 	if err != nil {
-		return fmt.Errorf("%w: %s", ErrEventUnmarshal, err)
+		return fmt.Errorf("%w: %s", ErrEventMarshal, err)
 	}
 
-	// datatenant == subaccountid
-	for datatenant, event := range events {
-		metricTimer := prometheus.NewTimer(metrics.SentSamplesDuration)
-		defer metricTimer.ObserveDuration()
+	edpurl := fmt.Sprintf("%s/namespaces/%s/dataStreams/%s/%s/dataTenants/%s/%s/events",
+		c.config.URL,
+		c.config.Namespace,
+		c.config.DataStream,
+		c.config.DataStreamVersion,
+		datatenant,
+		c.config.DataStreamEnv,
+	)
 
-		receivedEvents := 1
+	logger.With("event", string(eventdata)).Debugf("sending event to '%s'", edpurl)
 
-		eventjson, err := event.MarshalJSON()
-		if err == nil {
-			var datamap []interface{}
+	httpreq, err := http.NewRequestWithContext(parentctx, "POST", edpurl, bytes.NewBuffer(eventdata))
+	if err != nil {
+		sentEvent.WithLabelValues(strconv.Itoa(http.StatusBadRequest)).Inc()
+		return fmt.Errorf("%w: %s", ErrEventHTTPRequest, err)
+	}
 
-			err = json.Unmarshal(eventjson, &datamap)
-			if err == nil {
-				receivedEvents = len(datamap)
-			}
-		}
+	httpreq.Header.Set("User-Agent", "metris")
+	httpreq.Header.Add("Content-Type", "application/json;charset=utf-8")
+	httpreq.Header.Add("Authorization", "bearer "+c.config.Token)
 
-		edpurl := fmt.Sprintf("%s/namespaces/%s/dataStreams/%s/%s/dataTenants/%s/%s/eventBatch",
-			c.config.URL,
-			c.config.Namespace,
-			c.config.DataStream,
-			c.config.DataStreamVersion,
-			datatenant,
-			c.config.DataStreamEnv,
-		)
+	resp, err := c.httpClient.Do(httpreq)
+	if err != nil {
+		sentEvent.WithLabelValues(strconv.Itoa(http.StatusBadRequest)).Inc()
+		return fmt.Errorf("%w: %s", ErrEventHTTPRequest, err)
+	}
 
-		logger.Debugf("sending events '%s':\n%+v", edpurl, string(event))
-
-		httpreq, err := http.NewRequestWithContext(ctx, "POST", edpurl, bytes.NewBuffer(event))
+	defer func() {
+		err := resp.Body.Close()
 		if err != nil {
-			metrics.FailedSamples.Add(float64(receivedEvents))
-			return fmt.Errorf("%w: %s", ErrEventHTTPRequest, err)
+			c.logger.Warn(err)
 		}
+	}()
 
-		httpreq.Header.Set("User-Agent", "metris")
-		httpreq.Header.Add("Content-Type", "application/json;charset=utf-8")
-		httpreq.Header.Add("Authorization", "bearer "+c.config.Token)
+	sentEvent.WithLabelValues(strconv.Itoa(resp.StatusCode)).Inc()
 
-		resp, err := c.httpClient.Do(httpreq)
-		if err != nil {
-			metrics.FailedSamples.Add(float64(receivedEvents))
-			return fmt.Errorf("%w: %s", ErrEventHTTPRequest, err)
-		}
-
-		defer func() {
-			err := resp.Body.Close()
-			if err != nil {
-				c.logger.Warn(err)
-			}
-		}()
-
-		if resp.StatusCode != http.StatusCreated {
-			metrics.FailedSamples.Add(float64(receivedEvents))
-			return statusError(resp.StatusCode)
-		}
-
-		metrics.SentSamples.Add(float64(receivedEvents))
+	if resp.StatusCode != http.StatusCreated {
+		return statusError(resp.StatusCode)
 	}
 
 	return nil
 }
 
+// statusError converts http response code to an EDP error type.
 func statusError(code int) error {
 	var err error
 
@@ -254,6 +206,8 @@ func statusError(code int) error {
 		err = ErrEventInvalidRequest
 	case http.StatusNotFound:
 		err = ErrEventMissingParameters
+	case http.StatusRequestEntityTooLarge:
+		err = ErrEventPayloadTooLarge
 	default:
 		err = ErrEventUnknown
 	}
@@ -261,6 +215,7 @@ func statusError(code int) error {
 	return fmt.Errorf("%w: %d", err, code)
 }
 
+// when returns the duration to wait before requeing event.
 func when(failure int) time.Duration {
 	var rateLimiterBase float64 = 2
 

@@ -7,12 +7,7 @@ import (
 	gclientset "github.com/gardener/gardener/pkg/client/core/clientset/versioned"
 )
 
-type Client struct {
-	Namespace           string
-	GardenerClientset   gclientset.Interface
-	KubernetesClientset kubernetes.Interface
-}
-
+// NewClient returns a new Client with Gardener and Kubernetes clientset from the given kubeconfig.
 func NewClient(kubeconfig string) (*Client, error) {
 	loadingRules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfig}
 	configOverrides := &clientcmd.ConfigOverrides{}
@@ -39,9 +34,9 @@ func NewClient(kubeconfig string) (*Client, error) {
 	}
 
 	client := &Client{
-		Namespace:           ns,
-		GardenerClientset:   gclient,
-		KubernetesClientset: kclient,
+		Namespace:  ns,
+		GClientset: gclient,
+		KClientset: kclient,
 	}
 
 	return client, nil

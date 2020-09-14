@@ -1,0 +1,18 @@
+{{- if and .Values.metrics.enabled .Values.metrics.grafanaDashboard.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "metris.fullname" . }}-dashboard
+{{- with .Values.metrics.grafanaDashboard.namespace }}
+  namespace: {{ . }}
+{{- end }}
+  labels:
+    app: {{ .Chart.Name }}
+{{ include "metris.labels" . | indent 4 }}
+{{- with .Values.metrics.grafanaDashboard.additionalLabels }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+data:
+  {{ template "metris.fullname" . }}-dashboard.json: |-
+{{ .Files.Get "files/dashboard.json" | indent 4 }}
+{{- end }}
