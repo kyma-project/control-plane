@@ -1,6 +1,7 @@
 package shootupgrade
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -14,7 +15,7 @@ import (
 )
 
 type GardenerClient interface {
-	Get(name string, options v1.GetOptions) (*gardener_types.Shoot, error)
+	Get(ctx context.Context, name string, options v1.GetOptions) (*gardener_types.Shoot, error)
 }
 
 type WaitForShootUpgradeStep struct {
@@ -43,7 +44,7 @@ func (s *WaitForShootUpgradeStep) Run(cluster model.Cluster, operation model.Ope
 
 	gardenerConfig := cluster.ClusterConfig
 
-	shoot, err := s.gardenerClient.Get(gardenerConfig.Name, v1.GetOptions{})
+	shoot, err := s.gardenerClient.Get(context.Background(), gardenerConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err
 	}

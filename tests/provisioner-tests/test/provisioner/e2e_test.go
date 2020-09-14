@@ -6,16 +6,15 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
+	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit"
 	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/assertions"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 )
 
 // TODO: Consider fetching logs from Provisioner on error (or from created Runtime)
@@ -23,7 +22,7 @@ import (
 func Test_E2E_Gardener(t *testing.T) {
 	t.Parallel()
 
-	globalLog := logrus.WithField("TestId", testSuite.TestId)
+	globalLog := logrus.WithField("TestID", testSuite.TestID)
 
 	globalLog.Infof("Starting Kyma Control Plane Runtime Provisioner tests on Gardener")
 	wg := &sync.WaitGroup{}
@@ -35,7 +34,10 @@ func Test_E2E_Gardener(t *testing.T) {
 			defer testSuite.Recover()
 
 			t.Run(provider, func(t *testing.T) {
-				log := NewLogger(t, fmt.Sprintf("Provider=%s", provider))
+				log := testkit.NewLogger(t, logrus.Fields{
+					"Provider": provider,
+					"TestType": "end-to-end",
+				})
 
 				// Provisioning runtime
 				// Create provisioning input
@@ -49,10 +51,10 @@ func Test_E2E_Gardener(t *testing.T) {
 				log.Log("Starting provisioning...")
 				provisioningOperationID, runtimeID, err := testSuite.ProvisionerClient.ProvisionRuntime(provisioningInput)
 				assertions.RequireNoError(t, err, "Error while starting Runtime provisioning")
-				defer ensureClusterIsDeprovisioned(runtimeID)
+				defer ensureClusterIsDeprovisioned(runtimeID, log)
 
-				log.AddField(fmt.Sprintf("RuntimeId=%s", runtimeID))
-				log.AddField(fmt.Sprintf("ProvisioningOperationId=%s", provisioningOperationID))
+				log.WithField("RuntimeID", runtimeID)
+				log.WithField("ProvisioningOperationID", provisioningOperationID)
 
 				// Get provisioning Operation Status
 				log.Log("Getting operation status...")
@@ -62,7 +64,7 @@ func Test_E2E_Gardener(t *testing.T) {
 
 				// Wait for provisioning to finish
 				log.Log("Waiting for provisioning to finish...")
-				provisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationID)
+				provisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationID, log)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtimeID, provisioningOperationStatus)
 				log.Log("Provisioning finished.")
@@ -96,7 +98,7 @@ func Test_E2E_Gardener(t *testing.T) {
 				deprovisioningOperationID, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeID)
 				assertions.RequireNoError(t, err)
 
-				log.AddField(fmt.Sprintf("DeprovisioningOperationId=%s", deprovisioningOperationID))
+				log.WithField("DeprovisioningOperationID", deprovisioningOperationID)
 
 				// Get provisioning Operation Status
 				deprovisioningOperationStatus, err := testSuite.ProvisionerClient.RuntimeOperationStatus(deprovisioningOperationID)
@@ -104,7 +106,7 @@ func Test_E2E_Gardener(t *testing.T) {
 				assertions.AssertOperationInProgress(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
 
 				log.Log("Waiting for deprovisioning to finish...")
-				deprovisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationID)
+				deprovisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationID, log)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
 				log.Log("Deprovisioning finished.")
@@ -114,48 +116,23 @@ func Test_E2E_Gardener(t *testing.T) {
 	wg.Wait()
 }
 
-type Logger struct {
-	t            *testing.T
-	fields       []string
-	joinedFields string
-}
-
-func NewLogger(t *testing.T, fields ...string) *Logger {
-	joinedFields := strings.Join(fields, " ")
-
-	return &Logger{
-		t:            t,
-		fields:       fields,
-		joinedFields: joinedFields,
-	}
-}
-
-func (l Logger) Log(msg string) {
-	l.t.Logf("%s   %s", msg, l.joinedFields)
-}
-
-func (l *Logger) AddField(field string) {
-	l.fields = append(l.fields, field)
-	l.joinedFields = strings.Join(l.fields, " ")
-}
-
-func ensureClusterIsDeprovisioned(runtimeId string) {
-	logrus.Infof("Ensuring the cluster is deprovisioned...")
+func ensureClusterIsDeprovisioned(runtimeId string, log *testkit.Logger) {
+	log.Logf("Ensuring the cluster is deprovisioned...")
 	deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeId)
 	if err != nil {
-		logrus.Warnf("Ensuring the cluster is deprovisioned failed, cluster might have already been deprovisioned: %s", err.Error())
+		log.Errorf("Ensuring the cluster is deprovisioned failed, cluster might have already been deprovisioned: %s", err.Error())
 		return
 	}
 
-	logrus.Infof("Deprovisioning operation id: %s", deprovisioningOperationId)
-	deprovisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationId)
+	log.Logf("Deprovisioning operation id: %s", deprovisioningOperationId)
+	deprovisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationId, log)
 	if err != nil {
-		logrus.Errorf("Error while waiting for deprovisioning operation to finish: %s", err.Error())
+		log.Errorf("Error while waiting for deprovisioning operation to finish: %s", err.Error())
 		return
 	}
 
 	if deprovisioningOperationStatus.State != gqlschema.OperationStateSucceeded {
-		logrus.Errorf("Ensuring the cluster is deprovisioned failed with operation status %s with message %s", deprovisioningOperationStatus.State, unwrapString(deprovisioningOperationStatus.Message))
+		log.Errorf("Ensuring the cluster is deprovisioned failed with operation status %s with message %s", deprovisioningOperationStatus.State, unwrapString(deprovisioningOperationStatus.Message))
 	}
 }
 

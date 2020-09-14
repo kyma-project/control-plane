@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"context"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
@@ -74,7 +76,7 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 		StringData: configurationData,
 	}
 
-	_, k8serr := k8sClient.CoreV1().Secrets(namespace).Create(secret)
+	_, k8serr := k8sClient.CoreV1().Secrets(namespace).Create(context.Background(), secret, meta.CreateOptions{})
 	if k8serr != nil {
 		return util.K8SErrorToAppError(k8serr).Append("error creating Secret on Runtime")
 	}

@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -47,7 +48,7 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 		{
 			description: "should continue waiting if domain name is not set",
 			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(&gardener_types.Shoot{}, nil)
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(&gardener_types.Shoot{}, nil)
 			},
 			expectedStage: model.WaitingForClusterDomain,
 			expectedDelay: 5 * time.Second,
@@ -55,7 +56,7 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 		{
 			description: "should go to the next stage if domain name is available",
 			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
 
 				runtime := fixRuntime(runtimeID, clusterName, map[string]interface{}{
 					"label": "value",
@@ -97,7 +98,7 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 		{
 			description: "should return error if failed to read Shoot",
 			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, apperrors.Internal("some error"))
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(nil, apperrors.Internal("some error"))
 			},
 			unrecoverableError: false,
 			cluster:            cluster,
@@ -105,7 +106,7 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 		{
 			description: "should return error if failed to get Runtime from Director",
 			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
 				directorClient.On("GetRuntime", runtimeID, tenant).Return(graphql.RuntimeExt{}, apperrors.Internal("some error"))
 
 			},
@@ -115,7 +116,7 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 		{
 			description: "should return error if failed to update Runtime in Director",
 			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
 
 				runtime := fixRuntime(runtimeID, clusterName, map[string]interface{}{
 					"label": "value",

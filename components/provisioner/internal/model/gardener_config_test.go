@@ -172,15 +172,11 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Region:            "eu",
 					Provider: gardener_types.Provider{
 						Type: "gcp",
-						ControlPlaneConfig: &gardener_types.ProviderConfig{
-							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","zone":"fix-zone-1"}`),
-							},
+						ControlPlaneConfig: &apimachineryRuntime.RawExtension{
+							Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","zone":"fix-zone-1"}`),
 						},
-						InfrastructureConfig: &gardener_types.ProviderConfig{
-							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","networks":{"worker":"10.10.10.10/255","workers":"10.10.10.10/255"}}`),
-							},
+						InfrastructureConfig: &apimachineryRuntime.RawExtension{
+							Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","networks":{"worker":"10.10.10.10/255","workers":"10.10.10.10/255"}}`),
 						},
 						Workers: []gardener_types.Worker{
 							fixWorker([]string{"fix-zone-1", "fix-zone-2"}),
@@ -227,15 +223,11 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Region:            "eu",
 					Provider: gardener_types.Provider{
 						Type: "azure",
-						ControlPlaneConfig: &gardener_types.ProviderConfig{
-							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1"}`),
-							},
+						ControlPlaneConfig: &apimachineryRuntime.RawExtension{
+							Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1"}`),
 						},
-						InfrastructureConfig: &gardener_types.ProviderConfig{
-							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1","networks":{"vnet":{"cidr":"10.10.11.11/255"},"workers":"10.10.10.10/255"},"zoned":true}`),
-							},
+						InfrastructureConfig: &apimachineryRuntime.RawExtension{
+							Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1","networks":{"vnet":{"cidr":"10.10.11.11/255"},"workers":"10.10.10.10/255"},"zoned":true}`),
 						},
 						Workers: []gardener_types.Worker{
 							fixWorker([]string{"fix-zone-1", "fix-zone-2"}),
@@ -281,15 +273,11 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Region:            "eu",
 					Provider: gardener_types.Provider{
 						Type: "azure",
-						ControlPlaneConfig: &gardener_types.ProviderConfig{
-							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1"}`),
-							},
+						ControlPlaneConfig: &apimachineryRuntime.RawExtension{
+							Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1"}`),
 						},
-						InfrastructureConfig: &gardener_types.ProviderConfig{
-							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1","networks":{"vnet":{"cidr":"10.10.11.11/255"},"workers":"10.10.10.10/255"},"zoned":false}`),
-							},
+						InfrastructureConfig: &apimachineryRuntime.RawExtension{
+							Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1","networks":{"vnet":{"cidr":"10.10.11.11/255"},"workers":"10.10.10.10/255"},"zoned":false}`),
 						},
 						Workers: []gardener_types.Worker{
 							fixWorker(nil),
@@ -336,15 +324,11 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Region:            "eu",
 					Provider: gardener_types.Provider{
 						Type: "aws",
-						ControlPlaneConfig: &gardener_types.ProviderConfig{
-							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1"}`),
-							},
+						ControlPlaneConfig: &apimachineryRuntime.RawExtension{
+							Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1"}`),
 						},
-						InfrastructureConfig: &gardener_types.ProviderConfig{
-							RawExtension: apimachineryRuntime.RawExtension{
-								Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1","networks":{"vpc":{"cidr":"10.10.11.11/255"},"zones":[{"name":"zone","internal":"10.10.11.13/255","public":"10.10.11.12/255","workers":"10.10.10.10/255"}]}}`),
-							},
+						InfrastructureConfig: &apimachineryRuntime.RawExtension{
+							Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1","networks":{"vpc":{"cidr":"10.10.11.11/255"},"zones":[{"name":"zone","internal":"10.10.11.13/255","public":"10.10.11.12/255","workers":"10.10.10.10/255"}]}}`),
 						},
 						Workers: []gardener_types.Worker{
 							fixWorker([]string{"zone"}),
@@ -537,12 +521,12 @@ func fixWorker(zones []string) gardener_types.Worker {
 			Type: "machine",
 			Image: &gardener_types.ShootMachineImage{
 				Name:    "gardenlinux",
-				Version: "25.0.0",
+				Version: util.StringPtr("25.0.0"),
 			},
 		},
 		Volume: &gardener_types.Volume{
-			Type: util.StringPtr("SSD"),
-			Size: "30Gi",
+			Type:       util.StringPtr("SSD"),
+			VolumeSize: "30Gi",
 		},
 		Maximum: 3,
 		Minimum: 1,

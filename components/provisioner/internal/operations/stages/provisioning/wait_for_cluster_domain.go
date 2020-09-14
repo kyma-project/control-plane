@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -24,7 +25,7 @@ type WaitForClusterDomainStep struct {
 
 //go:generate mockery -name=GardenerClient
 type GardenerClient interface {
-	Get(name string, options v1.GetOptions) (*gardener_types.Shoot, error)
+	Get(ctx context.Context, name string, options v1.GetOptions) (*gardener_types.Shoot, error)
 }
 
 func NewWaitForClusterDomainStep(gardenerClient GardenerClient, directorClient director.DirectorClient, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterDomainStep {
@@ -45,8 +46,7 @@ func (s *WaitForClusterDomainStep) TimeLimit() time.Duration {
 }
 
 func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
-
-	shoot, err := s.gardenerClient.Get(cluster.ClusterConfig.Name, v1.GetOptions{})
+	shoot, err := s.gardenerClient.Get(context.Background(), cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err
 	}

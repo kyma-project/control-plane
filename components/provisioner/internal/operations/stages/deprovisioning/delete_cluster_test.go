@@ -1,6 +1,7 @@
 package deprovisioning
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -44,7 +45,7 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 		{
 			description: "should go to the next step when Shoot was deleted successfully",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Delete", clusterName, mock.Anything).Return(nil)
+				gardenerClient.On("Delete", context.Background(), clusterName, mock.Anything).Return(nil)
 			},
 			expectedStage: nextStageName,
 			expectedDelay: 0,
@@ -52,7 +53,7 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 		{
 			description: "should go to the next step when Shoot not exists",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Delete", clusterName, mock.Anything).Return(k8serrors.NewNotFound(schema.GroupResource{}, ""))
+				gardenerClient.On("Delete", context.Background(), clusterName, mock.Anything).Return(k8serrors.NewNotFound(schema.GroupResource{}, ""))
 			},
 			expectedStage: nextStageName,
 			expectedDelay: 0,
@@ -86,7 +87,7 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 		{
 			description: "should return error when failed to delete shoot",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Delete", clusterName, mock.Anything).Return(errors.New("some error"))
+				gardenerClient.On("Delete", context.Background(), clusterName, mock.Anything).Return(errors.New("some error"))
 			},
 			cluster:            cluster,
 			unrecoverableError: false,

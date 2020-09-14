@@ -1,6 +1,7 @@
 package shootupgrade
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -38,7 +39,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		{
 			description: "should continue waiting if cluster is in processing state",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithOperationProcessing().
 						ToShoot(), nil)
@@ -49,7 +50,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		{
 			description: "should continue waiting if cluster is in pending state",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithOperationPending().
 						ToShoot(), nil)
@@ -60,7 +61,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		{
 			description: "should continue waiting if cluster is in error state - the operation will be retried on Gardener side",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithOperationError().
 						ToShoot(), nil)
@@ -71,7 +72,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		{
 			description: "should continue waiting if last operation not set",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithOperationNil().
 						ToShoot(), nil)
@@ -83,7 +84,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 			description: "should return finished stage if cluster upgrade has succeeded",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
 
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithOperationSucceeded().
 						ToShoot(), nil)
@@ -119,7 +120,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		{
 			description: "should return error if failed to read Shoot",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, errors.New("some error"))
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(nil, errors.New("some error"))
 			},
 			unrecoverableError: false,
 			cluster:            cluster,
@@ -127,7 +128,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 		{
 			description: "should return unrecoverable error if Shoot is in failed state",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithOperationFailed().
 						ToShoot(), nil)

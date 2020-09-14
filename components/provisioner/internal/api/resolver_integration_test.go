@@ -43,7 +43,7 @@ func TestMain(m *testing.M) {
 
 func setupEnv() error {
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("testdata")},
+		CRDDirectoryPaths: []string{filepath.Join("testdata", "crd")},
 	}
 
 	var err error

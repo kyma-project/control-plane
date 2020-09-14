@@ -1,6 +1,7 @@
 package shootupgrade
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -40,7 +41,7 @@ func TestWaitForNewShootVersion(t *testing.T) {
 		{
 			description: "should continue waiting if cluster has old resource version",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithGeneration(2).
 						WithObservedGeneration(1).
@@ -52,7 +53,7 @@ func TestWaitForNewShootVersion(t *testing.T) {
 		{
 			description: "should move to next step if resource version changes",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithGeneration(2).
 						WithObservedGeneration(2).
@@ -90,7 +91,7 @@ func TestWaitForNewShootVersion(t *testing.T) {
 		{
 			description: "should return error if failed to read Shoot",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(nil, errors.New("some error"))
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(nil, errors.New("some error"))
 			},
 			unrecoverableError: false,
 			cluster:            cluster,
@@ -98,7 +99,7 @@ func TestWaitForNewShootVersion(t *testing.T) {
 		{
 			description: "should return unrecoverable error if Shoot is in failed state",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Get", clusterName, mock.Anything).Return(
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
 					testkit.NewTestShoot(clusterName).
 						WithGeneration(2).
 						WithObservedGeneration(1).

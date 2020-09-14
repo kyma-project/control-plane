@@ -1,6 +1,7 @@
 package gardener
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -73,7 +74,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		g.applyAuditConfig(shootTemplate)
 	}
 
-	_, k8serr := g.shootClient.Create(shootTemplate)
+	_, k8serr := g.shootClient.Create(context.Background(), shootTemplate, v1.CreateOptions{})
 	if k8serr != nil {
 		appError := util.K8SErrorToAppError(k8serr)
 		return appError.Append("error creating Shoot for %s cluster: %s", cluster.ID)
@@ -84,7 +85,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 
 func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError {
 
-	shoot, err := g.shootClient.Get(upgradeConfig.Name, v1.GetOptions{})
+	shoot, err := g.shootClient.Get(context.Background(), upgradeConfig.Name, v1.GetOptions{})
 	if err != nil {
 		appErr := util.K8SErrorToAppError(err)
 		return appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, upgradeConfig.Name)
@@ -97,7 +98,7 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 	}
 
 	err = retry.Do(func() error {
-		_, err := g.shootClient.Update(shoot)
+		_, err := g.shootClient.Update(context.Background(), shoot, v1.UpdateOptions{})
 		return err
 	}, retry.Attempts(5))
 	if err != nil {
@@ -109,7 +110,7 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 }
 
 func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, apperrors.AppError) {
-	shoot, err := g.shootClient.Get(cluster.ClusterConfig.Name, v1.GetOptions{})
+	shoot, err := g.shootClient.Get(context.Background(), cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
 			message := fmt.Sprintf("Cluster %s already deleted. Proceeding to DeprovisionCluster stage.", cluster.ID)
@@ -133,7 +134,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 
 	annotateWithConfirmDeletion(shoot)
 
-	_, err = g.shootClient.Update(shoot)
+	_, err = g.shootClient.Update(context.Background(), shoot, v1.UpdateOptions{})
 	if err != nil {
 		appError := util.K8SErrorToAppError(err)
 		return model.Operation{}, appError.Append("error updating Shoot")

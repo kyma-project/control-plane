@@ -1,6 +1,7 @@
 package provisioner
 
 import (
+	"context"
 	"crypto/tls"
 	"io/ioutil"
 	"math/rand"
@@ -10,27 +11,25 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/client-go/util/homedir"
-
 	"github.com/pkg/errors"
-	restclient "k8s.io/client-go/rest"
-
-	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/compass/director"
-	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/compass/director/oauth"
-	gql "github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/graphql"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	v1meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	v1client "k8s.io/client-go/kubernetes/typed/core/v1"
-
 	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit"
-	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/compass/provisioner"
-	"github.com/sirupsen/logrus"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/compass/director"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/compass/director/oauth"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/control-plane/provisioner"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/graphql"
+
 	"k8s.io/client-go/kubernetes"
+	v1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -43,7 +42,7 @@ const (
 )
 
 type TestSuite struct {
-	TestId            string
+	TestID            string
 	HttpClient        http.Client
 	ProvisionerClient provisioner.Client
 	DirectorClient    director.Client
@@ -70,7 +69,7 @@ func NewTestSuite(config testkit.TestConfig) (*TestSuite, error) {
 	testId := randStringBytes(8)
 
 	return &TestSuite{
-		TestId: testId,
+		TestID: testId,
 
 		HttpClient:        httpClient,
 		ProvisionerClient: provisionerClient,
@@ -100,7 +99,7 @@ func newDirectorClient(config testkit.TestConfig) (director.Client, error) {
 	}
 	secretClient := coreClientset.CoreV1().Secrets(config.DirectorClient.Namespace)
 	httpClient := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
-	graphQLClient := gql.NewGraphQLClient(config.DirectorClient.URL, true, config.QueryLogging)
+	graphQLClient := graphql.NewGraphQLClient(config.DirectorClient.URL, true, config.QueryLogging)
 	oauthClient := oauth.NewOauthClient(httpClient, secretClient, config.DirectorClient.OauthCredentialsSecretName)
 
 	return director.NewDirectorClient(oauthClient, *graphQLClient, config.Tenant, logrus.WithField("service", "director_client")), nil
@@ -124,7 +123,6 @@ func (ts *TestSuite) Setup() error {
 func (ts *TestSuite) Cleanup() {
 	logrus.Infof("Starting cleanup...")
 	// TODO: Fetch Provisioner logs if test failed
-
 	logrus.Infof("Cleanup completed.")
 }
 
@@ -134,19 +132,19 @@ func (ts *TestSuite) Recover() {
 	}
 }
 
-func (ts *TestSuite) WaitUntilOperationIsFinished(timeout time.Duration, operationID string) (gqlschema.OperationStatus, error) {
+func (ts *TestSuite) WaitUntilOperationIsFinished(timeout time.Duration, operationID string, log *testkit.Logger) (gqlschema.OperationStatus, error) {
 	var operationStatus gqlschema.OperationStatus
 	var err error
 
 	err = testkit.WaitForFunction(checkInterval, timeout, func() bool {
 		operationStatus, err = ts.ProvisionerClient.RuntimeOperationStatus(operationID)
 		if err != nil {
-			logrus.Warnf("Failed to get operation status: %s", err.Error())
+			log.Errorf("Failed to get operation status: %s", err.Error())
 			return false
 		}
 
 		if operationStatus.State == gqlschema.OperationStateInProgress {
-			logrus.Infof("Operation '%s': %s in progress", operationStatus.Operation, operationID)
+			log.Logf("Operation '%s': %s in progress", operationStatus.Operation, operationID)
 			return false
 		}
 
@@ -178,7 +176,7 @@ func (ts *TestSuite) KubernetesClientFromRawConfig(t *testing.T, rawConfig strin
 }
 
 func (ts *TestSuite) removeCredentialsSecret(secretName string) error {
-	return ts.secretsClient.Delete(secretName, &v1meta.DeleteOptions{})
+	return ts.secretsClient.Delete(context.Background(), secretName, metav1.DeleteOptions{})
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyz123456789"

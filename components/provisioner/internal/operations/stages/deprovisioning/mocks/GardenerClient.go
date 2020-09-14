@@ -3,7 +3,10 @@
 package mocks
 
 import (
+	context "context"
+
 	mock "github.com/stretchr/testify/mock"
+
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -14,13 +17,13 @@ type GardenerClient struct {
 	mock.Mock
 }
 
-// Delete provides a mock function with given fields: name, options
-func (_m *GardenerClient) Delete(name string, options *v1.DeleteOptions) error {
-	ret := _m.Called(name, options)
+// Delete provides a mock function with given fields: ctx, name, options
+func (_m *GardenerClient) Delete(ctx context.Context, name string, options v1.DeleteOptions) error {
+	ret := _m.Called(ctx, name, options)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, *v1.DeleteOptions) error); ok {
-		r0 = rf(name, options)
+	if rf, ok := ret.Get(0).(func(context.Context, string, v1.DeleteOptions) error); ok {
+		r0 = rf(ctx, name, options)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -28,13 +31,13 @@ func (_m *GardenerClient) Delete(name string, options *v1.DeleteOptions) error {
 	return r0
 }
 
-// Get provides a mock function with given fields: name, options
-func (_m *GardenerClient) Get(name string, options v1.GetOptions) (*v1beta1.Shoot, error) {
-	ret := _m.Called(name, options)
+// Get provides a mock function with given fields: ctx, name, options
+func (_m *GardenerClient) Get(ctx context.Context, name string, options v1.GetOptions) (*v1beta1.Shoot, error) {
+	ret := _m.Called(ctx, name, options)
 
 	var r0 *v1beta1.Shoot
-	if rf, ok := ret.Get(0).(func(string, v1.GetOptions) *v1beta1.Shoot); ok {
-		r0 = rf(name, options)
+	if rf, ok := ret.Get(0).(func(context.Context, string, v1.GetOptions) *v1beta1.Shoot); ok {
+		r0 = rf(ctx, name, options)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*v1beta1.Shoot)
@@ -42,8 +45,8 @@ func (_m *GardenerClient) Get(name string, options v1.GetOptions) (*v1beta1.Shoo
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, v1.GetOptions) error); ok {
-		r1 = rf(name, options)
+	if rf, ok := ret.Get(1).(func(context.Context, string, v1.GetOptions) error); ok {
+		r1 = rf(ctx, name, options)
 	} else {
 		r1 = ret.Error(1)
 	}

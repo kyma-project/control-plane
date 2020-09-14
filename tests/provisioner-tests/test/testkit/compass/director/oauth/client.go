@@ -1,6 +1,7 @@
 package oauth
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -21,7 +22,7 @@ type Client interface {
 }
 
 type SecretInterface interface {
-	Get(name string, options metav1.GetOptions) (*v1.Secret, error)
+	Get(context.Context, string, metav1.GetOptions) (*v1.Secret, error)
 }
 
 type oauthClient struct {
@@ -48,7 +49,7 @@ func (c *oauthClient) GetAuthorizationToken() (Token, error) {
 }
 
 func (c *oauthClient) getCredentials() (credentials, error) {
-	secret, err := c.secretClient.Get(c.secretName, metav1.GetOptions{})
+	secret, err := c.secretClient.Get(context.Background(), c.secretName, metav1.GetOptions{})
 	if err != nil {
 		return credentials{}, err
 	}

@@ -1,6 +1,7 @@
 package gardener
 
 import (
+	"context"
 	"fmt"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,7 +19,7 @@ func NewKubeconfigProvider(secretsClient v12.SecretInterface) KubeconfigProvider
 }
 
 func (kp KubeconfigProvider) FetchRaw(shootName string) ([]byte, error) {
-	secret, err := kp.secretsClient.Get(fmt.Sprintf("%s.kubeconfig", shootName), v1.GetOptions{})
+	secret, err := kp.secretsClient.Get(context.Background(), fmt.Sprintf("%s.kubeconfig", shootName), v1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("error fetching kubeconfig: %s", err.Error())
 	}
