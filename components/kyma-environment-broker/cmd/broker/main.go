@@ -311,8 +311,7 @@ func main() {
 	}{
 		{
 			weight: 1,
-			step: deprovisioning.NewSkipForTrialPlanStep(db.Operations(),
-				deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant)),
+			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
 		},
 		{
 			weight: 1,
