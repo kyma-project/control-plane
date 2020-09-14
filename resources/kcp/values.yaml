@@ -65,7 +65,8 @@ global:
       integrationSystemCredentials:
         name: kcp-provisioner-credentials
 
-  gateway: #TODO: Prepare values for external Compass
+  compass-gateway:
+    domain: compass-system.svc.cluster.local
     tls:
       host: compass-gateway
       secure:

@@ -54,8 +54,8 @@ spec:
               value: "{{ .Values.e2e.gcp.configName }}"
             - name: APP_DEPLOY_NAMESPACE
               value: "kcp-system"
-            - name: APP_DIRECTOR_URL #TODO: Prepare for external Compass
-              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+            - name: APP_DIRECTOR_URL
+              value: "https://{{ .Values.global.compass-gateway.tls.secure.oauth.host }}.{{ .Values.global.compass-gateway.domain }}/director/graphql"
             - name: APP_DIRECTOR_NAMESPACE
               value: "kcp-system"
             - name: APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME
@@ -122,8 +122,8 @@ spec:
               value: "{{ .Values.e2e.gcp.configName }}"
             - name: APP_DEPLOY_NAMESPACE
               value: "kcp-system"
-            - name: APP_DIRECTOR_URL #TODO: Prepare for external Compass
-              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+            - name: APP_DIRECTOR_URL
+              value: "https://{{ .Values.global.compass-gateway.tls.secure.oauth.host }}.{{ .Values.global.compass-gateway.domain }}/director/graphql"
             - name: APP_DIRECTOR_NAMESPACE
               value: "kcp-system"
             - name: APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME
