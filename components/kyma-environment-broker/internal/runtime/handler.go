@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/pkg/httphelpers"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
@@ -53,26 +53,26 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 	var toReturn []RuntimeDTO
 	limit, cursor, err := h.getParams(req)
 	if err != nil {
-		httphelpers.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
+		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
 		return
 	}
 
 	instances, pageInfo, totalCount, err := h.instancesDb.List(limit, cursor)
 	if err != nil {
-		httphelpers.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching instances"))
+		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching instances"))
 		return
 	}
 
 	for _, instance := range instances {
 		pOpr, dOpr, ukOpr, err := h.getOperationsForInstance(instance)
 		if err != nil {
-			httphelpers.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching operations for instance"))
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching operations for instance"))
 			return
 		}
 
 		dto, err := h.converter.InstancesAndOperationsToDTO(instance, pOpr, dOpr, ukOpr)
 		if err != nil {
-			httphelpers.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while converting instances to DTO"))
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while converting instances to DTO"))
 			return
 		}
 
@@ -84,7 +84,7 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 		PageInfo:   pageInfo,
 		TotalCount: totalCount,
 	}
-	httphelpers.WriteResponse(w, http.StatusOK, page)
+	httputil.WriteResponse(w, http.StatusOK, page)
 }
 
 func (h *Handler) getOperationsForInstance(instance internal.Instance) (*internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation, error) {
