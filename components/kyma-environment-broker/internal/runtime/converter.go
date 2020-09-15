@@ -3,18 +3,35 @@ package runtime
 import (
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
 
 type converter struct {
+	defaultSubaccountRegion string
 }
 
-func NewConverter() *converter {
-	return &converter{}
+func NewConverter(region string) *converter {
+	return &converter{
+		defaultSubaccountRegion: region,
+	}
+}
+
+func (c *converter) getRegionOrDefault(instance internal.Instance) (string, error) {
+	pp, err := instance.GetProvisioningParameters()
+	if err != nil {
+		return "", errors.Wrap(err, "while getting provisioning parameters")
+	}
+
+	if pp.PlatformRegion == "" {
+		return c.defaultSubaccountRegion, nil
+	}
+	return pp.PlatformRegion, nil
 }
 
 func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr *internal.ProvisioningOperation,
-	dOpr *internal.DeprovisioningOperation, ukOpr *internal.UpgradeKymaOperation) runtimeDTO {
+	dOpr *internal.DeprovisioningOperation, ukOpr *internal.UpgradeKymaOperation) (runtimeDTO, error) {
 	toReturn := runtimeDTO{
 		InstanceID:       instance.InstanceID,
 		RuntimeID:        instance.RuntimeID,
@@ -26,30 +43,36 @@ func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr
 		ServicePlanName:  instance.ServicePlanName,
 		Status: runtimeStatus{
 			CreatedAt:      instance.CreatedAt,
+			ModifiedAt:     instance.UpdatedAt,
 			Provisioning:   &operation{},
 			Deprovisioning: &operation{},
 			UpgradingKyma:  &operation{},
 		},
 	}
 
+	region, err := c.getRegionOrDefault(instance)
+	if err != nil {
+		return runtimeDTO{}, errors.Wrap(err, "while getting region")
+	}
+	toReturn.SubaccountRegion = region
+
 	urlSplitted := strings.Split(instance.DashboardURL, ".")
 	if len(urlSplitted) > 1 {
 		toReturn.ShootName = urlSplitted[1]
 	}
+
 	if pOpr != nil {
 		toReturn.Status.Provisioning.State = string(pOpr.State)
 		toReturn.Status.Provisioning.Description = pOpr.Description
 	}
 	if dOpr != nil {
-		toReturn.Status.DeletedAt = &instance.DeletedAt
 		toReturn.Status.Deprovisioning.State = string(dOpr.State)
 		toReturn.Status.Deprovisioning.Description = dOpr.Description
 	}
-
 	if ukOpr != nil {
-		toReturn.Status.UpdatedAt = &instance.UpdatedAt
 		toReturn.Status.UpgradingKyma.State = string(ukOpr.State)
 		toReturn.Status.UpgradingKyma.Description = ukOpr.Description
 	}
-	return toReturn
+
+	return toReturn, nil
 }

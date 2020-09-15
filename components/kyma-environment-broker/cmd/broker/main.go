@@ -443,7 +443,7 @@ func main() {
 	// create list runtimes endpoint
 	maxPage, err := strconv.Atoi(cfg.MaxPaginationPage)
 	fatalOnError(err)
-	runtimeHandler := runtime.NewHandler(db.Instances(), db.Operations(), maxPage, runtime.NewConverter())
+	runtimeHandler := runtime.NewHandler(db.Instances(), db.Operations(), maxPage, runtime.NewConverter(cfg.DefaultRequestRegion))
 	runtimeHandler.AttachRoutes(router)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))

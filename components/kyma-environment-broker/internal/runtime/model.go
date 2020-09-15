@@ -7,22 +7,22 @@ import (
 )
 
 type runtimeDTO struct {
-	InstanceID       string        `json:"instanceId"`
-	RuntimeID        string        `json:"runtimeId"`
-	GlobalAccountID  string        `json:"globalAccountId"`
-	SubAccountID     string        `json:"subaccountId"`
+	InstanceID       string        `json:"instanceID"`
+	RuntimeID        string        `json:"runtimeID"`
+	GlobalAccountID  string        `json:"globalAccountID"`
+	SubAccountID     string        `json:"subaccountID"`
 	ShootName        string        `json:"shootName"`
 	ServiceClassID   string        `json:"serviceClassID"`
 	ServiceClassName string        `json:"serviceClassName"`
 	ServicePlanID    string        `json:"servicePlanID"`
 	ServicePlanName  string        `json:"servicePlanName"`
+	SubaccountRegion string        `json:"subaccountRegion"`
 	Status           runtimeStatus `json:"status"`
 }
 
 type runtimeStatus struct {
 	CreatedAt      time.Time  `json:"createdAt"`
-	UpdatedAt      *time.Time `json:"updatedAt"`
-	DeletedAt      *time.Time `json:"deletedAt"`
+	ModifiedAt     time.Time  `json:"modifiedAt"`
 	Provisioning   *operation `json:"provisioning"`
 	Deprovisioning *operation `json:"deprovisioning"`
 	UpgradingKyma  *operation `json:"upgradingKyma"`

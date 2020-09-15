@@ -24,7 +24,7 @@ const (
 )
 
 type Converter interface {
-	InstancesAndOperationsToDTO(internal.Instance, *internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation) runtimeDTO
+	InstancesAndOperationsToDTO(internal.Instance, *internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation) (runtimeDTO, error)
 }
 
 type Handler struct {
@@ -61,13 +61,20 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 		httphelpers.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching instances"))
 		return
 	}
+
 	for _, instance := range instances {
 		pOpr, dOpr, ukOpr, err := h.getOperationsForInstance(instance)
 		if err != nil {
 			httphelpers.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching operations for instance"))
 			return
 		}
-		dto := h.converter.InstancesAndOperationsToDTO(instance, pOpr, dOpr, ukOpr)
+
+		dto, err := h.converter.InstancesAndOperationsToDTO(instance, pOpr, dOpr, ukOpr)
+		if err != nil {
+			httphelpers.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while converting instances to DTO"))
+			return
+		}
+
 		toReturn = append(toReturn, dto)
 	}
 
