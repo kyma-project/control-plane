@@ -6,6 +6,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/mock"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/automock"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -23,17 +28,23 @@ func TestRuntimeHandler(t *testing.T) {
 		instances := memory.NewInstance(operations)
 		testID1 := "Test1"
 		testID2 := "Test2"
+		testTime1 := time.Now()
+		testTime2 := time.Now().Add(time.Minute)
 
 		err := instances.Insert(internal.Instance{
 			InstanceID: testID1,
+			CreatedAt:  testTime1,
 		})
 		require.NoError(t, err)
 		err = instances.Insert(internal.Instance{
 			InstanceID: testID2,
+			CreatedAt:  testTime2,
 		})
 		require.NoError(t, err)
 
-		runtimeHandler := NewHandler(instances, operations, 2, NewConverter())
+		converter := automock.Converter{}
+		converter.On("InstancesAndOperationsToDTO", mock.Anything).Return()
+		runtimeHandler := NewHandler(instances, operations, 2, NewConverter("region"))
 
 		req, err := http.NewRequest("GET", "/runtimes?limit=1", nil)
 		require.NoError(t, err)
@@ -85,7 +96,7 @@ func TestRuntimeHandler(t *testing.T) {
 		operations := memory.NewOperation()
 		instances := memory.NewInstance(operations)
 
-		runtimeHandler := NewHandler(instances, operations, 2, NewConverter())
+		runtimeHandler := NewHandler(instances, operations, 2, NewConverter("region"))
 
 		req, err := http.NewRequest("GET", "/runtimes?limit=a", nil)
 		require.NoError(t, err)

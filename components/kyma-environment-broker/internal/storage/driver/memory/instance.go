@@ -169,10 +169,10 @@ func (s *Instance) List(limit int, cursor string) ([]internal.Instance, *paginat
 	if err != nil {
 		return nil, nil, 0, err
 	}
-	keys := getSortedKeys(s.instances)
+	sortedInstances := getSortedByCreatedAt(s.instances)
 
-	for i := offset; i < offset+limit && i < len(keys); i++ {
-		toReturn = append(toReturn, s.instances[keys[i]])
+	for i := offset; i < offset+limit && i < len(sortedInstances); i++ {
+		toReturn = append(toReturn, s.instances[sortedInstances[i].InstanceID])
 	}
 
 	hasNextPage := false
@@ -192,12 +192,14 @@ func (s *Instance) List(limit int, cursor string) ([]internal.Instance, *paginat
 		nil
 }
 
-func getSortedKeys(instances map[string]internal.Instance) []string {
-	keys := make([]string, 0, len(instances))
-	for k := range instances {
-		keys = append(keys, k)
+func getSortedByCreatedAt(instances map[string]internal.Instance) []internal.Instance {
+	instancesArr := make([]internal.Instance, 0, len(instances))
+	for _, v := range instances {
+		instancesArr = append(instancesArr, v)
 	}
-	sort.Strings(keys)
-	return keys
+	sort.Slice(instancesArr, func(i, j int) bool {
+		return instancesArr[i].CreatedAt.Before(instancesArr[j].CreatedAt)
+	})
+	return instancesArr
 
 }

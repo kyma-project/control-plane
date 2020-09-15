@@ -23,6 +23,7 @@ const (
 	cursorParam = "cursor"
 )
 
+//go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
 	InstancesAndOperationsToDTO(internal.Instance, *internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation) (runtimeDTO, error)
 }

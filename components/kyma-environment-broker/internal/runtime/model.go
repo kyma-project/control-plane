@@ -11,12 +11,12 @@ type runtimeDTO struct {
 	RuntimeID        string        `json:"runtimeID"`
 	GlobalAccountID  string        `json:"globalAccountID"`
 	SubAccountID     string        `json:"subaccountID"`
+	SubAccountRegion string        `json:"subaccountRegion"`
 	ShootName        string        `json:"shootName"`
 	ServiceClassID   string        `json:"serviceClassID"`
 	ServiceClassName string        `json:"serviceClassName"`
 	ServicePlanID    string        `json:"servicePlanID"`
 	ServicePlanName  string        `json:"servicePlanName"`
-	SubaccountRegion string        `json:"subaccountRegion"`
 	Status           runtimeStatus `json:"status"`
 }
 
@@ -24,8 +24,8 @@ type runtimeStatus struct {
 	CreatedAt      time.Time  `json:"createdAt"`
 	ModifiedAt     time.Time  `json:"modifiedAt"`
 	Provisioning   *operation `json:"provisioning"`
-	Deprovisioning *operation `json:"deprovisioning"`
-	UpgradingKyma  *operation `json:"upgradingKyma"`
+	Deprovisioning *operation `json:"deprovisioning,omitempty"`
+	UpgradingKyma  *operation `json:"upgradingKyma,omitempty"`
 }
 
 type operation struct {

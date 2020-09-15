@@ -295,7 +295,7 @@ func (r readSession) ListInstances(limit int, cursor string) ([]internal.Instanc
 		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while decoding offset cursor")
 	}
 
-	order, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(limit, offset, postsql.InstancesIDName)
+	order, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(limit, offset, postsql.InstancesCreatedAtField)
 	if err != nil {
 		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while converting offset and limit to SQL statement")
 	}

@@ -42,11 +42,9 @@ func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr
 		ServicePlanID:    instance.ServicePlanID,
 		ServicePlanName:  instance.ServicePlanName,
 		Status: runtimeStatus{
-			CreatedAt:      instance.CreatedAt,
-			ModifiedAt:     instance.UpdatedAt,
-			Provisioning:   &operation{},
-			Deprovisioning: &operation{},
-			UpgradingKyma:  &operation{},
+			CreatedAt:    instance.CreatedAt,
+			ModifiedAt:   instance.UpdatedAt,
+			Provisioning: &operation{},
 		},
 	}
 
@@ -54,7 +52,7 @@ func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr
 	if err != nil {
 		return runtimeDTO{}, errors.Wrap(err, "while getting region")
 	}
-	toReturn.SubaccountRegion = region
+	toReturn.SubAccountRegion = region
 
 	urlSplitted := strings.Split(instance.DashboardURL, ".")
 	if len(urlSplitted) > 1 {
@@ -66,12 +64,13 @@ func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr
 		toReturn.Status.Provisioning.Description = pOpr.Description
 	}
 	if dOpr != nil {
-		toReturn.Status.Deprovisioning.State = string(dOpr.State)
-		toReturn.Status.Deprovisioning.Description = dOpr.Description
+
 	}
 	if ukOpr != nil {
-		toReturn.Status.UpgradingKyma.State = string(ukOpr.State)
-		toReturn.Status.UpgradingKyma.Description = ukOpr.Description
+		toReturn.Status.UpgradingKyma = &operation{
+			State:       string(ukOpr.State),
+			Description: ukOpr.Description,
+		}
 	}
 
 	return toReturn, nil
