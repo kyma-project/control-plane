@@ -64,7 +64,10 @@ func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr
 		toReturn.Status.Provisioning.Description = pOpr.Description
 	}
 	if dOpr != nil {
-
+		toReturn.Status.Deprovisioning = &operation{
+			State:       string(dOpr.State),
+			Description: dOpr.Description,
+		}
 	}
 	if ukOpr != nil {
 		toReturn.Status.UpgradingKyma = &operation{
