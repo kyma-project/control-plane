@@ -1,4 +1,4 @@
-package runtime
+package runtime_test
 
 import (
 	"encoding/json"
@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/mock"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/automock"
 
@@ -30,21 +32,30 @@ func TestRuntimeHandler(t *testing.T) {
 		testID2 := "Test2"
 		testTime1 := time.Now()
 		testTime2 := time.Now().Add(time.Minute)
-
-		err := instances.Insert(internal.Instance{
+		testInstance1 := internal.Instance{
 			InstanceID: testID1,
 			CreatedAt:  testTime1,
-		})
-		require.NoError(t, err)
-		err = instances.Insert(internal.Instance{
+		}
+		testInstance2 := internal.Instance{
 			InstanceID: testID2,
 			CreatedAt:  testTime2,
-		})
+		}
+		testDTO1 := runtime.RuntimeDTO{
+			InstanceID: testID1,
+		}
+		testDTO2 := runtime.RuntimeDTO{
+			InstanceID: testID2,
+		}
+
+		err := instances.Insert(testInstance1)
+		require.NoError(t, err)
+		err = instances.Insert(testInstance2)
 		require.NoError(t, err)
 
 		converter := automock.Converter{}
-		converter.On("InstancesAndOperationsToDTO", mock.Anything).Return()
-		runtimeHandler := NewHandler(instances, operations, 2, NewConverter("region"))
+		converter.On("InstancesAndOperationsToDTO", testInstance1, mock.Anything, mock.Anything, mock.Anything).Return(testDTO1, nil)
+		converter.On("InstancesAndOperationsToDTO", testInstance2, mock.Anything, mock.Anything, mock.Anything).Return(testDTO2, nil)
+		runtimeHandler := runtime.NewHandler(instances, operations, 2, &converter)
 
 		req, err := http.NewRequest("GET", "/runtimes?limit=1", nil)
 		require.NoError(t, err)
@@ -59,7 +70,7 @@ func TestRuntimeHandler(t *testing.T) {
 		// then
 		require.Equal(t, http.StatusOK, rr.Code)
 
-		var out RuntimesPage
+		var out runtime.RuntimesPage
 
 		err = json.Unmarshal(rr.Body.Bytes(), &out)
 		require.NoError(t, err)
@@ -96,7 +107,7 @@ func TestRuntimeHandler(t *testing.T) {
 		operations := memory.NewOperation()
 		instances := memory.NewInstance(operations)
 
-		runtimeHandler := NewHandler(instances, operations, 2, NewConverter("region"))
+		runtimeHandler := runtime.NewHandler(instances, operations, 2, runtime.NewConverter("region"))
 
 		req, err := http.NewRequest("GET", "/runtimes?limit=a", nil)
 		require.NoError(t, err)

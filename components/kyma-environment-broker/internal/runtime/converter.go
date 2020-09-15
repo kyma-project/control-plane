@@ -31,8 +31,8 @@ func (c *converter) getRegionOrDefault(instance internal.Instance) (string, erro
 }
 
 func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr *internal.ProvisioningOperation,
-	dOpr *internal.DeprovisioningOperation, ukOpr *internal.UpgradeKymaOperation) (runtimeDTO, error) {
-	toReturn := runtimeDTO{
+	dOpr *internal.DeprovisioningOperation, ukOpr *internal.UpgradeKymaOperation) (RuntimeDTO, error) {
+	toReturn := RuntimeDTO{
 		InstanceID:       instance.InstanceID,
 		RuntimeID:        instance.RuntimeID,
 		GlobalAccountID:  instance.GlobalAccountID,
@@ -50,7 +50,7 @@ func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr
 
 	region, err := c.getRegionOrDefault(instance)
 	if err != nil {
-		return runtimeDTO{}, errors.Wrap(err, "while getting region")
+		return RuntimeDTO{}, errors.Wrap(err, "while getting region")
 	}
 	toReturn.SubAccountRegion = region
 

@@ -6,7 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
-type runtimeDTO struct {
+type RuntimeDTO struct {
 	InstanceID       string        `json:"instanceID"`
 	RuntimeID        string        `json:"runtimeID"`
 	GlobalAccountID  string        `json:"globalAccountID"`
@@ -34,7 +34,7 @@ type operation struct {
 }
 
 type RuntimesPage struct {
-	Data       []runtimeDTO     `json:"data"`
+	Data       []RuntimeDTO     `json:"data"`
 	PageInfo   *pagination.Page `json:"pageInfo"`
 	TotalCount int              `json:"totalCount"`
 }

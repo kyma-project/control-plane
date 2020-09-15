@@ -25,7 +25,7 @@ const (
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
-	InstancesAndOperationsToDTO(internal.Instance, *internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation) (runtimeDTO, error)
+	InstancesAndOperationsToDTO(internal.Instance, *internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation) (RuntimeDTO, error)
 }
 
 type Handler struct {
@@ -50,7 +50,7 @@ func (h *Handler) AttachRoutes(router *mux.Router) {
 }
 
 func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
-	var toReturn []runtimeDTO
+	var toReturn []RuntimeDTO
 	limit, cursor, err := h.getParams(req)
 	if err != nil {
 		httphelpers.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
