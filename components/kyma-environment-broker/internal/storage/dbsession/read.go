@@ -182,6 +182,7 @@ func (r readSession) GetOperationByTypeAndInstanceID(inID string, opType dbmodel
 		From(postsql.OperationTableName).
 		Where(idCondition).
 		Where(typeCondition).
+		OrderDesc(postsql.CreatedAtField).
 		LoadOne(&operation)
 
 	if err != nil {
@@ -295,7 +296,7 @@ func (r readSession) ListInstances(limit int, cursor string) ([]internal.Instanc
 		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while decoding offset cursor")
 	}
 
-	order, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(limit, offset, postsql.InstancesCreatedAtField)
+	order, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(limit, offset, postsql.CreatedAtField)
 	if err != nil {
 		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while converting offset and limit to SQL statement")
 	}

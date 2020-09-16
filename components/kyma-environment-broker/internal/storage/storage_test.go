@@ -440,6 +440,58 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, "new modified description", gotOperation2.Description)
 
 		})
+		t.Run("GetOperation should return the newest one", func(t *testing.T) {
+			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			require.NoError(t, err)
+			defer containerCleanupFunc()
+
+			givenOperation1 := internal.UpgradeKymaOperation{
+				Operation: internal.Operation{
+					ID:    "operation-id-1",
+					State: domain.InProgress,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second),
+					InstanceID:             "inst-id",
+					ProvisionerOperationID: "target-op-id",
+					Description:            "description",
+					Version:                1,
+				},
+			}
+
+			givenOperation2 := internal.UpgradeKymaOperation{
+				Operation: internal.Operation{
+					ID:    "operation-id-2",
+					State: domain.InProgress,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Minute),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second).Add(time.Minute),
+					InstanceID:             "inst-id",
+					ProvisionerOperationID: "target-op-id",
+					Description:            "description",
+					Version:                1,
+				},
+			}
+
+			err = InitTestDBTables(t, cfg.ConnectionURL())
+			require.NoError(t, err)
+
+			brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			require.NoError(t, err)
+
+			svc := brokerStorage.Operations()
+
+			// when
+			err = svc.InsertUpgradeKymaOperation(givenOperation1)
+			require.NoError(t, err)
+			err = svc.InsertUpgradeKymaOperation(givenOperation2)
+			require.NoError(t, err)
+
+			ops, err := svc.GetUpgradeKymaOperationByInstanceID("inst-id")
+			require.NoError(t, err)
+
+			assertUpgradeKymaOperation(t, givenOperation2, *ops)
+		})
 	})
 
 	t.Run("Operations conflicts", func(t *testing.T) {
@@ -651,6 +703,15 @@ func assertProvisioningOperation(t *testing.T, expected, got internal.Provisioni
 }
 
 func assertDeprovisioningOperation(t *testing.T, expected, got internal.DeprovisioningOperation) {
+	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
+	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
+
+	expected.CreatedAt = got.CreatedAt
+	expected.UpdatedAt = got.UpdatedAt
+	assert.Equal(t, expected, got)
+}
+
+func assertUpgradeKymaOperation(t *testing.T, expected, got internal.UpgradeKymaOperation) {
 	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
 	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
 
