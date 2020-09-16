@@ -55,7 +55,7 @@ spec:
             - name: APP_DEPLOY_NAMESPACE
               value: "kcp-system"
             - name: APP_DIRECTOR_URL
-              value: "https://{{ .Values.global.compass-gateway.tls.secure.oauth.host }}.{{ .Values.global.compass-gateway.domain }}/director/graphql"
+              value: "https://{{ .Values.global.compass-gateway.tls.secure.oauth.host }}.{{ .Values.global.compass-gateway.domain | default .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_DIRECTOR_NAMESPACE
               value: "{{ .Release.Namespace }}"
             - name: APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME
@@ -124,7 +124,7 @@ spec:
             - name: APP_DEPLOY_NAMESPACE
               value: "kcp-system"
             - name: APP_DIRECTOR_URL
-              value: "https://{{ .Values.global.compass-gateway.tls.secure.oauth.host }}.{{ .Values.global.compass-gateway.domain }}/director/graphql"
+              value: "https://{{ .Values.global.compass-gateway.tls.secure.oauth.host }}.{{ .Values.global.compass-gateway.domain | default .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_DIRECTOR_NAMESPACE
               value: "kcp-system"
             - name: APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME

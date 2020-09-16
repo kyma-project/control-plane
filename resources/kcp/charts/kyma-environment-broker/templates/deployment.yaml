@@ -26,9 +26,9 @@ spec:
         - ip: {{ .Values.global.minikubeIP }}
           hostnames:
             # Used for calls to Director
-            - "{{ .Values.global.compass-gateway.tls.secure.oauth.host }}.{{ .Values.global.compass-gateway.domain }}"
+            - "{{ .Values.global.compass-gateway.tls.secure.oauth.host }}.{{ .Values.global.compass-gateway.domain | default .Values.global.ingress.domainName }}"
             # Used for calls for oauth token
-            - "{{ .Values.global.oauth2.host }}.{{ .Values.global.compass-gateway.domain }}"
+            - "{{ .Values.global.oauth2.host }}.{{ .Values.global.compass-gateway.domain | default .Values.global.ingress.domainName }}"
       {{ end }}
       serviceAccountName: {{ include "kyma-env-broker.fullname" . }}
     {{- with .Values.deployment.securityContext }}
@@ -65,7 +65,7 @@ spec:
             - name: APP_DIRECTOR_DEFAULT_TENANT
               value: "{{ .Values.global.defaultTenant }}"
             - name: APP_DIRECTOR_URL
-              value: "https://{{ .Values.global.compass-gateway.tls.secure.oauth.host }}.{{ .Values.global.compass-gateway.domain }}/director/graphql"
+              value: "https://{{ .Values.global.compass-gateway.tls.secure.oauth.host }}.{{ .Values.global.compass-gateway.domain | default .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME
               value: "{{ .Values.global.kyma_environment_broker.secrets.integrationSystemCredentials.name }}"
             - name: APP_DIRECTOR_SKIP_CERT_VERIFICATION
