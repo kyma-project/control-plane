@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	mocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/director/automock"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/director/oauth"
+	mocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director/oauth"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 
 	machineGraphql "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
@@ -41,7 +42,7 @@ func TestClient_setToken(t *testing.T) {
 			oc.On("GetAuthorizationToken").Return(oauth.Token{tc.token, tc.expire}, tc.expectedErr)
 			defer oc.AssertExpectations(t)
 
-			client := NewDirectorClient(oc, qc)
+			client := NewDirectorClient(oc, qc, logger.NewLogDummy())
 
 			// When
 			tokenErr := client.setToken()
@@ -76,7 +77,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		// Given
 		qc := &mocks.GraphQLClient{}
 
-		client := NewDirectorClient(oc, qc)
+		client := NewDirectorClient(oc, qc, logger.NewLogDummy())
 		client.token = token
 
 		// #create request
@@ -114,7 +115,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		// Given
 		qc := &mocks.GraphQLClient{}
 
-		client := NewDirectorClient(oc, qc)
+		client := NewDirectorClient(oc, qc, logger.NewLogDummy())
 		client.token = token
 
 		// #create request
@@ -137,7 +138,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		// Given
 		qc := &mocks.GraphQLClient{}
 
-		client := NewDirectorClient(oc, qc)
+		client := NewDirectorClient(oc, qc, logger.NewLogDummy())
 		client.token = token
 
 		// #create request
@@ -175,7 +176,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		// Given
 		qc := &mocks.GraphQLClient{}
 
-		client := NewDirectorClient(oc, qc)
+		client := NewDirectorClient(oc, qc, logger.NewLogDummy())
 		client.token = token
 
 		// #create request
@@ -213,7 +214,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		// Given
 		qc := &mocks.GraphQLClient{}
 
-		client := NewDirectorClient(oc, qc)
+		client := NewDirectorClient(oc, qc, logger.NewLogDummy())
 		client.token = token
 
 		// #create request
@@ -251,7 +252,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		// Given
 		qc := &mocks.GraphQLClient{}
 
-		client := NewDirectorClient(oc, qc)
+		client := NewDirectorClient(oc, qc, logger.NewLogDummy())
 		client.token = token
 
 		// #create request
@@ -290,7 +291,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		qc := &mocks.GraphQLClient{}
 		oc = &mocks.OauthClient{}
 
-		client := NewDirectorClient(oc, qc)
+		client := NewDirectorClient(oc, qc, logger.NewLogDummy())
 		client.token = token
 
 		// #create request
@@ -326,7 +327,7 @@ func TestClient_SetLabel(t *testing.T) {
 	oc := &mocks.OauthClient{}
 	qc := &mocks.GraphQLClient{}
 
-	client := NewDirectorClient(oc, qc)
+	client := NewDirectorClient(oc, qc, logger.NewLogDummy())
 	client.token = oauth.Token{
 		AccessToken: "1234xyza",
 		Expiration:  time.Now().Unix() + 999,
