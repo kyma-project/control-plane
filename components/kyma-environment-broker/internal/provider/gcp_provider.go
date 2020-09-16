@@ -44,7 +44,9 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 			MaxSurge:       4,
 			MaxUnavailable: 1,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-				GcpConfig: &gqlschema.GCPProviderConfigInput{},
+				GcpConfig: &gqlschema.GCPProviderConfigInput{
+					Zones: ZonesForGCPRegion(DefaultGCPRegion),
+				},
 			},
 		},
 	}
@@ -72,7 +74,9 @@ func (p *GcpTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 			MaxSurge:       1,
 			MaxUnavailable: 1,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-				GcpConfig: &gqlschema.GCPProviderConfigInput{},
+				GcpConfig: &gqlschema.GCPProviderConfigInput{
+					Zones: ZonesForGCPRegion(DefaultGCPRegion),
+				},
 			},
 		},
 	}
@@ -108,7 +112,7 @@ func (p *GcpTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp 
 func ZonesForGCPRegion(region string) []string {
 	var zones []string
 
-	for _, name := range []string{"a", "b", "c"} {
+	for _, name := range []string{"a"} {
 		zones = append(zones, fmt.Sprintf("%s-%s", region, name))
 	}
 
