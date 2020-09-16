@@ -114,7 +114,7 @@ type Config struct {
 	}
 
 	TrialRegionMappingFilePath string
-	MaxPaginationPage          string `envconfig:"default=100"`
+	MaxPaginationPage          int `envconfig:"default=100"`
 }
 
 func main() {
@@ -441,9 +441,7 @@ func main() {
 	})
 
 	// create list runtimes endpoint
-	maxPage, err := strconv.Atoi(cfg.MaxPaginationPage)
-	fatalOnError(err)
-	runtimeHandler := runtime.NewHandler(db.Instances(), db.Operations(), maxPage, runtime.NewConverter(cfg.DefaultRequestRegion))
+	runtimeHandler := runtime.NewHandler(db.Instances(), db.Operations(), cfg.MaxPaginationPage, runtime.NewConverter(cfg.DefaultRequestRegion))
 	runtimeHandler.AttachRoutes(router)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))

@@ -5,17 +5,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
-
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-
-	"github.com/pkg/errors"
-
 	"github.com/gorilla/mux"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/pkg/errors"
 )
 
 const (
