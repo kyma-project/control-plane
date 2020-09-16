@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"reflect"
 
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 
+	gcli "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/third_party/machinebox/graphql"
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
 
@@ -63,7 +64,7 @@ func (c *client) ProvisionRuntime(accountID, subAccountID string, config schema.
 	var response schema.OperationStatus
 	err = c.executeRequest(req, &response)
 	if err != nil {
-		return schema.OperationStatus{}, errors.Wrap(err, "Failed to provision Runtime")
+		return schema.OperationStatus{}, errors.Wrap(err, "failed to provision a Runtime")
 	}
 
 	return response, nil
@@ -137,9 +138,25 @@ func (c *client) executeRequest(req *gcli.Request, respDestination interface{}) 
 
 	wrapper := &graphQLResponseWrapper{Result: respDestination}
 	err := c.graphQLClient.Run(context.TODO(), req, wrapper)
-	if err != nil {
-		return errors.Wrap(err, "Failed to execute request")
+	switch {
+	case isClientError(err):
+		return err
+	case err != nil:
+		return kebError.AsTemporaryError(err, "failed to execute the request")
 	}
 
 	return nil
+}
+
+func isClientError(err error) bool {
+	if ee, ok := err.(gcli.ExtendedError); ok {
+		code, found := ee.Extensions()["error_code"]
+		if found {
+			errCode := code.(float64)
+			if errCode >= 400 && errCode < 500 {
+				return true
+			}
+		}
+	}
+	return false
 }

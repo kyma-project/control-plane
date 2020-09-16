@@ -2,10 +2,9 @@ package provisioning
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -13,12 +12,15 @@ import (
 	inputAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 const (
@@ -129,6 +131,32 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	assert.Equal(t, instance.RuntimeID, runtimeID)
 }
 
+func TestCreateRuntimeStep_RunWithBadRequestError(t *testing.T) {
+	// given
+	log := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+
+	operation := fixOperationCreateRuntime(t)
+	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
+	assert.NoError(t, err)
+
+	err = memoryStorage.Instances().Insert(fixInstance())
+	assert.NoError(t, err)
+
+	provisionerClient := &provisionerAutomock.Client{}
+	provisionerClient.On("ProvisionRuntime", globalAccountID, subAccountID, mock.Anything).Return(gqlschema.OperationStatus{}, fmt.Errorf("some permanent error"))
+
+	step := NewCreateRuntimeStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
+
+	// when
+	entry := log.WithFields(logrus.Fields{"step": "TEST"})
+	operation, _, err = step.Run(operation, entry)
+
+	// then
+	assert.Equal(t, domain.Failed, operation.State)
+
+}
+
 func fixOperationCreateRuntime(t *testing.T) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
@@ -136,6 +164,7 @@ func fixOperationCreateRuntime(t *testing.T) internal.ProvisioningOperation {
 			InstanceID:  instanceID,
 			Description: "",
 			UpdatedAt:   time.Now(),
+			State:       domain.InProgress,
 		},
 		ProvisioningParameters: fixProvisioningParameters(t),
 		InputCreator:           fixInputCreator(t),

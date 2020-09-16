@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
@@ -192,6 +193,75 @@ func TestClient_ReconnectRuntimeAgent(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, "", operationId)
 	})
+
+	t.Run("provisioner returns bad request code error", func(t *testing.T) {
+		server := fixHTTPMockServer(`{
+			  "errors": [
+				{
+				  "message": "tenant header is empty",
+				  "path": [
+					"runtimeStatus"
+				  ],
+				  "extensions": {
+					"error_code": 400
+				  }
+				}
+			  ],
+			  "data": {
+				"runtimeStatus": null
+			  }
+			}`)
+		defer server.Close()
+
+		client := NewProvisionerClient(server.URL, false)
+
+		// when
+		_, err := client.ProvisionRuntime(testAccountID, testSubAccountID, fixProvisionRuntimeInput())
+
+		// Then
+		assert.Error(t, err)
+		assert.False(t, kebError.IsTemporaryError(err))
+	})
+
+	t.Run("provisioner returns temporary code error", func(t *testing.T) {
+		server := fixHTTPMockServer(`{
+			  "errors": [
+				{
+				  "message": "tenant header is empty",
+				  "path": [
+					"runtimeStatus"
+				  ],
+				  "extensions": {
+					"error_code": 500
+				  }
+				}
+			  ],
+			  "data": {
+				"runtimeStatus": null
+			  }
+			}`)
+		defer server.Close()
+
+		client := NewProvisionerClient(server.URL, false)
+
+		// when
+		_, err := client.ProvisionRuntime(testAccountID, testSubAccountID, fixProvisionRuntimeInput())
+
+		// Then
+		assert.Error(t, err)
+		assert.True(t, kebError.IsTemporaryError(err))
+	})
+
+	t.Run("network error", func(t *testing.T) {
+		client := NewProvisionerClient("http://not-existing", false)
+
+		// when
+		_, err := client.ProvisionRuntime(testAccountID, testSubAccountID, fixProvisionRuntimeInput())
+
+		// Then
+		assert.Error(t, err)
+		assert.True(t, kebError.IsTemporaryError(err))
+	})
 }
 
 func TestClient_RuntimeOperationStatus(t *testing.T) {
@@ -251,6 +321,24 @@ type testResolver struct {
 	t       *testing.T
 	runtime *testRuntime
 	failed  bool
+}
+
+type httpHandler struct {
+	r string
+}
+
+func (h httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+	rw.Write([]byte(h.r))
+}
+
+func fixHandler(resp string) http.Handler {
+	return httpHandler{
+		r: resp,
+	}
+}
+
+func fixHTTPMockServer(resp string) *httptest.Server {
+	return httptest.NewServer(fixHandler(resp))
 }
 
 func fixHTTPServer(tr *testResolver) *httptest.Server {
