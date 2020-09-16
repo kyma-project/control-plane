@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/wait"
+
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
@@ -81,7 +83,7 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 
 	// TODO(upgrade): support many strategies
 	strategy := orchestration.NewInstantOrchestrationStrategy(u.kymaUpgradeExecutor, u.log)
-	_, err = strategy.Execute(operations, dto.Strategy)
+	_, err = strategy.Execute(u.filterOperationsInProgress(operations), dto.Strategy)
 	if err != nil {
 		return 0, errors.Wrap(err, "while executing instant upgrade strategy")
 	}
@@ -150,6 +152,18 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, dto or
 	return operations, nil
 }
 
+func (u *upgradeKymaManager) filterOperationsInProgress(ops []internal.RuntimeOperation) []internal.RuntimeOperation {
+	result := make([]internal.RuntimeOperation, 0)
+
+	for _, op := range ops {
+		if op.Status == internal.InProgress {
+			result = append(result, op)
+		}
+	}
+
+	return result
+}
+
 func (u *upgradeKymaManager) failOrchestration(o *internal.Orchestration, err error) (time.Duration, error) {
 	u.log.Errorf("orchestration %s failed: %s", o.OrchestrationID, err)
 	return u.updateOrchestration(o, internal.Failed, err.Error(), nil)
@@ -189,11 +203,11 @@ func (u *upgradeKymaManager) checkOperationsResults(ops []internal.RuntimeOperat
 		}
 	}
 
-	// get operation status for each processed operation
-	for len(operationIDList) != 0 {
+	err := wait.PollInfinite(time.Second*20, func() (bool, error) {
 		operations, err := u.operationStorage.GetOperationsForIDs(operationIDList)
 		if err != nil {
-			return []internal.RuntimeOperation{}, false, err
+			u.log.Errorf("while getting operations: %v", err)
+			return false, nil
 		}
 		// loop over operations, remove IDs which were succeeded or failed
 		for i, op := range operations {
@@ -204,6 +218,13 @@ func (u *upgradeKymaManager) checkOperationsResults(ops []internal.RuntimeOperat
 				runtimeOperations[op.ID] = runtimeOp
 			}
 		}
+		if len(operationIDList) == 0 {
+			return true, nil
+		}
+		return false, nil
+	})
+	if err != nil {
+		return nil, false, errors.Wrap(err, "while waiting for scheduled operations to finish")
 	}
 
 	result := make([]internal.RuntimeOperation, 0)

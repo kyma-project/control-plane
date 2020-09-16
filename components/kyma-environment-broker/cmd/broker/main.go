@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	orchestrate "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/kyma"
@@ -372,15 +374,6 @@ func main() {
 	upgradeKymaQueue := process.NewQueue(upgradeKymaManager, logs)
 	upgradeKymaQueue.Run(ctx.Done(), workersAmount)
 
-	if !cfg.DisableProcessOperationsInProgress {
-		err = processOperationsInProgressByType(dbmodel.OperationTypeProvision, db.Operations(), provisionQueue, logs)
-		fatalOnError(err)
-		err = processOperationsInProgressByType(dbmodel.OperationTypeDeprovision, db.Operations(), deprovisionQueue, logs)
-		fatalOnError(err)
-	} else {
-		logger.Info("Skipping processing operation in progress on start")
-	}
-
 	plansValidator, err := broker.NewPlansSchemaValidator()
 	fatalOnError(err)
 
@@ -418,6 +411,17 @@ func main() {
 	kymaQueue.Run(ctx.Done(), workersAmount)
 	orchestrationHandler := orchestrate.NewOrchestrationHandler(db.Orchestrations(), kymaQueue, logs)
 
+	if !cfg.DisableProcessOperationsInProgress {
+		err = processOperationsInProgressByType(dbmodel.OperationTypeProvision, db.Operations(), provisionQueue, logs)
+		fatalOnError(err)
+		err = processOperationsInProgressByType(dbmodel.OperationTypeDeprovision, db.Operations(), deprovisionQueue, logs)
+		fatalOnError(err)
+		err = processOrchestrationsInProgress(db.Orchestrations(), kymaQueue, logs)
+		fatalOnError(err)
+	} else {
+		logger.Info("Skipping processing operation in progress on start")
+	}
+
 	// create OSB API endpoints
 	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
 	for _, prefix := range []string{
@@ -436,7 +440,7 @@ func main() {
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
 }
 
-// queues all in progress provision operations existing in the database
+// queues all in progress operations by type
 func processOperationsInProgressByType(opType dbmodel.OperationType, op storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
 	operations, err := op.GetOperationsInProgressByType(opType)
 	if err != nil {
@@ -445,6 +449,18 @@ func processOperationsInProgressByType(opType dbmodel.OperationType, op storage.
 	for _, operation := range operations {
 		queue.Add(operation.ID)
 		log.Infof("Resuming the processing of %s operation ID: %s", opType, operation.ID)
+	}
+	return nil
+}
+
+func processOrchestrationsInProgress(op storage.Orchestrations, queue *process.Queue, log logrus.FieldLogger) error {
+	orchestrations, err := op.ListByState(internal.InProgress)
+	if err != nil {
+		return errors.Wrap(err, "while getting in progress orchestrations from storage")
+	}
+	for _, o := range orchestrations {
+		queue.Add(o.OrchestrationID)
+		log.Infof("Resuming the processing of %s orchestration ID: %s", internal.InProgress, o.OrchestrationID)
 	}
 	return nil
 }

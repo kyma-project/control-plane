@@ -119,6 +119,22 @@ func (r readSession) GetOrchestrationByID(oID string) (internal.Orchestration, d
 	return operation, nil
 }
 
+func (r readSession) GetOrchestrationByType(state string) ([]internal.Orchestration, dberr.Error) {
+	var orchestrations []internal.Orchestration
+
+	stateCondition := dbr.Eq("state", state)
+
+	_, err := r.session.
+		Select("*").
+		From(postsql.OrchestrationTableName).
+		Where(stateCondition).
+		Load(&orchestrations)
+	if err != nil {
+		return nil, dberr.Internal("Failed to get orchestrations: %s", err)
+	}
+	return orchestrations, nil
+}
+
 func (r readSession) ListOrchestrations() ([]internal.Orchestration, dberr.Error) {
 	var orchestrations []internal.Orchestration
 
