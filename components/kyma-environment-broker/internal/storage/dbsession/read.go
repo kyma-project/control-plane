@@ -119,7 +119,7 @@ func (r readSession) GetOrchestrationByID(oID string) (internal.Orchestration, d
 	return operation, nil
 }
 
-func (r readSession) GetOrchestrationByType(state string) ([]internal.Orchestration, dberr.Error) {
+func (r readSession) ListOrchestrationsByState(state string) ([]internal.Orchestration, dberr.Error) {
 	var orchestrations []internal.Orchestration
 
 	stateCondition := dbr.Eq("state", state)

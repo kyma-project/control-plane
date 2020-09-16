@@ -30,7 +30,7 @@ type ReadSession interface {
 	GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
 	GetOrchestrationByID(oID string) (internal.Orchestration, dberr.Error)
-	GetOrchestrationByType(state string) ([]internal.Orchestration, dberr.Error)
+	ListOrchestrationsByState(state string) ([]internal.Orchestration, dberr.Error)
 	ListOrchestrations() ([]internal.Orchestration, dberr.Error)
 }
 
