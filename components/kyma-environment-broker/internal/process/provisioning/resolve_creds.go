@@ -6,9 +6,9 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"

@@ -3,7 +3,7 @@
 package automock
 
 import (
-	hyperscaler "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler"
+	hyperscaler "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	gqlschema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	mock "github.com/stretchr/testify/mock"
 )

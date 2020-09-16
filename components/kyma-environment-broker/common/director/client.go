@@ -9,7 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director/oauth"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
-	gcli "github.com/machinebox/graphql"
+	machineGraph "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -26,7 +26,7 @@ const (
 
 //go:generate mockery -name=GraphQLClient -output=automock
 type GraphQLClient interface {
-	Run(ctx context.Context, req *gcli.Request, resp interface{}) error
+	Run(ctx context.Context, req *machineGraph.Request, resp interface{}) error
 }
 
 //go:generate mockery -name=OauthClient -output=automock
@@ -72,7 +72,7 @@ func NewDirectorClient(oauthClient OauthClient, gqlClient GraphQLClient, log log
 // GetConsoleURL fetches, validates and returns console URL from director component based on runtime ID
 func (dc *Client) GetConsoleURL(accountID, runtimeID string) (string, error) {
 	query := dc.queryProvider.Runtime(runtimeID)
-	req := gcli.NewRequest(query)
+	req := machineGraph.NewRequest(query)
 	req.Header.Add(accountIDKey, accountID)
 
 	dc.log.Info("Send request to director")
@@ -88,7 +88,7 @@ func (dc *Client) GetConsoleURL(accountID, runtimeID string) (string, error) {
 // SetLabel adds key-value label to a Runtime
 func (dc *Client) SetLabel(accountID, runtimeID, key, value string) error {
 	query := dc.queryProvider.SetRuntimeLabel(runtimeID, key, value)
-	req := gcli.NewRequest(query)
+	req := machineGraph.NewRequest(query)
 	req.Header.Add(accountIDKey, accountID)
 
 	dc.log.Info("Setup label in director")
@@ -108,7 +108,7 @@ func (dc *Client) SetLabel(accountID, runtimeID, key, value string) error {
 // GetRuntimeID fetches runtime ID with given label name from director component
 func (dc *Client) GetRuntimeID(accountID, instanceID string) (string, error) {
 	query := dc.queryProvider.RuntimeForInstanceId(instanceID)
-	req := gcli.NewRequest(query)
+	req := machineGraph.NewRequest(query)
 	req.Header.Add(accountIDKey, accountID)
 
 	dc.log.Info("Send request to director")
@@ -121,7 +121,7 @@ func (dc *Client) GetRuntimeID(accountID, instanceID string) (string, error) {
 	return dc.getIDFromRuntime(&response.Result)
 }
 
-func (dc *Client) fetchURLFromDirector(req *gcli.Request) (*getURLResponse, error) {
+func (dc *Client) fetchURLFromDirector(req *machineGraph.Request) (*getURLResponse, error) {
 	var response getURLResponse
 	var lastError error
 	var success bool
@@ -153,7 +153,7 @@ func (dc *Client) fetchURLFromDirector(req *gcli.Request) (*getURLResponse, erro
 	return &response, nil
 }
 
-func (dc *Client) setLabelsInDirector(req *gcli.Request) (*runtimeLabelResponse, error) {
+func (dc *Client) setLabelsInDirector(req *machineGraph.Request) (*runtimeLabelResponse, error) {
 	var response runtimeLabelResponse
 	var lastError error
 	var success bool
@@ -185,7 +185,7 @@ func (dc *Client) setLabelsInDirector(req *gcli.Request) (*runtimeLabelResponse,
 	return &response, nil
 }
 
-func (dc *Client) getRuntimeIdFromDirector(req *gcli.Request) (*getRuntimeIdResponse, error) {
+func (dc *Client) getRuntimeIdFromDirector(req *machineGraph.Request) (*getRuntimeIdResponse, error) {
 	var response getRuntimeIdResponse
 	var lastError error
 	var success bool
