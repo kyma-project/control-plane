@@ -41,7 +41,7 @@ func NewResolver(provisioningService provisioning.Service, validator Validator) 
 func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.ProvisionRuntimeInput) (*gqlschema.OperationStatus, error) {
 	err := r.validator.ValidateProvisioningInput(config)
 	if err != nil {
-		log.Errorf("Failed to provision Runtime %s", err)
+		log.Errorf("Failed to provision Runtime a%s", err)
 		return nil, err
 	}
 
