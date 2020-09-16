@@ -65,7 +65,7 @@ global:
       integrationSystemCredentials:
         name: kcp-provisioner-credentials
 
-  compass-gateway:
+  compass:
     tls:
       host: compass-gateway
       secure:

@@ -41,7 +41,7 @@ spec:
         - name: APP_QUERY_LOGGING
           value: {{ .Values.tests.queryLogging | quote }}
         - name: APP_DIRECTOR_CLIENT_URL
-          value: "https://{{ .Values.global.compass-gateway.tls.secure.oauth.host }}.{{ .Values.global.compass-gateway.domain | default .Values.global.ingress.domainName }}/director/graphql"
+          value: "https://{{ .Values.global.compass.tls.secure.oauth.host }}.{{ .Values.global.compass.domain | default .Values.global.ingress.domainName }}/director/graphql"
         - name: APP_DIRECTOR_CLIENT_NAMESPACE
           value: {{ .Release.Namespace }}
         - name: APP_DIRECTOR_CLIENT_OAUTH_CREDENTIALS_SECRET_NAME
