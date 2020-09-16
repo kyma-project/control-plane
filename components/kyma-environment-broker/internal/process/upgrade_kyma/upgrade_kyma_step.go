@@ -18,12 +18,22 @@ const UpgradeKymaTimeout = 1 * time.Hour
 type UpgradeKymaStep struct {
 	operationManager  *process.UpgradeKymaOperationManager
 	provisionerClient provisioner.Client
+	intervalConfig    IntervalConfig
 }
 
-func NewUpgradeKymaStep(os storage.Operations, cli provisioner.Client) *UpgradeKymaStep {
+func NewUpgradeKymaStep(os storage.Operations, cli provisioner.Client, intervalConfig *IntervalConfig) *UpgradeKymaStep {
+	icfg := intervalConfig
+	if icfg == nil {
+		icfg = &IntervalConfig{
+			Retry:              5 * time.Second,
+			StatusCheck:        time.Minute,
+			UpgradeKymaTimeout: time.Hour,
+		}
+	}
 	return &UpgradeKymaStep{
 		operationManager:  process.NewUpgradeKymaOperationManager(os),
 		provisionerClient: cli,
+		intervalConfig:    *icfg,
 	}
 }
 
@@ -32,7 +42,7 @@ func (s *UpgradeKymaStep) Name() string {
 }
 
 func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if time.Since(operation.UpdatedAt) > UpgradeKymaTimeout {
+	if time.Since(operation.UpdatedAt) > s.intervalConfig.UpgradeKymaTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", UpgradeKymaTimeout))
 	}
@@ -57,14 +67,14 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 		provisionerResponse, err := s.provisionerClient.UpgradeRuntime(pp.ErsContext.GlobalAccountID, operation.RuntimeID, requestInput)
 		if err != nil {
 			log.Errorf("call to provisioner failed: %s", err)
-			return operation, 5 * time.Second, nil
+			return operation, s.intervalConfig.Retry, nil
 		}
 		operation.ProvisionerOperationID = *provisionerResponse.ID
 
 		operation, repeat := s.operationManager.UpdateOperation(operation)
 		if repeat != 0 {
 			log.Errorf("cannot save operation ID from provisioner")
-			return operation, 5 * time.Second, nil
+			return operation, s.intervalConfig.Retry, nil
 		}
 	}
 
@@ -72,18 +82,18 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 		provisionerResponse, err = s.provisionerClient.RuntimeOperationStatus(pp.ErsContext.GlobalAccountID, operation.ProvisionerOperationID)
 		if err != nil {
 			log.Errorf("call to provisioner about operation status failed: %s", err)
-			return operation, 1 * time.Minute, nil
+			return operation, s.intervalConfig.Retry, nil
 		}
 	}
 	if provisionerResponse.RuntimeID == nil {
-		return operation, 1 * time.Minute, nil
+		return operation, s.intervalConfig.StatusCheck, nil
 	}
 	log = log.WithField("runtimeID", *provisionerResponse.RuntimeID)
 	log.Infof("call to provisioner succeeded, got operation ID %q", *provisionerResponse.ID)
 
 	log.Infof("kyma upgrade process initiated successfully")
-	// return repeat mode (1 sec) to start the initialization step which will now check the runtime status
-	return operation, 1 * time.Second, nil
+	// return repeat mode to start the initialization step which will now check the runtime status
+	return operation, s.intervalConfig.Retry, nil
 }
 
 func (s *UpgradeKymaStep) createUpgradeKymaInput(operation internal.UpgradeKymaOperation) (gqlschema.UpgradeRuntimeInput, error) {

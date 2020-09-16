@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -12,10 +11,8 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
+	gardenerclient "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	orchestrate "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/kyma"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 
@@ -49,10 +46,15 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 
+	"fmt"
+
 	"code.cloudfoundry.org/lager"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/kyma"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -184,8 +186,9 @@ func main() {
 	disabledComponentsProvider := runtime.NewDisabledComponentsProvider()
 
 	runtimeProvider := runtime.NewComponentsListProvider(cfg.ManagedRuntimeComponentsYAMLFilePath)
-
 	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
+	fatalOnError(err)
+	gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
 	fatalOnError(err)
 	gardenerSecrets, err := gardener.NewGardenerSecretsInterface(gardenerClusterConfig, cfg.Gardener.Project)
 	fatalOnError(err)
@@ -227,7 +230,6 @@ func main() {
 	// setup operation managers
 	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
-	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), eventBroker, logs.WithField("upgradeKyma", "manager"))
 
 	// define steps
 	kymaVersionConfigurator := provisioning.NewKymaVersionConfigurator(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
@@ -343,28 +345,6 @@ func main() {
 		}
 	}
 
-	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, inputFactory)
-	upgradeKymaManager.InitStep(upgradeKymaInit)
-	upgradeKymaSteps := []struct {
-		disabled bool
-		weight   int
-		step     upgrade_kyma.Step
-	}{
-		{
-			weight: 2,
-			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(ctx, cli, db.Operations()),
-		},
-		{
-			weight: 10,
-			step:   upgrade_kyma.NewUpgradeKymaStep(db.Operations(), provisionerClient),
-		},
-	}
-	for _, step := range upgradeKymaSteps {
-		if !step.disabled {
-			upgradeKymaManager.AddStep(step.weight, step.step)
-		}
-	}
-
 	// run queues
 	const workersAmount = 5
 	provisionQueue := process.NewQueue(provisionManager, logs)
@@ -372,9 +352,6 @@ func main() {
 
 	deprovisionQueue := process.NewQueue(deprovisionManager, logs)
 	deprovisionQueue.Run(ctx.Done(), workersAmount)
-
-	upgradeKymaQueue := process.NewQueue(upgradeKymaManager, logs)
-	upgradeKymaQueue.Run(ctx.Done(), workersAmount)
 
 	plansValidator, err := broker.NewPlansSchemaValidator()
 	fatalOnError(err)
@@ -404,13 +381,11 @@ func main() {
 	// create metrics endpoint
 	router.Handle("/metrics", promhttp.Handler())
 
-	gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
-	fatalOnError(err)
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
-	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, db.Instances(), logs)
-	orchestrateKymaManager := kyma.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(), upgradeKymaManager, runtimeResolver, logs)
-	kymaQueue := process.NewQueue(orchestrateKymaManager, logs)
-	kymaQueue.Run(ctx.Done(), workersAmount)
+	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, cli, provisionerClient, gardenerClient,
+		gardenerNamespace, eventBroker, inputFactory, nil, 20*time.Second, logs)
+	fatalOnError(err)
+
 	orchestrationHandler := orchestrate.NewOrchestrationHandler(db.Orchestrations(), kymaQueue, logs)
 
 	if !cfg.DisableProcessOperationsInProgress {
@@ -510,4 +485,49 @@ func fatalOnError(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStorage,
+	cli client.Client, provisionerClient provisioner.Client,
+	gardenerClient gardenerclient.CoreV1beta1Interface, gardenerNamespace string, pub event.Publisher,
+	inputFactory input.CreatorForPlan, icfg *upgrade_kyma.IntervalConfig,
+	pollingInterval time.Duration, logs logrus.FieldLogger) (*process.Queue, error) {
+
+	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
+
+	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, inputFactory, icfg)
+	upgradeKymaManager.InitStep(upgradeKymaInit)
+	upgradeKymaSteps := []struct {
+		disabled bool
+		weight   int
+		step     upgrade_kyma.Step
+	}{
+		{
+			weight: 2,
+			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(ctx, cli, db.Operations()),
+		},
+		{
+			weight: 10,
+			step:   upgrade_kyma.NewUpgradeKymaStep(db.Operations(), provisionerClient, icfg),
+		},
+	}
+	for _, step := range upgradeKymaSteps {
+		if !step.disabled {
+			upgradeKymaManager.AddStep(step.weight, step.step)
+		}
+	}
+
+	upgradeKymaQueue := process.NewQueue(upgradeKymaManager, logs)
+	upgradeKymaQueue.Run(ctx.Done(), 5)
+
+	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, db.Instances(), logs)
+
+	orchestrateKymaManager := kyma.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(),
+		upgradeKymaManager, runtimeResolver, pollingInterval, logs)
+	queue := process.NewQueue(orchestrateKymaManager, logs)
+
+	// only one orchestration can be processed at the same time
+	queue.Run(ctx.Done(), 1)
+
+	return queue, nil
 }

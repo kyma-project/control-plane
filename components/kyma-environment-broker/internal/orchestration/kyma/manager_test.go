@@ -18,6 +18,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const poolingInterval = 20 * time.Millisecond
+
 func TestUpgradeKymaManager_Execute(t *testing.T) {
 	t.Run("Empty", func(t *testing.T) {
 		// given
@@ -35,7 +37,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id})
 		require.NoError(t, err)
 
-		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, logrus.New())
+		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, 20*time.Millisecond, logrus.New())
 
 		// when
 		_, err = svc.Execute(id)
@@ -57,7 +59,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, State: internal.InProgress})
 		require.NoError(t, err)
 
-		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, logrus.New())
+		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, poolingInterval, logrus.New())
 
 		// when
 		_, err = svc.Execute(id)
@@ -91,7 +93,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		}})
 		require.NoError(t, err)
 
-		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, logrus.New())
+		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, poolingInterval, logrus.New())
 
 		// when
 		_, err = svc.Execute(id)
@@ -151,7 +153,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		err = store.Orchestrations().Insert(givenO)
 		require.NoError(t, err)
 
-		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), &testExecutor{}, resolver, logrus.New())
+		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), &testExecutor{}, resolver, poolingInterval, logrus.New())
 
 		// when
 		_, err = svc.Execute(id)
