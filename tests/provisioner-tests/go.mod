@@ -17,7 +17,6 @@ require (
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.4.0 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/common v0.9.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.5.1
 	github.com/vektah/gqlparser v1.2.1 // indirect
@@ -32,7 +31,7 @@ require (
 
 replace (
 	github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
+	github.com/kyma-project/control-plane => github.com/rafalpotempa/control-plane v0.0.0-20200904095315-9b9d4c8f16d6
+	golang.org/x/text => golang.org/x/text v0.3.3
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible => k8s.io/client-go v0.18.8
 )
-
-replace github.com/kyma-project/control-plane => github.com/rafalpotempa/control-plane v0.0.0-20200904095315-9b9d4c8f16d6
