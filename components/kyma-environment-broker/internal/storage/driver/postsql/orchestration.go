@@ -104,7 +104,7 @@ func (s *orchestration) ListByState(state string) ([]internal.Orchestration, err
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		result, lastErr = sess.ListOrchestrationsByState(state)
 		if lastErr != nil {
-			log.Warn("while listing %s orchestrations: %v", state, lastErr)
+			log.Warnf("while listing %s orchestrations: %v", state, lastErr)
 			return false, nil
 		}
 		return true, nil
