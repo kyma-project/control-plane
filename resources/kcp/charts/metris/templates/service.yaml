@@ -17,7 +17,7 @@ spec:
   {{- end }}
   ports:
   - name: metrics
-    port: {{ .Values.metrics.port }}
+    port: {{ .Values.port }}
     targetPort: http
   selector:
     app: {{ .Chart.Name }}

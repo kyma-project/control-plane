@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -48,21 +49,28 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 
 	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
+		log.Errorf("Unable to get provisioning parameters: %s", err.Error())
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 
 	requestInput, err := s.createProvisionInput(operation, pp)
 	if err != nil {
+		log.Errorf("Unable to create provisioning input: %s", err.Error())
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create provisioning input")
 	}
 
 	var provisionerResponse gqlschema.OperationStatus
 	if operation.ProvisionerOperationID == "" {
 		provisionerResponse, err := s.provisionerClient.ProvisionRuntime(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID, requestInput)
-		if err != nil {
-			log.Errorf("call to provisioner failed: %s", err)
+		switch {
+		case kebError.IsTemporaryError(err):
+			log.Errorf("call to provisioner failed (temporary error): %s", err)
 			return operation, 5 * time.Second, nil
+		case err != nil:
+			log.Errorf("call to Provisioner failed: %s", err)
+			return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create provisioning input")
 		}
+
 		operation.ProvisionerOperationID = *provisionerResponse.ID
 		if provisionerResponse.RuntimeID != nil {
 			operation.RuntimeID = *provisionerResponse.RuntimeID
