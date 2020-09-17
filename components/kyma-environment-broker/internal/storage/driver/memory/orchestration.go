@@ -56,3 +56,17 @@ func (s *orchestration) Update(orchestration internal.Orchestration) error {
 
 	return nil
 }
+
+func (s *orchestration) ListByState(state string) ([]internal.Orchestration, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	result := make([]internal.Orchestration, 0)
+
+	for _, o := range s.orchestrations {
+		if o.State == state {
+			result = append(result, o)
+		}
+	}
+
+	return result, nil
+}

@@ -548,6 +548,10 @@ func TestSchemaInitializer(t *testing.T) {
 		l, err := svc.ListAll()
 		require.NoError(t, err)
 		assert.Len(t, l, 1)
+
+		l, err = svc.ListByState("test")
+		require.NoError(t, err)
+		assert.Len(t, l, 1)
 	})
 
 	t.Run("LMS Tenants", func(t *testing.T) {

@@ -47,6 +47,7 @@ type Orchestrations interface {
 	Insert(orchestration internal.Orchestration) error
 	Update(orchestration internal.Orchestration) error
 	GetByID(orchestrationID string) (*internal.Orchestration, error)
+	ListByState(state string) ([]internal.Orchestration, error)
 	ListAll() ([]internal.Orchestration, error)
 }
 

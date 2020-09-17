@@ -96,3 +96,21 @@ func (s *orchestration) Update(orchestration internal.Orchestration) error {
 	}
 	return nil
 }
+
+func (s *orchestration) ListByState(state string) ([]internal.Orchestration, error) {
+	sess := s.NewReadSession()
+	var lastErr dberr.Error
+	var result []internal.Orchestration
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		result, lastErr = sess.ListOrchestrationsByState(state)
+		if lastErr != nil {
+			log.Warnf("while listing %s orchestrations: %v", state, lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, lastErr
+	}
+	return result, nil
+}
