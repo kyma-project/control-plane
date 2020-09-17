@@ -92,13 +92,6 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	dto.Targets, err = h.resolveTargets(dto.Targets)
-	if err != nil {
-		h.log.Errorf("while resolving targets: %v", err)
-		writeErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while resolving targets"))
-		return
-	}
-
 	params, err := json.Marshal(dto)
 	if err != nil {
 		h.log.Errorf("while encoding request params: %v", err)
@@ -131,25 +124,6 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 	response := orchestration.UpgradeResponse{OrchestrationID: o.OrchestrationID}
 
 	writeResponse(w, http.StatusAccepted, response)
-}
-
-// resolveTargets helps to reject request if the request body is incorrect
-// TODO(upgrade): get rid of it after switching to bulk
-func (h *kymaHandler) resolveTargets(targets internal.TargetSpec) (internal.TargetSpec, error) {
-	lenTargets := len(targets.Include)
-	if lenTargets > 1 {
-		h.log.Errorf("only 1 target is allowed")
-		return internal.TargetSpec{}, errors.New("only 1 target is allowed")
-	}
-	if lenTargets == 1 {
-		if targets.Include[0].RuntimeID == "" {
-			return internal.TargetSpec{}, errors.New("runtimeId must be specified in the included target")
-		}
-	}
-	// TODO(upgrade): exclude not supported until bulk
-	targets.Exclude = nil
-
-	return targets, nil
 }
 
 func writeResponse(w http.ResponseWriter, code int, object interface{}) {
