@@ -295,7 +295,7 @@ func main() {
 		},
 		{
 			weight: 10,
-			step:   provisioning.NewCreateRuntimeStep(db.Operations(), db.Instances(), provisionerClient),
+			step:   provisioning.NewCreateRuntimeStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
 		},
 	}
 	for _, step := range provisioningSteps {

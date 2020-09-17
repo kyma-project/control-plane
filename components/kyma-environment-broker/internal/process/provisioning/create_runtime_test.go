@@ -115,7 +115,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 		RuntimeID: ptr.String(runtimeID),
 	}, nil)
 
-	step := NewCreateRuntimeStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
+	step := NewCreateRuntimeStep(memoryStorage.Operations(), memoryStorage.RuntimeStates(), memoryStorage.Instances(), provisionerClient)
 
 	// when
 	entry := log.WithFields(logrus.Fields{"step": "TEST"})
@@ -146,7 +146,7 @@ func TestCreateRuntimeStep_RunWithBadRequestError(t *testing.T) {
 	provisionerClient := &provisionerAutomock.Client{}
 	provisionerClient.On("ProvisionRuntime", globalAccountID, subAccountID, mock.Anything).Return(gqlschema.OperationStatus{}, fmt.Errorf("some permanent error"))
 
-	step := NewCreateRuntimeStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
+	step := NewCreateRuntimeStep(memoryStorage.Operations(), memoryStorage.RuntimeStates(), memoryStorage.Instances(), provisionerClient)
 
 	// when
 	entry := log.WithFields(logrus.Fields{"step": "TEST"})

@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
@@ -653,6 +655,46 @@ func TestSchemaInitializer(t *testing.T) {
 		l, err = svc.ListByState("test")
 		require.NoError(t, err)
 		assert.Len(t, l, 1)
+	})
+
+	t.Run("RuntimeStates", func(t *testing.T) {
+		containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+		require.NoError(t, err)
+		defer containerCleanupFunc()
+
+		now := time.Now()
+
+		fixID := "test"
+		givenRuntimeState := internal.RuntimeState{
+			ID:          fixID,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			RuntimeID:   fixID,
+			OperationID: fixID,
+			KymaConfig: gqlschema.KymaConfigInput{
+				Version: fixID,
+			},
+			ClusterConfig: gqlschema.GardenerConfigInput{
+				KubernetesVersion: fixID,
+			},
+		}
+
+		err = InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+
+		brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+		require.NoError(t, err)
+
+		svc := brokerStorage.RuntimeStates()
+
+		err = svc.Insert(givenRuntimeState)
+		require.NoError(t, err)
+
+		runtimeStates, err := svc.ListByRuntimeID(fixID)
+		require.NoError(t, err)
+		assert.Len(t, runtimeStates, 1)
+		assert.Equal(t, runtimeStates[0].KymaConfig.Version, fixID)
+		assert.Equal(t, runtimeStates[0].ClusterConfig.KubernetesVersion, fixID)
 	})
 
 	t.Run("LMS Tenants", func(t *testing.T) {

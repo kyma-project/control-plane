@@ -180,6 +180,42 @@ type RuntimeOperation struct {
 	Status      string `json:"status,omitempty"`
 }
 
+func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaConfigInput, clusterConfig *gqlschema.GardenerConfigInput) RuntimeState {
+	var (
+		kymaConfigInput    gqlschema.KymaConfigInput
+		clusterConfigInput gqlschema.GardenerConfigInput
+	)
+	if kymaConfig != nil {
+		kymaConfigInput = *kymaConfig
+	}
+	if clusterConfig != nil {
+		clusterConfigInput = *clusterConfig
+	}
+
+	return RuntimeState{
+		ID:            uuid.New().String(),
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+		RuntimeID:     runtimeID,
+		OperationID:   operationID,
+		KymaConfig:    kymaConfigInput,
+		ClusterConfig: clusterConfigInput,
+	}
+}
+
+type RuntimeState struct {
+	ID string `json:"id"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+
+	RuntimeID   string `json:"runtimeId"`
+	OperationID string `json:"operationId"`
+
+	KymaConfig    gqlschema.KymaConfigInput     `json:"kymaConfig"`
+	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
+}
+
 // TargetAll all SKRs provisioned successfully and not deprovisioning
 const TargetAll = "all"
 

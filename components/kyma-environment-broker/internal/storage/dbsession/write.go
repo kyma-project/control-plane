@@ -157,6 +157,31 @@ func (ws writeSession) UpdateOrchestration(o internal.Orchestration) dberr.Error
 	return nil
 }
 
+func (ws writeSession) InsertRuntimeState(state dbmodel.RuntimeStateDTO) dberr.Error {
+	_, err := ws.insertInto(postsql.RuntimeStateTableName).
+		Pair("id", state.ID).
+		Pair("operation_id", state.OperationID).
+		Pair("runtime_id", state.RuntimeID).
+		Pair("created_at", state.CreatedAt).
+		Pair("updated_at", state.UpdatedAt).
+		Pair("kyma_version", state.KymaVersion).
+		Pair("k8s_version", state.K8SVersion).
+		Pair("kyma_config", state.KymaConfig).
+		Pair("cluster_config", state.ClusterConfig).
+		Exec()
+
+	if err != nil {
+		if err, ok := err.(*pq.Error); ok {
+			if err.Code == UniqueViolationErrorCode {
+				return dberr.AlreadyExists("RuntimeState with id %s already exist", state.ID)
+			}
+		}
+		return dberr.Internal("Failed to insert record to RuntimeState table: %s", err)
+	}
+
+	return nil
+}
+
 func (ws writeSession) InsertLMSTenant(dto dbmodel.LMSTenantDTO) dberr.Error {
 	_, err := ws.insertInto(postsql.LMSTenantTableName).
 		Pair("id", dto.ID).
