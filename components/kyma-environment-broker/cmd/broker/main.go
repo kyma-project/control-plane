@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -416,7 +417,7 @@ func main() {
 		fatalOnError(err)
 		err = processOperationsInProgressByType(dbmodel.OperationTypeDeprovision, db.Operations(), deprovisionQueue, logs)
 		fatalOnError(err)
-		err = processOrchestrationsInProgress(db.Orchestrations(), kymaQueue, logs)
+		err = reprocessOrchestrations(db.Orchestrations(), kymaQueue, logs)
 		fatalOnError(err)
 	} else {
 		logger.Info("Skipping processing operation in progress on start")
@@ -453,14 +454,28 @@ func processOperationsInProgressByType(opType dbmodel.OperationType, op storage.
 	return nil
 }
 
-func processOrchestrationsInProgress(op storage.Orchestrations, queue *process.Queue, log logrus.FieldLogger) error {
-	orchestrations, err := op.ListByState(internal.InProgress)
+func reprocessOrchestrations(op storage.Orchestrations, queue *process.Queue, log logrus.FieldLogger) error {
+	if err := processOrchestration(internal.InProgress, op, queue, log); err != nil {
+		return errors.Wrap(err, "while processing in progress orchestrations")
+	}
+	if err := processOrchestration(internal.Pending, op, queue, log); err != nil {
+		return errors.Wrap(err, "while processing pending orchestrations")
+	}
+	return nil
+}
+
+func processOrchestration(state string, op storage.Orchestrations, queue *process.Queue, log logrus.FieldLogger) error {
+	orchestrations, err := op.ListByState(state)
 	if err != nil {
 		return errors.Wrap(err, "while getting in progress orchestrations from storage")
 	}
+	sort.Slice(orchestrations, func(i, j int) bool {
+		return orchestrations[i].CreatedAt.Before(orchestrations[j].CreatedAt)
+	})
+
 	for _, o := range orchestrations {
 		queue.Add(o.OrchestrationID)
-		log.Infof("Resuming the processing of %s orchestration ID: %s", internal.InProgress, o.OrchestrationID)
+		log.Infof("Resuming the processing of %s orchestration ID: %s", state, o.OrchestrationID)
 	}
 	return nil
 }
