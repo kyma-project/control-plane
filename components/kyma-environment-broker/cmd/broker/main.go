@@ -177,7 +177,7 @@ func main() {
 
 	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets, gardenerShoots)
 	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecrets, gardenerShoots)
-	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool, gardenerSharedPool)
+	accountProvider := hyperscaler.NewAccountProvider(gardenerAccountPool, gardenerSharedPool)
 
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider, cfg.Provisioning, cfg.KymaVersion)
 	fatalOnError(err)

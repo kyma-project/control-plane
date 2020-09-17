@@ -2,7 +2,6 @@ package hyperscaler
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
@@ -20,17 +19,6 @@ const (
 	AWS   Type = "aws"
 )
 
-func HyperscalerTypeFromProviderString(provider string) (Type, error) {
-
-	hyperscalerType := Type(strings.ToLower(provider))
-
-	switch hyperscalerType {
-	case GCP, Azure, AWS:
-		return hyperscalerType, nil
-	}
-	return "", errors.Errorf("unknown Hyperscaler provider type: %s", provider)
-}
-
 type Credentials struct {
 	Name            string
 	HyperscalerType Type
@@ -40,7 +28,6 @@ type Credentials struct {
 type AccountPool interface {
 	Credentials(hyperscalerType Type, tenantName string) (Credentials, error)
 	MarkSecretAsDirty(hyperscalerType Type, tenantName string) error
-	// Consider moving this method to Account Provider
 	IsSecretUsed(hyperscalerType Type, tenantName string) (bool, error)
 	IsSecretDirty(hyperscalerType Type, tenantName string) (bool, error)
 }
@@ -65,7 +52,7 @@ func (p *secretsAccountPool) IsSecretDirty(hyperscalerType Type, tenantName stri
 	secret, err := getK8SSecret(p.secretsClient, labelSelector)
 
 	if err != nil {
-		return false, errors.Wrapf(err, "error while looking for a secret used by the tenant %s and hyperscaler %s", tenantName, hyperscalerType)
+		return false, errors.Wrapf(err, "error looking for a secret used by the tenant %s and hyperscaler %s", tenantName, hyperscalerType)
 	}
 
 	if secret != nil {
@@ -85,14 +72,14 @@ func (p *secretsAccountPool) MarkSecretAsDirty(hyperscalerType Type, tenantName 
 	secret, err := getK8SSecret(p.secretsClient, labelSelector)
 
 	if err != nil || secret == nil {
-		return errors.Wrapf(err, "accountPool failed to find secret used by the tenant %s and hyperscaler %s to release subscription", tenantName, hyperscalerType)
+		return errors.Wrapf(err, "error marking secret as dirty: failed to find secret used by the tenant %s and hyperscaler %s", tenantName, hyperscalerType)
 	}
 
 	secret.Labels["dirty"] = "true"
 
 	_, err = p.secretsClient.Update(secret)
 	if err != nil {
-		return errors.Wrapf(err, "accountPool failed to update secret with dirty label for tenant: %s and hyperscaler: %s", tenantName, hyperscalerType)
+		return errors.Wrapf(err, "error marking secret as dirty: failed to update secret for tenant: %s and hyperscaler: %s", tenantName, hyperscalerType)
 	}
 
 	return nil
@@ -105,12 +92,12 @@ func (p *secretsAccountPool) IsSecretUsed(hyperscalerType Type, tenantName strin
 	secret, err := getK8SSecret(p.secretsClient, labelSelector)
 
 	if err != nil || secret == nil {
-		return false, errors.Wrapf(err, "Could not find secret used by the tenant %s and hyperscaler %s to count subscription usage", tenantName, hyperscalerType)
+		return false, errors.Wrapf(err, "error counting subscription usage: could not find secret used by the tenant %s and hyperscaler %s", tenantName, hyperscalerType)
 	}
 
 	shootlist, err := p.shootsClient.List(metav1.ListOptions{})
 	if err != nil {
-		return false, errors.Wrap(err, "Error while listing Gardener shoots ")
+		return false, errors.Wrap(err, "error while listing Gardener shoots")
 	}
 
 	for _, shoot := range shootlist.Items {
@@ -145,13 +132,13 @@ func (p *secretsAccountPool) Credentials(hyperscalerType Type, tenantName string
 	}
 
 	if secret == nil {
-		return Credentials{}, errors.Errorf("accountPool failed to find unassigned secret for hyperscalerType: %s", hyperscalerType)
+		return Credentials{}, errors.Errorf("failed to find unassigned secret for hyperscalerType: %s", hyperscalerType)
 	}
 
 	secret.Labels["tenantName"] = tenantName
 	updatedSecret, err := p.secretsClient.Update(secret)
 	if err != nil {
-		return Credentials{}, errors.Wrapf(err, "accountPool error while updating secret with tenantName: %s", tenantName)
+		return Credentials{}, errors.Wrapf(err, "error updating secret with tenantName: %s", tenantName)
 	}
 
 	return credentialsFromSecret(updatedSecret, hyperscalerType), nil
@@ -164,7 +151,7 @@ func getK8SSecret(secretsClient corev1.SecretInterface, labelSelector string) (*
 
 	if err != nil {
 		return nil,
-			errors.Wrapf(err, "accountPool error during secret list for LabelSelector: %s", labelSelector)
+			errors.Wrapf(err, "error listing secrets for LabelSelector: %s", labelSelector)
 	}
 
 	if secrets != nil && len(secrets.Items) > 0 {
