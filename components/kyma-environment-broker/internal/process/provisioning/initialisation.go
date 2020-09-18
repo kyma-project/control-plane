@@ -110,7 +110,7 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 
-	kymaVersion, err := s.provideKymaVersion(pp, log)
+	err = s.configureKymaVersion(&pp, log)
 	if err != nil {
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	}
@@ -122,7 +122,7 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 		operation.InputCreator = creator
 		return operation, 0, nil
 	case kebError.IsTemporaryError(err):
-		log.Errorf("cannot create input creator at the moment for plan %s and version %s: %s", pp.PlanID, kymaVersion, err)
+		log.Errorf("cannot create input creator at the moment for plan %s and version %s: %s", pp.PlanID, pp.Parameters.KymaVersion, err)
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	default:
 		log.Errorf("cannot create input creator for plan %s: %s", pp.PlanID, err)
@@ -130,25 +130,25 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 	}
 }
 
-func (s *InitialisationStep) provideKymaVersion(pp internal.ProvisioningParameters, log logrus.FieldLogger) (string, error) {
+func (s *InitialisationStep) configureKymaVersion(pp *internal.ProvisioningParameters, log logrus.FieldLogger) error {
 	var kymaVersion string
 	if pp.Parameters.KymaVersion == "" {
 		log.Infof("looking for kyma version for %s", pp.ErsContext.GlobalAccountID)
 		ver, found, err := s.kymaVersionConfigurator.ForGlobalAccount(pp.ErsContext.GlobalAccountID)
 		if err != nil {
-			return "", err
+			return err
 		}
 		if found {
 			log.Infof("input builder setting up to work with configured Kyma version %s per global account", ver)
-			return ver, nil
+			pp.Parameters.KymaVersion = ver
+			return nil
 		}
 		log.Info("input builder setting up to work with default Kyma version")
 	} else {
-		kymaVersion = pp.Parameters.KymaVersion
 		log.Infof("setting up input builder to work with %s Kyma version provided by the provisioning parameters", kymaVersion)
 	}
 
-	return kymaVersion, nil
+	return nil
 }
 
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
