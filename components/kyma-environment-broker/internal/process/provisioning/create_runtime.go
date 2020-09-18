@@ -61,6 +61,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 
 	var provisionerResponse gqlschema.OperationStatus
 	if operation.ProvisionerOperationID == "" {
+		log.Infof("call ProvisionRuntime: kymaVersion=%s, kubernetesVersion=%s", requestInput.KymaConfig.Version, requestInput.ClusterConfig.GardenerConfig.KubernetesVersion)
 		provisionerResponse, err := s.provisionerClient.ProvisionRuntime(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID, requestInput)
 		switch {
 		case kebError.IsTemporaryError(err):
