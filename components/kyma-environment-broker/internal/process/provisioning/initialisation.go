@@ -130,7 +130,7 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 	}
 }
 
-func (s *InitialisationStep) configureKymaVersion(pp *internal.ProvisioningParameters, log logrus.FieldLogger) (error) {
+func (s *InitialisationStep) configureKymaVersion(pp *internal.ProvisioningParameters, log logrus.FieldLogger) error {
 	var kymaVersion string
 	if pp.Parameters.KymaVersion == "" {
 		log.Infof("looking for kyma version for %s", pp.ErsContext.GlobalAccountID)
