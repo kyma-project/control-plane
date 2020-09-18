@@ -10,4 +10,5 @@ const (
 	Tracing                 = "tracing"
 	Backup                  = "backup"
 	BackupInit              = "backup-init"
+	AvSBridge               = "avs-bridge"
 )
