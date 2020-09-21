@@ -264,6 +264,55 @@ func TestSchemaInitializer(t *testing.T) {
 			require.Contains(t, []string{"1", "3", "4"}, out[1].InstanceID)
 			require.Contains(t, []string{"1", "3", "4"}, out[2].InstanceID)
 		})
+
+		t.Run("should list instances based on offset and cursor", func(t *testing.T) {
+			// given
+			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			require.NoError(t, err)
+			defer containerCleanupFunc()
+
+			err = InitTestDBTables(t, cfg.ConnectionURL())
+			require.NoError(t, err)
+
+			psqlStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			require.NoError(t, err)
+			require.NotNil(t, psqlStorage)
+
+			// populate database with samples
+			fixInstances := []internal.Instance{
+				*fixInstance(instanceData{val: "1"}),
+				*fixInstance(instanceData{val: "2"}),
+				*fixInstance(instanceData{val: "3"}),
+				*fixInstance(instanceData{val: "4"}),
+			}
+			for _, i := range fixInstances {
+				err = psqlStorage.Instances().Insert(i)
+				require.NoError(t, err)
+			}
+			// when
+			out, page, count, err := psqlStorage.Instances().List(2, "")
+
+			// then
+			require.NoError(t, err)
+			require.Len(t, out, 2)
+			require.Equal(t, 4, count)
+			require.True(t, page.HasNextPage)
+
+			assert.Equal(t, fixInstances[0].InstanceID, out[0].InstanceID)
+			assert.Equal(t, fixInstances[1].InstanceID, out[1].InstanceID)
+
+			// when
+			out, page, count, err = psqlStorage.Instances().List(2, page.EndCursor)
+
+			// then
+			require.NoError(t, err)
+			require.Len(t, out, 2)
+			require.Equal(t, 4, count)
+			require.False(t, page.HasNextPage)
+
+			assert.Equal(t, fixInstances[2].InstanceID, out[0].InstanceID)
+			assert.Equal(t, fixInstances[3].InstanceID, out[1].InstanceID)
+		})
 	})
 
 	t.Run("Operations", func(t *testing.T) {
@@ -390,6 +439,58 @@ func TestSchemaInitializer(t *testing.T) {
 
 			assert.Equal(t, "new modified description", gotOperation2.Description)
 
+		})
+		t.Run("GetOperation should return the newest one", func(t *testing.T) {
+			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			require.NoError(t, err)
+			defer containerCleanupFunc()
+
+			givenOperation1 := internal.UpgradeKymaOperation{
+				Operation: internal.Operation{
+					ID:    "operation-id-1",
+					State: domain.InProgress,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second),
+					InstanceID:             "inst-id",
+					ProvisionerOperationID: "target-op-id",
+					Description:            "description",
+					Version:                1,
+				},
+			}
+
+			givenOperation2 := internal.UpgradeKymaOperation{
+				Operation: internal.Operation{
+					ID:    "operation-id-2",
+					State: domain.InProgress,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Minute),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second).Add(time.Minute),
+					InstanceID:             "inst-id",
+					ProvisionerOperationID: "target-op-id",
+					Description:            "description",
+					Version:                1,
+				},
+			}
+
+			err = InitTestDBTables(t, cfg.ConnectionURL())
+			require.NoError(t, err)
+
+			brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			require.NoError(t, err)
+
+			svc := brokerStorage.Operations()
+
+			// when
+			err = svc.InsertUpgradeKymaOperation(givenOperation1)
+			require.NoError(t, err)
+			err = svc.InsertUpgradeKymaOperation(givenOperation2)
+			require.NoError(t, err)
+
+			ops, err := svc.GetUpgradeKymaOperationByInstanceID("inst-id")
+			require.NoError(t, err)
+
+			assertUpgradeKymaOperation(t, givenOperation2, *ops)
 		})
 	})
 
@@ -602,6 +703,15 @@ func assertProvisioningOperation(t *testing.T, expected, got internal.Provisioni
 }
 
 func assertDeprovisioningOperation(t *testing.T, expected, got internal.DeprovisioningOperation) {
+	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
+	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
+
+	expected.CreatedAt = got.CreatedAt
+	expected.UpdatedAt = got.UpdatedAt
+	assert.Equal(t, expected, got)
+}
+
+func assertUpgradeKymaOperation(t *testing.T, expected, got internal.UpgradeKymaOperation) {
 	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
 	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
 

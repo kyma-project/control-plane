@@ -161,7 +161,7 @@ cis:
     secretName: "cis-creds-v2"
 
 kebClient:
-  scope: "broker:write broker-upgrade:write broker-upgrade:read cld:read"
+  scope: "broker:write broker-upgrade:write broker-upgrade:read cld:read runtimes:read"
 
 environmentsCleanup:
   schedule: "0 0 * * *"

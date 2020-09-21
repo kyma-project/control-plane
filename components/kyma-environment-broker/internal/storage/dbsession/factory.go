@@ -2,6 +2,7 @@ package dbsession
 
 import (
 	dbr "github.com/gocraft/dbr"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
@@ -32,6 +33,7 @@ type ReadSession interface {
 	GetOrchestrationByID(oID string) (internal.Orchestration, dberr.Error)
 	ListOrchestrationsByState(state string) ([]internal.Orchestration, dberr.Error)
 	ListOrchestrations() ([]internal.Orchestration, dberr.Error)
+	ListInstances(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error)
 }
 
 //go:generate mockery -name=WriteSession

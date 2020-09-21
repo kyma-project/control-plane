@@ -3,6 +3,9 @@ package dbsession
 import (
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/pkg/errors"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
@@ -17,15 +20,19 @@ type readSession struct {
 	session *dbr.Session
 }
 
-func (r readSession) FindAllInstancesJoinedWithOperation(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, dberr.Error) {
-	var instances []internal.InstanceWithOperation
-
+func (r readSession) getInstancesJoinedWithOperationStatement() *dbr.SelectStmt {
 	join := fmt.Sprintf("%s.instance_id = %s.instance_id", postsql.InstancesTableName, postsql.OperationTableName)
 	stmt := r.session.
 		Select("instances.instance_id, instances.runtime_id, instances.global_account_id, instances.service_id, instances.service_plan_id, instances.dashboard_url, instances.provisioning_parameters, instances.created_at, instances.updated_at, instances.deleted_at, instances.sub_account_id, instances.service_name, instances.service_plan_name, operations.state, operations.description, operations.type").
 		From(postsql.InstancesTableName).
 		LeftJoin(postsql.OperationTableName, join)
+	return stmt
+}
 
+func (r readSession) FindAllInstancesJoinedWithOperation(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, dberr.Error) {
+	var instances []internal.InstanceWithOperation
+
+	stmt := r.getInstancesJoinedWithOperationStatement()
 	for _, p := range prct {
 		p.ApplyToPostgres(stmt)
 	}
@@ -175,6 +182,7 @@ func (r readSession) GetOperationByTypeAndInstanceID(inID string, opType dbmodel
 		From(postsql.OperationTableName).
 		Where(idCondition).
 		Where(typeCondition).
+		OrderDesc(postsql.CreatedAtField).
 		LoadOne(&operation)
 
 	if err != nil {
@@ -275,6 +283,61 @@ func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID stri
 	err := r.session.Select("count(*) as total").
 		From(postsql.InstancesTableName).
 		Where(dbr.Eq("global_account_id", globalAccountID)).
+		LoadOne(&res)
+
+	return res.Total, err
+}
+
+func (r readSession) ListInstances(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error) {
+	var instances []internal.Instance
+
+	offset, err := pagination.DecodeOffsetCursor(cursor)
+	if err != nil {
+		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while decoding offset cursor")
+	}
+
+	order, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(limit, offset, postsql.CreatedAtField)
+	if err != nil {
+		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while converting offset and limit to SQL statement")
+	}
+
+	stmtWithPagination := fmt.Sprintf("SELECT * FROM %s %s", postsql.InstancesTableName, order)
+
+	execStmt := r.session.SelectBySql(stmtWithPagination)
+
+	_, err = execStmt.Load(&instances)
+	if err != nil {
+		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while fetching instances")
+	}
+
+	totalCount, err := r.getInstanceCount()
+	if err != nil {
+		return nil, &pagination.Page{}, -1, err
+	}
+
+	hasNextPage := false
+	endCursor := ""
+	if totalCount > offset+len(instances) {
+		hasNextPage = true
+		endCursor = pagination.EncodeNextOffsetCursor(offset, limit)
+	}
+
+	return instances,
+		&pagination.Page{
+			StartCursor: cursor,
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		},
+		totalCount,
+		nil
+}
+
+func (r readSession) getInstanceCount() (int, error) {
+	var res struct {
+		Total int
+	}
+	err := r.session.Select("count(*) as total").
+		From(postsql.InstancesTableName).
 		LoadOne(&res)
 
 	return res.Total, err

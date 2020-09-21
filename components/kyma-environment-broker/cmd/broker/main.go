@@ -113,6 +113,7 @@ type Config struct {
 	}
 
 	TrialRegionMappingFilePath string
+	MaxPaginationPage          int `envconfig:"default=100"`
 }
 
 func main() {
@@ -437,6 +438,10 @@ func main() {
 	svr := handlers.CustomLoggingHandler(os.Stdout, router, func(writer io.Writer, params handlers.LogFormatterParams) {
 		logs.Infof("Call handled: method=%s url=%s statusCode=%d size=%d", params.Request.Method, params.URL.Path, params.StatusCode, params.Size)
 	})
+
+	// create list runtimes endpoint
+	runtimeHandler := runtime.NewHandler(db.Instances(), db.Operations(), cfg.MaxPaginationPage, runtime.NewConverter(cfg.DefaultRequestRegion))
+	runtimeHandler.AttachRoutes(router)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
 }

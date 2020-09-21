@@ -1,6 +1,7 @@
 package postsql
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession"
@@ -172,4 +173,8 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 		result.TotalNumberOfInstances = result.TotalNumberOfInstances + e.Total
 	}
 	return result, nil
+}
+
+func (s *Instance) List(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error) {
+	return s.NewReadSession().ListInstances(limit, cursor)
 }

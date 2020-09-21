@@ -2,7 +2,10 @@ package memory
 
 import (
 	"database/sql"
+	"sort"
 	"sync"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"fmt"
 
@@ -26,6 +29,7 @@ func NewInstance(operations *operations) *Instance {
 }
 func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, error) {
 	var instances []internal.InstanceWithOperation
+
 	// simulate left join without grouping on column
 	for id, v := range s.instances {
 		dOp, dErr := s.operationsStorage.GetDeprovisioningOperationByInstanceID(id)
@@ -35,6 +39,10 @@ func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]i
 		pOp, pErr := s.operationsStorage.GetProvisioningOperationByInstanceID(id)
 		if pErr != nil && !dberr.IsNotFound(pErr) {
 			return nil, pErr
+		}
+		uOp, uErr := s.operationsStorage.GetUpgradeKymaOperationByInstanceID(id)
+		if uErr != nil && !dberr.IsNotFound(uErr) {
+			return nil, uErr
 		}
 
 		if !dberr.IsNotFound(dErr) {
@@ -51,6 +59,14 @@ func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]i
 				Type:        sql.NullString{String: string(dbmodel.OperationTypeProvision), Valid: true},
 				State:       sql.NullString{String: string(pOp.State), Valid: true},
 				Description: sql.NullString{String: pOp.Description, Valid: true},
+			})
+		}
+		if !dberr.IsNotFound(uErr) {
+			instances = append(instances, internal.InstanceWithOperation{
+				Instance:    v,
+				Type:        sql.NullString{String: string(dbmodel.OperationTypeUpgradeKyma), Valid: true},
+				State:       sql.NullString{String: string(uOp.State), Valid: true},
+				Description: sql.NullString{String: uOp.Description, Valid: true},
 			})
 		}
 		if dberr.IsNotFound(dErr) && dberr.IsNotFound(pErr) {
@@ -142,4 +158,48 @@ func (s *Instance) Update(instance internal.Instance) error {
 
 func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 	return internal.InstanceStats{}, fmt.Errorf("not implemented")
+}
+
+func (s *Instance) List(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var toReturn []internal.Instance
+
+	offset, err := pagination.DecodeOffsetCursor(cursor)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	sortedInstances := getSortedByCreatedAt(s.instances)
+
+	for i := offset; i < offset+limit && i < len(sortedInstances); i++ {
+		toReturn = append(toReturn, s.instances[sortedInstances[i].InstanceID])
+	}
+
+	hasNextPage := false
+	endCursor := ""
+	if len(s.instances) > offset+len(toReturn) {
+		hasNextPage = true
+		endCursor = pagination.EncodeNextOffsetCursor(offset, limit)
+	}
+
+	return toReturn,
+		&pagination.Page{
+			StartCursor: cursor,
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		},
+		len(s.instances),
+		nil
+}
+
+func getSortedByCreatedAt(instances map[string]internal.Instance) []internal.Instance {
+	instancesArr := make([]internal.Instance, 0, len(instances))
+	for _, v := range instances {
+		instancesArr = append(instancesArr, v)
+	}
+	sort.Slice(instancesArr, func(i, j int) bool {
+		return instancesArr[i].CreatedAt.Before(instancesArr[j].CreatedAt)
+	})
+	return instancesArr
+
 }
