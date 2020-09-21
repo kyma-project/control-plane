@@ -10,7 +10,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/sirupsen/logrus"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/azure"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 )
 
@@ -28,6 +28,14 @@ type FakeNamespaceClient struct {
 	GetResourceGroupReturnValue    resources.Group
 	DeleteResourceGroupCalled      bool
 	DeleteResourceGroupError       error
+}
+
+func (nc *FakeNamespaceClient) ListResourceGroup(ctx context.Context, filter string, top *int32) (resources.GroupListResultPage, error) {
+	return resources.GroupListResultPage{}, nil
+}
+
+func (nc *FakeNamespaceClient) ListEHNamespaceByResourceGroup(ctx context.Context, resourceGroupName string) (eventhub.EHNamespaceListResultPage, error) {
+	return eventhub.EHNamespaceListResultPage{}, nil
 }
 
 func (nc *FakeNamespaceClient) GetEventhubAccessKeys(context.Context, string, string, string) (result eventhub.AccessKeys, err error) {

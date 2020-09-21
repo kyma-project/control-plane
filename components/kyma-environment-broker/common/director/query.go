@@ -2,7 +2,10 @@ package director
 
 import "fmt"
 
-const consoleURLLabelKey = "runtime_consoleUrl"
+const (
+	consoleURLLabelKey = "runtime_consoleUrl"
+	instanceIDLabelKey = "broker_instance_id"
+)
 
 type queryProvider struct{}
 
@@ -20,6 +23,16 @@ func (qp queryProvider) SetRuntimeLabel(runtimeId, key, value string) string {
 			%s
 		}
 	}`, runtimeId, key, value, labelData())
+}
+
+func (qp queryProvider) RuntimeForInstanceId(instanceID string) string {
+	return fmt.Sprintf(`query {
+	result: runtimes(filter: { key: "%s" query: "\"%s\"" }) {
+    data {
+      id
+	}
+}
+}`, instanceIDLabelKey, instanceID)
 }
 
 func runtimeStatusData() string {

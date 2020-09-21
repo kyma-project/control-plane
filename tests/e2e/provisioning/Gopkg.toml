@@ -31,7 +31,8 @@
 
 [[constraint]]
   name = "github.com/kyma-project/control-plane"
-  revision = "d5c043eb0dbe34e64759b23bcbd1e49505eee7c0"
+  branch = "keb-refactor-duplicates" # align with master after merging #204
+  source = "github.com/ksputo/control-plane"
 
 [[override]]
   name = "github.com/kyma-incubator/compass"

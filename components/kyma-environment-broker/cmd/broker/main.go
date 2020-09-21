@@ -23,19 +23,19 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director/oauth"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/appinfo"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/director"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/director/oauth"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/health"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/metrics"
@@ -152,7 +152,7 @@ func main() {
 	graphQLClient := gcli.NewClient(cfg.Director.URL, gcli.WithHTTPClient(httpClient))
 	oauthClient := oauth.NewOauthClient(httpClient, cli, cfg.Director.OauthCredentialsSecretName, cfg.Director.Namespace)
 	fatalOnError(oauthClient.WaitForCredentials())
-	directorClient := director.NewDirectorClient(oauthClient, graphQLClient)
+	directorClient := director.NewDirectorClient(oauthClient, graphQLClient, logs.WithField("service", "directorClient"))
 
 	// create storage
 	var db storage.BrokerStorage

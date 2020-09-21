@@ -11,8 +11,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler"
-	hyperscalerMocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
+	hyperscalerMocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"

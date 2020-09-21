@@ -20,6 +20,8 @@ type Interface interface {
 	CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags Tags) (*eventhub.EHNamespace, error)
 	GetResourceGroup(ctx context.Context, tags Tags) (resources.Group, error)
 	DeleteResourceGroup(ctx context.Context, tags Tags) (resources.GroupsDeleteFuture, error)
+	ListResourceGroup(ctx context.Context, filter string, top *int32) (resources.GroupListResultPage, error)
+	ListEHNamespaceByResourceGroup(ctx context.Context, resourceGroupName string) (eventhub.EHNamespaceListResultPage, error)
 }
 
 var _ Interface = (*Client)(nil)
@@ -110,6 +112,14 @@ func (nc *Client) GetResourceGroup(ctx context.Context, tags Tags) (resources.Gr
 		return resourceGroups[0], nil
 	}
 	return resources.Group{}, NewResourceGroupDoesNotExist(fmt.Sprintf("no resource group found for service instance id: %s", serviceInstanceID))
+}
+
+func (nc *Client) ListResourceGroup(ctx context.Context, filter string, top *int32) (resources.GroupListResultPage, error) {
+	return nc.resourceGroupClient.List(ctx, filter, top)
+}
+
+func (nc *Client) ListEHNamespaceByResourceGroup(ctx context.Context, resourceGroupName string) (eventhub.EHNamespaceListResultPage, error) {
+	return nc.eventHubNamespaceClient.ListByResourceGroup(ctx, resourceGroupName)
 }
 
 func (nc *Client) createNamespaceAndWait(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {

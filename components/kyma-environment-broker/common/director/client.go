@@ -7,12 +7,11 @@ import (
 	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/director/oauth"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director/oauth"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
-
 	machineGraph "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -40,6 +39,7 @@ type Client struct {
 	oauthClient   OauthClient
 	queryProvider queryProvider
 	token         oauth.Token
+	log           logrus.FieldLogger
 }
 
 type (
@@ -50,17 +50,22 @@ type (
 	runtimeLabelResponse struct {
 		Result *graphql.Label `json:"result"`
 	}
+
+	getRuntimeIdResponse struct {
+		Result graphql.RuntimePageExt `json:"result"`
+	}
 )
 
 var lock sync.Mutex
 
 // NewDirectorClient returns new director client struct pointer
-func NewDirectorClient(oauthClient OauthClient, gqlClient GraphQLClient) *Client {
+func NewDirectorClient(oauthClient OauthClient, gqlClient GraphQLClient, log logrus.FieldLogger) *Client {
 	return &Client{
 		graphQLClient: gqlClient,
 		oauthClient:   oauthClient,
 		queryProvider: queryProvider{},
 		token:         oauth.Token{},
+		log:           log,
 	}
 }
 
@@ -70,22 +75,23 @@ func (dc *Client) GetConsoleURL(accountID, runtimeID string) (string, error) {
 	req := machineGraph.NewRequest(query)
 	req.Header.Add(accountIDKey, accountID)
 
-	log.Info("DirectorClient: Send request to director")
+	dc.log.Info("Send request to director")
 	response, err := dc.fetchURLFromDirector(req)
 	if err != nil {
 		return "", errors.Wrap(err, "while making call to director")
 	}
 
-	log.Info("DirectorClient: Extract the URL from the response")
+	dc.log.Info("Extract the URL from the response")
 	return dc.getURLFromRuntime(&response.Result)
 }
 
+// SetLabel adds key-value label to a Runtime
 func (dc *Client) SetLabel(accountID, runtimeID, key, value string) error {
 	query := dc.queryProvider.SetRuntimeLabel(runtimeID, key, value)
 	req := machineGraph.NewRequest(query)
 	req.Header.Add(accountIDKey, accountID)
 
-	log.Info("DirectorClient: Setup label in director")
+	dc.log.Info("Setup label in director")
 	response, err := dc.setLabelsInDirector(req)
 	if err != nil {
 		return errors.Wrapf(err, "while setting %s Runtime label to value %s", key, value)
@@ -95,8 +101,24 @@ func (dc *Client) SetLabel(accountID, runtimeID, key, value string) error {
 		return errors.Errorf("failed to set %s Runtime label to value %s. Received nil response.", key, value)
 	}
 
-	log.Infof("DirectorClient: Label %s:%s set correctly", response.Result.Key, response.Result.Value)
+	dc.log.Infof("Label %s:%s set correctly", response.Result.Key, response.Result.Value)
 	return nil
+}
+
+// GetRuntimeID fetches runtime ID with given label name from director component
+func (dc *Client) GetRuntimeID(accountID, instanceID string) (string, error) {
+	query := dc.queryProvider.RuntimeForInstanceId(instanceID)
+	req := machineGraph.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
+
+	dc.log.Info("Send request to director")
+	response, err := dc.getRuntimeIdFromDirector(req)
+	if err != nil {
+		return "", err
+	}
+
+	dc.log.Info("Extract the RuntimeID from the response")
+	return dc.getIDFromRuntime(&response.Result)
 }
 
 func (dc *Client) fetchURLFromDirector(req *machineGraph.Request) (*getURLResponse, error) {
@@ -108,7 +130,7 @@ func (dc *Client) fetchURLFromDirector(req *machineGraph.Request) (*getURLRespon
 		err := dc.setToken()
 		if err != nil {
 			lastError = err
-			log.Errorf("cannot set token to director client (attempt %d): %s", i, err)
+			dc.log.Errorf("cannot set token to director client (attempt %d): %s", i, err)
 			continue
 		}
 		req.Header.Add(authorizationKey, fmt.Sprintf("Bearer %s", dc.token.AccessToken))
@@ -117,7 +139,7 @@ func (dc *Client) fetchURLFromDirector(req *machineGraph.Request) (*getURLRespon
 			lastError = kebError.AsTemporaryError(err, "while requesting to director client")
 			dc.token.AccessToken = ""
 			req.Header.Del(authorizationKey)
-			log.Errorf("call to director failed (attempt %d): %s", i, err)
+			dc.log.Errorf("call to director failed (attempt %d): %s", i, err)
 			continue
 		}
 		success = true
@@ -140,7 +162,7 @@ func (dc *Client) setLabelsInDirector(req *machineGraph.Request) (*runtimeLabelR
 		err := dc.setToken()
 		if err != nil {
 			lastError = err
-			log.Errorf("cannot set token to director client (attempt %d): %s", i, err)
+			dc.log.Errorf("cannot set token to director client (attempt %d): %s", i, err)
 			continue
 		}
 		req.Header.Add(authorizationKey, fmt.Sprintf("Bearer %s", dc.token.AccessToken))
@@ -149,7 +171,7 @@ func (dc *Client) setLabelsInDirector(req *machineGraph.Request) (*runtimeLabelR
 			lastError = kebError.AsTemporaryError(err, "while requesting to director client")
 			dc.token.AccessToken = ""
 			req.Header.Del(authorizationKey)
-			log.Errorf("call to director failed (attempt %d): %s", i, err)
+			dc.log.Errorf("call to director failed (attempt %d): %s", i, err)
 			continue
 		}
 		success = true
@@ -158,6 +180,38 @@ func (dc *Client) setLabelsInDirector(req *machineGraph.Request) (*runtimeLabelR
 
 	if !success {
 		return &runtimeLabelResponse{}, lastError
+	}
+
+	return &response, nil
+}
+
+func (dc *Client) getRuntimeIdFromDirector(req *machineGraph.Request) (*getRuntimeIdResponse, error) {
+	var response getRuntimeIdResponse
+	var lastError error
+	var success bool
+
+	for i := 0; i < reqAttempt; i++ {
+		err := dc.setToken()
+		if err != nil {
+			lastError = err
+			dc.log.Errorf("cannot set token to director client (attempt %d): %s", i, err)
+			continue
+		}
+		req.Header.Add(authorizationKey, fmt.Sprintf("Bearer %s", dc.token.AccessToken))
+		err = dc.graphQLClient.Run(context.Background(), req, &response)
+		if err != nil {
+			lastError = kebError.AsTemporaryError(err, "while requesting to director client")
+			dc.token.AccessToken = ""
+			req.Header.Del(authorizationKey)
+			dc.log.Errorf("call to director failed (attempt %d): %s", i, err)
+			continue
+		}
+		success = true
+		break
+	}
+
+	if !success {
+		return &getRuntimeIdResponse{}, lastError
 	}
 
 	return &response, nil
@@ -206,4 +260,14 @@ func (dc *Client) getURLFromRuntime(response *graphql.RuntimeExt) (string, error
 	}
 
 	return URL, nil
+}
+
+func (dc *Client) getIDFromRuntime(response *graphql.RuntimePageExt) (string, error) {
+	if response.Data == nil || len(response.Data) == 0 || response.Data[0] == nil {
+		return "", errors.New("got empty data from director response")
+	}
+	if len(response.Data) > 1 {
+		return "", errors.Errorf("expected single runtime, got: %v", response.Data)
+	}
+	return response.Data[0].ID, nil
 }

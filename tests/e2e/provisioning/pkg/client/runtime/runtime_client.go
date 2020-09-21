@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/director"
 	graphCli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
