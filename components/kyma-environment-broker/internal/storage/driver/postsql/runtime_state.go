@@ -80,7 +80,6 @@ func runtimeStateToDB(op internal.RuntimeState) (dbmodel.RuntimeStateDTO, error)
 	return dbmodel.RuntimeStateDTO{
 		ID:            op.ID,
 		CreatedAt:     op.CreatedAt,
-		UpdatedAt:     op.UpdatedAt,
 		RuntimeID:     op.RuntimeID,
 		OperationID:   op.OperationID,
 		KymaConfig:    string(kymaCfg),
@@ -108,7 +107,6 @@ func toRuntimeState(dto *dbmodel.RuntimeStateDTO) (internal.RuntimeState, error)
 	return internal.RuntimeState{
 		ID:            dto.ID,
 		CreatedAt:     dto.CreatedAt,
-		UpdatedAt:     dto.UpdatedAt,
 		RuntimeID:     dto.RuntimeID,
 		OperationID:   dto.OperationID,
 		KymaConfig:    kymaCfg,

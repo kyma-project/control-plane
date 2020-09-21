@@ -195,7 +195,6 @@ func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaCo
 	return RuntimeState{
 		ID:            uuid.New().String(),
 		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
 		RuntimeID:     runtimeID,
 		OperationID:   operationID,
 		KymaConfig:    kymaConfigInput,
@@ -207,7 +206,6 @@ type RuntimeState struct {
 	ID string `json:"id"`
 
 	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
 
 	RuntimeID   string `json:"runtimeId"`
 	OperationID string `json:"operationId"`

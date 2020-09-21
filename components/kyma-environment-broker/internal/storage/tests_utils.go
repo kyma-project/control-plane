@@ -250,7 +250,6 @@ func FixTables() map[string]string {
     		runtime_id varchar(255),
     		operation_id varchar(255),
     		created_at TIMESTAMPTZ NOT NULL,
-			updated_at TIMESTAMPTZ NOT NULL,
 			kyma_config text,
 			cluster_config text,
 			kyma_version text,

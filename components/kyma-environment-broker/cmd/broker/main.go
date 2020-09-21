@@ -504,7 +504,7 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 		},
 		{
 			weight: 10,
-			step:   upgrade_kyma.NewUpgradeKymaStep(db.Operations(), provisionerClient, icfg),
+			step:   upgrade_kyma.NewUpgradeKymaStep(db.Operations(), db.RuntimeStates(), provisionerClient, icfg),
 		},
 	}
 	for _, step := range upgradeKymaSteps {
