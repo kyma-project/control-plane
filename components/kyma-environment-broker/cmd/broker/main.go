@@ -28,7 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director/oauth"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
@@ -145,12 +144,8 @@ func main() {
 	cli, err := initClient(k8sCfg)
 	fatalOnError(err)
 
-	// create director client on the base of graphQL client and OAuth client
-	httpClient := httputil.NewClient(30, cfg.Director.SkipCertVerification)
-	graphQLClient := gcli.NewClient(cfg.Director.URL, gcli.WithHTTPClient(httpClient))
-	oauthClient := oauth.NewOauthClient(httpClient, cli, cfg.Director.OauthCredentialsSecretName, cfg.Director.Namespace)
-	fatalOnError(oauthClient.WaitForCredentials())
-	directorClient := director.NewDirectorClient(oauthClient, graphQLClient, logs.WithField("service", "directorClient"))
+	// create director client
+	directorClient := director.NewDirectorClient(ctx, cfg.Director, logs.WithField("service", "directorClient"))
 
 	// create storage
 	var db storage.BrokerStorage
@@ -210,7 +205,7 @@ func main() {
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
 	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 
-	clientHTTPForIAS := httpClient
+	clientHTTPForIAS := httputil.NewClient(30, cfg.Director.SkipCertVerification)
 	if cfg.IAS.TLSRenegotiationEnable {
 		clientHTTPForIAS = httputil.NewRenegotiationTLSClient(30, cfg.Director.SkipCertVerification)
 	}

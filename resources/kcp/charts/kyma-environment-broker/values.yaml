@@ -47,6 +47,9 @@ provisioner:
     # name of the gardener project
     projectName: "gopher"
 
+director:
+  scope: "runtime:read runtime:write"
+
 additionalRuntimeComponents: |-
   - name: "service-manager-proxy"
     namespace: "kyma-system"
