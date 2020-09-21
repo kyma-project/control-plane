@@ -235,7 +235,6 @@
   revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
 
 [[projects]]
-  branch = "keb-refactor-duplicates"
   digest = "1:4b467ab0c7164f8b358821eae3dac1ee112fbe94249ca536ddc041bb91c8af13"
   name = "github.com/kyma-project/control-plane"
   packages = [
@@ -246,8 +245,7 @@
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "39b2eb5fa57f64bc758d3f6e6ec938505e7cd958"
-  source = "github.com/ksputo/control-plane"
+  revision = "d40fff3571fd230222c5bd96afbac5c64139d9ef"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
