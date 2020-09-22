@@ -4,7 +4,6 @@ package storage
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"math/rand"
 	"sort"
@@ -384,6 +383,7 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, 1, stats.Provisioning[domain.InProgress])
 
 		})
+
 		t.Run("Deprovisioning", func(t *testing.T) {
 			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
@@ -448,30 +448,36 @@ func TestSchemaInitializer(t *testing.T) {
 			defer containerCleanupFunc()
 
 			givenOperation1 := internal.UpgradeKymaOperation{
-				Operation: internal.Operation{
-					ID:    "operation-id-1",
-					State: domain.InProgress,
-					// used Round and set timezone to be able to compare timestamps
-					CreatedAt:              time.Now().Truncate(time.Millisecond),
-					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second),
-					InstanceID:             "inst-id",
-					ProvisionerOperationID: "target-op-id",
-					Description:            "description",
-					Version:                1,
+				RuntimeOperation: internal.RuntimeOperation{
+					Operation: internal.Operation{
+						ID:    "operation-id-1",
+						State: domain.InProgress,
+						// used Round and set timezone to be able to compare timestamps
+						CreatedAt:              time.Now().Truncate(time.Millisecond),
+						UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second),
+						InstanceID:             "inst-id",
+						ProvisionerOperationID: "target-op-id",
+						Description:            "description",
+						Version:                1,
+					},
+					OrchestrationID: "orchestration-id",
 				},
 			}
 
 			givenOperation2 := internal.UpgradeKymaOperation{
-				Operation: internal.Operation{
-					ID:    "operation-id-2",
-					State: domain.InProgress,
-					// used Round and set timezone to be able to compare timestamps
-					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Minute),
-					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second).Add(time.Minute),
-					InstanceID:             "inst-id",
-					ProvisionerOperationID: "target-op-id",
-					Description:            "description",
-					Version:                1,
+				RuntimeOperation: internal.RuntimeOperation{
+					Operation: internal.Operation{
+						ID:    "operation-id-2",
+						State: domain.InProgress,
+						// used Round and set timezone to be able to compare timestamps
+						CreatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Minute),
+						UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second).Add(time.Minute),
+						InstanceID:             "inst-id",
+						ProvisionerOperationID: "target-op-id",
+						Description:            "description",
+						Version:                1,
+					},
+					OrchestrationID: "orchestration-id",
 				},
 			}
 
@@ -488,6 +494,7 @@ func TestSchemaInitializer(t *testing.T) {
 			require.NoError(t, err)
 			err = svc.InsertUpgradeKymaOperation(givenOperation2)
 			require.NoError(t, err)
+
 
 			ops, err := svc.GetUpgradeKymaOperationByInstanceID("inst-id")
 			require.NoError(t, err)
@@ -621,8 +628,9 @@ func TestSchemaInitializer(t *testing.T) {
 			Description:       "test",
 			CreatedAt:         now,
 			UpdatedAt:         now,
-			Parameters:        sql.NullString{String: "test", Valid: true},
-			RuntimeOperations: sql.NullString{Valid: false},
+			Parameters:        internal.OrchestrationParameters{
+				DryRun: true,
+			},
 		}
 
 		err = InitTestDBTables(t, cfg.ConnectionURL())

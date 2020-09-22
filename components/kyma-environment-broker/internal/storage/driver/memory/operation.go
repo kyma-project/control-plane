@@ -267,3 +267,18 @@ func (s *operations) GetOperationStats() (internal.OperationStats, error) {
 	}
 	return result, nil
 }
+
+func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (map[domain.LastOperationState]int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	result := map[domain.LastOperationState]int{
+		domain.InProgress: 0,
+		domain.Succeeded:  0,
+		domain.Failed:     0,
+	}
+	for _, op := range s.upgradeKymaOperations {
+		result[op.State] = result[op.State] + 1
+	}
+	return result, nil
+}

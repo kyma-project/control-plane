@@ -112,22 +112,22 @@ func (r readSession) GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.
 	return operation, nil
 }
 
-func (r readSession) GetOrchestrationByID(oID string) (internal.Orchestration, dberr.Error) {
+func (r readSession) GetOrchestrationByID(oID string) (dbmodel.OrchestrationDTO, dberr.Error) {
 	condition := dbr.Eq("orchestration_id", oID)
 	operation, err := r.getOrchestration(condition)
 	if err != nil {
 		switch {
 		case dberr.IsNotFound(err):
-			return internal.Orchestration{}, dberr.NotFound("for ID: %s %s", oID, err)
+			return dbmodel.OrchestrationDTO{}, dberr.NotFound("for ID: %s %s", oID, err)
 		default:
-			return internal.Orchestration{}, err
+			return dbmodel.OrchestrationDTO{}, err
 		}
 	}
 	return operation, nil
 }
 
-func (r readSession) ListOrchestrationsByState(state string) ([]internal.Orchestration, dberr.Error) {
-	var orchestrations []internal.Orchestration
+func (r readSession) ListOrchestrationsByState(state string) ([]dbmodel.OrchestrationDTO, error) {
+	var orchestrations []dbmodel.OrchestrationDTO
 
 	stateCondition := dbr.Eq("state", state)
 
@@ -142,8 +142,8 @@ func (r readSession) ListOrchestrationsByState(state string) ([]internal.Orchest
 	return orchestrations, nil
 }
 
-func (r readSession) ListOrchestrations() ([]internal.Orchestration, dberr.Error) {
-	var orchestrations []internal.Orchestration
+func (r readSession) ListOrchestrations() ([]dbmodel.OrchestrationDTO, dberr.Error) {
+	var orchestrations []dbmodel.OrchestrationDTO
 
 	_, err := r.session.
 		Select("*").
@@ -241,8 +241,8 @@ func (r readSession) getOperation(condition dbr.Builder) (dbmodel.OperationDTO, 
 	return operation, nil
 }
 
-func (r readSession) getOrchestration(condition dbr.Builder) (internal.Orchestration, dberr.Error) {
-	var operation internal.Orchestration
+func (r readSession) getOrchestration(condition dbr.Builder) (dbmodel.OrchestrationDTO, dberr.Error) {
+	var operation dbmodel.OrchestrationDTO
 
 	err := r.session.
 		Select("*").
@@ -252,9 +252,9 @@ func (r readSession) getOrchestration(condition dbr.Builder) (internal.Orchestra
 
 	if err != nil {
 		if err == dbr.ErrNotFound {
-			return internal.Orchestration{}, dberr.NotFound("cannot find operation: %s", err)
+			return dbmodel.OrchestrationDTO{}, dberr.NotFound("cannot find operation: %s", err)
 		}
-		return internal.Orchestration{}, dberr.Internal("Failed to get operation: %s", err)
+		return dbmodel.OrchestrationDTO{}, dberr.Internal("Failed to get operation: %s", err)
 	}
 	return operation, nil
 }
@@ -281,6 +281,17 @@ func (r readSession) GetOperationStats() ([]dbmodel.OperationStatEntry, error) {
 	var rows []dbmodel.OperationStatEntry
 	_, err := r.session.SelectBySql(fmt.Sprintf("select type, state, count(*) as total from %s group by type, state",
 		postsql.OperationTableName)).Load(&rows)
+	return rows, err
+}
+
+func (r readSession) GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error) {
+	var rows []dbmodel.OperationStatEntry
+	_, err := r.session.Select("state, count(*)").
+		From(postsql.OperationTableName).
+		Where("orchestration_id", orchestrationID).
+		GroupBy("state").
+		Load(&rows)
+
 	return rows, err
 }
 

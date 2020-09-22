@@ -26,6 +26,7 @@ type OperationDTO struct {
 	TargetOperationID string
 	State             string
 	Description       string
+	OrchestrationID   string
 
 	Data string
 

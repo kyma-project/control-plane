@@ -10,6 +10,7 @@ func TestOrchestration_OneRuntimeHappyPath(t *testing.T) {
 	// given
 	suite := NewOrchestrationSuite(t)
 	runtimeID := suite.CreateProvisionedRuntime(RuntimeOptions{})
+	otherRuntimeID := suite.CreateProvisionedRuntime(RuntimeOptions{})
 	orchestrationID := suite.CreateOrchestration(runtimeID)
 
 	suite.WaitForOrchestrationState(orchestrationID, internal.InProgress)
@@ -19,4 +20,7 @@ func TestOrchestration_OneRuntimeHappyPath(t *testing.T) {
 
 	// then
 	suite.WaitForOrchestrationState(orchestrationID, internal.Succeeded)
+
+	suite.AssertRuntimeUpgraded(runtimeID)
+	suite.AssertRuntimeNotUpgraded(otherRuntimeID)
 }

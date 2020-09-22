@@ -89,6 +89,9 @@ type Operation struct {
 	ProvisionerOperationID string
 	State                  domain.LastOperationState
 	Description            string
+
+	// OrchestrationID specifies the origin orchestration which triggers the operation, empty for OSB operations (provisioning/deprovisioning)
+	OrchestrationID string
 }
 
 type InstanceWithOperation struct {
@@ -126,30 +129,49 @@ type DeprovisioningOperation struct {
 	RuntimeID              string           `json:"runtime_id"`
 }
 
-// UpgradeKymaOperation holds all information about upgrade Kyma operation
-type UpgradeKymaOperation struct {
+// RuntimeOperation holds information about operation performed on a runtime
+type RuntimeOperation struct {
 	Operation `json:"-"`
 
-	ProvisioningParameters string `json:"provisioning_parameters"`
+	DryRun                 bool      `json:"dryRun"`
+	ShootName              string    `json:"shootName"`
+	MaintenanceWindowBegin time.Time `json:"maintenanceWindowBegin"`
+	MaintenanceWindowEnd   time.Time `json:"maintenanceWindowEnd"`
+	RuntimeID              string    `json:"runtimeId"`
+	GlobalAccountID        string    `json:"globalAccountId"`
+	SubAccountID           string    `json:"subAccountId"`
 
+	OrchestrationID string `json:"orchestrationId"`
+}
+
+// UpgradeKymaOperation holds all information about upgrade Kyma operation
+type UpgradeKymaOperation struct {
+	RuntimeOperation                     `json:"-"`
 	InputCreator ProvisionerInputCreator `json:"-"`
 
-	SubAccountID string `json:"-"`
-	RuntimeID    string `json:"runtime_id"`
-	DryRun       bool   `json:"dry_run"`
+	ProvisioningParameters string `json:"provisioning_parameters"`
 }
 
 // Orchestration holds all information about an orchestration.
 // Orchestration performs operations of a specific type (UpgradeKymaOperation, UpgradeClusterOperation)
 // on specific targets of SKRs.
 type Orchestration struct {
-	OrchestrationID   string
-	State             string
-	Description       string
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
-	Parameters        sql.NullString
-	RuntimeOperations sql.NullString
+	OrchestrationID string
+	State           string
+	Description     string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	Parameters      OrchestrationParameters
+}
+
+func (o *Orchestration) IsFinished() bool {
+	return o.State == Succeeded || o.State == Failed
+}
+
+type OrchestrationParameters struct {
+	Targets  TargetSpec   `json:"targets"`
+	Strategy StrategySpec `json:"strategy,omitempty"`
+	DryRun   bool         `json:"dry_run,omitempty"`
 }
 
 const (
@@ -173,12 +195,6 @@ type Runtime struct {
 	MaintenanceWindowEnd time.Time `json:"maintenanceWindowEnd"`
 }
 
-// RuntimeOperation encapsulates a Runtime object and an operation ID for the OrchestrationStrategy to execute.
-type RuntimeOperation struct {
-	Runtime
-	OperationID string `json:"operationId"`
-	Status      string `json:"status,omitempty"`
-}
 
 func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaConfigInput, clusterConfig *gqlschema.GardenerConfigInput) RuntimeState {
 	var (
@@ -379,6 +395,10 @@ func (do *UpgradeKymaOperation) SetProvisioningParameters(parameters Provisionin
 
 	do.ProvisioningParameters = string(params)
 	return nil
+}
+
+func (o *Operation) IsFinished() bool {
+	return o.State != InProgress
 }
 
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput
