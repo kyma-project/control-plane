@@ -16,6 +16,9 @@ global:
     kyma_environments_cleanup_job:
       dir:
       version: "PR-83"
+    subscription_cleanup_job:
+      dir:
+      version: "PR-113"
     metris:
       dir:
       version: "PR-20"
