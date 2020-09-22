@@ -2,7 +2,7 @@ package upgrade_kyma
 
 import "time"
 
-type IntervalConfig struct {
+type TimeSchedule struct {
 	Retry              time.Duration
 	StatusCheck        time.Duration
 	UpgradeKymaTimeout time.Duration

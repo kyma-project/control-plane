@@ -28,13 +28,13 @@ type InitialisationStep struct {
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
 	inputBuilder      input.CreatorForPlan
-	intervalConfig    IntervalConfig
+	intervalConfig    TimeSchedule
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, intervalConfig *IntervalConfig) *InitialisationStep {
-	icfg := intervalConfig
-	if icfg == nil {
-		icfg = &IntervalConfig{
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, timeSchedule *TimeSchedule) *InitialisationStep {
+	ts := timeSchedule
+	if ts == nil {
+		ts = &TimeSchedule{
 			Retry:              5 * time.Second,
 			StatusCheck:        time.Minute,
 			UpgradeKymaTimeout: time.Hour,
@@ -46,7 +46,7 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 		instanceStorage:   is,
 		provisionerClient: pc,
 		inputBuilder:      b,
-		intervalConfig:    *icfg,
+		intervalConfig:    *ts,
 	}
 }
 

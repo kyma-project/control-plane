@@ -87,7 +87,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 	eventBroker := event.NewPubSub()
 
 	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, cli, provisionerClient, gardenerClient.CoreV1beta1(),
-		gardenerNamespace, eventBroker, inputFactory, &upgrade_kyma.IntervalConfig{
+		gardenerNamespace, eventBroker, inputFactory, &upgrade_kyma.TimeSchedule{
 			Retry:              10 * time.Millisecond,
 			StatusCheck:        100 * time.Millisecond,
 			UpgradeKymaTimeout: 2 * time.Second,
@@ -201,10 +201,10 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 		},
 	}
 
-	s.storage.Instances().Insert(instance)
-	s.storage.Operations().InsertProvisioningOperation(provisioningOperation)
-	s.gardenerClient.CoreV1beta1().Shoots(s.gardenerNamespace).Create(shoot)
-
+	require.NoError(s.t, s.storage.Instances().Insert(instance))
+	require.NoError(s.t, s.storage.Operations().InsertProvisioningOperation(provisioningOperation))
+	_, err = s.gardenerClient.CoreV1beta1().Shoots(s.gardenerNamespace).Create(shoot)
+	require.NoError(s.t, err)
 	return runtimeID
 }
 
@@ -229,7 +229,7 @@ func (s *OrchestrationSuite) CreateOrchestration(runtimeID string) string {
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
-	s.storage.Orchestrations().Insert(o)
+	require.NoError(s.t, s.storage.Orchestrations().Insert(o))
 
 	s.orchestrationQueue.Add(o.OrchestrationID)
 	return o.OrchestrationID

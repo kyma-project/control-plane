@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -9,22 +10,29 @@ import (
 	"sort"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-
+	"code.cloudfoundry.org/lager"
+	"github.com/dlmiddlecote/sqlstats"
 	gardenerclient "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
-	orchestrate "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
-
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
+	gcli "github.com/machinebox/graphql"
+	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
+	"github.com/vrischmann/envconfig"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director/oauth"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/appinfo"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
@@ -45,24 +53,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
-
-	"fmt"
-
-	"code.cloudfoundry.org/lager"
-	"github.com/dlmiddlecote/sqlstats"
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/kyma"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
-	gcli "github.com/machinebox/graphql"
-	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
-	"github.com/vrischmann/envconfig"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 // Config holds configuration for the whole application
