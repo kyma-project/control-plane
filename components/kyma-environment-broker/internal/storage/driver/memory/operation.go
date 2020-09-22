@@ -193,6 +193,9 @@ func (s *operations) GetOperationByID(operationID string) (*internal.Operation, 
 }
 
 func (s *operations) GetOperationsInProgressByType(opType dbmodel.OperationType) ([]internal.Operation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	ops := make([]internal.Operation, 0)
 	switch opType {
 	case dbmodel.OperationTypeProvision:
@@ -213,6 +216,9 @@ func (s *operations) GetOperationsInProgressByType(opType dbmodel.OperationType)
 }
 
 func (s *operations) GetOperationsForIDs(opIdList []string) ([]internal.Operation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	ops := make([]internal.Operation, 0)
 	for _, opID := range opIdList {
 		for _, op := range s.upgradeKymaOperations {

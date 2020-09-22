@@ -25,14 +25,18 @@ type upgradeKymaManager struct {
 	resolver             orchestration.RuntimeResolver
 	kymaUpgradeExecutor  process.Executor
 	log                  logrus.FieldLogger
+	pollingInterval      time.Duration
 }
 
-func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, kymaUpgradeExecutor process.Executor, resolver orchestration.RuntimeResolver, log logrus.FieldLogger) process.Executor {
+func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations,
+	kymaUpgradeExecutor process.Executor, resolver orchestration.RuntimeResolver,
+	pollingInterval time.Duration, log logrus.FieldLogger) process.Executor {
 	return &upgradeKymaManager{
 		orchestrationStorage: orchestrationStorage,
 		operationStorage:     operationStorage,
 		resolver:             resolver,
 		kymaUpgradeExecutor:  kymaUpgradeExecutor,
+		pollingInterval:      pollingInterval,
 		log:                  log,
 	}
 }
@@ -203,7 +207,7 @@ func (u *upgradeKymaManager) checkOperationsResults(ops []internal.RuntimeOperat
 		}
 	}
 
-	err := wait.PollInfinite(time.Second*20, func() (bool, error) {
+	err := wait.PollInfinite(u.pollingInterval, func() (bool, error) {
 		operations, err := u.operationStorage.GetOperationsForIDs(operationIDList)
 		if err != nil {
 			u.log.Errorf("while getting operations: %v", err)

@@ -65,7 +65,7 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 		RuntimeID: ptr.String(fixRuntimeID),
 	}, nil)
 
-	step := NewUpgradeKymaStep(memoryStorage.Operations(), provisionerClient)
+	step := NewUpgradeKymaStep(memoryStorage.Operations(), provisionerClient, nil)
 
 	// when
 
@@ -73,7 +73,7 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 
 	// then
 	assert.NoError(t, err)
-	assert.Equal(t, 1*time.Second, repeat)
+	assert.Equal(t, 5*time.Second, repeat)
 	assert.Equal(t, fixProvisionerOperationID, operation.ProvisionerOperationID)
 }
 
