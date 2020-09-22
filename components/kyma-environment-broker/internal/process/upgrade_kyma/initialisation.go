@@ -28,7 +28,7 @@ type InitialisationStep struct {
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
 	inputBuilder      input.CreatorForPlan
-	intervalConfig    TimeSchedule
+	timeSchedule      TimeSchedule
 }
 
 func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, timeSchedule *TimeSchedule) *InitialisationStep {
@@ -46,7 +46,7 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 		instanceStorage:   is,
 		provisionerClient: pc,
 		inputBuilder:      b,
-		intervalConfig:    *ts,
+		timeSchedule:      *ts,
 	}
 }
 
@@ -59,11 +59,11 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 	op, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
 	if err != nil {
 		log.Errorf("while getting provisioning operation from storage")
-		return operation, s.intervalConfig.Retry, nil
+		return operation, s.timeSchedule.Retry, nil
 	}
 	if op.State == domain.InProgress {
 		log.Info("waiting for provisioning operation to finish")
-		return operation, s.intervalConfig.UpgradeKymaTimeout, nil
+		return operation, s.timeSchedule.UpgradeKymaTimeout, nil
 	}
 
 	parameters, err := op.GetProvisioningParameters()
@@ -92,7 +92,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		return s.operationManager.OperationFailed(operation, "instance was not found")
 	default:
 		log.Errorf("unable to get instance from storage: %s", err)
-		return operation, s.intervalConfig.Retry, nil
+		return operation, s.timeSchedule.Retry, nil
 	}
 
 }
@@ -127,7 +127,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
 	if err != nil {
-		return operation, s.intervalConfig.StatusCheck, nil
+		return operation, s.timeSchedule.StatusCheck, nil
 	}
 	log.Infof("call to provisioner returned %s status", status.State.String())
 
@@ -140,9 +140,9 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 	case gqlschema.OperationStateSucceeded:
 		return s.operationManager.OperationSucceeded(operation, msg)
 	case gqlschema.OperationStateInProgress:
-		return operation, s.intervalConfig.StatusCheck, nil
+		return operation, s.timeSchedule.StatusCheck, nil
 	case gqlschema.OperationStatePending:
-		return operation, s.intervalConfig.StatusCheck, nil
+		return operation, s.timeSchedule.StatusCheck, nil
 	case gqlschema.OperationStateFailed:
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg))
 	}
