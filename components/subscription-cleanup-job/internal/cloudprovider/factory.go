@@ -10,7 +10,18 @@ type ResourceCleaner interface {
 	Do() error
 }
 
-func New(hyperscalerType model.HyperscalerType, secretData map[string][]byte) (ResourceCleaner, error) {
+//go:generate mockery -name=ProviderFactory
+type ProviderFactory interface {
+	New(hyperscalerType model.HyperscalerType, secretData map[string][]byte) (ResourceCleaner, error)
+}
+
+type providerFactory struct{}
+
+func NewProviderFactory() ProviderFactory {
+	return &providerFactory{}
+}
+
+func (pf *providerFactory) New(hyperscalerType model.HyperscalerType, secretData map[string][]byte) (ResourceCleaner, error) {
 	switch hyperscalerType {
 	case model.GCP:
 		{

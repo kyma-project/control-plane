@@ -17,18 +17,19 @@ type Cleaner interface {
 	Do() error
 }
 
-func NewCleaner(secretsClient corev1.SecretInterface) Cleaner {
+func NewCleaner(secretsClient corev1.SecretInterface, providerFactory cloudprovider.ProviderFactory) Cleaner {
 	return &cleaner{
-		secretsClient: secretsClient,
+		secretsClient:   secretsClient,
+		providerFactory: providerFactory,
 	}
 }
 
 type cleaner struct {
-	secretsClient corev1.SecretInterface
+	secretsClient   corev1.SecretInterface
+	providerFactory cloudprovider.ProviderFactory
 }
 
 func (p *cleaner) Do() error {
-
 	logrus.Info("Started releasing resources")
 	secrets, err := p.getSecretsToRelease()
 	if err != nil {
@@ -37,12 +38,19 @@ func (p *cleaner) Do() error {
 
 	for _, secret := range secrets {
 		err := p.releaseResources(secret)
-		if err == nil {
-			p.returnSecretToThePool(secret)
-			logrus.Infof("Resources released for '%s' secret", secret.Name)
+		if err != nil {
+			logrus.Errorf("Failed to release resources for '%s' secret: %s", secret.Name, err.Error())
+			continue
 		}
+		err = p.returnSecretToThePool(secret)
+		if err != nil {
+			logrus.Errorf("Failed returning '%s' secret to the pool: %s", secret.Name, err.Error())
+			continue
+		}
+		logrus.Infof("Resources released for '%s' secret", secret.Name)
 	}
 
+	logrus.Info("Finished releasing resources")
 	return nil
 }
 
@@ -52,7 +60,7 @@ func (p *cleaner) releaseResources(secret apiv1.Secret) error {
 		return errors.Wrap(err, "failed to start releasing resources")
 	}
 
-	cleaner, err := cloudprovider.New(hyperscalerType, secret.Data)
+	cleaner, err := p.providerFactory.New(hyperscalerType, secret.Data)
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize cloud provider cleaner")
 	}
@@ -61,7 +69,6 @@ func (p *cleaner) releaseResources(secret apiv1.Secret) error {
 }
 
 func (p *cleaner) returnSecretToThePool(secret apiv1.Secret) error {
-
 	s, err := p.secretsClient.Get(secret.Name, metav1.GetOptions{})
 	if err != nil {
 		return err

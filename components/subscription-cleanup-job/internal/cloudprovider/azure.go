@@ -130,7 +130,6 @@ func getResourceManagementAuthorizer(config *config, environment *azure.Environm
 }
 
 func getAuthorizerForResource(config *config, environment *azure.Environment) (autorest.Authorizer, error) {
-
 	oauthConfig, err := adal.NewOAuthConfig(environment.ActiveDirectoryEndpoint, config.tenantID)
 	if err != nil {
 		return nil, err

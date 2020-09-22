@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/cloudprovider"
 	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/job"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -28,8 +29,8 @@ func main() {
 	secretsInterface, err := newSecretsInterface(cfg)
 	exitOnError(err, "Failed to create secrets client ")
 
-	err = job.NewCleaner(secretsInterface).Do()
-	exitOnError(err, "Fob execution failed")
+	err = job.NewCleaner(secretsInterface, cloudprovider.NewProviderFactory()).Do()
+	exitOnError(err, "Job execution failed")
 
 	log.Info("Cleanup job finished successfully!")
 }
