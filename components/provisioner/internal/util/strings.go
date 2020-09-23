@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"rand"
 	"strings"
 	"unicode"
 )
@@ -19,11 +20,17 @@ func RemoveNotAllowedCharacters(str string) string {
 // StartWithLetter returns given string but starting with letter
 func StartWithLetter(str string) string {
 	if len(str) == 0 {
-		return "c"
+		return RandomLetter()
 	} else if !unicode.IsLetter(rune(str[0])) {
-		return fmt.Sprintf("c-%.9s", str)
+		return fmt.Sprintf("%s%s", RandomLetter(), str[1:])
 	}
 	return str
+}
+
+// RandomLetter returns randomly generated letter
+func RandomLetter() string {
+	letterRunes := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	return string(letterRunes[rand.Intn(len(letterRunes))])
 }
 
 func NotNilOrEmpty(str *string) bool {

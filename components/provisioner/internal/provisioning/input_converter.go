@@ -175,7 +175,7 @@ func (c converter) createGardenerClusterName() string {
 	id := c.uuidGenerator.New()
 
 	name := strings.ReplaceAll(id, "-", "")
-	name = fmt.Sprintf("%.7s", name)
+	name = fmt.Sprintf("%.13s", name)
 	name = util.StartWithLetter(name)
 	name = strings.ToLower(name)
 	return name
