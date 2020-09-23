@@ -208,6 +208,21 @@ func (r readSession) GetOperationsForIDs(opIDlist []string) ([]dbmodel.Operation
 	return operations, nil
 }
 
+func (r readSession) ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.RuntimeStateDTO, dberr.Error) {
+	stateCondition := dbr.Eq("runtime_id", runtimeID)
+	var states []dbmodel.RuntimeStateDTO
+
+	_, err := r.session.
+		Select("*").
+		From(postsql.RuntimeStateTableName).
+		Where(stateCondition).
+		Load(&states)
+	if err != nil {
+		return nil, dberr.Internal("Failed to get states: %s", err)
+	}
+	return states, nil
+}
+
 func (r readSession) getOperation(condition dbr.Builder) (dbmodel.OperationDTO, dberr.Error) {
 	var operation dbmodel.OperationDTO
 

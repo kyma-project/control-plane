@@ -32,6 +32,7 @@ type ReadSession interface {
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
 	GetOrchestrationByID(oID string) (internal.Orchestration, dberr.Error)
 	ListOrchestrationsByState(state string) ([]internal.Orchestration, dberr.Error)
+	ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.RuntimeStateDTO, dberr.Error)
 	ListOrchestrations() ([]internal.Orchestration, dberr.Error)
 	ListInstances(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error)
 }
@@ -45,6 +46,7 @@ type WriteSession interface {
 	UpdateOperation(instance dbmodel.OperationDTO) dberr.Error
 	InsertOrchestration(o internal.Orchestration) dberr.Error
 	UpdateOrchestration(o internal.Orchestration) dberr.Error
+	InsertRuntimeState(state dbmodel.RuntimeStateDTO) dberr.Error
 	InsertLMSTenant(dto dbmodel.LMSTenantDTO) dberr.Error
 }
 

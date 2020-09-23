@@ -24,16 +24,18 @@ const (
 )
 
 type CreateRuntimeStep struct {
-	operationManager  *process.ProvisionOperationManager
-	instanceStorage   storage.Instances
-	provisionerClient provisioner.Client
+	operationManager    *process.ProvisionOperationManager
+	instanceStorage     storage.Instances
+	runtimeStateStorage storage.RuntimeStates
+	provisionerClient   provisioner.Client
 }
 
-func NewCreateRuntimeStep(os storage.Operations, is storage.Instances, cli provisioner.Client) *CreateRuntimeStep {
+func NewCreateRuntimeStep(os storage.Operations, runtimeStorage storage.RuntimeStates, is storage.Instances, cli provisioner.Client) *CreateRuntimeStep {
 	return &CreateRuntimeStep{
-		operationManager:  process.NewProvisionOperationManager(os),
-		instanceStorage:   is,
-		provisionerClient: cli,
+		operationManager:    process.NewProvisionOperationManager(os),
+		instanceStorage:     is,
+		provisionerClient:   cli,
+		runtimeStateStorage: runtimeStorage,
 	}
 }
 
@@ -95,6 +97,13 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 	}
 	log = log.WithField("runtimeID", *provisionerResponse.RuntimeID)
 	log.Infof("call to provisioner succeeded, got operation ID %q", *provisionerResponse.ID)
+
+	err = s.runtimeStateStorage.Insert(
+		internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.ID, requestInput.KymaConfig, requestInput.ClusterConfig.GardenerConfig),
+	)
+	if err != nil {
+		return operation, 10 * time.Second, nil
+	}
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	if err != nil {
