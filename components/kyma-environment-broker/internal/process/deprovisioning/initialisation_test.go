@@ -1,10 +1,16 @@
 package deprovisioning
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	hyperscalerMocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/automock"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -23,6 +29,9 @@ const (
 )
 
 func TestInitialisationStep_Run(t *testing.T) {
+	accountProviderMock := &hyperscalerMocks.AccountProvider{}
+	accountProviderMock.On("MarkUnusedGardenerSecretAsDirty", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+
 	t.Run("Should mark operation as Succeeded when runtime deprovisioning was successful", func(t *testing.T) {
 		// given
 		log := logrus.New()
@@ -49,7 +58,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: nil,
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock)
 
 		// when
 		operation, repeat, err := step.Run(operation, log)
@@ -82,7 +91,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		provisionerClient := &provisionerAutomock.Client{}
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock)
 
 		// when
 		operation, repeat, err := step.Run(operation, log)
@@ -112,6 +121,8 @@ func fixDeprovisioningOperation() internal.DeprovisioningOperation {
 }
 
 func fixProvisioningOperation() internal.ProvisioningOperation {
+	planID := broker.AzurePlanID
+
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ID:                     fixOperationID,
@@ -120,7 +131,7 @@ func fixProvisioningOperation() internal.ProvisioningOperation {
 			Description:            "",
 			UpdatedAt:              time.Now(),
 		},
-		ProvisioningParameters: `{"ers_context":{"globalaccount_id":"1"}}`,
+		ProvisioningParameters: fmt.Sprintf(`{"ers_context":{"globalaccount_id":"1"},"plan_id":"%s"}`, planID),
 	}
 }
 

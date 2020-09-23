@@ -191,9 +191,9 @@ func main() {
 	gardenerShoots, err := gardener.NewGardenerShootInterface(gardenerClusterConfig, cfg.Gardener.Project)
 	fatalOnError(err)
 
-	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
+	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets, gardenerShoots)
 	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecrets, gardenerShoots)
-	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool, gardenerSharedPool)
+	accountProvider := hyperscaler.NewAccountProvider(gardenerAccountPool, gardenerSharedPool)
 
 	regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)
 	fatalOnError(err)
@@ -304,7 +304,7 @@ func main() {
 		}
 	}
 
-	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient)
+	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider)
 	deprovisionManager.InitStep(deprovisioningInit)
 	deprovisioningSteps := []struct {
 		disabled bool

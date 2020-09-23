@@ -1,53 +1,17 @@
 package hyperscaler
 
 import (
-	"fmt"
-	"strings"
+	"github.com/stretchr/testify/require"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"testing"
 
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardener_fake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	machineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
-
-func TestHyperscalerTypeFromProviderString(t *testing.T) {
-
-	var testcases = []struct {
-		providerType string
-		recognized   bool
-	}{
-		{"GCP", true},
-		{"Gcp", true},
-		{"gcp", true},
-		{"gcpx", false},
-		{"Azure", true},
-		{"AWS", true},
-		{"FOO", false},
-	}
-	for _, testcase := range testcases {
-		var testDescription string
-		var expectedError string
-		if testcase.recognized {
-			testDescription = fmt.Sprintf("%s is a recognized HyperscalerType", testcase.providerType)
-			expectedError = ""
-		} else {
-			testDescription = fmt.Sprintf("%s is an unknown HyperscalerType", testcase.providerType)
-			expectedError = fmt.Sprintf("unknown Hyperscaler provider type: %s", testcase.providerType)
-		}
-		t.Run(testDescription, func(t *testing.T) {
-
-			hyperscalerType, err := HyperscalerTypeFromProviderString(testcase.providerType)
-
-			if err == nil {
-				assert.Equal(t, true, strings.EqualFold(testcase.providerType, string(hyperscalerType)), testDescription)
-				assert.Equal(t, expectedError, "", testDescription)
-			} else {
-				assert.Equal(t, expectedError, err.Error(), testDescription)
-			}
-		})
-	}
-}
 
 func TestCredentials(t *testing.T) {
 
@@ -77,11 +41,11 @@ func TestCredentials(t *testing.T) {
 
 		{"No Available credential for tenant5, Azure returns error",
 			"tenant5", Azure, "",
-			"accountPool failed to find unassigned secret for hyperscalerType: azure"},
+			"failed to find unassigned secret for hyperscalerType: azure"},
 
 		{"No Available credential for tenant6, GCP returns error - ignore secret with label shared=true",
 			"tenant6", GCP, "",
-			"accountPool failed to find unassigned secret for hyperscalerType: gcp"},
+			"failed to find unassigned secret for hyperscalerType: gcp"},
 	}
 	for _, testcase := range testcases {
 
@@ -102,9 +66,75 @@ func TestCredentials(t *testing.T) {
 	}
 }
 
-func newTestAccountPool() AccountPool {
-	var testNamespace = "test-namespace"
+func TestSecretsAccountPool_IsSecretDirty(t *testing.T) {
+	t.Run("should return true if dirty secret found", func(t *testing.T) {
+		//given
+		accPool, _ := newTestAccountPoolWithSecretDirty()
 
+		//when
+		isdirty, err := accPool.IsSecretDirty("azure", "tenant1")
+
+		//then
+		require.NoError(t, err)
+		assert.True(t, isdirty)
+	})
+
+	t.Run("should return false if dirty secret not found", func(t *testing.T) {
+		//given
+		accPool := newTestAccountPool()
+
+		//when
+		isdirty, err := accPool.IsSecretDirty("azure", "tenant1")
+
+		//then
+		require.NoError(t, err)
+		assert.False(t, isdirty)
+	})
+}
+
+func TestSecretsAccountPool_IsSecretUsed(t *testing.T) {
+	t.Run("should return true when secret is in use", func(t *testing.T) {
+		//given
+		accPool, _ := newTestAccountPoolWithSingleShoot()
+
+		//when
+		used, err := accPool.IsSecretUsed("azure", "tenant1")
+
+		//then
+		require.NoError(t, err)
+		assert.True(t, used)
+	})
+
+	t.Run("should return false when secret is not in use", func(t *testing.T) {
+		//given
+		accPool, _ := newTestAccountPoolWithoutShoots()
+
+		//when
+		used, err := accPool.IsSecretUsed("azure", "tenant1")
+
+		//then
+		require.NoError(t, err)
+		assert.False(t, used)
+	})
+}
+
+func TestSecretsAccountPool_MarkSecretAsDirty(t *testing.T) {
+	t.Run("should mark secret as dirty", func(t *testing.T) {
+		//given
+		accPool, mockSecrets := newTestAccountPoolWithoutShoots()
+
+		//when
+		err := accPool.MarkSecretAsDirty("azure", "tenant1")
+
+		//then
+		require.NoError(t, err)
+		secret, err := mockSecrets.Get("secret1", machineryv1.GetOptions{})
+		require.NoError(t, err)
+		assert.Equal(t, secret.Labels["dirty"], "true")
+	})
+}
+
+func newTestAccountPool() AccountPool {
 	secret1 := &corev1.Secret{
 		ObjectMeta: machineryv1.ObjectMeta{
 			Name: "secret1", Namespace: testNamespace,
@@ -178,6 +208,169 @@ func newTestAccountPool() AccountPool {
 
 	mockClient := fake.NewSimpleClientset(secret1, secret2, secret3, secret4, secret5, secret6)
 	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
-	pool := NewAccountPool(mockSecrets)
+	pool := NewAccountPool(mockSecrets, nil)
 	return pool
+}
+
+func newTestAccountPoolWithSingleShoot() (AccountPool, v1.SecretInterface) {
+	secret1 := &corev1.Secret{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name: "secret1", Namespace: testNamespace,
+			Labels: map[string]string{
+				"tenantName":      "tenant1",
+				"hyperscalerType": "azure",
+			},
+		},
+		Data: map[string][]byte{
+			"credentials": []byte("secret1"),
+		},
+	}
+
+	shoot1 := &gardener_types.Shoot{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name:      "shoot1",
+			Namespace: testNamespace,
+		},
+		Spec: gardener_types.ShootSpec{
+			SecretBindingName: "secret1",
+		},
+		Status: gardener_types.ShootStatus{
+			LastOperation: &gardener_types.LastOperation{
+				State: gardener_types.LastOperationStateSucceeded,
+				Type:  gardener_types.LastOperationTypeReconcile,
+			},
+		},
+	}
+
+	mockClient := fake.NewSimpleClientset(secret1)
+	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
+
+	gardenerFake := gardener_fake.NewSimpleClientset(shoot1)
+	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
+
+	pool := NewAccountPool(mockSecrets, mockShoots)
+
+	return pool, mockSecrets
+}
+
+func newTestAccountPoolWithSecretDirty() (AccountPool, v1.SecretInterface) {
+	secret1 := &corev1.Secret{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name: "secret1", Namespace: testNamespace,
+			Labels: map[string]string{
+				"tenantName":      "tenant1",
+				"hyperscalerType": "azure",
+				"dirty":           "true",
+			},
+		},
+		Data: map[string][]byte{
+			"credentials": []byte("secret1"),
+		},
+	}
+
+	shoot1 := &gardener_types.Shoot{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name:      "shoot1",
+			Namespace: testNamespace,
+		},
+		Spec: gardener_types.ShootSpec{
+			SecretBindingName: "secret1",
+		},
+		Status: gardener_types.ShootStatus{
+			LastOperation: &gardener_types.LastOperation{
+				State: gardener_types.LastOperationStateSucceeded,
+				Type:  gardener_types.LastOperationTypeReconcile,
+			},
+		},
+	}
+
+	mockClient := fake.NewSimpleClientset(secret1)
+	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
+
+	gardenerFake := gardener_fake.NewSimpleClientset(shoot1)
+	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
+
+	pool := NewAccountPool(mockSecrets, mockShoots)
+	return pool, mockSecrets
+}
+
+func newTestAccountPoolWithShootsUsingSecret() (AccountPool, v1.SecretInterface) {
+	secret1 := &corev1.Secret{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name: "secret1", Namespace: testNamespace,
+			Labels: map[string]string{
+				"tenantName":      "tenant1",
+				"hyperscalerType": "azure",
+			},
+		},
+		Data: map[string][]byte{
+			"credentials": []byte("secret1"),
+		},
+	}
+
+	shoot1 := &gardener_types.Shoot{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name:      "shoot1",
+			Namespace: testNamespace,
+		},
+		Spec: gardener_types.ShootSpec{
+			SecretBindingName: "secret1",
+		},
+		Status: gardener_types.ShootStatus{
+			LastOperation: &gardener_types.LastOperation{
+				State: gardener_types.LastOperationStateSucceeded,
+				Type:  gardener_types.LastOperationTypeReconcile,
+			},
+		},
+	}
+
+	shoot2 := &gardener_types.Shoot{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name:      "shoot2",
+			Namespace: testNamespace,
+		},
+		Spec: gardener_types.ShootSpec{
+			SecretBindingName: "secret1",
+		},
+		Status: gardener_types.ShootStatus{
+			LastOperation: &gardener_types.LastOperation{
+				State: gardener_types.LastOperationStateSucceeded,
+				Type:  gardener_types.LastOperationTypeReconcile,
+			},
+		},
+	}
+
+	mockClient := fake.NewSimpleClientset(secret1)
+	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
+
+	gardenerFake := gardener_fake.NewSimpleClientset(shoot1, shoot2)
+	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
+
+	pool := NewAccountPool(mockSecrets, mockShoots)
+	return pool, mockSecrets
+}
+
+func newTestAccountPoolWithoutShoots() (AccountPool, v1.SecretInterface) {
+	secret1 := &corev1.Secret{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name: "secret1", Namespace: testNamespace,
+			Labels: map[string]string{
+				"tenantName":      "tenant1",
+				"hyperscalerType": "azure",
+			},
+		},
+		Data: map[string][]byte{
+			"credentials": []byte("secret1"),
+		},
+	}
+
+	mockClient := fake.NewSimpleClientset(secret1)
+	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
+
+	gardenerFake := gardener_fake.NewSimpleClientset()
+	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
+
+	pool := NewAccountPool(mockSecrets, mockShoots)
+
+	return pool, mockSecrets
 }

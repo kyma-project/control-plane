@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -17,7 +20,7 @@ import (
 
 const (
 	// the time after which the operation is marked as expired
-	CheckStatusTimeout = 3 * time.Hour
+	CheckStatusTimeout = 5 * time.Hour
 )
 
 type InitialisationStep struct {
@@ -25,14 +28,16 @@ type InitialisationStep struct {
 	operationStorage  storage.Provisioning
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
+	accountProvider   hyperscaler.AccountProvider
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, accountProvider hyperscaler.AccountProvider) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:  process.NewDeprovisionOperationManager(os),
 		operationStorage:  os,
 		instanceStorage:   is,
 		provisionerClient: pc,
+		accountProvider:   accountProvider,
 	}
 }
 
@@ -86,7 +91,7 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 		}
 		log.Info("runtime being removed, check operation status")
 		operation.RuntimeID = instance.RuntimeID
-		return s.checkRuntimeStatus(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
+		return s.checkRuntimeStatus(operation, instance, parameters.PlanID, log.WithField("runtimeID", instance.RuntimeID))
 	case dberr.IsNotFound(err):
 		return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned")
 	default:
@@ -105,7 +110,7 @@ func setAvsIds(deprovisioningOperation *internal.DeprovisioningOperation, provis
 	}
 }
 
-func (s *InitialisationStep) checkRuntimeStatus(operation internal.DeprovisioningOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+func (s *InitialisationStep) checkRuntimeStatus(operation internal.DeprovisioningOperation, instance *internal.Instance, planID string, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout))
@@ -124,7 +129,29 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
-		return s.operationManager.OperationSucceeded(operation, msg)
+		{
+
+			// TODO:
+			//After moving from POC into Production phase
+			//Move the code retated to relesing subscription into the pool into separate step executed independently after runtime
+			//is sucessfully  deprovisioned
+
+			if !broker.IsTrialPlan(planID) {
+				hypType, err := hyperscaler.HyperscalerTypeForPlanID(planID)
+				if err != nil {
+					log.Errorf("after successful deprovisioning failing to hyperscaler release subscription - determine the type of Hyperscaler to use for planID: %s", planID)
+					return operation, 0, nil
+				}
+
+				err = s.accountProvider.MarkUnusedGardenerSecretAsDirty(hypType, instance.GlobalAccountID)
+				if err != nil {
+					log.Errorf("after successful deprovisioning failed to release hyperscaler subscription: %s", err)
+					return operation, 10 * time.Second, nil
+				}
+			}
+			return s.operationManager.OperationSucceeded(operation, msg)
+		}
+
 	case gqlschema.OperationStateInProgress:
 		return operation, 1 * time.Minute, nil
 	case gqlschema.OperationStatePending:

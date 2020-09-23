@@ -64,6 +64,7 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 
 	var provisionerResponse string
 	if operation.ProvisionerOperationID == "" {
+
 		provisionerResponse, err = s.provisionerClient.DeprovisionRuntime(instance.GlobalAccountID, instance.RuntimeID)
 		if err != nil {
 			log.Errorf("unable to deprovision runtime: %s", err)
