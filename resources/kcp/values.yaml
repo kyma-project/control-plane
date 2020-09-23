@@ -12,7 +12,7 @@ global:
       version: "b37eda4c"
     kyma_environment_broker:
       dir:
-      version: "PR-187"
+      version: "PR-219"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-131"
@@ -21,7 +21,7 @@ global:
       version: "PR-131"
     subscription_cleanup_job:
       dir:
-      version: "PR-113"
+      version: "PR-219"
     metris:
       dir:
       version: "PR-20"
