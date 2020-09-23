@@ -15,7 +15,6 @@ import (
 	gardenerclient "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
