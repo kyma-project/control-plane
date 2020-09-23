@@ -27,9 +27,9 @@ func NewAccountProvider(gardenerPool AccountPool, sharedGardenerPool SharedPool)
 func HyperscalerTypeForPlanID(planID string) (Type, error) {
 
 	switch planID {
-	case broker.GCPPlanID, broker.GcpTrialPlanID:
+	case broker.GCPPlanID:
 		return GCP, nil
-	case broker.AzurePlanID, broker.AzureLitePlanID, broker.AzureTrialPlanID:
+	case broker.AzurePlanID, broker.AzureLitePlanID:
 		return Azure, nil
 	default:
 		return "", errors.Errorf("cannot determine the type of Hyperscaler to use for planID: %s", planID)
