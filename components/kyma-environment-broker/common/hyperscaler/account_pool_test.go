@@ -1,9 +1,10 @@
 package hyperscaler
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	"testing"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_fake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
