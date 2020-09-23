@@ -5,6 +5,8 @@ ARG DOCK_PKG_DIR=/go/src/github.com/kyma-project/control-plane/components/subscr
 WORKDIR $DOCK_PKG_DIR
 COPY . $DOCK_PKG_DIR
 
+COPY ./licenses ${DOCK_PKG_DIR}/licenses
+
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o subscriptioncleanupjob ./cmd/
 
 FROM scratch
