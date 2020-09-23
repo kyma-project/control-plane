@@ -53,6 +53,11 @@ type Orchestrations interface {
 	ListAll() ([]internal.Orchestration, error)
 }
 
+type RuntimeStates interface {
+	Insert(runtimeState internal.RuntimeState) error
+	ListByRuntimeID(runtimeID string) ([]internal.RuntimeState, error)
+}
+
 type UpgradeKyma interface {
 	InsertUpgradeKymaOperation(operation internal.UpgradeKymaOperation) error
 	GetUpgradeKymaOperationByID(operationID string) (*internal.UpgradeKymaOperation, error)

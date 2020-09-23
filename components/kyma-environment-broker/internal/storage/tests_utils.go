@@ -243,6 +243,17 @@ func FixTables() map[string]string {
 			region varchar(12) NOT NULL,
 			created_at TIMESTAMPTZ NOT NULL,
             unique (name, region)
-			)`, postsql.LMSTenantTableName)}
-
+			)`, postsql.LMSTenantTableName),
+		postsql.RuntimeStateTableName: fmt.Sprintf(
+			`CREATE TABLE IF NOT EXISTS %s (
+			id varchar(255) PRIMARY KEY,
+    		runtime_id varchar(255),
+    		operation_id varchar(255),
+    		created_at TIMESTAMPTZ NOT NULL,
+			kyma_config text,
+			cluster_config text,
+			kyma_version text,
+			k8s_version text
+			)`, postsql.RuntimeStateTableName),
+	}
 }
