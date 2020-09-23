@@ -17,6 +17,7 @@ const (
 	InstancesTableName     = "instances"
 	OperationTableName     = "operations"
 	OrchestrationTableName = "orchestrations"
+	RuntimeStateTableName  = "runtime_states"
 	LMSTenantTableName     = "lms_tenants"
 	CreatedAtField         = "created_at"
 )
