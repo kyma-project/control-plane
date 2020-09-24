@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+
 	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/cloudprovider"
 	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/job"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
-	"io/ioutil"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/clientcmd"

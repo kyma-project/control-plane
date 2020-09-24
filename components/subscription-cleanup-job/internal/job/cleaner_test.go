@@ -1,6 +1,8 @@
 package job
 
 import (
+	"testing"
+
 	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/cloudprovider/mocks"
 	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -9,7 +11,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	machineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
-	"testing"
 )
 
 var namespace = "test_gardener"
