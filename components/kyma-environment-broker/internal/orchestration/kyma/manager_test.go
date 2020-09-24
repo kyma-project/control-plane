@@ -80,7 +80,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		id := "id"
 		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
-			State: internal.Pending,
+			State:           internal.Pending,
 			Parameters: internal.OrchestrationParameters{
 				DryRun: true,
 			}})
@@ -133,7 +133,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		givenO := internal.Orchestration{
 			OrchestrationID: id,
 			State:           internal.InProgress,
-			}
+		}
 		err = store.Orchestrations().Insert(givenO)
 		require.NoError(t, err)
 
