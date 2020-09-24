@@ -146,7 +146,7 @@ type RuntimeOperation struct {
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
 type UpgradeKymaOperation struct {
-	RuntimeOperation `json:"-"`
+	RuntimeOperation `json:"runtime_operation"`
 	InputCreator     ProvisionerInputCreator `json:"-"`
 
 	ProvisioningParameters string `json:"provisioning_parameters"`
