@@ -477,8 +477,16 @@ func TestSchemaInitializer(t *testing.T) {
 						Description:            "description",
 						Version:                1,
 					},
-					OrchestrationID: "orchestration-id",
+					DryRun:                 false,
+					ShootName:              "shoot-stage",
+					MaintenanceWindowBegin: time.Now().Truncate(time.Millisecond).Add(time.Hour),
+					MaintenanceWindowEnd:   time.Now().Truncate(time.Millisecond).Add(time.Minute).Add(time.Hour),
+					RuntimeID:              "runtime-id",
+					GlobalAccountID:        "global-account-if",
+					SubAccountID:           "subaccount-id",
+					OrchestrationID:        "orchestration-id",
 				},
+				ProvisioningParameters: "{}",
 			}
 
 			err = InitTestDBTables(t, cfg.ConnectionURL())
