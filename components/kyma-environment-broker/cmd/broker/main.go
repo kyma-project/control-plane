@@ -251,9 +251,8 @@ func main() {
 		},
 		{
 			weight: 1,
-			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
+			step: provisioning.NewLmsActivationStep(db.Operations(), cfg.LMS,
 				provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
-			disabled: cfg.LMS.Disabled,
 		},
 		{
 			weight:   1,
@@ -284,9 +283,8 @@ func main() {
 		},
 		{
 			weight: 4,
-			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
+			step: provisioning.NewLmsActivationStep(db.Operations(), cfg.LMS,
 				provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
-			disabled: cfg.LMS.Disabled,
 		},
 		{
 			weight:   5,
