@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"testing"
-	"time"
 
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"

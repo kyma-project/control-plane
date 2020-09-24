@@ -146,8 +146,8 @@ type RuntimeOperation struct {
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
 type UpgradeKymaOperation struct {
-	RuntimeOperation                     `json:"-"`
-	InputCreator ProvisionerInputCreator `json:"-"`
+	RuntimeOperation `json:"-"`
+	InputCreator     ProvisionerInputCreator `json:"-"`
 
 	ProvisioningParameters string `json:"provisioning_parameters"`
 }
@@ -194,7 +194,6 @@ type Runtime struct {
 	// The corresponding shoot cluster's .spec.maintenance.timeWindow.End value, which is in "HHMMSS+[HHMM TZ]" format, e.g. "040000+0000"
 	MaintenanceWindowEnd time.Time `json:"maintenanceWindowEnd"`
 }
-
 
 func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaConfigInput, clusterConfig *gqlschema.GardenerConfigInput) RuntimeState {
 	var (

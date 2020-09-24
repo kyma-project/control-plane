@@ -98,12 +98,11 @@ func fixUpgradeKymaOperation() internal.UpgradeKymaOperation {
 				State:                  domain.InProgress,
 				Description:            "op description",
 			},
-			SubAccountID:           "",
-			RuntimeID:              "",
-			DryRun:                 false,
+			SubAccountID: "",
+			RuntimeID:    "",
+			DryRun:       false,
 		},
 		ProvisioningParameters: "",
 		InputCreator:           nil,
-
 	}
 }

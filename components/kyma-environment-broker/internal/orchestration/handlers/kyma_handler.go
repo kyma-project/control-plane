@@ -98,9 +98,9 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 		OrchestrationID: uuid.New().String(),
 		State:           internal.Pending,
 		Description:     "started processing of Kyma upgrade",
-		Parameters: params,
-		CreatedAt: now,
-		UpdatedAt: now,
+		Parameters:      params,
+		CreatedAt:       now,
+		UpdatedAt:       now,
 	}
 
 	err = h.db.Insert(o)

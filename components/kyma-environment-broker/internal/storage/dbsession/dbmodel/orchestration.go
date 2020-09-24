@@ -1,9 +1,10 @@
 package dbmodel
 
 import (
-	"time"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"encoding/json"
+	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
 
 type OrchestrationDTO struct {
@@ -23,15 +24,14 @@ func NewOrchestrationDTO(o internal.Orchestration) (OrchestrationDTO, error) {
 
 	dto := OrchestrationDTO{
 		OrchestrationID: o.OrchestrationID,
-		State: o.State,
-		CreatedAt: o.CreatedAt,
-		UpdatedAt: o.UpdatedAt,
-		Description: o.Description,
-		Parameters: string(params),
+		State:           o.State,
+		CreatedAt:       o.CreatedAt,
+		UpdatedAt:       o.UpdatedAt,
+		Description:     o.Description,
+		Parameters:      string(params),
 	}
 	return dto, nil
 }
-
 
 func (o *OrchestrationDTO) ToOrchestration() (internal.Orchestration, error) {
 	var params internal.OrchestrationParameters

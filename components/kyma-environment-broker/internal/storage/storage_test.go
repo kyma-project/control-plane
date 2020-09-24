@@ -495,7 +495,6 @@ func TestSchemaInitializer(t *testing.T) {
 			err = svc.InsertUpgradeKymaOperation(givenOperation2)
 			require.NoError(t, err)
 
-
 			ops, err := svc.GetUpgradeKymaOperationByInstanceID("inst-id")
 			require.NoError(t, err)
 
@@ -623,12 +622,12 @@ func TestSchemaInitializer(t *testing.T) {
 
 		const fixID = "test"
 		givenOrchestration := internal.Orchestration{
-			OrchestrationID:   fixID,
-			State:             "test",
-			Description:       "test",
-			CreatedAt:         now,
-			UpdatedAt:         now,
-			Parameters:        internal.OrchestrationParameters{
+			OrchestrationID: fixID,
+			State:           "test",
+			Description:     "test",
+			CreatedAt:       now,
+			UpdatedAt:       now,
+			Parameters: internal.OrchestrationParameters{
 				DryRun: true,
 			},
 		}

@@ -11,12 +11,12 @@ type Converter struct{}
 func (*Converter) OrchestrationToDTO(o *internal.Orchestration) (*orchestration.StatusResponse, error) {
 
 	return &orchestration.StatusResponse{
-		OrchestrationID:   o.OrchestrationID,
-		State:             o.State,
-		Description:       o.Description,
-		CreatedAt:         o.CreatedAt,
-		UpdatedAt:         o.UpdatedAt,
-		Parameters:        o.Parameters,
+		OrchestrationID: o.OrchestrationID,
+		State:           o.State,
+		Description:     o.Description,
+		CreatedAt:       o.CreatedAt,
+		UpdatedAt:       o.UpdatedAt,
+		Parameters:      o.Parameters,
 	}, nil
 }
 
