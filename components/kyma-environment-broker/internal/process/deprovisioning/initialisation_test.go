@@ -46,6 +46,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
+		instance.ServicePlanID = broker.AzurePlanID
 		err = memoryStorage.Instances().Insert(instance)
 		assert.NoError(t, err)
 
