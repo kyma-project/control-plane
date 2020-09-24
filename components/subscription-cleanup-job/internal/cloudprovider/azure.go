@@ -56,7 +56,7 @@ func (ac azureResourceCleaner) Do() error {
 
 			err = future.WaitForCompletionRef(ctx, ac.azureClient.Client)
 			if err != nil {
-				log.Errorf("failed to remove resource group '%s', : ", *resourceGroup.Name, err.Error())
+				log.Errorf("failed to remove resource group '%s', %s: ", *resourceGroup.Name, err.Error())
 			}
 		}
 	}
