@@ -769,9 +769,13 @@ func assertDeprovisioningOperation(t *testing.T, expected, got internal.Deprovis
 func assertUpgradeKymaOperation(t *testing.T, expected, got internal.UpgradeKymaOperation) {
 	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
 	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
+	assert.True(t, expected.MaintenanceWindowBegin.Equal(got.MaintenanceWindowBegin))
+	assert.True(t, expected.MaintenanceWindowEnd.Equal(got.MaintenanceWindowEnd))
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
+	expected.MaintenanceWindowBegin = got.MaintenanceWindowBegin
+	expected.MaintenanceWindowEnd = got.MaintenanceWindowEnd
 	assert.Equal(t, expected, got)
 }
 
