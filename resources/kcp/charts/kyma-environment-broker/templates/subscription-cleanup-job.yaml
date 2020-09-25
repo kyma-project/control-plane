@@ -1,11 +1,11 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: { .Chart.Name }}-subscription-cleanup-job
+  name: subscription-cleanup-job
 spec:
   jobTemplate:
     metadata:
-      name: { .Chart.Name }}-subscription-cleanup-job
+      name: subscription-cleanup-job
     spec:
       template:
         metadata:
@@ -14,7 +14,7 @@ spec:
         spec:
           containers:
             - image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.subscription_cleanup_job.dir }}subscription-cleanup-job:{{ .Values.global.images.subscription_cleanup_job.version }}"
-              name: { .Chart.Name }}-subscription-cleanup-job
+              name: subscription-cleanup-job
               env:
                 - name: APP_GARDENER_PROJECT
                   value: {{ .Values.gardener.project }}
