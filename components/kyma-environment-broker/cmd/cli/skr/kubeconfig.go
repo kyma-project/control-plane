@@ -26,7 +26,7 @@ func NewKubeconfigCmd() *cobra.Command {
 The runtime can be specified by either of the following:
   - Global Account / Subaccount pair with the --account and --subaccount options
   - Global Account / Runtime ID pair with the --account and --runtime-id options
-	- Shoot cluster name with the --shoot option
+  - Shoot cluster name with the --shoot option
 
 By default the kubeconfig is saved to the current directory. The output file name can be specified using the --output option.`,
 		Example: `  skr kubeconfig -g GAID -s SAID -o /my/path/skr.config  Download kubeconfig using Global Account ID and Subaccount ID
