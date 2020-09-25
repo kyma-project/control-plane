@@ -38,7 +38,14 @@ func (s *LmsActivationStep) Run(operation internal.ProvisioningOperation, log lo
 			log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
 			return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 		}
-		if strings.EqualFold(s.cfg.EnabledForGlobalAccounts, "all") || strings.Contains(s.cfg.EnabledForGlobalAccounts, pp.ErsContext.GlobalAccountID) {
+		enabledForGA := false
+		ids := strings.Split(s.cfg.EnabledForGlobalAccounts, ",")
+		for i := range ids {
+			if strings.EqualFold(strings.TrimSpace(ids[i]), pp.ErsContext.GlobalAccountID) {
+				enabledForGA = true
+			}
+		}
+		if strings.EqualFold(s.cfg.EnabledForGlobalAccounts, "all") || enabledForGA {
 			if broker.IsTrialPlan(pp.PlanID) {
 				log.Infof("Skipping step %s", s.Name())
 				return operation, 0, nil
