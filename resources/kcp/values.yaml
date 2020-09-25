@@ -66,6 +66,8 @@ global:
         name: kcp-provisioner-credentials
 
   compass:
+    registration:
+      enabled: true
     tls:
       host: compass-gateway
       secure:
