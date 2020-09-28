@@ -121,7 +121,7 @@ lms:
   clusterType: "single-node"
   environment: "dev"
   samlTenant: "TBD"
-  disabled: false
+  enabledForGlobalAccounts: "all" # possible values: "all", "none", "{global-account-ID-1}, {global-account-ID-2}, .."
   # if set - always use this region, if empty - region is mapped from the OSB API request
   region: ""
   # if false - failing LMS step does not break provisioning
