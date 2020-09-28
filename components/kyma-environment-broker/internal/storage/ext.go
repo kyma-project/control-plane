@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
@@ -18,7 +18,7 @@ type Instances interface {
 	Delete(instanceID string) error
 	GetInstanceStats() (internal.InstanceStats, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
-	List(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error)
+	List(limit int, page int) ([]internal.Instance, *pagination.Page, int, error)
 }
 
 type Operations interface {

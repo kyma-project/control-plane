@@ -291,29 +291,76 @@ func TestSchemaInitializer(t *testing.T) {
 				require.NoError(t, err)
 			}
 			// when
-			out, page, count, err := psqlStorage.Instances().List(2, "")
+			out, _, count, err := psqlStorage.Instances().List(2, 1)
 
 			// then
 			require.NoError(t, err)
 			require.Len(t, out, 2)
 			require.Equal(t, 4, count)
-			require.True(t, page.HasNextPage)
+			//require.True(t, page.HasNextPage)
 
 			assert.Equal(t, fixInstances[0].InstanceID, out[0].InstanceID)
 			assert.Equal(t, fixInstances[1].InstanceID, out[1].InstanceID)
 
 			// when
-			out, page, count, err = psqlStorage.Instances().List(2, page.EndCursor)
+			out, _, count, err = psqlStorage.Instances().List(2, 2)
 
 			// then
 			require.NoError(t, err)
 			require.Len(t, out, 2)
 			require.Equal(t, 4, count)
-			require.False(t, page.HasNextPage)
+			//require.False(t, page.HasNextPage)
 
 			assert.Equal(t, fixInstances[2].InstanceID, out[0].InstanceID)
 			assert.Equal(t, fixInstances[3].InstanceID, out[1].InstanceID)
 		})
+	})
+
+	t.Run("should  return page with one", func(t *testing.T) {
+		// given
+		containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+		require.NoError(t, err)
+		defer containerCleanupFunc()
+
+		err = InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+
+		psqlStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+		require.NoError(t, err)
+		require.NotNil(t, psqlStorage)
+
+		// populate database with samples
+		fixInstances := []internal.Instance{
+			*fixInstance(instanceData{val: "1"}),
+			*fixInstance(instanceData{val: "2"}),
+			*fixInstance(instanceData{val: "3"}),
+		}
+		for _, i := range fixInstances {
+			err = psqlStorage.Instances().Insert(i)
+			require.NoError(t, err)
+		}
+		// when
+		out, _, count, err := psqlStorage.Instances().List(2, 1)
+
+		// then
+		require.NoError(t, err)
+		require.Len(t, out, 2)
+		require.Equal(t, 3, count)
+		//require.True(t, page.HasNextPage)
+
+		assert.Equal(t, fixInstances[0].InstanceID, out[0].InstanceID)
+		assert.Equal(t, fixInstances[1].InstanceID, out[1].InstanceID)
+
+		// when
+		out, _, count, err = psqlStorage.Instances().List(2, 2)
+
+		// then
+		require.NoError(t, err)
+		require.Len(t, out, 1)
+		require.Equal(t, 3, count)
+		//require.False(t, page.HasNextPage)
+
+		assert.Equal(t, fixInstances[2].InstanceID, out[0].InstanceID)
 	})
 
 	t.Run("Operations", func(t *testing.T) {

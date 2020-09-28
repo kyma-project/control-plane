@@ -3,7 +3,8 @@ package dbsession
 import (
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -314,17 +315,12 @@ func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID stri
 	return res.Total, err
 }
 
-func (r readSession) ListInstances(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error) {
+func (r readSession) ListInstances(limit int, page int) ([]internal.Instance, *pagination.Page, int, error) {
 	var instances []internal.Instance
 
-	offset, err := pagination.DecodeOffsetCursor(cursor)
+	order, err := pagination.ConvertPageLimitAndOrderedColumnToSQL(limit, page, postsql.CreatedAtField)
 	if err != nil {
-		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while decoding offset cursor")
-	}
-
-	order, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(limit, offset, postsql.CreatedAtField)
-	if err != nil {
-		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while converting offset and limit to SQL statement")
+		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while converting page and limit to SQL statement")
 	}
 
 	stmtWithPagination := fmt.Sprintf("SELECT * FROM %s %s", postsql.InstancesTableName, order)
@@ -342,16 +338,14 @@ func (r readSession) ListInstances(limit int, cursor string) ([]internal.Instanc
 	}
 
 	hasNextPage := false
-	endCursor := ""
-	if totalCount > offset+len(instances) {
+
+	if totalCount >= page*limit+len(instances) {
 		hasNextPage = true
-		endCursor = pagination.EncodeNextOffsetCursor(offset, limit)
 	}
 
 	return instances,
 		&pagination.Page{
-			StartCursor: cursor,
-			EndCursor:   endCursor,
+			Count:       len(instances),
 			HasNextPage: hasNextPage,
 		},
 		totalCount,

@@ -81,7 +81,7 @@ func TestRuntimeHandler(t *testing.T) {
 		assert.True(t, out.PageInfo.HasNextPage)
 
 		// given
-		urlPath := fmt.Sprintf("/runtimes?cursor=%s", out.PageInfo.EndCursor)
+		urlPath := fmt.Sprintf("/runtimes?page=2&limit=1")
 		req, err = http.NewRequest(http.MethodGet, urlPath, nil)
 		require.NoError(t, err)
 		rr = httptest.NewRecorder()
@@ -128,13 +128,13 @@ func TestRuntimeHandler(t *testing.T) {
 
 		require.Equal(t, http.StatusBadRequest, rr.Code)
 
-		req, err = http.NewRequest("GET", "/runtimes?cursor=abc", nil)
+		req, err = http.NewRequest("GET", "/runtimes?page=abc", nil)
 		require.NoError(t, err)
 
 		rr = httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 
-		require.Equal(t, http.StatusInternalServerError, rr.Code)
+		require.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
 }

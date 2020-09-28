@@ -3,7 +3,7 @@ package runtime
 import (
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 )
 
 type RuntimeDTO struct {

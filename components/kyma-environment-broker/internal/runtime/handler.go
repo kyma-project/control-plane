@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	limitParam  = "limit"
-	cursorParam = "cursor"
+	limitParam = "limit"
+	pageParam  = "page"
 )
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
@@ -47,13 +47,13 @@ func (h *Handler) AttachRoutes(router *mux.Router) {
 
 func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 	var toReturn []RuntimeDTO
-	limit, cursor, err := h.getParams(req)
+	limit, page, err := h.getParams(req)
 	if err != nil {
 		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
 		return
 	}
 
-	instances, pageInfo, totalCount, err := h.instancesDb.List(limit, cursor)
+	instances, pageInfo, totalCount, err := h.instancesDb.List(limit, page)
 	if err != nil {
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching instances"))
 		return
@@ -75,12 +75,12 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 		toReturn = append(toReturn, dto)
 	}
 
-	page := RuntimesPage{
+	runtimePage := RuntimesPage{
 		Data:       toReturn,
 		PageInfo:   pageInfo,
 		TotalCount: totalCount,
 	}
-	httputil.WriteResponse(w, http.StatusOK, page)
+	httputil.WriteResponse(w, http.StatusOK, runtimePage)
 }
 
 func (h *Handler) getOperationsForInstance(instance internal.Instance) (*internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation, error) {
@@ -99,15 +99,15 @@ func (h *Handler) getOperationsForInstance(instance internal.Instance) (*interna
 	return pOpr, dOpr, ukOpr, nil
 }
 
-func (h *Handler) getParams(req *http.Request) (int, string, error) {
+func (h *Handler) getParams(req *http.Request) (int, int, error) {
 	var limit int
-	var cursor string
+	var page int
 	var err error
 
 	params := req.URL.Query()
 	limitArr, ok := params[limitParam]
 	if len(limitArr) > 1 {
-		return 0, "", errors.New("limit has to be one parameter")
+		return 0, 0, errors.New("limit has to be one parameter")
 	}
 
 	if !ok {
@@ -115,23 +115,26 @@ func (h *Handler) getParams(req *http.Request) (int, string, error) {
 	} else {
 		limit, err = strconv.Atoi(limitArr[0])
 		if err != nil {
-			return 0, "", errors.New("limit has to be an integer")
+			return 0, 0, errors.New("limit has to be an integer")
 		}
 	}
 
 	if limit > h.defaultMaxPage {
-		return 0, "", errors.New(fmt.Sprintf("limit is bigger than maxPage(%d)", h.defaultMaxPage))
+		return 0, 0, errors.New(fmt.Sprintf("limit is bigger than maxPage(%d)", h.defaultMaxPage))
 	}
 
-	cursorArr, ok := params[cursorParam]
-	if len(cursorArr) > 1 {
-		return 0, "", errors.New("cursor has to be one parameter")
+	pageArr, ok := params[pageParam]
+	if len(pageArr) > 1 {
+		return 0, 0, errors.New("page has to be one parameter")
 	}
 	if !ok {
-		cursor = ""
+		page = 1
 	} else {
-		cursor = cursorArr[0]
+		page, err = strconv.Atoi(pageArr[0])
+		if err != nil {
+			return 0, 0, errors.New("page has to be an integer")
+		}
 	}
 
-	return limit, cursor, nil
+	return limit, page, nil
 }
