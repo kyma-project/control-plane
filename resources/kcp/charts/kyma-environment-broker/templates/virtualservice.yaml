@@ -61,10 +61,10 @@ spec:
     - uri:
         regex: /orchestrations.*
     route:
-      - destination:
-          host: {{ .Values.global.oathkeeper.host }}
-          port:
-            number: {{ .Values.global.oathkeeper.port }}
+    - destination:
+        host: {{ .Values.global.oathkeeper.host }}
+        port:
+          number: {{ .Values.global.oathkeeper.port }}
   - corsPolicy:
       allowHeaders:
         - Authorization
