@@ -2,7 +2,6 @@ package postsql
 
 import (
 	"encoding/json"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -17,10 +16,10 @@ import (
 type runtimeState struct {
 	dbsession.Factory
 
-	cipher storage.Cipher
+	cipher Cipher
 }
 
-func NewRuntimeStates(sess dbsession.Factory, cipher storage.Cipher) *runtimeState {
+func NewRuntimeStates(sess dbsession.Factory, cipher Cipher) *runtimeState {
 	return &runtimeState{
 		Factory: sess,
 		cipher:  cipher,

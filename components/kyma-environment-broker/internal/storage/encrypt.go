@@ -11,12 +11,7 @@ import (
 	"strings"
 )
 
-type Cipher interface {
-	Encrypt(text string) (string, error)
-	Decrypt(text string) (string, error)
-}
-
-func NewEncrypter(secretKey string) Cipher {
+func NewEncrypter(secretKey string) *Encrypter {
 	return &Encrypter{key: secretKey}
 }
 
