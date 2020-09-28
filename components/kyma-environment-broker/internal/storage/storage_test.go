@@ -690,8 +690,7 @@ func TestSchemaInitializer(t *testing.T) {
 		runtimeStates, err := svc.ListByRuntimeID(fixID)
 		require.NoError(t, err)
 		assert.Len(t, runtimeStates, 1)
-		// TODO: uncomment after implement encryption
-		//assert.Equal(t, fixID, runtimeStates[0].KymaConfig.Version)
+		assert.Equal(t, fixID, runtimeStates[0].KymaConfig.Version)
 		assert.Equal(t, fixID, runtimeStates[0].ClusterConfig.KubernetesVersion)
 	})
 

@@ -77,9 +77,6 @@ func runtimeStateToDB(op internal.RuntimeState) (dbmodel.RuntimeStateDTO, error)
 		return dbmodel.RuntimeStateDTO{}, errors.Wrap(err, "while encoding cluster config")
 	}
 
-	// TODO: remove after enabling encryption
-	kymaCfg = nil
-
 	return dbmodel.RuntimeStateDTO{
 		ID:            op.ID,
 		CreatedAt:     op.CreatedAt,
