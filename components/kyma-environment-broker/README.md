@@ -59,3 +59,4 @@ KEB binary allows you to override some configuration parameters. You can specify
 | **APP_LMS_ENABLED_FOR_GLOBAL_ACCOUNTS** | An LMS instance gets provisioned for the specified Global Accounts. Possible values are "all", "none", "{global-account-ID-1}, {global-account-ID-2}, .." | `all` |
 | **APP_LMS_MANDATORY** | Defines if failing LMS activation will break provisioning. | `true` |
 | **APP_LMS_REGION** | Defines the region for the LMS system. if set, always this region is used. If empty, the region is mapped from the OSB API request. | None |
+| **APP_LMS_TOKEN** | Specifies the token for the LMS system. | None |

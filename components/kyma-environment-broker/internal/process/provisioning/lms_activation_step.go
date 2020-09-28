@@ -47,13 +47,13 @@ func (s *LmsActivationStep) Run(operation internal.ProvisioningOperation, log lo
 		}
 		if strings.EqualFold(s.cfg.EnabledForGlobalAccounts, "all") || enabledForGA {
 			if broker.IsTrialPlan(pp.PlanID) {
-				log.Infof("Skipping step %s", s.Name())
+				log.Infof("Skipping step %s because the step is set to skip trial plans", s.Name())
 				return operation, 0, nil
 			}
 
 			return s.step.Run(operation, log)
 		}
 	}
-	log.Infof("Skipping step %s", s.Name())
+	log.Infof("Skipping step %s because the step is set to skip all global accounts", s.Name())
 	return operation, 0, nil
 }
