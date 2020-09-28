@@ -27,7 +27,7 @@ func NewRuntimeStates(sess dbsession.Factory, cipher Cipher) *runtimeState {
 }
 
 func (s *runtimeState) Insert(runtimeState internal.RuntimeState) error {
-	state, err := runtimeStateToDB(runtimeState)
+	state, err := s.runtimeStateToDB(runtimeState)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (s *runtimeState) Insert(runtimeState internal.RuntimeState) error {
 	return wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		err := sess.InsertRuntimeState(state)
 		if err != nil {
-			log.Warnf("while saving orchestration ID %s: %v", runtimeState.ID, err)
+			log.Warnf("while saving runtime state ID %s: %v", runtimeState.ID, err)
 			return false, nil
 		}
 		return true, nil
@@ -60,14 +60,14 @@ func (s *runtimeState) ListByRuntimeID(runtimeID string) ([]internal.RuntimeStat
 	if err != nil {
 		return nil, lastErr
 	}
-	result, err := toRuntimeStates(states)
+	result, err := s.toRuntimeStates(states)
 	if err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func runtimeStateToDB(op internal.RuntimeState) (dbmodel.RuntimeStateDTO, error) {
+func (s *runtimeState) runtimeStateToDB(op internal.RuntimeState) (dbmodel.RuntimeStateDTO, error) {
 	kymaCfg, err := json.Marshal(op.KymaConfig)
 	if err != nil {
 		return dbmodel.RuntimeStateDTO{}, errors.Wrap(err, "while encoding kyma config")
@@ -77,25 +77,34 @@ func runtimeStateToDB(op internal.RuntimeState) (dbmodel.RuntimeStateDTO, error)
 		return dbmodel.RuntimeStateDTO{}, errors.Wrap(err, "while encoding cluster config")
 	}
 
+	encKymaCfg, err := s.cipher.Encrypt(kymaCfg)
+	if err != nil {
+		return dbmodel.RuntimeStateDTO{}, errors.Wrap(err, "while encrypting kyma config")
+	}
+
 	return dbmodel.RuntimeStateDTO{
 		ID:            op.ID,
 		CreatedAt:     op.CreatedAt,
 		RuntimeID:     op.RuntimeID,
 		OperationID:   op.OperationID,
-		KymaConfig:    string(kymaCfg),
+		KymaConfig:    string(encKymaCfg),
 		ClusterConfig: string(clusterCfg),
 		KymaVersion:   op.KymaConfig.Version,
 		K8SVersion:    op.ClusterConfig.KubernetesVersion,
 	}, nil
 }
 
-func toRuntimeState(dto *dbmodel.RuntimeStateDTO) (internal.RuntimeState, error) {
+func (s *runtimeState) toRuntimeState(dto *dbmodel.RuntimeStateDTO) (internal.RuntimeState, error) {
 	var (
 		kymaCfg    gqlschema.KymaConfigInput
 		clusterCfg gqlschema.GardenerConfigInput
 	)
 	if dto.KymaConfig != "" {
-		if err := json.Unmarshal([]byte(dto.KymaConfig), &kymaCfg); err != nil {
+		cfg, err := s.cipher.Decrypt([]byte(dto.KymaConfig))
+		if err != nil {
+			return internal.RuntimeState{}, errors.Wrap(err, "while decrypting kyma config")
+		}
+		if err := json.Unmarshal(cfg, &kymaCfg); err != nil {
 			return internal.RuntimeState{}, errors.Wrap(err, "while unmarshall kyma config")
 		}
 	}
@@ -114,11 +123,11 @@ func toRuntimeState(dto *dbmodel.RuntimeStateDTO) (internal.RuntimeState, error)
 	}, nil
 }
 
-func toRuntimeStates(states []dbmodel.RuntimeStateDTO) ([]internal.RuntimeState, error) {
+func (s *runtimeState) toRuntimeStates(states []dbmodel.RuntimeStateDTO) ([]internal.RuntimeState, error) {
 	result := make([]internal.RuntimeState, 0)
 
 	for _, state := range states {
-		r, err := toRuntimeState(&state)
+		r, err := s.toRuntimeState(&state)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting runtime states")
 		}

@@ -36,12 +36,13 @@ func makeConnectionString(hostname string, port string) Config {
 	}
 
 	cfg := Config{
-		Host:     host,
-		User:     DbUser,
-		Password: DbPass,
-		Port:     port,
-		Name:     DbName,
-		SSLMode:  "disable",
+		Host:      host,
+		User:      DbUser,
+		Password:  DbPass,
+		Port:      port,
+		Name:      DbName,
+		SSLMode:   "disable",
+		SecretKey: "$C&F)H@McQfTjWnZr4u7x!A%D*G-KaNd",
 
 		MaxOpenConns:    2,
 		MaxIdleConns:    1,

@@ -6,31 +6,52 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 func TestNewEncrypter(t *testing.T) {
 
-	secretKey := "sdas@mlkasmfL_("
-
-	e := NewEncrypter(secretKey)
-
-	dto := struct {
+	type testDto struct {
 		Data string `json:"data"`
-	}{
-		Data: secretKey,
 	}
 
-	j, err := json.Marshal(&dto)
-	require.NoError(t, err)
+	t.Run("success", func(t *testing.T) {
+		secretKey := rand.String(32)
 
-	enc, err := e.Encrypt(j)
-	require.NoError(t, err)
-	assert.NotEqual(t, j, enc)
+		e := NewEncrypter(secretKey)
+		dto := testDto{
+			Data: secretKey,
+		}
 
-	enc, err = e.Decrypt(enc)
-	require.NoError(t, err)
-	assert.Equal(t, j, enc)
+		j, err := json.Marshal(&dto)
+		require.NoError(t, err)
 
-	err = json.Unmarshal(enc, &dto)
-	require.NoError(t, err)
+		enc, err := e.Encrypt(j)
+		require.NoError(t, err)
+		assert.NotEqual(t, j, enc)
+
+		enc, err = e.Decrypt(enc)
+		require.NoError(t, err)
+		assert.Equal(t, j, enc)
+
+		err = json.Unmarshal(enc, &dto)
+		require.NoError(t, err)
+	})
+
+	t.Run("wrong key", func(t *testing.T) {
+		secretKey := ""
+
+		e := NewEncrypter(secretKey)
+
+		dto := testDto{
+			Data: secretKey,
+		}
+
+		j, err := json.Marshal(&dto)
+		require.NoError(t, err)
+
+		_, err = e.Encrypt(j)
+		require.Error(t, err)
+	})
+
 }
