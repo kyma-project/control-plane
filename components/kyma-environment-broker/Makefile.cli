@@ -6,6 +6,10 @@
 ifndef CLI_VERSION
 	CLI_VERSION = ${shell git describe --tags --always}
 endif
+ifndef ARTIFACTS
+	ARTIFACTS = .
+endif
+
 CLI_FLAGS = -ldflags '-s -w -X github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/skr.Version=$(CLI_VERSION)'
 
 .PHONY: release
@@ -22,12 +26,12 @@ build: build-windows build-linux build-darwin
 
 .PHONY: build-windows
 build-windows:
-	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o ./skr.exe $(CLI_FLAGS) ./cmd/cli
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o $(ARTIFACTS)/skr.exe $(CLI_FLAGS) ./cmd/cli
 
 .PHONY: build-linux
 build-linux:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ./skr-linux $(CLI_FLAGS) ./cmd/cli
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(ARTIFACTS)/skr-linux $(CLI_FLAGS) ./cmd/cli
 
 .PHONY: build-darwin
 build-darwin:
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o ./skr-darwin $(CLI_FLAGS) ./cmd/cli
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o $(ARTIFACTS)/skr-darwin $(CLI_FLAGS) ./cmd/cli
