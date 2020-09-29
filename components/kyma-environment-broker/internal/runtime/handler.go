@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	limitParam = "limit"
-	pageParam  = "page"
+	pageSizeParam = "page_size"
+	pageParam     = "page"
 )
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
@@ -47,13 +47,13 @@ func (h *Handler) AttachRoutes(router *mux.Router) {
 
 func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 	toReturn := make([]RuntimeDTO, 0)
-	limit, page, err := h.getParams(req)
+	pageSize, page, err := h.getParams(req)
 	if err != nil {
 		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
 		return
 	}
 
-	instances, count, totalCount, err := h.instancesDb.List(limit, page)
+	instances, count, totalCount, err := h.instancesDb.List(pageSize, page)
 	if err != nil {
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching instances"))
 		return
@@ -105,7 +105,7 @@ func (h *Handler) getParams(req *http.Request) (int, int, error) {
 	var err error
 
 	params := req.URL.Query()
-	limitArr, ok := params[limitParam]
+	limitArr, ok := params[pageSizeParam]
 	if len(limitArr) > 1 {
 		return 0, 0, errors.New("limit has to be one parameter")
 	}

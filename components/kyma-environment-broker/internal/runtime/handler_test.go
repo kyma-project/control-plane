@@ -57,7 +57,7 @@ func TestRuntimeHandler(t *testing.T) {
 		converter.On("InstancesAndOperationsToDTO", testInstance2, mock.Anything, mock.Anything, mock.Anything).Return(testDTO2, nil)
 		runtimeHandler := runtime.NewHandler(instances, operations, 2, &converter)
 
-		req, err := http.NewRequest("GET", "/runtimes?limit=1", nil)
+		req, err := http.NewRequest("GET", "/runtimes?page_size=1", nil)
 		require.NoError(t, err)
 
 		rr := httptest.NewRecorder()
@@ -80,7 +80,7 @@ func TestRuntimeHandler(t *testing.T) {
 		assert.Equal(t, testID1, out.Data[0].InstanceID)
 
 		// given
-		urlPath := fmt.Sprintf("/runtimes?page=2&limit=1")
+		urlPath := fmt.Sprintf("/runtimes?page=2&page_size=1")
 		req, err = http.NewRequest(http.MethodGet, urlPath, nil)
 		require.NoError(t, err)
 		rr = httptest.NewRecorder()
@@ -107,7 +107,7 @@ func TestRuntimeHandler(t *testing.T) {
 
 		runtimeHandler := runtime.NewHandler(instances, operations, 2, runtime.NewConverter("region"))
 
-		req, err := http.NewRequest("GET", "/runtimes?limit=a", nil)
+		req, err := http.NewRequest("GET", "/runtimes?page_size=a", nil)
 		require.NoError(t, err)
 
 		rr := httptest.NewRecorder()
@@ -118,7 +118,7 @@ func TestRuntimeHandler(t *testing.T) {
 
 		require.Equal(t, http.StatusBadRequest, rr.Code)
 
-		req, err = http.NewRequest("GET", "/runtimes?limit=1,2,3", nil)
+		req, err = http.NewRequest("GET", "/runtimes?page_size=1,2,3", nil)
 		require.NoError(t, err)
 
 		rr = httptest.NewRecorder()
@@ -126,7 +126,7 @@ func TestRuntimeHandler(t *testing.T) {
 
 		require.Equal(t, http.StatusBadRequest, rr.Code)
 
-		req, err = http.NewRequest("GET", "/runtimes?page=abc", nil)
+		req, err = http.NewRequest("GET", "/runtimes?page_size=abc", nil)
 		require.NoError(t, err)
 
 		rr = httptest.NewRecorder()

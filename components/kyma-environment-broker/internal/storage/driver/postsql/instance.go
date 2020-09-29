@@ -174,6 +174,6 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 	return result, nil
 }
 
-func (s *Instance) List(limit int, page int) ([]internal.Instance, int, int, error) {
-	return s.NewReadSession().ListInstances(limit, page)
+func (s *Instance) List(pageSize int, page int) ([]internal.Instance, int, int, error) {
+	return s.NewReadSession().ListInstances(pageSize, page)
 }

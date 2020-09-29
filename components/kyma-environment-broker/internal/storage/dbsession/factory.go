@@ -33,11 +33,9 @@ type ReadSession interface {
 	ListOrchestrationsByState(state string) ([]internal.Orchestration, dberr.Error)
 	ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.RuntimeStateDTO, dberr.Error)
 	ListOrchestrations() ([]internal.Orchestration, dberr.Error)
-	ListInstances(limit int, page int) ([]internal.Instance, int, int, error)
+	ListInstances(pageSize int, page int) ([]internal.Instance, int, int, error)
 	GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error)
 	ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.RuntimeStateDTO, dberr.Error)
-}
-
 }
 
 //go:generate mockery -name=WriteSession

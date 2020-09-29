@@ -158,7 +158,7 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 	return internal.InstanceStats{}, fmt.Errorf("not implemented")
 }
 
-func (s *Instance) List(limit int, page int) ([]internal.Instance, int, int, error) {
+func (s *Instance) List(pageSize int, page int) ([]internal.Instance, int, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var toReturn []internal.Instance
@@ -166,12 +166,12 @@ func (s *Instance) List(limit int, page int) ([]internal.Instance, int, int, err
 	if page < 2 {
 		offset = 0
 	} else {
-		offset = page*limit - 1
+		offset = page*pageSize - 1
 	}
 
 	sortedInstances := getSortedByCreatedAt(s.instances)
 
-	for i := offset; i < offset+limit && i < len(sortedInstances); i++ {
+	for i := offset; i < offset+pageSize && i < len(sortedInstances); i++ {
 		toReturn = append(toReturn, s.instances[sortedInstances[i].InstanceID])
 	}
 
