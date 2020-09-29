@@ -2,7 +2,6 @@ package dbsession
 
 import (
 	dbr "github.com/gocraft/dbr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
@@ -30,12 +29,15 @@ type ReadSession interface {
 	GetOperationStats() ([]dbmodel.OperationStatEntry, error)
 	GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
-	GetOrchestrationByID(oID string) (dbmodel.OrchestrationDTO, dberr.Error)
-	ListOrchestrationsByState(state string) ([]dbmodel.OrchestrationDTO, error)
-	ListOrchestrations() ([]dbmodel.OrchestrationDTO, dberr.Error)
-	ListInstances(limit int, page int) ([]internal.Instance, *pagination.Page, int, error)
+	GetOrchestrationByID(oID string) (internal.Orchestration, dberr.Error)
+	ListOrchestrationsByState(state string) ([]internal.Orchestration, dberr.Error)
+	ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.RuntimeStateDTO, dberr.Error)
+	ListOrchestrations() ([]internal.Orchestration, dberr.Error)
+	ListInstances(limit int, page int) ([]internal.Instance, int, int, error)
 	GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error)
 	ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.RuntimeStateDTO, dberr.Error)
+}
+
 }
 
 //go:generate mockery -name=WriteSession

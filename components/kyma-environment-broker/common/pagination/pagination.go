@@ -6,11 +6,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Page struct {
-	Count       int
-	HasNextPage bool
-}
-
 func ConvertPageLimitAndOrderedColumnToSQL(pageSize, page int, orderedColumn string) (string, error) {
 	if page < 1 {
 		return "", errors.New("page cannot be smaller than 0")

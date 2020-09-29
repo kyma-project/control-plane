@@ -5,8 +5,6 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
-
 	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -160,7 +158,7 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 	return internal.InstanceStats{}, fmt.Errorf("not implemented")
 }
 
-func (s *Instance) List(limit int, page int) ([]internal.Instance, *pagination.Page, int, error) {
+func (s *Instance) List(limit int, page int) ([]internal.Instance, int, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var toReturn []internal.Instance
@@ -168,7 +166,7 @@ func (s *Instance) List(limit int, page int) ([]internal.Instance, *pagination.P
 	if page < 2 {
 		offset = 0
 	} else {
-		offset = page*limit - 1 //that's because arrays start at 0
+		offset = page*limit - 1
 	}
 
 	sortedInstances := getSortedByCreatedAt(s.instances)
@@ -177,16 +175,8 @@ func (s *Instance) List(limit int, page int) ([]internal.Instance, *pagination.P
 		toReturn = append(toReturn, s.instances[sortedInstances[i].InstanceID])
 	}
 
-	hasNextPage := false
-	if len(s.instances) > offset+len(toReturn) {
-		hasNextPage = true
-	}
-
 	return toReturn,
-		&pagination.Page{
-			Count:       len(toReturn),
-			HasNextPage: hasNextPage,
-		},
+		len(toReturn),
 		len(s.instances),
 		nil
 }

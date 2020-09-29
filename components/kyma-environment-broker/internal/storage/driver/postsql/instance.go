@@ -1,7 +1,6 @@
 package postsql
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession"
@@ -175,6 +174,6 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 	return result, nil
 }
 
-func (s *Instance) List(limit int, page int) ([]internal.Instance, *pagination.Page, int, error) {
+func (s *Instance) List(limit int, page int) ([]internal.Instance, int, int, error) {
 	return s.NewReadSession().ListInstances(limit, page)
 }

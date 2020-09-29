@@ -46,14 +46,14 @@ func (h *Handler) AttachRoutes(router *mux.Router) {
 }
 
 func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
-	var toReturn []RuntimeDTO
+	toReturn := make([]RuntimeDTO, 0)
 	limit, page, err := h.getParams(req)
 	if err != nil {
 		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
 		return
 	}
 
-	instances, pageInfo, totalCount, err := h.instancesDb.List(limit, page)
+	instances, count, totalCount, err := h.instancesDb.List(limit, page)
 	if err != nil {
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching instances"))
 		return
@@ -77,7 +77,7 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 
 	runtimePage := RuntimesPage{
 		Data:       toReturn,
-		PageInfo:   pageInfo,
+		Count:      count,
 		TotalCount: totalCount,
 	}
 	httputil.WriteResponse(w, http.StatusOK, runtimePage)

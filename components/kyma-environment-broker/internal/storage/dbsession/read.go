@@ -315,12 +315,12 @@ func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID stri
 	return res.Total, err
 }
 
-func (r readSession) ListInstances(limit int, page int) ([]internal.Instance, *pagination.Page, int, error) {
+func (r readSession) ListInstances(pageSize int, page int) ([]internal.Instance, int, int, error) {
 	var instances []internal.Instance
 
-	order, err := pagination.ConvertPageLimitAndOrderedColumnToSQL(limit, page, postsql.CreatedAtField)
+	order, err := pagination.ConvertPageLimitAndOrderedColumnToSQL(pageSize, page, postsql.CreatedAtField)
 	if err != nil {
-		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while converting page and limit to SQL statement")
+		return nil, -1, -1, errors.Wrap(err, "while converting page and pageSize to SQL statement")
 	}
 
 	stmtWithPagination := fmt.Sprintf("SELECT * FROM %s %s", postsql.InstancesTableName, order)
@@ -329,25 +329,16 @@ func (r readSession) ListInstances(limit int, page int) ([]internal.Instance, *p
 
 	_, err = execStmt.Load(&instances)
 	if err != nil {
-		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while fetching instances")
+		return nil, -1, -1, errors.Wrap(err, "while fetching instances")
 	}
 
 	totalCount, err := r.getInstanceCount()
 	if err != nil {
-		return nil, &pagination.Page{}, -1, err
-	}
-
-	hasNextPage := false
-
-	if totalCount >= page*limit+len(instances) {
-		hasNextPage = true
+		return nil, -1, -1, err
 	}
 
 	return instances,
-		&pagination.Page{
-			Count:       len(instances),
-			HasNextPage: hasNextPage,
-		},
+		len(instances),
 		totalCount,
 		nil
 }

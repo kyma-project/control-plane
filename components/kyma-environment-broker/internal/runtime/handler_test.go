@@ -76,9 +76,8 @@ func TestRuntimeHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, 2, out.TotalCount)
-		assert.Equal(t, 1, len(out.Data))
+		assert.Equal(t, 1, out.Count)
 		assert.Equal(t, testID1, out.Data[0].InstanceID)
-		assert.True(t, out.PageInfo.HasNextPage)
 
 		// given
 		urlPath := fmt.Sprintf("/runtimes?page=2&limit=1")
@@ -96,9 +95,8 @@ func TestRuntimeHandler(t *testing.T) {
 		require.NoError(t, err)
 		logrus.Print(out.Data)
 		assert.Equal(t, 2, out.TotalCount)
-		assert.Equal(t, 1, len(out.Data))
+		assert.Equal(t, 1, out.Count)
 		assert.Equal(t, testID2, out.Data[0].InstanceID)
-		assert.False(t, out.PageInfo.HasNextPage)
 
 	})
 
