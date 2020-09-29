@@ -125,10 +125,10 @@ spec:
                   name: "{{ .Values.edp.secretName }}"
                   key: secret
             - name: APP_DATABASE_SECRET_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: "{{ .Values.global.database.managedGCP.encryptionSecretName }}"
-                    key: secretKey
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.global.database.managedGCP.encryptionSecretName }}"
+                  key: secretKey
             - name: APP_DATABASE_USER
               valueFrom:
                 secretKeyRef:

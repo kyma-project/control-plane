@@ -5,8 +5,9 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	"io"
+
+	"github.com/pkg/errors"
 )
 
 func NewEncrypter(secretKey string) *Encrypter {
@@ -23,17 +24,22 @@ func (e *Encrypter) Encrypt(obj []byte) ([]byte, error) {
 		return nil, err
 	}
 	b := base64.StdEncoding.EncodeToString(obj)
-	ciphertext := make([]byte, aes.BlockSize+len(b))
-	iv := ciphertext[:aes.BlockSize]
+	bytes := make([]byte, aes.BlockSize+len(b))
+	iv := bytes[:aes.BlockSize]
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
 		return nil, err
 	}
 	cfb := cipher.NewCFBEncrypter(block, iv)
-	cfb.XORKeyStream(ciphertext[aes.BlockSize:], []byte(b))
-	return ciphertext, nil
+	cfb.XORKeyStream(bytes[aes.BlockSize:], []byte(b))
+
+	return []byte(base64.StdEncoding.EncodeToString(bytes)), nil
 }
 
 func (e *Encrypter) Decrypt(obj []byte) ([]byte, error) {
+	obj, err := base64.StdEncoding.DecodeString(string(obj))
+	if err != nil {
+		return nil, errors.Wrap(err, "while decoding object")
+	}
 	block, err := aes.NewCipher(e.key)
 	if err != nil {
 		return nil, err
@@ -47,7 +53,7 @@ func (e *Encrypter) Decrypt(obj []byte) ([]byte, error) {
 	cfb.XORKeyStream(obj, obj)
 	data, err := base64.StdEncoding.DecodeString(string(obj))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while decoding decrypted object")
 	}
 	return data, nil
 }

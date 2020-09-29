@@ -35,7 +35,7 @@ func (s *runtimeState) Insert(runtimeState internal.RuntimeState) error {
 	return wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		err := sess.InsertRuntimeState(state)
 		if err != nil {
-			log.Warnf("while saving runtime state ID %s: %v", runtimeState.ID, err)
+			log.Warnf("while saving runtime state ID %s conf: %s: %v", runtimeState.ID, state.KymaConfig, err)
 			return false, nil
 		}
 		return true, nil
