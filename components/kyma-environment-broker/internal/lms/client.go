@@ -61,7 +61,7 @@ type Config struct {
 	Region     string `envconfig:"optional"`
 	Mandatory  bool   `envconfig:"default=true"`
 
-	Disabled bool
+	EnabledForGlobalAccounts string // "all", "none", or "{global-account-ID-1}, <global-account-ID-2>, .."
 }
 
 func (c Config) Validate() error {

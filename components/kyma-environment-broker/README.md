@@ -52,3 +52,11 @@ KEB binary allows you to override some configuration parameters. You can specify
 | **APP_PROVISIONING_MACHINE_IMAGE_VERSION** | Defines the Gardener image version used in a provisioned cluster. | None |
 | **APP_TRIAL_REGION_MAPPING_FILE_PATH** | Defines a path to the file which contains a mapping between the platform region and the Trial plan region. | None |
 | **APP_MAX_PAGINATION_PAGE** | Defines the maximum number of objects that can be queried in one page using the endpoints that use pagination. | `100` |
+| **APP_LMS_URL** | Defines the URL for the LMS system. | None |
+| **APP_LMS_CLUSTER_TYPE** | Defines the cluster type for the LMS system. | `single-node` |
+| **APP_LMS_ENVIRONMENT** | Specifies the environment for the LMS system. | `dev` |
+| **APP_LMS_SAML_TENANT** | Defines the SAML tenant for the LMS system. | None |
+| **APP_LMS_ENABLED_FOR_GLOBAL_ACCOUNTS** | An LMS instance gets provisioned for the specified Global Accounts. Possible values are `all`, `none`, `{global-account-ID-1}, {global-account-ID-2}, ...` | `all` |
+| **APP_LMS_MANDATORY** | Defines whether failing LMS activation will break provisioning. | `true` |
+| **APP_LMS_REGION** | Defines the region for the LMS system. If set, this region is always used. If empty, the region is mapped from the OSB API request. | None |
+| **APP_LMS_TOKEN** | Specifies the token for the LMS system. | None |
