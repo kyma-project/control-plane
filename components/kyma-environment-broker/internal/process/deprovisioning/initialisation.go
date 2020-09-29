@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -17,7 +20,7 @@ import (
 
 const (
 	// the time after which the operation is marked as expired
-	CheckStatusTimeout = 3 * time.Hour
+	CheckStatusTimeout = 5 * time.Hour
 )
 
 type InitialisationStep struct {
@@ -25,14 +28,16 @@ type InitialisationStep struct {
 	operationStorage  storage.Provisioning
 	instanceStorage   storage.Instances
 	provisionerClient provisioner.Client
+	accountProvider   hyperscaler.AccountProvider
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, accountProvider hyperscaler.AccountProvider) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:  process.NewDeprovisionOperationManager(os),
 		operationStorage:  os,
 		instanceStorage:   is,
 		provisionerClient: pc,
+		accountProvider:   accountProvider,
 	}
 }
 
@@ -122,9 +127,27 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 		msg = *status.Message
 	}
 
+	planID := instance.ServicePlanID
+
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
-		return s.operationManager.OperationSucceeded(operation, msg)
+		{
+			if !broker.IsTrialPlan(planID) {
+				hypType, err := hyperscaler.HyperscalerTypeForPlanID(planID)
+				if err != nil {
+					log.Errorf("after successful deprovisioning failing to hyperscaler release subscription - determine the type of Hyperscaler to use for planID: %s", planID)
+					return operation, 0, nil
+				}
+
+				err = s.accountProvider.MarkUnusedGardenerSecretAsDirty(hypType, instance.GlobalAccountID)
+				if err != nil {
+					log.Errorf("after successful deprovisioning failed to release hyperscaler subscription: %s", err)
+					return operation, 10 * time.Second, nil
+				}
+			}
+			return s.operationManager.OperationSucceeded(operation, msg)
+		}
+
 	case gqlschema.OperationStateInProgress:
 		return operation, 1 * time.Minute, nil
 	case gqlschema.OperationStatePending:
