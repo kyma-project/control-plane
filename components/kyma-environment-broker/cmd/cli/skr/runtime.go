@@ -3,11 +3,13 @@ package skr
 import (
 	"fmt"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
 	"github.com/spf13/cobra"
 )
 
 // RuntimeCommand represents an execution of the skr runtimes command
 type RuntimeCommand struct {
+	logger           logger.Logger
 	output           string
 	shoots           []string
 	globalAccountIDs []string
@@ -18,8 +20,8 @@ type RuntimeCommand struct {
 }
 
 // NewRuntimeCmd constructs a new instance of RuntimeCommand and configures it in terms of a cobra.Command
-func NewRuntimeCmd() *cobra.Command {
-	cmd := RuntimeCommand{}
+func NewRuntimeCmd(logger logger.Logger) *cobra.Command {
+	cmd := RuntimeCommand{logger: logger}
 	cobraCmd := &cobra.Command{
 		Use:     "runtimes",
 		Aliases: []string{"runtime", "rt"},

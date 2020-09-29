@@ -3,6 +3,7 @@ package skr
 import (
 	"fmt"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -12,8 +13,12 @@ type UpgradeKymaCommand struct {
 }
 
 // NewUpgradeKymaCmd constructs a new instance of UpgradeKymaCommand and configures it in terms of a cobra.Command
-func NewUpgradeKymaCmd() *cobra.Command {
-	cmd := UpgradeKymaCommand{}
+func NewUpgradeKymaCmd(logger logger.Logger) *cobra.Command {
+	cmd := UpgradeKymaCommand{
+		UpgradeCommand: UpgradeCommand{
+			logger: logger,
+		},
+	}
 	cobraCmd := &cobra.Command{
 		Use:   "kyma --target <TARGET SPEC> ... [--target-exclude <TARGET SPEC> ...]",
 		Short: "Upgrade or reconfigure Kyma on one or more Kyma runtimes",

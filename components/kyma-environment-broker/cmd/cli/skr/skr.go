@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -13,7 +14,7 @@ import (
 var Version string = "N/A"
 
 // NewCmd constructs a new root command for the skr CLI.
-func NewCmd() *cobra.Command {
+func NewCmd(logger logger.Logger) *cobra.Command {
 	cobra.OnInitialize(initConfig)
 	description := fmt.Sprintf(`The skr CLI is a day-two operations tool for SAP CP Kyma Runtimes (SKRs), which allows to view and manage SKRs in scale.
 It is possible to list and observe attributes and state of each SKRs and perform various operations on them, e.g. upgrading the Kyma version.
@@ -42,15 +43,16 @@ The configuration file is in YAML format and supports the following global optio
 
 	cmd.PersistentFlags().StringVar(&configPath, "config", os.Getenv(configEnv), "Path to the skr CLI config file. Can also be set via the SKRCONFIG environment variable. Defaults to $HOME/.skr/config.yaml")
 	SetGlobalOpts(cmd)
+	logger.AddFlags(cmd.PersistentFlags())
 	cmd.PersistentFlags().BoolP("help", "h", false, "Displays help for the CLI")
 
 	cmd.AddCommand(
-		NewLoginCmd(),
-		NewRuntimeCmd(),
-		NewOrchestrationCmd(),
-		NewKubeconfigCmd(),
-		NewUpgradeCmd(),
-		NewTaskRunCmd(),
+		NewLoginCmd(logger),
+		NewRuntimeCmd(logger),
+		NewOrchestrationCmd(logger),
+		NewKubeconfigCmd(logger),
+		NewUpgradeCmd(logger),
+		NewTaskRunCmd(logger),
 	)
 	return cmd
 }

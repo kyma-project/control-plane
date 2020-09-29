@@ -3,18 +3,20 @@ package skr
 import (
 	"fmt"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
 	"github.com/spf13/cobra"
 )
 
 // LoginCommand represents an execution of the skr login command
 type LoginCommand struct {
+	logger   logger.Logger
 	username string
 	password string
 }
 
 // NewLoginCmd constructs a new instance of LoginCommand and configures it in terms of a cobra.Command
-func NewLoginCmd() *cobra.Command {
-	cmd := LoginCommand{}
+func NewLoginCmd(logger logger.Logger) *cobra.Command {
+	cmd := LoginCommand{logger: logger}
 	cobraCmd := &cobra.Command{
 		Use:     "login",
 		Aliases: []string{"l"},

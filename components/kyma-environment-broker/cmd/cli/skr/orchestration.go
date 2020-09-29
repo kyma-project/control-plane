@@ -5,20 +5,22 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/spf13/cobra"
 )
 
 // OrchestrationCommand represents an execution of the skr orchestrations command
 type OrchestrationCommand struct {
+	logger    logger.Logger
 	output    string
 	state     string
 	operation string
 }
 
 // NewOrchestrationCmd constructs a new instance of OrchestrationCommand and configures it in terms of a cobra.Command
-func NewOrchestrationCmd() *cobra.Command {
-	cmd := OrchestrationCommand{}
+func NewOrchestrationCmd(logger logger.Logger) *cobra.Command {
+	cmd := OrchestrationCommand{logger: logger}
 	cobraCmd := &cobra.Command{
 		Use:     "orchestrations [id]",
 		Aliases: []string{"orchestration", "o"},

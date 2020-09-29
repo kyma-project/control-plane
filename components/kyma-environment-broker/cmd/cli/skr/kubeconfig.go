@@ -4,10 +4,12 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
 )
 
 // KubeconfigCommand represents an execution of the skr kubeconfig command
 type KubeconfigCommand struct {
+	logger          logger.Logger
 	shoot           string
 	globalAccountID string
 	subAccountID    string
@@ -16,8 +18,8 @@ type KubeconfigCommand struct {
 }
 
 // NewKubeconfigCmd constructs a new instance of KubeconfigCommand and configures it in terms of a cobra.Command
-func NewKubeconfigCmd() *cobra.Command {
-	cmd := KubeconfigCommand{}
+func NewKubeconfigCmd(logger logger.Logger) *cobra.Command {
+	cmd := KubeconfigCommand{logger: logger}
 	cobraCmd := &cobra.Command{
 		Use:     "kubeconfig",
 		Aliases: []string{"kc"},

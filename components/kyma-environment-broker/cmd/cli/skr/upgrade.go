@@ -5,12 +5,14 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 )
 
 // UpgradeCommand is the base type of all subcommands under the upgrade command. The type holds common attributes and methods inherited by all subcommands
 type UpgradeCommand struct {
+	logger              logger.Logger
 	targetInputs        []string
 	targetExcludeInputs []string
 	strategy            string
@@ -26,7 +28,7 @@ var scheduleInputToParam = map[string]internal.ScheduleType{
 }
 
 // NewUpgradeCmd constructs the upgrade command and all subcommands under the upgrade command
-func NewUpgradeCmd() *cobra.Command {
+func NewUpgradeCmd(logger logger.Logger) *cobra.Command {
 	cobraCmd := &cobra.Command{
 		Use:     "upgrade",
 		Aliases: []string{"u"},
@@ -34,7 +36,7 @@ func NewUpgradeCmd() *cobra.Command {
 		Long:    "Performs upgrade operations on Kyma runtimes.",
 	}
 
-	cobraCmd.AddCommand(NewUpgradeKymaCmd())
+	cobraCmd.AddCommand(NewUpgradeKymaCmd(logger))
 	return cobraCmd
 }
 

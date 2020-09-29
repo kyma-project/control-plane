@@ -3,12 +3,14 @@ package skr
 import (
 	"fmt"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/spf13/cobra"
 )
 
 // TaskRunCommand represents an execution of the skr taskrun command
 type TaskRunCommand struct {
+	logger              logger.Logger
 	targetInputs        []string
 	targetExcludeInputs []string
 	parallelism         int
@@ -18,8 +20,8 @@ type TaskRunCommand struct {
 }
 
 // NewTaskRunCmd constructs a new instance of TaskRunCommand and configures it in terms of a cobra.Command
-func NewTaskRunCmd() *cobra.Command {
-	cmd := TaskRunCommand{}
+func NewTaskRunCmd(logger logger.Logger) *cobra.Command {
+	cmd := TaskRunCommand{logger: logger}
 	cobraCmd := &cobra.Command{
 		Use:     "taskrun --target <TARGET SPEC> ... [--target-exclude <TARGET SPEC> ...] COMMAND [ARGS ...]",
 		Aliases: []string{"task", "t"},
