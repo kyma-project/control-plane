@@ -3,8 +3,8 @@ package skr
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
+	"github.com/spf13/cobra"
 )
 
 // KubeconfigCommand represents an execution of the skr kubeconfig command
