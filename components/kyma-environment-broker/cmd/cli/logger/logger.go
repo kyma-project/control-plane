@@ -19,12 +19,8 @@ func New() Logger {
 type Logger interface {
 	AddFlags(f *pflag.FlagSet)
 	Printf(format string, args ...interface{})
-	V(level int) Verbose
+	V(level int) klog.Verbose
 	IsEnabled(level int) bool
-}
-
-type Verbose interface {
-	Infof(format string, args ...interface{})
 }
 
 type goLogger interface {
@@ -44,7 +40,7 @@ func (*logger) AddFlags(f *pflag.FlagSet) {
 }
 
 // V returns a logger enabled only if the level is enabled.
-func (*logger) V(level int) Verbose {
+func (*logger) V(level int) klog.Verbose {
 	return klog.V(klog.Level(level))
 }
 
