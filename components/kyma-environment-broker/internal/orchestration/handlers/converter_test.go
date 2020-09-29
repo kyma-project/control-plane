@@ -36,5 +36,5 @@ func TestConverter_OrchestrationListToDTO(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, len(givenOrchestration), len(resp.Orchestrations))
+	assert.Equal(t, len(givenOrchestration), len(resp.Data))
 }

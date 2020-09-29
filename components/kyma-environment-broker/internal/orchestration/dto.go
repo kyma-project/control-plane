@@ -23,7 +23,7 @@ type StatusResponse struct {
 }
 
 type StatusResponseList struct {
-	Orchestrations []StatusResponse `json:"orchestrations"`
+	Data []StatusResponse `json:"data"`
 }
 
 type UpgradeResponse struct {

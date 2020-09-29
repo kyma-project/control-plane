@@ -49,5 +49,5 @@ func (c *Converter) OrchestrationListToDTO(orchestrations []internal.Orchestrati
 		responses = append(responses, *status)
 	}
 
-	return orchestration.StatusResponseList{Orchestrations: responses}, nil
+	return orchestration.StatusResponseList{Data: responses}, nil
 }
