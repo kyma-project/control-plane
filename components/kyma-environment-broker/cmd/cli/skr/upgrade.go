@@ -7,7 +7,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 )
 
 // UpgradeCommand is the base type of all subcommands under the upgrade command. The type holds common attributes and methods inherited by all subcommands
@@ -18,7 +17,7 @@ type UpgradeCommand struct {
 	strategy            string
 	parallelWorkers     int
 	schedule            string
-	orchestrationParams orchestration.Parameters
+	orchestrationParams internal.OrchestrationParameters
 }
 
 var scheduleInputToParam = map[string]internal.ScheduleType{
