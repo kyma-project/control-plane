@@ -100,27 +100,27 @@ func (h *Handler) getOperationsForInstance(instance internal.Instance) (*interna
 }
 
 func (h *Handler) getParams(req *http.Request) (int, int, error) {
-	var limit int
+	var pageSize int
 	var page int
 	var err error
 
 	params := req.URL.Query()
-	limitArr, ok := params[pageSizeParam]
-	if len(limitArr) > 1 {
-		return 0, 0, errors.New("limit has to be one parameter")
+	pageSizeArr, ok := params[pageSizeParam]
+	if len(pageSizeArr) > 1 {
+		return 0, 0, errors.New("pageSize has to be one parameter")
 	}
 
 	if !ok {
-		limit = h.defaultMaxPage
+		pageSize = h.defaultMaxPage
 	} else {
-		limit, err = strconv.Atoi(limitArr[0])
+		pageSize, err = strconv.Atoi(pageSizeArr[0])
 		if err != nil {
-			return 0, 0, errors.New("limit has to be an integer")
+			return 0, 0, errors.New("pageSize has to be an integer")
 		}
 	}
 
-	if limit > h.defaultMaxPage {
-		return 0, 0, errors.New(fmt.Sprintf("limit is bigger than maxPage(%d)", h.defaultMaxPage))
+	if pageSize > h.defaultMaxPage {
+		return 0, 0, errors.New(fmt.Sprintf("pageSize is bigger than maxPage(%d)", h.defaultMaxPage))
 	}
 
 	pageArr, ok := params[pageParam]
@@ -136,5 +136,5 @@ func (h *Handler) getParams(req *http.Request) (int, int, error) {
 		}
 	}
 
-	return limit, page, nil
+	return pageSize, page, nil
 }
