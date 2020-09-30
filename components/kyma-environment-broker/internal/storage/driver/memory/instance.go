@@ -5,6 +5,8 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
+
 	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -162,12 +164,8 @@ func (s *Instance) List(pageSize int, page int) ([]internal.Instance, int, int, 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var toReturn []internal.Instance
-	var offset int
-	if page < 2 {
-		offset = 0
-	} else {
-		offset = page*pageSize - 1
-	}
+
+	offset := pagination.ConvertPageAndPageSizeToOffset(pageSize, page)
 
 	sortedInstances := getSortedByCreatedAt(s.instances)
 

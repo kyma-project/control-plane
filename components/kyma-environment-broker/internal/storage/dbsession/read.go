@@ -318,7 +318,7 @@ func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID stri
 func (r readSession) ListInstances(pageSize int, page int) ([]internal.Instance, int, int, error) {
 	var instances []internal.Instance
 
-	order, err := pagination.ConvertPageLimitAndOrderedColumnToSQL(pageSize, page, postsql.CreatedAtField)
+	order, err := pagination.ConvertPagePageSizeAndOrderedColumnToSQL(pageSize, page, postsql.CreatedAtField)
 	if err != nil {
 		return nil, -1, -1, errors.Wrap(err, "while converting page and pageSize to SQL statement")
 	}

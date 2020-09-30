@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func ConvertPageLimitAndOrderedColumnToSQL(pageSize, page int, orderedColumn string) (string, error) {
+func ConvertPagePageSizeAndOrderedColumnToSQL(pageSize, page int, orderedColumn string) (string, error) {
 	if page < 1 {
 		return "", errors.New("page cannot be smaller than 0")
 	}
@@ -16,4 +16,13 @@ func ConvertPageLimitAndOrderedColumnToSQL(pageSize, page int, orderedColumn str
 	}
 
 	return fmt.Sprintf(`ORDER BY %s LIMIT %d OFFSET %d`, orderedColumn, pageSize, (page-1)*pageSize), nil
+}
+
+func ConvertPageAndPageSizeToOffset(pageSize, page int) int {
+
+	if page < 2 {
+		return 0
+	} else {
+		return page*pageSize - 1
+	}
 }
