@@ -9,7 +9,7 @@ import (
 
 // RuntimeCommand represents an execution of the skr runtimes command
 type RuntimeCommand struct {
-	logger           logger.Logger
+	log              logger.Logger
 	output           string
 	shoots           []string
 	globalAccountIDs []string
@@ -20,8 +20,8 @@ type RuntimeCommand struct {
 }
 
 // NewRuntimeCmd constructs a new instance of RuntimeCommand and configures it in terms of a cobra.Command
-func NewRuntimeCmd(logger logger.Logger) *cobra.Command {
-	cmd := RuntimeCommand{logger: logger}
+func NewRuntimeCmd(log logger.Logger) *cobra.Command {
+	cmd := RuntimeCommand{log: log}
 	cobraCmd := &cobra.Command{
 		Use:     "runtimes",
 		Aliases: []string{"runtime", "rt"},

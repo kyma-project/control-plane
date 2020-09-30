@@ -10,7 +10,7 @@ import (
 
 // TaskRunCommand represents an execution of the skr taskrun command
 type TaskRunCommand struct {
-	logger              logger.Logger
+	log                 logger.Logger
 	targetInputs        []string
 	targetExcludeInputs []string
 	parallelism         int
@@ -20,8 +20,8 @@ type TaskRunCommand struct {
 }
 
 // NewTaskRunCmd constructs a new instance of TaskRunCommand and configures it in terms of a cobra.Command
-func NewTaskRunCmd(logger logger.Logger) *cobra.Command {
-	cmd := TaskRunCommand{logger: logger}
+func NewTaskRunCmd(log logger.Logger) *cobra.Command {
+	cmd := TaskRunCommand{log: log}
 	cobraCmd := &cobra.Command{
 		Use:     "taskrun --target <TARGET SPEC> ... [--target-exclude <TARGET SPEC> ...] COMMAND [ARGS ...]",
 		Aliases: []string{"task", "t"},

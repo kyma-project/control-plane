@@ -9,7 +9,7 @@ import (
 
 // KubeconfigCommand represents an execution of the skr kubeconfig command
 type KubeconfigCommand struct {
-	logger          logger.Logger
+	log             logger.Logger
 	shoot           string
 	globalAccountID string
 	subAccountID    string
@@ -18,8 +18,8 @@ type KubeconfigCommand struct {
 }
 
 // NewKubeconfigCmd constructs a new instance of KubeconfigCommand and configures it in terms of a cobra.Command
-func NewKubeconfigCmd(logger logger.Logger) *cobra.Command {
-	cmd := KubeconfigCommand{logger: logger}
+func NewKubeconfigCmd(log logger.Logger) *cobra.Command {
+	cmd := KubeconfigCommand{log: log}
 	cobraCmd := &cobra.Command{
 		Use:     "kubeconfig",
 		Aliases: []string{"kc"},

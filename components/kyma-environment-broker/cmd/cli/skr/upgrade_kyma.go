@@ -13,10 +13,10 @@ type UpgradeKymaCommand struct {
 }
 
 // NewUpgradeKymaCmd constructs a new instance of UpgradeKymaCommand and configures it in terms of a cobra.Command
-func NewUpgradeKymaCmd(logger logger.Logger) *cobra.Command {
+func NewUpgradeKymaCmd(log logger.Logger) *cobra.Command {
 	cmd := UpgradeKymaCommand{
 		UpgradeCommand: UpgradeCommand{
-			logger: logger,
+			log: log,
 		},
 	}
 	cobraCmd := &cobra.Command{

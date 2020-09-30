@@ -23,6 +23,13 @@ const (
 	yaml  string = "yaml"
 )
 
+const (
+	targetAccount    = "account"
+	targetSubaccount = "subaccount"
+	targetRuntimeID  = "runtime-id"
+	targetRegion     = "region"
+)
+
 // GlobalOptionsKey is the type for holding the configuration key for each global parameter
 type GlobalOptionsKey struct {
 	oidcIssuerURL      string
@@ -181,28 +188,28 @@ func parseRuntimeTarget(targetInput string, targets *[]internal.RuntimeTarget, i
 		switch selectorKey {
 		case internal.TargetAll:
 			if !include {
-				return errors.New("\"all\" cannot be used with --target-exclude")
+				return fmt.Errorf("\"%s\" cannot be used with --target-exclude", internal.TargetAll)
 			}
 			target.Target = internal.TargetAll
-		case "account":
+		case targetAccount:
 			err := checkRuntimeTargetSelector(selectorKey, selectorValue, flagName)
 			if err != nil {
 				return err
 			}
 			target.GlobalAccount = selectorValue
-		case "subaccount":
+		case targetSubaccount:
 			err := checkRuntimeTargetSelector(selectorKey, selectorValue, flagName)
 			if err != nil {
 				return err
 			}
 			target.SubAccount = selectorValue
-		case "region":
+		case targetRegion:
 			err := checkRuntimeTargetSelector(selectorKey, selectorValue, flagName)
 			if err != nil {
 				return err
 			}
 			target.Region = selectorValue
-		case "runtime-id":
+		case targetRuntimeID:
 			err := checkRuntimeTargetSelector(selectorKey, selectorValue, flagName)
 			if err != nil {
 				return err

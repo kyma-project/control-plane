@@ -9,14 +9,14 @@ import (
 
 // LoginCommand represents an execution of the skr login command
 type LoginCommand struct {
-	logger   logger.Logger
+	log      logger.Logger
 	username string
 	password string
 }
 
 // NewLoginCmd constructs a new instance of LoginCommand and configures it in terms of a cobra.Command
-func NewLoginCmd(logger logger.Logger) *cobra.Command {
-	cmd := LoginCommand{logger: logger}
+func NewLoginCmd(log logger.Logger) *cobra.Command {
+	cmd := LoginCommand{log: log}
 	cobraCmd := &cobra.Command{
 		Use:     "login",
 		Aliases: []string{"l"},

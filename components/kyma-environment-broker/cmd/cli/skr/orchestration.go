@@ -12,15 +12,15 @@ import (
 
 // OrchestrationCommand represents an execution of the skr orchestrations command
 type OrchestrationCommand struct {
-	logger    logger.Logger
+	log       logger.Logger
 	output    string
 	state     string
 	operation string
 }
 
 // NewOrchestrationCmd constructs a new instance of OrchestrationCommand and configures it in terms of a cobra.Command
-func NewOrchestrationCmd(logger logger.Logger) *cobra.Command {
-	cmd := OrchestrationCommand{logger: logger}
+func NewOrchestrationCmd(log logger.Logger) *cobra.Command {
+	cmd := OrchestrationCommand{log: log}
 	cobraCmd := &cobra.Command{
 		Use:     "orchestrations [id]",
 		Aliases: []string{"orchestration", "o"},

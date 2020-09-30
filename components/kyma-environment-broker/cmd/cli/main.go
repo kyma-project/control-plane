@@ -12,8 +12,8 @@ import (
 
 func main() {
 	setupCloseHandler()
-	logger := logger.New()
-	command := skr.NewCmd(logger)
+	log := logger.New()
+	command := skr.NewCmd(log)
 
 	err := command.Execute()
 	if err != nil {
