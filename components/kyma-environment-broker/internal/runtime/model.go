@@ -2,8 +2,6 @@ package runtime
 
 import (
 	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
 type RuntimeDTO struct {
@@ -34,7 +32,7 @@ type operation struct {
 }
 
 type RuntimesPage struct {
-	Data       []RuntimeDTO     `json:"data"`
-	PageInfo   *pagination.Page `json:"pageInfo"`
-	TotalCount int              `json:"totalCount"`
+	Data       []RuntimeDTO `json:"data"`
+	Count      int          `json:"count"`
+	TotalCount int          `json:"totalCount"`
 }

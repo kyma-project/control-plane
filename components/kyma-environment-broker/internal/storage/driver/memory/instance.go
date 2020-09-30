@@ -5,7 +5,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 
 	"fmt"
 
@@ -160,34 +160,21 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 	return internal.InstanceStats{}, fmt.Errorf("not implemented")
 }
 
-func (s *Instance) List(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error) {
+func (s *Instance) List(pageSize int, page int) ([]internal.Instance, int, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var toReturn []internal.Instance
 
-	offset, err := pagination.DecodeOffsetCursor(cursor)
-	if err != nil {
-		return nil, nil, 0, err
-	}
+	offset := pagination.ConvertPageAndPageSizeToOffset(pageSize, page)
+
 	sortedInstances := getSortedByCreatedAt(s.instances)
 
-	for i := offset; i < offset+limit && i < len(sortedInstances); i++ {
+	for i := offset; i < offset+pageSize && i < len(sortedInstances); i++ {
 		toReturn = append(toReturn, s.instances[sortedInstances[i].InstanceID])
 	}
 
-	hasNextPage := false
-	endCursor := ""
-	if len(s.instances) > offset+len(toReturn) {
-		hasNextPage = true
-		endCursor = pagination.EncodeNextOffsetCursor(offset, limit)
-	}
-
 	return toReturn,
-		&pagination.Page{
-			StartCursor: cursor,
-			EndCursor:   endCursor,
-			HasNextPage: hasNextPage,
-		},
+		len(toReturn),
 		len(s.instances),
 		nil
 }

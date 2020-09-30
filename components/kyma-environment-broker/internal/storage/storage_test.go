@@ -266,7 +266,7 @@ func TestSchemaInitializer(t *testing.T) {
 			require.Contains(t, []string{"1", "3", "4"}, out[2].InstanceID)
 		})
 
-		t.Run("should list instances based on offset and cursor", func(t *testing.T) {
+		t.Run("should list instances based on page and page size", func(t *testing.T) {
 			// given
 			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
@@ -284,36 +284,33 @@ func TestSchemaInitializer(t *testing.T) {
 				*fixInstance(instanceData{val: "1"}),
 				*fixInstance(instanceData{val: "2"}),
 				*fixInstance(instanceData{val: "3"}),
-				*fixInstance(instanceData{val: "4"}),
 			}
 			for _, i := range fixInstances {
 				err = psqlStorage.Instances().Insert(i)
 				require.NoError(t, err)
 			}
 			// when
-			out, page, count, err := psqlStorage.Instances().List(2, "")
+			out, count, totalCount, err := psqlStorage.Instances().List(2, 1)
 
 			// then
 			require.NoError(t, err)
-			require.Len(t, out, 2)
-			require.Equal(t, 4, count)
-			require.True(t, page.HasNextPage)
+			require.Equal(t, 2, count)
+			require.Equal(t, 3, totalCount)
 
 			assert.Equal(t, fixInstances[0].InstanceID, out[0].InstanceID)
 			assert.Equal(t, fixInstances[1].InstanceID, out[1].InstanceID)
 
 			// when
-			out, page, count, err = psqlStorage.Instances().List(2, page.EndCursor)
+			out, count, totalCount, err = psqlStorage.Instances().List(2, 2)
 
 			// then
 			require.NoError(t, err)
-			require.Len(t, out, 2)
-			require.Equal(t, 4, count)
-			require.False(t, page.HasNextPage)
+			require.Equal(t, 1, count)
+			require.Equal(t, 3, totalCount)
 
 			assert.Equal(t, fixInstances[2].InstanceID, out[0].InstanceID)
-			assert.Equal(t, fixInstances[3].InstanceID, out[1].InstanceID)
 		})
+
 	})
 
 	t.Run("Operations", func(t *testing.T) {
