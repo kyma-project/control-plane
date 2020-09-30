@@ -29,11 +29,11 @@ type ReadSession interface {
 	GetOperationStats() ([]dbmodel.OperationStatEntry, error)
 	GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
-	GetOrchestrationByID(oID string) (internal.Orchestration, dberr.Error)
-	ListOrchestrationsByState(state string) ([]internal.Orchestration, dberr.Error)
 	ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.RuntimeStateDTO, dberr.Error)
-	ListOrchestrations() ([]internal.Orchestration, dberr.Error)
-	ListInstances(pageSize int, page int) ([]internal.Instance, int, int, error)
+	GetOrchestrationByID(oID string) (dbmodel.OrchestrationDTO, dberr.Error)
+	ListOrchestrationsByState(state string) ([]dbmodel.OrchestrationDTO, error)
+	ListOrchestrations() ([]dbmodel.OrchestrationDTO, dberr.Error)
+	ListInstances(pageSize, page int) ([]internal.Instance, int, int, error)
 	GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error)
 }
 
