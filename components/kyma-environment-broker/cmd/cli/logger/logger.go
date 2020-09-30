@@ -1,19 +1,17 @@
 package logger
 
 import (
-	"flag"
 	"log"
 	"os"
 
 	"github.com/int128/kubelogin/pkg/adaptors/logger"
 	"github.com/spf13/pflag"
-	"k8s.io/klog"
 )
 
-// New returns a Logger with the standard log.Logger and klog.
+// New returns a Logger with the standard log.Logger
 func New() Logger {
 	return &logging{
-		goLogger: log.New(os.Stderr, "", 0),
+		goLogger: log.New(os.Stderr, "", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile),
 	}
 }
 
@@ -32,21 +30,33 @@ type goLogger interface {
 // logging provides logging facility using log.Logger and klog.
 type logging struct {
 	goLogger
+	verbosity int
+}
+
+type verbose struct {
+	l     *logging
+	level int
 }
 
 // AddFlags adds the flags such as -v.
-func (*logging) AddFlags(f *pflag.FlagSet) {
-	gf := flag.NewFlagSet("", flag.ContinueOnError)
-	klog.InitFlags(gf)
-	f.AddGoFlagSet(gf)
+func (l *logging) AddFlags(f *pflag.FlagSet) {
+	f.IntVarP(&l.verbosity, "verbose", "v", 0, "Turn on verbose logging to stderr. Valid values: 0 (default) - 3 (maximum verbosity)")
 }
 
 // V returns a logger enabled only if the level is enabled.
-func (*logging) V(level int) logger.Verbose {
-	return klog.V(klog.Level(level))
+func (l *logging) V(level int) logger.Verbose {
+	v := &verbose{l: l, level: level}
+	return v
 }
 
 // IsEnabled returns true if the level is enabled.
-func (*logging) IsEnabled(level int) bool {
-	return bool(klog.V(klog.Level(level)))
+func (l *logging) IsEnabled(level int) bool {
+	return l.verbosity >= level
+}
+
+// Infof logs a verbose info message with he given format and arguments based on the configured verbosity
+func (v *verbose) Infof(format string, args ...interface{}) {
+	if v.l.verbosity >= v.level {
+		v.l.Printf(format, args...)
+	}
 }
