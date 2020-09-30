@@ -1,12 +1,9 @@
 package kyma_test
 
 import (
-	"database/sql"
-	"encoding/json"
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
 
@@ -34,7 +31,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		}).Return([]internal.Runtime{}, nil)
 
 		id := "id"
-		err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id})
+		err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, State: internal.Pending})
 		require.NoError(t, err)
 
 		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, 20*time.Millisecond, logrus.New())
@@ -80,17 +77,13 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		defer resolver.AssertExpectations(t)
 		resolver.On("Resolve", internal.TargetSpec{}).Return([]internal.Runtime{}, nil).Once()
 
-		p := orchestration.Parameters{
-			DryRun: true,
-		}
-		serialized, err := json.Marshal(p)
-		require.NoError(t, err)
-
 		id := "id"
-		err = store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, Parameters: sql.NullString{
-			String: string(serialized),
-			Valid:  true,
-		}})
+		err := store.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: id,
+			State:           internal.Pending,
+			Parameters: internal.OrchestrationParameters{
+				DryRun: true,
+			}})
 		require.NoError(t, err)
 
 		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, poolingInterval, logrus.New())
@@ -114,42 +107,33 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		defer resolver.AssertExpectations(t)
 
 		id := "id"
-		operations := []internal.RuntimeOperation{{
-			Runtime: internal.Runtime{
-				RuntimeID: id,
-			},
-			OperationID: id,
-		}}
-		ops, err := json.Marshal(&operations)
-		require.NoError(t, err)
 
 		upgradeOperation := internal.UpgradeKymaOperation{
-			Operation: internal.Operation{
-				ID:                     id,
-				Version:                0,
-				CreatedAt:              time.Now(),
-				UpdatedAt:              time.Now(),
-				InstanceID:             "",
-				ProvisionerOperationID: "",
-				State:                  domain.Succeeded,
-				Description:            "operation created",
+			RuntimeOperation: internal.RuntimeOperation{
+				Operation: internal.Operation{
+					ID:                     id,
+					Version:                0,
+					CreatedAt:              time.Now(),
+					UpdatedAt:              time.Now(),
+					InstanceID:             "",
+					ProvisionerOperationID: "",
+					State:                  domain.Succeeded,
+					Description:            "operation created",
+				},
+				RuntimeID:    id,
+				SubAccountID: "sub",
+				DryRun:       false,
 			},
 			ProvisioningParameters: "",
 			InputCreator:           nil,
-			SubAccountID:           "sub",
-			RuntimeID:              id,
-			DryRun:                 false,
 		}
-		err = store.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		err := store.Operations().InsertUpgradeKymaOperation(upgradeOperation)
 		require.NoError(t, err)
 
 		givenO := internal.Orchestration{
 			OrchestrationID: id,
 			State:           internal.InProgress,
-			RuntimeOperations: sql.NullString{
-				String: string(ops),
-				Valid:  true,
-			}}
+		}
 		err = store.Orchestrations().Insert(givenO)
 		require.NoError(t, err)
 

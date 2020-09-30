@@ -15,6 +15,7 @@ type runtime struct {
 type FakeClient struct {
 	mu         sync.Mutex
 	runtimes   []runtime
+	upgrades   map[string]schema.UpgradeRuntimeInput
 	operations map[string]schema.OperationStatus
 }
 
@@ -22,6 +23,7 @@ func NewFakeClient() *FakeClient {
 	return &FakeClient{
 		runtimes:   []runtime{},
 		operations: make(map[string]schema.OperationStatus),
+		upgrades:   make(map[string]schema.UpgradeRuntimeInput),
 	}
 }
 
@@ -114,8 +116,14 @@ func (c *FakeClient) UpgradeRuntime(accountID, runtimeID string, config schema.U
 		Operation: schema.OperationTypeUpgrade,
 		State:     schema.OperationStateInProgress,
 	}
+	c.upgrades[runtimeID] = config
 	return schema.OperationStatus{
 		RuntimeID: &runtimeID,
 		ID:        &opId,
 	}, nil
+}
+
+func (c *FakeClient) IsRuntimeUpgraded(runtimeID string) bool {
+	_, found := c.upgrades[runtimeID]
+	return found
 }

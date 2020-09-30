@@ -254,6 +254,8 @@ func (s *operations) InsertUpgradeKymaOperation(operation internal.UpgradeKymaOp
 			log.Warn(errors.Wrap(err, "while insert operation"))
 			return false, nil
 		}
+
+		//todo - insert link to orchestration
 		return true, nil
 	})
 	return lastErr
@@ -408,6 +410,18 @@ func (s *operations) GetOperationStats() (internal.OperationStats, error) {
 	return result, nil
 }
 
+func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (map[domain.LastOperationState]int, error) {
+	entries, err := s.NewReadSession().GetOperationStatsForOrchestration(orchestrationID)
+	if err != nil {
+		return map[domain.LastOperationState]int{}, err
+	}
+	result := make(map[domain.LastOperationState]int, 3)
+	for _, entry := range entries {
+		result[domain.LastOperationState(entry.State)] = entry.Total
+	}
+	return result, nil
+}
+
 func (s *operations) GetOperationsForIDs(operationIDList []string) ([]internal.Operation, error) {
 	session := s.NewReadSession()
 	operations := make([]dbmodel.OperationDTO, 0)
@@ -509,6 +523,7 @@ func toUpgradeKymaOperation(op *dbmodel.OperationDTO) (*internal.UpgradeKymaOper
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
 	operation.Operation = toOperation(op)
+	operation.OrchestrationID = op.OrchestrationID
 
 	return &operation, nil
 }
@@ -522,6 +537,7 @@ func upgradeKymaOperationToDTO(op *internal.UpgradeKymaOperation) (dbmodel.Opera
 	ret := operationToDB(&op.Operation)
 	ret.Data = string(serialized)
 	ret.Type = dbmodel.OperationTypeUpgradeKyma
+	ret.OrchestrationID = op.OrchestrationID
 	return ret, nil
 }
 

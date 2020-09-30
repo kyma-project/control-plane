@@ -2,18 +2,20 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
@@ -21,17 +23,14 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	kebRuntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pborman/uuid"
 	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -39,7 +38,6 @@ const (
 	globalAccountLabel  = "account"
 	subAccountLabel     = "subaccount"
 	runtimeIDAnnotation = "kcp.provisioner.kyma-project.io/runtime-id"
-	platformRegion      = "cf-eu10"
 )
 
 type OrchestrationSuite struct {
@@ -209,22 +207,18 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 }
 
 func (s *OrchestrationSuite) CreateOrchestration(runtimeID string) string {
-	params, err := json.Marshal(orchestration.Parameters{
-		Targets: internal.TargetSpec{
-			Include: []internal.RuntimeTarget{
-				{RuntimeID: runtimeID},
-			},
-		},
-	})
-	require.NoError(s.t, err)
 	now := time.Now()
 	o := internal.Orchestration{
 		OrchestrationID: uuid.New(),
 		State:           internal.Pending,
 		Description:     "started processing of Kyma upgrade",
-		Parameters: sql.NullString{
-			String: string(params),
-			Valid:  true,
+		Parameters: internal.OrchestrationParameters{
+			Targets: internal.TargetSpec{
+				Include: []internal.RuntimeTarget{
+					{RuntimeID: runtimeID},
+				},
+			},
+			DryRun: false,
 		},
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -249,4 +243,12 @@ func (s *OrchestrationSuite) WaitForOrchestrationState(orchestrationID string, s
 		return orchestration.State == state, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for the orchestration expected state %s. The existing orchestration %+V", state, orchestration)
+}
+
+func (s *OrchestrationSuite) AssertRuntimeUpgraded(runtimeID string) {
+	assert.True(s.t, s.provisionerClient.IsRuntimeUpgraded(runtimeID), "The runtime %s expected to be upgraded", runtimeID)
+}
+
+func (s *OrchestrationSuite) AssertRuntimeNotUpgraded(runtimeID string) {
+	assert.False(s.t, s.provisionerClient.IsRuntimeUpgraded(runtimeID), "The runtime %s expected to be not upgraded", runtimeID)
 }

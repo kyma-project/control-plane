@@ -15,7 +15,7 @@ func TestNewInstantOrchestrationStrategy(t *testing.T) {
 
 	ops := make([]internal.RuntimeOperation, 3)
 	for i := range ops {
-		ops[i] = internal.RuntimeOperation{OperationID: rand.String(3)}
+		ops[i] = internal.RuntimeOperation{Operation: internal.Operation{ID: rand.String(3)}}
 	}
 
 	_, err := s.Execute(ops, internal.StrategySpec{})
