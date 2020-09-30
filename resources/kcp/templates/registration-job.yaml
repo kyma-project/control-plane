@@ -1,4 +1,4 @@
-{{ if .Values.global.provisioning.enabled }}
+{{- if and .Values.global.provisioning.enabled .Values.global.compass.registration.enabled -}}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
