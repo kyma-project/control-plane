@@ -1,7 +1,7 @@
 package hyperscaler
 
 import (
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/pkg/errors"
 )
 
@@ -9,37 +9,31 @@ import (
 type AccountProvider interface {
 	GardenerCredentials(hyperscalerType Type, tenantName string) (Credentials, error)
 	GardenerSharedCredentials(hyperscalerType Type) (Credentials, error)
-	GardenerSecretName(input *gqlschema.GardenerConfigInput, tenantName string) (string, error)
+	MarkUnusedGardenerSecretAsDirty(hyperscalerType Type, tenantName string) error
 }
 
 type accountProvider struct {
-	compassPool        AccountPool
 	gardenerPool       AccountPool
 	sharedGardenerPool SharedPool
 }
 
-func NewAccountProvider(compassPool AccountPool, gardenerPool AccountPool, sharedGardenerPool SharedPool) AccountProvider {
+func NewAccountProvider(gardenerPool AccountPool, sharedGardenerPool SharedPool) AccountProvider {
 	return &accountProvider{
-		compassPool:        compassPool,
 		gardenerPool:       gardenerPool,
 		sharedGardenerPool: sharedGardenerPool,
 	}
 }
 
-func HyperscalerTypeFromProvisionInput(input *gqlschema.ProvisionRuntimeInput) (Type, error) {
+func HyperscalerTypeForPlanID(planID string) (Type, error) {
 
-	if input == nil {
-		return Type(""), errors.New("can't determine hyperscaler type because ProvisionRuntimeInput not specified (was nil)")
+	switch planID {
+	case broker.GCPPlanID:
+		return GCP, nil
+	case broker.AzurePlanID, broker.AzureLitePlanID:
+		return Azure, nil
+	default:
+		return "", errors.Errorf("cannot determine the type of Hyperscaler to use for planID: %s", planID)
 	}
-	if input.ClusterConfig == nil {
-		return Type(""), errors.New("can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig not specified (was nil)")
-	}
-
-	if input.ClusterConfig.GardenerConfig == nil {
-		return Type(""), errors.New("can't determine hyperscaler type because ProvisionRuntimeInput.ClusterConfig.GardenerConfig not specified (was nil)")
-	}
-
-	return HyperscalerTypeFromProviderString(input.ClusterConfig.GardenerConfig.Provider)
 }
 
 func (p *accountProvider) GardenerCredentials(hyperscalerType Type, tenantName string) (Credentials, error) {
@@ -61,21 +55,29 @@ func (p *accountProvider) GardenerSharedCredentials(hyperscalerType Type) (Crede
 	return p.sharedGardenerPool.SharedCredentials(hyperscalerType)
 }
 
-func (p *accountProvider) GardenerSecretName(input *gqlschema.GardenerConfigInput, tenantName string) (string, error) {
-	if len(input.TargetSecret) > 0 {
-		return input.TargetSecret, nil
+func (p *accountProvider) MarkUnusedGardenerSecretAsDirty(hyperscalerType Type, tenantName string) error {
+	if p.gardenerPool == nil {
+		return errors.New("failed to release subscription for tenant. Gardener Account pool is not configured")
 	}
 
-	hyperscalerType, err := HyperscalerTypeFromProviderString(input.Provider)
+	dirty, err := p.gardenerPool.IsSecretDirty(hyperscalerType, tenantName)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	credential, err := p.GardenerCredentials(hyperscalerType, tenantName)
+	if dirty {
+		return nil
+	}
+
+	secretUsed, err := p.gardenerPool.IsSecretUsed(hyperscalerType, tenantName)
+
 	if err != nil {
-		return "", err
+		return errors.Wrapf(err, "cannot determine whether %s secret is used for tenant: %s", hyperscalerType, tenantName)
 	}
 
-	return credential.Name, nil
+	if !secretUsed {
+		return p.gardenerPool.MarkSecretAsDirty(hyperscalerType, tenantName)
+	}
 
+	return nil
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 )
 
@@ -69,6 +68,9 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 		return 3 * time.Second, nil
 	}
 	operation := *op
+	if operation.IsFinished() {
+		return 0, nil
+	}
 
 	var when time.Duration
 	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID})
@@ -85,7 +87,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 				logStep.Errorf("Process operation failed: %s", err)
 				return 0, err
 			}
-			if operation.State != domain.InProgress {
+			if operation.IsFinished() {
 				logStep.Infof("Operation %q got status %s. Process finished.", operation.ID, operation.State)
 				return 0, nil
 			}

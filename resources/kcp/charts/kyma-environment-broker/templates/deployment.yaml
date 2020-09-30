@@ -78,8 +78,8 @@ spec:
               value: "{{ .Values.lms.environment }}"
             - name: APP_LMS_SAML_TENANT
               value: "{{ .Values.lms.samlTenant }}"
-            - name: APP_LMS_DISABLED
-              value: "{{ .Values.lms.disabled }}"
+            - name: APP_LMS_ENABLED_FOR_GLOBAL_ACCOUNTS 
+              value: "{{ .Values.lms.enabledForGlobalAccounts }}"
             - name: APP_LMS_MANDATORY
               value: "{{ .Values.lms.mandatory }}"
             - name: APP_LMS_REGION

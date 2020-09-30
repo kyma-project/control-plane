@@ -30,11 +30,12 @@ type ReadSession interface {
 	GetOperationStats() ([]dbmodel.OperationStatEntry, error)
 	GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
-	GetOrchestrationByID(oID string) (internal.Orchestration, dberr.Error)
-	ListOrchestrationsByState(state string) ([]internal.Orchestration, dberr.Error)
-	ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.RuntimeStateDTO, dberr.Error)
-	ListOrchestrations() ([]internal.Orchestration, dberr.Error)
+	GetOrchestrationByID(oID string) (dbmodel.OrchestrationDTO, dberr.Error)
+	ListOrchestrationsByState(state string) ([]dbmodel.OrchestrationDTO, error)
+	ListOrchestrations() ([]dbmodel.OrchestrationDTO, dberr.Error)
 	ListInstances(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error)
+	GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error)
+	ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.RuntimeStateDTO, dberr.Error)
 }
 
 //go:generate mockery -name=WriteSession
@@ -44,8 +45,8 @@ type WriteSession interface {
 	DeleteInstance(instanceID string) dberr.Error
 	InsertOperation(dto dbmodel.OperationDTO) dberr.Error
 	UpdateOperation(instance dbmodel.OperationDTO) dberr.Error
-	InsertOrchestration(o internal.Orchestration) dberr.Error
-	UpdateOrchestration(o internal.Orchestration) dberr.Error
+	InsertOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
+	UpdateOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
 	InsertRuntimeState(state dbmodel.RuntimeStateDTO) dberr.Error
 	InsertLMSTenant(dto dbmodel.LMSTenantDTO) dberr.Error
 }

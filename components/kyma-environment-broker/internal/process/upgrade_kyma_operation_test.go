@@ -87,20 +87,22 @@ func TestUpgradeKymaOperationManager_RetryOperation(t *testing.T) {
 
 func fixUpgradeKymaOperation() internal.UpgradeKymaOperation {
 	return internal.UpgradeKymaOperation{
-		Operation: internal.Operation{
-			ID:                     "2c538027-d1c4-41ef-a26c-c9604483cb6d",
-			Version:                0,
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Time{},
-			InstanceID:             "2b6645a1-87e7-491d-bce3-cc0fbe16b6c0",
-			ProvisionerOperationID: "",
-			State:                  domain.InProgress,
-			Description:            "op description",
+		RuntimeOperation: internal.RuntimeOperation{
+			Operation: internal.Operation{
+				ID:                     "2c538027-d1c4-41ef-a26c-c9604483cb6d",
+				Version:                0,
+				CreatedAt:              time.Now(),
+				UpdatedAt:              time.Time{},
+				InstanceID:             "2b6645a1-87e7-491d-bce3-cc0fbe16b6c0",
+				ProvisionerOperationID: "",
+				State:                  domain.InProgress,
+				Description:            "op description",
+			},
+			SubAccountID: "",
+			RuntimeID:    "",
+			DryRun:       false,
 		},
 		ProvisioningParameters: "",
 		InputCreator:           nil,
-		SubAccountID:           "",
-		RuntimeID:              "",
-		DryRun:                 false,
 	}
 }

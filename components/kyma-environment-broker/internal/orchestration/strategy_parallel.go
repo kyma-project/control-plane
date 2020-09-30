@@ -44,7 +44,7 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []internal.RuntimeOpe
 		if isMaintenanceWindowMode {
 			time.Sleep(time.Until(op.MaintenanceWindowEnd))
 		}
-		q.Add(op.OperationID)
+		q.Add(op.ID)
 	}
 	q.ShutDown()
 

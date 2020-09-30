@@ -1,8 +1,6 @@
 package kyma
 
 import (
-	"database/sql"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -43,125 +41,108 @@ func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operatio
 
 // Execute reconciles runtimes for a given orchestration
 func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, error) {
+	logger := u.log.WithField("orchestrationID", orchestrationID)
 	u.log.Infof("Processing orchestration %s", orchestrationID)
 	o, err := u.orchestrationStorage.GetByID(orchestrationID)
 	if err != nil {
 		return u.failOrchestration(o, errors.Wrap(err, "while getting orchestration"))
 	}
 
-	dto := orchestration.Parameters{}
-	if o.Parameters.Valid {
-		err = json.Unmarshal([]byte(o.Parameters.String), &dto)
-		if err != nil {
-			return u.failOrchestration(o, errors.Wrap(err, "while unmarshalling parameters"))
-		}
-	}
-
-	targets := dto.Targets
+	targets := o.Parameters.Targets
 	if targets.Include == nil || len(targets.Include) == 0 {
 		targets.Include = []internal.RuntimeTarget{{Target: internal.TargetAll}}
 	}
 
-	operations, err := u.resolveOperations(o, dto)
+	operations, err := u.resolveOperations(o, o.Parameters)
 	if err != nil {
 		return u.failOrchestration(o, errors.Wrap(err, "while resolving operations"))
 	}
 
-	state := internal.InProgress
-	desc := fmt.Sprintf("scheduled %d operations", len(operations))
-
-	isFinished := len(operations) == 0
-	if isFinished {
-		state = internal.Succeeded
+	err = u.orchestrationStorage.Update(*o)
+	if err != nil {
+		logger.Errorf("while updating orchestration: %v", err)
+		return u.pollingInterval, nil
 	}
-
-	repeat, err := u.updateOrchestration(o, state, desc, operations)
-	switch {
-	case err != nil:
-		return u.failOrchestration(o, errors.Wrap(err, "while updating orchestration"))
-	case repeat != 0:
-		return repeat, nil
-	case isFinished:
+	// do not perform any action if the orchestration is finished
+	if o.IsFinished() {
 		return 0, nil
 	}
 
 	// TODO(upgrade): support many strategies
-	strategy := orchestration.NewInstantOrchestrationStrategy(u.kymaUpgradeExecutor, u.log)
-	_, err = strategy.Execute(u.filterOperationsInProgress(operations), dto.Strategy)
+	strategy := orchestration.NewInstantOrchestrationStrategy(u.kymaUpgradeExecutor, logger)
+	_, err = strategy.Execute(u.filterOperationsInProgress(operations), o.Parameters.Strategy)
 	if err != nil {
 		return 0, errors.Wrap(err, "while executing instant upgrade strategy")
 	}
 
-	state = internal.Succeeded
-	processedOps, result, err := u.checkOperationsResults(operations)
+	err = u.waitForCompletion(o)
 	if err != nil {
 		return 0, errors.Wrap(err, "while checking operations results")
 	}
-	if !result {
-		state = internal.Failed
-	}
-	repeat, err = u.updateOrchestration(o, state, desc, processedOps)
-	if err != nil {
-		return 0, errors.Wrap(err, "while updating orchestration")
-	}
-	u.log.Infof("Finished processing orchestration %s", orchestrationID)
 
-	return repeat, nil
+	err = u.orchestrationStorage.Update(*o)
+	if err != nil {
+		logger.Errorf("while updating orchestration: %v", err)
+		return u.pollingInterval, nil
+	}
+
+	logger.Infof("Finished processing orchestration, state: %s", o.State)
+	return 0, nil
 }
 
-func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, dto orchestration.Parameters) ([]internal.RuntimeOperation, error) {
-	operations := make([]internal.RuntimeOperation, 0)
-
-	if o.State == internal.InProgress {
-		if o.RuntimeOperations.Valid {
-			err := json.Unmarshal([]byte(o.RuntimeOperations.String), &operations)
-			if err != nil {
-				return nil, errors.Wrap(err, "while un-marshalling runtime operations")
-			}
-		}
-	} else {
-		runtimes, err := u.resolver.Resolve(dto.Targets)
+func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params internal.OrchestrationParameters) ([]internal.UpgradeKymaOperation, error) {
+	var result []internal.UpgradeKymaOperation
+	if o.State == internal.Pending {
+		runtimes, err := u.resolver.Resolve(params.Targets)
 		if err != nil {
-			return nil, errors.Wrap(err, "while resolving targets")
+			return result, errors.Wrap(err, "while resolving targets")
 		}
+
 		for _, r := range runtimes {
 			id := uuid.New().String()
 			op := internal.UpgradeKymaOperation{
-				Operation: internal.Operation{
-					ID:          id,
-					Version:     0,
-					CreatedAt:   time.Now(),
-					UpdatedAt:   time.Now(),
-					InstanceID:  r.InstanceID,
-					State:       domain.InProgress,
-					Description: "Operation created",
+				RuntimeOperation: internal.RuntimeOperation{
+					Operation: internal.Operation{
+						ID:          id,
+						Version:     0,
+						CreatedAt:   time.Now(),
+						UpdatedAt:   time.Now(),
+						InstanceID:  r.InstanceID,
+						State:       domain.InProgress,
+						Description: "Operation created",
+					},
+					DryRun:          params.DryRun,
+					RuntimeID:       r.RuntimeID,
+					GlobalAccountID: r.GlobalAccountID,
+					SubAccountID:    r.SubAccountID,
+					OrchestrationID: o.OrchestrationID,
 				},
-				SubAccountID: r.SubAccountID,
-				RuntimeID:    r.RuntimeID,
-				DryRun:       dto.DryRun,
 			}
+			result = append(result, op)
 			err := u.operationStorage.InsertUpgradeKymaOperation(op)
 			if err != nil {
 				u.log.Errorf("while inserting UpgradeKymaOperation for runtime id %q", r.RuntimeID)
 			}
-
-			operations = append(operations, internal.RuntimeOperation{
-				Runtime:     r,
-				OperationID: id,
-				Status:      internal.InProgress,
-			})
 		}
+
+		if len(runtimes) != 0 {
+			o.State = internal.InProgress
+		} else {
+			o.State = internal.Succeeded
+		}
+		o.Description = fmt.Sprintf("Scheduled %d operations", len(runtimes))
+
 	}
 
-	return operations, nil
+	return result, nil
 }
 
-func (u *upgradeKymaManager) filterOperationsInProgress(ops []internal.RuntimeOperation) []internal.RuntimeOperation {
+func (u *upgradeKymaManager) filterOperationsInProgress(ops []internal.UpgradeKymaOperation) []internal.RuntimeOperation {
 	result := make([]internal.RuntimeOperation, 0)
 
 	for _, op := range ops {
-		if op.Status == internal.InProgress {
-			result = append(result, op)
+		if op.State == domain.InProgress {
+			result = append(result, op.RuntimeOperation)
 		}
 	}
 
@@ -170,71 +151,52 @@ func (u *upgradeKymaManager) filterOperationsInProgress(ops []internal.RuntimeOp
 
 func (u *upgradeKymaManager) failOrchestration(o *internal.Orchestration, err error) (time.Duration, error) {
 	u.log.Errorf("orchestration %s failed: %s", o.OrchestrationID, err)
-	return u.updateOrchestration(o, internal.Failed, err.Error(), nil)
+	return u.updateOrchestration(o, internal.Failed, err.Error()), nil
 }
 
-func (u *upgradeKymaManager) updateOrchestration(o *internal.Orchestration, state, description string, ops []internal.RuntimeOperation) (time.Duration, error) {
-	if len(ops) > 0 {
-		result, err := json.Marshal(&ops)
-		if err != nil {
-			return 0, errors.Wrap(err, "while un-marshalling runtime operations")
-		}
-		o.RuntimeOperations = sql.NullString{
-			String: string(result),
-			Valid:  true,
-		}
-	}
+func (u *upgradeKymaManager) updateOrchestration(o *internal.Orchestration, state, description string) time.Duration {
 	o.State = state
 	o.Description = description
 	err := u.orchestrationStorage.Update(*o)
 	if err != nil {
 		if !dberr.IsNotFound(err) {
 			u.log.Errorf("while updating orchestration: %v", err)
-			return time.Minute, nil
+			return time.Minute
 		}
 	}
-	return 0, nil
+	return 0
 }
 
-func (u *upgradeKymaManager) checkOperationsResults(ops []internal.RuntimeOperation) ([]internal.RuntimeOperation, bool, error) {
-	// get all operation IDs to process
-	var operationIDList []string
-	runtimeOperations := make(map[string]internal.RuntimeOperation)
-	for _, op := range ops {
-		if len(op.OperationID) != 0 {
-			operationIDList = append(operationIDList, op.OperationID)
-			runtimeOperations[op.OperationID] = op
-		}
-	}
-
+func (u *upgradeKymaManager) waitForCompletion(o *internal.Orchestration) error {
+	// todo: use inter al config
+	// todo: remove PollInfinite  and introduce some timeout???
+	var stats map[domain.LastOperationState]int
 	err := wait.PollInfinite(u.pollingInterval, func() (bool, error) {
-		operations, err := u.operationStorage.GetOperationsForIDs(operationIDList)
+		s, err := u.operationStorage.GetOperationStatsForOrchestration(o.OrchestrationID)
 		if err != nil {
 			u.log.Errorf("while getting operations: %v", err)
 			return false, nil
 		}
-		// loop over operations, remove IDs which were succeeded or failed
-		for i, op := range operations {
-			if op.State != domain.InProgress {
-				operationIDList = append(operationIDList[:i], operationIDList[i+1:]...)
-				runtimeOp := runtimeOperations[op.ID]
-				runtimeOp.Status = string(op.State)
-				runtimeOperations[op.ID] = runtimeOp
-			}
+		stats = s
+
+		numberOfInProgress, found := stats[domain.InProgress]
+		if !found {
+			u.log.Warnf("Orchestration %s operation stats does not contain in progress operations", o.OrchestrationID)
+			return false, nil
 		}
-		if len(operationIDList) == 0 {
-			return true, nil
-		}
-		return false, nil
+
+		return numberOfInProgress == 0, nil
 	})
 	if err != nil {
-		return nil, false, errors.Wrap(err, "while waiting for scheduled operations to finish")
+		return errors.Wrap(err, "while waiting for scheduled operations to finish")
 	}
 
-	result := make([]internal.RuntimeOperation, 0)
-	for _, op := range runtimeOperations {
-		result = append(result, op)
+	orchestrationState := internal.Succeeded
+	if stats[domain.Failed] > 0 {
+		orchestrationState = internal.Failed
 	}
 
-	return result, true, nil
+	o.State = orchestrationState
+
+	return nil
 }

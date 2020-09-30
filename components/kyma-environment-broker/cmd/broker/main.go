@@ -191,9 +191,9 @@ func main() {
 	gardenerShoots, err := gardener.NewGardenerShootInterface(gardenerClusterConfig, cfg.Gardener.Project)
 	fatalOnError(err)
 
-	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
+	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets, gardenerShoots)
 	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecrets, gardenerShoots)
-	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool, gardenerSharedPool)
+	accountProvider := hyperscaler.NewAccountProvider(gardenerAccountPool, gardenerSharedPool)
 
 	regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)
 	fatalOnError(err)
@@ -251,9 +251,8 @@ func main() {
 		},
 		{
 			weight: 1,
-			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
+			step: provisioning.NewLmsActivationStep(db.Operations(), cfg.LMS,
 				provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
-			disabled: cfg.LMS.Disabled,
 		},
 		{
 			weight:   1,
@@ -284,9 +283,8 @@ func main() {
 		},
 		{
 			weight: 4,
-			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
+			step: provisioning.NewLmsActivationStep(db.Operations(), cfg.LMS,
 				provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
-			disabled: cfg.LMS.Disabled,
 		},
 		{
 			weight:   5,
@@ -304,7 +302,7 @@ func main() {
 		}
 	}
 
-	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient)
+	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider)
 	deprovisionManager.InitStep(deprovisioningInit)
 	deprovisioningSteps := []struct {
 		disabled bool

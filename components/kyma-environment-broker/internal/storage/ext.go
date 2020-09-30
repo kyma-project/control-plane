@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
 type Instances interface {
@@ -29,6 +30,7 @@ type Operations interface {
 	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]internal.Operation, error)
 	GetOperationStats() (internal.OperationStats, error)
 	GetOperationsForIDs(operationIDList []string) ([]internal.Operation, error)
+	GetOperationStatsForOrchestration(orchestrationID string) (map[domain.LastOperationState]int, error)
 }
 
 type Provisioning interface {
