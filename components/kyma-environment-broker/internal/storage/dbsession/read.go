@@ -287,7 +287,7 @@ func (r readSession) GetOperationStats() ([]dbmodel.OperationStatEntry, error) {
 
 func (r readSession) GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error) {
 	var rows []dbmodel.OperationStatEntry
-	_, err := r.session.Select("state, count(*)").
+	_, err := r.session.Select("type, state, count(*) as total").
 		From(postsql.OperationTableName).
 		Where("orchestration_id", orchestrationID).
 		GroupBy("state").
