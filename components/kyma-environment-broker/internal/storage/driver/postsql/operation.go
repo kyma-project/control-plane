@@ -1,10 +1,11 @@
 package postsql
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/storage"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
@@ -451,7 +452,7 @@ func toOperation(op *dbmodel.OperationDTO) internal.Operation {
 		InstanceID:             op.InstanceID,
 		Description:            op.Description,
 		Version:                op.Version,
-		OrchestrationID:        orchestrationIDtoString(op.OrchestrationID),
+		OrchestrationID:        storage.SQLNullStringToString(op.OrchestrationID),
 	}
 }
 
@@ -541,7 +542,7 @@ func upgradeKymaOperationToDTO(op *internal.UpgradeKymaOperation) (dbmodel.Opera
 	ret := operationToDB(&op.Operation)
 	ret.Data = string(serialized)
 	ret.Type = dbmodel.OperationTypeUpgradeKyma
-	ret.OrchestrationID = orchestrationIDtoSQL(op.OrchestrationID)
+	ret.OrchestrationID = storage.StringToSQLNullString(op.OrchestrationID)
 	return ret, nil
 }
 
@@ -555,25 +556,6 @@ func operationToDB(op *internal.Operation) dbmodel.OperationDTO {
 		CreatedAt:         op.CreatedAt,
 		Version:           op.Version,
 		InstanceID:        op.InstanceID,
-		OrchestrationID:   orchestrationIDtoSQL(op.OrchestrationID),
+		OrchestrationID:   storage.StringToSQLNullString(op.OrchestrationID),
 	}
-}
-
-func orchestrationIDtoSQL(orchestrationID string) sql.NullString {
-	result := sql.NullString{}
-
-	if orchestrationID != "" {
-		result.String = orchestrationID
-		result.Valid = true
-	}
-
-	return result
-}
-
-func orchestrationIDtoString(orchestrationID sql.NullString) string {
-	if orchestrationID.Valid {
-		return orchestrationID.String
-	}
-
-	return ""
 }
