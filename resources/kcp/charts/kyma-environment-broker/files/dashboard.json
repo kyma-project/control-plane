@@ -331,11 +331,29 @@
           "refId": "A"
         }
       ],
+      "options": {
+        "colorMode": "value",
+        "fieldOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
       "thresholds": "1,5",
       "timeFrom": null,
       "timeShift": null,
       "title": "In progress provisioning operations",
-      "type": "singlestat",
+      "type": "stat",
       "valueFontSize": "80%",
       "valueMaps": [
         {
@@ -421,11 +439,29 @@
           "refId": "A"
         }
       ],
+      "options": {
+        "colorMode": "value",
+        "fieldOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
       "thresholds": "1,10",
       "timeFrom": null,
       "timeShift": null,
       "title": "In progress deprovisioning operations",
-      "type": "singlestat",
+      "type": "stat",
       "valueFontSize": "80%",
       "valueMaps": [
         {
@@ -1733,7 +1769,7 @@
       }
     }
   ],
-  "refresh": false,
+  "refresh": "10s",
   "schemaVersion": 25,
   "style": "dark",
   "tags": [
@@ -1749,8 +1785,6 @@
   },
   "timepicker": {
     "refresh_intervals": [
-      "5s",
-      "10s",
       "30s",
       "1m",
       "5m",
@@ -1775,5 +1809,5 @@
   "timezone": "",
   "title": "KCP / Kyma Environment Broker",
   "uid": "_MIdIJiZh",
-  "version": 1
+  "version": 4
 }
