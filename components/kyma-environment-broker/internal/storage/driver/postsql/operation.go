@@ -523,7 +523,9 @@ func toUpgradeKymaOperation(op *dbmodel.OperationDTO) (*internal.UpgradeKymaOper
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
 	operation.Operation = toOperation(op)
-	operation.OrchestrationID = op.OrchestrationID
+	if op.OrchestrationID.Valid {
+		operation.OrchestrationID = op.OrchestrationID.String
+	}
 
 	return &operation, nil
 }
@@ -537,7 +539,8 @@ func upgradeKymaOperationToDTO(op *internal.UpgradeKymaOperation) (dbmodel.Opera
 	ret := operationToDB(&op.Operation)
 	ret.Data = string(serialized)
 	ret.Type = dbmodel.OperationTypeUpgradeKyma
-	ret.OrchestrationID = op.OrchestrationID
+	ret.OrchestrationID.Valid = true
+	ret.OrchestrationID.String = op.OrchestrationID
 	return ret, nil
 }
 

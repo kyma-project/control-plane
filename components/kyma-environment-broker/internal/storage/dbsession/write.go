@@ -91,7 +91,7 @@ func (ws writeSession) InsertOperation(op dbmodel.OperationDTO) dberr.Error {
 		Pair("target_operation_id", op.TargetOperationID).
 		Pair("type", op.Type).
 		Pair("data", op.Data).
-		Pair("orchestration_id", op.OrchestrationID).
+		Pair("orchestration_id", op.OrchestrationID.String).
 		Exec()
 
 	if err != nil {
@@ -213,7 +213,7 @@ func (ws writeSession) UpdateOperation(op dbmodel.OperationDTO) dberr.Error {
 		Set("target_operation_id", op.TargetOperationID).
 		Set("type", op.Type).
 		Set("data", op.Data).
-		Set("orchestration_id", op.OrchestrationID).
+		Set("orchestration_id", op.OrchestrationID.String).
 		Exec()
 
 	if err != nil {
