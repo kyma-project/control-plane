@@ -1,6 +1,9 @@
 package dbmodel
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 // OperationType defines the possible types of an asynchronous operation to a broker.
 type OperationType string
@@ -23,12 +26,12 @@ type OperationDTO struct {
 	UpdatedAt time.Time
 
 	InstanceID        string
+	OrchestrationID   sql.NullString
 	TargetOperationID string
-	State             string
-	Description       string
-	OrchestrationID   string
 
-	Data string
+	Data        string
+	State       string
+	Description string
 
 	Type OperationType
 }

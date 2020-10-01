@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/storage"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
@@ -450,6 +452,7 @@ func toOperation(op *dbmodel.OperationDTO) internal.Operation {
 		InstanceID:             op.InstanceID,
 		Description:            op.Description,
 		Version:                op.Version,
+		OrchestrationID:        storage.SQLNullStringToString(op.OrchestrationID),
 	}
 }
 
@@ -523,7 +526,9 @@ func toUpgradeKymaOperation(op *dbmodel.OperationDTO) (*internal.UpgradeKymaOper
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
 	operation.Operation = toOperation(op)
-	operation.OrchestrationID = op.OrchestrationID
+	if op.OrchestrationID.Valid {
+		operation.OrchestrationID = op.OrchestrationID.String
+	}
 
 	return &operation, nil
 }
@@ -537,7 +542,7 @@ func upgradeKymaOperationToDTO(op *internal.UpgradeKymaOperation) (dbmodel.Opera
 	ret := operationToDB(&op.Operation)
 	ret.Data = string(serialized)
 	ret.Type = dbmodel.OperationTypeUpgradeKyma
-	ret.OrchestrationID = op.OrchestrationID
+	ret.OrchestrationID = storage.StringToSQLNullString(op.OrchestrationID)
 	return ret, nil
 }
 
@@ -551,5 +556,6 @@ func operationToDB(op *internal.Operation) dbmodel.OperationDTO {
 		CreatedAt:         op.CreatedAt,
 		Version:           op.Version,
 		InstanceID:        op.InstanceID,
+		OrchestrationID:   storage.StringToSQLNullString(op.OrchestrationID),
 	}
 }
