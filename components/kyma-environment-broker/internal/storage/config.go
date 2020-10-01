@@ -17,7 +17,7 @@ type Config struct {
 	Name     string `envconfig:"default=broker"`
 	SSLMode  string `envconfig:"default=disable"`
 
-	SecretKey string
+	SecretKey string `envconfig:"optional"`
 
 	MaxOpenConns    int           `envconfig:"default=8"`
 	MaxIdleConns    int           `envconfig:"default=2"`

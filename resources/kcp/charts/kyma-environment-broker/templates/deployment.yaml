@@ -129,6 +129,7 @@ spec:
                 secretKeyRef:
                   name: "{{ .Values.global.database.managedGCP.encryptionSecretName }}"
                   key: secretKey
+                  optional: true
             - name: APP_DATABASE_USER
               valueFrom:
                 secretKeyRef:
