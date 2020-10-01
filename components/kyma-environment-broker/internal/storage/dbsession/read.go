@@ -3,7 +3,8 @@ package dbsession
 import (
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -112,22 +113,22 @@ func (r readSession) GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.
 	return operation, nil
 }
 
-func (r readSession) GetOrchestrationByID(oID string) (internal.Orchestration, dberr.Error) {
+func (r readSession) GetOrchestrationByID(oID string) (dbmodel.OrchestrationDTO, dberr.Error) {
 	condition := dbr.Eq("orchestration_id", oID)
 	operation, err := r.getOrchestration(condition)
 	if err != nil {
 		switch {
 		case dberr.IsNotFound(err):
-			return internal.Orchestration{}, dberr.NotFound("for ID: %s %s", oID, err)
+			return dbmodel.OrchestrationDTO{}, dberr.NotFound("for ID: %s %s", oID, err)
 		default:
-			return internal.Orchestration{}, err
+			return dbmodel.OrchestrationDTO{}, err
 		}
 	}
 	return operation, nil
 }
 
-func (r readSession) ListOrchestrationsByState(state string) ([]internal.Orchestration, dberr.Error) {
-	var orchestrations []internal.Orchestration
+func (r readSession) ListOrchestrationsByState(state string) ([]dbmodel.OrchestrationDTO, error) {
+	var orchestrations []dbmodel.OrchestrationDTO
 
 	stateCondition := dbr.Eq("state", state)
 
@@ -142,8 +143,8 @@ func (r readSession) ListOrchestrationsByState(state string) ([]internal.Orchest
 	return orchestrations, nil
 }
 
-func (r readSession) ListOrchestrations() ([]internal.Orchestration, dberr.Error) {
-	var orchestrations []internal.Orchestration
+func (r readSession) ListOrchestrations() ([]dbmodel.OrchestrationDTO, dberr.Error) {
+	var orchestrations []dbmodel.OrchestrationDTO
 
 	_, err := r.session.
 		Select("*").
@@ -241,8 +242,8 @@ func (r readSession) getOperation(condition dbr.Builder) (dbmodel.OperationDTO, 
 	return operation, nil
 }
 
-func (r readSession) getOrchestration(condition dbr.Builder) (internal.Orchestration, dberr.Error) {
-	var operation internal.Orchestration
+func (r readSession) getOrchestration(condition dbr.Builder) (dbmodel.OrchestrationDTO, dberr.Error) {
+	var operation dbmodel.OrchestrationDTO
 
 	err := r.session.
 		Select("*").
@@ -252,9 +253,9 @@ func (r readSession) getOrchestration(condition dbr.Builder) (internal.Orchestra
 
 	if err != nil {
 		if err == dbr.ErrNotFound {
-			return internal.Orchestration{}, dberr.NotFound("cannot find operation: %s", err)
+			return dbmodel.OrchestrationDTO{}, dberr.NotFound("cannot find operation: %s", err)
 		}
-		return internal.Orchestration{}, dberr.Internal("Failed to get operation: %s", err)
+		return dbmodel.OrchestrationDTO{}, dberr.Internal("Failed to get operation: %s", err)
 	}
 	return operation, nil
 }
@@ -284,6 +285,17 @@ func (r readSession) GetOperationStats() ([]dbmodel.OperationStatEntry, error) {
 	return rows, err
 }
 
+func (r readSession) GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error) {
+	var rows []dbmodel.OperationStatEntry
+	_, err := r.session.Select("state, count(*)").
+		From(postsql.OperationTableName).
+		Where("orchestration_id", orchestrationID).
+		GroupBy("state").
+		Load(&rows)
+
+	return rows, err
+}
+
 func (r readSession) GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error) {
 	var rows []dbmodel.InstanceByGlobalAccountIDStatEntry
 	_, err := r.session.SelectBySql(fmt.Sprintf("select global_account_id, count(*) as total from %s group by global_account_id",
@@ -303,17 +315,12 @@ func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID stri
 	return res.Total, err
 }
 
-func (r readSession) ListInstances(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error) {
+func (r readSession) ListInstances(pageSize int, page int) ([]internal.Instance, int, int, error) {
 	var instances []internal.Instance
 
-	offset, err := pagination.DecodeOffsetCursor(cursor)
+	order, err := pagination.ConvertPagePageSizeAndOrderedColumnToSQL(pageSize, page, postsql.CreatedAtField)
 	if err != nil {
-		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while decoding offset cursor")
-	}
-
-	order, err := pagination.ConvertOffsetLimitAndOrderedColumnToSQL(limit, offset, postsql.CreatedAtField)
-	if err != nil {
-		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while converting offset and limit to SQL statement")
+		return nil, -1, -1, errors.Wrap(err, "while converting page and pageSize to SQL statement")
 	}
 
 	stmtWithPagination := fmt.Sprintf("SELECT * FROM %s %s", postsql.InstancesTableName, order)
@@ -322,27 +329,16 @@ func (r readSession) ListInstances(limit int, cursor string) ([]internal.Instanc
 
 	_, err = execStmt.Load(&instances)
 	if err != nil {
-		return nil, &pagination.Page{}, -1, errors.Wrap(err, "while fetching instances")
+		return nil, -1, -1, errors.Wrap(err, "while fetching instances")
 	}
 
 	totalCount, err := r.getInstanceCount()
 	if err != nil {
-		return nil, &pagination.Page{}, -1, err
-	}
-
-	hasNextPage := false
-	endCursor := ""
-	if totalCount > offset+len(instances) {
-		hasNextPage = true
-		endCursor = pagination.EncodeNextOffsetCursor(offset, limit)
+		return nil, -1, -1, err
 	}
 
 	return instances,
-		&pagination.Page{
-			StartCursor: cursor,
-			EndCursor:   endCursor,
-			HasNextPage: hasNextPage,
-		},
+		len(instances),
 		totalCount,
 		nil
 }

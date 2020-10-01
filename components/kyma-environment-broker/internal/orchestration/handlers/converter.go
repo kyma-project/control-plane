@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/pkg/errors"
@@ -11,29 +9,14 @@ import (
 type Converter struct{}
 
 func (*Converter) OrchestrationToDTO(o *internal.Orchestration) (*orchestration.StatusResponse, error) {
-	params := orchestration.Parameters{}
-	if o.Parameters.Valid {
-		err := json.Unmarshal([]byte(o.Parameters.String), &params)
-		if err != nil {
-			return nil, errors.Wrap(err, "while un-marshalling parameters")
-		}
-	}
-	ops := make([]internal.RuntimeOperation, 0)
-	if o.RuntimeOperations.Valid {
-		err := json.Unmarshal([]byte(o.RuntimeOperations.String), &ops)
-		if err != nil {
-			return nil, errors.Wrap(err, "while un-marshalling operations")
-		}
-	}
 
 	return &orchestration.StatusResponse{
-		OrchestrationID:   o.OrchestrationID,
-		State:             o.State,
-		Description:       o.Description,
-		CreatedAt:         o.CreatedAt,
-		UpdatedAt:         o.UpdatedAt,
-		Parameters:        params,
-		RuntimeOperations: ops,
+		OrchestrationID: o.OrchestrationID,
+		State:           o.State,
+		Description:     o.Description,
+		CreatedAt:       o.CreatedAt,
+		UpdatedAt:       o.UpdatedAt,
+		Parameters:      o.Parameters,
 	}, nil
 }
 
@@ -49,5 +32,5 @@ func (c *Converter) OrchestrationListToDTO(orchestrations []internal.Orchestrati
 		responses = append(responses, *status)
 	}
 
-	return orchestration.StatusResponseList{Orchestrations: responses}, nil
+	return orchestration.StatusResponseList{Data: responses}, nil
 }

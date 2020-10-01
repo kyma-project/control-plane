@@ -1,10 +1,10 @@
 package storage
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
 type Instances interface {
@@ -17,7 +17,7 @@ type Instances interface {
 	Delete(instanceID string) error
 	GetInstanceStats() (internal.InstanceStats, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
-	List(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error)
+	List(pageSize int, page int) ([]internal.Instance, int, int, error)
 }
 
 type Operations interface {
@@ -29,6 +29,7 @@ type Operations interface {
 	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]internal.Operation, error)
 	GetOperationStats() (internal.OperationStats, error)
 	GetOperationsForIDs(operationIDList []string) ([]internal.Operation, error)
+	GetOperationStatsForOrchestration(orchestrationID string) (map[domain.LastOperationState]int, error)
 }
 
 type Provisioning interface {

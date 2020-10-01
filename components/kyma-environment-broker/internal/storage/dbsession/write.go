@@ -91,6 +91,7 @@ func (ws writeSession) InsertOperation(op dbmodel.OperationDTO) dberr.Error {
 		Pair("target_operation_id", op.TargetOperationID).
 		Pair("type", op.Type).
 		Pair("data", op.Data).
+		Pair("orchestration_id", op.OrchestrationID).
 		Exec()
 
 	if err != nil {
@@ -105,7 +106,7 @@ func (ws writeSession) InsertOperation(op dbmodel.OperationDTO) dberr.Error {
 	return nil
 }
 
-func (ws writeSession) InsertOrchestration(o internal.Orchestration) dberr.Error {
+func (ws writeSession) InsertOrchestration(o dbmodel.OrchestrationDTO) dberr.Error {
 	_, err := ws.insertInto(postsql.OrchestrationTableName).
 		Pair("orchestration_id", o.OrchestrationID).
 		Pair("created_at", o.CreatedAt).
@@ -113,7 +114,6 @@ func (ws writeSession) InsertOrchestration(o internal.Orchestration) dberr.Error
 		Pair("description", o.Description).
 		Pair("state", o.State).
 		Pair("parameters", o.Parameters).
-		Pair("runtime_operations", o.RuntimeOperations).
 		Exec()
 
 	if err != nil {
@@ -128,7 +128,7 @@ func (ws writeSession) InsertOrchestration(o internal.Orchestration) dberr.Error
 	return nil
 }
 
-func (ws writeSession) UpdateOrchestration(o internal.Orchestration) dberr.Error {
+func (ws writeSession) UpdateOrchestration(o dbmodel.OrchestrationDTO) dberr.Error {
 	res, err := ws.update(postsql.OrchestrationTableName).
 		Where(dbr.Eq("orchestration_id", o.OrchestrationID)).
 		Set("created_at", o.CreatedAt).
@@ -136,7 +136,6 @@ func (ws writeSession) UpdateOrchestration(o internal.Orchestration) dberr.Error
 		Set("description", o.Description).
 		Set("state", o.State).
 		Set("parameters", o.Parameters).
-		Set("runtime_operations", o.RuntimeOperations).
 		Exec()
 
 	if err != nil {
@@ -214,6 +213,7 @@ func (ws writeSession) UpdateOperation(op dbmodel.OperationDTO) dberr.Error {
 		Set("target_operation_id", op.TargetOperationID).
 		Set("type", op.Type).
 		Set("data", op.Data).
+		Set("orchestration_id", op.OrchestrationID).
 		Exec()
 
 	if err != nil {

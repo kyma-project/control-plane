@@ -101,11 +101,13 @@ func TestManager_Execute(t *testing.T) {
 
 func fixOperation(ID string) internal.UpgradeKymaOperation {
 	return internal.UpgradeKymaOperation{
-		Operation: internal.Operation{
-			ID:          ID,
-			State:       domain.InProgress,
-			InstanceID:  "fea2c1a1-139d-43f6-910a-a618828a79d5",
-			Description: "",
+		RuntimeOperation: internal.RuntimeOperation{
+			Operation: internal.Operation{
+				ID:          ID,
+				State:       domain.InProgress,
+				InstanceID:  "fea2c1a1-139d-43f6-910a-a618828a79d5",
+				Description: "",
+			},
 		},
 	}
 }

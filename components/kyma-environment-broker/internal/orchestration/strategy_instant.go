@@ -36,7 +36,7 @@ func (p *InstantOrchestrationStrategy) Execute(operations []internal.RuntimeOper
 	q.Run(stopCh, workers)
 
 	for _, op := range operations {
-		q.Add(op.OperationID)
+		q.Add(op.ID)
 	}
 
 	return 0, nil

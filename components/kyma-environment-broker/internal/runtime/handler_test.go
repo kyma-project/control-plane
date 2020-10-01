@@ -57,7 +57,7 @@ func TestRuntimeHandler(t *testing.T) {
 		converter.On("InstancesAndOperationsToDTO", testInstance2, mock.Anything, mock.Anything, mock.Anything).Return(testDTO2, nil)
 		runtimeHandler := runtime.NewHandler(instances, operations, 2, &converter)
 
-		req, err := http.NewRequest("GET", "/runtimes?limit=1", nil)
+		req, err := http.NewRequest("GET", "/runtimes?page_size=1", nil)
 		require.NoError(t, err)
 
 		rr := httptest.NewRecorder()
@@ -76,12 +76,11 @@ func TestRuntimeHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, 2, out.TotalCount)
-		assert.Equal(t, 1, len(out.Data))
+		assert.Equal(t, 1, out.Count)
 		assert.Equal(t, testID1, out.Data[0].InstanceID)
-		assert.True(t, out.PageInfo.HasNextPage)
 
 		// given
-		urlPath := fmt.Sprintf("/runtimes?cursor=%s", out.PageInfo.EndCursor)
+		urlPath := fmt.Sprintf("/runtimes?page=2&page_size=1")
 		req, err = http.NewRequest(http.MethodGet, urlPath, nil)
 		require.NoError(t, err)
 		rr = httptest.NewRecorder()
@@ -96,9 +95,8 @@ func TestRuntimeHandler(t *testing.T) {
 		require.NoError(t, err)
 		logrus.Print(out.Data)
 		assert.Equal(t, 2, out.TotalCount)
-		assert.Equal(t, 1, len(out.Data))
+		assert.Equal(t, 1, out.Count)
 		assert.Equal(t, testID2, out.Data[0].InstanceID)
-		assert.False(t, out.PageInfo.HasNextPage)
 
 	})
 
@@ -109,7 +107,7 @@ func TestRuntimeHandler(t *testing.T) {
 
 		runtimeHandler := runtime.NewHandler(instances, operations, 2, runtime.NewConverter("region"))
 
-		req, err := http.NewRequest("GET", "/runtimes?limit=a", nil)
+		req, err := http.NewRequest("GET", "/runtimes?page_size=a", nil)
 		require.NoError(t, err)
 
 		rr := httptest.NewRecorder()
@@ -120,7 +118,7 @@ func TestRuntimeHandler(t *testing.T) {
 
 		require.Equal(t, http.StatusBadRequest, rr.Code)
 
-		req, err = http.NewRequest("GET", "/runtimes?limit=1,2,3", nil)
+		req, err = http.NewRequest("GET", "/runtimes?page_size=1,2,3", nil)
 		require.NoError(t, err)
 
 		rr = httptest.NewRecorder()
@@ -128,13 +126,13 @@ func TestRuntimeHandler(t *testing.T) {
 
 		require.Equal(t, http.StatusBadRequest, rr.Code)
 
-		req, err = http.NewRequest("GET", "/runtimes?cursor=abc", nil)
+		req, err = http.NewRequest("GET", "/runtimes?page_size=abc", nil)
 		require.NoError(t, err)
 
 		rr = httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 
-		require.Equal(t, http.StatusInternalServerError, rr.Code)
+		require.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
 }

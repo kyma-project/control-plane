@@ -104,12 +104,14 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 func fixUpgradeKymaOperation(t *testing.T) internal.UpgradeKymaOperation {
 	return internal.UpgradeKymaOperation{
-		Operation: internal.Operation{
-			ID:                     fixUpgradeOperationID,
-			InstanceID:             fixInstanceID,
-			ProvisionerOperationID: fixProvisionerOperationID,
-			Description:            "",
-			UpdatedAt:              time.Now(),
+		RuntimeOperation: internal.RuntimeOperation{
+			Operation: internal.Operation{
+				ID:                     fixUpgradeOperationID,
+				InstanceID:             fixInstanceID,
+				ProvisionerOperationID: fixProvisionerOperationID,
+				Description:            "",
+				UpdatedAt:              time.Now(),
+			},
 		},
 		ProvisioningParameters: fixRawProvisioningParameters(t),
 	}

@@ -2,7 +2,6 @@ package dbsession
 
 import (
 	dbr "github.com/gocraft/dbr"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
@@ -30,11 +29,12 @@ type ReadSession interface {
 	GetOperationStats() ([]dbmodel.OperationStatEntry, error)
 	GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
-	GetOrchestrationByID(oID string) (internal.Orchestration, dberr.Error)
-	ListOrchestrationsByState(state string) ([]internal.Orchestration, dberr.Error)
 	ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.RuntimeStateDTO, dberr.Error)
-	ListOrchestrations() ([]internal.Orchestration, dberr.Error)
-	ListInstances(limit int, cursor string) ([]internal.Instance, *pagination.Page, int, error)
+	GetOrchestrationByID(oID string) (dbmodel.OrchestrationDTO, dberr.Error)
+	ListOrchestrationsByState(state string) ([]dbmodel.OrchestrationDTO, error)
+	ListOrchestrations() ([]dbmodel.OrchestrationDTO, dberr.Error)
+	ListInstances(pageSize, page int) ([]internal.Instance, int, int, error)
+	GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error)
 }
 
 //go:generate mockery -name=WriteSession
@@ -44,8 +44,8 @@ type WriteSession interface {
 	DeleteInstance(instanceID string) dberr.Error
 	InsertOperation(dto dbmodel.OperationDTO) dberr.Error
 	UpdateOperation(instance dbmodel.OperationDTO) dberr.Error
-	InsertOrchestration(o internal.Orchestration) dberr.Error
-	UpdateOrchestration(o internal.Orchestration) dberr.Error
+	InsertOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
+	UpdateOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
 	InsertRuntimeState(state dbmodel.RuntimeStateDTO) dberr.Error
 	InsertLMSTenant(dto dbmodel.LMSTenantDTO) dberr.Error
 }

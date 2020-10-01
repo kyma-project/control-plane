@@ -65,3 +65,17 @@ spec:
         host: {{ .Values.global.oathkeeper.host }}
         port:
           number: {{ .Values.global.oathkeeper.port }}
+  - corsPolicy:
+      allowHeaders:
+        - Authorization
+        - Content-Type
+      allowMethods: ["GET"]
+      allowOrigin: ["*"]
+    match:
+      - uri:
+          regex: /runtimes
+    route:
+      - destination:
+          host: {{ .Values.global.oathkeeper.host }}
+          port:
+            number: {{ .Values.global.oathkeeper.port }}

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -85,19 +84,12 @@ func (h *kymaHandler) listOrchestration(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request) {
-	dto := orchestration.Parameters{}
+	params := internal.OrchestrationParameters{}
 
-	err := json.NewDecoder(r.Body).Decode(&dto)
+	err := json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
 		h.log.Errorf("while decoding request body: %v", err)
 		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while decoding request body"))
-		return
-	}
-
-	params, err := json.Marshal(dto)
-	if err != nil {
-		h.log.Errorf("while encoding request params: %v", err)
-		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while encoding request params"))
 		return
 	}
 
@@ -106,12 +98,9 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 		OrchestrationID: uuid.New().String(),
 		State:           internal.Pending,
 		Description:     "started processing of Kyma upgrade",
-		Parameters: sql.NullString{
-			String: string(params),
-			Valid:  true,
-		},
-		CreatedAt: now,
-		UpdatedAt: now,
+		Parameters:      params,
+		CreatedAt:       now,
+		UpdatedAt:       now,
 	}
 
 	err = h.db.Insert(o)

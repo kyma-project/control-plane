@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	limitParam  = "limit"
-	cursorParam = "cursor"
+	pageSizeParam = "page_size"
+	pageParam     = "page"
 )
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
@@ -46,14 +46,14 @@ func (h *Handler) AttachRoutes(router *mux.Router) {
 }
 
 func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
-	var toReturn []RuntimeDTO
-	limit, cursor, err := h.getParams(req)
+	toReturn := make([]RuntimeDTO, 0)
+	pageSize, page, err := h.getParams(req)
 	if err != nil {
 		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
 		return
 	}
 
-	instances, pageInfo, totalCount, err := h.instancesDb.List(limit, cursor)
+	instances, count, totalCount, err := h.instancesDb.List(pageSize, page)
 	if err != nil {
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching instances"))
 		return
@@ -75,12 +75,12 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 		toReturn = append(toReturn, dto)
 	}
 
-	page := RuntimesPage{
+	runtimePage := RuntimesPage{
 		Data:       toReturn,
-		PageInfo:   pageInfo,
+		Count:      count,
 		TotalCount: totalCount,
 	}
-	httputil.WriteResponse(w, http.StatusOK, page)
+	httputil.WriteResponse(w, http.StatusOK, runtimePage)
 }
 
 func (h *Handler) getOperationsForInstance(instance internal.Instance) (*internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation, error) {
@@ -99,39 +99,42 @@ func (h *Handler) getOperationsForInstance(instance internal.Instance) (*interna
 	return pOpr, dOpr, ukOpr, nil
 }
 
-func (h *Handler) getParams(req *http.Request) (int, string, error) {
-	var limit int
-	var cursor string
+func (h *Handler) getParams(req *http.Request) (int, int, error) {
+	var pageSize int
+	var page int
 	var err error
 
 	params := req.URL.Query()
-	limitArr, ok := params[limitParam]
-	if len(limitArr) > 1 {
-		return 0, "", errors.New("limit has to be one parameter")
+	pageSizeArr, ok := params[pageSizeParam]
+	if len(pageSizeArr) > 1 {
+		return 0, 0, errors.New("pageSize has to be one parameter")
 	}
 
 	if !ok {
-		limit = h.defaultMaxPage
+		pageSize = h.defaultMaxPage
 	} else {
-		limit, err = strconv.Atoi(limitArr[0])
+		pageSize, err = strconv.Atoi(pageSizeArr[0])
 		if err != nil {
-			return 0, "", errors.New("limit has to be an integer")
+			return 0, 0, errors.New("pageSize has to be an integer")
 		}
 	}
 
-	if limit > h.defaultMaxPage {
-		return 0, "", errors.New(fmt.Sprintf("limit is bigger than maxPage(%d)", h.defaultMaxPage))
+	if pageSize > h.defaultMaxPage {
+		return 0, 0, errors.New(fmt.Sprintf("pageSize is bigger than maxPage(%d)", h.defaultMaxPage))
 	}
 
-	cursorArr, ok := params[cursorParam]
-	if len(cursorArr) > 1 {
-		return 0, "", errors.New("cursor has to be one parameter")
+	pageArr, ok := params[pageParam]
+	if len(pageArr) > 1 {
+		return 0, 0, errors.New("page has to be one parameter")
 	}
 	if !ok {
-		cursor = ""
+		page = 1
 	} else {
-		cursor = cursorArr[0]
+		page, err = strconv.Atoi(pageArr[0])
+		if err != nil {
+			return 0, 0, errors.New("page has to be an integer")
+		}
 	}
 
-	return limit, cursor, nil
+	return pageSize, page, nil
 }

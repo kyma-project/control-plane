@@ -47,7 +47,7 @@ func getK8sSecrets(secretsClient corev1.SecretInterface, labelSelector string) (
 	})
 	if err != nil {
 		return nil,
-			errors.Wrapf(err, "sharedAccountPool error during secret list for LabelSelector: %s", labelSelector)
+			errors.Wrapf(err, "error listing secrets for LabelSelector: %s", labelSelector)
 	}
 	if secrets == nil || len(secrets.Items) == 0 {
 		return nil, errors.Errorf("sharedAccountPool error: no shared Secret found for %s label selector", labelSelector)
@@ -64,7 +64,7 @@ func (sp *SharedAccountPool) getLeastUsed(secrets []apiv1.Secret) (apiv1.Secret,
 
 	shoots, err := sp.shootsClient.List(metav1.ListOptions{})
 	if err != nil {
-		return apiv1.Secret{}, errors.Wrap(err, "sharedAccountPool error while listing Shoots")
+		return apiv1.Secret{}, errors.Wrap(err, "error while listing Shoots")
 	}
 
 	if shoots == nil || len(shoots.Items) == 0 {
