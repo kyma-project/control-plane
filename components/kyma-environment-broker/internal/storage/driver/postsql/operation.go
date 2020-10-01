@@ -1,6 +1,7 @@
 package postsql
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -450,6 +451,7 @@ func toOperation(op *dbmodel.OperationDTO) internal.Operation {
 		InstanceID:             op.InstanceID,
 		Description:            op.Description,
 		Version:                op.Version,
+		OrchestrationID:        orchestrationIDtoString(op.OrchestrationID),
 	}
 }
 
@@ -539,8 +541,7 @@ func upgradeKymaOperationToDTO(op *internal.UpgradeKymaOperation) (dbmodel.Opera
 	ret := operationToDB(&op.Operation)
 	ret.Data = string(serialized)
 	ret.Type = dbmodel.OperationTypeUpgradeKyma
-	ret.OrchestrationID.Valid = true
-	ret.OrchestrationID.String = op.OrchestrationID
+	ret.OrchestrationID = orchestrationIDtoSQL(op.OrchestrationID)
 	return ret, nil
 }
 
@@ -554,5 +555,25 @@ func operationToDB(op *internal.Operation) dbmodel.OperationDTO {
 		CreatedAt:         op.CreatedAt,
 		Version:           op.Version,
 		InstanceID:        op.InstanceID,
+		OrchestrationID:   orchestrationIDtoSQL(op.OrchestrationID),
 	}
+}
+
+func orchestrationIDtoSQL(orchestrationID string) sql.NullString {
+	result := sql.NullString{}
+
+	if orchestrationID != "" {
+		result.String = orchestrationID
+		result.Valid = true
+	}
+
+	return result
+}
+
+func orchestrationIDtoString(orchestrationID sql.NullString) string {
+	if orchestrationID.Valid {
+		return orchestrationID.String
+	}
+
+	return ""
 }

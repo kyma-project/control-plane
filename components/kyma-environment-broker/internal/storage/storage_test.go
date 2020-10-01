@@ -319,6 +319,7 @@ func TestSchemaInitializer(t *testing.T) {
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
+			orchestrationID := "orch-id"
 			givenOperation := internal.ProvisioningOperation{
 				Operation: internal.Operation{
 					ID:    "operation-id",
@@ -327,6 +328,7 @@ func TestSchemaInitializer(t *testing.T) {
 					CreatedAt:              time.Now().Truncate(time.Millisecond),
 					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second),
 					InstanceID:             "inst-id",
+					OrchestrationID:        orchestrationID,
 					ProvisionerOperationID: "target-op-id",
 					Description:            "description",
 					Version:                1,
@@ -339,6 +341,9 @@ func TestSchemaInitializer(t *testing.T) {
 			require.NoError(t, err)
 
 			brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			require.NoError(t, err)
+
+			err = brokerStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: orchestrationID})
 			require.NoError(t, err)
 
 			svc := brokerStorage.Operations()
@@ -378,6 +383,11 @@ func TestSchemaInitializer(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, 1, stats.Provisioning[domain.InProgress])
+
+			opStats, err := svc.GetOperationStatsForOrchestration(orchestrationID)
+			require.NoError(t, err)
+
+			assert.Equal(t, 1, opStats[domain.InProgress])
 
 		})
 
@@ -473,6 +483,7 @@ func TestSchemaInitializer(t *testing.T) {
 						ProvisionerOperationID: "target-op-id",
 						Description:            "description",
 						Version:                1,
+						OrchestrationID:        "orchestration-id",
 					},
 					DryRun:                 false,
 					ShootName:              "shoot-stage",
