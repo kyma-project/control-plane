@@ -28,11 +28,10 @@ type client struct {
 //   - url  : base url of the kubeconfig-service API
 //   - auth : TokenSource object which provides the ID token for the HTTP request
 func NewClient(ctx context.Context, url string, auth oauth2.TokenSource) Client {
-	c := &client{
+	return &client{
 		url:        url,
 		httpClient: oauth2.NewClient(ctx, auth),
 	}
-	return c
 }
 
 // GetKubeConfig
