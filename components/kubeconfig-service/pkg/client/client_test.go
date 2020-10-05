@@ -40,7 +40,8 @@ special-chars-to-escape: "abcdefgh<0123456789>ijkl*:_mnopqrst"`
 		called = true
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(testKubeConfig))
+		_, err := w.Write([]byte(testKubeConfig))
+		require.NoError(t, err)
 	}))
 	defer ts.Close()
 
