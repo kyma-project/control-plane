@@ -16,6 +16,7 @@ import (
 	"github.com/int128/kubelogin/pkg/usecases/authentication/ropc"
 	"github.com/int128/kubelogin/pkg/usecases/credentialplugin"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
+	"golang.org/x/oauth2"
 	"k8s.io/client-go/util/homedir"
 )
 
@@ -27,10 +28,12 @@ const defaultAuthenticationTimeoutSec = 180
 // Manager is a client for an OIDC provider capable of authenticating users and retrieving ID tokens through
 //   - Authorization code grant flow using browser for interactive use
 //   - Resource owner password credentials flow for non-interactive use
+// Manager implements the oauth2.TokenSource interface to interact with client libraries depending on the oauth2 package for obtaining auth token.
 type Manager interface {
-	GetToken(ctx context.Context) (string, error)
+	GetTokenByAuthCode(ctx context.Context) (string, error)
 	GetTokenByROPC(ctx context.Context, username, password string) (string, error)
 	TokenExpiry() time.Time
+	Token() (*oauth2.Token, error)
 }
 
 type manager struct {
@@ -96,7 +99,7 @@ func NewManager(oidcIssuerURL, oidcClientID, oidcClientSecret string, logger log
 }
 
 // GetToken fetches an ID token from local cache if a valid token is found, or else initiates interactive authorization code grant flow with browser to request a new ID token
-func (mgr *manager) GetToken(ctx context.Context) (string, error) {
+func (mgr *manager) GetTokenByAuthCode(ctx context.Context) (string, error) {
 	in := mgr.input
 	in.GrantOptionSet.AuthCodeBrowserOption = &authcode.BrowserOption{
 		BindAddress:           defaultListenAddress,
@@ -123,6 +126,15 @@ func (mgr *manager) GetTokenByROPC(ctx context.Context, username, password strin
 		return "", err
 	}
 	return mgr.token, nil
+}
+
+// Token uses GetTokenByAuthCode() to obtain an ID token in oauth2.Token format. This method implements the oauth2.TokenSource interface
+func (mgr *manager) Token() (*oauth2.Token, error) {
+	_, err := mgr.GetTokenByAuthCode(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+	return &oauth2.Token{AccessToken: mgr.token, Expiry: mgr.expiry}, nil
 }
 
 func (mgr *manager) TokenExpiry() time.Time {

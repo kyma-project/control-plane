@@ -38,7 +38,7 @@ func (cmd *LoginCommand) Run(cobraCmd *cobra.Command) error {
 	cred := CLICredentialManager(cmd.log)
 	var err error
 	if cmd.username == "" {
-		_, err = cred.GetToken(cobraCmd.Context())
+		_, err = cred.GetTokenByAuthCode(cobraCmd.Context())
 	} else {
 		_, err = cred.GetTokenByROPC(cobraCmd.Context(), cmd.username, cmd.password)
 	}
