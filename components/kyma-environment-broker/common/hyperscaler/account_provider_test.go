@@ -38,7 +38,6 @@ func TestMarkUnusedGardenerSecretAsDirty(t *testing.T) {
 
 	t.Run("should not mark secret as dirty if internal", func(t *testing.T) {
 		//given
-		//given
 		pool, secretMock := newTestAccountPoolWithSecretInternal()
 
 		accountProvider := NewAccountProvider(pool, nil)

@@ -321,26 +321,10 @@ func newTestAccountPoolWithSecretInternal() (AccountPool, v1.SecretInterface) {
 		},
 	}
 
-	shoot1 := &gardener_types.Shoot{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "shoot1",
-			Namespace: testNamespace,
-		},
-		Spec: gardener_types.ShootSpec{
-			SecretBindingName: "secret1",
-		},
-		Status: gardener_types.ShootStatus{
-			LastOperation: &gardener_types.LastOperation{
-				State: gardener_types.LastOperationStateSucceeded,
-				Type:  gardener_types.LastOperationTypeReconcile,
-			},
-		},
-	}
-
 	mockClient := fake.NewSimpleClientset(secret1)
 	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
 
-	gardenerFake := gardener_fake.NewSimpleClientset(shoot1)
+	gardenerFake := gardener_fake.NewSimpleClientset()
 	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 
 	pool := NewAccountPool(mockSecrets, mockShoots)
