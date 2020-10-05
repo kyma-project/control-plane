@@ -36,6 +36,23 @@ func TestMarkUnusedGardenerSecretAsDirty(t *testing.T) {
 		assert.Equal(t, secret.Labels["dirty"], "true")
 	})
 
+	t.Run("should not mark secret as dirty if internal", func(t *testing.T) {
+		//given
+		//given
+		pool, secretMock := newTestAccountPoolWithSecretInternal()
+
+		accountProvider := NewAccountProvider(pool, nil)
+
+		//when
+		err := accountProvider.MarkUnusedGardenerSecretAsDirty(Type("azure"), "tenant1")
+
+		//then
+		require.NoError(t, err)
+		secret, err := secretMock.Get("secret1", machineryv1.GetOptions{})
+		require.NoError(t, err)
+		assert.Equal(t, secret.Labels["dirty"], "")
+	})
+
 	t.Run("should not mark secret as dirty if used by a cluster", func(t *testing.T) {
 		//given
 		pool, secretMock := newTestAccountPoolWithSingleShoot()

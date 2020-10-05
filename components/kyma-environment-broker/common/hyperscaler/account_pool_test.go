@@ -67,6 +67,44 @@ func TestCredentials(t *testing.T) {
 	}
 }
 
+func TestSecretsAccountPool_IsSecretInternal(t *testing.T) {
+	t.Run("should return true if internal secret found", func(t *testing.T) {
+		//given
+		accPool, _ := newTestAccountPoolWithSecretInternal()
+
+		//when
+		internal, err := accPool.IsSecretInternal("azure", "tenant1")
+
+		//then
+		require.NoError(t, err)
+		assert.True(t, internal)
+	})
+
+	t.Run("should return false if internal secret not found", func(t *testing.T) {
+		//given
+		accPool := newTestAccountPool()
+
+		//when
+		internal, err := accPool.IsSecretInternal("azure", "tenant1")
+
+		//then
+		require.NoError(t, err)
+		assert.False(t, internal)
+	})
+
+	t.Run("should return false when there is no secret in the pool", func(t *testing.T) {
+		//given
+		accPool, _ := newEmptyTestAccountPool()
+
+		//when
+		internal, err := accPool.IsSecretInternal("azure", "tenant1")
+
+		//then
+		require.NoError(t, err)
+		assert.False(t, internal)
+	})
+}
+
 func TestSecretsAccountPool_IsSecretDirty(t *testing.T) {
 	t.Run("should return true if dirty secret found", func(t *testing.T) {
 		//given
@@ -251,6 +289,61 @@ func newTestAccountPoolWithSingleShoot() (AccountPool, v1.SecretInterface) {
 
 	pool := NewAccountPool(mockSecrets, mockShoots)
 
+	return pool, mockSecrets
+}
+
+func newEmptyTestAccountPool() (AccountPool, v1.SecretInterface) {
+	secret1 := &corev1.Secret{}
+
+	mockClient := fake.NewSimpleClientset(secret1)
+	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
+
+	gardenerFake := gardener_fake.NewSimpleClientset()
+	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
+
+	pool := NewAccountPool(mockSecrets, mockShoots)
+
+	return pool, mockSecrets
+}
+
+func newTestAccountPoolWithSecretInternal() (AccountPool, v1.SecretInterface) {
+	secret1 := &corev1.Secret{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name: "secret1", Namespace: testNamespace,
+			Labels: map[string]string{
+				"tenantName":      "tenant1",
+				"hyperscalerType": "azure",
+				"internal":        "true",
+			},
+		},
+		Data: map[string][]byte{
+			"credentials": []byte("secret1"),
+		},
+	}
+
+	shoot1 := &gardener_types.Shoot{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name:      "shoot1",
+			Namespace: testNamespace,
+		},
+		Spec: gardener_types.ShootSpec{
+			SecretBindingName: "secret1",
+		},
+		Status: gardener_types.ShootStatus{
+			LastOperation: &gardener_types.LastOperation{
+				State: gardener_types.LastOperationStateSucceeded,
+				Type:  gardener_types.LastOperationTypeReconcile,
+			},
+		},
+	}
+
+	mockClient := fake.NewSimpleClientset(secret1)
+	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
+
+	gardenerFake := gardener_fake.NewSimpleClientset(shoot1)
+	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
+
+	pool := NewAccountPool(mockSecrets, mockShoots)
 	return pool, mockSecrets
 }
 
