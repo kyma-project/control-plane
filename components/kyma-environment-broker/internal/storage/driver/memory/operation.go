@@ -300,8 +300,9 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 	offset := pagination.ConvertPageAndPageSizeToOffset(pageSize, page)
 
 	sortedOperations := s.getUpgradeSortedByCreatedAt(s.upgradeKymaOperations)
+	result = make([]internal.UpgradeKymaOperation, 0)
 
-	for i := offset; i < offset+pageSize && i < len(sortedOperations); i++ {
+	for i := offset; i < offset+pageSize && i < len(sortedOperations)+offset; i++ {
 		result = append(result, s.upgradeKymaOperations[sortedOperations[i].OrchestrationID])
 	}
 

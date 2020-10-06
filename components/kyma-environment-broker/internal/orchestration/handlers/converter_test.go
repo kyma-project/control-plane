@@ -1,7 +1,6 @@
 package handlers_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -76,7 +75,6 @@ func TestConverter_UpgradeKymaOperationListToDTO(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	require.Len(t, resp.Data, 2)
-	fmt.Println(resp)
 	assert.Equal(t, id, resp.Data[0].OrchestrationID)
 	assert.Equal(t, 2, resp.Count)
 	assert.Equal(t, 5, resp.TotalCount)

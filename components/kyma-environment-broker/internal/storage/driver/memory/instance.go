@@ -168,6 +168,7 @@ func (s *Instance) List(pageSize int, page int) ([]internal.Instance, int, int, 
 	offset := pagination.ConvertPageAndPageSizeToOffset(pageSize, page)
 
 	sortedInstances := s.getSortedByCreatedAt(s.instances)
+	toReturn = make([]internal.Instance, 0)
 
 	for i := offset; i < offset+pageSize && i < len(sortedInstances); i++ {
 		toReturn = append(toReturn, s.instances[sortedInstances[i].InstanceID])

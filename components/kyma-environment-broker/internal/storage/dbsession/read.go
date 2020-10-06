@@ -230,14 +230,6 @@ func (r readSession) ListOperationsByOrchestrationID(orchestrationID string, pag
 
 	offset := pagination.ConvertPageAndPageSizeToOffset(pageSize, page)
 
-	q := r.session.
-		Select("*").
-		From(postsql.OperationTableName).
-		Where(condition).
-		Offset(uint64(offset)).Limit(uint64(pageSize)).Query
-
-	fmt.Println(q)
-
 	_, err := r.session.
 		Select("*").
 		From(postsql.OperationTableName).
@@ -245,10 +237,10 @@ func (r readSession) ListOperationsByOrchestrationID(orchestrationID string, pag
 		Offset(uint64(offset)).Limit(uint64(pageSize)).
 		Load(&ops)
 	if err != nil {
-		return nil, -1, -1, dberr.Internal("Failed to get operations %s: %s", q, err)
+		return nil, -1, -1, dberr.Internal("Failed to get operations: %s", err)
 	}
 
-	totalCount, err := r.getOperationCount()
+	totalCount, err := r.getOperationCount(orchestrationID)
 	if err != nil {
 		return nil, -1, -1, err
 	}
@@ -422,12 +414,13 @@ func (r readSession) getInstanceCount() (int, error) {
 	return res.Total, err
 }
 
-func (r readSession) getOperationCount() (int, error) {
+func (r readSession) getOperationCount(orchestrationID string) (int, error) {
 	var res struct {
 		Total int
 	}
 	err := r.session.Select("count(*) as total").
 		From(postsql.OperationTableName).
+		Where(dbr.Eq("orchestration_id", orchestrationID)).
 		LoadOne(&res)
 
 	return res.Total, err

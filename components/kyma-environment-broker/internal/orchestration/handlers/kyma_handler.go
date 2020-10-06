@@ -23,7 +23,7 @@ import (
 
 type kymaHandler struct {
 	orchestrations storage.Orchestrations
-	operations     storage.UpgradeKyma
+	operations     storage.Operations
 	runtimeStates  storage.RuntimeStates
 
 	queue *process.Queue
@@ -33,7 +33,7 @@ type kymaHandler struct {
 	defaultMaxPage int
 }
 
-func NewKymaOrchestrationHandler(operations storage.UpgradeKyma, orchestrations storage.Orchestrations, runtimeStates storage.RuntimeStates, defaultMaxPage int, q *process.Queue, log logrus.FieldLogger) *kymaHandler {
+func NewKymaOrchestrationHandler(operations storage.Operations, orchestrations storage.Orchestrations, runtimeStates storage.RuntimeStates, defaultMaxPage int, q *process.Queue, log logrus.FieldLogger) *kymaHandler {
 	return &kymaHandler{
 		operations:     operations,
 		orchestrations: orchestrations,
@@ -94,8 +94,6 @@ func (h *kymaHandler) listOrchestration(w http.ResponseWriter, r *http.Request) 
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting orchestrations"))
 		return
 	}
-	response.Count = count
-	response.TotalCount = totalCount
 
 	httputil.WriteResponse(w, http.StatusOK, response)
 }
@@ -121,8 +119,6 @@ func (h *kymaHandler) listOperations(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting operations"))
 		return
 	}
-	response.Count = count
-	response.TotalCount = totalCount
 
 	httputil.WriteResponse(w, http.StatusOK, response)
 }
@@ -132,19 +128,32 @@ func (h *kymaHandler) getOperation(w http.ResponseWriter, r *http.Request) {
 
 	operation, err := h.operations.GetUpgradeKymaOperationByID(operationID)
 	if err != nil {
-		h.log.Errorf("while getting operation %s: %v", operationID, err)
+		h.log.Errorf("while getting upgrade operation %s: %v", operationID, err)
 		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting operation %s", operationID))
 		return
 	}
-
-	state, err := h.runtimeStates.GetByOperationID(operationID)
+	// fetches k8s config from the provisioning operation
+	provisioningOp, err := h.operations.GetProvisioningOperationByInstanceID(operation.InstanceID)
 	if err != nil {
-		h.log.Errorf("while getting runtime state for operation %s: %v", operationID, err)
-		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting runtime state for operation %s", operationID))
+		h.log.Errorf("while getting provisioning operation for instance %s: %v", operation.InstanceID, err)
+		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting provisioning operation for instance %s", operation.InstanceID))
+		return
+	}
+	provisioningState, err := h.runtimeStates.GetByOperationID(provisioningOp.ID)
+	if err != nil {
+		h.log.Errorf("while getting runtime state for operation %s: %v", provisioningOp.ID, err)
+		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting runtime state for operation %s", provisioningOp.ID))
 		return
 	}
 
-	response, err := h.conv.UpgradeKymaOperationToDetailDTO(*operation, state.KymaConfig, state.ClusterConfig)
+	upgradeState, err := h.runtimeStates.GetByOperationID(operationID)
+	if err != nil && !dberr.IsNotFound(err) {
+		h.log.Errorf("while getting runtime state for upgrade operation %s: %v", operationID, err)
+		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting runtime state for upgrade operation %s", operationID))
+		return
+	}
+
+	response, err := h.conv.UpgradeKymaOperationToDetailDTO(*operation, upgradeState.KymaConfig, provisioningState.ClusterConfig)
 	if err != nil {
 		h.log.Errorf("while converting operation: %v", err)
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting operation"))
@@ -157,11 +166,13 @@ func (h *kymaHandler) getOperation(w http.ResponseWriter, r *http.Request) {
 func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request) {
 	params := internal.OrchestrationParameters{}
 
-	err := json.NewDecoder(r.Body).Decode(&params)
-	if err != nil {
-		h.log.Errorf("while decoding request body: %v", err)
-		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while decoding request body"))
-		return
+	if r.Body != nil {
+		err := json.NewDecoder(r.Body).Decode(&params)
+		if err != nil {
+			h.log.Errorf("while decoding request body: %v", err)
+			httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while decoding request body"))
+			return
+		}
 	}
 
 	now := time.Now()
@@ -174,7 +185,7 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 		UpdatedAt:       now,
 	}
 
-	err = h.orchestrations.Insert(o)
+	err := h.orchestrations.Insert(o)
 	if err != nil {
 		h.log.Errorf("while inserting orchestration to storage: %v", err)
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while inserting orchestration to storage"))

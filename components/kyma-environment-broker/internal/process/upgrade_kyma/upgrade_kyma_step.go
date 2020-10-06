@@ -13,6 +13,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const DryRunPrefix = "dry_run-"
+
 type UpgradeKymaStep struct {
 	operationManager    *process.UpgradeKymaOperationManager
 	provisionerClient   provisioner.Client
@@ -58,6 +60,13 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 	}
 
 	if operation.DryRun {
+		// runtimeID is set with prefix to indicate the fake runtime state
+		err = s.runtimeStateStorage.Insert(
+			internal.NewRuntimeState(fmt.Sprintf("%s%s", DryRunPrefix, operation.RuntimeID), operation.ID, requestInput.KymaConfig, nil),
+		)
+		if err != nil {
+			return operation, 10 * time.Second, nil
+		}
 		return s.operationManager.OperationSucceeded(operation, "dry run succeeded")
 	}
 
