@@ -3,7 +3,6 @@ package director
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"net/url"
 	"sync"
 	"time"
@@ -62,9 +61,6 @@ func NewDirectorClient(ctx context.Context, config Config, log logrus.FieldLogge
 	}
 	httpClientOAuth := cfg.Client(ctx)
 	httpClientOAuth.Timeout = 30 * time.Second
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.TLSClientConfig.InsecureSkipVerify = config.SkipCertVerification
-	httpClientOAuth.Transport = transport
 
 	graphQLClient := machineGraph.NewClient(config.URL, machineGraph.WithHTTPClient(httpClientOAuth))
 
@@ -82,14 +78,12 @@ func (dc *Client) GetConsoleURL(accountID, runtimeID string) (string, error) {
 	req.Header.Add(accountIDKey, accountID)
 
 	dc.log.Info("Send request to director")
-	dc.log.Infof("[DEBUG]: request body: %+v", req)
 	response, err := dc.fetchURLFromDirector(req)
 	if err != nil {
 		return "", errors.Wrap(err, "while making call to director")
 	}
 
 	dc.log.Info("Extract the URL from the response")
-	dc.log.Infof("[DEBUG]: response body: %+v", response)
 	return dc.getURLFromRuntime(&response.Result)
 }
 
