@@ -50,20 +50,22 @@ type Orchestrations interface {
 	Insert(orchestration internal.Orchestration) error
 	Update(orchestration internal.Orchestration) error
 	GetByID(orchestrationID string) (*internal.Orchestration, error)
+	List(pageSize int, page int) ([]internal.Orchestration, int, int, error)
 	ListByState(state string) ([]internal.Orchestration, error)
-	ListAll() ([]internal.Orchestration, error)
 }
 
 type RuntimeStates interface {
 	Insert(runtimeState internal.RuntimeState) error
+	GetByOperationID(operationID string) (internal.RuntimeState, error)
 	ListByRuntimeID(runtimeID string) ([]internal.RuntimeState, error)
 }
 
 type UpgradeKyma interface {
 	InsertUpgradeKymaOperation(operation internal.UpgradeKymaOperation) error
+	UpdateUpgradeKymaOperation(operation internal.UpgradeKymaOperation) (*internal.UpgradeKymaOperation, error)
 	GetUpgradeKymaOperationByID(operationID string) (*internal.UpgradeKymaOperation, error)
 	GetUpgradeKymaOperationByInstanceID(instanceID string) (*internal.UpgradeKymaOperation, error)
-	UpdateUpgradeKymaOperation(operation internal.UpgradeKymaOperation) (*internal.UpgradeKymaOperation, error)
+	ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, pageSize int, page int) ([]internal.UpgradeKymaOperation, int, int, error)
 }
 
 type LMSTenants interface {

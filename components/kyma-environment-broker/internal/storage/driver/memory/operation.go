@@ -1,7 +1,10 @@
 package memory
 
 import (
+	"sort"
 	"sync"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 
@@ -281,4 +284,40 @@ func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (
 		result[op.State] = result[op.State] + 1
 	}
 	return result, nil
+}
+
+func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, pageSize, page int) ([]internal.UpgradeKymaOperation, int, int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	result := make([]internal.UpgradeKymaOperation, 0)
+
+	for _, op := range s.upgradeKymaOperations {
+		if op.OrchestrationID == orchestrationID {
+			result = append(result, op)
+		}
+	}
+	offset := pagination.ConvertPageAndPageSizeToOffset(pageSize, page)
+
+	sortedOperations := s.getUpgradeSortedByCreatedAt(s.upgradeKymaOperations)
+
+	for i := offset; i < offset+pageSize && i < len(sortedOperations); i++ {
+		result = append(result, s.upgradeKymaOperations[sortedOperations[i].OrchestrationID])
+	}
+
+	return result,
+		len(result),
+		len(s.upgradeKymaOperations),
+		nil
+}
+
+func (s *operations) getUpgradeSortedByCreatedAt(operations map[string]internal.UpgradeKymaOperation) []internal.UpgradeKymaOperation {
+	operationsList := make([]internal.UpgradeKymaOperation, 0, len(operations))
+	for _, v := range operations {
+		operationsList = append(operationsList, v)
+	}
+	sort.Slice(operationsList, func(i, j int) bool {
+		return operationsList[i].CreatedAt.Before(operationsList[j].CreatedAt)
+	})
+	return operationsList
 }

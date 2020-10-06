@@ -143,17 +143,32 @@ func (r readSession) ListOrchestrationsByState(state string) ([]dbmodel.Orchestr
 	return orchestrations, nil
 }
 
-func (r readSession) ListOrchestrations() ([]dbmodel.OrchestrationDTO, dberr.Error) {
+func (r readSession) ListOrchestrations(pageSize, page int) ([]dbmodel.OrchestrationDTO, int, int, error) {
 	var orchestrations []dbmodel.OrchestrationDTO
 
-	_, err := r.session.
-		Select("*").
-		From(postsql.OrchestrationTableName).
-		Load(&orchestrations)
+	order, err := pagination.ConvertPageSizeAndOrderedColumnToSQL(pageSize, page, postsql.CreatedAtField)
 	if err != nil {
-		return nil, dberr.Internal("Failed to get orchestrations: %s", err)
+		return nil, -1, -1, errors.Wrap(err, "while converting page and pageSize to SQL statement")
 	}
-	return orchestrations, nil
+
+	stmt := fmt.Sprintf("SELECT * FROM %s %s", postsql.OrchestrationTableName, order)
+
+	execStmt := r.session.SelectBySql(stmt)
+
+	_, err = execStmt.Load(&orchestrations)
+	if err != nil {
+		return nil, -1, -1, errors.Wrap(err, "while fetching orchestrations")
+	}
+
+	totalCount, err := r.getOrchestrationCount()
+	if err != nil {
+		return nil, -1, -1, err
+	}
+
+	return orchestrations,
+		len(orchestrations),
+		totalCount,
+		nil
 }
 
 func (r readSession) GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
@@ -207,6 +222,59 @@ func (r readSession) GetOperationsForIDs(opIDlist []string) ([]dbmodel.Operation
 		return nil, dberr.Internal("Failed to get operations: %s", err)
 	}
 	return operations, nil
+}
+
+func (r readSession) ListOperationsByOrchestrationID(orchestrationID string, pageSize, page int) ([]dbmodel.OperationDTO, int, int, error) {
+	var ops []dbmodel.OperationDTO
+	condition := dbr.Eq("orchestration_id", orchestrationID)
+
+	offset := pagination.ConvertPageAndPageSizeToOffset(pageSize, page)
+
+	q := r.session.
+		Select("*").
+		From(postsql.OperationTableName).
+		Where(condition).
+		Offset(uint64(offset)).Limit(uint64(pageSize)).Query
+
+	fmt.Println(q)
+
+	_, err := r.session.
+		Select("*").
+		From(postsql.OperationTableName).
+		Where(condition).
+		Offset(uint64(offset)).Limit(uint64(pageSize)).
+		Load(&ops)
+	if err != nil {
+		return nil, -1, -1, dberr.Internal("Failed to get operations %s: %s", q, err)
+	}
+
+	totalCount, err := r.getOperationCount()
+	if err != nil {
+		return nil, -1, -1, err
+	}
+
+	return ops,
+		len(ops),
+		totalCount,
+		nil
+}
+
+func (r readSession) GetRuntimeStateByOperationID(operationID string) (dbmodel.RuntimeStateDTO, dberr.Error) {
+	var state dbmodel.RuntimeStateDTO
+
+	err := r.session.
+		Select("*").
+		From(postsql.RuntimeStateTableName).
+		Where(dbr.Eq("operation_id", operationID)).
+		LoadOne(&state)
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return dbmodel.RuntimeStateDTO{}, dberr.NotFound("cannot find runtime state: %s", err)
+		}
+		return dbmodel.RuntimeStateDTO{}, dberr.Internal("Failed to get runtime state: %s", err)
+	}
+	return state, nil
 }
 
 func (r readSession) ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.RuntimeStateDTO, dberr.Error) {
@@ -318,7 +386,7 @@ func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID stri
 func (r readSession) ListInstances(pageSize int, page int) ([]internal.Instance, int, int, error) {
 	var instances []internal.Instance
 
-	order, err := pagination.ConvertPagePageSizeAndOrderedColumnToSQL(pageSize, page, postsql.CreatedAtField)
+	order, err := pagination.ConvertPageSizeAndOrderedColumnToSQL(pageSize, page, postsql.CreatedAtField)
 	if err != nil {
 		return nil, -1, -1, errors.Wrap(err, "while converting page and pageSize to SQL statement")
 	}
@@ -349,6 +417,28 @@ func (r readSession) getInstanceCount() (int, error) {
 	}
 	err := r.session.Select("count(*) as total").
 		From(postsql.InstancesTableName).
+		LoadOne(&res)
+
+	return res.Total, err
+}
+
+func (r readSession) getOperationCount() (int, error) {
+	var res struct {
+		Total int
+	}
+	err := r.session.Select("count(*) as total").
+		From(postsql.OperationTableName).
+		LoadOne(&res)
+
+	return res.Total, err
+}
+
+func (r readSession) getOrchestrationCount() (int, error) {
+	var res struct {
+		Total int
+	}
+	err := r.session.Select("count(*) as total").
+		From(postsql.OrchestrationTableName).
 		LoadOne(&res)
 
 	return res.Total, err
