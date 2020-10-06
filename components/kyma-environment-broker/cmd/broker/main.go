@@ -204,9 +204,9 @@ func main() {
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
 	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 
-	clientHTTPForIAS := httputil.NewClient(30, cfg.Director.SkipCertVerification)
+	clientHTTPForIAS := httputil.NewClient(30, cfg.IAS.TLSRenegotiationEnable)
 	if cfg.IAS.TLSRenegotiationEnable {
-		clientHTTPForIAS = httputil.NewRenegotiationTLSClient(30, cfg.Director.SkipCertVerification)
+		clientHTTPForIAS = httputil.NewRenegotiationTLSClient(30, cfg.IAS.TLSRenegotiationEnable)
 	}
 	bundleBuilder := ias.NewBundleBuilder(clientHTTPForIAS, cfg.IAS)
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)

@@ -83,8 +83,6 @@ spec:
                   key: client_secret
             - name: APP_DIRECTOR_OAUTH_SCOPE
               value: "{{ .Values.director.scope }}"
-            - name: APP_DIRECTOR_SKIP_CERT_VERIFICATION
-              value: "{{ .Values.global.isLocalEnv }}"
             - name: APP_LMS_URL
               value: "{{ .Values.lms.url }}"
             - name: APP_LMS_CLUSTER_TYPE
