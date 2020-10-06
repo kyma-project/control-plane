@@ -11,7 +11,6 @@ import (
 
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/clientcredentials"
@@ -87,10 +86,19 @@ func (c *Client) DeleteDataTenant(name, env string) error {
 
 	response, err := c.httpClient.Do(request)
 	if err != nil {
-		return errors.Wrap(err, "while requesting about delete dataTenant")
+		return kebError.AsTemporaryError(err, "while requesting about delete dataTenant")
 	}
 
-	return c.processResponse(response, true)
+	err = c.processResponse(response, true)
+	if err != nil {
+		return errors.Wrap(err, "while processing delete DataTenant response")
+	}
+
+	if err := c.closeResponseBody(response); err != nil {
+		return kebError.AsTemporaryError(err, "while closing delete DataTenant response")
+	}
+
+	return nil
 }
 
 func (c *Client) CreateMetadataTenant(name, env string, data MetadataTenantPayload) error {
@@ -111,40 +119,65 @@ func (c *Client) DeleteMetadataTenant(name, env, key string) error {
 
 	response, err := c.httpClient.Do(request)
 	if err != nil {
-		return errors.Wrap(err, "while requesting about delete metadata")
+		return kebError.AsTemporaryError(err, "while requesting about delete metadata")
 	}
 
-	return c.processResponse(response, true)
+	err = c.processResponse(response, true)
+	if err != nil {
+		return errors.Wrap(err, "while processing delete MetadataTenant response")
+	}
+
+	if err := c.closeResponseBody(response); err != nil {
+		return kebError.AsTemporaryError(err, "while closing delete MetadataTenant response")
+	}
+
+	return nil
 }
 
-func (c *Client) GetMetadataTenant(name, env string) (_ []MetadataItem, err error) {
-	response, err := c.httpClient.Get(c.metadataTenantURL(name, env))
-	if err != nil {
-		return []MetadataItem{}, errors.Wrap(err, "while requesting about dataTenant metadata")
-	}
-	defer func() {
-		err = multierror.Append(err, errors.Wrap(c.closeResponseBody(response), "while trying to close body reader")).ErrorOrNil()
-	}()
-
+func (c *Client) GetMetadataTenant(name, env string) ([]MetadataItem, error) {
 	var metadata []MetadataItem
+	request, err := http.NewRequest(http.MethodGet, c.metadataTenantURL(name, env), nil)
+	if err != nil {
+		return metadata, errors.Wrap(err, "while creating GET metadata tenant request")
+	}
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return metadata, kebError.AsTemporaryError(err, "while requesting about dataTenant metadata")
+	}
+
 	err = json.NewDecoder(response.Body).Decode(&metadata)
 	if err != nil {
-		return nil, errors.Wrap(err, "while decoding dataTenant metadata response")
+		return metadata, errors.Wrap(err, "while decoding dataTenant metadata response")
+	}
+
+	if err := c.closeResponseBody(response); err != nil {
+		return metadata, kebError.AsTemporaryError(err, "while closing get MetadataTenant response")
 	}
 
 	return metadata, nil
 }
 
-func (c *Client) post(URL string, data []byte) (err error) {
-	response, err := c.httpClient.Post(URL, "application/json", bytes.NewBuffer(data))
+func (c *Client) post(URL string, data []byte) error {
+	request, err := http.NewRequest(http.MethodPost, URL, bytes.NewBuffer(data))
 	if err != nil {
-		return errors.Wrapf(err, "while sending POST request on %s", URL)
+		return errors.Wrapf(err, "while creating POST request for %s", URL)
 	}
-	defer func() {
-		err = multierror.Append(err, errors.Wrap(c.closeResponseBody(response), "while trying to close body reader")).ErrorOrNil()
-	}()
+	request.Header.Set("Content-Type", "application/json")
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return kebError.AsTemporaryError(err, "while sending POST request on %s", URL)
+	}
 
-	return c.processResponse(response, false)
+	err = c.processResponse(response, false)
+	if err != nil {
+		return errors.Wrap(err, "while processing response")
+	}
+
+	if err := c.closeResponseBody(response); err != nil {
+		return kebError.AsTemporaryError(err, "while closing post response")
+	}
+
+	return nil
 }
 
 func (c *Client) processResponse(response *http.Response, allowNotFound bool) error {

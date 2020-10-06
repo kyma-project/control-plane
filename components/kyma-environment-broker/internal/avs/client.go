@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
@@ -90,7 +92,7 @@ func (c *Client) CreateEvaluation(evaluationRequest *BasicEvaluationCreateReques
 	}
 
 	if err := response.Body.Close(); err != nil {
-		return &responseObject, errors.Wrap(err, "while closing CreateEvaluation response")
+		return &responseObject, kebError.AsTemporaryError(err, "while closing CreateEvaluation response")
 	}
 
 	return &responseObject, nil
@@ -104,16 +106,14 @@ func (c *Client) RemoveReferenceFromParentEval(evaluationId int64) error {
 	}
 
 	if response != nil && response.Body != nil {
-		defer func() {
-			err := response.Body.Close()
-			if err != nil {
-				c.log.Errorf("while closing body: %v")
-			}
-		}()
 		var responseObject avsNonSuccessResp
 		err := json.NewDecoder(response.Body).Decode(&responseObject)
 		if err != nil {
 			return errors.Wrapf(err, "while decoding avs non success response body for ID: %d", evaluationId)
+		}
+
+		if err := response.Body.Close(); err != nil {
+			return kebError.AsTemporaryError(err, "while closing body")
 		}
 
 		if strings.Contains(strings.ToLower(responseObject.Message), "does not contain subevaluation") {
@@ -132,7 +132,7 @@ func (c *Client) DeleteEvaluation(evaluationId int64) error {
 	}
 
 	if err := response.Body.Close(); err != nil {
-		return errors.Wrap(err, "while closing DeleteEvaluation response body")
+		return kebError.AsTemporaryError(err, "while closing DeleteEvaluation response body")
 	}
 
 	return nil
@@ -163,11 +163,11 @@ func (c *Client) deleteRequest(absoluteURL string) (*http.Response, error) {
 func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetToken bool) (*http.Response, error) {
 	httpClient, err := c.getHttpClient()
 	if err != nil {
-		return &http.Response{}, err
+		return &http.Response{}, errors.Wrap(err, "while getting http client")
 	}
 	response, err := httpClient.Do(request)
 	if err != nil {
-		return &http.Response{}, errors.Wrap(err, "while executing request by http client")
+		return &http.Response{}, kebError.AsTemporaryError(err, "while executing request by http client")
 	}
 
 	switch response.StatusCode {
@@ -186,6 +186,11 @@ func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetTo
 			return c.execute(request, allowNotFound, false)
 		}
 		return response, fmt.Errorf("avs server returned %d status code twice for %s (response body: %s)", http.StatusUnauthorized, request.URL.String(), responseBody(response))
+	case http.StatusInternalServerError,
+		http.StatusRequestTimeout,
+		http.StatusServiceUnavailable,
+		http.StatusGatewayTimeout:
+		return response, kebError.NewTemporaryError("avs server returned %d status code", response.StatusCode)
 	default:
 		return response, fmt.Errorf("unsupported status code: %d for %s (response body: %s)", response.StatusCode, request.URL.String(), responseBody(response))
 	}
