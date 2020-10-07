@@ -64,13 +64,12 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		// Given
 		qc := &mocks.GraphQLClient{}
 		cfg := Config{
-			URL:                  "",
-			Namespace:            "",
-			SkipCertVerification: false,
-			OauthTokenURL:        "",
-			OauthClientID:        "",
-			OauthClientSecret:    "",
-			OauthScope:           "",
+			URL:               "",
+			Namespace:         "",
+			OauthTokenURL:     "",
+			OauthClientID:     "",
+			OauthClientSecret: "",
+			OauthScope:        "",
 		}
 
 		client := NewDirectorClient(context.Background(), cfg, logger.NewLogDummy())
@@ -213,13 +212,12 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		// Given
 		qc := &mocks.GraphQLClient{}
 		cfg := Config{
-			URL:                  "",
-			Namespace:            "",
-			SkipCertVerification: false,
-			OauthTokenURL:        "",
-			OauthClientID:        "",
-			OauthClientSecret:    "",
-			OauthScope:           "",
+			URL:               "",
+			Namespace:         "",
+			OauthTokenURL:     "",
+			OauthClientID:     "",
+			OauthClientSecret: "",
+			OauthScope:        "",
 		}
 
 		client := NewDirectorClient(context.Background(), cfg, logger.NewLogDummy())
