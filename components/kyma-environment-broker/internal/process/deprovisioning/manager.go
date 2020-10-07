@@ -70,9 +70,15 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 	}
 	operation := *op
 
-	var when time.Duration
-	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID})
+	pp, err := operation.GetProvisioningParameters()
+	if err != nil {
+		m.log.Errorf("while getting ProvisioningParameters from operation id %q", operation.ID)
+		return 3 * time.Second, nil
+	}
 
+	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID, "planID": pp.PlanID})
+
+	var when time.Duration
 	logOperation.Info("Start process operation steps")
 	for _, weightStep := range m.sortWeight() {
 		steps := m.steps[weightStep]

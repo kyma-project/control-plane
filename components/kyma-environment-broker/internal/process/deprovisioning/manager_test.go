@@ -107,6 +107,7 @@ func fixOperation(ID string) internal.DeprovisioningOperation {
 			InstanceID:  "fea2c1a1-139d-43f6-910a-a618828a79d5",
 			Description: "",
 		},
+		ProvisioningParameters: `{"plan_id":"7b2a9156-884c-4586-a630-3e644fc8ec0f"}`,
 	}
 }
 
