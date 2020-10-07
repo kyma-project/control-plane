@@ -12,7 +12,7 @@ global:
       version: "PR-220"
     kyma_environment_broker:
       dir:
-      version: "PR-245"
+      version: "PR-251"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-131"

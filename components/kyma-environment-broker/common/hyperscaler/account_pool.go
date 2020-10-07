@@ -30,6 +30,7 @@ type AccountPool interface {
 	MarkSecretAsDirty(hyperscalerType Type, tenantName string) error
 	IsSecretUsed(hyperscalerType Type, tenantName string) (bool, error)
 	IsSecretDirty(hyperscalerType Type, tenantName string) (bool, error)
+	IsSecretInternal(hyperscalerType Type, tenantName string) (bool, error)
 }
 
 func NewAccountPool(secretsClient corev1.SecretInterface, shootsClient gardener_apis.ShootInterface) AccountPool {
@@ -45,8 +46,23 @@ type secretsAccountPool struct {
 	mux           sync.Mutex
 }
 
-func (p *secretsAccountPool) IsSecretDirty(hyperscalerType Type, tenantName string) (bool, error) {
+func (p *secretsAccountPool) IsSecretInternal(hyperscalerType Type, tenantName string) (bool, error) {
+	labelSelector := fmt.Sprintf("internal=true, tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
 
+	secret, err := getK8SSecret(p.secretsClient, labelSelector)
+
+	if err != nil {
+		return false, errors.Wrapf(err, "error looking for a secret used by the tenant %s and hyperscaler %s", tenantName, hyperscalerType)
+	}
+
+	if secret != nil {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (p *secretsAccountPool) IsSecretDirty(hyperscalerType Type, tenantName string) (bool, error) {
 	labelSelector := fmt.Sprintf("shared!=true, dirty=true, tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
 
 	secret, err := getK8SSecret(p.secretsClient, labelSelector)
