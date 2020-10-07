@@ -23,7 +23,7 @@ import (
 var defaultTokenCacheDir = homedir.HomeDir() + "/.kube/cache/oidc-login"
 var defaultListenAddress = []string{"127.0.0.1:8000", "127.0.0.1:18000"}
 
-const defaultAuthenticationTimeoutSec = 180
+const defaultAuthenticationTimeout = 180 * time.Second
 
 // Manager is a client for an OIDC provider capable of authenticating users and retrieving ID tokens through
 //   - Authorization code grant flow using browser for interactive use
@@ -98,13 +98,13 @@ func NewManager(oidcIssuerURL, oidcClientID, oidcClientSecret string, logger log
 	return mgr
 }
 
-// GetToken fetches an ID token from local cache if a valid token is found, or else initiates interactive authorization code grant flow with browser to request a new ID token
+// GetTokenByAuthCode fetches an ID token from local cache if a valid token is found, or else initiates interactive authorization code grant flow with browser to request a new ID token
 func (mgr *manager) GetTokenByAuthCode(ctx context.Context) (string, error) {
 	in := mgr.input
 	in.GrantOptionSet.AuthCodeBrowserOption = &authcode.BrowserOption{
 		BindAddress:           defaultListenAddress,
 		SkipOpenBrowser:       false,
-		AuthenticationTimeout: time.Duration(defaultAuthenticationTimeoutSec) * time.Second,
+		AuthenticationTimeout: defaultAuthenticationTimeout,
 		RedirectURLHostname:   "localhost",
 	}
 	err := mgr.getter.Do(ctx, in)
