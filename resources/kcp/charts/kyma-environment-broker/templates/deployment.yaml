@@ -123,6 +123,8 @@ spec:
               value: "{{ .Values.ias.disabled }}"
             - name: APP_IAS_TLS_RENEGOTIATION_ENABLE
               value: "{{ .Values.ias.tlsRenegotiationEnable }}"
+            - name: APP_IAS_TLS_SKIP_CERT_VERIFICATION
+              value: "{{ .Values.ias.tlsRenegotiationEnable }}"
             - name: APP_EDP_AUTH_URL
               value: "{{ .Values.edp.authURL }}"
             - name: APP_EDP_ADMIN_URL

@@ -65,7 +65,6 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		qc := &mocks.GraphQLClient{}
 		cfg := Config{
 			URL:               "",
-			Namespace:         "",
 			OauthTokenURL:     "",
 			OauthClientID:     "",
 			OauthClientSecret: "",
@@ -213,7 +212,6 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		qc := &mocks.GraphQLClient{}
 		cfg := Config{
 			URL:               "",
-			Namespace:         "",
 			OauthTokenURL:     "",
 			OauthClientID:     "",
 			OauthClientSecret: "",
@@ -266,7 +264,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 		request := createGraphQLRequest(client, accountID, runtimeID)
 
 		// #mock on Run method for grapQL client
-		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.getURLResponse")).Times(3).Return(fmt.Errorf("director error"))
+		qc.On("Run", context.Background(), request, mock.AnythingOfType("*director.getURLResponse")).Return(fmt.Errorf("director error"))
 		defer qc.AssertExpectations(t)
 
 		// When

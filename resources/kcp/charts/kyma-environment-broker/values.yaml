@@ -138,6 +138,7 @@ ias:
   identityProvider: "TBD"
   disabled: true
   tlsRenegotiationEnable: false
+  skipCertVerification: false
 
 edp:
   authURL: "TBD"

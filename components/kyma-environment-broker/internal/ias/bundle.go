@@ -18,6 +18,7 @@ type (
 		IdentityProvider       string
 		Disabled               bool
 		TLSRenegotiationEnable bool `envconfig:"default=false"`
+		SkipCertVerification   bool `envconfig:"default=false"`
 	}
 )
 

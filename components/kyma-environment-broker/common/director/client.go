@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"sync"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -29,10 +28,9 @@ type GraphQLClient interface {
 }
 
 type Client struct {
-	directorConfig Config
-	graphQLClient  GraphQLClient
-	queryProvider  queryProvider
-	log            logrus.FieldLogger
+	graphQLClient GraphQLClient
+	queryProvider queryProvider
+	log           logrus.FieldLogger
 }
 
 type (
@@ -48,8 +46,6 @@ type (
 		Result graphql.RuntimePageExt `json:"result"`
 	}
 )
-
-var lock sync.Mutex
 
 // NewDirectorClient returns new director client struct pointer
 func NewDirectorClient(ctx context.Context, config Config, log logrus.FieldLogger) *Client {
@@ -125,22 +121,11 @@ func (dc *Client) GetRuntimeID(accountID, instanceID string) (string, error) {
 
 func (dc *Client) fetchURLFromDirector(req *machineGraph.Request) (*getURLResponse, error) {
 	var response getURLResponse
-	var lastError error
-	var success bool
 
-	for i := 0; i < reqAttempt; i++ {
-		err := dc.graphQLClient.Run(context.Background(), req, &response)
-		if err != nil {
-			lastError = kebError.AsTemporaryError(err, "while requesting to director client")
-			dc.log.Errorf("call to director failed (attempt %d): %s", i, err)
-			continue
-		}
-		success = true
-		break
-	}
-
-	if !success {
-		return &getURLResponse{}, lastError
+	err := dc.graphQLClient.Run(context.Background(), req, &response)
+	if err != nil {
+		dc.log.Errorf("call to director failed: %s", err)
+		return &getURLResponse{}, kebError.AsTemporaryError(err, "while requesting to director client")
 	}
 
 	return &response, nil
@@ -148,22 +133,11 @@ func (dc *Client) fetchURLFromDirector(req *machineGraph.Request) (*getURLRespon
 
 func (dc *Client) setLabelsInDirector(req *machineGraph.Request) (*runtimeLabelResponse, error) {
 	var response runtimeLabelResponse
-	var lastError error
-	var success bool
 
-	for i := 0; i < reqAttempt; i++ {
-		err := dc.graphQLClient.Run(context.Background(), req, &response)
-		if err != nil {
-			lastError = kebError.AsTemporaryError(err, "while requesting to director client")
-			dc.log.Errorf("call to director failed (attempt %d): %s", i, err)
-			continue
-		}
-		success = true
-		break
-	}
-
-	if !success {
-		return &runtimeLabelResponse{}, lastError
+	err := dc.graphQLClient.Run(context.Background(), req, &response)
+	if err != nil {
+		dc.log.Errorf("call to director failed: %s", err)
+		return &runtimeLabelResponse{}, kebError.AsTemporaryError(err, "while requesting to director client")
 	}
 
 	return &response, nil
@@ -171,22 +145,11 @@ func (dc *Client) setLabelsInDirector(req *machineGraph.Request) (*runtimeLabelR
 
 func (dc *Client) getRuntimeIdFromDirector(req *machineGraph.Request) (*getRuntimeIdResponse, error) {
 	var response getRuntimeIdResponse
-	var lastError error
-	var success bool
 
-	for i := 0; i < reqAttempt; i++ {
-		err := dc.graphQLClient.Run(context.Background(), req, &response)
-		if err != nil {
-			lastError = kebError.AsTemporaryError(err, "while requesting to director client")
-			dc.log.Errorf("call to director failed (attempt %d): %s", i, err)
-			continue
-		}
-		success = true
-		break
-	}
-
-	if !success {
-		return &getRuntimeIdResponse{}, lastError
+	err := dc.graphQLClient.Run(context.Background(), req, &response)
+	if err != nil {
+		dc.log.Errorf("call to director failed: %s", err)
+		return &getRuntimeIdResponse{}, kebError.AsTemporaryError(err, "while requesting to director client")
 	}
 
 	return &response, nil
