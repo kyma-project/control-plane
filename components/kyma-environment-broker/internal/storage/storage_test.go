@@ -345,7 +345,7 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, fixInstances[0].InstanceID, out[0].InstanceID)
 
 			// when
-			out, count, totalCount, err := psqlStorage.Instances().List(dbmodel.InstanceFilter{GlobalAccountIDs: []string{fixInstances[1].GlobalAccountID}})
+			out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{GlobalAccountIDs: []string{fixInstances[1].GlobalAccountID}})
 
 			// then
 			require.NoError(t, err)
@@ -355,7 +355,7 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
 
 			// when
-			out, count, totalCount, err := psqlStorage.Instances().List(dbmodel.InstanceFilter{SubAccountIDs: []string{fixInstances[1].SubAccountID}})
+			out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{SubAccountIDs: []string{fixInstances[1].SubAccountID}})
 
 			// then
 			require.NoError(t, err)
@@ -365,7 +365,7 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
 
 			// when
-			out, count, totalCount, err := psqlStorage.Instances().List(dbmodel.InstanceFilter{RuntimeIDs: []string{fixInstances[1].RuntimeID}})
+			out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{RuntimeIDs: []string{fixInstances[1].RuntimeID}})
 
 			// then
 			require.NoError(t, err)
@@ -375,7 +375,7 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
 
 			// when
-			out, count, totalCount, err := psqlStorage.Instances().List(dbmodel.InstanceFilter{Plans: []string{fixInstances[1].ServicePlanName}})
+			out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{Plans: []string{fixInstances[1].ServicePlanName}})
 
 			// then
 			require.NoError(t, err)
@@ -385,7 +385,7 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
 
 			// when
-			out, count, totalCount, err := psqlStorage.Instances().List(dbmodel.InstanceFilter{Domains: []string{"inst2"}})
+			out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{Domains: []string{"inst2"}})
 
 			// then
 			require.NoError(t, err)
@@ -395,7 +395,7 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
 
 			// when
-			out, count, totalCount, err := psqlStorage.Instances().List(dbmodel.InstanceFilter{Regions: []string{"inst2"}})
+			out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{Regions: []string{"inst2"}})
 
 			// then
 			require.NoError(t, err)
