@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	"crypto/x509/pkix"
+
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
