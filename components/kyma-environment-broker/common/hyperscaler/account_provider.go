@@ -60,6 +60,15 @@ func (p *accountProvider) MarkUnusedGardenerSecretAsDirty(hyperscalerType Type, 
 		return errors.New("failed to release subscription for tenant. Gardener Account pool is not configured")
 	}
 
+	internal, err := p.gardenerPool.IsSecretInternal(hyperscalerType, tenantName)
+	if err != nil {
+		return err
+	}
+
+	if internal {
+		return nil
+	}
+
 	dirty, err := p.gardenerPool.IsSecretDirty(hyperscalerType, tenantName)
 	if err != nil {
 		return err
