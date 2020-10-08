@@ -2,8 +2,7 @@ package dbsession
 
 import (
 	"fmt"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -315,24 +314,28 @@ func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID stri
 	return res.Total, err
 }
 
-func (r readSession) ListInstances(pageSize int, page int) ([]internal.Instance, int, int, error) {
+func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
 	var instances []internal.Instance
 
-	order, err := pagination.ConvertPagePageSizeAndOrderedColumnToSQL(pageSize, page, postsql.CreatedAtField)
-	if err != nil {
-		return nil, -1, -1, errors.Wrap(err, "while converting page and pageSize to SQL statement")
+	// Base select and order by created at
+	stmt := r.session.
+		Select("*").
+		From(postsql.InstancesTableName).
+		OrderBy(postsql.CreatedAtField)
+
+	// Add pagination
+	if filter.Page > 0 && filter.PageSize > 0 {
+		stmt = stmt.Paginate(uint64(filter.Page), uint64(filter.PageSize))
 	}
 
-	stmtWithPagination := fmt.Sprintf("SELECT * FROM %s %s", postsql.InstancesTableName, order)
+	addFilters(stmt, filter)
 
-	execStmt := r.session.SelectBySql(stmtWithPagination)
-
-	_, err = execStmt.Load(&instances)
+	_, err := stmt.Load(&instances)
 	if err != nil {
 		return nil, -1, -1, errors.Wrap(err, "while fetching instances")
 	}
 
-	totalCount, err := r.getInstanceCount()
+	totalCount, err := r.getInstanceCount(filter)
 	if err != nil {
 		return nil, -1, -1, err
 	}
@@ -343,13 +346,37 @@ func (r readSession) ListInstances(pageSize int, page int) ([]internal.Instance,
 		nil
 }
 
-func (r readSession) getInstanceCount() (int, error) {
+func (r readSession) getInstanceCount(filter dbmodel.InstanceFilter) (int, error) {
 	var res struct {
 		Total int
 	}
-	err := r.session.Select("count(*) as total").
-		From(postsql.InstancesTableName).
-		LoadOne(&res)
+	stmt := r.session.Select("count(*) as total").From(postsql.InstancesTableName)
+	addFilters(stmt, filter)
+	err := stmt.LoadOne(&res)
 
 	return res.Total, err
+}
+
+func addFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
+	if len(filter.GlobalAccountIDs) > 0 {
+		stmt.Where("global_account_id IN ?", filter.GlobalAccountIDs)
+	}
+	if len(filter.SubAccountIDs) > 0 {
+		stmt.Where("sub_account_id IN ?", filter.SubAccountIDs)
+	}
+	if len(filter.InstanceIDs) > 0 {
+		stmt.Where("instance_id IN ?", filter.InstanceIDs)
+	}
+	if len(filter.RuntimeIDs) > 0 {
+		stmt.Where("runtime_id IN ?", filter.RuntimeIDs)
+	}
+	if len(filter.Regions) > 0 {
+		stmt.Where("provisioning_parameters::jsonb -> 'parameters' ->> 'region' IN ?", filter.Regions)
+	}
+	if len(filter.Plans) > 0 {
+		stmt.Where("service_plan_name IN ?", filter.Plans)
+	}
+	if len(filter.Domains) > 0 {
+		stmt.Where("dashboard_url ~ ?", strings.Join(filter.Domains, "|"))
+	}
 }
