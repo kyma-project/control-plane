@@ -27,8 +27,8 @@ func NewOrchestrationCmd(log logger.Logger) *cobra.Command {
 		Short:   "Display Kyma control plane orchestrations",
 		Long: `Display Kyma control plane orchestrations and their primary attributes, such as identifiers, type, state, parameters, runtime operations.
 The commands has two modes:
-  1. Without specifying an orcherstration id as an argument, it will list all orchestrations, or orcherstrations matching the --state if supplied.
-  2. When specifying an orcherstration id as an argument, it will display details about the specific orchestration.
+  1. Without specifying an orchestration id as an argument, it will list all orchestrations, or orchestrations matching the --state if supplied.
+  2. When specifying an orchestration id as an argument, it will display details about the specific orchestration.
      If the optional --operation is given, it will display details of the specified runtime operation within the orchestration.`,
 		Example: `  skr orchestrations --state inprogress                                   Display all orchestrations which are in progress
   skr orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                  Display details about a specific orchestration

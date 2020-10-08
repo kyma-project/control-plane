@@ -146,6 +146,14 @@
   revision = "26c1120b8d4107d2471b93ad78ef7ce1fc84c4c4"
 
 [[projects]]
+  digest = "1:1c982c5d5bbe792e6dca8304d23aa38a1bd268e38607e35b14e00d688caf69a8"
+  name = "github.com/coreos/go-oidc"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "8d771559cf6e5111c9b9159810d0e4538e7cdc82"
+  version = "v2.2.1"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -461,12 +469,49 @@
   version = "v1.0"
 
 [[projects]]
-  digest = "1:212f47668128b8024e4b004fcbdf3ef039a133d2d5129ce33c09785472aad7d2"
+  digest = "1:6505644f0d3ec0207b2593792e39f254290558553ad8b30f78c1b6b78e5f49aa"
   name = "github.com/int128/kubelogin"
-  packages = ["pkg/adaptors/logger"]
+  packages = [
+    "pkg/adaptors/browser",
+    "pkg/adaptors/certpool",
+    "pkg/adaptors/clock",
+    "pkg/adaptors/credentialpluginwriter",
+    "pkg/adaptors/logger",
+    "pkg/adaptors/oidcclient",
+    "pkg/adaptors/oidcclient/logging",
+    "pkg/adaptors/reader",
+    "pkg/adaptors/stdio",
+    "pkg/adaptors/tokencache",
+    "pkg/jwt",
+    "pkg/oidc",
+    "pkg/pkce",
+    "pkg/usecases/authentication",
+    "pkg/usecases/authentication/authcode",
+    "pkg/usecases/authentication/ropc",
+    "pkg/usecases/credentialplugin",
+  ]
   pruneopts = "NUT"
   revision = "6071dd83a3c8ee9fe4ec0df63583beb2a5467de8"
   version = "v1.21.0"
+
+[[projects]]
+  digest = "1:87e17059c444f0a198fc99999918bd8f374a7dc22f12b1bf3882e931df77a081"
+  name = "github.com/int128/listener"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "d3b8de705416ee04fd904e62e96273fb48a2a0fb"
+  version = "v1.1.0"
+
+[[projects]]
+  digest = "1:d00896bca1153979d938cfc4ce18903690f68df6263029a6a59f5d994d718bf5"
+  name = "github.com/int128/oauth2cli"
+  packages = [
+    ".",
+    "oauth2params",
+  ]
+  pruneopts = "NUT"
+  revision = "a52d98eb988e0732b1964dde5c9a9e2428bba31e"
+  version = "v1.13.0"
 
 [[projects]]
   digest = "1:88116f979a2f3ff8e6748a942ec37efd668ba2db062fc9a5e47f4dd2de339a38"
@@ -659,6 +704,14 @@
   version = "v7.1.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:3c47bdd19ee30cc18546c0003a69a08908e86b2ea3e435be78e337575271e83b"
+  name = "github.com/pkg/browser"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "0a3d74bf9ce488f035cf5bc36f753a711bc74334"
+
+[[projects]]
   digest = "1:14715f705ff5dfe0ffd6571d7d201dd8e921030f8070321a79380d8ca4ec1a24"
   name = "github.com/pkg/errors"
   packages = ["."]
@@ -673,6 +726,17 @@
   pruneopts = "NUT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:56d4317a6d538c1212c1884f0440a291d7f86a9950a9c9659d630afc7250089c"
+  name = "github.com/pquerna/cachecontrol"
+  packages = [
+    ".",
+    "cacheobject",
+  ]
+  pruneopts = "NUT"
+  revision = "858c6e7e6b7e879f681b8ced4da529d4b2918ab6"
 
 [[projects]]
   digest = "1:097cc61836050f45cbb712ae3bb45d66fba464c16b8fac09907fa3c1f753eff6"
@@ -898,9 +962,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c72812eff46e3f038674f00d9e043412d2bafd79bdbb4995075aa16b83445135"
+  digest = "1:3031abe5ec8fc83fbb08976f29733d104ad689552ce11f815a9c6a09ada1a34d"
   name = "golang.org/x/crypto"
   packages = [
+    "ed25519",
+    "ed25519/internal/edwards25519",
     "pbkdf2",
     "scrypt",
     "ssh/terminal",
@@ -1053,6 +1119,18 @@
   pruneopts = "NUT"
   revision = "fcd0515f91612282aba5f5231a7dd71487e6dd8f"
   version = "v1.61.0"
+
+[[projects]]
+  digest = "1:559d892ae6c1cc1561b0837324d5620def72b34cfd53f73b7a7ff207e5d6f336"
+  name = "gopkg.in/square/go-jose.v2"
+  packages = [
+    ".",
+    "cipher",
+    "json",
+  ]
+  pruneopts = "NUT"
+  revision = "3a5ee095dcb5030a9de84fb92c222ac652fff176"
+  version = "v2.5.1"
 
 [[projects]]
   digest = "1:d9b9ac6943a512737f76bf3d61b08d97121c66686bc02ffc231313563230b468"
@@ -1338,7 +1416,18 @@
     "github.com/gorilla/handlers",
     "github.com/gorilla/mux",
     "github.com/hashicorp/go-multierror",
+    "github.com/int128/kubelogin/pkg/adaptors/browser",
+    "github.com/int128/kubelogin/pkg/adaptors/certpool",
+    "github.com/int128/kubelogin/pkg/adaptors/clock",
+    "github.com/int128/kubelogin/pkg/adaptors/credentialpluginwriter",
     "github.com/int128/kubelogin/pkg/adaptors/logger",
+    "github.com/int128/kubelogin/pkg/adaptors/oidcclient",
+    "github.com/int128/kubelogin/pkg/adaptors/reader",
+    "github.com/int128/kubelogin/pkg/adaptors/tokencache",
+    "github.com/int128/kubelogin/pkg/usecases/authentication",
+    "github.com/int128/kubelogin/pkg/usecases/authentication/authcode",
+    "github.com/int128/kubelogin/pkg/usecases/authentication/ropc",
+    "github.com/int128/kubelogin/pkg/usecases/credentialplugin",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/director/pkg/jsonschema",
     "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema",
@@ -1382,6 +1471,7 @@
     "k8s.io/client-go/rest",
     "k8s.io/client-go/testing",
     "k8s.io/client-go/tools/clientcmd",
+    "k8s.io/client-go/util/homedir",
     "k8s.io/client-go/util/workqueue",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/apiutil",
