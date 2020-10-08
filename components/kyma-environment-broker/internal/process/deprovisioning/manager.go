@@ -72,7 +72,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 
 	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
-		m.log.Errorf("while getting ProvisioningParameters from operation id %q", operation.ID)
+		m.log.Errorf("while getting ProvisioningParameters from operation id %q: %s", operation.ID, err)
 		return 3 * time.Second, nil
 	}
 
