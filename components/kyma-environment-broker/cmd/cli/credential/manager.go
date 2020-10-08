@@ -2,6 +2,7 @@ package credential
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/int128/kubelogin/pkg/adaptors/browser"
@@ -41,6 +42,7 @@ type manager struct {
 	input  credentialplugin.Input
 	token  string
 	expiry time.Time
+	mux    sync.Mutex
 }
 
 type tokenWriter struct {
@@ -107,6 +109,8 @@ func (mgr *manager) GetTokenByAuthCode(ctx context.Context) (string, error) {
 		AuthenticationTimeout: defaultAuthenticationTimeout,
 		RedirectURLHostname:   "localhost",
 	}
+	mgr.mux.Lock()
+	defer mgr.mux.Unlock()
 	err := mgr.getter.Do(ctx, in)
 	if err != nil {
 		return "", err
@@ -121,6 +125,8 @@ func (mgr *manager) GetTokenByROPC(ctx context.Context, username, password strin
 		Username: username,
 		Password: password,
 	}
+	mgr.mux.Lock()
+	defer mgr.mux.Unlock()
 	err := mgr.getter.Do(ctx, in)
 	if err != nil {
 		return "", err
@@ -128,9 +134,18 @@ func (mgr *manager) GetTokenByROPC(ctx context.Context, username, password strin
 	return mgr.token, nil
 }
 
-// Token uses GetTokenByAuthCode() to obtain an ID token in oauth2.Token format. This method implements the oauth2.TokenSource interface
+// Token uses auth code grant flow to obtain an ID token in oauth2.Token format. This method implements the oauth2.TokenSource interface
 func (mgr *manager) Token() (*oauth2.Token, error) {
-	_, err := mgr.GetTokenByAuthCode(context.TODO())
+	in := mgr.input
+	in.GrantOptionSet.AuthCodeBrowserOption = &authcode.BrowserOption{
+		BindAddress:           defaultListenAddress,
+		SkipOpenBrowser:       false,
+		AuthenticationTimeout: defaultAuthenticationTimeout,
+		RedirectURLHostname:   "localhost",
+	}
+	mgr.mux.Lock()
+	defer mgr.mux.Unlock()
+	err := mgr.getter.Do(context.TODO(), in)
 	if err != nil {
 		return nil, err
 	}
@@ -138,6 +153,8 @@ func (mgr *manager) Token() (*oauth2.Token, error) {
 }
 
 func (mgr *manager) TokenExpiry() time.Time {
+	mgr.mux.Lock()
+	defer mgr.mux.Unlock()
 	return mgr.expiry
 }
 
