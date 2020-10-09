@@ -48,7 +48,7 @@ spec:
             - name: OIDC_KUBECONFIG_CLIENT_SECRET
               value: {{ .Values.config.oidc.kubeconfig.secret | quote }}
             - name: OIDC_ISSUER_URL
-              value: "https://dex.{{ .Values.global.ingress.domainName }}"
+              value: {{ .Values.config.oidc.issuer | default (printf "https://dex.%s" .Values.global.ingress.domainName) | quote }}
             - name: OIDC_CLIENT_ID
               value: {{ .Values.config.oidc.client }}
             {{- with .Values.config.oidc.caFile }}

@@ -28,6 +28,7 @@ config:
       client: 1234-5678-qwer
       secret: foobar
     client: compass-ui
+    issuer:
     # caFile: /etc/dex-tls-cert/tls.crt
 
 
