@@ -170,6 +170,10 @@ func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetTo
 		return &http.Response{}, kebError.AsTemporaryError(err, "while executing request by http client")
 	}
 
+	if response.StatusCode >= http.StatusInternalServerError {
+		return response, kebError.NewTemporaryError("avs server returned %d status code", response.StatusCode)
+	}
+
 	switch response.StatusCode {
 	case http.StatusOK, http.StatusCreated:
 		return response, nil
@@ -186,10 +190,7 @@ func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetTo
 			return c.execute(request, allowNotFound, false)
 		}
 		return response, fmt.Errorf("avs server returned %d status code twice for %s (response body: %s)", http.StatusUnauthorized, request.URL.String(), responseBody(response))
-	case http.StatusInternalServerError,
-		http.StatusRequestTimeout,
-		http.StatusServiceUnavailable,
-		http.StatusGatewayTimeout:
+	case http.StatusRequestTimeout:
 		return response, kebError.NewTemporaryError("avs server returned %d status code", response.StatusCode)
 	default:
 		return response, fmt.Errorf("unsupported status code: %d for %s (response body: %s)", response.StatusCode, request.URL.String(), responseBody(response))
