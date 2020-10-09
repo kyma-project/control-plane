@@ -28,7 +28,7 @@ config:
       client: 1234-5678-qwer
       secret: foobar
     client: compass-ui
-    issuer: 'https://dex.{{ .Values.global.ingress.domainName }}'
+    issuer: https://dex.{{ .Values.global.ingress.domainName }}
     # caFile: /etc/dex-tls-cert/tls.crt
 
 
