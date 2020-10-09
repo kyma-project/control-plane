@@ -190,6 +190,13 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt internal.Runtim
 			continue
 		}
 
+		// Perform match against a specific PlanName
+		if rt.PlanName != "" {
+			if rt.PlanName != instanceOpStatus.ServicePlanName {
+				continue
+			}
+		}
+
 		// Perform match against GlobalAccount regexp
 		if rt.GlobalAccount != "" {
 			matched, err := regexp.MatchString(rt.GlobalAccount, shoot.Labels[globalAccountLabel])

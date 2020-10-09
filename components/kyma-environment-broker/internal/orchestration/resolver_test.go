@@ -34,6 +34,9 @@ const (
 	region1 = "westeurope"
 	region2 = "centralus"
 	region3 = "uksouth"
+
+	plan1 = "azure"
+	plan2 = "gcp"
 )
 
 func TestResolver_Resolve(t *testing.T) {
@@ -147,6 +150,17 @@ func TestResolver_Resolve(t *testing.T) {
 			},
 			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime3},
 		},
+		"IncludePlanName": {
+			Target: internal.TargetSpec{
+				Include: []internal.RuntimeTarget{
+					{
+						PlanName: plan1,
+					},
+				},
+				Exclude: nil,
+			},
+			ExpectedRuntimes: []expectedRuntime{expectedRuntime2, expectedRuntime3},
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			// when
@@ -225,14 +239,14 @@ var (
 	shoot2                  = fixShoot(2, globalAccountID1, region2)
 	shoot3                  = fixShoot(3, globalAccountID2, region3)
 	shoot4                  = fixShoot(4, globalAccountID3, region1)
-	instance1               = fixInstanceWithOperation(1, globalAccountID1, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
-	instance2               = fixInstanceWithOperation(2, globalAccountID1, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
-	instance3               = fixInstanceWithOperation(3, globalAccountID2, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
-	instance4               = fixInstanceWithOperation(4, globalAccountID3, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
-	instance4Deprovisioning = fixInstanceWithOperation(4, globalAccountID3, string(dbmodel.OperationTypeDeprovision), string(brokerapi.InProgress))
-	instance5Failed         = fixInstanceWithOperation(5, globalAccountID3, string(dbmodel.OperationTypeProvision), string(brokerapi.Failed))
-	instance6Provisioning   = fixInstanceWithOperation(6, globalAccountID3, string(dbmodel.OperationTypeProvision), string(brokerapi.InProgress))
-	instance7               = fixInstanceWithOperation(7, globalAccountID1, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded))
+	instance1               = fixInstanceWithOperation(1, globalAccountID1, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded), plan2)
+	instance2               = fixInstanceWithOperation(2, globalAccountID1, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded), plan1)
+	instance3               = fixInstanceWithOperation(3, globalAccountID2, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded), plan1)
+	instance4               = fixInstanceWithOperation(4, globalAccountID3, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded), plan1)
+	instance4Deprovisioning = fixInstanceWithOperation(4, globalAccountID3, string(dbmodel.OperationTypeDeprovision), string(brokerapi.InProgress), plan1)
+	instance5Failed         = fixInstanceWithOperation(5, globalAccountID3, string(dbmodel.OperationTypeProvision), string(brokerapi.Failed), plan1)
+	instance6Provisioning   = fixInstanceWithOperation(6, globalAccountID3, string(dbmodel.OperationTypeProvision), string(brokerapi.InProgress), plan2)
+	instance7               = fixInstanceWithOperation(7, globalAccountID1, string(dbmodel.OperationTypeProvision), string(brokerapi.Succeeded), plan1)
 )
 
 func fixShoot(id int, globalAccountID, region string) gardenerapi.Shoot {
@@ -260,13 +274,14 @@ func fixShoot(id int, globalAccountID, region string) gardenerapi.Shoot {
 	}
 }
 
-func fixInstanceWithOperation(id int, globalAccountID, opType, opState string) internal.InstanceWithOperation {
+func fixInstanceWithOperation(id int, globalAccountID, opType, opState, planName string) internal.InstanceWithOperation {
 	return internal.InstanceWithOperation{
 		Instance: internal.Instance{
 			InstanceID:      fmt.Sprintf("instance-id-%d", id),
 			RuntimeID:       fmt.Sprintf("runtime-id-%d", id),
 			GlobalAccountID: globalAccountID,
 			SubAccountID:    fmt.Sprintf("subaccount-id-%d", id),
+			ServicePlanName: planName,
 		},
 		Type: sql.NullString{
 			String: opType,
