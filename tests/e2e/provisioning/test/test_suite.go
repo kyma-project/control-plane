@@ -10,16 +10,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director/oauth"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/hyperscaler"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/hyperscaler/azure"
-
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/broker"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/runtime"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/v1_client"
 
-	gcli "github.com/machinebox/graphql"
 	"github.com/ory/hydra-maester/api/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -131,19 +128,9 @@ func newTestSuite(t *testing.T) *Suite {
 
 	httpClient := newHTTPClient(cfg.SkipCertVerification)
 
-	// create director client on the base of graphQL client and OAuth client
-	graphQLClient := gcli.NewClient(cfg.Director.URL, gcli.WithHTTPClient(httpClient))
-	graphQLClient.Log = func(s string) { log.Println(s) }
-
-	oauthClient := oauth.NewOauthClient(httpClient, cli, cfg.Director.OauthCredentialsSecretName, cfg.Director.Namespace)
-	err = oauthClient.WaitForCredentials()
-	if err != nil {
-		panic(err)
-	}
-
 	brokerClient := broker.NewClient(ctx, cfg.Broker, cfg.TenantID, instanceID, subAccountID, oAuth2Config, log.WithField("service", "broker_client"))
 
-	directorClient := director.NewDirectorClient(oauthClient, graphQLClient, log.WithField("service", "director_client"))
+	directorClient := director.NewDirectorClient(ctx, cfg.Director, log.WithField("service", "director_client"))
 
 	runtimeClient := runtime.NewClient(cfg.ProvisionerURL, cfg.TenantID, instanceID, *httpClient, directorClient, log.WithField("service", "runtime_client"))
 
