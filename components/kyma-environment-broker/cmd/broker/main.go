@@ -206,7 +206,7 @@ func main() {
 
 	clientHTTPForIAS := httputil.NewClient(30, cfg.IAS.SkipCertVerification)
 	if cfg.IAS.TLSRenegotiationEnable {
-		clientHTTPForIAS = httputil.NewRenegotiationTLSClient(30, cfg.IAS.TLSRenegotiationEnable)
+		clientHTTPForIAS = httputil.NewRenegotiationTLSClient(30, cfg.IAS.SkipCertVerification)
 	}
 	bundleBuilder := ias.NewBundleBuilder(clientHTTPForIAS, cfg.IAS)
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)

@@ -63,15 +63,8 @@ func TestClient_GetConsoleURL(t *testing.T) {
 	t.Run("response from director is empty", func(t *testing.T) {
 		// Given
 		qc := &mocks.GraphQLClient{}
-		cfg := Config{
-			URL:               "",
-			OauthTokenURL:     "",
-			OauthClientID:     "",
-			OauthClientSecret: "",
-			OauthScope:        "",
-		}
 
-		client := NewDirectorClient(context.Background(), cfg, logger.NewLogDummy())
+		client := NewDirectorClient(context.Background(), Config{}, logger.NewLogDummy())
 		client.graphQLClient = qc
 
 		// #create request
@@ -93,9 +86,8 @@ func TestClient_GetConsoleURL(t *testing.T) {
 	t.Run("response from director is in failed state", func(t *testing.T) {
 		// Given
 		qc := &mocks.GraphQLClient{}
-		cfg := Config{}
 
-		client := NewDirectorClient(context.Background(), cfg, logger.NewLogDummy())
+		client := NewDirectorClient(context.Background(), Config{}, logger.NewLogDummy())
 		client.graphQLClient = qc
 
 		// #create request
@@ -132,9 +124,8 @@ func TestClient_GetConsoleURL(t *testing.T) {
 	t.Run("response from director has no proper labels", func(t *testing.T) {
 		// Given
 		qc := &mocks.GraphQLClient{}
-		cfg := Config{}
 
-		client := NewDirectorClient(context.Background(), cfg, logger.NewLogDummy())
+		client := NewDirectorClient(context.Background(), Config{}, logger.NewLogDummy())
 		client.graphQLClient = qc
 
 		// #create request
@@ -171,9 +162,8 @@ func TestClient_GetConsoleURL(t *testing.T) {
 	t.Run("response from director has label with wrong type", func(t *testing.T) {
 		// Given
 		qc := &mocks.GraphQLClient{}
-		cfg := Config{}
 
-		client := NewDirectorClient(context.Background(), cfg, logger.NewLogDummy())
+		client := NewDirectorClient(context.Background(), Config{}, logger.NewLogDummy())
 		client.graphQLClient = qc
 
 		// #create request
@@ -210,15 +200,8 @@ func TestClient_GetConsoleURL(t *testing.T) {
 	t.Run("response from director has wrong URL value", func(t *testing.T) {
 		// Given
 		qc := &mocks.GraphQLClient{}
-		cfg := Config{
-			URL:               "",
-			OauthTokenURL:     "",
-			OauthClientID:     "",
-			OauthClientSecret: "",
-			OauthScope:        "",
-		}
 
-		client := NewDirectorClient(context.Background(), cfg, logger.NewLogDummy())
+		client := NewDirectorClient(context.Background(), Config{}, logger.NewLogDummy())
 		client.graphQLClient = qc
 
 		// #create request

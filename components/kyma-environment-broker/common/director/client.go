@@ -17,9 +17,6 @@ import (
 const (
 	// accountIDKey is a header key name for request send by graphQL client
 	accountIDKey = "tenant"
-
-	// amount of request attempt to director service
-	reqAttempt = 3
 )
 
 //go:generate mockery -name=GraphQLClient -output=automock
