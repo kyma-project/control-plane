@@ -66,10 +66,26 @@ spec:
               value: "{{ .Values.global.defaultTenant }}"
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.compass.tls.secure.oauth.host }}.{{ .Values.global.compass.domain | default .Values.global.ingress.domainName }}/director/graphql"
-            - name: APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME
-              value: "{{ .Values.global.kyma_environment_broker.secrets.integrationSystemCredentials.name }}"
-            - name: APP_DIRECTOR_SKIP_CERT_VERIFICATION
-              value: "{{ .Values.global.isLocalEnv }}"
+            - name: APP_DIRECTOR_OAUTH_TOKEN_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.global.kyma_environment_broker.secrets.integrationSystemCredentials.name }}"
+                  key: tokens_endpoint
+                  optional: true
+            - name: APP_DIRECTOR_OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.global.kyma_environment_broker.secrets.integrationSystemCredentials.name }}"
+                  key: client_id
+                  optional: true
+            - name: APP_DIRECTOR_OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.global.kyma_environment_broker.secrets.integrationSystemCredentials.name }}"
+                  key: client_secret
+                  optional: true
+            - name: APP_DIRECTOR_OAUTH_SCOPE
+              value: "{{ .Values.director.scope }}"
             - name: APP_LMS_URL
               value: "{{ .Values.lms.url }}"
             - name: APP_LMS_CLUSTER_TYPE
@@ -106,6 +122,8 @@ spec:
             - name: APP_IAS_DISABLED
               value: "{{ .Values.ias.disabled }}"
             - name: APP_IAS_TLS_RENEGOTIATION_ENABLE
+              value: "{{ .Values.ias.tlsRenegotiationEnable }}"
+            - name: APP_IAS_TLS_SKIP_CERT_VERIFICATION
               value: "{{ .Values.ias.tlsRenegotiationEnable }}"
             - name: APP_EDP_AUTH_URL
               value: "{{ .Values.edp.authURL }}"
