@@ -77,7 +77,7 @@ func (c *Client) CreateDataTenant(data DataTenantPayload) error {
 	return c.post(c.dataTenantURL(), rawData)
 }
 
-func (c *Client) DeleteDataTenant(name, env string) error {
+func (c *Client) DeleteDataTenant(name, env string) (err error) {
 	URL := fmt.Sprintf("%s/%s/%s", c.dataTenantURL(), name, env)
 	request, err := http.NewRequest(http.MethodDelete, URL, nil)
 	if err != nil {
@@ -85,20 +85,16 @@ func (c *Client) DeleteDataTenant(name, env string) error {
 	}
 
 	response, err := c.httpClient.Do(request)
+	defer func() {
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing delete DataTenant response")
+		}
+	}()
 	if err != nil {
 		return kebError.AsTemporaryError(err, "while requesting about delete dataTenant")
 	}
 
-	err = c.processResponse(response, true)
-	if err != nil {
-		return errors.Wrap(err, "while processing delete DataTenant response")
-	}
-
-	if err := c.closeResponseBody(response); err != nil {
-		return kebError.AsTemporaryError(err, "while closing delete DataTenant response")
-	}
-
-	return nil
+	return c.processResponse(response, true)
 }
 
 func (c *Client) CreateMetadataTenant(name, env string, data MetadataTenantPayload) error {
@@ -110,7 +106,7 @@ func (c *Client) CreateMetadataTenant(name, env string, data MetadataTenantPaylo
 	return c.post(c.metadataTenantURL(name, env), rawData)
 }
 
-func (c *Client) DeleteMetadataTenant(name, env, key string) error {
+func (c *Client) DeleteMetadataTenant(name, env, key string) (err error) {
 	URL := fmt.Sprintf("%s/%s", c.metadataTenantURL(name, env), key)
 	request, err := http.NewRequest(http.MethodDelete, URL, nil)
 	if err != nil {
@@ -118,29 +114,31 @@ func (c *Client) DeleteMetadataTenant(name, env, key string) error {
 	}
 
 	response, err := c.httpClient.Do(request)
+	defer func() {
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing delete MetadataTenant response")
+		}
+	}()
 	if err != nil {
 		return kebError.AsTemporaryError(err, "while requesting about delete metadata")
 	}
 
-	err = c.processResponse(response, true)
-	if err != nil {
-		return errors.Wrap(err, "while processing delete MetadataTenant response")
-	}
-
-	if err := c.closeResponseBody(response); err != nil {
-		return kebError.AsTemporaryError(err, "while closing delete MetadataTenant response")
-	}
-
-	return nil
+	return c.processResponse(response, true)
 }
 
-func (c *Client) GetMetadataTenant(name, env string) ([]MetadataItem, error) {
+func (c *Client) GetMetadataTenant(name, env string) (_ []MetadataItem, err error) {
 	var metadata []MetadataItem
 	request, err := http.NewRequest(http.MethodGet, c.metadataTenantURL(name, env), nil)
 	if err != nil {
 		return metadata, errors.Wrap(err, "while creating GET metadata tenant request")
 	}
+
 	response, err := c.httpClient.Do(request)
+	defer func() {
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing get MetadataTenant response")
+		}
+	}()
 	if err != nil {
 		return metadata, kebError.AsTemporaryError(err, "while requesting about dataTenant metadata")
 	}
@@ -150,34 +148,27 @@ func (c *Client) GetMetadataTenant(name, env string) ([]MetadataItem, error) {
 		return metadata, errors.Wrap(err, "while decoding dataTenant metadata response")
 	}
 
-	if err := c.closeResponseBody(response); err != nil {
-		return metadata, kebError.AsTemporaryError(err, "while closing get MetadataTenant response")
-	}
-
 	return metadata, nil
 }
 
-func (c *Client) post(URL string, data []byte) error {
+func (c *Client) post(URL string, data []byte) (err error) {
 	request, err := http.NewRequest(http.MethodPost, URL, bytes.NewBuffer(data))
 	if err != nil {
 		return errors.Wrapf(err, "while creating POST request for %s", URL)
 	}
 	request.Header.Set("Content-Type", "application/json")
+
 	response, err := c.httpClient.Do(request)
+	defer func() {
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing post response")
+		}
+	}()
 	if err != nil {
 		return kebError.AsTemporaryError(err, "while sending POST request on %s", URL)
 	}
 
-	err = c.processResponse(response, false)
-	if err != nil {
-		return errors.Wrap(err, "while processing response")
-	}
-
-	if err := c.closeResponseBody(response); err != nil {
-		return kebError.AsTemporaryError(err, "while closing post response")
-	}
-
-	return nil
+	return c.processResponse(response, false)
 }
 
 func (c *Client) processResponse(response *http.Response, allowNotFound bool) error {
@@ -226,9 +217,11 @@ func responseLog(r *http.Response) string {
 }
 
 func (c *Client) closeResponseBody(response *http.Response) error {
+	if response == nil {
+		return nil
+	}
 	if response.Body == nil {
 		return nil
 	}
-
 	return response.Body.Close()
 }

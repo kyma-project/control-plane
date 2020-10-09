@@ -150,6 +150,15 @@ func (c *client) CreateTenant(input CreateTenantInput) (o CreateTenantOutput, er
 	if err != nil {
 		return CreateTenantOutput{}, kebError.AsTemporaryError(err, "while calling Create Tenant endpoint")
 	}
+	defer func() {
+		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
+			err = kebError.AsTemporaryError(drainErr, "while trying to drain body reader")
+		}
+
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while trying to close body reader")
+		}
+	}()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	var output struct {
@@ -169,14 +178,6 @@ func (c *client) CreateTenant(input CreateTenantInput) (o CreateTenantOutput, er
 			resp.StatusCode, output.Error, output.Message)
 	}
 
-	if err := iosafety.DrainReader(resp.Body); err != nil {
-		return CreateTenantOutput{}, kebError.AsTemporaryError(err, "while trying to drain body reader")
-	}
-
-	if err := resp.Body.Close(); err != nil {
-		return CreateTenantOutput{}, kebError.AsTemporaryError(err, "while trying to close body reader")
-	}
-
 	return CreateTenantOutput{ID: output.ID}, nil
 }
 
@@ -191,6 +192,15 @@ func (c *client) GetTenantStatus(tenantID string) (status TenantStatus, err erro
 	if err != nil {
 		return TenantStatus{}, kebError.AsTemporaryError(err, "while calling Get Tenant Status endpoint")
 	}
+	defer func() {
+		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
+			err = kebError.AsTemporaryError(drainErr, "while trying to drain body reader")
+		}
+
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while trying to close body reader")
+		}
+	}()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	var tenantStatus TenantStatus
@@ -204,14 +214,6 @@ func (c *client) GetTenantStatus(tenantID string) (status TenantStatus, err erro
 		return TenantStatus{}, errors.Errorf("error when calling get tenant status endpoint,"+
 			" status code: %d, body: %s",
 			resp.StatusCode, body)
-	}
-
-	if err := iosafety.DrainReader(resp.Body); err != nil {
-		return TenantStatus{}, kebError.AsTemporaryError(err, "while trying to drain body reader")
-	}
-
-	if err := resp.Body.Close(); err != nil {
-		return TenantStatus{}, kebError.AsTemporaryError(err, "while trying to close body reader")
 	}
 
 	return tenantStatus, nil
@@ -228,6 +230,15 @@ func (c *client) GetTenantInfo(tenantID string) (status TenantInfo, err error) {
 	if err != nil {
 		return TenantInfo{}, kebError.AsTemporaryError(err, "while calling Get Tenant endpoint")
 	}
+	defer func() {
+		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
+			err = kebError.AsTemporaryError(drainErr, "while trying to drain body reader")
+		}
+
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while trying to close body reader")
+		}
+	}()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	var response TenantInfo
@@ -241,14 +252,6 @@ func (c *client) GetTenantInfo(tenantID string) (status TenantInfo, err error) {
 		return TenantInfo{}, errors.Errorf("error when calling get tenant info endpoint,"+
 			" status code: %d, body: %s",
 			resp.StatusCode, body)
-	}
-
-	if err := iosafety.DrainReader(resp.Body); err != nil {
-		return TenantInfo{}, kebError.AsTemporaryError(err, "while trying to drain body reader")
-	}
-
-	if err := resp.Body.Close(); err != nil {
-		return TenantInfo{}, kebError.AsTemporaryError(err, "while trying to close body reader")
 	}
 
 	return response, nil
@@ -265,6 +268,15 @@ func (c *client) GetCertificateByURL(url string) (cert string, found bool, err e
 	if err != nil {
 		return "", false, kebError.AsTemporaryError(err, "while calling Get Certificate endpoint (%s)", url)
 	}
+	defer func() {
+		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
+			err = kebError.AsTemporaryError(drainErr, "while trying to drain body reader")
+		}
+
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while trying to close body reader")
+		}
+	}()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	var certResponse struct {
@@ -284,14 +296,6 @@ func (c *client) GetCertificateByURL(url string) (cert string, found bool, err e
 	err = json.Unmarshal(body, &certResponse)
 	if err != nil {
 		return "", false, errors.Wrapf(err, "while unmarshalling response: %s", string(body))
-	}
-
-	if err := iosafety.DrainReader(resp.Body); err != nil {
-		return "", false, kebError.AsTemporaryError(err, "while trying to drain body reader")
-	}
-
-	if err := resp.Body.Close(); err != nil {
-		return "", false, kebError.AsTemporaryError(err, "while trying to close body reader")
 	}
 
 	return certResponse.Cert, true, nil
@@ -332,6 +336,15 @@ func (c *client) RequestCertificate(tenantID string, subject pkix.Name) (string,
 	if err != nil {
 		return "", privateKey, kebError.AsTemporaryError(err, "while calling Request Certificate endpoint")
 	}
+	defer func() {
+		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
+			err = kebError.AsTemporaryError(drainErr, "while trying to drain body reader")
+		}
+
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while trying to close body reader")
+		}
+	}()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	var response struct {
@@ -347,14 +360,6 @@ func (c *client) RequestCertificate(tenantID string, subject pkix.Name) (string,
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return "", []byte{}, errors.Wrapf(err, "while unmarshalling response: %s", string(body))
-	}
-
-	if err := iosafety.DrainReader(resp.Body); err != nil {
-		return "", []byte{}, kebError.AsTemporaryError(err, "while trying to drain body reader")
-	}
-
-	if err := resp.Body.Close(); err != nil {
-		return "", []byte{}, kebError.AsTemporaryError(err, "while trying to close body reader")
 	}
 
 	return response.CallbackURL, privateKey, nil
