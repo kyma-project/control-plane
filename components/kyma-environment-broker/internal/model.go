@@ -245,6 +245,8 @@ type RuntimeTarget struct {
 	Region string `json:"region,omitempty"`
 	// RuntimeID is used to indicate a specific runtime
 	RuntimeID string `json:"runtimeId,omitempty"`
+	// PlanName is used to match runtimes with the same plan
+	PlanName string `json:"planName,omitempty"`
 }
 
 type StrategyType string

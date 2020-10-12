@@ -1,22 +1,22 @@
 package provisioning
 
 import (
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"regexp"
 	"time"
 
-	"crypto/x509/pkix"
-
-	"fmt"
-
-	"encoding/base64"
-
-	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+
+	"crypto/x509/pkix"
+
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -48,6 +48,7 @@ func NewLmsCertificatesStep(certProvider LmsClient, os storage.Operations, isMan
 		LmsStep: LmsStep{
 			operationManager: process.NewProvisionOperationManager(os),
 			isMandatory:      isMandatory,
+			expirationTime:   lmsTimeout,
 		},
 		provider:            certProvider,
 		normalizationRegexp: regexp.MustCompile("[^a-zA-Z0-9]+"),
@@ -83,12 +84,12 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 	// check if LMS tenant is ready
 	status, err := s.provider.GetTenantStatus(operation.Lms.TenantID)
 	if err != nil {
-		logger.Errorf("Unable to get LMS Tenant status: %s", err.Error())
-		if time.Since(operation.Lms.RequestedAt) > lmsTimeout {
-			logger.Errorf("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
-			return s.failLmsAndUpdate(operation, "Getting LMS Tenant status failed")
-		}
-		return operation, tenantReadyRetryInterval, nil
+		return s.handleError(
+			operation,
+			logger,
+			time.Since(operation.Lms.RequestedAt),
+			"Unable to get LMS Tenant status",
+			err)
 	}
 	if !(status.ElasticsearchDNSResolves && status.KibanaDNSResolves) {
 		logger.Infof("LMS tenant not ready: elasticDNS=%v, kibanaDNS=%v", status.ElasticsearchDNSResolves, status.KibanaDNSResolves)
@@ -101,12 +102,12 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 
 	tenantInfo, err := s.provider.GetTenantInfo(operation.Lms.TenantID)
 	if err != nil {
-		logger.Errorf("Unable to get LMS Tenant info: %s", err.Error())
-		if time.Since(operation.Lms.RequestedAt) > lmsTimeout {
-			logger.Errorf("Setting LMS operation failed - tenant provisioning timed out, last error: %s", err.Error())
-			return s.failLmsAndUpdate(operation, "LMS Tenant provisioning timeout")
-		}
-		return operation, tenantReadyRetryInterval, nil
+		return s.handleError(
+			operation,
+			logger,
+			time.Since(operation.Lms.RequestedAt),
+			"Unable to get LMS Tenant info",
+			err)
 	}
 
 	// request certificates
@@ -196,6 +197,20 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 type LmsStep struct {
 	operationManager *process.ProvisionOperationManager
 	isMandatory      bool
+	expirationTime   time.Duration
+}
+
+func (s *LmsStep) handleError(operation internal.ProvisioningOperation, log logrus.FieldLogger, since time.Duration, msg string, err error) (internal.ProvisioningOperation, time.Duration, error) {
+	log.Errorf("%s: %s", msg, err)
+	switch {
+	case kebError.IsTemporaryError(err):
+		return s.operationManager.RetryOperation(operation, msg, 10*time.Second, time.Minute*30, log)
+	default:
+		if since < s.expirationTime {
+			return operation, tenantReadyRetryInterval, nil
+		}
+		return s.failLmsAndUpdate(operation, "getting LMS tenant failed")
+	}
 }
 
 func (s *LmsStep) failLmsAndUpdate(operation internal.ProvisioningOperation, msg string) (internal.ProvisioningOperation, time.Duration, error) {

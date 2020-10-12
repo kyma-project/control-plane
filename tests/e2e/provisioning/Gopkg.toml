@@ -31,7 +31,7 @@
 
 [[constraint]]
   name = "github.com/kyma-project/control-plane"
-  revision = "d40fff3571fd230222c5bd96afbac5c64139d9ef"
+  revision = "e0437b7ac8d66565e1253b46f42f10b20f3dda48"
 
 [[override]]
   name = "github.com/kyma-incubator/compass"

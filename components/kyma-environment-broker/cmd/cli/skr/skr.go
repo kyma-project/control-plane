@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/credential"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -84,4 +85,9 @@ func initConfig() {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
+}
+
+// CLICredentialManager returns a credential.Manager configured using the CLI global options
+func CLICredentialManager(logger logger.Logger) credential.Manager {
+	return credential.NewManager(GlobalOpts.OIDCIssuerURL(), GlobalOpts.OIDCClientID(), GlobalOpts.OIDCClientSecret(), logger)
 }

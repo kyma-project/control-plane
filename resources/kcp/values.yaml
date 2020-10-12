@@ -18,7 +18,7 @@ global:
       version: "PR-131"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-131"
+      version: "PR-262"
     subscription_cleanup_job:
       dir:
       version: "PR-219"
@@ -31,7 +31,7 @@ global:
         version: "PR-220"
       e2e_provisioning:
         dir:
-        version: "PR-215"
+        version: "PR-263"
   isLocalEnv: false
   oauth2:
     host: oauth2
