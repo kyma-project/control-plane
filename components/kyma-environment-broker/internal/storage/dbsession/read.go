@@ -146,12 +146,12 @@ func (r readSession) ListOrchestrationsByState(state string) ([]dbmodel.Orchestr
 func (r readSession) ListOrchestrations(pageSize, page int) ([]dbmodel.OrchestrationDTO, int, int, error) {
 	var orchestrations []dbmodel.OrchestrationDTO
 
-	order, err := pagination.ConvertPageSizeAndOrderedColumnToSQL(pageSize, page, postsql.CreatedAtField)
+	err := pagination.ValidatePageParameters(pageSize, page)
 	if err != nil {
 		return nil, -1, -1, errors.Wrap(err, "while converting page and pageSize to SQL statement")
 	}
 
-	stmt := fmt.Sprintf("SELECT * FROM %s %s", postsql.OrchestrationTableName, order)
+	_, err = r.session.Select("*").From(postsql.OrchestrationTableName).OrderBy(postsql.CreatedAtField).Limit(uint64(pageSize)).Offset(uint64((page-1)*pageSize)).Load(&orchestrations)
 
 	execStmt := r.session.SelectBySql(stmt)
 
