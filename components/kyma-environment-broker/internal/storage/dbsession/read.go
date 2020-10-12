@@ -377,6 +377,10 @@ func addFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
 		stmt.Where("service_plan_name IN ?", filter.Plans)
 	}
 	if len(filter.Domains) > 0 {
-		stmt.Where("dashboard_url ~ ?", strings.Join(filter.Domains, "|"))
+		// Preceeding character is either a . or / (after protocol://)
+		// match subdomain inputs
+		// match any .upperdomain zero or more times
+		domainMatch := fmt.Sprintf(`[./](%s)(\.[0-9A-Za-z-]+)*$`, strings.Join(filter.Domains, "|"))
+		stmt.Where("dashboard_url ~ ?", domainMatch)
 	}
 }

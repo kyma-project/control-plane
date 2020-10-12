@@ -2,8 +2,8 @@ package memory
 
 import (
 	"database/sql"
+	"regexp"
 	"sort"
-	"strings"
 	"sync"
 
 	"fmt"
@@ -191,6 +191,14 @@ func filterInstances(instances map[string]internal.Instance, filter dbmodel.Inst
 	equal := func(a, b string) bool {
 		return a == b
 	}
+	domainMatch := func(url, filter string) bool {
+		// Preceeding character is either a . or / (after protocol://)
+		// match subdomain inputs
+		// match any .upperdomain zero or more times
+		matchExpr := fmt.Sprintf(`[./]%s(\.[0-9A-Za-z-]+)*$`, filter)
+		matched, err := regexp.MatchString(matchExpr, url)
+		return err == nil && matched
+	}
 
 	for _, v := range instances {
 		if ok = matchFilter(v.InstanceID, filter.InstanceIDs, equal); !ok {
@@ -221,7 +229,7 @@ func filterInstances(instances map[string]internal.Instance, filter dbmodel.Inst
 			}
 		}
 		// Match domains with dashboard url
-		if ok = matchFilter(v.DashboardURL, filter.Domains, func(url, filter string) bool { return strings.Contains(url, filter) }); !ok {
+		if ok = matchFilter(v.DashboardURL, filter.Domains, domainMatch); !ok {
 			continue
 		}
 

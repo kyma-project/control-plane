@@ -138,7 +138,7 @@ func (h *Handler) getFilters(req *http.Request) (dbmodel.InstanceFilter, error) 
 		}
 	}
 
-	// For optional filter filter, zero value (nil) is fine if not supplied
+	// For optional filter, zero value (nil) is fine if not supplied
 	filter.GlobalAccountIDs = query[pkg.GlobalAccountIDParam]
 	filter.SubAccountIDs = query[pkg.SubAccountIDParam]
 	filter.InstanceIDs = query[pkg.InstanceIDParam]
