@@ -173,8 +173,10 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 			return
 		}
 	}
-	// defaults strategy if not specified to Parallel with MaintenanceWindow schedule
+	// defaults strategy if not specified to Parallel with Immediate schedule
 	h.defaultOrchestrationStrategy(&params.Strategy)
+	// defaults target to TargetAll if not specified
+	h.defaultTarget(&params.Targets)
 
 	now := time.Now()
 	o := internal.Orchestration{
@@ -209,11 +211,27 @@ func (h *kymaHandler) resolveErrorStatus(err error) int {
 	}
 }
 
+func (h *kymaHandler) defaultTarget(spec *internal.TargetSpec) {
+	if spec.Include == nil || len(spec.Include) == 0 {
+		spec.Include = []internal.RuntimeTarget{{Target: internal.TargetAll}}
+	}
+}
+
 func (h *kymaHandler) defaultOrchestrationStrategy(spec *internal.StrategySpec) {
-	if spec.Type == "" {
+	if spec.Parallel.Workers == 0 {
+		spec.Parallel.Workers = 1
+	}
+
+	switch spec.Type {
+	case internal.ParallelStrategy:
+	default:
 		spec.Type = internal.ParallelStrategy
 	}
-	if spec.Schedule == "" {
-		spec.Schedule = internal.MaintenanceWindow
+
+	switch spec.Schedule {
+	case internal.MaintenanceWindow:
+	case internal.Immediate:
+	default:
+		spec.Schedule = internal.Immediate
 	}
 }

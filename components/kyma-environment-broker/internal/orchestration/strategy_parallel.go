@@ -1,7 +1,6 @@
 package orchestration
 
 import (
-	"context"
 	"sort"
 	"time"
 
@@ -11,30 +10,32 @@ import (
 )
 
 type ParallelOrchestrationStrategy struct {
-	operationExecutor process.Executor
-	log               logrus.FieldLogger
+	executor process.Executor
+	log      logrus.FieldLogger
 }
 
-func NewParallelOrchestrationStrategy(operationExecutor process.Executor, log logrus.FieldLogger) Strategy {
+func NewParallelOrchestrationStrategy(executor process.Executor, log logrus.FieldLogger) Strategy {
 	return &ParallelOrchestrationStrategy{
-		operationExecutor: operationExecutor,
-		log:               log,
+		executor: executor,
+		log:      log,
 	}
 }
 
 func (p *ParallelOrchestrationStrategy) Execute(operations []internal.RuntimeOperation, strategySpec internal.StrategySpec) (time.Duration, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	if len(operations) == 0 {
+		return 0, nil
+	}
 
-	q := process.NewQueue(p.operationExecutor, p.log)
+	stopCh := make(chan struct{})
 
-	q.Run(ctx.Done(), strategySpec.Parallel.Workers)
+	q := process.NewQueue(p.executor, p.log)
+	q.Run(stopCh, strategySpec.Parallel.Workers)
 
 	isMaintenanceWindowSchedule := strategySpec.Schedule == internal.MaintenanceWindow
 
 	if isMaintenanceWindowSchedule {
 		for i, op := range operations {
-			operations[i].MaintenanceWindowBegin = p.resolveWindowBeginTime(op.MaintenanceWindowBegin, op.MaintenanceWindowEnd)
+			operations[i].MaintenanceWindowBegin = p.resolveWindowTime(op.MaintenanceWindowBegin, op.MaintenanceWindowEnd)
 		}
 		sort.Slice(operations, func(i, j int) bool {
 			return operations[i].MaintenanceWindowBegin.Before(operations[j].MaintenanceWindowBegin)
@@ -48,13 +49,14 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []internal.RuntimeOpe
 			time.Sleep(until)
 		}
 		q.Add(op.ID)
+		p.log.Infof("Upgrade operation %s added for processing", op.Operation.ID)
 	}
 
 	return 0, nil
 }
 
-// resolves WindowBeginTime to schedule upgrade in the next occurrence of the time window
-func (p *ParallelOrchestrationStrategy) resolveWindowBeginTime(beginTime, endTime time.Time) time.Time {
+// resolves when is the next occurrence of the time window
+func (p *ParallelOrchestrationStrategy) resolveWindowTime(beginTime, endTime time.Time) time.Time {
 	n := time.Now()
 	start := time.Date(n.Year(), n.Month(), n.Day(), beginTime.Hour(), beginTime.Minute(), beginTime.Second(), beginTime.Nanosecond(), beginTime.Location())
 	end := time.Date(n.Year(), n.Month(), n.Day(), endTime.Hour(), endTime.Minute(), endTime.Second(), endTime.Nanosecond(), endTime.Location())

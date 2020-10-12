@@ -65,7 +65,7 @@ func TestKymaOrchestrationHandler_(t *testing.T) {
 
 		err = json.Unmarshal(rr.Body.Bytes(), &dto)
 		require.NoError(t, err)
-		assert.Equal(t, dto.OrchestrationID, fixID)
+		assert.Equal(t, dto.OrchestrationID, out.OrchestrationID)
 		assert.Equal(t, dto.Parameters.Strategy.Type, internal.ParallelStrategy)
 		assert.Equal(t, dto.Parameters.Strategy.Schedule, internal.Immediate)
 	})

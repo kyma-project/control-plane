@@ -48,11 +48,6 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 		return u.failOrchestration(o, errors.Wrap(err, "while getting orchestration"))
 	}
 
-	targets := o.Parameters.Targets
-	if targets.Include == nil || len(targets.Include) == 0 {
-		targets.Include = []internal.RuntimeTarget{{Target: internal.TargetAll}}
-	}
-
 	operations, err := u.resolveOperations(o, o.Parameters)
 	if err != nil {
 		return u.failOrchestration(o, errors.Wrap(err, "while resolving operations"))
@@ -98,17 +93,25 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 		}
 
 		for _, r := range runtimes {
+			// we set provisioning parameters from provisioning operation in order to have access to planID and planName
+			// provisioning parameters will be updated on upgrade call to provisioner
+			po, err := u.operationStorage.GetProvisioningOperationByInstanceID(r.InstanceID)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while getting provisioning operation for instance id %s", r.InstanceID)
+			}
+
 			id := uuid.New().String()
 			op := internal.UpgradeKymaOperation{
 				RuntimeOperation: internal.RuntimeOperation{
 					Operation: internal.Operation{
-						ID:          id,
-						Version:     0,
-						CreatedAt:   time.Now(),
-						UpdatedAt:   time.Now(),
-						InstanceID:  r.InstanceID,
-						State:       domain.InProgress,
-						Description: "Operation created",
+						ID:              id,
+						Version:         0,
+						CreatedAt:       time.Now(),
+						UpdatedAt:       time.Now(),
+						InstanceID:      r.InstanceID,
+						State:           domain.InProgress,
+						Description:     "Operation created",
+						OrchestrationID: o.OrchestrationID,
 					},
 					DryRun:                 params.DryRun,
 					ShootName:              r.ShootName,
@@ -119,9 +122,10 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 					SubAccountID:           r.SubAccountID,
 					OrchestrationID:        o.OrchestrationID,
 				},
+				ProvisioningParameters: po.ProvisioningParameters,
 			}
 			result = append(result, op)
-			err := u.operationStorage.InsertUpgradeKymaOperation(op)
+			err = u.operationStorage.InsertUpgradeKymaOperation(op)
 			if err != nil {
 				u.log.Errorf("while inserting UpgradeKymaOperation for runtime id %q", r.RuntimeID)
 			}

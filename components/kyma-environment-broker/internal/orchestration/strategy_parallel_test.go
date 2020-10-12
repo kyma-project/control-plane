@@ -52,7 +52,7 @@ func TestNewParallelOrchestrationStrategy(t *testing.T) {
 			}
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		defer cancel()
 
 		executed := make(chan struct{})
