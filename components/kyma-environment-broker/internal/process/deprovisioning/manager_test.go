@@ -24,6 +24,7 @@ const (
 	operationIDSuccess = "5b954fa8-fc34-4164-96e9-49e3b6741278"
 	operationIDFailed  = "69b8ee2b-5c21-4997-9070-4fd356b24c46"
 	operationIDRepeat  = "ca317a1e-ddab-44d2-b2ba-7bbd9df9066f"
+	fakeInstanceID     = "fea2c1a1-139d-43f6-910a-a618828a79d5"
 )
 
 func TestManager_Execute(t *testing.T) {
@@ -59,8 +60,9 @@ func TestManager_Execute(t *testing.T) {
 			log := logrus.New()
 			memoryStorage := storage.NewMemoryStorage()
 			operations := memoryStorage.Operations()
-			err := operations.InsertDeprovisioningOperation(fixOperation(tc.operationID))
+			err := operations.InsertDeprovisioningOperation(fixDeprovisionOperation(tc.operationID))
 			assert.NoError(t, err)
+			err = operations.InsertProvisioningOperation(fixProvisionOperation())
 
 			sInit := testStep{t: t, name: "init", storage: operations}
 			s1 := testStep{t: t, name: "one", storage: operations}
@@ -99,12 +101,24 @@ func TestManager_Execute(t *testing.T) {
 	}
 }
 
-func fixOperation(ID string) internal.DeprovisioningOperation {
+func fixDeprovisionOperation(ID string) internal.DeprovisioningOperation {
 	return internal.DeprovisioningOperation{
 		Operation: internal.Operation{
 			ID:          ID,
 			State:       domain.InProgress,
-			InstanceID:  "fea2c1a1-139d-43f6-910a-a618828a79d5",
+			InstanceID:  fakeInstanceID,
+			Description: "",
+		},
+		ProvisioningParameters: `{"plan_id":"7b2a9156-884c-4586-a630-3e644fc8ec0f"}`,
+	}
+}
+
+func fixProvisionOperation() internal.ProvisioningOperation {
+	return internal.ProvisioningOperation{
+		Operation: internal.Operation{
+			ID:          "6bc401aa-2ec4-4303-bf3f-2e04990f6d8f",
+			InstanceID:  fakeInstanceID,
+			State:       domain.Succeeded,
 			Description: "",
 		},
 		ProvisioningParameters: `{"plan_id":"7b2a9156-884c-4586-a630-3e644fc8ec0f"}`,

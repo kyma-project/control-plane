@@ -65,15 +65,21 @@ func (m *Manager) runStep(step Step, operation internal.DeprovisioningOperation,
 func (m *Manager) Execute(operationID string) (time.Duration, error) {
 	op, err := m.operationStorage.GetDeprovisioningOperationByID(operationID)
 	if err != nil {
-		m.log.Errorf("Cannot fetch operation from storage: %s", err)
+		m.log.Errorf("Cannot fetch DeprovisioningOperation from storage: %s", err)
 		return 3 * time.Second, nil
 	}
 	operation := *op
 
-	pp, err := operation.GetProvisioningParameters()
+	provisioningOp, err := m.operationStorage.GetProvisioningOperationByInstanceID(op.InstanceID)
+	if err != nil {
+		m.log.Errorf("Cannot fetch ProvisioningOperation from storage: %s", err)
+		return 3 * time.Second, nil
+	}
+
+	pp, err := provisioningOp.GetProvisioningParameters()
 	if err != nil {
 		m.log.Errorf("while getting ProvisioningParameters from operation id %q: %s", operation.ID, err)
-		return 3 * time.Second, nil
+		return 0, err
 	}
 
 	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID, "planID": pp.PlanID})
