@@ -8,8 +8,8 @@ type RuntimeDTO struct {
 	InstanceID       string        `json:"instanceID"`
 	RuntimeID        string        `json:"runtimeID"`
 	GlobalAccountID  string        `json:"globalAccountID"`
-	SubAccountID     string        `json:"subaccountID"`
-	SubAccountRegion string        `json:"subaccountRegion"`
+	SubAccountID     string        `json:"subAccountID"`
+	SubAccountRegion string        `json:"subAccountRegion"`
 	ShootName        string        `json:"shootName"`
 	ServiceClassID   string        `json:"serviceClassID"`
 	ServiceClassName string        `json:"serviceClassName"`

@@ -1,10 +1,9 @@
 package runtime
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -12,11 +11,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-)
-
-const (
-	pageSizeParam = "page_size"
-	pageParam     = "page"
 )
 
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
@@ -47,7 +41,7 @@ func (h *Handler) AttachRoutes(router *mux.Router) {
 
 func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 	toReturn := make([]RuntimeDTO, 0)
-	pageSize, page, err := h.getParams(req)
+	pageSize, page, err := pagination.ExtractPaginationConfigFromRequest(req, h.defaultMaxPage)
 	if err != nil {
 		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
 		return
@@ -97,44 +91,4 @@ func (h *Handler) getOperationsForInstance(instance internal.Instance) (*interna
 		return nil, nil, nil, err
 	}
 	return pOpr, dOpr, ukOpr, nil
-}
-
-func (h *Handler) getParams(req *http.Request) (int, int, error) {
-	var pageSize int
-	var page int
-	var err error
-
-	params := req.URL.Query()
-	pageSizeArr, ok := params[pageSizeParam]
-	if len(pageSizeArr) > 1 {
-		return 0, 0, errors.New("pageSize has to be one parameter")
-	}
-
-	if !ok {
-		pageSize = h.defaultMaxPage
-	} else {
-		pageSize, err = strconv.Atoi(pageSizeArr[0])
-		if err != nil {
-			return 0, 0, errors.New("pageSize has to be an integer")
-		}
-	}
-
-	if pageSize > h.defaultMaxPage {
-		return 0, 0, errors.New(fmt.Sprintf("pageSize is bigger than maxPage(%d)", h.defaultMaxPage))
-	}
-
-	pageArr, ok := params[pageParam]
-	if len(pageArr) > 1 {
-		return 0, 0, errors.New("page has to be one parameter")
-	}
-	if !ok {
-		page = 1
-	} else {
-		page, err = strconv.Atoi(pageArr[0])
-		if err != nil {
-			return 0, 0, errors.New("page has to be an integer")
-		}
-	}
-
-	return pageSize, page, nil
 }

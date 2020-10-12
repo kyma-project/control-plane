@@ -442,6 +442,36 @@ func (s *operations) GetOperationsForIDs(operationIDList []string) ([]internal.O
 	return toOperations(operations), nil
 }
 
+func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, pageSize int, page int) ([]internal.UpgradeKymaOperation, int, int, error) {
+	session := s.NewReadSession()
+	var (
+		operations        = make([]dbmodel.OperationDTO, 0)
+		lastErr           error
+		count, totalCount int
+	)
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		operations, count, totalCount, lastErr = session.ListOperationsByOrchestrationID(orchestrationID, pageSize, page)
+		if lastErr != nil {
+			if dberr.IsNotFound(lastErr) {
+				lastErr = dberr.NotFound("Operations for orchestration ID %s not exist", orchestrationID)
+				return false, lastErr
+			}
+			log.Errorf("while reading Operation from the storage: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", lastErr)
+	}
+	ret, err := toUpgradeKymaOperationList(operations)
+	if err != nil {
+		return nil, -1, -1, errors.Wrapf(err, "while converting DTO to Operation")
+	}
+
+	return ret, count, totalCount, nil
+}
+
 func toOperation(op *dbmodel.OperationDTO) internal.Operation {
 	return internal.Operation{
 		ID:                     op.ID,
@@ -531,6 +561,20 @@ func toUpgradeKymaOperation(op *dbmodel.OperationDTO) (*internal.UpgradeKymaOper
 	}
 
 	return &operation, nil
+}
+
+func toUpgradeKymaOperationList(ops []dbmodel.OperationDTO) ([]internal.UpgradeKymaOperation, error) {
+	result := make([]internal.UpgradeKymaOperation, 0)
+
+	for _, op := range ops {
+		o, err := toUpgradeKymaOperation(&op)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting to upgrade kyma operation")
+		}
+		result = append(result, *o)
+	}
+
+	return result, nil
 }
 
 func upgradeKymaOperationToDTO(op *internal.UpgradeKymaOperation) (dbmodel.OperationDTO, error) {

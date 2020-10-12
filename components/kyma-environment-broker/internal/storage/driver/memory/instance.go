@@ -167,7 +167,8 @@ func (s *Instance) List(pageSize int, page int) ([]internal.Instance, int, int, 
 
 	offset := pagination.ConvertPageAndPageSizeToOffset(pageSize, page)
 
-	sortedInstances := getSortedByCreatedAt(s.instances)
+	sortedInstances := s.getSortedByCreatedAt(s.instances)
+	toReturn = make([]internal.Instance, 0)
 
 	for i := offset; i < offset+pageSize && i < len(sortedInstances); i++ {
 		toReturn = append(toReturn, s.instances[sortedInstances[i].InstanceID])
@@ -179,7 +180,7 @@ func (s *Instance) List(pageSize int, page int) ([]internal.Instance, int, int, 
 		nil
 }
 
-func getSortedByCreatedAt(instances map[string]internal.Instance) []internal.Instance {
+func (s *Instance) getSortedByCreatedAt(instances map[string]internal.Instance) []internal.Instance {
 	instancesArr := make([]internal.Instance, 0, len(instances))
 	for _, v := range instances {
 		instancesArr = append(instancesArr, v)
@@ -188,5 +189,4 @@ func getSortedByCreatedAt(instances map[string]internal.Instance) []internal.Ins
 		return instancesArr[i].CreatedAt.Before(instancesArr[j].CreatedAt)
 	})
 	return instancesArr
-
 }

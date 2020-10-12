@@ -65,13 +65,16 @@ func (s *orchestration) GetByID(orchestrationID string) (*internal.Orchestration
 	return &orchestration, nil
 }
 
-func (s *orchestration) ListAll() ([]internal.Orchestration, error) {
+func (s *orchestration) List(pageSize int, page int) ([]internal.Orchestration, int, int, error) {
 	sess := s.NewReadSession()
-	orchestrations := make([]internal.Orchestration, 0)
-	var lastErr error
+	var (
+		orchestrations    = make([]internal.Orchestration, 0)
+		lastErr           error
+		count, totalCount int
+	)
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		var dtos []dbmodel.OrchestrationDTO
-		dtos, lastErr = sess.ListOrchestrations()
+		dtos, count, totalCount, lastErr = sess.ListOrchestrations(pageSize, page)
 		if lastErr != nil {
 			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("Orchestrations not exist")
@@ -90,9 +93,9 @@ func (s *orchestration) ListAll() ([]internal.Orchestration, error) {
 		return true, nil
 	})
 	if err != nil {
-		return nil, lastErr
+		return nil, -1, -1, lastErr
 	}
-	return orchestrations, nil
+	return orchestrations, count, totalCount, nil
 }
 
 func (s *orchestration) Update(orchestration internal.Orchestration) error {
