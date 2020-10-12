@@ -60,8 +60,6 @@ spec:
               value: "{{ .Values.broker.port }}"
             - name: APP_STATUS_PORT
               value: "{{ .Values.broker.statusPort }}"
-            - name: APP_DIRECTOR_NAMESPACE
-              value: "{{ .Release.Namespace }}"
             - name: APP_DIRECTOR_DEFAULT_TENANT
               value: "{{ .Values.global.defaultTenant }}"
             - name: APP_DIRECTOR_URL
