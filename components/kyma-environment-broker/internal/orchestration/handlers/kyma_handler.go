@@ -132,7 +132,6 @@ func (h *kymaHandler) getOperation(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting operation %s", operationID))
 		return
 	}
-	// fetches k8s config from the provisioning operation
 	provisioningOp, err := h.operations.GetProvisioningOperationByInstanceID(operation.InstanceID)
 	if err != nil {
 		h.log.Errorf("while getting provisioning operation for instance %s: %v", operation.InstanceID, err)

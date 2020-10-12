@@ -151,14 +151,12 @@ func (r readSession) ListOrchestrations(pageSize, page int) ([]dbmodel.Orchestra
 		return nil, -1, -1, errors.Wrap(err, "while converting page and pageSize to SQL statement")
 	}
 
-	_, err = r.session.Select("*").From(postsql.OrchestrationTableName).OrderBy(postsql.CreatedAtField).Limit(uint64(pageSize)).Offset(uint64((page-1)*pageSize)).Load(&orchestrations)
-
-	execStmt := r.session.SelectBySql(stmt)
-
-	_, err = execStmt.Load(&orchestrations)
-	if err != nil {
-		return nil, -1, -1, errors.Wrap(err, "while fetching orchestrations")
-	}
+	_, err = r.session.Select("*").
+		From(postsql.OrchestrationTableName).
+		OrderBy(postsql.CreatedAtField).
+		Limit(uint64(pageSize)).
+		Offset(uint64(pagination.ConvertPageAndPageSizeToOffset(pageSize, page))).
+		Load(&orchestrations)
 
 	totalCount, err := r.getOrchestrationCount()
 	if err != nil {
@@ -228,13 +226,13 @@ func (r readSession) ListOperationsByOrchestrationID(orchestrationID string, pag
 	var ops []dbmodel.OperationDTO
 	condition := dbr.Eq("orchestration_id", orchestrationID)
 
-	offset := pagination.ConvertPageAndPageSizeToOffset(pageSize, page)
-
 	_, err := r.session.
 		Select("*").
 		From(postsql.OperationTableName).
 		Where(condition).
-		Offset(uint64(offset)).Limit(uint64(pageSize)).
+		OrderBy(postsql.CreatedAtField).
+		Offset(uint64(pagination.ConvertPageAndPageSizeToOffset(pageSize, page))).
+		Limit(uint64(pageSize)).
 		Load(&ops)
 	if err != nil {
 		return nil, -1, -1, dberr.Internal("Failed to get operations: %s", err)
