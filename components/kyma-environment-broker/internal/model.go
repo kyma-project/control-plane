@@ -252,11 +252,9 @@ type RuntimeTarget struct {
 
 type StrategyType string
 
-// TODO(upgrade)
-//const (
-//	ParallelStrategy StrategyType = "parallel"
-//	CanaryStrategy   StrategyType = "canary"
-//)
+const (
+	ParallelStrategy StrategyType = "parallel"
+)
 
 type ScheduleType string
 

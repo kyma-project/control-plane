@@ -48,6 +48,26 @@ func TestKymaOrchestrationHandler_(t *testing.T) {
 		err = json.Unmarshal(rr.Body.Bytes(), &out)
 		require.NoError(t, err)
 		assert.NotEmpty(t, out.OrchestrationID)
+
+		// check via GET endpoint
+		urlPath := fmt.Sprintf("/orchestrations/%s", out.OrchestrationID)
+		req, err = http.NewRequest(http.MethodGet, urlPath, nil)
+		require.NoError(t, err)
+		rr = httptest.NewRecorder()
+
+		dto := orchestration.StatusResponse{}
+
+		// when
+		router.ServeHTTP(rr, req)
+
+		// then
+		require.Equal(t, http.StatusOK, rr.Code)
+
+		err = json.Unmarshal(rr.Body.Bytes(), &dto)
+		require.NoError(t, err)
+		assert.Equal(t, dto.OrchestrationID, fixID)
+		assert.Equal(t, dto.Parameters.Strategy.Type, internal.ParallelStrategy)
+		assert.Equal(t, dto.Parameters.Strategy.Schedule, internal.Immediate)
 	})
 
 	t.Run("orchestrations", func(t *testing.T) {
@@ -118,7 +138,6 @@ func TestKymaOrchestrationHandler_(t *testing.T) {
 		err = json.Unmarshal(rr.Body.Bytes(), &dto)
 		require.NoError(t, err)
 		assert.Equal(t, dto.OrchestrationID, fixID)
-
 	})
 
 	t.Run("operations", func(t *testing.T) {

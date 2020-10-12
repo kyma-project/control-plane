@@ -173,6 +173,8 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 			return
 		}
 	}
+	// defaults strategy if not specified to Parallel with MaintenanceWindow schedule
+	h.defaultOrchestrationStrategy(&params.Strategy)
 
 	now := time.Now()
 	o := internal.Orchestration{
@@ -204,5 +206,14 @@ func (h *kymaHandler) resolveErrorStatus(err error) int {
 		return http.StatusNotFound
 	default:
 		return http.StatusInternalServerError
+	}
+}
+
+func (h *kymaHandler) defaultOrchestrationStrategy(spec *internal.StrategySpec) {
+	if spec.Type == "" {
+		spec.Type = internal.ParallelStrategy
+	}
+	if spec.Schedule == "" {
+		spec.Schedule = internal.MaintenanceWindow
 	}
 }

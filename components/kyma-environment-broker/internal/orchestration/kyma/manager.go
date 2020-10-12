@@ -68,11 +68,10 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 		return 0, nil
 	}
 
-	// TODO(upgrade): support many strategies
-	strategy := orchestration.NewInstantOrchestrationStrategy(u.kymaUpgradeExecutor, logger)
+	strategy := u.resolveStrategy(o.Parameters.Strategy.Type, u.kymaUpgradeExecutor, logger)
 	_, err = strategy.Execute(u.filterOperationsInProgress(operations), o.Parameters.Strategy)
 	if err != nil {
-		return 0, errors.Wrap(err, "while executing instant upgrade strategy")
+		return 0, errors.Wrap(err, "while executing upgrade strategy")
 	}
 
 	err = u.waitForCompletion(o)
@@ -138,6 +137,14 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 	}
 
 	return result, nil
+}
+
+func (u *upgradeKymaManager) resolveStrategy(sType internal.StrategyType, executor process.Executor, log logrus.FieldLogger) orchestration.Strategy {
+	switch sType {
+	case internal.ParallelStrategy:
+		return orchestration.NewParallelOrchestrationStrategy(executor, log)
+	}
+	return nil
 }
 
 func (u *upgradeKymaManager) filterOperationsInProgress(ops []internal.UpgradeKymaOperation) []internal.RuntimeOperation {
