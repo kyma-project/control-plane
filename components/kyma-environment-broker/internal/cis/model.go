@@ -18,8 +18,8 @@ type EventDataVer1 struct {
 }
 
 type EventVer1 struct {
-	Type string `json:"type"`
-	Data string `json:"eventData"`
+	Type string        `json:"type"`
+	Data EventDataVer1 `json:"eventData"`
 }
 
 type CisResponseVer1 struct {

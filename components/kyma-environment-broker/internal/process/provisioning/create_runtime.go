@@ -102,6 +102,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.ID, requestInput.KymaConfig, requestInput.ClusterConfig.GardenerConfig),
 	)
 	if err != nil {
+		log.Errorf("cannot insert runtimeState: %s", err)
 		return operation, 10 * time.Second, nil
 	}
 

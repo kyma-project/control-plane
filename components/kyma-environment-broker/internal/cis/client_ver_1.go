@@ -96,13 +96,7 @@ func (c *ClientVer1) fetchSubAccountsFromDeleteEvents(collection *subAccountsVer
 			c.log.Warnf("event type %s is not equal to %s, skip event", event.Type, eventTypeVer1)
 			continue
 		}
-		var eventData EventDataVer1
-		err := json.Unmarshal([]byte(event.Data), &eventData)
-		if err != nil {
-			c.log.Warnf("cannot unmarshal event data %v: %s", event.Data, err)
-			continue
-		}
-		collection.ids = append(collection.ids, eventData.SubAccount)
+		collection.ids = append(collection.ids, event.Data.SubAccount)
 	}
 
 	page++

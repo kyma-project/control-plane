@@ -4,24 +4,19 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"sync"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director/oauth"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	machineGraph "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 const (
 	// accountIDKey is a header key name for request send by graphQL client
 	accountIDKey = "tenant"
-
-	// amount of request attempt to director service
-	reqAttempt = 3
-
-	authorizationKey = "Authorization"
 )
 
 //go:generate mockery -name=GraphQLClient -output=automock
@@ -29,16 +24,9 @@ type GraphQLClient interface {
 	Run(ctx context.Context, req *machineGraph.Request, resp interface{}) error
 }
 
-//go:generate mockery -name=OauthClient -output=automock
-type OauthClient interface {
-	GetAuthorizationToken() (oauth.Token, error)
-}
-
 type Client struct {
 	graphQLClient GraphQLClient
-	oauthClient   OauthClient
 	queryProvider queryProvider
-	token         oauth.Token
 	log           logrus.FieldLogger
 }
 
@@ -56,15 +44,22 @@ type (
 	}
 )
 
-var lock sync.Mutex
-
 // NewDirectorClient returns new director client struct pointer
-func NewDirectorClient(oauthClient OauthClient, gqlClient GraphQLClient, log logrus.FieldLogger) *Client {
+func NewDirectorClient(ctx context.Context, config Config, log logrus.FieldLogger) *Client {
+	cfg := clientcredentials.Config{
+		ClientID:     config.OauthClientID,
+		ClientSecret: config.OauthClientSecret,
+		TokenURL:     config.OauthTokenURL,
+		Scopes:       []string{config.OauthScope},
+	}
+	httpClientOAuth := cfg.Client(ctx)
+	httpClientOAuth.Timeout = 30 * time.Second
+
+	graphQLClient := machineGraph.NewClient(config.URL, machineGraph.WithHTTPClient(httpClientOAuth))
+
 	return &Client{
-		graphQLClient: gqlClient,
-		oauthClient:   oauthClient,
+		graphQLClient: graphQLClient,
 		queryProvider: queryProvider{},
-		token:         oauth.Token{},
 		log:           log,
 	}
 }
@@ -123,31 +118,11 @@ func (dc *Client) GetRuntimeID(accountID, instanceID string) (string, error) {
 
 func (dc *Client) fetchURLFromDirector(req *machineGraph.Request) (*getURLResponse, error) {
 	var response getURLResponse
-	var lastError error
-	var success bool
 
-	for i := 0; i < reqAttempt; i++ {
-		err := dc.setToken()
-		if err != nil {
-			lastError = err
-			dc.log.Errorf("cannot set token to director client (attempt %d): %s", i, err)
-			continue
-		}
-		req.Header.Add(authorizationKey, fmt.Sprintf("Bearer %s", dc.token.AccessToken))
-		err = dc.graphQLClient.Run(context.Background(), req, &response)
-		if err != nil {
-			lastError = kebError.AsTemporaryError(err, "while requesting to director client")
-			dc.token.AccessToken = ""
-			req.Header.Del(authorizationKey)
-			dc.log.Errorf("call to director failed (attempt %d): %s", i, err)
-			continue
-		}
-		success = true
-		break
-	}
-
-	if !success {
-		return &getURLResponse{}, lastError
+	err := dc.graphQLClient.Run(context.Background(), req, &response)
+	if err != nil {
+		dc.log.Errorf("call to director failed: %s", err)
+		return &getURLResponse{}, kebError.AsTemporaryError(err, "while requesting to director client")
 	}
 
 	return &response, nil
@@ -155,31 +130,11 @@ func (dc *Client) fetchURLFromDirector(req *machineGraph.Request) (*getURLRespon
 
 func (dc *Client) setLabelsInDirector(req *machineGraph.Request) (*runtimeLabelResponse, error) {
 	var response runtimeLabelResponse
-	var lastError error
-	var success bool
 
-	for i := 0; i < reqAttempt; i++ {
-		err := dc.setToken()
-		if err != nil {
-			lastError = err
-			dc.log.Errorf("cannot set token to director client (attempt %d): %s", i, err)
-			continue
-		}
-		req.Header.Add(authorizationKey, fmt.Sprintf("Bearer %s", dc.token.AccessToken))
-		err = dc.graphQLClient.Run(context.Background(), req, &response)
-		if err != nil {
-			lastError = kebError.AsTemporaryError(err, "while requesting to director client")
-			dc.token.AccessToken = ""
-			req.Header.Del(authorizationKey)
-			dc.log.Errorf("call to director failed (attempt %d): %s", i, err)
-			continue
-		}
-		success = true
-		break
-	}
-
-	if !success {
-		return &runtimeLabelResponse{}, lastError
+	err := dc.graphQLClient.Run(context.Background(), req, &response)
+	if err != nil {
+		dc.log.Errorf("call to director failed: %s", err)
+		return &runtimeLabelResponse{}, kebError.AsTemporaryError(err, "while requesting to director client")
 	}
 
 	return &response, nil
@@ -187,50 +142,14 @@ func (dc *Client) setLabelsInDirector(req *machineGraph.Request) (*runtimeLabelR
 
 func (dc *Client) getRuntimeIdFromDirector(req *machineGraph.Request) (*getRuntimeIdResponse, error) {
 	var response getRuntimeIdResponse
-	var lastError error
-	var success bool
 
-	for i := 0; i < reqAttempt; i++ {
-		err := dc.setToken()
-		if err != nil {
-			lastError = err
-			dc.log.Errorf("cannot set token to director client (attempt %d): %s", i, err)
-			continue
-		}
-		req.Header.Add(authorizationKey, fmt.Sprintf("Bearer %s", dc.token.AccessToken))
-		err = dc.graphQLClient.Run(context.Background(), req, &response)
-		if err != nil {
-			lastError = kebError.AsTemporaryError(err, "while requesting to director client")
-			dc.token.AccessToken = ""
-			req.Header.Del(authorizationKey)
-			dc.log.Errorf("call to director failed (attempt %d): %s", i, err)
-			continue
-		}
-		success = true
-		break
-	}
-
-	if !success {
-		return &getRuntimeIdResponse{}, lastError
+	err := dc.graphQLClient.Run(context.Background(), req, &response)
+	if err != nil {
+		dc.log.Errorf("call to director failed: %s", err)
+		return &getRuntimeIdResponse{}, kebError.AsTemporaryError(err, "while requesting to director client")
 	}
 
 	return &response, nil
-}
-
-func (dc *Client) setToken() error {
-	lock.Lock()
-	defer lock.Unlock()
-	if !dc.token.EmptyOrExpired() {
-		return nil
-	}
-
-	token, err := dc.oauthClient.GetAuthorizationToken()
-	if err != nil {
-		return errors.Wrap(err, "Error while obtaining token")
-	}
-	dc.token = token
-
-	return nil
 }
 
 func (dc *Client) getURLFromRuntime(response *graphql.RuntimeExt) (string, error) {

@@ -11,7 +11,6 @@ import (
 
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 )
 
@@ -85,7 +84,9 @@ func (c *Client) GetCompany() (_ *Company, err error) {
 
 	response, err := c.do(request)
 	defer func() {
-		err = multierror.Append(err, errors.Wrap(c.closeResponseBody(response), "while trying to close body reader")).ErrorOrNil()
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing response body with company data")
+		}
 	}()
 	if err != nil {
 		return company, errors.Wrap(err, "while making request to ias platform about company")
@@ -110,7 +111,9 @@ func (c *Client) CreateServiceProvider(serviceName, companyID string) (err error
 
 	response, err := c.do(request)
 	defer func() {
-		err = multierror.Append(err, errors.Wrap(c.closeResponseBody(response), "while trying to close body reader")).ErrorOrNil()
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing response body for ServiceProvider creation")
+		}
 	}()
 	if err != nil {
 		return errors.Wrap(err, "while making request with ServiceProvider creation")
@@ -127,7 +130,9 @@ func (c *Client) DeleteServiceProvider(spID string) (err error) {
 	}
 	response, err := c.do(request)
 	defer func() {
-		err = multierror.Append(err, errors.Wrap(c.closeResponseBody(response), "while trying to close body reader")).ErrorOrNil()
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing response body for ServiceProvider deletion")
+		}
 	}()
 	if err != nil {
 		return errors.Wrap(err, "while making request to delete ServiceProvider")
@@ -145,7 +150,9 @@ func (c *Client) DeleteSecret(payload SecretsRef) (err error) {
 
 	response, err := c.do(request)
 	defer func() {
-		err = multierror.Append(err, errors.Wrap(c.closeResponseBody(response), "while trying to close body reader")).ErrorOrNil()
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing response body for Secret deletion")
+		}
 	}()
 	if err != nil {
 		return errors.Wrap(err, "while making request to delete ServiceProvider secrets")
@@ -163,7 +170,9 @@ func (c *Client) GenerateServiceProviderSecret(secretCfg SecretConfiguration) (_
 
 	response, err := c.do(request)
 	defer func() {
-		err = multierror.Append(err, errors.Wrap(c.closeResponseBody(response), "while trying to close body reader")).ErrorOrNil()
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing response body for ServiceProviderSecret generating")
+		}
 	}()
 	if err != nil {
 		return secretResponse, errors.Wrap(err, "while creating ServiceProvider secret")
@@ -193,7 +202,9 @@ func (c *Client) call(path string, payload interface{}) (err error) {
 
 	response, err := c.do(request)
 	defer func() {
-		err = multierror.Append(err, errors.Wrap(c.closeResponseBody(response), "while trying to close body reader")).ErrorOrNil()
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing response body for call method")
+		}
 	}()
 	if err != nil {
 		return errors.Wrapf(err, "while making request for path %s", path)
@@ -233,7 +244,7 @@ func (c *Client) do(sciReq *Request) (*http.Response, error) {
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {
-		return &http.Response{}, errors.Wrap(err, "while making request")
+		return &http.Response{}, kebError.AsTemporaryError(err, "while making request")
 	}
 
 	switch response.StatusCode {
@@ -254,6 +265,9 @@ func (c *Client) do(sciReq *Request) (*http.Response, error) {
 }
 
 func (c *Client) closeResponseBody(response *http.Response) error {
+	if response == nil {
+		return nil
+	}
 	if response.Body == nil {
 		return nil
 	}

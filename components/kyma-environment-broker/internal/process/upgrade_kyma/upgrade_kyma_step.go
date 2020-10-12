@@ -95,6 +95,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 		internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.ID, requestInput.KymaConfig, nil),
 	)
 	if err != nil {
+		log.Errorf("cannot insert runtimeState: %s", err)
 		return operation, 10 * time.Second, nil
 	}
 

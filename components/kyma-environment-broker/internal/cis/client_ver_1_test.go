@@ -100,9 +100,9 @@ func (s *serverVer1) returnCISEvents(w http.ResponseWriter, r *http.Request) {
 	} else {
 		response = fmt.Sprintf(`{
 			"events":[
-				{"id":145366,"type":"MASTER_SUBACCOUNT_DELETION","timestamp":"1597906863271","eventData":"{\"globalAccountGuid\":\"22cb7ffd-6f53-4b94-9915-b8a6dc6038f3\",\"subaccountGuid\":\"%s\",\"platformID\":\"8e8b4231-0224-441e-a017-234cdccd816e\",\"subdomain\":\"procurepartobedeleted\",\"region\":\"eu10-canary\"}"},
-				{"id":145365,"type":"MASTER_SUBACCOUNT_DELETION","timestamp":"1597906758247","eventData":"{\"globalAccountGuid\":\"22cb7ffd-6f53-4b94-9915-b8a6dc6038f3\",\"subaccountGuid\":\"%s\",\"platformID\":\"064adad0-6d0c-4afb-8439-6095d86d4dfd\",\"subdomain\":\"procurepardevc4\",\"region\":\"eu10-canary\"}"},
-				{"id":145364,"type":"MASTER_SUBACCOUNT_DELETION","timestamp":"1597906403195","eventData":"{\"globalAccountGuid\":\"423e5e64-1b67-474b-87ae-8c84070cdcaa\",\"subaccountGuid\":\"%s\",\"platformID\":\"4ae3bbb3-dc96-47b5-81f9-66b5fa030b11\",\"subdomain\":\"iotae-hotfixtmtest01\",\"region\":\"eu10-canary\"}"}
+				{"id":145366,"type":"MASTER_SUBACCOUNT_DELETION","timestamp":"1597906863271","eventData":{"globalAccountGuid":"22cb7ffd-6f53-4b94-9915-b8a6dc6038f3","subaccountGuid":"%s","platformID":"8e8b4231-0224-441e-a017-234cdccd816e","subdomain":"procurepartobedeleted","region":"eu10-canary"}},
+				{"id":145365,"type":"MASTER_SUBACCOUNT_DELETION","timestamp":"1597906758247","eventData":{"globalAccountGuid":"22cb7ffd-6f53-4b94-9915-b8a6dc6038f3","subaccountGuid":"%s","platformID":"064adad0-6d0c-4afb-8439-6095d86d4dfd","subdomain":"procurepardevc4","region":"eu10-canary"}},
+				{"id":145364,"type":"MASTER_SUBACCOUNT_DELETION","timestamp":"1597906403195","eventData":{"globalAccountGuid":"423e5e64-1b67-474b-87ae-8c84070cdcaa","subaccountGuid":"%s","platformID":"4ae3bbb3-dc96-47b5-81f9-66b5fa030b11","subdomain":"iotae-hotfixtmtest01","region":"eu10-canary"}}
 			],
 			"totalResults":3,
 			"totalPages":1

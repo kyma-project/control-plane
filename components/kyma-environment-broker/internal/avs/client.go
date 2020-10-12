@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
@@ -65,7 +67,7 @@ func (c *Client) resetHTTPClient() error {
 	return nil
 }
 
-func (c *Client) CreateEvaluation(evaluationRequest *BasicEvaluationCreateRequest) (*BasicEvaluationCreateResponse, error) {
+func (c *Client) CreateEvaluation(evaluationRequest *BasicEvaluationCreateRequest) (_ *BasicEvaluationCreateResponse, err error) {
 	var responseObject BasicEvaluationCreateResponse
 
 	objAsBytes, err := json.Marshal(evaluationRequest)
@@ -83,20 +85,21 @@ func (c *Client) CreateEvaluation(evaluationRequest *BasicEvaluationCreateReques
 	if err != nil {
 		return &responseObject, errors.Wrap(err, "while executing CreateEvaluation request")
 	}
+	defer func() {
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing CreateEvaluation response")
+		}
+	}()
 
 	err = json.NewDecoder(response.Body).Decode(&responseObject)
 	if err != nil {
 		return nil, errors.Wrap(err, "while decode create evaluation response")
 	}
 
-	if err := response.Body.Close(); err != nil {
-		return &responseObject, errors.Wrap(err, "while closing CreateEvaluation response")
-	}
-
 	return &responseObject, nil
 }
 
-func (c *Client) RemoveReferenceFromParentEval(evaluationId int64) error {
+func (c *Client) RemoveReferenceFromParentEval(evaluationId int64) (err error) {
 	absoluteURL := fmt.Sprintf("%s/child/%d", appendId(c.avsConfig.ApiEndpoint, c.avsConfig.ParentId), evaluationId)
 	response, err := c.deleteRequest(absoluteURL)
 	if err == nil {
@@ -105,9 +108,8 @@ func (c *Client) RemoveReferenceFromParentEval(evaluationId int64) error {
 
 	if response != nil && response.Body != nil {
 		defer func() {
-			err := response.Body.Close()
-			if err != nil {
-				c.log.Errorf("while closing body: %v")
+			if closeErr := c.closeResponseBody(response); closeErr != nil {
+				err = kebError.AsTemporaryError(closeErr, "while closing body")
 			}
 		}()
 		var responseObject avsNonSuccessResp
@@ -124,15 +126,16 @@ func (c *Client) RemoveReferenceFromParentEval(evaluationId int64) error {
 	return fmt.Errorf("unexpected response for evaluationId: %d while deleting reference from parent evaluation, error: %s", evaluationId, err)
 }
 
-func (c *Client) DeleteEvaluation(evaluationId int64) error {
+func (c *Client) DeleteEvaluation(evaluationId int64) (err error) {
 	absoluteURL := appendId(c.avsConfig.ApiEndpoint, evaluationId)
 	response, err := c.deleteRequest(absoluteURL)
+	defer func() {
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing DeleteEvaluation response body")
+		}
+	}()
 	if err != nil {
 		return errors.Wrap(err, "while deleting evaluation")
-	}
-
-	if err := response.Body.Close(); err != nil {
-		return errors.Wrap(err, "while closing DeleteEvaluation response body")
 	}
 
 	return nil
@@ -163,11 +166,15 @@ func (c *Client) deleteRequest(absoluteURL string) (*http.Response, error) {
 func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetToken bool) (*http.Response, error) {
 	httpClient, err := c.getHttpClient()
 	if err != nil {
-		return &http.Response{}, err
+		return &http.Response{}, errors.Wrap(err, "while getting http client")
 	}
 	response, err := httpClient.Do(request)
 	if err != nil {
-		return &http.Response{}, errors.Wrap(err, "while executing request by http client")
+		return &http.Response{}, kebError.AsTemporaryError(err, "while executing request by http client")
+	}
+
+	if response.StatusCode >= http.StatusInternalServerError {
+		return response, kebError.NewTemporaryError("avs server returned %d status code", response.StatusCode)
 	}
 
 	switch response.StatusCode {
@@ -186,6 +193,8 @@ func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetTo
 			return c.execute(request, allowNotFound, false)
 		}
 		return response, fmt.Errorf("avs server returned %d status code twice for %s (response body: %s)", http.StatusUnauthorized, request.URL.String(), responseBody(response))
+	case http.StatusRequestTimeout:
+		return response, kebError.NewTemporaryError("avs server returned %d status code", response.StatusCode)
 	default:
 		return response, fmt.Errorf("unsupported status code: %d for %s (response body: %s)", response.StatusCode, request.URL.String(), responseBody(response))
 	}
@@ -211,4 +220,14 @@ func (c *Client) getHttpClient() (*http.Client, error) {
 		c.httpClient = config.Client(c.ctx, initialToken)
 	}
 	return c.httpClient, nil
+}
+
+func (c *Client) closeResponseBody(response *http.Response) error {
+	if response == nil {
+		return nil
+	}
+	if response.Body == nil {
+		return nil
+	}
+	return response.Body.Close()
 }

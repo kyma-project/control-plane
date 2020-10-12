@@ -3,11 +3,12 @@ package avs
 import (
 	"time"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Delegator struct {
@@ -59,7 +60,11 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 		}
 
 		evalResp, err := del.client.CreateEvaluation(evaluationObject)
-		if err != nil {
+		switch {
+		case err == nil:
+		case kebError.IsTemporaryError(err):
+			return del.operationManager.RetryOperation(operation, "", 10*time.Second, time.Minute*30, logger)
+		default:
 			errMsg := "cannot create AVS evaluation"
 			logger.Errorf("%s: %s", errMsg, err)
 			retryConfig := evalAssistant.provideRetryConfig()
