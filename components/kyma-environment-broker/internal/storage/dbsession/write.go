@@ -33,6 +33,7 @@ func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
 		Pair("service_plan_name", instance.ServicePlanName).
 		Pair("dashboard_url", instance.DashboardURL).
 		Pair("provisioning_parameters", instance.ProvisioningParameters).
+		Pair("provider_region", instance.ProviderRegion).
 		// in postgres database it will be equal to "0001-01-01 00:00:00+00"
 		Pair("deleted_at", time.Time{}).
 		Exec()
@@ -70,6 +71,7 @@ func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
 		Set("service_plan_id", instance.ServicePlanID).
 		Set("dashboard_url", instance.DashboardURL).
 		Set("provisioning_parameters", instance.ProvisioningParameters).
+		Set("provider_region", instance.ProviderRegion).
 		Set("updated_at", time.Now()).
 		Exec()
 	if err != nil {

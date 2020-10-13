@@ -430,7 +430,7 @@ func addFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
 		stmt.Where("runtime_id IN ?", filter.RuntimeIDs)
 	}
 	if len(filter.Regions) > 0 {
-		stmt.Where("provisioning_parameters::jsonb -> 'parameters' ->> 'region' IN ?", filter.Regions)
+		stmt.Where("provider_region IN ?", filter.Regions)
 	}
 	if len(filter.Plans) > 0 {
 		stmt.Where("service_plan_name IN ?", filter.Plans)

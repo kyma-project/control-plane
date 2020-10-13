@@ -216,17 +216,8 @@ func (s *Instance) filterInstances(filter dbmodel.InstanceFilter) []internal.Ins
 		if ok = matchFilter(v.ServicePlanName, filter.Plans, equal); !ok {
 			continue
 		}
-		// Match region in provisioning parameters
-		if len(filter.Plans) > 0 {
-			pp, err := v.GetProvisioningParameters()
-			if err != nil {
-				continue
-			}
-			if pp.Parameters.Region != nil {
-				if ok = matchFilter(*pp.Parameters.Region, filter.Plans, equal); !ok {
-					continue
-				}
-			}
+		if ok = matchFilter(v.ProviderRegion, filter.Regions, equal); !ok {
+			continue
 		}
 		// Match domains with dashboard url
 		if ok = matchFilter(v.DashboardURL, filter.Domains, domainMatch); !ok {

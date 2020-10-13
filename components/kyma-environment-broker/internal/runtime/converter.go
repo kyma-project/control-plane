@@ -29,11 +29,6 @@ func (c *converter) setRegionOrDefault(instance internal.Instance, runtime *pkg.
 	} else {
 		runtime.SubAccountRegion = pp.PlatformRegion
 	}
-	if pp.Parameters.Region != nil {
-		runtime.ProviderRegion = *pp.Parameters.Region
-	} else {
-		runtime.ProviderRegion = ""
-	}
 	return nil
 }
 
@@ -48,6 +43,7 @@ func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr
 		ServiceClassName: instance.ServiceName,
 		ServicePlanID:    instance.ServicePlanID,
 		ServicePlanName:  instance.ServicePlanName,
+		ProviderRegion:   instance.ProviderRegion,
 		Status: pkg.RuntimeStatus{
 			CreatedAt:    instance.CreatedAt,
 			ModifiedAt:   instance.UpdatedAt,

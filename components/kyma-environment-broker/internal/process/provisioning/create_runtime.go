@@ -112,12 +112,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		return operation, 1 * time.Minute, nil
 	}
 	instance.RuntimeID = *provisionerResponse.RuntimeID
-	// Save provider region in instance ProvivisiongParameters so that all instances store it regardless of ServicePlan, and whether region parameter was input or not
-	pp.Parameters.Region = &requestInput.ClusterConfig.GardenerConfig.Region
-	err = instance.SetProvisioningParameters(pp)
-	if err != nil {
-		return s.operationManager.OperationFailed(operation, "invalid provisioning parameters to store in instance")
-	}
+	instance.ProviderRegion = requestInput.ClusterConfig.GardenerConfig.Region
 
 	err = s.instanceStorage.Update(*instance)
 	if err != nil {

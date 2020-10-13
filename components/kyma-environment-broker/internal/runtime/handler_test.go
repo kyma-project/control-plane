@@ -183,16 +183,16 @@ func TestRuntimeHandler(t *testing.T) {
 
 func fixInstance(id string, t time.Time) internal.Instance {
 	return internal.Instance{
-		InstanceID:             id,
-		CreatedAt:              t,
-		GlobalAccountID:        id,
-		SubAccountID:           id,
-		RuntimeID:              id,
-		ServiceID:              id,
-		ServiceName:            id,
-		ServicePlanID:          id,
-		ServicePlanName:        id,
-		DashboardURL:           fmt.Sprintf("https://console.%s.kyma.local", id),
-		ProvisioningParameters: fmt.Sprintf("{\"plan_id\":\"%s\",\"parameters\":{\"name\":\"%s\",\"region\":\"%s\"},\"platform_region\":\"cf-eu10\"}", id, id, id),
+		InstanceID:      id,
+		CreatedAt:       t,
+		GlobalAccountID: id,
+		SubAccountID:    id,
+		RuntimeID:       id,
+		ServiceID:       id,
+		ServiceName:     id,
+		ServicePlanID:   id,
+		ServicePlanName: id,
+		DashboardURL:    fmt.Sprintf("https://console.%s.kyma.local", id),
+		ProviderRegion:  id,
 	}
 }

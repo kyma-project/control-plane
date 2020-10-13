@@ -62,6 +62,7 @@ type Instance struct {
 
 	DashboardURL           string
 	ProvisioningParameters string
+	ProviderRegion         string
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -77,16 +78,6 @@ func (instance Instance) GetProvisioningParameters() (ProvisioningParameters, er
 	}
 
 	return pp, nil
-}
-
-func (instance *Instance) SetProvisioningParameters(parameters ProvisioningParameters) error {
-	pp, err := json.Marshal(parameters)
-	if err != nil {
-		return errors.Wrap(err, "while marshaling provisioning parameters")
-	}
-
-	instance.ProvisioningParameters = string(pp)
-	return nil
 }
 
 type Operation struct {

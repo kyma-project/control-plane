@@ -960,16 +960,16 @@ func fixInstance(testData instanceData) *internal.Instance {
 	}
 
 	return &internal.Instance{
-		InstanceID:             testData.val,
-		RuntimeID:              testData.val,
-		GlobalAccountID:        gaid,
-		SubAccountID:           suid,
-		ServiceID:              testData.val,
-		ServiceName:            testData.val,
-		ServicePlanID:          testData.val,
-		ServicePlanName:        testData.val,
-		DashboardURL:           fmt.Sprintf("https://console.%s.kyma.local", testData.val),
-		ProvisioningParameters: fmt.Sprintf("{\"plan_id\":\"%s\",\"parameters\":{\"name\":\"%s\",\"region\":\"%s\"},\"platform_region\":\"cf-eu10\"}", testData.val, testData.val, testData.val),
+		InstanceID:      testData.val,
+		RuntimeID:       testData.val,
+		GlobalAccountID: gaid,
+		SubAccountID:    suid,
+		ServiceID:       testData.val,
+		ServiceName:     testData.val,
+		ServicePlanID:   testData.val,
+		ServicePlanName: testData.val,
+		DashboardURL:    fmt.Sprintf("https://console.%s.kyma.local", testData.val),
+		ProviderRegion:  testData.val,
 	}
 }
 
