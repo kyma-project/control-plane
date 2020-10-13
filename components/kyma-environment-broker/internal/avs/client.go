@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 
@@ -19,52 +18,19 @@ import (
 )
 
 type Client struct {
-	httpClient      *http.Client
-	httpClientMutex sync.Mutex
-
-	avsConfig Config
-
-	log logrus.FieldLogger
-
-	ctx context.Context
+	httpClient *http.Client
+	avsConfig  Config
+	log        logrus.FieldLogger
+	ctx        context.Context
 }
 
 func NewClient(ctx context.Context, avsConfig Config, log logrus.FieldLogger) (*Client, error) {
-
 	return &Client{
-		httpClient: nil, // http client is lazy initialized
-		avsConfig:  avsConfig,
-		log:        log,
+		avsConfig: avsConfig,
+		log:       log,
 
 		ctx: ctx,
 	}, nil
-}
-
-func createInitialToken(cfg Config) (*oauth2.Config, *oauth2.Token, error) {
-	config := &oauth2.Config{
-		ClientID: cfg.OauthClientId,
-		Endpoint: oauth2.Endpoint{
-			TokenURL:  cfg.OauthTokenEndpoint,
-			AuthStyle: oauth2.AuthStyleInHeader,
-		},
-	}
-
-	initialToken, err := config.PasswordCredentialsToken(context.TODO(), cfg.OauthUsername, cfg.OauthPassword)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "while fetching initial token")
-	}
-
-	return config, initialToken, nil
-}
-
-func (c *Client) resetHTTPClient() error {
-	config, initialToken, err := createInitialToken(c.avsConfig)
-	if err != nil {
-		return errors.Wrap(err, "while resetting initial token")
-	}
-	c.httpClient = config.Client(context.TODO(), initialToken)
-
-	return nil
 }
 
 func (c *Client) CreateEvaluation(evaluationRequest *BasicEvaluationCreateRequest) (_ *BasicEvaluationCreateResponse, err error) {
@@ -164,10 +130,11 @@ func (c *Client) deleteRequest(absoluteURL string) (*http.Response, error) {
 }
 
 func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetToken bool) (*http.Response, error) {
-	httpClient, err := c.getHttpClient()
+	httpClient, err := getHttpClient(c.ctx, c.avsConfig)
 	if err != nil {
 		return &http.Response{}, errors.Wrap(err, "while getting http client")
 	}
+	defer httpClient.CloseIdleConnections()
 	response, err := httpClient.Do(request)
 	if err != nil {
 		return &http.Response{}, kebError.AsTemporaryError(err, "while executing request by http client")
@@ -187,9 +154,6 @@ func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetTo
 		return response, fmt.Errorf("response status code: %d for %s", http.StatusNotFound, request.URL.String())
 	case http.StatusUnauthorized:
 		if allowResetToken {
-			if err := c.resetHTTPClient(); err != nil {
-				return response, errors.Wrap(err, "while resetting http auth client")
-			}
 			return c.execute(request, allowNotFound, false)
 		}
 		return response, fmt.Errorf("avs server returned %d status code twice for %s (response body: %s)", http.StatusUnauthorized, request.URL.String(), responseBody(response))
@@ -200,28 +164,6 @@ func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetTo
 	}
 }
 
-func responseBody(resp *http.Response) string {
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return ""
-	}
-	return string(bodyBytes)
-}
-
-func (c *Client) getHttpClient() (*http.Client, error) {
-	c.httpClientMutex.Lock()
-	defer c.httpClientMutex.Unlock()
-
-	if c.httpClient == nil {
-		config, initialToken, err := createInitialToken(c.avsConfig)
-		if err != nil {
-			return nil, errors.Wrap(err, "while creating oauth config and token")
-		}
-		c.httpClient = config.Client(c.ctx, initialToken)
-	}
-	return c.httpClient, nil
-}
-
 func (c *Client) closeResponseBody(response *http.Response) error {
 	if response == nil {
 		return nil
@@ -230,4 +172,29 @@ func (c *Client) closeResponseBody(response *http.Response) error {
 		return nil
 	}
 	return response.Body.Close()
+}
+
+func responseBody(resp *http.Response) string {
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return ""
+	}
+	return string(bodyBytes)
+}
+
+func getHttpClient(ctx context.Context, cfg Config) (http.Client, error) {
+	config := oauth2.Config{
+		ClientID: cfg.OauthClientId,
+		Endpoint: oauth2.Endpoint{
+			TokenURL:  cfg.OauthTokenEndpoint,
+			AuthStyle: oauth2.AuthStyleInHeader,
+		},
+	}
+
+	initialToken, err := config.PasswordCredentialsToken(ctx, cfg.OauthUsername, cfg.OauthPassword)
+	if err != nil {
+		return http.Client{}, kebError.AsTemporaryError(err, "while fetching initial token")
+	}
+
+	return *config.Client(ctx, initialToken), nil
 }
