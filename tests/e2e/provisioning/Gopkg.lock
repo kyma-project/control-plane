@@ -235,17 +235,16 @@
   revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
 
 [[projects]]
-  digest = "1:4b467ab0c7164f8b358821eae3dac1ee112fbe94249ca536ddc041bb91c8af13"
+  digest = "1:67c319de6100353ad5a319c4444b5d43cb27217be3e9c9bbf27303bcf08a70b1"
   name = "github.com/kyma-project/control-plane"
   packages = [
     "components/kyma-environment-broker/common/director",
-    "components/kyma-environment-broker/common/director/oauth",
     "components/kyma-environment-broker/common/gardener",
     "components/kyma-environment-broker/internal/error",
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "d40fff3571fd230222c5bd96afbac5c64139d9ef"
+  revision = "e0437b7ac8d66565e1253b46f42f10b20f3dda48"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -729,7 +728,6 @@
     "github.com/Azure/go-autorest/autorest/azure",
     "github.com/google/uuid",
     "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director",
-    "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director/oauth",
     "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener",
     "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema",
     "github.com/machinebox/graphql",

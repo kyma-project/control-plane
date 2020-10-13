@@ -3,6 +3,8 @@ package memory
 import (
 	"sync"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
 
@@ -27,6 +29,9 @@ func (s *runtimeState) Insert(runtimeState internal.RuntimeState) error {
 }
 
 func (s *runtimeState) ListByRuntimeID(runtimeID string) ([]internal.RuntimeState, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	result := make([]internal.RuntimeState, 0)
 
 	for _, state := range s.runtimeStates {
@@ -36,4 +41,17 @@ func (s *runtimeState) ListByRuntimeID(runtimeID string) ([]internal.RuntimeStat
 	}
 
 	return result, nil
+}
+
+func (s *runtimeState) GetByOperationID(operationID string) (internal.RuntimeState, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, rs := range s.runtimeStates {
+		if rs.OperationID == operationID {
+			return rs, nil
+		}
+	}
+
+	return internal.RuntimeState{}, dberr.NotFound("runtime state with operation ID %s not found", operationID)
 }

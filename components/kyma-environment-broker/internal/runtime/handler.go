@@ -1,10 +1,9 @@
 package runtime
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	pkg "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
@@ -44,11 +43,15 @@ func (h *Handler) AttachRoutes(router *mux.Router) {
 
 func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 	toReturn := make([]pkg.RuntimeDTO, 0)
-	filter, err := h.getFilters(req)
+
+	pageSize, page, err := pagination.ExtractPaginationConfigFromRequest(req, h.defaultMaxPage)
 	if err != nil {
 		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
 		return
 	}
+	filter := h.getFilters(req)
+	filter.PageSize = pageSize
+	filter.Page = page
 
 	instances, count, totalCount, err := h.instancesDb.List(filter)
 	if err != nil {
@@ -96,48 +99,9 @@ func (h *Handler) getOperationsForInstance(instance internal.Instance) (*interna
 	return pOpr, dOpr, ukOpr, nil
 }
 
-func (h *Handler) getFilters(req *http.Request) (dbmodel.InstanceFilter, error) {
+func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {
 	var filter dbmodel.InstanceFilter
-	var err error
-
 	query := req.URL.Query()
-	pageSizeArr, ok := query[pkg.PageSizeParam]
-	if len(pageSizeArr) > 1 {
-		return filter, errors.New("pageSize has to be one parameter")
-	}
-
-	if !ok {
-		filter.PageSize = h.defaultMaxPage
-	} else {
-		filter.PageSize, err = strconv.Atoi(pageSizeArr[0])
-		if err != nil {
-			return filter, errors.New("pageSize has to be an integer")
-		}
-	}
-
-	if filter.PageSize > h.defaultMaxPage {
-		return filter, errors.New(fmt.Sprintf("pageSize is bigger than maxPage(%d)", h.defaultMaxPage))
-	}
-	if filter.PageSize < 1 {
-		return filter, errors.New("pageSize cannot be smaller than 1")
-	}
-
-	pageArr, ok := query[pkg.PageParam]
-	if len(pageArr) > 1 {
-		return filter, errors.New("page has to be one parameter")
-	}
-	if !ok {
-		filter.Page = 1
-	} else {
-		filter.Page, err = strconv.Atoi(pageArr[0])
-		if err != nil {
-			return filter, errors.New("page has to be an integer")
-		}
-		if filter.Page < 1 {
-			return filter, errors.New("page cannot be smaller than 1")
-		}
-	}
-
 	// For optional filter, zero value (nil) is fine if not supplied
 	filter.GlobalAccountIDs = query[pkg.GlobalAccountIDParam]
 	filter.SubAccountIDs = query[pkg.SubAccountIDParam]
@@ -146,5 +110,5 @@ func (h *Handler) getFilters(req *http.Request) (dbmodel.InstanceFilter, error) 
 	filter.Regions = query[pkg.RegionParam]
 	filter.Domains = query[pkg.ShootParam]
 
-	return filter, nil
+	return filter
 }

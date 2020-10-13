@@ -181,7 +181,7 @@ func (o *Orchestration) IsFinished() bool {
 type OrchestrationParameters struct {
 	Targets  TargetSpec   `json:"targets"`
 	Strategy StrategySpec `json:"strategy,omitempty"`
-	DryRun   bool         `json:"dry_run,omitempty"`
+	DryRun   bool         `json:"dryRun,omitempty"`
 }
 
 const (

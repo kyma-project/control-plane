@@ -8,9 +8,9 @@ type RuntimeDTO struct {
 	InstanceID       string        `json:"instanceID"`
 	RuntimeID        string        `json:"runtimeID"`
 	GlobalAccountID  string        `json:"globalAccountID"`
-	SubAccountID     string        `json:"subaccountID"`
+	SubAccountID     string        `json:"subAccountID"`
 	ProviderRegion   string        `json:"region"`
-	SubAccountRegion string        `json:"subaccountRegion"`
+	SubAccountRegion string        `json:"subAccountRegion"`
 	ShootName        string        `json:"shootName"`
 	ServiceClassID   string        `json:"serviceClassID"`
 	ServiceClassName string        `json:"serviceClassName"`
@@ -39,8 +39,6 @@ type RuntimesPage struct {
 }
 
 const (
-	PageSizeParam        = "page_size"
-	PageParam            = "page"
 	GlobalAccountIDParam = "account"
 	SubAccountIDParam    = "subaccount"
 	InstanceIDParam      = "instance_id"

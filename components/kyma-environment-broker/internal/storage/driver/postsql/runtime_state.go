@@ -35,7 +35,7 @@ func (s *runtimeState) Insert(runtimeState internal.RuntimeState) error {
 	return wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		err := sess.InsertRuntimeState(state)
 		if err != nil {
-			log.Warnf("while saving runtime state ID %s conf: %s: %v", runtimeState.ID, state.KymaConfig, err)
+			log.Warnf("while saving runtime state ID %s: %v", runtimeState.ID, err)
 			return false, nil
 		}
 		return true, nil
@@ -64,6 +64,32 @@ func (s *runtimeState) ListByRuntimeID(runtimeID string) ([]internal.RuntimeStat
 	if err != nil {
 		return nil, err
 	}
+	return result, nil
+}
+
+func (s *runtimeState) GetByOperationID(operationID string) (internal.RuntimeState, error) {
+	sess := s.NewReadSession()
+	state := dbmodel.RuntimeStateDTO{}
+	var lastErr dberr.Error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		state, lastErr = sess.GetRuntimeStateByOperationID(operationID)
+		if lastErr != nil {
+			if dberr.IsNotFound(lastErr) {
+				return false, dberr.NotFound("RuntimeState for operation %s not found", operationID)
+			}
+			log.Warnf("while getting RuntimeState: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return internal.RuntimeState{}, lastErr
+	}
+	result, err := s.toRuntimeState(&state)
+	if err != nil {
+		return internal.RuntimeState{}, errors.Wrap(err, "while converting runtime states")
+	}
+
 	return result, nil
 }
 

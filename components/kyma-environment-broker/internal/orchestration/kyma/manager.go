@@ -111,11 +111,14 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 						State:       domain.InProgress,
 						Description: "Operation created",
 					},
-					DryRun:          params.DryRun,
-					RuntimeID:       r.RuntimeID,
-					GlobalAccountID: r.GlobalAccountID,
-					SubAccountID:    r.SubAccountID,
-					OrchestrationID: o.OrchestrationID,
+					DryRun:                 params.DryRun,
+					ShootName:              r.ShootName,
+					MaintenanceWindowBegin: r.MaintenanceWindowBegin,
+					MaintenanceWindowEnd:   r.MaintenanceWindowEnd,
+					RuntimeID:              r.RuntimeID,
+					GlobalAccountID:        r.GlobalAccountID,
+					SubAccountID:           r.SubAccountID,
+					OrchestrationID:        o.OrchestrationID,
 				},
 			}
 			result = append(result, op)
@@ -182,7 +185,7 @@ func (u *upgradeKymaManager) waitForCompletion(o *internal.Orchestration) error 
 		numberOfInProgress, found := stats[domain.InProgress]
 		if !found {
 			u.log.Warnf("Orchestration %s operation stats does not contain in progress operations", o.OrchestrationID)
-			return false, nil
+			return true, nil
 		}
 
 		return numberOfInProgress == 0, nil

@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
@@ -50,8 +51,8 @@ func TestClient_ListRuntimes(t *testing.T) {
 			assert.Equal(t, "/runtimes", r.URL.Path)
 			assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Bearer %s", fixToken))
 			query := r.URL.Query()
-			assert.ElementsMatch(t, []string{strconv.Itoa(params.Page)}, query[PageParam])
-			assert.ElementsMatch(t, []string{strconv.Itoa(params.PageSize)}, query[PageSizeParam])
+			assert.ElementsMatch(t, []string{strconv.Itoa(params.Page)}, query[pagination.PageParam])
+			assert.ElementsMatch(t, []string{strconv.Itoa(params.PageSize)}, query[pagination.PageSizeParam])
 			assert.ElementsMatch(t, params.GlobalAccountIDs, query[GlobalAccountIDParam])
 			assert.ElementsMatch(t, params.SubAccountIDs, query[SubAccountIDParam])
 			assert.ElementsMatch(t, params.InstanceIDs, query[InstanceIDParam])

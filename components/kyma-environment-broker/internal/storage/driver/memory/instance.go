@@ -166,7 +166,7 @@ func (s *Instance) List(filter dbmodel.InstanceFilter) ([]internal.Instance, int
 
 	offset := convertPageAndPageSizeToOffset(filter.PageSize, filter.Page)
 
-	instances := filterInstances(s.instances, filter)
+	instances := s.filterInstances(filter)
 	sortInstancesByCreatedAt(instances)
 
 	for i := offset; i < offset+filter.PageSize && i < len(instances); i++ {
@@ -185,8 +185,8 @@ func sortInstancesByCreatedAt(instances []internal.Instance) {
 	})
 }
 
-func filterInstances(instances map[string]internal.Instance, filter dbmodel.InstanceFilter) []internal.Instance {
-	inst := make([]internal.Instance, 0, len(instances))
+func (s *Instance) filterInstances(filter dbmodel.InstanceFilter) []internal.Instance {
+	inst := make([]internal.Instance, 0, len(s.instances))
 	var ok bool
 	equal := func(a, b string) bool {
 		return a == b
@@ -200,7 +200,7 @@ func filterInstances(instances map[string]internal.Instance, filter dbmodel.Inst
 		return err == nil && matched
 	}
 
-	for _, v := range instances {
+	for _, v := range s.instances {
 		if ok = matchFilter(v.InstanceID, filter.InstanceIDs, equal); !ok {
 			continue
 		}

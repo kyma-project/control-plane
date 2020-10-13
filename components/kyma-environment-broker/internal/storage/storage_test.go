@@ -542,11 +542,12 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, "new modified description", gotOperation2.Description)
 
 		})
-		t.Run("GetOperation should return the newest one", func(t *testing.T) {
+		t.Run("Upgrade", func(t *testing.T) {
 			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
+			orchestrationID := "orchestration-id"
 			givenOperation1 := internal.UpgradeKymaOperation{
 				RuntimeOperation: internal.RuntimeOperation{
 					Operation: internal.Operation{
@@ -560,7 +561,7 @@ func TestSchemaInitializer(t *testing.T) {
 						Description:            "description",
 						Version:                1,
 					},
-					OrchestrationID: "orchestration-id",
+					OrchestrationID: orchestrationID,
 				},
 			}
 
@@ -576,7 +577,7 @@ func TestSchemaInitializer(t *testing.T) {
 						ProvisionerOperationID: "target-op-id",
 						Description:            "description",
 						Version:                1,
-						OrchestrationID:        "orchestration-id",
+						OrchestrationID:        orchestrationID,
 					},
 					DryRun:                 false,
 					ShootName:              "shoot-stage",
@@ -585,7 +586,7 @@ func TestSchemaInitializer(t *testing.T) {
 					RuntimeID:              "runtime-id",
 					GlobalAccountID:        "global-account-if",
 					SubAccountID:           "subaccount-id",
-					OrchestrationID:        "orchestration-id",
+					OrchestrationID:        orchestrationID,
 				},
 				ProvisioningParameters: "{}",
 			}
@@ -604,10 +605,16 @@ func TestSchemaInitializer(t *testing.T) {
 			err = svc.InsertUpgradeKymaOperation(givenOperation2)
 			require.NoError(t, err)
 
-			ops, err := svc.GetUpgradeKymaOperationByInstanceID("inst-id")
+			op, err := svc.GetUpgradeKymaOperationByInstanceID("inst-id")
 			require.NoError(t, err)
 
-			assertUpgradeKymaOperation(t, givenOperation2, *ops)
+			assertUpgradeKymaOperation(t, givenOperation2, *op)
+
+			ops, count, totalCount, err := svc.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, 10, 1)
+			require.NoError(t, err)
+			assert.Len(t, ops, 2)
+			assert.Equal(t, count, 2)
+			assert.Equal(t, totalCount, 2)
 		})
 	})
 
@@ -764,9 +771,11 @@ func TestSchemaInitializer(t *testing.T) {
 		err = svc.Insert(givenOrchestration)
 		assertError(t, dberr.CodeAlreadyExists, err)
 
-		l, err := svc.ListAll()
+		l, count, totalCount, err := svc.List(10, 1)
 		require.NoError(t, err)
 		assert.Len(t, l, 1)
+		assert.Equal(t, 1, count)
+		assert.Equal(t, 1, totalCount)
 
 		l, err = svc.ListByState("test")
 		require.NoError(t, err)
@@ -808,6 +817,11 @@ func TestSchemaInitializer(t *testing.T) {
 		assert.Len(t, runtimeStates, 1)
 		assert.Equal(t, fixID, runtimeStates[0].KymaConfig.Version)
 		assert.Equal(t, fixID, runtimeStates[0].ClusterConfig.KubernetesVersion)
+
+		state, err := svc.GetByOperationID(fixID)
+		require.NoError(t, err)
+		assert.Equal(t, fixID, state.KymaConfig.Version)
+		assert.Equal(t, fixID, state.ClusterConfig.KubernetesVersion)
 	})
 
 	t.Run("LMS Tenants", func(t *testing.T) {

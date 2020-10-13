@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 )
@@ -101,8 +102,8 @@ func (c *client) ListRuntimes(params ListParameters) (RuntimesPage, error) {
 
 func setQuery(url *url.URL, params ListParameters) {
 	query := url.Query()
-	query.Add(PageParam, strconv.Itoa(params.Page))
-	query.Add(PageSizeParam, strconv.Itoa(params.PageSize))
+	query.Add(pagination.PageParam, strconv.Itoa(params.Page))
+	query.Add(pagination.PageSizeParam, strconv.Itoa(params.PageSize))
 	setParamList(query, GlobalAccountIDParam, params.GlobalAccountIDs)
 	setParamList(query, SubAccountIDParam, params.SubAccountIDs)
 	setParamList(query, InstanceIDParam, params.InstanceIDs)
