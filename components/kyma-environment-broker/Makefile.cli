@@ -35,3 +35,7 @@ build-linux:
 .PHONY: build-darwin
 build-darwin:
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o $(ARTIFACTS)/skr-darwin $(CLI_FLAGS) ./cmd/cli
+
+.PHONY: docs
+docs:
+	go run ./cmd/cli/gendocs/gendocs.go
