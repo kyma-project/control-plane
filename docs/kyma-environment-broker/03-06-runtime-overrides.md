@@ -9,17 +9,17 @@ You can set overrides to customize your Kyma Runtime. To provision a cluster wit
 
 ## ConfigMap
 
-The overrides mechanism selects ConfigMaps by filtering the resources using labels. You can prepare overrides for a given plan and Kyma version, using the `overrides-plan-{"PLAN_NAME"}: "true"` and `overrides-version-{"KYMA_VERSION"}: "true"` labels.
+The overrides mechanism selects ConfigMaps by filtering the resources using labels. You can prepare overrides for a given plan and Kyma version using the `overrides-plan-{PLAN_NAME}: "true"` and `overrides-version-{KYMA_VERSION}: "true"` labels.
 
 > **NOTE:** Each ConfigMap that defines overrides must have both labels assigned.
 
-Optionally you can narrow the scope for the overrides to a specific component. Use the `component: {"COMPONENT_NAME"}` label to indicate the component. 
+Optionally, you can narrow the scope of the overrides to a specific component. Use the `component: "{COMPONENT_NAME}"` label to indicate the component. 
 
-The mechanism for the overrides lookup requires at least ConfigMap to be present otherwise it fails.
+The overrides lookup mechanism requires at least one ConfigMap present for each plan and version pair. Otherwise, it fails. 
 
-See the examples:
+See the example of a ConfigMap with global overrides for the `trial` plan and versions `1.15.1` and `1.16.0`:
+-
 
-- ConfigMap with global overrides for plan `trial` and versions `1.15.1`, and `1.16.0`:
 
     ```yaml
     apiVersion: v1
@@ -37,11 +37,10 @@ See the examples:
 
 ### Use Kyma default overrides for specific plan and version
 
-By default, the overrides lookup mechanism expects at least one ConfigMap present for each plan and version pair. It will fail otherwise. To allow the Kyma installation without providing any additional overrides create empty ConfigMap.
+By default, the overrides lookup mechanism expects at least one ConfigMap present for each plan and version pair. Otherwise, it fails. To allow Kyma installation without providing any additional overrides, create an empty ConfigMap.
 
-Example:
+See the example of an empty ConfigMap for the `lite` plan and version `1.16.0`:
 
-- Empty ConfigMap for plan `lite` and version `1.16.0`
 
     ```yaml
     apiVersion: v1
@@ -55,7 +54,7 @@ Example:
 
 ## Secrets
 
-In order to use Secret to provide overrides, you must label it using `runtime-override: "true"`. Optionally you can narrow the scope for the overrides to a specific component. Use the `component: {"COMPONENT_NAME"}` label to indicate the component. 
+In order to provide overrides using Secrets, label the Secret with the `runtime-override: "true"` label. Optionally, you can narrow the scope of the overrides to a specific component. Use the `component: "{COMPONENT_NAME}"` label to indicate the component. 
 
 See the examples:
 
@@ -63,7 +62,7 @@ See the examples:
 
     ```yaml
     apiVersion: v1
-    kind: ConfigMap
+    kind: Secret
     metadata:
       labels:
         runtime-override: "true"
