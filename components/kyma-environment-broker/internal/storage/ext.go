@@ -17,7 +17,7 @@ type Instances interface {
 	Delete(instanceID string) error
 	GetInstanceStats() (internal.InstanceStats, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
-	List(pageSize int, page int) ([]internal.Instance, int, int, error)
+	List(dbmodel.InstanceFilter) ([]internal.Instance, int, int, error)
 }
 
 type Operations interface {

@@ -37,8 +37,8 @@ func ConvertPageAndPageSizeToOffset(pageSize, page int) int {
 }
 
 const (
-	pageSizeParam = "page_size"
-	pageParam     = "page"
+	PageSizeParam = "page_size"
+	PageParam     = "page"
 )
 
 func ExtractPaginationConfigFromRequest(req *http.Request, maxPage int) (int, int, error) {
@@ -47,7 +47,7 @@ func ExtractPaginationConfigFromRequest(req *http.Request, maxPage int) (int, in
 	var err error
 
 	params := req.URL.Query()
-	pageSizeArr, ok := params[pageSizeParam]
+	pageSizeArr, ok := params[PageSizeParam]
 	if len(pageSizeArr) > 1 {
 		return 0, 0, errors.New("pageSize has to be one parameter")
 	}
@@ -64,8 +64,11 @@ func ExtractPaginationConfigFromRequest(req *http.Request, maxPage int) (int, in
 	if pageSize > maxPage {
 		return 0, 0, errors.New(fmt.Sprintf("pageSize is bigger than maxPage(%d)", maxPage))
 	}
+	if pageSize < 1 {
+		return 0, 0, errors.New("pageSize cannot be smaller than 1")
+	}
 
-	pageArr, ok := params[pageParam]
+	pageArr, ok := params[PageParam]
 	if len(pageArr) > 1 {
 		return 0, 0, errors.New("page has to be one parameter")
 	}
@@ -75,6 +78,9 @@ func ExtractPaginationConfigFromRequest(req *http.Request, maxPage int) (int, in
 		page, err = strconv.Atoi(pageArr[0])
 		if err != nil {
 			return 0, 0, errors.New("page has to be an integer")
+		}
+		if page < 1 {
+			return 0, 0, errors.New("page cannot be smaller than 1")
 		}
 	}
 

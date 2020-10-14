@@ -112,6 +112,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		return operation, 1 * time.Minute, nil
 	}
 	instance.RuntimeID = *provisionerResponse.RuntimeID
+	instance.ProviderRegion = requestInput.ClusterConfig.GardenerConfig.Region
 
 	err = s.instanceStorage.Update(*instance)
 	if err != nil {

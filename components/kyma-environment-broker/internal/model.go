@@ -62,6 +62,7 @@ type Instance struct {
 
 	DashboardURL           string
 	ProvisioningParameters string
+	ProviderRegion         string
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

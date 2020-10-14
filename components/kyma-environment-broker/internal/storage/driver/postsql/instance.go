@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -174,6 +175,6 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 	return result, nil
 }
 
-func (s *Instance) List(pageSize int, page int) ([]internal.Instance, int, int, error) {
-	return s.NewReadSession().ListInstances(pageSize, page)
+func (s *Instance) List(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
+	return s.NewReadSession().ListInstances(filter)
 }
