@@ -244,7 +244,7 @@ type RuntimeTarget struct {
 	// Regex pattern to match against the shoot cluster's Region field (not SCP platform-region). E.g. "europe|eu-"
 	Region string `json:"region,omitempty"`
 	// RuntimeID is used to indicate a specific runtime
-	RuntimeID string `json:"runtimeId,omitempty"`
+	RuntimeID string `json:"runtimeID,omitempty"`
 	// PlanName is used to match runtimes with the same plan
 	PlanName string `json:"planName,omitempty"`
 }
