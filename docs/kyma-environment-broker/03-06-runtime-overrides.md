@@ -18,22 +18,20 @@ Optionally, you can narrow the scope of the overrides to a specific component. U
 The overrides lookup mechanism requires at least one ConfigMap present for each plan and version pair. Otherwise, it fails. 
 
 See the example of a ConfigMap with global overrides for the `trial` plan and versions `1.15.1` and `1.16.0`:
--
 
-
-    ```yaml
-    apiVersion: v1
-    kind: ConfigMap
-    metadata:
-      labels:
-        overrides-plan-trial: "true"
-        overrides-version-1.15.1: "true"
-        overrides-version-1.16.0: "true"
-      name: global-overrides
-      namespace: kcp-system
-    data:
-      global.disableLegacyConnectivity: "true"
-    ```  
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    overrides-plan-trial: "true"
+    overrides-version-1.15.1: "true"
+    overrides-version-1.16.0: "true"
+  name: global-overrides
+  namespace: kcp-system
+data:
+  global.disableLegacyConnectivity: "true"
+```
 
 ### Use Kyma default overrides for specific plan and version
 
@@ -42,15 +40,15 @@ By default, the overrides lookup mechanism expects at least one ConfigMap presen
 See the example of an empty ConfigMap for the `lite` plan and version `1.16.0`:
 
 
-    ```yaml
-    apiVersion: v1
-    kind: ConfigMap
-    metadata:
-      labels:
-        overrides-plan-lite: "true"
-        overrides-version-1.16.0: "true"
-    data:
-    ```
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    overrides-plan-lite: "true"
+    overrides-version-1.16.0: "true"
+data:
+```
 
 ## Secrets
 
