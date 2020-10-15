@@ -131,10 +131,10 @@ func TestKymaOrchestrationHandler_(t *testing.T) {
 		err = db.Operations().InsertUpgradeKymaOperation(internal.UpgradeKymaOperation{
 			RuntimeOperation: internal.RuntimeOperation{
 				Operation: internal.Operation{
-					ID:         fixID,
-					InstanceID: fixID,
+					ID:              fixID,
+					InstanceID:      fixID,
+					OrchestrationID: fixID,
 				},
-				OrchestrationID: fixID,
 			},
 			ProvisioningParameters: `{"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c"}`,
 		})

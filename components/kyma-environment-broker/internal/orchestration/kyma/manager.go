@@ -103,13 +103,14 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 			op := internal.UpgradeKymaOperation{
 				RuntimeOperation: internal.RuntimeOperation{
 					Operation: internal.Operation{
-						ID:          id,
-						Version:     0,
-						CreatedAt:   time.Now(),
-						UpdatedAt:   time.Now(),
-						InstanceID:  r.InstanceID,
-						State:       domain.InProgress,
-						Description: "Operation created",
+						ID:              id,
+						Version:         0,
+						CreatedAt:       time.Now(),
+						UpdatedAt:       time.Now(),
+						InstanceID:      r.InstanceID,
+						State:           domain.InProgress,
+						Description:     "Operation created",
+						OrchestrationID: o.OrchestrationID,
 					},
 					DryRun:                 params.DryRun,
 					ShootName:              r.ShootName,
@@ -118,7 +119,6 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 					RuntimeID:              r.RuntimeID,
 					GlobalAccountID:        r.GlobalAccountID,
 					SubAccountID:           r.SubAccountID,
-					OrchestrationID:        o.OrchestrationID,
 				},
 			}
 			result = append(result, op)

@@ -53,7 +53,7 @@ func (c *Converter) UpgradeKymaOperationToDTO(op internal.UpgradeKymaOperation) 
 		RuntimeID:              op.RuntimeID,
 		GlobalAccountID:        op.GlobalAccountID,
 		SubAccountID:           op.SubAccountID,
-		OrchestrationID:        op.RuntimeOperation.OrchestrationID,
+		OrchestrationID:        op.OrchestrationID,
 		ServicePlanID:          pp.PlanID,
 		ServicePlanName:        plan.PlanDefinition.Name,
 		DryRun:                 op.DryRun,
