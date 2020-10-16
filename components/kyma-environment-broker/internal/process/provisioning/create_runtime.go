@@ -71,7 +71,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 			return operation, 5 * time.Second, nil
 		case err != nil:
 			log.Errorf("call to Provisioner failed: %s", err)
-			return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create provisioning input")
+			return s.operationManager.OperationFailed(operation, "call to the provisioner service failed")
 		}
 
 		operation.ProvisionerOperationID = *provisionerResponse.ID
@@ -112,6 +112,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		return operation, 1 * time.Minute, nil
 	}
 	instance.RuntimeID = *provisionerResponse.RuntimeID
+	instance.ProviderRegion = requestInput.ClusterConfig.GardenerConfig.Region
 
 	err = s.instanceStorage.Update(*instance)
 	if err != nil {

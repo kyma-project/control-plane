@@ -3,36 +3,38 @@ package runtime
 import (
 	"strings"
 
-	"github.com/pkg/errors"
-
+	pkg "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/pkg/errors"
 )
 
 type converter struct {
 	defaultSubaccountRegion string
 }
 
-func NewConverter(region string) *converter {
+func NewConverter(platformRegion string) *converter {
 	return &converter{
-		defaultSubaccountRegion: region,
+		defaultSubaccountRegion: platformRegion,
 	}
 }
 
-func (c *converter) getRegionOrDefault(instance internal.Instance) (string, error) {
+func (c *converter) setRegionOrDefault(instance internal.Instance, runtime *pkg.RuntimeDTO) error {
 	pp, err := instance.GetProvisioningParameters()
 	if err != nil {
-		return "", errors.Wrap(err, "while getting provisioning parameters")
+		return errors.Wrap(err, "while getting provisioning parameters")
 	}
 
 	if pp.PlatformRegion == "" {
-		return c.defaultSubaccountRegion, nil
+		runtime.SubAccountRegion = c.defaultSubaccountRegion
+	} else {
+		runtime.SubAccountRegion = pp.PlatformRegion
 	}
-	return pp.PlatformRegion, nil
+	return nil
 }
 
 func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr *internal.ProvisioningOperation,
-	dOpr *internal.DeprovisioningOperation, ukOpr *internal.UpgradeKymaOperation) (RuntimeDTO, error) {
-	toReturn := RuntimeDTO{
+	dOpr *internal.DeprovisioningOperation, ukOpr *internal.UpgradeKymaOperation) (pkg.RuntimeDTO, error) {
+	toReturn := pkg.RuntimeDTO{
 		InstanceID:       instance.InstanceID,
 		RuntimeID:        instance.RuntimeID,
 		GlobalAccountID:  instance.GlobalAccountID,
@@ -41,18 +43,18 @@ func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr
 		ServiceClassName: instance.ServiceName,
 		ServicePlanID:    instance.ServicePlanID,
 		ServicePlanName:  instance.ServicePlanName,
-		Status: runtimeStatus{
+		ProviderRegion:   instance.ProviderRegion,
+		Status: pkg.RuntimeStatus{
 			CreatedAt:    instance.CreatedAt,
 			ModifiedAt:   instance.UpdatedAt,
-			Provisioning: &operation{},
+			Provisioning: &pkg.Operation{},
 		},
 	}
 
-	region, err := c.getRegionOrDefault(instance)
+	err := c.setRegionOrDefault(instance, &toReturn)
 	if err != nil {
-		return RuntimeDTO{}, errors.Wrap(err, "while getting region")
+		return pkg.RuntimeDTO{}, errors.Wrap(err, "while setting region")
 	}
-	toReturn.SubAccountRegion = region
 
 	urlSplitted := strings.Split(instance.DashboardURL, ".")
 	if len(urlSplitted) > 1 {
@@ -64,13 +66,13 @@ func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr
 		toReturn.Status.Provisioning.Description = pOpr.Description
 	}
 	if dOpr != nil {
-		toReturn.Status.Deprovisioning = &operation{
+		toReturn.Status.Deprovisioning = &pkg.Operation{
 			State:       string(dOpr.State),
 			Description: dOpr.Description,
 		}
 	}
 	if ukOpr != nil {
-		toReturn.Status.UpgradingKyma = &operation{
+		toReturn.Status.UpgradingKyma = &pkg.Operation{
 			State:       string(ukOpr.State),
 			Description: ukOpr.Description,
 		}

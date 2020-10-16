@@ -2,10 +2,9 @@ package memory
 
 import (
 	"database/sql"
+	"regexp"
 	"sort"
 	"sync"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 
 	"fmt"
 
@@ -160,33 +159,93 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 	return internal.InstanceStats{}, fmt.Errorf("not implemented")
 }
 
-func (s *Instance) List(pageSize int, page int) ([]internal.Instance, int, int, error) {
+func (s *Instance) List(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var toReturn []internal.Instance
 
-	offset := pagination.ConvertPageAndPageSizeToOffset(pageSize, page)
+	offset := convertPageAndPageSizeToOffset(filter.PageSize, filter.Page)
 
-	sortedInstances := s.getSortedByCreatedAt(s.instances)
-	toReturn = make([]internal.Instance, 0)
+	instances := s.filterInstances(filter)
+	sortInstancesByCreatedAt(instances)
 
-	for i := offset; i < offset+pageSize && i < len(sortedInstances); i++ {
-		toReturn = append(toReturn, s.instances[sortedInstances[i].InstanceID])
+	for i := offset; i < offset+filter.PageSize && i < len(instances); i++ {
+		toReturn = append(toReturn, s.instances[instances[i].InstanceID])
 	}
 
 	return toReturn,
 		len(toReturn),
-		len(s.instances),
+		len(instances),
 		nil
 }
 
-func (s *Instance) getSortedByCreatedAt(instances map[string]internal.Instance) []internal.Instance {
-	instancesArr := make([]internal.Instance, 0, len(instances))
-	for _, v := range instances {
-		instancesArr = append(instancesArr, v)
-	}
-	sort.Slice(instancesArr, func(i, j int) bool {
-		return instancesArr[i].CreatedAt.Before(instancesArr[j].CreatedAt)
+func sortInstancesByCreatedAt(instances []internal.Instance) {
+	sort.Slice(instances, func(i, j int) bool {
+		return instances[i].CreatedAt.Before(instances[j].CreatedAt)
 	})
-	return instancesArr
+}
+
+func (s *Instance) filterInstances(filter dbmodel.InstanceFilter) []internal.Instance {
+	inst := make([]internal.Instance, 0, len(s.instances))
+	var ok bool
+	equal := func(a, b string) bool {
+		return a == b
+	}
+	domainMatch := func(url, filter string) bool {
+		// Preceeding character is either a . or / (after protocol://)
+		// match subdomain inputs
+		// match any .upperdomain zero or more times
+		matchExpr := fmt.Sprintf(`[./]%s(\.[0-9A-Za-z-]+)*$`, filter)
+		matched, err := regexp.MatchString(matchExpr, url)
+		return err == nil && matched
+	}
+
+	for _, v := range s.instances {
+		if ok = matchFilter(v.InstanceID, filter.InstanceIDs, equal); !ok {
+			continue
+		}
+		if ok = matchFilter(v.GlobalAccountID, filter.GlobalAccountIDs, equal); !ok {
+			continue
+		}
+		if ok = matchFilter(v.SubAccountID, filter.SubAccountIDs, equal); !ok {
+			continue
+		}
+		if ok = matchFilter(v.RuntimeID, filter.RuntimeIDs, equal); !ok {
+			continue
+		}
+		if ok = matchFilter(v.ServicePlanName, filter.Plans, equal); !ok {
+			continue
+		}
+		if ok = matchFilter(v.ProviderRegion, filter.Regions, equal); !ok {
+			continue
+		}
+		// Match domains with dashboard url
+		if ok = matchFilter(v.DashboardURL, filter.Domains, domainMatch); !ok {
+			continue
+		}
+
+		inst = append(inst, v)
+	}
+
+	return inst
+}
+
+func matchFilter(value string, filters []string, match func(string, string) bool) bool {
+	if len(filters) == 0 {
+		return true
+	}
+	for _, f := range filters {
+		if match(value, f) {
+			return true
+		}
+	}
+	return false
+}
+
+func convertPageAndPageSizeToOffset(pageSize, page int) int {
+	if page < 2 {
+		return 0
+	} else {
+		return page*pageSize - 1
+	}
 }

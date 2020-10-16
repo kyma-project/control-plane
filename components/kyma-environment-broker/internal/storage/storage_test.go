@@ -290,7 +290,7 @@ func TestSchemaInitializer(t *testing.T) {
 				require.NoError(t, err)
 			}
 			// when
-			out, count, totalCount, err := psqlStorage.Instances().List(2, 1)
+			out, count, totalCount, err := psqlStorage.Instances().List(dbmodel.InstanceFilter{PageSize: 2, Page: 1})
 
 			// then
 			require.NoError(t, err)
@@ -301,7 +301,7 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, fixInstances[1].InstanceID, out[1].InstanceID)
 
 			// when
-			out, count, totalCount, err = psqlStorage.Instances().List(2, 2)
+			out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{PageSize: 2, Page: 2})
 
 			// then
 			require.NoError(t, err)
@@ -311,6 +311,99 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, fixInstances[2].InstanceID, out[0].InstanceID)
 		})
 
+		t.Run("should list instances based on filters", func(t *testing.T) {
+			// given
+			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			require.NoError(t, err)
+			defer containerCleanupFunc()
+
+			err = InitTestDBTables(t, cfg.ConnectionURL())
+			require.NoError(t, err)
+
+			psqlStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			require.NoError(t, err)
+			require.NotNil(t, psqlStorage)
+
+			// populate database with samples
+			fixInstances := []internal.Instance{
+				*fixInstance(instanceData{val: "inst1"}),
+				*fixInstance(instanceData{val: "inst2"}),
+				*fixInstance(instanceData{val: "inst3"}),
+			}
+			for _, i := range fixInstances {
+				err = psqlStorage.Instances().Insert(i)
+				require.NoError(t, err)
+			}
+			// when
+			out, count, totalCount, err := psqlStorage.Instances().List(dbmodel.InstanceFilter{InstanceIDs: []string{fixInstances[0].InstanceID}})
+
+			// then
+			require.NoError(t, err)
+			require.Equal(t, 1, count)
+			require.Equal(t, 1, totalCount)
+
+			assert.Equal(t, fixInstances[0].InstanceID, out[0].InstanceID)
+
+			// when
+			out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{GlobalAccountIDs: []string{fixInstances[1].GlobalAccountID}})
+
+			// then
+			require.NoError(t, err)
+			require.Equal(t, 1, count)
+			require.Equal(t, 1, totalCount)
+
+			assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+			// when
+			out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{SubAccountIDs: []string{fixInstances[1].SubAccountID}})
+
+			// then
+			require.NoError(t, err)
+			require.Equal(t, 1, count)
+			require.Equal(t, 1, totalCount)
+
+			assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+			// when
+			out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{RuntimeIDs: []string{fixInstances[1].RuntimeID}})
+
+			// then
+			require.NoError(t, err)
+			require.Equal(t, 1, count)
+			require.Equal(t, 1, totalCount)
+
+			assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+			// when
+			out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{Plans: []string{fixInstances[1].ServicePlanName}})
+
+			// then
+			require.NoError(t, err)
+			require.Equal(t, 1, count)
+			require.Equal(t, 1, totalCount)
+
+			assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+			// when
+			out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{Domains: []string{"inst2"}})
+
+			// then
+			require.NoError(t, err)
+			require.Equal(t, 1, count)
+			require.Equal(t, 1, totalCount)
+
+			assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+			// when
+			out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{Regions: []string{"inst2"}})
+
+			// then
+			require.NoError(t, err)
+			require.Equal(t, 1, count)
+			require.Equal(t, 1, totalCount)
+
+			assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+		})
 	})
 
 	t.Run("Operations", func(t *testing.T) {
@@ -867,16 +960,16 @@ func fixInstance(testData instanceData) *internal.Instance {
 	}
 
 	return &internal.Instance{
-		InstanceID:             testData.val,
-		RuntimeID:              testData.val,
-		GlobalAccountID:        gaid,
-		SubAccountID:           suid,
-		ServiceID:              testData.val,
-		ServiceName:            testData.val,
-		ServicePlanID:          testData.val,
-		ServicePlanName:        testData.val,
-		DashboardURL:           testData.val,
-		ProvisioningParameters: testData.val,
+		InstanceID:      testData.val,
+		RuntimeID:       testData.val,
+		GlobalAccountID: gaid,
+		SubAccountID:    suid,
+		ServiceID:       testData.val,
+		ServiceName:     testData.val,
+		ServicePlanID:   testData.val,
+		ServicePlanName: testData.val,
+		DashboardURL:    fmt.Sprintf("https://console.%s.kyma.local", testData.val),
+		ProviderRegion:  testData.val,
 	}
 }
 

@@ -2,11 +2,11 @@ package dbsession
 
 import (
 	"fmt"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
+	"strings"
 
 	"github.com/pkg/errors"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
@@ -24,7 +24,7 @@ type readSession struct {
 func (r readSession) getInstancesJoinedWithOperationStatement() *dbr.SelectStmt {
 	join := fmt.Sprintf("%s.instance_id = %s.instance_id", postsql.InstancesTableName, postsql.OperationTableName)
 	stmt := r.session.
-		Select("instances.instance_id, instances.runtime_id, instances.global_account_id, instances.service_id, instances.service_plan_id, instances.dashboard_url, instances.provisioning_parameters, instances.created_at, instances.updated_at, instances.deleted_at, instances.sub_account_id, instances.service_name, instances.service_plan_name, operations.state, operations.description, operations.type").
+		Select("instances.instance_id, instances.runtime_id, instances.global_account_id, instances.service_id, instances.service_plan_id, instances.dashboard_url, instances.provisioning_parameters, instances.created_at, instances.updated_at, instances.deleted_at, instances.sub_account_id, instances.service_name, instances.service_plan_name, instances.provider_region, operations.state, operations.description, operations.type").
 		From(postsql.InstancesTableName).
 		LeftJoin(postsql.OperationTableName, join)
 	return stmt
@@ -373,24 +373,28 @@ func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID stri
 	return res.Total, err
 }
 
-func (r readSession) ListInstances(pageSize int, page int) ([]internal.Instance, int, int, error) {
+func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
 	var instances []internal.Instance
 
-	order, err := pagination.ConvertPageSizeAndOrderedColumnToSQL(pageSize, page, postsql.CreatedAtField)
-	if err != nil {
-		return nil, -1, -1, errors.Wrap(err, "while converting page and pageSize to SQL statement")
+	// Base select and order by created at
+	stmt := r.session.
+		Select("*").
+		From(postsql.InstancesTableName).
+		OrderBy(postsql.CreatedAtField)
+
+	// Add pagination
+	if filter.Page > 0 && filter.PageSize > 0 {
+		stmt = stmt.Paginate(uint64(filter.Page), uint64(filter.PageSize))
 	}
 
-	stmtWithPagination := fmt.Sprintf("SELECT * FROM %s %s", postsql.InstancesTableName, order)
+	addFilters(stmt, filter)
 
-	execStmt := r.session.SelectBySql(stmtWithPagination)
-
-	_, err = execStmt.Load(&instances)
+	_, err := stmt.Load(&instances)
 	if err != nil {
 		return nil, -1, -1, errors.Wrap(err, "while fetching instances")
 	}
 
-	totalCount, err := r.getInstanceCount()
+	totalCount, err := r.getInstanceCount(filter)
 	if err != nil {
 		return nil, -1, -1, err
 	}
@@ -401,15 +405,43 @@ func (r readSession) ListInstances(pageSize int, page int) ([]internal.Instance,
 		nil
 }
 
-func (r readSession) getInstanceCount() (int, error) {
+func (r readSession) getInstanceCount(filter dbmodel.InstanceFilter) (int, error) {
 	var res struct {
 		Total int
 	}
-	err := r.session.Select("count(*) as total").
-		From(postsql.InstancesTableName).
-		LoadOne(&res)
+	stmt := r.session.Select("count(*) as total").From(postsql.InstancesTableName)
+	addFilters(stmt, filter)
+	err := stmt.LoadOne(&res)
 
 	return res.Total, err
+}
+
+func addFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
+	if len(filter.GlobalAccountIDs) > 0 {
+		stmt.Where("global_account_id IN ?", filter.GlobalAccountIDs)
+	}
+	if len(filter.SubAccountIDs) > 0 {
+		stmt.Where("sub_account_id IN ?", filter.SubAccountIDs)
+	}
+	if len(filter.InstanceIDs) > 0 {
+		stmt.Where("instance_id IN ?", filter.InstanceIDs)
+	}
+	if len(filter.RuntimeIDs) > 0 {
+		stmt.Where("runtime_id IN ?", filter.RuntimeIDs)
+	}
+	if len(filter.Regions) > 0 {
+		stmt.Where("provider_region IN ?", filter.Regions)
+	}
+	if len(filter.Plans) > 0 {
+		stmt.Where("service_plan_name IN ?", filter.Plans)
+	}
+	if len(filter.Domains) > 0 {
+		// Preceeding character is either a . or / (after protocol://)
+		// match subdomain inputs
+		// match any .upperdomain zero or more times
+		domainMatch := fmt.Sprintf(`[./](%s)(\.[0-9A-Za-z-]+)*$`, strings.Join(filter.Domains, "|"))
+		stmt.Where("dashboard_url ~ ?", domainMatch)
+	}
 }
 
 func (r readSession) getOperationCount(orchestrationID string) (int, error) {
