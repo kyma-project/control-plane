@@ -1,4 +1,4 @@
-package skr
+package command
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// RuntimeCommand represents an execution of the skr runtimes command
+// RuntimeCommand represents an execution of the kcp runtimes command
 type RuntimeCommand struct {
 	log              logger.Logger
 	output           string
@@ -28,9 +28,9 @@ func NewRuntimeCmd(log logger.Logger) *cobra.Command {
 		Short:   "Display Kyma runtimes",
 		Long: `Display Kyma runtimes and their primary attributes, such as identifiers, region, states, etc.
 The command supports filtering runtimes based on various attributes, see the list of options below.`,
-		Example: `  skr runtimes                                           Display table overview about all runtimes
-  skr rt -c c-178e034 -o json                            Display all details about one runtime identified by Shoot name in JSON format
-  skr runtimes --account CA4836781TID000000000123456789  Display all runtimes of a given Global Account`,
+		Example: `  kcp runtimes                                           Display table overview about all runtimes
+  kcp rt -c c-178e034 -o json                            Display all details about one runtime identified by Shoot name in JSON format
+  kcp runtimes --account CA4836781TID000000000123456789  Display all runtimes of a given Global Account`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}

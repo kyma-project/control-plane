@@ -1,4 +1,4 @@
-package skr
+package command
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// TaskRunCommand represents an execution of the skr taskrun command
+// TaskRunCommand represents an execution of the kcp taskrun command
 type TaskRunCommand struct {
 	log                 logger.Logger
 	targetInputs        []string
@@ -30,18 +30,18 @@ func NewTaskRunCmd(log logger.Logger) *cobra.Command {
 The specified command will be executed locally in parallel in separate subprocesses for each runtime, where the number of parallel executions are controlled by the --parallelism option.
 
 For each subprocess, the following runtime specific data are passed as environment variables:
-  KUBECONFIG       : Path to the kubeconfig file for the specific SKR
-  GLOBALACCOUNT_ID : Global Account ID of the SKR
-  SUBACCOUNT_ID    : Subaccount ID of the SKR
+  KUBECONFIG       : Path to the kubeconfig file for the specific runtimme
+  GLOBALACCOUNT_ID : Global Account ID of the runtime
+  SUBACCOUNT_ID    : Subaccount ID of the runtime
   RUNTIME_NAME     : Shoot cluster name
-  RUNTIME_ID       : Runtime ID of the SKR
+  RUNTIME_ID       : Runtime ID of the runtime
 
 The exit status is zero (0) if all subprocesses exit successfully with zero status code. If one or more subprocesses exit with non-zero status, the command will also exit with non-zero status.`,
-		Example: `  skr taskrun --target all kubectl patch deployment valid-deployment -p '{"spec":{"template":{"spec":{"containers":[{"name":"kubernetes-serve-hostname","image":"new image"}]}}}}'
+		Example: `  kcp taskrun --target all kubectl patch deployment valid-deployment -p '{"spec":{"template":{"spec":{"containers":[{"name":"kubernetes-serve-hostname","image":"new image"}]}}}}'
     Execute a kubectl patch operation for all runtimes
-  skr taskrun --target account=CA4836781TID000000000123456789 /usr/local/bin/awesome-script.sh
+  kcp taskrun --target account=CA4836781TID000000000123456789 /usr/local/bin/awesome-script.sh
     Run a maintenance script for all runtimes of a given Global Account
-  skr taskrun --target all helm upgrade -i -n kyma-system my-kyma-addon --values overrides.yaml
+  kcp taskrun --target all helm upgrade -i -n kyma-system my-kyma-addon --values overrides.yaml
     Deploy or a helm chart on all runtimes`,
 		Args:    cobra.MinimumNArgs(1),
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },

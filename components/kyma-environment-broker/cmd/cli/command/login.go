@@ -1,4 +1,4 @@
-package skr
+package command
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// LoginCommand represents an execution of the skr login command
+// LoginCommand represents an execution of the kcp login command
 type LoginCommand struct {
 	log      logger.Logger
 	username string

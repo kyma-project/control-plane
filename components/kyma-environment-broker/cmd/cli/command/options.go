@@ -1,4 +1,4 @@
-package skr
+package command
 
 import (
 	"errors"
@@ -13,8 +13,8 @@ import (
 var configPath string
 
 const (
-	configEnv string = "SKRCONFIG"
-	configDir string = ".skr"
+	configEnv string = "KCPCONFIG"
+	configDir string = ".kcp"
 )
 
 const (
@@ -52,22 +52,22 @@ var GlobalOpts = GlobalOptionsKey{
 
 // SetGlobalOpts configures the global parameters on the given root command
 func SetGlobalOpts(cmd *cobra.Command) {
-	cmd.PersistentFlags().String(GlobalOpts.oidcIssuerURL, "", "OIDC authentication server URL to use for login. Can also be set the SKR_OIDC_ISSUER_URL environment variable")
+	cmd.PersistentFlags().String(GlobalOpts.oidcIssuerURL, "", "OIDC authentication server URL to use for login. Can also be set the KCP_OIDC_ISSUER_URL environment variable")
 	viper.BindPFlag(GlobalOpts.oidcIssuerURL, cmd.PersistentFlags().Lookup(GlobalOpts.oidcIssuerURL))
 
-	cmd.PersistentFlags().String(GlobalOpts.oidcClientID, "", "OIDC client ID to use for login. Can also be set via the SKR_OIDC_CLIENT_ID environment variable")
+	cmd.PersistentFlags().String(GlobalOpts.oidcClientID, "", "OIDC client ID to use for login. Can also be set via the KCP_OIDC_CLIENT_ID environment variable")
 	viper.BindPFlag(GlobalOpts.oidcClientID, cmd.PersistentFlags().Lookup(GlobalOpts.oidcClientID))
 
-	cmd.PersistentFlags().String(GlobalOpts.oidcClientSecret, "", "OIDC client Secret to use for login. Can also be set via the SKR_OIDC_CLIENT_SECRET environment variable")
+	cmd.PersistentFlags().String(GlobalOpts.oidcClientSecret, "", "OIDC client Secret to use for login. Can also be set via the KCP_OIDC_CLIENT_SECRET environment variable")
 	viper.BindPFlag(GlobalOpts.oidcClientSecret, cmd.PersistentFlags().Lookup(GlobalOpts.oidcClientSecret))
 
-	cmd.PersistentFlags().String(GlobalOpts.kebAPIURL, "", "Kyma Environment Broker API URL to use for all commands. Can also be set via the SKR_KEB_API_URL environment variable")
+	cmd.PersistentFlags().String(GlobalOpts.kebAPIURL, "", "Kyma Environment Broker API URL to use for all commands. Can also be set via the KCP_KEB_API_URL environment variable")
 	viper.BindPFlag(GlobalOpts.kebAPIURL, cmd.PersistentFlags().Lookup(GlobalOpts.kebAPIURL))
 
-	cmd.PersistentFlags().String(GlobalOpts.kubeconfigAPIURL, "", "OIDC Kubeconfig Service API URL, used by the skr kubeconfig and taskrun commands. Can also be set via the SKR_KUBECONFIG_API_URL environment variable")
+	cmd.PersistentFlags().String(GlobalOpts.kubeconfigAPIURL, "", "OIDC Kubeconfig Service API URL, used by the kcp kubeconfig and taskrun commands. Can also be set via the KCP_KUBECONFIG_API_URL environment variable")
 	viper.BindPFlag(GlobalOpts.kubeconfigAPIURL, cmd.PersistentFlags().Lookup(GlobalOpts.kubeconfigAPIURL))
 
-	cmd.PersistentFlags().String(GlobalOpts.gardenerKubeconfig, "", "Path to the corresponding Gardener project kubeconfig file which have permissions to list/get shoots. Can also be set via the SKR_GARDENER_KUBECONFIG environment variable")
+	cmd.PersistentFlags().String(GlobalOpts.gardenerKubeconfig, "", "Path to the corresponding Gardener project kubeconfig file which have permissions to list/get shoots. Can also be set via the KCP_GARDENER_KUBECONFIG environment variable")
 	viper.BindPFlag(GlobalOpts.gardenerKubeconfig, cmd.PersistentFlags().Lookup(GlobalOpts.gardenerKubeconfig))
 }
 
@@ -84,7 +84,7 @@ func ValidateGlobalOpts() error {
 	if len(missingGlobalOpts) == 0 {
 		return nil
 	}
-	return fmt.Errorf("missing required options: %s. See skr --help for more information", strings.Join(missingGlobalOpts, ", "))
+	return fmt.Errorf("missing required options: %s. See kcp --help for more information", strings.Join(missingGlobalOpts, ", "))
 }
 
 // OIDCIssuerURL gets the oidc-issuer-url global parameter
@@ -136,7 +136,7 @@ func SetRuntimeTargetOpts(cmd *cobra.Command, targetInputs *[]string, targetExcl
 	cmd.Flags().StringArrayVarP(targetInputs, "target", "t", nil,
 		`List of runtime target specifiers to include (the option can be specified multiple times).
 A target specifier is a comma separated list of the following selectors:
-  all                 : all SKRs provisioned successfully and not deprovisioning
+  all                 : all runtimes provisioned successfully and not deprovisioning
   account=<REGEXP>    : Regex pattern to match against the runtime's GlobalAccount field. E.g. CA50125541TID000000000741207136, "CA.*"
   subaccount=<REGEXP> : Regex pattern to match against the runtime's SubAccount field. E.g. 0d20e315-d0b4-48a2-9512-49bc8eb03cd1
   region=<REGEXP>     : Regex pattern to match against the shoot cluster's Region field (not SCP platform-region). E.g. "europe|eu-"

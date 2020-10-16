@@ -1,4 +1,4 @@
-package skr
+package command
 
 import (
 	"fmt"
@@ -14,23 +14,23 @@ import (
 // Version is the CLI version to be filled in by the build system
 var Version string = "N/A"
 
-// NewCmd constructs a new root command for the skr CLI.
-func NewCmd(log logger.Logger) *cobra.Command {
+// New constructs a new root command for the kcp CLI.
+func New(log logger.Logger) *cobra.Command {
 	cobra.OnInitialize(initConfig)
-	description := fmt.Sprintf(`The skr CLI is a day-two operations tool for SAP CP Kyma Runtimes (SKRs), which allows to view and manage SKRs in scale.
-It is possible to list and observe attributes and state of each SKRs and perform various operations on them, e.g. upgrading the Kyma version.
+	description := fmt.Sprintf(`The kcp CLI (a.k.a. Kyma Control Plane CLI) is a day-two operations tool for Kyma runtimes, which allows to view and manage the runtimes in scale.
+It is possible to list and observe attributes and state of each Kyma runtime and perform various operations on them, e.g. upgrading the Kyma version.
 You can find the complete list of possible operations as commands below.
 
 The CLI supports configuration file for common, global options needed for all commands. The config file will be looked up in this order:
   --config <PATH> option
-  SKRCONFIG environment variable which contains the path
-  $HOME/.skr/config.yaml (default path)
+  KCPCONFIG environment variable which contains the path
+  $HOME/.kcp/config.yaml (default path)
 
 The configuration file is in YAML format and supports the following global options: %s, %s, %s, %s, %s, %s.`, GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.oidcClientSecret, GlobalOpts.kebAPIURL, GlobalOpts.kubeconfigAPIURL, GlobalOpts.gardenerKubeconfig)
 
 	cmd := &cobra.Command{
-		Use:     "skr",
-		Short:   "Day-two operations tool for SAP CP Kyma Runtimes (SKRs)",
+		Use:     "kcp",
+		Short:   "Day-two operations tool for Kyma Runtimes",
 		Long:    description,
 		Version: Version,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
@@ -42,7 +42,7 @@ The configuration file is in YAML format and supports the following global optio
 		SilenceUsage: true,
 	}
 
-	cmd.PersistentFlags().StringVar(&configPath, "config", os.Getenv(configEnv), "Path to the skr CLI config file. Can also be set via the SKRCONFIG environment variable. Defaults to $HOME/.skr/config.yaml")
+	cmd.PersistentFlags().StringVar(&configPath, "config", os.Getenv(configEnv), "Path to the kcp CLI config file. Can also be set via the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml")
 	SetGlobalOpts(cmd)
 	log.AddFlags(cmd.PersistentFlags())
 	cmd.PersistentFlags().BoolP("help", "h", false, "Displays help for the CLI")
@@ -76,7 +76,7 @@ func initConfig() {
 	viper.SetConfigType("yaml")
 	replacer := strings.NewReplacer("-", "_")
 	viper.SetEnvKeyReplacer(replacer)
-	viper.SetEnvPrefix("SKR")
+	viper.SetEnvPrefix("KCP")
 	viper.AutomaticEnv()
 	err := viper.ReadInConfig()
 	// Ignore when config file is not found to allow config parameters being passed as flags or environment variables

@@ -1,4 +1,4 @@
-package skr
+package command
 
 import (
 	"fmt"
@@ -45,7 +45,7 @@ func (cmd *UpgradeCommand) SetUpgradeOpts(cobraCmd *cobra.Command) {
 	cobraCmd.Flags().StringVar(&cmd.strategy, "strategy", "parallel", "Orchestration strategy to use. Currently the only supported strategy is parallel")
 	cobraCmd.Flags().IntVar(&cmd.parallelWorkers, "parallel-workers", 0, "Number of parallel workers to use in parallel orchestration strategy. By default the amount of workers will be auto-selected on control plane server side")
 	cobraCmd.Flags().StringVar(&cmd.schedule, "schedule", "", "Orchestration schedule to use. Possible values: \"immediate\", \"maintenancewindow\". By default the schedule will be auto-selected on control plane server side")
-	cobraCmd.Flags().BoolVar(&cmd.orchestrationParams.DryRun, "dry-run", false, "Perform the orchestration without executing the actual upgrage operations for the runtimes. The details can be obtained using the \"skr orchestrations\" command")
+	cobraCmd.Flags().BoolVar(&cmd.orchestrationParams.DryRun, "dry-run", false, "Perform the orchestration without executing the actual upgrage operations for the runtimes. The details can be obtained using the \"kcp orchestrations\" command")
 }
 
 // ValidateTransformUpgradeOpts checks in the input upgrade options, and transforms them for internal usage
@@ -57,7 +57,7 @@ func (cmd *UpgradeCommand) ValidateTransformUpgradeOpts() error {
 	if scheduleParam, ok := scheduleInputToParam[cmd.schedule]; ok {
 		cmd.orchestrationParams.Strategy.Schedule = scheduleParam
 	} else {
-		return fmt.Errorf("invalid value for schedule: %s. Check skr upgrade --help for more information", cmd.schedule)
+		return fmt.Errorf("invalid value for schedule: %s. Check kcp upgrade --help for more information", cmd.schedule)
 	}
 	return nil
 }

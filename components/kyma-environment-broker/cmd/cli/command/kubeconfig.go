@@ -1,4 +1,4 @@
-package skr
+package command
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// KubeconfigCommand represents an execution of the skr kubeconfig command
+// KubeconfigCommand represents an execution of the kcp kubeconfig command
 type KubeconfigCommand struct {
 	log             logger.Logger
 	shoot           string
@@ -31,9 +31,9 @@ The runtime can be specified by either of the following:
   - Shoot cluster name with the --shoot option
 
 By default the kubeconfig is saved to the current directory. The output file name can be specified using the --output option.`,
-		Example: `  skr kubeconfig -g GAID -s SAID -o /my/path/skr.config  Download kubeconfig using Global Account ID and Subaccount ID
-  skr kubeconfig -g GAID -r RUNTIMEID                    Download kubeconfig using Global Account ID and Runtime ID
-  skr kubeconfig -c c-178e034                            Download kubeconfig using Shoot cluster name`,
+		Example: `  kcp kubeconfig -g GAID -s SAID -o /my/path/runtime.config  Download kubeconfig using Global Account ID and Subaccount ID
+  kcp kubeconfig -g GAID -r RUNTIMEID                    Download kubeconfig using Global Account ID and Runtime ID
+  kcp kubeconfig -c c-178e034                            Download kubeconfig using Shoot cluster name`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}

@@ -1,4 +1,4 @@
-package skr
+package command
 
 import (
 	"errors"
@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// OrchestrationCommand represents an execution of the skr orchestrations command
+// OrchestrationCommand represents an execution of the kcp orchestrations command
 type OrchestrationCommand struct {
 	log       logger.Logger
 	output    string
@@ -30,9 +30,9 @@ The commands has two modes:
   1. Without specifying an orchestration id as an argument, it will list all orchestrations, or orchestrations matching the --state if supplied.
   2. When specifying an orchestration id as an argument, it will display details about the specific orchestration.
      If the optional --operation is given, it will display details of the specified runtime operation within the orchestration.`,
-		Example: `  skr orchestrations --state inprogress                                   Display all orchestrations which are in progress
-  skr orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                  Display details about a specific orchestration
-  skr orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified runtime operation within the orchestration`,
+		Example: `  kcp orchestrations --state inprogress                                   Display all orchestrations which are in progress
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                  Display details about a specific orchestration
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified runtime operation within the orchestration`,
 		Args:    cobra.MaximumNArgs(1),
 		PreRunE: func(_ *cobra.Command, args []string) error { return cmd.Validate(args) },
 		RunE:    func(_ *cobra.Command, args []string) error { return cmd.Run(args) },

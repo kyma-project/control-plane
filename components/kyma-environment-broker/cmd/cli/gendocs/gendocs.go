@@ -11,8 +11,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/command"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/skr"
 )
 
 const (
@@ -25,9 +25,9 @@ title: %s
 
 func main() {
 	log := logger.New()
-	command := skr.NewCmd(log)
+	cmd := command.New(log)
 
-	err := genMarkdownTree(command, docsTargetDir)
+	err := genMarkdownTree(cmd, docsTargetDir)
 	if err != nil {
 		fmt.Println("unable to generate docs", err.Error())
 		os.Exit(1)
