@@ -9,7 +9,7 @@ global:
       version: "ef192c0a"
     provisioner:
       dir:
-      version: "PR-220"
+      version: "PR-277"
     kyma_environment_broker:
       dir:
       version: "PR-258"
