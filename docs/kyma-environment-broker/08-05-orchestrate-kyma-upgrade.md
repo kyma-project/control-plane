@@ -28,7 +28,7 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
 - planName
 - region
 
->**NOTE:** The **dryRun** parameter specified in the request body is set to `true`. As a result, the upgrade is executed in a fake mode. It means that all actions are executed against selected Runtimes but the upgrade process is not sending the upgrade request to Provisioner..
+>**NOTE:** If the **dryRun** parameter specified in the request body is set to `true`, the upgrade is executed but the process is not sending the upgrade request to the Provisioner.
 
    ```bash
    curl --request POST "https://$BROKER_URL/upgrade/kyma" \
@@ -48,7 +48,7 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
    }"
    ```
 
->**NOTE:** Without specifying the **targets** field, the orchestration will select all the runtimes by default using the **all** target.
+>**NOTE:** By default, the orchestration will select all the runtimes using the **all** target.
 
 A successful call returns the orchestration ID:
 
@@ -66,12 +66,12 @@ A successful call returns the orchestration ID:
 
 To change the behaviour of the orchestration you can specify a strategy in the request body.
 
-For now we support only the **Parallel** type of strategy with two types of schedule:
+For now we support only the **Parallel** strategy with two types of schedule:
 
 - Immediate - schedules the upgrade operations instantly
-- MaintenanceWindow - schedules the upgrade operations in the time windows specified for each runtime
+- MaintenanceWindow - schedules the upgrade operations respecting the maintenance time windows specified for given runtime
 
-You can also configure how many upgrade operations can be executed in parallel to accelerate the process by specifying the **parallel** object in the request body with field **workers** set to number of the desired concurrent executions of the upgrade operations.
+You can also configure how many upgrade operations can be executed in parallel to accelerate the process. Specify the **parallel** object in the request body with **workers** field set to the number of concurrent executions for the upgrade operations.
 
 The example strategy objects looks as follows:
 
@@ -87,4 +87,4 @@ The example strategy objects looks as follows:
 }
 ```
 
->**NOTE:** Without specifying the **strategy** field, the orchestration will be executed with Parallel strategy, using the immediate type of schedule with only one worker.
+>**NOTE:** By default the orchestration will be executed with Parallel strategy, using the immediate type of schedule with only one worker.

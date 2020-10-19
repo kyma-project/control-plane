@@ -99,7 +99,7 @@ A successful call returns a list of all orchestrations:
    export ORCHESTRATION_ID={OBTAINED_ORCHESTRATION_ID}
    ```
 
-2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](#details-authorization) to verify that the orchestration succeeded.
+2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](#details-authorization) to fetch the list of the upgrade operations for a given orchestration.
 
    ```bash
    curl --request GET "https://$BROKER_URL/orchestrations/$ORCHESTRATION_ID/operations --header "$AUTHORIZATION_HEADER""
@@ -151,7 +151,7 @@ A successful call returns a list of the upgrade operations:
    export OPERATION_ID={SCHEDULED_OPERATION_ID}
    ```
 
-2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](#details-authorization) to verify that the orchestration succeeded.
+2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](#details-authorization) to fetch the details for given operation.
 
    ```bash
    curl --request GET "https://$BROKER_URL/orchestrations/$ORCHESTRATION_ID/operations/$OPERATION_ID --header "$AUTHORIZATION_HEADER""
