@@ -1,5 +1,5 @@
 ---
-title: Upgrade Kyma Runtime using KEB
+title: Orchestrate Kyma Upgrade
 type: Tutorials
 ---
 
@@ -31,24 +31,22 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
 >**NOTE:** If the **dryRun** parameter specified in the request body is set to `true`, the upgrade is executed but the process is not sending the upgrade request to the Provisioner.
 
    ```bash
-   curl --request POST "https://$BROKER_URL/upgrade/kyma" \
-   --header "$AUTHORIZATION_HEADER" \
-   --header 'Content-Type: application/json' \
-   --data-raw "{
-       \"targets\": {
-           \"include\": {\
-               \"runtimeID\": "uuid-sdasd-sda23t-efs",
-               \"globalAccount\": "uuid-sdasd-sda23t-efs",
-               \"subAccount\": "uuid-sdasd-sda23t-efs",
-               \"planName\": "azure",
-               \"region\": "europewest",
-            },
-       },
-       \"dryRun\": false
-   }"
+curl --request POST "https://$BROKER_URL/upgrade/kyma" \
+--header "$AUTHORIZATION_HEADER" \
+--header 'Content-Type: application/json' \
+--data-raw "{\
+    \"targets\": {\
+        \"include\": {\
+            \"runtimeID\": \"uuid-sdasd-sda23t-efs\",\
+            \"globalAccount\": \"uuid-sdasd-sda23t-efs\",\
+            \"subAccount\": \"uuid-sdasd-sda23t-efs\",\
+            \"planName\": \"azure\",\
+            \"region\": \"europewest\",\
+         },\
+    },\
+    \"dryRun\": false\
+}"
    ```
-
->**NOTE:** By default, the orchestration will select all the runtimes using the **all** target.
 
 A successful call returns the orchestration ID:
 
