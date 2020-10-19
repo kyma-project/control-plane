@@ -34,33 +34,19 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []internal.RuntimeOpe
 	isMaintenanceWindowSchedule := strategySpec.Schedule == internal.MaintenanceWindow
 
 	if isMaintenanceWindowSchedule {
-		for i, op := range operations {
-			operations[i].MaintenanceWindowBegin = p.resolveWindowTime(op.MaintenanceWindowBegin, op.MaintenanceWindowEnd)
-		}
 		sort.Slice(operations, func(i, j int) bool {
 			return operations[i].MaintenanceWindowBegin.Before(operations[j].MaintenanceWindowBegin)
 		})
 	}
 
 	for _, op := range operations {
+		if !isMaintenanceWindowSchedule {
+			q.Add(op.ID)
+		}
 		until := time.Until(op.MaintenanceWindowBegin)
-		p.log.Infof("Upgrade operation %s will be scheduled in %v", until, op.Operation.ID)
+		p.log.Infof("Upgrade operation %s will be scheduled in %v", op.ID, until)
 		q.AddAfter(op.ID, until)
 	}
 
 	return 0, nil
-}
-
-// resolves when is the next occurrence of the time window
-func (p *ParallelOrchestrationStrategy) resolveWindowTime(beginTime, endTime time.Time) time.Time {
-	n := time.Now()
-	start := time.Date(n.Year(), n.Month(), n.Day(), beginTime.Hour(), beginTime.Minute(), beginTime.Second(), beginTime.Nanosecond(), beginTime.Location())
-	end := time.Date(n.Year(), n.Month(), n.Day(), endTime.Hour(), endTime.Minute(), endTime.Second(), endTime.Nanosecond(), endTime.Location())
-
-	// if time window has already passed we wait until next day
-	if start.Before(n) && end.Before(n) {
-		start = start.AddDate(0, 0, 1)
-	}
-
-	return start
 }

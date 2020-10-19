@@ -150,6 +150,7 @@ type UpgradeKymaOperation struct {
 	RuntimeOperation `json:"runtime_operation"`
 	InputCreator     ProvisionerInputCreator `json:"-"`
 
+	PlanID                 string `json:"plan_id"`
 	ProvisioningParameters string `json:"provisioning_parameters"`
 }
 

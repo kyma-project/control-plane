@@ -93,12 +93,16 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 		}
 
 		for _, r := range runtimes {
-			// we set provisioning parameters from provisioning operation in order to have access to planID and planName
-			// provisioning parameters will be updated on upgrade call to provisioner
+			// we set planID fetched from provisioning parameters
 			po, err := u.operationStorage.GetProvisioningOperationByInstanceID(r.InstanceID)
 			if err != nil {
 				return nil, errors.Wrapf(err, "while getting provisioning operation for instance id %s", r.InstanceID)
 			}
+			provisioningParams, err := po.GetProvisioningParameters()
+			if err != nil {
+				return nil, errors.Wrap(err, "while getting provisioning operation")
+			}
+			windowBegin, windowEnd := u.resolveWindowTime(r.MaintenanceWindowBegin, r.MaintenanceWindowEnd)
 
 			id := uuid.New().String()
 			op := internal.UpgradeKymaOperation{
@@ -115,14 +119,14 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 					},
 					DryRun:                 params.DryRun,
 					ShootName:              r.ShootName,
-					MaintenanceWindowBegin: r.MaintenanceWindowBegin,
-					MaintenanceWindowEnd:   r.MaintenanceWindowEnd,
+					MaintenanceWindowBegin: windowBegin,
+					MaintenanceWindowEnd:   windowEnd,
 					RuntimeID:              r.RuntimeID,
 					GlobalAccountID:        r.GlobalAccountID,
 					SubAccountID:           r.SubAccountID,
 					OrchestrationID:        o.OrchestrationID,
 				},
-				ProvisioningParameters: po.ProvisioningParameters,
+				PlanID: provisioningParams.PlanID,
 			}
 			result = append(result, op)
 			err = u.operationStorage.InsertUpgradeKymaOperation(op)
@@ -213,4 +217,19 @@ func (u *upgradeKymaManager) waitForCompletion(o *internal.Orchestration) error 
 	o.State = orchestrationState
 
 	return nil
+}
+
+// resolves when is the next occurrence of the time window
+func (u *upgradeKymaManager) resolveWindowTime(beginTime, endTime time.Time) (time.Time, time.Time) {
+	n := time.Now()
+	start := time.Date(n.Year(), n.Month(), n.Day(), beginTime.Hour(), beginTime.Minute(), beginTime.Second(), beginTime.Nanosecond(), beginTime.Location())
+	end := time.Date(n.Year(), n.Month(), n.Day(), endTime.Hour(), endTime.Minute(), endTime.Second(), endTime.Nanosecond(), endTime.Location())
+
+	// if time window has already passed we wait until next day
+	if start.Before(n) && end.Before(n) {
+		start = start.AddDate(0, 0, 1)
+		end = end.AddDate(0, 0, 1)
+	}
+
+	return start, end
 }
