@@ -171,6 +171,9 @@ func (cc *directorClient) RuntimeExists(id, tenant string) (bool, apperrors.AppE
 	var response GetRuntimeResponse
 	err := cc.executeDirectorGraphQLCall(runtimeQuery, tenant, &response)
 	if err != nil {
+		if err.IntCode() == apperrors.IntCodeTenantNotFound {
+			return false, nil
+		}
 		return false, err.Append("Failed to get runtime %s from Director", id)
 	}
 
@@ -273,8 +276,10 @@ func mapDirectorErrorToProvisionerError(egErr gcli.ExtendedError) apperrors.AppE
 	case directorApperrors.InsufficientScopes, directorApperrors.Unauthorized:
 		return apperrors.BadGateway(egErr.Error())
 	case directorApperrors.NotFound, directorApperrors.NotUnique, directorApperrors.InvalidData,
-		directorApperrors.TenantRequired, directorApperrors.TenantNotFound, directorApperrors.InvalidOperation:
+		directorApperrors.InvalidOperation:
 		return apperrors.BadRequest(egErr.Error())
+	case directorApperrors.TenantRequired, directorApperrors.TenantNotFound:
+		return apperrors.WrongTenant(egErr.Error())
 	default:
 		return apperrors.Internal("Did not recognize the error code from the error response. Original error: %v", egErr)
 	}

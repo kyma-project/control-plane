@@ -921,84 +921,98 @@ func TestDirectorClient_MapDirectorErrors(t *testing.T) {
 		description             string
 		directorErrorExtensions map[string]interface{}
 		provisionerErrorCode    apperrors.ErrCode
+		internalErrorCode       apperrors.IntErrCode
 		provisionerErrorMessage string
 	}{
 		{
 			"Should map Director Internal Error to Provisioner Internal Error",
 			map[string]interface{}{"error_code": float64(directorApperrors.InternalError)},
 			apperrors.CodeInternal,
+			apperrors.IntCodeInternal,
 			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
 		},
 		{
 			"Should map Director Unknown Error to Provisioner Internal Error",
 			map[string]interface{}{"error_code": float64(directorApperrors.UnknownError)},
 			apperrors.CodeInternal,
+			apperrors.IntCodeInternal,
 			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
 		},
 		{
 			"Should map Director Insufficient Scopes Error to Provisioner Bad Gateway Error",
 			map[string]interface{}{"error_code": float64(directorApperrors.InsufficientScopes)},
 			apperrors.CodeBadGateway,
+			apperrors.IntCodeBadGateway,
 			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
 		},
 		{
 			"Should map Director Unauthorized Error to Provisioner Bad Gateway Error",
 			map[string]interface{}{"error_code": float64(directorApperrors.Unauthorized)},
 			apperrors.CodeBadGateway,
+			apperrors.IntCodeBadGateway,
 			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
 		},
 		{
 			"Should map Director Not Found Error to Provisioner Bad Request Error",
 			map[string]interface{}{"error_code": float64(directorApperrors.NotFound)},
 			apperrors.CodeBadRequest,
+			apperrors.IntCodeBadRequest,
 			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
 		},
 		{
 			"Should map Director Not Unique Error to Provisioner Bad Request Error",
 			map[string]interface{}{"error_code": float64(directorApperrors.NotUnique)},
 			apperrors.CodeBadRequest,
+			apperrors.IntCodeBadRequest,
 			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
 		},
 		{
 			"Should map Director Invalid Data Error to Provisioner Bad Request Error",
 			map[string]interface{}{"error_code": float64(directorApperrors.InvalidData)},
 			apperrors.CodeBadRequest,
+			apperrors.IntCodeBadRequest,
 			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
 		},
 		{
 			"Should map Director Tenant Required Error to Provisioner Bad Request Error",
 			map[string]interface{}{"error_code": float64(directorApperrors.TenantRequired)},
 			apperrors.CodeBadRequest,
+			apperrors.IntCodeTenantNotFound,
 			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
 		},
 		{
 			"Should map Director Tenant Not Found Error to Provisioner Bad Request Error",
 			map[string]interface{}{"error_code": float64(directorApperrors.TenantNotFound)},
 			apperrors.CodeBadRequest,
+			apperrors.IntCodeTenantNotFound,
 			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
 		},
 		{
 			"Should map Director Invalid Operation Error to Provisioner Bad Request Error",
 			map[string]interface{}{"error_code": float64(directorApperrors.InvalidOperation)},
 			apperrors.CodeBadRequest,
+			apperrors.IntCodeBadRequest,
 			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, graphql: some error",
 		},
 		{
 			"Should return Internal Error if failed to find error code in the Director Error",
 			map[string]interface{}{"something_else": float64(directorApperrors.InvalidOperation)},
 			apperrors.CodeInternal,
+			apperrors.IntCodeInternal,
 			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, Failed to read the error code from the error response. Original error: graphql: some error",
 		},
 		{
 			"Should return Internal Error if failed to cast error code from the Director Error",
 			map[string]interface{}{"error_code": "not a float64"},
 			apperrors.CodeInternal,
+			apperrors.IntCodeInternal,
 			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, Failed to cast the error code from the error response. Original error: graphql: some error",
 		},
 		{
 			"Should return Internal Error if failed to recognize the Director Error code",
 			map[string]interface{}{"error_code": float64(123)},
 			apperrors.CodeInternal,
+			apperrors.IntCodeInternal,
 			"Failed to register runtime in Director. Request failed, Failed to execute GraphQL request to Director, Did not recognize the error code from the error response. Original error: graphql: some error",
 		},
 	}
@@ -1024,6 +1038,7 @@ func TestDirectorClient_MapDirectorErrors(t *testing.T) {
 			// then
 			require.Error(t, err)
 			assert.Equal(t, testcase.provisionerErrorCode, err.Code())
+			assert.Equal(t, testcase.internalErrorCode, err.IntCode())
 			assert.Equal(t, testcase.provisionerErrorMessage, err.Error())
 		})
 	}

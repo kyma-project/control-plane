@@ -9,42 +9,58 @@ const (
 	CodeBadRequest ErrCode = 400
 )
 
+const (
+	IntCodeBadGateway     IntErrCode = 10
+	IntCodeInternal       IntErrCode = 11
+	IntCodeForbidden      IntErrCode = 12
+	IntCodeBadRequest     IntErrCode = 13
+	IntCodeTenantNotFound IntErrCode = 13
+)
+
 type ErrCode int
+
+type IntErrCode int
 
 type AppError interface {
 	Append(string, ...interface{}) AppError
 	Code() ErrCode
+	IntCode() IntErrCode
 	Error() string
 }
 
 type appError struct {
-	code    ErrCode
-	message string
+	code         ErrCode
+	internalCode IntErrCode
+	message      string
 }
 
-func errorf(code ErrCode, format string, a ...interface{}) AppError {
-	return appError{code: code, message: fmt.Sprintf(format, a...)}
+func errorf(code ErrCode, internalCode IntErrCode, format string, a ...interface{}) AppError {
+	return appError{code: code, internalCode: internalCode, message: fmt.Sprintf(format, a...)}
 }
 
 func BadGateway(format string, a ...interface{}) AppError {
-	return errorf(CodeBadGateway, format, a...)
+	return errorf(CodeBadGateway, IntCodeBadGateway, format, a...)
 }
 
 func Internal(format string, a ...interface{}) AppError {
-	return errorf(CodeInternal, format, a...)
+	return errorf(CodeInternal, IntCodeInternal, format, a...)
 }
 
 func Forbidden(format string, a ...interface{}) AppError {
-	return errorf(CodeForbidden, format, a...)
+	return errorf(CodeForbidden, IntCodeForbidden, format, a...)
 }
 
 func BadRequest(format string, a ...interface{}) AppError {
-	return errorf(CodeBadRequest, format, a...)
+	return errorf(CodeBadRequest, IntCodeBadRequest, format, a...)
+}
+
+func WrongTenant(format string, a ...interface{}) AppError {
+	return errorf(CodeBadRequest, IntCodeTenantNotFound, format, a...)
 }
 
 func (ae appError) Append(additionalFormat string, a ...interface{}) AppError {
 	format := additionalFormat + ", " + ae.message
-	return errorf(ae.code, format, a...)
+	return errorf(ae.code, ae.internalCode, format, a...)
 }
 
 func (ae appError) Code() ErrCode {
@@ -53,4 +69,8 @@ func (ae appError) Code() ErrCode {
 
 func (ae appError) Error() string {
 	return ae.message
+}
+
+func (ae appError) IntCode() IntErrCode {
+	return ae.internalCode
 }
