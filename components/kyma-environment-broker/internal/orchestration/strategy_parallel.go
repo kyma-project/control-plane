@@ -43,13 +43,9 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []internal.RuntimeOpe
 	}
 
 	for _, op := range operations {
-		if isMaintenanceWindowSchedule {
-			until := time.Until(op.MaintenanceWindowBegin)
-			p.log.Infof("Waiting %v to start upgrade operation %s", until, op.Operation.ID)
-			time.Sleep(until)
-		}
-		q.Add(op.ID)
-		p.log.Infof("Upgrade operation %s added for processing", op.Operation.ID)
+		until := time.Until(op.MaintenanceWindowBegin)
+		p.log.Infof("Upgrade operation %s will be scheduled in %v", until, op.Operation.ID)
+		q.AddAfter(op.ID, until)
 	}
 
 	return 0, nil
