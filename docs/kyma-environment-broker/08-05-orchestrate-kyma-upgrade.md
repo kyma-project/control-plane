@@ -21,7 +21,7 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
 
 2. Make a call to the Kyma Environment Broker to orchestrate the upgrade. You can select specific Runtimes to upgrade using the following selectors:
 
-- `target` - use the `target: "all"` selector to selects all Runtimes
+- `target` - use the `target: "all"` selector to select all Runtimes
 - `globalAccount` - use it to select Runtimes with the specified global account ID
 - `subAccount` - use it to select Runtimes with the specified subaccount ID
 - `runtimeID` - use it to select Runtimes with the specified Runtime ID
