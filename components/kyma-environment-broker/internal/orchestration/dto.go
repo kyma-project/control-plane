@@ -25,6 +25,7 @@ type OperationResponse struct {
 	OrchestrationID        string    `json:"orchestrationID"`
 	ServicePlanID          string    `json:"servicePlanID"`
 	ServicePlanName        string    `json:"servicePlanName"`
+	State                  string    `json:"state"`
 	DryRun                 bool      `json:"dryRun"`
 	ShootName              string    `json:"shootName"`
 	MaintenanceWindowBegin time.Time `json:"maintenanceWindowBegin"`
