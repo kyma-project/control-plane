@@ -9,7 +9,7 @@ This tutorial shows how to check the orchestration status. Using this API you ca
 - Upgrade operations scheduled by a given orchestration
 - A single operation with details, such as parameters sent to Runtime Provisioner
 
-## Fetch a single orchestration
+## Fetch a single orchestration status
 
 1. Export the orchestration ID that you obtained during the upgrade call as an environment variable:
 
@@ -52,7 +52,7 @@ A successful call returns the orchestration object:
 }
    ```
 
-## Fetch all orchestrations
+## Fetch all orchestrations status
 
 Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](#details-authorization) to verify that the orchestration succeeded.
 
@@ -60,7 +60,7 @@ Make a call to the Kyma Environment Broker with a proper **Authorization** [requ
    curl --request GET "https://$BROKER_URL/orchestrations --header "$AUTHORIZATION_HEADER""
    ```
 
-A successful call returns a list of all orchestrations:
+A successful call returns the list of all orchestrations:
 
    ```json
 [
