@@ -21,14 +21,14 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
 
 2. Make a call to the Kyma Environment Broker to orchestrate the upgrade. You can select Runtimes to upgrade using the following selectors:
 
+```
 - target - can be used to select all runtimes by specifying it as `target: "all"`
-- globalAccount
-- subAccount
-- runtimeID
-- planName
-- region
-
->**NOTE:** If the **dryRun** parameter specified in the request body is set to `true`, the upgrade is executed but the upgrade request is not sent to the Runtime Provisioner.
+- globalAccount - selects runtimes with specified globalAccount ID
+- subAccount - selects runtimes with specified subAccount ID
+- runtimeID - selects runtimes with specified runtime ID
+- planName - selects runtimes with specified plan name
+- region - selects runtimes located in specified region
+```
 
    ```bash
 curl --request POST "https://$BROKER_URL/upgrade/kyma" \
@@ -47,6 +47,8 @@ curl --request POST "https://$BROKER_URL/upgrade/kyma" \
     \"dryRun\": false\
 }"
    ```
+
+>**NOTE:** If the **dryRun** parameter specified in the request body is set to `true`, the upgrade is executed but the upgrade request is not sent to the Runtime Provisioner.
 
 A successful call returns the orchestration ID:
 
