@@ -577,6 +577,14 @@
   version = "v1.3.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:e94e69261097d7067fa28052bcf209be4c47b12c665b7e88116c96f905a77364"
+  name = "github.com/liggitt/tabwriter"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "89fcab3d43de07060e4fd4c1547430ed57e87f24"
+
+[[projects]]
   digest = "1:8139f3ca1f0523e8db13e12c21b5c1b3ec2f396ae27c64ca1bc126f8136d2e7f"
   name = "github.com/machinebox/graphql"
   packages = ["."]
@@ -1242,7 +1250,7 @@
   version = "v0.17.1"
 
 [[projects]]
-  digest = "1:d55d681a63b69b8395fb31300536de2e4250632dc55f2634853d0b7fd6fb4156"
+  digest = "1:0c1800ef4e948a455766f041af484e0d16e120237f3e13a6a46da9c847444734"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -1332,6 +1340,7 @@
     "rest/watch",
     "restmapper",
     "testing",
+    "third_party/forked/golang/template",
     "tools/auth",
     "tools/clientcmd",
     "tools/clientcmd/api",
@@ -1344,6 +1353,7 @@
     "util/connrotation",
     "util/flowcontrol",
     "util/homedir",
+    "util/jsonpath",
     "util/keyutil",
     "util/workqueue",
   ]
@@ -1439,6 +1449,7 @@
     "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/lib/pq",
+    "github.com/liggitt/tabwriter",
     "github.com/machinebox/graphql",
     "github.com/matryer/is",
     "github.com/pborman/uuid",
@@ -1478,6 +1489,7 @@
     "k8s.io/client-go/testing",
     "k8s.io/client-go/tools/clientcmd",
     "k8s.io/client-go/util/homedir",
+    "k8s.io/client-go/util/jsonpath",
     "k8s.io/client-go/util/workqueue",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/apiutil",
