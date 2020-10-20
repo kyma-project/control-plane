@@ -18,9 +18,8 @@ const (
 )
 
 const (
-	table string = "table"
-	json  string = "json"
-	yaml  string = "yaml"
+	tableOutput string = "table"
+	jsonOutput  string = "json"
 )
 
 const (
@@ -119,13 +118,13 @@ func (keys *GlobalOptionsKey) GardenerKubeconfig() string {
 
 // SetOutputOpt configures the optput type option on the given command
 func SetOutputOpt(cmd *cobra.Command, opt *string) {
-	cmd.Flags().StringVarP(opt, "output", "o", table, fmt.Sprintf("Output type of displayed runtime(s). Possible values: %s, %s, %s", table, json, yaml))
+	cmd.Flags().StringVarP(opt, "output", "o", tableOutput, fmt.Sprintf("Output type of displayed runtime(s). Possible values: %s, %s", tableOutput, jsonOutput))
 }
 
 // ValidateOutputOpt checks whether the given optput type is one of the valid values
 func ValidateOutputOpt(opt string) error {
 	switch opt {
-	case table, json, yaml:
+	case tableOutput, jsonOutput:
 		return nil
 	}
 	return fmt.Errorf("invalid value for output: %s", opt)

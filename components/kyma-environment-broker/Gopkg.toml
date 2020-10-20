@@ -24,7 +24,7 @@
 
 [[constraint]]
   name = "github.com/kyma-project/control-plane"
-  revision = "c6e9740422d74f86d01740ffcf3731f7ce1a03cf"
+  revision = "8c42ec6476f185fec8dffb409eb27dedd6d76d5a"
 
 [[constraint]]
   name = "github.com/kyma-project/kyma"
@@ -95,3 +95,7 @@
 [[constraint]]
   name = "github.com/spf13/pflag"
   version = "1.0.5"
+
+[[constraint]]
+  name = "golang.org/x/oauth2"
+  revision = "5d25da1a8d43b66f2898c444f899c7bcfd6a407e"
