@@ -50,6 +50,35 @@ curl --request POST "https://$BROKER_URL/upgrade/kyma" \
 
 >**NOTE:** If the **dryRun** parameter specified in the request body is set to `true`, the upgrade is executed but the upgrade request is not sent to the Runtime Provisioner.
 
+3. To configure strategy of your orchestration, use the following request example:
+
+```bash
+curl --request POST "https://$BROKER_URL/upgrade/kyma" \
+--header "$AUTHORIZATION_HEADER" \
+--header 'Content-Type: application/json' \
+--data-raw "{\
+    \"targets\": {\
+        \"include\": {\
+            \"runtimeID\": \"uuid-sdasd-sda23t-efs\",\
+            \"globalAccount\": \"uuid-sdasd-sda23t-efs\",\
+            \"subAccount\": \"uuid-sdasd-sda23t-efs\",\
+            \"planName\": \"azure\",\
+            \"region\": \"europewest\",\
+         },\
+    },\
+    \"strategies\": {\
+        \"type\": \"parallel\",\
+            \"schedule\": \"maintenanceWindow\",\
+            \"parallel\": {\
+              \"workers\": 5\
+            },\
+    },\
+    \"dryRun\": false\
+}"
+```
+
+>**NOTE:** By default, the orchestration is configured with the parallel strategy, using the immediate type of schedule with only one worker.
+
 A successful call returns the orchestration ID:
 
    ```json
@@ -61,29 +90,3 @@ A successful call returns the orchestration ID:
 4. [Check the orchestration status](#tutorials-check-orchestration-status).
 
 >**NOTE:** Only one orchestration request can be processed at the same time. If KEB is already processing an orchestration, the newly created request waits for processing with the `PENDING` state.
-
-### Strategies
-
-To change the behavior of the orchestration, you can specify a strategy in the request body.
-For now, we support only the **parallel** strategy with two types of schedule:
-
-- Immediate - schedules the upgrade operations instantly
-- MaintenanceWindow - schedules the upgrade operations with the maintenance time windows specified for a given Runtime
-
-You can also configure how many upgrade operations can be executed in parallel to accelerate the process. Specify the **parallel** object in the request body with **workers** field set to the number of concurrent executions for the upgrade operations.
-
-The example strategy object looks as follows:
-
-```json
-{
-  "strategy": {
-    "type": "parallel",
-    "schedule": "maintenanceWindow",
-    "parallel": {
-      "workers": 5
-    }
-  }
-}
-```
-
->**NOTE:** By default, the orchestration is executed with the parallel strategy, using the immediate type of schedule with only one worker.

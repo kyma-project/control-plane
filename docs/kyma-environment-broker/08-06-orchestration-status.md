@@ -91,7 +91,7 @@ A successful call returns the list of all orchestrations:
 ]
    ```
 
-## List upgrade operations
+## List upgrade operations scheduled by orchestration
 
 1. Export the orchestration ID that you obtained during the upgrade call as an environment variable:
 
