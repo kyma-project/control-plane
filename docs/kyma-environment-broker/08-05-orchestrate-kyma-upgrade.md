@@ -63,7 +63,6 @@ A successful call returns the orchestration ID:
 ### Strategies
 
 To change the behavior of the orchestration, you can specify a strategy in the request body.
-
 For now, we support only the **parallel** strategy with two types of schedule:
 
 - Immediate - schedules the upgrade operations instantly
