@@ -19,16 +19,14 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
    export AUTHORIZATION_HEADER="Authorization: Bearer $ACCESS_TOKEN"
    ```
 
-2. Make a call to the Kyma Environment Broker to orchestrate the upgrade. You can select Runtimes to upgrade using the following selectors:
+2. Make a call to the Kyma Environment Broker to orchestrate the upgrade. You can select specific Runtimes to upgrade using the following selectors:
 
-```
-- target - can be used to select all runtimes by specifying it as `target: "all"`
-- globalAccount - selects runtimes with specified globalAccount ID
-- subAccount - selects runtimes with specified subAccount ID
-- runtimeID - selects runtimes with specified runtime ID
-- planName - selects runtimes with specified plan name
-- region - selects runtimes located in specified region
-```
+- `target` - use the `target: "all"` selector to selects all Runtimes
+- `globalAccount` - use it to select Runtimes with the specified global account ID
+- `subAccount` - use it to select Runtimes with the specified subaccount ID
+- `runtimeID` - use it to select Runtimes with the specified Runtime ID
+- `planName` - use it to select Runtimes with the specified plan name
+- `region` - use it to select Runtimes located in the specified region
 
    ```bash
 curl --request POST "https://$BROKER_URL/upgrade/kyma" \
@@ -48,9 +46,9 @@ curl --request POST "https://$BROKER_URL/upgrade/kyma" \
 }"
    ```
 
->**NOTE:** If the **dryRun** parameter specified in the request body is set to `true`, the upgrade is executed but the upgrade request is not sent to the Runtime Provisioner.
+>**NOTE:** If the **dryRun** parameter specified in the request body is set to `true`, the upgrade is executed but the upgrade request is not sent to Runtime Provisioner.
 
-3. To configure strategy of your orchestration, use the following request example:
+3. If you want to configure [the strategy of your orchestration](#details-orchestration-strategies), use the following request example:
 
 ```bash
 curl --request POST "https://$BROKER_URL/upgrade/kyma" \

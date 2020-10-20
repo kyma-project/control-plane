@@ -19,13 +19,13 @@ Orchestration API consist of the following handlers:
 
 For more details about the API, check the [Swagger schema](https://app.swaggerhub.com/apis/kempski/kyma-orchestration_api/0.4).
 
-### Strategies
+## Strategies
 
-To change the behavior of the orchestration, you can specify a strategy in the request body.
-For now, we support only the **parallel** strategy with two types of schedule:
+To change the behavior of the orchestration, you can specify a **strategy** in the request body.
+For now, there is only one **parallel** strategy with two types of schedule:
 
-- Immediate - schedules the upgrade operations instantly
-- MaintenanceWindow - schedules the upgrade operations with the maintenance time windows specified for a given Runtime
+- Immediate - schedules the upgrade operations instantly.
+- MaintenanceWindow - schedules the upgrade operations with the maintenance time windows specified for a given Runtime.
 
 You can also configure how many upgrade operations can be executed in parallel to accelerate the process. Specify the **parallel** object in the request body with **workers** field set to the number of concurrent executions for the upgrade operations.
 

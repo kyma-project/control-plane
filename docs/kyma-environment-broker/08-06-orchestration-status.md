@@ -3,7 +3,7 @@ title: Check orchestration status
 type: Tutorials
 ---
 
-This tutorial shows how to check the orchestration status. Using this API you can fetch data about:
+This tutorial shows how to check the orchestration status. Using this API, you can fetch data about:
 - A single orchestration
 - All orchestrations
 - Upgrade operations scheduled by a given orchestration
@@ -91,7 +91,7 @@ A successful call returns the list of all orchestrations:
 ]
    ```
 
-## List upgrade operations scheduled by orchestration
+## List upgrade operations scheduled by an orchestration
 
 1. Export the orchestration ID that you obtained during the upgrade call as an environment variable:
 
