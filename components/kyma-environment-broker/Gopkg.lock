@@ -546,11 +546,14 @@
   revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
 
 [[projects]]
-  digest = "1:16256b89f9f55ca55e33bd260b3a235adace8e31012c384b0001bbd3a800a526"
+  digest = "1:019936e2c808516bb3597e2147d87ec52c3fe119080e35905f2f1f4f7327d1ee"
   name = "github.com/kyma-project/control-plane"
-  packages = ["components/provisioner/pkg/gqlschema"]
+  packages = [
+    "components/kubeconfig-service/pkg/client",
+    "components/provisioner/pkg/gqlschema",
+  ]
   pruneopts = "NUT"
-  revision = "c6e9740422d74f86d01740ffcf3731f7ce1a03cf"
+  revision = "8c42ec6476f185fec8dffb409eb27dedd6d76d5a"
 
 [[projects]]
   digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
@@ -992,7 +995,6 @@
   revision = "c0dbc17a35534bf2e581d7a942408dc936316da4"
 
 [[projects]]
-  branch = "master"
   digest = "1:0b10baad5e1a455de79af85262602560f6c49e72be2ce519db2aa221446e9f84"
   name = "golang.org/x/oauth2"
   packages = [
@@ -1001,7 +1003,7 @@
     "internal",
   ]
   pruneopts = "NUT"
-  revision = "bf48bf16ab8d622ce64ec6ce98d2c98f916b6303"
+  revision = "5d25da1a8d43b66f2898c444f899c7bcfd6a407e"
 
 [[projects]]
   branch = "master"
@@ -1430,6 +1432,7 @@
     "github.com/int128/kubelogin/pkg/usecases/credentialplugin",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/director/pkg/jsonschema",
+    "github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/client",
     "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/lib/pq",
