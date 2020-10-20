@@ -1,5 +1,5 @@
 ---
-title: Orchestrate Kyma Upgrade
+title: Orchestrate Kyma upgrade
 type: Tutorials
 ---
 
@@ -19,7 +19,7 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
    export AUTHORIZATION_HEADER="Authorization: Bearer $ACCESS_TOKEN"
    ```
 
-2. Make a call to the Kyma Environment Broker to orchestrate the upgrade. You can select runtimes to upgrade using a following selectors:
+2. Make a call to the Kyma Environment Broker to orchestrate the upgrade. You can select Runtimes to upgrade using the following selectors:
 
 - target - can be used to select all runtimes by specifying it as `target: "all"`
 - globalAccount
@@ -28,7 +28,7 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
 - planName
 - region
 
->**NOTE:** If the **dryRun** parameter specified in the request body is set to `true`, the upgrade is executed but the process is not sending the upgrade request to the Provisioner.
+>**NOTE:** If the **dryRun** parameter specified in the request body is set to `true`, the upgrade is executed but the upgrade request is not sent to the Runtime Provisioner.
 
    ```bash
 curl --request POST "https://$BROKER_URL/upgrade/kyma" \
@@ -58,20 +58,20 @@ A successful call returns the orchestration ID:
 
 4. [Check the orchestration status](#tutorials-check-orchestration-status).
 
->**NOTE:** Only one orchestration can be processed at the same time. If the KEB is already processing some orchestration the newly created will wait for processing with the **pending** state.
+>**NOTE:** Only one orchestration request can be processed at the same time. If KEB is already processing an orchestration, the newly created request waits for processing with the `PENDING` state.
 
 ### Strategies
 
-To change the behaviour of the orchestration you can specify a strategy in the request body.
+To change the behavior of the orchestration, you can specify a strategy in the request body.
 
-For now we support only the **Parallel** strategy with two types of schedule:
+For now, we support only the **parallel** strategy with two types of schedule:
 
 - Immediate - schedules the upgrade operations instantly
-- MaintenanceWindow - schedules the upgrade operations respecting the maintenance time windows specified for given runtime
+- MaintenanceWindow - schedules the upgrade operations with the maintenance time windows specified for a given Runtime
 
 You can also configure how many upgrade operations can be executed in parallel to accelerate the process. Specify the **parallel** object in the request body with **workers** field set to the number of concurrent executions for the upgrade operations.
 
-The example strategy objects looks as follows:
+The example strategy object looks as follows:
 
 ```json
 {
@@ -85,4 +85,4 @@ The example strategy objects looks as follows:
 }
 ```
 
->**NOTE:** By default the orchestration will be executed with Parallel strategy, using the immediate type of schedule with only one worker.
+>**NOTE:** By default, the orchestration is executed with the parallel strategy, using the immediate type of schedule with only one worker.

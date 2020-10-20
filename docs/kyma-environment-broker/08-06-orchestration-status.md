@@ -3,11 +3,11 @@ title: Check orchestration status
 type: Tutorials
 ---
 
-This tutorial shows how to check the orchestration status for the cluster and Kyma orchestrations. Using this API you can fetch data about:
+This tutorial shows how to check the orchestration status. Using this API you can fetch data about:
 - A single orchestration
 - All orchestrations
 - Upgrade operations scheduled by a given orchestration
-- A single operation with details like parameters send to the Provisioner
+- A single operation with details, such as parameters sent to Runtime Provisioner
 
 ## Fetch a single orchestration
 
@@ -91,7 +91,7 @@ A successful call returns a list of all orchestrations:
 ]
    ```
 
-## List the upgrade operations
+## List upgrade operations
 
 1. Export the orchestration ID that you obtained during the upgrade call as an environment variable:
 
@@ -105,7 +105,7 @@ A successful call returns a list of all orchestrations:
    curl --request GET "https://$BROKER_URL/orchestrations/$ORCHESTRATION_ID/operations --header "$AUTHORIZATION_HEADER""
    ```
 
-A successful call returns a list of the upgrade operations:
+A successful call returns the list of upgrade operations:
 
    ```json
 {
@@ -142,7 +142,7 @@ A successful call returns a list of the upgrade operations:
 }
    ```
 
-## Fetch the detailed single operation
+## Fetch the detailed operation status
 
 1. Export the following values as the environment variables:
 
@@ -157,7 +157,7 @@ A successful call returns a list of the upgrade operations:
    curl --request GET "https://$BROKER_URL/orchestrations/$ORCHESTRATION_ID/operations/$OPERATION_ID --header "$AUTHORIZATION_HEADER""
    ```
 
-A successful call returns the upgrade operation object with `kymaConfig` and `clusterConfig` fields:
+A successful call returns the upgrade operation object with the **kymaConfig** and **clusterConfig** fields:
 
    ```json
 {
