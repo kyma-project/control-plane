@@ -29,21 +29,21 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
 - `region` - use it to select Runtimes located in the specified region
 
    ```bash
-curl --request POST "https://$BROKER_URL/upgrade/kyma" \
---header "$AUTHORIZATION_HEADER" \
---header 'Content-Type: application/json' \
---data-raw "{\
-    \"targets\": {\
-        \"include\": {\
-            \"runtimeID\": \"uuid-sdasd-sda23t-efs\",\
-            \"globalAccount\": \"uuid-sdasd-sda23t-efs\",\
-            \"subAccount\": \"uuid-sdasd-sda23t-efs\",\
-            \"planName\": \"azure\",\
-            \"region\": \"europewest\",\
-         },\
-    },\
-    \"dryRun\": false\
-}"
+   curl --request POST "https://$BROKER_URL/upgrade/kyma" \
+   --header "$AUTHORIZATION_HEADER" \
+   --header 'Content-Type: application/json' \
+   --data-raw "{\
+       \"targets\": {\
+           \"include\": {\
+               \"runtimeID\": \"uuid-sdasd-sda23t-efs\",\
+               \"globalAccount\": \"uuid-sdasd-sda23t-efs\",\
+               \"subAccount\": \"uuid-sdasd-sda23t-efs\",\
+               \"planName\": \"azure\",\
+               \"region\": \"europewest\",\
+            },\
+       },\
+       \"dryRun\": false\
+   }"
    ```
 
 >**NOTE:** If the **dryRun** parameter specified in the request body is set to `true`, the upgrade is executed but the upgrade request is not sent to Runtime Provisioner.
