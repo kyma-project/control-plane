@@ -10,52 +10,49 @@ const (
 )
 
 const (
-	IntCodeBadGateway     IntErrCode = 10
-	IntCodeInternal       IntErrCode = 11
-	IntCodeForbidden      IntErrCode = 12
-	IntCodeBadRequest     IntErrCode = 13
-	IntCodeTenantNotFound IntErrCode = 13
+	Unknown        CauseCode = 10
+	TenantNotFound CauseCode = 11
 )
 
 type ErrCode int
 
-type IntErrCode int
+type CauseCode int
 
 type AppError interface {
 	Append(string, ...interface{}) AppError
 	Code() ErrCode
-	IntCode() IntErrCode
+	Cause() CauseCode
 	Error() string
 }
 
 type appError struct {
 	code         ErrCode
-	internalCode IntErrCode
+	internalCode CauseCode
 	message      string
 }
 
-func errorf(code ErrCode, internalCode IntErrCode, format string, a ...interface{}) AppError {
-	return appError{code: code, internalCode: internalCode, message: fmt.Sprintf(format, a...)}
+func errorf(code ErrCode, cause CauseCode, format string, a ...interface{}) AppError {
+	return appError{code: code, internalCode: cause, message: fmt.Sprintf(format, a...)}
 }
 
 func BadGateway(format string, a ...interface{}) AppError {
-	return errorf(CodeBadGateway, IntCodeBadGateway, format, a...)
+	return errorf(CodeBadGateway, Unknown, format, a...)
 }
 
 func Internal(format string, a ...interface{}) AppError {
-	return errorf(CodeInternal, IntCodeInternal, format, a...)
+	return errorf(CodeInternal, Unknown, format, a...)
 }
 
 func Forbidden(format string, a ...interface{}) AppError {
-	return errorf(CodeForbidden, IntCodeForbidden, format, a...)
+	return errorf(CodeForbidden, Unknown, format, a...)
 }
 
 func BadRequest(format string, a ...interface{}) AppError {
-	return errorf(CodeBadRequest, IntCodeBadRequest, format, a...)
+	return errorf(CodeBadRequest, Unknown, format, a...)
 }
 
-func WrongTenant(format string, a ...interface{}) AppError {
-	return errorf(CodeBadRequest, IntCodeTenantNotFound, format, a...)
+func InvalidTenant(format string, a ...interface{}) AppError {
+	return errorf(CodeBadRequest, TenantNotFound, format, a...)
 }
 
 func (ae appError) Append(additionalFormat string, a ...interface{}) AppError {
@@ -71,6 +68,6 @@ func (ae appError) Error() string {
 	return ae.message
 }
 
-func (ae appError) IntCode() IntErrCode {
+func (ae appError) Cause() CauseCode {
 	return ae.internalCode
 }
