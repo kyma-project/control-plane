@@ -71,6 +71,20 @@ spec:
         - Content-Type
       allowMethods: ["GET"]
       allowOrigin: ["*"]
+      match:
+        - uri:
+            regex: /swagger.*
+      route:
+        - destination:
+            host: {{ .Values.global.oathkeeper.host }}
+            port:
+              number: {{ .Values.global.oathkeeper.port }}
+  - corsPolicy:
+      allowHeaders:
+        - Authorization
+        - Content-Type
+      allowMethods: ["GET"]
+      allowOrigin: ["*"]
     match:
       - uri:
           regex: /runtimes
