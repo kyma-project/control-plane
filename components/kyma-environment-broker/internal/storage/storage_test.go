@@ -560,8 +560,8 @@ func TestSchemaInitializer(t *testing.T) {
 						ProvisionerOperationID: "target-op-id",
 						Description:            "description",
 						Version:                1,
+						OrchestrationID:        orchestrationID,
 					},
-					OrchestrationID: orchestrationID,
 				},
 			}
 
@@ -586,7 +586,6 @@ func TestSchemaInitializer(t *testing.T) {
 					RuntimeID:              "runtime-id",
 					GlobalAccountID:        "global-account-if",
 					SubAccountID:           "subaccount-id",
-					OrchestrationID:        orchestrationID,
 				},
 				ProvisioningParameters: "{}",
 			}

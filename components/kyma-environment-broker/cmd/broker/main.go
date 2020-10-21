@@ -403,7 +403,7 @@ func main() {
 	})
 
 	// create list runtimes endpoint
-	runtimeHandler := runtime.NewHandler(db.Instances(), db.Operations(), cfg.MaxPaginationPage, runtime.NewConverter(cfg.DefaultRequestRegion))
+	runtimeHandler := runtime.NewHandler(db.Instances(), db.Operations(), cfg.MaxPaginationPage, cfg.DefaultRequestRegion)
 	runtimeHandler.AttachRoutes(router)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))

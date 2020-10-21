@@ -141,8 +141,6 @@ type RuntimeOperation struct {
 	RuntimeID              string    `json:"runtimeId"`
 	GlobalAccountID        string    `json:"globalAccountId"`
 	SubAccountID           string    `json:"subAccountId"`
-
-	OrchestrationID string `json:"orchestrationId"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation

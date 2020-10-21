@@ -124,7 +124,6 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 					RuntimeID:              r.RuntimeID,
 					GlobalAccountID:        r.GlobalAccountID,
 					SubAccountID:           r.SubAccountID,
-					OrchestrationID:        o.OrchestrationID,
 				},
 				PlanID: provisioningParams.PlanID,
 			}
