@@ -56,6 +56,8 @@ func (c *Converter) UpgradeKymaOperationToDTO(op internal.UpgradeKymaOperation) 
 		ShootName:              op.ShootName,
 		MaintenanceWindowBegin: op.MaintenanceWindowBegin,
 		MaintenanceWindowEnd:   op.MaintenanceWindowEnd,
+		State:                  string(op.Operation.State),
+		Description:            op.Operation.Description,
 	}, nil
 }
 
