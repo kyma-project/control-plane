@@ -150,6 +150,7 @@ type UpgradeKymaOperation struct {
 	RuntimeOperation `json:"runtime_operation"`
 	InputCreator     ProvisionerInputCreator `json:"-"`
 
+	PlanID                 string `json:"plan_id"`
 	ProvisioningParameters string `json:"provisioning_parameters"`
 }
 
@@ -252,11 +253,9 @@ type RuntimeTarget struct {
 
 type StrategyType string
 
-// TODO(upgrade)
-//const (
-//	ParallelStrategy StrategyType = "parallel"
-//	CanaryStrategy   StrategyType = "canary"
-//)
+const (
+	ParallelStrategy StrategyType = "parallel"
+)
 
 type ScheduleType string
 

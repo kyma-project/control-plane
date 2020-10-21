@@ -103,6 +103,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 }
 
 func fixUpgradeKymaOperation(t *testing.T) internal.UpgradeKymaOperation {
+	n := time.Now()
+	windowEnd := n.Add(time.Minute)
 	return internal.UpgradeKymaOperation{
 		RuntimeOperation: internal.RuntimeOperation{
 			Operation: internal.Operation{
@@ -110,8 +112,9 @@ func fixUpgradeKymaOperation(t *testing.T) internal.UpgradeKymaOperation {
 				InstanceID:             fixInstanceID,
 				ProvisionerOperationID: fixProvisionerOperationID,
 				Description:            "",
-				UpdatedAt:              time.Now(),
+				UpdatedAt:              n,
 			},
+			MaintenanceWindowEnd: windowEnd,
 		},
 		ProvisioningParameters: fixRawProvisioningParameters(t),
 	}
