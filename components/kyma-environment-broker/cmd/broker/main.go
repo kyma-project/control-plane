@@ -371,10 +371,10 @@ func main() {
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, cli, provisionerClient, gardenerClient,
-		gardenerNamespace, eventBroker, inputFactory, nil, 20*time.Second, logs)
+		gardenerNamespace, eventBroker, inputFactory, nil, time.Minute, logs)
 	fatalOnError(err)
 
-	orchestrationHandler := orchestrate.NewOrchestrationHandler(db.Orchestrations(), kymaQueue, logs)
+	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, cfg.MaxPaginationPage, logs)
 
 	if !cfg.DisableProcessOperationsInProgress {
 		err = processOperationsInProgressByType(dbmodel.OperationTypeProvision, db.Operations(), provisionQueue, logs)

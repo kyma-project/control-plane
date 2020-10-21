@@ -210,6 +210,7 @@ func FixTables() map[string]string {
 			service_plan_name varchar(255) NOT NULL,
 			dashboard_url varchar(255) NOT NULL,
 			provisioning_parameters text NOT NULL,
+			provider_region varchar(32) NOT NULL,
 			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			deleted_at TIMESTAMPTZ NOT NULL DEFAULT '0001-01-01 00:00:00+00'

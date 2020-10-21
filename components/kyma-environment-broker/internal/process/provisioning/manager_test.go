@@ -56,7 +56,7 @@ func TestManager_Execute(t *testing.T) {
 			// given
 			log := logrus.New()
 			memoryStorage := storage.NewMemoryStorage()
-			err := memoryStorage.Operations().InsertProvisioningOperation(fixOperation(tc.operationID))
+			err := memoryStorage.Operations().InsertProvisioningOperation(fixProvisionOperation(tc.operationID))
 			assert.NoError(t, err)
 
 			sInit := testStep{name: "init", storage: memoryStorage.Operations()}
@@ -97,7 +97,7 @@ func TestManager_Execute(t *testing.T) {
 	}
 }
 
-func fixOperation(ID string) internal.ProvisioningOperation {
+func fixProvisionOperation(ID string) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ID:          ID,
@@ -105,6 +105,7 @@ func fixOperation(ID string) internal.ProvisioningOperation {
 			InstanceID:  "fea2c1a1-139d-43f6-910a-a618828a79d5",
 			Description: "",
 		},
+		ProvisioningParameters: `{"plan_id":"7b2a9156-884c-4586-a630-3e644fc8ec0f"}`,
 	}
 }
 

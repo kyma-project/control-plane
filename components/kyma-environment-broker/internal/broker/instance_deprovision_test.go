@@ -17,6 +17,7 @@ import (
 
 const (
 	instanceID  = "instance-001"
+	planID      = "awesome-plan"
 	operationID = "1234"
 )
 
@@ -38,9 +39,8 @@ func TestDeprovisionEndpoint_DeprovisionNotExistingInstance(t *testing.T) {
 func TestDeprovisionEndpoint_DeprovisionExistingInstance(t *testing.T) {
 	// given
 	memoryStorage := storage.NewMemoryStorage()
-	memoryStorage.Instances().Insert(internal.Instance{
-		InstanceID: instanceID,
-	})
+	err := memoryStorage.Instances().Insert(fixInstance())
+	require.NoError(t, err)
 
 	queue := &automock.Queue{}
 	queue.On("Add", mock.AnythingOfType("string"))
@@ -48,7 +48,7 @@ func TestDeprovisionEndpoint_DeprovisionExistingInstance(t *testing.T) {
 	svc := NewDeprovision(memoryStorage.Instances(), memoryStorage.Operations(), queue, logrus.StandardLogger())
 
 	// when
-	_, err := svc.Deprovision(context.TODO(), instanceID, domain.DeprovisionDetails{}, true)
+	_, err = svc.Deprovision(context.TODO(), instanceID, domain.DeprovisionDetails{}, true)
 
 	// then
 	require.NoError(t, err)
@@ -60,9 +60,7 @@ func TestDeprovisionEndpoint_DeprovisionExistingInstance(t *testing.T) {
 func TestDeprovisionEndpoint_DeprovisionExistingOperationInProgress(t *testing.T) {
 	// given
 	memoryStorage := storage.NewMemoryStorage()
-	err := memoryStorage.Instances().Insert(internal.Instance{
-		InstanceID: instanceID,
-	})
+	err := memoryStorage.Instances().Insert(fixInstance())
 	require.NoError(t, err)
 
 	err = memoryStorage.Operations().InsertDeprovisioningOperation(fixDeprovisioningOperation(domain.InProgress))
@@ -89,9 +87,7 @@ func TestDeprovisionEndpoint_DeprovisionExistingOperationInProgress(t *testing.T
 func TestDeprovisionEndpoint_DeprovisionExistingOperationFailed(t *testing.T) {
 	// given
 	memoryStorage := storage.NewMemoryStorage()
-	err := memoryStorage.Instances().Insert(internal.Instance{
-		InstanceID: instanceID,
-	})
+	err := memoryStorage.Instances().Insert(fixInstance())
 	require.NoError(t, err)
 
 	err = memoryStorage.Operations().InsertDeprovisioningOperation(fixDeprovisioningOperation(domain.Failed))
@@ -121,5 +117,12 @@ func fixDeprovisioningOperation(state domain.LastOperationState) internal.Deprov
 			InstanceID: instanceID,
 			State:      state,
 		},
+	}
+}
+
+func fixInstance() internal.Instance {
+	return internal.Instance{
+		InstanceID:    instanceID,
+		ServicePlanID: planID,
 	}
 }

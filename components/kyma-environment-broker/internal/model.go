@@ -62,6 +62,7 @@ type Instance struct {
 
 	DashboardURL           string
 	ProvisioningParameters string
+	ProviderRegion         string
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -149,6 +150,7 @@ type UpgradeKymaOperation struct {
 	RuntimeOperation `json:"runtime_operation"`
 	InputCreator     ProvisionerInputCreator `json:"-"`
 
+	PlanID                 string `json:"plan_id"`
 	ProvisioningParameters string `json:"provisioning_parameters"`
 }
 
@@ -171,7 +173,7 @@ func (o *Orchestration) IsFinished() bool {
 type OrchestrationParameters struct {
 	Targets  TargetSpec   `json:"targets"`
 	Strategy StrategySpec `json:"strategy,omitempty"`
-	DryRun   bool         `json:"dry_run,omitempty"`
+	DryRun   bool         `json:"dryRun,omitempty"`
 }
 
 const (
@@ -244,18 +246,16 @@ type RuntimeTarget struct {
 	// Regex pattern to match against the shoot cluster's Region field (not SCP platform-region). E.g. "europe|eu-"
 	Region string `json:"region,omitempty"`
 	// RuntimeID is used to indicate a specific runtime
-	RuntimeID string `json:"runtimeId,omitempty"`
+	RuntimeID string `json:"runtimeID,omitempty"`
 	// PlanName is used to match runtimes with the same plan
 	PlanName string `json:"planName,omitempty"`
 }
 
 type StrategyType string
 
-// TODO(upgrade)
-//const (
-//	ParallelStrategy StrategyType = "parallel"
-//	CanaryStrategy   StrategyType = "canary"
-//)
+const (
+	ParallelStrategy StrategyType = "parallel"
+)
 
 type ScheduleType string
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/types"
 
@@ -118,7 +119,11 @@ func (r *Reconciler) updateShoot(namespacedName types.NamespacedName, modifyShoo
 
 func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, namespacedName types.NamespacedName, shoot *gardener_types.Shoot, seed string) error {
 	logger.Info("Enabling audit logs")
-	tenant, err := r.getAuditLogTenant(seed)
+	data, err := r.getTenantDataFromFile()
+	if err != nil {
+		return err
+	}
+	tenant, err := getAuditLogTenant(seed, data)
 	if err != nil {
 		return err
 	}
@@ -138,20 +143,29 @@ func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, namespacedName t
 	})
 }
 
-func (r *Reconciler) getAuditLogTenant(seed string) (string, error) {
+func getAuditLogTenant(seed string, data map[string]string) (string, error) {
+	for key, tenant := range data {
+		if strings.Contains(seed, key) {
+			return tenant, nil
+		}
+	}
+	return "", nil
+}
+
+func (r *Reconciler) getTenantDataFromFile() (map[string]string, error) {
 	file, err := os.Open(r.auditLogTenantConfigPath)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	defer file.Close()
 
 	var data map[string]string
 	if err := json.NewDecoder(file).Decode(&data); err != nil {
-		return "", err
+		return nil, err
 	}
-	return data[seed], nil
+	return data, nil
 }
 
 func getSeed(shoot gardener_types.Shoot) string {

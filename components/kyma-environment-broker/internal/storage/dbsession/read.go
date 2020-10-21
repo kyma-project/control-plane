@@ -2,11 +2,11 @@ package dbsession
 
 import (
 	"fmt"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
+	"strings"
 
 	"github.com/pkg/errors"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
@@ -24,7 +24,7 @@ type readSession struct {
 func (r readSession) getInstancesJoinedWithOperationStatement() *dbr.SelectStmt {
 	join := fmt.Sprintf("%s.instance_id = %s.instance_id", postsql.InstancesTableName, postsql.OperationTableName)
 	stmt := r.session.
-		Select("instances.instance_id, instances.runtime_id, instances.global_account_id, instances.service_id, instances.service_plan_id, instances.dashboard_url, instances.provisioning_parameters, instances.created_at, instances.updated_at, instances.deleted_at, instances.sub_account_id, instances.service_name, instances.service_plan_name, operations.state, operations.description, operations.type").
+		Select("instances.instance_id, instances.runtime_id, instances.global_account_id, instances.service_id, instances.service_plan_id, instances.dashboard_url, instances.provisioning_parameters, instances.created_at, instances.updated_at, instances.deleted_at, instances.sub_account_id, instances.service_name, instances.service_plan_name, instances.provider_region, operations.state, operations.description, operations.type").
 		From(postsql.InstancesTableName).
 		LeftJoin(postsql.OperationTableName, join)
 	return stmt
@@ -143,17 +143,30 @@ func (r readSession) ListOrchestrationsByState(state string) ([]dbmodel.Orchestr
 	return orchestrations, nil
 }
 
-func (r readSession) ListOrchestrations() ([]dbmodel.OrchestrationDTO, dberr.Error) {
+func (r readSession) ListOrchestrations(pageSize, page int) ([]dbmodel.OrchestrationDTO, int, int, error) {
 	var orchestrations []dbmodel.OrchestrationDTO
 
-	_, err := r.session.
-		Select("*").
-		From(postsql.OrchestrationTableName).
-		Load(&orchestrations)
+	err := pagination.ValidatePageParameters(pageSize, page)
 	if err != nil {
-		return nil, dberr.Internal("Failed to get orchestrations: %s", err)
+		return nil, -1, -1, errors.Wrap(err, "while converting page and pageSize to SQL statement")
 	}
-	return orchestrations, nil
+
+	_, err = r.session.Select("*").
+		From(postsql.OrchestrationTableName).
+		OrderBy(postsql.CreatedAtField).
+		Limit(uint64(pageSize)).
+		Offset(uint64(pagination.ConvertPageAndPageSizeToOffset(pageSize, page))).
+		Load(&orchestrations)
+
+	totalCount, err := r.getOrchestrationCount()
+	if err != nil {
+		return nil, -1, -1, err
+	}
+
+	return orchestrations,
+		len(orchestrations),
+		totalCount,
+		nil
 }
 
 func (r readSession) GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
@@ -207,6 +220,51 @@ func (r readSession) GetOperationsForIDs(opIDlist []string) ([]dbmodel.Operation
 		return nil, dberr.Internal("Failed to get operations: %s", err)
 	}
 	return operations, nil
+}
+
+func (r readSession) ListOperationsByOrchestrationID(orchestrationID string, pageSize, page int) ([]dbmodel.OperationDTO, int, int, error) {
+	var ops []dbmodel.OperationDTO
+	condition := dbr.Eq("orchestration_id", orchestrationID)
+
+	_, err := r.session.
+		Select("*").
+		From(postsql.OperationTableName).
+		Where(condition).
+		OrderBy(postsql.CreatedAtField).
+		Offset(uint64(pagination.ConvertPageAndPageSizeToOffset(pageSize, page))).
+		Limit(uint64(pageSize)).
+		Load(&ops)
+	if err != nil {
+		return nil, -1, -1, dberr.Internal("Failed to get operations: %s", err)
+	}
+
+	totalCount, err := r.getOperationCount(orchestrationID)
+	if err != nil {
+		return nil, -1, -1, err
+	}
+
+	return ops,
+		len(ops),
+		totalCount,
+		nil
+}
+
+func (r readSession) GetRuntimeStateByOperationID(operationID string) (dbmodel.RuntimeStateDTO, dberr.Error) {
+	var state dbmodel.RuntimeStateDTO
+
+	err := r.session.
+		Select("*").
+		From(postsql.RuntimeStateTableName).
+		Where(dbr.Eq("operation_id", operationID)).
+		LoadOne(&state)
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return dbmodel.RuntimeStateDTO{}, dberr.NotFound("cannot find runtime state: %s", err)
+		}
+		return dbmodel.RuntimeStateDTO{}, dberr.Internal("Failed to get runtime state: %s", err)
+	}
+	return state, nil
 }
 
 func (r readSession) ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.RuntimeStateDTO, dberr.Error) {
@@ -315,24 +373,28 @@ func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID stri
 	return res.Total, err
 }
 
-func (r readSession) ListInstances(pageSize int, page int) ([]internal.Instance, int, int, error) {
+func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
 	var instances []internal.Instance
 
-	order, err := pagination.ConvertPagePageSizeAndOrderedColumnToSQL(pageSize, page, postsql.CreatedAtField)
-	if err != nil {
-		return nil, -1, -1, errors.Wrap(err, "while converting page and pageSize to SQL statement")
+	// Base select and order by created at
+	stmt := r.session.
+		Select("*").
+		From(postsql.InstancesTableName).
+		OrderBy(postsql.CreatedAtField)
+
+	// Add pagination
+	if filter.Page > 0 && filter.PageSize > 0 {
+		stmt = stmt.Paginate(uint64(filter.Page), uint64(filter.PageSize))
 	}
 
-	stmtWithPagination := fmt.Sprintf("SELECT * FROM %s %s", postsql.InstancesTableName, order)
+	addFilters(stmt, filter)
 
-	execStmt := r.session.SelectBySql(stmtWithPagination)
-
-	_, err = execStmt.Load(&instances)
+	_, err := stmt.Load(&instances)
 	if err != nil {
 		return nil, -1, -1, errors.Wrap(err, "while fetching instances")
 	}
 
-	totalCount, err := r.getInstanceCount()
+	totalCount, err := r.getInstanceCount(filter)
 	if err != nil {
 		return nil, -1, -1, err
 	}
@@ -343,12 +405,63 @@ func (r readSession) ListInstances(pageSize int, page int) ([]internal.Instance,
 		nil
 }
 
-func (r readSession) getInstanceCount() (int, error) {
+func (r readSession) getInstanceCount(filter dbmodel.InstanceFilter) (int, error) {
+	var res struct {
+		Total int
+	}
+	stmt := r.session.Select("count(*) as total").From(postsql.InstancesTableName)
+	addFilters(stmt, filter)
+	err := stmt.LoadOne(&res)
+
+	return res.Total, err
+}
+
+func addFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
+	if len(filter.GlobalAccountIDs) > 0 {
+		stmt.Where("global_account_id IN ?", filter.GlobalAccountIDs)
+	}
+	if len(filter.SubAccountIDs) > 0 {
+		stmt.Where("sub_account_id IN ?", filter.SubAccountIDs)
+	}
+	if len(filter.InstanceIDs) > 0 {
+		stmt.Where("instance_id IN ?", filter.InstanceIDs)
+	}
+	if len(filter.RuntimeIDs) > 0 {
+		stmt.Where("runtime_id IN ?", filter.RuntimeIDs)
+	}
+	if len(filter.Regions) > 0 {
+		stmt.Where("provider_region IN ?", filter.Regions)
+	}
+	if len(filter.Plans) > 0 {
+		stmt.Where("service_plan_name IN ?", filter.Plans)
+	}
+	if len(filter.Domains) > 0 {
+		// Preceeding character is either a . or / (after protocol://)
+		// match subdomain inputs
+		// match any .upperdomain zero or more times
+		domainMatch := fmt.Sprintf(`[./](%s)(\.[0-9A-Za-z-]+)*$`, strings.Join(filter.Domains, "|"))
+		stmt.Where("dashboard_url ~ ?", domainMatch)
+	}
+}
+
+func (r readSession) getOperationCount(orchestrationID string) (int, error) {
 	var res struct {
 		Total int
 	}
 	err := r.session.Select("count(*) as total").
-		From(postsql.InstancesTableName).
+		From(postsql.OperationTableName).
+		Where(dbr.Eq("orchestration_id", orchestrationID)).
+		LoadOne(&res)
+
+	return res.Total, err
+}
+
+func (r readSession) getOrchestrationCount() (int, error) {
+	var res struct {
+		Total int
+	}
+	err := r.session.Select("count(*) as total").
+		From(postsql.OrchestrationTableName).
 		LoadOne(&res)
 
 	return res.Total, err

@@ -1,5 +1,5 @@
 ---
-title: Upgrade Kyma Runtime using KEB
+title: Orchestrate Kyma upgrade
 type: Tutorials
 ---
 
@@ -13,42 +13,78 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
 
 ## Steps
 
-1. Export these values as environment variables:
-
-   ```bash
-   export RUNTIME_ID={RUNTIME_ID}
-   ```
-
-2. [Get the access token](#details-authorization). Export this variable based on the token you got from the OAuth client:
+1. [Get the access token](#details-authorization). Export this variable based on the token you got from the OAuth client:
 
    ```bash
    export AUTHORIZATION_HEADER="Authorization: Bearer $ACCESS_TOKEN"
    ```
 
-3. Make a call to the Kyma Environment Broker to orchestrate the upgrade.
+2. Make a call to the Kyma Environment Broker to orchestrate the upgrade. You can select specific Runtimes to upgrade using the following selectors:
 
->**NOTE:** The **dry** parameter specified in the request body is set to `true`. As a result, the upgrade is executed in a fake mode. It means that all actions are not executed against selected Runtimes but the Orchestration status is still available.
+- `target` - use the `target: "all"` selector to select all Runtimes
+- `globalAccount` - use it to select Runtimes with the specified global account ID
+- `subAccount` - use it to select Runtimes with the specified subaccount ID
+- `runtimeID` - use it to select Runtimes with the specified Runtime ID
+- `planName` - use it to select Runtimes with the specified plan name
+- `region` - use it to select Runtimes located in the specified region
 
    ```bash
    curl --request POST "https://$BROKER_URL/upgrade/kyma" \
    --header "$AUTHORIZATION_HEADER" \
    --header 'Content-Type: application/json' \
-   --data-raw "{
-       \"targets\": {
+   --data-raw "{\
+       \"targets\": {\
            \"include\": {\
-               \"runtime_id\": "uuid-sdasd-sda23t-efs",
-            },
-       },
-        \"dry\": false,
+               \"runtimeID\": \"uuid-sdasd-sda23t-efs\",\
+               \"globalAccount\": \"uuid-sdasd-sda23t-efs\",\
+               \"subAccount\": \"uuid-sdasd-sda23t-efs\",\
+               \"planName\": \"azure\",\
+               \"region\": \"europewest\",\
+            },\
+       },\
+       \"dryRun\": false\
    }"
    ```
+
+>**NOTE:** If the **dryRun** parameter specified in the request body is set to `true`, the upgrade is executed but the upgrade request is not sent to Runtime Provisioner.
+
+3. If you want to configure [the strategy of your orchestration](#details-orchestration-strategies), use the following request example:
+
+```bash
+curl --request POST "https://$BROKER_URL/upgrade/kyma" \
+--header "$AUTHORIZATION_HEADER" \
+--header 'Content-Type: application/json' \
+--data-raw "{\
+    \"targets\": {\
+        \"include\": {\
+            \"runtimeID\": \"uuid-sdasd-sda23t-efs\",\
+            \"globalAccount\": \"uuid-sdasd-sda23t-efs\",\
+            \"subAccount\": \"uuid-sdasd-sda23t-efs\",\
+            \"planName\": \"azure\",\
+            \"region\": \"europewest\",\
+         },\
+    },\
+    \"strategies\": {\
+        \"type\": \"parallel\",\
+            \"schedule\": \"maintenanceWindow\",\
+            \"parallel\": {\
+              \"workers\": 5\
+            },\
+    },\
+    \"dryRun\": false\
+}"
+```
+
+>**NOTE:** By default, the orchestration is configured with the parallel strategy, using the immediate type of schedule with only one worker.
 
 A successful call returns the orchestration ID:
 
    ```json
    {
-       "orchestration_id":"8a7bfd9b-f2f5-43d1-bb67-177d2434053c"
+       "orchestrationID":"8a7bfd9b-f2f5-43d1-bb67-177d2434053c"
    }
    ```
 
-4. [Check the operation status](#tutorials-check-orchestration-status).
+4. [Check the orchestration status](#tutorials-check-orchestration-status).
+
+>**NOTE:** Only one orchestration request can be processed at the same time. If KEB is already processing an orchestration, the newly created request waits for processing with the `PENDING` state.

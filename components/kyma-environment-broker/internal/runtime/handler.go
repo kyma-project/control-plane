@@ -1,27 +1,23 @@
 package runtime
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
+	pkg "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
 
-const (
-	pageSizeParam = "page_size"
-	pageParam     = "page"
-)
-
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
-	InstancesAndOperationsToDTO(internal.Instance, *internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation) (RuntimeDTO, error)
+	InstancesAndOperationsToDTO(internal.Instance, *internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation) (pkg.RuntimeDTO, error)
 }
 
 type Handler struct {
@@ -46,14 +42,18 @@ func (h *Handler) AttachRoutes(router *mux.Router) {
 }
 
 func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
-	toReturn := make([]RuntimeDTO, 0)
-	pageSize, page, err := h.getParams(req)
+	toReturn := make([]pkg.RuntimeDTO, 0)
+
+	pageSize, page, err := pagination.ExtractPaginationConfigFromRequest(req, h.defaultMaxPage)
 	if err != nil {
 		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
 		return
 	}
+	filter := h.getFilters(req)
+	filter.PageSize = pageSize
+	filter.Page = page
 
-	instances, count, totalCount, err := h.instancesDb.List(pageSize, page)
+	instances, count, totalCount, err := h.instancesDb.List(filter)
 	if err != nil {
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching instances"))
 		return
@@ -75,7 +75,7 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 		toReturn = append(toReturn, dto)
 	}
 
-	runtimePage := RuntimesPage{
+	runtimePage := pkg.RuntimesPage{
 		Data:       toReturn,
 		Count:      count,
 		TotalCount: totalCount,
@@ -99,42 +99,16 @@ func (h *Handler) getOperationsForInstance(instance internal.Instance) (*interna
 	return pOpr, dOpr, ukOpr, nil
 }
 
-func (h *Handler) getParams(req *http.Request) (int, int, error) {
-	var pageSize int
-	var page int
-	var err error
+func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {
+	var filter dbmodel.InstanceFilter
+	query := req.URL.Query()
+	// For optional filter, zero value (nil) is fine if not supplied
+	filter.GlobalAccountIDs = query[pkg.GlobalAccountIDParam]
+	filter.SubAccountIDs = query[pkg.SubAccountIDParam]
+	filter.InstanceIDs = query[pkg.InstanceIDParam]
+	filter.RuntimeIDs = query[pkg.RuntimeIDParam]
+	filter.Regions = query[pkg.RegionParam]
+	filter.Domains = query[pkg.ShootParam]
 
-	params := req.URL.Query()
-	pageSizeArr, ok := params[pageSizeParam]
-	if len(pageSizeArr) > 1 {
-		return 0, 0, errors.New("pageSize has to be one parameter")
-	}
-
-	if !ok {
-		pageSize = h.defaultMaxPage
-	} else {
-		pageSize, err = strconv.Atoi(pageSizeArr[0])
-		if err != nil {
-			return 0, 0, errors.New("pageSize has to be an integer")
-		}
-	}
-
-	if pageSize > h.defaultMaxPage {
-		return 0, 0, errors.New(fmt.Sprintf("pageSize is bigger than maxPage(%d)", h.defaultMaxPage))
-	}
-
-	pageArr, ok := params[pageParam]
-	if len(pageArr) > 1 {
-		return 0, 0, errors.New("page has to be one parameter")
-	}
-	if !ok {
-		page = 1
-	} else {
-		page, err = strconv.Atoi(pageArr[0])
-		if err != nil {
-			return 0, 0, errors.New("page has to be an integer")
-		}
-	}
-
-	return pageSize, page, nil
+	return filter
 }
