@@ -56,11 +56,12 @@ func (c *Converter) UpgradeKymaOperationToDTO(op internal.UpgradeKymaOperation) 
 		OrchestrationID:        op.RuntimeOperation.OrchestrationID,
 		ServicePlanID:          pp.PlanID,
 		ServicePlanName:        plan.PlanDefinition.Name,
-		State:                  string(op.Operation.State),
 		DryRun:                 op.DryRun,
 		ShootName:              op.ShootName,
 		MaintenanceWindowBegin: op.MaintenanceWindowBegin,
 		MaintenanceWindowEnd:   op.MaintenanceWindowEnd,
+		State:                  string(op.Operation.State),
+		Description:            op.Operation.Description,
 	}, nil
 }
 
