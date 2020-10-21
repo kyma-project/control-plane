@@ -138,7 +138,7 @@ A target specifier is a comma separated list of the following selectors:
   all                 : all runtimes provisioned successfully and not deprovisioning
   account=<REGEXP>    : Regex pattern to match against the runtime's GlobalAccount field. E.g. CA50125541TID000000000741207136, "CA.*"
   subaccount=<REGEXP> : Regex pattern to match against the runtime's SubAccount field. E.g. 0d20e315-d0b4-48a2-9512-49bc8eb03cd1
-  region=<REGEXP>     : Regex pattern to match against the shoot cluster's Region field (not SCP platform-region). E.g. "europe|eu-"
+  region=<REGEXP>     : Regex pattern to match against the shoot cluster's Region field (provider region). E.g. "europe|eu-"
   runtime-id=<ID>     : Runtime ID is used to indicate a specific runtime`)
 	cmd.Flags().StringArrayVarP(targetExcludeInputs, "target-exclude", "e", nil,
 		`List of runtime target specifiers to exclude (the option can be specified multiple times).

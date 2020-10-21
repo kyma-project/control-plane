@@ -14,7 +14,7 @@ kcp runtimes [flags]
 
 ## Examples
 
-```bash
+```
   kcp runtimes                                           Display table overview about all runtimes
   kcp rt -c c-178e034 -o json                            Display all details about one runtime identified by Shoot name in JSON format
   kcp runtimes --account CA4836781TID000000000123456789  Display all runtimes of a given Global Account
@@ -22,9 +22,9 @@ kcp runtimes [flags]
 
 ## Options
 
-```bash
+```
   -g, --account strings      Filter by Global Account ID. Multiple values can be provided, either separated as a comma (e.g GAID1,GAID2), or by specifying the option multiple times
-  -o, --output string        Output type of displayed runtime(s). Possible values: table, json, yaml (default "table")
+  -o, --output string        Output type of displayed runtime(s). Possible values: table, json (default "table")
   -r, --region strings       Filter by Region. Multiple values can be provided, either separated as a comma (e.g cf-eu10,cf-us10), or by specifying the option multiple times
   -i, --runtime-id strings   Filter by Runtime ID. Multiple values can be provided, either separated as a comma (e.g ID1,ID2), or by specifying the option multiple times
   -c, --shoot strings        Filter by Shoot cluster name. Multiple values can be provided, either separated as a comma (e.g shoot1,shoot2), or by specifying the option multiple times
@@ -33,7 +33,7 @@ kcp runtimes [flags]
 
 ## Options inherited from parent commands
 
-```bash
+```
       --config string                Path to the kcp CLI config file. Can also be set via the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml
       --gardener-kubeconfig string   Path to the corresponding Gardener project kubeconfig file which have permissions to list/get shoots. Can also be set via the KCP_GARDENER_KUBECONFIG environment variable
   -h, --help                         Displays help for the CLI

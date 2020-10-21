@@ -19,7 +19,7 @@ kcp kubeconfig [flags]
 
 ## Examples
 
-```bash
+```
   kcp kubeconfig -g GAID -s SAID -o /my/path/runtime.config  Download kubeconfig using Global Account ID and Subaccount ID
   kcp kubeconfig -g GAID -r RUNTIMEID                    Download kubeconfig using Global Account ID and Runtime ID
   kcp kubeconfig -c c-178e034                            Download kubeconfig using Shoot cluster name
@@ -27,7 +27,7 @@ kcp kubeconfig [flags]
 
 ## Options
 
-```bash
+```
   -g, --account string      Global Account ID of the specific Kyma Runtime
   -o, --output string       Path to the file to save the downloaded kubeconfig to. Defaults to <CLUSTER NAME>.yaml in the current directory if not specified.
   -r, --runtime-id string   Runtime ID of the specific Kyma Runtime
@@ -37,7 +37,7 @@ kcp kubeconfig [flags]
 
 ## Options inherited from parent commands
 
-```bash
+```
       --config string                Path to the kcp CLI config file. Can also be set via the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml
       --gardener-kubeconfig string   Path to the corresponding Gardener project kubeconfig file which have permissions to list/get shoots. Can also be set via the KCP_GARDENER_KUBECONFIG environment variable
   -h, --help                         Displays help for the CLI

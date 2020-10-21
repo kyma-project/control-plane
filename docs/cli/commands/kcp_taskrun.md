@@ -23,7 +23,7 @@ kcp taskrun --target <TARGET SPEC> ... [--target-exclude <TARGET SPEC> ...] COMM
 
 ## Examples
 
-```bash
+```
   kcp taskrun --target all kubectl patch deployment valid-deployment -p '{"spec":{"template":{"spec":{"containers":[{"name":"kubernetes-serve-hostname","image":"new image"}]}}}}'
     Execute a kubectl patch operation for all runtimes
   kcp taskrun --target account=CA4836781TID000000000123456789 /usr/local/bin/awesome-script.sh
@@ -34,7 +34,7 @@ kcp taskrun --target <TARGET SPEC> ... [--target-exclude <TARGET SPEC> ...] COMM
 
 ## Options
 
-```bash
+```
       --keep                         Keep downloaded kubeconfigs after execution for caching purpose
       --kubeconfig-dir string        Directory to download runtime kubeconfigs to. By default it is a random-generated directory in the OS specific default temporary directory (e.g. /tmp in Linux)
   -p, --parallelism int              Number of parallel commands to execute (default 8)
@@ -43,7 +43,7 @@ kcp taskrun --target <TARGET SPEC> ... [--target-exclude <TARGET SPEC> ...] COMM
                                        all                 : all runtimes provisioned successfully and not deprovisioning
                                        account=<REGEXP>    : Regex pattern to match against the runtime's GlobalAccount field. E.g. CA50125541TID000000000741207136, "CA.*"
                                        subaccount=<REGEXP> : Regex pattern to match against the runtime's SubAccount field. E.g. 0d20e315-d0b4-48a2-9512-49bc8eb03cd1
-                                       region=<REGEXP>     : Regex pattern to match against the shoot cluster's Region field (not SCP platform-region). E.g. "europe|eu-"
+                                       region=<REGEXP>     : Regex pattern to match against the shoot cluster's Region field (provider region). E.g. "europe|eu-"
                                        runtime-id=<ID>     : Runtime ID is used to indicate a specific runtime
   -e, --target-exclude stringArray   List of runtime target specifiers to exclude (the option can be specified multiple times).
                                      A target specifier is a comma separated list of the selectors described under --target option
@@ -51,7 +51,7 @@ kcp taskrun --target <TARGET SPEC> ... [--target-exclude <TARGET SPEC> ...] COMM
 
 ## Options inherited from parent commands
 
-```bash
+```
       --config string                Path to the kcp CLI config file. Can also be set via the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml
       --gardener-kubeconfig string   Path to the corresponding Gardener project kubeconfig file which have permissions to list/get shoots. Can also be set via the KCP_GARDENER_KUBECONFIG environment variable
   -h, --help                         Displays help for the CLI

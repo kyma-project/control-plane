@@ -17,7 +17,7 @@ kcp orchestrations [id] [flags]
 
 ## Examples
 
-```bash
+```
   kcp orchestrations --state inprogress                                   Display all orchestrations which are in progress
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                  Display details about a specific orchestration
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified runtime operation within the orchestration
@@ -25,15 +25,15 @@ kcp orchestrations [id] [flags]
 
 ## Options
 
-```bash
+```
       --operation string   Display details of the specified runtime operation when a given orchestration is selected
-  -o, --output string      Output type of displayed runtime(s). Possible values: table, json, yaml (default "table")
+  -o, --output string      Output type of displayed runtime(s). Possible values: table, json (default "table")
   -s, --state string       Filter output by state. Possible values: pending, inprogress, succeeded, failed
 ```
 
 ## Options inherited from parent commands
 
-```bash
+```
       --config string                Path to the kcp CLI config file. Can also be set via the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml
       --gardener-kubeconfig string   Path to the corresponding Gardener project kubeconfig file which have permissions to list/get shoots. Can also be set via the KCP_GARDENER_KUBECONFIG environment variable
   -h, --help                         Displays help for the CLI

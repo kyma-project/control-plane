@@ -9,7 +9,7 @@ Performs upgrade operations on Kyma runtimes.
 
 ## Options inherited from parent commands
 
-```bash
+```
       --config string                Path to the kcp CLI config file. Can also be set via the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml
       --gardener-kubeconfig string   Path to the corresponding Gardener project kubeconfig file which have permissions to list/get shoots. Can also be set via the KCP_GARDENER_KUBECONFIG environment variable
   -h, --help                         Displays help for the CLI

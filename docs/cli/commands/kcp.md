@@ -10,15 +10,15 @@ It is possible to list and observe attributes and state of each Kyma runtime and
 You can find the complete list of possible operations as commands below.
 
 The CLI supports configuration file for common, global options needed for all commands. The config file will be looked up in this order:
-  --config <PATH> option
-  KCPCONFIG environment variable which contains the path
-  $HOME/.kcp/config.yaml (default path)
+  - --config <PATH> option
+  - KCPCONFIG environment variable which contains the path
+  - $HOME/.kcp/config.yaml (default path)
 
 The configuration file is in YAML format and supports the following global options: oidc-issuer-url, oidc-client-id, oidc-client-secret, keb-api-url, kubeconfig-api-url, gardener-kubeconfig.
 
 ## Options
 
-```bash
+```
       --config string                Path to the kcp CLI config file. Can also be set via the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml
       --gardener-kubeconfig string   Path to the corresponding Gardener project kubeconfig file which have permissions to list/get shoots. Can also be set via the KCP_GARDENER_KUBECONFIG environment variable
   -h, --help                         Displays help for the CLI

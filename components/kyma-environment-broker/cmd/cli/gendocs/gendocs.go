@@ -79,7 +79,7 @@ func genMarkdown(cmd *cobra.Command, w io.Writer) error {
 
 	if len(cmd.Example) > 0 {
 		buf.WriteString("## Examples\n\n")
-		buf.WriteString(fmt.Sprintf("```bash\n%s\n```\n\n", cmd.Example))
+		buf.WriteString(fmt.Sprintf("```\n%s\n```\n\n", cmd.Example))
 	}
 
 	if err := printOptions(buf, cmd); err != nil {
@@ -112,7 +112,7 @@ func printOptions(buf *bytes.Buffer, cmd *cobra.Command) error {
 	flags := cmd.NonInheritedFlags()
 	flags.SetOutput(buf)
 	if flags.HasAvailableFlags() {
-		buf.WriteString("## Options\n\n```bash\n")
+		buf.WriteString("## Options\n\n```\n")
 		flags.PrintDefaults()
 		buf.WriteString("```\n\n")
 	}
@@ -120,7 +120,7 @@ func printOptions(buf *bytes.Buffer, cmd *cobra.Command) error {
 	parentFlags := cmd.InheritedFlags()
 	parentFlags.SetOutput(buf)
 	if parentFlags.HasAvailableFlags() {
-		buf.WriteString("## Options inherited from parent commands\n\n```bash\n")
+		buf.WriteString("## Options inherited from parent commands\n\n```\n")
 		parentFlags.PrintDefaults()
 		buf.WriteString("```\n\n")
 	}

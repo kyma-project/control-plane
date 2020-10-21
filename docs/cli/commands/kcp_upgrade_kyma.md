@@ -16,7 +16,7 @@ kcp upgrade kyma --target <TARGET SPEC> ... [--target-exclude <TARGET SPEC> ...]
 
 ## Examples
 
-```bash
+```
   kcp upgrade kyma --target all --schedule maintenancewindow     Upgrade Kyma on all runtimes in their next respective maintenance window hours
   kcp upgrade kyma --target "account=CA.*"                       Upgrade Kyma on runtimes of all Global Accounts starting with CA
   kcp upgrade kyma --target all --target-exclude "account=CA.*"  Upgrade Kyma on runtimes of all Global Accounts not starting with CA
@@ -25,7 +25,7 @@ kcp upgrade kyma --target <TARGET SPEC> ... [--target-exclude <TARGET SPEC> ...]
 
 ## Options
 
-```bash
+```
       --dry-run                      Perform the orchestration without executing the actual upgrage operations for the runtimes. The details can be obtained using the "kcp orchestrations" command
       --parallel-workers int         Number of parallel workers to use in parallel orchestration strategy. By default the amount of workers will be auto-selected on control plane server side
       --schedule string              Orchestration schedule to use. Possible values: "immediate", "maintenancewindow". By default the schedule will be auto-selected on control plane server side
@@ -35,7 +35,7 @@ kcp upgrade kyma --target <TARGET SPEC> ... [--target-exclude <TARGET SPEC> ...]
                                        all                 : all runtimes provisioned successfully and not deprovisioning
                                        account=<REGEXP>    : Regex pattern to match against the runtime's GlobalAccount field. E.g. CA50125541TID000000000741207136, "CA.*"
                                        subaccount=<REGEXP> : Regex pattern to match against the runtime's SubAccount field. E.g. 0d20e315-d0b4-48a2-9512-49bc8eb03cd1
-                                       region=<REGEXP>     : Regex pattern to match against the shoot cluster's Region field (not SCP platform-region). E.g. "europe|eu-"
+                                       region=<REGEXP>     : Regex pattern to match against the shoot cluster's Region field (provider region). E.g. "europe|eu-"
                                        runtime-id=<ID>     : Runtime ID is used to indicate a specific runtime
   -e, --target-exclude stringArray   List of runtime target specifiers to exclude (the option can be specified multiple times).
                                      A target specifier is a comma separated list of the selectors described under --target option
@@ -43,7 +43,7 @@ kcp upgrade kyma --target <TARGET SPEC> ... [--target-exclude <TARGET SPEC> ...]
 
 ## Options inherited from parent commands
 
-```bash
+```
       --config string                Path to the kcp CLI config file. Can also be set via the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml
       --gardener-kubeconfig string   Path to the corresponding Gardener project kubeconfig file which have permissions to list/get shoots. Can also be set via the KCP_GARDENER_KUBECONFIG environment variable
   -h, --help                         Displays help for the CLI

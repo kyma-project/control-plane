@@ -22,9 +22,9 @@ It is possible to list and observe attributes and state of each Kyma runtime and
 You can find the complete list of possible operations as commands below.
 
 The CLI supports configuration file for common, global options needed for all commands. The config file will be looked up in this order:
-  --config <PATH> option
-  KCPCONFIG environment variable which contains the path
-  $HOME/.kcp/config.yaml (default path)
+  - --config <PATH> option
+  - KCPCONFIG environment variable which contains the path
+  - $HOME/.kcp/config.yaml (default path)
 
 The configuration file is in YAML format and supports the following global options: %s, %s, %s, %s, %s, %s.`, GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.oidcClientSecret, GlobalOpts.kebAPIURL, GlobalOpts.kubeconfigAPIURL, GlobalOpts.gardenerKubeconfig)
 
