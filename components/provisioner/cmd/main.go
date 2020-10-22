@@ -187,7 +187,8 @@ func main() {
 		provisioningStages.NewCompassConnectionClient,
 		directorClient,
 		shootClient,
-		secretsInterface)
+		secretsInterface,
+		k8sClientProvider)
 
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
 

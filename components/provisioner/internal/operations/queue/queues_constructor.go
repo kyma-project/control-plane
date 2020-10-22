@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
@@ -44,22 +45,26 @@ func CreateProvisioningQueue(
 	ccClientConstructor provisioning.CompassConnectionClientConstructor,
 	directorClient director.DirectorClient,
 	shootClient gardener_apis.ShootInterface,
-	secretsClient v1core.SecretInterface) OperationQueue {
+	secretsClient v1core.SecretInterface,
+	k8sClientProvider k8s.K8sClientProvider) OperationQueue {
 
 	waitForAgentToConnectStep := provisioning.NewWaitForAgentToConnectStep(ccClientConstructor, model.FinishedStage, timeouts.AgentConnection, directorClient)
 	configureAgentStep := provisioning.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Name(), timeouts.AgentConfiguration)
 	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), timeouts.Installation)
 	installStep := provisioning.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 20*time.Minute)
-	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), installStep.Name(), timeouts.ClusterCreation)
+	// TODO: Use config timeouts everywhere there
+	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, installStep.Name(), 2*time.Minute)
+	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
 	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), 10*time.Minute)
 
 	provisionSteps := map[model.OperationStage]operations.Step{
-		model.WaitForAgentToConnect:     waitForAgentToConnectStep,
-		model.ConnectRuntimeAgent:       configureAgentStep,
-		model.WaitingForInstallation:    waitForInstallStep,
-		model.StartingInstallation:      installStep,
-		model.WaitingForClusterDomain:   waitForClusterDomainStep,
-		model.WaitingForClusterCreation: waitForClusterCreationStep,
+		model.WaitForAgentToConnect:        waitForAgentToConnectStep,
+		model.ConnectRuntimeAgent:          configureAgentStep,
+		model.WaitingForInstallation:       waitForInstallStep,
+		model.StartingInstallation:         installStep,
+		model.CreatingBindingsForOperators: createBindingsForOperatorsStep,
+		model.WaitingForClusterDomain:      waitForClusterDomainStep,
+		model.WaitingForClusterCreation:    waitForClusterCreationStep,
 	}
 
 	provisioningExecutor := operations.NewExecutor(
