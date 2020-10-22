@@ -111,6 +111,7 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 	}
 
 	err = s.configureKymaVersion(&pp, log)
+
 	if err != nil {
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	}

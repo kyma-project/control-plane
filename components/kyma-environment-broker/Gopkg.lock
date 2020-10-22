@@ -23,7 +23,7 @@
   version = "v0.10.2"
 
 [[projects]]
-  digest = "1:298d4ba5657d3558241332cfdf2062b9ef91a7ab7543db7e47677eecc6d750c6"
+  digest = "1:782889e3ae2bd4866abbb4ddadd4971e273b2c8024bbb26ee8515b4fc4d1d518"
   name = "github.com/Azure/azure-sdk-for-go"
   packages = [
     "services/eventhub/mgmt/2017-04-01/eventhub",
@@ -31,13 +31,14 @@
     "version",
   ]
   pruneopts = "NUT"
-  revision = "ee7c54530df34dd03f392562bcb869613fd7efdc"
-  version = "v39.3.0"
+  revision = "abb0fcc0862ea482081f2e9d9bc700c4ad088704"
+  version = "v47.1.0"
 
 [[projects]]
-  digest = "1:3145d0b3c746de44906703baa44c009d97a00f3daca6df01928d7b149bfe1514"
+  digest = "1:6a3936eee6f0e0f43a719381e7ffe10e885c8e68bf5a28926dc6799ea49fb124"
   name = "github.com/Azure/go-autorest"
   packages = [
+    ".",
     "autorest",
     "autorest/adal",
     "autorest/azure",
@@ -48,8 +49,8 @@
     "tracing",
   ]
   pruneopts = "NUT"
-  revision = "327ff6ce8b902f9afe648d5ea8ff6dc26c26f150"
-  version = "v13.4.0"
+  revision = "bf140ad4ab62921cd264efe85cadcf8353d5a364"
+  version = "autorest/v0.11.10"
 
 [[projects]]
   digest = "1:25870183293a3fb61cc9afd060a61d63a486f091db72af01a8ea3449f5ca530d"
@@ -162,14 +163,6 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:7a6852b35eb5bbc184561443762d225116ae630c26a7c4d90546619f1e7d2ad2"
-  name = "github.com/dgrijalva/jwt-go"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
-  version = "v3.2.0"
-
-[[projects]]
   digest = "1:240e32b60d8cab17bf5c961f3a5b0302e7a7fd0ab717dbb87fa29bffb76ae32d"
   name = "github.com/dlmiddlecote/sqlstats"
   packages = ["."]
@@ -251,6 +244,14 @@
   pruneopts = "NUT"
   revision = "bf22ed9311622d93e213ba31e4ae7a5771e5d379"
   version = "v4.6.0"
+
+[[projects]]
+  digest = "1:09bd3999160f4b5c5bd4a991cc07a9c5bb017b195a30dc9d182a450a0b6a27ac"
+  name = "github.com/form3tech-oss/jwt-go"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "9162a5abdbc046b7c8b03ee90052cee67e25caa7"
+  version = "v3.2.2"
 
 [[projects]]
   digest = "1:0914bf7efc3e3052163e92b859a89f3b407ad353d7c3b7f59a1bbb4fd05bb25d"
@@ -965,12 +966,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3031abe5ec8fc83fbb08976f29733d104ad689552ce11f815a9c6a09ada1a34d"
+  digest = "1:8cbc3f42001c546516a84b8c7e47c0073a2c03b6acc18c3cc9ddd79a0524a9b6"
   name = "golang.org/x/crypto"
   packages = [
     "ed25519",
     "ed25519/internal/edwards25519",
     "pbkdf2",
+    "pkcs12",
+    "pkcs12/internal/rc2",
     "scrypt",
     "ssh/terminal",
   ]
