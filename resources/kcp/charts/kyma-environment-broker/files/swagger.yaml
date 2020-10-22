@@ -175,50 +175,50 @@ paths:
           name: account
           required: false
           description: Filter by Global Account ID
-          type: array
-          collectionFormat: multi
-          items:
-            type: string
+          schema:
+            type: array
+            items:
+              type: string
         - in: query
           name: subaccount
           required: false
           description: Filter by Subaccount ID
-          type: array
-          collectionFormat: multi
-          items:
-            type: string
+          schema:
+            type: array
+            items:
+              type: string
         - in: query
           name: instance_id
           required: false
           description: Filter by Instance ID
-          type: array
-          collectionFormat: multi
-          items:
-            type: string
+          schema:
+            type: array
+            items:
+              type: string
         - in: query
           name: runtime_id
           required: false
           description: Filter by runtime ID
-          type: array
-          collectionFormat: multi
-          items:
-            type: string
+          schema:
+            type: array
+            items:
+              type: string
         - in: query
           name: region
           required: false
           description: Filter by provider region
-          type: array
-          collectionFormat: multi
-          items:
-            type: string
+          schema:
+            type: array
+            items:
+              type: string
         - in: query
           name: shoot
           required: false
           description: Filter by shoot name
-          type: array
-          collectionFormat: multi
-          items:
-            type: string
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         '200':
           description: page of runtimes
