@@ -33,6 +33,10 @@ func (q *Queue) Add(processId string) {
 	q.queue.Add(processId)
 }
 
+func (q *Queue) AddAfter(processId string, duration time.Duration) {
+	q.queue.AddAfter(processId, duration)
+}
+
 func (q *Queue) ShutDown() {
 	q.queue.ShutDown()
 }

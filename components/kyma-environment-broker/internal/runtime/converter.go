@@ -12,7 +12,7 @@ type converter struct {
 	defaultSubaccountRegion string
 }
 
-func NewConverter(platformRegion string) *converter {
+func newConverter(platformRegion string) *converter {
 	return &converter{
 		defaultSubaccountRegion: platformRegion,
 	}
@@ -32,8 +32,32 @@ func (c *converter) setRegionOrDefault(instance internal.Instance, runtime *pkg.
 	return nil
 }
 
-func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr *internal.ProvisioningOperation,
-	dOpr *internal.DeprovisioningOperation, ukOpr *internal.UpgradeKymaOperation) (pkg.RuntimeDTO, error) {
+func (c *converter) ApplyProvisioningOperation(dto *pkg.RuntimeDTO, pOpr *internal.ProvisioningOperation) {
+	if pOpr != nil {
+		c.applyOperation(&pOpr.Operation, dto.Status.Provisioning)
+	}
+}
+
+func (c *converter) ApplyDeprovisioningOperation(dto *pkg.RuntimeDTO, dOpr *internal.DeprovisioningOperation) {
+	if dOpr != nil {
+		dto.Status.Deprovisioning = &pkg.Operation{}
+		c.applyOperation(&dOpr.Operation, dto.Status.Deprovisioning)
+	}
+}
+
+func (c *converter) applyOperation(source *internal.Operation, target *pkg.Operation) {
+	if source != nil {
+		target.OperationID = source.ID
+		target.CreatedAt = source.CreatedAt
+		target.State = string(source.State)
+		target.Description = source.Description
+		if source.OrchestrationID != "" {
+			target.OrchestrationID = &source.OrchestrationID
+		}
+	}
+}
+
+func (c *converter) NewDTO(instance internal.Instance) (pkg.RuntimeDTO, error) {
 	toReturn := pkg.RuntimeDTO{
 		InstanceID:       instance.InstanceID,
 		RuntimeID:        instance.RuntimeID,
@@ -61,22 +85,16 @@ func (c *converter) InstancesAndOperationsToDTO(instance internal.Instance, pOpr
 		toReturn.ShootName = urlSplitted[1]
 	}
 
-	if pOpr != nil {
-		toReturn.Status.Provisioning.State = string(pOpr.State)
-		toReturn.Status.Provisioning.Description = pOpr.Description
-	}
-	if dOpr != nil {
-		toReturn.Status.Deprovisioning = &pkg.Operation{
-			State:       string(dOpr.State),
-			Description: dOpr.Description,
-		}
-	}
-	if ukOpr != nil {
-		toReturn.Status.UpgradingKyma = &pkg.Operation{
-			State:       string(ukOpr.State),
-			Description: ukOpr.Description,
-		}
-	}
-
 	return toReturn, nil
+}
+
+func (c *converter) ApplyUpgradingKymaOperations(dto *pkg.RuntimeDTO, oprs []internal.UpgradeKymaOperation, totalCount int) {
+	dto.Status.UpgradingKyma.TotalCount = totalCount
+	dto.Status.UpgradingKyma.Count = len(oprs)
+	dto.Status.UpgradingKyma.Data = make([]pkg.Operation, 0)
+	for _, o := range oprs {
+		op := pkg.Operation{}
+		c.applyOperation(&o.Operation, &op)
+		dto.Status.UpgradingKyma.Data = append(dto.Status.UpgradingKyma.Data, op)
+	}
 }

@@ -1,7 +1,6 @@
 package orchestration
 
 import (
-	"context"
 	"sort"
 	"time"
 
@@ -11,42 +10,43 @@ import (
 )
 
 type ParallelOrchestrationStrategy struct {
-	operationExecutor process.Executor
-	log               logrus.FieldLogger
+	executor process.Executor
+	log      logrus.FieldLogger
 }
 
-// TODO(upgrade): Finish implementation and write tests; unused for now
-func NewParallelOrchestrationStrategy(operationExecutor process.Executor, log logrus.FieldLogger) Strategy {
+func NewParallelOrchestrationStrategy(executor process.Executor, log logrus.FieldLogger) Strategy {
 	return &ParallelOrchestrationStrategy{
-		operationExecutor: operationExecutor,
-		log:               log,
+		executor: executor,
+		log:      log,
 	}
 }
 
 func (p *ParallelOrchestrationStrategy) Execute(operations []internal.RuntimeOperation, strategySpec internal.StrategySpec) (time.Duration, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	if len(operations) == 0 {
+		return 0, nil
+	}
 
-	q := process.NewQueue(p.operationExecutor, p.log)
+	stopCh := make(chan struct{})
 
-	q.Run(ctx.Done(), strategySpec.Parallel.Workers)
+	q := process.NewQueue(p.executor, p.log)
+	q.Run(stopCh, strategySpec.Parallel.Workers)
 
-	isMaintenanceWindowMode := strategySpec.Schedule == internal.MaintenanceWindow
+	isMaintenanceWindowSchedule := strategySpec.Schedule == internal.MaintenanceWindow
 
-	// Sort operations according to TimeDelta(Now, internal.RuntimeOperation.MaintenanceWindowBegin)
-	if isMaintenanceWindowMode {
+	if isMaintenanceWindowSchedule {
 		sort.Slice(operations, func(i, j int) bool {
 			return operations[i].MaintenanceWindowBegin.Before(operations[j].MaintenanceWindowBegin)
 		})
 	}
 
 	for _, op := range operations {
-		if isMaintenanceWindowMode {
-			time.Sleep(time.Until(op.MaintenanceWindowEnd))
+		if !isMaintenanceWindowSchedule {
+			q.Add(op.ID)
 		}
-		q.Add(op.ID)
+		until := time.Until(op.MaintenanceWindowBegin)
+		p.log.Infof("Upgrade operation %s will be scheduled in %v", op.ID, until)
+		q.AddAfter(op.ID, until)
 	}
-	q.ShutDown()
 
 	return 0, nil
 }

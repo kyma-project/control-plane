@@ -141,8 +141,6 @@ type RuntimeOperation struct {
 	RuntimeID              string    `json:"runtimeId"`
 	GlobalAccountID        string    `json:"globalAccountId"`
 	SubAccountID           string    `json:"subAccountId"`
-
-	OrchestrationID string `json:"orchestrationId"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
@@ -150,6 +148,7 @@ type UpgradeKymaOperation struct {
 	RuntimeOperation `json:"runtime_operation"`
 	InputCreator     ProvisionerInputCreator `json:"-"`
 
+	PlanID                 string `json:"plan_id"`
 	ProvisioningParameters string `json:"provisioning_parameters"`
 }
 
@@ -252,11 +251,9 @@ type RuntimeTarget struct {
 
 type StrategyType string
 
-// TODO(upgrade)
-//const (
-//	ParallelStrategy StrategyType = "parallel"
-//	CanaryStrategy   StrategyType = "canary"
-//)
+const (
+	ParallelStrategy StrategyType = "parallel"
+)
 
 type ScheduleType string
 

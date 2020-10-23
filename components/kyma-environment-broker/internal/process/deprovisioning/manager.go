@@ -72,14 +72,15 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 
 	provisioningOp, err := m.operationStorage.GetProvisioningOperationByInstanceID(op.InstanceID)
 	if err != nil {
-		m.log.Errorf("Cannot fetch ProvisioningOperation from storage: %s", err)
-		return 3 * time.Second, nil
+		m.log.Errorf("Cannot fetch ProvisioningOperation for instanceID %s from storage: %s", op.InstanceID, err)
 	}
 
-	pp, err := provisioningOp.GetProvisioningParameters()
-	if err != nil {
-		m.log.Errorf("while getting ProvisioningParameters from operation id %q: %s", operation.ID, err)
-		return 0, err
+	var pp internal.ProvisioningParameters
+	if provisioningOp != nil {
+		pp, err = provisioningOp.GetProvisioningParameters()
+		if err != nil {
+			m.log.Errorf("while getting ProvisioningParameters from operation id %q: %s", operation.ID, err)
+		}
 	}
 
 	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID, "planID": pp.PlanID})

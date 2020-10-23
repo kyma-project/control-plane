@@ -371,7 +371,7 @@ func main() {
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, cli, provisionerClient, gardenerClient,
-		gardenerNamespace, eventBroker, inputFactory, nil, 20*time.Second, logs)
+		gardenerNamespace, eventBroker, inputFactory, nil, time.Minute, logs)
 	fatalOnError(err)
 
 	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, cfg.MaxPaginationPage, logs)
@@ -403,7 +403,7 @@ func main() {
 	})
 
 	// create list runtimes endpoint
-	runtimeHandler := runtime.NewHandler(db.Instances(), db.Operations(), cfg.MaxPaginationPage, runtime.NewConverter(cfg.DefaultRequestRegion))
+	runtimeHandler := runtime.NewHandler(db.Instances(), db.Operations(), cfg.MaxPaginationPage, cfg.DefaultRequestRegion)
 	runtimeHandler.AttachRoutes(router)
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
