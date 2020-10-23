@@ -1,13 +1,11 @@
 package queue
 
 import (
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"time"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
@@ -18,6 +16,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/upgrade"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 

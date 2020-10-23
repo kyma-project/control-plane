@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	provisioning2 "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s/mocks"
@@ -151,7 +153,17 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	provisioningQueue := queue.CreateProvisioningQueue(testProvisioningTimeouts(), dbsFactory, installationServiceMock, runtimeConfigurator, fakeCompassConnectionClientConstructor, directorServiceMock, shootInterface, secretsInterface)
+	provisioningQueue := queue.CreateProvisioningQueue(
+		testProvisioningTimeouts(),
+		dbsFactory,
+		installationServiceMock,
+		runtimeConfigurator,
+		fakeCompassConnectionClientConstructor,
+		directorServiceMock,
+		shootInterface,
+		secretsInterface,
+		testOperatorRoleBinding(),
+		mockK8sClientProvider)
 	provisioningQueue.Run(queueCtx.Done())
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
@@ -429,6 +441,14 @@ func testDeprovisioningTimeouts() queue.DeprovisioningTimeouts {
 		WaitingForClusterDeletion: 5 * time.Minute,
 	}
 }
+
+func testOperatorRoleBinding() provisioning2.OperatorRoleBinding {
+	return provisioning2.OperatorRoleBinding{
+		L2SubjectName: "runtimeOperator",
+		L3SubjectName: "runtimeAdmin",
+	}
+}
+
 func removeFinalizers(t *testing.T, shootInterface gardener_apis.ShootInterface, shoot *gardener_types.Shoot) *gardener_types.Shoot {
 	shoot.SetFinalizers([]string{})
 

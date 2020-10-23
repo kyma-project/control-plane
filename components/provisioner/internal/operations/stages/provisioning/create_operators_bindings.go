@@ -3,6 +3,8 @@ package provisioning
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
@@ -11,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/client-go/kubernetes/typed/rbac/v1"
-	"time"
 )
 
 const (
@@ -49,7 +50,7 @@ func NewCreateBindingsForOperatorsStep(
 }
 
 func (s *CreateBindingsForOperatorsStep) Name() model.OperationStage {
-	return model.WaitingForInstallation
+	return model.CreatingBindingsForOperators
 }
 
 func (s *CreateBindingsForOperatorsStep) TimeLimit() time.Duration {

@@ -2,6 +2,9 @@ package provisioning
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
@@ -11,8 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
-	"testing"
-	"time"
 )
 
 const kubeconfigRaw = "kubeconfig"
