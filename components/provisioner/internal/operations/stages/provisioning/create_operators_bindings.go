@@ -8,22 +8,43 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"github.com/sirupsen/logrus"
 	v12 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/client-go/kubernetes/typed/rbac/v1"
 	"time"
 )
 
-type CreateBindingsForOperatorsStep struct {
-	k8sClientProvider k8s.K8sClientProvider
-	nextStep          model.OperationStage
-	timeLimit         time.Duration
+const (
+	l2OperatorClusterRoleBindingName = "l2-operator-view"
+	l3OperatorClusterRoleBindingName = "l3-operator-admin"
+
+	l2OperatorClusterRoleBindingRoleRefName = "view"
+	l3OperatorClusterRoleBindingRoleRefName = "cluster-admin"
+)
+
+type OperatorRoleBinding struct {
+	L2SubjectName string `envconfig:"default=runtimeOperator"`
+	L3SubjectName string `envconfig:"default=runtimeAdmin"`
 }
 
-func NewCreateBindingsForOperatorsStep(k8sClientProvider k8s.K8sClientProvider, nextStep model.OperationStage, timeLimit time.Duration) *CreateBindingsForOperatorsStep {
+type CreateBindingsForOperatorsStep struct {
+	k8sClientProvider         k8s.K8sClientProvider
+	operatorRoleBindingConfig OperatorRoleBinding
+	nextStep                  model.OperationStage
+	timeLimit                 time.Duration
+}
+
+func NewCreateBindingsForOperatorsStep(
+	k8sClientProvider k8s.K8sClientProvider,
+	operatorRoleBindingConfig OperatorRoleBinding,
+	nextStep model.OperationStage,
+	timeLimit time.Duration) *CreateBindingsForOperatorsStep {
+
 	return &CreateBindingsForOperatorsStep{
-		k8sClientProvider: k8sClientProvider,
-		nextStep:          nextStep,
-		timeLimit:         timeLimit,
+		k8sClientProvider:         k8sClientProvider,
+		operatorRoleBindingConfig: operatorRoleBindingConfig,
+		nextStep:                  nextStep,
+		timeLimit:                 timeLimit,
 	}
 }
 
@@ -35,7 +56,6 @@ func (s *CreateBindingsForOperatorsStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-// TODO: Add tests!
 func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Operation, _ logrus.FieldLogger) (operations.StageResult, error) {
 	if cluster.Kubeconfig == nil {
 		return operations.StageResult{}, fmt.Errorf("cluster kubeconfig is nil")
@@ -46,9 +66,8 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 		return operations.StageResult{}, fmt.Errorf("failed to create k8s client: %v", err)
 	}
 
-	// TODO: Parametrize these. At least the subjectNames
-	l2OperatorView := buildClusterRoleBinding("l2-operator-view", "runtimeOperator", "view")
-	l3OperatorAdmin := buildClusterRoleBinding("l3-operator-admin", "runtimeAdmin", "cluster-admin")
+	l2OperatorView := buildClusterRoleBinding(l2OperatorClusterRoleBindingName, s.operatorRoleBindingConfig.L2SubjectName, l2OperatorClusterRoleBindingRoleRefName)
+	l3OperatorAdmin := buildClusterRoleBinding(l3OperatorClusterRoleBindingName, s.operatorRoleBindingConfig.L3SubjectName, l3OperatorClusterRoleBindingRoleRefName)
 	if err := createClusterRoleBindings(k8sClient.RbacV1().ClusterRoleBindings(), l2OperatorView, l3OperatorAdmin); err != nil {
 		return operations.StageResult{}, fmt.Errorf("failed to create cluster role bindings: %v", err)
 	}
@@ -78,8 +97,9 @@ func buildClusterRoleBinding(metaName, subjectName, roleRefName string) v12.Clus
 func createClusterRoleBindings(crbClient v1.ClusterRoleBindingInterface, clusterRoleBindings ...v12.ClusterRoleBinding) error {
 	for _, crb := range clusterRoleBindings {
 		if _, err := crbClient.Create(context.Background(), &crb, metav1.CreateOptions{}); err != nil {
-			// TODO: Check if error is "already exists". If so it should be omitted
-			return fmt.Errorf("failed to create %s ClusterRoleBinding: %v", crb.Name, err)
+			if !errors.IsAlreadyExists(err) {
+				return fmt.Errorf("failed to create %s ClusterRoleBinding: %v", crb.Name, err)
+			}
 		}
 	}
 	return nil

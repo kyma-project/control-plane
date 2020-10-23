@@ -22,13 +22,16 @@ import (
 )
 
 type ProvisioningTimeouts struct {
-	ClusterCreation    time.Duration `envconfig:"default=60m"`
-	Installation       time.Duration `envconfig:"default=60m"`
-	Upgrade            time.Duration `envconfig:"default=60m"`
-	ShootUpgrade       time.Duration `envconfig:"default=30m"`
-	ShootRefresh       time.Duration `envconfig:"default=5m"`
-	AgentConfiguration time.Duration `envconfig:"default=15m"`
-	AgentConnection    time.Duration `envconfig:"default=15m"`
+	ClusterCreation        time.Duration `envconfig:"default=60m"`
+	ClusterDomains         time.Duration `envconfig:"default=10m"`
+	BindingsCreation       time.Duration `envconfig:"default=5m"`
+	InstallationTriggering time.Duration `envconfig:"default=20m"`
+	Installation           time.Duration `envconfig:"default=60m"`
+	Upgrade                time.Duration `envconfig:"default=60m"`
+	ShootUpgrade           time.Duration `envconfig:"default=30m"`
+	ShootRefresh           time.Duration `envconfig:"default=5m"`
+	AgentConfiguration     time.Duration `envconfig:"default=15m"`
+	AgentConnection        time.Duration `envconfig:"default=15m"`
 }
 
 type DeprovisioningTimeouts struct {
@@ -46,16 +49,16 @@ func CreateProvisioningQueue(
 	directorClient director.DirectorClient,
 	shootClient gardener_apis.ShootInterface,
 	secretsClient v1core.SecretInterface,
+	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
 	k8sClientProvider k8s.K8sClientProvider) OperationQueue {
 
 	waitForAgentToConnectStep := provisioning.NewWaitForAgentToConnectStep(ccClientConstructor, model.FinishedStage, timeouts.AgentConnection, directorClient)
 	configureAgentStep := provisioning.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Name(), timeouts.AgentConfiguration)
 	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), timeouts.Installation)
-	installStep := provisioning.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), 20*time.Minute)
-	// TODO: Use config timeouts everywhere there
-	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, installStep.Name(), 2*time.Minute)
+	installStep := provisioning.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), timeouts.InstallationTriggering)
+	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, installStep.Name(), timeouts.BindingsCreation)
 	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
-	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), 10*time.Minute)
+	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), timeouts.ClusterDomains)
 
 	provisionSteps := map[model.OperationStage]operations.Step{
 		model.WaitForAgentToConnect:        waitForAgentToConnectStep,
