@@ -90,7 +90,7 @@ metadata:
 spec:
   match:
     methods: ["GET"]
-    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></swagger.*>
+    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></>
   authenticators:
     - handler: noop
   authorizer:

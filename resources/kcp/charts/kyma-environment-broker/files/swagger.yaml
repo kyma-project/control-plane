@@ -244,62 +244,78 @@ components:
             type:
               type: string
               example: parallel
+              enum: [
+                "parallel"
+              ]
+              description: "Specifies the type of the orchestration"
             schedule:
               type: string
+              enum: [
+                "immediate",
+                "maintenanceWindow"
+              ]
               example: immediate
+              description: "Specifies the schedule type for an orchestration."
             parallel:
               type: object
               properties:
                 workers:
                   type: number
                   example: 1
+                  description: Specifies number of parallel workers which process upgrade operations
         dryRun:
           type: boolean
           default: false
+          description: Specifies if orchestration is for testing purposes
         targets:
           type: object
           properties:
             include:
               type: array
               items:
-                type: object
-                properties:
-                  target:
-                    type: string
-                  globalAccount:
-                    type: string
-                  subAccount:
-                    type: string
-                  region:
-                    type: string
-                  runtimeID:
-                    type: string
-                  planName:
-                    type: string
+                $ref: '#/components/schemas/RuntimeTarget'
             exclude:
               type: array
               items:
-                type: object
-                properties:
-                  target:
-                    type: string
-                  globalAccount:
-                    type: string
-                  subAccount:
-                    type: string
-                  region:
-                    type: string
-                  runtimeID:
-                    type: string
-                  planName:
-                    type: string
+                $ref: '#/components/schemas/RuntimeTarget'
+
+    RuntimeTarget:
+      type: object
+      properties:
+        target:
+          type: string
+          enum: [
+            "all"
+          ]
+          example: all
+          description: "Used to select runtimes in specified way"
+        globalAccount:
+          type: string
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+          description: Regex pattern to match against the runtime's GlobalAccount field
+        subAccount:
+          type: string
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+          description: Regex pattern to match against the runtime's SubAccount field
+        region:
+          type: string
+          example: europe|eu-
+          description: Regex pattern to match against the shoot cluster's Region field (not SCP platform-region)
+        runtimeID:
+          type: string
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+          description: Specifies runtimeID
+        planName:
+          type: string
+          example: azure
+          description: Specifies plan name
 
     StatusResponse:
       type: object
       properties:
         state:
           type: string
-          example: InProgress
+          example: in progress
         description:
           type: string
           example: Orchestration scheduled
@@ -315,8 +331,10 @@ components:
             $ref: '#/components/schemas/StatusResponse'
         count:
           type: integer
+          example: 0
         totalCount:
           type: integer
+          example: 0
 
     OperationResponse:
       type: object
@@ -343,24 +361,40 @@ components:
           example: 054ac2c2-318f-45dd-855c-eee41513d40d
         state:
           type: string
-          example: InProgress
+          example: in progress
+          enum: [
+            "suceeded",
+            "failed",
+            "in progress"
+          ]
         description:
           type: string
           example: Operation scheduled
         shootName:
           type: string
+          example: c-8e9ea4f
+          description: Name of the shoot on gardener
         maintenanceWindowBegin:
           type: string
+          example: 150405-0000
+          description: Start time of orchestrations processing
         maintenanceWindowEnd:
           type: string
+          example: 160405-0000
+          description: Orchestrations processing deadline
         dryRun:
           type: boolean
           default: false
+          description: Specifies if orchestration is for testing purposes
         servicePlanID:
           type: string
           format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+          description: ID of the service plan
         servicePlanName:
           type: string
+          example: azure
+          description: Specifies plan name
 
     OperationDetailsResponse:
       type: object
@@ -387,28 +421,46 @@ components:
           example: 054ac2c2-318f-45dd-855c-eee41513d40d
         state:
           type: string
-          example: InProgress
+          enum: [
+            "suceeded",
+            "failed",
+            "in progress"
+          ]
+          example: in progress
         description:
           type: string
           example: Operation scheduled
         shootName:
           type: string
+          example: c-8e9ea4f
+          description: Name of the shoot on gardener
         maintenanceWindowBegin:
           type: string
+          example: 150405-0000
+          description: Start time of orchestrations processing
         maintenanceWindowEnd:
           type: string
+          example: 160405-0000
+          description: Orchestrations processing deadline
         dryRun:
           type: boolean
           default: false
+          description: Specifies if orchestration is for testing purposes
         servicePlanID:
           type: string
           format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+          description: ID of the service plan
         servicePlanName:
           type: string
+          example: azure
+          description: Specifies plan name
         kymaConfig:
           type: string
+          description: Object with kyma config send to provisioner
         clusterConfig:
           type: string
+          description: Object with cluster config send to provisioner
 
     OperationResponseList:
       type: object
@@ -419,8 +471,10 @@ components:
             $ref: '#/components/schemas/OperationResponse'
         count:
           type: integer
+          example: 0
         totalCount:
           type: integer
+          example: 0
 
     UpgradeResponse:
       type: object
@@ -434,28 +488,38 @@ components:
       properties:
         instanceID:
           type: string
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
         runtimeID:
           type: string
           format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
         globalAccountID:
           type: string
           format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
         subaccountID:
           type: string
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
         subaccountRegion:
           type: string
         shootName:
           type: string
+          example: c-8e9ea4f
+          description: Name of the shoot on gardener
         serviceClassID:
           type: string
           format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
         serviceClassName:
           type: string
+          example: kymaruntime
         servicePlanID:
           type: string
           format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
         servicePlanName:
           type: string
+          example: azure
         status:
           $ref: '#/components/schemas/StatusDTO'
 
@@ -468,8 +532,10 @@ components:
             $ref: '#/components/schemas/RuntimeDTO'
         count:
           type: integer
+          example: 0
         totalCount:
           type: integer
+          example: 0
 
     StatusDTO:
       type: object
@@ -492,11 +558,19 @@ components:
       properties:
         state:
           type: string
+          example: in progress
+          enum: [
+            "suceeded",
+            "failed",
+            "in progress"
+          ]
         description:
           type: string
+          example: Operation scheduled
 
     errObj:
       type: object
       properties:
         error:
           type: string
+          example: "while decoding request body: invalid character '}' looking for beginning of object key string"
