@@ -19,7 +19,7 @@ kcp runtimes --region westeurope
 
 The CLI supports configuration file for common, global options needed for all commands. The config file will be looked up in this order:
 
-  - `--config <PATH>` option
+  - `--config {PATH}` option
   - `KCPCONFIG` environment variable which contains the path
   - `$HOME/.kcp/config.yaml` (default path)
 
