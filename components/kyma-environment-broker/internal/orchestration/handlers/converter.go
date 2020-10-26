@@ -40,26 +40,24 @@ func (c *Converter) OrchestrationListToDTO(orchestrations []internal.Orchestrati
 }
 
 func (c *Converter) UpgradeKymaOperationToDTO(op internal.UpgradeKymaOperation) (orchestration.OperationResponse, error) {
-	pp, err := op.GetProvisioningParameters()
-	if err != nil {
-		return orchestration.OperationResponse{}, errors.Wrap(err, "while getting provisioning parameters")
-	}
-	plan, ok := broker.Plans[pp.PlanID]
+	plan, ok := broker.Plans[op.PlanID]
 	if !ok {
-		return orchestration.OperationResponse{}, errors.Errorf("plan with ID %s not exist in the broker's plans definitions", pp.PlanID)
+		return orchestration.OperationResponse{}, errors.Errorf("plan with ID %s not exist in the broker's plans definitions", op.PlanID)
 	}
 	return orchestration.OperationResponse{
 		OperationID:            op.Operation.ID,
 		RuntimeID:              op.RuntimeID,
 		GlobalAccountID:        op.GlobalAccountID,
 		SubAccountID:           op.SubAccountID,
-		OrchestrationID:        op.RuntimeOperation.OrchestrationID,
-		ServicePlanID:          pp.PlanID,
+		OrchestrationID:        op.OrchestrationID,
+		ServicePlanID:          op.PlanID,
 		ServicePlanName:        plan.PlanDefinition.Name,
 		DryRun:                 op.DryRun,
 		ShootName:              op.ShootName,
 		MaintenanceWindowBegin: op.MaintenanceWindowBegin,
 		MaintenanceWindowEnd:   op.MaintenanceWindowEnd,
+		State:                  string(op.Operation.State),
+		Description:            op.Operation.Description,
 	}, nil
 }
 

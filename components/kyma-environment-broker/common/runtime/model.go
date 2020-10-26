@@ -20,16 +20,25 @@ type RuntimeDTO struct {
 }
 
 type RuntimeStatus struct {
-	CreatedAt      time.Time  `json:"createdAt"`
-	ModifiedAt     time.Time  `json:"modifiedAt"`
-	Provisioning   *Operation `json:"provisioning"`
-	Deprovisioning *Operation `json:"deprovisioning,omitempty"`
-	UpgradingKyma  *Operation `json:"upgradingKyma,omitempty"`
+	CreatedAt      time.Time      `json:"createdAt"`
+	ModifiedAt     time.Time      `json:"modifiedAt"`
+	Provisioning   *Operation     `json:"provisioning"`
+	Deprovisioning *Operation     `json:"deprovisioning,omitempty"`
+	UpgradingKyma  OperationsData `json:"upgradingKyma,omitempty"`
+}
+
+type OperationsData struct {
+	Data       []Operation `json:"data"`
+	TotalCount int         `json:"totalCount"`
+	Count      int         `json:"count"`
 }
 
 type Operation struct {
-	State       string `json:"state"`
-	Description string `json:"description"`
+	State           string    `json:"state"`
+	Description     string    `json:"description"`
+	CreatedAt       time.Time `json:"createdAt"`
+	OperationID     string    `json:"operationID"`
+	OrchestrationID *string   `json:"orchestrationID,omitempty"`
 }
 
 type RuntimesPage struct {

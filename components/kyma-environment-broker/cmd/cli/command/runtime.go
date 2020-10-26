@@ -54,22 +54,22 @@ func NewRuntimeCmd(log logger.Logger) *cobra.Command {
 	cobraCmd := &cobra.Command{
 		Use:     "runtimes",
 		Aliases: []string{"runtime", "rt"},
-		Short:   "Display Kyma runtimes",
-		Long: `Display Kyma runtimes and their primary attributes, such as identifiers, region, states, etc.
-The command supports filtering runtimes based on various attributes, see the list of options below.`,
-		Example: `  kcp runtimes                                           Display table overview about all runtimes
-  kcp rt -c c-178e034 -o json                            Display all details about one runtime identified by Shoot name in JSON format
-  kcp runtimes --account CA4836781TID000000000123456789  Display all runtimes of a given Global Account`,
+		Short:   "Displays Kyma Runtimes.",
+		Long: `Display Kyma Runtimes and their primary attributes, such as identifiers, region, or states.
+The command supports filtering Runtimes based on various attributes. See the list of options for more details.`,
+		Example: `  kcp runtimes                                           Display table overview about all Runtimes.
+  kcp rt -c c-178e034 -o json                            Display all details about one Runtime identified by a Shoot name in the JSON format.
+  kcp runtimes --account CA4836781TID000000000123456789  Display all Runtimes of a given global account.`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(cobraCmd *cobra.Command, _ []string) error { return cmd.Run(cobraCmd) },
 	}
 
 	SetOutputOpt(cobraCmd, &cmd.output)
-	cobraCmd.Flags().StringSliceVarP(&cmd.params.Shoots, "shoot", "c", nil, "Filter by Shoot cluster name. Multiple values can be provided, either separated as a comma (e.g shoot1,shoot2), or by specifying the option multiple times")
-	cobraCmd.Flags().StringSliceVarP(&cmd.params.GlobalAccountIDs, "account", "g", nil, "Filter by Global Account ID. Multiple values can be provided, either separated as a comma (e.g GAID1,GAID2), or by specifying the option multiple times")
-	cobraCmd.Flags().StringSliceVarP(&cmd.params.SubAccountIDs, "subaccount", "s", nil, "Filter by Subaccount ID. Multiple values can be provided, either separated as a comma (e.g SAID1,SAID2), or by specifying the option multiple times")
-	cobraCmd.Flags().StringSliceVarP(&cmd.params.RuntimeIDs, "runtime-id", "i", nil, "Filter by Runtime ID. Multiple values can be provided, either separated as a comma (e.g ID1,ID2), or by specifying the option multiple times")
-	cobraCmd.Flags().StringSliceVarP(&cmd.params.Regions, "region", "r", nil, "Filter by Region. Multiple values can be provided, either separated as a comma (e.g cf-eu10,cf-us10), or by specifying the option multiple times")
+	cobraCmd.Flags().StringSliceVarP(&cmd.params.Shoots, "shoot", "c", nil, "Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.")
+	cobraCmd.Flags().StringSliceVarP(&cmd.params.GlobalAccountIDs, "account", "g", nil, "Filter by global account ID. You can provide multiple values, either separated by a comma (e.g. GAID1,GAID2), or by specifying the option multiple times.")
+	cobraCmd.Flags().StringSliceVarP(&cmd.params.SubAccountIDs, "subaccount", "s", nil, "Filter by subaccount ID. You can provide multiple values, either separated by a comma (e.g. SAID1,SAID2), or by specifying the option multiple times.")
+	cobraCmd.Flags().StringSliceVarP(&cmd.params.RuntimeIDs, "runtime-id", "i", nil, "Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
+	cobraCmd.Flags().StringSliceVarP(&cmd.params.Regions, "region", "r", nil, "Filter by provider region. You can provide multiple values, either separated by a comma (e.g. westeurope,northeurope), or by specifying the option multiple times.")
 
 	return cobraCmd
 }

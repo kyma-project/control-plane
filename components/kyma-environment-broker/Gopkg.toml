@@ -65,11 +65,11 @@
 # Azure
 [[constraint]]
   name = "github.com/Azure/azure-sdk-for-go"
-  version = "39.3.0"
+  version = "v47.1.0"
 
-[[constraint]]
+[[override]]
   name = "github.com/Azure/go-autorest"
-  version = "13.4.0"
+  version = "autorest/v0.11.10"
 
 [[constraint]]
   name = "gopkg.in/yaml.v2"

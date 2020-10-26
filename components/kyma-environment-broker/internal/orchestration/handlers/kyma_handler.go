@@ -173,6 +173,15 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 			return
 		}
 	}
+	err := h.validateTarget(params.Targets)
+	if err != nil {
+		h.log.Errorf("while validating target: %v", err)
+		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while validating target"))
+		return
+	}
+
+	// defaults strategy if not specified to Parallel with Immediate schedule
+	h.defaultOrchestrationStrategy(&params.Strategy)
 
 	now := time.Now()
 	o := internal.Orchestration{
@@ -184,7 +193,7 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 		UpdatedAt:       now,
 	}
 
-	err := h.orchestrations.Insert(o)
+	err = h.orchestrations.Insert(o)
 	if err != nil {
 		h.log.Errorf("while inserting orchestration to storage: %v", err)
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while inserting orchestration to storage"))
@@ -204,5 +213,31 @@ func (h *kymaHandler) resolveErrorStatus(err error) int {
 		return http.StatusNotFound
 	default:
 		return http.StatusInternalServerError
+	}
+}
+
+func (h *kymaHandler) validateTarget(spec internal.TargetSpec) error {
+	if spec.Include == nil || len(spec.Include) == 0 {
+		return errors.New("targets.include array must be not empty")
+	}
+	return nil
+}
+
+func (h *kymaHandler) defaultOrchestrationStrategy(spec *internal.StrategySpec) {
+	if spec.Parallel.Workers == 0 {
+		spec.Parallel.Workers = 1
+	}
+
+	switch spec.Type {
+	case internal.ParallelStrategy:
+	default:
+		spec.Type = internal.ParallelStrategy
+	}
+
+	switch spec.Schedule {
+	case internal.MaintenanceWindow:
+	case internal.Immediate:
+	default:
+		spec.Schedule = internal.Immediate
 	}
 }

@@ -51,22 +51,22 @@ var GlobalOpts = GlobalOptionsKey{
 
 // SetGlobalOpts configures the global parameters on the given root command
 func SetGlobalOpts(cmd *cobra.Command) {
-	cmd.PersistentFlags().String(GlobalOpts.oidcIssuerURL, "", "OIDC authentication server URL to use for login. Can also be set the KCP_OIDC_ISSUER_URL environment variable")
+	cmd.PersistentFlags().String(GlobalOpts.oidcIssuerURL, "", "OIDC authentication server URL to use for login. Can also be set using the KCP_OIDC_ISSUER_URL environment variable.")
 	viper.BindPFlag(GlobalOpts.oidcIssuerURL, cmd.PersistentFlags().Lookup(GlobalOpts.oidcIssuerURL))
 
-	cmd.PersistentFlags().String(GlobalOpts.oidcClientID, "", "OIDC client ID to use for login. Can also be set via the KCP_OIDC_CLIENT_ID environment variable")
+	cmd.PersistentFlags().String(GlobalOpts.oidcClientID, "", "OIDC client ID to use for login. Can also be set using the KCP_OIDC_CLIENT_ID environment variable.")
 	viper.BindPFlag(GlobalOpts.oidcClientID, cmd.PersistentFlags().Lookup(GlobalOpts.oidcClientID))
 
-	cmd.PersistentFlags().String(GlobalOpts.oidcClientSecret, "", "OIDC client Secret to use for login. Can also be set via the KCP_OIDC_CLIENT_SECRET environment variable")
+	cmd.PersistentFlags().String(GlobalOpts.oidcClientSecret, "", "OIDC client secret to use for login. Can also be set using the KCP_OIDC_CLIENT_SECRET environment variable.")
 	viper.BindPFlag(GlobalOpts.oidcClientSecret, cmd.PersistentFlags().Lookup(GlobalOpts.oidcClientSecret))
 
-	cmd.PersistentFlags().String(GlobalOpts.kebAPIURL, "", "Kyma Environment Broker API URL to use for all commands. Can also be set via the KCP_KEB_API_URL environment variable")
+	cmd.PersistentFlags().String(GlobalOpts.kebAPIURL, "", "Kyma Environment Broker API URL to use for all commands. Can also be set using the KCP_KEB_API_URL environment variable.")
 	viper.BindPFlag(GlobalOpts.kebAPIURL, cmd.PersistentFlags().Lookup(GlobalOpts.kebAPIURL))
 
-	cmd.PersistentFlags().String(GlobalOpts.kubeconfigAPIURL, "", "OIDC Kubeconfig Service API URL, used by the kcp kubeconfig and taskrun commands. Can also be set via the KCP_KUBECONFIG_API_URL environment variable")
+	cmd.PersistentFlags().String(GlobalOpts.kubeconfigAPIURL, "", "OIDC Kubeconfig Service API URL used by the kcp kubeconfig and taskrun commands. Can also be set using the KCP_KUBECONFIG_API_URL environment variable.")
 	viper.BindPFlag(GlobalOpts.kubeconfigAPIURL, cmd.PersistentFlags().Lookup(GlobalOpts.kubeconfigAPIURL))
 
-	cmd.PersistentFlags().String(GlobalOpts.gardenerKubeconfig, "", "Path to the corresponding Gardener project kubeconfig file which have permissions to list/get shoots. Can also be set via the KCP_GARDENER_KUBECONFIG environment variable")
+	cmd.PersistentFlags().String(GlobalOpts.gardenerKubeconfig, "", "Path to the kubeconfig file of the corresponding Gardener project which has permissions to list/get Shoots. Can also be set using the KCP_GARDENER_KUBECONFIG environment variable.")
 	viper.BindPFlag(GlobalOpts.gardenerKubeconfig, cmd.PersistentFlags().Lookup(GlobalOpts.gardenerKubeconfig))
 }
 
@@ -118,7 +118,7 @@ func (keys *GlobalOptionsKey) GardenerKubeconfig() string {
 
 // SetOutputOpt configures the optput type option on the given command
 func SetOutputOpt(cmd *cobra.Command, opt *string) {
-	cmd.Flags().StringVarP(opt, "output", "o", tableOutput, fmt.Sprintf("Output type of displayed runtime(s). Possible values: %s, %s", tableOutput, jsonOutput))
+	cmd.Flags().StringVarP(opt, "output", "o", tableOutput, fmt.Sprintf("Output type of displayed Runtime(s). The possible values are: %s, %s.", tableOutput, jsonOutput))
 }
 
 // ValidateOutputOpt checks whether the given optput type is one of the valid values
@@ -133,16 +133,16 @@ func ValidateOutputOpt(opt string) error {
 // SetRuntimeTargetOpts configures runtime target options on the given command
 func SetRuntimeTargetOpts(cmd *cobra.Command, targetInputs *[]string, targetExcludeInputs *[]string) {
 	cmd.Flags().StringArrayVarP(targetInputs, "target", "t", nil,
-		`List of runtime target specifiers to include (the option can be specified multiple times).
-A target specifier is a comma separated list of the following selectors:
-  all                 : all runtimes provisioned successfully and not deprovisioning
-  account=<REGEXP>    : Regex pattern to match against the runtime's GlobalAccount field. E.g. CA50125541TID000000000741207136, "CA.*"
-  subaccount=<REGEXP> : Regex pattern to match against the runtime's SubAccount field. E.g. 0d20e315-d0b4-48a2-9512-49bc8eb03cd1
-  region=<REGEXP>     : Regex pattern to match against the shoot cluster's Region field (not SCP platform-region). E.g. "europe|eu-"
-  runtime-id=<ID>     : Runtime ID is used to indicate a specific runtime`)
+		`List of Runtime target specifiers to include. You can specify this option multiple times.
+A target specifier is a comma-separated list of the following selectors:
+  all                 : All Runtimes provisioned successfully and not deprovisioning
+  account=<REGEXP>    : Regex pattern to match against the Runtime's global account field, e.g. "CA50125541TID000000000741207136", "CA.*"
+  subaccount=<REGEXP> : Regex pattern to match against the Runtime's subaccount field, e.g. "0d20e315-d0b4-48a2-9512-49bc8eb03cd1"
+  region=<REGEXP>     : Regex pattern to match against the Runtime's provider region field, e.g. "europe|eu-"
+  runtime-id=<ID>     : Runtime ID is used to indicate a specific Runtime`)
 	cmd.Flags().StringArrayVarP(targetExcludeInputs, "target-exclude", "e", nil,
-		`List of runtime target specifiers to exclude (the option can be specified multiple times).
-A target specifier is a comma separated list of the selectors described under --target option`)
+		`List of runtime target specifiers to exclude. You can specify this option multiple times.
+A target specifier is a comma-separated list of the selectors described under --target option.`)
 }
 
 // ValidateTransformRuntimeTargetOpts checks the validity of runtime target options, and transforms them for internal usage

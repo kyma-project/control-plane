@@ -218,6 +218,11 @@ func (s *OrchestrationSuite) CreateOrchestration(runtimeID string) string {
 					{RuntimeID: runtimeID},
 				},
 			},
+			Strategy: internal.StrategySpec{
+				Type:     internal.ParallelStrategy,
+				Schedule: internal.Immediate,
+				Parallel: internal.ParallelStrategySpec{Workers: 1},
+			},
 			DryRun: false,
 		},
 		CreatedAt: now,
@@ -242,7 +247,7 @@ func (s *OrchestrationSuite) WaitForOrchestrationState(orchestrationID string, s
 		orchestration, _ = s.storage.Orchestrations().GetByID(orchestrationID)
 		return orchestration.State == state, nil
 	})
-	assert.NoError(s.t, err, "timeout waiting for the orchestration expected state %s. The existing orchestration %+V", state, orchestration)
+	assert.NoError(s.t, err, "timeout waiting for the orchestration expected state %s. The existing orchestration %+v", state, orchestration)
 }
 
 func (s *OrchestrationSuite) AssertRuntimeUpgraded(runtimeID string) {

@@ -24,23 +24,23 @@ func NewOrchestrationCmd(log logger.Logger) *cobra.Command {
 	cobraCmd := &cobra.Command{
 		Use:     "orchestrations [id]",
 		Aliases: []string{"orchestration", "o"},
-		Short:   "Display Kyma control plane orchestrations",
-		Long: `Display Kyma control plane orchestrations and their primary attributes, such as identifiers, type, state, parameters, runtime operations.
+		Short:   "Displays Kyma Control Plane (KCP) orchestrations.",
+		Long: `Display KCP orchestrations and their primary attributes, such as identifiers, type, state, parameters, or Runtime operations.
 The commands has two modes:
-  1. Without specifying an orchestration id as an argument, it will list all orchestrations, or orchestrations matching the --state if supplied.
-  2. When specifying an orchestration id as an argument, it will display details about the specific orchestration.
-     If the optional --operation is given, it will display details of the specified runtime operation within the orchestration.`,
-		Example: `  kcp orchestrations --state inprogress                                   Display all orchestrations which are in progress
-  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                  Display details about a specific orchestration
-  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified runtime operation within the orchestration`,
+  - Without specifying an orchestration ID as an argument, the command lists all orchestrations, or orchestrations matching the --state option, if provided.
+  - When specifying an orchestration ID as an argument, the command displays details about the specific orchestration.
+     If the optional --operation is provided, it displays details of the specified Runtime operation within the orchestration.`,
+		Example: `  kcp orchestrations --state inprogress                                   Display all orchestrations which are in progress.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                  Display details about a specific orchestration.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified Runtime operation within the orchestration.`,
 		Args:    cobra.MaximumNArgs(1),
 		PreRunE: func(_ *cobra.Command, args []string) error { return cmd.Validate(args) },
 		RunE:    func(_ *cobra.Command, args []string) error { return cmd.Run(args) },
 	}
 
 	SetOutputOpt(cobraCmd, &cmd.output)
-	cobraCmd.Flags().StringVarP(&cmd.state, "state", "s", "", fmt.Sprintf("Filter output by state. Possible values: %s", strings.Join(allOrchestrationStates(), ", ")))
-	cobraCmd.Flags().StringVar(&cmd.operation, "operation", "", "Display details of the specified runtime operation when a given orchestration is selected")
+	cobraCmd.Flags().StringVarP(&cmd.state, "state", "s", "", fmt.Sprintf("Filter output by state. The possible values are: %s.", strings.Join(allOrchestrationStates(), ", ")))
+	cobraCmd.Flags().StringVar(&cmd.operation, "operation", "", "Display details of the specified Runtime operation when a given orchestration is selected.")
 	return cobraCmd
 }
 
@@ -91,7 +91,7 @@ func (cmd *OrchestrationCommand) Validate(args []string) error {
 	}
 
 	if cmd.operation != "" && len(args) == 0 {
-		return errors.New("--operation shoiuld only be used when orchestration id is given as an argument")
+		return errors.New("--operation should only be used when orchestration id is given as an argument")
 	}
 
 	return nil

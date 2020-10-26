@@ -1,61 +1,59 @@
----
-title: kcp upgrade kyma
----
-Upgrade or reconfigure Kyma on one or more Kyma runtimes
+# kcp upgrade kyma
+Upgrades or reconfigures Kyma on one or more Kyma Runtimes.
 
 ## Synopsis
 
-Upgrades or reconfigures Kyma on targets of runtimes.
-The upgrade is performed by the Kyma Control plane within a new orchestration asynchronously, the id of which is returned by the command upon success.
-The targets of runtimes are specified via the --target and --target-exclude options. At lease one --target must be specified.
-The Kyma version and configurations to use for the upgrade is taken from the Kyma Control Plane during processing of the orchestration.
+Upgrades or reconfigures Kyma on targets of Runtimes.
+The upgrade is performed by Kyma Control Plane (KCP) within a new orchestration asynchronously. The ID of the orchestration is returned by the command upon success.
+The targets of Runtimes are specified via the `--target` and `--target-exclude` options. At least one `--target` must be specified.
+The Kyma version and configurations to use for the upgrade are taken from the Kyma Control Plane during the processing of the orchestration.
 
 ```bash
-kcp upgrade kyma --target <TARGET SPEC> ... [--target-exclude <TARGET SPEC> ...] [flags]
+kcp upgrade kyma --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...] [flags]
 ```
 
 ## Examples
 
-```bash
-  kcp upgrade kyma --target all --schedule maintenancewindow     Upgrade Kyma on all runtimes in their next respective maintenance window hours
-  kcp upgrade kyma --target "account=CA.*"                       Upgrade Kyma on runtimes of all Global Accounts starting with CA
-  kcp upgrade kyma --target all --target-exclude "account=CA.*"  Upgrade Kyma on runtimes of all Global Accounts not starting with CA
-  kcp upgrade kyma --target "region=europe|eu|uk"                Upgrade Kyma on runtimes whose region belongs to Europe
+```
+  kcp upgrade kyma --target all --schedule maintenancewindow     Upgrade Kyma on all Runtimes in their next respective maintenance window hours.
+  kcp upgrade kyma --target "account=CA.*"                       Upgrade Kyma on Runtimes of all global accounts starting with CA.
+  kcp upgrade kyma --target all --target-exclude "account=CA.*"  Upgrade Kyma on Runtimes of all global accounts not starting with CA.
+  kcp upgrade kyma --target "region=europe|eu|uk"                Upgrade Kyma on Runtimes whose region belongs to Europe.
 ```
 
 ## Options
 
-```bash
-      --dry-run                      Perform the orchestration without executing the actual upgrage operations for the runtimes. The details can be obtained using the "kcp orchestrations" command
-      --parallel-workers int         Number of parallel workers to use in parallel orchestration strategy. By default the amount of workers will be auto-selected on control plane server side
-      --schedule string              Orchestration schedule to use. Possible values: "immediate", "maintenancewindow". By default the schedule will be auto-selected on control plane server side
-      --strategy string              Orchestration strategy to use. Currently the only supported strategy is parallel (default "parallel")
-  -t, --target stringArray           List of runtime target specifiers to include (the option can be specified multiple times).
-                                     A target specifier is a comma separated list of the following selectors:
-                                       all                 : all runtimes provisioned successfully and not deprovisioning
-                                       account=<REGEXP>    : Regex pattern to match against the runtime's GlobalAccount field. E.g. CA50125541TID000000000741207136, "CA.*"
-                                       subaccount=<REGEXP> : Regex pattern to match against the runtime's SubAccount field. E.g. 0d20e315-d0b4-48a2-9512-49bc8eb03cd1
-                                       region=<REGEXP>     : Regex pattern to match against the shoot cluster's Region field (not SCP platform-region). E.g. "europe|eu-"
-                                       runtime-id=<ID>     : Runtime ID is used to indicate a specific runtime
-  -e, --target-exclude stringArray   List of runtime target specifiers to exclude (the option can be specified multiple times).
-                                     A target specifier is a comma separated list of the selectors described under --target option
+```
+      --dry-run                      Perform the orchestration without executing the actual upgrage operations for the Runtimes. The details can be obtained using the "kcp orchestrations" command.
+      --parallel-workers int         Number of parallel workers to use in parallel orchestration strategy. By default the amount of workers will be auto-selected on control plane server side.
+      --schedule string              Orchestration schedule to use. Possible values: "immediate", "maintenancewindow". By default the schedule will be auto-selected on control plane server side.
+      --strategy string              Orchestration strategy to use. Currently the only supported strategy is parallel. (default "parallel")
+  -t, --target stringArray           List of Runtime target specifiers to include. You can specify this option multiple times.
+                                     A target specifier is a comma-separated list of the following selectors:
+                                       all                 : All Runtimes provisioned successfully and not deprovisioning
+                                       account=<REGEXP>    : Regex pattern to match against the Runtime's global account field, e.g. "CA50125541TID000000000741207136", "CA.*"
+                                       subaccount=<REGEXP> : Regex pattern to match against the Runtime's subaccount field, e.g. "0d20e315-d0b4-48a2-9512-49bc8eb03cd1"
+                                       region=<REGEXP>     : Regex pattern to match against the Runtime's provider region field, e.g. "europe|eu-"
+                                       runtime-id=<ID>     : Runtime ID is used to indicate a specific Runtime
+  -e, --target-exclude stringArray   List of runtime target specifiers to exclude. You can specify this option multiple times.
+                                     A target specifier is a comma-separated list of the selectors described under --target option.
 ```
 
-## Options inherited from parent commands
+## Global Options
 
-```bash
-      --config string                Path to the kcp CLI config file. Can also be set via the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml
-      --gardener-kubeconfig string   Path to the corresponding Gardener project kubeconfig file which have permissions to list/get shoots. Can also be set via the KCP_GARDENER_KUBECONFIG environment variable
-  -h, --help                         Displays help for the CLI
-      --keb-api-url string           Kyma Environment Broker API URL to use for all commands. Can also be set via the KCP_KEB_API_URL environment variable
-      --kubeconfig-api-url string    OIDC Kubeconfig Service API URL, used by the kcp kubeconfig and taskrun commands. Can also be set via the KCP_KUBECONFIG_API_URL environment variable
-      --oidc-client-id string        OIDC client ID to use for login. Can also be set via the KCP_OIDC_CLIENT_ID environment variable
-      --oidc-client-secret string    OIDC client Secret to use for login. Can also be set via the KCP_OIDC_CLIENT_SECRET environment variable
-      --oidc-issuer-url string       OIDC authentication server URL to use for login. Can also be set the KCP_OIDC_ISSUER_URL environment variable
-  -v, --verbose int                  Turn on verbose logging to stderr. Valid values: 0 (default) - 3 (maximum verbosity)
+```
+      --config string                Path to the KCP CLI config file. Can also be set using the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml .
+      --gardener-kubeconfig string   Path to the kubeconfig file of the corresponding Gardener project which has permissions to list/get Shoots. Can also be set using the KCP_GARDENER_KUBECONFIG environment variable.
+  -h, --help                         Option that displays help for the CLI.
+      --keb-api-url string           Kyma Environment Broker API URL to use for all commands. Can also be set using the KCP_KEB_API_URL environment variable.
+      --kubeconfig-api-url string    OIDC Kubeconfig Service API URL used by the kcp kubeconfig and taskrun commands. Can also be set using the KCP_KUBECONFIG_API_URL environment variable.
+      --oidc-client-id string        OIDC client ID to use for login. Can also be set using the KCP_OIDC_CLIENT_ID environment variable.
+      --oidc-client-secret string    OIDC client secret to use for login. Can also be set using the KCP_OIDC_CLIENT_SECRET environment variable.
+      --oidc-issuer-url string       OIDC authentication server URL to use for login. Can also be set using the KCP_OIDC_ISSUER_URL environment variable.
+  -v, --verbose int                  Option that turns verbose logging to stderr. Valid values are 0 (default) - 3 (maximum verbosity).
 ```
 
 ## See also
 
-* [kcp upgrade](kcp_upgrade.md)	 - Perform upgrade operations on Kyma runtimes
+* [kcp upgrade](kcp_upgrade.md)	 - Performs upgrade operations on Kyma Runtimes.
 

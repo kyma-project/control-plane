@@ -17,16 +17,17 @@ var Version string = "N/A"
 // New constructs a new root command for the kcp CLI.
 func New(log logger.Logger) *cobra.Command {
 	cobra.OnInitialize(initConfig)
-	description := fmt.Sprintf(`The kcp CLI (a.k.a. Kyma Control Plane CLI) is a day-two operations tool for Kyma runtimes, which allows to view and manage the runtimes in scale.
-It is possible to list and observe attributes and state of each Kyma runtime and perform various operations on them, e.g. upgrading the Kyma version.
+	description := fmt.Sprintf(`The KCP CLI (Kyma Control Plane CLI) is a day-two operations tool for Kyma Runtimes, which allows you to view and manage the Runtimes in scale.
+It is possible to list and observe attributes and state of each Kyma Runtime and perform various operations on them, such as upgrading the Kyma version.
 You can find the complete list of possible operations as commands below.
 
 The CLI supports configuration file for common, global options needed for all commands. The config file will be looked up in this order:
-  --config <PATH> option
-  KCPCONFIG environment variable which contains the path
-  $HOME/.kcp/config.yaml (default path)
+  - --config {PATH} option
+  - KCPCONFIG environment variable which contains the path
+  - $HOME/.kcp/config.yaml (default path).
 
-The configuration file is in YAML format and supports the following global options: %s, %s, %s, %s, %s, %s.`, GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.oidcClientSecret, GlobalOpts.kebAPIURL, GlobalOpts.kubeconfigAPIURL, GlobalOpts.gardenerKubeconfig)
+The configuration file is in YAML format and supports the following global options: %s, %s, %s, %s, %s, %s.
+Please see the Global Flags / Options section for the description of these options.`, GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.oidcClientSecret, GlobalOpts.kebAPIURL, GlobalOpts.kubeconfigAPIURL, GlobalOpts.gardenerKubeconfig)
 
 	cmd := &cobra.Command{
 		Use:     "kcp",
@@ -42,10 +43,10 @@ The configuration file is in YAML format and supports the following global optio
 		SilenceUsage: true,
 	}
 
-	cmd.PersistentFlags().StringVar(&configPath, "config", os.Getenv(configEnv), "Path to the kcp CLI config file. Can also be set via the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml")
+	cmd.PersistentFlags().StringVar(&configPath, "config", os.Getenv(configEnv), "Path to the KCP CLI config file. Can also be set using the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml .")
 	SetGlobalOpts(cmd)
 	log.AddFlags(cmd.PersistentFlags())
-	cmd.PersistentFlags().BoolP("help", "h", false, "Displays help for the CLI")
+	cmd.PersistentFlags().BoolP("help", "h", false, "Option that displays help for the CLI.")
 
 	cmd.AddCommand(
 		NewLoginCmd(log),

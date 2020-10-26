@@ -102,8 +102,10 @@ func TestConverter_UpgradeKymaOperationToDetailDTO(t *testing.T) {
 func fixOperation(id string) internal.UpgradeKymaOperation {
 	return internal.UpgradeKymaOperation{
 		RuntimeOperation: internal.RuntimeOperation{
-			OrchestrationID: id,
+			Operation: internal.Operation{
+				OrchestrationID: id,
+			},
 		},
-		ProvisioningParameters: `{"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c"}`,
+		PlanID: "4deee563-e5ec-4731-b9b1-53b42d855f0c",
 	}
 }
