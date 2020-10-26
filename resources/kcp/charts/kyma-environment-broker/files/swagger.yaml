@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  description: The APIs described below can be used to orchestrate runtime's upgrades and to fetch data about orchestrations, operations or runtimes.
+  description: The APIs described below can be used to orchestrate Runtime upgrades and to fetch data about Runtime operations.
   version: '1.0'
   title: Kyma Environment Broker APIs
   license:
@@ -9,18 +9,18 @@ info:
 paths:
   /upgrade/kyma:
     post:
-      summary: orchestrates kyma upgrade
+      summary: Orchestrates Kyma upgrade
       operationId: upgradeKyma
-      description: Start the processing of Kyma upgrade, returns orchestration ID
+      description: Starts the processing of Kyma upgrade, returns the orchestration ID
       responses:
         '202':
-          description: upgrade started
+          description: Upgrade started
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UpgradeResponse'
         '400':
-          description: invalid input, object invalid
+          description: Invalid input or object
           content:
             application/json:
               schema:
@@ -34,17 +34,17 @@ paths:
 
   /orchestrations:
     get:
-      summary: returns page of orchestrations
+      summary: Returns a list of orchestrations
       operationId: listStatusResponses
       description: |
-        Using this you can list all of the created orchestrations
+        Lists all created orchestrations
       parameters:
         - in: query
           name: page_size
           required: false
           schema:
             type: integer
-          description: The page size
+          description: Size of the list
         - in: query
           name: page
           required: false
@@ -53,7 +53,7 @@ paths:
           description: Number of the page
       responses:
         '200':
-          description: orchestration objects page
+          description: List of orchestration objects
           content:
             application/json:
               schema:
@@ -61,26 +61,26 @@ paths:
 
   /orchestrations/{orchestration_id}:
     get:
-      summary: returns a single orchestration
+      summary: Returns a single orchestration
       operationId: getOrchestration
       description: |
-        Fetches orchestration by ID
+        Fetches orchestrations by ID
       parameters:
         - in: path
           name: orchestration_id
           required: true
           schema:
             type: string
-          description: The orchestration ID
+          description: Orchestration ID
       responses:
         '200':
-          description: orchestration was returned
+          description: Orchestration returned
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/StatusResponse'
         '404':
-          description: orchestration not exist
+          description: Orchestration doesn't exist
           content:
             application/json:
               schema:
@@ -88,7 +88,7 @@ paths:
 
   /orchestrations/{orchestration_id}/operations:
     get:
-      summary: returns page of operations scheduled by orchestration
+      summary: Returns a list of operations scheduled by the orchestration
       operationId: getOperationsPage
       description: |
         Lists operations scheduled by a given orchestration
@@ -98,13 +98,13 @@ paths:
           required: true
           schema:
             type: string
-          description: The orchestration ID
+          description: Orchestration ID
         - in: query
           name: page_size
           required: false
           schema:
             type: integer
-          description: The page size
+          description: Size of the list
         - in: query
           name: page
           required: false
@@ -113,7 +113,7 @@ paths:
           description: Number of the page
       responses:
         '200':
-          description: operations were found and returned
+          description: Operations found and returned
           content:
             application/json:
               schema:
@@ -121,17 +121,17 @@ paths:
 
   /orchestrations/{orchestration_id}/operations/{operation_id}:
     get:
-      summary: returns detailed operation scheduled by orchestration
+      summary: Returns details of the operation scheduled by the orchestration
       operationId: getOperationResponse
       description: |
-        Fetches the detailed operation with a given ID scheduled by orchestration with a given ID
+        Fetches details of the operation with a given ID that was scheduled by the orchestration with a given ID
       parameters:
         - in: path
           name: orchestration_id
           required: true
           schema:
             type: string
-          description: The orchestration ID
+          description: Orchestration ID
         - in: path
           name: operation_id
           required: true
@@ -140,13 +140,13 @@ paths:
           description: The operation ID
       responses:
         '200':
-          description: operation was found and returned
+          description: Operation found and returned
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/OperationDetailsResponse'
         '404':
-          description: operation not exist
+          description: Operation doesn't exist
           content:
             application/json:
               schema:
@@ -154,17 +154,17 @@ paths:
 
   /runtimes:
     get:
-      summary: returns page of runtimes
+      summary: Returns a list of Runtimes
       operationId: listRuntimes
       description: |
-        Using this you can list all of the runtimes
+        Lists all Runtimes
       parameters:
         - in: query
           name: page_size
           required: false
           schema:
             type: integer
-          description: The page size
+          description: Size of the list
         - in: query
           name: page
           required: false
@@ -174,7 +174,7 @@ paths:
         - in: query
           name: account
           required: false
-          description: Filter by Global Account ID
+          description: Filter by global account ID
           schema:
             type: array
             items:
@@ -182,7 +182,7 @@ paths:
         - in: query
           name: subaccount
           required: false
-          description: Filter by Subaccount ID
+          description: Filter by subaccount ID
           schema:
             type: array
             items:
@@ -190,7 +190,7 @@ paths:
         - in: query
           name: instance_id
           required: false
-          description: Filter by Instance ID
+          description: Filter by instance ID
           schema:
             type: array
             items:
@@ -198,7 +198,7 @@ paths:
         - in: query
           name: runtime_id
           required: false
-          description: Filter by runtime ID
+          description: Filter by Runtime ID
           schema:
             type: array
             items:
@@ -214,20 +214,20 @@ paths:
         - in: query
           name: shoot
           required: false
-          description: Filter by shoot name
+          description: Filter by Shoot name
           schema:
             type: array
             items:
               type: string
       responses:
         '200':
-          description: page of runtimes
+          description: List of Runtimes
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RuntimePage'
         '400':
-          description: wrong params
+          description: Wrong parameters
           content:
             application/json:
               schema:
@@ -255,18 +255,18 @@ components:
                 "maintenanceWindow"
               ]
               example: immediate
-              description: "Specifies the schedule type for an orchestration."
+              description: "Specifies the schedule type for an orchestration"
             parallel:
               type: object
               properties:
                 workers:
                   type: number
                   example: 1
-                  description: Specifies number of parallel workers which process upgrade operations
+                  description: Specifies the number of parallel workers to process upgrade operations
         dryRun:
           type: boolean
           default: false
-          description: Specifies if orchestration is for testing purposes
+          description: Specifies if the orchestration is used for testing purposes
         targets:
           type: object
           properties:
@@ -288,19 +288,19 @@ components:
             "all"
           ]
           example: all
-          description: "Used to select runtimes in specified way"
+          description: "Selects Runtimes in a specified way"
         globalAccount:
           type: string
           example: 054ac2c2-318f-45dd-855c-eee41513d40d
-          description: Regex pattern to match against the runtime's GlobalAccount field
+          description: Regex pattern to match against Runtime's globalAccount field
         subAccount:
           type: string
           example: 054ac2c2-318f-45dd-855c-eee41513d40d
-          description: Regex pattern to match against the runtime's SubAccount field
+          description: Regex pattern to match against Runtime's subAccount field
         region:
           type: string
           example: europe|eu-
-          description: Regex pattern to match against the shoot cluster's Region field (not SCP platform-region)
+          description: Regex pattern to match against the Shoot cluster's region field (not SCP platform region)
         runtimeID:
           type: string
           example: 054ac2c2-318f-45dd-855c-eee41513d40d
@@ -373,11 +373,11 @@ components:
         shootName:
           type: string
           example: c-8e9ea4f
-          description: Name of the shoot on gardener
+          description: Name of the Shoot cluster on Gardener
         maintenanceWindowBegin:
           type: string
           example: 150405-0000
-          description: Start time of orchestrations processing
+          description: Start time of the orchestrations processing
         maintenanceWindowEnd:
           type: string
           example: 160405-0000
@@ -385,7 +385,7 @@ components:
         dryRun:
           type: boolean
           default: false
-          description: Specifies if orchestration is for testing purposes
+          description: Specifies if the orchestration is used for testing purposes
         servicePlanID:
           type: string
           format: uuid
@@ -394,7 +394,7 @@ components:
         servicePlanName:
           type: string
           example: azure
-          description: Specifies plan name
+          description: Specifies the plan name
 
     OperationDetailsResponse:
       type: object
@@ -433,11 +433,11 @@ components:
         shootName:
           type: string
           example: c-8e9ea4f
-          description: Name of the shoot on gardener
+          description: Name of the Shoot cluster on Gardener
         maintenanceWindowBegin:
           type: string
           example: 150405-0000
-          description: Start time of orchestrations processing
+          description: Start time of the orchestrations processing
         maintenanceWindowEnd:
           type: string
           example: 160405-0000
@@ -445,7 +445,7 @@ components:
         dryRun:
           type: boolean
           default: false
-          description: Specifies if orchestration is for testing purposes
+          description: Specifies if the orchestration is used for testing purposes
         servicePlanID:
           type: string
           format: uuid
@@ -454,13 +454,13 @@ components:
         servicePlanName:
           type: string
           example: azure
-          description: Specifies plan name
+          description: Specifies the plan name
         kymaConfig:
           type: string
-          description: Object with kyma config send to provisioner
+          description: Object with the Kyma config sent to Runtime Provisioner
         clusterConfig:
           type: string
-          description: Object with cluster config send to provisioner
+          description: Object with the cluster config sent to Runtime Provisioner
 
     OperationResponseList:
       type: object
@@ -505,7 +505,7 @@ components:
         shootName:
           type: string
           example: c-8e9ea4f
-          description: Name of the shoot on gardener
+          description: Name of the Shoot cluster on Gardener
         serviceClassID:
           type: string
           format: uuid

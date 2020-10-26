@@ -1,13 +1,11 @@
 ---
 title: Check API using Swagger
-type: Tutorials
+type: Details
 ---
 
-This tutorial shows how to check the API schema using Swagger.
+Using the Swagger UI you can visualize the KEB's APIs on a single page.
 
-The Swagger is injected into the KEB's container which exposes the Swagger UI on root endpoint.
-
-The Swagger UI static files are copied from the [official source](https://github.com/swagger-api/swagger-ui/tree/master/dist).
+The Swagger UI static files are copied from the [official source](https://github.com/swagger-api/swagger-ui/tree/master/dist) then they're injected into the KEB's container which exposes them on the root endpoint.
 
 The KEB uses swagger schema file mounted as volume to the Pod. You can find that schema [here](https://github.com/kyma-project/control-plane/blob/master/resources/kcp/charts/kyma-environment-broker/files/swagger.yaml).
 
