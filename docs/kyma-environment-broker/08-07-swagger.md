@@ -1,5 +1,5 @@
 ---
-title: Check API using swagger
+title: Check API using Swagger
 type: Tutorials
 ---
 
@@ -21,7 +21,7 @@ Open the following website:
    https://$BROKER_URL/
    ```
 
-> **NOTE:** Using this option you can't use `Try it out` option due to not configured OAuth2 swagger schema.
+> **NOTE:** If you choose this option, you can't use the `Try it out` feature as the OAuth2 Swagger schema is not configured.
 
 ## Port-forward the Pod
 
@@ -36,4 +36,3 @@ Open the following website:
    ```
    http://localhost:8888/
    ```
-
