@@ -312,6 +312,24 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 		nil
 }
 
+func (s *operations) ListUpgradeKymaOperationsByInstanceID(instanceID string) ([]internal.UpgradeKymaOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	result := make([]internal.UpgradeKymaOperation, 0)
+
+	for _, op := range s.upgradeKymaOperations {
+		if op.InstanceID == instanceID {
+			result = append(result, op)
+		}
+	}
+
+	sortedOperations := s.getUpgradeSortedByCreatedAt(s.upgradeKymaOperations)
+	result = make([]internal.UpgradeKymaOperation, 0)
+
+	return sortedOperations, nil
+}
+
 func (s *operations) getUpgradeSortedByCreatedAt(operations map[string]internal.UpgradeKymaOperation) []internal.UpgradeKymaOperation {
 	operationsList := make([]internal.UpgradeKymaOperation, 0, len(operations))
 	for _, v := range operations {

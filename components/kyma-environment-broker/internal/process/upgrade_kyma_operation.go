@@ -2,7 +2,6 @@ package process
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -65,7 +64,7 @@ func (om *UpgradeKymaOperationManager) UpdateOperation(operation internal.Upgrad
 
 func (om *UpgradeKymaOperationManager) update(operation internal.UpgradeKymaOperation, state domain.LastOperationState, description string) (internal.UpgradeKymaOperation, time.Duration) {
 	operation.State = state
-	operation.Description = fmt.Sprintf("%s : %s", operation.Description, description)
+	operation.Description = description
 
 	return om.UpdateOperation(operation)
 }

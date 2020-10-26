@@ -29,6 +29,8 @@ type OperationResponse struct {
 	ShootName              string    `json:"shootName"`
 	MaintenanceWindowBegin time.Time `json:"maintenanceWindowBegin"`
 	MaintenanceWindowEnd   time.Time `json:"maintenanceWindowEnd"`
+	State                  string    `json:"state"`
+	Description            string    `json:"description"`
 }
 
 type OperationResponseList struct {

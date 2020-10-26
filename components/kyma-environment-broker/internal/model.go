@@ -141,8 +141,6 @@ type RuntimeOperation struct {
 	RuntimeID              string    `json:"runtimeId"`
 	GlobalAccountID        string    `json:"globalAccountId"`
 	SubAccountID           string    `json:"subAccountId"`
-
-	OrchestrationID string `json:"orchestrationId"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
@@ -150,6 +148,7 @@ type UpgradeKymaOperation struct {
 	RuntimeOperation `json:"runtime_operation"`
 	InputCreator     ProvisionerInputCreator `json:"-"`
 
+	PlanID                 string `json:"plan_id"`
 	ProvisioningParameters string `json:"provisioning_parameters"`
 }
 
@@ -245,18 +244,16 @@ type RuntimeTarget struct {
 	// Regex pattern to match against the shoot cluster's Region field (not SCP platform-region). E.g. "europe|eu-"
 	Region string `json:"region,omitempty"`
 	// RuntimeID is used to indicate a specific runtime
-	RuntimeID string `json:"runtimeId,omitempty"`
+	RuntimeID string `json:"runtimeID,omitempty"`
 	// PlanName is used to match runtimes with the same plan
 	PlanName string `json:"planName,omitempty"`
 }
 
 type StrategyType string
 
-// TODO(upgrade)
-//const (
-//	ParallelStrategy StrategyType = "parallel"
-//	CanaryStrategy   StrategyType = "canary"
-//)
+const (
+	ParallelStrategy StrategyType = "parallel"
+)
 
 type ScheduleType string
 

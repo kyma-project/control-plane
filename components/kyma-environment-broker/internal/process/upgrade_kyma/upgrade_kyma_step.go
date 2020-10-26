@@ -79,6 +79,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 			return operation, s.timeSchedule.Retry, nil
 		}
 		operation.ProvisionerOperationID = *provisionerResponse.ID
+		operation.Description = "kyma upgrade in progress"
 
 		operation, repeat := s.operationManager.UpdateOperation(operation)
 		if repeat != 0 {

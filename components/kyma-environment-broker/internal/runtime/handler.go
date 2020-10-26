@@ -15,6 +15,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const numberOfUpgradeOperationsToReturn = 2
+
 //go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
 type Converter interface {
 	InstancesAndOperationsToDTO(internal.Instance, *internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation) (pkg.RuntimeDTO, error)
@@ -23,16 +25,16 @@ type Converter interface {
 type Handler struct {
 	instancesDb  storage.Instances
 	operationsDb storage.Operations
-	converter    Converter
+	converter    *converter
 
 	defaultMaxPage int
 }
 
-func NewHandler(instanceDb storage.Instances, operationDb storage.Operations, defaultMaxPage int, converter Converter) *Handler {
+func NewHandler(instanceDb storage.Instances, operationDb storage.Operations, defaultMaxPage int, defaultRequestRegion string) *Handler {
 	return &Handler{
 		instancesDb:    instanceDb,
 		operationsDb:   operationDb,
-		converter:      converter,
+		converter:      newConverter(defaultRequestRegion),
 		defaultMaxPage: defaultMaxPage,
 	}
 }
@@ -60,17 +62,33 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 	}
 
 	for _, instance := range instances {
-		pOpr, dOpr, ukOpr, err := h.getOperationsForInstance(instance)
+		dto, err := h.converter.NewDTO(instance)
 		if err != nil {
-			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching operations for instance"))
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while converting instance to DTO"))
 			return
 		}
 
-		dto, err := h.converter.InstancesAndOperationsToDTO(instance, pOpr, dOpr, ukOpr)
-		if err != nil {
-			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while converting instances to DTO"))
+		pOpr, err := h.operationsDb.GetProvisioningOperationByInstanceID(instance.InstanceID)
+		if err != nil && !dberr.IsNotFound(err) {
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching provisioning operation for instance"))
 			return
 		}
+		h.converter.ApplyProvisioningOperation(&dto, pOpr)
+
+		dOpr, err := h.operationsDb.GetDeprovisioningOperationByInstanceID(instance.InstanceID)
+		if err != nil && !dberr.IsNotFound(err) {
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching deprovisioning operation for instance"))
+			return
+		}
+		h.converter.ApplyDeprovisioningOperation(&dto, dOpr)
+
+		ukOprs, err := h.operationsDb.ListUpgradeKymaOperationsByInstanceID(instance.InstanceID)
+		if err != nil && !dberr.IsNotFound(err) {
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching upgrade kyma operation for instance"))
+			return
+		}
+		ukOprs, totalCount := h.takeLastNonDryRunOperations(ukOprs)
+		h.converter.ApplyUpgradingKymaOperations(&dto, ukOprs, totalCount)
 
 		toReturn = append(toReturn, dto)
 	}
@@ -83,20 +101,19 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 	httputil.WriteResponse(w, http.StatusOK, runtimePage)
 }
 
-func (h *Handler) getOperationsForInstance(instance internal.Instance) (*internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation, error) {
-	pOpr, err := h.operationsDb.GetProvisioningOperationByInstanceID(instance.InstanceID)
-	if err != nil && !dberr.IsNotFound(err) {
-		return nil, nil, nil, err
+func (h *Handler) takeLastNonDryRunOperations(oprs []internal.UpgradeKymaOperation) ([]internal.UpgradeKymaOperation, int) {
+	toReturn := make([]internal.UpgradeKymaOperation, 0)
+	totalCount := 0
+	for _, op := range oprs {
+		if op.DryRun {
+			continue
+		}
+		if len(toReturn) < numberOfUpgradeOperationsToReturn {
+			toReturn = append(toReturn, op)
+		}
+		totalCount = totalCount + 1
 	}
-	dOpr, err := h.operationsDb.GetDeprovisioningOperationByInstanceID(instance.InstanceID)
-	if err != nil && !dberr.IsNotFound(err) {
-		return nil, nil, nil, err
-	}
-	ukOpr, err := h.operationsDb.GetUpgradeKymaOperationByInstanceID(instance.InstanceID)
-	if err != nil && !dberr.IsNotFound(err) {
-		return nil, nil, nil, err
-	}
-	return pOpr, dOpr, ukOpr, nil
+	return toReturn, totalCount
 }
 
 func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {
