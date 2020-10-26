@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -17,9 +18,7 @@ import (
 
 const (
 	docsTargetDir = "../../docs/cli/commands"
-	fmTemplate    = `---
-title: %s
----
+	fmTemplate    = `# %s
 `
 )
 
@@ -105,7 +104,7 @@ func printSynopsis(buf *bytes.Buffer, cmd *cobra.Command) {
 	}
 
 	buf.WriteString("## Synopsis\n\n")
-	buf.WriteString(long + "\n\n")
+	buf.WriteString(markdownFormatCLIParts(long) + "\n\n")
 }
 
 func printOptions(buf *bytes.Buffer, cmd *cobra.Command) error {
@@ -120,7 +119,7 @@ func printOptions(buf *bytes.Buffer, cmd *cobra.Command) error {
 	parentFlags := cmd.InheritedFlags()
 	parentFlags.SetOutput(buf)
 	if parentFlags.HasAvailableFlags() {
-		buf.WriteString("## Options inherited from parent commands\n\n```\n")
+		buf.WriteString("## Global and Inherited Options\n\n```\n")
 		parentFlags.PrintDefaults()
 		buf.WriteString("```\n\n")
 	}
@@ -158,6 +157,12 @@ func printSeeAlso(buf *bytes.Buffer, cmd *cobra.Command) {
 		buf.WriteString(fmt.Sprintf("* [%s](%s)\t - %s\n", cname, linkHandler(child), child.Short))
 	}
 	buf.WriteString("\n")
+}
+
+func markdownFormatCLIParts(s string) string {
+	opts := regexp.MustCompile(`--[a-zA-z0-9-_]+( \{[a-zA-z0-9-_]+\}){0,1}`)
+	formatted := opts.ReplaceAllString(s, "`$0`")
+	return formatted
 }
 
 func filePrepender(cmd *cobra.Command) string {

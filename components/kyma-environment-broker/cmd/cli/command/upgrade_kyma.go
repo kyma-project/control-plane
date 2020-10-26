@@ -20,17 +20,17 @@ func NewUpgradeKymaCmd(log logger.Logger) *cobra.Command {
 		},
 	}
 	cobraCmd := &cobra.Command{
-		Use:   "kyma --target <TARGET SPEC> ... [--target-exclude <TARGET SPEC> ...]",
-		Short: "Upgrade or reconfigure Kyma on one or more Kyma runtimes",
-		Long: `Upgrades or reconfigures Kyma on targets of runtimes.
-The upgrade is performed by the Kyma Control plane within a new orchestration asynchronously, the id of which is returned by the command upon success.
-The targets of runtimes are specified via the --target and --target-exclude options. At lease one --target must be specified.
-The Kyma version and configurations to use for the upgrade is taken from the Kyma Control Plane during processing of the orchestration.`,
+		Use:   "kyma --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...]",
+		Short: "Upgrades or reconfigures Kyma on one or more Kyma Runtimes.",
+		Long: `Upgrades or reconfigures Kyma on targets of Runtimes.
+The upgrade is performed by Kyma Control Plane (KCP) within a new orchestration asynchronously. The ID of the orchestration is returned by the command upon success.
+The targets of Runtimes are specified via the --target and --target-exclude options. At least one --target must be specified.
+The Kyma version and configurations to use for the upgrade are taken from the Kyma Control Plane during the processing of the orchestration.`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
-		Example: `  kcp upgrade kyma --target all --schedule maintenancewindow     Upgrade Kyma on all runtimes in their next respective maintenance window hours
-  kcp upgrade kyma --target "account=CA.*"                       Upgrade Kyma on runtimes of all Global Accounts starting with CA
-  kcp upgrade kyma --target all --target-exclude "account=CA.*"  Upgrade Kyma on runtimes of all Global Accounts not starting with CA
-  kcp upgrade kyma --target "region=europe|eu|uk"                Upgrade Kyma on runtimes whose region belongs to Europe`,
+		Example: `  kcp upgrade kyma --target all --schedule maintenancewindow     Upgrade Kyma on all Runtimes in their next respective maintenance window hours.
+  kcp upgrade kyma --target "account=CA.*"                       Upgrade Kyma on Runtimes of all global accounts starting with CA.
+  kcp upgrade kyma --target all --target-exclude "account=CA.*"  Upgrade Kyma on Runtimes of all global accounts not starting with CA.
+  kcp upgrade kyma --target "region=europe|eu|uk"                Upgrade Kyma on Runtimes whose region belongs to Europe.`,
 		RunE: func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}
 
