@@ -76,6 +76,6 @@ spec:
           regex: /runtimes
     route:
       - destination:
-          host: {{ .Values.global.oathkeeper.host }}
+          host: {{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
           port:
-            number: {{ .Values.global.oathkeeper.port }}
+            number: {{ .Values.broker.port }}
