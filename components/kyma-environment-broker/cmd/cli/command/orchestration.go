@@ -25,11 +25,11 @@ func NewOrchestrationCmd(log logger.Logger) *cobra.Command {
 		Use:     "orchestrations [id]",
 		Aliases: []string{"orchestration", "o"},
 		Short:   "Displays Kyma Control Plane (KCP) orchestrations.",
-		Long: `Display KCP orchestrations and their primary attributes, such as identifiers, type, state, parameters, or Runtime operations.
-The commands has two modes:
-  - Without specifying an orchestration ID as an argument, the command lists all orchestrations, or orchestrations matching the --state option, if provided.
-  - When specifying an orchestration ID as an argument, the command displays details about the specific orchestration.
-     If the optional --operation is provided, it displays details of the specified Runtime operation within the orchestration.`,
+		Long: `Displays KCP orchestrations and their primary attributes, such as identifiers, type, state, parameters, or Runtime operations.
+The command has two modes:
+  - Without specifying an orchestration ID as an argument. In this mode, the command lists all orchestrations, or orchestrations matching the --state option, if provided.
+  - When specifying an orchestration ID as an argument. In this mode, the command displays details about the specific orchestration.
+     If the optional --operation flag is provided, it displays details of the specified Runtime operation within the orchestration.`,
 		Example: `  kcp orchestrations --state inprogress                                   Display all orchestrations which are in progress.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                  Display details about a specific orchestration.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified Runtime operation within the orchestration.`,
@@ -40,7 +40,7 @@ The commands has two modes:
 
 	SetOutputOpt(cobraCmd, &cmd.output)
 	cobraCmd.Flags().StringVarP(&cmd.state, "state", "s", "", fmt.Sprintf("Filter output by state. The possible values are: %s.", strings.Join(allOrchestrationStates(), ", ")))
-	cobraCmd.Flags().StringVar(&cmd.operation, "operation", "", "Display details of the specified Runtime operation when a given orchestration is selected.")
+	cobraCmd.Flags().StringVar(&cmd.operation, "operation", "", "Option that displays details of the specified Runtime operation when a given orchestration is selected.")
 	return cobraCmd
 }
 

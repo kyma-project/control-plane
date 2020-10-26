@@ -17,21 +17,21 @@ var Version string = "N/A"
 // New constructs a new root command for the kcp CLI.
 func New(log logger.Logger) *cobra.Command {
 	cobra.OnInitialize(initConfig)
-	description := fmt.Sprintf(`The KCP CLI (Kyma Control Plane CLI) is a day-two operations tool for Kyma Runtimes, which allows you to view and manage the Runtimes in scale.
-It is possible to list and observe attributes and state of each Kyma Runtime and perform various operations on them, such as upgrading the Kyma version.
+	description := fmt.Sprintf(`KCP CLI (Kyma Control Plane CLI) is a day-two operations tool for Kyma Runtimes, which allows you to view and manage the Runtimes in scale.
+It is possible to list and observe attributes and state of each Kyma Runtime, and perform various operations on them, such as upgrading the Kyma version.
 You can find the complete list of possible operations as commands below.
 
-The CLI supports configuration file for common, global options needed for all commands. The config file will be looked up in this order:
+The CLI supports configuration file for common (global) options needed for all commands. The config file will be looked up in this order:
   - --config {PATH} option
   - KCPCONFIG environment variable which contains the path
   - $HOME/.kcp/config.yaml (default path).
 
 The configuration file is in YAML format and supports the following global options: %s, %s, %s, %s, %s, %s.
-Please see the Global Flags / Options section for the description of these options.`, GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.oidcClientSecret, GlobalOpts.kebAPIURL, GlobalOpts.kubeconfigAPIURL, GlobalOpts.gardenerKubeconfig)
+See the **Global Options** section of each command for the description of these options.`, GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.oidcClientSecret, GlobalOpts.kebAPIURL, GlobalOpts.kubeconfigAPIURL, GlobalOpts.gardenerKubeconfig)
 
 	cmd := &cobra.Command{
 		Use:     "kcp",
-		Short:   "Day-two operations tool for Kyma Runtimes",
+		Short:   "Day-two operations tool for Kyma Runtimes.",
 		Long:    description,
 		Version: Version,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {

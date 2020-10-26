@@ -3,11 +3,11 @@ Displays Kyma Control Plane (KCP) orchestrations.
 
 ## Synopsis
 
-Display KCP orchestrations and their primary attributes, such as identifiers, type, state, parameters, or Runtime operations.
-The commands has two modes:
-  - Without specifying an orchestration ID as an argument, the command lists all orchestrations, or orchestrations matching the `--state` option, if provided.
-  - When specifying an orchestration ID as an argument, the command displays details about the specific orchestration.
-     If the optional `--operation` is provided, it displays details of the specified Runtime operation within the orchestration.
+Displays KCP orchestrations and their primary attributes, such as identifiers, type, state, parameters, or Runtime operations.
+The command has two modes:
+  - Without specifying an orchestration ID as an argument. In this mode, the command lists all orchestrations, or orchestrations matching the `--state` option, if provided.
+  - When specifying an orchestration ID as an argument. In this mode, the command displays details about the specific orchestration.
+     If the optional `--operation` flag is provided, it displays details of the specified Runtime operation within the orchestration.
 
 ```bash
 kcp orchestrations [id] [flags]
@@ -24,7 +24,7 @@ kcp orchestrations [id] [flags]
 ## Options
 
 ```
-      --operation string   Display details of the specified Runtime operation when a given orchestration is selected.
+      --operation string   Option that displays details of the specified Runtime operation when a given orchestration is selected.
   -o, --output string      Output type of displayed Runtime(s). The possible values are: table, json. (default "table")
   -s, --state string       Filter output by state. The possible values are: pending, inprogress, succeeded, failed.
 ```
@@ -45,5 +45,5 @@ kcp orchestrations [id] [flags]
 
 ## See also
 
-* [kcp](kcp.md)	 - Day-two operations tool for Kyma Runtimes
+* [kcp](kcp.md)	 - Day-two operations tool for Kyma Runtimes.
 

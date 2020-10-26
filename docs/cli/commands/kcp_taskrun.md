@@ -27,7 +27,7 @@ kcp taskrun --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...] COMM
   kcp taskrun --target account=CA4836781TID000000000123456789 /usr/local/bin/awesome-script.sh
     Run a maintenance script for all Runtimes of a given global account.
   kcp taskrun --target all helm upgrade -i -n kyma-system my-kyma-addon --values overrides.yaml
-    Deploy a helm chart on all Runtimes.
+    Deploy a Helm chart on all Runtimes.
 ```
 
 ## Options
@@ -43,8 +43,8 @@ kcp taskrun --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...] COMM
                                        subaccount=<REGEXP> : Regex pattern to match against the Runtime's subaccount field, e.g. "0d20e315-d0b4-48a2-9512-49bc8eb03cd1"
                                        region=<REGEXP>     : Regex pattern to match against the Runtime's provider region field, e.g. "europe|eu-"
                                        runtime-id=<ID>     : Runtime ID is used to indicate a specific Runtime
-  -e, --target-exclude stringArray   List of runtime target specifiers to exclude. You can specify this option multiple times.
-                                     A target specifier is a comma-separated list of the selectors described under --target option.
+  -e, --target-exclude stringArray   List of Runtime target specifiers to exclude. You can specify this option multiple times.
+                                     A target specifier is a comma-separated list of the selectors described under the --target option.
 ```
 
 ## Global Options
@@ -63,5 +63,5 @@ kcp taskrun --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...] COMM
 
 ## See also
 
-* [kcp](kcp.md)	 - Day-two operations tool for Kyma Runtimes
+* [kcp](kcp.md)	 - Day-two operations tool for Kyma Runtimes.
 

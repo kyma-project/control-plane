@@ -21,6 +21,6 @@ Performs upgrade operations on Kyma Runtimes.
 
 ## See also
 
-* [kcp](kcp.md)	 - Day-two operations tool for Kyma Runtimes
+* [kcp](kcp.md)	 - Day-two operations tool for Kyma Runtimes.
 * [kcp upgrade kyma](kcp_upgrade_kyma.md)	 - Upgrades or reconfigures Kyma on one or more Kyma Runtimes.
 

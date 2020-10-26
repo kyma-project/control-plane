@@ -26,7 +26,7 @@ func NewRuntimeCmd(log logger.Logger) *cobra.Command {
 		Use:     "runtimes",
 		Aliases: []string{"runtime", "rt"},
 		Short:   "Displays Kyma Runtimes.",
-		Long: `Display Kyma Runtimes and their primary attributes, such as identifiers, region, or states.
+		Long: `Displays Kyma Runtimes and their primary attributes, such as identifiers, region, or states.
 The command supports filtering Runtimes based on various attributes. See the list of options for more details.`,
 		Example: `  kcp runtimes                                           Display table overview about all Runtimes.
   kcp rt -c c-178e034 -o json                            Display all details about one Runtime identified by a Shoot name in the JSON format.
