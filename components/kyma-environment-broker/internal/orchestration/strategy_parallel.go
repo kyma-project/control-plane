@@ -31,21 +31,21 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []internal.RuntimeOpe
 	q := process.NewQueue(p.executor, p.log)
 	q.Run(stopCh, strategySpec.Parallel.Workers)
 
-	isMaintenanceWindowSchedule := strategySpec.Schedule == internal.MaintenanceWindow
-
-	if isMaintenanceWindowSchedule {
+	if strategySpec.Schedule == internal.MaintenanceWindow {
 		sort.Slice(operations, func(i, j int) bool {
 			return operations[i].MaintenanceWindowBegin.Before(operations[j].MaintenanceWindowBegin)
 		})
 	}
 
 	for _, op := range operations {
-		if !isMaintenanceWindowSchedule {
+		switch strategySpec.Schedule {
+		case internal.MaintenanceWindow:
+			until := time.Until(op.MaintenanceWindowBegin)
+			p.log.Infof("Upgrade operation %s will be scheduled in %v", op.ID, until)
+			q.AddAfter(op.ID, until)
+		case internal.Immediate:
 			q.Add(op.ID)
 		}
-		until := time.Until(op.MaintenanceWindowBegin)
-		p.log.Infof("Upgrade operation %s will be scheduled in %v", op.ID, until)
-		q.AddAfter(op.ID, until)
 	}
 
 	return 0, nil
