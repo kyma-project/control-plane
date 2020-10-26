@@ -18,7 +18,7 @@ kcp login [flags]
   -u, --username string   Username to use for the resource owner credentials flow.
 ```
 
-## Global and Inherited Options
+## Global Options
 
 ```
       --config string                Path to the KCP CLI config file. Can also be set using the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml .

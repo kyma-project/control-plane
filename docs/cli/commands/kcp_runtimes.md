@@ -29,7 +29,7 @@ kcp runtimes [flags]
   -s, --subaccount strings   Filter by subaccount ID. You can provide multiple values, either separated by a comma (e.g. SAID1,SAID2), or by specifying the option multiple times.
 ```
 
-## Global and Inherited Options
+## Global Options
 
 ```
       --config string                Path to the KCP CLI config file. Can also be set using the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml .

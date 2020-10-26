@@ -39,7 +39,7 @@ kcp upgrade kyma --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...]
                                      A target specifier is a comma-separated list of the selectors described under --target option.
 ```
 
-## Global and Inherited Options
+## Global Options
 
 ```
       --config string                Path to the KCP CLI config file. Can also be set using the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml .
