@@ -161,6 +161,8 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		MachineType:                         util.UnwrapStrOrDefault(input.MachineType, config.MachineType),
 		DiskType:                            util.UnwrapStrOrDefault(input.DiskType, config.DiskType),
 		VolumeSizeGB:                        util.UnwrapIntOrDefault(input.VolumeSizeGb, config.VolumeSizeGB),
+		MachineImage:                        input.MachineImage,
+		MachineImageVersion:                 input.MachineImageVersion,
 		AutoScalerMin:                       util.UnwrapIntOrDefault(input.AutoScalerMin, config.AutoScalerMin),
 		AutoScalerMax:                       util.UnwrapIntOrDefault(input.AutoScalerMax, config.AutoScalerMax),
 		MaxSurge:                            util.UnwrapIntOrDefault(input.MaxSurge, config.MaxSurge),

@@ -140,6 +140,8 @@ type GardenerUpgradeInput struct {
 	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
 	AutoScalerMin                       *int                   `json:"autoScalerMin"`
 	AutoScalerMax                       *int                   `json:"autoScalerMax"`
+	MachineImage                        *string                `json:"machineImage"`
+	MachineImageVersion                 *string                `json:"machineImageVersion"`
 	MaxSurge                            *int                   `json:"maxSurge"`
 	MaxUnavailable                      *int                   `json:"maxUnavailable"`
 	Purpose                             *string                `json:"purpose"`
