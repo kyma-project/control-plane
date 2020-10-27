@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
+
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -12,8 +14,8 @@ import (
 )
 
 // StepResultCollector provides the following metrics:
-// - compass_keb_provisioning_step_result{"operation_id", "runtime_id", "instance_id", "step_name"}
-// - compass_keb_deprovisioning_step_result{"operation_id", "runtime_id", "instance_id", "step_name"}
+// - compass_keb_provisioning_step_result{"operation_id", "runtime_id", "instance_id", "step_name", "global_account_id", "plan_id"}
+// - compass_keb_deprovisioning_step_result{"operation_id", "runtime_id", "instance_id", "step_name", "global_account_id", "plan_id"}
 // These gauges show the status of the operation step.
 // The value of the gauge could be:
 // 0 - Failed
@@ -31,13 +33,13 @@ func NewStepResultCollector() *StepResultCollector {
 			Subsystem: prometheusSubsystem,
 			Name:      "provisioning_step_result",
 			Help:      "Result of the provisioning step",
-		}, []string{"operation_id", "runtime_id", "instance_id", "step_name"}),
+		}, []string{"operation_id", "runtime_id", "instance_id", "step_name", "global_account_id", "plan_id"}),
 		deprovisioningResultGauge: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: prometheusNamespace,
 			Subsystem: prometheusSubsystem,
 			Name:      "deprovisioning_step_result",
 			Help:      "Result of the deprovisioning step",
-		}, []string{"operation_id", "runtime_id", "instance_id", "step_name"}),
+		}, []string{"operation_id", "runtime_id", "instance_id", "step_name", "global_account_id", "plan_id"}),
 	}
 }
 
@@ -57,6 +59,11 @@ func (c *StepResultCollector) OnProvisioningStepProcessed(ctx context.Context, e
 		return fmt.Errorf("expected ProvisioningStepProcessed but got %+v", ev)
 	}
 
+	pp, err := stepProcessed.Operation.GetProvisioningParameters()
+	if err != nil {
+		return errors.Wrap(err, "while getting provisioning parameters")
+	}
+
 	var resultValue float64
 	switch {
 	case stepProcessed.Operation.State == domain.Succeeded:
@@ -72,7 +79,9 @@ func (c *StepResultCollector) OnProvisioningStepProcessed(ctx context.Context, e
 		stepProcessed.Operation.ID,
 		stepProcessed.Operation.RuntimeID,
 		stepProcessed.Operation.InstanceID,
-		stepProcessed.StepName).Set(resultValue)
+		stepProcessed.StepName,
+		pp.ErsContext.GlobalAccountID,
+		pp.PlanID).Set(resultValue)
 
 	return nil
 }
@@ -81,6 +90,11 @@ func (c *StepResultCollector) OnDeprovisioningStepProcessed(ctx context.Context,
 	stepProcessed, ok := ev.(process.DeprovisioningStepProcessed)
 	if !ok {
 		return fmt.Errorf("expected DeprovisioningStepProcessed but got %+v", ev)
+	}
+
+	pp, err := stepProcessed.Operation.GetProvisioningParameters()
+	if err != nil {
+		return errors.Wrap(err, "while getting provisioning parameters")
 	}
 
 	var resultValue float64
@@ -98,11 +112,12 @@ func (c *StepResultCollector) OnDeprovisioningStepProcessed(ctx context.Context,
 	if stepProcessed.StepName == "Create_Runtime" && stepProcessed.When == time.Second {
 		resultValue = resultSucceeded
 	}
-
 	c.deprovisioningResultGauge.WithLabelValues(
 		stepProcessed.Operation.ID,
 		stepProcessed.Operation.RuntimeID,
 		stepProcessed.Operation.InstanceID,
-		stepProcessed.StepName).Set(resultValue)
+		stepProcessed.StepName,
+		pp.ErsContext.GlobalAccountID,
+		pp.PlanID).Set(resultValue)
 	return nil
 }
