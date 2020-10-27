@@ -79,17 +79,46 @@ spec:
           host: {{ .Values.global.oathkeeper.host }}
           port:
             number: {{ .Values.global.oathkeeper.port }}
+  # swagger exposed without authorization on root endpoint also needs access to static resources placed under /swagger folder
   - corsPolicy:
       allowHeaders:
         - Authorization
         - Content-Type
       allowMethods: ["GET"]
       allowOrigin: ["*"]
-      match:
-        - uri:
-            regex: /
-      route:
-        - destination:
-            host: {{ .Values.global.oathkeeper.host }}
-            port:
-              number: {{ .Values.global.oathkeeper.port }}
+    match:
+      - uri:
+          exact: /
+    route:
+      - destination:
+          host: {{ include "kyma-env-broker.fullname" . }}
+          port:
+            number: 80
+  - corsPolicy:
+      allowHeaders:
+        - Authorization
+        - Content-Type
+      allowMethods: ["GET"]
+      allowOrigin: ["*"]
+    match:
+      - uri:
+          regex: /swagger.*
+    route:
+      - destination:
+          host: {{ include "kyma-env-broker.fullname" . }}
+          port:
+            number: 80
+  - corsPolicy:
+      allowHeaders:
+        - Authorization
+        - Content-Type
+      allowMethods: ["GET"]
+      allowOrigin: ["*"]
+    match:
+      - uri:
+          regex: /schema.*
+    route:
+      - destination:
+          host: {{ include "kyma-env-broker.fullname" . }}
+          port:
+            number: 80

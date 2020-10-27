@@ -82,18 +82,3 @@ spec:
     handler: allow
   upstream:
     url: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
----
-apiVersion: oathkeeper.ory.sh/v1alpha1
-kind: Rule
-metadata:
-  name: keb-swagger
-spec:
-  match:
-    methods: ["GET"]
-    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></>
-  authenticators:
-    - handler: noop
-  authorizer:
-    handler: allow
-  upstream:
-    url: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
