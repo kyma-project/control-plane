@@ -141,8 +141,8 @@ A target specifier is a comma-separated list of the following selectors:
   region=<REGEXP>     : Regex pattern to match against the Runtime's provider region field, e.g. "europe|eu-"
   runtime-id=<ID>     : Runtime ID is used to indicate a specific Runtime`)
 	cmd.Flags().StringArrayVarP(targetExcludeInputs, "target-exclude", "e", nil,
-		`List of runtime target specifiers to exclude. You can specify this option multiple times.
-A target specifier is a comma-separated list of the selectors described under --target option.`)
+		`List of Runtime target specifiers to exclude. You can specify this option multiple times.
+A target specifier is a comma-separated list of the selectors described under the --target option.`)
 }
 
 // ValidateTransformRuntimeTargetOpts checks the validity of runtime target options, and transforms them for internal usage

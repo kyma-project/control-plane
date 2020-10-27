@@ -5,11 +5,11 @@ Downloads the kubeconfig file for a given Kyma Runtime
 
 Downloads the kubeconfig file for a given Kyma Runtime.
 The Runtime can be specified by one of the following:
-  - global account / subaccount pair with the `--account` and `--subaccount` options
-  - global account / Runtime ID pair with the `--account` and `--runtime-id` options
+  - Global account / subaccount pair with the `--account` and `--subaccount` options
+  - Global account / Runtime ID pair with the `--account` and `--runtime-id` options
   - Shoot cluster name with the `--shoot` option.
 
-By default the kubeconfig file is saved to the current directory. The output file name can be specified using the `--output` option.
+By default, the kubeconfig file is saved to the current directory. The output file name can be specified using the `--output` option.
 
 ```bash
 kcp kubeconfig [flags]
@@ -26,11 +26,11 @@ kcp kubeconfig [flags]
 ## Options
 
 ```
-  -g, --account string      global account ID of the specific Kyma Runtime.
+  -g, --account string      Global account ID of the specific Kyma Runtime.
   -o, --output string       Path to the file to save the downloaded kubeconfig to. Defaults to {CLUSTER NAME}.yaml in the current directory if not specified.
   -r, --runtime-id string   Runtime ID of the specific Kyma Runtime.
   -c, --shoot string        Shoot cluster name of the specific Kyma Runtime.
-  -s, --subaccount string   subccount ID of the specific Kyma Runtime.
+  -s, --subaccount string   Subccount ID of the specific Kyma Runtime.
 ```
 
 ## Global Options
@@ -49,5 +49,5 @@ kcp kubeconfig [flags]
 
 ## See also
 
-* [kcp](kcp.md)	 - Day-two operations tool for Kyma Runtimes
+* [kcp](kcp.md)	 - Day-two operations tool for Kyma Runtimes.
 

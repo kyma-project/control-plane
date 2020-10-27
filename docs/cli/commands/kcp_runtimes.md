@@ -3,7 +3,7 @@ Displays Kyma Runtimes.
 
 ## Synopsis
 
-Display Kyma Runtimes and their primary attributes, such as identifiers, region, or states.
+Displays Kyma Runtimes and their primary attributes, such as identifiers, region, or states.
 The command supports filtering Runtimes based on various attributes. See the list of options for more details.
 
 ```bash
@@ -45,5 +45,5 @@ kcp runtimes [flags]
 
 ## See also
 
-* [kcp](kcp.md)	 - Day-two operations tool for Kyma Runtimes
+* [kcp](kcp.md)	 - Day-two operations tool for Kyma Runtimes.
 

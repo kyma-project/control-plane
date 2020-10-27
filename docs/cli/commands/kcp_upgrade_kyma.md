@@ -6,7 +6,7 @@ Upgrades or reconfigures Kyma on one or more Kyma Runtimes.
 Upgrades or reconfigures Kyma on targets of Runtimes.
 The upgrade is performed by Kyma Control Plane (KCP) within a new orchestration asynchronously. The ID of the orchestration is returned by the command upon success.
 The targets of Runtimes are specified via the `--target` and `--target-exclude` options. At least one `--target` must be specified.
-The Kyma version and configurations to use for the upgrade are taken from the Kyma Control Plane during the processing of the orchestration.
+The Kyma version and configurations to use for the upgrade are taken from Kyma Control Plane during the processing of the orchestration.
 
 ```bash
 kcp upgrade kyma --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...] [flags]
@@ -35,8 +35,8 @@ kcp upgrade kyma --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...]
                                        subaccount=<REGEXP> : Regex pattern to match against the Runtime's subaccount field, e.g. "0d20e315-d0b4-48a2-9512-49bc8eb03cd1"
                                        region=<REGEXP>     : Regex pattern to match against the Runtime's provider region field, e.g. "europe|eu-"
                                        runtime-id=<ID>     : Runtime ID is used to indicate a specific Runtime
-  -e, --target-exclude stringArray   List of runtime target specifiers to exclude. You can specify this option multiple times.
-                                     A target specifier is a comma-separated list of the selectors described under --target option.
+  -e, --target-exclude stringArray   List of Runtime target specifiers to exclude. You can specify this option multiple times.
+                                     A target specifier is a comma-separated list of the selectors described under the --target option.
 ```
 
 ## Global Options

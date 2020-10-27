@@ -55,7 +55,7 @@ func NewRuntimeCmd(log logger.Logger) *cobra.Command {
 		Use:     "runtimes",
 		Aliases: []string{"runtime", "rt"},
 		Short:   "Displays Kyma Runtimes.",
-		Long: `Display Kyma Runtimes and their primary attributes, such as identifiers, region, or states.
+		Long: `Displays Kyma Runtimes and their primary attributes, such as identifiers, region, or states.
 The command supports filtering Runtimes based on various attributes. See the list of options for more details.`,
 		Example: `  kcp runtimes                                           Display table overview about all Runtimes.
   kcp rt -c c-178e034 -o json                            Display all details about one Runtime identified by a Shoot name in the JSON format.
@@ -133,8 +133,10 @@ func runtimeStatus(obj interface{}) string {
 			return "deprovisioned"
 		}
 	}
-	if rt.Status.UpgradingKyma != nil {
-		switch rt.Status.UpgradingKyma.State {
+	upgradeCount := rt.Status.UpgradingKyma.Count
+	if upgradeCount > 0 {
+		// Get the last one, assuming that the data is sorted by CreatedAt ASC
+		switch rt.Status.UpgradingKyma.Data[upgradeCount-1].State {
 		case inProgress:
 			return "upgrading"
 		case failed:

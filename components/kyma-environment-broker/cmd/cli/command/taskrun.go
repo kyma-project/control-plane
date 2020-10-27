@@ -42,7 +42,7 @@ For each subprocess, the following Runtime-specific data are passed as environme
   kcp taskrun --target account=CA4836781TID000000000123456789 /usr/local/bin/awesome-script.sh
     Run a maintenance script for all Runtimes of a given global account.
   kcp taskrun --target all helm upgrade -i -n kyma-system my-kyma-addon --values overrides.yaml
-    Deploy a helm chart on all Runtimes.`,
+    Deploy a Helm chart on all Runtimes.`,
 		Args:    cobra.MinimumNArgs(1),
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },

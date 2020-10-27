@@ -34,5 +34,5 @@ kcp login [flags]
 
 ## See also
 
-* [kcp](kcp.md)	 - Day-two operations tool for Kyma Runtimes
+* [kcp](kcp.md)	 - Day-two operations tool for Kyma Runtimes.
 
