@@ -137,7 +137,7 @@ paths:
           required: true
           schema:
             type: string
-          description: The operation ID
+          description: Operation ID
       responses:
         '200':
           description: Operation found and returned
