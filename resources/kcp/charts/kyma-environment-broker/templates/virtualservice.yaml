@@ -79,6 +79,7 @@ spec:
           host: {{ .Values.global.oathkeeper.host }}
           port:
             number: {{ .Values.global.oathkeeper.port }}
+  {{ if .Values.swagger.virtualService.enabled }}
   # swagger exposed without authorization on root endpoint also needs access to static resources placed under /swagger folder
   - corsPolicy:
       allowHeaders:
@@ -122,3 +123,4 @@ spec:
           host: {{ include "kyma-env-broker.fullname" . }}
           port:
             number: 80
+  {{ end }}
