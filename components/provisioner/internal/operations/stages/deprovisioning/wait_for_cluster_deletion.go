@@ -3,6 +3,8 @@ package deprovisioning
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
@@ -98,7 +100,12 @@ func (s *WaitForClusterDeletionStep) setDeprovisioningFinished(cluster model.Clu
 }
 
 func (s *WaitForClusterDeletionStep) deleteRuntime(cluster model.Cluster) error {
-	exists, err := s.directorClient.RuntimeExists(cluster.ID, cluster.Tenant)
+	var exists bool
+	err := util.RetryOnError(5*time.Second, 3, "Error while checking if runtime exists in Director: %s", func() (err apperrors.AppError) {
+		exists, err = s.directorClient.RuntimeExists(cluster.ID, cluster.Tenant)
+		return
+	})
+
 	if err != nil {
 		return fmt.Errorf("error checking Runtime exists in Director: %s", err.Error())
 	}
@@ -107,7 +114,11 @@ func (s *WaitForClusterDeletionStep) deleteRuntime(cluster model.Cluster) error 
 		return nil
 	}
 
-	err = s.directorClient.DeleteRuntime(cluster.ID, cluster.Tenant)
+	err = util.RetryOnError(5*time.Second, 3, "Error while unregistering runtime in Director: %s", func() (err apperrors.AppError) {
+		err = s.directorClient.DeleteRuntime(cluster.ID, cluster.Tenant)
+		return
+	})
+
 	if err != nil {
 		return fmt.Errorf("error deleting Runtime form Director: %s", err.Error())
 	}

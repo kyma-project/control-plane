@@ -3,6 +3,8 @@ package provisioning
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"time"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -45,7 +47,7 @@ func (s *WaitForClusterDomainStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
+func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation, _ logrus.FieldLogger) (operations.StageResult, error) {
 	shoot, err := s.gardenerClient.Get(context.Background(), cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err
@@ -63,7 +65,13 @@ func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation,
 	if err != nil {
 		return operations.StageResult{}, err
 	}
-	if err := s.directorClient.UpdateRuntime(cluster.ID, runtimeInput, cluster.Tenant); err != nil {
+
+	err = util.RetryOnError(5*time.Second, 3, "Error while updating runtime in Director: %s", func() (err apperrors.AppError) {
+		err = s.directorClient.UpdateRuntime(cluster.ID, runtimeInput, cluster.Tenant)
+		return
+	})
+
+	if err != nil {
 		return operations.StageResult{}, err
 	}
 
@@ -72,7 +80,13 @@ func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation,
 
 func (s *WaitForClusterDomainStep) prepareProvisioningUpdateRuntimeInput(runtimeId, tenant string, shoot *gardener_types.Shoot) (*graphql.RuntimeInput, error) {
 
-	runtime, err := s.directorClient.GetRuntime(runtimeId, tenant)
+	var runtime graphql.RuntimeExt
+
+	err := util.RetryOnError(5*time.Second, 3, "Error while getting runtime from Director: %s", func() (err apperrors.AppError) {
+		runtime, err = s.directorClient.GetRuntime(runtimeId, tenant)
+		return
+	})
+
 	if err != nil {
 		return &graphql.RuntimeInput{}, errors.Wrap(err, fmt.Sprintf("failed to get Runtime by ID: %s", runtimeId))
 	}
