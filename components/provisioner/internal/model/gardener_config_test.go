@@ -382,6 +382,7 @@ func TestEditShootConfig(t *testing.T) {
 		WithWorkers(
 			testkit.NewTestWorker("peon").
 				WithMachineType("machine").
+				WithMachineImageAndVersion("gardenlinux", "25.0.0").
 				WithVolume("SSD", 30).
 				WithMinMax(1, 3).
 				WithMaxSurge(30).
@@ -434,7 +435,7 @@ func TestEditShootConfig(t *testing.T) {
 			gardenerProviderConfig := testCase.upgradeConfig.GardenerProviderConfig
 
 			// when
-			gardenerProviderConfig.EditShootConfig(testCase.upgradeConfig, testCase.initialShoot)
+			err := gardenerProviderConfig.EditShootConfig(testCase.upgradeConfig, testCase.initialShoot)
 
 			// then
 			require.NoError(t, err)
