@@ -3,9 +3,10 @@ package provisioning
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-	"time"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"

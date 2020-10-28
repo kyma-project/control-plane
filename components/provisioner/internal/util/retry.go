@@ -1,8 +1,9 @@
 package util
 
 import (
-	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	"github.com/sirupsen/logrus"
 )

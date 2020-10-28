@@ -1,8 +1,9 @@
 package provisioning
 
 import (
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
