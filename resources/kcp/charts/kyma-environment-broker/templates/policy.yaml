@@ -30,6 +30,11 @@ spec:
       app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   rules:
+  # Allow /metrics without authorization
+  - to:
+    - operation:
+        paths: ["/metrics"]
+  # Allow /runtimes query endpoints only with principal present from JWT, for operators and admins
   - from:
     - source:
         requestPrincipals: ["*"]
