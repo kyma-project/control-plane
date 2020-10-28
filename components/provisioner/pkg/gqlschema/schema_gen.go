@@ -920,6 +920,8 @@ input GardenerUpgradeInput {
     volumeSizeGB: Int                             # Size of the available disk, provided in GB
     autoScalerMin: Int                            # Minimum number of VMs to create
     autoScalerMax: Int                            # Maximum number of VMs to create
+    machineImage: String                          # Machine OS image name
+    machineImageVersion: String                   # Machine OS image version
     maxSurge: Int                                 # Maximum number of VMs created during an update
     maxUnavailable: Int                           # Maximum number of VMs that can be unavailable during an update
     purpose: String                               # The purpose given to the cluster (development, evaluation, testing, production)
@@ -4860,6 +4862,18 @@ func (ec *executionContext) unmarshalInputGardenerUpgradeInput(ctx context.Conte
 		case "autoScalerMax":
 			var err error
 			it.AutoScalerMax, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "machineImage":
+			var err error
+			it.MachineImage, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "machineImageVersion":
+			var err error
+			it.MachineImageVersion, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
