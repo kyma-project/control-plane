@@ -13,6 +13,7 @@ import (
 
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerclient "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
@@ -64,7 +65,7 @@ func NewGardenerRuntimeResolver(gardenerClient gardenerclient.CoreV1beta1Interfa
 }
 
 // Resolve given an input slice of target specs to include and exclude, returns back a list of unique Runtime objects
-func (resolver *GardenerRuntimeResolver) Resolve(targets internal.TargetSpec) ([]internal.Runtime, error) {
+func (resolver *GardenerRuntimeResolver) Resolve(targets orchestration.TargetSpec) ([]internal.Runtime, error) {
 	runtimeIncluded := map[string]bool{}
 	runtimeExcluded := map[string]bool{}
 	runtimes := []internal.Runtime{}
@@ -149,7 +150,7 @@ func (resolver *GardenerRuntimeResolver) getInstanceOperationStatus(runtimeID st
 	return resolver.instanceOperations[runtimeID]
 }
 
-func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt internal.RuntimeTarget, shoots []gardenerapi.Shoot) ([]internal.Runtime, error) {
+func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt orchestration.RuntimeTarget, shoots []gardenerapi.Shoot) ([]internal.Runtime, error) {
 	runtimes := []internal.Runtime{}
 
 	// Iterate over all shoots. Evaluate target specs. If multiple are specified, all must match for a given shoot.
@@ -222,7 +223,7 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt internal.Runtim
 		}
 
 		// Check if target: all is specified
-		if rt.Target != "" && rt.Target != internal.TargetAll {
+		if rt.Target != "" && rt.Target != orchestration.TargetAll {
 			continue
 		}
 

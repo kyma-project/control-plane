@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/spf13/cobra"
 )
 
@@ -14,7 +14,7 @@ type TaskRunCommand struct {
 	targetInputs        []string
 	targetExcludeInputs []string
 	parallelism         int
-	targets             internal.TargetSpec
+	targets             orchestration.TargetSpec
 	kubeconfigDir       string
 	keepKubeconfigs     bool
 }

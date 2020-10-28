@@ -33,10 +33,9 @@ type ReadSession interface {
 	GetRuntimeStateByOperationID(operationID string) (dbmodel.RuntimeStateDTO, dberr.Error)
 	ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.RuntimeStateDTO, dberr.Error)
 	GetOrchestrationByID(oID string) (dbmodel.OrchestrationDTO, dberr.Error)
-	ListOrchestrationsByState(state string) ([]dbmodel.OrchestrationDTO, error)
-	ListOrchestrations(pageSize, page int) ([]dbmodel.OrchestrationDTO, int, int, error)
+	ListOrchestrations(filter dbmodel.OrchestrationFilter) ([]dbmodel.OrchestrationDTO, int, int, error)
 	ListInstances(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error)
-	ListOperationsByOrchestrationID(orchestrationID string, pageSize, page int) ([]dbmodel.OperationDTO, int, int, error)
+	ListOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error)
 	GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error)
 }
 
