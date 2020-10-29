@@ -51,3 +51,4 @@ spec:
     when:
     - key: request.auth.claims[groups]
       values: ["{{ .Values.oidc.groups.admin }}", "{{ .Values.oidc.groups.operator }}"]
+  {{- end }}
