@@ -15,17 +15,6 @@ import (
 	gardenerclient "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
-	"github.com/vrischmann/envconfig"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
@@ -57,6 +46,16 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
+	"github.com/vrischmann/envconfig"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 // Config holds configuration for the whole application
@@ -397,14 +396,17 @@ func main() {
 		broker.AttachRoutes(route, kymaEnvBroker, logger)
 	}
 
+	// create /orchestration
 	orchestrationHandler.AttachRoutes(router)
-	svr := handlers.CustomLoggingHandler(os.Stdout, router, func(writer io.Writer, params handlers.LogFormatterParams) {
-		logs.Infof("Call handled: method=%s url=%s statusCode=%d size=%d", params.Request.Method, params.URL.Path, params.StatusCode, params.Size)
-	})
 
 	// create list runtimes endpoint
 	runtimeHandler := runtime.NewHandler(db.Instances(), db.Operations(), cfg.MaxPaginationPage, cfg.DefaultRequestRegion)
 	runtimeHandler.AttachRoutes(router)
+
+	router.StrictSlash(true).PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("/swagger"))))
+	svr := handlers.CustomLoggingHandler(os.Stdout, router, func(writer io.Writer, params handlers.LogFormatterParams) {
+		logs.Infof("Call handled: method=%s url=%s statusCode=%d size=%d", params.Request.Method, params.URL.Path, params.StatusCode, params.Size)
+	})
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
 }

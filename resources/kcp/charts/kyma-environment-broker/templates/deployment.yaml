@@ -333,6 +333,8 @@ spec:
               readOnly: true
             - mountPath: /config
               name: config-volume
+            - mountPath: /swagger/schema
+              name: swagger-volume
             - mountPath: /auditlog-script
               name: auditlog-script
           {{if eq .Values.global.database.embedded.enabled false}}
@@ -360,6 +362,9 @@ spec:
       - name: config-volume
         configMap:
           name: {{ include "kyma-env-broker.fullname" . }}
+      - name: swagger-volume
+        configMap:
+          name: {{ include "kyma-env-broker.fullname" . }}-swagger
       {{- if eq .Values.global.database.embedded.enabled false}}
       - name: cloudsql-instance-credentials
         secret:
