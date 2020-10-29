@@ -67,8 +67,14 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 		return operations.StageResult{}, fmt.Errorf("failed to create k8s client: %v", err)
 	}
 
-	l2OperatorView := buildClusterRoleBinding(l2OperatorClusterRoleBindingName, s.operatorRoleBindingConfig.L2SubjectName, l2OperatorClusterRoleBindingRoleRefName)
-	l3OperatorAdmin := buildClusterRoleBinding(l3OperatorClusterRoleBindingName, s.operatorRoleBindingConfig.L3SubjectName, l3OperatorClusterRoleBindingRoleRefName)
+	l2OperatorView := buildClusterRoleBinding(
+		l2OperatorClusterRoleBindingName,
+		s.operatorRoleBindingConfig.L2SubjectName,
+		l2OperatorClusterRoleBindingRoleRefName)
+	l3OperatorAdmin := buildClusterRoleBinding(
+		l3OperatorClusterRoleBindingName,
+		s.operatorRoleBindingConfig.L3SubjectName,
+		l3OperatorClusterRoleBindingRoleRefName)
 	if err := createClusterRoleBindings(k8sClient.RbacV1().ClusterRoleBindings(), l2OperatorView, l3OperatorAdmin); err != nil {
 		return operations.StageResult{}, fmt.Errorf("failed to create cluster role bindings: %v", err)
 	}

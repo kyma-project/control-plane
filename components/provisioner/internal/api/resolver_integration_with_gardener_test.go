@@ -426,11 +426,16 @@ func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.Op
 
 func testProvisioningTimeouts() queue.ProvisioningTimeouts {
 	return queue.ProvisioningTimeouts{
-		ClusterCreation:    5 * time.Minute,
-		Installation:       5 * time.Minute,
-		Upgrade:            5 * time.Minute,
-		AgentConfiguration: 5 * time.Minute,
-		AgentConnection:    5 * time.Minute,
+		ClusterCreation:        5 * time.Minute,
+		ClusterDomains:         5 * time.Minute,
+		BindingsCreation:       5 * time.Minute,
+		InstallationTriggering: 5 * time.Minute,
+		Installation:           5 * time.Minute,
+		Upgrade:                5 * time.Minute,
+		ShootUpgrade:           5 * time.Minute,
+		ShootRefresh:           5 * time.Minute,
+		AgentConfiguration:     5 * time.Minute,
+		AgentConnection:        5 * time.Minute,
 	}
 }
 
