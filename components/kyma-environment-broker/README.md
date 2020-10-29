@@ -61,3 +61,4 @@ KEB binary allows you to override some configuration parameters. You can specify
 | **APP_LMS_MANDATORY** | Defines whether failing LMS activation will break provisioning. | `true` |
 | **APP_LMS_REGION** | Defines the region for the LMS system. If set, this region is always used. If empty, the region is mapped from the OSB API request. | None |
 | **APP_LMS_TOKEN** | Specifies the token for the LMS system. | None |
+| **APP_AZURE_CONTAINER_REGISTRY_SKU** | Specifies the service tier of provisioned Azure Container Registry. See the possible values [here](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-skus). | `Basic` |

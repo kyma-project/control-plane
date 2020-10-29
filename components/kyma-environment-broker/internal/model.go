@@ -75,8 +75,11 @@ func NewRuntimeVersionFromGlobalAccount(version string) *RuntimeVersionData {
 	return &RuntimeVersionData{Version: version, Origin: GlobalAccount}
 }
 
-type EventHub struct {
-	Deleted bool `json:"event_hub_deleted"`
+type AzureLifecycleData struct {
+	EventHubCreated          bool   `json:"event_hub_created"`
+	ContainerRegistryCreated bool   `json:"container_registry_created"`
+	ResourceGroupName        string `json:"resource_group_name"`
+	ResourceGroupDeleted     bool   `json:"resource_group_deleted"`
 }
 
 type Instance struct {
@@ -143,7 +146,8 @@ type ProvisioningOperation struct {
 	// following fields are not stored in the storage
 	InputCreator ProvisionerInputCreator `json:"-"`
 
-	Avs AvsLifecycleData `json:"avs"`
+	Avs   AvsLifecycleData   `json:"avs"`
+	Azure AzureLifecycleData `json:"azure"`
 
 	RuntimeID string `json:"runtime_id"`
 
@@ -154,11 +158,11 @@ type ProvisioningOperation struct {
 type DeprovisioningOperation struct {
 	Operation `json:"-"`
 
-	ProvisioningParameters string           `json:"provisioning_parameters"`
-	Avs                    AvsLifecycleData `json:"avs"`
-	EventHub               EventHub         `json:"eh"`
-	SubAccountID           string           `json:"-"`
-	RuntimeID              string           `json:"runtime_id"`
+	ProvisioningParameters string             `json:"provisioning_parameters"`
+	Avs                    AvsLifecycleData   `json:"avs"`
+	Azure                  AzureLifecycleData `json:"azure"`
+	SubAccountID           string             `json:"-"`
+	RuntimeID              string             `json:"runtime_id"`
 }
 
 // RuntimeOperation holds information about operation performed on a runtime

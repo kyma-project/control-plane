@@ -6,19 +6,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
-
-	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
-	"github.com/sirupsen/logrus"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	processazure "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/azure"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+
+	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -28,10 +27,6 @@ const (
 
 	k8sSecretNamespace = "knative-eventing"
 	kafkaProvider      = "azure"
-
-	// prefix is added before the created Azure resources
-	// to satisfy Azure naming validation: https://docs.microsoft.com/en-us/rest/api/servicebus/create-namespace
-	prefix = "k"
 )
 
 // ensure the interface is implemented
@@ -39,13 +34,13 @@ var _ Step = (*ProvisionAzureEventHubStep)(nil)
 
 type ProvisionAzureEventHubStep struct {
 	operationManager *process.ProvisionOperationManager
-	processazure.EventHub
+	processazure.ProviderContext
 }
 
 func NewProvisionAzureEventHubStep(os storage.Operations, hyperscalerProvider azure.HyperscalerProvider, accountProvider hyperscaler.AccountProvider, ctx context.Context) *ProvisionAzureEventHubStep {
 	return &ProvisionAzureEventHubStep{
 		operationManager: process.NewProvisionOperationManager(os),
-		EventHub: processazure.EventHub{
+		ProviderContext: processazure.ProviderContext{
 			HyperscalerProvider: hyperscalerProvider,
 			AccountProvider:     accountProvider,
 			Context:             ctx,
@@ -59,6 +54,11 @@ func (p *ProvisionAzureEventHubStep) Name() string {
 
 func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperation,
 	log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	// check if step was finished successfully before, and the resource group name was persisted
+	if operation.Azure.EventHubCreated {
+		log.Info("Event Hub is already provisioned")
+		return operation, 0, nil
+	}
 
 	hypType := hyperscaler.Azure
 
@@ -73,7 +73,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
 
 	// get hyperscaler credentials from HAP
-	credentials, err := p.EventHub.AccountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+	credentials, err := p.ProviderContext.AccountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
 	if err != nil {
 		// retrying might solve the issue, the HAP could be temporarily unavailable
 		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
@@ -87,7 +87,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	}
 
 	// create hyperscaler client
-	azureClient, err := p.EventHub.HyperscalerProvider.GetClient(azureCfg, log)
+	azureClient, err := p.ProviderContext.HyperscalerProvider.GetClient(azureCfg, log)
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure EventHubs client: %v", err)
@@ -102,21 +102,19 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	}
 
 	// prepare a valid unique name for Azure resources
-	uniqueName := getAzureResourceName(operation.InstanceID)
+	uniqueName := processazure.GetAzureResourceName(operation.InstanceID)
 
-	// create Resource Group
-	groupName := uniqueName
-	resourceGroup, err := azureClient.CreateResourceGroup(p.EventHub.Context, azureCfg, groupName, tags)
-	if err != nil {
-		// retrying might solve the issue while communicating with azure, e.g. network problems etc
-		errorMessage := fmt.Sprintf("Failed to persist Azure Resource Group [%s] with error: %v", groupName, err)
+	// retrieve azure resource group name from operation
+	groupName := operation.Azure.ResourceGroupName
+	if groupName == "" {
+		// resource group wasn't correctly created in previous steps
+		errorMessage := fmt.Sprintf("Failed to retrieve name of Azure Resource Group")
 		return p.operationManager.RetryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
-	log.Printf("Persisted Azure Resource Group [%s]", groupName)
 
 	// create EventHubs Namespace
 	eventHubsNamespace := uniqueName
-	eventHubNamespace, err := azureClient.CreateNamespace(p.EventHub.Context, azureCfg, groupName, eventHubsNamespace, tags)
+	eventHubNamespace, err := azureClient.CreateNamespace(p.ProviderContext.Context, azureCfg, groupName, eventHubsNamespace, tags)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
 		errorMessage := fmt.Sprintf("Failed to persist Azure EventHubs Namespace [%s] with error: %v", eventHubsNamespace, err)
@@ -125,7 +123,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	log.Printf("Persisted Azure EventHubs Namespace [%s]", eventHubsNamespace)
 
 	// get EventHubs Namespace secret
-	accessKeys, err := azureClient.GetEventhubAccessKeys(p.EventHub.Context, *resourceGroup.Name, *eventHubNamespace.Name, authorizationRuleName)
+	accessKeys, err := azureClient.GetEventhubAccessKeys(p.ProviderContext.Context, groupName, *eventHubNamespace.Name, authorizationRuleName)
 	if err != nil {
 		// retrying might solve the issue while communicating with azure, e.g. network problems etc
 		errorMessage := fmt.Sprintf("Unable to retrieve access keys to azure event-hub namespace: %v", err)
@@ -144,7 +142,15 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	operation.InputCreator.AppendOverrides(components.KnativeEventing, getKnativeEventingOverrides())
 	operation.InputCreator.AppendOverrides(components.KnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, kafkaPort, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
 
-	return operation, 0, nil
+	// persist the state of provisioning
+	operation.Azure.EventHubCreated = true
+	op, repeat := p.operationManager.UpdateOperation(operation)
+	if repeat != 0 {
+		log.Errorf("cannot save Azure Event Hub provisioning state")
+		return operation, time.Second, nil
+	}
+
+	return op, 0, nil
 }
 
 func extractEndpoint(accessKeys eventhub.AccessKeys) string {
@@ -205,11 +211,4 @@ func getKafkaChannelOverrides(brokerHostname, brokerPort, namespace, username, p
 			Secret: ptr.Bool(true),
 		},
 	}
-}
-
-// getAzureResourceName returns a valid Azure resource name that is in lower case and starts with a letter.
-func getAzureResourceName(name string) string {
-	name = fmt.Sprintf("%s%s", prefix, name)
-	name = strings.ToLower(name)
-	return name
 }

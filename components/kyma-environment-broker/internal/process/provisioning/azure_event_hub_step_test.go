@@ -47,7 +47,7 @@ func Test_HappyPath(t *testing.T) {
 	tags := fixTags()
 	memoryStorage := storage.NewMemoryStorage()
 	accountProvider := fixAccountProvider()
-	namespaceClient := azuretesting.NewFakeNamespaceClientHappyPath()
+	namespaceClient := azuretesting.NewFakeAzureClientHappyPath()
 	step := fixEventHubStep(memoryStorage.Operations(), azuretesting.NewFakeHyperscalerProvider(namespaceClient), accountProvider)
 	op := fixProvisioningOperation(t)
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
@@ -81,7 +81,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			giveOperation: fixInvalidProvisioningOperation,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
 				accountProvider := fixAccountProvider()
-				return *fixEventHubStep(storage.Operations(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
+				return *fixEventHubStep(storage.Operations(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeAzureClientHappyPath()), accountProvider)
 			},
 			wantRepeatOperation: false,
 		},
@@ -90,7 +90,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			giveOperation: fixProvisioningOperation,
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
 				accountProvider := fixAccountProviderGardenerCredentialsError()
-				return *fixEventHubStep(storage.Operations(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
+				return *fixEventHubStep(storage.Operations(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeAzureClientHappyPath()), accountProvider)
 			},
 			wantRepeatOperation: true,
 		},
@@ -101,7 +101,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				accountProvider := fixAccountProvider()
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... namespace cannot get created
-					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientCreationError()),
+					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeAzureClientCreationError()),
 					accountProvider,
 					context.Background(),
 				)
@@ -115,7 +115,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				accountProvider := fixAccountProvider()
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... namespace cannot get listed
-					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientListError()),
+					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeAzureClientListError()),
 					accountProvider,
 					context.Background(),
 				)
@@ -129,7 +129,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 				accountProvider := fixAccountProvider()
 				return *NewProvisionAzureEventHubStep(storage.Operations(),
 					// ups ... PrimaryConnectionString is nil
-					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceAccessKeysNil()),
+					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeAzureClientAccessKeysNil()),
 					accountProvider,
 					context.Background(),
 				)
@@ -151,16 +151,15 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			wantRepeatOperation: false,
 		},
 		{
-			name:          "Error while creating Azure ResourceGroup",
-			giveOperation: fixProvisioningOperation,
+			name: "Error while retrieving Azure Resource Group name",
+			giveOperation: func(t *testing.T) internal.ProvisioningOperation {
+				op := fixProvisioningOperation(t)
+				op.Azure.ResourceGroupName = ""
+				return op
+			},
 			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
 				accountProvider := fixAccountProvider()
-				return *NewProvisionAzureEventHubStep(storage.Operations(),
-					// ups ... resource group cannot be created
-					azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceResourceGroupError()),
-					accountProvider,
-					context.Background(),
-				)
+				return *fixEventHubStep(storage.Operations(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeAzureClientHappyPath()), accountProvider)
 			},
 			wantRepeatOperation: true,
 		},
@@ -187,32 +186,6 @@ func Test_StepsUnhappyPath(t *testing.T) {
 			} else {
 				ensureOperationIsNotRepeated(t, err)
 			}
-		})
-	}
-}
-
-func Test_getAzureResourceName(t *testing.T) {
-	tests := []struct {
-		name             string
-		givenName        string
-		wantResourceName string
-	}{
-		{
-			name:             "all lowercase and starts with digit",
-			givenName:        "1a23238d-1b04-3a9c-c139-405b75796ceb",
-			wantResourceName: "k1a23238d-1b04-3a9c-c139-405b75796ceb",
-		},
-		{
-			name:             "all uppercase and starts with digit",
-			givenName:        "1A23238D-1B04-3A9C-C139-405B75796CEB",
-			wantResourceName: "k1a23238d-1b04-3a9c-c139-405b75796ceb",
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := getAzureResourceName(test.givenName)
-			assert.Equal(t, test.wantResourceName, got)
 		})
 	}
 }
@@ -404,6 +377,9 @@ func fixProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
 			}
 		}`,
 		InputCreator: fixKnativeKafkaInputCreator(t),
+		Azure: internal.AzureLifecycleData{
+			ResourceGroupName: "ktest-name",
+		},
 	}
 	return op
 }

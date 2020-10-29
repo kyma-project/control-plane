@@ -1,6 +1,7 @@
 package azure
 
 import (
+	"github.com/Azure/azure-sdk-for-go/services/containerregistry/mgmt/2019-05-01/containerregistry"
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 	"github.com/Azure/go-autorest/autorest"
@@ -47,8 +48,14 @@ func (ac *azureProvider) GetClient(config *Config, logger logrus.FieldLogger) (I
 		return nil, errors.Wrap(err, "while creating resource group client")
 	}
 
+	// create registries client
+	registriesClient, err := ac.getRegistriesClient(config, authorizer)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating registries client")
+	}
+
 	// create azure client
-	return NewAzureClient(nsClient, resourceGroupClient, logger), nil
+	return NewAzureClient(nsClient, resourceGroupClient, registriesClient, logger), nil
 }
 
 // getGroupsClient gets a client for handling of Azure Namespaces
@@ -69,6 +76,18 @@ func (ac *azureProvider) getGroupsClient(config *Config, authorizer autorest.Aut
 
 	if err := client.AddToUserAgent(config.userAgent); err != nil {
 		return resources.GroupsClient{}, errors.Wrapf(err, "while adding user agent [%s]", config.userAgent)
+	}
+
+	return client, nil
+}
+
+// getRegistriesClient gets a client for handling of Azure Container Registries
+func (ac *azureProvider) getRegistriesClient(config *Config, authorizer autorest.Authorizer) (containerregistry.RegistriesClient, error) {
+	client := containerregistry.NewRegistriesClient(config.subscriptionID)
+	client.Authorizer = authorizer
+
+	if err := client.AddToUserAgent(config.userAgent); err != nil {
+		return containerregistry.RegistriesClient{}, errors.Wrapf(err, "while adding user agent [%s]", config.userAgent)
 	}
 
 	return client, nil

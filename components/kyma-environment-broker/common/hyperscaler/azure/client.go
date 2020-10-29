@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Azure/azure-sdk-for-go/services/containerregistry/mgmt/2019-05-01/containerregistry"
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,10 +20,12 @@ type Interface interface {
 	GetEventhubAccessKeys(ctx context.Context, resourceGroupName string, namespaceName string, authorizationRuleName string) (result eventhub.AccessKeys, err error)
 	CreateResourceGroup(ctx context.Context, config *Config, name string, tags Tags) (resources.Group, error)
 	CreateNamespace(ctx context.Context, azureCfg *Config, groupName, namespace string, tags Tags) (*eventhub.EHNamespace, error)
+	CreateContainerRegistry(ctx context.Context, config *Config, name, groupName string, tags Tags, sku containerregistry.SkuName) (containerregistry.Registry, error)
 	GetResourceGroup(ctx context.Context, tags Tags) (resources.Group, error)
 	DeleteResourceGroup(ctx context.Context, tags Tags) (resources.GroupsDeleteFuture, error)
 	ListResourceGroup(ctx context.Context, filter string, top *int32) (resources.GroupListResultPage, error)
 	ListEHNamespaceByResourceGroup(ctx context.Context, resourceGroupName string) (eventhub.EHNamespaceListResultPage, error)
+	ListContainerRegistryCredentials(ctx context.Context, registryName, groupName string) (containerregistry.RegistryListCredentialsResult, error)
 }
 
 var _ Interface = (*Client)(nil)
@@ -30,6 +34,7 @@ type Client struct {
 	// the actual azure client
 	eventHubNamespaceClient eventhub.NamespacesClient
 	resourceGroupClient     resources.GroupsClient
+	registriesClient        containerregistry.RegistriesClient
 	logger                  logrus.FieldLogger
 }
 
@@ -45,10 +50,11 @@ func (e ResourceGroupDoesNotExistError) Error() string {
 	return e.message
 }
 
-func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourceGroupClient resources.GroupsClient, logger logrus.FieldLogger) *Client {
+func NewAzureClient(namespaceClient eventhub.NamespacesClient, resourceGroupClient resources.GroupsClient, registriesClient containerregistry.RegistriesClient, logger logrus.FieldLogger) *Client {
 	return &Client{
 		eventHubNamespaceClient: namespaceClient,
 		resourceGroupClient:     resourceGroupClient,
+		registriesClient:        registriesClient,
 		logger:                  logger,
 	}
 }
@@ -120,6 +126,40 @@ func (nc *Client) ListResourceGroup(ctx context.Context, filter string, top *int
 
 func (nc *Client) ListEHNamespaceByResourceGroup(ctx context.Context, resourceGroupName string) (eventhub.EHNamespaceListResultPage, error) {
 	return nc.eventHubNamespaceClient.ListByResourceGroup(ctx, resourceGroupName)
+}
+
+// CreateContainerRegistry creates new Container Registry with specified tags.
+func (nc *Client) CreateContainerRegistry(ctx context.Context, config *Config, name, groupName string, tags Tags, sku containerregistry.SkuName) (containerregistry.Registry, error) {
+	// we need to use a copy of the location, because the following azure call will modify it
+	locationCopy := config.GetLocation()
+
+	parameters := containerregistry.Registry{
+		Sku: &containerregistry.Sku{
+			Name: sku, // Registry Tier
+		},
+		RegistryProperties: &containerregistry.RegistryProperties{
+			AdminUserEnabled: to.BoolPtr(true),
+		},
+		Location: &locationCopy,
+		Tags:     tags,
+	}
+
+	future, err := nc.registriesClient.Create(ctx, groupName, name, parameters)
+	if err != nil {
+		return containerregistry.Registry{}, err
+	}
+
+	err = future.WaitForCompletionRef(ctx, nc.registriesClient.Client)
+	if err != nil {
+		return containerregistry.Registry{}, err
+	}
+
+	return future.Result(nc.registriesClient)
+}
+
+// ListContainerRegistryCredentials lists credentials of specified Container Registry.
+func (nc *Client) ListContainerRegistryCredentials(ctx context.Context, registryName, groupName string) (containerregistry.RegistryListCredentialsResult, error) {
+	return nc.registriesClient.ListCredentials(ctx, groupName, registryName)
 }
 
 func (nc *Client) createNamespaceAndWait(ctx context.Context, resourceGroupName string, namespaceName string, parameters eventhub.EHNamespace) (result eventhub.EHNamespace, err error) {

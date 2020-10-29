@@ -1,9 +1,14 @@
 package azure
 
 import (
+	"github.com/Azure/azure-sdk-for-go/services/containerregistry/mgmt/2019-05-01/containerregistry"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/pkg/errors"
 )
+
+type StepConfig struct {
+	ContainerRegistrySKU containerregistry.SkuName `envconfig:"default=Basic"`
+}
 
 type Config struct {
 	clientID               string

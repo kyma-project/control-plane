@@ -15,17 +15,17 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
-type DeprovisionAzureEventHubStep struct {
+type DeprovisionAzureResourceGroupStep struct {
 	OperationManager *process.DeprovisionOperationManager
-	processazure.EventHub
+	processazure.ProviderContext
 }
 
-func NewDeprovisionAzureEventHubStep(os storage.Operations, hyperscalerProvider azure.HyperscalerProvider,
+func NewDeprovisionAzureResourceGroupStep(os storage.Operations, hyperscalerProvider azure.HyperscalerProvider,
 	accountProvider hyperscaler.AccountProvider,
-	ctx context.Context) DeprovisionAzureEventHubStep {
-	return DeprovisionAzureEventHubStep{
+	ctx context.Context) DeprovisionAzureResourceGroupStep {
+	return DeprovisionAzureResourceGroupStep{
 		OperationManager: process.NewDeprovisionOperationManager(os),
-		EventHub: processazure.EventHub{
+		ProviderContext: processazure.ProviderContext{
 			HyperscalerProvider: hyperscalerProvider,
 			AccountProvider:     accountProvider,
 			Context:             ctx,
@@ -33,16 +33,16 @@ func NewDeprovisionAzureEventHubStep(os storage.Operations, hyperscalerProvider 
 	}
 }
 
-var _ Step = (*DeprovisionAzureEventHubStep)(nil)
+var _ Step = (*DeprovisionAzureResourceGroupStep)(nil)
 
-func (s DeprovisionAzureEventHubStep) Name() string {
-	return "Deprovision Azure Event Hubs"
+func (s DeprovisionAzureResourceGroupStep) Name() string {
+	return "Deprovision Azure Resource Group"
 }
 
-func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (
+func (s DeprovisionAzureResourceGroupStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (
 	internal.DeprovisioningOperation, time.Duration, error) {
-	if operation.EventHub.Deleted {
-		log.Info("Event Hub is already deprovisioned")
+	if operation.Azure.ResourceGroupDeleted {
+		log.Info("Resource Group is already deprovisioned")
 		return operation, 0, nil
 	}
 
@@ -61,7 +61,7 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 		pp.ErsContext.GlobalAccountID, hypType)
 
 	//get hyperscaler credentials from HAP
-	credentials, err := s.EventHub.AccountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+	credentials, err := s.ProviderContext.AccountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
 	if err != nil {
 		// retrying might solve the issue, the HAP could be temporarily unavailable
 		errorMessage := fmt.Sprintf("unable to retrieve Gardener Credentials from HAP lookup: %v", err)
@@ -78,24 +78,30 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	namespaceClient, err := s.HyperscalerProvider.GetClient(azureCfg, log)
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
-		log.Errorf("failed to create Azure EventHubs client: %v", err)
+		log.Errorf("failed to create Azure client: %v", err)
 		return operation, 0, nil
 	}
 	// prepare azure tags
 	tags := azure.Tags{azure.TagInstanceID: &operation.InstanceID}
 
 	// check if resource group exists
-	resourceGroup, err := namespaceClient.GetResourceGroup(s.EventHub.Context, tags)
+	resourceGroup, err := namespaceClient.GetResourceGroup(s.ProviderContext.Context, tags)
 	if err != nil {
 		// if it doesn't exist anymore, there is nothing to delete - we are done
 		if _, ok := err.(azure.ResourceGroupDoesNotExistError); ok {
 			if &resourceGroup != nil && resourceGroup.Name != nil {
-				log.Infof("deprovisioning of event hub step succeeded, resource group: %v", resourceGroup.Name)
+				log.Infof("deprovisioning of resource group step succeeded, resource group: %v", resourceGroup.Name)
 			} else {
-				log.Info("deprovisioning of event hub step succeeded")
+				log.Info("deprovisioning of resource group step succeeded")
 			}
-			operation.EventHub.Deleted = true
-			return operation, 0, nil
+			operation.Azure.ResourceGroupDeleted = true
+			// save new operation state to database
+			op, _, err := s.OperationManager.UpdateOperation(operation)
+			if err != nil {
+				log.Error("cannot save Azure Resource Group deprovisioning state")
+				return operation, time.Second, nil
+			}
+			return op, 0, nil
 		}
 		// custom error occurred while getting resource group - try again
 		errorMessage := fmt.Sprintf("error while getting resource group, error: %v", err)
@@ -108,7 +114,7 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 	}
 	deprovisioningState := *resourceGroup.Properties.ProvisioningState
 	if deprovisioningState != azure.FutureOperationDeleting {
-		future, err := namespaceClient.DeleteResourceGroup(s.EventHub.Context, tags)
+		future, err := namespaceClient.DeleteResourceGroup(s.ProviderContext.Context, tags)
 		if err != nil {
 			errorMessage := fmt.Sprintf("unable to delete Azure resource group: %v", err)
 			return s.OperationManager.RetryOperationWithoutFail(operation, errorMessage, time.Minute, time.Hour,

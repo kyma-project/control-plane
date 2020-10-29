@@ -23,9 +23,10 @@
   version = "v0.10.2"
 
 [[projects]]
-  digest = "1:782889e3ae2bd4866abbb4ddadd4971e273b2c8024bbb26ee8515b4fc4d1d518"
+  digest = "1:3bd79a4684304d559aa235658b2be0ca78a7a89378378c674a5c083f372e46cc"
   name = "github.com/Azure/azure-sdk-for-go"
   packages = [
+    "services/containerregistry/mgmt/2019-05-01/containerregistry",
     "services/eventhub/mgmt/2017-04-01/eventhub",
     "services/resources/mgmt/2019-05-01/resources",
     "version",
@@ -1410,11 +1411,13 @@
   input-imports = [
     "code.cloudfoundry.org/lager",
     "github.com/99designs/gqlgen/handler",
+    "github.com/Azure/azure-sdk-for-go/services/containerregistry/mgmt/2019-05-01/containerregistry",
     "github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub",
     "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources",
     "github.com/Azure/go-autorest/autorest",
     "github.com/Azure/go-autorest/autorest/adal",
     "github.com/Azure/go-autorest/autorest/azure",
+    "github.com/Azure/go-autorest/autorest/to",
     "github.com/Masterminds/sprig",
     "github.com/dlmiddlecote/sqlstats",
     "github.com/gardener/gardener/pkg/apis/core/v1beta1",

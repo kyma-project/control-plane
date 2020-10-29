@@ -97,10 +97,11 @@ type Config struct {
 
 	Broker broker.Config
 
-	Avs avs.Config
-	LMS lms.Config
-	IAS ias.Config
-	EDP edp.Config
+	Avs   avs.Config
+	LMS   lms.Config
+	IAS   ias.Config
+	EDP   edp.Config
+	Azure azure.StepConfig
 
 	AuditLog auditlog.Config
 
@@ -259,6 +260,10 @@ func main() {
 			disabled: cfg.EDP.Disabled,
 		},
 		{
+			weight: 1,
+			step:   provisioning.NewProvisionAzureResourceGroupStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
+		},
+		{
 			weight: 2,
 			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
 				provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
@@ -267,6 +272,10 @@ func main() {
 			weight: 2,
 			step: provisioning.NewEnableForTrialPlanStep(db.Operations(),
 				provisioning.NewNatsStreamingOverridesStep(db.Operations())),
+		},
+		{
+			weight: 2,
+			step:   provisioning.NewProvisionAzureContainerRegistryStep(db.Operations(), azure.NewAzureProvider(), accountProvider, cfg.Azure, ctx),
 		},
 		{
 			weight: 2,
@@ -314,8 +323,7 @@ func main() {
 		},
 		{
 			weight: 1,
-			step: deprovisioning.NewSkipForTrialPlanStep(db.Operations(),
-				deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+			step:   deprovisioning.NewDeprovisionAzureResourceGroupStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
 		},
 		{
 			weight:   1,

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/Azure/azure-sdk-for-go/services/containerregistry/mgmt/2019-05-01/containerregistry"
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 	"github.com/Azure/go-autorest/autorest"
@@ -15,30 +16,32 @@ import (
 )
 
 // ensure the fake Client is implementing the interface
-var _ azure.Interface = (*FakeNamespaceClient)(nil)
+var _ azure.Interface = (*FakeAzureClient)(nil)
 
-/// A fake Client for Azure EventHubs Namespace handling
-type FakeNamespaceClient struct {
-	PersistEventhubsNamespaceError error
-	ResourceGroupError             error
-	AccessKeysError                error
-	AccessKeys                     *eventhub.AccessKeys
-	Tags                           azure.Tags
-	GetResourceGroupError          error
-	GetResourceGroupReturnValue    resources.Group
-	DeleteResourceGroupCalled      bool
-	DeleteResourceGroupError       error
+/// A fake Client for Azure handling
+type FakeAzureClient struct {
+	PersistEventhubsNamespaceError        error
+	ResourceGroupError                    error
+	AccessKeysError                       error
+	AccessKeys                            *eventhub.AccessKeys
+	Tags                                  azure.Tags
+	GetResourceGroupError                 error
+	GetResourceGroupReturnValue           resources.Group
+	DeleteResourceGroupCalled             bool
+	DeleteResourceGroupError              error
+	CreateContainerRegistryError          error
+	ListContainerRegistryCredentialsError error
 }
 
-func (nc *FakeNamespaceClient) ListResourceGroup(ctx context.Context, filter string, top *int32) (resources.GroupListResultPage, error) {
+func (nc *FakeAzureClient) ListResourceGroup(ctx context.Context, filter string, top *int32) (resources.GroupListResultPage, error) {
 	return resources.GroupListResultPage{}, nil
 }
 
-func (nc *FakeNamespaceClient) ListEHNamespaceByResourceGroup(ctx context.Context, resourceGroupName string) (eventhub.EHNamespaceListResultPage, error) {
+func (nc *FakeAzureClient) ListEHNamespaceByResourceGroup(ctx context.Context, resourceGroupName string) (eventhub.EHNamespaceListResultPage, error) {
 	return eventhub.EHNamespaceListResultPage{}, nil
 }
 
-func (nc *FakeNamespaceClient) GetEventhubAccessKeys(context.Context, string, string, string) (result eventhub.AccessKeys, err error) {
+func (nc *FakeAzureClient) GetEventhubAccessKeys(context.Context, string, string, string) (result eventhub.AccessKeys, err error) {
 	if nc.AccessKeys != nil {
 		return *nc.AccessKeys, nil
 	}
@@ -47,43 +50,68 @@ func (nc *FakeNamespaceClient) GetEventhubAccessKeys(context.Context, string, st
 	}, nc.AccessKeysError
 }
 
-func (nc *FakeNamespaceClient) CreateResourceGroup(ctx context.Context, config *azure.Config, name string, tags azure.Tags) (resources.Group, error) {
+func (nc *FakeAzureClient) CreateResourceGroup(ctx context.Context, config *azure.Config, name string, tags azure.Tags) (resources.Group, error) {
 	nc.Tags = tags
 	return resources.Group{
 		Name: ptr.String("my-resourcegroup"),
 	}, nc.ResourceGroupError
 }
 
-func (nc *FakeNamespaceClient) GetResourceGroup(context.Context, azure.Tags) (resources.Group, error) {
+func (nc *FakeAzureClient) GetResourceGroup(context.Context, azure.Tags) (resources.Group, error) {
 	return nc.GetResourceGroupReturnValue, nc.GetResourceGroupError
 }
 
-func (nc *FakeNamespaceClient) CreateNamespace(ctx context.Context, azureCfg *azure.Config, groupName, namespace string, tags azure.Tags) (*eventhub.EHNamespace, error) {
+func (nc *FakeAzureClient) CreateNamespace(ctx context.Context, azureCfg *azure.Config, groupName, namespace string, tags azure.Tags) (*eventhub.EHNamespace, error) {
 	nc.Tags = tags
 	return &eventhub.EHNamespace{
 		Name: ptr.String(namespace),
 	}, nc.PersistEventhubsNamespaceError
 }
 
-func (nc *FakeNamespaceClient) DeleteResourceGroup(context.Context, azure.Tags) (resources.GroupsDeleteFuture, error) {
+func (nc *FakeAzureClient) DeleteResourceGroup(context.Context, azure.Tags) (resources.GroupsDeleteFuture, error) {
 	nc.DeleteResourceGroupCalled = true
 	return resources.GroupsDeleteFuture{}, nc.DeleteResourceGroupError
 }
 
-func NewFakeNamespaceClientCreationError() azure.Interface {
-	return &FakeNamespaceClient{PersistEventhubsNamespaceError: fmt.Errorf("error while creating namespace")}
+func (nc *FakeAzureClient) CreateContainerRegistry(ctx context.Context, config *azure.Config, name, groupName string, tags azure.Tags, sku containerregistry.SkuName) (containerregistry.Registry, error) {
+	nc.Tags = tags
+	return containerregistry.Registry{
+		Name: ptr.String(name),
+	}, nc.CreateContainerRegistryError
 }
 
-func NewFakeNamespaceClientListError() azure.Interface {
-	return &FakeNamespaceClient{AccessKeysError: fmt.Errorf("cannot list namespaces")}
+func (nc *FakeAzureClient) ListContainerRegistryCredentials(ctx context.Context, registryName, groupName string) (containerregistry.RegistryListCredentialsResult, error) {
+	return containerregistry.RegistryListCredentialsResult{
+		Username: ptr.String(registryName),
+		Passwords: &[]containerregistry.RegistryPassword{
+			{Name: "Password", Value: ptr.String("some-password")},
+			{Name: "Password2", Value: ptr.String("some-other-password")},
+		},
+	}, nc.ListContainerRegistryCredentialsError
 }
 
-func NewFakeNamespaceResourceGroupError() azure.Interface {
-	return &FakeNamespaceClient{ResourceGroupError: fmt.Errorf("cannot create resource group")}
+func NewFakeAzureClientCreationError() *FakeAzureClient {
+	return &FakeAzureClient{PersistEventhubsNamespaceError: fmt.Errorf("error while creating namespace")}
 }
 
-func NewFakeNamespaceAccessKeysNil() azure.Interface {
-	return &FakeNamespaceClient{
+func NewFakeAzureClientListError() *FakeAzureClient {
+	return &FakeAzureClient{AccessKeysError: fmt.Errorf("cannot list namespaces")}
+}
+
+func NewFakeAzureClientResourceGroupError() *FakeAzureClient {
+	return &FakeAzureClient{ResourceGroupError: fmt.Errorf("cannot create resource group")}
+}
+
+func NewFakeAzureClientCreateContainerRegistryError() *FakeAzureClient {
+	return &FakeAzureClient{CreateContainerRegistryError: fmt.Errorf("cannot create container registry")}
+}
+
+func NewFakeAzureClientListContainerRegistryCredentialsError() *FakeAzureClient {
+	return &FakeAzureClient{ListContainerRegistryCredentialsError: fmt.Errorf("cannot list container registry credentials")}
+}
+
+func NewFakeAzureClientAccessKeysNil() *FakeAzureClient {
+	return &FakeAzureClient{
 		// no error here
 		AccessKeysError: nil,
 		AccessKeys: &eventhub.AccessKeys{
@@ -93,24 +121,24 @@ func NewFakeNamespaceAccessKeysNil() azure.Interface {
 	}
 }
 
-func NewFakeNamespaceClientHappyPath() *FakeNamespaceClient {
-	return &FakeNamespaceClient{}
+func NewFakeAzureClientHappyPath() *FakeAzureClient {
+	return &FakeAzureClient{}
 }
 
-func NewFakeNamespaceClientResourceGroupDoesNotExist() *FakeNamespaceClient {
-	return &FakeNamespaceClient{
+func NewFakeAzureClientResourceGroupDoesNotExist() *FakeAzureClient {
+	return &FakeAzureClient{
 		GetResourceGroupError: azure.NewResourceGroupDoesNotExist("ups .. resource group does not exist"),
 	}
 }
 
-func NewFakeNamespaceClientResourceGroupConnectionError() *FakeNamespaceClient {
-	return &FakeNamespaceClient{
+func NewFakeAzureClientResourceGroupConnectionError() *FakeAzureClient {
+	return &FakeAzureClient{
 		GetResourceGroupError: errors.New("ups .. can't connect to azure"),
 	}
 }
 
-func NewFakeNamespaceClientResourceGroupDeleteError() *FakeNamespaceClient {
-	return &FakeNamespaceClient{
+func NewFakeAzureClientResourceGroupDeleteError() *FakeAzureClient {
+	return &FakeAzureClient{
 		DeleteResourceGroupError: errors.New("error while trying to delete resource group"),
 		GetResourceGroupReturnValue: resources.Group{
 			Response:   autorest.Response{},
@@ -120,14 +148,14 @@ func NewFakeNamespaceClientResourceGroupDeleteError() *FakeNamespaceClient {
 	}
 }
 
-func NewFakeNamespaceClientResourceGroupPropertiesError() *FakeNamespaceClient {
-	return &FakeNamespaceClient{
+func NewFakeAzureClientResourceGroupPropertiesError() *FakeAzureClient {
+	return &FakeAzureClient{
 		DeleteResourceGroupError: errors.New("error while trying to delete resource group"),
 	}
 }
 
-func NewFakeNamespaceClientResourceGroupInDeletionMode() *FakeNamespaceClient {
-	return &FakeNamespaceClient{
+func NewFakeAzureClientResourceGroupInDeletionMode() *FakeAzureClient {
+	return &FakeAzureClient{
 		GetResourceGroupReturnValue: resources.Group{
 			Response:   autorest.Response{},
 			Name:       ptr.String("fake-resource-group"),
@@ -136,8 +164,8 @@ func NewFakeNamespaceClientResourceGroupInDeletionMode() *FakeNamespaceClient {
 	}
 }
 
-func NewFakeNamespaceClientResourceGroupExists() *FakeNamespaceClient {
-	return &FakeNamespaceClient{
+func NewFakeAzureClientResourceGroupExists() *FakeAzureClient {
+	return &FakeAzureClient{
 		GetResourceGroupReturnValue: resources.Group{
 			Response:   autorest.Response{},
 			Name:       ptr.String("fake-resource-group"),

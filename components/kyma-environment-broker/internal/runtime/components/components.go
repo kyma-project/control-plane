@@ -11,4 +11,5 @@ const (
 	Backup                  = "backup"
 	BackupInit              = "backup-init"
 	AvSBridge               = "avs-bridge"
+	Serverless              = "serverless"
 )
