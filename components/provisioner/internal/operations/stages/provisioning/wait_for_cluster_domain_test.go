@@ -67,6 +67,36 @@ func TestWaitForClusterDomain_Run(t *testing.T) {
 			expectedStage: nextStageName,
 			expectedDelay: 0,
 		},
+		{
+			description: "should retry on failed GetRuntime call and go to the next stage if domain name is available",
+			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
+
+				runtime := fixRuntime(runtimeID, clusterName, map[string]interface{}{
+					"label": "value",
+				})
+				directorClient.On("GetRuntime", runtimeID, tenant).Once().Return(graphql.RuntimeExt{}, apperrors.Internal("get runtime error"))
+				directorClient.On("GetRuntime", runtimeID, tenant).Once().Return(runtime, nil)
+				directorClient.On("UpdateRuntime", runtimeID, mock.Anything, tenant).Return(nil)
+			},
+			expectedStage: nextStageName,
+			expectedDelay: 0,
+		},
+		{
+			description: "should retry on failed UpdateRuntime call and go to the next stage if domain name is available",
+			mockFunc: func(gardenerClient *gardenerMocks.GardenerClient, directorClient *directormock.DirectorClient) {
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootWithDomainSet(clusterName, domain), nil)
+
+				runtime := fixRuntime(runtimeID, clusterName, map[string]interface{}{
+					"label": "value",
+				})
+				directorClient.On("GetRuntime", runtimeID, tenant).Return(runtime, nil)
+				directorClient.On("UpdateRuntime", runtimeID, mock.Anything, tenant).Once().Return(apperrors.Internal("update runtime error"))
+				directorClient.On("UpdateRuntime", runtimeID, mock.Anything, tenant).Once().Return(nil)
+			},
+			expectedStage: nextStageName,
+			expectedDelay: 0,
+		},
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
 			// given

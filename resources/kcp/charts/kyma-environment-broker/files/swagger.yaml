@@ -1,0 +1,576 @@
+openapi: 3.0.0
+info:
+  description: The APIs described below can be used to orchestrate Runtime upgrades and to fetch data about Runtime operations.
+  version: '1.0'
+  title: Kyma Environment Broker APIs
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+paths:
+  /upgrade/kyma:
+    post:
+      summary: Orchestrates Kyma upgrade
+      operationId: upgradeKyma
+      description: Starts the processing of Kyma upgrade, returns the orchestration ID
+      responses:
+        '202':
+          description: Upgrade started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpgradeResponse'
+        '400':
+          description: Invalid input or object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errObj'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrchestrationParameters'
+        description: Orchestration parameters to configure orchestration
+
+  /orchestrations:
+    get:
+      summary: Returns a list of orchestrations
+      operationId: listStatusResponses
+      description: |
+        Lists all created orchestrations
+      parameters:
+        - in: query
+          name: page_size
+          required: false
+          schema:
+            type: integer
+          description: Size of the list
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+          description: Number of the page
+      responses:
+        '200':
+          description: List of orchestration objects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponseList'
+
+  /orchestrations/{orchestration_id}:
+    get:
+      summary: Returns a single orchestration
+      operationId: getOrchestration
+      description: |
+        Fetches orchestrations by ID
+      parameters:
+        - in: path
+          name: orchestration_id
+          required: true
+          schema:
+            type: string
+          description: Orchestration ID
+      responses:
+        '200':
+          description: Orchestration returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+        '404':
+          description: Orchestration doesn't exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errObj'
+
+  /orchestrations/{orchestration_id}/operations:
+    get:
+      summary: Returns a list of operations scheduled by the orchestration
+      operationId: getOperationsPage
+      description: |
+        Lists operations scheduled by a given orchestration
+      parameters:
+        - in: path
+          name: orchestration_id
+          required: true
+          schema:
+            type: string
+          description: Orchestration ID
+        - in: query
+          name: page_size
+          required: false
+          schema:
+            type: integer
+          description: Size of the list
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+          description: Number of the page
+      responses:
+        '200':
+          description: Operations found and returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationResponseList'
+
+  /orchestrations/{orchestration_id}/operations/{operation_id}:
+    get:
+      summary: Returns details of the operation scheduled by the orchestration
+      operationId: getOperationResponse
+      description: |
+        Fetches details of the operation with a given ID that was scheduled by the orchestration with a given ID
+      parameters:
+        - in: path
+          name: orchestration_id
+          required: true
+          schema:
+            type: string
+          description: Orchestration ID
+        - in: path
+          name: operation_id
+          required: true
+          schema:
+            type: string
+          description: Operation ID
+      responses:
+        '200':
+          description: Operation found and returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationDetailsResponse'
+        '404':
+          description: Operation doesn't exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errObj'
+
+  /runtimes:
+    get:
+      summary: Returns a list of Runtimes
+      operationId: listRuntimes
+      description: |
+        Lists all Runtimes
+      parameters:
+        - in: query
+          name: page_size
+          required: false
+          schema:
+            type: integer
+          description: Size of the list
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+          description: Number of the page
+        - in: query
+          name: account
+          required: false
+          description: Filter by global account ID
+          schema:
+            type: array
+            items:
+              type: string
+        - in: query
+          name: subaccount
+          required: false
+          description: Filter by subaccount ID
+          schema:
+            type: array
+            items:
+              type: string
+        - in: query
+          name: instance_id
+          required: false
+          description: Filter by instance ID
+          schema:
+            type: array
+            items:
+              type: string
+        - in: query
+          name: runtime_id
+          required: false
+          description: Filter by Runtime ID
+          schema:
+            type: array
+            items:
+              type: string
+        - in: query
+          name: region
+          required: false
+          description: Filter by provider region
+          schema:
+            type: array
+            items:
+              type: string
+        - in: query
+          name: shoot
+          required: false
+          description: Filter by Shoot name
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: List of Runtimes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuntimePage'
+        '400':
+          description: Wrong parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errObj'
+
+components:
+  schemas:
+    OrchestrationParameters:
+      type: object
+      properties:
+        strategy:
+          type: object
+          properties:
+            type:
+              type: string
+              example: parallel
+              enum: [
+                "parallel"
+              ]
+              description: "Specifies the type of the orchestration"
+            schedule:
+              type: string
+              enum: [
+                "immediate",
+                "maintenanceWindow"
+              ]
+              example: immediate
+              description: "Specifies the schedule type for an orchestration"
+            parallel:
+              type: object
+              properties:
+                workers:
+                  type: number
+                  example: 1
+                  description: Specifies the number of parallel workers to process upgrade operations
+        dryRun:
+          type: boolean
+          default: false
+          description: Specifies if the orchestration is used for testing purposes
+        targets:
+          type: object
+          properties:
+            include:
+              type: array
+              items:
+                $ref: '#/components/schemas/RuntimeTarget'
+            exclude:
+              type: array
+              items:
+                $ref: '#/components/schemas/RuntimeTarget'
+
+    RuntimeTarget:
+      type: object
+      properties:
+        target:
+          type: string
+          enum: [
+            "all"
+          ]
+          example: all
+          description: "Selects Runtimes in a specified way"
+        globalAccount:
+          type: string
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+          description: Regex pattern to match against Runtime's globalAccount field
+        subAccount:
+          type: string
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+          description: Regex pattern to match against Runtime's subAccount field
+        region:
+          type: string
+          example: europe|eu-
+          description: Regex pattern to match against the Shoot cluster's region field (not SCP platform region)
+        runtimeID:
+          type: string
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+          description: Specifies runtimeID
+        planName:
+          type: string
+          example: azure
+          description: Specifies plan name
+
+    StatusResponse:
+      type: object
+      properties:
+        state:
+          type: string
+          example: in progress
+        description:
+          type: string
+          example: Orchestration scheduled
+        parameters:
+          $ref: '#/components/schemas/OrchestrationParameters'
+
+    StatusResponseList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusResponse'
+        count:
+          type: integer
+          example: 0
+        totalCount:
+          type: integer
+          example: 0
+
+    OperationResponse:
+      type: object
+      properties:
+        instanceID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        runtimeID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        operationID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        globalAccountID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        subAccountID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        state:
+          type: string
+          example: in progress
+          enum: [
+            "suceeded",
+            "failed",
+            "in progress"
+          ]
+        description:
+          type: string
+          example: Operation scheduled
+        shootName:
+          type: string
+          example: c-8e9ea4f
+          description: Name of the Shoot cluster on Gardener
+        maintenanceWindowBegin:
+          type: string
+          example: 150405-0000
+          description: Start time of the orchestrations processing
+        maintenanceWindowEnd:
+          type: string
+          example: 160405-0000
+          description: Orchestrations processing deadline
+        dryRun:
+          type: boolean
+          default: false
+          description: Specifies if the orchestration is used for testing purposes
+        servicePlanID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+          description: ID of the service plan
+        servicePlanName:
+          type: string
+          example: azure
+          description: Specifies the plan name
+
+    OperationDetailsResponse:
+      type: object
+      properties:
+        instanceID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        runtimeID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        operationID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        globalAccountID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        subAccountID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        state:
+          type: string
+          enum: [
+            "suceeded",
+            "failed",
+            "in progress"
+          ]
+          example: in progress
+        description:
+          type: string
+          example: Operation scheduled
+        shootName:
+          type: string
+          example: c-8e9ea4f
+          description: Name of the Shoot cluster on Gardener
+        maintenanceWindowBegin:
+          type: string
+          example: 150405-0000
+          description: Start time of the orchestrations processing
+        maintenanceWindowEnd:
+          type: string
+          example: 160405-0000
+          description: Orchestrations processing deadline
+        dryRun:
+          type: boolean
+          default: false
+          description: Specifies if the orchestration is used for testing purposes
+        servicePlanID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+          description: ID of the service plan
+        servicePlanName:
+          type: string
+          example: azure
+          description: Specifies the plan name
+        kymaConfig:
+          type: string
+          description: Object with the Kyma config sent to Runtime Provisioner
+        clusterConfig:
+          type: string
+          description: Object with the cluster config sent to Runtime Provisioner
+
+    OperationResponseList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/OperationResponse'
+        count:
+          type: integer
+          example: 0
+        totalCount:
+          type: integer
+          example: 0
+
+    UpgradeResponse:
+      type: object
+      properties:
+        orchestrationID:
+          type: string
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+
+    RuntimeDTO:
+      type: object
+      properties:
+        instanceID:
+          type: string
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        runtimeID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        globalAccountID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        subaccountID:
+          type: string
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        subaccountRegion:
+          type: string
+        shootName:
+          type: string
+          example: c-8e9ea4f
+          description: Name of the Shoot cluster on Gardener
+        serviceClassID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        serviceClassName:
+          type: string
+          example: kymaruntime
+        servicePlanID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        servicePlanName:
+          type: string
+          example: azure
+        status:
+          $ref: '#/components/schemas/StatusDTO'
+
+    RuntimePage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RuntimeDTO'
+        count:
+          type: integer
+          example: 0
+        totalCount:
+          type: integer
+          example: 0
+
+    StatusDTO:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: timestamp
+        modifiedAt:
+          type: string
+          format: timestamp
+        provisioning:
+          $ref: '#/components/schemas/OperationStateDTO'
+        deprovisioning:
+          $ref: '#/components/schemas/OperationStateDTO'
+        upgradingKyma:
+          $ref: '#/components/schemas/OperationStateDTO'
+
+    OperationStateDTO:
+      type: object
+      properties:
+        state:
+          type: string
+          example: in progress
+          enum: [
+            "suceeded",
+            "failed",
+            "in progress"
+          ]
+        description:
+          type: string
+          example: Operation scheduled
+
+    errObj:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "while decoding request body: invalid character '}' looking for beginning of object key string"

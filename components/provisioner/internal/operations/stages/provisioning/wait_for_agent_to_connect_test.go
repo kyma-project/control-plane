@@ -65,6 +65,30 @@ func TestWaitForAgentToConnect(t *testing.T) {
 			require.Equal(t, time.Duration(0), result.Delay)
 		})
 
+		t.Run(fmt.Sprintf("should retry when SetRuntimeStatusCondition fails and proceed to next step when Compass connection in state: %s", testCase.state), func(t *testing.T) {
+			// given
+			clientProvider := newMockClientProvider(&v1alpha12.CompassConnection{
+				ObjectMeta: v1.ObjectMeta{Name: defaultCompassConnectionName},
+				Status: v1alpha12.CompassConnectionStatus{
+					State: testCase.state,
+				},
+			})
+
+			directorClient := &directorMocks.DirectorClient{}
+			directorClient.On("SetRuntimeStatusCondition", cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant).Once().Return(apperrors.Internal("runtime status error"))
+			directorClient.On("SetRuntimeStatusCondition", cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant).Once().Return(nil)
+
+			waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
+
+			// when
+			result, err := waitForAgentToConnectStep.Run(cluster, model.Operation{}, logrus.New())
+
+			// then
+			require.NoError(t, err)
+			require.Equal(t, nextStageName, result.Stage)
+			require.Equal(t, time.Duration(0), result.Delay)
+		})
+
 		t.Run(fmt.Sprintf("should rerun step if failed to update Director when Compass connection in state: %s", testCase.state), func(t *testing.T) {
 			// given
 			clientProvider := newMockClientProvider(&v1alpha12.CompassConnection{
