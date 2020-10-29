@@ -5,6 +5,13 @@ import (
 	"time"
 )
 
+// OperationFilter holds the filters when listing multiple operations
+type OperationFilter struct {
+	Page     int
+	PageSize int
+	States   []string
+}
+
 // OperationType defines the possible types of an asynchronous operation to a broker.
 type OperationType string
 

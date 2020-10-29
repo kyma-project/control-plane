@@ -13,6 +13,7 @@ import (
 
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
@@ -212,16 +213,16 @@ func (s *OrchestrationSuite) CreateOrchestration(runtimeID string) string {
 		OrchestrationID: uuid.New(),
 		State:           internal.Pending,
 		Description:     "started processing of Kyma upgrade",
-		Parameters: internal.OrchestrationParameters{
-			Targets: internal.TargetSpec{
-				Include: []internal.RuntimeTarget{
+		Parameters: orchestration.Parameters{
+			Targets: orchestration.TargetSpec{
+				Include: []orchestration.RuntimeTarget{
 					{RuntimeID: runtimeID},
 				},
 			},
-			Strategy: internal.StrategySpec{
-				Type:     internal.ParallelStrategy,
-				Schedule: internal.Immediate,
-				Parallel: internal.ParallelStrategySpec{Workers: 1},
+			Strategy: orchestration.StrategySpec{
+				Type:     orchestration.ParallelStrategy,
+				Schedule: orchestration.Immediate,
+				Parallel: orchestration.ParallelStrategySpec{Workers: 1},
 			},
 			DryRun: false,
 		},

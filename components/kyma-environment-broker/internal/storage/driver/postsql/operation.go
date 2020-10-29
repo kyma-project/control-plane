@@ -465,7 +465,7 @@ func (s *operations) GetOperationsForIDs(operationIDList []string) ([]internal.O
 	return toOperations(operations), nil
 }
 
-func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, pageSize int, page int) ([]internal.UpgradeKymaOperation, int, int, error) {
+func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeKymaOperation, int, int, error) {
 	session := s.NewReadSession()
 	var (
 		operations        = make([]dbmodel.OperationDTO, 0)
@@ -473,7 +473,7 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 		count, totalCount int
 	)
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		operations, count, totalCount, lastErr = session.ListOperationsByOrchestrationID(orchestrationID, pageSize, page)
+		operations, count, totalCount, lastErr = session.ListOperationsByOrchestrationID(orchestrationID, filter)
 		if lastErr != nil {
 			if dberr.IsNotFound(lastErr) {
 				lastErr = dberr.NotFound("Operations for orchestration ID %s not exist", orchestrationID)

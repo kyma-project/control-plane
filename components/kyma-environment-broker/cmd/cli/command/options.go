@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -146,7 +146,7 @@ A target specifier is a comma-separated list of the selectors described under th
 }
 
 // ValidateTransformRuntimeTargetOpts checks the validity of runtime target options, and transforms them for internal usage
-func ValidateTransformRuntimeTargetOpts(targetInputs []string, targetExcludeInputs []string, targetSpec *internal.TargetSpec) error {
+func ValidateTransformRuntimeTargetOpts(targetInputs []string, targetExcludeInputs []string, targetSpec *orchestration.TargetSpec) error {
 	if len(targetInputs) == 0 {
 		return errors.New("at least one runtime target must be specified with --target")
 	}
@@ -165,8 +165,8 @@ func ValidateTransformRuntimeTargetOpts(targetInputs []string, targetExcludeInpu
 	return nil
 }
 
-func parseRuntimeTarget(targetInput string, targets *[]internal.RuntimeTarget, include bool) error {
-	target := internal.RuntimeTarget{}
+func parseRuntimeTarget(targetInput string, targets *[]orchestration.RuntimeTarget, include bool) error {
+	target := orchestration.RuntimeTarget{}
 	selectors := strings.Split(targetInput, ",")
 	var flagName string
 	if include {
@@ -185,11 +185,11 @@ func parseRuntimeTarget(targetInput string, targets *[]internal.RuntimeTarget, i
 			selectorValue = ""
 		}
 		switch selectorKey {
-		case internal.TargetAll:
+		case orchestration.TargetAll:
 			if !include {
-				return fmt.Errorf("\"%s\" cannot be used with --target-exclude", internal.TargetAll)
+				return fmt.Errorf("\"%s\" cannot be used with --target-exclude", orchestration.TargetAll)
 			}
-			target.Target = internal.TargetAll
+			target.Target = orchestration.TargetAll
 		case targetAccount:
 			err := checkRuntimeTargetSelector(selectorKey, selectorValue, flagName)
 			if err != nil {

@@ -65,7 +65,7 @@ func (s *orchestration) GetByID(orchestrationID string) (*internal.Orchestration
 	return &orchestration, nil
 }
 
-func (s *orchestration) List(pageSize int, page int) ([]internal.Orchestration, int, int, error) {
+func (s *orchestration) List(filter dbmodel.OrchestrationFilter) ([]internal.Orchestration, int, int, error) {
 	sess := s.NewReadSession()
 	var (
 		orchestrations    = make([]internal.Orchestration, 0)
@@ -74,7 +74,7 @@ func (s *orchestration) List(pageSize int, page int) ([]internal.Orchestration, 
 	)
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		var dtos []dbmodel.OrchestrationDTO
-		dtos, count, totalCount, lastErr = sess.ListOrchestrations(pageSize, page)
+		dtos, count, totalCount, lastErr = sess.ListOrchestrations(filter)
 		if lastErr != nil {
 			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("Orchestrations not exist")
@@ -125,11 +125,16 @@ func (s *orchestration) Update(orchestration internal.Orchestration) error {
 
 func (s *orchestration) ListByState(state string) ([]internal.Orchestration, error) {
 	sess := s.NewReadSession()
-	var lastErr error
-	var result []internal.Orchestration
+	var (
+		lastErr error
+		result  []internal.Orchestration
+		filter  = dbmodel.OrchestrationFilter{
+			States: []string{state},
+		}
+	)
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		var dtos []dbmodel.OrchestrationDTO
-		dtos, lastErr = sess.ListOrchestrationsByState(state)
+		dtos, _, _, lastErr = sess.ListOrchestrations(filter)
 		if lastErr != nil {
 			log.Warnf("while listing %s orchestrations: %v", state, lastErr)
 			return false, nil
