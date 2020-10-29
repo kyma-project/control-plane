@@ -12,6 +12,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
@@ -609,7 +610,7 @@ func TestSchemaInitializer(t *testing.T) {
 
 			assertUpgradeKymaOperation(t, givenOperation2, *op)
 
-			ops, count, totalCount, err := svc.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, 10, 1)
+			ops, count, totalCount, err := svc.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{PageSize: 10, Page: 1})
 			require.NoError(t, err)
 			assert.Len(t, ops, 2)
 			assert.Equal(t, count, 2)
@@ -742,7 +743,7 @@ func TestSchemaInitializer(t *testing.T) {
 			Description:     "test",
 			CreatedAt:       now,
 			UpdatedAt:       now,
-			Parameters: internal.OrchestrationParameters{
+			Parameters: orchestration.Parameters{
 				DryRun: true,
 			},
 		}
@@ -770,7 +771,7 @@ func TestSchemaInitializer(t *testing.T) {
 		err = svc.Insert(givenOrchestration)
 		assertError(t, dberr.CodeAlreadyExists, err)
 
-		l, count, totalCount, err := svc.List(10, 1)
+		l, count, totalCount, err := svc.List(dbmodel.OrchestrationFilter{PageSize: 10, Page: 1})
 		require.NoError(t, err)
 		assert.Len(t, l, 1)
 		assert.Equal(t, 1, count)

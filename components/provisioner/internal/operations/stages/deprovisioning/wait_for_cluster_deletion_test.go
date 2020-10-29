@@ -27,6 +27,8 @@ import (
 
 func TestWaitForClusterDeletion_Run(t *testing.T) {
 
+	type mockFunc func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient)
+
 	cluster := model.Cluster{
 		ID: "runtimeID",
 		ClusterConfig: model.GardenerConfig{
@@ -37,7 +39,7 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 
 	for _, testCase := range []struct {
 		description   string
-		mockFunc      func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient)
+		mockFunc      mockFunc
 		expectedStage model.OperationStage
 		expectedDelay time.Duration
 	}{
@@ -64,6 +66,38 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
 				directorClient.On("RuntimeExists", runtimeID, tenant).Return(false, nil)
+				dbSession.On("Commit").Return(nil)
+				dbSession.On("RollbackUnlessCommitted").Return()
+			},
+			expectedStage: nextStageName,
+			expectedDelay: 0,
+		},
+		{
+			description: "should retry on error on RuntimeExists call and go to the next step when Shoot was deleted successfully",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(nil, k8serrors.NewNotFound(schema.GroupResource{}, ""))
+				dbSession := &dbMocks.WriteSessionWithinTransaction{}
+				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
+				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
+				directorClient.On("RuntimeExists", runtimeID, tenant).Once().Return(false, apperrors.Internal("exists err"))
+				directorClient.On("RuntimeExists", runtimeID, tenant).Once().Return(true, nil)
+				directorClient.On("DeleteRuntime", runtimeID, tenant).Return(nil)
+				dbSession.On("Commit").Return(nil)
+				dbSession.On("RollbackUnlessCommitted").Return()
+			},
+			expectedStage: nextStageName,
+			expectedDelay: 0,
+		},
+		{
+			description: "should retry on error on DeleteRuntime call and go to the next step when Shoot was deleted successfully",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(nil, k8serrors.NewNotFound(schema.GroupResource{}, ""))
+				dbSession := &dbMocks.WriteSessionWithinTransaction{}
+				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
+				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
+				directorClient.On("RuntimeExists", runtimeID, tenant).Return(true, nil)
+				directorClient.On("DeleteRuntime", runtimeID, tenant).Once().Return(apperrors.Internal("delete error"))
+				directorClient.On("DeleteRuntime", runtimeID, tenant).Once().Return(nil)
 				dbSession.On("Commit").Return(nil)
 				dbSession.On("RollbackUnlessCommitted").Return()
 			},
@@ -103,7 +137,7 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 
 	for _, testCase := range []struct {
 		description        string
-		mockFunc           func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient)
+		mockFunc           mockFunc
 		cluster            model.Cluster
 		unrecoverableError bool
 	}{

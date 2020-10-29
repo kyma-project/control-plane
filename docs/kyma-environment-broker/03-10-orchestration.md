@@ -17,7 +17,7 @@ Orchestration API consist of the following handlers:
 - `GET /orchestrations/{orchestration_id}/operations/{operation_id}` - exposes the detailed data about a single operation with a given ID.
 - `POST /upgrade/kyma` - schedules the orchestration. It requires specifying a request body.
 
-For more details about the API, check the [Swagger schema](https://app.swaggerhub.com/apis/kempski/kyma-orchestration_api/0.4).
+For more details, follow the tutorial on how to [check API using Swagger](#tutorials-check-api-using-swagger).
 
 ## Strategies
 

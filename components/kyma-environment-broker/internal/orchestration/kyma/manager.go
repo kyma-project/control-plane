@@ -7,6 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/google/uuid"
+	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -84,7 +85,7 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 	return 0, nil
 }
 
-func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params internal.OrchestrationParameters) ([]internal.UpgradeKymaOperation, error) {
+func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params orchestrationExt.Parameters) ([]internal.UpgradeKymaOperation, error) {
 	var result []internal.UpgradeKymaOperation
 	if o.State == internal.Pending {
 		runtimes, err := u.resolver.Resolve(params.Targets)
@@ -146,9 +147,9 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 	return result, nil
 }
 
-func (u *upgradeKymaManager) resolveStrategy(sType internal.StrategyType, executor process.Executor, log logrus.FieldLogger) orchestration.Strategy {
+func (u *upgradeKymaManager) resolveStrategy(sType orchestrationExt.StrategyType, executor process.Executor, log logrus.FieldLogger) orchestration.Strategy {
 	switch sType {
-	case internal.ParallelStrategy:
+	case orchestrationExt.ParallelStrategy:
 		return orchestration.NewParallelOrchestrationStrategy(executor, log)
 	}
 	return nil

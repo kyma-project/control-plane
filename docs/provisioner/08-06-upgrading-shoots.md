@@ -21,6 +21,8 @@ mutation {
         volumeSizeGB: 35
         machineType: "Standard_D2_v3"
         diskType: "pd-standard"
+        machineImage: "gardenlinux"
+        machineImageVersion: "27.0.0"
         purpose: "testing"
         autoScalerMin: 2
         autoScalerMax: 4
@@ -51,7 +53,12 @@ A successful call returns the ID of the upgrade operation:
 ```json
 {
   "data": {
-    "upgradeShoot": "c7e6727f-16b5-4748-ac95-197d8f79d094"
+    "upgradeShoot": {
+      "id": "708202f7-bc8f-43b5-883c-7add36fba0aa",
+      "operation": "UpgradeShoot",
+      "state": "InProgress",
+      "message": "Starting Gardener Shoot upgrade"
+    }
   }
 }
 ```

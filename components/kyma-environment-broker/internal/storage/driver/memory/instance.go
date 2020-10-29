@@ -8,6 +8,7 @@ import (
 
 	"fmt"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
@@ -164,7 +165,7 @@ func (s *Instance) List(filter dbmodel.InstanceFilter) ([]internal.Instance, int
 	defer s.mu.Unlock()
 	var toReturn []internal.Instance
 
-	offset := convertPageAndPageSizeToOffset(filter.PageSize, filter.Page)
+	offset := pagination.ConvertPageAndPageSizeToOffset(filter.PageSize, filter.Page)
 
 	instances := s.filterInstances(filter)
 	sortInstancesByCreatedAt(instances)
@@ -240,12 +241,4 @@ func matchFilter(value string, filters []string, match func(string, string) bool
 		}
 	}
 	return false
-}
-
-func convertPageAndPageSizeToOffset(pageSize, page int) int {
-	if page < 2 {
-		return 0
-	} else {
-		return page*pageSize - 1
-	}
 }

@@ -20,5 +20,6 @@ LABEL source=git@github.com:kyma-project/control-plane.git
 
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /bin/kyma-env-broker /bin/kyma-env-broker
+COPY /files/swagger /swagger
 
 CMD ["/bin/kyma-env-broker"]

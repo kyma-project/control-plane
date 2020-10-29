@@ -7,6 +7,7 @@ import (
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/kyma"
@@ -25,7 +26,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		resolver := &automock.RuntimeResolver{}
 		defer resolver.AssertExpectations(t)
 
-		resolver.On("Resolve", internal.TargetSpec{
+		resolver.On("Resolve", orchestration.TargetSpec{
 			Include: nil,
 			Exclude: nil,
 		}).Return([]internal.Runtime{}, nil)
@@ -56,10 +57,10 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
 			State:           internal.InProgress,
-			Parameters: internal.OrchestrationParameters{
-				Strategy: internal.StrategySpec{
-					Type:     internal.ParallelStrategy,
-					Schedule: internal.Immediate,
+			Parameters: orchestration.Parameters{
+				Strategy: orchestration.StrategySpec{
+					Type:     orchestration.ParallelStrategy,
+					Schedule: orchestration.Immediate,
 				},
 			},
 		})
@@ -84,13 +85,13 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 
 		resolver := &automock.RuntimeResolver{}
 		defer resolver.AssertExpectations(t)
-		resolver.On("Resolve", internal.TargetSpec{}).Return([]internal.Runtime{}, nil).Once()
+		resolver.On("Resolve", orchestration.TargetSpec{}).Return([]internal.Runtime{}, nil).Once()
 
 		id := "id"
 		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
 			State:           internal.Pending,
-			Parameters: internal.OrchestrationParameters{
+			Parameters: orchestration.Parameters{
 				DryRun: true,
 			}})
 		require.NoError(t, err)
@@ -142,9 +143,9 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		givenO := internal.Orchestration{
 			OrchestrationID: id,
 			State:           internal.InProgress,
-			Parameters: internal.OrchestrationParameters{Strategy: internal.StrategySpec{
-				Type:     internal.ParallelStrategy,
-				Schedule: internal.Immediate,
+			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
+				Type:     orchestration.ParallelStrategy,
+				Schedule: orchestration.Immediate,
 			}},
 		}
 		err = store.Orchestrations().Insert(givenO)

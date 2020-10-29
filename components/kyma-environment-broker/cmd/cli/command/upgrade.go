@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 )
 
 // UpgradeCommand is the base type of all subcommands under the upgrade command. The type holds common attributes and methods inherited by all subcommands
@@ -17,10 +17,10 @@ type UpgradeCommand struct {
 	strategy            string
 	parallelWorkers     int
 	schedule            string
-	orchestrationParams internal.OrchestrationParameters
+	orchestrationParams orchestration.Parameters
 }
 
-var scheduleInputToParam = map[string]internal.ScheduleType{
+var scheduleInputToParam = map[string]orchestration.ScheduleType{
 	"":                  "",
 	"immediate":         "immediate",
 	"maintenancewindow": "maintenanceWindow",

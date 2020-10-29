@@ -34,6 +34,12 @@ spec:
   - to:
     - operation:
         paths: ["/metrics"]
+  # Allow swagger endpoints without authorization
+  {{- if .Values.swagger.virtualService.enabled }}
+  - to:
+    - operation:
+        paths: ["/", "/swagger*", "/schema*"]
+  {{- end }}
   # Allow /runtimes query endpoints only with principal present from JWT, for operators and admins
   - from:
     - source:

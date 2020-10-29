@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -29,10 +30,10 @@ func TestNewParallelOrchestrationStrategy(t *testing.T) {
 		}
 	}
 
-	_, err = s.Execute(ops, internal.StrategySpec{Schedule: internal.Immediate})
+	_, err = s.Execute(ops, orchestration.StrategySpec{Schedule: orchestration.Immediate})
 	assert.NoError(t, err)
 
-	_, err = s.Execute(ops, internal.StrategySpec{Schedule: internal.MaintenanceWindow})
+	_, err = s.Execute(ops, orchestration.StrategySpec{Schedule: orchestration.MaintenanceWindow})
 	assert.NoError(t, err)
 }
 
