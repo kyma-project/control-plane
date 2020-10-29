@@ -46,6 +46,7 @@ func TestClient_ListOrchestrations(t *testing.T) {
 		called := 0
 		params := ListParameters{
 			PageSize: 2,
+			States:   []string{"failed", "in progress"},
 		}
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			called++
@@ -55,6 +56,7 @@ func TestClient_ListOrchestrations(t *testing.T) {
 			query := r.URL.Query()
 			assert.ElementsMatch(t, []string{strconv.Itoa(called)}, query[pagination.PageParam])
 			assert.ElementsMatch(t, []string{strconv.Itoa(params.PageSize)}, query[pagination.PageSizeParam])
+			assert.ElementsMatch(t, params.States, query[StateParam])
 
 			err := respondStatusList(w, orchs[(called-1)*params.PageSize:called*params.PageSize], 4)
 			require.NoError(t, err)
@@ -110,6 +112,7 @@ func TestClient_ListOperations(t *testing.T) {
 		called := 0
 		params := ListParameters{
 			PageSize: 2,
+			States:   []string{"failed", "in progress"},
 		}
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			called++
@@ -119,6 +122,7 @@ func TestClient_ListOperations(t *testing.T) {
 			query := r.URL.Query()
 			assert.ElementsMatch(t, []string{strconv.Itoa(called)}, query[pagination.PageParam])
 			assert.ElementsMatch(t, []string{strconv.Itoa(params.PageSize)}, query[pagination.PageSizeParam])
+			assert.ElementsMatch(t, params.States, query[StateParam])
 
 			err := respondOperationList(w, operations[(called-1)*params.PageSize:called*params.PageSize], 4)
 			require.NoError(t, err)

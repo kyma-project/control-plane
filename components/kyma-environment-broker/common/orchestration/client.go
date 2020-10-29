@@ -283,6 +283,7 @@ func setQuery(url *url.URL, params ListParameters) {
 	query := url.Query()
 	query.Add(pagination.PageParam, strconv.Itoa(params.Page))
 	query.Add(pagination.PageSizeParam, strconv.Itoa(params.PageSize))
+	setParamList(query, StateParam, params.States)
 	url.RawQuery = query.Encode()
 }
 
