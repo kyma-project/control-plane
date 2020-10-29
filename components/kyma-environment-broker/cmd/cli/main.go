@@ -6,16 +6,16 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/command"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/skr"
 )
 
 func main() {
 	setupCloseHandler()
 	log := logger.New()
-	command := skr.NewCmd(log)
+	cmd := command.New(log)
 
-	err := command.Execute()
+	err := cmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}

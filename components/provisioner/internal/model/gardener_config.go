@@ -399,6 +399,12 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	shoot.Spec.Provider.Workers[0].Maximum = int32(upgradeConfig.AutoScalerMax)
 	shoot.Spec.Provider.Workers[0].Minimum = int32(upgradeConfig.AutoScalerMin)
 	shoot.Spec.Provider.Workers[0].Zones = zones
+	if util.NotNilOrEmpty(upgradeConfig.MachineImage) {
+		shoot.Spec.Provider.Workers[0].Machine.Image.Name = *upgradeConfig.MachineImage
+	}
+	if util.NotNilOrEmpty(upgradeConfig.MachineImageVersion) {
+		shoot.Spec.Provider.Workers[0].Machine.Image.Version = upgradeConfig.MachineImageVersion
+	}
 	return nil
 }
 

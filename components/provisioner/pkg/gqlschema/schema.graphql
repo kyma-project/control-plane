@@ -215,6 +215,8 @@ input GardenerUpgradeInput {
     volumeSizeGB: Int                             # Size of the available disk, provided in GB
     autoScalerMin: Int                            # Minimum number of VMs to create
     autoScalerMax: Int                            # Maximum number of VMs to create
+    machineImage: String                          # Machine OS image name
+    machineImageVersion: String                   # Machine OS image version
     maxSurge: Int                                 # Maximum number of VMs created during an update
     maxUnavailable: Int                           # Maximum number of VMs that can be unavailable during an update
     purpose: String                               # The purpose given to the cluster (development, evaluation, testing, production)

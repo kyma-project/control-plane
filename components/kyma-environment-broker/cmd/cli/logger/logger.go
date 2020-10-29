@@ -40,7 +40,7 @@ type verbose struct {
 
 // AddFlags adds the flags such as -v.
 func (l *logging) AddFlags(f *pflag.FlagSet) {
-	f.IntVarP(&l.verbosity, "verbose", "v", 0, "Turn on verbose logging to stderr. Valid values: 0 (default) - 3 (maximum verbosity)")
+	f.IntVarP(&l.verbosity, "verbose", "v", 0, "Option that turns verbose logging to stderr. Valid values are 0 (default) - 3 (maximum verbosity).")
 }
 
 // V returns a logger enabled only if the level is enabled.
