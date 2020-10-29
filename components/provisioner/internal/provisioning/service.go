@@ -3,6 +3,8 @@ package provisioning
 import (
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
@@ -85,7 +87,13 @@ func NewProvisioningService(
 func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, apperrors.AppError) {
 	runtimeInput := config.RuntimeInput
 
-	runtimeID, err := r.directorService.CreateRuntime(runtimeInput, tenant)
+	var runtimeID string
+
+	err := util.RetryOnError(10*time.Second, 6, "Error while registering runtime in Director: %s", func() (err apperrors.AppError) {
+		runtimeID, err = r.directorService.CreateRuntime(runtimeInput, tenant)
+		return
+	})
+
 	if err != nil {
 		return nil, err.Append("Failed to register Runtime")
 	}
@@ -128,7 +136,10 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 
 func (r *service) unregisterFailedRuntime(id, tenant string) {
 	log.Infof("Starting provisioning failed. Unregistering Runtime %s...", id)
-	err := r.directorService.DeleteRuntime(id, tenant)
+	err := util.RetryOnError(10*time.Second, 3, "Error while unregistering runtime in Director: %s", func() (err apperrors.AppError) {
+		err = r.directorService.DeleteRuntime(id, tenant)
+		return
+	})
 	if err != nil {
 		log.Warnf("Failed to unregister failed Runtime '%s': %s", id, err.Error())
 	}
@@ -192,9 +203,9 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 	}
 	defer txSession.RollbackUnlessCommitted()
 
-	operation, error := r.setGardenerShootUpgradeStarted(txSession, cluster, gardenerConfig)
-	if error != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to set shoot upgrade started: %s", error.Error())
+	operation, gardError := r.setGardenerShootUpgradeStarted(txSession, cluster, gardenerConfig)
+	if gardError != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to set shoot upgrade started: %s", gardError.Error())
 	}
 
 	err = r.provisioner.UpgradeCluster(cluster.ID, gardenerConfig)
