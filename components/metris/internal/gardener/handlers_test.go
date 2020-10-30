@@ -1,6 +1,7 @@
 package gardener
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -85,7 +86,7 @@ func TestShootAddHandlerFunc(t *testing.T) {
 		newshoot.ObjectMeta.Name = "new-test-shoot-account"
 		delete(newshoot.ObjectMeta.Labels, labelAccountID)
 
-		if _, err := ctrl.client.GClientset.CoreV1beta1().Shoots(defaultNamespace.Name).Create(newshoot); err != nil {
+		if _, err := ctrl.client.GClientset.CoreV1beta1().Shoots(defaultNamespace.Name).Create(context.TODO(), newshoot, metav1.CreateOptions{}); err != nil {
 			asserts.Failf("error adding shoot", "%v", err)
 		}
 
@@ -103,7 +104,7 @@ func TestShootAddHandlerFunc(t *testing.T) {
 		newshoot.ObjectMeta.Name = "test-shoot-2"
 		newshoot.ObjectMeta.Namespace = "default"
 
-		if _, err := ctrl.client.GClientset.CoreV1beta1().Shoots("default").Create(newshoot); err != nil {
+		if _, err := ctrl.client.GClientset.CoreV1beta1().Shoots("default").Create(context.TODO(), newshoot, metav1.CreateOptions{}); err != nil {
 			asserts.Failf("error adding shoot", "%v", err)
 		}
 
@@ -138,7 +139,7 @@ func TestShootUpdateHandlerFunc(t *testing.T) {
 		newshoot := defaultShoot.DeepCopy()
 		newshoot.ResourceVersion = "2"
 
-		if _, err := ctrl.client.GClientset.CoreV1beta1().Shoots(defaultNamespace.Name).Update(newshoot); err != nil {
+		if _, err := ctrl.client.GClientset.CoreV1beta1().Shoots(defaultNamespace.Name).Update(context.TODO(), newshoot, metav1.UpdateOptions{}); err != nil {
 			asserts.Failf("error updating shoot", "%v", err)
 		}
 
@@ -156,7 +157,7 @@ func TestShootUpdateHandlerFunc(t *testing.T) {
 		newshoot.ResourceVersion = "3"
 		newshoot.ObjectMeta.Labels[labelSubAccountID] = "new-subaccountid"
 
-		if _, err := ctrl.client.GClientset.CoreV1beta1().Shoots(defaultNamespace.Name).Update(newshoot); err != nil {
+		if _, err := ctrl.client.GClientset.CoreV1beta1().Shoots(defaultNamespace.Name).Update(context.TODO(), newshoot, metav1.UpdateOptions{}); err != nil {
 			asserts.Failf("error updating shoot", "%v", err)
 		}
 
@@ -260,7 +261,7 @@ func TestSecretUpdateHandlerFunc(t *testing.T) {
 		newsecret.ResourceVersion = "2"
 		newsecret.Data["clientID"] = []byte("new-new-clientid")
 
-		if _, err := ctrl.client.KClientset.CoreV1().Secrets(defaultNamespace.Name).Update(newsecret); err != nil {
+		if _, err := ctrl.client.KClientset.CoreV1().Secrets(defaultNamespace.Name).Update(context.TODO(), newsecret, metav1.UpdateOptions{}); err != nil {
 			asserts.Failf("error creating secret", "%v", err)
 		}
 
@@ -295,15 +296,15 @@ func testSetup(t *testing.T) {
 		asserts.FailNowf("error creating controller", "%v", err)
 	}
 
-	if _, err := ctrl.client.KClientset.CoreV1().Namespaces().Create(defaultNamespace); err != nil {
+	if _, err := ctrl.client.KClientset.CoreV1().Namespaces().Create(context.TODO(), defaultNamespace, metav1.CreateOptions{}); err != nil {
 		asserts.FailNowf("error creating namespace", "%v", err)
 	}
 
-	if _, err := ctrl.client.KClientset.CoreV1().Secrets(defaultNamespace.Name).Create(defaultSecret); err != nil {
+	if _, err := ctrl.client.KClientset.CoreV1().Secrets(defaultNamespace.Name).Create(context.TODO(), defaultSecret, metav1.CreateOptions{}); err != nil {
 		asserts.FailNowf("error creating secret", "%v", err)
 	}
 
-	if _, err := ctrl.client.GClientset.CoreV1beta1().Shoots(defaultNamespace.Name).Create(defaultShoot); err != nil {
+	if _, err := ctrl.client.GClientset.CoreV1beta1().Shoots(defaultNamespace.Name).Create(context.TODO(), defaultShoot, metav1.CreateOptions{}); err != nil {
 		asserts.FailNowf("error creating shoot", "%v", err)
 	}
 }
@@ -311,7 +312,7 @@ func testSetup(t *testing.T) {
 func testTeardown(t *testing.T) {
 	t.Helper()
 
-	err := ctrl.client.KClientset.CoreV1().Namespaces().Delete(defaultNamespace.Name, &metav1.DeleteOptions{})
+	err := ctrl.client.KClientset.CoreV1().Namespaces().Delete(context.TODO(), defaultNamespace.Name, metav1.DeleteOptions{})
 	if err != nil {
 		assert.FailNowf(t, "error tearing down test", "%s", err)
 	}
