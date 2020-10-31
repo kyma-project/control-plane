@@ -83,7 +83,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 	const gardenerProject = "testing"
 	gardenerNamespace := fmt.Sprintf("garden-%s", gardenerProject)
 
-	eventBroker := event.NewPubSub()
+	eventBroker := event.NewPubSub(logs)
 
 	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, cli, provisionerClient, gardenerClient.CoreV1beta1(),
 		gardenerNamespace, eventBroker, inputFactory, &upgrade_kyma.TimeSchedule{

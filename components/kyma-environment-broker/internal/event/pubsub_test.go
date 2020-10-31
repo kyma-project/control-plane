@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -35,7 +36,7 @@ func TestPubSub(t *testing.T) {
 		gotEventBList = append(gotEventBList, ev.(eventB))
 		return nil
 	}
-	svc := event.NewPubSub()
+	svc := event.NewPubSub(logrus.New())
 	svc.Subscribe(eventA{}, handlerA1)
 	svc.Subscribe(eventB{}, handlerB)
 	svc.Subscribe(eventA{}, handlerA2)
