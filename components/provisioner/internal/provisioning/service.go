@@ -89,7 +89,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 
 	var runtimeID string
 
-	err := util.RetryOnError(10*time.Second, 6, "Error while registering runtime in Director: %s", func() (err apperrors.AppError) {
+	err := util.RetryOnError(10*time.Second, 12, "Error while registering runtime in Director: %s", func() (err apperrors.AppError) {
 		runtimeID, err = r.directorService.CreateRuntime(runtimeInput, tenant)
 		return
 	})
