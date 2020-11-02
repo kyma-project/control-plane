@@ -69,7 +69,7 @@ func TestManager_Execute(t *testing.T) {
 			s2 := testStep{t: t, name: "two", storage: operations}
 			sFinal := testStep{t: t, name: "final", storage: operations}
 
-			eventBroker := event.NewPubSub()
+			eventBroker := event.NewPubSub(logrus.New())
 			eventCollector := &collectingEventHandler{}
 			eventBroker.Subscribe(process.DeprovisioningStepProcessed{}, eventCollector.OnEvent)
 

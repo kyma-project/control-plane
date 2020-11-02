@@ -211,7 +211,7 @@ func main() {
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
 	// application event broker
-	eventBroker := event.NewPubSub()
+	eventBroker := event.NewPubSub(logs)
 
 	// metrics collectors
 	metrics.RegisterAll(eventBroker, db.Operations(), db.Instances())

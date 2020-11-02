@@ -26,8 +26,9 @@ type PubSub struct {
 	handlers map[reflect.Type][]Handler
 }
 
-func NewPubSub() *PubSub {
+func NewPubSub(log logrus.FieldLogger) *PubSub {
 	return &PubSub{
+		log:      log,
 		handlers: make(map[reflect.Type][]Handler),
 	}
 }
