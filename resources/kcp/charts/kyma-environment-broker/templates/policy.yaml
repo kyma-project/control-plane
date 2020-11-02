@@ -1,4 +1,3 @@
-# Required because the KEB has Istio sidecar but Prometheus Operator doesn't
 apiVersion: authentication.istio.io/v1alpha1
 kind: Policy
 metadata:
@@ -10,3 +9,45 @@ spec:
       mode: PERMISSIVE
   targets:
   - name: {{ include "kyma-env-broker.fullname" . }}
+  origins:
+  - jwt:
+      issuer: {{ tpl .Values.oidc.issuer $ | quote }}
+      audiences:
+      - {{ .Values.oidc.client | quote }}
+      triggerRules:
+      - includedPaths:
+        - prefix: /runtimes
+  principalBinding: USE_ORIGIN
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ include "kyma-env-broker.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  rules:
+  # Allow /metrics without authorization
+  - to:
+    - operation:
+        paths: ["/metrics"]
+  # Allow swagger endpoints without authorization
+  {{- if .Values.swagger.virtualService.enabled }}
+  - to:
+    - operation:
+        paths: ["/", "/swagger*", "/schema*"]
+  {{- end }}
+  # Allow /runtimes query endpoints only with principal present from JWT, for operators and admins
+  - from:
+    - source:
+        requestPrincipals: ["*"]
+    to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/runtimes*"]
+    when:
+    - key: request.auth.claims[groups]
+      values: ["{{ .Values.oidc.groups.admin }}", "{{ .Values.oidc.groups.operator }}"]

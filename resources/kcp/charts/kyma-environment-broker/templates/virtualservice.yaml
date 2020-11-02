@@ -76,10 +76,10 @@ spec:
           regex: /runtimes
     route:
       - destination:
-          host: {{ .Values.global.oathkeeper.host }}
+          host: {{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
           port:
-            number: {{ .Values.global.oathkeeper.port }}
-  {{ if .Values.swagger.virtualService.enabled }}
+            number: {{ .Values.service.port }}
+  {{- if .Values.swagger.virtualService.enabled }}
   # swagger exposed without authorization on root endpoint also needs access to static resources placed under /swagger folder
   - corsPolicy:
       allowHeaders:

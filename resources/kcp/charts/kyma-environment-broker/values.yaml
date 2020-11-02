@@ -168,8 +168,15 @@ cis:
     secret: "TBD"
     secretName: "cis-creds-v2"
 
+oidc:
+  issuer: https://dex.{{ .Values.global.ingress.domainName }}
+  client: "kyma-env-broker"
+  groups:
+    admin: runtimeAdmin
+    operator: runtimeOperator
+
 kebClient:
-  scope: "broker:write broker-upgrade:write broker-upgrade:read cld:read runtimes:read"
+  scope: "broker:write broker-upgrade:write broker-upgrade:read cld:read"
 
 environmentsCleanup:
   schedule: "0 0 * * *"
