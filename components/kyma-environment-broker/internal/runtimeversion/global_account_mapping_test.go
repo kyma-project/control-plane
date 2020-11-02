@@ -1,4 +1,4 @@
-package provisioning
+package runtimeversion
 
 import (
 	"testing"
@@ -15,10 +15,11 @@ import (
 )
 
 const (
-	cmName = "config"
+	cmName    = "config"
+	namespace = "foo"
 )
 
-func TestConfigMapKymaVersionConfigurator_ForGlobalAccount(t *testing.T) {
+func TestConfigMapGlobalAccountVersionMapping_ForGlobalAccount(t *testing.T) {
 	// given
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
@@ -33,16 +34,16 @@ func TestConfigMapKymaVersionConfigurator_ForGlobalAccount(t *testing.T) {
 		},
 	})
 
-	svc := NewKymaVersionConfigurator(context.TODO(), client, namespace, cmName, logrus.New())
+	svc := NewGlobalAccountVersionMapping(context.TODO(), client, namespace, cmName, logrus.New())
 
 	// when
-	v1, found1, err := svc.ForGlobalAccount("ga-001")
+	v1, found1, err := svc.Get("ga-001")
 	require.NoError(t, err)
 
-	v2, found2, err := svc.ForGlobalAccount("ga-002")
+	v2, found2, err := svc.Get("ga-002")
 	require.NoError(t, err)
 
-	_, found3, err := svc.ForGlobalAccount("not-existing")
+	_, found3, err := svc.Get("not-existing")
 	require.NoError(t, err)
 
 	// then

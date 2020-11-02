@@ -11,13 +11,6 @@ const (
 	KymaServiceName = "kymaruntime"
 )
 
-var planIDsMapping = map[string]string{
-	AzurePlanName:     AzurePlanID,
-	AzureLitePlanName: AzureLitePlanID,
-	GCPPlanName:       GCPPlanID,
-	TrialPlanName:     TrialPlanID,
-}
-
 type KymaEnvironmentBroker struct {
 	*ServicesEndpoint
 	*ProvisionEndpoint
@@ -44,7 +37,7 @@ type EnablePlans []string
 func (m *EnablePlans) Unmarshal(in string) error {
 	plans := strings.Split(in, ",")
 	for _, name := range plans {
-		if _, exists := planIDsMapping[name]; !exists {
+		if _, exists := PlanIDsMapping[name]; !exists {
 			return errors.Errorf("unrecognized %v plan name ", name)
 		}
 	}

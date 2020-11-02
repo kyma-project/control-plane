@@ -19,6 +19,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 )
 
+var emptyVersion = internal.RuntimeVersionData{}
+
 func TestShouldEnableComponents(t *testing.T) {
 	t.Run("When creating ProvisionRuntimeInput", func(t *testing.T) {
 		// given
@@ -42,7 +44,7 @@ func TestShouldEnableComponents(t *testing.T) {
 		assert.NoError(t, err)
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "")
-		creator, err := builder.CreateProvisionInput(pp)
+		creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.1.0", Origin: internal.Defaults})
 		require.NoError(t, err)
 
 		// when
@@ -82,7 +84,7 @@ func TestShouldEnableComponents(t *testing.T) {
 		assert.NoError(t, err)
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "1.14.0")
-		creator, err := builder.CreateUpgradeInput(pp)
+		creator, err := builder.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.14.0", Origin: "not-relevant"})
 		require.NoError(t, err)
 
 		// when
@@ -116,7 +118,7 @@ func TestShouldDisableComponents(t *testing.T) {
 
 		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
-		creator, err := builder.CreateProvisionInput(pp)
+		creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.10.0", Origin: internal.Defaults})
 		require.NoError(t, err)
 
 		// when
@@ -148,7 +150,7 @@ func TestShouldDisableComponents(t *testing.T) {
 
 		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
-		creator, err := builder.CreateUpgradeInput(pp)
+		creator, err := builder.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.14.0", Origin: "not-relevant"})
 		require.NoError(t, err)
 
 		// when
@@ -182,7 +184,7 @@ func TestDisabledComponentsForPlanNotExist(t *testing.T) {
 	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
 	// when
-	_, err = builder.CreateProvisionInput(pp)
+	_, err = builder.CreateProvisionInput(pp, emptyVersion)
 	require.Error(t, err)
 }
 
@@ -208,7 +210,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 
 		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
-		creator, err := builder.CreateProvisionInput(pp)
+		creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.10.0", Origin: internal.Defaults})
 		require.NoError(t, err)
 
 		// when
@@ -246,7 +248,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		pp := fixProvisioningParameters(broker.AzurePlanID, "")
 		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
-		creator, err := builder.CreateProvisionInput(pp)
+		creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.10.0", Origin: internal.Defaults})
 		require.NoError(t, err)
 
 		// when
@@ -281,7 +283,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		pp := fixProvisioningParameters(broker.AzurePlanID, "1.14.0")
 		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
-		creator, err := builder.CreateUpgradeInput(pp)
+		creator, err := builder.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.14.0", Origin: internal.Defaults})
 		require.NoError(t, err)
 
 		// when
@@ -326,7 +328,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	pp := fixProvisioningParameters(broker.AzurePlanID, "")
 
 	// when
-	builder, err := factory.CreateProvisionInput(pp)
+	builder, err := factory.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.10.0", Origin: internal.Defaults})
 
 	// then
 	require.NoError(t, err)

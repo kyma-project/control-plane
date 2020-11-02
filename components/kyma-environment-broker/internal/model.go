@@ -47,6 +47,34 @@ type AvsLifecycleData struct {
 	AVSExternalEvaluationDeleted bool `json:"avs_external_evaluation_deleted"`
 }
 
+// RuntimeVersionOrigin defines the possible sources of the Kyma Version parameter
+type RuntimeVersionOrigin string
+
+const (
+	Parameters    RuntimeVersionOrigin = "parameters"
+	Defaults      RuntimeVersionOrigin = "defaults"
+	GlobalAccount RuntimeVersionOrigin = "global-account"
+)
+
+// RuntimeVersionData describes the Kyma Version used for the cluser
+// provisioning or upgrade
+type RuntimeVersionData struct {
+	Version string               `json:"version"`
+	Origin  RuntimeVersionOrigin `json:"origin"`
+}
+
+func NewRuntimeVersionFromParameters(version string) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: Parameters}
+}
+
+func NewRuntimeVersionFromDefaults(version string) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: Defaults}
+}
+
+func NewRuntimeVersionFromGlobalAccount(version string) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: GlobalAccount}
+}
+
 type EventHub struct {
 	Deleted bool `json:"event_hub_deleted"`
 }
@@ -118,6 +146,8 @@ type ProvisioningOperation struct {
 	Avs AvsLifecycleData `json:"avs"`
 
 	RuntimeID string `json:"runtime_id"`
+
+	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 }
 
 // DeprovisioningOperation holds all information about de-provisioning operation
@@ -151,6 +181,8 @@ type UpgradeKymaOperation struct {
 
 	PlanID                 string `json:"plan_id"`
 	ProvisioningParameters string `json:"provisioning_parameters"`
+
+	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 }
 
 // Orchestration holds all information about an orchestration.
@@ -282,7 +314,7 @@ func (po *ProvisioningOperation) GetProvisioningParameters() (ProvisioningParame
 
 	err := json.Unmarshal([]byte(po.ProvisioningParameters), &pp)
 	if err != nil {
-		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
+		return pp, errors.Wrapf(err, "while unmarshaling provisioning parameters: %s, ProvisioningOperations: %+v", po.ProvisioningParameters, po)
 	}
 
 	return pp, nil
@@ -303,7 +335,7 @@ func (do *DeprovisioningOperation) GetProvisioningParameters() (ProvisioningPara
 
 	err := json.Unmarshal([]byte(do.ProvisioningParameters), &pp)
 	if err != nil {
-		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
+		return pp, errors.Wrapf(err, "while unmarshaling provisioning parameters: %s, ProvisioningOperations: %+v", do.ProvisioningParameters, do)
 	}
 
 	return pp, nil
@@ -324,7 +356,7 @@ func (do *UpgradeKymaOperation) GetProvisioningParameters() (ProvisioningParamet
 
 	err := json.Unmarshal([]byte(do.ProvisioningParameters), &pp)
 	if err != nil {
-		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
+		return pp, errors.Wrapf(err, "while unmarshaling provisioning parameters: %s, ProvisioningOperations: %+v", do.ProvisioningParameters, do)
 	}
 
 	return pp, nil

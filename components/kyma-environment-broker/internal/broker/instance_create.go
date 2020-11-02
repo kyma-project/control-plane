@@ -47,7 +47,7 @@ type ProvisionEndpoint struct {
 func NewProvision(cfg Config, operationsStorage storage.Operations, instanceStorage storage.Instances, q Queue, builderFactory PlanValidator, validator PlansSchemaValidator, kvod bool, log logrus.FieldLogger) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
-		id := planIDsMapping[planName]
+		id := PlanIDsMapping[planName]
 		enabledPlanIDs[id] = struct{}{}
 	}
 

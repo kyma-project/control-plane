@@ -38,15 +38,15 @@ type KymaVersionConfigurator interface {
 }
 
 type InitialisationStep struct {
-	operationManager        *process.ProvisionOperationManager
-	instanceStorage         storage.Instances
-	provisionerClient       provisioner.Client
-	directorClient          DirectorClient
-	inputBuilder            input.CreatorForPlan
-	externalEvalCreator     *ExternalEvalCreator
-	iasType                 *IASType
-	provisioningTimeout     time.Duration
-	kymaVersionConfigurator KymaVersionConfigurator
+	operationManager       *process.ProvisionOperationManager
+	instanceStorage        storage.Instances
+	provisionerClient      provisioner.Client
+	directorClient         DirectorClient
+	inputBuilder           input.CreatorForPlan
+	externalEvalCreator    *ExternalEvalCreator
+	iasType                *IASType
+	provisioningTimeout    time.Duration
+	runtimeVerConfigurator RuntimeVersionConfiguratorForProvisioning
 }
 
 func NewInitialisationStep(os storage.Operations,
@@ -57,17 +57,17 @@ func NewInitialisationStep(os storage.Operations,
 	avsExternalEvalCreator *ExternalEvalCreator,
 	iasType *IASType,
 	timeout time.Duration,
-	configurator KymaVersionConfigurator) *InitialisationStep {
+	rvc RuntimeVersionConfiguratorForProvisioning) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:        process.NewProvisionOperationManager(os),
-		instanceStorage:         is,
-		provisionerClient:       pc,
-		directorClient:          dc,
-		inputBuilder:            b,
-		externalEvalCreator:     avsExternalEvalCreator,
-		iasType:                 iasType,
-		provisioningTimeout:     timeout,
-		kymaVersionConfigurator: configurator,
+		operationManager:       process.NewProvisionOperationManager(os),
+		instanceStorage:        is,
+		provisionerClient:      pc,
+		directorClient:         dc,
+		inputBuilder:           b,
+		externalEvalCreator:    avsExternalEvalCreator,
+		iasType:                iasType,
+		provisioningTimeout:    timeout,
+		runtimeVerConfigurator: rvc,
 	}
 }
 
@@ -110,13 +110,13 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 
-	err = s.configureKymaVersion(&pp, log)
+	err = s.configureKymaVersion(&operation, &pp)
 	if err != nil {
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	}
 
 	log.Infof("create provisioner input creator for %q plan ID", pp.PlanID)
-	creator, err := s.inputBuilder.CreateProvisionInput(pp)
+	creator, err := s.inputBuilder.CreateProvisionInput(pp, operation.RuntimeVersion)
 	switch {
 	case err == nil:
 		operation.InputCreator = creator
@@ -130,24 +130,18 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 	}
 }
 
-func (s *InitialisationStep) configureKymaVersion(pp *internal.ProvisioningParameters, log logrus.FieldLogger) error {
-	var kymaVersion string
-	if pp.Parameters.KymaVersion == "" {
-		log.Infof("looking for kyma version for %s", pp.ErsContext.GlobalAccountID)
-		ver, found, err := s.kymaVersionConfigurator.ForGlobalAccount(pp.ErsContext.GlobalAccountID)
-		if err != nil {
-			return err
-		}
-		if found {
-			log.Infof("input builder setting up to work with configured Kyma version %s per global account", ver)
-			pp.Parameters.KymaVersion = ver
-			return nil
-		}
-		log.Info("input builder setting up to work with default Kyma version")
-	} else {
-		log.Infof("setting up input builder to work with %s Kyma version provided by the provisioning parameters", kymaVersion)
+func (s *InitialisationStep) configureKymaVersion(operation *internal.ProvisioningOperation, pp *internal.ProvisioningParameters) error {
+	version, err := s.runtimeVerConfigurator.ForProvisioning(*operation, *pp)
+	if err != nil {
+		return errors.Wrap(err, "while getting the runtime version")
 	}
 
+	operation.RuntimeVersion = *version
+
+	var repeat time.Duration
+	if *operation, repeat = s.operationManager.UpdateOperation(*operation); repeat != 0 {
+		return errors.New("unable to update operation with RuntimeVersion property")
+	}
 	return nil
 }
 
