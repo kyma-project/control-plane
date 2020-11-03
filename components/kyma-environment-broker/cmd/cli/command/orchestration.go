@@ -1,22 +1,122 @@
 package command
 
 import (
-	"errors"
 	"fmt"
+	"os"
 	"strings"
+	"text/template"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/printer"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/spf13/cobra"
 )
 
 // OrchestrationCommand represents an execution of the kcp orchestrations command
 type OrchestrationCommand struct {
-	log       logger.Logger
-	output    string
-	state     string
-	operation string
+	cobraCmd   *cobra.Command
+	log        logger.Logger
+	client     orchestration.Client
+	output     string
+	states     []string
+	operation  string
+	listParams orchestration.ListParameters
 }
+
+type orchestrationDetails struct {
+	Orchestration orchestration.StatusResponse        `json:"orchestration"`
+	Operations    orchestration.OperationResponseList `json:"operations"`
+}
+
+var cliStates = map[string]string{
+	"pending":    internal.Pending,
+	"failed":     internal.Failed,
+	"succeeded":  internal.Succeeded,
+	"inprogress": internal.InProgress,
+}
+
+var orchestrationColumns = []printer.Column{
+	{
+		Header:    "ORCHESTRATION ID",
+		FieldSpec: "{.OrchestrationID}",
+	},
+	{
+		Header:         "TYPE",
+		FieldFormatter: orchestrationType,
+	},
+	{
+		Header:         "CREATED AT",
+		FieldFormatter: orchestrationCreatedAt,
+	},
+	{
+		Header:    "STATE",
+		FieldSpec: "{.State}",
+	},
+	{
+		Header:    "DRY RUN",
+		FieldSpec: "{.Parameters.DryRun}",
+	},
+}
+
+var operationColumns = []printer.Column{
+	{
+		Header:    "OPERATION ID",
+		FieldSpec: "{.OperationID}",
+	},
+	{
+		Header:    "SHOOT",
+		FieldSpec: "{.ShootName}",
+	},
+	{
+		Header:    "GLOBALACCOUNT",
+		FieldSpec: "{.GlobalAccountID}",
+	},
+	{
+		Header:    "SUBACCOUNT",
+		FieldSpec: "{.SubAccountID}",
+	},
+	{
+		Header:    "STATE",
+		FieldSpec: "{.State}",
+	},
+}
+
+var orchestrationDetailsTpl = `Orchestration ID : {{.OrchestrationID}}
+Type             : kyma upgrade
+Created At       : {{.CreatedAt}}
+Updated At       : {{.UpdatedAt}}
+Dry Run          : {{.Parameters.DryRun}}
+State            : {{.State}}
+Description      : {{.Description}}
+Strategy         : {{.Parameters.Strategy.Type}}
+Schedule         : {{.Parameters.Strategy.Schedule}}
+Workers          : {{.Parameters.Strategy.Parallel.Workers}}
+Targets          :
+{{- range $i, $t := .Parameters.Targets.Include }}
+  - {{ orchestrationTarget $t }}
+{{- end -}}
+{{- if gt (len .Parameters.Targets.Exclude) 0 }}
+Exclude Targets  :
+{{- range $i, $t := .Parameters.Targets.Exclude }}
+  - {{ orchestrationTarget $t }}
+{{- end -}}
+{{- end }}
+`
+var operationDetailsTpl = `Operation ID       : {{.OperationID}}
+Orchestration ID   : {{.OrchestrationID}}
+Global Account ID  : {{.GlobalAccountID}}
+Subaccount ID      : {{.SubAccountID}}
+Runtime ID         : {{.RuntimeID}}
+Shoot Name         : {{.ShootName}}
+Service Plan       : {{.ServicePlanName}}
+Maintenance Window : {{.MaintenanceWindowBegin}} - {{.MaintenanceWindowEnd}}
+State              : {{.State}}
+Description        : {{.Description}}
+Kyma Version       : {{.KymaConfig.Version}}
+`
 
 // NewOrchestrationCmd constructs a new instance of OrchestrationCommand and configures it in terms of a cobra.Command
 func NewOrchestrationCmd(log logger.Logger) *cobra.Command {
@@ -37,45 +137,45 @@ The command has two modes:
 		PreRunE: func(_ *cobra.Command, args []string) error { return cmd.Validate(args) },
 		RunE:    func(_ *cobra.Command, args []string) error { return cmd.Run(args) },
 	}
+	cmd.cobraCmd = cobraCmd
 
 	SetOutputOpt(cobraCmd, &cmd.output)
-	cobraCmd.Flags().StringVarP(&cmd.state, "state", "s", "", fmt.Sprintf("Filter output by state. The possible values are: %s.", strings.Join(allOrchestrationStates(), ", ")))
+	cobraCmd.Flags().StringSliceVarP(&cmd.states, "state", "s", nil, fmt.Sprintf("Filter output by state. You can provide multiple values, either separated by a comma (e.g. failed,inprogress), or by specifying the option multiple times. The possible values are: %s.", strings.Join(cliOrchestrationStates(), ", ")))
 	cobraCmd.Flags().StringVar(&cmd.operation, "operation", "", "Option that displays details of the specified Runtime operation when a given orchestration is selected.")
 	return cobraCmd
 }
 
-func orchestrationToCLIState(state string) string {
-	return strings.ReplaceAll(state, " ", "")
-}
-
-func allOrchestrationStates() []string {
-	var states = []string{}
-	for _, state := range []string{internal.Pending, internal.InProgress, internal.Succeeded, internal.Failed} {
-		states = append(states, orchestrationToCLIState(state))
+func cliOrchestrationStates() []string {
+	s := []string{}
+	for state := range cliStates {
+		s = append(s, state)
 	}
 
-	return states
+	return s
 }
 
-func validateOrchestrationState(inputState string, args []string) error {
-	if inputState == "" {
-		return nil
-	} else if len(args) > 0 {
-		return errors.New("--state should not be used together with orchestration argument")
-	}
-	for _, state := range allOrchestrationStates() {
-		if state == inputState {
-			return nil
+func (cmd *OrchestrationCommand) validateTransformOrchestrationStates() error {
+	for _, inputState := range cmd.states {
+		if state, ok := cliStates[inputState]; ok {
+			cmd.listParams.States = append(cmd.listParams.States, state)
+		} else {
+			return fmt.Errorf("invalid value for state: %s", inputState)
 		}
 	}
 
-	return fmt.Errorf("invalid value for state: %s", inputState)
+	return nil
 }
 
 // Run executes the orchestrations command
 func (cmd *OrchestrationCommand) Run(args []string) error {
-	fmt.Println("Not implemented yet.")
-	return nil
+	cmd.client = orchestration.NewClient(cmd.cobraCmd.Context(), GlobalOpts.KEBAPIURL(), CLICredentialManager(cmd.log))
+	if len(args) == 0 {
+		return cmd.showOrchestrations()
+	} else if cmd.operation == "" {
+		return cmd.showOneOrchestration(args[0])
+	} else {
+		return cmd.showOperationDetails(args[0])
+	}
 }
 
 // Validate checks the input parameters of the orchestrations command
@@ -85,7 +185,7 @@ func (cmd *OrchestrationCommand) Validate(args []string) error {
 		return err
 	}
 
-	err = validateOrchestrationState(cmd.state, args)
+	err = cmd.validateTransformOrchestrationStates()
 	if err != nil {
 		return err
 	}
@@ -93,6 +193,136 @@ func (cmd *OrchestrationCommand) Validate(args []string) error {
 	if cmd.operation != "" && len(args) == 0 {
 		return errors.New("--operation should only be used when orchestration id is given as an argument")
 	}
+	if cmd.operation != "" && len(cmd.states) > 0 {
+		return errors.New("--state should not be used together with --operation")
+	}
 
 	return nil
+}
+
+func (cmd *OrchestrationCommand) showOrchestrations() error {
+	srl, err := cmd.client.ListOrchestrations(cmd.listParams)
+	if err != nil {
+		return errors.Wrap(err, "while listing orchestrations")
+	}
+
+	switch cmd.output {
+	case tableOutput:
+		tp, err := printer.NewTablePrinter(orchestrationColumns, false)
+		if err != nil {
+			return err
+		}
+		return tp.PrintObj(srl.Data)
+	case jsonOutput:
+		jp := printer.NewJSONPrinter("  ")
+		jp.PrintObj(srl)
+	}
+
+	return nil
+}
+
+func (cmd *OrchestrationCommand) showOneOrchestration(orchestrationID string) error {
+	sr, err := cmd.client.GetOrchestration(orchestrationID)
+	if err != nil {
+		return errors.Wrap(err, "while getting orchestration")
+	}
+	orl, err := cmd.client.ListOperations(orchestrationID, cmd.listParams)
+	if err != nil {
+		return errors.Wrap(err, "while listing operations")
+	}
+
+	switch cmd.output {
+	case tableOutput:
+		// Print orchestration details via template
+		funcMap := template.FuncMap{
+			"orchestrationTarget": orchestrationTarget,
+		}
+		tmpl, err := template.New("orchestrationDetails").Funcs(funcMap).Parse(orchestrationDetailsTpl)
+		if err != nil {
+			return errors.Wrap(err, "while parsing orchestration details template")
+		}
+		err = tmpl.Execute(os.Stdout, sr)
+		if err != nil {
+			return errors.Wrap(err, "while printing orchestration details")
+		}
+
+		// Print operation table
+		if len(orl.Data) > 0 {
+			fmt.Println("\nRuntime Operations :")
+			tp, err := printer.NewTablePrinter(operationColumns, false)
+			if err != nil {
+				return err
+			}
+			return tp.PrintObj(orl.Data)
+		}
+	case jsonOutput:
+		od := orchestrationDetails{
+			Orchestration: sr,
+			Operations:    orl,
+		}
+		jp := printer.NewJSONPrinter("  ")
+		jp.PrintObj(od)
+	}
+
+	return nil
+}
+
+func (cmd *OrchestrationCommand) showOperationDetails(orchestrationID string) error {
+	odr, err := cmd.client.GetOperation(orchestrationID, cmd.operation)
+	if err != nil {
+		return errors.Wrap(err, "while getting operation details")
+	}
+
+	switch cmd.output {
+	case tableOutput:
+		tmpl, err := template.New("operationDetails").Parse(operationDetailsTpl)
+		if err != nil {
+			return errors.Wrap(err, "while parsing operation details template")
+		}
+		err = tmpl.Execute(os.Stdout, odr)
+		if err != nil {
+			return errors.Wrap(err, "while printing operation details")
+		}
+	case jsonOutput:
+		jp := printer.NewJSONPrinter("  ")
+		jp.PrintObj(odr)
+	}
+
+	return nil
+}
+
+// Currently only orchestrations of type "kyma upgrade" are supported,
+// and the type is not reflected in the StatusResponse object
+func orchestrationType(obj interface{}) string {
+	return "kyma upgrade"
+}
+
+func orchestrationCreatedAt(obj interface{}) string {
+	sr := obj.(orchestration.StatusResponse)
+	return sr.CreatedAt.Format("2006/01/02 15:04:05")
+}
+
+// orchestrationTarget returns the string representation of a orchestration.RuntimeTarget
+func orchestrationTarget(t orchestration.RuntimeTarget) string {
+	targets := []string{}
+	if t.Target != "" {
+		targets = append(targets, fmt.Sprintf("target = %s", t.Target))
+	}
+	if t.GlobalAccount != "" {
+		targets = append(targets, fmt.Sprintf("account = %s", t.GlobalAccount))
+	}
+	if t.SubAccount != "" {
+		targets = append(targets, fmt.Sprintf("subaccount = %s", t.SubAccount))
+	}
+	if t.RuntimeID != "" {
+		targets = append(targets, fmt.Sprintf("runtime-id = %s", t.RuntimeID))
+	}
+	if t.Region != "" {
+		targets = append(targets, fmt.Sprintf("region = %s", t.Region))
+	}
+	if t.PlanName != "" {
+		targets = append(targets, fmt.Sprintf("plan = %s", t.PlanName))
+	}
+
+	return strings.Join(targets, ",")
 }

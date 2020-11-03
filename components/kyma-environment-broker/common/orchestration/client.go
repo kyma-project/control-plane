@@ -266,7 +266,7 @@ func (c client) UpgradeKyma(params Parameters) (UpgradeResponse, error) {
 		}
 	}()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusAccepted {
 		return ur, fmt.Errorf("calling %s/upgrade/kyma returned %s status", c.url, resp.Status)
 	}
 

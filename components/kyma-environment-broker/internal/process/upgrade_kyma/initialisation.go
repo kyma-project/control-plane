@@ -55,11 +55,9 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	// if time window for this operation has finished we reprocess on next time window
-	if operation.MaintenanceWindowEnd.Before(time.Now()) {
-		until := time.Until(operation.MaintenanceWindowBegin)
-		log.Infof("Upgrade operation %s will be rescheduled in %v", operation.ID, until)
-		return operation, until, nil
+	// if schedule is maintenanceWindow and time window for this operation has finished we reprocess on next time window
+	if !operation.MaintenanceWindowEnd.IsZero() && operation.MaintenanceWindowEnd.Before(time.Now()) {
+		return s.rescheduleAtNextMaintenanceWindow(operation, log)
 	}
 
 	// rewrite necessary data from ProvisioningOperation to operation internal.UpgradeOperation
@@ -102,6 +100,19 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		return operation, s.timeSchedule.Retry, nil
 	}
 
+}
+
+func (s *InitialisationStep) rescheduleAtNextMaintenanceWindow(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	operation.MaintenanceWindowBegin = operation.MaintenanceWindowBegin.AddDate(0, 0, 1)
+	operation.MaintenanceWindowEnd = operation.MaintenanceWindowEnd.AddDate(0, 0, 1)
+	operation, repeat := s.operationManager.UpdateOperation(operation)
+	if repeat != 0 {
+		log.Errorf("cannot save updated maintenance window to DB")
+		return operation, s.timeSchedule.Retry, nil
+	}
+	until := time.Until(operation.MaintenanceWindowBegin)
+	log.Infof("Upgrade operation %s will be rescheduled in %v", operation.ID, until)
+	return operation, until, nil
 }
 
 func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {

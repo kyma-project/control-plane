@@ -39,10 +39,11 @@ kcp taskrun --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...] COMM
   -t, --target stringArray           List of Runtime target specifiers to include. You can specify this option multiple times.
                                      A target specifier is a comma-separated list of the following selectors:
                                        all                 : All Runtimes provisioned successfully and not deprovisioning
-                                       account=<REGEXP>    : Regex pattern to match against the Runtime's global account field, e.g. "CA50125541TID000000000741207136", "CA.*"
-                                       subaccount=<REGEXP> : Regex pattern to match against the Runtime's subaccount field, e.g. "0d20e315-d0b4-48a2-9512-49bc8eb03cd1"
-                                       region=<REGEXP>     : Regex pattern to match against the Runtime's provider region field, e.g. "europe|eu-"
-                                       runtime-id=<ID>     : Runtime ID is used to indicate a specific Runtime
+                                       account={REGEXP}    : Regex pattern to match against the Runtime's global account field, e.g. "CA50125541TID000000000741207136", "CA.*"
+                                       subaccount={REGEXP} : Regex pattern to match against the Runtime's subaccount field, e.g. "0d20e315-d0b4-48a2-9512-49bc8eb03cd1"
+                                       region={REGEXP}     : Regex pattern to match against the Runtime's provider region field, e.g. "europe|eu-"
+                                       runtime-id={ID}     : Specific Runtime by Runtime ID
+                                       plan={NAME}         : Name of the Runtime's service plan. The possible values are: azure, azure_lite, trial
   -e, --target-exclude stringArray   List of Runtime target specifiers to exclude. You can specify this option multiple times.
                                      A target specifier is a comma-separated list of the selectors described under the --target option.
 ```

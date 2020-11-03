@@ -103,7 +103,11 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 			if err != nil {
 				return nil, errors.Wrap(err, "while getting provisioning operation")
 			}
-			windowBegin, windowEnd := u.resolveWindowTime(r.MaintenanceWindowBegin, r.MaintenanceWindowEnd)
+			windowBegin := time.Time{}
+			windowEnd := time.Time{}
+			if params.Strategy.Schedule == orchestrationExt.MaintenanceWindow {
+				windowBegin, windowEnd = u.resolveWindowTime(r.MaintenanceWindowBegin, r.MaintenanceWindowEnd)
+			}
 
 			id := uuid.New().String()
 			op := internal.UpgradeKymaOperation{
@@ -224,6 +228,11 @@ func (u *upgradeKymaManager) resolveWindowTime(beginTime, endTime time.Time) (ti
 	n := time.Now()
 	start := time.Date(n.Year(), n.Month(), n.Day(), beginTime.Hour(), beginTime.Minute(), beginTime.Second(), beginTime.Nanosecond(), beginTime.Location())
 	end := time.Date(n.Year(), n.Month(), n.Day(), endTime.Hour(), endTime.Minute(), endTime.Second(), endTime.Nanosecond(), endTime.Location())
+
+	// if the window end slips through the next day, adjust the date accordingly
+	if end.Before(start) {
+		end = end.AddDate(0, 0, 1)
+	}
 
 	// if time window has already passed we wait until next day
 	if start.Before(n) && end.Before(n) {
