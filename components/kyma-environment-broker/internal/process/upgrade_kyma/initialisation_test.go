@@ -65,6 +65,10 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.Equal(t, time.Duration(0), repeat)
 		assert.Equal(t, domain.Succeeded, upgradeOperation.State)
 
+		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.ID)
+		assert.Equal(t, upgradeOperation, *storedOp)
+		assert.NoError(t, err)
+
 	})
 
 	t.Run("should initialize UpgradeRuntimeInput request when run", func(t *testing.T) {
@@ -99,6 +103,10 @@ func TestInitialisationStep_Run(t *testing.T) {
 		inputBuilder.AssertNumberOfCalls(t, "CreateUpgradeInput", 1)
 		assert.Equal(t, time.Duration(0), repeat)
 		assert.NotNil(t, op.InputCreator)
+
+		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(op.ID)
+		assert.Equal(t, op, *storedOp)
+		assert.NoError(t, err)
 	})
 }
 
