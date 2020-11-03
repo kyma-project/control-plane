@@ -27,7 +27,7 @@ kcp upgrade kyma --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...]
       --dry-run                      Perform the orchestration without executing the actual upgrage operations for the Runtimes. The details can be obtained using the "kcp orchestrations" command.
       --parallel-workers int         Number of parallel workers to use in parallel orchestration strategy. By default the amount of workers will be auto-selected on control plane server side.
       --schedule string              Orchestration schedule to use. Possible values: "immediate", "maintenancewindow". By default the schedule will be auto-selected on control plane server side.
-      --strategy string              Orchestration strategy to use. The possible values are: parallel. (default "parallel")
+      --strategy string              Orchestration strategy to use. (default "parallel")
   -t, --target stringArray           List of Runtime target specifiers to include. You can specify this option multiple times.
                                      A target specifier is a comma-separated list of the following selectors:
                                        all                 : All Runtimes provisioned successfully and not deprovisioning

@@ -7,7 +7,7 @@ Orchestration is a mechanism that allows you to upgrade Kyma Runtimes. To create
 
 If Kyma Environment Broker is restarted, it reprocesses the orchestration with the `IN PROGRESS` state.
 
->**NOTE:** You need an OIDC ID token in JWT format, issued by a (configurable) OIDC provider which is trusted by Kyma Environment Broker. The `groups` claim must be present in the token, and furthermore the user must belong to the configurable admin group (`runtimeAdmin` by default) to create an orchestration, and must belong to the configurable operator group (`runtimeOperator` by default) to fetch the orchestrations.
+>**NOTE:** You need an OIDC ID token in the JWT format issued by a (configurable) OIDC provider which is trusted by Kyma Environment Broker. The `groups` claim must be present in the token, and furthermore the user must belong to the configurable admin group (`runtimeAdmin` by default) to create an orchestration. To fetch the orchestrations, the user must belong to the configurable operator group (`runtimeOperator` by default).
 
 Orchestration API consist of the following handlers:
 
