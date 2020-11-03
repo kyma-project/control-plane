@@ -27,8 +27,8 @@ require (
 	github.com/vektah/gqlparser v1.2.0
 	github.com/vrischmann/envconfig v1.3.0
 	gotest.tools v2.2.0+incompatible
-	k8s.io/api v0.18.8
-	k8s.io/apimachinery v0.18.8
+	k8s.io/api v0.18.10
+	k8s.io/apimachinery v0.18.10
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	sigs.k8s.io/controller-runtime v0.6.2
 )
@@ -45,5 +45,6 @@ replace (
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/text => golang.org/x/text v0.3.3
 
-	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible => k8s.io/client-go v0.18.8
+	k8s.io/apiserver => k8s.io/apiserver v0.18.10
+	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible => k8s.io/client-go v0.18.10
 )
