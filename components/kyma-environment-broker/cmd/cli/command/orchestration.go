@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -150,6 +151,7 @@ func cliOrchestrationStates() []string {
 	for state := range cliStates {
 		s = append(s, state)
 	}
+	sort.Strings(s)
 
 	return s
 }

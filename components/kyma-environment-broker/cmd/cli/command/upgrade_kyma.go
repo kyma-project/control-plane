@@ -32,7 +32,7 @@ The Kyma version and configurations to use for the upgrade are taken from Kyma C
 		Example: `  kcp upgrade kyma --target all --schedule maintenancewindow     Upgrade Kyma on all Runtimes in their next respective maintenance window hours.
   kcp upgrade kyma --target "account=CA.*"                       Upgrade Kyma on Runtimes of all global accounts starting with CA.
   kcp upgrade kyma --target all --target-exclude "account=CA.*"  Upgrade Kyma on Runtimes of all global accounts not starting with CA.
-	kcp upgrade kyma --target "region=europe|eu|uk"                Upgrade Kyma on Runtimes whose region belongs to Europe.`,
+  kcp upgrade kyma --target "region=europe|eu|uk"                Upgrade Kyma on Runtimes whose region belongs to Europe.`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}

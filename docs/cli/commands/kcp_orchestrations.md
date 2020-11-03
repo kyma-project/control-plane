@@ -26,7 +26,7 @@ kcp orchestrations [id] [flags]
 ```
       --operation string   Option that displays details of the specified Runtime operation when a given orchestration is selected.
   -o, --output string      Output type of displayed Runtime(s). The possible values are: table, json. (default "table")
-  -s, --state strings      Filter output by state. You can provide multiple values, either separated by a comma (e.g. failed,inprogress), or by specifying the option multiple times. The possible values are: pending, failed, succeeded, inprogress.
+  -s, --state strings      Filter output by state. You can provide multiple values, either separated by a comma (e.g. failed,inprogress), or by specifying the option multiple times. The possible values are: failed, inprogress, pending, succeeded.
 ```
 
 ## Global Options
