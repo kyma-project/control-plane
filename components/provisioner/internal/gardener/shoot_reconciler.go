@@ -153,11 +153,7 @@ func getAuditLogTenant(seed string, data map[string]string) string {
 }
 
 func findTenantStrictly(seed string, data map[string]string) string {
-	tenant, found := data[seed]
-	if found {
-		return tenant
-	}
-	return ""
+	return data[seed]
 }
 
 func findTenantLoosely(seed string, data map[string]string) string {
