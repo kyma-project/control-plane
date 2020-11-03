@@ -67,6 +67,10 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, time.Duration(0), repeat)
 		assert.Equal(t, domain.Succeeded, operation.State)
+
+		storedOp, err := memoryStorage.Operations().GetDeprovisioningOperationByID(operation.ID)
+		assert.Equal(t, operation, *storedOp)
+		assert.NoError(t, err)
 	})
 
 	t.Run("Should delete instance when operation has succeeded due to runtime not existing", func(t *testing.T) {
@@ -104,6 +108,10 @@ func TestInitialisationStep_Run(t *testing.T) {
 		inst, err := memoryStorage.Instances().GetByID(operation.InstanceID)
 		assert.Error(t, err)
 		assert.Nil(t, inst)
+
+		storedOp, err := memoryStorage.Operations().GetDeprovisioningOperationByID(operation.ID)
+		assert.Equal(t, operation, *storedOp)
+		assert.NoError(t, err)
 	})
 
 }

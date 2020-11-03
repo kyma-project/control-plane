@@ -84,6 +84,12 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		return s.operationManager.OperationFailed(operation, err.Error())
 	}
 
+	operation, repeat := s.operationManager.UpdateOperation(operation)
+	if repeat != 0 {
+		log.Errorf("cannot save the operation")
+		return operation, time.Second, nil
+	}
+
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:
@@ -116,6 +122,13 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 	switch {
 	case err == nil:
 		operation.InputCreator = creator
+
+		operation, repeat := s.operationManager.UpdateOperation(operation)
+		if repeat != 0 {
+			log.Errorf("cannot save the operation")
+			return operation, time.Second, nil
+		}
+
 		return operation, 0, nil // go to next step
 	case kebError.IsTemporaryError(err):
 		log.Errorf("cannot create upgrade runtime input creator at the moment for plan %s: %s", pp.PlanID, err)
