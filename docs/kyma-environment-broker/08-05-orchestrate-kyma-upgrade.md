@@ -13,7 +13,7 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
 
 ## Steps
 
-1. Get the OIDC ID token in JWT format. Export this variable based on the token you got from the OIDC client:
+1. [Get the OIDC ID token in JWT format](#details-orchestration). Export this variable based on the token you got from the OIDC client:
 
    ```bash
    export AUTHORIZATION_HEADER="Authorization: Bearer $ID_TOKEN"
