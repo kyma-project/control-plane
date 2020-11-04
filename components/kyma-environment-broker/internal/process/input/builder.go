@@ -6,7 +6,6 @@ import (
 	cloudProvider "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/vburenin/nsync"
@@ -131,7 +130,9 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 
 func (f *InputBuilderFactory) forTrialPlan(provider *internal.TrialCloudProvider) HyperscalerInputProvider {
 	if provider == nil {
-		return &cloudProvider.AzureTrialInput{}
+		return &cloudProvider.AzureTrialInput{
+			PlatformRegionMapping: f.trialPlatformRegionMapping,
+		}
 	}
 
 	switch *provider {
