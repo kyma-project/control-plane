@@ -2,32 +2,40 @@ package provisioning
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/services/containerregistry/mgmt/2019-05-01/containerregistry"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/uid"
 
 	hyperscalerautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
 	azuretesting "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure/testing"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
+	"github.com/Azure/azure-sdk-for-go/services/containerregistry/mgmt/2019-05-01/containerregistry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_AzureContainerRegistryHappyPath(t *testing.T) {
 	// given
+	mockUID := "4ee0b0d7-ff22-404c-8fe3-ed4a342fe940"
+	expectedRegistryName := "kyma4ee0b0d7ff22404c8fe3ed4a342fe940"
 	tags := fixTags()
 	memoryStorage := storage.NewMemoryStorage()
 	accountProvider := fixAccountProvider()
 	azureClient := azuretesting.NewFakeAzureClientHappyPath()
 	step := fixAzureContainerRegistryStep(memoryStorage.Operations(), azuretesting.NewFakeHyperscalerProvider(azureClient), accountProvider)
+	mockUIDGenerator := &automock.UIDGenerator{}
+	mockUIDGenerator.On("Generate").Return(mockUID).Once()
+	step.uidSvc = mockUIDGenerator
 	inputCreator := newInputCreator()
 	op := fixOperationAzureContainerRegistry(inputCreator)
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
@@ -43,10 +51,10 @@ func Test_AzureContainerRegistryHappyPath(t *testing.T) {
 	assert.True(t, op.Azure.ContainerRegistryCreated)
 	assert.Equal(t, azureClient.Tags, tags)
 	inputCreator.AssertOverride(t, components.Serverless, gqlschema.ConfigEntryInput{Key: "dockerRegistry.enableInternal", Value: "false", Secret: ptr.Bool(true)})
-	inputCreator.AssertOverride(t, components.Serverless, gqlschema.ConfigEntryInput{Key: "dockerRegistry.username", Value: "rtestinstanceid", Secret: ptr.Bool(true)})
+	inputCreator.AssertOverride(t, components.Serverless, gqlschema.ConfigEntryInput{Key: "dockerRegistry.username", Value: expectedRegistryName, Secret: ptr.Bool(true)})
 	inputCreator.AssertOverride(t, components.Serverless, gqlschema.ConfigEntryInput{Key: "dockerRegistry.password", Value: "some-password", Secret: ptr.Bool(true)})
-	inputCreator.AssertOverride(t, components.Serverless, gqlschema.ConfigEntryInput{Key: "dockerRegistry.serverAddress", Value: "rtestinstanceid.azurecr.io", Secret: ptr.Bool(true)})
-	inputCreator.AssertOverride(t, components.Serverless, gqlschema.ConfigEntryInput{Key: "dockerRegistry.registryAddress", Value: "rtestinstanceid.azurecr.io", Secret: ptr.Bool(true)})
+	inputCreator.AssertOverride(t, components.Serverless, gqlschema.ConfigEntryInput{Key: "dockerRegistry.serverAddress", Value: fmt.Sprintf("%s.azurecr.io", expectedRegistryName), Secret: ptr.Bool(true)})
+	inputCreator.AssertOverride(t, components.Serverless, gqlschema.ConfigEntryInput{Key: "dockerRegistry.registryAddress", Value: fmt.Sprintf("%s.azurecr.io", expectedRegistryName), Secret: ptr.Bool(true)})
 
 	// when retrying completed step
 	op, when, err = step.Run(op, fixLogger())
@@ -146,6 +154,23 @@ func Test_AzureContainerRegistryUnhappyPath(t *testing.T) {
 		})
 	}
 }
+
+func Test_AzureContainerRegistryGetValidRegistryName(t *testing.T) {
+	// given
+	s := ProvisionAzureContainerRegistryStep{}
+	s.uidSvc = uid.NewUIDService()
+
+	// when
+	name1 := s.getValidRegistryName()
+	name2 := s.getValidRegistryName()
+
+	// then
+	assert.True(t, len(name1) > 4 && len(name1) < 51, "Should have length between 5 and 50 characters")
+	assert.True(t, strings.HasPrefix(name1, registryNamePrefix), "Should start with prefix: %s", registryNamePrefix)
+	assert.Regexp(t, "^[a-zA-Z0-9]+$", name1)
+	assert.NotEqual(t, name1, name2, "Should always be unique.")
+}
+
 func fixAzureContainerRegistryStep(memoryStorageOp storage.Operations, hyperscalerProvider azure.HyperscalerProvider,
 	accountProvider *hyperscalerautomock.AccountProvider) *ProvisionAzureContainerRegistryStep {
 	return NewProvisionAzureContainerRegistryStep(memoryStorageOp, hyperscalerProvider, accountProvider, fixAzureContainerRegistryStepConfig(), context.Background())

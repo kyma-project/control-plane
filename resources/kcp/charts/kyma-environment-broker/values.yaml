@@ -155,8 +155,8 @@ edp:
   secretName: "edp-creds"
 
 azure:
+  containerRegistryDisabled: true
   containerRegistrySKU: "Basic"
-  disabled: true
 
 cis:
   v1:

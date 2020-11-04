@@ -14,6 +14,7 @@ import (
 	processazure "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/azure"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/uid"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	"github.com/Azure/go-autorest/autorest/to"
@@ -21,13 +22,18 @@ import (
 )
 
 const (
-	registryNamePrefix = "r"
+	registryNamePrefix = "kyma"
 	registryAddress    = "azurecr.io"
 )
 
 var (
 	registryNameRegexp = regexp.MustCompile(`[^a-zA-Z0-9]`)
 )
+
+//go:generate mockery -name=UIDGenerator -output=automock -outpkg=automock -case=underscore
+type UIDGenerator interface {
+	Generate() string
+}
 
 // ensure the interface is implemented
 var _ Step = (*ProvisionAzureContainerRegistryStep)(nil)
@@ -36,6 +42,7 @@ type ProvisionAzureContainerRegistryStep struct {
 	operationManager *process.ProvisionOperationManager
 	azure            processazure.ProviderContext
 	azureStepConfig  azure.StepConfig
+	uidSvc           UIDGenerator
 }
 
 func NewProvisionAzureContainerRegistryStep(os storage.Operations, hyperscalerProvider azure.HyperscalerProvider, accountProvider hyperscaler.AccountProvider, stepCfg azure.StepConfig, ctx context.Context) *ProvisionAzureContainerRegistryStep {
@@ -47,6 +54,7 @@ func NewProvisionAzureContainerRegistryStep(os storage.Operations, hyperscalerPr
 			Context:             ctx,
 		},
 		azureStepConfig: stepCfg,
+		uidSvc:          uid.NewUIDService(),
 	}
 }
 
@@ -103,7 +111,7 @@ func (s *ProvisionAzureContainerRegistryStep) Run(operation internal.Provisionin
 	}
 
 	// prepare a valid unique name for Azure resources
-	uniqueRegistryName := s.getValidRegistryName(operation.InstanceID)
+	uniqueRegistryName := s.getValidRegistryName()
 
 	// retrieve azure resource group name from operation
 	groupName := operation.Azure.ResourceGroupName
@@ -180,10 +188,11 @@ func (s *ProvisionAzureContainerRegistryStep) getServerlessOverrides(username, p
 	}
 }
 
-// getValidRegistryName returns a valid Azure Container Registry name created from a specified string
-// https://docs.microsoft.com/en-us/rest/api/containerregistry/registries/create#uri-parameters
-func (s *ProvisionAzureContainerRegistryStep) getValidRegistryName(name string) string {
-	name = fmt.Sprintf("%s%s", registryNamePrefix, name)
+// getValidRegistryName returns a valid unique Azure Container Registry name.
+// The name must be a 5-50 characters long alphanumeric string.
+// https://docs.microsoft.com/en-us/azure/container-registry/container-registry-get-started-azure-cli#create-a-container-registry
+func (s *ProvisionAzureContainerRegistryStep) getValidRegistryName() string {
+	name := fmt.Sprintf("%s%s", registryNamePrefix, s.uidSvc.Generate())
 	name = registryNameRegexp.ReplaceAllString(name, "")
 	return name
 }

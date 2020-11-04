@@ -7,8 +7,8 @@ import (
 )
 
 type StepConfig struct {
-	Disabled             bool                      `envconfig:"default=true"`
-	ContainerRegistrySKU containerregistry.SkuName `envconfig:"default=Basic"`
+	ContainerRegistryDisabled bool                      `envconfig:"default=true"`
+	ContainerRegistrySKU      containerregistry.SkuName `envconfig:"default=Basic"`
 }
 
 type Config struct {

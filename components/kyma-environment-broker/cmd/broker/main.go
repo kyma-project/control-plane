@@ -276,7 +276,7 @@ func main() {
 		{
 			weight:   2,
 			step:     provisioning.NewProvisionAzureContainerRegistryStep(db.Operations(), azure.NewAzureProvider(), accountProvider, cfg.Azure, ctx),
-			disabled: cfg.Azure.Disabled,
+			disabled: cfg.Azure.ContainerRegistryDisabled,
 		},
 		{
 			weight: 2,
