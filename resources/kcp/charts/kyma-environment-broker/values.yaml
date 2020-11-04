@@ -156,6 +156,7 @@ edp:
 
 azure:
   containerRegistrySKU: "Basic"
+  disabled: true
 
 cis:
   v1:

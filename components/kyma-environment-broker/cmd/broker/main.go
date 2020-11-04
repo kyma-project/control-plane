@@ -274,8 +274,9 @@ func main() {
 				provisioning.NewNatsStreamingOverridesStep(db.Operations())),
 		},
 		{
-			weight: 2,
-			step:   provisioning.NewProvisionAzureContainerRegistryStep(db.Operations(), azure.NewAzureProvider(), accountProvider, cfg.Azure, ctx),
+			weight:   2,
+			step:     provisioning.NewProvisionAzureContainerRegistryStep(db.Operations(), azure.NewAzureProvider(), accountProvider, cfg.Azure, ctx),
+			disabled: cfg.Azure.Disabled,
 		},
 		{
 			weight: 2,

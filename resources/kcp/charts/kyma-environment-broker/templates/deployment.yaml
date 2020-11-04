@@ -265,6 +265,8 @@ spec:
                   name: {{ .Values.avs.secretName }}
             - name: APP_AZURE_CONTAINER_REGISTRY_SKU
               value: "{{ .Values.azure.containerRegistrySKU }}"
+            - name: APP_AZURE_DISABLED
+              value: "{{ .Values.azure.disabled }}"
             - name: APP_KYMA_VERSION
               value: {{ .Values.kymaVersion }}
             - name: APP_ENABLE_ON_DEMAND_VERSION
