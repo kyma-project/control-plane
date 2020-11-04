@@ -35,6 +35,7 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "kyma-env-broker.labels" -}}
+app: {{ include "kyma-env-broker.name" . }}
 app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
 helm.sh/chart: {{ include "kyma-env-broker.chart" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
