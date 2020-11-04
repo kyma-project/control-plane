@@ -31,6 +31,6 @@ See [the full list of commands, global options and flags](commands/kcp.md).
 | [`kubeconfig`](commands/kcp_kubeconfig.md) | None | Downloads the kubeconfig file for a given Kyma Runtime. | `kcp kubeconfig -c a1fb2d35` |
 | [`login`](commands/kcp_login.md) | None | Performs OIDC login required by all commands. | `kcp login` |
 | [`orchestrations`](commands/kcp_orchestrations.md) | None | Displays KCP orchestrations and corresponding operations details. | `kcp orchestrations` |
-| [`runtimes`](commands/kcp_runtimes) | None | Displays Kyma Runtimes based on various filters. | `kcp runtimes --region westeurope` |
+| [`runtimes`](commands/kcp_runtimes.md) | None | Displays Kyma Runtimes based on various filters. | `kcp runtimes --region westeurope` |
 | [`taskrun`](commands/kcp_taskrun.md) | None | Runs generic tasks on one or more Kyma Runtimes. | `kcp taskrun --target all kubectl get nodes` |
 | [`upgrade`](commands/kcp_upgrade.md) | [`kyma`](commands/kcp_upgrade_kyma.md) | Performs upgrade operations on Kyma Runtimes. Currently, only Kyma upgrade is supported. | `kcp upgrade kyma --target all` |

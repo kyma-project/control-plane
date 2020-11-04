@@ -10,9 +10,10 @@ import (
 
 // RuntimeCommand represents an execution of the kcp runtimes command
 type RuntimeCommand struct {
-	log    logger.Logger
-	output string
-	params runtime.ListParameters
+	cobraCmd *cobra.Command
+	log      logger.Logger
+	output   string
+	params   runtime.ListParameters
 }
 
 const (
@@ -61,8 +62,9 @@ The command supports filtering Runtimes based on various attributes. See the lis
   kcp rt -c c-178e034 -o json                            Display all details about one Runtime identified by a Shoot name in the JSON format.
   kcp runtimes --account CA4836781TID000000000123456789  Display all Runtimes of a given global account.`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
-		RunE:    func(cobraCmd *cobra.Command, _ []string) error { return cmd.Run(cobraCmd) },
+		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}
+	cmd.cobraCmd = cobraCmd
 
 	SetOutputOpt(cobraCmd, &cmd.output)
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.Shoots, "shoot", "c", nil, "Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.")
@@ -75,8 +77,8 @@ The command supports filtering Runtimes based on various attributes. See the lis
 }
 
 // Run executes the runtimes command
-func (cmd *RuntimeCommand) Run(cobraCmd *cobra.Command) error {
-	client := runtime.NewClient(cobraCmd.Context(), GlobalOpts.KEBAPIURL(), CLICredentialManager(cmd.log))
+func (cmd *RuntimeCommand) Run() error {
+	client := runtime.NewClient(cmd.cobraCmd.Context(), GlobalOpts.KEBAPIURL(), CLICredentialManager(cmd.log))
 
 	rp, err := client.ListRuntimes(cmd.params)
 	if err != nil {
@@ -117,12 +119,6 @@ func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
 
 func runtimeStatus(obj interface{}) string {
 	rt := obj.(runtime.RuntimeDTO)
-	switch rt.Status.Provisioning.State {
-	case inProgress:
-		return "provisioning"
-	case failed:
-		return "failed (provision)"
-	}
 	if rt.Status.Deprovisioning != nil {
 		switch rt.Status.Deprovisioning.State {
 		case inProgress:
@@ -133,6 +129,7 @@ func runtimeStatus(obj interface{}) string {
 			return "deprovisioned"
 		}
 	}
+
 	upgradeCount := rt.Status.UpgradingKyma.Count
 	if upgradeCount > 0 {
 		// Take the last upgrade operation, assuming that Data is sorted by CreatedBy ASC.
@@ -144,6 +141,13 @@ func runtimeStatus(obj interface{}) string {
 		case succeeded:
 			return "succeeded"
 		}
+	}
+
+	switch rt.Status.Provisioning.State {
+	case inProgress:
+		return "provisioning"
+	case failed:
+		return "failed (provision)"
 	}
 
 	return "succeeded"

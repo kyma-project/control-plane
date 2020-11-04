@@ -324,7 +324,7 @@ func respondUpgrade(w http.ResponseWriter, orchestrationID string) error {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusAccepted)
 	_, err = w.Write(data)
 	return err
 }

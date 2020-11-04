@@ -23,10 +23,18 @@ const (
 )
 
 const (
-	targetAccount    = "account"
-	targetSubaccount = "subaccount"
-	targetRuntimeID  = "runtime-id"
-	targetRegion     = "region"
+	accountTarget    = "account"
+	subaccountTarget = "subaccount"
+	runtimeIDTarget  = "runtime-id"
+	regionTarget     = "region"
+	planTarget       = "plan"
+)
+
+const (
+	azurePlan     = "azure"
+	azureLitePlan = "azure_lite"
+	trialPlan     = "trial"
+	gcpPlan       = "gcp"
 )
 
 // GlobalOptionsKey is the type for holding the configuration key for each global parameter
@@ -136,10 +144,11 @@ func SetRuntimeTargetOpts(cmd *cobra.Command, targetInputs *[]string, targetExcl
 		`List of Runtime target specifiers to include. You can specify this option multiple times.
 A target specifier is a comma-separated list of the following selectors:
   all                 : All Runtimes provisioned successfully and not deprovisioning
-  account=<REGEXP>    : Regex pattern to match against the Runtime's global account field, e.g. "CA50125541TID000000000741207136", "CA.*"
-  subaccount=<REGEXP> : Regex pattern to match against the Runtime's subaccount field, e.g. "0d20e315-d0b4-48a2-9512-49bc8eb03cd1"
-  region=<REGEXP>     : Regex pattern to match against the Runtime's provider region field, e.g. "europe|eu-"
-  runtime-id=<ID>     : Runtime ID is used to indicate a specific Runtime`)
+  account={REGEXP}    : Regex pattern to match against the Runtime's global account field, e.g. "CA50125541TID000000000741207136", "CA.*"
+  subaccount={REGEXP} : Regex pattern to match against the Runtime's subaccount field, e.g. "0d20e315-d0b4-48a2-9512-49bc8eb03cd1"
+  region={REGEXP}     : Regex pattern to match against the Runtime's provider region field, e.g. "europe|eu-"
+  runtime-id={ID}     : Specific Runtime by Runtime ID
+  plan={NAME}         : Name of the Runtime's service plan. The possible values are: azure, azure_lite, trial, gcp`)
 	cmd.Flags().StringArrayVarP(targetExcludeInputs, "target-exclude", "e", nil,
 		`List of Runtime target specifiers to exclude. You can specify this option multiple times.
 A target specifier is a comma-separated list of the selectors described under the --target option.`)
@@ -184,36 +193,32 @@ func parseRuntimeTarget(targetInput string, targets *[]orchestration.RuntimeTarg
 		} else {
 			selectorValue = ""
 		}
+
+		err := checkMissingRuntimeTargetSelector(selectorKey, selectorValue, flagName)
+		if err != nil {
+			return err
+		}
 		switch selectorKey {
 		case orchestration.TargetAll:
 			if !include {
 				return fmt.Errorf("\"%s\" cannot be used with --target-exclude", orchestration.TargetAll)
 			}
 			target.Target = orchestration.TargetAll
-		case targetAccount:
-			err := checkRuntimeTargetSelector(selectorKey, selectorValue, flagName)
-			if err != nil {
-				return err
-			}
+		case accountTarget:
 			target.GlobalAccount = selectorValue
-		case targetSubaccount:
-			err := checkRuntimeTargetSelector(selectorKey, selectorValue, flagName)
-			if err != nil {
-				return err
-			}
+		case subaccountTarget:
 			target.SubAccount = selectorValue
-		case targetRegion:
-			err := checkRuntimeTargetSelector(selectorKey, selectorValue, flagName)
-			if err != nil {
-				return err
-			}
+		case regionTarget:
 			target.Region = selectorValue
-		case targetRuntimeID:
-			err := checkRuntimeTargetSelector(selectorKey, selectorValue, flagName)
-			if err != nil {
-				return err
-			}
+		case runtimeIDTarget:
 			target.RuntimeID = selectorValue
+		case planTarget:
+			switch selectorValue {
+			case azurePlan, azureLitePlan, trialPlan, gcpPlan:
+				target.PlanName = selectorValue
+			default:
+				return fmt.Errorf("invalid value for selector: %s %s=%s", flagName, selectorKey, selectorValue)
+			}
 		default:
 			return fmt.Errorf("invalid selector: %s %s", flagName, selectorKey)
 		}
@@ -223,10 +228,10 @@ func parseRuntimeTarget(targetInput string, targets *[]orchestration.RuntimeTarg
 	return nil
 }
 
-func checkRuntimeTargetSelector(selectorKey, selectorValue string, flagName string) error {
+func checkMissingRuntimeTargetSelector(selectorKey, selectorValue string, flagName string) error {
 
-	if selectorValue == "" {
-		return fmt.Errorf("%s %s is missing required value (--target %s=<VALUE>)", flagName, selectorKey, selectorKey)
+	if selectorKey != orchestration.TargetAll && selectorValue == "" {
+		return fmt.Errorf("%s %s is missing required value (%s={VALUE})", flagName, selectorKey, selectorKey)
 	}
 
 	return nil

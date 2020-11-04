@@ -176,7 +176,7 @@ oidc:
     operator: runtimeOperator
 
 kebClient:
-  scope: "broker:write broker-upgrade:write broker-upgrade:read cld:read"
+  scope: "broker:write cld:read"
 
 environmentsCleanup:
   schedule: "0 0 * * *"

@@ -17,6 +17,8 @@ spec:
       triggerRules:
       - includedPaths:
         - prefix: /runtimes
+        - prefix: /orchestrations
+        - prefix: /upgrade
   principalBinding: USE_ORIGIN
 ---
 apiVersion: security.istio.io/v1beta1
