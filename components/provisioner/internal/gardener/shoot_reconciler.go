@@ -123,10 +123,7 @@ func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, namespacedName t
 	if err != nil {
 		return err
 	}
-	tenant, err := getAuditLogTenant(seed, data)
-	if err != nil {
-		return err
-	}
+	tenant := getAuditLogTenant(seed, data)
 
 	if tenant == "" {
 		logger.Warnf("Cannot enable audit logs. Tenant for seed %s is empty", seed)
@@ -143,13 +140,29 @@ func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, namespacedName t
 	})
 }
 
-func getAuditLogTenant(seed string, data map[string]string) (string, error) {
+/*
+if can't find exact match for seed (eg. az-us10 key),
+tries to find generic config for seeds group (eg. az-us key)
+*/
+func getAuditLogTenant(seed string, data map[string]string) string {
+	tenant := findTenantStrictly(seed, data)
+	if tenant != "" {
+		return tenant
+	}
+	return findTenantLoosely(seed, data)
+}
+
+func findTenantStrictly(seed string, data map[string]string) string {
+	return data[seed]
+}
+
+func findTenantLoosely(seed string, data map[string]string) string {
 	for key, tenant := range data {
 		if strings.Contains(seed, key) {
-			return tenant, nil
+			return tenant
 		}
 	}
-	return "", nil
+	return ""
 }
 
 func (r *Reconciler) getTenantDataFromFile() (map[string]string, error) {
