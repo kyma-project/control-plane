@@ -119,12 +119,6 @@ func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
 
 func runtimeStatus(obj interface{}) string {
 	rt := obj.(runtime.RuntimeDTO)
-	switch rt.Status.Provisioning.State {
-	case inProgress:
-		return "provisioning"
-	case failed:
-		return "failed (provision)"
-	}
 	if rt.Status.Deprovisioning != nil {
 		switch rt.Status.Deprovisioning.State {
 		case inProgress:
@@ -135,6 +129,7 @@ func runtimeStatus(obj interface{}) string {
 			return "deprovisioned"
 		}
 	}
+
 	upgradeCount := rt.Status.UpgradingKyma.Count
 	if upgradeCount > 0 {
 		// Take the last upgrade operation, assuming that Data is sorted by CreatedBy ASC.
@@ -146,6 +141,13 @@ func runtimeStatus(obj interface{}) string {
 		case succeeded:
 			return "succeeded"
 		}
+	}
+
+	switch rt.Status.Provisioning.State {
+	case inProgress:
+		return "provisioning"
+	case failed:
+		return "failed (provision)"
 	}
 
 	return "succeeded"
