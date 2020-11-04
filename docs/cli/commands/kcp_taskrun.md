@@ -43,7 +43,7 @@ kcp taskrun --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...] COMM
                                        subaccount={REGEXP} : Regex pattern to match against the Runtime's subaccount field, e.g. "0d20e315-d0b4-48a2-9512-49bc8eb03cd1"
                                        region={REGEXP}     : Regex pattern to match against the Runtime's provider region field, e.g. "europe|eu-"
                                        runtime-id={ID}     : Specific Runtime by Runtime ID
-                                       plan={NAME}         : Name of the Runtime's service plan. The possible values are: azure, azure_lite, trial
+                                       plan={NAME}         : Name of the Runtime's service plan. The possible values are: azure, azure_lite, trial, gcp
   -e, --target-exclude stringArray   List of Runtime target specifiers to exclude. You can specify this option multiple times.
                                      A target specifier is a comma-separated list of the selectors described under the --target option.
 ```

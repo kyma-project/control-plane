@@ -116,6 +116,7 @@ Service Plan       : {{.ServicePlanName}}
 Maintenance Window : {{.MaintenanceWindowBegin}} - {{.MaintenanceWindowEnd}}
 State              : {{.State}}
 Description        : {{.Description}}
+Kubernetes Version : {{.ClusterConfig.KubernetesVersion}}
 Kyma Version       : {{.KymaConfig.Version}}
 `
 
