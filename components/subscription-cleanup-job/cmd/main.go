@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 
@@ -30,7 +31,7 @@ func main() {
 	secretsInterface, err := newSecretsInterface(cfg)
 	exitOnError(err, "Failed to create secrets client ")
 
-	err = job.NewCleaner(secretsInterface, cloudprovider.NewProviderFactory()).Do()
+	err = job.NewCleaner(context.Background(), secretsInterface, cloudprovider.NewProviderFactory()).Do()
 	exitOnError(err, "Job execution failed")
 
 	log.Info("Cleanup job finished successfully!")

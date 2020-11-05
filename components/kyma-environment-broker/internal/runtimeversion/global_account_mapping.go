@@ -1,4 +1,4 @@
-package provisioning
+package runtimeversion
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type kymaVersionConfigurator struct {
+type GlobalAccountVersionMapping struct {
 	ctx       context.Context
 	k8sClient client.Client
 
@@ -20,10 +20,10 @@ type kymaVersionConfigurator struct {
 	log logrus.FieldLogger
 }
 
-func NewKymaVersionConfigurator(ctx context.Context,
-	cli client.Client, namespace, name string, log logrus.FieldLogger) KymaVersionConfigurator {
+func NewGlobalAccountVersionMapping(ctx context.Context, cli client.Client,
+	namespace, name string, log logrus.FieldLogger) *GlobalAccountVersionMapping {
 
-	return &kymaVersionConfigurator{
+	return &GlobalAccountVersionMapping{
 		ctx:       ctx,
 		namespace: namespace,
 		name:      name,
@@ -32,21 +32,19 @@ func NewKymaVersionConfigurator(ctx context.Context,
 	}
 }
 
-func (c *kymaVersionConfigurator) ForGlobalAccount(gaID string) (string, bool, error) {
+func (m *GlobalAccountVersionMapping) Get(globalAccountID string) (string, bool, error) {
 	config := &v1.ConfigMap{}
-	err := c.k8sClient.Get(c.ctx, client.ObjectKey{
-		Namespace: c.namespace,
-		Name:      c.name,
-	}, config)
+	key := client.ObjectKey{Namespace: m.namespace, Name: m.name}
+	err := m.k8sClient.Get(m.ctx, key, config)
 
 	switch {
 	case apierr.IsNotFound(err):
-		c.log.Infof("Kyma Version per Global Acocunt configuration %s/%s not found", c.namespace, c.name)
+		m.log.Infof("Kyma Version per Global Acocunt configuration %s/%s not found", m.namespace, m.name)
 		return "", false, nil
 	case err != nil:
 		return "", false, errors.Wrap(err, "while getting kyma version config map")
 	}
 
-	ver, found := config.Data[gaID]
+	ver, found := config.Data[globalAccountID]
 	return ver, found, nil
 }

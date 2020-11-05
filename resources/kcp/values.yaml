@@ -21,7 +21,7 @@ global:
       version: "PR-262"
     subscription_cleanup_job:
       dir:
-      version: "PR-219"
+      version: "PR-313"
     metris:
       dir:
       version: "PR-63"
@@ -31,7 +31,7 @@ global:
         version: "PR-220"
       e2e_provisioning:
         dir:
-        version: "PR-263"
+        version: "PR-314"
   isLocalEnv: false
   oauth2:
     host: oauth2

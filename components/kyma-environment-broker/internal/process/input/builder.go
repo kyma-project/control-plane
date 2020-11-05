@@ -37,8 +37,8 @@ type (
 
 	CreatorForPlan interface {
 		IsPlanSupport(planID string) bool
-		CreateProvisionInput(parameters internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error)
-		CreateUpgradeInput(parameters internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error)
+		CreateProvisionInput(parameters internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error)
+		CreateUpgradeInput(parameters internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error)
 	}
 
 	ComponentListProvider interface {
@@ -84,7 +84,7 @@ func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	}
 }
 
-func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error) {
+func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error) {
 	if !f.IsPlanSupport(pp.PlanID) {
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}
@@ -104,7 +104,7 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 		return nil, errors.Errorf("case with plan %s is not supported", pp.PlanID)
 	}
 
-	initInput, err := f.initProvisionRuntimeInput(provider, pp.Parameters.KymaVersion)
+	initInput, err := f.initProvisionRuntimeInput(provider, version)
 	if err != nil {
 		return nil, errors.Wrap(err, "while initializing ProvisionRuntimeInput")
 	}
@@ -147,29 +147,29 @@ func (f *InputBuilderFactory) forTrialPlan(provider *internal.TrialCloudProvider
 	}
 
 }
-func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInputProvider, kymaVersion string) (gqlschema.ProvisionRuntimeInput, error) {
+func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInputProvider, version internal.RuntimeVersionData) (gqlschema.ProvisionRuntimeInput, error) {
 	var (
-		version    string
 		components internal.ComponentConfigurationInputList
 	)
 
-	if kymaVersion != "" {
-		allComponents, err := f.componentsProvider.AllComponents(kymaVersion)
-		if err != nil {
-			return gqlschema.ProvisionRuntimeInput{}, errors.Wrapf(err, "while fetching components for %s Kyma version", kymaVersion)
-		}
-		version = kymaVersion
-		components = mapToGQLComponentConfigurationInput(allComponents)
-	} else {
-		version = f.kymaVersion
+	switch version.Origin {
+	case internal.Defaults:
 		components = f.fullComponentsList
+	case internal.GlobalAccount:
+	case internal.Parameters:
+		allComponents, err := f.componentsProvider.AllComponents(version.Version)
+		if err != nil {
+			return gqlschema.ProvisionRuntimeInput{}, errors.Wrapf(err, "while fetching components for %s Kyma version", version.Version)
+		}
+
+		components = mapToGQLComponentConfigurationInput(allComponents)
 	}
 
 	provisionInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput:  &gqlschema.RuntimeInput{},
 		ClusterConfig: provider.Defaults(),
 		KymaConfig: &gqlschema.KymaConfigInput{
-			Version:    version,
+			Version:    version.Version,
 			Components: components.DeepCopy(),
 		},
 	}
@@ -185,12 +185,12 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 	return provisionInput, nil
 }
 
-func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error) {
+func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error) {
 	if !f.IsPlanSupport(pp.PlanID) {
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}
 
-	upgradeKymaInput, err := f.initUpgradeRuntimeInput(f.kymaVersion)
+	upgradeKymaInput, err := f.initUpgradeRuntimeInput(version)
 	if err != nil {
 		return nil, errors.Wrap(err, "while initializing UpgradeRuntimeInput")
 	}
@@ -212,14 +212,14 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 	}, nil
 }
 
-func (f *InputBuilderFactory) initUpgradeRuntimeInput(kymaVersion string) (gqlschema.UpgradeRuntimeInput, error) {
-	if kymaVersion == "" {
-		return gqlschema.UpgradeRuntimeInput{}, errors.New("desired kymaVersion cannot be empty")
+func (f *InputBuilderFactory) initUpgradeRuntimeInput(version internal.RuntimeVersionData) (gqlschema.UpgradeRuntimeInput, error) {
+	if version.Version == "" {
+		return gqlschema.UpgradeRuntimeInput{}, errors.New("desired runtiem version cannot be empty")
 	}
 
 	return gqlschema.UpgradeRuntimeInput{
 		KymaConfig: &gqlschema.KymaConfigInput{
-			Version:    kymaVersion,
+			Version:    version.Version,
 			Components: f.fullComponentsList.DeepCopy(),
 		},
 	}, nil
