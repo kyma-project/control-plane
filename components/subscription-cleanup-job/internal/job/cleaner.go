@@ -1,6 +1,7 @@
 package job
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/cloudprovider"
@@ -70,7 +71,7 @@ func (p *cleaner) releaseResources(secret apiv1.Secret) error {
 }
 
 func (p *cleaner) returnSecretToThePool(secret apiv1.Secret) error {
-	s, err := p.secretsClient.Get(secret.Name, metav1.GetOptions{})
+	s, err := p.secretsClient.Get(context.Background(), secret.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -78,7 +79,7 @@ func (p *cleaner) returnSecretToThePool(secret apiv1.Secret) error {
 	delete(s.Labels, "dirty")
 	delete(s.Labels, "tenantName")
 
-	_, err = p.secretsClient.Update(s)
+	_, err = p.secretsClient.Update(context.Background(), s, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to return secret to the hyperscaler account pool")
 	}
@@ -93,7 +94,7 @@ func (p *cleaner) getSecretsToRelease() ([]apiv1.Secret, error) {
 }
 
 func getK8SSecrets(secretsClient corev1.SecretInterface, labelSelector string) ([]apiv1.Secret, error) {
-	secrets, err := secretsClient.List(metav1.ListOptions{
+	secrets, err := secretsClient.List(context.Background(), metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 
