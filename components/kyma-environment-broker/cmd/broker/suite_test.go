@@ -23,6 +23,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	kebRuntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeoverrides"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pborman/uuid"
@@ -30,7 +32,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -62,6 +64,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 	componentListProvider := &automock.ComponentListProvider{}
 	componentListProvider.On("AllComponents", mock.Anything).Return([]v1alpha1.KymaComponent{}, nil)
 
+	defaultKymaVer := "1.15.1"
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
 		MachineImageVersion:         "coreos",
 		KubernetesVersion:           "1.18",
@@ -69,14 +72,14 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 		Timeout:                     time.Minute,
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-	}, "1.15.1", map[string]string{"cf-eu10": "europe"})
+	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"})
 	require.NoError(t, err)
 
 	ctx, _ := context.WithTimeout(context.Background(), 20*time.Minute)
 	db := storage.NewMemoryStorage()
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
-	cli := fake.NewFakeClientWithScheme(sch)
+	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources()...)
 
 	gardenerClient := gardenerFake.NewSimpleClientset()
 	provisionerClient := provisioner.NewFakeClient()
@@ -85,12 +88,16 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 
 	eventBroker := event.NewPubSub(logs)
 
-	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, cli, provisionerClient, gardenerClient.CoreV1beta1(),
+	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
+
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(defaultKymaVer, &runtimeversion.GlobalAccountVersionMapping{})
+
+	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, gardenerClient.CoreV1beta1(),
 		gardenerNamespace, eventBroker, inputFactory, &upgrade_kyma.TimeSchedule{
 			Retry:              10 * time.Millisecond,
 			StatusCheck:        100 * time.Millisecond,
 			UpgradeKymaTimeout: 2 * time.Second,
-		}, 250*time.Millisecond, logs)
+		}, 250*time.Millisecond, runtimeVerConfigurator, logs)
 
 	return &OrchestrationSuite{
 		gardenerNamespace:  gardenerNamespace,
@@ -178,7 +185,7 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 		ProvisioningParameters: string(serializedProvisioningParams),
 	}
 	shoot := &gardenerapi.Shoot{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      fmt.Sprintf("shoot%s", runtimeID),
 			Namespace: s.gardenerNamespace,
 			Labels: map[string]string{
@@ -257,4 +264,24 @@ func (s *OrchestrationSuite) AssertRuntimeUpgraded(runtimeID string) {
 
 func (s *OrchestrationSuite) AssertRuntimeNotUpgraded(runtimeID string) {
 	assert.False(s.t, s.provisionerClient.IsRuntimeUpgraded(runtimeID), "The runtime %s expected to be not upgraded", runtimeID)
+}
+
+func fixK8sResources() []runtime.Object {
+	var resources []runtime.Object
+
+	resources = append(resources, &coreV1.ConfigMap{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "overrides",
+			Namespace: "kcp-system",
+			Labels: map[string]string{
+				"overrides-version-1.15.1": "true",
+				"overrides-plan-azure":     "true",
+			},
+		},
+		Data: map[string]string{
+			"foo": "bar",
+		},
+	})
+
+	return resources
 }
