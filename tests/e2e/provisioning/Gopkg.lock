@@ -553,7 +553,7 @@
   ]
   pruneopts = "UT"
   revision = "7ea599edc7fd1198238be103353ca78eef24ae63"
-  version = "v0.17.2"
+  version = "v0.17.13"
 
 [[projects]]
   digest = "1:3d95b12b8d7f030aa7e8fc5507ff9347464f1ccb882586cd45b1660f67685eb7"
@@ -601,7 +601,7 @@
   ]
   pruneopts = "UT"
   revision = "79c2a76c473a20cdc4ce59cae4b72529b5d9d16b"
-  version = "v0.17.2"
+  version = "v0.17.13"
 
 [[projects]]
   digest = "1:2cc2cf71fc9e28f8ef9f746e52295d5391837454217e5682929078dfc425fb5d"
