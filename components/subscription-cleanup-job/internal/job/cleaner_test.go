@@ -1,6 +1,7 @@
 package job
 
 import (
+	"context"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/cloudprovider/mocks"
@@ -51,7 +52,7 @@ func TestCleanerJob(t *testing.T) {
 
 		//then
 		require.NoError(t, err)
-		cleanedSecret, err := mockSecrets.Get(secret.Name, machineryv1.GetOptions{})
+		cleanedSecret, err := mockSecrets.Get(context.Background(), secret.Name, machineryv1.GetOptions{})
 		require.NoError(t, err)
 
 		assert.Equal(t, "", cleanedSecret.Labels["dirty"])
