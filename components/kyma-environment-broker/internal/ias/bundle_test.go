@@ -69,27 +69,6 @@ func TestServiceProviderBundle_ConfigureServiceProviderType_OIDC(t *testing.T) {
 	assert.Equal(t, "https://grafana.example.com/login/generic_oauth", provider.RedirectURIs[0])
 }
 
-func TestServiceProviderBundle_ConfigureServiceProviderType_SAML(t *testing.T) {
-	// given
-	client := NewFakeClient()
-	bundle := NewServiceProviderBundle(FakeDexName, ServiceProviderInputs[SPDexID], client, Config{IdentityProvider: FakeIdentityProviderName})
-
-	err := bundle.FetchServiceProviderData()
-	assert.NoError(t, err)
-
-	// when
-	err = bundle.ConfigureServiceProviderType("https://console.example.com")
-
-	// then
-	assert.NoError(t, err)
-	provider, err := client.GetServiceProvider(FakeDexID)
-	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("SKR Dex (instanceID: %s)", FakeDexName), provider.DisplayName)
-	assert.Equal(t, "https://dex.example.com/callback", provider.ACSEndpoints[0].Location)
-	assert.Equal(t, int32(0), provider.ACSEndpoints[0].Index)
-	assert.Equal(t, true, provider.ACSEndpoints[0].IsDefault)
-}
-
 func TestServiceProviderBundle_ConfigureServiceProvider(t *testing.T) {
 	// given
 	client := NewFakeClient()
