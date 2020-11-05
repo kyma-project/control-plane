@@ -92,11 +92,11 @@ func (p *cleaner) returnSecretToThePool(secret apiv1.Secret) error {
 func (p *cleaner) getSecretsToRelease() ([]apiv1.Secret, error) {
 	labelSelector := fmt.Sprintf("dirty=true")
 
-	return getK8SSecrets(p.secretsClient, labelSelector)
+	return getK8SSecrets(p.context, p.secretsClient, labelSelector)
 }
 
-func getK8SSecrets(secretsClient corev1.SecretInterface, labelSelector string) ([]apiv1.Secret, error) {
-	secrets, err := secretsClient.List(p.context, metav1.ListOptions{
+func getK8SSecrets(ctx context.Context, secretsClient corev1.SecretInterface, labelSelector string) ([]apiv1.Secret, error) {
+	secrets, err := secretsClient.List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 
