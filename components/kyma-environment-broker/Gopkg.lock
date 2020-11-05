@@ -1194,7 +1194,7 @@
   version = "v0.17.1"
 
 [[projects]]
-  digest = "1:3aec70609d8ddf357111cb1ed86de5356d6e1106556676a5f37bc9941351391c"
+  digest = "1:8a78cd1f16b3752fd005e369ff20b837e7a42cb4af9bd40ba6d476fc747f0505"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
@@ -1241,8 +1241,8 @@
     "third_party/forked/golang/reflect",
   ]
   pruneopts = "NUT"
-  revision = "79c2a76c473a20cdc4ce59cae4b72529b5d9d16b"
-  version = "v0.17.1"
+  revision = "657cd094317c09d73696c12abec7b97f840fa75e"
+  version = "v0.17.13"
 
 [[projects]]
   digest = "1:0c1800ef4e948a455766f041af484e0d16e120237f3e13a6a46da9c847444734"
