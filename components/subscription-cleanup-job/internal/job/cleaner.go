@@ -19,16 +19,18 @@ type Cleaner interface {
 	Do() error
 }
 
-func NewCleaner(secretsClient corev1.SecretInterface, providerFactory cloudprovider.ProviderFactory) Cleaner {
+func NewCleaner(context context.Context, secretsClient corev1.SecretInterface, providerFactory cloudprovider.ProviderFactory) Cleaner {
 	return &cleaner{
 		secretsClient:   secretsClient,
 		providerFactory: providerFactory,
+		context:         context,
 	}
 }
 
 type cleaner struct {
 	secretsClient   corev1.SecretInterface
 	providerFactory cloudprovider.ProviderFactory
+	context         context.Context
 }
 
 func (p *cleaner) Do() error {
@@ -71,7 +73,7 @@ func (p *cleaner) releaseResources(secret apiv1.Secret) error {
 }
 
 func (p *cleaner) returnSecretToThePool(secret apiv1.Secret) error {
-	s, err := p.secretsClient.Get(context.Background(), secret.Name, metav1.GetOptions{})
+	s, err := p.secretsClient.Get(p.context, secret.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -79,7 +81,7 @@ func (p *cleaner) returnSecretToThePool(secret apiv1.Secret) error {
 	delete(s.Labels, "dirty")
 	delete(s.Labels, "tenantName")
 
-	_, err = p.secretsClient.Update(context.Background(), s, metav1.UpdateOptions{})
+	_, err = p.secretsClient.Update(p.context, s, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to return secret to the hyperscaler account pool")
 	}
@@ -94,7 +96,7 @@ func (p *cleaner) getSecretsToRelease() ([]apiv1.Secret, error) {
 }
 
 func getK8SSecrets(secretsClient corev1.SecretInterface, labelSelector string) ([]apiv1.Secret, error) {
-	secrets, err := secretsClient.List(context.Background(), metav1.ListOptions{
+	secrets, err := secretsClient.List(p.context, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 

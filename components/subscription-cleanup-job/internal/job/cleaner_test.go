@@ -45,7 +45,7 @@ func TestCleanerJob(t *testing.T) {
 		providerFactory := &mocks.ProviderFactory{}
 		providerFactory.On("New", model.Azure, mock.Anything).Return(resCleaner, nil)
 
-		cleaner := NewCleaner(mockSecrets, providerFactory)
+		cleaner := NewCleaner(context.Background(), mockSecrets, providerFactory)
 
 		//when
 		err := cleaner.Do()
