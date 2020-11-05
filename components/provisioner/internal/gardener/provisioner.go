@@ -149,7 +149,7 @@ func annotateWithConfirmDeletion(shoot *gardener_types.Shoot) {
 		shoot.Annotations = map[string]string{}
 	}
 
-	shoot.Annotations["confirmation.garden.sapcloud.io/deletion"] = "true"
+	shoot.Annotations["confirmation.gardener.cloud/deletion"] = "true"
 }
 
 func (g *GardenerProvisioner) shouldSetMaintenanceWindow() bool {
