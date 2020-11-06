@@ -22,12 +22,6 @@ type ServiceProviderParam struct {
 }
 
 var ServiceProviderInputs = map[SPInputID]ServiceProviderParam{
-	SPDexID: {
-		domain:        "dex",
-		ssoType:       SAML,
-		redirectPath:  "/callback",
-		allowedGroups: []string{"runtimeOperator", "runtimeAdmin"},
-	},
 	SPGrafanaID: {
 		domain:        "grafana",
 		ssoType:       OIDC,
