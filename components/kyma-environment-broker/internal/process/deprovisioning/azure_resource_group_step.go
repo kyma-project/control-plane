@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
@@ -57,14 +59,19 @@ func (s DeprovisionAzureResourceGroupStep) Run(operation internal.Deprovisioning
 		log.Errorf(errorMessage)
 		return operation, 0, nil
 	}
-	log.Infof("HAP lookup for credentials to deprovision cluster for global account ID %s on Hyperscaler %s",
-		pp.ErsContext.GlobalAccountID, hypType)
 
-	//get hyperscaler credentials from HAP
-	credentials, err := s.ProviderContext.AccountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+	// get hyperscaler credentials from HAP
+	var credentials hyperscaler.Credentials
+	if !broker.IsTrialPlan(pp.PlanID) {
+		log.Infof("HAP lookup for credentials to deprovision Resource Group for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
+		credentials, err = s.ProviderContext.AccountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+	} else {
+		log.Infof("HAP lookup for shared credentials to deprovision Resource Group on Hyperscaler %s", hypType)
+		credentials, err = s.ProviderContext.AccountProvider.GardenerSharedCredentials(hypType)
+	}
 	if err != nil {
 		// retrying might solve the issue, the HAP could be temporarily unavailable
-		errorMessage := fmt.Sprintf("unable to retrieve Gardener Credentials from HAP lookup: %v", err)
+		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
 		return s.OperationManager.RetryOperationWithoutFail(operation, errorMessage, time.Minute, 30*time.Minute, log)
 	}
 	azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, pp)

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -55,10 +57,16 @@ func (s *ProvisionAzureResourceGroupStep) Run(operation internal.ProvisioningOpe
 		log.Errorf("Aborting after failing to get valid operation provisioning parameters: %v", err)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
-	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
 
 	// get hyperscaler credentials from HAP
-	credentials, err := s.azure.AccountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+	var credentials hyperscaler.Credentials
+	if !broker.IsTrialPlan(pp.PlanID) {
+		log.Infof("HAP lookup for credentials to provision Resource Group for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
+		credentials, err = s.azure.AccountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+	} else {
+		log.Infof("HAP lookup for shared credentials to provision Resource Group on Hyperscaler %s", hypType)
+		credentials, err = s.azure.AccountProvider.GardenerSharedCredentials(hypType)
+	}
 	if err != nil {
 		// retrying might solve the issue, the HAP could be temporarily unavailable
 		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
