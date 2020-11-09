@@ -2,11 +2,12 @@ package api_test
 
 import (
 	"fmt"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"

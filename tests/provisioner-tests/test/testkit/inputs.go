@@ -2,9 +2,10 @@ package testkit
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"strings"
 	"unicode"
+
+	"github.com/google/uuid"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
