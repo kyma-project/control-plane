@@ -1,8 +1,11 @@
 package api_test
 
 import (
+	"fmt"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
@@ -120,6 +123,7 @@ func newTestProvisioningConfigs() []testCase {
 func gcpGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 	return gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:              createGardenerClusterName(),
 			KubernetesVersion: "version",
 			Purpose:           util.StringPtr("evaluation"),
 			Provider:          "GCP",
@@ -146,6 +150,7 @@ func gcpGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInput {
 	return gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:              createGardenerClusterName(),
 			KubernetesVersion: "version",
 			Purpose:           util.StringPtr("evaluation"),
 			Provider:          "Azure",
@@ -173,6 +178,7 @@ func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInp
 func awsGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 	return gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:              createGardenerClusterName(),
 			KubernetesVersion: "version",
 			Purpose:           util.StringPtr("evaluation"),
 			Provider:          "AWS",
@@ -344,4 +350,15 @@ func fixGQLConfigEntry(key, val string, secret *bool) *gqlschema.ConfigEntry {
 		Value:  val,
 		Secret: secret,
 	}
+}
+
+func createGardenerClusterName() string {
+	generator := uuid.NewUUIDGenerator
+	id := generator().New()
+
+	name := strings.ReplaceAll(id, "-", "")
+	name = fmt.Sprintf("%.7s", name)
+	name = util.StartWithLetter(name)
+	name = strings.ToLower(name)
+	return name
 }

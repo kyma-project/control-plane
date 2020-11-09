@@ -1,9 +1,6 @@
 package provisioning
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
@@ -91,7 +88,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 
 	return model.GardenerConfig{
 		ID:                                  c.uuidGenerator.New(),
-		Name:                                c.createGardenerClusterName(),
+		Name:                                input.Name,
 		ProjectName:                         c.gardenerProject,
 		KubernetesVersion:                   input.KubernetesVersion,
 		Provider:                            input.Provider,
@@ -171,16 +168,6 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
 		GardenerProviderConfig:              providerSpecificConfig,
 	}, nil
-}
-
-func (c converter) createGardenerClusterName() string {
-	id := c.uuidGenerator.New()
-
-	name := strings.ReplaceAll(id, "-", "")
-	name = fmt.Sprintf("%.7s", name)
-	name = util.StartWithLetter(name)
-	name = strings.ToLower(name)
-	return name
 }
 
 func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, apperrors.AppError) {
