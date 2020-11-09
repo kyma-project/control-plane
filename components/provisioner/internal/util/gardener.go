@@ -2,8 +2,9 @@ package util
 
 import (
 	"fmt"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 	"strings"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 )
 
 func CreateGardenerClusterName() string {
