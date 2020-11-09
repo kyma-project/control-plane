@@ -49,7 +49,7 @@ func CreateGardenerProvisioningInput(config *TestConfig, version, provider strin
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				Name:                                createGardenerClusterName(),
+				Name:                                strToPtr(createGardenerClusterName()),
 				KubernetesVersion:                   config.KubernetesVersion,
 				DiskType:                            gardenerInputs[provider].DiskType,
 				VolumeSizeGb:                        35,
