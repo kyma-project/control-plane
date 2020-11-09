@@ -110,7 +110,7 @@ type GardenerConfig struct {
 }
 
 type GardenerConfigInput struct {
-	Name                                string                 `json:"name"`
+	Name                                *string                `json:"name"`
 	KubernetesVersion                   string                 `json:"kubernetesVersion"`
 	Provider                            string                 `json:"provider"`
 	TargetSecret                        string                 `json:"targetSecret"`

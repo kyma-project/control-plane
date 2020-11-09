@@ -839,7 +839,7 @@ input ClusterConfigInput {
 }
 
 input GardenerConfigInput {
-    name: String!                                   # Name of the cluster
+    name: String                                    # Name of the cluster
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
     provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
     targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
@@ -4694,7 +4694,7 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 		switch k {
 		case "name":
 			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			it.Name, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

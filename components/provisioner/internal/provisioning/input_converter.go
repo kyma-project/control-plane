@@ -88,7 +88,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 
 	return model.GardenerConfig{
 		ID:                                  c.uuidGenerator.New(),
-		Name:                                input.Name,
+		Name:                                setClusterName(input.Name),
 		ProjectName:                         c.gardenerProject,
 		KubernetesVersion:                   input.KubernetesVersion,
 		Provider:                            input.Provider,
@@ -236,4 +236,12 @@ func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput) m
 
 func configEntryFromInput(entry *gqlschema.ConfigEntryInput) model.ConfigEntry {
 	return model.NewConfigEntry(entry.Key, entry.Value, util.UnwrapBoolOrDefault(entry.Secret, false))
+}
+
+//TODO Remove when name is changed to obligatory field
+func setClusterName(name *string) string {
+	if name != nil {
+		return util.UnwrapStr(name)
+	}
+	return util.CreateGardenerClusterName()
 }
