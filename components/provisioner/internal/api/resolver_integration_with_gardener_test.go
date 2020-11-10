@@ -290,7 +290,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, runtimeID, *upgradeRuntimeOp.RuntimeID)
 
 			// wait for queue to process operation
-			time.Sleep(5* waitPeriod)
+			time.Sleep(5 * waitPeriod)
 
 			// assert db content
 			readSession := dbsFactory.NewReadSession()
@@ -355,7 +355,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			// when
 			// wait for Shoot to update
-			time.Sleep(5* waitPeriod)
+			time.Sleep(5 * waitPeriod)
 			shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
 
 			// then
