@@ -124,9 +124,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	require.NoError(t, err)
 	defer cleanupNetwork()
 
-	_, connString, err := testutils.InitTestDBContainer(t, ctx, "postgres_database_2")
+	containerCleanupFunc, connString, err := testutils.InitTestDBContainer(t, ctx, "postgres_database_2")
 	require.NoError(t, err)
-	//defer containerCleanupFunc()
+	defer containerCleanupFunc()
 
 	connection, err := database.InitializeDatabaseConnection(connString, 5)
 	require.NoError(t, err)
