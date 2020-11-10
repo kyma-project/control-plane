@@ -1,8 +1,6 @@
 package orchestration
 
 import (
-	"time"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
@@ -17,5 +15,8 @@ type RuntimeResolver interface {
 // Strategy interface encapsulates the strategy how the orchestration is performed.
 type Strategy interface {
 	// Execute invokes operation managers' Execute(operationID string) method for each operation according to the encapsulated strategy.
-	Execute(operations []internal.RuntimeOperation, strategySpec orchestration.StrategySpec) (time.Duration, error)
+	// The strategy is executed asynchronously. Successful call to the function returns a unique identifier, which can be used in a subsequent call to Wait().
+	Execute(operations []internal.RuntimeOperation, strategySpec orchestration.StrategySpec) (string, error)
+	// Wait blocks and waits until the execution with the given ID is finished.
+	Wait(executionID string)
 }
