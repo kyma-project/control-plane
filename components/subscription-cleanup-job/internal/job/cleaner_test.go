@@ -1,6 +1,7 @@
 package job
 
 import (
+	"context"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/cloudprovider/mocks"
@@ -44,14 +45,14 @@ func TestCleanerJob(t *testing.T) {
 		providerFactory := &mocks.ProviderFactory{}
 		providerFactory.On("New", model.Azure, mock.Anything).Return(resCleaner, nil)
 
-		cleaner := NewCleaner(mockSecrets, providerFactory)
+		cleaner := NewCleaner(context.Background(), mockSecrets, providerFactory)
 
 		//when
 		err := cleaner.Do()
 
 		//then
 		require.NoError(t, err)
-		cleanedSecret, err := mockSecrets.Get(secret.Name, machineryv1.GetOptions{})
+		cleanedSecret, err := mockSecrets.Get(context.Background(), secret.Name, machineryv1.GetOptions{})
 		require.NoError(t, err)
 
 		assert.Equal(t, "", cleanedSecret.Labels["dirty"])

@@ -18,6 +18,7 @@ import (
 
 // KubeconfigCommand represents an execution of the kcp kubeconfig command
 type KubeconfigCommand struct {
+	cobraCmd        *cobra.Command
 	log             logger.Logger
 	shoot           string
 	globalAccountID string
@@ -53,8 +54,9 @@ By default, the kubeconfig file is saved to the current directory. The output fi
   kcp kubeconfig -g GAID -r RUNTIMEID                    Downloads the kubeconfig file using global account ID and Runtime ID.
   kcp kubeconfig -c c-178e034                            Downloads the kubeconfig file using a Shoot cluster name.`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
-		RunE:    func(cobraCmd *cobra.Command, _ []string) error { return cmd.Run(cobraCmd) },
+		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}
+	cmd.cobraCmd = cobraCmd
 
 	cobraCmd.Flags().StringVarP(&cmd.outputPath, "output", "o", "", "Path to the file to save the downloaded kubeconfig to. Defaults to {CLUSTER NAME}.yaml in the current directory if not specified.")
 	cobraCmd.Flags().StringVarP(&cmd.globalAccountID, "account", "g", "", "Global account ID of the specific Kyma Runtime.")
@@ -66,13 +68,13 @@ By default, the kubeconfig file is saved to the current directory. The output fi
 }
 
 // Run executes the kubeconfig command
-func (cmd *KubeconfigCommand) Run(cobraCmd *cobra.Command) error {
+func (cmd *KubeconfigCommand) Run() error {
 	cred := CLICredentialManager(cmd.log)
-	client := client.NewClient(cobraCmd.Context(), GlobalOpts.KubeconfigAPIURL(), cred)
+	client := client.NewClient(cmd.cobraCmd.Context(), GlobalOpts.KubeconfigAPIURL(), cred)
 
 	// Resolve Global Account / Subaccount, or Shoot name to Global Account / Runtime ID
 	if cmd.globalAccountID == "" || cmd.runtimeID == "" {
-		err := cmd.resolveRuntimeAttributes(cobraCmd.Context(), cred)
+		err := cmd.resolveRuntimeAttributes(cmd.cobraCmd.Context(), cred)
 		if err != nil {
 			return errors.Wrap(err, "while resolving runtime")
 		}

@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/pkg/errors"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
@@ -23,15 +24,17 @@ const (
 )
 
 type InitialisationStep struct {
-	operationManager  *process.UpgradeKymaOperationManager
-	operationStorage  storage.Provisioning
-	instanceStorage   storage.Instances
-	provisionerClient provisioner.Client
-	inputBuilder      input.CreatorForPlan
-	timeSchedule      TimeSchedule
+	operationManager       *process.UpgradeKymaOperationManager
+	operationStorage       storage.Provisioning
+	instanceStorage        storage.Instances
+	provisionerClient      provisioner.Client
+	inputBuilder           input.CreatorForPlan
+	timeSchedule           TimeSchedule
+	runtimeVerConfigurator RuntimeVersionConfiguratorForUpgrade
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, timeSchedule *TimeSchedule) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, timeSchedule *TimeSchedule,
+	rvc RuntimeVersionConfiguratorForUpgrade) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
 		ts = &TimeSchedule{
@@ -41,12 +44,13 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 		}
 	}
 	return &InitialisationStep{
-		operationManager:  process.NewUpgradeKymaOperationManager(os),
-		operationStorage:  os,
-		instanceStorage:   is,
-		provisionerClient: pc,
-		inputBuilder:      b,
-		timeSchedule:      *ts,
+		operationManager:       process.NewUpgradeKymaOperationManager(os),
+		operationStorage:       os,
+		instanceStorage:        is,
+		provisionerClient:      pc,
+		inputBuilder:           b,
+		timeSchedule:           *ts,
+		runtimeVerConfigurator: rvc,
 	}
 }
 
@@ -55,11 +59,9 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	// if time window for this operation has finished we reprocess on next time window
-	if operation.MaintenanceWindowEnd.Before(time.Now()) {
-		until := time.Until(operation.MaintenanceWindowBegin)
-		log.Infof("Upgrade operation %s will be rescheduled in %v", operation.ID, until)
-		return operation, until, nil
+	// if schedule is maintenanceWindow and time window for this operation has finished we reprocess on next time window
+	if !operation.MaintenanceWindowEnd.IsZero() && operation.MaintenanceWindowEnd.Before(time.Now()) {
+		return s.rescheduleAtNextMaintenanceWindow(operation, log)
 	}
 
 	// rewrite necessary data from ProvisioningOperation to operation internal.UpgradeOperation
@@ -84,6 +86,12 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		return s.operationManager.OperationFailed(operation, err.Error())
 	}
 
+	operation, repeat := s.operationManager.UpdateOperation(operation)
+	if repeat != 0 {
+		log.Errorf("cannot save the operation")
+		return operation, time.Second, nil
+	}
+
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:
@@ -104,6 +112,19 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 
 }
 
+func (s *InitialisationStep) rescheduleAtNextMaintenanceWindow(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	operation.MaintenanceWindowBegin = operation.MaintenanceWindowBegin.AddDate(0, 0, 1)
+	operation.MaintenanceWindowEnd = operation.MaintenanceWindowEnd.AddDate(0, 0, 1)
+	operation, repeat := s.operationManager.UpdateOperation(operation)
+	if repeat != 0 {
+		log.Errorf("cannot save updated maintenance window to DB")
+		return operation, s.timeSchedule.Retry, nil
+	}
+	until := time.Until(operation.MaintenanceWindowBegin)
+	log.Infof("Upgrade operation %s will be rescheduled in %v", operation.ID, until)
+	return operation, until, nil
+}
+
 func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	pp, err := operation.GetProvisioningParameters()
 	if err != nil {
@@ -111,11 +132,22 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 
+	if err := s.configureKymaVersion(&operation); err != nil {
+		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
+	}
+
 	log.Infof("create provisioner input creator for plan ID %q", pp.PlanID)
-	creator, err := s.inputBuilder.CreateUpgradeInput(pp)
+	creator, err := s.inputBuilder.CreateUpgradeInput(pp, operation.RuntimeVersion)
 	switch {
 	case err == nil:
 		operation.InputCreator = creator
+
+		operation, repeat := s.operationManager.UpdateOperation(operation)
+		if repeat != 0 {
+			log.Errorf("cannot save the operation")
+			return operation, time.Second, nil
+		}
+
 		return operation, 0, nil // go to next step
 	case kebError.IsTemporaryError(err):
 		log.Errorf("cannot create upgrade runtime input creator at the moment for plan %s: %s", pp.PlanID, err)
@@ -124,6 +156,18 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 		log.Errorf("cannot create input creator for plan %s: %s", pp.PlanID, err)
 		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
 	}
+}
+
+func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKymaOperation) error {
+	version := s.runtimeVerConfigurator.ForUpgrade()
+	operation.RuntimeVersion = *version
+
+	var repeat time.Duration
+	if *operation, repeat = s.operationManager.UpdateOperation(*operation); repeat != 0 {
+		return errors.New("unable to update operation with RuntimeVersion property")
+	}
+
+	return nil
 }
 
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {

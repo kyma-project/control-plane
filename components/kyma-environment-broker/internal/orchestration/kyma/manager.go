@@ -7,6 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/google/uuid"
+	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -84,7 +85,7 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 	return 0, nil
 }
 
-func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params internal.OrchestrationParameters) ([]internal.UpgradeKymaOperation, error) {
+func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params orchestrationExt.Parameters) ([]internal.UpgradeKymaOperation, error) {
 	var result []internal.UpgradeKymaOperation
 	if o.State == internal.Pending {
 		runtimes, err := u.resolver.Resolve(params.Targets)
@@ -102,7 +103,11 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 			if err != nil {
 				return nil, errors.Wrap(err, "while getting provisioning operation")
 			}
-			windowBegin, windowEnd := u.resolveWindowTime(r.MaintenanceWindowBegin, r.MaintenanceWindowEnd)
+			windowBegin := time.Time{}
+			windowEnd := time.Time{}
+			if params.Strategy.Schedule == orchestrationExt.MaintenanceWindow {
+				windowBegin, windowEnd = u.resolveWindowTime(r.MaintenanceWindowBegin, r.MaintenanceWindowEnd)
+			}
 
 			id := uuid.New().String()
 			op := internal.UpgradeKymaOperation{
@@ -146,9 +151,9 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 	return result, nil
 }
 
-func (u *upgradeKymaManager) resolveStrategy(sType internal.StrategyType, executor process.Executor, log logrus.FieldLogger) orchestration.Strategy {
+func (u *upgradeKymaManager) resolveStrategy(sType orchestrationExt.StrategyType, executor process.Executor, log logrus.FieldLogger) orchestration.Strategy {
 	switch sType {
-	case internal.ParallelStrategy:
+	case orchestrationExt.ParallelStrategy:
 		return orchestration.NewParallelOrchestrationStrategy(executor, log)
 	}
 	return nil
@@ -223,6 +228,11 @@ func (u *upgradeKymaManager) resolveWindowTime(beginTime, endTime time.Time) (ti
 	n := time.Now()
 	start := time.Date(n.Year(), n.Month(), n.Day(), beginTime.Hour(), beginTime.Minute(), beginTime.Second(), beginTime.Nanosecond(), beginTime.Location())
 	end := time.Date(n.Year(), n.Month(), n.Day(), endTime.Hour(), endTime.Minute(), endTime.Second(), endTime.Nanosecond(), endTime.Location())
+
+	// if the window end slips through the next day, adjust the date accordingly
+	if end.Before(start) {
+		end = end.AddDate(0, 0, 1)
+	}
 
 	// if time window has already passed we wait until next day
 	if start.Before(n) && end.Before(n) {

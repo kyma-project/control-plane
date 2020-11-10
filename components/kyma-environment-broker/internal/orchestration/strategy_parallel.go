@@ -4,6 +4,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/sirupsen/logrus"
@@ -21,7 +22,7 @@ func NewParallelOrchestrationStrategy(executor process.Executor, log logrus.Fiel
 	}
 }
 
-func (p *ParallelOrchestrationStrategy) Execute(operations []internal.RuntimeOperation, strategySpec internal.StrategySpec) (time.Duration, error) {
+func (p *ParallelOrchestrationStrategy) Execute(operations []internal.RuntimeOperation, strategySpec orchestration.StrategySpec) (time.Duration, error) {
 	if len(operations) == 0 {
 		return 0, nil
 	}
@@ -31,7 +32,7 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []internal.RuntimeOpe
 	q := process.NewQueue(p.executor, p.log)
 	q.Run(stopCh, strategySpec.Parallel.Workers)
 
-	if strategySpec.Schedule == internal.MaintenanceWindow {
+	if strategySpec.Schedule == orchestration.MaintenanceWindow {
 		sort.Slice(operations, func(i, j int) bool {
 			return operations[i].MaintenanceWindowBegin.Before(operations[j].MaintenanceWindowBegin)
 		})
@@ -39,11 +40,11 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []internal.RuntimeOpe
 
 	for _, op := range operations {
 		switch strategySpec.Schedule {
-		case internal.MaintenanceWindow:
+		case orchestration.MaintenanceWindow:
 			until := time.Until(op.MaintenanceWindowBegin)
 			p.log.Infof("Upgrade operation %s will be scheduled in %v", op.ID, until)
 			q.AddAfter(op.ID, until)
-		case internal.Immediate:
+		case orchestration.Immediate:
 			q.Add(op.ID)
 		}
 	}

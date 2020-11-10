@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	k8stesting "k8s.io/client-go/testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/automock"
@@ -60,14 +61,14 @@ func TestResolver_Resolve(t *testing.T) {
 	}
 
 	for tn, tc := range map[string]struct {
-		Target           internal.TargetSpec
+		Target           orchestration.TargetSpec
 		ExpectedRuntimes []expectedRuntime
 	}{
 		"IncludeAll": {
-			Target: internal.TargetSpec{
-				Include: []internal.RuntimeTarget{
+			Target: orchestration.TargetSpec{
+				Include: []orchestration.RuntimeTarget{
 					{
-						Target: internal.TargetAll,
+						Target: orchestration.TargetAll,
 					},
 				},
 				Exclude: nil,
@@ -75,13 +76,13 @@ func TestResolver_Resolve(t *testing.T) {
 			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime2, expectedRuntime3},
 		},
 		"IncludeAllExcludeOne": {
-			Target: internal.TargetSpec{
-				Include: []internal.RuntimeTarget{
+			Target: orchestration.TargetSpec{
+				Include: []orchestration.RuntimeTarget{
 					{
-						Target: internal.TargetAll,
+						Target: orchestration.TargetAll,
 					},
 				},
-				Exclude: []internal.RuntimeTarget{
+				Exclude: []orchestration.RuntimeTarget{
 					{
 						GlobalAccount: expectedRuntime2.instance.GlobalAccountID,
 						SubAccount:    expectedRuntime2.instance.SubAccountID,
@@ -91,23 +92,23 @@ func TestResolver_Resolve(t *testing.T) {
 			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime3},
 		},
 		"ExcludeAll": {
-			Target: internal.TargetSpec{
-				Include: []internal.RuntimeTarget{
+			Target: orchestration.TargetSpec{
+				Include: []orchestration.RuntimeTarget{
 					{
-						Target: internal.TargetAll,
+						Target: orchestration.TargetAll,
 					},
 				},
-				Exclude: []internal.RuntimeTarget{
+				Exclude: []orchestration.RuntimeTarget{
 					{
-						Target: internal.TargetAll,
+						Target: orchestration.TargetAll,
 					},
 				},
 			},
 			ExpectedRuntimes: []expectedRuntime{},
 		},
 		"IncludeOne": {
-			Target: internal.TargetSpec{
-				Include: []internal.RuntimeTarget{
+			Target: orchestration.TargetSpec{
+				Include: []orchestration.RuntimeTarget{
 					{
 						GlobalAccount: expectedRuntime2.instance.GlobalAccountID,
 						SubAccount:    expectedRuntime2.instance.SubAccountID,
@@ -118,8 +119,8 @@ func TestResolver_Resolve(t *testing.T) {
 			ExpectedRuntimes: []expectedRuntime{expectedRuntime2},
 		},
 		"IncludeRuntime": {
-			Target: internal.TargetSpec{
-				Include: []internal.RuntimeTarget{
+			Target: orchestration.TargetSpec{
+				Include: []orchestration.RuntimeTarget{
 					{
 						RuntimeID: "runtime-id-1",
 					},
@@ -129,8 +130,8 @@ func TestResolver_Resolve(t *testing.T) {
 			ExpectedRuntimes: []expectedRuntime{expectedRuntime1},
 		},
 		"IncludeTenant": {
-			Target: internal.TargetSpec{
-				Include: []internal.RuntimeTarget{
+			Target: orchestration.TargetSpec{
+				Include: []orchestration.RuntimeTarget{
 					{
 						GlobalAccount: globalAccountID1,
 					},
@@ -140,8 +141,8 @@ func TestResolver_Resolve(t *testing.T) {
 			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime2},
 		},
 		"IncludeRegion": {
-			Target: internal.TargetSpec{
-				Include: []internal.RuntimeTarget{
+			Target: orchestration.TargetSpec{
+				Include: []orchestration.RuntimeTarget{
 					{
 						Region: "europe|eu|uk",
 					},
@@ -151,8 +152,8 @@ func TestResolver_Resolve(t *testing.T) {
 			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime3},
 		},
 		"IncludePlanName": {
-			Target: internal.TargetSpec{
-				Include: []internal.RuntimeTarget{
+			Target: orchestration.TargetSpec{
+				Include: []orchestration.RuntimeTarget{
 					{
 						PlanName: plan1,
 					},
@@ -193,10 +194,10 @@ func TestResolver_Resolve_GardenerFailure(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(internal.TargetSpec{
-		Include: []internal.RuntimeTarget{
+	runtimes, err := resolver.Resolve(orchestration.TargetSpec{
+		Include: []orchestration.RuntimeTarget{
 			{
-				Target: internal.TargetAll,
+				Target: orchestration.TargetAll,
 			},
 		},
 		Exclude: nil,
@@ -220,10 +221,10 @@ func TestResolver_Resolve_StorageFailure(t *testing.T) {
 	resolver := NewGardenerRuntimeResolver(client, shootNamespace, lister, logger)
 
 	// when
-	runtimes, err := resolver.Resolve(internal.TargetSpec{
-		Include: []internal.RuntimeTarget{
+	runtimes, err := resolver.Resolve(orchestration.TargetSpec{
+		Include: []orchestration.RuntimeTarget{
 			{
-				Target: internal.TargetAll,
+				Target: orchestration.TargetAll,
 			},
 		},
 		Exclude: nil,

@@ -4,8 +4,16 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
+
+// OrchestrationFilter holds the filters when listing orchestrations
+type OrchestrationFilter struct {
+	Page     int
+	PageSize int
+	States   []string
+}
 
 type OrchestrationDTO struct {
 	OrchestrationID string
@@ -34,7 +42,7 @@ func NewOrchestrationDTO(o internal.Orchestration) (OrchestrationDTO, error) {
 }
 
 func (o *OrchestrationDTO) ToOrchestration() (internal.Orchestration, error) {
-	var params internal.OrchestrationParameters
+	var params orchestration.Parameters
 	err := json.Unmarshal([]byte(o.Parameters), &params)
 	if err != nil {
 		return internal.Orchestration{}, err

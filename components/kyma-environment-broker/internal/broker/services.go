@@ -23,7 +23,7 @@ type ServicesEndpoint struct {
 func NewServices(cfg Config, optComponentsSvc OptionalComponentNamesProvider, log logrus.FieldLogger) *ServicesEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
-		id := planIDsMapping[planName]
+		id := PlanIDsMapping[planName]
 		enabledPlanIDs[id] = struct{}{}
 	}
 

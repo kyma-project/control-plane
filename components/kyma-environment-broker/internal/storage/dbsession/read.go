@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
@@ -127,38 +126,24 @@ func (r readSession) GetOrchestrationByID(oID string) (dbmodel.OrchestrationDTO,
 	return operation, nil
 }
 
-func (r readSession) ListOrchestrationsByState(state string) ([]dbmodel.OrchestrationDTO, error) {
+func (r readSession) ListOrchestrations(filter dbmodel.OrchestrationFilter) ([]dbmodel.OrchestrationDTO, int, int, error) {
 	var orchestrations []dbmodel.OrchestrationDTO
 
-	stateCondition := dbr.Eq("state", state)
-
-	_, err := r.session.
-		Select("*").
+	stmt := r.session.Select("*").
 		From(postsql.OrchestrationTableName).
-		Where(stateCondition).
-		Load(&orchestrations)
-	if err != nil {
-		return nil, dberr.Internal("Failed to get orchestrations: %s", err)
-	}
-	return orchestrations, nil
-}
+		OrderBy(postsql.CreatedAtField)
 
-func (r readSession) ListOrchestrations(pageSize, page int) ([]dbmodel.OrchestrationDTO, int, int, error) {
-	var orchestrations []dbmodel.OrchestrationDTO
-
-	err := pagination.ValidatePageParameters(pageSize, page)
-	if err != nil {
-		return nil, -1, -1, errors.Wrap(err, "while converting page and pageSize to SQL statement")
+	// Add pagination if provided
+	if filter.Page > 0 && filter.PageSize > 0 {
+		stmt.Paginate(uint64(filter.Page), uint64(filter.PageSize))
 	}
 
-	_, err = r.session.Select("*").
-		From(postsql.OrchestrationTableName).
-		OrderBy(postsql.CreatedAtField).
-		Limit(uint64(pageSize)).
-		Offset(uint64(pagination.ConvertPageAndPageSizeToOffset(pageSize, page))).
-		Load(&orchestrations)
+	// Apply filtering if provided
+	addOrchestrationFilters(stmt, filter)
 
-	totalCount, err := r.getOrchestrationCount()
+	_, err := stmt.Load(&orchestrations)
+
+	totalCount, err := r.getOrchestrationCount(filter)
 	if err != nil {
 		return nil, -1, -1, err
 	}
@@ -241,23 +226,30 @@ func (r readSession) GetOperationsForIDs(opIDlist []string) ([]dbmodel.Operation
 	return operations, nil
 }
 
-func (r readSession) ListOperationsByOrchestrationID(orchestrationID string, pageSize, page int) ([]dbmodel.OperationDTO, int, int, error) {
+func (r readSession) ListOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error) {
 	var ops []dbmodel.OperationDTO
 	condition := dbr.Eq("orchestration_id", orchestrationID)
 
-	_, err := r.session.
+	stmt := r.session.
 		Select("*").
 		From(postsql.OperationTableName).
 		Where(condition).
-		OrderBy(postsql.CreatedAtField).
-		Offset(uint64(pagination.ConvertPageAndPageSizeToOffset(pageSize, page))).
-		Limit(uint64(pageSize)).
-		Load(&ops)
+		OrderBy(postsql.CreatedAtField)
+
+		// Add pagination if provided
+	if filter.Page > 0 && filter.PageSize > 0 {
+		stmt.Paginate(uint64(filter.Page), uint64(filter.PageSize))
+	}
+
+	// Apply filtering if provided
+	addOperationFilters(stmt, filter)
+
+	_, err := stmt.Load(&ops)
 	if err != nil {
 		return nil, -1, -1, dberr.Internal("Failed to get operations: %s", err)
 	}
 
-	totalCount, err := r.getOperationCount(orchestrationID)
+	totalCount, err := r.getOperationCount(orchestrationID, filter)
 	if err != nil {
 		return nil, -1, -1, err
 	}
@@ -406,7 +398,7 @@ func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]internal.In
 		stmt = stmt.Paginate(uint64(filter.Page), uint64(filter.PageSize))
 	}
 
-	addFilters(stmt, filter)
+	addInstanceFilters(stmt, filter)
 
 	_, err := stmt.Load(&instances)
 	if err != nil {
@@ -429,13 +421,13 @@ func (r readSession) getInstanceCount(filter dbmodel.InstanceFilter) (int, error
 		Total int
 	}
 	stmt := r.session.Select("count(*) as total").From(postsql.InstancesTableName)
-	addFilters(stmt, filter)
+	addInstanceFilters(stmt, filter)
 	err := stmt.LoadOne(&res)
 
 	return res.Total, err
 }
 
-func addFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
+func addInstanceFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
 	if len(filter.GlobalAccountIDs) > 0 {
 		stmt.Where("global_account_id IN ?", filter.GlobalAccountIDs)
 	}
@@ -463,25 +455,38 @@ func addFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
 	}
 }
 
-func (r readSession) getOperationCount(orchestrationID string) (int, error) {
+func addOrchestrationFilters(stmt *dbr.SelectStmt, filter dbmodel.OrchestrationFilter) {
+	if len(filter.States) > 0 {
+		stmt.Where("state IN ?", filter.States)
+	}
+}
+
+func addOperationFilters(stmt *dbr.SelectStmt, filter dbmodel.OperationFilter) {
+	if len(filter.States) > 0 {
+		stmt.Where("state IN ?", filter.States)
+	}
+}
+
+func (r readSession) getOperationCount(orchestrationID string, filter dbmodel.OperationFilter) (int, error) {
 	var res struct {
 		Total int
 	}
-	err := r.session.Select("count(*) as total").
+	stmt := r.session.Select("count(*) as total").
 		From(postsql.OperationTableName).
-		Where(dbr.Eq("orchestration_id", orchestrationID)).
-		LoadOne(&res)
+		Where(dbr.Eq("orchestration_id", orchestrationID))
+	addOperationFilters(stmt, filter)
+	err := stmt.LoadOne(&res)
 
 	return res.Total, err
 }
 
-func (r readSession) getOrchestrationCount() (int, error) {
+func (r readSession) getOrchestrationCount(filter dbmodel.OrchestrationFilter) (int, error) {
 	var res struct {
 		Total int
 	}
-	err := r.session.Select("count(*) as total").
-		From(postsql.OrchestrationTableName).
-		LoadOne(&res)
+	stmt := r.session.Select("count(*) as total").From(postsql.OrchestrationTableName)
+	addOrchestrationFilters(stmt, filter)
+	err := stmt.LoadOne(&res)
 
 	return res.Total, err
 }

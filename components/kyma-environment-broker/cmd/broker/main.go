@@ -44,6 +44,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeoverrides"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 	"github.com/pkg/errors"
@@ -203,7 +205,7 @@ func main() {
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
 	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 
-	clientHTTPForIAS := httputil.NewClient(30, cfg.IAS.SkipCertVerification)
+	clientHTTPForIAS := httputil.NewClient(60, cfg.IAS.SkipCertVerification)
 	if cfg.IAS.TLSRenegotiationEnable {
 		clientHTTPForIAS = httputil.NewRenegotiationTLSClient(30, cfg.IAS.SkipCertVerification)
 	}
@@ -211,20 +213,24 @@ func main() {
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
 	// application event broker
-	eventBroker := event.NewPubSub()
+	eventBroker := event.NewPubSub(logs)
 
 	// metrics collectors
 	metrics.RegisterAll(eventBroker, db.Operations(), db.Instances())
+
+	//setup runtime overrides appender
+	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 
 	// setup operation managers
 	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 
 	// define steps
-	kymaVersionConfigurator := provisioning.NewKymaVersionConfigurator(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
+	globalAccountVersionMapping := runtimeversion.NewGlobalAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, globalAccountVersionMapping)
 	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),
 		provisionerClient, directorClient, inputFactory, externalEvalCreator, iasTypeSetter, cfg.Provisioning.Timeout,
-		kymaVersionConfigurator)
+		runtimeVerConfigurator)
 	provisionManager.InitStep(provisioningInit)
 
 	provisioningSteps := []struct {
@@ -264,7 +270,7 @@ func main() {
 		},
 		{
 			weight: 2,
-			step:   provisioning.NewOverridesFromSecretsAndConfigStep(ctx, cli, db.Operations()),
+			step:   provisioning.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
 		{
 			weight: 2,
@@ -369,8 +375,8 @@ func main() {
 	router.Handle("/metrics", promhttp.Handler())
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
-	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, cli, provisionerClient, gardenerClient,
-		gardenerNamespace, eventBroker, inputFactory, nil, time.Minute, logs)
+	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, gardenerClient,
+		gardenerNamespace, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, logs)
 	fatalOnError(err)
 
 	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, cfg.MaxPaginationPage, logs)
@@ -478,14 +484,15 @@ func fatalOnError(err error) {
 }
 
 func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStorage,
-	cli client.Client, provisionerClient provisioner.Client,
+	runtimeOverrides upgrade_kyma.RuntimeOverridesAppender, provisionerClient provisioner.Client,
 	gardenerClient gardenerclient.CoreV1beta1Interface, gardenerNamespace string, pub event.Publisher,
 	inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
-	pollingInterval time.Duration, logs logrus.FieldLogger) (*process.Queue, error) {
+	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
+	logs logrus.FieldLogger) (*process.Queue, error) {
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 
-	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, inputFactory, icfg)
+	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, inputFactory, icfg, runtimeVerConfigurator)
 	upgradeKymaManager.InitStep(upgradeKymaInit)
 	upgradeKymaSteps := []struct {
 		disabled bool
@@ -494,7 +501,7 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 	}{
 		{
 			weight: 2,
-			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(ctx, cli, db.Operations()),
+			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
 		{
 			weight: 10,

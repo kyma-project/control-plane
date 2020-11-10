@@ -21,6 +21,20 @@ const (
 	TrialPlanName     = "trial"
 )
 
+var PlanNamesMapping = map[string]string{
+	GCPPlanID:       GCPPlanName,
+	AzurePlanID:     AzurePlanName,
+	AzureLitePlanID: AzureLitePlanName,
+	TrialPlanID:     TrialPlanName,
+}
+
+var PlanIDsMapping = map[string]string{
+	AzurePlanName:     AzurePlanID,
+	AzureLitePlanName: AzureLitePlanID,
+	GCPPlanName:       GCPPlanID,
+	TrialPlanName:     TrialPlanID,
+}
+
 type TrialCloudRegion string
 
 const (
@@ -355,8 +369,8 @@ var Plans = map[string]struct {
 	},
 }
 
-func IsTrialPlan(planId string) bool {
-	switch planId {
+func IsTrialPlan(planID string) bool {
+	switch planID {
 	case TrialPlanID:
 		return true
 	default:

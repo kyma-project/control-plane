@@ -8,7 +8,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma/automock"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -55,7 +55,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, nil, nil, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -65,12 +65,17 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.Equal(t, time.Duration(0), repeat)
 		assert.Equal(t, domain.Succeeded, upgradeOperation.State)
 
+		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.ID)
+		assert.Equal(t, upgradeOperation, *storedOp)
+		assert.NoError(t, err)
+
 	})
 
 	t.Run("should initialize UpgradeRuntimeInput request when run", func(t *testing.T) {
 		// given
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
+		ver := &internal.RuntimeVersionData{}
 
 		provisioningOperation := fixProvisioningOperation(t)
 		err := memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
@@ -87,9 +92,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		provisionerClient := &provisionerAutomock.Client{}
 		inputBuilder := &automock.CreatorForPlan{}
-		inputBuilder.On("CreateUpgradeInput", fixProvisioningParameters()).Return(&input.RuntimeInput{}, nil)
+		inputBuilder.On("CreateUpgradeInput", fixProvisioningParameters(), *ver).Return(&input.RuntimeInput{}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, inputBuilder, nil)
+		rvc := &automock.RuntimeVersionConfiguratorForUpgrade{}
+		defer rvc.AssertExpectations(t)
+		rvc.On("ForUpgrade").Return(ver).Once()
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, inputBuilder, nil, rvc)
 
 		// when
 		op, repeat, err := step.Run(upgradeOperation, log)
@@ -99,6 +108,10 @@ func TestInitialisationStep_Run(t *testing.T) {
 		inputBuilder.AssertNumberOfCalls(t, "CreateUpgradeInput", 1)
 		assert.Equal(t, time.Duration(0), repeat)
 		assert.NotNil(t, op.InputCreator)
+
+		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(op.ID)
+		assert.Equal(t, op, *storedOp)
+		assert.NoError(t, err)
 	})
 }
 

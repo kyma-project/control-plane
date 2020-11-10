@@ -523,14 +523,6 @@
   version = "v1.1.9"
 
 [[projects]]
-  digest = "1:58999a98719fddbac6303cb17e8d85b945f60b72f48e3a2df6b950b97fa926f1"
-  name = "github.com/konsorten/go-windows-terminal-sequences"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
-  version = "v1.0.2"
-
-[[projects]]
   digest = "1:d0100634ab992bbca4e68f01c7d0ba5a5694e84e833d8dc6b6782e20dd35dbfd"
   name = "github.com/kyma-incubator/compass"
   packages = [
@@ -575,6 +567,14 @@
   pruneopts = "NUT"
   revision = "99274577be97ac9b1d95a2d61d566dc9b7cc6a54"
   version = "v1.3.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:e94e69261097d7067fa28052bcf209be4c47b12c665b7e88116c96f905a77364"
+  name = "github.com/liggitt/tabwriter"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "89fcab3d43de07060e4fd4c1547430ed57e87f24"
 
 [[projects]]
   digest = "1:8139f3ca1f0523e8db13e12c21b5c1b3ec2f396ae27c64ca1bc126f8136d2e7f"
@@ -811,12 +811,15 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:f4aaa07a6c33f2b354726d0571acbc8ca118837c75709f6353203ae1a3f8eeab"
+  digest = "1:1c97acfe1b0b6a8f44e3ced4837da28566246a4df27cd77af9b090c5be8a0a19"
   name = "github.com/sirupsen/logrus"
-  packages = ["."]
+  packages = [
+    ".",
+    "hooks/test",
+  ]
   pruneopts = "NUT"
-  revision = "839c75faf7f98a33d445d181f3018b5c3409a45e"
-  version = "v1.4.2"
+  revision = "6699a89a232f3db797f2e280639854bbc4b89725"
+  version = "v1.7.0"
 
 [[projects]]
   digest = "1:6792bb72ea0e7112157d02e4e175cd421b43d004a853f56316a19beca6e0c074"
@@ -1191,7 +1194,7 @@
   version = "v0.17.1"
 
 [[projects]]
-  digest = "1:3aec70609d8ddf357111cb1ed86de5356d6e1106556676a5f37bc9941351391c"
+  digest = "1:8a78cd1f16b3752fd005e369ff20b837e7a42cb4af9bd40ba6d476fc747f0505"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
@@ -1238,11 +1241,11 @@
     "third_party/forked/golang/reflect",
   ]
   pruneopts = "NUT"
-  revision = "79c2a76c473a20cdc4ce59cae4b72529b5d9d16b"
-  version = "v0.17.1"
+  revision = "657cd094317c09d73696c12abec7b97f840fa75e"
+  version = "v0.17.13"
 
 [[projects]]
-  digest = "1:d55d681a63b69b8395fb31300536de2e4250632dc55f2634853d0b7fd6fb4156"
+  digest = "1:0c1800ef4e948a455766f041af484e0d16e120237f3e13a6a46da9c847444734"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -1332,6 +1335,7 @@
     "rest/watch",
     "restmapper",
     "testing",
+    "third_party/forked/golang/template",
     "tools/auth",
     "tools/clientcmd",
     "tools/clientcmd/api",
@@ -1344,6 +1348,7 @@
     "util/connrotation",
     "util/flowcontrol",
     "util/homedir",
+    "util/jsonpath",
     "util/keyutil",
     "util/workqueue",
   ]
@@ -1439,6 +1444,7 @@
     "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/lib/pq",
+    "github.com/liggitt/tabwriter",
     "github.com/machinebox/graphql",
     "github.com/matryer/is",
     "github.com/pborman/uuid",
@@ -1451,6 +1457,7 @@
     "github.com/prometheus/client_golang/prometheus/promhttp",
     "github.com/sebdah/goldie",
     "github.com/sirupsen/logrus",
+    "github.com/sirupsen/logrus/hooks/test",
     "github.com/spf13/afero",
     "github.com/spf13/cobra",
     "github.com/spf13/pflag",
@@ -1478,6 +1485,7 @@
     "k8s.io/client-go/testing",
     "k8s.io/client-go/tools/clientcmd",
     "k8s.io/client-go/util/homedir",
+    "k8s.io/client-go/util/jsonpath",
     "k8s.io/client-go/util/workqueue",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/apiutil",

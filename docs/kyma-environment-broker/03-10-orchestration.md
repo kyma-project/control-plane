@@ -5,9 +5,9 @@ type: Details
 
 Orchestration is a mechanism that allows you to upgrade Kyma Runtimes. To create an orchestration, [follow this tutorial](#tutorials-orchestrate-kyma-upgrade). After sending the request, the orchestration is processed by `KymaUpgradeManager`. It lists Shoots (Kyma Runtimes) in the Gardener cluster and narrows them to the IDs that you have specified in the request body. Then, `KymaUpgradeManager` performs the [upgrade steps](#details-runtime-operations) logic on the selected Runtimes.
 
-If Kyma Environment Broker is restarted, it reprocesses the orchestration with the `IN PROGRESS` state. 
+If Kyma Environment Broker is restarted, it reprocesses the orchestration with the `IN PROGRESS` state.
 
->**NOTE:** You need a token with the `broker-upgrade:write` authorization scope to create an orchestration, and a token with the `broker-upgrade:read` scope to fetch the orchestrations.
+>**NOTE:** You need an OIDC ID token in the JWT format issued by a (configurable) OIDC provider which is trusted by Kyma Environment Broker. The `groups` claim must be present in the token, and furthermore the user must belong to the configurable admin group (`runtimeAdmin` by default) to create an orchestration. To fetch the orchestrations, the user must belong to the configurable operator group (`runtimeOperator` by default).
 
 Orchestration API consist of the following handlers:
 
