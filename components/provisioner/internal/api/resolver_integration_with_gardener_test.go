@@ -124,9 +124,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	require.NoError(t, err)
 	defer cleanupNetwork()
 
-	containerCleanupFunc, connString, err := testutils.InitTestDBContainer(t, ctx, "postgres_database_2")
+	_, connString, err := testutils.InitTestDBContainer(t, ctx, "postgres_database_2")
 	require.NoError(t, err)
-	defer containerCleanupFunc()
+	//defer containerCleanupFunc()
 
 	connection, err := database.InitializeDatabaseConnection(connString, 5)
 	require.NoError(t, err)
@@ -249,6 +249,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			shoot := &list.Items[0]
 
+			time.Sleep(2 * waitPeriod)
+
 			// then
 			assert.Equal(t, runtimeID, shoot.Annotations["kcp.provisioner.kyma-project.io/runtime-id"])
 			assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
@@ -260,7 +262,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			simulateSuccessfulClusterProvisioning(t, shootInterface, secretsInterface, shoot)
 
 			// wait for Shoot to update
-			time.Sleep(2 * waitPeriod)
+			time.Sleep(5 * waitPeriod)
 
 			shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
 			require.NoError(t, err)
@@ -288,7 +290,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, runtimeID, *upgradeRuntimeOp.RuntimeID)
 
 			// wait for queue to process operation
-			time.Sleep(waitPeriod)
+			time.Sleep(5* waitPeriod)
 
 			// assert db content
 			readSession := dbsFactory.NewReadSession()
@@ -318,7 +320,13 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			require.NoError(t, err)
 
 			upgradeShootOp, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
+
 			require.NoError(t, err)
+
+			// for wait for shoot new version step
+			simulateShootUpgrade(t, shootInterface, shoot)
+
+			time.Sleep(2 * waitPeriod)
 
 			// then
 			require.NoError(t, err)
@@ -329,7 +337,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, runtimeID, *upgradeShootOp.RuntimeID)
 
 			// wait for queue to process operation
-			time.Sleep(waitPeriod)
+			time.Sleep(2 * waitPeriod)
 
 			// assert db content
 			runtimeAfterUpgrade, err := readSession.GetCluster(runtimeID)
@@ -347,7 +355,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			// when
 			// wait for Shoot to update
-			time.Sleep(waitPeriod)
+			time.Sleep(5* waitPeriod)
 			shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
 
 			// then
@@ -466,6 +474,15 @@ func simulateSuccessfulClusterProvisioning(t *testing.T, f gardener_apis.ShootIn
 	simulateDNSAdmissionPluginRun(shoot)
 	setShootStatusToSuccessful(t, f, shoot)
 	createKubeconfigSecret(t, s, shoot.Name)
+}
+
+func simulateShootUpgrade(t *testing.T, shoots gardener_apis.ShootInterface, shoot *gardener_types.Shoot) {
+	if shoot != nil {
+		shoot, err := shoots.Get(context.Background(), shoot.Name, metav1.GetOptions{})
+		shoot.Status.ObservedGeneration = shoot.ObjectMeta.Generation + 1
+		_, err = shoots.Update(context.Background(), shoot, metav1.UpdateOptions{})
+		require.NoError(t, err)
+	}
 }
 
 func simulateDNSAdmissionPluginRun(shoot *gardener_types.Shoot) {
