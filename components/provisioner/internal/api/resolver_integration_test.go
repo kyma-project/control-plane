@@ -120,6 +120,7 @@ func newTestProvisioningConfigs() []testCase {
 func gcpGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 	return gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:              util.StringPtr(util.CreateGardenerClusterName()),
 			KubernetesVersion: "version",
 			Purpose:           util.StringPtr("evaluation"),
 			Provider:          "GCP",
@@ -146,6 +147,7 @@ func gcpGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInput {
 	return gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:              util.StringPtr(util.CreateGardenerClusterName()),
 			KubernetesVersion: "version",
 			Purpose:           util.StringPtr("evaluation"),
 			Provider:          "Azure",
@@ -173,6 +175,7 @@ func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInp
 func awsGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 	return gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:              util.StringPtr(util.CreateGardenerClusterName()),
 			KubernetesVersion: "version",
 			Purpose:           util.StringPtr("evaluation"),
 			Provider:          "AWS",
