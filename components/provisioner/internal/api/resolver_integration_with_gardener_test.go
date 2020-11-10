@@ -249,8 +249,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			shoot := &list.Items[0]
 
-			time.Sleep(2 * waitPeriod)
-
 			// then
 			assert.Equal(t, runtimeID, shoot.Annotations["kcp.provisioner.kyma-project.io/runtime-id"])
 			assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
@@ -262,7 +260,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			simulateSuccessfulClusterProvisioning(t, shootInterface, secretsInterface, shoot)
 
 			// wait for Shoot to update
-			time.Sleep(5 * waitPeriod)
+			time.Sleep(2 * waitPeriod)
 
 			shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
 			require.NoError(t, err)
@@ -290,7 +288,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			assert.Equal(t, runtimeID, *upgradeRuntimeOp.RuntimeID)
 
 			// wait for queue to process operation
-			time.Sleep(5 * waitPeriod)
+			time.Sleep(2 * waitPeriod)
 
 			// assert db content
 			readSession := dbsFactory.NewReadSession()
@@ -320,13 +318,10 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			require.NoError(t, err)
 
 			upgradeShootOp, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
-
 			require.NoError(t, err)
 
 			// for wait for shoot new version step
 			simulateShootUpgrade(t, shootInterface, shoot)
-
-			time.Sleep(2 * waitPeriod)
 
 			// then
 			require.NoError(t, err)
@@ -355,7 +350,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			// when
 			// wait for Shoot to update
-			time.Sleep(5 * waitPeriod)
+			time.Sleep(2 * waitPeriod)
 			shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
 
 			// then
