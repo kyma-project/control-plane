@@ -888,6 +888,137 @@ func TestDirectorClient_SetRuntimeStatusCondition(t *testing.T) {
 	})
 }
 
+func TestDirectorClient_RuntimeExists(t *testing.T) {
+	expectedRequest := gcli.NewRequest(expectedGetRuntimeQuery)
+	expectedRequest.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", validTokenValue))
+	expectedRequest.Header.Set(TenantHeader, tenantValue)
+
+	t.Run("should return true when Runtime exists", func(t *testing.T) {
+		//given
+		expectedResponse := &graphql.RuntimeExt{
+			Runtime: graphql.Runtime{
+				ID:   runtimeTestingID,
+				Name: runtimeTestingName,
+			},
+		}
+
+		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*GetRuntimeResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = expectedResponse
+		})
+
+		token := oauth.Token{
+			AccessToken: validTokenValue,
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+
+		//when
+		exists, err := configClient.RuntimeExists(runtimeTestingID, tenantValue)
+
+		//then
+		require.NoError(t, err)
+		assert.True(t, exists)
+	})
+
+	t.Run("should return false when Runtime does not exist", func(t *testing.T) {
+		//given
+		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*GetRuntimeResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = nil
+		})
+
+		token := oauth.Token{
+			AccessToken: validTokenValue,
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+
+		//when
+		exists, err := configClient.RuntimeExists(runtimeTestingID, tenantValue)
+
+		//then
+		require.NoError(t, err)
+		assert.False(t, exists)
+	})
+
+	t.Run("should return error when director returns error", func(t *testing.T) {
+		//given
+		directorError := &testGraphQLError{
+			Message:         "some error",
+			ErrorExtensions: map[string]interface{}{"error_code": float64(directorApperrors.InternalError)},
+		}
+
+		gqlClient := gql.NewQueryAssertClient(t, directorError, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*GetRuntimeResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = nil
+		})
+
+		token := oauth.Token{
+			AccessToken: validTokenValue,
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+
+		//when
+		exists, err := configClient.RuntimeExists(runtimeTestingID, tenantValue)
+
+		//then
+		require.Error(t, err)
+		assert.False(t, exists)
+	})
+
+	t.Run("should return false when director returns TenantNotFound error", func(t *testing.T) {
+		//given
+		directorError := &testGraphQLError{
+			Message:         "some error",
+			ErrorExtensions: map[string]interface{}{"error_code": float64(directorApperrors.TenantNotFound)},
+		}
+
+		gqlClient := gql.NewQueryAssertClient(t, directorError, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
+			cfg, ok := r.(*GetRuntimeResponse)
+			require.True(t, ok)
+			assert.Empty(t, cfg.Result)
+			cfg.Result = nil
+		})
+
+		token := oauth.Token{
+			AccessToken: validTokenValue,
+			Expiration:  futureExpirationTime,
+		}
+
+		mockedOAuthClient := &oauthmocks.Client{}
+		mockedOAuthClient.On("GetAuthorizationToken").Return(token, nil)
+
+		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
+
+		//when
+		exists, err := configClient.RuntimeExists(runtimeTestingID, tenantValue)
+
+		//then
+		require.NoError(t, err)
+		assert.False(t, exists)
+	})
+}
+
 type testGraphQLError struct {
 	Message         string
 	ErrorExtensions map[string]interface{}
