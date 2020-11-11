@@ -36,7 +36,7 @@ type client struct {
 }
 
 func NewProvisionerClient(endpoint string, queryDumping bool) Client {
-	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httputil.NewClient(30, false)))
+	graphQlClient := gcli.NewClient(endpoint, gcli.WithHTTPClient(httputil.NewClient(120, false)))
 	if queryDumping {
 		graphQlClient.Log = func(s string) {
 			fmt.Println(s)

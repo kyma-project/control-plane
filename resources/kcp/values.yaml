@@ -1,6 +1,5 @@
 global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
-
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
@@ -12,7 +11,7 @@ global:
       version: "PR-286"
     kyma_environment_broker:
       dir:
-      version: "PR-310"
+      version: "PR-320"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-131"

@@ -156,15 +156,11 @@ func (h *kymaHandler) getOperation(w http.ResponseWriter, r *http.Request) {
 	provisioningState, err := h.runtimeStates.GetByOperationID(provisioningOp.ID)
 	if err != nil {
 		h.log.Errorf("while getting runtime state for operation %s: %v", provisioningOp.ID, err)
-		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting runtime state for operation %s", provisioningOp.ID))
-		return
 	}
 
 	upgradeState, err := h.runtimeStates.GetByOperationID(operationID)
 	if err != nil && !dberr.IsNotFound(err) {
 		h.log.Errorf("while getting runtime state for upgrade operation %s: %v", operationID, err)
-		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting runtime state for upgrade operation %s", operationID))
-		return
 	}
 
 	response, err := h.conv.UpgradeKymaOperationToDetailDTO(*operation, upgradeState.KymaConfig, provisioningState.ClusterConfig)
