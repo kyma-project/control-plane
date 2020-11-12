@@ -2,6 +2,7 @@ package gardener
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 
 	gcorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -40,7 +41,7 @@ func (c *Controller) secretUpdateHandlerFunc(oldObj, newObj interface{}) {
 			fieldCloudProfileName:  c.providertype,
 		}).String()
 
-	shootlist, err := c.client.GClientset.CoreV1beta1().Shoots(newSecret.Namespace).List(metav1.ListOptions{FieldSelector: fselector})
+	shootlist, err := c.client.GClientset.CoreV1beta1().Shoots(newSecret.Namespace).List(context.TODO(), metav1.ListOptions{FieldSelector: fselector})
 	if err != nil {
 		c.logger.With("error", err).Error("error retrieving shoot")
 		return
@@ -166,7 +167,7 @@ func (c *Controller) shootUpdateHandlerFunc(oldObj, newObj interface{}) {
 
 // getTechnicalID determines the technical id of a Shoot which is used for tagging resources created in the infrastructure.
 func (c *Controller) getTechnicalID(shoot *gcorev1beta1.Shoot) (string, error) {
-	ns, err := c.client.KClientset.CoreV1().Namespaces().Get(shoot.Namespace, metav1.GetOptions{})
+	ns, err := c.client.KClientset.CoreV1().Namespaces().Get(context.TODO(), shoot.Namespace, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -213,7 +214,7 @@ func (c *Controller) newCluster(shoot *gcorev1beta1.Shoot) (*Cluster, error) {
 		return cluster, err
 	}
 
-	secret, err := c.client.KClientset.CoreV1().Secrets(shoot.Namespace).Get(shoot.Spec.SecretBindingName, metav1.GetOptions{})
+	secret, err := c.client.KClientset.CoreV1().Secrets(shoot.Namespace).Get(context.TODO(), shoot.Spec.SecretBindingName, metav1.GetOptions{})
 	if err != nil {
 		err = fmt.Errorf("error getting shoot secret: %s", err)
 

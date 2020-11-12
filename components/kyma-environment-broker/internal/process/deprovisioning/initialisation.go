@@ -83,6 +83,12 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 		return s.operationManager.OperationFailed(operation, err.Error())
 	}
 
+	operation, repeat, _ := s.operationManager.UpdateOperation(operation)
+	if repeat != 0 {
+		log.Errorf("cannot save the operation")
+		return operation, time.Second, nil
+	}
+
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:

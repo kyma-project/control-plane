@@ -1,4 +1,4 @@
-package skr
+package command
 
 import (
 	"errors"
@@ -7,8 +7,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// LoginCommand represents an execution of the skr login command
+// LoginCommand represents an execution of the kcp login command
 type LoginCommand struct {
+	cobraCmd *cobra.Command
 	log      logger.Logger
 	username string
 	password string
@@ -20,27 +21,28 @@ func NewLoginCmd(log logger.Logger) *cobra.Command {
 	cobraCmd := &cobra.Command{
 		Use:     "login",
 		Aliases: []string{"l"},
-		Short:   "Perform OIDC login required by all commands",
-		Long: `Initiates OIDC login to obtain ID token, which is required by all CLI commands.
-By default without any options, the OIDC authorization code flow is executed, which prompts the user to navigate to a local address in the browser and get redirected to the OIDC Authentication Server login page.
+		Short:   "Performs OIDC login required by all commands.",
+		Long: `Initiates OIDC login to obtain the ID token which is required by all CLI commands.
+By default, without any options, the OIDC authorization code flow is executed. It prompts the user to navigate to a local address in the browser and get redirected to the OIDC Authentication Server login page.
 Service accounts can execute the resource owner credentials flow by specifying the --username and --password options.`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
-		RunE:    func(cobraCmd *cobra.Command, _ []string) error { return cmd.Run(cobraCmd) },
+		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}
-	cobraCmd.Flags().StringVarP(&cmd.username, "username", "u", "", "Username to use for resource owner credentials flow")
-	cobraCmd.Flags().StringVarP(&cmd.password, "password", "p", "", "Password to use for resource owner credentials flow")
+	cmd.cobraCmd = cobraCmd
+	cobraCmd.Flags().StringVarP(&cmd.username, "username", "u", "", "Username to use for the resource owner credentials flow.")
+	cobraCmd.Flags().StringVarP(&cmd.password, "password", "p", "", "Password to use for the resource owner credentials flow.")
 
 	return cobraCmd
 }
 
 // Run executes the login command
-func (cmd *LoginCommand) Run(cobraCmd *cobra.Command) error {
+func (cmd *LoginCommand) Run() error {
 	cred := CLICredentialManager(cmd.log)
 	var err error
 	if cmd.username == "" {
-		_, err = cred.GetTokenByAuthCode(cobraCmd.Context())
+		_, err = cred.GetTokenByAuthCode(cmd.cobraCmd.Context())
 	} else {
-		_, err = cred.GetTokenByROPC(cobraCmd.Context(), cmd.username, cmd.password)
+		_, err = cred.GetTokenByROPC(cmd.cobraCmd.Context(), cmd.username, cmd.password)
 	}
 
 	if err != nil {

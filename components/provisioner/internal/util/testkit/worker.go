@@ -40,6 +40,12 @@ func (tw *TestWorker) WithMachineType(t string) *TestWorker {
 	return tw
 }
 
+func (tw *TestWorker) WithMachineImageAndVersion(name string, version string) *TestWorker {
+	tw.worker.Machine.Image.Name = name
+	tw.worker.Machine.Image.Version = util.StringPtr(version)
+	return tw
+}
+
 // WithVolume sets value of worker.Volume Type and Size
 func (tw *TestWorker) WithVolume(vType string, size int) *TestWorker {
 	tw.worker.Volume.Type = util.StringPtr(vType)

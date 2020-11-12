@@ -73,6 +73,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 	provisioningOp, err := m.operationStorage.GetProvisioningOperationByInstanceID(op.InstanceID)
 	if err != nil {
 		m.log.Errorf("Cannot fetch ProvisioningOperation for instanceID %s from storage: %s", op.InstanceID, err)
+		return 0, err
 	}
 
 	var pp internal.ProvisioningParameters
@@ -80,6 +81,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 		pp, err = provisioningOp.GetProvisioningParameters()
 		if err != nil {
 			m.log.Errorf("while getting ProvisioningParameters from operation id %q: %s", operation.ID, err)
+			return 0, err
 		}
 	}
 

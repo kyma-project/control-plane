@@ -10,11 +10,12 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pkg/errors"
@@ -80,8 +81,15 @@ func (h *kymaHandler) listOrchestration(w http.ResponseWriter, r *http.Request) 
 		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
 		return
 	}
+	query := r.URL.Query()
+	filter := dbmodel.OrchestrationFilter{
+		Page:     page,
+		PageSize: pageSize,
+		// For optional filters, zero value (nil) is ok if not supplied
+		States: query[orchestration.StateParam],
+	}
 
-	orchestrations, count, totalCount, err := h.orchestrations.List(pageSize, page)
+	orchestrations, count, totalCount, err := h.orchestrations.List(filter)
 	if err != nil {
 		h.log.Errorf("while getting orchestrations: %v", err)
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting orchestrations"))
@@ -105,8 +113,15 @@ func (h *kymaHandler) listOperations(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrap(err, "while getting query parameters"))
 		return
 	}
+	query := r.URL.Query()
+	filter := dbmodel.OperationFilter{
+		Page:     page,
+		PageSize: pageSize,
+		// For optional filters, zero value (nil) is ok if not supplied
+		States: query[orchestration.StateParam],
+	}
 
-	operations, count, totalCount, err := h.operations.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, pageSize, page)
+	operations, count, totalCount, err := h.operations.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, filter)
 	if err != nil {
 		h.log.Errorf("while getting operations: %v", err)
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting operations"))
@@ -141,15 +156,11 @@ func (h *kymaHandler) getOperation(w http.ResponseWriter, r *http.Request) {
 	provisioningState, err := h.runtimeStates.GetByOperationID(provisioningOp.ID)
 	if err != nil {
 		h.log.Errorf("while getting runtime state for operation %s: %v", provisioningOp.ID, err)
-		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting runtime state for operation %s", provisioningOp.ID))
-		return
 	}
 
 	upgradeState, err := h.runtimeStates.GetByOperationID(operationID)
 	if err != nil && !dberr.IsNotFound(err) {
 		h.log.Errorf("while getting runtime state for upgrade operation %s: %v", operationID, err)
-		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting runtime state for upgrade operation %s", operationID))
-		return
 	}
 
 	response, err := h.conv.UpgradeKymaOperationToDetailDTO(*operation, upgradeState.KymaConfig, provisioningState.ClusterConfig)
@@ -163,7 +174,7 @@ func (h *kymaHandler) getOperation(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request) {
-	params := internal.OrchestrationParameters{}
+	params := orchestration.Parameters{}
 
 	if r.Body != nil {
 		err := json.NewDecoder(r.Body).Decode(&params)
@@ -216,28 +227,28 @@ func (h *kymaHandler) resolveErrorStatus(err error) int {
 	}
 }
 
-func (h *kymaHandler) validateTarget(spec internal.TargetSpec) error {
+func (h *kymaHandler) validateTarget(spec orchestration.TargetSpec) error {
 	if spec.Include == nil || len(spec.Include) == 0 {
 		return errors.New("targets.include array must be not empty")
 	}
 	return nil
 }
 
-func (h *kymaHandler) defaultOrchestrationStrategy(spec *internal.StrategySpec) {
+func (h *kymaHandler) defaultOrchestrationStrategy(spec *orchestration.StrategySpec) {
 	if spec.Parallel.Workers == 0 {
 		spec.Parallel.Workers = 1
 	}
 
 	switch spec.Type {
-	case internal.ParallelStrategy:
+	case orchestration.ParallelStrategy:
 	default:
-		spec.Type = internal.ParallelStrategy
+		spec.Type = orchestration.ParallelStrategy
 	}
 
 	switch spec.Schedule {
-	case internal.MaintenanceWindow:
-	case internal.Immediate:
+	case orchestration.MaintenanceWindow:
+	case orchestration.Immediate:
 	default:
-		spec.Schedule = internal.Immediate
+		spec.Schedule = orchestration.Immediate
 	}
 }

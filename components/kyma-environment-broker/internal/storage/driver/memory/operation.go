@@ -286,29 +286,23 @@ func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (
 	return result, nil
 }
 
-func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, pageSize, page int) ([]internal.UpgradeKymaOperation, int, int, error) {
+func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeKymaOperation, int, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	result := make([]internal.UpgradeKymaOperation, 0)
+	offset := pagination.ConvertPageAndPageSizeToOffset(filter.PageSize, filter.Page)
 
-	for _, op := range s.upgradeKymaOperations {
-		if op.OrchestrationID == orchestrationID {
-			result = append(result, op)
-		}
-	}
-	offset := pagination.ConvertPageAndPageSizeToOffset(pageSize, page)
+	operations := s.filterUpgrade(filter)
+	s.sortUpgradeByCreatedAt(operations)
 
-	sortedOperations := s.getUpgradeSortedByCreatedAt(s.upgradeKymaOperations)
-	result = make([]internal.UpgradeKymaOperation, 0)
-
-	for i := offset; i < offset+pageSize && i < len(sortedOperations)+offset; i++ {
-		result = append(result, s.upgradeKymaOperations[sortedOperations[i].OrchestrationID])
+	for i := offset; (filter.PageSize < 1 || i < offset+filter.PageSize) && i < len(operations)+offset; i++ {
+		result = append(result, s.upgradeKymaOperations[operations[i].OrchestrationID])
 	}
 
 	return result,
 		len(result),
-		len(s.upgradeKymaOperations),
+		len(operations),
 		nil
 }
 
@@ -316,27 +310,29 @@ func (s *operations) ListUpgradeKymaOperationsByInstanceID(instanceID string) ([
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	result := make([]internal.UpgradeKymaOperation, 0)
+	// Empty filter means get all
+	operations := s.filterUpgrade(dbmodel.OperationFilter{})
+	s.sortUpgradeByCreatedAt(operations)
 
-	for _, op := range s.upgradeKymaOperations {
-		if op.InstanceID == instanceID {
-			result = append(result, op)
-		}
-	}
-
-	sortedOperations := s.getUpgradeSortedByCreatedAt(s.upgradeKymaOperations)
-	result = make([]internal.UpgradeKymaOperation, 0)
-
-	return sortedOperations, nil
+	return operations, nil
 }
 
-func (s *operations) getUpgradeSortedByCreatedAt(operations map[string]internal.UpgradeKymaOperation) []internal.UpgradeKymaOperation {
-	operationsList := make([]internal.UpgradeKymaOperation, 0, len(operations))
-	for _, v := range operations {
-		operationsList = append(operationsList, v)
-	}
-	sort.Slice(operationsList, func(i, j int) bool {
-		return operationsList[i].CreatedAt.Before(operationsList[j].CreatedAt)
+func (s *operations) sortUpgradeByCreatedAt(operations []internal.UpgradeKymaOperation) {
+	sort.Slice(operations, func(i, j int) bool {
+		return operations[i].CreatedAt.Before(operations[j].CreatedAt)
 	})
-	return operationsList
+}
+
+func (s *operations) filterUpgrade(filter dbmodel.OperationFilter) []internal.UpgradeKymaOperation {
+	operations := make([]internal.UpgradeKymaOperation, 0, len(s.upgradeKymaOperations))
+	equal := func(a, b string) bool { return a == b }
+	for _, v := range s.upgradeKymaOperations {
+		if ok := matchFilter(string(v.State), filter.States, equal); !ok {
+			continue
+		}
+
+		operations = append(operations, v)
+	}
+
+	return operations
 }

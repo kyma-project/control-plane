@@ -110,6 +110,7 @@ type GardenerConfig struct {
 }
 
 type GardenerConfigInput struct {
+	Name                                *string                `json:"name"`
 	KubernetesVersion                   string                 `json:"kubernetesVersion"`
 	Provider                            string                 `json:"provider"`
 	TargetSecret                        string                 `json:"targetSecret"`
@@ -140,6 +141,8 @@ type GardenerUpgradeInput struct {
 	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
 	AutoScalerMin                       *int                   `json:"autoScalerMin"`
 	AutoScalerMax                       *int                   `json:"autoScalerMax"`
+	MachineImage                        *string                `json:"machineImage"`
+	MachineImageVersion                 *string                `json:"machineImageVersion"`
 	MaxSurge                            *int                   `json:"maxSurge"`
 	MaxUnavailable                      *int                   `json:"maxUnavailable"`
 	Purpose                             *string                `json:"purpose"`

@@ -839,6 +839,7 @@ input ClusterConfigInput {
 }
 
 input GardenerConfigInput {
+    name: String                                    # Name of the cluster
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
     provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
     targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
@@ -920,6 +921,8 @@ input GardenerUpgradeInput {
     volumeSizeGB: Int                             # Size of the available disk, provided in GB
     autoScalerMin: Int                            # Minimum number of VMs to create
     autoScalerMax: Int                            # Maximum number of VMs to create
+    machineImage: String                          # Machine OS image name
+    machineImageVersion: String                   # Machine OS image version
     maxSurge: Int                                 # Maximum number of VMs created during an update
     maxUnavailable: Int                           # Maximum number of VMs that can be unavailable during an update
     purpose: String                               # The purpose given to the cluster (development, evaluation, testing, production)
@@ -4689,6 +4692,12 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 
 	for k, v := range asMap {
 		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "kubernetesVersion":
 			var err error
 			it.KubernetesVersion, err = ec.unmarshalNString2string(ctx, v)
@@ -4860,6 +4869,18 @@ func (ec *executionContext) unmarshalInputGardenerUpgradeInput(ctx context.Conte
 		case "autoScalerMax":
 			var err error
 			it.AutoScalerMax, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "machineImage":
+			var err error
+			it.MachineImage, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "machineImageVersion":
+			var err error
+			it.MachineImageVersion, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

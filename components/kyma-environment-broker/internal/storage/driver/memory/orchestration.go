@@ -8,6 +8,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 )
 
 type orchestration struct {
@@ -42,22 +43,23 @@ func (s *orchestration) GetByID(orchestrationID string) (*internal.Orchestration
 	return &inst, nil
 }
 
-func (s *orchestration) List(pageSize int, page int) ([]internal.Orchestration, int, int, error) {
+func (s *orchestration) List(filter dbmodel.OrchestrationFilter) ([]internal.Orchestration, int, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	result := make([]internal.Orchestration, 0)
-	offset := pagination.ConvertPageAndPageSizeToOffset(pageSize, page)
+	offset := pagination.ConvertPageAndPageSizeToOffset(filter.PageSize, filter.Page)
 
-	sortedOrchestrations := s.getSortedByCreatedAt(s.orchestrations)
+	orchestrations := s.filter(filter)
+	s.sortByCreatedAt(orchestrations)
 
-	for i := offset; i < offset+pageSize && i < len(sortedOrchestrations); i++ {
-		result = append(result, s.orchestrations[sortedOrchestrations[i].OrchestrationID])
+	for i := offset; (filter.PageSize < 1 || i < offset+filter.PageSize) && i < len(orchestrations); i++ {
+		result = append(result, s.orchestrations[orchestrations[i].OrchestrationID])
 	}
 
 	return result,
 		len(result),
-		len(s.orchestrations),
+		len(orchestrations),
 		nil
 }
 
@@ -87,13 +89,22 @@ func (s *orchestration) ListByState(state string) ([]internal.Orchestration, err
 	return result, nil
 }
 
-func (s *orchestration) getSortedByCreatedAt(orchestrations map[string]internal.Orchestration) []internal.Orchestration {
-	orchestrationsList := make([]internal.Orchestration, 0, len(orchestrations))
-	for _, v := range orchestrations {
-		orchestrationsList = append(orchestrationsList, v)
-	}
-	sort.Slice(orchestrationsList, func(i, j int) bool {
-		return orchestrationsList[i].CreatedAt.Before(orchestrationsList[j].CreatedAt)
+func (s *orchestration) sortByCreatedAt(orchestrations []internal.Orchestration) {
+	sort.Slice(orchestrations, func(i, j int) bool {
+		return orchestrations[i].CreatedAt.Before(orchestrations[j].CreatedAt)
 	})
-	return orchestrationsList
+}
+
+func (s *orchestration) filter(filter dbmodel.OrchestrationFilter) []internal.Orchestration {
+	orchestrations := make([]internal.Orchestration, 0, len(s.orchestrations))
+	equal := func(a, b string) bool { return a == b }
+	for _, v := range s.orchestrations {
+		if ok := matchFilter(v.State, filter.States, equal); !ok {
+			continue
+		}
+
+		orchestrations = append(orchestrations, v)
+	}
+
+	return orchestrations
 }

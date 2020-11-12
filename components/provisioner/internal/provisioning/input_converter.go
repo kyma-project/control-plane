@@ -1,9 +1,6 @@
 package provisioning
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
@@ -91,7 +88,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 
 	return model.GardenerConfig{
 		ID:                                  c.uuidGenerator.New(),
-		Name:                                c.createGardenerClusterName(),
+		Name:                                setClusterName(input.Name),
 		ProjectName:                         c.gardenerProject,
 		KubernetesVersion:                   input.KubernetesVersion,
 		Provider:                            input.Provider,
@@ -161,6 +158,8 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		MachineType:                         util.UnwrapStrOrDefault(input.MachineType, config.MachineType),
 		DiskType:                            util.UnwrapStrOrDefault(input.DiskType, config.DiskType),
 		VolumeSizeGB:                        util.UnwrapIntOrDefault(input.VolumeSizeGb, config.VolumeSizeGB),
+		MachineImage:                        input.MachineImage,
+		MachineImageVersion:                 input.MachineImageVersion,
 		AutoScalerMin:                       util.UnwrapIntOrDefault(input.AutoScalerMin, config.AutoScalerMin),
 		AutoScalerMax:                       util.UnwrapIntOrDefault(input.AutoScalerMax, config.AutoScalerMax),
 		MaxSurge:                            util.UnwrapIntOrDefault(input.MaxSurge, config.MaxSurge),
@@ -169,16 +168,6 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
 		GardenerProviderConfig:              providerSpecificConfig,
 	}, nil
-}
-
-func (c converter) createGardenerClusterName() string {
-	id := c.uuidGenerator.New()
-
-	name := strings.ReplaceAll(id, "-", "")
-	name = fmt.Sprintf("%.7s", name)
-	name = util.StartWithLetter(name)
-	name = strings.ToLower(name)
-	return name
 }
 
 func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, apperrors.AppError) {
@@ -247,4 +236,12 @@ func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput) m
 
 func configEntryFromInput(entry *gqlschema.ConfigEntryInput) model.ConfigEntry {
 	return model.NewConfigEntry(entry.Key, entry.Value, util.UnwrapBoolOrDefault(entry.Secret, false))
+}
+
+//TODO Remove when name is changed to obligatory field
+func setClusterName(name *string) string {
+	if name != nil {
+		return util.UnwrapStr(name)
+	}
+	return util.CreateGardenerClusterName()
 }

@@ -23,6 +23,10 @@ service:
   type: ClusterIP
   port: 80
 
+swagger:
+  virtualService:
+    enabled: true
+
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
@@ -164,8 +168,15 @@ cis:
     secret: "TBD"
     secretName: "cis-creds-v2"
 
+oidc:
+  issuer: https://dex.{{ .Values.global.ingress.domainName }}
+  client: "kyma-env-broker"
+  groups:
+    admin: runtimeAdmin
+    operator: runtimeOperator
+
 kebClient:
-  scope: "broker:write broker-upgrade:write broker-upgrade:read cld:read runtimes:read"
+  scope: "broker:write cld:read"
 
 environmentsCleanup:
   schedule: "0 0 * * *"

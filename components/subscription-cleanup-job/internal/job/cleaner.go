@@ -1,6 +1,7 @@
 package job
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/cloudprovider"
@@ -18,16 +19,18 @@ type Cleaner interface {
 	Do() error
 }
 
-func NewCleaner(secretsClient corev1.SecretInterface, providerFactory cloudprovider.ProviderFactory) Cleaner {
+func NewCleaner(context context.Context, secretsClient corev1.SecretInterface, providerFactory cloudprovider.ProviderFactory) Cleaner {
 	return &cleaner{
 		secretsClient:   secretsClient,
 		providerFactory: providerFactory,
+		context:         context,
 	}
 }
 
 type cleaner struct {
 	secretsClient   corev1.SecretInterface
 	providerFactory cloudprovider.ProviderFactory
+	context         context.Context
 }
 
 func (p *cleaner) Do() error {
@@ -70,7 +73,7 @@ func (p *cleaner) releaseResources(secret apiv1.Secret) error {
 }
 
 func (p *cleaner) returnSecretToThePool(secret apiv1.Secret) error {
-	s, err := p.secretsClient.Get(secret.Name, metav1.GetOptions{})
+	s, err := p.secretsClient.Get(p.context, secret.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -78,7 +81,7 @@ func (p *cleaner) returnSecretToThePool(secret apiv1.Secret) error {
 	delete(s.Labels, "dirty")
 	delete(s.Labels, "tenantName")
 
-	_, err = p.secretsClient.Update(s)
+	_, err = p.secretsClient.Update(p.context, s, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to return secret to the hyperscaler account pool")
 	}
@@ -89,11 +92,11 @@ func (p *cleaner) returnSecretToThePool(secret apiv1.Secret) error {
 func (p *cleaner) getSecretsToRelease() ([]apiv1.Secret, error) {
 	labelSelector := fmt.Sprintf("dirty=true")
 
-	return getK8SSecrets(p.secretsClient, labelSelector)
+	return getK8SSecrets(p.context, p.secretsClient, labelSelector)
 }
 
-func getK8SSecrets(secretsClient corev1.SecretInterface, labelSelector string) ([]apiv1.Secret, error) {
-	secrets, err := secretsClient.List(metav1.ListOptions{
+func getK8SSecrets(ctx context.Context, secretsClient corev1.SecretInterface, labelSelector string) ([]apiv1.Secret, error) {
+	secrets, err := secretsClient.List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 

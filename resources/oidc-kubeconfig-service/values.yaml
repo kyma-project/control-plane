@@ -15,7 +15,7 @@ replicaCount: 1
 
 image:
   repository: eu.gcr.io/kyma-project/control-plane/kubeconfig-service
-  tag: 260809dd
+  tag: PR-312
   pullPolicy: Always
 
 config:

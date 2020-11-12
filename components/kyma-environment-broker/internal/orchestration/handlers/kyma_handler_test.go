@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -31,9 +31,9 @@ func TestKymaOrchestrationHandler_(t *testing.T) {
 		q := process.NewQueue(&testExecutor{}, logs)
 		kymaHandler := handlers.NewKymaOrchestrationHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), 100, q, logs)
 
-		params := internal.OrchestrationParameters{
-			Targets: internal.TargetSpec{
-				Include: []internal.RuntimeTarget{
+		params := orchestration.Parameters{
+			Targets: orchestration.TargetSpec{
+				Include: []orchestration.RuntimeTarget{
 					{
 						RuntimeID: "test",
 					},
@@ -79,8 +79,8 @@ func TestKymaOrchestrationHandler_(t *testing.T) {
 		err = json.Unmarshal(rr.Body.Bytes(), &dto)
 		require.NoError(t, err)
 		assert.Equal(t, dto.OrchestrationID, out.OrchestrationID)
-		assert.Equal(t, dto.Parameters.Strategy.Type, internal.ParallelStrategy)
-		assert.Equal(t, dto.Parameters.Strategy.Schedule, internal.Immediate)
+		assert.Equal(t, dto.Parameters.Strategy.Type, orchestration.ParallelStrategy)
+		assert.Equal(t, dto.Parameters.Strategy.Schedule, orchestration.Immediate)
 	})
 
 	t.Run("orchestrations", func(t *testing.T) {

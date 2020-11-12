@@ -70,8 +70,11 @@ func TestInitialisationStep_RunInitialized(t *testing.T) {
 	externalEvalCreator := NewExternalEvalCreator(avsDel, false, externalEvalAssistant)
 	iasType := NewIASType(nil, true)
 
+	rvc := &automock.RuntimeVersionConfiguratorForProvisioning{}
+	defer rvc.AssertExpectations(t)
+
 	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient,
-		directorClient, nil, externalEvalCreator, iasType, time.Hour, newInMemoryKymaVersionConfigurator(map[string]string{}))
+		directorClient, nil, externalEvalCreator, iasType, time.Hour, rvc)
 
 	// when
 	operation, repeat, err := step.Run(operation, logger.NewLogDummy())
@@ -128,8 +131,11 @@ func TestInitialisationStep_RunUninitialized(t *testing.T) {
 	externalEvalCreator := NewExternalEvalCreator(avsDel, false, externalEvalAssistant)
 	iasType := NewIASType(nil, true)
 
+	rvc := &automock.RuntimeVersionConfiguratorForProvisioning{}
+	defer rvc.AssertExpectations(t)
+
 	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient,
-		directorClient, nil, externalEvalCreator, iasType, time.Hour, newInMemoryKymaVersionConfigurator(map[string]string{}))
+		directorClient, nil, externalEvalCreator, iasType, time.Hour, rvc)
 
 	// when
 	operation, repeat, err := step.Run(operation, logger.NewLogDummy())

@@ -2,6 +2,10 @@ package testkit
 
 import (
 	"fmt"
+	"strings"
+	"unicode"
+
+	"github.com/google/uuid"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
@@ -45,6 +49,7 @@ func CreateGardenerProvisioningInput(config *TestConfig, version, provider strin
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
+				Name:                                strToPtr(createGardenerClusterName()),
 				KubernetesVersion:                   config.KubernetesVersion,
 				DiskType:                            gardenerInputs[provider].DiskType,
 				VolumeSizeGb:                        35,
@@ -100,4 +105,23 @@ func CreateKymaConfigInput(version string) (*gqlschema.KymaConfigInput, error) {
 	}
 
 	return &gqlschema.KymaConfigInput{Version: version, Components: componentConfigInput}, nil
+}
+
+func createGardenerClusterName() string {
+	id := uuid.New().String()
+
+	name := strings.ReplaceAll(id, "-", "")
+	name = fmt.Sprintf("%.7s", name)
+	name = startWithLetter(name)
+	name = strings.ToLower(name)
+	return name
+}
+
+func startWithLetter(str string) string {
+	if len(str) == 0 {
+		return "c"
+	} else if !unicode.IsLetter(rune(str[0])) {
+		return fmt.Sprintf("c-%.9s", str)
+	}
+	return str
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
@@ -44,6 +45,34 @@ type AvsLifecycleData struct {
 
 	AVSInternalEvaluationDeleted bool `json:"avs_internal_evaluation_deleted"`
 	AVSExternalEvaluationDeleted bool `json:"avs_external_evaluation_deleted"`
+}
+
+// RuntimeVersionOrigin defines the possible sources of the Kyma Version parameter
+type RuntimeVersionOrigin string
+
+const (
+	Parameters    RuntimeVersionOrigin = "parameters"
+	Defaults      RuntimeVersionOrigin = "defaults"
+	GlobalAccount RuntimeVersionOrigin = "global-account"
+)
+
+// RuntimeVersionData describes the Kyma Version used for the cluser
+// provisioning or upgrade
+type RuntimeVersionData struct {
+	Version string               `json:"version"`
+	Origin  RuntimeVersionOrigin `json:"origin"`
+}
+
+func NewRuntimeVersionFromParameters(version string) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: Parameters}
+}
+
+func NewRuntimeVersionFromDefaults(version string) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: Defaults}
+}
+
+func NewRuntimeVersionFromGlobalAccount(version string) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: GlobalAccount}
 }
 
 type EventHub struct {
@@ -117,6 +146,8 @@ type ProvisioningOperation struct {
 	Avs AvsLifecycleData `json:"avs"`
 
 	RuntimeID string `json:"runtime_id"`
+
+	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 }
 
 // DeprovisioningOperation holds all information about de-provisioning operation
@@ -150,6 +181,8 @@ type UpgradeKymaOperation struct {
 
 	PlanID                 string `json:"plan_id"`
 	ProvisioningParameters string `json:"provisioning_parameters"`
+
+	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 }
 
 // Orchestration holds all information about an orchestration.
@@ -161,17 +194,11 @@ type Orchestration struct {
 	Description     string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
-	Parameters      OrchestrationParameters
+	Parameters      orchestration.Parameters
 }
 
 func (o *Orchestration) IsFinished() bool {
 	return o.State == Succeeded || o.State == Failed
-}
-
-type OrchestrationParameters struct {
-	Targets  TargetSpec   `json:"targets"`
-	Strategy StrategySpec `json:"strategy,omitempty"`
-	DryRun   bool         `json:"dryRun,omitempty"`
 }
 
 const (
@@ -181,7 +208,7 @@ const (
 	Failed     = "failed"
 )
 
-// Runtime is the data type which captures the needed SKR specific attributes to perform reconciliations on a given runtime.
+// Runtime is the data type which captures the needed runtime specific attributes to perform orchestrations on a given runtime.
 type Runtime struct {
 	InstanceID      string `json:"instanceId"`
 	RuntimeID       string `json:"runtimeId"`
@@ -227,57 +254,6 @@ type RuntimeState struct {
 
 	KymaConfig    gqlschema.KymaConfigInput     `json:"kymaConfig"`
 	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
-}
-
-// TargetAll all SKRs provisioned successfully and not deprovisioning
-const TargetAll = "all"
-
-// RuntimeTarget captures a specification of SKR targets to resolve for an orchestration.
-// When a RuntimeTarget defines multiple fields, all should match to any given runtime to be selected (i.e. the terms are AND-ed).
-type RuntimeTarget struct {
-	// Valid values: "all"
-	Target string `json:"target,omitempty"`
-	// Regex pattern to match against the runtime's GlobalAccount field. E.g. CA50125541TID000000000741207136, CA.*
-	GlobalAccount string `json:"globalAccount,omitempty"`
-	// Regex pattern to match against the runtime's SubAccount field. E.g. 0d20e315-d0b4-48a2-9512-49bc8eb03cd1
-	SubAccount string `json:"subAccount,omitempty"`
-	// Regex pattern to match against the shoot cluster's Region field (not SCP platform-region). E.g. "europe|eu-"
-	Region string `json:"region,omitempty"`
-	// RuntimeID is used to indicate a specific runtime
-	RuntimeID string `json:"runtimeID,omitempty"`
-	// PlanName is used to match runtimes with the same plan
-	PlanName string `json:"planName,omitempty"`
-}
-
-type StrategyType string
-
-const (
-	ParallelStrategy StrategyType = "parallel"
-)
-
-type ScheduleType string
-
-const (
-	Immediate         ScheduleType = "immediate"
-	MaintenanceWindow ScheduleType = "maintenanceWindow"
-)
-
-// ParallelStrategySpec defines parameters for the parallel orchestration strategy
-type ParallelStrategySpec struct {
-	Workers int `json:"workers"`
-}
-
-// StrategySpec is the strategy part common for all orchestration trigger/status API
-type StrategySpec struct {
-	Type     StrategyType         `json:"type"`
-	Schedule ScheduleType         `json:"schedule,omitempty"`
-	Parallel ParallelStrategySpec `json:"parallel,omitempty"`
-}
-
-// TargetSpec is the targets part common for all orchestration trigger/status API
-type TargetSpec struct {
-	Include []RuntimeTarget `json:"include"`
-	Exclude []RuntimeTarget `json:"exclude,omitempty"`
 }
 
 // OperationStats provide number of operations per type and state
@@ -338,7 +314,7 @@ func (po *ProvisioningOperation) GetProvisioningParameters() (ProvisioningParame
 
 	err := json.Unmarshal([]byte(po.ProvisioningParameters), &pp)
 	if err != nil {
-		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
+		return pp, errors.Wrapf(err, "while unmarshaling provisioning parameters: %s, ProvisioningOperations: %+v", po.ProvisioningParameters, po)
 	}
 
 	return pp, nil
@@ -359,7 +335,7 @@ func (do *DeprovisioningOperation) GetProvisioningParameters() (ProvisioningPara
 
 	err := json.Unmarshal([]byte(do.ProvisioningParameters), &pp)
 	if err != nil {
-		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
+		return pp, errors.Wrapf(err, "while unmarshaling provisioning parameters: %s, ProvisioningOperations: %+v", do.ProvisioningParameters, do)
 	}
 
 	return pp, nil
@@ -380,7 +356,7 @@ func (do *UpgradeKymaOperation) GetProvisioningParameters() (ProvisioningParamet
 
 	err := json.Unmarshal([]byte(do.ProvisioningParameters), &pp)
 	if err != nil {
-		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
+		return pp, errors.Wrapf(err, "while unmarshaling provisioning parameters: %s, ProvisioningOperations: %+v", do.ProvisioningParameters, do)
 	}
 
 	return pp, nil
