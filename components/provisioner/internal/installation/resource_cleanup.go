@@ -10,12 +10,17 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	apiServBeta "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 )
+
+const SystemBrokerCRDName = ""
+const SystemCatalogCRDName = ""
+const SystemInstanceCRD = ""
 
 const (
 	ClusterServiceBrokerNameLabel   = "servicecatalog.k8s.io/spec.clusterServiceBrokerName"
@@ -26,17 +31,41 @@ type ServiceCatalogClient interface {
 	PerformCleanup(resourceSelector string) error
 }
 
-func NewServiceCatalogClient(kubeconfig *rest.Config) (ServiceCatalogClient, error) {
+
+type CrdsManager interface {
+	List(ctx context.Context, opts metav1.ListOptions) (*apiServBeta.CustomResourceDefinitionList, error)
+}
+
+func NewServiceCatalogClient(kubeconfig *rest.Config, crdsManager CrdsManager) (ServiceCatalogClient, error) {
 	scCli, err := sc.NewForConfig(kubeconfig)
 	if err != nil {
 		return &serviceCatalogClient{}, err
 	}
 
-	return &serviceCatalogClient{client: scCli}, nil
+	return &serviceCatalogClient{
+		client: scCli,
+		crdsManager: crdsManager,
+	}, nil
 }
 
 type serviceCatalogClient struct {
 	client sc.Interface
+	crdsManager CrdsManager
+}
+
+func (s *serviceCatalogClient) EnsureCRDsExist(crdName string) (bool, error) {
+	list, err := s.crdsManager.List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return false, err
+	}
+
+	for _, item := range list.Items {
+		if item.Name == crdName {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (s *serviceCatalogClient) PerformCleanup(resourceSelector string) error {

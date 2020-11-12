@@ -48,6 +48,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/client-go/kubernetes"
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 )
 
 const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
@@ -156,7 +157,12 @@ func main() {
 	exitOnError(err, "Failed to create Gardener cluster clientset")
 
 	k8sCoreClientSet, err := kubernetes.NewForConfig(gardenerClusterConfig)
-	exitOnError(err, "Failed to create Kubernetes ")
+	exitOnError(err, "Failed to create Kubernetes clientset")
+
+	apiExtensionsClientSet, err := apiextensionsclient.NewForConfig(gardenerClusterConfig)
+	exitOnError(err, "Failed to create  API Server Extension clientset ")
+
+	crdsInterface := apiExtensionsClientSet.ApiextensionsV1beta1().CustomResourceDefinitions()
 
 	secretsInterface := k8sCoreClientSet.CoreV1().Secrets(gardenerNamespace)
 
