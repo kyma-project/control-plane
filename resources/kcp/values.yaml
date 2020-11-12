@@ -27,10 +27,10 @@ global:
     tests:
       provisioner:
         dir:
-        version: "PR-315"
+        version: "PR-286"
       e2e_provisioning:
         dir:
-        version: "PR-314"
+        version: "PR-286"
   isLocalEnv: false
   oauth2:
     host: oauth2
