@@ -155,8 +155,7 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 	switch version.Origin {
 	case internal.Defaults:
 		components = f.fullComponentsList
-	case internal.GlobalAccount:
-	case internal.Parameters:
+	case internal.Parameters, internal.GlobalAccount:
 		allComponents, err := f.componentsProvider.AllComponents(version.Version)
 		if err != nil {
 			return gqlschema.ProvisionRuntimeInput{}, errors.Wrapf(err, "while fetching components for %s Kyma version", version.Version)
