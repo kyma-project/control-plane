@@ -131,6 +131,9 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 }
 
 func (s *InitialisationStep) configureKymaVersion(operation *internal.ProvisioningOperation, pp *internal.ProvisioningParameters) error {
+	if !operation.RuntimeVersion.IsEmpty() {
+		return nil
+	}
 	version, err := s.runtimeVerConfigurator.ForProvisioning(*operation, *pp)
 	if err != nil {
 		return errors.Wrap(err, "while getting the runtime version")
