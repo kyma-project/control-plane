@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -146,6 +147,14 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 		}
 		o.Description = fmt.Sprintf("Scheduled %d operations", len(runtimes))
 
+	} else {
+		// Resume processing of in progress upgrade operations after restart
+		var err error
+		result, _, _, err = u.operationStorage.ListUpgradeKymaOperationsByOrchestrationID(o.OrchestrationID, dbmodel.OperationFilter{States: []string{string(domain.InProgress)}})
+		if err != nil {
+			return result, err
+		}
+		u.log.Infof("Resuming %d operations for orchestration %s", len(result), o.OrchestrationID)
 	}
 
 	return result, nil
