@@ -159,6 +159,9 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 }
 
 func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKymaOperation) error {
+	if !operation.RuntimeVersion.IsEmpty() {
+		return nil
+	}
 	version := s.runtimeVerConfigurator.ForUpgrade()
 	operation.RuntimeVersion = *version
 
