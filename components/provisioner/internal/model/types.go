@@ -90,6 +90,6 @@ type OperationsCount struct {
 }
 
 const (
-	EvaluationProfile KymaProfile = "evaluation"
-	ProductionProfile KymaProfile = "production"
+	EvaluationProfile KymaProfile = "EVALUATION"
+	ProductionProfile KymaProfile = "PRODUCTION"
 )

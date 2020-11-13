@@ -65,7 +65,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 	expectedCluster := model.Cluster{
 		ID:         runtimeID,
-		KymaConfig: fixKymaConfig(),
+		KymaConfig: fixKymaConfig(nil),
 	}
 	expectedOperation := model.Operation{
 		ClusterID: runtimeID,
@@ -83,7 +83,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	provisionRuntimeInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput:  runtimeInput,
 		ClusterConfig: clusterConfig,
-		KymaConfig:    fixKymaGraphQLConfigInput(),
+		KymaConfig:    fixKymaGraphQLConfigInput(nil),
 	}
 
 	clusterMatcher := getClusterMatcher(expectedCluster)
@@ -556,7 +556,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 	}
 
 	upgradeInput := gqlschema.UpgradeRuntimeInput{
-		KymaConfig: fixKymaGraphQLConfigInput(),
+		KymaConfig: fixKymaGraphQLConfigInput(nil),
 	}
 
 	operationMatcher := getOperationMatcher(expectedOperation)

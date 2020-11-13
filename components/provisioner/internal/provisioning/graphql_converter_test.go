@@ -121,7 +121,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					GardenerProviderConfig:              gardenerProviderConfig,
 				},
 				Kubeconfig: &kubeconfig,
-				KymaConfig: fixKymaConfig(),
+				KymaConfig: fixKymaConfig(nil),
 			},
 		}
 
@@ -167,7 +167,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						Zones: zones,
 					},
 				},
-				KymaConfig: fixKymaGraphQLConfig(),
+				KymaConfig: fixKymaGraphQLConfig(nil),
 				Kubeconfig: &kubeconfig,
 			},
 		}
@@ -204,6 +204,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		enableKubernetesVersionAutoUpdate := true
 		enableMachineImageVersionAutoUpdate := false
 		allowPrivilegedContainers := true
+
+		modelProductionProfile := model.ProductionProfile
+		gqlProductionProfile := gqlschema.KymaProfileProduction
 
 		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"vnetCidr":"10.10.11.11/255"}`)
 		require.NoError(t, err)
@@ -244,7 +247,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					GardenerProviderConfig:              gardenerProviderConfig,
 				},
 				Kubeconfig: &kubeconfig,
-				KymaConfig: fixKymaConfig(),
+				KymaConfig: fixKymaConfig(&modelProductionProfile),
 			},
 		}
 
@@ -291,7 +294,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						Zones:    nil, // Expected empty when no zones specified in input.
 					},
 				},
-				KymaConfig: fixKymaGraphQLConfig(),
+				KymaConfig: fixKymaGraphQLConfig(&gqlProductionProfile),
 				Kubeconfig: &kubeconfig,
 			},
 		}
@@ -304,9 +307,10 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 	})
 }
 
-func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
+func fixKymaGraphQLConfig(profile *gqlschema.KymaProfile) *gqlschema.KymaConfig {
 	return &gqlschema.KymaConfig{
 		Version: util.StringPtr(kymaVersion),
+		Profile: profile,
 		Components: []*gqlschema.ComponentConfiguration{
 			{
 				Component:     clusterEssentialsComponent,
@@ -352,10 +356,11 @@ func fixGQLConfigEntry(key, val string, secret *bool) *gqlschema.ConfigEntry {
 	}
 }
 
-func fixKymaConfig() model.KymaConfig {
+func fixKymaConfig(profile *model.KymaProfile) model.KymaConfig {
 	return model.KymaConfig{
 		ID:                  "id",
 		Release:             fixKymaRelease(),
+		Profile:             profile,
 		Components:          fixKymaComponents(),
 		GlobalConfiguration: fixGlobalConfig(),
 		ClusterID:           "runtimeID",

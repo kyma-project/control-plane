@@ -198,8 +198,7 @@ func (s *installationService) waitForInstallation(runtimeId string, stateChannel
 func GetInstallationCRModificationFunc(kymaProfile *model.KymaProfile, componentsConfig []model.KymaComponentConfig) func(*v1alpha1.Installation) {
 	return func(installation *v1alpha1.Installation) {
 		if kymaProfile != nil {
-			profile := string(*kymaProfile)
-			installation.Spec.Profile = v1alpha1.KymaProfile(profile)
+			installation.Spec.Profile = toKymaProfile(*kymaProfile)
 		}
 
 		components := make([]v1alpha1.KymaComponent, 0, len(componentsConfig))
@@ -213,6 +212,17 @@ func GetInstallationCRModificationFunc(kymaProfile *model.KymaProfile, component
 		}
 
 		installation.Spec.Components = components
+	}
+}
+
+func toKymaProfile(profile model.KymaProfile) v1alpha1.KymaProfile {
+	switch profile {
+	case model.ProductionProfile:
+		return v1alpha1.ProductionProfile
+	case model.EvaluationProfile:
+		return v1alpha1.EvaluationProfile
+	default:
+		return v1alpha1.KymaProfile("")
 	}
 }
 

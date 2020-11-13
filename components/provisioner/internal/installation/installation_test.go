@@ -244,23 +244,45 @@ func Test_getInstallationCRModificationFunc(t *testing.T) {
 		}
 	}
 
-	t.Run("should create modification func", func(t *testing.T) {
-		// given
-		componentsConfig := fixComponentsConfig()
-		installationCR := newInstallationCR()
+	kymaProductionProfile := model.ProductionProfile
+	kymaEvaluationProfile := model.EvaluationProfile
 
-		// when
-		modificationFunc := GetInstallationCRModificationFunc(nil, componentsConfig)
+	testcases := []struct {
+		description string
+		profile     *model.KymaProfile
+	}{
+		{
+			description: "should create modification func with empty KymaProfile",
+		},
+		{
+			description: "should create modification func with Kyma production profile",
+			profile:     &kymaProductionProfile,
+		},
+		{
+			description: "should create modification func with Kyma evaluation profile",
+			profile:     &kymaEvaluationProfile,
+		},
+	}
 
-		modificationFunc(installationCR)
+	for _, testcase := range testcases {
+		t.Run(testcase.description, func(t *testing.T) {
+			// given
+			componentsConfig := fixComponentsConfig()
+			installationCR := newInstallationCR()
 
-		// then
-		require.Equal(t, 4, len(installationCR.Spec.Components))
-		assertComponent(t, "cluster-essentials", kymaSystemNamespace, nil, installationCR.Spec.Components[0])
-		assertComponent(t, "core", kymaSystemNamespace, nil, installationCR.Spec.Components[1])
-		assertComponent(t, "rafter", kymaSystemNamespace, &v1alpha1.ComponentSource{URL: rafterSourceURL}, installationCR.Spec.Components[2])
-		assertComponent(t, "application-connector", kymaIntegrationNamespace, nil, installationCR.Spec.Components[3])
-	})
+			// when
+			modificationFunc := GetInstallationCRModificationFunc(testcase.profile, componentsConfig)
+
+			modificationFunc(installationCR)
+
+			// then
+			require.Equal(t, 4, len(installationCR.Spec.Components))
+			assertComponent(t, "cluster-essentials", kymaSystemNamespace, nil, installationCR.Spec.Components[0])
+			assertComponent(t, "core", kymaSystemNamespace, nil, installationCR.Spec.Components[1])
+			assertComponent(t, "rafter", kymaSystemNamespace, &v1alpha1.ComponentSource{URL: rafterSourceURL}, installationCR.Spec.Components[2])
+			assertComponent(t, "application-connector", kymaIntegrationNamespace, nil, installationCR.Spec.Components[3])
+		})
+	}
 
 	t.Run("should have no components if configuration is empty", func(t *testing.T) {
 		// given

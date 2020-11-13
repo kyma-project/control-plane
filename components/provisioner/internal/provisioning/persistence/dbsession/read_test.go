@@ -16,12 +16,15 @@ func Test_parseToKymaConfig(t *testing.T) {
 	version := "18.0.0"
 	tillerYaml := "tiller"
 	installerYaml := "installer"
+	profileProduction := string(model.ProductionProfile)
+	expectedProfileProduction := model.ProductionProfile
 
-	newComponentDTO := func(id, name, namespace string, order int) kymaComponentConfigDTO {
+	newComponentDTO := func(id, name, namespace string, profile *string, order int) kymaComponentConfigDTO {
 		return kymaComponentConfigDTO{
 			ID:                  id,
 			KymaConfigID:        kymaConfigId,
 			ReleaseID:           releaseId,
+			Profile:             profile,
 			Version:             version,
 			TillerYAML:          tillerYaml,
 			InstallerYAML:       installerYaml,
@@ -42,9 +45,9 @@ func Test_parseToKymaConfig(t *testing.T) {
 		{
 			description: "should parse using component order",
 			kymaConfigDTO: kymaConfigDTO{
-				newComponentDTO("comp-3", "even-less-essential", "core", 3),
-				newComponentDTO("comp-1", "essential", "core", 1),
-				newComponentDTO("comp-2", "less-essential", "other", 2),
+				newComponentDTO("comp-3", "even-less-essential", "core", &profileProduction, 3),
+				newComponentDTO("comp-1", "essential", "core", &profileProduction, 1),
+				newComponentDTO("comp-2", "less-essential", "other", &profileProduction, 2),
 			},
 			expectedConfig: model.KymaConfig{
 				ID: kymaConfigId,
@@ -54,6 +57,7 @@ func Test_parseToKymaConfig(t *testing.T) {
 					TillerYAML:    tillerYaml,
 					InstallerYAML: installerYaml,
 				},
+				Profile: &expectedProfileProduction,
 				Components: []model.KymaComponentConfig{
 					{
 						ID:             "comp-1",
@@ -90,9 +94,9 @@ func Test_parseToKymaConfig(t *testing.T) {
 		{
 			description: "should parse in order of reed if component order is equal",
 			kymaConfigDTO: kymaConfigDTO{
-				newComponentDTO("comp-3", "even-less-essential", "core", 0),
-				newComponentDTO("comp-1", "essential", "core", 0),
-				newComponentDTO("comp-2", "less-essential", "other", 0),
+				newComponentDTO("comp-3", "even-less-essential", "core", nil, 0),
+				newComponentDTO("comp-1", "essential", "core", nil, 0),
+				newComponentDTO("comp-2", "less-essential", "other", nil, 0),
 			},
 			expectedConfig: model.KymaConfig{
 				ID: kymaConfigId,
