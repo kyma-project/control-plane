@@ -217,7 +217,7 @@ func (r readSession) getKymaConfig(runtimeID, kymaConfigId string) (model.KymaCo
 	var kymaConfig kymaConfigDTO
 
 	rowsCount, err := r.session.
-		Select("kyma_config_id", "kyma_config.release_id", "kyma_config.kyma_profile", "kyma_config.global_configuration",
+		Select("kyma_config_id", "kyma_config.release_id", "kyma_config.profile", "kyma_config.global_configuration",
 			"kyma_component_config.id", "kyma_component_config.component", "kyma_component_config.namespace",
 			"kyma_component_config.source_url", "kyma_component_config.configuration",
 			"kyma_component_config.component_order",
