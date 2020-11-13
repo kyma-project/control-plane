@@ -361,7 +361,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		})
 	}
 
-	t.Run("should ignore Shoot with unknown runtime id", func(t *testing.T) {
+	t.Run("should ignore Shoot with unknown runtime id and don't fail", func(t *testing.T) {
 		// given
 		installationServiceMock.Calls = nil
 		installationServiceMock.ExpectedCalls = nil
