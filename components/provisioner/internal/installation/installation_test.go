@@ -184,7 +184,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 			go testCase.installationMock(stateChannel, errChannel)
 
 			// when
-			err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease, testCase.globalConfig, testCase.componentsConfig)
+			err := installationSvc.InstallKyma(runtimeId, kubeconfig, nil, kymaRelease, testCase.globalConfig, testCase.componentsConfig)
 
 			// then
 			if testCase.shouldFail {
@@ -201,7 +201,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, resourceCleanupSelector)
 
 		// when
-		err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease, globalConfig, componentsConfig)
+		err := installationSvc.InstallKyma(runtimeId, kubeconfig, nil, kymaRelease, globalConfig, componentsConfig)
 
 		// then
 		require.Error(t, err)
@@ -213,7 +213,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, resourceCleanupSelector)
 
 		// when
-		err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease, globalConfig, componentsConfig)
+		err := installationSvc.InstallKyma(runtimeId, kubeconfig, nil, kymaRelease, globalConfig, componentsConfig)
 
 		// then
 		require.Error(t, err)
@@ -224,7 +224,7 @@ func TestInstallationService_InstallKyma(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, nil, resourceCleanupSelector)
 
 		// when
-		err := installationSvc.InstallKyma(runtimeId, "", kymaRelease, globalConfig, componentsConfig)
+		err := installationSvc.InstallKyma(runtimeId, "", nil, kymaRelease, globalConfig, componentsConfig)
 
 		// then
 		require.Error(t, err)
@@ -250,7 +250,7 @@ func Test_getInstallationCRModificationFunc(t *testing.T) {
 		installationCR := newInstallationCR()
 
 		// when
-		modificationFunc := GetInstallationCRModificationFunc(componentsConfig)
+		modificationFunc := GetInstallationCRModificationFunc(nil, componentsConfig)
 
 		modificationFunc(installationCR)
 
@@ -267,7 +267,7 @@ func Test_getInstallationCRModificationFunc(t *testing.T) {
 		installationCR := newInstallationCR()
 
 		// when
-		modificationFunc := GetInstallationCRModificationFunc(nil)
+		modificationFunc := GetInstallationCRModificationFunc(nil, nil)
 
 		modificationFunc(installationCR)
 

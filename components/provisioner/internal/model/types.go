@@ -88,3 +88,8 @@ type RuntimeStatus struct {
 type OperationsCount struct {
 	Count map[OperationType]int
 }
+
+const (
+	EvaluationProfile KymaProfile = "evaluation"
+	ProductionProfile KymaProfile = "production"
+)

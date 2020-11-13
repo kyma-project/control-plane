@@ -33,7 +33,7 @@ type InstallationHandler func(*rest.Config, ...installation.InstallationOption) 
 
 //go:generate mockery -name=Service
 type Service interface {
-	InstallKyma(runtimeId, kubeconfigRaw string, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
+	InstallKyma(runtimeId, kubeconfigRaw string, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
 	CheckInstallationState(kubeconfig *rest.Config) (installation.InstallationState, error)
 	TriggerInstallation(kubeconfigRaw *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
 	TriggerUpgrade(kubeconfigRaw *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
@@ -64,7 +64,7 @@ func (s *installationService) PerformCleanup(kubeconfig *rest.Config) error {
 }
 
 func (s *installationService) TriggerInstallation(kubeconfig *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
-	kymaInstaller, err := s.createKymaInstaller(kubeconfig, componentsConfig)
+	kymaInstaller, err := s.createKymaInstaller(kubeconfig, nil, componentsConfig)
 	if err != nil {
 		return fmt.Errorf("failed to trigger installation: %s", err.Error())
 	}
@@ -72,7 +72,7 @@ func (s *installationService) TriggerInstallation(kubeconfig *rest.Config, relea
 }
 
 func (s *installationService) TriggerUpgrade(kubeconfig *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
-	kymaInstaller, err := s.createKymaInstaller(kubeconfig, componentsConfig)
+	kymaInstaller, err := s.createKymaInstaller(kubeconfig, nil, componentsConfig)
 	if err != nil {
 		return fmt.Errorf("failed to trigger upgrade: %s", err.Error())
 	}
@@ -110,11 +110,11 @@ func (s *installationService) triggerAction(
 	return nil
 }
 
-func (s *installationService) createKymaInstaller(kubeconfig *rest.Config, componentsConfig []model.KymaComponentConfig) (installation.Installer, error) {
+func (s *installationService) createKymaInstaller(kubeconfig *rest.Config, kymaProfile *model.KymaProfile, componentsConfig []model.KymaComponentConfig) (installation.Installer, error) {
 	kymaInstaller, err := s.installationHandler(
 		kubeconfig,
 		installation.WithTillerWaitTime(tillerWaitTime),
-		installation.WithInstallationCRModification(GetInstallationCRModificationFunc(componentsConfig)),
+		installation.WithInstallationCRModification(GetInstallationCRModificationFunc(kymaProfile, componentsConfig)),
 	)
 	if err != nil {
 		return nil, pkgErrors.Wrap(err, "Failed to create Kyma installer")
@@ -123,13 +123,13 @@ func (s *installationService) createKymaInstaller(kubeconfig *rest.Config, compo
 	return kymaInstaller, nil
 }
 
-func (s *installationService) InstallKyma(runtimeId, kubeconfigRaw string, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
+func (s *installationService) InstallKyma(runtimeId, kubeconfigRaw string, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
 	kubeconfig, err := k8s.ParseToK8sConfig([]byte(kubeconfigRaw))
 	if err != nil {
 		return fmt.Errorf("error parsing kubeconfig from raw config: %s", err.Error())
 	}
 
-	kymaInstaller, err := s.createKymaInstaller(kubeconfig, componentsConfig)
+	kymaInstaller, err := s.createKymaInstaller(kubeconfig, kymaProfile, componentsConfig)
 	if err != nil {
 		return fmt.Errorf("failed to deploy Kyma installer: %s", err.Error())
 	}
@@ -195,8 +195,13 @@ func (s *installationService) waitForInstallation(runtimeId string, stateChannel
 	}
 }
 
-func GetInstallationCRModificationFunc(componentsConfig []model.KymaComponentConfig) func(*v1alpha1.Installation) {
+func GetInstallationCRModificationFunc(kymaProfile *model.KymaProfile, componentsConfig []model.KymaComponentConfig) func(*v1alpha1.Installation) {
 	return func(installation *v1alpha1.Installation) {
+		if kymaProfile != nil {
+			profile := string(*kymaProfile)
+			installation.Spec.Profile = v1alpha1.KymaProfile(profile)
+		}
+
 		components := make([]v1alpha1.KymaComponent, 0, len(componentsConfig))
 
 		for _, cc := range componentsConfig {

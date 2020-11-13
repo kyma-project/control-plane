@@ -153,12 +153,14 @@ type GardenerUpgradeInput struct {
 
 type KymaConfig struct {
 	Version       *string                   `json:"version"`
+	Profile       *KymaProfile              `json:"profile"`
 	Components    []*ComponentConfiguration `json:"components"`
 	Configuration []*ConfigEntry            `json:"configuration"`
 }
 
 type KymaConfigInput struct {
 	Version       string                         `json:"version"`
+	Profile       *KymaProfile                   `json:"profile"`
 	Components    []*ComponentConfigurationInput `json:"components"`
 	Configuration []*ConfigEntryInput            `json:"configuration"`
 }
@@ -212,6 +214,47 @@ type UpgradeRuntimeInput struct {
 
 type UpgradeShootInput struct {
 	GardenerConfig *GardenerUpgradeInput `json:"gardenerConfig"`
+}
+
+type KymaProfile string
+
+const (
+	KymaProfileEvaluation KymaProfile = "Evaluation"
+	KymaProfileProduction KymaProfile = "Production"
+)
+
+var AllKymaProfile = []KymaProfile{
+	KymaProfileEvaluation,
+	KymaProfileProduction,
+}
+
+func (e KymaProfile) IsValid() bool {
+	switch e {
+	case KymaProfileEvaluation, KymaProfileProduction:
+		return true
+	}
+	return false
+}
+
+func (e KymaProfile) String() string {
+	return string(e)
+}
+
+func (e *KymaProfile) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = KymaProfile(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid KymaProfile", str)
+	}
+	return nil
+}
+
+func (e KymaProfile) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type OperationState string

@@ -64,6 +64,7 @@ type ComponentConfiguration {
 
 type KymaConfig {
     version: String
+    profile: KymaProfile
     components: [ComponentConfiguration]
     configuration: [ConfigEntry]
 }
@@ -111,6 +112,11 @@ enum RuntimeAgentConnectionStatus {
     Pending
     Connected
     Disconnected
+}
+
+enum KymaProfile {
+    Evaluation
+    Production
 }
 
 # Inputs
@@ -182,6 +188,7 @@ input AWSProviderConfigInput {
 
 input KymaConfigInput {
     version: String!                            # Kyma version to install on the cluster
+    profile: KymaProfile                        # Optional resources profile
     components: [ComponentConfigurationInput]!  # List of Kyma Components with specific configuration
     configuration: [ConfigEntryInput]           # Global Kyma configuration
 }

@@ -2,9 +2,12 @@ package model
 
 type KymaComponent string
 
+type KymaProfile string
+
 type KymaConfig struct {
 	ID                  string
 	Release             Release
+	Profile             *KymaProfile
 	Components          []KymaComponentConfig
 	GlobalConfiguration Configuration
 	ClusterID           string

@@ -103,6 +103,7 @@ type ComplexityRoot struct {
 	KymaConfig struct {
 		Components    func(childComplexity int) int
 		Configuration func(childComplexity int) int
+		Profile       func(childComplexity int) int
 		Version       func(childComplexity int) int
 	}
 
@@ -447,6 +448,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.KymaConfig.Configuration(childComplexity), true
 
+	case "KymaConfig.profile":
+		if e.complexity.KymaConfig.Profile == nil {
+			break
+		}
+
+		return e.complexity.KymaConfig.Profile(childComplexity), true
+
 	case "KymaConfig.version":
 		if e.complexity.KymaConfig.Version == nil {
 			break
@@ -769,6 +777,7 @@ type ComponentConfiguration {
 
 type KymaConfig {
     version: String
+    profile: KymaProfile
     components: [ComponentConfiguration]
     configuration: [ConfigEntry]
 }
@@ -816,6 +825,11 @@ enum RuntimeAgentConnectionStatus {
     Pending
     Connected
     Disconnected
+}
+
+enum KymaProfile {
+    Evaluation
+    Production
 }
 
 # Inputs
@@ -887,6 +901,7 @@ input AWSProviderConfigInput {
 
 input KymaConfigInput {
     version: String!                            # Kyma version to install on the cluster
+    profile: KymaProfile                        # Optional resources profile
     components: [ComponentConfigurationInput]!  # List of Kyma Components with specific configuration
     configuration: [ConfigEntryInput]           # Global Kyma configuration
 }
@@ -2443,6 +2458,40 @@ func (ec *executionContext) _KymaConfig_version(ctx context.Context, field graph
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _KymaConfig_profile(ctx context.Context, field graphql.CollectedField, obj *KymaConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "KymaConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Profile, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*KymaProfile)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOKymaProfile2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaProfile(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KymaConfig_components(ctx context.Context, field graphql.CollectedField, obj *KymaConfig) (ret graphql.Marshaler) {
@@ -4938,6 +4987,12 @@ func (ec *executionContext) unmarshalInputKymaConfigInput(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
+		case "profile":
+			var err error
+			it.Profile, err = ec.unmarshalOKymaProfile2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaProfile(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "components":
 			var err error
 			it.Components, err = ec.unmarshalNComponentConfigurationInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx, v)
@@ -5367,6 +5422,8 @@ func (ec *executionContext) _KymaConfig(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = graphql.MarshalString("KymaConfig")
 		case "version":
 			out.Values[i] = ec._KymaConfig_version(ctx, field, obj)
+		case "profile":
+			out.Values[i] = ec._KymaConfig_profile(ctx, field, obj)
 		case "components":
 			out.Values[i] = ec._KymaConfig_components(ctx, field, obj)
 		case "configuration":
@@ -6576,6 +6633,30 @@ func (ec *executionContext) marshalOKymaConfig2ᚖgithubᚗcomᚋkymaᚑproject�
 		return graphql.Null
 	}
 	return ec._KymaConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOKymaProfile2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaProfile(ctx context.Context, v interface{}) (KymaProfile, error) {
+	var res KymaProfile
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOKymaProfile2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaProfile(ctx context.Context, sel ast.SelectionSet, v KymaProfile) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOKymaProfile2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaProfile(ctx context.Context, v interface{}) (*KymaProfile, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOKymaProfile2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaProfile(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOKymaProfile2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaProfile(ctx context.Context, sel ast.SelectionSet, v *KymaProfile) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOLabels2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx context.Context, v interface{}) (Labels, error) {

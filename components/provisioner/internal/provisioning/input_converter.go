@@ -213,9 +213,16 @@ func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 		components = append(components, kymaConfigModule)
 	}
 
+	var kymaProfile *model.KymaProfile
+	if input.Profile != nil {
+		profile := model.KymaProfile(string(*input.Profile))
+		kymaProfile = &profile
+	}
+
 	return model.KymaConfig{
 		ID:                  kymaConfigID,
 		Release:             kymaRelease,
+		Profile:             kymaProfile,
 		Components:          components,
 		ClusterID:           runtimeID,
 		GlobalConfiguration: c.configurationFromInput(input.Configuration),
