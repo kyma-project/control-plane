@@ -58,4 +58,6 @@ type Cluster struct {
 	SubAccountID string
 	// Deleted is a flag that mark the cluster has being destroyed.
 	Deleted bool
+	// Trial is a flag that tell if the cluster is a trial one or not
+	Trial bool
 }
