@@ -160,14 +160,19 @@ func (a *Azure) clusterHandler(parentctx context.Context) {
 				instance.clusterResourceGroupName = *rg.Name
 			}
 
+			// Resource Groups for Event Hubs are tag with the subaccountid, if none is found, it may be a trial account.
 			filter := fmt.Sprintf("tagname eq '%s' and tagvalue eq '%s'", tagNameSubAccountID, cluster.SubAccountID)
 
 			rg, err = client.GetResourceGroup(parentctx, "", filter, logger)
 			if err != nil {
-				logger.Errorf("could not find event hub resource groups, cluster may not be ready, retrying in %s: %s", a.config.PollInterval, err)
-				time.AfterFunc(a.config.PollInterval, func() { a.config.ClusterChannel <- cluster })
+				if cluster.Trial {
+					logger.Warn("trial cluster, could not find event hubs resource groups, metrics will not be reported for the event hubs")
+				} else {
+					logger.Errorf("could not find event hub resource groups, cluster may not be ready, retrying in %s: %s", a.config.PollInterval, err)
+					time.AfterFunc(a.config.PollInterval, func() { a.config.ClusterChannel <- cluster })
 
-				continue
+					continue
+				}
 			} else {
 				instance.eventHubResourceGroupName = *rg.Name
 			}
@@ -226,7 +231,11 @@ func (a *Azure) gatherMetrics(parentctx context.Context, workerlogger log.Logger
 
 	resourceGroupName := instance.clusterResourceGroupName
 	eventHubResourceGroupName := instance.eventHubResourceGroupName
-	eventData := &EventData{ResourceGroups: []string{resourceGroupName, eventHubResourceGroupName}}
+
+	eventData := &EventData{ResourceGroups: []string{resourceGroupName}}
+	if len(eventHubResourceGroupName) > 0 {
+		eventData.ResourceGroups = append(eventData.ResourceGroups, eventHubResourceGroupName)
+	}
 
 	workerlogger.Debug("getting metrics")
 

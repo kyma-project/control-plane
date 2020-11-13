@@ -158,11 +158,7 @@ func (i *Instance) getEventHubMetrics(ctx context.Context, pollinterval time.Dur
 	}
 
 	if resourceGroupName == "" {
-		logger.Warn("eventhub namespace is empty, getting information from last successful event")
-
-		result = i.lastEvent.EventHub
-
-		return result
+		return i.lastEvent.EventHub
 	}
 
 	ehns, eherr := i.client.GetEHNamespaces(ctx, resourceGroupName)

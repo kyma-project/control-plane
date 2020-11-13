@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"regexp"
 
 	gcorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	commonpkg "github.com/gardener/gardener/pkg/operation/common"
@@ -12,6 +13,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
+)
+
+const (
+	trialRegex = "^sap-skr-[^-]*-trial-[0-9]*$"
 )
 
 // secretUpdateHandlerFunc is notification function which handle secret updates.
@@ -221,6 +226,11 @@ func (c *Controller) newCluster(shoot *gcorev1beta1.Shoot) (*Cluster, error) {
 		clusterSyncErrorVec.WithLabelValues("secret").Inc()
 
 		return cluster, err
+	}
+
+	// check if the account is a trial one
+	if trial, err := regexp.MatchString(trialRegex, shoot.Spec.SecretBindingName); err == nil {
+		cluster.Trial = trial
 	}
 
 	cluster.CredentialData = secret.Data
