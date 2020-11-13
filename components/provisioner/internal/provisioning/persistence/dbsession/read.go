@@ -7,7 +7,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
-	dbr "github.com/gocraft/dbr/v2"
+	"github.com/gocraft/dbr/v2"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 )
@@ -137,6 +137,7 @@ type kymaComponentConfigDTO struct {
 	KymaConfigID        string
 	GlobalConfiguration []byte
 	ReleaseID           string
+	Profile             string
 	Version             string
 	TillerYAML          string
 	InstallerYAML       string
@@ -191,6 +192,12 @@ func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, db
 		return model.KymaConfig{}, dberrors.Internal("Failed to unmarshal global configuration: %s", err.Error())
 	}
 
+	var kymaProfile *model.KymaProfile
+	if c[0].Profile != "" {
+		profile := model.KymaProfile(c[0].Profile)
+		kymaProfile = &profile
+	}
+
 	return model.KymaConfig{
 		ID: c[0].KymaConfigID,
 		Release: model.Release{
@@ -199,6 +206,7 @@ func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, db
 			TillerYAML:    c[0].TillerYAML,
 			InstallerYAML: c[0].InstallerYAML,
 		},
+		Profile:             kymaProfile,
 		Components:          orderedComponents,
 		GlobalConfiguration: globalConfiguration,
 		ClusterID:           runtimeID,
@@ -209,7 +217,7 @@ func (r readSession) getKymaConfig(runtimeID, kymaConfigId string) (model.KymaCo
 	var kymaConfig kymaConfigDTO
 
 	rowsCount, err := r.session.
-		Select("kyma_config_id", "kyma_config.release_id", "kyma_config.global_configuration",
+		Select("kyma_config_id", "kyma_config.release_id", "kyma_config.kyma_profile", "kyma_config.global_configuration",
 			"kyma_component_config.id", "kyma_component_config.component", "kyma_component_config.namespace",
 			"kyma_component_config.source_url", "kyma_component_config.configuration",
 			"kyma_component_config.component_order",

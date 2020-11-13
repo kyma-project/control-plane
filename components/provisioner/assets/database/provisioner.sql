@@ -89,11 +89,17 @@ CREATE TABLE kyma_release
 
 -- Kyma Config
 
+CREATE TYPE kyma_profile AS ENUM (
+    'EVALUATION',
+    'PRODUCTION'
+);
+
 CREATE TABLE kyma_config
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     release_id uuid NOT NULL,
     cluster_id uuid NOT NULL,
+    profile kyma_profile,
     global_configuration jsonb,
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE,
     foreign key (release_id) REFERENCES kyma_release (id) ON DELETE RESTRICT

@@ -104,6 +104,7 @@ func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Er
 	_, err = ws.insertInto("kyma_config").
 		Pair("id", kymaConfig.ID).
 		Pair("release_id", kymaConfig.Release.Id).
+		Pair("profile", kymaConfig.Profile).
 		Pair("cluster_id", kymaConfig.ClusterID).
 		Pair("global_configuration", jsonConfig).
 		Exec()
