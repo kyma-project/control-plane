@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -188,10 +189,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	for _, config := range clusterConfigurations {
 		t.Run(config.description, func(t *testing.T) {
-			runtimeID := config.runtimeID
 			clusterConfig := config.provisioningInput.config
 			runtimeInput := config.provisioningInput.runtimeInput
-			upgradeShootInput := config.upgradeShootInput
 
 			fakeK8sClient.CoreV1().Secrets(compassSystemNamespace).Delete(context.Background(), runtimeConfig.AgentConfigurationSecretName, metav1.DeleteOptions{})
 			fakeK8sClient.CoreV1().ConfigMaps(compassSystemNamespace).Delete(context.Background(), runtimeConfig.AgentConfigurationSecretName, metav1.DeleteOptions{})
@@ -199,18 +198,19 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			directorServiceMock.Calls = nil
 			directorServiceMock.ExpectedCalls = nil
 
-			directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(runtimeID, nil)
+			directorServiceMock.On("CreateRuntime", mock.Anything, mock.Anything).Return(config.runtimeID, nil)
 			directorServiceMock.On("RuntimeExists", mock.Anything, mock.Anything).Return(true, nil)
 			directorServiceMock.On("DeleteRuntime", mock.Anything, mock.Anything).Return(nil)
 			directorServiceMock.On("GetConnectionToken", mock.Anything, mock.Anything).Return(graphql.OneTimeTokenForRuntimeExt{}, nil)
 
 			directorServiceMock.On("GetRuntime", mock.Anything, mock.Anything).Return(graphql.RuntimeExt{
 				Runtime: graphql.Runtime{
-					ID:          runtimeID,
+					ID:          config.runtimeID,
 					Name:        runtimeInput.Name,
 					Description: runtimeInput.Description,
 				},
 			}, nil)
+
 			directorServiceMock.On("UpdateRuntime", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 			directorServiceMock.On("SetRuntimeStatusCondition", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -234,145 +234,13 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig, KymaConfig: kymaConfig}
 
-			// when Provisioning Runtime
-			provisionRuntime, err := resolver.ProvisionRuntime(ctx, fullConfig)
+			testProvisionRuntime(t, ctx, resolver, fullConfig, config.runtimeID, shootInterface, secretsInterface)
 
-			// then
-			require.NoError(t, err)
-			require.NotEmpty(t, provisionRuntime)
+			testUpgradeRuntimeAndRollback(t, ctx, resolver, dbsFactory, config.runtimeID)
 
-			// wait for Shoot to update
-			time.Sleep(2 * syncPeriod)
+			testUpgradeGardenerShoot(t, ctx, resolver, dbsFactory, config.runtimeID, config.upgradeShootInput, shootInterface, inputConverter)
 
-			list, err := shootInterface.List(context.Background(), metav1.ListOptions{})
-			require.NoError(t, err)
-
-			shoot := &list.Items[0]
-
-			// then
-			assert.Equal(t, runtimeID, shoot.Annotations["kcp.provisioner.kyma-project.io/runtime-id"])
-			assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
-			assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["kcp.provisioner.kyma-project.io/operation-id"])
-			assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
-			assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
-			assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
-
-			simulateSuccessfulClusterProvisioning(t, shootInterface, secretsInterface, shoot)
-
-			// wait for Shoot to update
-			time.Sleep(2 * waitPeriod)
-
-			shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
-			require.NoError(t, err)
-			assert.Equal(t, runtimeID, shoot.Annotations["kcp.provisioner.kyma-project.io/runtime-id"])
-			assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
-
-			// when checking Runtime Status
-			runtimeStatusProvisioned, err := resolver.RuntimeStatus(ctx, *provisionRuntime.RuntimeID)
-
-			// then
-			require.NoError(t, err)
-			require.NotNil(t, runtimeStatusProvisioned)
-			assert.Equal(t, fixOperationStatusProvisioned(provisionRuntime.RuntimeID, provisionRuntime.ID), runtimeStatusProvisioned.LastOperationStatus)
-			assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioned.RuntimeConfiguration.KymaConfig)
-
-			// when Upgrading Runtime
-			upgradeRuntimeOp, err := resolver.UpgradeRuntime(ctx, runtimeID, gqlschema.UpgradeRuntimeInput{KymaConfig: fixKymaGraphQLConfigInput()})
-
-			// then
-			require.NoError(t, err)
-			assert.NotEmpty(t, upgradeRuntimeOp.ID)
-			assert.Equal(t, gqlschema.OperationTypeUpgrade, upgradeRuntimeOp.Operation)
-			assert.Equal(t, gqlschema.OperationStateInProgress, upgradeRuntimeOp.State)
-			require.NotNil(t, upgradeRuntimeOp.RuntimeID)
-			assert.Equal(t, runtimeID, *upgradeRuntimeOp.RuntimeID)
-
-			// wait for queue to process operation
-			time.Sleep(2 * waitPeriod)
-
-			// assert db content
-			readSession := dbsFactory.NewReadSession()
-			runtimeUpgrade, err := readSession.GetRuntimeUpgrade(*upgradeRuntimeOp.ID)
-			require.NoError(t, err)
-			assert.Equal(t, model.UpgradeSucceeded, runtimeUpgrade.State)
-			assert.NotEmpty(t, runtimeUpgrade.PostUpgradeKymaConfigId)
-			runtimeFromDB, err := readSession.GetCluster(runtimeID)
-			require.NoError(t, err)
-			assert.Equal(t, runtimeFromDB.KymaConfig.ID, runtimeUpgrade.PostUpgradeKymaConfigId)
-
-			// when Roll Back last upgrade
-			_, err = resolver.RollBackUpgradeOperation(ctx, runtimeID)
-			require.NoError(t, err)
-
-			// then assert db content
-			runtimeUpgrade, err = readSession.GetRuntimeUpgrade(*upgradeRuntimeOp.ID)
-			require.NoError(t, err)
-			assert.Equal(t, model.UpgradeRolledBack, runtimeUpgrade.State)
-
-			runtimeFromDB, err = readSession.GetCluster(runtimeID)
-			require.NoError(t, err)
-			assert.Equal(t, runtimeFromDB.KymaConfig.ID, runtimeUpgrade.PreUpgradeKymaConfigId)
-
-			// when Upgrade Shoot
-			runtimeBeforeUpgrade, err := readSession.GetCluster(runtimeID)
-			require.NoError(t, err)
-
-			upgradeShootOp, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
-			require.NoError(t, err)
-
-			// for wait for shoot new version step
-			simulateShootUpgrade(t, shootInterface, shoot)
-
-			// then
-			require.NoError(t, err)
-			assert.NotEmpty(t, upgradeShootOp.ID)
-			assert.Equal(t, gqlschema.OperationTypeUpgradeShoot, upgradeShootOp.Operation)
-			assert.Equal(t, gqlschema.OperationStateInProgress, upgradeShootOp.State)
-			require.NotNil(t, upgradeShootOp.RuntimeID)
-			assert.Equal(t, runtimeID, *upgradeShootOp.RuntimeID)
-
-			// wait for queue to process operation
-			time.Sleep(2 * waitPeriod)
-
-			// assert db content
-			runtimeAfterUpgrade, err := readSession.GetCluster(runtimeID)
-			require.NoError(t, err)
-			shootAfterUpgrade := runtimeAfterUpgrade.ClusterConfig
-
-			expectedShootConfig, err := inputConverter.UpgradeShootInputToGardenerConfig(*upgradeShootInput.GardenerConfig, runtimeBeforeUpgrade.ClusterConfig)
-			require.NoError(t, err)
-			assert.Equal(t, expectedShootConfig, shootAfterUpgrade)
-
-			// when
-			deprovisionRuntimeID, err := resolver.DeprovisionRuntime(ctx, runtimeID)
-			require.NoError(t, err)
-			require.NotEmpty(t, deprovisionRuntimeID)
-
-			// when
-			// wait for Shoot to update
-			time.Sleep(2 * waitPeriod)
-			shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
-
-			// then
-			require.NoError(t, err)
-			assert.Equal(t, runtimeID, shoot.Annotations["kcp.provisioner.kyma-project.io/runtime-id"])
-			assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
-
-			//when Deprovisioning
-			shoot = removeFinalizers(t, shootInterface, shoot)
-			time.Sleep(4 * waitPeriod)
-			shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
-
-			// then
-			require.Error(t, err)
-			require.Empty(t, shoot)
-
-			// assert database content
-			runtimeFromDB, err = readSession.GetCluster(runtimeID)
-			require.NoError(t, err)
-			assert.Equal(t, tenant, runtimeFromDB.Tenant)
-			assert.Equal(t, subAccountId, util.UnwrapStr(runtimeFromDB.SubAccountId))
-			assert.Equal(t, true, runtimeFromDB.Deleted)
+			testDeprovisionRuntime(t, ctx, resolver, dbsFactory, config.runtimeID, shootInterface)
 		})
 	}
 
@@ -415,6 +283,188 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		installationServiceMock.AssertNotCalled(t, "TriggerInstallation", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 		installationServiceMock.AssertNotCalled(t, "CheckInstallationState", mock.Anything)
 	})
+}
+
+func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resolver, fullConfig gqlschema.ProvisionRuntimeInput, runtimeID string, shootInterface gardener_apis.ShootInterface, secretsInterface v1core.SecretInterface) {
+
+	// when Provisioning Runtime
+	provisionRuntime, err := resolver.ProvisionRuntime(ctx, fullConfig)
+
+	// then
+	require.NoError(t, err)
+	require.NotEmpty(t, provisionRuntime)
+
+	// wait for queue to process operation
+	time.Sleep(2 * syncPeriod)
+
+	list, err := shootInterface.List(context.Background(), metav1.ListOptions{})
+	require.NoError(t, err)
+
+	shoot := &list.Items[0]
+
+	// then
+	assert.Equal(t, runtimeID, shoot.Annotations["kcp.provisioner.kyma-project.io/runtime-id"])
+	assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
+	assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["kcp.provisioner.kyma-project.io/operation-id"])
+	assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
+	assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
+	assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
+
+	simulateSuccessfulClusterProvisioning(t, shootInterface, secretsInterface, shoot)
+
+	// wait for Shoot to update
+	time.Sleep(2 * waitPeriod)
+
+	shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
+	require.NoError(t, err)
+	assert.Equal(t, runtimeID, shoot.Annotations["kcp.provisioner.kyma-project.io/runtime-id"])
+	assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
+
+	// when checking Runtime Status
+	runtimeStatusProvisioned, err := resolver.RuntimeStatus(ctx, *provisionRuntime.RuntimeID)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, runtimeStatusProvisioned)
+	assert.Equal(t, fixOperationStatusProvisioned(provisionRuntime.RuntimeID, provisionRuntime.ID), runtimeStatusProvisioned.LastOperationStatus)
+	assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioned.RuntimeConfiguration.KymaConfig)
+}
+
+func testUpgradeRuntimeAndRollback(t *testing.T, ctx context.Context, resolver *api.Resolver, dbsFactory dbsession.Factory, runtimeID string) {
+
+	// when Upgrading Runtime
+	upgradeRuntimeOp, err := resolver.UpgradeRuntime(ctx, runtimeID, gqlschema.UpgradeRuntimeInput{KymaConfig: fixKymaGraphQLConfigInput()})
+
+	// then
+	require.NoError(t, err)
+	assert.NotEmpty(t, upgradeRuntimeOp.ID)
+	assert.Equal(t, gqlschema.OperationTypeUpgrade, upgradeRuntimeOp.Operation)
+	assert.Equal(t, gqlschema.OperationStateInProgress, upgradeRuntimeOp.State)
+	require.NotNil(t, upgradeRuntimeOp.RuntimeID)
+	assert.Equal(t, runtimeID, *upgradeRuntimeOp.RuntimeID)
+
+	// wait for queue to process operation
+	time.Sleep(2 * waitPeriod)
+
+	// assert db content
+	readSession := dbsFactory.NewReadSession()
+	runtimeUpgrade, err := readSession.GetRuntimeUpgrade(*upgradeRuntimeOp.ID)
+	require.NoError(t, err)
+	assert.Equal(t, model.UpgradeSucceeded, runtimeUpgrade.State)
+	assert.NotEmpty(t, runtimeUpgrade.PostUpgradeKymaConfigId)
+	runtimeFromDB, err := readSession.GetCluster(runtimeID)
+	require.NoError(t, err)
+	assert.Equal(t, runtimeFromDB.KymaConfig.ID, runtimeUpgrade.PostUpgradeKymaConfigId)
+
+	operation, err := readSession.GetOperation(*upgradeRuntimeOp.ID)
+	require.NoError(t, err)
+	assert.Equal(t, strings.ToUpper(gqlschema.OperationStateSucceeded.String()), string(operation.State))
+
+	// when Roll Back last upgrade
+	_, err = resolver.RollBackUpgradeOperation(ctx, runtimeID)
+	require.NoError(t, err)
+
+	// then assert db content
+	runtimeUpgrade, err = readSession.GetRuntimeUpgrade(*upgradeRuntimeOp.ID)
+	require.NoError(t, err)
+	assert.Equal(t, model.UpgradeRolledBack, runtimeUpgrade.State)
+
+	runtimeFromDB, err = readSession.GetCluster(runtimeID)
+	require.NoError(t, err)
+	assert.Equal(t, runtimeFromDB.KymaConfig.ID, runtimeUpgrade.PreUpgradeKymaConfigId)
+
+	operation, err = readSession.GetOperation(*upgradeRuntimeOp.ID)
+	require.NoError(t, err)
+	assert.Equal(t, strings.ToUpper(gqlschema.OperationStateSucceeded.String()), string(operation.State))
+
+}
+
+func testUpgradeGardenerShoot(t *testing.T, ctx context.Context, resolver *api.Resolver, dbsFactory dbsession.Factory, runtimeID string, upgradeShootInput gqlschema.UpgradeShootInput, shootInterface gardener_apis.ShootInterface, inputConverter provisioning.InputConverter) {
+
+	list, err := shootInterface.List(context.Background(), metav1.ListOptions{})
+	require.NoError(t, err)
+	shoot := &list.Items[0]
+
+	readSession := dbsFactory.NewReadSession()
+	// when Upgrade Shoot
+	runtimeBeforeUpgrade, err := readSession.GetCluster(runtimeID)
+	require.NoError(t, err)
+
+	upgradeShootOp, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
+	require.NoError(t, err)
+
+	// for wait for shoot new version step
+	simulateShootUpgrade(t, shootInterface, shoot)
+
+	// then
+	require.NoError(t, err)
+	assert.NotEmpty(t, upgradeShootOp.ID)
+	assert.Equal(t, gqlschema.OperationTypeUpgradeShoot, upgradeShootOp.Operation)
+	assert.Equal(t, gqlschema.OperationStateInProgress, upgradeShootOp.State)
+	require.NotNil(t, upgradeShootOp.RuntimeID)
+	assert.Equal(t, runtimeID, *upgradeShootOp.RuntimeID)
+
+	// wait for queue to process operation
+	time.Sleep(2 * waitPeriod)
+
+	// assert db content
+	runtimeAfterUpgrade, err := readSession.GetCluster(runtimeID)
+	require.NoError(t, err)
+	shootAfterUpgrade := runtimeAfterUpgrade.ClusterConfig
+
+	expectedShootConfig, err := inputConverter.UpgradeShootInputToGardenerConfig(*upgradeShootInput.GardenerConfig, runtimeBeforeUpgrade.ClusterConfig)
+	require.NoError(t, err)
+	assert.Equal(t, expectedShootConfig, shootAfterUpgrade)
+
+	operation, err := readSession.GetOperation(*upgradeShootOp.ID)
+	require.NoError(t, err)
+	assert.Equal(t, strings.ToUpper(gqlschema.OperationStateSucceeded.String()), string(operation.State))
+}
+
+func testDeprovisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resolver, dbsFactory dbsession.Factory, runtimeID string, shootInterface gardener_apis.ShootInterface) {
+
+	list, err := shootInterface.List(context.Background(), metav1.ListOptions{})
+	require.NoError(t, err)
+	shoot := &list.Items[0]
+
+	readSession := dbsFactory.NewReadSession()
+	runtimeFromDB, err := readSession.GetCluster(runtimeID)
+	require.NoError(t, err)
+
+	// when
+	deprovisionRuntimeID, err := resolver.DeprovisionRuntime(ctx, runtimeID)
+	require.NoError(t, err)
+	require.NotEmpty(t, deprovisionRuntimeID)
+
+	// when
+	// wait for Shoot to update
+	time.Sleep(2 * waitPeriod)
+	shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, runtimeID, shoot.Annotations["kcp.provisioner.kyma-project.io/runtime-id"])
+	assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
+
+	//when Deprovisioning
+	shoot = removeFinalizers(t, shootInterface, shoot)
+	time.Sleep(4 * waitPeriod)
+	shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
+
+	// then
+	require.Error(t, err)
+	require.Empty(t, shoot)
+
+	// assert database content
+	runtimeFromDB, err = readSession.GetCluster(runtimeID)
+	require.NoError(t, err)
+	assert.Equal(t, tenant, runtimeFromDB.Tenant)
+	assert.Equal(t, subAccountId, util.UnwrapStr(runtimeFromDB.SubAccountId))
+	assert.Equal(t, true, runtimeFromDB.Deleted)
+
+	operation, err := readSession.GetOperation(deprovisionRuntimeID)
+	require.NoError(t, err)
+	assert.Equal(t, strings.ToUpper(gqlschema.OperationStateSucceeded.String()), string(operation.State))
 }
 
 func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.OperationStatus {
