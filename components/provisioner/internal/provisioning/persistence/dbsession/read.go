@@ -137,7 +137,7 @@ type kymaComponentConfigDTO struct {
 	KymaConfigID        string
 	GlobalConfiguration []byte
 	ReleaseID           string
-	Profile             string
+	Profile             *string
 	Version             string
 	TillerYAML          string
 	InstallerYAML       string
@@ -193,8 +193,8 @@ func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, db
 	}
 
 	var kymaProfile *model.KymaProfile
-	if c[0].Profile != "" {
-		profile := model.KymaProfile(c[0].Profile)
+	if c[0].Profile != nil {
+		profile := model.KymaProfile(*c[0].Profile)
 		kymaProfile = &profile
 	}
 
