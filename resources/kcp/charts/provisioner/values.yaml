@@ -32,6 +32,11 @@ gardener:
   defaultEnableMachineImageVersionAutoUpdate: false
   forceAllowPrivilegedContainers: false
 
+support:
+  l2OperatorRoleBindingSubject: "runtimeOperator"
+  l3OperatorRoleBindingSubject: "runtimeAdmin"
+  bindingsCreationTimeout: 5m
+
 kymaRelease:
   preReleases:
     enabled: true
