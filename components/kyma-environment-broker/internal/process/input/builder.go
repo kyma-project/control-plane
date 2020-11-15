@@ -174,7 +174,9 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 	}
 
 	provisionInput.ClusterConfig.GardenerConfig.KubernetesVersion = f.config.KubernetesVersion
-	provisionInput.ClusterConfig.GardenerConfig.Purpose = &f.config.DefaultGardenerShootPurpose
+	if provisionInput.ClusterConfig.GardenerConfig.Purpose == nil {
+		provisionInput.ClusterConfig.GardenerConfig.Purpose = &f.config.DefaultGardenerShootPurpose
+	}
 	if f.config.MachineImage != "" {
 		provisionInput.ClusterConfig.GardenerConfig.MachineImage = &f.config.MachineImage
 	}
