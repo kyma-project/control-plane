@@ -3,6 +3,10 @@ package input
 import (
 	"time"
 
+	"github.com/Masterminds/goutils"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -112,6 +116,10 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 		{
 			name:    "applying global overrides",
 			execute: r.applyGlobalOverridesForProvisionRuntime,
+		},
+		{
+			name:    "adding random string to trial runtime name",
+			execute: r.addRandomStringToTrialRuntimeName,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -272,6 +280,17 @@ func updateString(toUpdate *string, value *string) {
 	if value != nil {
 		*toUpdate = *value
 	}
+}
+
+func (r *RuntimeInput) addRandomStringToTrialRuntimeName() error {
+	if r.provisioningParameters.PlanID == broker.TrialPlanID {
+		random, err := goutils.RandomAlphabetic(10)
+		if err != nil {
+			return err
+		}
+		r.provisionRuntimeInput.RuntimeInput.Name += random
+	}
+	return nil
 }
 
 func updateInt(toUpdate *int, value *int) {
