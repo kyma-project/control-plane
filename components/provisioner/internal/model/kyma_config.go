@@ -70,3 +70,8 @@ func NewConfigEntry(key, val string, secret bool) ConfigEntry {
 		Secret: secret,
 	}
 }
+
+const (
+	EvaluationProfile KymaProfile = "EVALUATION"
+	ProductionProfile KymaProfile = "PRODUCTION"
+)

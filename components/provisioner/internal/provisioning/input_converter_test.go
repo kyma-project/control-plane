@@ -43,8 +43,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	modelProductionProfile := model.ProductionProfile
 	gqlProductionProfile := gqlschema.KymaProfileProduction
 
-	modelEvaluationProfile := model.ProductionProfile
-	gqlEvaluationProfile := gqlschema.KymaProfileProduction
+	modelEvaluationProfile := model.EvaluationProfile
+	gqlEvaluationProfile := gqlschema.KymaProfileEvaluation
 
 	gardenerGCPGQLInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
@@ -185,7 +185,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				GardenerProviderConfig:              expectedAzureProviderCfg,
 			},
 			Kubeconfig:   nil,
-			KymaConfig:   fixKymaConfig(&modelEvaluationProfile),
+			KymaConfig:   fixKymaConfig(&modelProductionProfile),
 			Tenant:       tenant,
 			SubAccountId: util.StringPtr(subAccountId),
 		}
@@ -273,7 +273,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			GardenerProviderConfig:              expectedAWSProviderCfg,
 		},
 		Kubeconfig:   nil,
-		KymaConfig:   fixKymaConfig(nil),
+		KymaConfig:   fixKymaConfig(&modelEvaluationProfile),
 		Tenant:       tenant,
 		SubAccountId: util.StringPtr(subAccountId),
 	}

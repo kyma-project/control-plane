@@ -213,20 +213,34 @@ func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 		components = append(components, kymaConfigModule)
 	}
 
-	var kymaProfile *model.KymaProfile
-	if input.Profile != nil {
-		profile := model.KymaProfile(string(*input.Profile))
-		kymaProfile = &profile
-	}
-
 	return model.KymaConfig{
 		ID:                  kymaConfigID,
 		Release:             kymaRelease,
-		Profile:             kymaProfile,
+		Profile:             c.graphQLProfileToProfile(input.Profile),
 		Components:          components,
 		ClusterID:           runtimeID,
 		GlobalConfiguration: c.configurationFromInput(input.Configuration),
 	}, nil
+}
+
+func (c converter) graphQLProfileToProfile(profile *gqlschema.KymaProfile) *model.KymaProfile {
+	if profile == nil {
+		return nil
+	}
+
+	var result model.KymaProfile
+
+	switch *profile {
+	case gqlschema.KymaProfileEvaluation:
+		result = model.EvaluationProfile
+	case gqlschema.KymaProfileProduction:
+		result = model.ProductionProfile
+	default:
+		result = model.KymaProfile(string(string(*profile)))
+	}
+
+	return &result
+
 }
 
 func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput) model.Configuration {
