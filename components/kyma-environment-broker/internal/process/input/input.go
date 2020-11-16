@@ -1,6 +1,7 @@
 package input
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -277,18 +278,19 @@ func (r *RuntimeInput) applyGlobalOverridesForUpgradeRuntime() error {
 	return nil
 }
 
+func (r *RuntimeInput) addRandomStringToTrialRuntimeName() error {
+	rand.Seed(time.Now().UnixNano())
+	if r.provisioningParameters.PlanID == broker.TrialPlanID {
+		r.provisionRuntimeInput.RuntimeInput.Name =
+			fmt.Sprintf("%s-%s", r.provisionRuntimeInput.RuntimeInput.Name, randomString(trialSuffixLength))
+	}
+	return nil
+}
+
 func updateString(toUpdate *string, value *string) {
 	if value != nil {
 		*toUpdate = *value
 	}
-}
-
-func (r *RuntimeInput) addRandomStringToTrialRuntimeName() error {
-	rand.Seed(time.Now().UnixNano())
-	if r.provisioningParameters.PlanID == broker.TrialPlanID {
-		r.provisionRuntimeInput.RuntimeInput.Name += randomString(trialSuffixLength)
-	}
-	return nil
 }
 
 func updateInt(toUpdate *int, value *int) {
