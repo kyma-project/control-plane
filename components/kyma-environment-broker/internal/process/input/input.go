@@ -1,9 +1,8 @@
 package input
 
 import (
+	"math/rand"
 	"time"
-
-	"github.com/Masterminds/goutils"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 
@@ -12,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/vburenin/nsync"
 )
+
+const trialSuffixLength = 10
 
 type Config struct {
 	URL                         string
@@ -283,12 +284,9 @@ func updateString(toUpdate *string, value *string) {
 }
 
 func (r *RuntimeInput) addRandomStringToTrialRuntimeName() error {
+	rand.Seed(time.Now().UnixNano())
 	if r.provisioningParameters.PlanID == broker.TrialPlanID {
-		random, err := goutils.RandomAlphabetic(10)
-		if err != nil {
-			return err
-		}
-		r.provisionRuntimeInput.RuntimeInput.Name += random
+		r.provisionRuntimeInput.RuntimeInput.Name += randomString(trialSuffixLength)
 	}
 	return nil
 }
@@ -297,4 +295,14 @@ func updateInt(toUpdate *int, value *int) {
 	if value != nil {
 		*toUpdate = *value
 	}
+}
+
+func randomString(n int) string {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyz")
+
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }
