@@ -2,6 +2,9 @@ package provisioning
 
 import (
 	"context"
+	"fmt"
+	"k8s.io/apimachinery/pkg/runtime"
+	clientgotesting "k8s.io/client-go/testing"
 	"testing"
 	"time"
 
@@ -96,25 +99,25 @@ func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	//t.Run("should return error when failed to create cluster role binding", func(t *testing.T) {
-	//	// given
-	//	k8sClient := fake.NewSimpleClientset()
-	//	k8sClient.Fake.AddReactor(
-	//		"*",
-	//		"*",
-	//		func(action clientgotesting.Action) (handled bool, ret runtime.Object, err error) {
-	//			return true, nil, fmt.Errorf("error")
-	//		})
-	//
-	//	k8sClientProvider := &mocks.K8sClientProvider{}
-	//	k8sClientProvider.On("CreateK8SClient", kubeconfigRaw).Return(k8sClient, nil)
-	//
-	//	step := NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorBindingConfig, nextStageName, time.Minute)
-	//
-	//	// when
-	//	_, err := step.Run(cluster, model.Operation{}, &logrus.Entry{})
-	//
-	//	// then
-	//	require.Error(t, err)
-	//})
+	t.Run("should return error when failed to create cluster role binding", func(t *testing.T) {
+		// given
+		k8sClient := fake.NewSimpleClientset()
+		k8sClient.Fake.PrependReactor(
+			"*",
+			"*",
+			func(action clientgotesting.Action) (handled bool, ret runtime.Object, err error) {
+				return true, nil, fmt.Errorf("error")
+			})
+
+		k8sClientProvider := &mocks.K8sClientProvider{}
+		k8sClientProvider.On("CreateK8SClient", kubeconfigRaw).Return(k8sClient, nil)
+
+		step := NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorBindingConfig, nextStageName, time.Minute)
+
+		// when
+		_, err := step.Run(cluster, model.Operation{}, &logrus.Entry{})
+
+		// then
+		require.Error(t, err)
+	})
 }
