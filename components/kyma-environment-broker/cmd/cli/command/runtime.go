@@ -132,7 +132,7 @@ func runtimeStatus(obj interface{}) string {
 
 	upgradeCount := rt.Status.UpgradingKyma.Count
 	if upgradeCount > 0 {
-		// Take the last upgrade operation, assuming that Data is sorted by CreatedBy DESC.
+		// Take the first upgrade operation, assuming that Data is sorted by CreatedBy DESC.
 		switch rt.Status.UpgradingKyma.Data[0].State {
 		case inProgress:
 			return "upgrading"
