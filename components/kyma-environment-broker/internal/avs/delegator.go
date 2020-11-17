@@ -63,12 +63,14 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 		switch {
 		case err == nil:
 		case kebError.IsTemporaryError(err):
-			return del.operationManager.RetryOperation(operation, "", 10*time.Second, time.Minute*30, logger)
-		default:
-			errMsg := "cannot create AVS evaluation"
+			errMsg := "cannot create AVS evaluation (temporary)"
 			logger.Errorf("%s: %s", errMsg, err)
 			retryConfig := evalAssistant.provideRetryConfig()
 			return del.operationManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
+		default:
+			errMsg := "cannot create AVS evaluation"
+			logger.Errorf("%s: %s", errMsg, err)
+			return del.operationManager.OperationFailed(operation, errMsg)
 		}
 
 		evalAssistant.SetEvalId(&operation.Avs, evalResp.Id)
