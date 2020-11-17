@@ -103,8 +103,8 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		operation.RuntimeID = instance.RuntimeID
 		return s.checkRuntimeStatus(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
 	case dberr.IsNotFound(err):
-		log.Info("instance not exist")
-		return s.operationManager.OperationFailed(operation, "instance was not found")
+		log.Info("instance does not exist, it may have been deprovisioned")
+		return s.operationManager.OperationSucceeded(operation, "instance was not found")
 	default:
 		log.Errorf("unable to get instance from storage: %s", err)
 		return operation, s.timeSchedule.Retry, nil
