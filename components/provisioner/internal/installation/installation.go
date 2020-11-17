@@ -197,8 +197,10 @@ func (s *installationService) waitForInstallation(runtimeId string, stateChannel
 
 func GetInstallationCRModificationFunc(kymaProfile *model.KymaProfile, componentsConfig []model.KymaComponentConfig) func(*v1alpha1.Installation) {
 	return func(installation *v1alpha1.Installation) {
+		logrus.Info("Setting Kyma profile in installation CR")
 		if kymaProfile != nil {
 			installation.Spec.Profile = toKymaProfile(*kymaProfile)
+			logrus.Infof("Setting profile value %s %s", *kymaProfile, installation.Spec.Profile)
 		}
 
 		components := make([]v1alpha1.KymaComponent, 0, len(componentsConfig))
