@@ -13,7 +13,7 @@ require (
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b
 	github.com/kyma-incubator/hydroform/install v0.0.0-20200817114824-fd8c8876066c
 	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200902131640-31c29c8feb0c
-	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20200902131640-31c29c8feb0c
+	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5
 	github.com/lib/pq v1.7.0
 	github.com/matryer/is v1.2.0
 	github.com/mitchellh/mapstructure v1.1.2
@@ -40,8 +40,6 @@ replace (
 	github.com/coreos/etcd => github.com/coreos/etcd v3.3.25+incompatible
 	github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc92
-
-    github.com/kyma-project/kyma/components/kyma-operator => github.com/akgalwas/kyma/components/kyma-operator v0.0.0-20201112125036-bc43059f186c
 
 	go.etcd.io/etcd => go.etcd.io/etcd v3.3.25+incompatible
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a

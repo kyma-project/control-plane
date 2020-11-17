@@ -560,6 +560,8 @@ github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200902131
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20200817094157-8392259f5be1/go.mod h1:Svisep1qUjML69qtRee5OcDOpWVjxID2Nb6E/xyhQ5k=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20200902131640-31c29c8feb0c h1:1R4PH8/EuoQ2Oq92bLhGj79GNVCJo8WAc0nK9VSmLEk=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20200902131640-31c29c8feb0c/go.mod h1:Svisep1qUjML69qtRee5OcDOpWVjxID2Nb6E/xyhQ5k=
+github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5 h1:QPPcTCefqwKvvO+oyz0GgkllkE+1LGAdsR8dMrhZgK0=
+github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5/go.mod h1:jDvGQt3ccmrDW/9dZufC8e4xwr+PUTR74IJ0yQ81Jhk=
 github.com/kyma-project/rafter v0.0.0-20200626063334-5a8dd27d1976/go.mod h1:ns2WlAMShwCU3zDQuM+kuGhpnSPmHQpqiWdOJ7s3CR0=
 github.com/lann/builder v0.0.0-20180802200727-47ae307949d0/go.mod h1:dXGbAdH5GtBTC4WfIxhKZfyBF/HBFgRZSWwZ9g/He9o=
 github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0/go.mod h1:vmVJ0l/dxyfGW6FmdpVm2joNMFikkuWg0EoCKLGUMNw=

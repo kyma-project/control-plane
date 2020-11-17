@@ -321,12 +321,6 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue,
 		return fmt.Errorf("error enqueuing in progress operations: %s", err.Error())
 	}
 
-	err = migrateOperationsInShootProvisioningStage(dbFactory.NewWriteSession())
-	if err != nil {
-
-		return fmt.Errorf("error migrating operations in ShootProvisioning stage: %s", err.Error())
-	}
-
 	for _, op := range inProgressOps {
 		if op.Type == model.Provision {
 			provisioningQueue.Add(op.ID)
