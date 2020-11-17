@@ -157,7 +157,10 @@ func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetTo
 			return c.execute(request, allowNotFound, false)
 		}
 		return response, fmt.Errorf("avs server returned %d status code twice for %s (response body: %s)", http.StatusUnauthorized, request.URL.String(), responseBody(response))
-	case http.StatusRequestTimeout:
+	case http.StatusRequestTimeout,
+		http.StatusInternalServerError,
+		http.StatusServiceUnavailable,
+		http.StatusGatewayTimeout:
 		return response, kebError.NewTemporaryError("avs server returned %d status code", response.StatusCode)
 	default:
 		return response, fmt.Errorf("unsupported status code: %d for %s (response body: %s)", response.StatusCode, request.URL.String(), responseBody(response))
