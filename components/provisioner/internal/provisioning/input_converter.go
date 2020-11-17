@@ -236,7 +236,7 @@ func (c converter) graphQLProfileToProfile(profile *gqlschema.KymaProfile) *mode
 	case gqlschema.KymaProfileProduction:
 		result = model.ProductionProfile
 	default:
-		result = model.KymaProfile(string(string(*profile)))
+		result = model.KymaProfile("")
 	}
 
 	return &result

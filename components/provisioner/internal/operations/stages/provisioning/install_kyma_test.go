@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/hydroform/install/installation"
 	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -43,9 +45,12 @@ func TestInstallKymaStep_Run(t *testing.T) {
 	globalConfig := model.Configuration{}
 	components := []model.KymaComponentConfig{}
 
+	productionProfile := model.ProductionProfile
+
 	cluster := model.Cluster{
 		Kubeconfig: util.StringPtr(kubeconfig),
 		KymaConfig: model.KymaConfig{
+			Profile:             &productionProfile,
 			Release:             release,
 			Components:          components,
 			GlobalConfiguration: globalConfig,
@@ -78,7 +83,7 @@ func TestInstallKymaStep_Run(t *testing.T) {
 			mockFunc: func(installationSvc *installationMocks.Service) {
 				installationSvc.On("CheckInstallationState", k8sConfig).
 					Return(installation.InstallationState{State: installation.NoInstallationState}, nil)
-				installationSvc.On("TriggerInstallation", k8sConfig, release, globalConfig, components).
+				installationSvc.On("TriggerInstallation", k8sConfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), release, globalConfig, components).
 					Return(nil)
 			},
 		},
@@ -106,7 +111,7 @@ func TestInstallKymaStep_Run(t *testing.T) {
 		installationSvc := &installationMocks.Service{}
 		installationSvc.On("CheckInstallationState", k8sConfig).
 			Return(installation.InstallationState{State: installation.NoInstallationState}, nil)
-		installationSvc.On("TriggerInstallation", k8sConfig, release, globalConfig, components).
+		installationSvc.On("TriggerInstallation", k8sConfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), release, globalConfig, components).
 			Return(fmt.Errorf("error"))
 
 		installStep := NewInstallKymaStep(installationSvc, nextStageName, 10*time.Minute)
@@ -118,5 +123,14 @@ func TestInstallKymaStep_Run(t *testing.T) {
 		require.Error(t, err)
 		installationSvc.AssertExpectations(t)
 	})
+}
 
+func getProfileMatcher(expected *model.KymaProfile) func(profile *model.KymaProfile) bool {
+	return func(p *model.KymaProfile) bool {
+		if p != nil && expected != nil {
+			return *p == *expected
+		}
+
+		return p == expected
+	}
 }
