@@ -73,6 +73,8 @@ type config struct {
 	ProvisioningTimeout   queue.ProvisioningTimeouts
 	DeprovisioningTimeout queue.DeprovisioningTimeouts
 
+	OperatorRoleBinding provisioningStages.OperatorRoleBinding
+
 	Gardener struct {
 		Project                                    string `envconfig:"default=gardenerProject"`
 		KubeconfigPath                             string `envconfig:"default=./dev/kubeconfig.yaml"`
@@ -187,7 +189,9 @@ func main() {
 		provisioningStages.NewCompassConnectionClient,
 		directorClient,
 		shootClient,
-		secretsInterface)
+		secretsInterface,
+		cfg.OperatorRoleBinding,
+		k8sClientProvider)
 
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
 
