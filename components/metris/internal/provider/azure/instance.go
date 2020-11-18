@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-project/control-plane/components/metris/internal/log"
 )
 
-func (i *Instance) getComputeMetrics(ctx context.Context, resourceGroupName string, logger log.Logger, vmcaps *vmCapabilities) *Compute {
+func (i *Instance) getComputeMetrics(ctx context.Context, logger log.Logger, vmcaps *vmCapabilities) *Compute {
 	var (
 		caps   = *vmcaps
 		vms    []compute.VirtualMachine
@@ -37,7 +37,7 @@ func (i *Instance) getComputeMetrics(ctx context.Context, resourceGroupName stri
 		i.lastEvent.Compute = result
 	}
 
-	vms, err = i.client.GetVirtualMachines(ctx, resourceGroupName)
+	vms, err = i.client.GetVirtualMachines(ctx, i.clusterResourceGroupName)
 	if err != nil {
 		logger.Warnf("could not get virtual machines information, using information from last successful event: %s", err)
 
@@ -76,7 +76,7 @@ func (i *Instance) getComputeMetrics(ctx context.Context, resourceGroupName stri
 		}
 	}
 
-	disks, err = i.client.GetDisks(ctx, resourceGroupName)
+	disks, err = i.client.GetDisks(ctx, i.clusterResourceGroupName)
 	if err != nil {
 		logger.With("error", err).Warn("could not get disk information, getting information from last successful event")
 
@@ -93,7 +93,7 @@ func (i *Instance) getComputeMetrics(ctx context.Context, resourceGroupName stri
 	return result
 }
 
-func (i *Instance) getNetworkMetrics(ctx context.Context, resourceGroupName string, logger log.Logger) *Networking {
+func (i *Instance) getNetworkMetrics(ctx context.Context, logger log.Logger) *Networking {
 	var (
 		result = &Networking{
 			ProvisionedLoadBalancers: 0,
@@ -110,7 +110,7 @@ func (i *Instance) getNetworkMetrics(ctx context.Context, resourceGroupName stri
 		i.lastEvent.Networking = result
 	}
 
-	lbs, err = i.client.GetLoadBalancers(ctx, resourceGroupName)
+	lbs, err = i.client.GetLoadBalancers(ctx, i.clusterResourceGroupName)
 	if err != nil {
 		logger.With("error", err).Warn("could not get loadbalancer infornation, getting information from last successful event")
 
@@ -119,7 +119,7 @@ func (i *Instance) getNetworkMetrics(ctx context.Context, resourceGroupName stri
 		result.ProvisionedLoadBalancers += uint32(len(lbs))
 	}
 
-	vnets, err = i.client.GetVirtualNetworks(ctx, resourceGroupName)
+	vnets, err = i.client.GetVirtualNetworks(ctx, i.clusterResourceGroupName)
 	if err != nil {
 		logger.With("error", err).Warn("could not get vnet infornation, getting information from last successful event")
 
@@ -128,7 +128,7 @@ func (i *Instance) getNetworkMetrics(ctx context.Context, resourceGroupName stri
 		result.ProvisionedVnets += uint32(len(vnets))
 	}
 
-	publicIPs, err = i.client.GetPublicIPAddresses(ctx, resourceGroupName)
+	publicIPs, err = i.client.GetPublicIPAddresses(ctx, i.clusterResourceGroupName)
 	if err != nil {
 		logger.With("error", err).Warn("could not get public ip infornation, getting information from last successful event")
 
@@ -140,7 +140,7 @@ func (i *Instance) getNetworkMetrics(ctx context.Context, resourceGroupName stri
 	return result
 }
 
-func (i *Instance) getEventHubMetrics(ctx context.Context, pollinterval time.Duration, resourceGroupName string, logger log.Logger) *EventHub {
+func (i *Instance) getEventHubMetrics(ctx context.Context, pollinterval time.Duration, logger log.Logger) *EventHub {
 	var (
 		result = &EventHub{
 			NumberNamespaces:     0,
@@ -157,11 +157,11 @@ func (i *Instance) getEventHubMetrics(ctx context.Context, pollinterval time.Dur
 		i.lastEvent.EventHub = result
 	}
 
-	if resourceGroupName == "" {
+	if i.eventHubResourceGroupName == "" {
 		return i.lastEvent.EventHub
 	}
 
-	ehns, eherr := i.client.GetEHNamespaces(ctx, resourceGroupName)
+	ehns, eherr := i.client.GetEHNamespaces(ctx, i.eventHubResourceGroupName)
 	if eherr != nil {
 		logger.With("error", eherr).Warn("eventhub namespace error, getting information from last successful event")
 

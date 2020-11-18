@@ -19,6 +19,7 @@ Metris is a metering component that collects data and sends them to EDP.
 | `--edp-workers` | **EDP_WORKERS** | Number of workers to send metrics | `5` |
 | `--edp-event-retry` | **EDP_RETRY** | Number of retries for sending an event | `5` |
 | `--provider-poll-interval` | **PROVIDER_POLLINTERVAL** | Interval at which metrics are fetched | `1m` |
+| `--provider-poll-duration` | **PROVIDER_POLLDURATION** | Time limit for requests made by the provider client | `5m` |
 | `--provider-workers` | **PROVIDER_WORKERS** | Number of workers to fetch metrics | `10` |
 | `--provider-buffer` | **PROVIDER_BUFFER** | Number of clusters that the buffer can have | `100` |
 | `--listen-addr` | **METRIS_LISTEN_ADDRESS** | Address and port the metrics and health HTTP endpoints will bind to | None |

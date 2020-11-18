@@ -87,7 +87,6 @@ func newClient(cluster *gardener.Cluster, logger log.Logger, tracelevel int, cli
 	baseclient.BaseURI = env.ResourceManagerEndpoint
 	baseclient.SubscriptionID = subscriptionID
 	baseclient.Authorizer = authz
-	baseclient.PollingDuration = maxPollingDuration
 	baseclient.RequestInspector = LogRequest(logger, tracelevel)
 	baseclient.ResponseInspector = LogResponse(logger, tracelevel)
 
@@ -113,7 +112,6 @@ func (c *baseClient) createResourcesBaseClient() *resources.BaseClient {
 	baseclient := resources.New(c.SubscriptionID)
 	baseclient.Authorizer = c.Authorizer
 	baseclient.BaseURI = c.BaseURI
-	baseclient.PollingDuration = c.PollingDuration
 	baseclient.RequestInspector = c.RequestInspector
 	baseclient.ResponseInspector = c.ResponseInspector
 
@@ -124,7 +122,6 @@ func (c *baseClient) createComputeBaseClient() *compute.BaseClient {
 	baseclient := compute.New(c.SubscriptionID)
 	baseclient.Authorizer = c.Authorizer
 	baseclient.BaseURI = c.BaseURI
-	baseclient.PollingDuration = c.PollingDuration
 	baseclient.RequestInspector = c.RequestInspector
 	baseclient.ResponseInspector = c.ResponseInspector
 
@@ -135,7 +132,6 @@ func (c *baseClient) createNetworkBaseClient() *network.BaseClient {
 	baseclient := network.New(c.SubscriptionID)
 	baseclient.Authorizer = c.Authorizer
 	baseclient.BaseURI = c.BaseURI
-	baseclient.PollingDuration = c.PollingDuration
 	baseclient.RequestInspector = c.RequestInspector
 	baseclient.ResponseInspector = c.ResponseInspector
 
@@ -146,7 +142,6 @@ func (c *baseClient) createInsightsBaseClient() *insights.BaseClient {
 	baseclient := insights.New(c.SubscriptionID)
 	baseclient.Authorizer = c.Authorizer
 	baseclient.BaseURI = c.BaseURI
-	baseclient.PollingDuration = c.PollingDuration
 	baseclient.RequestInspector = c.RequestInspector
 	baseclient.ResponseInspector = c.ResponseInspector
 
@@ -157,7 +152,6 @@ func (c *baseClient) createEventhubBaseClient() *eventhub.BaseClient {
 	baseclient := eventhub.New(c.SubscriptionID)
 	baseclient.Authorizer = c.Authorizer
 	baseclient.BaseURI = c.BaseURI
-	baseclient.PollingDuration = c.PollingDuration
 	baseclient.RequestInspector = c.RequestInspector
 	baseclient.ResponseInspector = c.ResponseInspector
 

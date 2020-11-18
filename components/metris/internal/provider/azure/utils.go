@@ -8,15 +8,21 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/kyma-project/control-plane/components/metris/internal/log"
 )
 
+type ctxKey int
+
+const timeKey = ctxKey(1)
+
 // LogRequest inspect the request being made to Azure API and writes it to the logger.
 func LogRequest(logger log.Logger, tracelevel int) autorest.PrepareDecorator {
 	return func(p autorest.Preparer) autorest.Preparer {
 		return autorest.PreparerFunc(func(r *http.Request) (*http.Request, error) {
+			r = r.WithContext(context.WithValue(r.Context(), timeKey, time.Now()))
 			r, err := p.Prepare(r)
 
 			ctx := r.Context()
@@ -33,8 +39,8 @@ func LogRequest(logger log.Logger, tracelevel int) autorest.PrepareDecorator {
 				apiRequestCounter.WithLabelValues(provider, resource, status).Inc()
 			}
 
-			if tracelevel > 0 && logger.GetLogLevel() == log.DebugLevel {
-				if d, e := httputil.DumpRequest(r, tracelevel > 1); e == nil {
+			if tracelevel > 1 && logger.GetLogLevel() == log.DebugLevel {
+				if d, e := httputil.DumpRequestOut(r, tracelevel > 2); e == nil {
 					logger.Debug(string(d))
 				}
 			}
@@ -54,8 +60,18 @@ func LogResponse(logger log.Logger, tracelevel int) autorest.RespondDecorator {
 				apiRequestCounter.WithLabelValues(provider, resource, strconv.Itoa(resp.StatusCode)).Inc()
 
 				if tracelevel > 0 && logger.GetLogLevel() == log.DebugLevel {
-					if dump, e := httputil.DumpResponse(resp, tracelevel > 1); e == nil {
-						logger.Debug(string(dump))
+					if start, ok := resp.Request.Context().Value(timeKey).(time.Time); ok {
+						logger.
+							With("path", resp.Request.URL.Path).
+							With("status", resp.StatusCode).
+							With("time", time.Since(start)).
+							Debug("request")
+					}
+
+					if tracelevel > 1 {
+						if dump, e := httputil.DumpResponse(resp, tracelevel > 2); e == nil {
+							logger.Debug(string(dump))
+						}
 					}
 				}
 			}
