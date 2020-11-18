@@ -972,7 +972,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "delta(compass_keb_operations_deprovisioning_failed_total[40m])",
+          "expr": "delta(compass_keb_operations_deprovisioning_failed_total[40m])>=0",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
