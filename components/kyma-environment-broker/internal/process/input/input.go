@@ -280,7 +280,7 @@ func (r *RuntimeInput) applyGlobalOverridesForUpgradeRuntime() error {
 
 func (r *RuntimeInput) addRandomStringToTrialRuntimeName() error {
 	rand.Seed(time.Now().UnixNano())
-	if r.provisioningParameters.PlanID == broker.TrialPlanID {
+	if broker.IsTrialPlan(r.provisioningParameters.PlanID) {
 		r.provisionRuntimeInput.RuntimeInput.Name =
 			fmt.Sprintf("%s-%s", r.provisionRuntimeInput.RuntimeInput.Name, randomString(trialSuffixLength))
 	}
