@@ -362,6 +362,32 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	assertOverrides(t, "keb", input.KymaConfig.Components, kebOverrides)
 }
 
+func TestShouldAddSuffixToTrialRuntimeName(t *testing.T) {
+	// given
+	trialName := "test"
+	optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+	componentsProvider := &automock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+
+	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
+	assert.NoError(t, err)
+
+	pp := fixProvisioningParameters(broker.TrialPlanID, "")
+	pp.Parameters.Name = trialName
+
+	creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.1.0", Origin: internal.Defaults})
+	require.NoError(t, err)
+	creator.SetProvisioningParameters(pp)
+
+	// when
+	input, err := creator.CreateProvisionRuntimeInput()
+	require.NoError(t, err)
+
+	// then
+	assert.NotEqual(t, pp.Parameters.Name, input.RuntimeInput.Name)
+	assert.Greater(t, len(input.RuntimeInput.Name), len(pp.Parameters.Name))
+}
+
 func assertOverrides(t *testing.T, componentName string, components internal.ComponentConfigurationInputList, overrides []*gqlschema.ConfigEntryInput) {
 	overriddenComponent, found := find(components, componentName)
 	require.True(t, found)
