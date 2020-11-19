@@ -44,6 +44,10 @@ func NewServiceCatalogCleanupClient(kubeconfig *rest.Config) (CleanupClient, err
 
 	apiExtensionsClientSet, err := apiextensionsclient.NewForConfig(kubeconfig)
 
+	if err != nil {
+		return &serviceCatalogClient{}, err
+	}
+
 	crdsInterface := apiExtensionsClientSet.ApiextensionsV1beta1().CustomResourceDefinitions()
 
 	return &serviceCatalogClient{
