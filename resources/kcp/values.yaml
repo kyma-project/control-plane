@@ -23,7 +23,7 @@ global:
       version: "PR-313"
     metris:
       dir:
-      version: "PR-328"
+      version: "PR-339"
     tests:
       provisioner:
         dir:

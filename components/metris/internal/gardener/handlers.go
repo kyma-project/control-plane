@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strconv"
 
 	gcorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	commonpkg "github.com/gardener/gardener/pkg/operation/common"
@@ -117,7 +118,12 @@ func (c *Controller) shootAddHandlerFunc(obj interface{}) {
 
 	cluster, err := c.newCluster(shoot)
 
-	logger := c.logger.With("account", cluster.AccountID).With("subaccount", cluster.SubAccountID).With("shoot", shoot.Name).With("technicalid", cluster.TechnicalID)
+	logger := c.logger.
+		With("account", cluster.AccountID).
+		With("subaccount", cluster.SubAccountID).
+		With("shoot", shoot.Name).
+		With("technicalid", cluster.TechnicalID).
+		With("trial", strconv.FormatBool(cluster.Trial))
 
 	if err != nil {
 		logger.With("error", err).Error("received a shoot add event, but there was missing informations")
