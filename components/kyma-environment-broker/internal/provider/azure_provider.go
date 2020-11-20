@@ -89,7 +89,7 @@ func (p *AzureLiteInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp
 }
 
 func (p *AzureLiteInput) Profile() gqlschema.KymaProfile {
-	return gqlschema.KymaProfileProduction
+	return gqlschema.KymaProfileEvaluation
 }
 
 func (p *AzureTrialInput) Defaults() *gqlschema.ClusterConfigInput {
