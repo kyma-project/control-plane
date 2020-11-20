@@ -33,6 +33,7 @@ type (
 	HyperscalerInputProvider interface {
 		Defaults() *gqlschema.ClusterConfigInput
 		ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParameters)
+		Profile() gqlschema.KymaProfile
 	}
 
 	CreatorForPlan interface {
@@ -163,11 +164,13 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 
 		components = mapToGQLComponentConfigurationInput(allComponents)
 	}
+	kymaProfile := provider.Profile()
 
 	provisionInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput:  &gqlschema.RuntimeInput{},
 		ClusterConfig: provider.Defaults(),
 		KymaConfig: &gqlschema.KymaConfigInput{
+			Profile:    &kymaProfile,
 			Version:    version.Version,
 			Components: components.DeepCopy(),
 		},

@@ -98,6 +98,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				},
 			},
 			Configuration: []*gqlschema.ConfigEntryInput{},
+			Profile:       &profile,
 		},
 	}
 

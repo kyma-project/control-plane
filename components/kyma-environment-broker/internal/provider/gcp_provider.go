@@ -60,6 +60,10 @@ func (p *GcpInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp inter
 	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, pp.Parameters.Zones)
 }
 
+func (p *GcpInput) Profile() gqlschema.KymaProfile {
+	return gqlschema.KymaProfileProduction
+}
+
 func (p *GcpTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -107,6 +111,10 @@ func (p *GcpTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp 
 	}
 
 	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, zones)
+}
+
+func (p *GcpTrialInput) Profile() gqlschema.KymaProfile {
+	return gqlschema.KymaProfileEvaluation
 }
 
 func ZonesForGCPRegion(region string) []string {

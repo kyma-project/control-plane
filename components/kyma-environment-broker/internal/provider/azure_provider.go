@@ -57,6 +57,10 @@ func (p *AzureInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp int
 	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, pp.Parameters.Zones)
 }
 
+func (p *AzureInput) Profile() gqlschema.KymaProfile {
+	return gqlschema.KymaProfileProduction
+}
+
 func (p *AzureLiteInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -82,6 +86,10 @@ func (p *AzureLiteInput) Defaults() *gqlschema.ClusterConfigInput {
 
 func (p *AzureLiteInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
 	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, pp.Parameters.Zones)
+}
+
+func (p *AzureLiteInput) Profile() gqlschema.KymaProfile {
+	return gqlschema.KymaProfileProduction
 }
 
 func (p *AzureTrialInput) Defaults() *gqlschema.ClusterConfigInput {
@@ -125,4 +133,8 @@ func (p *AzureTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, p
 	}
 
 	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, params.Zones)
+}
+
+func (p *AzureTrialInput) Profile() gqlschema.KymaProfile {
+	return gqlschema.KymaProfileEvaluation
 }
