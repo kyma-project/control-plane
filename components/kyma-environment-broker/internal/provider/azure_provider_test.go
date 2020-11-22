@@ -1,7 +1,10 @@
 package provider
 
 import (
+	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/stretchr/testify/assert"
@@ -57,6 +60,22 @@ func TestAzureTrialInput_ApplyParametersWithRegion(t *testing.T) {
 
 		//then
 		assert.Equal(t, "westeurope", input.GardenerConfig.Region)
+	})
+
+	// when
+	t.Run("use random zone", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{})
+
+		zone, err := strconv.Atoi(input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones[0])
+		require.NoError(t, err)
+
+		//then
+		assert.LessOrEqual(t, zone, 3)
+		assert.GreaterOrEqual(t, zone, 1)
 	})
 
 	// when
