@@ -85,7 +85,15 @@ return "fooBar"
         Name    lua
         Match   dex.*
         script  script.lua
-        call    reformat
+		call    reformat
+[FILTER]
+		Name    grep
+		Match   dex.*
+		Regex   time .*
+[FILTER]
+		Name    grep
+		Match   dex.*
+		Regex   data .*\"xsuaa
 [OUTPUT]
         Name             http
         Match            dex.*
