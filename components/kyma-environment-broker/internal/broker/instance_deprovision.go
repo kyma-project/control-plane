@@ -47,7 +47,7 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 	switch {
 	case err == nil:
 	case dberr.IsNotFound(err):
-		logger.Warn("instance does not exists")
+		logger.Warn("instance does not exist")
 		return domain.DeprovisionServiceSpec{
 			IsAsync: false,
 		}, nil
