@@ -112,6 +112,12 @@ spec:
               value: {{ .Values.gardener.waitingForClusterDeletionTimeout | quote }}
             - name: APP_DEPROVISIONING_TIMEOUT_CLUSTER_CLEANUP
               value: {{ .Values.gardener.clusterCleanupTimeout | quote }}
+            - name: APP_PROVISIONING_TIMEOUT_BINDINGS_CREATION
+              value: {{ .Values.support.bindingsCreationTimeout | quote }}
+            - name: APP_OPERATOR_ROLE_BINDING_L2SUBJECT_NAME
+              value: {{ .Values.support.l2OperatorRoleBindingSubject | quote }}
+            - name: APP_OPERATOR_ROLE_BINDING_L3SUBJECT_NAME
+              value: {{ .Values.support.l3OperatorRoleBindingSubject | quote }}
             - name: APP_GARDENER_PROJECT
               value: {{ .Values.gardener.project }}
             - name: APP_GARDENER_KUBECONFIG_PATH

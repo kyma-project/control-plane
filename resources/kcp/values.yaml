@@ -11,7 +11,7 @@ global:
       version: "PR-336"
     kyma_environment_broker:
       dir:
-      version: "PR-320"
+      version: "PR-334"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-131"
@@ -23,7 +23,7 @@ global:
       version: "PR-313"
     metris:
       dir:
-      version: "PR-63"
+      version: "PR-339"
     tests:
       provisioner:
         dir:

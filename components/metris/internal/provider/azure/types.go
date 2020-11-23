@@ -37,9 +37,6 @@ const (
 	// tagNameSubAccountID is the subAccountID tag name use for tagging resource group.
 	tagNameSubAccountID string = "SubAccountID"
 
-	// maxPollingDuration is the maximum polling time for the REST API client.
-	maxPollingDuration = 1 * time.Minute
-
 	// diskSizeFactor is to calculate rounded value of disk size in gigabytes, example 17Gb->32Gb, 33Gb->64Gb.
 	diskSizeFactor float64 = 32
 
@@ -50,6 +47,9 @@ const (
 	PT1M TimeGrain = "PT1M"
 	// PT5M ...
 	PT5M TimeGrain = "PT5M"
+
+	// maximum number of failed attempt to get metrics, after that instance is remove from cache/storage.
+	maxRetryAttempts int = 5
 )
 
 // TimeGrain enumerates the values for time grain.
@@ -102,6 +102,8 @@ type Instance struct {
 	clusterResourceGroupName string
 	// eventHubResourceGroupName store the Azure Event Hub resource group name associated with the subaccountid.
 	eventHubResourceGroupName string
+	// retryAttempts store the number of retry attempts to get metrics.
+	retryAttempts int
 }
 
 //go:generate mockery --name AuthConfig

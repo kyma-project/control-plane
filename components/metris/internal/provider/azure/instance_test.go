@@ -201,8 +201,8 @@ func TestInstance_getComputeMetrics(t *testing.T) {
 		tt := tt // pin
 
 		t.Run(tt.name, func(t *testing.T) {
-			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client, lastEvent: tt.fields.lastEvent}
-			got := i.getComputeMetrics(context.Background(), tt.args.resourceGroupName, noopLogger, tt.args.vmcaps)
+			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client, lastEvent: tt.fields.lastEvent, clusterResourceGroupName: tt.args.resourceGroupName}
+			got := i.getComputeMetrics(context.Background(), noopLogger, tt.args.vmcaps)
 
 			asserts.ElementsMatch(tt.want.VMTypes, got.VMTypes)
 			asserts.Equal(tt.want.ProvisionedCpus, got.ProvisionedCpus)
@@ -262,8 +262,8 @@ func TestInstance_getNetworkMetrics(t *testing.T) {
 		tt := tt // pin
 
 		t.Run(tt.name, func(t *testing.T) {
-			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client, lastEvent: tt.fields.lastEvent}
-			got := i.getNetworkMetrics(context.Background(), tt.args.resourceGroupName, noopLogger)
+			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client, lastEvent: tt.fields.lastEvent, clusterResourceGroupName: tt.args.resourceGroupName}
+			got := i.getNetworkMetrics(context.Background(), noopLogger)
 			asserts.Equal(tt.want, got)
 		})
 	}
@@ -332,8 +332,8 @@ func TestInstance_getEventHubMetrics(t *testing.T) {
 		tt := tt // pinned
 
 		t.Run(tt.name, func(t *testing.T) {
-			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client, lastEvent: tt.fields.lastEvent}
-			got := i.getEventHubMetrics(context.Background(), tt.args.pollinterval, tt.args.resourceGroupName, noopLogger)
+			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client, lastEvent: tt.fields.lastEvent, eventHubResourceGroupName: tt.args.resourceGroupName}
+			got := i.getEventHubMetrics(context.Background(), tt.args.pollinterval, noopLogger)
 			asserts.Equal(tt.want, got)
 		})
 	}

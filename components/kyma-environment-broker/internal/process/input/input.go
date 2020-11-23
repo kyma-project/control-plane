@@ -1,13 +1,19 @@
 package input
 
 import (
+	"fmt"
+	"math/rand"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/vburenin/nsync"
 )
+
+const trialSuffixLength = 10
 
 type Config struct {
 	URL                         string
@@ -112,6 +118,10 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 		{
 			name:    "applying global overrides",
 			execute: r.applyGlobalOverridesForProvisionRuntime,
+		},
+		{
+			name:    "adding random string to trial runtime name",
+			execute: r.addRandomStringToTrialRuntimeName,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -268,6 +278,15 @@ func (r *RuntimeInput) applyGlobalOverridesForUpgradeRuntime() error {
 	return nil
 }
 
+func (r *RuntimeInput) addRandomStringToTrialRuntimeName() error {
+	rand.Seed(time.Now().UnixNano())
+	if broker.IsTrialPlan(r.provisioningParameters.PlanID) {
+		r.provisionRuntimeInput.RuntimeInput.Name =
+			fmt.Sprintf("%s-%s", r.provisionRuntimeInput.RuntimeInput.Name, randomString(trialSuffixLength))
+	}
+	return nil
+}
+
 func updateString(toUpdate *string, value *string) {
 	if value != nil {
 		*toUpdate = *value
@@ -278,4 +297,14 @@ func updateInt(toUpdate *int, value *int) {
 	if value != nil {
 		*toUpdate = *value
 	}
+}
+
+func randomString(n int) string {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyz")
+
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }

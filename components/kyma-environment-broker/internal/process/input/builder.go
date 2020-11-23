@@ -155,8 +155,7 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 	switch version.Origin {
 	case internal.Defaults:
 		components = f.fullComponentsList
-	case internal.GlobalAccount:
-	case internal.Parameters:
+	case internal.Parameters, internal.GlobalAccount:
 		allComponents, err := f.componentsProvider.AllComponents(version.Version)
 		if err != nil {
 			return gqlschema.ProvisionRuntimeInput{}, errors.Wrapf(err, "while fetching components for %s Kyma version", version.Version)
@@ -175,7 +174,9 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 	}
 
 	provisionInput.ClusterConfig.GardenerConfig.KubernetesVersion = f.config.KubernetesVersion
-	provisionInput.ClusterConfig.GardenerConfig.Purpose = &f.config.DefaultGardenerShootPurpose
+	if provisionInput.ClusterConfig.GardenerConfig.Purpose == nil {
+		provisionInput.ClusterConfig.GardenerConfig.Purpose = &f.config.DefaultGardenerShootPurpose
+	}
 	if f.config.MachineImage != "" {
 		provisionInput.ClusterConfig.GardenerConfig.MachineImage = &f.config.MachineImage
 	}

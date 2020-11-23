@@ -14,6 +14,8 @@ var europeAzure = "westeurope"
 var usAzure = "eastus"
 var asiaAzure = "southeastasia"
 
+var trialPurpose = "evaluation"
+
 var toAzureSpecific = map[string]*string{
 	string(broker.Europe): &europeAzure,
 	string(broker.Us):     &usAzure,
@@ -95,6 +97,7 @@ func (p *AzureTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 			AutoScalerMax:  2,
 			MaxSurge:       1,
 			MaxUnavailable: 1,
+			Purpose:        &trialPurpose,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "10.250.0.0/19",

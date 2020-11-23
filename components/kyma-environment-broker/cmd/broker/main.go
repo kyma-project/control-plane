@@ -514,9 +514,6 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 		}
 	}
 
-	upgradeKymaQueue := process.NewQueue(upgradeKymaManager, logs)
-	upgradeKymaQueue.Run(ctx.Done(), 5)
-
 	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, db.Instances(), logs)
 
 	orchestrateKymaManager := kyma.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(),

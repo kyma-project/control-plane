@@ -90,7 +90,22 @@ func (a *Azure) Run(ctx context.Context) {
 					workerlogger.Warnf("vm capabilities for region %s not found, some metrics won't be available", instance.cluster.Region)
 				}
 
-				a.gatherMetrics(ctx, workerlogger, instance, &vmcaps)
+				// check if resource group still exists in azure, sometime we miss gardener delete events
+				_, err := instance.client.GetResourceGroup(ctx, clusterid.(string), "", workerlogger)
+				if errors.Is(err, ErrResourceGroupNotFound) {
+					instance.retryAttempts++
+
+					// delete cluster from storage if it does not exist after `maxRetryAttempts`
+					if instance.retryAttempts > maxRetryAttempts {
+						a.instanceStorage.Delete(clusterid.(string))
+						workerlogger.Infof("removing cluster after %d attempts", maxRetryAttempts)
+					} else {
+						a.instanceStorage.Put(clusterid.(string), instance)
+						workerlogger.Warnf("can't find resource group in azure, attempts: %d/%d", instance.retryAttempts, maxRetryAttempts)
+					}
+				} else {
+					a.gatherMetrics(ctx, workerlogger, instance, &vmcaps)
+				}
 
 				a.queue.Done(clusterid)
 
@@ -152,7 +167,7 @@ func (a *Azure) clusterHandler(parentctx context.Context) {
 			// getting cluster and event hub resource group names.
 			rg, err := client.GetResourceGroup(parentctx, cluster.TechnicalID, "", logger)
 			if err != nil {
-				logger.Errorf("could not find cluster resource group, cluster may not be ready, retrying in %s: %s", a.config.PollInterval, err)
+				logger.Warnf("could not find cluster resource group, cluster may not be ready, retrying in %s: %s", a.config.PollInterval, err)
 				time.AfterFunc(a.config.PollInterval, func() { a.config.ClusterChannel <- cluster })
 
 				continue
@@ -160,14 +175,17 @@ func (a *Azure) clusterHandler(parentctx context.Context) {
 				instance.clusterResourceGroupName = *rg.Name
 			}
 
+			// Resource Groups for Event Hubs are tag with the subaccountid, if none is found, it may be a trial account.
 			filter := fmt.Sprintf("tagname eq '%s' and tagvalue eq '%s'", tagNameSubAccountID, cluster.SubAccountID)
 
 			rg, err = client.GetResourceGroup(parentctx, "", filter, logger)
 			if err != nil {
-				logger.Errorf("could not find event hub resource groups, cluster may not be ready, retrying in %s: %s", a.config.PollInterval, err)
-				time.AfterFunc(a.config.PollInterval, func() { a.config.ClusterChannel <- cluster })
+				if !cluster.Trial {
+					logger.Warnf("could not find event hub resource groups, cluster may not be ready, retrying in %s: %s", a.config.PollInterval, err)
+					time.AfterFunc(a.config.PollInterval, func() { a.config.ClusterChannel <- cluster })
 
-				continue
+					continue
+				}
 			} else {
 				instance.eventHubResourceGroupName = *rg.Name
 			}
@@ -226,22 +244,29 @@ func (a *Azure) gatherMetrics(parentctx context.Context, workerlogger log.Logger
 
 	resourceGroupName := instance.clusterResourceGroupName
 	eventHubResourceGroupName := instance.eventHubResourceGroupName
-	eventData := &EventData{ResourceGroups: []string{resourceGroupName, eventHubResourceGroupName}}
+
+	eventData := &EventData{ResourceGroups: []string{resourceGroupName}}
+	if len(eventHubResourceGroupName) > 0 {
+		eventData.ResourceGroups = append(eventData.ResourceGroups, eventHubResourceGroupName)
+	}
 
 	workerlogger.Debug("getting metrics")
 
 	// Using a timeout context to prevent azure api to hang for too long,
-	// sometimes client get stuck waiting even with a max poll duration of 1 min.
+	// sometimes client get stuck waiting even with a max poll duration is set.
 	// If it reach the time limit, last successful event data will be returned.
-	ctx, cancel := context.WithTimeout(parentctx, maxPollingDuration)
+	ctx, cancel := context.WithTimeout(parentctx, a.config.PollingDuration)
 	defer cancel()
 
-	eventData.Compute = instance.getComputeMetrics(ctx, resourceGroupName, workerlogger, vmcaps)
-	eventData.Networking = instance.getNetworkMetrics(ctx, resourceGroupName, workerlogger)
-	eventData.EventHub = instance.getEventHubMetrics(ctx, a.config.PollInterval, eventHubResourceGroupName, workerlogger)
+	eventData.Compute = instance.getComputeMetrics(ctx, workerlogger, vmcaps)
+	eventData.Networking = instance.getNetworkMetrics(ctx, workerlogger)
+	eventData.EventHub = instance.getEventHubMetrics(ctx, a.config.PollInterval, workerlogger)
 
-	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-		workerlogger.Warn("Azure REST API call timedout, sending last successful event data")
+	if errors.Is(ctx.Err(), context.Canceled) {
+		workerlogger.Warn("request got canceled")
+		return
+	} else if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+		workerlogger.Warn("request timedout, sending last successful event data")
 
 		if instance.lastEvent == nil {
 			return

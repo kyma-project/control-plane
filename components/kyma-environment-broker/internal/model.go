@@ -63,6 +63,10 @@ type RuntimeVersionData struct {
 	Origin  RuntimeVersionOrigin `json:"origin"`
 }
 
+func (rv RuntimeVersionData) IsEmpty() bool {
+	return rv.Version == ""
+}
+
 func NewRuntimeVersionFromParameters(version string) *RuntimeVersionData {
 	return &RuntimeVersionData{Version: version, Origin: Parameters}
 }
