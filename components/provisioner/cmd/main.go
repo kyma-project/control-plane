@@ -158,7 +158,7 @@ func main() {
 	exitOnError(err, "Failed to create Gardener cluster clientset")
 
 	k8sCoreClientSet, err := kubernetes.NewForConfig(gardenerClusterConfig)
-	exitOnError(err, "Failed to create Kubernetes ")
+	exitOnError(err, "Failed to create Kubernetes clientset")
 
 	secretsInterface := k8sCoreClientSet.CoreV1().Secrets(gardenerNamespace)
 
