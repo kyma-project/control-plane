@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/appinfo"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
@@ -431,10 +431,10 @@ func processOperationsInProgressByType(opType dbmodel.OperationType, op storage.
 }
 
 func reprocessOrchestrations(op storage.Orchestrations, queue *process.Queue, log logrus.FieldLogger) error {
-	if err := processOrchestration(internal.InProgress, op, queue, log); err != nil {
+	if err := processOrchestration(orchestrationExt.InProgress, op, queue, log); err != nil {
 		return errors.Wrap(err, "while processing in progress orchestrations")
 	}
-	if err := processOrchestration(internal.Pending, op, queue, log); err != nil {
+	if err := processOrchestration(orchestrationExt.Pending, op, queue, log); err != nil {
 		return errors.Wrap(err, "while processing pending orchestrations")
 	}
 	return nil

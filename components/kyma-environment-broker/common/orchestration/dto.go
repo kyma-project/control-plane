@@ -18,6 +18,14 @@ const (
 	StateParam = "state"
 )
 
+// Orchestration states
+const (
+	Pending    = "pending"
+	InProgress = "in progress"
+	Succeeded  = "succeeded"
+	Failed     = "failed"
+)
+
 // ListParameters hold attributes of list orchestrations / operations queries.
 type ListParameters struct {
 	Page     int
