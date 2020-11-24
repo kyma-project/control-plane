@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/int128/kubelogin/pkg/adaptors/browser"
-	"github.com/int128/kubelogin/pkg/adaptors/certpool"
 	"github.com/int128/kubelogin/pkg/adaptors/clock"
 	"github.com/int128/kubelogin/pkg/adaptors/credentialpluginwriter"
 	"github.com/int128/kubelogin/pkg/adaptors/oidcclient"
@@ -16,7 +15,7 @@ import (
 	"github.com/int128/kubelogin/pkg/usecases/authentication/authcode"
 	"github.com/int128/kubelogin/pkg/usecases/authentication/ropc"
 	"github.com/int128/kubelogin/pkg/usecases/credentialplugin"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"golang.org/x/oauth2"
 	"k8s.io/client-go/util/homedir"
 )
@@ -92,7 +91,6 @@ func NewManager(oidcIssuerURL, oidcClientID, oidcClientSecret string, logger log
 		Logger:               logger,
 		Authentication:       auth,
 		TokenCacheRepository: &tokencache.Repository{},
-		NewCertPool:          certpool.New,
 		Writer:               writer,
 	}
 	mgr.getter = getToken
