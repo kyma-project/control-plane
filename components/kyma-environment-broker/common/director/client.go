@@ -156,19 +156,19 @@ func (dc *Client) getURLFromRuntime(response *graphql.RuntimeExt) (string, error
 	if response.Status == nil {
 		return "", kebError.NewTemporaryError("response status from director is nil")
 	}
-	if response.Status.Condition == graphql.RuntimeStatusConditionFailed {
-		return "", fmt.Errorf("response status condition from director is %s", graphql.RuntimeStatusConditionFailed)
-	}
 
-	value, ok := response.Labels[consoleURLLabelKey]
+	value, ok := response.Labels[clusterDomainLabelKey]
 	if !ok {
-		return "", kebError.NewTemporaryError("response label key is not equal to %q", consoleURLLabelKey)
+		return "", kebError.NewTemporaryError("response label key is not equal to %q", clusterDomainLabelKey)
 	}
 
 	var URL string
 	switch value.(type) {
 	case string:
 		URL = value.(string)
+		if URL != "" {
+			URL = fmt.Sprintf("https://console.%s", value.(string))
+		}
 	default:
 		return "", errors.New("response label value is not string")
 	}

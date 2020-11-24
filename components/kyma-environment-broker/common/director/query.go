@@ -3,8 +3,8 @@ package director
 import "fmt"
 
 const (
-	consoleURLLabelKey = "runtime_consoleUrl"
-	instanceIDLabelKey = "broker_instance_id"
+	clusterDomainLabelKey = "gardenerClusterDomain"
+	instanceIDLabelKey    = "broker_instance_id"
 )
 
 type queryProvider struct{}
@@ -37,10 +37,10 @@ func (qp queryProvider) RuntimeForInstanceId(instanceID string) string {
 
 func runtimeStatusData() string {
 	return fmt.Sprintf(`id
-			labels(key: "%s") 
+			labels(key: "%s")
 			status{
 				condition
-			}`, consoleURLLabelKey)
+			}`, clusterDomainLabelKey)
 }
 
 func labelData() string {

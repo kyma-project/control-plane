@@ -2,7 +2,6 @@ package provisioning
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
@@ -159,11 +158,6 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 		return operation, 10 * time.Second, nil
 	}
 
-	_, err = url.ParseRequestURI(instance.DashboardURL)
-	if err == nil {
-		return s.launchPostActions(operation, instance, log, "Operation succeeded")
-	}
-
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
 	if err != nil {
 		return operation, 1 * time.Minute, nil
@@ -177,12 +171,23 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
-		repeat, err := s.handleDashboardURL(instance, log)
-		if err != nil || repeat != 0 {
-			return operation, repeat, err
+		if instance.DashboardURL == "" {
+			repeat, err := s.handleDashboardURL(instance, log)
+			if err != nil {
+				return s.operationManager.OperationFailed(operation, err.Error())
+			}
+			if repeat != 0 {
+				return operation, repeat, nil
+			}
 		}
 		return s.launchPostActions(operation, instance, log, msg)
 	case gqlschema.OperationStateInProgress:
+		if instance.DashboardURL == "" {
+			_, err := s.handleDashboardURL(instance, log)
+			if err != nil {
+				return s.operationManager.OperationFailed(operation, err.Error())
+			}
+		}
 		return operation, 2 * time.Minute, nil
 	case gqlschema.OperationStatePending:
 		return operation, 2 * time.Minute, nil
@@ -196,7 +201,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance, log logrus.FieldLogger) (time.Duration, error) {
 	dashboardURL, err := s.directorClient.GetConsoleURL(instance.GlobalAccountID, instance.RuntimeID)
 	if kebError.IsTemporaryError(err) {
-		log.Errorf("cannot get console URL from director client: %s", err)
+		log.Warnf("cannot get console URL from director client: %s", err)
 		return 3 * time.Minute, nil
 	}
 	if err != nil {

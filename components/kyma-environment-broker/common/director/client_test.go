@@ -18,7 +18,8 @@ func TestClient_GetConsoleURL(t *testing.T) {
 	var (
 		runtimeID   = "620f2303-f084-4956-8594-b351fbff124d"
 		accountID   = "32f2e45c-74dc-4bb8-b03f-7cb6a44c1fd9"
-		expectedURL = "http://example.com"
+		domain      = "example.com"
+		expectedURL = "https://console.example.com"
 	)
 
 	t.Run("url returned successfully", func(t *testing.T) {
@@ -45,7 +46,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 					},
 				},
 				Labels: map[string]interface{}{
-					consoleURLLabelKey: expectedURL,
+					clusterDomainLabelKey: domain,
 				},
 			}
 		}).Return(nil)
@@ -106,7 +107,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 					},
 				},
 				Labels: map[string]interface{}{
-					consoleURLLabelKey: "",
+					clusterDomainLabelKey: "",
 				},
 			}
 		}).Return(nil)
@@ -182,7 +183,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 					},
 				},
 				Labels: map[string]interface{}{
-					consoleURLLabelKey: 42,
+					clusterDomainLabelKey: 42,
 				},
 			}
 		}).Return(nil)
@@ -220,7 +221,7 @@ func TestClient_GetConsoleURL(t *testing.T) {
 					},
 				},
 				Labels: map[string]interface{}{
-					consoleURLLabelKey: "wrong-URL",
+					clusterDomainLabelKey: "wrong domain",
 				},
 			}
 		}).Return(nil)
