@@ -1,4 +1,4 @@
-package provisioning
+package servicemanager
 
 import (
 	"strings"
@@ -6,9 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const ServiceManagerComponentName = "service-manager-proxy"
-
-type ServiceManagerOverrideConfig struct {
+type Config struct {
 	OverrideMode ServiceManagerOverrideMode `envconfig:"default=Never"`
 	URL          string
 	Password     string
@@ -45,6 +43,5 @@ func (m *ServiceManagerOverrideMode) Unmarshal(in string) error {
 	if m.IsUnknown() {
 		return errors.Errorf("Unsupported override mode %q, possible values %s ", in, m.Names())
 	}
-
 	return nil
 }

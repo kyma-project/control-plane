@@ -46,7 +46,7 @@
   name = "github.com/pkg/errors"
   version = "0.8.1"
 
-[[constraint]]
+[[override]]
   name = "github.com/sirupsen/logrus"
   version = "1.6.0"
 
@@ -61,6 +61,10 @@
 [[constraint]]
   name = "github.com/vrischmann/envconfig"
   version = "1.2.0"
+
+[[constraint]]
+  name = "github.com/Peripli/service-manager-cli"
+  version = "v1.11.2"
 
 # Azure
 [[constraint]]

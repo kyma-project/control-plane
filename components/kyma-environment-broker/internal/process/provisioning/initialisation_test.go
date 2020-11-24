@@ -74,7 +74,7 @@ func TestInitialisationStep_RunInitialized(t *testing.T) {
 	defer rvc.AssertExpectations(t)
 
 	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient,
-		directorClient, nil, externalEvalCreator, iasType, time.Hour, rvc)
+		directorClient, nil, externalEvalCreator, iasType, time.Hour, rvc, nil)
 
 	// when
 	operation, repeat, err := step.Run(operation, logger.NewLogDummy())
@@ -135,7 +135,7 @@ func TestInitialisationStep_RunUninitialized(t *testing.T) {
 	defer rvc.AssertExpectations(t)
 
 	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient,
-		directorClient, nil, externalEvalCreator, iasType, time.Hour, rvc)
+		directorClient, nil, externalEvalCreator, iasType, time.Hour, rvc, nil)
 
 	// when
 	operation, repeat, err := step.Run(operation, logger.NewLogDummy())

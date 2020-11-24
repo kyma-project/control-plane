@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
+	"github.com/sirupsen/logrus"
+
 	"github.com/google/uuid"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
@@ -136,9 +139,15 @@ type InstanceWithOperation struct {
 	Description sql.NullString
 }
 
+type SMClientFactory interface {
+	ForCustomerCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (servicemanager.Client, error)
+	ProvideCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (*servicemanager.Credentials, error)
+}
+
 // ProvisioningOperation holds all information about provisioning operation
 type ProvisioningOperation struct {
-	Operation `json:"-"`
+	Operation       `json:"-"`
+	SMClientFactory SMClientFactory `json:"-"`
 
 	// following fields are serialized to JSON and stored in the storage
 	Lms                    LMS    `json:"lms"`
@@ -299,6 +308,39 @@ func (po *ProvisioningOperation) SetProvisioningParameters(parameters Provisioni
 
 	po.ProvisioningParameters = string(params)
 	return nil
+}
+
+func (po *ProvisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {
+	pp, err := po.GetProvisioningParameters()
+	if err != nil {
+		log.Errorf("unable to get Provisioning Parameters: %s", err.Error())
+		return nil, errors.New("invalid operation provisioning parameters")
+	}
+
+	return po.SMClientFactory.ForCustomerCredentials(po.serviceManagerRequestCereds(pp), log)
+}
+
+func (po *ProvisioningOperation) ProvideServiceManagerCredentials(log logrus.FieldLogger) (*servicemanager.Credentials, error) {
+	pp, err := po.GetProvisioningParameters()
+	if err != nil {
+		log.Errorf("unable to get Provisioning Parameters: %s", err.Error())
+		return nil, errors.New("invalid operation provisioning parameters")
+	}
+
+	return po.SMClientFactory.ProvideCredentials(po.serviceManagerRequestCereds(pp), log)
+}
+
+func (po *ProvisioningOperation) serviceManagerRequestCereds(parameters ProvisioningParameters) *servicemanager.Credentials {
+	var creds *servicemanager.Credentials
+	sm := parameters.ErsContext.ServiceManager
+	if sm != nil {
+		creds = &servicemanager.Credentials{
+			Username: sm.Credentials.BasicAuth.Username,
+			Password: sm.Credentials.BasicAuth.Password,
+			URL:      sm.URL,
+		}
+	}
+	return creds
 }
 
 func (do *DeprovisioningOperation) GetProvisioningParameters() (ProvisioningParameters, error) {
