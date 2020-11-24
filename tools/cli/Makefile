@@ -27,7 +27,7 @@ release: resolve verify build
 resolve:
 	GO111MODULE=on go mod vendor -v
 
-verify: test check-imports check-fmt go-mod-verify go-mod-check
+verify: check-imports check-fmt go-mod-verify go-mod-check
 
 test:
 	go test ./...
@@ -52,9 +52,9 @@ go-mod-verify:
 go-mod-check:
 	@echo make go-mod-check
 	go mod tidy
-	@if [ -z "$$(git status -s go.*)" ]; then \
+	@if [ -n "$$(git status -s go.*)" ]; then \
 		echo -e "${RED}✗ go mod tidy modified go.mod or go.sum files${NC}"; \
-		git status -s git status -s go.*; \
+		git status -s go.*; \
 		exit 1; \
 	fi;
 
