@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/printer"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/spf13/cobra"
 )
 
@@ -33,10 +32,10 @@ type orchestrationDetails struct {
 }
 
 var cliStates = map[string]string{
-	"pending":    internal.Pending,
-	"failed":     internal.Failed,
-	"succeeded":  internal.Succeeded,
-	"inprogress": internal.InProgress,
+	"pending":    orchestration.Pending,
+	"failed":     orchestration.Failed,
+	"succeeded":  orchestration.Succeeded,
+	"inprogress": orchestration.InProgress,
 }
 
 var orchestrationColumns = []printer.Column{

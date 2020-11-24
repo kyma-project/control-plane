@@ -202,15 +202,8 @@ type Orchestration struct {
 }
 
 func (o *Orchestration) IsFinished() bool {
-	return o.State == Succeeded || o.State == Failed
+	return o.State == orchestration.Succeeded || o.State == orchestration.Failed
 }
-
-const (
-	Pending    = "pending"
-	InProgress = "in progress"
-	Succeeded  = "succeeded"
-	Failed     = "failed"
-)
 
 // Runtime is the data type which captures the needed runtime specific attributes to perform orchestrations on a given runtime.
 type Runtime struct {
@@ -377,7 +370,7 @@ func (do *UpgradeKymaOperation) SetProvisioningParameters(parameters Provisionin
 }
 
 func (o *Operation) IsFinished() bool {
-	return o.State != InProgress
+	return o.State != domain.InProgress
 }
 
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput

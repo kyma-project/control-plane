@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -177,7 +178,7 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 	require.NoError(s.t, err)
 	provisioningOperation := internal.ProvisioningOperation{
 		Operation: internal.Operation{
-			State:      internal.Succeeded,
+			State:      domain.Succeeded,
 			ID:         uuid.New(),
 			InstanceID: instanceID,
 		},
@@ -218,7 +219,7 @@ func (s *OrchestrationSuite) CreateOrchestration(runtimeID string) string {
 	now := time.Now()
 	o := internal.Orchestration{
 		OrchestrationID: uuid.New(),
-		State:           internal.Pending,
+		State:           orchestration.Pending,
 		Description:     "started processing of Kyma upgrade",
 		Parameters: orchestration.Parameters{
 			Targets: orchestration.TargetSpec{

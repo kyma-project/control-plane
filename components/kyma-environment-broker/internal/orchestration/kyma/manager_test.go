@@ -32,7 +32,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		}).Return([]internal.Runtime{}, nil)
 
 		id := "id"
-		err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, State: internal.Pending})
+		err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, State: orchestration.Pending})
 		require.NoError(t, err)
 
 		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, 20*time.Millisecond, logrus.New())
@@ -44,7 +44,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		o, err := store.Orchestrations().GetByID(id)
 		require.NoError(t, err)
 
-		assert.Equal(t, internal.Succeeded, o.State)
+		assert.Equal(t, orchestration.Succeeded, o.State)
 	})
 	t.Run("InProgress", func(t *testing.T) {
 		// given
@@ -56,7 +56,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		id := "id"
 		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
-			State:           internal.InProgress,
+			State:           orchestration.InProgress,
 			Parameters: orchestration.Parameters{
 				Strategy: orchestration.StrategySpec{
 					Type:     orchestration.ParallelStrategy,
@@ -75,7 +75,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		o, err := store.Orchestrations().GetByID(id)
 		require.NoError(t, err)
 
-		assert.Equal(t, internal.Succeeded, o.State)
+		assert.Equal(t, orchestration.Succeeded, o.State)
 
 	})
 
@@ -90,7 +90,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		id := "id"
 		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
-			State:           internal.Pending,
+			State:           orchestration.Pending,
 			Parameters: orchestration.Parameters{
 				DryRun: true,
 			}})
@@ -105,7 +105,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		o, err := store.Orchestrations().GetByID(id)
 		require.NoError(t, err)
 
-		assert.Equal(t, internal.Succeeded, o.State)
+		assert.Equal(t, orchestration.Succeeded, o.State)
 
 	})
 
@@ -142,7 +142,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 
 		givenO := internal.Orchestration{
 			OrchestrationID: id,
-			State:           internal.InProgress,
+			State:           orchestration.InProgress,
 			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
 				Type:     orchestration.ParallelStrategy,
 				Schedule: orchestration.Immediate,
@@ -160,7 +160,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		o, err := store.Orchestrations().GetByID(id)
 		require.NoError(t, err)
 
-		assert.Equal(t, internal.Succeeded, o.State)
+		assert.Equal(t, orchestration.Succeeded, o.State)
 
 	})
 }

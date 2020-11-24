@@ -88,7 +88,7 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 
 func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params orchestrationExt.Parameters) ([]internal.UpgradeKymaOperation, error) {
 	var result []internal.UpgradeKymaOperation
-	if o.State == internal.Pending {
+	if o.State == orchestrationExt.Pending {
 		runtimes, err := u.resolver.Resolve(params.Targets)
 		if err != nil {
 			return result, errors.Wrap(err, "while resolving targets")
@@ -141,9 +141,9 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 		}
 
 		if len(runtimes) != 0 {
-			o.State = internal.InProgress
+			o.State = orchestrationExt.InProgress
 		} else {
-			o.State = internal.Succeeded
+			o.State = orchestrationExt.Succeeded
 		}
 		o.Description = fmt.Sprintf("Scheduled %d operations", len(runtimes))
 
@@ -182,7 +182,7 @@ func (u *upgradeKymaManager) filterOperationsInProgress(ops []internal.UpgradeKy
 
 func (u *upgradeKymaManager) failOrchestration(o *internal.Orchestration, err error) (time.Duration, error) {
 	u.log.Errorf("orchestration %s failed: %s", o.OrchestrationID, err)
-	return u.updateOrchestration(o, internal.Failed, err.Error()), nil
+	return u.updateOrchestration(o, orchestrationExt.Failed, err.Error()), nil
 }
 
 func (u *upgradeKymaManager) updateOrchestration(o *internal.Orchestration, state, description string) time.Duration {
@@ -222,9 +222,9 @@ func (u *upgradeKymaManager) waitForCompletion(o *internal.Orchestration) error 
 		return errors.Wrap(err, "while waiting for scheduled operations to finish")
 	}
 
-	orchestrationState := internal.Succeeded
+	orchestrationState := orchestrationExt.Succeeded
 	if stats[domain.Failed] > 0 {
-		orchestrationState = internal.Failed
+		orchestrationState = orchestrationExt.Failed
 	}
 
 	o.State = orchestrationState
