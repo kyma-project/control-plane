@@ -96,7 +96,9 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		rvc := &automock.RuntimeVersionConfiguratorForUpgrade{}
 		defer rvc.AssertExpectations(t)
-		rvc.On("ForUpgrade").Return(ver).Once()
+		expectedOperation := upgradeOperation
+		expectedOperation.Version++
+		rvc.On("ForUpgrade", expectedOperation).Return(ver, nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, inputBuilder, nil, rvc)
 

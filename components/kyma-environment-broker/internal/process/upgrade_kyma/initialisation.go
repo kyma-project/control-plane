@@ -162,7 +162,10 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 	if !operation.RuntimeVersion.IsEmpty() {
 		return nil
 	}
-	version := s.runtimeVerConfigurator.ForUpgrade()
+	version, err := s.runtimeVerConfigurator.ForUpgrade(*operation)
+	if err != nil {
+		return errors.Wrap(err, "while getting runtime version for upgrade")
+	}
 	operation.RuntimeVersion = *version
 
 	var repeat time.Duration
