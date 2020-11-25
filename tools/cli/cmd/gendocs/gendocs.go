@@ -12,8 +12,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/command"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/command"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 )
 
 const (
