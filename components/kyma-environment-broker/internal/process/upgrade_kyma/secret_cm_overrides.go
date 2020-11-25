@@ -17,7 +17,7 @@ type RuntimeOverridesAppender interface {
 	Append(input runtimeoverrides.InputAppender, planID, kymaVersion string) error
 }
 
-//go:generate mockery -name=RuntimeVersionConfiguratorForUpgrade -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=RuntimeVersionConfiguratorForUpgrade --output=automock --outpkg=automock --case=underscore
 type RuntimeVersionConfiguratorForUpgrade interface {
 	ForUpgrade(op internal.UpgradeKymaOperation) (*internal.RuntimeVersionData, error)
 }
