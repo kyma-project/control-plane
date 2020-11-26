@@ -379,6 +379,7 @@ func main() {
 		gardenerNamespace, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, logs)
 	fatalOnError(err)
 
+	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
 	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, cfg.MaxPaginationPage, logs)
 
 	if !cfg.DisableProcessOperationsInProgress {
