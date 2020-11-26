@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/credential"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/credential"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

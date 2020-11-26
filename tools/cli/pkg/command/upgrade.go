@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/cli/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 )
 
 // UpgradeCommand is the base type of all subcommands under the upgrade command. The type holds common attributes and methods inherited by all subcommands

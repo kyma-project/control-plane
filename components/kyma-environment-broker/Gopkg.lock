@@ -147,14 +147,6 @@
   revision = "26c1120b8d4107d2471b93ad78ef7ce1fc84c4c4"
 
 [[projects]]
-  digest = "1:1c982c5d5bbe792e6dca8304d23aa38a1bd268e38607e35b14e00d688caf69a8"
-  name = "github.com/coreos/go-oidc"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "8d771559cf6e5111c9b9159810d0e4538e7cdc82"
-  version = "v2.2.1"
-
-[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -254,14 +246,6 @@
   version = "v3.2.2"
 
 [[projects]]
-  digest = "1:0914bf7efc3e3052163e92b859a89f3b407ad353d7c3b7f59a1bbb4fd05bb25d"
-  name = "github.com/fsnotify/fsnotify"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "45d7d09e39ef4ac08d493309fa031790c15bfe8a"
-  version = "v1.4.9"
-
-[[projects]]
   digest = "1:e02805fa1257a13418c3b92eed1f77100171ab98febb79a9b6515d88ee594f09"
   name = "github.com/gardener/gardener"
   packages = [
@@ -356,14 +340,6 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:c457ba5895cc42f42f96b98a117d02a380563006749876b12b6e7f24f20cd096"
-  name = "github.com/google/wire"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "578b29ef42c1970b9853962dd1c4308fd7eb5387"
-  version = "v0.4.0"
-
-[[projects]]
   digest = "1:5e092394bed250d7fda36cef8b7e1d22bb2d5f71878bbb137be5fc1c2705f965"
   name = "github.com/googleapis/gnostic"
   packages = [
@@ -427,25 +403,6 @@
   version = "v0.5.4"
 
 [[projects]]
-  digest = "1:11c6c696067d3127ecf332b10f89394d386d9083f82baf71f40f2da31841a009"
-  name = "github.com/hashicorp/hcl"
-  packages = [
-    ".",
-    "hcl/ast",
-    "hcl/parser",
-    "hcl/printer",
-    "hcl/scanner",
-    "hcl/strconv",
-    "hcl/token",
-    "json/parser",
-    "json/scanner",
-    "json/token",
-  ]
-  pruneopts = "NUT"
-  revision = "8cb6e5b959231cc1119e43259c4a608f9c51a241"
-  version = "v1.0.0"
-
-[[projects]]
   digest = "1:b6957bedbe19df7d0db052bfe164a3e967734d7ecc9c5a6703bd193e72765721"
   name = "github.com/huandu/xstrings"
   packages = ["."]
@@ -460,59 +417,6 @@
   pruneopts = "NUT"
   revision = "1afb36080aec31e0d1528973ebe6721b191b0369"
   version = "v0.3.8"
-
-[[projects]]
-  digest = "1:406338ad39ab2e37b7f4452906442a3dbf0eb3379dd1f06aafb5c07e769a5fbb"
-  name = "github.com/inconshreveable/mousetrap"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
-  version = "v1.0"
-
-[[projects]]
-  digest = "1:6505644f0d3ec0207b2593792e39f254290558553ad8b30f78c1b6b78e5f49aa"
-  name = "github.com/int128/kubelogin"
-  packages = [
-    "pkg/adaptors/browser",
-    "pkg/adaptors/certpool",
-    "pkg/adaptors/clock",
-    "pkg/adaptors/credentialpluginwriter",
-    "pkg/adaptors/logger",
-    "pkg/adaptors/oidcclient",
-    "pkg/adaptors/oidcclient/logging",
-    "pkg/adaptors/reader",
-    "pkg/adaptors/stdio",
-    "pkg/adaptors/tokencache",
-    "pkg/jwt",
-    "pkg/oidc",
-    "pkg/pkce",
-    "pkg/usecases/authentication",
-    "pkg/usecases/authentication/authcode",
-    "pkg/usecases/authentication/ropc",
-    "pkg/usecases/credentialplugin",
-  ]
-  pruneopts = "NUT"
-  revision = "6071dd83a3c8ee9fe4ec0df63583beb2a5467de8"
-  version = "v1.21.0"
-
-[[projects]]
-  digest = "1:87e17059c444f0a198fc99999918bd8f374a7dc22f12b1bf3882e931df77a081"
-  name = "github.com/int128/listener"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "d3b8de705416ee04fd904e62e96273fb48a2a0fb"
-  version = "v1.1.0"
-
-[[projects]]
-  digest = "1:d00896bca1153979d938cfc4ce18903690f68df6263029a6a59f5d994d718bf5"
-  name = "github.com/int128/oauth2cli"
-  packages = [
-    ".",
-    "oauth2params",
-  ]
-  pruneopts = "NUT"
-  revision = "a52d98eb988e0732b1964dde5c9a9e2428bba31e"
-  version = "v1.13.0"
 
 [[projects]]
   digest = "1:88116f979a2f3ff8e6748a942ec37efd668ba2db062fc9a5e47f4dd2de339a38"
@@ -539,12 +443,9 @@
   revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
 
 [[projects]]
-  digest = "1:019936e2c808516bb3597e2147d87ec52c3fe119080e35905f2f1f4f7327d1ee"
+  digest = "1:c28e78a7689386694fb119eadd0450ec090eed63446b4453d6776d318b54cc53"
   name = "github.com/kyma-project/control-plane"
-  packages = [
-    "components/kubeconfig-service/pkg/client",
-    "components/provisioner/pkg/gqlschema",
-  ]
+  packages = ["components/provisioner/pkg/gqlschema"]
   pruneopts = "NUT"
   revision = "8c42ec6476f185fec8dffb409eb27dedd6d76d5a"
 
@@ -569,28 +470,12 @@
   version = "v1.3.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:e94e69261097d7067fa28052bcf209be4c47b12c665b7e88116c96f905a77364"
-  name = "github.com/liggitt/tabwriter"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "89fcab3d43de07060e4fd4c1547430ed57e87f24"
-
-[[projects]]
   digest = "1:8139f3ca1f0523e8db13e12c21b5c1b3ec2f396ae27c64ca1bc126f8136d2e7f"
   name = "github.com/machinebox/graphql"
   packages = ["."]
   pruneopts = "NUT"
   revision = "05b17f3157491bbfa5d6fc2006443a272d960d15"
   version = "v0.2.2"
-
-[[projects]]
-  digest = "1:74611e92e1e3339325f563e667395500211fb0d8713eccda2a381c2e9533b4b3"
-  name = "github.com/magiconair/properties"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "0e5c09062c2daef666bd279e2d2d9f25f218f2be"
-  version = "v1.8.4"
 
 [[projects]]
   digest = "1:b94761204ef188cce92f69d5f3089762fc4b7f41fea901c9590544ebfd5d5d27"
@@ -615,14 +500,6 @@
   pruneopts = "NUT"
   revision = "9a1b6f44e8da0e0e374624fb0a825a231b00c537"
   version = "v1.0.0"
-
-[[projects]]
-  digest = "1:40709da827caf66d1421f7e7251ed840c1c04423597041332d01797403280e49"
-  name = "github.com/mitchellh/mapstructure"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "9e1e4717f8567d7ead72d070d064ad17d444a67e"
-  version = "v1.3.3"
 
 [[projects]]
   digest = "1:bb676c5bf47f2159355d464cec0aba0af54140789768e5b1a74dbb68452c5aee"
@@ -686,14 +563,6 @@
   version = "v1.2"
 
 [[projects]]
-  digest = "1:fc97cf2189534e5e812b334032c4f6add2ff4457fa0f4221fbb8fd8c2a03ee7f"
-  name = "github.com/pelletier/go-toml"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "65ca8064882c8c308e5c804c5d5443d409e0738c"
-  version = "v1.8.1"
-
-[[projects]]
   digest = "1:a4a7e15e43bc64f5c551d18ed4b52a42a9636927ae6c77ac50eb6e0e06c0c380"
   name = "github.com/pivotal-cf/brokerapi"
   packages = [
@@ -706,14 +575,6 @@
   pruneopts = "NUT"
   revision = "c6d8338e2a6ae0313e16c8658f916bfdf2441f03"
   version = "v7.1.0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:3c47bdd19ee30cc18546c0003a69a08908e86b2ea3e435be78e337575271e83b"
-  name = "github.com/pkg/browser"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "0a3d74bf9ce488f035cf5bc36f753a711bc74334"
 
 [[projects]]
   digest = "1:14715f705ff5dfe0ffd6571d7d201dd8e921030f8070321a79380d8ca4ec1a24"
@@ -730,17 +591,6 @@
   pruneopts = "NUT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:56d4317a6d538c1212c1884f0440a291d7f86a9950a9c9659d630afc7250089c"
-  name = "github.com/pquerna/cachecontrol"
-  packages = [
-    ".",
-    "cacheobject",
-  ]
-  pruneopts = "NUT"
-  revision = "858c6e7e6b7e879f681b8ced4da529d4b2918ab6"
 
 [[projects]]
   digest = "1:097cc61836050f45cbb712ae3bb45d66fba464c16b8fac09907fa3c1f753eff6"
@@ -833,44 +683,12 @@
   version = "v1.2.2"
 
 [[projects]]
-  digest = "1:58dae2a64f88329debe1daed979ccd2fd9b5a1b4b1867c2bc7ed96acb0ff00d0"
-  name = "github.com/spf13/cast"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "1ffadf551085444af981432dd0f6d1160c11ec64"
-  version = "v1.3.1"
-
-[[projects]]
-  digest = "1:e9c1f69ccb4b7a224ceb6ee37cd1106ee4cc8a16927b773c5d877dd56adc67c2"
-  name = "github.com/spf13/cobra"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "a684a6d7f5e37385d954dd3b5a14fc6912c6ab9d"
-  version = "v1.0.0"
-
-[[projects]]
-  digest = "1:3d72352adb74e79d6d5a43d6f51bfd2d0bd0c9b5f3c00cf5a4b1636d8d3b9d92"
-  name = "github.com/spf13/jwalterweatherman"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "94f6ae3ed3bceceafa716478c5fbf8d29ca601a1"
-  version = "v1.1.0"
-
-[[projects]]
   digest = "1:d115708a27806831d1babbc6f28a7478ddf8e32a7095507c816e2515fb03a810"
   name = "github.com/spf13/pflag"
   packages = ["."]
   pruneopts = "NUT"
   revision = "2e9d26c8c37aae03e3f9d4e90b7116f5accb7cab"
   version = "v1.0.5"
-
-[[projects]]
-  digest = "1:fec0368c130b82ac6044d7460c860798b0333a0761e4c3244ec5364201db2777"
-  name = "github.com/spf13/viper"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "3826be313591f83193f048520482a7b3cf17d506"
-  version = "v1.7.1"
 
 [[projects]]
   digest = "1:60a46e2410edbf02b419f833372dd1d24d7aa1b916a990a7370e792fada1eadd"
@@ -891,14 +709,6 @@
   pruneopts = "NUT"
   revision = "221dbe5ed46703ee255b1da0dec05086f5035f62"
   version = "v1.4.0"
-
-[[projects]]
-  digest = "1:f60e4a8af6b6f3940cbdd28b1262221d28b4eb4d31b87bdb7b219f5fc0f278bf"
-  name = "github.com/subosito/gotenv"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "2ef7124db659d49edac6aa459693a15ae36c671a"
-  version = "v1.2.0"
 
 [[projects]]
   digest = "1:d08ebc29e2d83da1302c0dcfe7ee51724f71b935bf40026df07ef0c07d4de903"
@@ -969,11 +779,9 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8cbc3f42001c546516a84b8c7e47c0073a2c03b6acc18c3cc9ddd79a0524a9b6"
+  digest = "1:22910d6c3f8521a9c71d518d0aa0ff98ba0457852e03d63930466f2dbb6119e5"
   name = "golang.org/x/crypto"
   packages = [
-    "ed25519",
-    "ed25519/internal/edwards25519",
     "pbkdf2",
     "pkcs12",
     "pkcs12/internal/rc2",
@@ -1121,26 +929,6 @@
   version = "v0.9.1"
 
 [[projects]]
-  digest = "1:a88016144e08aa784330d6b68917adb02d2f3867c094576e70b7dc56c7ed7f69"
-  name = "gopkg.in/ini.v1"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "fcd0515f91612282aba5f5231a7dd71487e6dd8f"
-  version = "v1.61.0"
-
-[[projects]]
-  digest = "1:559d892ae6c1cc1561b0837324d5620def72b34cfd53f73b7a7ff207e5d6f336"
-  name = "gopkg.in/square/go-jose.v2"
-  packages = [
-    ".",
-    "cipher",
-    "json",
-  ]
-  pruneopts = "NUT"
-  revision = "3a5ee095dcb5030a9de84fb92c222ac652fff176"
-  version = "v2.5.1"
-
-[[projects]]
   digest = "1:d9b9ac6943a512737f76bf3d61b08d97121c66686bc02ffc231313563230b468"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
@@ -1245,7 +1033,7 @@
   version = "v0.17.13"
 
 [[projects]]
-  digest = "1:0c1800ef4e948a455766f041af484e0d16e120237f3e13a6a46da9c847444734"
+  digest = "1:d55d681a63b69b8395fb31300536de2e4250632dc55f2634853d0b7fd6fb4156"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -1335,7 +1123,6 @@
     "rest/watch",
     "restmapper",
     "testing",
-    "third_party/forked/golang/template",
     "tools/auth",
     "tools/clientcmd",
     "tools/clientcmd/api",
@@ -1348,7 +1135,6 @@
     "util/connrotation",
     "util/flowcontrol",
     "util/homedir",
-    "util/jsonpath",
     "util/keyutil",
     "util/workqueue",
   ]
@@ -1426,25 +1212,11 @@
     "github.com/gorilla/handlers",
     "github.com/gorilla/mux",
     "github.com/hashicorp/go-multierror",
-    "github.com/int128/kubelogin/pkg/adaptors/browser",
-    "github.com/int128/kubelogin/pkg/adaptors/certpool",
-    "github.com/int128/kubelogin/pkg/adaptors/clock",
-    "github.com/int128/kubelogin/pkg/adaptors/credentialpluginwriter",
-    "github.com/int128/kubelogin/pkg/adaptors/logger",
-    "github.com/int128/kubelogin/pkg/adaptors/oidcclient",
-    "github.com/int128/kubelogin/pkg/adaptors/reader",
-    "github.com/int128/kubelogin/pkg/adaptors/tokencache",
-    "github.com/int128/kubelogin/pkg/usecases/authentication",
-    "github.com/int128/kubelogin/pkg/usecases/authentication/authcode",
-    "github.com/int128/kubelogin/pkg/usecases/authentication/ropc",
-    "github.com/int128/kubelogin/pkg/usecases/credentialplugin",
     "github.com/kyma-incubator/compass/components/director/pkg/graphql",
     "github.com/kyma-incubator/compass/components/director/pkg/jsonschema",
-    "github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/client",
     "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema",
     "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/lib/pq",
-    "github.com/liggitt/tabwriter",
     "github.com/machinebox/graphql",
     "github.com/matryer/is",
     "github.com/pborman/uuid",
@@ -1459,9 +1231,6 @@
     "github.com/sirupsen/logrus",
     "github.com/sirupsen/logrus/hooks/test",
     "github.com/spf13/afero",
-    "github.com/spf13/cobra",
-    "github.com/spf13/pflag",
-    "github.com/spf13/viper",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",
@@ -1484,8 +1253,6 @@
     "k8s.io/client-go/rest",
     "k8s.io/client-go/testing",
     "k8s.io/client-go/tools/clientcmd",
-    "k8s.io/client-go/util/homedir",
-    "k8s.io/client-go/util/jsonpath",
     "k8s.io/client-go/util/workqueue",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/apiutil",
