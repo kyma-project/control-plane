@@ -34,7 +34,7 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionComputed(t *testing.T)
 
 		rvcMock := &automock.RuntimeVersionConfiguratorForUpgrade{}
 		defer rvcMock.AssertExpectations(t)
-		rvcMock.On("ForUpgrade").Return(&internal.RuntimeVersionData{Version: kymaVersion}).Once()
+		rvcMock.On("ForUpgrade", operation).Return(&internal.RuntimeVersionData{Version: kymaVersion}, nil).Once()
 
 		step := NewOverridesFromSecretsAndConfigStep(memoryStorage.Operations(), runtimeOverridesMock, rvcMock)
 

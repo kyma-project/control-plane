@@ -30,6 +30,14 @@ func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.ProvisioningO
 	return internal.NewRuntimeVersionFromParameters(pp.Parameters.KymaVersion), nil
 }
 
-func (rvc *RuntimeVersionConfigurator) ForUpgrade() *internal.RuntimeVersionData {
-	return internal.NewRuntimeVersionFromDefaults(rvc.defaultVersion)
+func (rvc *RuntimeVersionConfigurator) ForUpgrade(op internal.UpgradeKymaOperation) (*internal.RuntimeVersionData, error) {
+	version, found, err := rvc.globalAccountMapping.Get(op.GlobalAccountID)
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		return internal.NewRuntimeVersionFromGlobalAccount(version), nil
+	}
+
+	return internal.NewRuntimeVersionFromDefaults(rvc.defaultVersion), nil
 }
