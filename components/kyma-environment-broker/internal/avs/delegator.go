@@ -1,6 +1,7 @@
 package avs
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -79,6 +80,82 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 	}
 
 	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.Avs.AvsEvaluationInternalId)
+
+	return updatedOperation, d, nil
+}
+
+func (del *Delegator) GetEvaluation(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant) (internal.ProvisioningOperation, *BasicEvaluationCreateResponse, time.Duration, error) {
+	logger.Infof("starting the step avs internal id [%d] and avs external id [%d]", operation.Avs.AvsEvaluationInternalId, operation.Avs.AVSEvaluationExternalId)
+
+	var updatedOperation internal.ProvisioningOperation
+	d := 0 * time.Second
+
+	logger.Infof("making avs calls to get the Evaluation")
+	evalId := evalAssistant.GetEvaluationId(operation.Avs)
+	evalResp, err := del.client.GetEvaluation(strconv.FormatInt(evalId, 10))
+	switch {
+	case err == nil:
+	case kebError.IsTemporaryError(err):
+		errMsg := "cannot get AVS evaluation (temporary)"
+		logger.Errorf("%s: %s", errMsg, err)
+		retryConfig := evalAssistant.provideRetryConfig()
+		op, duration, err := del.operationManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
+		return op, &BasicEvaluationCreateResponse{}, duration, err
+	default:
+		errMsg := "cannot get AVS evaluation"
+		logger.Errorf("%s: %s", errMsg, err)
+		op, duration, err :=  del.operationManager.OperationFailed(operation, errMsg)
+		return op, &BasicEvaluationCreateResponse{}, duration, err
+	}
+
+	updatedOperation, d = del.operationManager.UpdateOperation(operation)
+
+	return updatedOperation, evalResp, d, nil
+}
+
+func (del *Delegator) UpdateEvaluation(logger logrus.FieldLogger, operation internal.ProvisioningOperation,  evaluation *BasicEvaluationCreateResponse, evalAssistant EvalAssistant, url string) (internal.ProvisioningOperation, time.Duration, error) {
+	logger.Infof("starting the update avs internal id [%d] and avs external id [%d]", operation.Avs.AvsEvaluationInternalId, operation.Avs.AVSEvaluationExternalId)
+
+	var updatedOperation internal.ProvisioningOperation
+	d := 0 * time.Second
+
+	updatedEvaluation := &BasicEvaluationCreateRequest{
+		DefinitionType:   evaluation.DefinitionType,
+		Name:             evaluation.Name,
+		Description:      evaluation.Description,
+		Service:          evaluation.Service,
+		URL:              evaluation.URL,
+		CheckType:        evaluation.CheckType,
+		Interval:         evaluation.Interval,
+		TesterAccessId:   evaluation.TesterAccessId,
+		Timeout:          evaluation.Timeout,
+		ReadOnly:         evaluation.ReadOnly,
+		ContentCheck:     evaluation.ContentCheck,
+		ContentCheckType: evaluation.ContentCheckType,
+		Threshold:        strconv.FormatInt(evaluation.Threshold, 10),
+		GroupId:          evaluation.GroupId,
+		Visibility:       evaluation.Visibility,
+		Tags:             evaluation.Tags,
+	}
+	logger.Infof("making avs calls to update the Evaluation")
+
+	updateResp, err := del.client.UpdateEvaluation(updatedEvaluation)
+	switch {
+	case err == nil:
+	case kebError.IsTemporaryError(err):
+		errMsg := "cannot update AVS evaluation (temporary)"
+		logger.Errorf("%s: %s", errMsg, err)
+		retryConfig := evalAssistant.provideRetryConfig()
+		return del.operationManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
+	default:
+		errMsg := "cannot update AVS evaluation"
+		logger.Errorf("%s: %s", errMsg, err)
+		return del.operationManager.OperationFailed(operation, errMsg)
+	}
+
+	logger.Infof("Successfully updated evaluation %s", updateResp.Id)
+
+	updatedOperation, d = del.operationManager.UpdateOperation(operation)
 
 	return updatedOperation, d, nil
 }

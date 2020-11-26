@@ -39,15 +39,16 @@ type KymaVersionConfigurator interface {
 }
 
 type InitialisationStep struct {
-	operationManager            *process.ProvisionOperationManager
-	instanceStorage             storage.Instances
-	provisionerClient           provisioner.Client
-	directorClient              DirectorClient
-	inputBuilder                input.CreatorForPlan
-	externalEvalCreator         *ExternalEvalCreator
-	iasType                     *IASType
-	provisioningTimeout         time.Duration
-	runtimeVerConfigurator      RuntimeVersionConfiguratorForProvisioning
+	operationManager       *process.ProvisionOperationManager
+	instanceStorage        storage.Instances
+	provisionerClient      provisioner.Client
+	directorClient         DirectorClient
+	inputBuilder           input.CreatorForPlan
+	externalEvalCreator    *ExternalEvalCreator
+	internalEvalUpdater *InternalEvalUpdater
+	iasType                *IASType
+	provisioningTimeout    time.Duration
+	runtimeVerConfigurator RuntimeVersionConfiguratorForProvisioning
 	serviceManagerClientFactory *servicemanager.ClientFactory
 }
 
@@ -57,6 +58,7 @@ func NewInitialisationStep(os storage.Operations,
 	dc DirectorClient,
 	b input.CreatorForPlan,
 	avsExternalEvalCreator *ExternalEvalCreator,
+	avsInternalEvalUpdater *InternalEvalUpdater,
 	iasType *IASType,
 	timeout time.Duration,
 	rvc RuntimeVersionConfiguratorForProvisioning,
@@ -222,6 +224,12 @@ func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOp
 	}
 
 	// action #2
+	operation, repeat, err = s.internalEvalUpdater.addEvalTags(operation, "", log)
+	if err != nil || repeat != 0 {
+		return operation, repeat, nil
+	}
+
+	// action #3
 	repeat, err = s.iasType.ConfigureType(operation, instance.DashboardURL, log)
 	if err != nil || repeat != 0 {
 		return operation, repeat, nil

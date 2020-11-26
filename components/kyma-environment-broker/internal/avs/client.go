@@ -28,8 +28,7 @@ func NewClient(ctx context.Context, avsConfig Config, log logrus.FieldLogger) (*
 	return &Client{
 		avsConfig: avsConfig,
 		log:       log,
-
-		ctx: ctx,
+		ctx:       ctx,
 	}, nil
 }
 
@@ -60,6 +59,64 @@ func (c *Client) CreateEvaluation(evaluationRequest *BasicEvaluationCreateReques
 	err = json.NewDecoder(response.Body).Decode(&responseObject)
 	if err != nil {
 		return nil, errors.Wrap(err, "while decode create evaluation response")
+	}
+
+	return &responseObject, nil
+}
+
+func (c *Client) GetEvaluation(evaluationID string) (_ *BasicEvaluationCreateResponse, err error) {
+	var responseObject BasicEvaluationCreateResponse
+
+	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", c.avsConfig.ApiEndpoint, evaluationID), nil)
+	if err != nil {
+		return &responseObject, errors.Wrap(err, "while creating request")
+	}
+
+	response, err := c.execute(request, false, true)
+	if err != nil {
+		return &responseObject, errors.Wrap(err, "while executing CreateEvaluation request")
+	}
+	defer func() {
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing CreateEvaluation response")
+		}
+	}()
+
+	err = json.NewDecoder(response.Body).Decode(&responseObject)
+	if err != nil {
+		return nil, errors.Wrap(err, "while decode create evaluation response")
+	}
+
+	return &responseObject, nil
+}
+
+func (c *Client) UpdateEvaluation(evaluationRequest *BasicEvaluationCreateRequest) (_ *BasicEvaluationCreateResponse, err error) {
+	var responseObject BasicEvaluationCreateResponse
+
+	objAsBytes, err := json.Marshal(evaluationRequest)
+	if err != nil {
+		return &responseObject, errors.Wrap(err, "while marshaling evaluation request")
+	}
+
+	request, err := http.NewRequest(http.MethodPost, c.avsConfig.ApiEndpoint, bytes.NewReader(objAsBytes))
+	if err != nil {
+		return &responseObject, errors.Wrap(err, "while creating request")
+	}
+	request.Header.Set("Content-Type", "application/json")
+
+	response, err := c.execute(request, false, true)
+	if err != nil {
+		return &responseObject, errors.Wrap(err, "while executing UpdateEvaluation request")
+	}
+	defer func() {
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing UpdateEvaluation response")
+		}
+	}()
+
+	err = json.NewDecoder(response.Body).Decode(&responseObject)
+	if err != nil {
+		return nil, errors.Wrap(err, "while decode UpdateEvaluation response")
 	}
 
 	return &responseObject, nil
