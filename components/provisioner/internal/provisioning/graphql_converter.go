@@ -108,6 +108,7 @@ func (c graphQLConverter) kymaConfigToGraphQLConfig(config model.KymaConfig) *gq
 
 	return &gqlschema.KymaConfig{
 		Version:       &config.Release.Version,
+		Profile:       c.profileToGraphQLProfile(config.Profile),
 		Components:    components,
 		Configuration: c.configurationToGraphQLConfig(config.GlobalConfiguration),
 	}
@@ -157,4 +158,24 @@ func (c graphQLConverter) operationStateToGraphQLState(state model.OperationStat
 	default:
 		return ""
 	}
+}
+
+func (c graphQLConverter) profileToGraphQLProfile(profile *model.KymaProfile) *gqlschema.KymaProfile {
+
+	if profile == nil {
+		return nil
+	}
+
+	var result gqlschema.KymaProfile
+
+	switch *profile {
+	case model.EvaluationProfile:
+		result = gqlschema.KymaProfileEvaluation
+	case model.ProductionProfile:
+		result = gqlschema.KymaProfileProduction
+	default:
+		result = gqlschema.KymaProfile("")
+	}
+
+	return &result
 }

@@ -112,7 +112,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	installationServiceMock.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
 
-	installationServiceMock.On("TriggerUpgrade", mock.Anything, mock.AnythingOfType("model.Release"),
+	installationServiceMock.On("TriggerUpgrade", mock.Anything, mock.Anything, mock.AnythingOfType("model.Release"),
 		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
 
 	installationServiceMock.On("PerformCleanup", mock.Anything).Return(nil)

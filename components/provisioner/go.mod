@@ -13,7 +13,7 @@ require (
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b
 	github.com/kyma-incubator/hydroform/install v0.0.0-20200817114824-fd8c8876066c
 	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200902131640-31c29c8feb0c
-	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20200902131640-31c29c8feb0c
+	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5
 	github.com/lib/pq v1.7.0
 	github.com/matryer/is v1.2.0
 	github.com/mitchellh/mapstructure v1.1.2

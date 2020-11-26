@@ -40,6 +40,12 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 
 	gcpGardenerProvider := &gqlschema.GCPProviderConfigInput{Zones: []string{"fix-gcp-zone-1", "fix-gcp-zone-2"}}
 
+	modelProductionProfile := model.ProductionProfile
+	gqlProductionProfile := gqlschema.KymaProfileProduction
+
+	modelEvaluationProfile := model.EvaluationProfile
+	gqlEvaluationProfile := gqlschema.KymaProfileEvaluation
+
 	gardenerGCPGQLInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "runtimeName",
@@ -69,7 +75,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				},
 			},
 		},
-		KymaConfig: fixKymaGraphQLConfigInput(),
+		KymaConfig: fixKymaGraphQLConfigInput(&gqlProductionProfile),
 	}
 
 	expectedGCPProviderCfg, err := model.NewGCPGardenerConfig(gcpGardenerProvider)
@@ -102,7 +108,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			GardenerProviderConfig:              expectedGCPProviderCfg,
 		},
 		Kubeconfig:   nil,
-		KymaConfig:   fixKymaConfig(),
+		KymaConfig:   fixKymaConfig(&modelProductionProfile),
 		Tenant:       tenant,
 		SubAccountId: util.StringPtr(subAccountId),
 	}
@@ -141,7 +147,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 					},
 				},
 			},
-			KymaConfig: fixKymaGraphQLConfigInput(),
+			KymaConfig: fixKymaGraphQLConfigInput(&gqlProductionProfile),
 		}
 	}
 
@@ -179,7 +185,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				GardenerProviderConfig:              expectedAzureProviderCfg,
 			},
 			Kubeconfig:   nil,
-			KymaConfig:   fixKymaConfig(),
+			KymaConfig:   fixKymaConfig(&modelProductionProfile),
 			Tenant:       tenant,
 			SubAccountId: util.StringPtr(subAccountId),
 		}
@@ -234,7 +240,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				},
 			},
 		},
-		KymaConfig: fixKymaGraphQLConfigInput(),
+		KymaConfig: fixKymaGraphQLConfigInput(&gqlEvaluationProfile),
 	}
 
 	expectedAWSProviderCfg, err := model.NewAWSGardenerConfig(awsGardenerProvider)
@@ -267,7 +273,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			GardenerProviderConfig:              expectedAWSProviderCfg,
 		},
 		Kubeconfig:   nil,
-		KymaConfig:   fixKymaConfig(),
+		KymaConfig:   fixKymaConfig(&modelEvaluationProfile),
 		Tenant:       tenant,
 		SubAccountId: util.StringPtr(subAccountId),
 	}
@@ -733,9 +739,10 @@ func newUpgradeShootInputWithoutProviderConfig(newPurpose string) gqlschema.Upgr
 	return input
 }
 
-func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
+func fixKymaGraphQLConfigInput(profile *gqlschema.KymaProfile) *gqlschema.KymaConfigInput {
 	return &gqlschema.KymaConfigInput{
 		Version: kymaVersion,
+		Profile: profile,
 		Components: []*gqlschema.ComponentConfigurationInput{
 			{
 				Component: clusterEssentialsComponent,
