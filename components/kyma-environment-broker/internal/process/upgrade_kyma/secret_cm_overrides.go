@@ -17,8 +17,9 @@ type RuntimeOverridesAppender interface {
 	Append(input runtimeoverrides.InputAppender, planID, kymaVersion string) error
 }
 
+//go:generate mockery --name=RuntimeVersionConfiguratorForUpgrade --output=automock --outpkg=automock --case=underscore
 type RuntimeVersionConfiguratorForUpgrade interface {
-	ForUpgrade() *internal.RuntimeVersionData
+	ForUpgrade(op internal.UpgradeKymaOperation) (*internal.RuntimeVersionData, error)
 }
 
 type OverridesFromSecretsAndConfigStep struct {
@@ -53,7 +54,10 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.UpgradeKymaOp
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 
-	version := s.getRuntimeVersion(operation)
+	version, err := s.getRuntimeVersion(operation)
+	if err != nil {
+		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
+	}
 
 	if err := s.runtimeOverrides.Append(operation.InputCreator, planName, version.Version); err != nil {
 		log.Errorf(err.Error())
@@ -63,14 +67,14 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.UpgradeKymaOp
 	return operation, 0, nil
 }
 
-func (s *OverridesFromSecretsAndConfigStep) getRuntimeVersion(operation internal.UpgradeKymaOperation) *internal.RuntimeVersionData {
+func (s *OverridesFromSecretsAndConfigStep) getRuntimeVersion(operation internal.UpgradeKymaOperation) (*internal.RuntimeVersionData, error) {
 	// for some previously stored operations the RuntimeVersion property may not be initialized
 	if operation.RuntimeVersion.Version != "" {
-		return &operation.RuntimeVersion
+		return &operation.RuntimeVersion, nil
 	}
 
 	// if so, we manually compute the correct version using the same algorithm as when preparing
 	// the provisioning operation. The following code can be removed after all operations will use
 	// new approach for setting up runtime version in operation struct
-	return s.runtimeVerConfigurator.ForUpgrade()
+	return s.runtimeVerConfigurator.ForUpgrade(operation)
 }

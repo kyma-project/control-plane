@@ -12,18 +12,25 @@ type RuntimeVersionConfiguratorForUpgrade struct {
 	mock.Mock
 }
 
-// ForUpgrade provides a mock function with given fields:
-func (_m *RuntimeVersionConfiguratorForUpgrade) ForUpgrade() *internal.RuntimeVersionData {
-	ret := _m.Called()
+// ForUpgrade provides a mock function with given fields: op
+func (_m *RuntimeVersionConfiguratorForUpgrade) ForUpgrade(op internal.UpgradeKymaOperation) (*internal.RuntimeVersionData, error) {
+	ret := _m.Called(op)
 
 	var r0 *internal.RuntimeVersionData
-	if rf, ok := ret.Get(0).(func() *internal.RuntimeVersionData); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(internal.UpgradeKymaOperation) *internal.RuntimeVersionData); ok {
+		r0 = rf(op)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*internal.RuntimeVersionData)
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(internal.UpgradeKymaOperation) error); ok {
+		r1 = rf(op)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }

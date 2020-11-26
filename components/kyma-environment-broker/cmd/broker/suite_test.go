@@ -39,9 +39,11 @@ import (
 )
 
 const (
-	globalAccountLabel  = "account"
-	subAccountLabel     = "subaccount"
-	runtimeIDAnnotation = "kcp.provisioner.kyma-project.io/runtime-id"
+	globalAccountLabel     = "account"
+	subAccountLabel        = "subaccount"
+	runtimeIDAnnotation    = "kcp.provisioner.kyma-project.io/runtime-id"
+	defaultNamespace       = "kcp-system"
+	kymaVersionsConfigName = "kyma-versions"
 )
 
 type OrchestrationSuite struct {
@@ -91,7 +93,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(defaultKymaVer, &runtimeversion.GlobalAccountVersionMapping{})
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(defaultKymaVer, runtimeversion.NewGlobalAccountVersionMapping(ctx, cli, defaultNamespace, kymaVersionsConfigName, logs))
 
 	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, gardenerClient.CoreV1beta1(),
 		gardenerNamespace, eventBroker, inputFactory, &upgrade_kyma.TimeSchedule{
