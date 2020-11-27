@@ -8,6 +8,7 @@ import (
 	"github.com/int128/kubelogin/pkg/adaptors/browser"
 	"github.com/int128/kubelogin/pkg/adaptors/clock"
 	"github.com/int128/kubelogin/pkg/adaptors/credentialpluginwriter"
+	"github.com/int128/kubelogin/pkg/adaptors/mutex"
 	"github.com/int128/kubelogin/pkg/adaptors/oidcclient"
 	"github.com/int128/kubelogin/pkg/adaptors/reader"
 	"github.com/int128/kubelogin/pkg/adaptors/tokencache"
@@ -92,6 +93,9 @@ func NewManager(oidcIssuerURL, oidcClientID, oidcClientSecret string, logger log
 		Authentication:       auth,
 		TokenCacheRepository: &tokencache.Repository{},
 		Writer:               writer,
+		Mutex: &mutex.Mutex{
+			Logger: logger,
+		},
 	}
 	mgr.getter = getToken
 
