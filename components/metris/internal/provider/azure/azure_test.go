@@ -14,13 +14,12 @@ import (
 var (
 	noopLogger     = log.NewNoopLogger()
 	providerConfig = &provider.Config{
-		PollInterval:     time.Minute,
-		Workers:          1,
-		Buffer:           1,
-		ClientTraceLevel: 2,
-		ClusterChannel:   make(chan *gardener.Cluster, 1),
-		EventsChannel:    make(chan *edp.Event, 1),
-		Logger:           noopLogger,
+		PollInterval:   time.Minute,
+		Workers:        1,
+		Buffer:         1,
+		ClusterChannel: make(chan *gardener.Cluster, 1),
+		EventsChannel:  make(chan *edp.Event, 1),
+		Logger:         noopLogger,
 	}
 
 	testCluster = &gardener.Cluster{

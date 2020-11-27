@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-project/control-plane/components/metris/internal/log"
 	"github.com/kyma-project/control-plane/components/metris/internal/provider"
 	"github.com/kyma-project/control-plane/components/metris/internal/service"
+	"github.com/kyma-project/control-plane/components/metris/internal/tracing"
 	"github.com/kyma-project/control-plane/components/metris/internal/utils"
 	"github.com/kyma-project/control-plane/components/metris/internal/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -25,6 +26,7 @@ type cli struct {
 	ProviderConfig provider.Config  `kong:"embed=true,prefix='provider-'"`
 	ListenAddr     string           `kong:"help='Address and port the metrics and health HTTP endpoints will bind to.',optional=true,env='METRIS_LISTEN_ADDRESS'"`
 	DebugPort      int              `kong:"help='Port the debug HTTP endpoint will bind to. Always listen on localhost.',optional=true,env='METRIS_DEBUG_PORT'"`
+	Tracing        tracing.Config   `kong:"embed=true"`
 	ConfigFile     kong.ConfigFlag  `kong:"help='Location of the config file.',type='path'"`
 	Kubeconfig     string           `kong:"help='Path to the Gardener kubeconfig file.',required=true,env='METRIS_KUBECONFIG'"`
 	LogLevel       string           `kong:"help='Logging level. (${loglevels})',default='info',env='METRIS_LOGLEVEL'"`
@@ -48,6 +50,17 @@ func main() {
 
 	log.SetLogLevel(app.LogLevel)
 
+	if app.Tracing.Enable {
+		tc, err := tracing.New(app.Tracing)
+		if err != nil {
+			log.Panic(err)
+		}
+
+		defer tc.Stop()
+
+		log.Named("zipkin").With("address", app.Tracing.ZipkinURL).Info("tracing enabled")
+	}
+
 	var (
 		g              service.Workgroup
 		clusterChannel = make(chan *gardener.Cluster, app.ProviderConfig.Buffer)
@@ -65,7 +78,7 @@ func main() {
 
 	pro, err := provider.NewProvider(app.ProviderType, &app.ProviderConfig)
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 
 	g.AddWithContext(pro.Run)
@@ -73,12 +86,12 @@ func main() {
 	// start gardener controller to sync clusters with provider
 	gclient, err := gardener.NewClient(app.Kubeconfig)
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 
 	ctrl, err := gardener.NewController(gclient, app.ProviderType, clusterChannel, log.Named("gardener"))
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 
 	g.Add(ctrl.Run)
@@ -95,6 +108,8 @@ func main() {
 		metrissvc.ServeMux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))
+		metrissvc.ServeMux.HandleFunc("/logz", log.LevelHandler)
+		// set loglevel: curl -X PUT -d '{"level":"debug"}' http://127.0.0.1:8080/logz
 
 		g.Add(metrissvc.Start)
 	}

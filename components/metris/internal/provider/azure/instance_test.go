@@ -97,14 +97,12 @@ func getMockClient() Client {
 			}
 			return
 		},
-		func(_ context.Context, uri, interval string, mnames, agg []string) []error {
-			errs := make([]error, 0)
-
+		func(_ context.Context, uri, interval string, mnames, agg []string) error {
 			if strings.Contains(uri, "mverr") {
-				errs = append(errs, fmt.Errorf("error"))
+				return fmt.Errorf("error")
 			}
 
-			return errs
+			return nil
 		},
 	)
 
@@ -202,8 +200,9 @@ func TestInstance_getComputeMetrics(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client, lastEvent: tt.fields.lastEvent, clusterResourceGroupName: tt.args.resourceGroupName}
-			got := i.getComputeMetrics(context.Background(), noopLogger, tt.args.vmcaps)
+			got, err := i.getComputeMetrics(context.Background(), noopLogger, tt.args.vmcaps)
 
+			asserts.NoError(err)
 			asserts.ElementsMatch(tt.want.VMTypes, got.VMTypes)
 			asserts.Equal(tt.want.ProvisionedCpus, got.ProvisionedCpus)
 			asserts.Equal(tt.want.ProvisionedRAMGB, got.ProvisionedRAMGB)
@@ -263,7 +262,8 @@ func TestInstance_getNetworkMetrics(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client, lastEvent: tt.fields.lastEvent, clusterResourceGroupName: tt.args.resourceGroupName}
-			got := i.getNetworkMetrics(context.Background(), noopLogger)
+			got, err := i.getNetworkMetrics(context.Background(), noopLogger)
+			asserts.NoError(err)
 			asserts.Equal(tt.want, got)
 		})
 	}
@@ -333,7 +333,8 @@ func TestInstance_getEventHubMetrics(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client, lastEvent: tt.fields.lastEvent, eventHubResourceGroupName: tt.args.resourceGroupName}
-			got := i.getEventHubMetrics(context.Background(), tt.args.pollinterval, noopLogger)
+			got, err := i.getEventHubMetrics(context.Background(), tt.args.pollinterval, noopLogger)
+			asserts.NoError(err)
 			asserts.Equal(tt.want, got)
 		})
 	}
