@@ -11,7 +11,7 @@ import (
 	"github.com/vburenin/nsync"
 )
 
-const trialSuffixLength = 10
+const trialSuffixLength = 5
 
 type Config struct {
 	URL                         string
