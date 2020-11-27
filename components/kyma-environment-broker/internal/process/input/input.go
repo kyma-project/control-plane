@@ -5,8 +5,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -120,8 +118,8 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 			execute: r.applyGlobalOverridesForProvisionRuntime,
 		},
 		{
-			name:    "adding random string to trial runtime name",
-			execute: r.addRandomStringToTrialRuntimeName,
+			name:    "adding random string to runtime name",
+			execute: r.addRandomStringToRuntimeName,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -278,12 +276,10 @@ func (r *RuntimeInput) applyGlobalOverridesForUpgradeRuntime() error {
 	return nil
 }
 
-func (r *RuntimeInput) addRandomStringToTrialRuntimeName() error {
+func (r *RuntimeInput) addRandomStringToRuntimeName() error {
 	rand.Seed(time.Now().UnixNano())
-	if broker.IsTrialPlan(r.provisioningParameters.PlanID) {
-		r.provisionRuntimeInput.RuntimeInput.Name =
-			fmt.Sprintf("%s-%s", r.provisionRuntimeInput.RuntimeInput.Name, randomString(trialSuffixLength))
-	}
+	r.provisionRuntimeInput.RuntimeInput.Name =
+		fmt.Sprintf("%s-%s", r.provisionRuntimeInput.RuntimeInput.Name, randomString(trialSuffixLength))
 	return nil
 }
 

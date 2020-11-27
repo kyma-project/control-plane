@@ -348,7 +348,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
-	assert.Equal(t, "azure-cluster", input.RuntimeInput.Name)
+	assert.Contains(t, input.RuntimeInput.Name, "azure-cluster")
 	assert.Equal(t, "azure", input.ClusterConfig.GardenerConfig.Provider)
 	assert.Equal(t, "azure-secret", input.ClusterConfig.GardenerConfig.TargetSecret)
 	require.NotNil(t, input.ClusterConfig.GardenerConfig.Purpose)
