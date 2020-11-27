@@ -3,6 +3,7 @@ package provisioning
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -54,8 +55,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	err = memoryStorage.Instances().Insert(fixInstance())
 	assert.NoError(t, err)
 
-	provisionerClient := &provisionerAutomock.Client{}
-	provisionerClient.On("ProvisionRuntime", globalAccountID, subAccountID, gqlschema.ProvisionRuntimeInput{
+	provisionerInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "dummy",
 			Description: nil,
@@ -99,7 +99,16 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 			},
 			Configuration: []*gqlschema.ConfigEntryInput{},
 		},
-	}).Return(gqlschema.OperationStatus{
+	}
+
+	provisionerClient := &provisionerAutomock.Client{}
+	provisionerClient.On("ProvisionRuntime", globalAccountID, subAccountID, mock.MatchedBy(
+		func(input gqlschema.ProvisionRuntimeInput) bool {
+			return reflect.DeepEqual(input.RuntimeInput.Labels, provisionerInput.RuntimeInput.Labels) &&
+				reflect.DeepEqual(input.KymaConfig, provisionerInput.KymaConfig) &&
+				reflect.DeepEqual(input.ClusterConfig, provisionerInput.ClusterConfig)
+		},
+	)).Return(gqlschema.OperationStatus{
 		ID:        ptr.String(provisionerOperationID),
 		Operation: "",
 		State:     "",
