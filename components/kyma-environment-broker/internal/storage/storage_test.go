@@ -550,43 +550,44 @@ func TestSchemaInitializer(t *testing.T) {
 
 			orchestrationID := "orchestration-id"
 			givenOperation1 := internal.UpgradeKymaOperation{
-				RuntimeOperation: internal.RuntimeOperation{
-					Operation: internal.Operation{
-						ID:    "operation-id-1",
-						State: domain.InProgress,
-						// used Round and set timezone to be able to compare timestamps
-						CreatedAt:              time.Now().Truncate(time.Millisecond),
-						UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second),
-						InstanceID:             "inst-id",
-						ProvisionerOperationID: "target-op-id",
-						Description:            "description",
-						Version:                1,
-						OrchestrationID:        orchestrationID,
-					},
+				Operation: internal.Operation{
+					ID:    "operation-id-1",
+					State: domain.InProgress,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second),
+					InstanceID:             "inst-id",
+					ProvisionerOperationID: "target-op-id",
+					Description:            "description",
+					Version:                1,
+					OrchestrationID:        orchestrationID,
 				},
+				RuntimeOperation: orchestration.RuntimeOperation{},
 			}
 
 			givenOperation2 := internal.UpgradeKymaOperation{
-				RuntimeOperation: internal.RuntimeOperation{
-					Operation: internal.Operation{
-						ID:    "operation-id-2",
-						State: domain.InProgress,
-						// used Round and set timezone to be able to compare timestamps
-						CreatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Minute),
-						UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second).Add(time.Minute),
-						InstanceID:             "inst-id",
-						ProvisionerOperationID: "target-op-id",
-						Description:            "description",
-						Version:                1,
-						OrchestrationID:        orchestrationID,
+				Operation: internal.Operation{
+					ID:    "operation-id-2",
+					State: domain.InProgress,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Minute),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second).Add(time.Minute),
+					InstanceID:             "inst-id",
+					ProvisionerOperationID: "target-op-id",
+					Description:            "description",
+					Version:                1,
+					OrchestrationID:        orchestrationID,
+				},
+				RuntimeOperation: orchestration.RuntimeOperation{
+					Runtime: orchestration.Runtime{
+						ShootName:              "shoot-stage",
+						MaintenanceWindowBegin: time.Now().Truncate(time.Millisecond).Add(time.Hour),
+						MaintenanceWindowEnd:   time.Now().Truncate(time.Millisecond).Add(time.Minute).Add(time.Hour),
+						RuntimeID:              "runtime-id",
+						GlobalAccountID:        "global-account-if",
+						SubAccountID:           "subaccount-id",
 					},
-					DryRun:                 false,
-					ShootName:              "shoot-stage",
-					MaintenanceWindowBegin: time.Now().Truncate(time.Millisecond).Add(time.Hour),
-					MaintenanceWindowEnd:   time.Now().Truncate(time.Millisecond).Add(time.Minute).Add(time.Hour),
-					RuntimeID:              "runtime-id",
-					GlobalAccountID:        "global-account-if",
-					SubAccountID:           "subaccount-id",
+					DryRun: false,
 				},
 				ProvisioningParameters: "{}",
 			}
