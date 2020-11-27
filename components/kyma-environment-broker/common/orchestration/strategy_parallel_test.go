@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -36,15 +34,15 @@ func TestNewParallelOrchestrationStrategy_Immediate(t *testing.T) {
 	executor := &testExecutor{opCalled: map[string]bool{}}
 	s := NewParallelOrchestrationStrategy(executor, logrus.New())
 
-	ops := make([]internal.RuntimeOperation, 3)
+	ops := make([]RuntimeOperation, 3)
 	for i := range ops {
-		ops[i] = internal.RuntimeOperation{
-			Operation: internal.Operation{ID: rand.String(5)},
+		ops[i] = RuntimeOperation{
+			ID: rand.String(5),
 		}
 	}
 
 	// when
-	id, err := s.Execute(ops, orchestration.StrategySpec{Schedule: orchestration.Immediate, Parallel: orchestration.ParallelStrategySpec{Workers: 2}})
+	id, err := s.Execute(ops, StrategySpec{Schedule: Immediate, Parallel: ParallelStrategySpec{Workers: 2}})
 
 	// then
 	assert.NoError(t, err)
@@ -58,16 +56,16 @@ func TestNewParallelOrchestrationStrategy_MaintenanceWindow(t *testing.T) {
 
 	start := time.Now().Add(5 * time.Second)
 
-	ops := make([]internal.RuntimeOperation, 3)
+	ops := make([]RuntimeOperation, 3)
 	for i := range ops {
-		ops[i] = internal.RuntimeOperation{
-			Operation:              internal.Operation{ID: rand.String(5)},
-			MaintenanceWindowBegin: start,
+		ops[i] = RuntimeOperation{
+			ID:      rand.String(5),
+			Runtime: Runtime{MaintenanceWindowBegin: start},
 		}
 	}
 
 	// when
-	id, err := s.Execute(ops, orchestration.StrategySpec{Schedule: orchestration.MaintenanceWindow, Parallel: orchestration.ParallelStrategySpec{Workers: 2}})
+	id, err := s.Execute(ops, StrategySpec{Schedule: MaintenanceWindow, Parallel: ParallelStrategySpec{Workers: 2}})
 
 	// then
 	assert.NoError(t, err)

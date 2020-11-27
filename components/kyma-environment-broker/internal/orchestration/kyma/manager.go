@@ -7,9 +7,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/google/uuid"
-	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -86,9 +85,9 @@ func (u *upgradeKymaManager) Execute(orchestrationID string) (time.Duration, err
 	return 0, nil
 }
 
-func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params orchestrationExt.Parameters) ([]internal.UpgradeKymaOperation, error) {
+func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params orchestration.Parameters) ([]internal.UpgradeKymaOperation, error) {
 	var result []internal.UpgradeKymaOperation
-	if o.State == orchestrationExt.Pending {
+	if o.State == orchestration.Pending {
 		runtimes, err := u.resolver.Resolve(params.Targets)
 		if err != nil {
 			return result, errors.Wrap(err, "while resolving targets")
@@ -106,30 +105,33 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 			}
 			windowBegin := time.Time{}
 			windowEnd := time.Time{}
-			if params.Strategy.Schedule == orchestrationExt.MaintenanceWindow {
+			if params.Strategy.Schedule == orchestration.MaintenanceWindow {
 				windowBegin, windowEnd = u.resolveWindowTime(r.MaintenanceWindowBegin, r.MaintenanceWindowEnd)
 			}
 
 			id := uuid.New().String()
 			op := internal.UpgradeKymaOperation{
-				RuntimeOperation: internal.RuntimeOperation{
-					Operation: internal.Operation{
-						ID:              id,
-						Version:         0,
-						CreatedAt:       time.Now(),
-						UpdatedAt:       time.Now(),
-						InstanceID:      r.InstanceID,
-						State:           domain.InProgress,
-						Description:     "Operation created",
-						OrchestrationID: o.OrchestrationID,
+				Operation: internal.Operation{
+					ID:              id,
+					Version:         0,
+					CreatedAt:       time.Now(),
+					UpdatedAt:       time.Now(),
+					InstanceID:      r.InstanceID,
+					State:           domain.InProgress,
+					Description:     "Operation created",
+					OrchestrationID: o.OrchestrationID,
+				},
+				RuntimeOperation: orchestration.RuntimeOperation{
+					ID: id,
+					Runtime: orchestration.Runtime{
+						ShootName:              r.ShootName,
+						MaintenanceWindowBegin: windowBegin,
+						MaintenanceWindowEnd:   windowEnd,
+						RuntimeID:              r.RuntimeID,
+						GlobalAccountID:        r.GlobalAccountID,
+						SubAccountID:           r.SubAccountID,
 					},
-					DryRun:                 params.DryRun,
-					ShootName:              r.ShootName,
-					MaintenanceWindowBegin: windowBegin,
-					MaintenanceWindowEnd:   windowEnd,
-					RuntimeID:              r.RuntimeID,
-					GlobalAccountID:        r.GlobalAccountID,
-					SubAccountID:           r.SubAccountID,
+					DryRun: params.DryRun,
 				},
 				PlanID: provisioningParams.PlanID,
 			}
@@ -141,9 +143,9 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 		}
 
 		if len(runtimes) != 0 {
-			o.State = orchestrationExt.InProgress
+			o.State = orchestration.InProgress
 		} else {
-			o.State = orchestrationExt.Succeeded
+			o.State = orchestration.Succeeded
 		}
 		o.Description = fmt.Sprintf("Scheduled %d operations", len(runtimes))
 
@@ -160,16 +162,16 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 	return result, nil
 }
 
-func (u *upgradeKymaManager) resolveStrategy(sType orchestrationExt.StrategyType, executor process.Executor, log logrus.FieldLogger) orchestration.Strategy {
+func (u *upgradeKymaManager) resolveStrategy(sType orchestration.StrategyType, executor process.Executor, log logrus.FieldLogger) orchestration.Strategy {
 	switch sType {
-	case orchestrationExt.ParallelStrategy:
+	case orchestration.ParallelStrategy:
 		return orchestration.NewParallelOrchestrationStrategy(executor, log)
 	}
 	return nil
 }
 
-func (u *upgradeKymaManager) filterOperationsInProgress(ops []internal.UpgradeKymaOperation) []internal.RuntimeOperation {
-	result := make([]internal.RuntimeOperation, 0)
+func (u *upgradeKymaManager) filterOperationsInProgress(ops []internal.UpgradeKymaOperation) []orchestration.RuntimeOperation {
+	result := make([]orchestration.RuntimeOperation, 0)
 
 	for _, op := range ops {
 		if op.State == domain.InProgress {
@@ -182,7 +184,7 @@ func (u *upgradeKymaManager) filterOperationsInProgress(ops []internal.UpgradeKy
 
 func (u *upgradeKymaManager) failOrchestration(o *internal.Orchestration, err error) (time.Duration, error) {
 	u.log.Errorf("orchestration %s failed: %s", o.OrchestrationID, err)
-	return u.updateOrchestration(o, orchestrationExt.Failed, err.Error()), nil
+	return u.updateOrchestration(o, orchestration.Failed, err.Error()), nil
 }
 
 func (u *upgradeKymaManager) updateOrchestration(o *internal.Orchestration, state, description string) time.Duration {
@@ -222,9 +224,9 @@ func (u *upgradeKymaManager) waitForCompletion(o *internal.Orchestration) error 
 		return errors.Wrap(err, "while waiting for scheduled operations to finish")
 	}
 
-	orchestrationState := orchestrationExt.Succeeded
+	orchestrationState := orchestration.Succeeded
 	if stats[domain.Failed] > 0 {
-		orchestrationState = orchestrationExt.Failed
+		orchestrationState = orchestration.Failed
 	}
 
 	o.State = orchestrationState

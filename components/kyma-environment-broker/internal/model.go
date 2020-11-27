@@ -165,23 +165,11 @@ type DeprovisioningOperation struct {
 	RuntimeID              string           `json:"runtime_id"`
 }
 
-// RuntimeOperation holds information about operation performed on a runtime
-type RuntimeOperation struct {
-	Operation `json:"-"`
-
-	DryRun                 bool      `json:"dryRun"`
-	ShootName              string    `json:"shootName"`
-	MaintenanceWindowBegin time.Time `json:"maintenanceWindowBegin"`
-	MaintenanceWindowEnd   time.Time `json:"maintenanceWindowEnd"`
-	RuntimeID              string    `json:"runtimeId"`
-	GlobalAccountID        string    `json:"globalAccountId"`
-	SubAccountID           string    `json:"subAccountId"`
-}
-
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
 type UpgradeKymaOperation struct {
-	RuntimeOperation `json:"runtime_operation"`
-	InputCreator     ProvisionerInputCreator `json:"-"`
+	Operation                      `json:"-"`
+	orchestration.RuntimeOperation `json:"runtime_operation"`
+	InputCreator                   ProvisionerInputCreator `json:"-"`
 
 	PlanID                 string `json:"plan_id"`
 	ProvisioningParameters string `json:"provisioning_parameters"`
@@ -203,20 +191,6 @@ type Orchestration struct {
 
 func (o *Orchestration) IsFinished() bool {
 	return o.State == orchestration.Succeeded || o.State == orchestration.Failed
-}
-
-// Runtime is the data type which captures the needed runtime specific attributes to perform orchestrations on a given runtime.
-type Runtime struct {
-	InstanceID      string `json:"instanceId"`
-	RuntimeID       string `json:"runtimeId"`
-	GlobalAccountID string `json:"globalAccountId"`
-	SubAccountID    string `json:"subaccountId"`
-	// The corresponding shoot cluster's .metadata.name value
-	ShootName string `json:"shootName"`
-	// The corresponding shoot cluster's .spec.maintenance.timeWindow.Begin value, which is in in "HHMMSS+[HHMM TZ]" format, e.g. "040000+0000"
-	MaintenanceWindowBegin time.Time `json:"maintenanceWindowBegin"`
-	// The corresponding shoot cluster's .spec.maintenance.timeWindow.End value, which is in "HHMMSS+[HHMM TZ]" format, e.g. "040000+0000"
-	MaintenanceWindowEnd time.Time `json:"maintenanceWindowEnd"`
 }
 
 func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaConfigInput, clusterConfig *gqlschema.GardenerConfigInput) RuntimeState {

@@ -170,7 +170,7 @@ func (s *Instance) List(filter dbmodel.InstanceFilter) ([]internal.Instance, int
 	instances := s.filterInstances(filter)
 	sortInstancesByCreatedAt(instances)
 
-	for i := offset; i < offset+filter.PageSize && i < len(instances); i++ {
+	for i := offset; (filter.PageSize < 1 || i < offset+filter.PageSize) && i < len(instances); i++ {
 		toReturn = append(toReturn, s.instances[instances[i].InstanceID])
 	}
 

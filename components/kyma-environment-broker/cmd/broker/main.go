@@ -376,7 +376,7 @@ func main() {
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, gardenerClient,
-		gardenerNamespace, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, logs)
+		gardenerNamespace, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, cfg.DefaultRequestRegion, logs)
 	fatalOnError(err)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
@@ -489,7 +489,7 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 	gardenerClient gardenerclient.CoreV1beta1Interface, gardenerNamespace string, pub event.Publisher,
 	inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
-	logs logrus.FieldLogger) (*process.Queue, error) {
+	defaultRegion string, logs logrus.FieldLogger) (*process.Queue, error) {
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 
@@ -515,7 +515,8 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 		}
 	}
 
-	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, db.Instances(), logs)
+	runtimeLister := orchestration.NewRuntimeLister(db.Instances(), db.Operations(), runtime.NewConverter(defaultRegion), logs)
+	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
 
 	orchestrateKymaManager := kyma.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(),
 		upgradeKymaManager, runtimeResolver, pollingInterval, logs)

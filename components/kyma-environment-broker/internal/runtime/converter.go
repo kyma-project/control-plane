@@ -8,11 +8,18 @@ import (
 	"github.com/pkg/errors"
 )
 
+type Converter interface {
+	NewDTO(instance internal.Instance) (pkg.RuntimeDTO, error)
+	ApplyProvisioningOperation(dto *pkg.RuntimeDTO, pOpr *internal.ProvisioningOperation)
+	ApplyDeprovisioningOperation(dto *pkg.RuntimeDTO, dOpr *internal.DeprovisioningOperation)
+	ApplyUpgradingKymaOperations(dto *pkg.RuntimeDTO, oprs []internal.UpgradeKymaOperation, totalCount int)
+}
+
 type converter struct {
 	defaultSubaccountRegion string
 }
 
-func newConverter(platformRegion string) *converter {
+func NewConverter(platformRegion string) Converter {
 	return &converter{
 		defaultSubaccountRegion: platformRegion,
 	}

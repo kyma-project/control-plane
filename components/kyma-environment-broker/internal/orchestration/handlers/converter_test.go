@@ -5,6 +5,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
 	"github.com/stretchr/testify/assert"
@@ -101,11 +102,10 @@ func TestConverter_UpgradeKymaOperationToDetailDTO(t *testing.T) {
 
 func fixOperation(id string) internal.UpgradeKymaOperation {
 	return internal.UpgradeKymaOperation{
-		RuntimeOperation: internal.RuntimeOperation{
-			Operation: internal.Operation{
-				OrchestrationID: id,
-			},
+		Operation: internal.Operation{
+			OrchestrationID: id,
 		},
-		PlanID: "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+		RuntimeOperation: orchestration.RuntimeOperation{},
+		PlanID:           "4deee563-e5ec-4731-b9b1-53b42d855f0c",
 	}
 }

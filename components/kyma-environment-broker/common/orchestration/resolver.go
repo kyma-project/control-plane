@@ -5,30 +5,20 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	brokerapi "github.com/pivotal-cf/brokerapi/v7/domain"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerclient "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
 )
 
-type instanceOperationStatus struct {
-	internal.Instance
-	provisionState   brokerapi.LastOperationState
-	deprovisionState brokerapi.LastOperationState
-}
-
-// InstanceLister is the interface to get InstanceWithOperation objects from KEB storage
-//go:generate mockery -name=InstanceLister -output=automock -outpkg=automock -case=underscore
-type InstanceLister interface {
-	FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, error)
+// RuntimeLister is the interface to get runtime objects from KEB
+//go:generate mockery --name=RuntimeLister --output=. --outpkg=orchestration --case=underscore --structname RuntimeListerMock --filename runtime_lister_mock.go
+type RuntimeLister interface {
+	ListAllRuntimes() ([]runtime.RuntimeDTO, error)
 }
 
 // GardenerRuntimeResolver is the default resolver which implements the RuntimeResolver interface.
@@ -38,12 +28,12 @@ type InstanceLister interface {
 // The logic could be optimized with k8s client cache using shoot lister / indexer.
 // The implementation is thread safe, i.e. it is safe to call Resolve() from multiple threads concurrently.
 type GardenerRuntimeResolver struct {
-	gardenerClient     gardenerclient.CoreV1beta1Interface
-	gardenerNamespace  string
-	instanceLister     InstanceLister
-	instanceOperations map[string]*instanceOperationStatus
-	instanceMutex      sync.RWMutex
-	logger             logrus.FieldLogger
+	gardenerClient    gardenerclient.CoreV1beta1Interface
+	gardenerNamespace string
+	runtimeLister     RuntimeLister
+	runtimes          map[string]runtime.RuntimeDTO
+	mutex             sync.RWMutex
+	logger            logrus.FieldLogger
 }
 
 const (
@@ -54,28 +44,28 @@ const (
 )
 
 // NewGardenerRuntimeResolver constructs a GardenerRuntimeResolver with the mandatory input parameters.
-func NewGardenerRuntimeResolver(gardenerClient gardenerclient.CoreV1beta1Interface, gardenerNamespace string, lister InstanceLister, logger logrus.FieldLogger) *GardenerRuntimeResolver {
+func NewGardenerRuntimeResolver(gardenerClient gardenerclient.CoreV1beta1Interface, gardenerNamespace string, lister RuntimeLister, logger logrus.FieldLogger) *GardenerRuntimeResolver {
 	return &GardenerRuntimeResolver{
-		gardenerClient:     gardenerClient,
-		gardenerNamespace:  gardenerNamespace,
-		instanceLister:     lister,
-		instanceOperations: map[string]*instanceOperationStatus{},
-		logger:             logger.WithField("orchestration", "resolver"),
+		gardenerClient:    gardenerClient,
+		gardenerNamespace: gardenerNamespace,
+		runtimeLister:     lister,
+		runtimes:          map[string]runtime.RuntimeDTO{},
+		logger:            logger.WithField("orchestration", "resolver"),
 	}
 }
 
 // Resolve given an input slice of target specs to include and exclude, returns back a list of unique Runtime objects
-func (resolver *GardenerRuntimeResolver) Resolve(targets orchestration.TargetSpec) ([]internal.Runtime, error) {
+func (resolver *GardenerRuntimeResolver) Resolve(targets TargetSpec) ([]Runtime, error) {
 	runtimeIncluded := map[string]bool{}
 	runtimeExcluded := map[string]bool{}
-	runtimes := []internal.Runtime{}
+	runtimes := []Runtime{}
 	shoots, err := resolver.getAllShoots()
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing gardener shoots in namespace %s", resolver.gardenerNamespace)
 	}
-	err = resolver.syncInstanceOperations()
+	err = resolver.syncRuntimeOperations()
 	if err != nil {
-		return nil, errors.Wrap(err, "while listing instances and operations from DB")
+		return nil, errors.Wrap(err, "while syncing runtimes")
 	}
 
 	// Assemble IDs of runtimes to exclude
@@ -115,43 +105,31 @@ func (resolver *GardenerRuntimeResolver) getAllShoots() ([]gardenerapi.Shoot, er
 	return shootList.Items, nil
 }
 
-func (resolver *GardenerRuntimeResolver) syncInstanceOperations() error {
-	instances, err := resolver.instanceLister.FindAllJoinedWithOperations(predicate.SortAscByCreatedAt())
+func (resolver *GardenerRuntimeResolver) syncRuntimeOperations() error {
+	runtimes, err := resolver.runtimeLister.ListAllRuntimes()
 	if err != nil {
 		return err
 	}
-	resolver.instanceMutex.Lock()
-	defer resolver.instanceMutex.Unlock()
+	resolver.mutex.Lock()
+	defer resolver.mutex.Unlock()
 
-	for _, inst := range instances {
-		runtimeOpStat := resolver.instanceOperations[inst.RuntimeID]
-		if runtimeOpStat == nil {
-			runtimeOpStat = &instanceOperationStatus{
-				inst.Instance,
-				"",
-				"",
-			}
-			resolver.instanceOperations[inst.RuntimeID] = runtimeOpStat
-		}
-		switch dbmodel.OperationType(inst.Type.String) {
-		case dbmodel.OperationTypeProvision:
-			runtimeOpStat.provisionState = brokerapi.LastOperationState(inst.State.String)
-		case dbmodel.OperationTypeDeprovision:
-			runtimeOpStat.deprovisionState = brokerapi.LastOperationState(inst.State.String)
-		}
+	for _, rt := range runtimes {
+		resolver.runtimes[rt.RuntimeID] = rt
 	}
 
 	return nil
 }
 
-func (resolver *GardenerRuntimeResolver) getInstanceOperationStatus(runtimeID string) *instanceOperationStatus {
-	resolver.instanceMutex.RLock()
-	defer resolver.instanceMutex.RUnlock()
-	return resolver.instanceOperations[runtimeID]
+func (resolver *GardenerRuntimeResolver) getRuntime(runtimeID string) (runtime.RuntimeDTO, bool) {
+	resolver.mutex.RLock()
+	defer resolver.mutex.RUnlock()
+	rt, ok := resolver.runtimes[runtimeID]
+
+	return rt, ok
 }
 
-func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt orchestration.RuntimeTarget, shoots []gardenerapi.Shoot) ([]internal.Runtime, error) {
-	runtimes := []internal.Runtime{}
+func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, shoots []gardenerapi.Shoot) ([]Runtime, error) {
+	runtimes := []Runtime{}
 
 	// Iterate over all shoots. Evaluate target specs. If multiple are specified, all must match for a given shoot.
 	for _, shoot := range shoots {
@@ -163,13 +141,21 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt orchestration.R
 			resolver.logger.Errorf("Failed to get runtimeID from %s annotation for Shoot %s", runtimeIDAnnotation, shoot.Name)
 			continue
 		}
-		instanceOpStatus := resolver.getInstanceOperationStatus(runtimeID)
-		if instanceOpStatus == nil {
-			resolver.logger.Errorf("Couldn't find InstanceOperationStatus for runtimeID %s", runtimeID)
+		runtime, ok := resolver.getRuntime(runtimeID)
+		if !ok {
+			resolver.logger.Errorf("Couldn't find runtime for runtimeID %s", runtimeID)
 			continue
 		}
-		if instanceOpStatus.provisionState != brokerapi.Succeeded || instanceOpStatus.deprovisionState != "" {
-			resolver.logger.Infof("Skipping Shoot %s (runtimeID: %s, instanceID %s) due to provisioning/deprovisioning state: %s/%s", shoot.Name, runtimeID, instanceOpStatus.InstanceID, instanceOpStatus.provisionState, instanceOpStatus.deprovisionState)
+		provState := ""
+		deprovState := ""
+		if runtime.Status.Provisioning != nil {
+			provState = runtime.Status.Provisioning.State
+		}
+		if runtime.Status.Deprovisioning != nil {
+			deprovState = runtime.Status.Deprovisioning.State
+		}
+		if provState != "succeeded" || deprovState != "" {
+			resolver.logger.Infof("Skipping Shoot %s (runtimeID: %s, instanceID %s) due to provisioning/deprovisioning state: %s/%s", shoot.Name, runtimeID, runtime.InstanceID, provState, deprovState)
 			continue
 		}
 		maintenanceWindowBegin, err := time.Parse(maintenanceWindowFormat, shoot.Spec.Maintenance.TimeWindow.Begin)
@@ -186,14 +172,14 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt orchestration.R
 		// Match exact shoot by runtimeID
 		if rt.RuntimeID != "" {
 			if rt.RuntimeID == runtimeID {
-				runtimes = append(runtimes, resolver.runtimeFromOperationStatus(instanceOpStatus, shoot.Name, maintenanceWindowBegin, maintenanceWindowEnd))
+				runtimes = append(runtimes, resolver.runtimeFromDTO(runtime, shoot.Name, maintenanceWindowBegin, maintenanceWindowEnd))
 			}
 			continue
 		}
 
 		// Perform match against a specific PlanName
 		if rt.PlanName != "" {
-			if rt.PlanName != instanceOpStatus.ServicePlanName {
+			if rt.PlanName != runtime.ServicePlanName {
 				continue
 			}
 		}
@@ -223,22 +209,22 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt orchestration.R
 		}
 
 		// Check if target: all is specified
-		if rt.Target != "" && rt.Target != orchestration.TargetAll {
+		if rt.Target != "" && rt.Target != TargetAll {
 			continue
 		}
 
-		runtimes = append(runtimes, resolver.runtimeFromOperationStatus(instanceOpStatus, shoot.Name, maintenanceWindowBegin, maintenanceWindowEnd))
+		runtimes = append(runtimes, resolver.runtimeFromDTO(runtime, shoot.Name, maintenanceWindowBegin, maintenanceWindowEnd))
 	}
 
 	return runtimes, nil
 }
 
-func (*GardenerRuntimeResolver) runtimeFromOperationStatus(opStatus *instanceOperationStatus, shootName string, windowBegin, windowEnd time.Time) internal.Runtime {
-	return internal.Runtime{
-		InstanceID:             opStatus.InstanceID,
-		RuntimeID:              opStatus.RuntimeID,
-		GlobalAccountID:        opStatus.GlobalAccountID,
-		SubAccountID:           opStatus.SubAccountID,
+func (*GardenerRuntimeResolver) runtimeFromDTO(runtime runtime.RuntimeDTO, shootName string, windowBegin, windowEnd time.Time) Runtime {
+	return Runtime{
+		InstanceID:             runtime.InstanceID,
+		RuntimeID:              runtime.RuntimeID,
+		GlobalAccountID:        runtime.GlobalAccountID,
+		SubAccountID:           runtime.SubAccountID,
 		ShootName:              shootName,
 		MaintenanceWindowBegin: windowBegin,
 		MaintenanceWindowEnd:   windowEnd,

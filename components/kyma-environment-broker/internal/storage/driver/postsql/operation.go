@@ -247,7 +247,7 @@ func (s *operations) InsertUpgradeKymaOperation(operation internal.UpgradeKymaOp
 	session := s.NewWriteSession()
 	dto, err := upgradeKymaOperationToDTO(&operation)
 	if err != nil {
-		return errors.Wrapf(err, "while inserting upgrade kyma operation (id: %s)", operation.ID)
+		return errors.Wrapf(err, "while inserting upgrade kyma operation (id: %s)", operation.Operation.ID)
 	}
 	var lastErr error
 	_ = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
@@ -355,14 +355,14 @@ func (s *operations) UpdateUpgradeKymaOperation(operation internal.UpgradeKymaOp
 	_ = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		lastErr = session.UpdateOperation(dto)
 		if lastErr != nil && dberr.IsNotFound(lastErr) {
-			_, lastErr = s.NewReadSession().GetOperationByID(operation.ID)
+			_, lastErr = s.NewReadSession().GetOperationByID(operation.Operation.ID)
 			if lastErr != nil {
 				log.Warn(errors.Wrapf(lastErr, "while getting Operation").Error())
 				return false, nil
 			}
 
 			// the operation exists but the version is different
-			lastErr = dberr.Conflict("operation update conflict, operation ID: %s", operation.ID)
+			lastErr = dberr.Conflict("operation update conflict, operation ID: %s", operation.Operation.ID)
 			log.Warn(lastErr.Error())
 			return false, lastErr
 		}

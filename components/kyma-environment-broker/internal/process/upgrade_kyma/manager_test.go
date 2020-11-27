@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
@@ -101,14 +102,13 @@ func TestManager_Execute(t *testing.T) {
 
 func fixOperation(ID string) internal.UpgradeKymaOperation {
 	return internal.UpgradeKymaOperation{
-		RuntimeOperation: internal.RuntimeOperation{
-			Operation: internal.Operation{
-				ID:          ID,
-				State:       domain.InProgress,
-				InstanceID:  "fea2c1a1-139d-43f6-910a-a618828a79d5",
-				Description: "",
-			},
+		Operation: internal.Operation{
+			ID:          ID,
+			State:       domain.InProgress,
+			InstanceID:  "fea2c1a1-139d-43f6-910a-a618828a79d5",
+			Description: "",
 		},
+		RuntimeOperation: orchestration.RuntimeOperation{},
 	}
 }
 
@@ -131,9 +131,9 @@ func (ts *testStep) Run(operation internal.UpgradeKymaOperation, logger logrus.F
 		ts.t.Error(err)
 	}
 
-	switch operation.ID {
+	switch operation.Operation.ID {
 	case operationIDFailed:
-		return *updated, 0, fmt.Errorf("operation %s failed", operation.ID)
+		return *updated, 0, fmt.Errorf("operation %s failed", operation.Operation.ID)
 	case operationIDRepeat:
 		return *updated, time.Duration(10), nil
 	default:

@@ -6,15 +6,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/util/workqueue"
 )
 
+type Executor interface {
+	Execute(operationID string) (time.Duration, error)
+}
+
 type ParallelOrchestrationStrategy struct {
-	executor process.Executor
+	executor Executor
 	log      logrus.FieldLogger
 	wg       map[string]*sync.WaitGroup
 	mux      sync.RWMutex
@@ -22,7 +23,7 @@ type ParallelOrchestrationStrategy struct {
 
 // NewParallelOrchestrationStrategy returns a new parallel orchestration strategy, which
 // executes operations in parallel using a pool of workers and a delaying queue to support time-based scheduling.
-func NewParallelOrchestrationStrategy(executor process.Executor, log logrus.FieldLogger) Strategy {
+func NewParallelOrchestrationStrategy(executor Executor, log logrus.FieldLogger) Strategy {
 	return &ParallelOrchestrationStrategy{
 		executor: executor,
 		log:      log,
@@ -31,18 +32,18 @@ func NewParallelOrchestrationStrategy(executor process.Executor, log logrus.Fiel
 }
 
 // Execute starts the parallel execution of operations.
-func (p *ParallelOrchestrationStrategy) Execute(operations []internal.RuntimeOperation, strategySpec orchestration.StrategySpec) (string, error) {
+func (p *ParallelOrchestrationStrategy) Execute(operations []RuntimeOperation, strategySpec StrategySpec) (string, error) {
 	if len(operations) == 0 {
 		return "", nil
 	}
 	dq := workqueue.NewDelayingQueue()
-	ops := make(chan internal.RuntimeOperation, len(operations))
+	ops := make(chan RuntimeOperation, len(operations))
 	execID := uuid.New().String()
 	p.mux.Lock()
 	defer p.mux.Unlock()
 	p.wg[execID] = &sync.WaitGroup{}
 
-	if strategySpec.Schedule == orchestration.MaintenanceWindow {
+	if strategySpec.Schedule == MaintenanceWindow {
 		sort.Slice(operations, func(i, j int) bool {
 			return operations[i].MaintenanceWindowBegin.Before(operations[j].MaintenanceWindowBegin)
 		})
@@ -71,7 +72,7 @@ func (p *ParallelOrchestrationStrategy) Wait(executionID string) {
 	}
 }
 
-func (p *ParallelOrchestrationStrategy) createWorker(execID string, ops <-chan internal.RuntimeOperation, dq workqueue.DelayingInterface, strategy orchestration.StrategySpec) {
+func (p *ParallelOrchestrationStrategy) createWorker(execID string, ops <-chan RuntimeOperation, dq workqueue.DelayingInterface, strategy StrategySpec) {
 	p.wg[execID].Add(1)
 	go func() {
 		for op := range ops {
@@ -83,17 +84,17 @@ func (p *ParallelOrchestrationStrategy) createWorker(execID string, ops <-chan i
 	}()
 }
 
-func (p *ParallelOrchestrationStrategy) processOperation(op internal.RuntimeOperation, dq workqueue.DelayingInterface, strategy orchestration.StrategySpec) {
+func (p *ParallelOrchestrationStrategy) processOperation(op RuntimeOperation, dq workqueue.DelayingInterface, strategy StrategySpec) {
 	exit := false
 	id := op.ID
 	log := p.log.WithField("operationID", id)
 
 	switch strategy.Schedule {
-	case orchestration.MaintenanceWindow:
+	case MaintenanceWindow:
 		until := time.Until(op.MaintenanceWindowBegin)
 		log.Infof("Upgrade operation will be scheduled in %v", until)
 		dq.AddAfter(id, until)
-	case orchestration.Immediate:
+	case Immediate:
 		log.Infof("Upgrade operation is scheduled now")
 		dq.Add(id)
 	}
