@@ -16,10 +16,11 @@ WORKDIR ${BASE_APP_DIR}
 COPY . .
 
 RUN go build -v -a -o /bin/metris \
-  -ldflags "-s -w -extldflags '-static'" \
-  -ldflags "-X github.com/kyma-project/control-plane/components/metris/internal/version.Version=${VERSION}" \
-  -ldflags "-X github.com/kyma-project/control-plane/components/metris/internal/version.CommitHash=${COMMITHASH}" \
-  ./cmd/metris/main.go
+    -ldflags "-s -w -extldflags '-static' \
+      -X 'github.com/kyma-project/control-plane/components/metris/internal/version.Version=${VERSION}' \
+      -X 'github.com/kyma-project/control-plane/components/metris/internal/version.CommitHash=${COMMITHASH}' \
+      -X 'github.com/kyma-project/control-plane/components/metris/internal/version.BuildDate=$(date --utc +%FT%T%z)'" \
+    ./cmd/metris/main.go
 
 # https://github.com/GoogleContainerTools/distroless/blob/master/base/README.md
 FROM gcr.io/distroless/static-debian10:nonroot

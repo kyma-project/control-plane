@@ -108,13 +108,11 @@ type Instance struct {
 	client Client
 	// lastEvent store the last successful event sent to EDP.
 	lastEvent *EventData
-	// clusterResourceGroupName store the Azure cluster resource group name associated with the subaccountid.
-	clusterResourceGroupName string
 	// eventHubResourceGroupName store the Azure Event Hub resource group name associated with the subaccountid.
 	eventHubResourceGroupName string
 	// retryAttempts store the number of retry attempts to get metrics.
 	retryAttempts int
-	//
+	// retryBackoff indicate to backing off between requests.
 	retryBackoff bool
 }
 

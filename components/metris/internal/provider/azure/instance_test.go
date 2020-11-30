@@ -205,7 +205,8 @@ func TestInstance_getComputeMetrics(t *testing.T) {
 		tt := tt // pin
 
 		t.Run(tt.name, func(t *testing.T) {
-			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client, clusterResourceGroupName: tt.args.resourceGroupName}
+			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client}
+			i.cluster.TechnicalID = tt.args.resourceGroupName
 			got, err := i.getComputeMetrics(context.Background(), noopLogger, tt.args.vmcaps)
 
 			if tt.wantErr {
@@ -271,7 +272,8 @@ func TestInstance_getNetworkMetrics(t *testing.T) {
 		tt := tt // pin
 
 		t.Run(tt.name, func(t *testing.T) {
-			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client, clusterResourceGroupName: tt.args.resourceGroupName}
+			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client}
+			i.cluster.TechnicalID = tt.args.resourceGroupName
 			got, err := i.getNetworkMetrics(context.Background(), noopLogger)
 
 			if tt.wantErr {

@@ -45,7 +45,7 @@ func (i *Instance) getComputeMetrics(ctx context.Context, logger log.Logger, vmc
 		logger = logger.With("traceID", span.SpanContext().TraceID).With("spanID", span.SpanContext().SpanID)
 	}
 
-	if vms, err = i.client.GetVirtualMachines(ctx, i.clusterResourceGroupName, logger); err != nil {
+	if vms, err = i.client.GetVirtualMachines(ctx, i.cluster.TechnicalID, logger); err != nil {
 		return nil, err
 	}
 
@@ -74,7 +74,7 @@ func (i *Instance) getComputeMetrics(ctx context.Context, logger log.Logger, vmc
 		result.VMTypes = append(result.VMTypes, VMType{Name: k, Count: v})
 	}
 
-	if disks, err = i.client.GetDisks(ctx, i.clusterResourceGroupName, logger); err != nil {
+	if disks, err = i.client.GetDisks(ctx, i.cluster.TechnicalID, logger); err != nil {
 		return nil, err
 	}
 
@@ -110,19 +110,19 @@ func (i *Instance) getNetworkMetrics(ctx context.Context, logger log.Logger) (*N
 		logger = logger.With("traceID", span.SpanContext().TraceID).With("spanID", span.SpanContext().SpanID)
 	}
 
-	if lbs, err = i.client.GetLoadBalancers(ctx, i.clusterResourceGroupName, logger); err != nil {
+	if lbs, err = i.client.GetLoadBalancers(ctx, i.cluster.TechnicalID, logger); err != nil {
 		return nil, err
 	}
 
 	result.ProvisionedLoadBalancers += uint32(len(lbs))
 
-	if vnets, err = i.client.GetVirtualNetworks(ctx, i.clusterResourceGroupName, logger); err != nil {
+	if vnets, err = i.client.GetVirtualNetworks(ctx, i.cluster.TechnicalID, logger); err != nil {
 		return nil, err
 	}
 
 	result.ProvisionedVnets += uint32(len(vnets))
 
-	if publicIPs, err = i.client.GetPublicIPAddresses(ctx, i.clusterResourceGroupName, logger); err != nil {
+	if publicIPs, err = i.client.GetPublicIPAddresses(ctx, i.cluster.TechnicalID, logger); err != nil {
 		return nil, err
 	}
 

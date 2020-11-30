@@ -220,7 +220,7 @@ func (c *client) GetVMResourceSkus(ctx context.Context, filter string, logger lo
 	// Only **location** filter is supported currently. :(
 	for skuList, err = skuClient.ListComplete(ctx, filter); skuList.NotDone(); err = skuList.NextWithContext(ctx) {
 		if err != nil {
-			break
+			return result, err
 		}
 
 		item := skuList.Value()
@@ -255,7 +255,7 @@ func (c *client) GetVirtualMachines(ctx context.Context, rgname string, logger l
 
 	for vmList, err = vmClient.ListComplete(ctx, rgname); vmList.NotDone(); err = vmList.NextWithContext(ctx) {
 		if err != nil {
-			break
+			return result, err
 		}
 
 		result = append(result, vmList.Value())
@@ -287,7 +287,7 @@ func (c *client) GetDisks(ctx context.Context, rgname string, logger log.Logger)
 
 	for diskList, err = diskClient.ListByResourceGroupComplete(ctx, rgname); diskList.NotDone(); err = diskList.NextWithContext(ctx) {
 		if err != nil {
-			break
+			return result, err
 		}
 
 		disk := diskList.Value()
@@ -322,7 +322,7 @@ func (c *client) GetLoadBalancers(ctx context.Context, rgname string, logger log
 
 	for lbList, err = loadBalancersClient.ListComplete(ctx, rgname); lbList.NotDone(); err = lbList.NextWithContext(ctx) {
 		if err != nil {
-			break
+			return result, err
 		}
 
 		result = append(result, lbList.Value())
@@ -354,7 +354,7 @@ func (c *client) GetVirtualNetworks(ctx context.Context, rgname string, logger l
 
 	for vnetList, err = virtualNetworksClient.ListComplete(ctx, rgname); vnetList.NotDone(); err = vnetList.NextWithContext(ctx) {
 		if err != nil {
-			break
+			return result, err
 		}
 
 		result = append(result, vnetList.Value())
@@ -386,7 +386,7 @@ func (c *client) GetPublicIPAddresses(ctx context.Context, rgname string, logger
 
 	for ipList, err = publicIPAddressesClient.ListComplete(ctx, rgname); ipList.NotDone(); err = ipList.NextWithContext(ctx) {
 		if err != nil {
-			break
+			return result, err
 		}
 
 		result = append(result, ipList.Value())
@@ -418,7 +418,7 @@ func (c *client) GetEHNamespaces(ctx context.Context, rgname string, logger log.
 
 	for nsList, err = nsClient.ListByResourceGroupComplete(ctx, rgname); nsList.NotDone(); err = nsList.NextWithContext(ctx) {
 		if err != nil {
-			break
+			return results, err
 		}
 
 		results = append(results, nsList.Value())

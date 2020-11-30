@@ -2,10 +2,9 @@ package version
 
 import (
 	"bytes"
-	"html/template"
 	"runtime"
 	"strings"
-	"time"
+	"text/template"
 
 	"github.com/kyma-project/control-plane/components/metris/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
@@ -17,8 +16,8 @@ import (
 var (
 	Version    string = "dev"
 	CommitHash string
-	BuildDate  string = time.Now().UTC().String()
-	GoVersion         = runtime.Version()
+	BuildDate  string
+	GoVersion  = runtime.Version()
 
 	MetrisBuildInfo = promauto.NewGaugeFunc(
 		prometheus.GaugeOpts{
@@ -28,6 +27,7 @@ var (
 			ConstLabels: prometheus.Labels{
 				"version":   Version,
 				"commit":    CommitHash,
+				"builddate": BuildDate,
 				"goversion": GoVersion,
 			},
 		},
