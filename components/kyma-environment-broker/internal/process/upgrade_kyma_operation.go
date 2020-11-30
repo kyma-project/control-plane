@@ -4,8 +4,10 @@ import (
 	"errors"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 )
@@ -20,7 +22,7 @@ func NewUpgradeKymaOperationManager(storage storage.Operations) *UpgradeKymaOper
 
 // OperationSucceeded marks the operation as succeeded and only repeats it if there is a storage error
 func (om *UpgradeKymaOperationManager) OperationSucceeded(operation internal.UpgradeKymaOperation, description string) (internal.UpgradeKymaOperation, time.Duration, error) {
-	updatedOperation, repeat := om.update(operation, domain.Succeeded, description)
+	updatedOperation, repeat := om.update(operation, orchestration.Succeeded, description)
 	// repeat in case of storage error
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
@@ -31,13 +33,23 @@ func (om *UpgradeKymaOperationManager) OperationSucceeded(operation internal.Upg
 
 // OperationFailed marks the operation as failed and only repeats it if there is a storage error
 func (om *UpgradeKymaOperationManager) OperationFailed(operation internal.UpgradeKymaOperation, description string) (internal.UpgradeKymaOperation, time.Duration, error) {
-	updatedOperation, repeat := om.update(operation, domain.Failed, description)
+	updatedOperation, repeat := om.update(operation, orchestration.Failed, description)
 	// repeat in case of storage error
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
 	}
 
 	return updatedOperation, 0, errors.New(description)
+}
+
+// OperationSucceeded marks the operation as succeeded and only repeats it if there is a storage error
+func (om *UpgradeKymaOperationManager) OperationCanceled(operation internal.UpgradeKymaOperation, description string) (internal.UpgradeKymaOperation, time.Duration, error) {
+	updatedOperation, repeat := om.update(operation, orchestration.Canceled, description)
+	if repeat != 0 {
+		return updatedOperation, repeat, nil
+	}
+
+	return updatedOperation, 0, nil
 }
 
 // RetryOperation retries an operation for at maxTime in retryInterval steps and fails the operation if retrying failed

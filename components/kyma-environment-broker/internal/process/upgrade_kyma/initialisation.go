@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+
+	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -25,7 +28,8 @@ const (
 
 type InitialisationStep struct {
 	operationManager       *process.UpgradeKymaOperationManager
-	operationStorage       storage.Provisioning
+	operationStorage       storage.Operations
+	orchestrationStorage   storage.Orchestrations
 	instanceStorage        storage.Instances
 	provisionerClient      provisioner.Client
 	inputBuilder           input.CreatorForPlan
@@ -33,7 +37,7 @@ type InitialisationStep struct {
 	runtimeVerConfigurator RuntimeVersionConfiguratorForUpgrade
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, timeSchedule *TimeSchedule,
+func NewInitialisationStep(os storage.Operations, orc storage.Orchestrations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, timeSchedule *TimeSchedule,
 	rvc RuntimeVersionConfiguratorForUpgrade) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
@@ -46,6 +50,7 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 	return &InitialisationStep{
 		operationManager:       process.NewUpgradeKymaOperationManager(os),
 		operationStorage:       os,
+		orchestrationStorage:   orc,
 		instanceStorage:        is,
 		provisionerClient:      pc,
 		inputBuilder:           b,
@@ -59,6 +64,37 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	o, err := s.orchestrationStorage.GetByID(operation.OrchestrationID)
+	if err != nil {
+		if dberr.IsNotFound(err) {
+			log.Errorf("orchestration %s not found: %v", err)
+			return s.operationManager.OperationFailed(operation, fmt.Sprintf("orchestration %s not found", operation.OrchestrationID))
+		}
+		log.Errorf("while getting orchestration from storage: %v", err)
+		return operation, s.timeSchedule.Retry, nil
+	}
+	if o.State == orchestrationExt.Canceled {
+		if operation.State == orchestrationExt.Pending || operation.State == orchestrationExt.Canceled {
+			log.Info("Skipping processing because orchestration was cancelled")
+			return s.operationManager.OperationCanceled(operation, fmt.Sprintf("orchestration %s was cancelled", operation.OrchestrationID))
+		}
+	}
+	if operation.State == orchestrationExt.Pending {
+		operation.State = orchestrationExt.InProgress
+
+		op, err := s.operationStorage.UpdateUpgradeKymaOperation(operation)
+		if err != nil {
+			log.Errorf("while updating operation: %v", err)
+			return operation, s.timeSchedule.Retry, nil
+		}
+		operation = *op
+	}
+
+	// if schedule is maintenanceWindow and time window for this operation has finished we reprocess on next time window
+	if !operation.MaintenanceWindowEnd.IsZero() && operation.MaintenanceWindowEnd.Before(time.Now()) {
+		return s.rescheduleAtNextMaintenanceWindow(operation, log)
+	}
+
 	// rewrite necessary data from ProvisioningOperation to operation internal.UpgradeOperation
 	op, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
 	if err != nil {

@@ -5,6 +5,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -87,7 +89,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 				logStep.Errorf("Process operation failed: %s", err)
 				return 0, err
 			}
-			if operation.IsFinished() {
+			if operation.IsFinished() || operation.State == orchestration.Canceled {
 				logStep.Infof("Operation %q got status %s. Process finished.", operation.Operation.ID, operation.State)
 				return 0, nil
 			}

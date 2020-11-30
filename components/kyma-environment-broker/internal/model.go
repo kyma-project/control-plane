@@ -186,22 +186,6 @@ type UpgradeKymaOperation struct {
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 }
 
-// Orchestration holds all information about an orchestration.
-// Orchestration performs operations of a specific type (UpgradeKymaOperation, UpgradeClusterOperation)
-// on specific targets of SKRs.
-type Orchestration struct {
-	OrchestrationID string
-	State           string
-	Description     string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	Parameters      orchestration.Parameters
-}
-
-func (o *Orchestration) IsFinished() bool {
-	return o.State == orchestration.Succeeded || o.State == orchestration.Failed
-}
-
 func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaConfigInput, clusterConfig *gqlschema.GardenerConfigInput) RuntimeState {
 	var (
 		kymaConfigInput    gqlschema.KymaConfigInput
@@ -386,7 +370,7 @@ func (do *UpgradeKymaOperation) SetProvisioningParameters(parameters Provisionin
 }
 
 func (o *Operation) IsFinished() bool {
-	return o.State != domain.InProgress
+	return o.State != domain.InProgress && o.State != orchestration.Pending
 }
 
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput

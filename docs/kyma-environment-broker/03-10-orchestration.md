@@ -12,7 +12,9 @@ If Kyma Environment Broker is restarted, it reprocesses the orchestration with t
 Orchestration API consist of the following handlers:
 
 - `GET /orchestrations` - exposes data about all orchestrations.
-- `GET /orchestrations/{orchestration_id}` - exposes data about a single orchestration status.
+- `DELETE /orchestrations` - cancels in progress orchestration.
+- `GET /orchestrations/{orchestration_id}` - exposes status of a single orchestration.
+- `DELETE /orchestrations/{orchestration_id}` - cancels in progress orchestration with a given ID.
 - `GET /orchestrations/{orchestration_id}/operations` - exposes data about operations scheduled by the orchestration with a given ID.
 - `GET /orchestrations/{orchestration_id}/operations/{operation_id}` - exposes the detailed data about a single operation with a given ID.
 - `POST /upgrade/kyma` - schedules the orchestration. It requires specifying a request body.
@@ -42,3 +44,11 @@ The example strategy configuration looks as follows:
   }
 }
 ```
+
+## Cancellation
+
+You may cancel any in progress orchestration using one of two DELETE endpoints described above.
+
+After you cancel an orchestration, the KEB sets its state to `Canceled`. Orchestration with such state is not scheduling any new operations.
+
+To provide consistency, cancelled orchestration waits for already processed operations to finish. When operations are finished the orchestration queue processing becomes unblocked.

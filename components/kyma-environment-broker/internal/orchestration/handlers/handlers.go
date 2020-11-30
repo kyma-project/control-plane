@@ -18,7 +18,8 @@ type handler struct {
 func NewOrchestrationHandler(db storage.BrokerStorage, kymaQueue *process.Queue, defaultMaxPage int, log logrus.FieldLogger) Handler {
 	return &handler{
 		handlers: []Handler{
-			NewKymaOrchestrationHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), defaultMaxPage, kymaQueue, log),
+			NewKymaHandler(db.Orchestrations(), kymaQueue, log),
+			NewOrchstrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), defaultMaxPage, log),
 		},
 	}
 }

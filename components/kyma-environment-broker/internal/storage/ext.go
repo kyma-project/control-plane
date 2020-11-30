@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
@@ -47,11 +48,11 @@ type Deprovisioning interface {
 }
 
 type Orchestrations interface {
-	Insert(orchestration internal.Orchestration) error
-	Update(orchestration internal.Orchestration) error
-	GetByID(orchestrationID string) (*internal.Orchestration, error)
-	List(filter dbmodel.OrchestrationFilter) ([]internal.Orchestration, int, int, error)
-	ListByState(state string) ([]internal.Orchestration, error)
+	Insert(orchestration orchestration.Orchestration) error
+	Update(orchestration orchestration.Orchestration) error
+	GetByID(orchestrationID string) (*orchestration.Orchestration, error)
+	List(filter dbmodel.OrchestrationFilter) ([]orchestration.Orchestration, int, int, error)
+	ListByState(state string) ([]orchestration.Orchestration, error)
 }
 
 type RuntimeStates interface {

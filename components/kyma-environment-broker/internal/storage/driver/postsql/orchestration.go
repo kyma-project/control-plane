@@ -1,7 +1,7 @@
 package postsql
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
@@ -10,17 +10,17 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-type orchestration struct {
+type orchestrations struct {
 	dbsession.Factory
 }
 
-func NewOrchestrations(sess dbsession.Factory) *orchestration {
-	return &orchestration{
+func NewOrchestrations(sess dbsession.Factory) *orchestrations {
+	return &orchestrations{
 		Factory: sess,
 	}
 }
 
-func (s *orchestration) Insert(orchestration internal.Orchestration) error {
+func (s *orchestrations) Insert(orchestration orchestration.Orchestration) error {
 	_, err := s.GetByID(orchestration.OrchestrationID)
 	if err == nil {
 		return dberr.AlreadyExists("orchestration with id %s already exist", orchestration.OrchestrationID)
@@ -42,9 +42,9 @@ func (s *orchestration) Insert(orchestration internal.Orchestration) error {
 	})
 }
 
-func (s *orchestration) GetByID(orchestrationID string) (*internal.Orchestration, error) {
+func (s *orchestrations) GetByID(orchestrationID string) (*orchestration.Orchestration, error) {
 	sess := s.NewReadSession()
-	orchestration := internal.Orchestration{}
+	orchestration := orchestration.Orchestration{}
 	var lastErr error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		var dto dbmodel.OrchestrationDTO
@@ -65,10 +65,10 @@ func (s *orchestration) GetByID(orchestrationID string) (*internal.Orchestration
 	return &orchestration, nil
 }
 
-func (s *orchestration) List(filter dbmodel.OrchestrationFilter) ([]internal.Orchestration, int, int, error) {
+func (s *orchestrations) List(filter dbmodel.OrchestrationFilter) ([]orchestration.Orchestration, int, int, error) {
 	sess := s.NewReadSession()
 	var (
-		orchestrations    = make([]internal.Orchestration, 0)
+		orchestrations    = make([]orchestration.Orchestration, 0)
 		lastErr           error
 		count, totalCount int
 	)
@@ -83,7 +83,7 @@ func (s *orchestration) List(filter dbmodel.OrchestrationFilter) ([]internal.Orc
 			return false, nil
 		}
 		for _, dto := range dtos {
-			var o internal.Orchestration
+			var o orchestration.Orchestration
 			o, lastErr = dto.ToOrchestration()
 			if lastErr != nil {
 				return false, lastErr
@@ -98,7 +98,7 @@ func (s *orchestration) List(filter dbmodel.OrchestrationFilter) ([]internal.Orc
 	return orchestrations, count, totalCount, nil
 }
 
-func (s *orchestration) Update(orchestration internal.Orchestration) error {
+func (s *orchestrations) Update(orchestration orchestration.Orchestration) error {
 	dto, err := dbmodel.NewOrchestrationDTO(orchestration)
 	if err != nil {
 		return errors.Wrapf(err, "while converting Orchestration to DTO")
@@ -123,11 +123,11 @@ func (s *orchestration) Update(orchestration internal.Orchestration) error {
 	return nil
 }
 
-func (s *orchestration) ListByState(state string) ([]internal.Orchestration, error) {
+func (s *orchestrations) ListByState(state string) ([]orchestration.Orchestration, error) {
 	sess := s.NewReadSession()
 	var (
 		lastErr error
-		result  []internal.Orchestration
+		result  []orchestration.Orchestration
 		filter  = dbmodel.OrchestrationFilter{
 			States: []string{state},
 		}
@@ -140,7 +140,7 @@ func (s *orchestration) ListByState(state string) ([]internal.Orchestration, err
 			return false, nil
 		}
 		for _, dto := range dtos {
-			var o internal.Orchestration
+			var o orchestration.Orchestration
 			o, lastErr = dto.ToOrchestration()
 			if lastErr != nil {
 				return false, lastErr
