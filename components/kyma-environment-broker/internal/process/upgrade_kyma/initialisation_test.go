@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
@@ -65,7 +66,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.Equal(t, time.Duration(0), repeat)
 		assert.Equal(t, domain.Succeeded, upgradeOperation.State)
 
-		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.ID)
+		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
 		assert.Equal(t, upgradeOperation, *storedOp)
 		assert.NoError(t, err)
 
@@ -111,7 +112,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.Equal(t, time.Duration(0), repeat)
 		assert.NotNil(t, op.InputCreator)
 
-		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(op.ID)
+		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(op.Operation.ID)
 		assert.Equal(t, op, *storedOp)
 		assert.NoError(t, err)
 	})
@@ -121,15 +122,17 @@ func fixUpgradeKymaOperation(t *testing.T) internal.UpgradeKymaOperation {
 	n := time.Now()
 	windowEnd := n.Add(time.Minute)
 	return internal.UpgradeKymaOperation{
-		RuntimeOperation: internal.RuntimeOperation{
-			Operation: internal.Operation{
-				ID:                     fixUpgradeOperationID,
-				InstanceID:             fixInstanceID,
-				ProvisionerOperationID: fixProvisionerOperationID,
-				Description:            "",
-				UpdatedAt:              n,
+		Operation: internal.Operation{
+			ID:                     fixUpgradeOperationID,
+			InstanceID:             fixInstanceID,
+			ProvisionerOperationID: fixProvisionerOperationID,
+			Description:            "",
+			UpdatedAt:              n,
+		},
+		RuntimeOperation: orchestration.RuntimeOperation{
+			Runtime: orchestration.Runtime{
+				MaintenanceWindowEnd: windowEnd,
 			},
-			MaintenanceWindowEnd: windowEnd,
 		},
 		ProvisioningParameters: fixRawProvisioningParameters(t),
 	}

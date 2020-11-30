@@ -129,7 +129,7 @@ func (s *operations) InsertUpgradeKymaOperation(operation internal.UpgradeKymaOp
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	id := operation.ID
+	id := operation.Operation.ID
 	if _, exists := s.upgradeKymaOperations[id]; exists {
 		return dberr.AlreadyExists("instance operation with id %s already exist", id)
 	}
@@ -160,15 +160,15 @@ func (s *operations) UpdateUpgradeKymaOperation(op internal.UpgradeKymaOperation
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	oldOp, exists := s.upgradeKymaOperations[op.ID]
+	oldOp, exists := s.upgradeKymaOperations[op.Operation.ID]
 	if !exists {
-		return nil, dberr.NotFound("instance operation with id %s not found", op.ID)
+		return nil, dberr.NotFound("instance operation with id %s not found", op.Operation.ID)
 	}
 	if oldOp.Version != op.Version {
-		return nil, dberr.Conflict("unable to update upgradeKyma operation with id %s (for instance id %s) - conflict", op.ID, op.InstanceID)
+		return nil, dberr.Conflict("unable to update upgradeKyma operation with id %s (for instance id %s) - conflict", op.Operation.ID, op.InstanceID)
 	}
 	op.Version = op.Version + 1
-	s.upgradeKymaOperations[op.ID] = op
+	s.upgradeKymaOperations[op.Operation.ID] = op
 
 	return &op, nil
 }

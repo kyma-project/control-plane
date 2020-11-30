@@ -44,6 +44,7 @@ const (
 	runtimeIDAnnotation    = "kcp.provisioner.kyma-project.io/runtime-id"
 	defaultNamespace       = "kcp-system"
 	kymaVersionsConfigName = "kyma-versions"
+	defaultRegion          = "cf-eu10"
 )
 
 type OrchestrationSuite struct {
@@ -100,7 +101,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 			Retry:              10 * time.Millisecond,
 			StatusCheck:        100 * time.Millisecond,
 			UpgradeKymaTimeout: 2 * time.Second,
-		}, 250*time.Millisecond, runtimeVerConfigurator, logs)
+		}, 250*time.Millisecond, runtimeVerConfigurator, defaultRegion, logs)
 
 	return &OrchestrationSuite{
 		gardenerNamespace:  gardenerNamespace,
@@ -155,16 +156,11 @@ func (o *RuntimeOptions) ProvidePlatformRegion() string {
 
 func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) string {
 	planID := broker.AzurePlanID
+	planName := broker.AzurePlanName
 	runtimeID := uuid.New()
 	globalAccountID := options.ProvideGlobalAccountID()
 	subAccountID := options.ProvideSubAccountID()
 	instanceID := uuid.New()
-
-	instance := internal.Instance{
-		RuntimeID:     runtimeID,
-		ServicePlanID: planID,
-		InstanceID:    instanceID,
-	}
 	provisioningParameters := internal.ProvisioningParameters{
 		PlanID: planID,
 		ErsContext: internal.ERSContext{
@@ -178,6 +174,18 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 	}
 	serializedProvisioningParams, err := json.Marshal(provisioningParameters)
 	require.NoError(s.t, err)
+
+	instance := internal.Instance{
+		RuntimeID:              runtimeID,
+		ServicePlanID:          planID,
+		ServicePlanName:        planName,
+		InstanceID:             instanceID,
+		GlobalAccountID:        globalAccountID,
+		SubAccountID:           subAccountID,
+		ProvisioningParameters: string(serializedProvisioningParams),
+		ProviderRegion:         *options.ProvideRegion(),
+	}
+
 	provisioningOperation := internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			State:      domain.Succeeded,

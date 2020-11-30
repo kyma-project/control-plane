@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
@@ -79,14 +80,16 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 
 func fixUpgradeKymaOperationWithInputCreator(t *testing.T) internal.UpgradeKymaOperation {
 	return internal.UpgradeKymaOperation{
-		RuntimeOperation: internal.RuntimeOperation{
-			Operation: internal.Operation{
-				ID:          fixUpgradeOperationID,
-				InstanceID:  fixInstanceID,
-				Description: "",
-				UpdatedAt:   time.Now(),
+		Operation: internal.Operation{
+			ID:          fixUpgradeOperationID,
+			InstanceID:  fixInstanceID,
+			Description: "",
+			UpdatedAt:   time.Now(),
+		},
+		RuntimeOperation: orchestration.RuntimeOperation{
+			Runtime: orchestration.Runtime{
+				RuntimeID: fixRuntimeID,
 			},
-			RuntimeID: fixRuntimeID,
 		},
 		ProvisioningParameters: fixRawProvisioningParameters(t),
 		InputCreator:           fixInputCreator(t),

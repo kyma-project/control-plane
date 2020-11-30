@@ -121,7 +121,7 @@ func (s *InitialisationStep) rescheduleAtNextMaintenanceWindow(operation interna
 		return operation, s.timeSchedule.Retry, nil
 	}
 	until := time.Until(operation.MaintenanceWindowBegin)
-	log.Infof("Upgrade operation %s will be rescheduled in %v", operation.ID, until)
+	log.Infof("Upgrade operation %s will be rescheduled in %v", operation.Operation.ID, until)
 	return operation, until, nil
 }
 

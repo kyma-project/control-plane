@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/kyma"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
@@ -29,7 +29,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		resolver.On("Resolve", orchestration.TargetSpec{
 			Include: nil,
 			Exclude: nil,
-		}).Return([]internal.Runtime{}, nil)
+		}).Return([]orchestration.Runtime{}, nil)
 
 		id := "id"
 		err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, State: orchestration.Pending})
@@ -85,7 +85,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 
 		resolver := &automock.RuntimeResolver{}
 		defer resolver.AssertExpectations(t)
-		resolver.On("Resolve", orchestration.TargetSpec{}).Return([]internal.Runtime{}, nil).Once()
+		resolver.On("Resolve", orchestration.TargetSpec{}).Return([]orchestration.Runtime{}, nil).Once()
 
 		id := "id"
 		err := store.Orchestrations().Insert(internal.Orchestration{
@@ -119,20 +119,22 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		id := "id"
 
 		upgradeOperation := internal.UpgradeKymaOperation{
-			RuntimeOperation: internal.RuntimeOperation{
-				Operation: internal.Operation{
-					ID:                     id,
-					Version:                0,
-					CreatedAt:              time.Now(),
-					UpdatedAt:              time.Now(),
-					InstanceID:             "",
-					ProvisionerOperationID: "",
-					State:                  domain.Succeeded,
-					Description:            "operation created",
+			Operation: internal.Operation{
+				ID:                     id,
+				Version:                0,
+				CreatedAt:              time.Now(),
+				UpdatedAt:              time.Now(),
+				InstanceID:             "",
+				ProvisionerOperationID: "",
+				State:                  domain.Succeeded,
+				Description:            "operation created",
+			},
+			RuntimeOperation: orchestration.RuntimeOperation{
+				Runtime: orchestration.Runtime{
+					RuntimeID:    id,
+					SubAccountID: "sub",
 				},
-				RuntimeID:    id,
-				SubAccountID: "sub",
-				DryRun:       false,
+				DryRun: false,
 			},
 			ProvisioningParameters: "",
 			InputCreator:           nil,

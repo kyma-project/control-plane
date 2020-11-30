@@ -62,7 +62,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 	if operation.DryRun {
 		// runtimeID is set with prefix to indicate the fake runtime state
 		err = s.runtimeStateStorage.Insert(
-			internal.NewRuntimeState(fmt.Sprintf("%s%s", DryRunPrefix, operation.RuntimeID), operation.ID, requestInput.KymaConfig, nil),
+			internal.NewRuntimeState(fmt.Sprintf("%s%s", DryRunPrefix, operation.RuntimeID), operation.Operation.ID, requestInput.KymaConfig, nil),
 		)
 		if err != nil {
 			return operation, 10 * time.Second, nil
@@ -102,7 +102,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 	log.Infof("call to provisioner succeeded, got operation ID %q", *provisionerResponse.ID)
 
 	err = s.runtimeStateStorage.Insert(
-		internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.ID, requestInput.KymaConfig, nil),
+		internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.Operation.ID, requestInput.KymaConfig, nil),
 	)
 	if err != nil {
 		log.Errorf("cannot insert runtimeState: %s", err)

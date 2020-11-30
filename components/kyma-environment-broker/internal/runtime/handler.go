@@ -17,15 +17,10 @@ import (
 
 const numberOfUpgradeOperationsToReturn = 2
 
-//go:generate mockery -name=Converter -output=automock -outpkg=automock -case=underscore
-type Converter interface {
-	InstancesAndOperationsToDTO(internal.Instance, *internal.ProvisioningOperation, *internal.DeprovisioningOperation, *internal.UpgradeKymaOperation) (pkg.RuntimeDTO, error)
-}
-
 type Handler struct {
 	instancesDb  storage.Instances
 	operationsDb storage.Operations
-	converter    *converter
+	converter    Converter
 
 	defaultMaxPage int
 }
@@ -34,7 +29,7 @@ func NewHandler(instanceDb storage.Instances, operationDb storage.Operations, de
 	return &Handler{
 		instancesDb:    instanceDb,
 		operationsDb:   operationDb,
-		converter:      newConverter(defaultRequestRegion),
+		converter:      NewConverter(defaultRequestRegion),
 		defaultMaxPage: defaultMaxPage,
 	}
 }
