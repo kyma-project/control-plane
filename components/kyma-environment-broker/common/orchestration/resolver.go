@@ -9,10 +9,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerclient "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+	brokerapi "github.com/pivotal-cf/brokerapi/v7/domain"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // RuntimeLister is the interface to get runtime objects from KEB
@@ -154,7 +154,7 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 		if runtime.Status.Deprovisioning != nil {
 			deprovState = runtime.Status.Deprovisioning.State
 		}
-		if provState != "succeeded" || deprovState != "" {
+		if provState != string(brokerapi.Succeeded) || deprovState != "" {
 			resolver.logger.Infof("Skipping Shoot %s (runtimeID: %s, instanceID %s) due to provisioning/deprovisioning state: %s/%s", shoot.Name, runtimeID, runtime.InstanceID, provState, deprovState)
 			continue
 		}
