@@ -11,7 +11,10 @@ import (
 	"github.com/vburenin/nsync"
 )
 
-const trialSuffixLength = 5
+const (
+	trialSuffixLength    = 5
+	maxRuntimeNameLength = 36
+)
 
 type Config struct {
 	URL                         string
@@ -278,6 +281,10 @@ func (r *RuntimeInput) applyGlobalOverridesForUpgradeRuntime() error {
 
 func (r *RuntimeInput) addRandomStringToRuntimeName() error {
 	rand.Seed(time.Now().UnixNano())
+	modifiedLength := len(r.provisionRuntimeInput.RuntimeInput.Name) + trialSuffixLength + 1
+	if modifiedLength > maxRuntimeNameLength {
+		r.provisionRuntimeInput.RuntimeInput.Name = trimLastCharacters(r.provisionRuntimeInput.RuntimeInput.Name, modifiedLength-maxRuntimeNameLength)
+	}
 	r.provisionRuntimeInput.RuntimeInput.Name =
 		fmt.Sprintf("%s-%s", r.provisionRuntimeInput.RuntimeInput.Name, randomString(trialSuffixLength))
 	return nil
@@ -303,4 +310,9 @@ func randomString(n int) string {
 		b[i] = letters[rand.Intn(len(letters))]
 	}
 	return string(b)
+}
+
+func trimLastCharacters(s string, count int) string {
+	s = s[:len(s)-count]
+	return s
 }
