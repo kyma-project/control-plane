@@ -1,6 +1,7 @@
 package input
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
@@ -362,7 +363,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	assertOverrides(t, "keb", input.KymaConfig.Components, kebOverrides)
 }
 
-func TestShouldAddSuffixToTrialRuntimeName(t *testing.T) {
+func TestShouldAddSuffixToRuntimeName(t *testing.T) {
 	// given
 	trialName := "test"
 	optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
@@ -386,6 +387,34 @@ func TestShouldAddSuffixToTrialRuntimeName(t *testing.T) {
 	// then
 	assert.NotEqual(t, pp.Parameters.Name, input.RuntimeInput.Name)
 	assert.Greater(t, len(input.RuntimeInput.Name), len(pp.Parameters.Name))
+}
+
+func TestShouldTrimRuntimeNameAndAddSuffix(t *testing.T) {
+	// given
+	trialName := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+	testPrefix := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+	optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+	componentsProvider := &automock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+
+	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
+	assert.NoError(t, err)
+
+	pp := fixProvisioningParameters(broker.TrialPlanID, "")
+	pp.Parameters.Name = trialName
+
+	creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.1.0", Origin: internal.Defaults})
+	require.NoError(t, err)
+	creator.SetProvisioningParameters(pp)
+
+	// when
+	input, err := creator.CreateProvisionRuntimeInput()
+	require.NoError(t, err)
+
+	// then
+	assert.NotEqual(t, pp.Parameters.Name, input.RuntimeInput.Name)
+	assert.True(t, strings.HasPrefix(input.RuntimeInput.Name, testPrefix))
+	assert.Equal(t, 36, len(trialName))
 }
 
 func assertOverrides(t *testing.T, componentName string, components internal.ComponentConfigurationInputList, overrides []*gqlschema.ConfigEntryInput) {

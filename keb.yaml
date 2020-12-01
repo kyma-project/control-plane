@@ -1,0 +1,318 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: kyma-environment-broker-kj
+  name: kcp-kyma-environment-broker-kj
+  namespace: kcp-system
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kyma-environment-broker-kj
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kyma-environment-broker-kj
+    spec:
+      containers:
+        - env:
+            - name: APP_IAS_URL
+              value: https://kymatest.accounts400.ondemand.com
+            - name: APP_IAS_USER_ID
+              valueFrom:
+                secretKeyRef:
+                  key: id
+                  name: ias-creds
+            - name: APP_IAS_USER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: secret
+                  name: ias-creds
+            - name: APP_IAS_IDENTITY_PROVIDER
+              value: https://accounts400.sap.com
+            - name: APP_IAS_DISABLED
+              value: "true"
+            - name: APP_BROKER_ENABLE_PLANS
+              value: azure
+            - name: APP_VERSION_CONFIG_NAME
+              value: "dummy"
+            - name: APP_VERSION_CONFIG_NAMESPACE
+              value: "dummy"
+            - name: APP_PROVISIONING_URL
+              value: http://kcp-provisioner.kcp-system.svc.cluster.local:3000/graphql
+            - name: APP_PORT
+              value: "8080"
+            - name: APP_AUTH_USERNAME
+              value: broker
+            - name: APP_LMS_DISABLED
+              value: "true"
+            - name: APP_LMS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: token
+                  name: lms-creds
+            - name: APP_DIRECTOR_NAMESPACE
+              value: kcp-system
+            - name: APP_DIRECTOR_DEFAULT_TENANT
+              value: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
+            - name: APP_DIRECTOR_URL
+              value: https://compass-gateway-auth-oauth.mps.dev.kyma.cloud.sap/director/graphql
+            - name: APP_DIRECTOR_OAUTH_CREDENTIALS_SECRET_NAME
+              value: kcp-kyma-environment-broker-credentials
+            - name: APP_DIRECTOR_SKIP_CERT_VERIFICATION
+              value: "false"
+            - name: APP_EDP_AUTH_URL
+              value: https://auth.yevents.io
+            - name: APP_EDP_ADMIN_URL
+              value: https://admin.yevents.io
+            - name: APP_EDP_NAMESPACE
+              value: kyma-dev
+            - name: APP_EDP_ENVIRONMENT
+              value: dev
+            - name: APP_EDP_REQUIRED
+              value: "false"
+            - name: APP_EDP_DISABLED
+              value: "false"
+            - name: APP_EDP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: secret
+                  name: edp-creds
+            - name: APP_LMS_URL
+              value: https://api.lmssap.io
+            - name: APP_DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-broker-username
+                  name: kcp-postgresql
+            - name: APP_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-broker-password
+                  name: kcp-postgresql
+            - name: APP_DATABASE_HOST
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-serviceName
+                  name: kcp-postgresql
+            - name: APP_DATABASE_PORT
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-servicePort
+                  name: kcp-postgresql
+            - name: APP_DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-broker-db-name
+                  name: kcp-postgresql
+            - name: APP_DATABASE_SSL
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-sslMode
+                  name: kcp-postgresql
+            - name: APP_SERVICE_MANAGER_OVERRIDE_MODE
+              value: Always
+            - name: APP_SERVICE_MANAGER_URL
+              valueFrom:
+                secretKeyRef:
+                  key: url
+                  name: service-manager-creds
+            - name: APP_SERVICE_MANAGER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: service-manager-creds
+            - name: APP_SERVICE_MANAGER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: service-manager-creds
+            - name: APP_AVS_OAUTH_TOKEN_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  key: oauthTokenEndpoint
+                  name: avs-creds
+            - name: APP_AVS_OAUTH_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: oauthUserName
+                  name: avs-creds
+            - name: APP_AVS_OAUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: oauthPassword
+                  name: avs-creds
+            - name: APP_AVS_API_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  key: apiEndpoint
+                  name: avs-creds
+            - name: APP_AVS_OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: clientId
+                  name: avs-creds
+            - name: APP_AVS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: apiKey
+                  name: avs-creds
+            - name: APP_AVS_INTERNAL_TESTER_ACCESS_ID
+              valueFrom:
+                secretKeyRef:
+                  key: internalTesterAccessId
+                  name: avs-creds
+            - name: APP_AVS_EXTERNAL_TESTER_ACCESS_ID
+              valueFrom:
+                secretKeyRef:
+                  key: externalTesterAccessId
+                  name: avs-creds
+            - name: APP_AVS_GROUP_ID
+              valueFrom:
+                secretKeyRef:
+                  key: groupId
+                  name: avs-creds
+            - name: APP_AVS_PARENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: parentId
+                  name: avs-creds
+            - name: APP_LMS_CLUSTER_TYPE
+              value: single-node
+            - name: APP_LMS_ENVIRONMENT
+              value: dev
+            - name: APP_LMS_SAML_TENANT
+              value: kymatest.accounts400.ondemand.com
+            - name: APP_KYMA_VERSION
+              value: 1.15.0
+            - name: APP_DISABLE_PROCESS_OPERATIONS_IN_PROGRESS
+              value: "true"
+            - name: APP_MANAGED_RUNTIME_COMPONENTS_YAML_FILE_PATH
+              value: /config/additionalRuntimeComponents.yaml
+            - name: APP_GARDENER_PROJECT
+              value: kyma-dev
+            - name: APP_GARDENER_KUBECONFIG_PATH
+              value: /gardener/kubeconfig/kubeconfig
+            - name: APP_PROVISIONING_KUBERNETES_VERSION
+              value: 1.16.9
+            - name: APP_DEFAULT_REQUEST_REGION
+              value: cf-eu10
+            - name: APP_AUDITLOG_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: auditlog-url-basic
+                  name: kcp-auditlog-config
+            - name: APP_AUDITLOG_USER
+              valueFrom:
+                secretKeyRef:
+                  key: auditlog-user
+                  name: kcp-auditlog-secret
+            - name: APP_AUDITLOG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: auditlog-password
+                  name: kcp-auditlog-secret
+            - name: APP_AUDITLOG_TENANT
+              valueFrom:
+                configMapKeyRef:
+                  key: auditlog-tenant
+                  name: kcp-auditlog-config
+          image: eu.gcr.io/kyma-project/control-plane/kyma-environment-broker:PR-187
+          imagePullPolicy: Always
+          name: kyma-environment-broker-kj
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8071
+            periodSeconds: 10
+            timeoutSeconds: 1
+            initialDelaySeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8071
+            periodSeconds: 2
+            timeoutSeconds: 1
+            initialDelaySeconds: 5
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /gardener/kubeconfig
+              name: gardener-kubeconfig
+              readOnly: true
+            - mountPath: /config
+              name: config-volume
+            - mountPath: /auditlog-script
+              name: auditlog-script
+            - mountPath: /secrets/cloudsql-instance-credentials
+              name: cloudsql-instance-credentials
+              readOnly: true
+        - command:
+            - /cloud_sql_proxy
+            - -instances=sap-ti-dx-kyma-mps-dev:europe-west1:kyma-mps-dev-f720=tcp:5432
+            - -credential_file=/secrets/cloudsql-instance-credentials/credentials.json
+          image: gcr.io/cloudsql-docker/gce-proxy:1.11
+          imagePullPolicy: IfNotPresent
+          name: cloudsql-proxy
+          resources: {}
+          securityContext:
+            runAsUser: 2000
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /secrets/cloudsql-instance-credentials
+              name: cloudsql-instance-credentials
+              readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsUser: 2000
+      serviceAccountName: kcp-kyma-environment-broker
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: config-volume
+          configMap:
+            name: kcp-kyma-environment-broker
+        - name: cloudsql-instance-credentials
+          secret:
+            secretName: cloudsql-instance-credentials
+        - name: gardener-kubeconfig
+          secret:
+            secretName: gardener-credentials
+        - name: auditlog-script
+          configMap:
+            name: kcp-auditlog-script
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: kyma-environment-broker-kj
+  name: kcp-kyma-environment-broker-kj
+  namespace: kcp-system
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: kyma-environment-broker-kj
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
