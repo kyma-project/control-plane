@@ -87,11 +87,11 @@ func Test_ListPlans(t *testing.T) {
 	})
 
 	// when
-	so, err := client.ListPlansByName("application", "off-id")
+	sp, err := client.ListPlansByName("application", "off-id")
 
 	// then
 	require.NoError(t, err)
-	require.NotNil(t, so)
+	require.NotNil(t, sp)
 }
 
 func Test_Provision(t *testing.T) {
@@ -120,7 +120,7 @@ func Test_Provision(t *testing.T) {
 	})
 
 	// when
-	so, err := client.Provision("broker1234", ProvisioningInput{
+	resp, err := client.Provision("broker1234", ProvisioningInput{
 		ProvisionRequest: ProvisionRequest{
 			ServiceID: "s-id",
 			PlanID:    "p-id",
@@ -130,7 +130,8 @@ func Test_Provision(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	require.NotNil(t, so)
+	require.NotNil(t, resp)
+	assert.True(t, resp.IsDone())
 }
 
 func Test_Deprovision(t *testing.T) {
@@ -164,6 +165,7 @@ func Test_Deprovision(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	require.NotNil(t, so)
+	assert.True(t, so.IsDone())
 }
 
 func Test_LastInstanceOperation(t *testing.T) {
@@ -177,7 +179,7 @@ func Test_LastInstanceOperation(t *testing.T) {
 		assert.Equal(t, "p-id", r.URL.Query().Get("plan_id"))
 		assert.Equal(t, "op-id", r.URL.Query().Get("operation"))
 
-		fmt.Fprintln(w, "{}")
+		fmt.Fprintln(w, `{"state":"failed"}`)
 	}))
 	defer ts.Close()
 
@@ -197,6 +199,7 @@ func Test_LastInstanceOperation(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
+	assert.Equal(t, Failed, resp.State)
 }
 
 func extractBody(t *testing.T, r *http.Request) map[string]interface{} {
