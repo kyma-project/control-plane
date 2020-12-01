@@ -392,7 +392,7 @@ func TestShouldAddSuffixToRuntimeName(t *testing.T) {
 func TestShouldTrimRuntimeNameAndAddSuffix(t *testing.T) {
 	// given
 	trialName := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-	testPrefix := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+	testPrefix := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA-"
 	optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 	componentsProvider := &automock.ComponentListProvider{}
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
@@ -414,7 +414,7 @@ func TestShouldTrimRuntimeNameAndAddSuffix(t *testing.T) {
 	// then
 	assert.NotEqual(t, pp.Parameters.Name, input.RuntimeInput.Name)
 	assert.True(t, strings.HasPrefix(input.RuntimeInput.Name, testPrefix))
-	assert.Equal(t, 36, len(trialName))
+	assert.Equal(t, 36, len(input.RuntimeInput.Name))
 }
 
 func assertOverrides(t *testing.T, componentName string, components internal.ComponentConfigurationInputList, overrides []*gqlschema.ConfigEntryInput) {
