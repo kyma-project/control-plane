@@ -97,8 +97,6 @@ const (
 	Failed     LastOperationState = "failed"
 )
 
-
-
 func (pr *HTTPResponse) IsDone() bool {
 	if pr == nil {
 		return false

@@ -60,19 +60,19 @@ func (s *UaaInstantiationStep) Run(operation internal.ProvisioningOperation, log
 	}
 
 	/*
-	1. Provisioning:
-	  - find offering and plan
-	  - call Provision -> operationID
-	    save instanceId and broker ID in the operation
+		1. Provisioning:
+		  - find offering and plan
+		  - call Provision -> operationID
+		    save instanceId and broker ID in the operation
 
 
 
 
-	2. Binding:
-	  - checks if provisioning is finished
-	  - call Bind
-	    save bindingID in the operation
-	 */
+		2. Binding:
+		  - checks if provisioning is finished
+		  - call Bind
+		    save bindingID in the operation
+	*/
 
 	return operation, 0, nil
 }
