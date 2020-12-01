@@ -188,7 +188,7 @@ func Test_LastInstanceOperation(t *testing.T) {
 	})
 
 	// when
-	so, err := client.LastInstanceOperation(InstanceKey{
+	resp, err := client.LastInstanceOperation(InstanceKey{
 		BrokerID:   "broker1234",
 		InstanceID: "instance-id-001",
 		ServiceID:  "s-id",
@@ -197,7 +197,6 @@ func Test_LastInstanceOperation(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	require.NotNil(t, so)
 }
 
 func extractBody(t *testing.T, r *http.Request) map[string]interface{} {
