@@ -199,6 +199,8 @@ e2e:
     configName: "e2e-runtime-config-azure"
   gcp:
     configName: "e2e-runtime-config-gcp"
+  skr:
+    configName: "e2e-runtime-config-skr"
   upgrade:
     configName: "e2e-upgrade-runtime-config-azure"
     timeout: "100m"
