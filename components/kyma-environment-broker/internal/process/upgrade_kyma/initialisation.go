@@ -59,11 +59,6 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	// if schedule is maintenanceWindow and time window for this operation has finished we reprocess on next time window
-	if !operation.MaintenanceWindowEnd.IsZero() && operation.MaintenanceWindowEnd.Before(time.Now()) {
-		return s.rescheduleAtNextMaintenanceWindow(operation, log)
-	}
-
 	// rewrite necessary data from ProvisioningOperation to operation internal.UpgradeOperation
 	op, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
 	if err != nil {
@@ -96,6 +91,10 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 	switch {
 	case err == nil:
 		if operation.ProvisionerOperationID == "" {
+			// if schedule is maintenanceWindow and time window for this operation has finished we reprocess on next time window
+			if !operation.MaintenanceWindowEnd.IsZero() && operation.MaintenanceWindowEnd.Before(time.Now()) {
+				return s.rescheduleAtNextMaintenanceWindow(operation, log)
+			}
 			log.Info("provisioner operation ID is empty, initialize upgrade runtime input request")
 			return s.initializeUpgradeRuntimeRequest(operation, log)
 		}
