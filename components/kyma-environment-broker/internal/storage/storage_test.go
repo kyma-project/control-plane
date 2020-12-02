@@ -579,6 +579,7 @@ func TestSchemaInitializer(t *testing.T) {
 					OrchestrationID:        orchestrationID,
 				},
 				RuntimeOperation: orchestration.RuntimeOperation{
+					ID: "operation-id-2",
 					Runtime: orchestration.Runtime{
 						ShootName:              "shoot-stage",
 						MaintenanceWindowBegin: time.Now().Truncate(time.Millisecond).Add(time.Hour),
