@@ -41,16 +41,16 @@ type KymaVersionConfigurator interface {
 }
 
 type InitialisationStep struct {
-	operationManager       *process.ProvisionOperationManager
-	instanceStorage        storage.Instances
-	provisionerClient      provisioner.Client
-	directorClient         DirectorClient
-	inputBuilder           input.CreatorForPlan
-	externalEvalCreator    *ExternalEvalCreator
-	internalEvalUpdater    *InternalEvalUpdater
-	iasType                *IASType
-	provisioningTimeout    time.Duration
-	runtimeVerConfigurator RuntimeVersionConfiguratorForProvisioning
+	operationManager            *process.ProvisionOperationManager
+	instanceStorage             storage.Instances
+	provisionerClient           provisioner.Client
+	directorClient              DirectorClient
+	inputBuilder                input.CreatorForPlan
+	externalEvalCreator         *ExternalEvalCreator
+	internalEvalUpdater         *InternalEvalUpdater
+	iasType                     *IASType
+	provisioningTimeout         time.Duration
+	runtimeVerConfigurator      RuntimeVersionConfiguratorForProvisioning
 	serviceManagerClientFactory *servicemanager.ClientFactory
 }
 
@@ -66,16 +66,16 @@ func NewInitialisationStep(os storage.Operations,
 	rvc RuntimeVersionConfiguratorForProvisioning,
 	smcf *servicemanager.ClientFactory) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:       process.NewProvisionOperationManager(os),
-		instanceStorage:        is,
-		provisionerClient:      pc,
-		directorClient:         dc,
-		inputBuilder:           b,
-		externalEvalCreator:    avsExternalEvalCreator,
-		internalEvalUpdater:    avsInternalEvalUpdater,
-		iasType:                iasType,
-		provisioningTimeout:    timeout,
-		runtimeVerConfigurator: rvc,
+		operationManager:            process.NewProvisionOperationManager(os),
+		instanceStorage:             is,
+		provisionerClient:           pc,
+		directorClient:              dc,
+		inputBuilder:                b,
+		externalEvalCreator:         avsExternalEvalCreator,
+		internalEvalUpdater:         avsInternalEvalUpdater,
+		iasType:                     iasType,
+		provisioningTimeout:         timeout,
+		runtimeVerConfigurator:      rvc,
 		serviceManagerClientFactory: smcf,
 	}
 }
