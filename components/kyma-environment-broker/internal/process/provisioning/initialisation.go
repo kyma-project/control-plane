@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -38,15 +40,16 @@ type KymaVersionConfigurator interface {
 }
 
 type InitialisationStep struct {
-	operationManager       *process.ProvisionOperationManager
-	instanceStorage        storage.Instances
-	provisionerClient      provisioner.Client
-	directorClient         DirectorClient
-	inputBuilder           input.CreatorForPlan
-	externalEvalCreator    *ExternalEvalCreator
-	iasType                *IASType
-	provisioningTimeout    time.Duration
-	runtimeVerConfigurator RuntimeVersionConfiguratorForProvisioning
+	operationManager            *process.ProvisionOperationManager
+	instanceStorage             storage.Instances
+	provisionerClient           provisioner.Client
+	directorClient              DirectorClient
+	inputBuilder                input.CreatorForPlan
+	externalEvalCreator         *ExternalEvalCreator
+	iasType                     *IASType
+	provisioningTimeout         time.Duration
+	runtimeVerConfigurator      RuntimeVersionConfiguratorForProvisioning
+	serviceManagerClientFactory *servicemanager.ClientFactory
 }
 
 func NewInitialisationStep(os storage.Operations,
@@ -57,17 +60,19 @@ func NewInitialisationStep(os storage.Operations,
 	avsExternalEvalCreator *ExternalEvalCreator,
 	iasType *IASType,
 	timeout time.Duration,
-	rvc RuntimeVersionConfiguratorForProvisioning) *InitialisationStep {
+	rvc RuntimeVersionConfiguratorForProvisioning,
+	smcf *servicemanager.ClientFactory) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:       process.NewProvisionOperationManager(os),
-		instanceStorage:        is,
-		provisionerClient:      pc,
-		directorClient:         dc,
-		inputBuilder:           b,
-		externalEvalCreator:    avsExternalEvalCreator,
-		iasType:                iasType,
-		provisioningTimeout:    timeout,
-		runtimeVerConfigurator: rvc,
+		operationManager:            process.NewProvisionOperationManager(os),
+		instanceStorage:             is,
+		provisionerClient:           pc,
+		directorClient:              dc,
+		inputBuilder:                b,
+		externalEvalCreator:         avsExternalEvalCreator,
+		iasType:                     iasType,
+		provisioningTimeout:         timeout,
+		runtimeVerConfigurator:      rvc,
+		serviceManagerClientFactory: smcf,
 	}
 }
 
@@ -84,6 +89,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 	if pp.PlanID == broker.TrialPlanID {
 		s.externalEvalCreator.disabled = true
 	}
+	operation.SMClientFactory = s.serviceManagerClientFactory
 
 	inst, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {

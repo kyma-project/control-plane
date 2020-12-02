@@ -13,14 +13,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const ServiceManagerComponentName = "service-manager-proxy"
+
 type ServiceManagerOverridesStep struct {
-	serviceManager   ServiceManagerOverrideConfig
 	operationManager *process.ProvisionOperationManager
 }
 
-func NewServiceManagerOverridesStep(os storage.Operations, smOverride ServiceManagerOverrideConfig) *ServiceManagerOverridesStep {
+func NewServiceManagerOverridesStep(os storage.Operations) *ServiceManagerOverridesStep {
 	return &ServiceManagerOverridesStep{
-		serviceManager:   smOverride,
 		operationManager: process.NewProvisionOperationManager(os),
 	}
 }
@@ -30,65 +30,27 @@ func (s *ServiceManagerOverridesStep) Name() string {
 }
 
 func (s *ServiceManagerOverridesStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	pp, err := operation.GetProvisioningParameters()
+	creds, err := operation.ProvideServiceManagerCredentials(log)
 	if err != nil {
-		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
+		log.Errorf("unable to obtain SM credentials", err)
+		return s.operationManager.OperationFailed(operation, err.Error())
 	}
 
-	ersCtx := pp.ErsContext
-	var smOverrides []*gqlschema.ConfigEntryInput
-	if s.shouldOverride(ersCtx.ServiceManager) {
-		smOverrides = []*gqlschema.ConfigEntryInput{
-			{
-				Key:   "config.sm.url",
-				Value: s.serviceManager.URL,
-			},
-			{
-				Key:   "sm.user",
-				Value: s.serviceManager.Username,
-			},
-			{
-				Key:    "sm.password",
-				Value:  s.serviceManager.Password,
-				Secret: ptr.Bool(true),
-			},
-		}
-	} else {
-		if ersCtx.ServiceManager == nil {
-			log.Errorf("Service Manager Credentials are required to be send in provisioning request (override_mode: %q)", s.serviceManager.OverrideMode)
-			return s.operationManager.OperationFailed(operation, "Service Manager Credentials are required to be send in provisioning request.")
-		}
-
-		smOverrides = []*gqlschema.ConfigEntryInput{
-			{
-				Key:   "config.sm.url",
-				Value: ersCtx.ServiceManager.URL,
-			},
-			{
-				Key:   "sm.user",
-				Value: ersCtx.ServiceManager.Credentials.BasicAuth.Username,
-			},
-			{
-				Key:    "sm.password",
-				Value:  ersCtx.ServiceManager.Credentials.BasicAuth.Password,
-				Secret: ptr.Bool(true),
-			},
-		}
+	smOverrides := []*gqlschema.ConfigEntryInput{
+		{
+			Key:   "config.sm.url",
+			Value: creds.URL,
+		},
+		{
+			Key:   "sm.user",
+			Value: creds.Username,
+		},
+		{
+			Key:    "sm.password",
+			Value:  creds.Password,
+			Secret: ptr.Bool(true),
+		},
 	}
 	operation.InputCreator.AppendOverrides(ServiceManagerComponentName, smOverrides)
-
 	return operation, 0, nil
-}
-
-func (s *ServiceManagerOverridesStep) shouldOverride(reqCreds *internal.ServiceManagerEntryDTO) bool {
-	if s.serviceManager.OverrideMode == SMOverrideModeAlways {
-		return true
-	}
-
-	if s.serviceManager.OverrideMode == SMOverrideModeWhenNotSentInRequest && reqCreds == nil {
-		return true
-	}
-
-	return false
 }

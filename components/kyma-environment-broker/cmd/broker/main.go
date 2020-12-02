@@ -10,6 +10,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
+
 	"code.cloudfoundry.org/lager"
 	"github.com/dlmiddlecote/sqlstats"
 	gardenerclient "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
@@ -88,7 +90,7 @@ type Config struct {
 	Database     storage.Config
 	Gardener     gardener.Config
 
-	ServiceManager provisioning.ServiceManagerOverrideConfig
+	ServiceManager servicemanager.Config
 
 	KymaVersion                          string
 	EnableOnDemandVersion                bool `envconfig:"default=false"`
@@ -101,6 +103,11 @@ type Config struct {
 	LMS lms.Config
 	IAS ias.Config
 	EDP edp.Config
+
+	// Service Manager services
+	XSUAA struct {
+		Disabled bool `envconfig:"default=true"`
+	}
 
 	AuditLog auditlog.Config
 
@@ -225,12 +232,14 @@ func main() {
 	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 
+	serviceManagerClientFactory := servicemanager.NewClientFactory(cfg.ServiceManager)
+
 	// define steps
 	globalAccountVersionMapping := runtimeversion.NewGlobalAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
 	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, globalAccountVersionMapping)
 	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),
 		provisionerClient, directorClient, inputFactory, externalEvalCreator, iasTypeSetter, cfg.Provisioning.Timeout,
-		runtimeVerConfigurator)
+		runtimeVerConfigurator, serviceManagerClientFactory)
 	provisionManager.InitStep(provisioningInit)
 
 	provisioningSteps := []struct {
@@ -239,54 +248,59 @@ func main() {
 		step     provisioning.Step
 	}{
 		{
-			weight: 1,
+			weight:   1,
+			step:     provisioning.NewUaaInstantiationStep(db.Operations()),
+			disabled: cfg.XSUAA.Disabled,
+		},
+		{
+			weight: 2,
 			step:   provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
 		},
 		{
-			weight: 1,
+			weight: 2,
 			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
 				provisioning.NewInternalEvaluationStep(avsDel, internalEvalAssistant)),
 			disabled: cfg.Avs.Disabled,
 		},
 		{
-			weight: 1,
+			weight: 2,
 			step: provisioning.NewLmsActivationStep(db.Operations(), cfg.LMS,
 				provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
 		},
 		{
-			weight:   1,
+			weight:   2,
 			step:     provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
 			disabled: cfg.EDP.Disabled,
 		},
 		{
-			weight: 2,
+			weight: 3,
 			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
 				provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
 		{
-			weight: 2,
+			weight: 3,
 			step: provisioning.NewEnableForTrialPlanStep(db.Operations(),
 				provisioning.NewNatsStreamingOverridesStep(db.Operations())),
 		},
 		{
-			weight: 2,
+			weight: 3,
 			step:   provisioning.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
 		{
-			weight: 2,
-			step:   provisioning.NewServiceManagerOverridesStep(db.Operations(), cfg.ServiceManager),
+			weight: 3,
+			step:   provisioning.NewServiceManagerOverridesStep(db.Operations()),
 		},
 		{
-			weight: 2,
+			weight: 3,
 			step:   provisioning.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog),
 		},
 		{
-			weight: 4,
+			weight: 5,
 			step: provisioning.NewLmsActivationStep(db.Operations(), cfg.LMS,
 				provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
 		},
 		{
-			weight:   5,
+			weight:   6,
 			step:     provisioning.NewIASRegistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
 		},

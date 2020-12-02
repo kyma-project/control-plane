@@ -53,6 +53,25 @@
   version = "autorest/v0.11.10"
 
 [[projects]]
+  digest = "1:c468e701694c5a1aeaaa65210e538f39c7d888d1e9de76d33533b4edc16e5705"
+  name = "github.com/InVisionApp/go-health"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "a4a89dc763c320ee165018886368a202bdcffb87"
+  version = "v2.1.2"
+
+[[projects]]
+  digest = "1:e23ca13f9b71e76342eb7604258e470d74c7465ffe13e983684facb35e238b5a"
+  name = "github.com/InVisionApp/go-logger"
+  packages = [
+    ".",
+    "shims/logrus",
+  ]
+  pruneopts = "NUT"
+  revision = "c377c6c3f6a48a6366517e86f77bafea18454ff1"
+  version = "v1.0.1"
+
+[[projects]]
   digest = "1:25870183293a3fb61cc9afd060a61d63a486f091db72af01a8ea3449f5ca530d"
   name = "github.com/Masterminds/goutils"
   packages = ["."]
@@ -96,12 +115,48 @@
   version = "v0.8.7"
 
 [[projects]]
+  digest = "1:fef74c79bee74c4e4a98cdb275293ca2bacf9930cc2ebe6621740c2469bc22b6"
+  name = "github.com/Peripli/service-manager"
+  packages = [
+    "pkg/health",
+    "pkg/log",
+    "pkg/query",
+    "pkg/query/parser",
+    "pkg/types",
+    "pkg/util",
+    "pkg/util/slice",
+    "pkg/web",
+  ]
+  pruneopts = "NUT"
+  revision = "5f130a0cd920ff5235a772256a50359221781ac9"
+  version = "v0.16.11"
+
+[[projects]]
+  digest = "1:5d2113efb606dba740d4d0f20bdc6e07c3174c462eafd0f9fca431ac1ae1337c"
+  name = "github.com/Peripli/service-manager-cli"
+  packages = [
+    "pkg/query",
+    "pkg/types",
+  ]
+  pruneopts = "NUT"
+  revision = "9da2cc426c9d2fb8293018223b89b87010dd064b"
+  version = "v1.11.2"
+
+[[projects]]
   digest = "1:edfb3ba6ce10718550fba50b86eba1e9b62599015b02901e8a7776488ca91c0a"
   name = "github.com/agnivade/levenshtein"
   packages = ["."]
   pruneopts = "NUT"
   revision = "5f1ee18e3efadffd18ef076ac4181cc92d87188c"
   version = "v1.0.3"
+
+[[projects]]
+  digest = "1:3076a0751f5648f3ab1838abfba18bc5bf514cde7e3957500b62fba90633479a"
+  name = "github.com/antlr/antlr4"
+  packages = ["runtime/Go/antlr"]
+  pruneopts = "NUT"
+  revision = "7a3f40bc341ddfb463d6e0aa1a6265064d020cb6"
+  version = "4.8"
 
 [[projects]]
   digest = "1:c625fa56b03726603d572cf18fc73499751d2715dfa3f8b2dfad48ddecd408d7"
@@ -246,6 +301,14 @@
   version = "v3.2.2"
 
 [[projects]]
+  digest = "1:0914bf7efc3e3052163e92b859a89f3b407ad353d7c3b7f59a1bbb4fd05bb25d"
+  name = "github.com/fsnotify/fsnotify"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "45d7d09e39ef4ac08d493309fa031790c15bfe8a"
+  version = "v1.4.9"
+
+[[projects]]
   digest = "1:e02805fa1257a13418c3b92eed1f77100171ab98febb79a9b6515d88ee594f09"
   name = "github.com/gardener/gardener"
   packages = [
@@ -288,6 +351,23 @@
   version = "v3.6.0"
 
 [[projects]]
+  digest = "1:6a7159c5f8f8826207545407a458b43ab6599c1c8a2271465c2e979ecea1dcd4"
+  name = "github.com/gobwas/glob"
+  packages = [
+    ".",
+    "compiler",
+    "match",
+    "syntax",
+    "syntax/ast",
+    "syntax/lexer",
+    "util/runes",
+    "util/strings",
+  ]
+  pruneopts = "NUT"
+  revision = "5ccd90ef52e1e632236f7326478d4faa74f99438"
+  version = "v0.2.3"
+
+[[projects]]
   digest = "1:62b4e5cc77cc50af225b2d4a10ef7f4c7b5807302be6f3f1f329cd53dc8abcbb"
   name = "github.com/gocraft/dbr"
   packages = [
@@ -297,6 +377,14 @@
   pruneopts = "NUT"
   revision = "8114670a83bd7b6dd19a2eb21c6ad88822c56414"
   version = "v2.6.1"
+
+[[projects]]
+  digest = "1:100f874677364387717ee2becf81bede9b2475634958a54accac40a2b8866773"
+  name = "github.com/gofrs/uuid"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "d41eeda0759468834c84365a32d1b1ec4264c75f"
+  version = "v3.1.0"
 
 [[projects]]
   digest = "1:a1b2a5e38f79688ee8250942d5fa960525fceb1024c855c7bc76fa77b0f3cca2"
@@ -526,6 +614,56 @@
   version = "1.0.1"
 
 [[projects]]
+  digest = "1:17995b544cdab2ad44419d8c9f551416c63c0fdee5a8b916373188623ed77ea5"
+  name = "github.com/nxadm/tail"
+  packages = [
+    ".",
+    "ratelimiter",
+    "util",
+    "watch",
+    "winfile",
+  ]
+  pruneopts = "NUT"
+  revision = "2683a83f3fb0c35b4908abeecadf6704cede46d1"
+  version = "v1.4.5"
+
+[[projects]]
+  digest = "1:96df5bdca983e4b8c62682af5b67100b187d582ac6db0968d8af52e84138d1e6"
+  name = "github.com/onrik/logrus"
+  packages = ["filename"]
+  pruneopts = "NUT"
+  revision = "94ad747c51752e8dfa69cfd0335b8c76bf1ae592"
+  version = "v0.4.1"
+
+[[projects]]
+  digest = "1:e8185fbeb206515e08c0a5ee0aed0814e391c39c6a5c92a5878108fd1ed4d3d1"
+  name = "github.com/onsi/ginkgo"
+  packages = [
+    ".",
+    "config",
+    "internal/codelocation",
+    "internal/containernode",
+    "internal/failer",
+    "internal/global",
+    "internal/leafnodes",
+    "internal/remote",
+    "internal/spec",
+    "internal/spec_iterator",
+    "internal/specrunner",
+    "internal/suite",
+    "internal/testingtproxy",
+    "internal/writer",
+    "reporters",
+    "reporters/stenographer",
+    "reporters/stenographer/support/go-colorable",
+    "reporters/stenographer/support/go-isatty",
+    "types",
+  ]
+  pruneopts = "NUT"
+  revision = "55c858784e51c26077949c81b6defb6b97b76944"
+  version = "v1.14.2"
+
+[[projects]]
   digest = "1:69e47979091e47a10e5ff0e2776ca71aa3e884238ce446bd71e246878ba0858d"
   name = "github.com/opencontainers/go-digest"
   packages = ["."]
@@ -722,6 +860,30 @@
   version = "v0.0.10"
 
 [[projects]]
+  digest = "1:7ac56eee8a1fee0c12f23ba86e35433ca152d8b85db45de6764b15c352511fe6"
+  name = "github.com/tidwall/gjson"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "5100d6926a4bea3753fc72352fca70654f04cedc"
+  version = "v1.6.3"
+
+[[projects]]
+  digest = "1:2e6d7797f48ba5f98a3611be7cf1fe87e7cf25cb118c8e2aae3ff846c9d4a2c5"
+  name = "github.com/tidwall/match"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "9e52e9e068387201730ec4876bac3a1902d0eef8"
+  version = "v1.0.2"
+
+[[projects]]
+  digest = "1:93e8c1535b3e4629b708db04d04e2d64ebd6f050712c05b49856b89ead0ce473"
+  name = "github.com/tidwall/pretty"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "ef453c788d6a371829f4f9967b014b2b81856df5"
+  version = "v1.0.2"
+
+[[projects]]
   branch = "master"
   digest = "1:57a5f9bf5751128bb0251809508d122b178a38830e80ba3e409f07b0b0db4b05"
   name = "github.com/vburenin/nsync"
@@ -809,6 +971,7 @@
   revision = "c0dbc17a35534bf2e581d7a942408dc936316da4"
 
 [[projects]]
+  branch = "master"
   digest = "1:0b10baad5e1a455de79af85262602560f6c49e72be2ce519db2aa221446e9f84"
   name = "golang.org/x/oauth2"
   packages = [
@@ -817,7 +980,7 @@
     "internal",
   ]
   pruneopts = "NUT"
-  revision = "5d25da1a8d43b66f2898c444f899c7bcfd6a407e"
+  revision = "9fd604954f58d391cab0f7f49affb0a6aa864086"
 
 [[projects]]
   branch = "master"
@@ -927,6 +1090,14 @@
   pruneopts = "NUT"
   revision = "d2d2541c53f18d2a059457998ce2876cc8e67cbf"
   version = "v0.9.1"
+
+[[projects]]
+  branch = "v1"
+  digest = "1:8fb1ccb16a6cfecbfdfeb84d8ea1cc7afa8f9ef16526bc2326f72d993e32cef1"
+  name = "gopkg.in/tomb.v1"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "dd632973f1e7218eb1089048e0798ec9ae7dceb8"
 
 [[projects]]
   digest = "1:d9b9ac6943a512737f76bf3d61b08d97121c66686bc02ffc231313563230b468"
@@ -1202,6 +1373,9 @@
     "github.com/Azure/go-autorest/autorest/adal",
     "github.com/Azure/go-autorest/autorest/azure",
     "github.com/Masterminds/sprig",
+    "github.com/Peripli/service-manager-cli/pkg/query",
+    "github.com/Peripli/service-manager-cli/pkg/types",
+    "github.com/Peripli/service-manager/pkg/web",
     "github.com/dlmiddlecote/sqlstats",
     "github.com/gardener/gardener/pkg/apis/core/v1beta1",
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake",
