@@ -502,6 +502,10 @@ func TestSchemaInitializer(t *testing.T) {
 					Description:            "description",
 					Version:                1,
 				},
+
+				ProvisioningParameters: internal.ProvisioningParameters{
+					PlanID: "some-plan-id",
+				},
 			}
 
 			err = InitTestDBTables(t, cfg.ConnectionURL())
@@ -520,6 +524,7 @@ func TestSchemaInitializer(t *testing.T) {
 			require.NoError(t, err)
 			assert.Len(t, ops, 1)
 			assertOperation(t, givenOperation.Operation, ops[0])
+
 
 			gotOperation, err := svc.GetDeprovisioningOperationByID("operation-id")
 			require.NoError(t, err)

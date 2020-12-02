@@ -552,12 +552,18 @@ func toDeprovisioningOperation(op *dbmodel.OperationDTO) (*internal.Deprovisioni
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
+	var pp internal.ProvisioningParameters
+	_ = json.Unmarshal([]byte(operation.RawProvisioningParameters), &pp)
 	operation.Operation = toOperation(op)
+	operation.ProvisioningParameters = pp
 
 	return &operation, nil
 }
 
 func deprovisioningOperationToDTO(op *internal.DeprovisioningOperation) (dbmodel.OperationDTO, error) {
+	pp, _ := json.Marshal(op.ProvisioningParameters)
+	opCopy := *op
+	opCopy.RawProvisioningParameters = string(pp)
 	serialized, err := json.Marshal(op)
 	if err != nil {
 		return dbmodel.OperationDTO{}, errors.Wrapf(err, "while serializing deprovisioning data %v", op)

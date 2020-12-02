@@ -158,11 +158,13 @@ type ProvisioningOperation struct {
 type DeprovisioningOperation struct {
 	Operation `json:"-"`
 
-	ProvisioningParameters string           `json:"provisioning_parameters"`
-	Avs                    AvsLifecycleData `json:"avs"`
-	EventHub               EventHub         `json:"eh"`
-	SubAccountID           string           `json:"-"`
-	RuntimeID              string           `json:"runtime_id"`
+	RawProvisioningParameters string           `json:"provisioning_parameters"`
+	Avs                       AvsLifecycleData `json:"avs"`
+	EventHub                  EventHub         `json:"eh"`
+	SubAccountID              string           `json:"-"`
+	RuntimeID                 string           `json:"runtime_id"`
+
+	ProvisioningParameters ProvisioningParameters `json:"-"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
@@ -304,9 +306,9 @@ func (po *ProvisioningOperation) SetProvisioningParameters(parameters Provisioni
 func (do *DeprovisioningOperation) GetProvisioningParameters() (ProvisioningParameters, error) {
 	var pp ProvisioningParameters
 
-	err := json.Unmarshal([]byte(do.ProvisioningParameters), &pp)
+	err := json.Unmarshal([]byte(do.RawProvisioningParameters), &pp)
 	if err != nil {
-		return pp, errors.Wrapf(err, "while unmarshaling provisioning parameters: %s, ProvisioningOperations: %+v", do.ProvisioningParameters, do)
+		return pp, errors.Wrapf(err, "while unmarshaling provisioning parameters: %s, ProvisioningOperations: %+v", do.RawProvisioningParameters, do)
 	}
 
 	return pp, nil
@@ -318,7 +320,7 @@ func (do *DeprovisioningOperation) SetProvisioningParameters(parameters Provisio
 		return errors.Wrap(err, "while marshaling provisioning parameters")
 	}
 
-	do.ProvisioningParameters = string(params)
+	do.RawProvisioningParameters = string(params)
 	return nil
 }
 
