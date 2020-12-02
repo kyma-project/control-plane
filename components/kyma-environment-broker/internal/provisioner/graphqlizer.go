@@ -122,7 +122,10 @@ func (g *Graphqlizer) AWSProviderConfigInputToGraphQL(in gqlschema.AWSProviderCo
 func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		version: "{{ .Version }}",
-      	{{- with .Components }}
+		{{- if .Profile }}
+		profile: {{ .Profile }},
+		{{- end }}
+		{{- with .Components }}
         components: [
 		  {{- range . }}
           {

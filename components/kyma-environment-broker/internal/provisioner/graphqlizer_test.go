@@ -11,8 +11,10 @@ import (
 
 func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 	// given
+	profile := gqlschema.KymaProfileProduction
 	fixInput := gqlschema.KymaConfigInput{
 		Version: "966",
+		Profile: &profile,
 		Components: []*gqlschema.ComponentConfigurationInput{
 			{
 				Component: "pico",
@@ -53,6 +55,7 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 	}
 	expRender := `{
 		version: "966",
+		profile: Production,
         components: [
           {
             component: "pico",
@@ -103,13 +106,16 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 	assert.Equal(t, expRender, gotRender)
 }
 
-func TestKymaConfigToGraphQLOnlyKymaVersion(t *testing.T) {
+func TestKymaConfigToGraphQLOnlyKymaVersionAndProfile(t *testing.T) {
 	// given
+	profile := gqlschema.KymaProfileEvaluation
 	fixInput := gqlschema.KymaConfigInput{
 		Version: "966",
+		Profile: &profile,
 	}
 	expRender := `{
 		version: "966",
+		profile: Evaluation,
 	}`
 
 	sut := Graphqlizer{}
