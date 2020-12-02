@@ -11,27 +11,25 @@ import (
 type InternalEvalUpdater struct {
 	delegator *avs.Delegator
 	assistant *avs.InternalEvalAssistant
+	avsConfig avs.Config
 }
 
-func NewInternalEvalUpdater(delegator *avs.Delegator, assistant *avs.InternalEvalAssistant) *InternalEvalUpdater {
+func NewInternalEvalUpdater(delegator *avs.Delegator, assistant *avs.InternalEvalAssistant, config avs.Config) *InternalEvalUpdater {
 	return &InternalEvalUpdater{
 		delegator: delegator,
 		assistant: assistant,
+		avsConfig: config,
 	}
 }
 
-func (ieu *InternalEvalUpdater) addEvalTags(operation internal.ProvisioningOperation, url string, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	// get current Evaluation
+func (ieu *InternalEvalUpdater) AddTagsToEval(tags []*avs.Tag, operation internal.ProvisioningOperation, url string, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	op, eval, duration, err := ieu.delegator.GetEvaluation(logger, operation, ieu.assistant)
 	if err != nil {
+		logger.Errorf("while getting Evaluations: %s", err)
 		return op, duration, err
 	}
 
-	eval.Tags = append(eval.Tags, &avs.Tag{
-		Content:      "test-content-region",
-		TagClassId:   61251099,
-		TagClassName: "region",
-	})
-	
-	return ieu.delegator.UpdateEvaluation(logger, operation, eval, ieu.assistant, url)
+	eval.Tags = append(eval.Tags, tags...)
+
+	return ieu.delegator.UpdateEvaluation(logger, op, eval, ieu.assistant, url)
 }

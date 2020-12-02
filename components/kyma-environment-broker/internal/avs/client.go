@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"gopkg.in/yaml.v2"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -71,6 +72,7 @@ func (c *Client) GetEvaluation(evaluationID string) (_ *BasicEvaluationCreateRes
 	if err != nil {
 		return &responseObject, errors.Wrap(err, "while creating request")
 	}
+	request.Header.Set("Content-Type", "application/json")
 
 	response, err := c.execute(request, false, true)
 	if err != nil {
@@ -90,7 +92,7 @@ func (c *Client) GetEvaluation(evaluationID string) (_ *BasicEvaluationCreateRes
 	return &responseObject, nil
 }
 
-func (c *Client) UpdateEvaluation(evaluationRequest *BasicEvaluationCreateRequest) (_ *BasicEvaluationCreateResponse, err error) {
+func (c *Client) UpdateEvaluation(evaluationID string, evaluationRequest *BasicEvaluationCreateRequest) (_ *BasicEvaluationCreateResponse, err error) {
 	var responseObject BasicEvaluationCreateResponse
 
 	objAsBytes, err := json.Marshal(evaluationRequest)
@@ -98,7 +100,7 @@ func (c *Client) UpdateEvaluation(evaluationRequest *BasicEvaluationCreateReques
 		return &responseObject, errors.Wrap(err, "while marshaling evaluation request")
 	}
 
-	request, err := http.NewRequest(http.MethodPost, c.avsConfig.ApiEndpoint, bytes.NewReader(objAsBytes))
+	request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/%s", c.avsConfig.ApiEndpoint, evaluationID), bytes.NewReader(objAsBytes))
 	if err != nil {
 		return &responseObject, errors.Wrap(err, "while creating request")
 	}
@@ -114,7 +116,7 @@ func (c *Client) UpdateEvaluation(evaluationRequest *BasicEvaluationCreateReques
 		}
 	}()
 
-	err = json.NewDecoder(response.Body).Decode(&responseObject)
+	err = yaml.NewDecoder(response.Body).Decode(&responseObject)
 	if err != nil {
 		return nil, errors.Wrap(err, "while decode UpdateEvaluation response")
 	}

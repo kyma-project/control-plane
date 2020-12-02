@@ -104,7 +104,7 @@ func (del *Delegator) GetEvaluation(logger logrus.FieldLogger, operation interna
 	default:
 		errMsg := "cannot get AVS evaluation"
 		logger.Errorf("%s: %s", errMsg, err)
-		op, duration, err :=  del.operationManager.OperationFailed(operation, errMsg)
+		op, duration, err := del.operationManager.OperationFailed(operation, errMsg)
 		return op, &BasicEvaluationCreateResponse{}, duration, err
 	}
 
@@ -113,8 +113,8 @@ func (del *Delegator) GetEvaluation(logger logrus.FieldLogger, operation interna
 	return updatedOperation, evalResp, d, nil
 }
 
-func (del *Delegator) UpdateEvaluation(logger logrus.FieldLogger, operation internal.ProvisioningOperation,  evaluation *BasicEvaluationCreateResponse, evalAssistant EvalAssistant, url string) (internal.ProvisioningOperation, time.Duration, error) {
-	logger.Infof("starting the update avs internal id [%d] and avs external id [%d]", operation.Avs.AvsEvaluationInternalId, operation.Avs.AVSEvaluationExternalId)
+func (del *Delegator) UpdateEvaluation(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evaluation *BasicEvaluationCreateResponse, evalAssistant EvalAssistant, url string) (internal.ProvisioningOperation, time.Duration, error) {
+	logger.Infof("starting the update avs internal id [%d]", operation.Avs.AvsEvaluationInternalId)
 
 	var updatedOperation internal.ProvisioningOperation
 	d := 0 * time.Second
@@ -139,7 +139,8 @@ func (del *Delegator) UpdateEvaluation(logger logrus.FieldLogger, operation inte
 	}
 	logger.Infof("making avs calls to update the Evaluation")
 
-	updateResp, err := del.client.UpdateEvaluation(updatedEvaluation)
+	evalId := evalAssistant.GetEvaluationId(operation.Avs)
+	updateResp, err := del.client.UpdateEvaluation(strconv.FormatInt(evalId, 10), updatedEvaluation)
 	switch {
 	case err == nil:
 	case kebError.IsTemporaryError(err):
@@ -153,7 +154,7 @@ func (del *Delegator) UpdateEvaluation(logger logrus.FieldLogger, operation inte
 		return del.operationManager.OperationFailed(operation, errMsg)
 	}
 
-	logger.Infof("Successfully updated evaluation %s", updateResp.Id)
+	logger.Infof("Successfully updated evaluation %s", strconv.FormatInt(updateResp.Id, 10))
 
 	updatedOperation, d = del.operationManager.UpdateOperation(operation)
 

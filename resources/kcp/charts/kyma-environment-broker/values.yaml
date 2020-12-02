@@ -121,6 +121,9 @@ avs:
   #     tag_name: value-B
   internalTesterTags: ""
   externalTesterTags: ""
+  gardenerSeedNameTagClassId: "0"
+  gardenerShootNameTagClassId: "0"
+  regionTagClassId: "0"
 
 lms:
   secretName: "lms-creds"

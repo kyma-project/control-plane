@@ -211,7 +211,7 @@ func main() {
 	externalEvalAssistant := avs.NewExternalEvalAssistant(cfg.Avs)
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
 	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
-	internalEvalUpdater := provisioning.NewInternalEvalUpdater(avsDel, internalEvalAssistant)
+	internalEvalUpdater := provisioning.NewInternalEvalUpdater(avsDel, internalEvalAssistant, cfg.Avs)
 
 	clientHTTPForIAS := httputil.NewClient(60, cfg.IAS.SkipCertVerification)
 	if cfg.IAS.TLSRenegotiationEnable {

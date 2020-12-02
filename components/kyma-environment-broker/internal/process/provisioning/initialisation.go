@@ -5,9 +5,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
@@ -45,7 +47,7 @@ type InitialisationStep struct {
 	directorClient         DirectorClient
 	inputBuilder           input.CreatorForPlan
 	externalEvalCreator    *ExternalEvalCreator
-	internalEvalUpdater *InternalEvalUpdater
+	internalEvalUpdater    *InternalEvalUpdater
 	iasType                *IASType
 	provisioningTimeout    time.Duration
 	runtimeVerConfigurator RuntimeVersionConfiguratorForProvisioning
@@ -64,15 +66,16 @@ func NewInitialisationStep(os storage.Operations,
 	rvc RuntimeVersionConfiguratorForProvisioning,
 	smcf *servicemanager.ClientFactory) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:            process.NewProvisionOperationManager(os),
-		instanceStorage:             is,
-		provisionerClient:           pc,
-		directorClient:              dc,
-		inputBuilder:                b,
-		externalEvalCreator:         avsExternalEvalCreator,
-		iasType:                     iasType,
-		provisioningTimeout:         timeout,
-		runtimeVerConfigurator:      rvc,
+		operationManager:       process.NewProvisionOperationManager(os),
+		instanceStorage:        is,
+		provisionerClient:      pc,
+		directorClient:         dc,
+		inputBuilder:           b,
+		externalEvalCreator:    avsExternalEvalCreator,
+		internalEvalUpdater:    avsInternalEvalUpdater,
+		iasType:                iasType,
+		provisioningTimeout:    timeout,
+		runtimeVerConfigurator: rvc,
 		serviceManagerClientFactory: smcf,
 	}
 }
@@ -224,8 +227,14 @@ func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOp
 	}
 
 	// action #2
-	operation, repeat, err = s.internalEvalUpdater.addEvalTags(operation, "", log)
+	tags, operation, repeat, err := s.createTagsForRuntime(operation)
 	if err != nil || repeat != 0 {
+		log.Errorf("while adding Tags to Evaluation: %s", err)
+		return operation, repeat, nil
+	}
+	operation, repeat, err = s.internalEvalUpdater.AddTagsToEval(tags, operation, "", log)
+	if err != nil || repeat != 0 {
+		log.Errorf("while adding Tags to Evaluation: %s", err)
 		return operation, repeat, nil
 	}
 
@@ -245,4 +254,36 @@ func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOp
 	}
 
 	return s.operationManager.OperationSucceeded(operation, msg)
+}
+
+func (s *InitialisationStep) createTagsForRuntime(operation internal.ProvisioningOperation) ([]*avs.Tag, internal.ProvisioningOperation, time.Duration, error) {
+	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
+	if err != nil {
+		return []*avs.Tag{}, operation, 10 * time.Second, err
+	}
+
+	status, err := s.provisionerClient.RuntimeStatus(instance.GlobalAccountID, operation.RuntimeID)
+	if err != nil {
+		return []*avs.Tag{}, operation, 1 * time.Minute, err
+	}
+
+	result := []*avs.Tag{
+		&avs.Tag{
+			Content:      ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Name),
+			TagClassId:   s.internalEvalUpdater.avsConfig.GardenerShootNameTagClassId,
+			TagClassName: "gardener_shoot_name",
+		},
+		&avs.Tag{
+			Content:      ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Seed),
+			TagClassId:   s.internalEvalUpdater.avsConfig.GardenerSeedNameTagClassId,
+			TagClassName: "gardener_seed_name",
+		},
+		&avs.Tag{
+			Content:      ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Region),
+			TagClassId:   s.internalEvalUpdater.avsConfig.RegionTagClassId,
+			TagClassName: "region",
+		},
+	}
+
+	return result, operation, 0 * time.Second, nil
 }
