@@ -163,15 +163,11 @@ type SMClientFactory interface {
 
 // ProvisioningOperation holds all information about provisioning operation
 type ProvisioningOperation struct {
-	Operation       `json:"-"`
-	SMClientFactory SMClientFactory `json:"-"`
+	Operation `json:"-"`
 
 	// following fields are serialized to JSON and stored in the storage
 	Lms                    LMS    `json:"lms"`
 	ProvisioningParameters string `json:"provisioning_parameters"`
-
-	// following fields are not stored in the storage
-	InputCreator ProvisionerInputCreator `json:"-"`
 
 	Avs AvsLifecycleData `json:"avs"`
 
@@ -180,17 +176,51 @@ type ProvisioningOperation struct {
 	ShootDomain string `json:"shoot_domain"`
 
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
+
+	XSUAA XSUAAData `json:"xsuaa"`
+
+	// following fields are not stored in the storage
+	InputCreator ProvisionerInputCreator `json:"-"`
+
+	SMClientFactory SMClientFactory `json:"-"`
+}
+
+type ServiceManagerInstanceInfo struct {
+	BrokerID              string `json:"brokerId"`
+	ServiceID             string `json:"serviceId"`
+	PlanID                string `json:"planId"` // it is a plan.CatalogID from the Service Manager perspective
+	InstanceID            string `json:"instanceId"`
+	Provisioned           bool   `json:"provisioned"`
+	ProvisioningTriggered bool   `json:"provisioningTriggered"`
+}
+
+type XSUAAData struct {
+	Instance ServiceManagerInstanceInfo `json:"instance"`
+
+	XSAppname string `json:"xsappname"`
+	BindingID string `json:"bindingId"`
+}
+
+func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {
+	return servicemanager.InstanceKey{
+		BrokerID:   s.BrokerID,
+		InstanceID: s.InstanceID,
+		ServiceID:  s.ServiceID,
+		PlanID:     s.PlanID,
+	}
 }
 
 // DeprovisioningOperation holds all information about de-provisioning operation
 type DeprovisioningOperation struct {
-	Operation `json:"-"`
+	Operation       `json:"-"`
+	SMClientFactory SMClientFactory `json:"-"`
 
 	ProvisioningParameters string           `json:"provisioning_parameters"`
 	Avs                    AvsLifecycleData `json:"avs"`
 	EventHub               EventHub         `json:"eh"`
 	SubAccountID           string           `json:"-"`
 	RuntimeID              string           `json:"runtime_id"`
+	XSUAA                  XSUAAData        `json:"xsuaa"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
@@ -320,7 +350,7 @@ func (po *ProvisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (s
 		return nil, errors.New("invalid operation provisioning parameters")
 	}
 
-	return po.SMClientFactory.ForCustomerCredentials(po.serviceManagerRequestCereds(pp), log)
+	return po.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(pp), log)
 }
 
 func (po *ProvisioningOperation) ProvideServiceManagerCredentials(log logrus.FieldLogger) (*servicemanager.Credentials, error) {
@@ -330,20 +360,17 @@ func (po *ProvisioningOperation) ProvideServiceManagerCredentials(log logrus.Fie
 		return nil, errors.New("invalid operation provisioning parameters")
 	}
 
-	return po.SMClientFactory.ProvideCredentials(po.serviceManagerRequestCereds(pp), log)
+	return po.SMClientFactory.ProvideCredentials(serviceManagerRequestCreds(pp), log)
 }
 
-func (po *ProvisioningOperation) serviceManagerRequestCereds(parameters ProvisioningParameters) *servicemanager.Credentials {
-	var creds *servicemanager.Credentials
-	sm := parameters.ErsContext.ServiceManager
-	if sm != nil {
-		creds = &servicemanager.Credentials{
-			Username: sm.Credentials.BasicAuth.Username,
-			Password: sm.Credentials.BasicAuth.Password,
-			URL:      sm.URL,
-		}
+func (do *DeprovisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {
+	pp, err := do.GetProvisioningParameters()
+	if err != nil {
+		log.Errorf("unable to get Provisioning Parameters: %s", err.Error())
+		return nil, errors.New("invalid operation provisioning parameters")
 	}
-	return creds
+
+	return do.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(pp), log)
 }
 
 func (do *DeprovisioningOperation) GetProvisioningParameters() (ProvisioningParameters, error) {
@@ -417,4 +444,17 @@ func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfig
 		})
 	}
 	return copiedList
+}
+
+func serviceManagerRequestCreds(parameters ProvisioningParameters) *servicemanager.Credentials {
+	var creds *servicemanager.Credentials
+	sm := parameters.ErsContext.ServiceManager
+	if sm != nil {
+		creds = &servicemanager.Credentials{
+			Username: sm.Credentials.BasicAuth.Username,
+			Password: sm.Credentials.BasicAuth.Password,
+			URL:      sm.URL,
+		}
+	}
+	return creds
 }

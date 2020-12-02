@@ -10,6 +10,8 @@ import (
 	"sort"
 	"time"
 
+	uaa "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/xsuaa"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"code.cloudfoundry.org/lager"
@@ -22,6 +24,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
 	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/appinfo"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
@@ -249,13 +252,27 @@ func main() {
 		step     provisioning.Step
 	}{
 		{
-			weight:   1,
-			step:     provisioning.NewUaaInstantiationStep(db.Operations()),
+			weight: 1,
+			step: provisioning.NewServiceManagerOfferingStep("XSUAA_Offering",
+				"xsuaa", "application", func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
+					return &op.XSUAA.Instance
+				}, db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
 		},
 		{
 			weight: 2,
 			step:   provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
+		},
+		{
+			weight: 2,
+			step: provisioning.NewXSUAAProvisioningStep(db.Operations(), uaa.Config{
+				// todo: set correct values from env variables
+				DeveloperGroup:      "devGroup",
+				DeveloperRole:       "devRole",
+				NamespaceAdminGroup: "nag",
+				NamespaceAdminRole:  "nar",
+			}),
+			disabled: cfg.XSUAA.Disabled,
 		},
 		{
 			weight: 2,
@@ -306,6 +323,11 @@ func main() {
 			disabled: cfg.IAS.Disabled,
 		},
 		{
+			weight:   7,
+			step:     provisioning.NewXSUAABindingStep(db.Operations()),
+			disabled: cfg.XSUAA.Disabled,
+		},
+		{
 			weight: 10,
 			step:   provisioning.NewCreateRuntimeStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
 		},
@@ -316,7 +338,7 @@ func main() {
 		}
 	}
 
-	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider)
+	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, serviceManagerClientFactory)
 	deprovisionManager.InitStep(deprovisioningInit)
 	deprovisioningSteps := []struct {
 		disabled bool
@@ -341,6 +363,16 @@ func main() {
 			weight:   1,
 			step:     deprovisioning.NewIASDeregistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
+		},
+		{
+			weight:   1,
+			step:     deprovisioning.NewXSUAAUnbindStep(db.Operations()),
+			disabled: cfg.XSUAA.Disabled,
+		},
+		{
+			weight:   2,
+			step:     deprovisioning.NewXSUAADeprovisionStep(db.Operations()),
+			disabled: cfg.XSUAA.Disabled,
 		},
 		{
 			weight: 10,

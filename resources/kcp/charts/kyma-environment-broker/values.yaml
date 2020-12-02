@@ -96,6 +96,9 @@ serviceManager:
   username: "TBD"
   password: "TBD"
 
+xsuaa:
+  disabled: true
+
 avs:
   secretName: "avs-creds"
   apiEndpoint: "TBD"
