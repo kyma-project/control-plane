@@ -8,7 +8,7 @@ global:
       version: "PR-353"
     provisioner:
       dir:
-      version: "PR-336"
+      version: "fdc30ac8"
     kyma_environment_broker:
       dir:
       version: "PR-359"
