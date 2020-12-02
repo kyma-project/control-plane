@@ -2,7 +2,6 @@ package provisioning
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
@@ -165,11 +164,6 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 		return operation, 10 * time.Second, nil
 	}
 
-	_, err = url.ParseRequestURI(instance.DashboardURL)
-	if err == nil {
-		return s.launchPostActions(operation, instance, log, "Operation succeeded")
-	}
-
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
 	if err != nil {
 		return operation, 1 * time.Minute, nil
@@ -209,11 +203,9 @@ func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance, log
 		return 0, errors.Wrapf(err, "while geting URL from director")
 	}
 
-	instance.DashboardURL = dashboardURL
-	err = s.instanceStorage.Update(*instance)
-	if err != nil {
-		log.Errorf("cannot update instance: %s", err)
-		return 10 * time.Second, nil
+	if instance.DashboardURL != dashboardURL {
+		log.Errorf("dashboard URL from instance %s is not equal to dashboard URL from director %s", instance.DashboardURL, dashboardURL)
+		return 10 * time.Second, errors.New("dashboard URL from director is incorrect")
 	}
 
 	return 0, nil

@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	cloudProvider "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
@@ -177,6 +178,9 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 	}
 
 	provisionInput.ClusterConfig.GardenerConfig.KubernetesVersion = f.config.KubernetesVersion
+	if provisionInput.ClusterConfig.GardenerConfig.Name == nil {
+		provisionInput.ClusterConfig.GardenerConfig.Name = ptr.String("")
+	}
 	if provisionInput.ClusterConfig.GardenerConfig.Purpose == nil {
 		provisionInput.ClusterConfig.GardenerConfig.Purpose = &f.config.DefaultGardenerShootPurpose
 	}

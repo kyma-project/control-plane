@@ -19,6 +19,7 @@ import (
 
 type ProvisionerInputCreator interface {
 	SetProvisioningParameters(params ProvisioningParameters) ProvisionerInputCreator
+	SetShootName(string) ProvisionerInputCreator
 	SetLabel(key, value string) ProvisionerInputCreator
 	// Deprecated, use: AppendOverrides
 	SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator
@@ -159,6 +160,7 @@ type ProvisioningOperation struct {
 	Avs AvsLifecycleData `json:"avs"`
 
 	RuntimeID string `json:"runtime_id"`
+	ShootName string `json:"shoot_name"`
 
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 }

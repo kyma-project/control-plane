@@ -209,24 +209,10 @@ func fixInstanceRuntimeStatus() internal.Instance {
 	return internal.Instance{
 		InstanceID:      statusInstanceID,
 		RuntimeID:       statusRuntimeID,
-		DashboardURL:    "",
+		DashboardURL:    dashboardURL,
 		GlobalAccountID: statusGlobalAccountID,
 		CreatedAt:       time.Time{},
 		UpdatedAt:       time.Time{},
 		DeletedAt:       time.Time{},
 	}
-}
-
-func newInMemoryKymaVersionConfigurator(versions map[string]string) *inMemoryKymaVersionConfigurator {
-	return &inMemoryKymaVersionConfigurator{
-		perGAID: versions,
-	}
-}
-
-type inMemoryKymaVersionConfigurator struct {
-	perGAID map[string]string
-}
-
-func (c *inMemoryKymaVersionConfigurator) ForGlobalAccount(string) (string, bool, error) {
-	return "", true, nil
 }

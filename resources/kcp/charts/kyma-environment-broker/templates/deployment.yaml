@@ -273,6 +273,8 @@ spec:
               value: /config/trialRegionMapping.yaml
             - name: APP_GARDENER_PROJECT
               value: {{ .Values.gardener.project }}
+            - name: APP_GARDENER_SHOOT_DOMAIN
+              value: "{{ .Values.gardener.shootDomain }}"
             - name: APP_GARDENER_KUBECONFIG_PATH
               value: {{ .Values.gardener.kubeconfigPath }}
             - name: APP_PROVISIONING_KUBERNETES_VERSION
