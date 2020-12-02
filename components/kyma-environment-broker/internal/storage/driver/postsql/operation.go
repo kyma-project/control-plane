@@ -564,7 +564,7 @@ func deprovisioningOperationToDTO(op *internal.DeprovisioningOperation) (dbmodel
 	pp, _ := json.Marshal(op.ProvisioningParameters)
 	opCopy := *op
 	opCopy.RawProvisioningParameters = string(pp)
-	serialized, err := json.Marshal(op)
+	serialized, err := json.Marshal(opCopy)
 	if err != nil {
 		return dbmodel.OperationDTO{}, errors.Wrapf(err, "while serializing deprovisioning data %v", op)
 	}

@@ -883,6 +883,8 @@ func assertDeprovisioningOperation(t *testing.T, expected, got internal.Deprovis
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
+	// do not compare raw PP
+	expected.RawProvisioningParameters = got.RawProvisioningParameters
 	assert.Equal(t, expected, got)
 }
 
