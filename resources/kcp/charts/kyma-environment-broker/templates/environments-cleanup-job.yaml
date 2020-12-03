@@ -98,7 +98,7 @@ spec:
                 mountPath: /secrets/cloudsql-instance-credentials
                 readOnly: true
           - name: cloudsql-proxy
-            image: gcr.io/cloudsql-docker/gce-proxy:1.14
+            image: gcr.io/cloudsql-docker/gce-proxy:1.19.1
             command:
               - /bin/sh
             args:

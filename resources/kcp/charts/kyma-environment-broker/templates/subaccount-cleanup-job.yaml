@@ -105,7 +105,7 @@ spec:
 
             {{- if eq .Values.global.database.embedded.enabled false }}
             - name: cloudsql-proxy
-              image: gcr.io/cloudsql-docker/gce-proxy:1.14
+              image: gcr.io/cloudsql-docker/gce-proxy:1.19.1
               command:
                 - /bin/sh
               args:
@@ -232,7 +232,7 @@ spec:
 
             {{- if eq .Values.global.database.embedded.enabled false }}
             - name: cloudsql-proxy
-              image: gcr.io/cloudsql-docker/gce-proxy:1.14
+              image: gcr.io/cloudsql-docker/gce-proxy:1.19.1
               command:
                 - /bin/sh
               args:
