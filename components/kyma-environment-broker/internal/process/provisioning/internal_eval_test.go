@@ -229,9 +229,13 @@ func avsConfig(mockOauthServer *httptest.Server, mockAvsServer *httptest.Server)
 				TagClassName: dummyStrAvsTest,
 			},
 		},
-		GroupId:  5555,
-		ParentId: 9101112,
-		ApiKey:   dummyStrAvsTest,
+		GroupId:                     5555,
+		ParentId:                    9101112,
+		ApiKey:                      dummyStrAvsTest,
+		AdditionalTagsEnabled:       true,
+		GardenerSeedNameTagClassId:  111111,
+		GardenerShootNameTagClassId: 111112,
+		RegionTagClassId:            111113,
 	}
 }
 

@@ -64,11 +64,7 @@ func TestInternalEvalUpdater_AddTagsToEval(t *testing.T) {
 	assert.NoError(t, err)
 	avsDel := avs.NewDelegator(avsClient, avsConfig, memoryStorage.Operations())
 	internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
-	evalUpdater := NewInternalEvalUpdater(avsDel, internalEvalAssistant, avs.Config{
-		GardenerShootNameTagClassId: 11111,
-		GardenerSeedNameTagClassId:  22222,
-		RegionTagClassId:            33333,
-	})
+	evalUpdater := NewInternalEvalUpdater(avsDel, internalEvalAssistant, avsConfig)
 
 	// when
 	_, repeat, err := evalUpdater.AddTagsToEval([]*avs.Tag{

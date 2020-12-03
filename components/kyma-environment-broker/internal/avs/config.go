@@ -23,6 +23,7 @@ type Config struct {
 	ExternalTesterService       string `envconfig:"optional"`
 	ExternalTesterTags          []*Tag `envconfig:"optional"`
 	ParentId                    int64
+	AdditionalTagsEnabled       bool
 	GardenerShootNameTagClassId int
 	GardenerSeedNameTagClassId  int
 	RegionTagClassId            int
