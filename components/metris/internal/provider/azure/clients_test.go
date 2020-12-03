@@ -407,10 +407,6 @@ func marshalJSON(obj interface{}) map[string]interface{} {
 
 func newTestServer(responses map[string]interface{}) *httptest.Server {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// if d, e := httputil.DumpRequest(r, true); e == nil {
-		// 	fmt.Printf("req: %s\n", string(d))
-		// }
-
 		if strings.Contains(r.RequestURI, "throttling") {
 			w.Header().Add("Content-Type", "application/json")
 			w.Header().Add("x-ms-ratelimit-remaining-resource", "Microsoft.Compute/HighCostGet3Min;46")
@@ -513,7 +509,7 @@ func Test_newClient(t *testing.T) {
 	asserts := assert.New(t)
 	authConfig := setupMockAuthConfig(t, "http://10.0.0.1")
 
-	_, err := newClient(testCluster, noopLogger, 0, authConfig)
+	_, err := newClient(testCluster, noopLogger, authConfig)
 	asserts.NoError(err)
 }
 
@@ -541,7 +537,7 @@ func Test_clients(t *testing.T) {
 
 	authConfig := setupMockAuthConfig(t, s.URL)
 
-	client, cerr := newClient(testCluster, noopLogger, 0, authConfig)
+	client, cerr := newClient(testCluster, noopLogger, authConfig)
 	asserts.NoError(cerr)
 
 	tests := []struct {
@@ -688,34 +684,34 @@ func Test_clients(t *testing.T) {
 					ctx = newctx
 					defer cancel()
 				}
-				obj, err = client.GetVirtualMachines(ctx, tt.rgname)
+				obj, err = client.GetVirtualMachines(ctx, tt.rgname, noopLogger)
 				gotValues = append(gotValues, len(obj.([]compute.VirtualMachine)))
 
 			case "Disk":
-				obj, err = client.GetDisks(context.Background(), tt.rgname)
+				obj, err = client.GetDisks(context.Background(), tt.rgname, noopLogger)
 				o, ok := obj.([]compute.Disk)
 				if ok {
 					gotValues = append(gotValues, len(o), *o[0].Name)
 				}
 
 			case "LoadBalancer":
-				obj, err = client.GetLoadBalancers(context.Background(), tt.rgname)
+				obj, err = client.GetLoadBalancers(context.Background(), tt.rgname, noopLogger)
 				gotValues = append(gotValues, len(obj.([]network.LoadBalancer)))
 
 			case "VirtualNetwork":
-				obj, err = client.GetVirtualNetworks(context.Background(), tt.rgname)
+				obj, err = client.GetVirtualNetworks(context.Background(), tt.rgname, noopLogger)
 				gotValues = append(gotValues, len(obj.([]network.VirtualNetwork)))
 
 			case "PublicIPAddress":
-				obj, err = client.GetPublicIPAddresses(context.Background(), tt.rgname)
+				obj, err = client.GetPublicIPAddresses(context.Background(), tt.rgname, noopLogger)
 				gotValues = append(gotValues, len(obj.([]network.PublicIPAddress)))
 
 			case "EHNamespace":
-				obj, err = client.GetEHNamespaces(context.Background(), tt.rgname)
+				obj, err = client.GetEHNamespaces(context.Background(), tt.rgname, noopLogger)
 				gotValues = append(gotValues, len(obj.([]eventhub.EHNamespace)))
 
 			case "ResourceSku":
-				obj, err = client.GetVMResourceSkus(context.Background(), tt.filter)
+				obj, err = client.GetVMResourceSkus(context.Background(), tt.filter, noopLogger)
 				gotValues = append(gotValues, len(obj.([]compute.ResourceSku)))
 			}
 
@@ -753,7 +749,7 @@ func Test_client_getMetricValues(t *testing.T) {
 
 	authConfig := setupMockAuthConfig(t, s.URL)
 
-	client, cerr := newClient(testCluster, noopLogger, 0, authConfig)
+	client, cerr := newClient(testCluster, noopLogger, authConfig)
 	asserts.NoError(cerr)
 
 	resourceURI := "/subscriptions/test-subscriptionid/resourceGroups/test-ehresourcegroup/providers/Microsoft.EventHub/namespaces/ns0"
@@ -762,34 +758,34 @@ func Test_client_getMetricValues(t *testing.T) {
 	aggregations := []string{string(insights.Maximum)}
 
 	t.Run("get maximum metric values", func(t *testing.T) {
-		obj, err := client.GetMetricValues(context.Background(), resourceURI, interval, metricnames, aggregations)
-		asserts.Empty(err)
+		obj, err := client.GetMetricValues(context.Background(), resourceURI, interval, metricnames, aggregations, noopLogger)
+		asserts.NoError(err)
 		asserts.EqualValues(41, *obj["IncomingBytes"].Maximum)
 		asserts.EqualValues(12, *obj["OutgoingBytes"].Maximum)
 		asserts.EqualValues(136, *obj["IncomingMessages"].Maximum)
 	})
 
 	t.Run("get metric not found error", func(t *testing.T) {
-		_, err := client.GetMetricValues(context.Background(), resourceURI, interval, []string{"UnknownMetric"}, aggregations)
-		asserts.NotEmpty(err)
-		asserts.True(errors.Is(err[0], ErrMetricClient))
+		_, err := client.GetMetricValues(context.Background(), resourceURI, interval, []string{"UnknownMetric"}, aggregations, noopLogger)
+		asserts.Error(err)
+		asserts.True(errors.Is(err, ErrMetricClient))
 	})
 
 	t.Run("get metric with no value error", func(t *testing.T) {
-		_, err := client.GetMetricValues(context.Background(), resourceURI, interval, []string{"NoValueMetric"}, aggregations)
-		asserts.NotEmpty(err)
-		asserts.True(errors.Is(err[0], ErrMetricNotFound))
+		_, err := client.GetMetricValues(context.Background(), resourceURI, interval, []string{"NoValueMetric"}, aggregations, noopLogger)
+		asserts.Error(err)
+		asserts.True(errors.Is(err, ErrMetricNotFound))
 	})
 
 	t.Run("get metric with no timeseries error", func(t *testing.T) {
-		_, err := client.GetMetricValues(context.Background(), resourceURI, interval, []string{"NoTSMetric"}, aggregations)
-		asserts.NotEmpty(err)
-		asserts.True(errors.Is(err[0], ErrTimeseriesNotFound))
+		_, err := client.GetMetricValues(context.Background(), resourceURI, interval, []string{"NoTSMetric"}, aggregations, noopLogger)
+		asserts.Error(err)
+		asserts.True(errors.Is(err, ErrTimeseriesNotFound))
 	})
 
 	t.Run("get metric with no timeserie data error", func(t *testing.T) {
-		_, err := client.GetMetricValues(context.Background(), resourceURI, interval, []string{"NoTSDataMetric"}, aggregations)
-		asserts.NotEmpty(err)
-		asserts.True(errors.Is(err[0], ErrTimeseriesDataNotFound))
+		_, err := client.GetMetricValues(context.Background(), resourceURI, interval, []string{"NoTSDataMetric"}, aggregations, noopLogger)
+		asserts.Error(err)
+		asserts.True(errors.Is(err, ErrTimeseriesDataNotFound))
 	})
 }

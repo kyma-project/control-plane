@@ -2,7 +2,7 @@ package azure
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"math"
 	"strconv"
 	"time"
@@ -11,9 +11,11 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
 	"github.com/Azure/azure-sdk-for-go/profiles/preview/preview/monitor/mgmt/insights"
 	"github.com/kyma-project/control-plane/components/metris/internal/log"
+	"github.com/kyma-project/control-plane/components/metris/internal/tracing"
+	"go.opencensus.io/trace"
 )
 
-func (i *Instance) getComputeMetrics(ctx context.Context, logger log.Logger, vmcaps *vmCapabilities) *Compute {
+func (i *Instance) getComputeMetrics(ctx context.Context, logger log.Logger, vmcaps *vmCapabilities) (*Compute, error) {
 	var (
 		caps   = *vmcaps
 		vms    []compute.VirtualMachine
@@ -21,6 +23,7 @@ func (i *Instance) getComputeMetrics(ctx context.Context, logger log.Logger, vmc
 		cpu    uint64
 		ram    float64
 		err    error
+		vmt    = make(map[string]uint32)
 		result = &Compute{
 			VMTypes:          make([]VMType, 0),
 			ProvisionedCpus:  0,
@@ -33,67 +36,59 @@ func (i *Instance) getComputeMetrics(ctx context.Context, logger log.Logger, vmc
 		}
 	)
 
-	if i.lastEvent.Compute == nil {
-		i.lastEvent.Compute = result
+	if tracing.IsEnabled() {
+		var span *trace.Span
+
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/getComputeMetrics")
+		defer span.End()
+
+		logger = logger.With("traceID", span.SpanContext().TraceID).With("spanID", span.SpanContext().SpanID)
 	}
 
-	vms, err = i.client.GetVirtualMachines(ctx, i.clusterResourceGroupName)
-	if err != nil {
-		logger.Warnf("could not get virtual machines information, using information from last successful event: %s", err)
+	if vms, err = i.client.GetVirtualMachines(ctx, i.cluster.TechnicalID, logger); err != nil {
+		return nil, err
+	}
 
-		result.VMTypes = i.lastEvent.Compute.VMTypes
-		result.ProvisionedCpus = i.lastEvent.Compute.ProvisionedCpus
-		result.ProvisionedRAMGB = i.lastEvent.Compute.ProvisionedRAMGB
-	} else {
-		var vmt = make(map[string]uint32)
+	for _, vm := range vms {
+		vmtype := string(vm.HardwareProfile.VMSize)
+		vmt[vmtype]++
 
-		for _, vm := range vms {
-			vmtype := string(vm.HardwareProfile.VMSize)
-			vmt[vmtype]++
-
-			capabilities, ok := caps[vmtype]
-			if !ok {
-				logger.Errorf("could not get vm capabilities for type %s", vmtype)
+		if capabilities, ok := caps[vmtype]; ok {
+			if cpu, err = strconv.ParseUint(capabilities[capvCPUs], 10, 64); err == nil {
+				result.ProvisionedCpus += uint32(cpu)
 			} else {
-				cpu, err = strconv.ParseUint(capabilities[capvCPUs], 10, 64)
-				if err != nil {
-					logger.Errorf("could not get vm capability %s for type %s: %s", capvCPUs, vmtype, err)
-				} else {
-					result.ProvisionedCpus += uint32(cpu)
-				}
-
-				ram, err = strconv.ParseFloat(capabilities[capMemoryGB], 64)
-				if err != nil {
-					logger.Errorf("could not get vm capability %s for type %s: %s", capMemoryGB, vmtype, err)
-				} else {
-					result.ProvisionedRAMGB += ram
-				}
+				return nil, fmt.Errorf("could not get vm capability %s for type %s: %s", capvCPUs, vmtype, err)
 			}
-		}
 
-		for k, v := range vmt {
-			result.VMTypes = append(result.VMTypes, VMType{Name: k, Count: v})
-		}
-	}
-
-	disks, err = i.client.GetDisks(ctx, i.clusterResourceGroupName)
-	if err != nil {
-		logger.With("error", err).Warn("could not get disk information, getting information from last successful event")
-
-		result.ProvisionedVolumes = i.lastEvent.Compute.ProvisionedVolumes
-	} else {
-		result.ProvisionedVolumes.Count = uint32(len(disks))
-
-		for _, disk := range disks {
-			result.ProvisionedVolumes.SizeGBTotal += uint32(*disk.DiskSizeGB)
-			result.ProvisionedVolumes.SizeGBRounded += uint32(math.Ceil(float64(*disk.DiskSizeGB)/diskSizeFactor) * diskSizeFactor)
+			if ram, err = strconv.ParseFloat(capabilities[capMemoryGB], 64); err == nil {
+				result.ProvisionedRAMGB += ram
+			} else {
+				return nil, fmt.Errorf("could not get vm capability %s for type %s: %s", capMemoryGB, vmtype, err)
+			}
+		} else {
+			return nil, fmt.Errorf("could not get vm capabilities for type %s", vmtype)
 		}
 	}
 
-	return result
+	for k, v := range vmt {
+		result.VMTypes = append(result.VMTypes, VMType{Name: k, Count: v})
+	}
+
+	if disks, err = i.client.GetDisks(ctx, i.cluster.TechnicalID, logger); err != nil {
+		return nil, err
+	}
+
+	result.ProvisionedVolumes.Count = uint32(len(disks))
+
+	for _, disk := range disks {
+		result.ProvisionedVolumes.SizeGBTotal += uint32(*disk.DiskSizeGB)
+		result.ProvisionedVolumes.SizeGBRounded += uint32(math.Ceil(float64(*disk.DiskSizeGB)/diskSizeFactor) * diskSizeFactor)
+	}
+
+	return result, nil
 }
 
-func (i *Instance) getNetworkMetrics(ctx context.Context, logger log.Logger) *Networking {
+func (i *Instance) getNetworkMetrics(ctx context.Context, logger log.Logger) (*Networking, error) {
 	var (
 		result = &Networking{
 			ProvisionedLoadBalancers: 0,
@@ -106,41 +101,37 @@ func (i *Instance) getNetworkMetrics(ctx context.Context, logger log.Logger) *Ne
 		publicIPs []network.PublicIPAddress
 	)
 
-	if i.lastEvent.Networking == nil {
-		i.lastEvent.Networking = result
+	if tracing.IsEnabled() {
+		var span *trace.Span
+
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/getNetworkMetrics")
+		defer span.End()
+
+		logger = logger.With("traceID", span.SpanContext().TraceID).With("spanID", span.SpanContext().SpanID)
 	}
 
-	lbs, err = i.client.GetLoadBalancers(ctx, i.clusterResourceGroupName)
-	if err != nil {
-		logger.With("error", err).Warn("could not get loadbalancer infornation, getting information from last successful event")
-
-		result.ProvisionedLoadBalancers = i.lastEvent.Networking.ProvisionedLoadBalancers
-	} else {
-		result.ProvisionedLoadBalancers += uint32(len(lbs))
+	if lbs, err = i.client.GetLoadBalancers(ctx, i.cluster.TechnicalID, logger); err != nil {
+		return nil, err
 	}
 
-	vnets, err = i.client.GetVirtualNetworks(ctx, i.clusterResourceGroupName)
-	if err != nil {
-		logger.With("error", err).Warn("could not get vnet infornation, getting information from last successful event")
+	result.ProvisionedLoadBalancers += uint32(len(lbs))
 
-		result.ProvisionedVnets = i.lastEvent.Networking.ProvisionedVnets
-	} else {
-		result.ProvisionedVnets += uint32(len(vnets))
+	if vnets, err = i.client.GetVirtualNetworks(ctx, i.cluster.TechnicalID, logger); err != nil {
+		return nil, err
 	}
 
-	publicIPs, err = i.client.GetPublicIPAddresses(ctx, i.clusterResourceGroupName)
-	if err != nil {
-		logger.With("error", err).Warn("could not get public ip infornation, getting information from last successful event")
+	result.ProvisionedVnets += uint32(len(vnets))
 
-		result.ProvisionedIps = i.lastEvent.Networking.ProvisionedIps
-	} else {
-		result.ProvisionedIps += uint32(len(publicIPs))
+	if publicIPs, err = i.client.GetPublicIPAddresses(ctx, i.cluster.TechnicalID, logger); err != nil {
+		return nil, err
 	}
 
-	return result
+	result.ProvisionedIps += uint32(len(publicIPs))
+
+	return result, nil
 }
 
-func (i *Instance) getEventHubMetrics(ctx context.Context, pollinterval time.Duration, logger log.Logger) *EventHub {
+func (i *Instance) getEventHubMetrics(ctx context.Context, pollinterval time.Duration, logger log.Logger) (*EventHub, error) {
 	var (
 		result = &EventHub{
 			NumberNamespaces:     0,
@@ -153,54 +144,45 @@ func (i *Instance) getEventHubMetrics(ctx context.Context, pollinterval time.Dur
 		}
 	)
 
-	if i.lastEvent.EventHub == nil {
-		i.lastEvent.EventHub = result
+	if tracing.IsEnabled() {
+		var span *trace.Span
+
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/getEventHubMetrics")
+		defer span.End()
+
+		logger = logger.With("traceID", span.SpanContext().TraceID).With("spanID", span.SpanContext().SpanID)
 	}
 
-	if i.eventHubResourceGroupName == "" {
-		return i.lastEvent.EventHub
-	}
-
-	ehns, eherr := i.client.GetEHNamespaces(ctx, i.eventHubResourceGroupName)
+	ehns, eherr := i.client.GetEHNamespaces(ctx, i.eventHubResourceGroupName, logger)
 	if eherr != nil {
-		logger.With("error", eherr).Warn("eventhub namespace error, getting information from last successful event")
+		return nil, eherr
+	}
 
-		result = i.lastEvent.EventHub
-	} else {
-		result.NumberNamespaces = uint32(len(ehns))
+	result.NumberNamespaces = uint32(len(ehns))
 
-		interval := PT1M
-		if pollinterval == intervalPT5M {
-			interval = PT5M
+	interval := PT1M
+	if pollinterval == intervalPT5M {
+		interval = PT5M
+	}
+
+	for _, ns := range ehns {
+		resourceURI := *ns.ID
+
+		nsmetric, err := i.client.GetMetricValues(ctx, resourceURI, string(interval), []string{"IncomingBytes", "OutgoingBytes", "IncomingMessages"}, []string{string(insights.Maximum)}, logger)
+		if err != nil {
+			return nil, err
 		}
 
-		for _, ns := range ehns {
-			resourceURI := *ns.ID
-
-			nsmetric, errs := i.client.GetMetricValues(ctx, resourceURI, string(interval), []string{"IncomingBytes", "OutgoingBytes", "IncomingMessages"}, []string{string(insights.Maximum)})
-			if len(errs) > 0 {
-				logger.With("errors", errs).Warn("eventhub metric error, getting information from last successful event")
-
-				result = i.lastEvent.EventHub
-
-				if errors.Is(ctx.Err(), context.Canceled) || errors.Is(ctx.Err(), context.DeadlineExceeded) {
-					break
-				}
-
-				continue
-			} else {
-				if interval == PT5M {
-					result.IncomingRequestsPT5M += *nsmetric["IncomingMessages"].Maximum
-					result.MaxIncomingBytesPT5M += *nsmetric["IncomingBytes"].Maximum
-					result.MaxOutgoingBytesPT5M += *nsmetric["OutgoingBytes"].Maximum
-				} else {
-					result.IncomingRequestsPT1M += *nsmetric["IncomingMessages"].Maximum
-					result.MaxIncomingBytesPT1M += *nsmetric["IncomingBytes"].Maximum
-					result.MaxOutgoingBytesPT1M += *nsmetric["OutgoingBytes"].Maximum
-				}
-			}
+		if interval == PT5M {
+			result.IncomingRequestsPT5M += *nsmetric["IncomingMessages"].Maximum
+			result.MaxIncomingBytesPT5M += *nsmetric["IncomingBytes"].Maximum
+			result.MaxOutgoingBytesPT5M += *nsmetric["OutgoingBytes"].Maximum
+		} else {
+			result.IncomingRequestsPT1M += *nsmetric["IncomingMessages"].Maximum
+			result.MaxIncomingBytesPT1M += *nsmetric["IncomingBytes"].Maximum
+			result.MaxOutgoingBytesPT1M += *nsmetric["OutgoingBytes"].Maximum
 		}
 	}
 
-	return result
+	return result, nil
 }

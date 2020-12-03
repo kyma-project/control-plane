@@ -6,6 +6,7 @@ import (
 
 type memoryStorage struct {
 	sync.RWMutex
+	name  string
 	items map[string]interface{}
 }
 
@@ -16,6 +17,7 @@ func (c *memoryStorage) Put(key string, obj interface{}) {
 	c.Lock()
 	c.items[key] = obj
 	c.Unlock()
+	storageItemCountMetricVec.WithLabelValues(c.name).Inc()
 }
 
 // Get returns the value stored in the map for a key, or nil if no value is present.
@@ -38,6 +40,7 @@ func (c *memoryStorage) Delete(key string) {
 	c.Lock()
 	delete(c.items, key)
 	c.Unlock()
+	storageItemCountMetricVec.WithLabelValues(c.name).Dec()
 }
 
 // List returns a list of all the objects.
@@ -67,8 +70,9 @@ func (c *memoryStorage) ListKeys() []string {
 }
 
 // NewMemoryStorage returns an in-memory storage.
-func NewMemoryStorage() Storage {
+func NewMemoryStorage(name string) Storage {
 	return &memoryStorage{
+		name:  name,
 		items: make(map[string]interface{}),
 	}
 }

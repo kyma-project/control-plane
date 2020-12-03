@@ -26,7 +26,9 @@ func (l *noopLogger) Fatal(args ...interface{})                 {}
 func (l *noopLogger) Fatalf(format string, args ...interface{}) {}
 func (l *noopLogger) Panic(args ...interface{})                 {}
 func (l *noopLogger) Panicf(format string, args ...interface{}) {}
+func (l *noopLogger) Print(args ...interface{})                 {}
 func (l *noopLogger) Println(args ...interface{})               {}
+func (l *noopLogger) Printf(format string, args ...interface{}) {}
 func (l *noopLogger) With(args ...interface{}) Logger           { return l }
 func (l *noopLogger) Named(name string) Logger                  { return l }
 func (l *noopLogger) Flush()                                    {}

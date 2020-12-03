@@ -131,11 +131,19 @@ func (l *zapLogger) Panic(args ...interface{}) {
 }
 
 func (l *zapLogger) Panicf(format string, args ...interface{}) {
-	l.logger.Fatalf(format, args...)
+	l.logger.Panicf(format, args...)
+}
+
+func (l *zapLogger) Print(args ...interface{}) {
+	l.logger.Info(args...)
 }
 
 func (l *zapLogger) Println(args ...interface{}) {
-	l.logger.Error(args...)
+	l.logger.Info(args...)
+}
+
+func (l *zapLogger) Printf(format string, args ...interface{}) {
+	l.logger.Infof(format, args...)
 }
 
 func (l *zapLogger) With(args ...interface{}) Logger {

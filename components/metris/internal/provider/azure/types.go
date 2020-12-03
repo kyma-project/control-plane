@@ -30,9 +30,9 @@ var (
 const (
 	// for more details on available capabilities, see https://docs.microsoft.com/en-ca/rest/api/compute/resourceskus/list.
 	// capMemoryGB is the capability name for the memory in GB of a virtual machine.
-	capMemoryGB = "MemoryGB"
+	capMemoryGB string = "MemoryGB"
 	// capvCPUs is the capability name for the virtual cpus of a virtual machine.
-	capvCPUs = "vCPUs"
+	capvCPUs string = "vCPUs"
 
 	// tagNameSubAccountID is the subAccountID tag name use for tagging resource group.
 	tagNameSubAccountID string = "SubAccountID"
@@ -41,7 +41,7 @@ const (
 	diskSizeFactor float64 = 32
 
 	// intervalPT5M represent an interval of 5 minutes for the insight metric query.
-	intervalPT5M = 5 * time.Minute
+	intervalPT5M time.Duration = 5 * time.Minute
 
 	// PT1M ...
 	PT1M TimeGrain = "PT1M"
@@ -50,7 +50,17 @@ const (
 
 	// maximum number of failed attempt to get metrics, after that instance is remove from cache/storage.
 	maxRetryAttempts int = 5
+
+	responseErrCodeResourceGroupNotFound string = "ResourceGroupNotFound"
 )
+
+// ResponseError represent the error message structure return by Azure REST API.
+type ResponseError struct {
+	Error struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	} `json:"error"`
+}
 
 // TimeGrain enumerates the values for time grain.
 type TimeGrain string
@@ -62,14 +72,14 @@ type vmCapabilities map[string]map[string]string
 // Client is the interface that provides the methods to get metrics from Azure Rest API.
 type Client interface {
 	GetResourceGroup(ctx context.Context, name, filter string, logger log.Logger) (resources.Group, error)
-	GetVirtualMachines(ctx context.Context, rgname string) ([]compute.VirtualMachine, error)
-	GetVMResourceSkus(ctx context.Context, filter string) ([]compute.ResourceSku, error)
-	GetDisks(ctx context.Context, rgname string) ([]compute.Disk, error)
-	GetLoadBalancers(ctx context.Context, rgname string) ([]network.LoadBalancer, error)
-	GetVirtualNetworks(ctx context.Context, rgname string) ([]network.VirtualNetwork, error)
-	GetPublicIPAddresses(ctx context.Context, rgname string) ([]network.PublicIPAddress, error)
-	GetEHNamespaces(ctx context.Context, rgname string) ([]eventhub.EHNamespace, error)
-	GetMetricValues(ctx context.Context, resourceURI, interval string, metricnames, aggregations []string) (map[string]insights.MetricValue, []error)
+	GetVirtualMachines(ctx context.Context, rgname string, logger log.Logger) ([]compute.VirtualMachine, error)
+	GetVMResourceSkus(ctx context.Context, filter string, logger log.Logger) ([]compute.ResourceSku, error)
+	GetDisks(ctx context.Context, rgname string, logger log.Logger) ([]compute.Disk, error)
+	GetLoadBalancers(ctx context.Context, rgname string, logger log.Logger) ([]network.LoadBalancer, error)
+	GetVirtualNetworks(ctx context.Context, rgname string, logger log.Logger) ([]network.VirtualNetwork, error)
+	GetPublicIPAddresses(ctx context.Context, rgname string, logger log.Logger) ([]network.PublicIPAddress, error)
+	GetEHNamespaces(ctx context.Context, rgname string, logger log.Logger) ([]eventhub.EHNamespace, error)
+	GetMetricValues(ctx context.Context, resourceURI, interval string, metricnames, aggregations []string, logger log.Logger) (map[string]insights.MetricValue, error)
 }
 
 // client holds Azure clients configuration.
@@ -98,12 +108,12 @@ type Instance struct {
 	client Client
 	// lastEvent store the last successful event sent to EDP.
 	lastEvent *EventData
-	// clusterResourceGroupName store the Azure cluster resource group name associated with the subaccountid.
-	clusterResourceGroupName string
 	// eventHubResourceGroupName store the Azure Event Hub resource group name associated with the subaccountid.
 	eventHubResourceGroupName string
 	// retryAttempts store the number of retry attempts to get metrics.
 	retryAttempts int
+	// retryBackoff indicate to backing off between requests.
+	retryBackoff bool
 }
 
 //go:generate mockery --name AuthConfig

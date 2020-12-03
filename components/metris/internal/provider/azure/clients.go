@@ -16,7 +16,9 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/kyma-project/control-plane/components/metris/internal/gardener"
 	"github.com/kyma-project/control-plane/components/metris/internal/log"
+	"github.com/kyma-project/control-plane/components/metris/internal/tracing"
 	"github.com/mitchellh/mapstructure"
+	"go.opencensus.io/trace"
 )
 
 func (a *DefaultAuthConfig) GetAuthConfig(clientID, clientSecret, tenantID, envName string) (autorest.Authorizer, azure.Environment, error) {
@@ -63,7 +65,7 @@ func (s *ClientSecretMap) decode(secrets map[string][]byte) error {
 }
 
 // newClient return a new client for a cluster base on the cluster configuration provided.
-func newClient(cluster *gardener.Cluster, logger log.Logger, tracelevel int, clientAuthConf AuthConfig) (Client, error) {
+func newClient(cluster *gardener.Cluster, logger log.Logger, clientAuthConf AuthConfig) (Client, error) {
 	conf := &ClientSecretMap{}
 
 	err := conf.decode(cluster.CredentialData)
@@ -81,14 +83,19 @@ func newClient(cluster *gardener.Cluster, logger log.Logger, tracelevel int, cli
 		return nil, err
 	}
 
+	logger.
+		With("tenantid", tenantID).
+		With("subscriptionid", subscriptionID).
+		With("environment", conf.EnvironmentName).
+		With("baseuri", env.ResourceManagerEndpoint).
+		Debug("generating new client")
+
 	// Unfortunately the azure sdk does not have a baseclient interface, each type has its own baseclient structure definition.
 	// So we can't just copy a base client to another, e.i. compute.BaseClient to resources.BaseClient.
 	baseclient := &baseClient{}
 	baseclient.BaseURI = env.ResourceManagerEndpoint
 	baseclient.SubscriptionID = subscriptionID
 	baseclient.Authorizer = authz
-	baseclient.RequestInspector = LogRequest(logger, tracelevel)
-	baseclient.ResponseInspector = LogResponse(logger, tracelevel)
 
 	resourcesBaseClient := baseclient.createResourcesBaseClient()
 	computeBaseClient := baseclient.createComputeBaseClient()
@@ -109,51 +116,36 @@ func newClient(cluster *gardener.Cluster, logger log.Logger, tracelevel int, cli
 }
 
 func (c *baseClient) createResourcesBaseClient() *resources.BaseClient {
-	baseclient := resources.New(c.SubscriptionID)
+	baseclient := resources.NewWithBaseURI(c.BaseURI, c.SubscriptionID)
 	baseclient.Authorizer = c.Authorizer
-	baseclient.BaseURI = c.BaseURI
-	baseclient.RequestInspector = c.RequestInspector
-	baseclient.ResponseInspector = c.ResponseInspector
 
 	return &baseclient
 }
 
 func (c *baseClient) createComputeBaseClient() *compute.BaseClient {
-	baseclient := compute.New(c.SubscriptionID)
+	baseclient := compute.NewWithBaseURI(c.BaseURI, c.SubscriptionID)
 	baseclient.Authorizer = c.Authorizer
-	baseclient.BaseURI = c.BaseURI
-	baseclient.RequestInspector = c.RequestInspector
-	baseclient.ResponseInspector = c.ResponseInspector
 
 	return &baseclient
 }
 
 func (c *baseClient) createNetworkBaseClient() *network.BaseClient {
-	baseclient := network.New(c.SubscriptionID)
+	baseclient := network.NewWithBaseURI(c.BaseURI, c.SubscriptionID)
 	baseclient.Authorizer = c.Authorizer
-	baseclient.BaseURI = c.BaseURI
-	baseclient.RequestInspector = c.RequestInspector
-	baseclient.ResponseInspector = c.ResponseInspector
 
 	return &baseclient
 }
 
 func (c *baseClient) createInsightsBaseClient() *insights.BaseClient {
-	baseclient := insights.New(c.SubscriptionID)
+	baseclient := insights.NewWithBaseURI(c.BaseURI, c.SubscriptionID)
 	baseclient.Authorizer = c.Authorizer
-	baseclient.BaseURI = c.BaseURI
-	baseclient.RequestInspector = c.RequestInspector
-	baseclient.ResponseInspector = c.ResponseInspector
 
 	return &baseclient
 }
 
 func (c *baseClient) createEventhubBaseClient() *eventhub.BaseClient {
-	baseclient := eventhub.New(c.SubscriptionID)
+	baseclient := eventhub.NewWithBaseURI(c.BaseURI, c.SubscriptionID)
 	baseclient.Authorizer = c.Authorizer
-	baseclient.BaseURI = c.BaseURI
-	baseclient.RequestInspector = c.RequestInspector
-	baseclient.ResponseInspector = c.ResponseInspector
 
 	return &baseclient
 }
@@ -163,7 +155,20 @@ func (c *client) GetResourceGroup(ctx context.Context, name, filter string, logg
 	metricfn := collectRequestMetrics("resource", "groups")
 	defer metricfn()
 
-	rgclient := resources.GroupsClient{BaseClient: *c.resourcesBaseClient}
+	if tracing.IsEnabled() {
+		var span *trace.Span
+
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/GetResourceGroup")
+		defer span.End()
+
+		logger = logger.With("traceID", span.SpanContext().TraceID).With("spanID", span.SpanContext().SpanID)
+	}
+
+	baseclient := *c.resourcesBaseClient
+	baseclient.RequestInspector = LogRequest(logger)
+	baseclient.ResponseInspector = LogResponse(logger)
+
+	rgclient := resources.GroupsClient{BaseClient: baseclient}
 
 	if name != "" {
 		rg, err = rgclient.Get(ctx, name)
@@ -182,9 +187,6 @@ func (c *client) GetResourceGroup(ctx context.Context, name, filter string, logg
 			switch rgLen := len(rgValues); {
 			case rgLen == 0:
 				err = ErrResourceGroupNotFound
-			case rgLen > 1:
-				logger.Warnf("found more than one event hub resource group for the same subaccountid, taking the first one")
-				fallthrough
 			default:
 				rg = rgValues[0]
 			}
@@ -195,15 +197,27 @@ func (c *client) GetResourceGroup(ctx context.Context, name, filter string, logg
 }
 
 // GetVMResourceSkus returns a list of available vm skus.
-func (c *client) GetVMResourceSkus(ctx context.Context, filter string) (result []compute.ResourceSku, err error) {
+func (c *client) GetVMResourceSkus(ctx context.Context, filter string, logger log.Logger) (result []compute.ResourceSku, err error) {
 	metricfn := collectRequestMetrics("compute", "skus")
 	defer metricfn()
 
-	var (
-		skuList   compute.ResourceSkusResultIterator
-		skuClient = compute.ResourceSkusClient{BaseClient: *c.computeBaseClient}
-	)
+	if tracing.IsEnabled() {
+		var span *trace.Span
 
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/GetVMResourceSkus")
+		defer span.End()
+
+		logger = logger.With("traceID", span.SpanContext().TraceID).With("spanID", span.SpanContext().SpanID)
+	}
+
+	var skuList compute.ResourceSkusResultIterator
+
+	baseclient := *c.computeBaseClient
+	baseclient.RequestInspector = LogRequest(logger)
+	baseclient.ResponseInspector = LogResponse(logger)
+	skuClient := compute.ResourceSkusClient{BaseClient: baseclient}
+
+	// Only **location** filter is supported currently. :(
 	for skuList, err = skuClient.ListComplete(ctx, filter); skuList.NotDone(); err = skuList.NextWithContext(ctx) {
 		if err != nil {
 			return result, err
@@ -219,14 +233,25 @@ func (c *client) GetVMResourceSkus(ctx context.Context, filter string) (result [
 }
 
 // GetVirtualMachines returns a list of vm used by a resource group.
-func (c *client) GetVirtualMachines(ctx context.Context, rgname string) (result []compute.VirtualMachine, err error) {
+func (c *client) GetVirtualMachines(ctx context.Context, rgname string, logger log.Logger) (result []compute.VirtualMachine, err error) {
 	metricfn := collectRequestMetrics("compute", "virtualmachines")
 	defer metricfn()
 
-	var (
-		vmList   compute.VirtualMachineListResultIterator
-		vmClient = compute.VirtualMachinesClient{BaseClient: *c.computeBaseClient}
-	)
+	if tracing.IsEnabled() {
+		var span *trace.Span
+
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/GetVirtualMachines")
+		defer span.End()
+
+		logger = logger.With("traceID", span.SpanContext().TraceID).With("spanID", span.SpanContext().SpanID)
+	}
+
+	var vmList compute.VirtualMachineListResultIterator
+
+	baseclient := *c.computeBaseClient
+	baseclient.RequestInspector = LogRequest(logger)
+	baseclient.ResponseInspector = LogResponse(logger)
+	vmClient := compute.VirtualMachinesClient{BaseClient: baseclient}
 
 	for vmList, err = vmClient.ListComplete(ctx, rgname); vmList.NotDone(); err = vmList.NextWithContext(ctx) {
 		if err != nil {
@@ -240,14 +265,25 @@ func (c *client) GetVirtualMachines(ctx context.Context, rgname string) (result 
 }
 
 // GetDisks returns a list of disk (non OS) used by a resource group.
-func (c *client) GetDisks(ctx context.Context, rgname string) (result []compute.Disk, err error) {
+func (c *client) GetDisks(ctx context.Context, rgname string, logger log.Logger) (result []compute.Disk, err error) {
 	metricfn := collectRequestMetrics("compute", "disks")
 	defer metricfn()
 
-	var (
-		diskList   compute.DiskListIterator
-		diskClient = compute.DisksClient{BaseClient: *c.computeBaseClient}
-	)
+	if tracing.IsEnabled() {
+		var span *trace.Span
+
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/GetDisks")
+		defer span.End()
+
+		logger = logger.With("traceID", span.SpanContext().TraceID).With("spanID", span.SpanContext().SpanID)
+	}
+
+	var diskList compute.DiskListIterator
+
+	baseclient := *c.computeBaseClient
+	baseclient.RequestInspector = LogRequest(logger)
+	baseclient.ResponseInspector = LogResponse(logger)
+	diskClient := compute.DisksClient{BaseClient: baseclient}
 
 	for diskList, err = diskClient.ListByResourceGroupComplete(ctx, rgname); diskList.NotDone(); err = diskList.NextWithContext(ctx) {
 		if err != nil {
@@ -264,14 +300,25 @@ func (c *client) GetDisks(ctx context.Context, rgname string) (result []compute.
 }
 
 // GetLoadBalancers returns a list of load balancer used by a resource group.
-func (c *client) GetLoadBalancers(ctx context.Context, rgname string) (result []network.LoadBalancer, err error) {
+func (c *client) GetLoadBalancers(ctx context.Context, rgname string, logger log.Logger) (result []network.LoadBalancer, err error) {
 	metricfn := collectRequestMetrics("network", "loadbalancers")
 	defer metricfn()
 
-	var (
-		lbList              network.LoadBalancerListResultIterator
-		loadBalancersClient = network.LoadBalancersClient{BaseClient: *c.networkBaseClient}
-	)
+	if tracing.IsEnabled() {
+		var span *trace.Span
+
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/GetLoadBalancers")
+		defer span.End()
+
+		logger = logger.With("traceID", span.SpanContext().TraceID).With("spanID", span.SpanContext().SpanID)
+	}
+
+	var lbList network.LoadBalancerListResultIterator
+
+	baseclient := *c.networkBaseClient
+	baseclient.RequestInspector = LogRequest(logger)
+	baseclient.ResponseInspector = LogResponse(logger)
+	loadBalancersClient := network.LoadBalancersClient{BaseClient: baseclient}
 
 	for lbList, err = loadBalancersClient.ListComplete(ctx, rgname); lbList.NotDone(); err = lbList.NextWithContext(ctx) {
 		if err != nil {
@@ -285,14 +332,25 @@ func (c *client) GetLoadBalancers(ctx context.Context, rgname string) (result []
 }
 
 // GetVirtualNetworks returns a list of virtual networks used by a resource group.
-func (c *client) GetVirtualNetworks(ctx context.Context, rgname string) (result []network.VirtualNetwork, err error) {
+func (c *client) GetVirtualNetworks(ctx context.Context, rgname string, logger log.Logger) (result []network.VirtualNetwork, err error) {
 	metricfn := collectRequestMetrics("network", "virtualnetworks")
 	defer metricfn()
 
-	var (
-		vnetList              network.VirtualNetworkListResultIterator
-		virtualNetworksClient = network.VirtualNetworksClient{BaseClient: *c.networkBaseClient}
-	)
+	if tracing.IsEnabled() {
+		var span *trace.Span
+
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/GetVirtualNetworks")
+		defer span.End()
+
+		logger = logger.With("traceID", span.SpanContext().TraceID).With("spanID", span.SpanContext().SpanID)
+	}
+
+	var vnetList network.VirtualNetworkListResultIterator
+
+	baseclient := *c.networkBaseClient
+	baseclient.RequestInspector = LogRequest(logger)
+	baseclient.ResponseInspector = LogResponse(logger)
+	virtualNetworksClient := network.VirtualNetworksClient{BaseClient: baseclient}
 
 	for vnetList, err = virtualNetworksClient.ListComplete(ctx, rgname); vnetList.NotDone(); err = vnetList.NextWithContext(ctx) {
 		if err != nil {
@@ -306,14 +364,25 @@ func (c *client) GetVirtualNetworks(ctx context.Context, rgname string) (result 
 }
 
 // GetPublicIPAddresses returns a list of public ip used by a resource group.
-func (c *client) GetPublicIPAddresses(ctx context.Context, rgname string) (result []network.PublicIPAddress, err error) {
+func (c *client) GetPublicIPAddresses(ctx context.Context, rgname string, logger log.Logger) (result []network.PublicIPAddress, err error) {
 	metricfn := collectRequestMetrics("network", "publicipaddresses")
 	defer metricfn()
 
-	var (
-		ipList                  network.PublicIPAddressListResultIterator
-		publicIPAddressesClient = network.PublicIPAddressesClient{BaseClient: *c.networkBaseClient}
-	)
+	if tracing.IsEnabled() {
+		var span *trace.Span
+
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/GetPublicIPAddresses")
+		defer span.End()
+
+		logger = logger.With("traceID", span.SpanContext().TraceID).With("spanID", span.SpanContext().SpanID)
+	}
+
+	var ipList network.PublicIPAddressListResultIterator
+
+	baseclient := *c.networkBaseClient
+	baseclient.RequestInspector = LogRequest(logger)
+	baseclient.ResponseInspector = LogResponse(logger)
+	publicIPAddressesClient := network.PublicIPAddressesClient{BaseClient: baseclient}
 
 	for ipList, err = publicIPAddressesClient.ListComplete(ctx, rgname); ipList.NotDone(); err = ipList.NextWithContext(ctx) {
 		if err != nil {
@@ -327,18 +396,29 @@ func (c *client) GetPublicIPAddresses(ctx context.Context, rgname string) (resul
 }
 
 // GetEHNamespaces returns a list of Event Hub namespaces for a resource group.
-func (c *client) GetEHNamespaces(ctx context.Context, rgname string) (results []eventhub.EHNamespace, err error) {
+func (c *client) GetEHNamespaces(ctx context.Context, rgname string, logger log.Logger) (results []eventhub.EHNamespace, err error) {
 	metricfn := collectRequestMetrics("eventhub", "namespaces")
 	defer metricfn()
 
-	var (
-		nsList   eventhub.EHNamespaceListResultIterator
-		nsClient = eventhub.NamespacesClient{BaseClient: *c.eventhubBaseClient}
-	)
+	if tracing.IsEnabled() {
+		var span *trace.Span
+
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/GetEHNamespaces")
+		defer span.End()
+
+		logger = logger.With("traceID", span.SpanContext().TraceID).With("spanID", span.SpanContext().SpanID)
+	}
+
+	var nsList eventhub.EHNamespaceListResultIterator
+
+	baseclient := *c.eventhubBaseClient
+	baseclient.RequestInspector = LogRequest(logger)
+	baseclient.ResponseInspector = LogResponse(logger)
+	nsClient := eventhub.NamespacesClient{BaseClient: baseclient}
 
 	for nsList, err = nsClient.ListByResourceGroupComplete(ctx, rgname); nsList.NotDone(); err = nsList.NextWithContext(ctx) {
 		if err != nil {
-			return nil, err
+			return results, err
 		}
 
 		results = append(results, nsList.Value())
@@ -348,13 +428,21 @@ func (c *client) GetEHNamespaces(ctx context.Context, rgname string) (results []
 }
 
 // GetMetricValues returns the specified metric data points for the specified resource ID spanning the last 5 minutes.
-func (c *client) GetMetricValues(ctx context.Context, resourceURI, interval string, metricnames, aggregations []string) (map[string]insights.MetricValue, []error) {
+func (c *client) GetMetricValues(ctx context.Context, resourceURI, interval string, metricnames, aggregations []string, logger log.Logger) (map[string]insights.MetricValue, error) {
 	metricfn := collectRequestMetrics("insights", "metrics")
 	defer metricfn()
 
+	if tracing.IsEnabled() {
+		var span *trace.Span
+
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/GetMetricValues")
+		defer span.End()
+
+		logger = logger.With("traceID", span.SpanContext().TraceID).With("spanID", span.SpanContext().SpanID)
+	}
+
 	var (
 		results   = make(map[string]insights.MetricValue)
-		errors    = make([]error, 0)
 		endTime   = time.Now().UTC()
 		startTime = endTime.Add(time.Duration(-5) * time.Minute)
 		timespan  = fmt.Sprintf("%s/%s", startTime.Format(time.RFC3339), endTime.Format(time.RFC3339))
@@ -370,13 +458,15 @@ func (c *client) GetMetricValues(ctx context.Context, resourceURI, interval stri
 		}
 	}
 
-	metricsClient := insights.MetricsClient{BaseClient: *c.insightsBaseClient}
+	baseclient := *c.insightsBaseClient
+	baseclient.RequestInspector = LogRequest(logger)
+	baseclient.ResponseInspector = LogResponse(logger)
+	metricsClient := insights.MetricsClient{BaseClient: baseclient}
 
 	// interval possible values: PT1M, PT5M, PT15M, PT30M, PT1H
 	metricsList, err := metricsClient.List(ctx, strings.TrimLeft(resourceURI, "/"), timespan, &interval, strings.Join(metricnames, ","), strings.Join(aggregations, ","), nil, "", "", insights.Data, "")
 	if err != nil {
-		errors = append(errors, fmt.Errorf("%w: %s", ErrMetricClient, err))
-		return results, errors
+		return nil, fmt.Errorf("%w: %s", ErrMetricClient, err)
 	}
 
 	if metricsList.Value != nil {
@@ -385,22 +475,20 @@ func (c *client) GetMetricValues(ctx context.Context, resourceURI, interval stri
 			ts := *metric.Timeseries
 
 			if len(ts) == 0 {
-				errors = append(errors, fmt.Errorf("%w: %s", ErrTimeseriesNotFound, fmt.Sprintf("metric %s at target %s", metricName, *metric.ID)))
-				continue
+				return nil, fmt.Errorf("%w: %s", ErrTimeseriesNotFound, fmt.Sprintf("metric %s at target %s", metricName, *metric.ID))
 			}
 
 			tsdata := *ts[0].Data
 			if len(tsdata) == 0 {
-				errors = append(errors, fmt.Errorf("%w: %s", ErrTimeseriesDataNotFound, fmt.Sprintf("metric %s at target %s", metricName, *metric.ID)))
-				continue
+				return nil, fmt.Errorf("%w: %s", ErrTimeseriesDataNotFound, fmt.Sprintf("metric %s at target %s", metricName, *metric.ID))
 			}
 
 			metricValue := tsdata[len(tsdata)-1]
 			results[metricName] = metricValue
 		}
 	} else {
-		errors = append(errors, fmt.Errorf("%w: %s", ErrMetricNotFound, fmt.Sprintf("at URI %s", resourceURI)))
+		return nil, fmt.Errorf("%w: %s", ErrMetricNotFound, fmt.Sprintf("at URI %s", resourceURI))
 	}
 
-	return results, errors
+	return results, nil
 }

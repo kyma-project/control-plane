@@ -12,7 +12,7 @@ type FakeObj struct {
 
 func Test_memoryStorage(t *testing.T) {
 	asserts := assert.New(t)
-	storage := NewMemoryStorage()
+	storage := NewMemoryStorage("test")
 
 	t.Run("add item", func(t *testing.T) {
 		obj := &FakeObj{Name: "item"}
