@@ -63,10 +63,11 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 
 	var provisionerResponse gqlschema.OperationStatus
 	if operation.ProvisionerOperationID == "" {
-		log.Infof("call ProvisionRuntime: kymaVersion=%s, kubernetesVersion=%s, region=%s",
+		log.Infof("call ProvisionRuntime: kymaVersion=%s, kubernetesVersion=%s, region=%s, kymaProfile=%s",
 			requestInput.KymaConfig.Version,
 			requestInput.ClusterConfig.GardenerConfig.KubernetesVersion,
-			requestInput.ClusterConfig.GardenerConfig.Region)
+			requestInput.ClusterConfig.GardenerConfig.Region,
+			requestInput.KymaConfig.Profile)
 
 		provisionerResponse, err := s.provisionerClient.ProvisionRuntime(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID, requestInput)
 		switch {

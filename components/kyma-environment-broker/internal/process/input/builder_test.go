@@ -3,6 +3,8 @@ package input
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/stretchr/testify/require"
 
@@ -102,6 +104,43 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		assert.NoError(t, err)
 		assert.IsType(t, &RuntimeInput{}, input)
 	})
+
+	t.Run("should build RuntimeInput with proper plan", func(t *testing.T) {
+		// given
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", "1.10").Return([]v1alpha1.KymaComponent{}, nil).Once()
+		defer componentsProvider.AssertExpectations(t)
+
+		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.10", fixTrialRegionMapping())
+		assert.NoError(t, err)
+		pp := fixProvisioningParameters(broker.GCPPlanID, "")
+
+		// when
+		input, err := ibf.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.1.0"})
+
+		// Then
+		assert.NoError(t, err)
+		require.IsType(t, &RuntimeInput{}, input)
+
+		result := input.(*RuntimeInput)
+		assert.Equal(t, gqlschema.KymaProfileProduction, *result.provisionRuntimeInput.KymaConfig.Profile)
+
+		// given
+		pp = fixProvisioningParameters(broker.TrialPlanID, "")
+
+		// when
+		input, err = ibf.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.1.0"})
+
+		// Then
+		assert.NoError(t, err)
+		require.IsType(t, &RuntimeInput{}, input)
+
+		result = input.(*RuntimeInput)
+		assert.Equal(t, gqlschema.KymaProfileEvaluation, *result.provisionRuntimeInput.KymaConfig.Profile)
+
+	})
+
 }
 
 func fixProvisioningParameters(planID, kymaVersion string) internal.ProvisioningParameters {
