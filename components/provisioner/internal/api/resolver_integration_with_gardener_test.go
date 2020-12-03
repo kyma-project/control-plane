@@ -344,7 +344,7 @@ func testUpgradeRuntimeAndRollback(t *testing.T, ctx context.Context, resolver *
 	assert.Equal(t, runtimeID, *upgradeRuntimeOp.RuntimeID)
 
 	// wait for queue to process operation
-	time.Sleep(2 * waitPeriod)
+	time.Sleep(8 * waitPeriod)
 
 	// assert db content
 	readSession := dbsFactory.NewReadSession()
