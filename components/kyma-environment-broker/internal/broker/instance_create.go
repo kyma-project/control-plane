@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -41,10 +43,21 @@ type ProvisionEndpoint struct {
 	plansSchemaValidator PlansSchemaValidator
 	kymaVerOnDemand      bool
 
+	shootDomain  string
+	shootProject string
+
 	log logrus.FieldLogger
 }
 
-func NewProvision(cfg Config, operationsStorage storage.Operations, instanceStorage storage.Instances, q Queue, builderFactory PlanValidator, validator PlansSchemaValidator, kvod bool, log logrus.FieldLogger) *ProvisionEndpoint {
+func NewProvision(cfg Config,
+	gardenerConfig gardener.Config,
+	operationsStorage storage.Operations,
+	instanceStorage storage.Instances,
+	queue Queue,
+	builderFactory PlanValidator,
+	validator PlansSchemaValidator,
+	kvod bool,
+	log logrus.FieldLogger) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
 		id := PlanIDsMapping[planName]
@@ -55,11 +68,13 @@ func NewProvision(cfg Config, operationsStorage storage.Operations, instanceStor
 		plansSchemaValidator: validator,
 		operationsStorage:    operationsStorage,
 		instanceStorage:      instanceStorage,
-		queue:                q,
+		queue:                queue,
 		builderFactory:       builderFactory,
 		log:                  log.WithField("service", "ProvisionEndpoint"),
 		enabledPlanIDs:       enabledPlanIDs,
 		kymaVerOnDemand:      kvod,
+		shootDomain:          gardenerConfig.ShootDomain,
+		shootProject:         gardenerConfig.Project,
 	}
 }
 
@@ -103,12 +118,18 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return b.handleExistingOperation(existingOperation, provisioningParameters, logger)
 	}
 
+	// create SKR shoot name
+	shootName := gardener.CreateShootName()
+	dashboardURL := fmt.Sprintf("https://console.%s.%s.%s", shootName, b.shootProject, strings.Trim(b.shootDomain, "."))
+
 	// create and save new operation
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
 	if err != nil {
 		logger.Errorf("cannot create new operation: %s", err)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot create new operation")
 	}
+	operation.ShootName = shootName
+	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, b.shootProject, strings.Trim(b.shootDomain, "."))
 
 	err = b.operationsStorage.InsertProvisioningOperation(operation)
 	if err != nil {
@@ -123,6 +144,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		ServiceName:            KymaServiceName,
 		ServicePlanID:          provisioningParameters.PlanID,
 		ServicePlanName:        Plans[provisioningParameters.PlanID].PlanDefinition.Name,
+		DashboardURL:           dashboardURL,
 		ProvisioningParameters: operation.ProvisioningParameters,
 	})
 	if err != nil {
@@ -136,6 +158,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	return domain.ProvisionedServiceSpec{
 		IsAsync:       true,
 		OperationData: operation.ID,
+		DashboardURL:  dashboardURL,
 	}, nil
 }
 

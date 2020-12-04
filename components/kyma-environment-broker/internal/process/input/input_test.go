@@ -103,6 +103,7 @@ func TestShouldEnableComponents(t *testing.T) {
 		assert.Len(t, input.KymaConfig.Components, 2)
 	})
 }
+
 func TestShouldDisableComponents(t *testing.T) {
 	t.Run("When creating ProvisionRuntimeInput", func(t *testing.T) {
 		// given
@@ -335,6 +336,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	require.NoError(t, err)
 
 	// when
+	shootName := "c-51bcc12"
 	input, err := builder.
 		SetProvisioningParameters(internal.ProvisioningParameters{
 			Parameters: internal.ProvisioningParametersDTO{
@@ -343,6 +345,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 				Purpose:      ptr.String("development"),
 			},
 		}).
+		SetShootName(shootName).
 		SetLabel("label1", "value1").
 		AppendOverrides("keb", kebOverrides).CreateProvisionRuntimeInput()
 
@@ -356,6 +359,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	assert.Equal(t, "development", *input.ClusterConfig.GardenerConfig.Purpose)
 	assert.Nil(t, input.ClusterConfig.GardenerConfig.LicenceType)
 	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
+	assert.Equal(t, &shootName, input.ClusterConfig.GardenerConfig.Name)
 	assert.Equal(t, &gqlschema.Labels{
 		"label1": "value1",
 	}, input.RuntimeInput.Labels)

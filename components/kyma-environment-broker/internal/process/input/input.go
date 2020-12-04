@@ -36,6 +36,7 @@ type RuntimeInput struct {
 	hyperscalerInputProvider  HyperscalerInputProvider
 	optionalComponentsService OptionalComponentService
 	provisioningParameters    internal.ProvisioningParameters
+	shootName                 *string
 
 	componentsDisabler        ComponentsDisabler
 	enabledOptionalComponents map[string]struct{}
@@ -50,6 +51,11 @@ func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.Pr
 
 func (r *RuntimeInput) SetProvisioningParameters(params internal.ProvisioningParameters) internal.ProvisionerInputCreator {
 	r.provisioningParameters = params
+	return r
+}
+
+func (r *RuntimeInput) SetShootName(name string) internal.ProvisionerInputCreator {
+	r.shootName = &name
 	return r
 }
 
@@ -172,6 +178,7 @@ func (r *RuntimeInput) applyProvisioningParameters() error {
 	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMin, params.AutoScalerMin)
 	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax, params.AutoScalerMax)
 	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.VolumeSizeGb, params.VolumeSizeGb)
+	updateString(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Name, r.shootName)
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Region, params.Region)
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.MachineType, params.MachineType)
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.TargetSecret, params.TargetSecret)

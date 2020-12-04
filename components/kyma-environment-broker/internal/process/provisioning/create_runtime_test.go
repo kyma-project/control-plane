@@ -27,6 +27,7 @@ import (
 const (
 	kymaVersion            = "1.10"
 	k8sVersion             = "1.16.9"
+	shootName              = "c-1234567"
 	instanceID             = "58f8c703-1756-48ab-9299-a847974d1fee"
 	operationID            = "fd5cee4d-0eeb-40d0-a7a7-0708e5eba470"
 	globalAccountID        = "80ac17bd-33e8-4ffa-8d56-1d5367755723"
@@ -67,6 +68,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
+				Name:              ptr.String(shootName),
 				KubernetesVersion: k8sVersion,
 				DiskType:          "pd-standard",
 				VolumeSizeGb:      30,
@@ -177,6 +179,7 @@ func fixOperationCreateRuntime(t *testing.T) internal.ProvisioningOperation {
 			UpdatedAt:   time.Now(),
 			State:       domain.InProgress,
 		},
+		ShootName:              shootName,
 		ProvisioningParameters: fixProvisioningParameters(t),
 		InputCreator:           fixInputCreator(t),
 	}
