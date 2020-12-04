@@ -132,6 +132,10 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 			name:    "adding random string to runtime name",
 			execute: r.addRandomStringToRuntimeName,
 		},
+		{
+			name:    "setting one node for >=1.18.0 trial SKRs",
+			execute: r.setOneNodeForTrialPlans,
+		},
 	} {
 		if err := step.execute(); err != nil {
 			return gqlschema.ProvisionRuntimeInput{}, errors.Wrapf(err, "while %s", step.name)
