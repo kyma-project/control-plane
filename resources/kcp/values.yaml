@@ -27,7 +27,7 @@ global:
     tests:
       provisioner:
         dir:
-        version: "PR-326"
+        version: "PR-368"
       e2e_provisioning:
         dir:
         version: "PR-314"
