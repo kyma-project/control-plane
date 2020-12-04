@@ -129,6 +129,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot create new operation")
 	}
 	operation.ShootName = shootName
+	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, b.shootProject, strings.Trim(b.shootDomain, "."))
 
 	err = b.operationsStorage.InsertProvisioningOperation(operation)
 	if err != nil {

@@ -52,6 +52,9 @@ KEB binary allows you to override some configuration parameters. You can specify
 | **APP_PROVISIONING_MACHINE_IMAGE** | Defines the Gardener machine image used in a provisioned node. | None |
 | **APP_PROVISIONING_MACHINE_IMAGE_VERSION** | Defines the Gardener image version used in a provisioned cluster. | None |
 | **APP_TRIAL_REGION_MAPPING_FILE_PATH** | Defines a path to the file which contains a mapping between the platform region and the Trial plan region. | None |
+| **APP_GARDENER_PROJECT** | Defines the on which the cluster will be created | `kyma-dev` |
+| **APP_GARDENER_SHOOT_DOMAIN** | Defines the domain for clusters created on Gardener | `shoot.canary.k8s-hana.ondemand.com` |
+| **APP_GARDENER_KUBECONFIG_PATH** | Defines the path to kubeconfig for Gardener | `/gardener/kubeconfig/kubeconfig` |
 | **APP_MAX_PAGINATION_PAGE** | Defines the maximum number of objects that can be queried in one page using the endpoints that use pagination. | `100` |
 | **APP_LMS_URL** | Defines the URL for the LMS system. | None |
 | **APP_LMS_CLUSTER_TYPE** | Defines the cluster type for the LMS system. | `single-node` |

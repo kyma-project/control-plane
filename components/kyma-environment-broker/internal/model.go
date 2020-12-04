@@ -159,8 +159,9 @@ type ProvisioningOperation struct {
 
 	Avs AvsLifecycleData `json:"avs"`
 
-	RuntimeID string `json:"runtime_id"`
-	ShootName string `json:"shoot_name"`
+	RuntimeID   string `json:"runtime_id"`
+	ShootName   string `json:"shoot_name"`
+	ShootDomain string `json:"shoot_domain"`
 
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 }
