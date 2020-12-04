@@ -5,6 +5,8 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -294,6 +296,14 @@ func (r *RuntimeInput) addRandomStringToRuntimeName() error {
 	}
 	r.provisionRuntimeInput.RuntimeInput.Name =
 		fmt.Sprintf("%s-%s", r.provisionRuntimeInput.RuntimeInput.Name, randomString(trialSuffixLength))
+	return nil
+}
+
+func (r *RuntimeInput) setOneNodeForTrialPlans() error {
+	if r.provisionRuntimeInput.KymaConfig.Version >= "1.18.0" && broker.IsTrialPlan(r.provisioningParameters.PlanID) {
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMin = 1
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax = 1
+	}
 	return nil
 }
 
