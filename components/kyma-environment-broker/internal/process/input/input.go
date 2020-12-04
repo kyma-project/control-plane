@@ -133,8 +133,8 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 			execute: r.addRandomStringToRuntimeName,
 		},
 		{
-			name:    "setting one node for >=1.18.0 trial SKRs",
-			execute: r.setOneNodeForTrialPlans,
+			name:    "setting two nodes for runtimes without eval profile",
+			execute: r.setMoreNodesForRuntimesWithoutEvalProfile,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -303,10 +303,10 @@ func (r *RuntimeInput) addRandomStringToRuntimeName() error {
 	return nil
 }
 
-func (r *RuntimeInput) setOneNodeForTrialPlans() error {
-	if r.provisionRuntimeInput.KymaConfig.Version >= "1.18.0" && broker.IsTrialPlan(r.provisioningParameters.PlanID) {
-		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMin = 1
-		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax = 1
+func (r *RuntimeInput) setMoreNodesForRuntimesWithoutEvalProfile() error {
+	if r.provisionRuntimeInput.KymaConfig.Version < "1.18.0" && broker.IsTrialPlan(r.provisioningParameters.PlanID) {
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMin = 2
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax = 2
 	}
 	return nil
 }

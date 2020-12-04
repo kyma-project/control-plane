@@ -432,7 +432,7 @@ func TestShouldSetOneNodeForNewTrialClusters(t *testing.T) {
 
 	pp := fixProvisioningParameters(broker.TrialPlanID, "")
 
-	creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.18.0", Origin: internal.Defaults})
+	creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.17.0", Origin: internal.Defaults})
 	require.NoError(t, err)
 	creator.SetProvisioningParameters(pp)
 
@@ -441,8 +441,8 @@ func TestShouldSetOneNodeForNewTrialClusters(t *testing.T) {
 	require.NoError(t, err)
 
 	// then
-	assert.Equal(t, 1, input.ClusterConfig.GardenerConfig.AutoScalerMin)
-	assert.Equal(t, 1, input.ClusterConfig.GardenerConfig.AutoScalerMax)
+	assert.Equal(t, 2, input.ClusterConfig.GardenerConfig.AutoScalerMin)
+	assert.Equal(t, 2, input.ClusterConfig.GardenerConfig.AutoScalerMax)
 }
 
 func assertOverrides(t *testing.T, componentName string, components internal.ComponentConfigurationInputList, overrides []*gqlschema.ConfigEntryInput) {
