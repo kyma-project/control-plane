@@ -19,6 +19,8 @@ type Logger interface {
 	Fatalf(format string, args ...interface{})
 	Panic(args ...interface{})
 	Panicf(format string, args ...interface{})
+	Print(args ...interface{})
+	Printf(format string, args ...interface{})
 	Println(args ...interface{}) // for prometheus
 	Flush()
 	Named(name string) Logger
@@ -29,7 +31,7 @@ type Logger interface {
 type Level string
 
 const (
-	// DebugLevel logs a lot, and shot be disabled in production.
+	// DebugLevel logs a lot, and should be disabled in production.
 	DebugLevel = "debug"
 	// InfoLevel is the default logging priority.
 	InfoLevel = "info"
@@ -109,11 +111,22 @@ func Panic(args ...interface{}) {
 
 // Panicf formats the log message according to a format, then panics.
 func Panicf(format string, args ...interface{}) {
-	DefaultLogger.Fatalf(format, args...)
+	DefaultLogger.Panicf(format, args...)
 }
 
+// Print construct and log a message.
+func Print(args ...interface{}) {
+	DefaultLogger.Print(args)
+}
+
+// Println construct and log a message.
 func Println(args ...interface{}) {
 	DefaultLogger.Println(args)
+}
+
+// Printf formats the log message according to a format.
+func Printf(format string, args ...interface{}) {
+	DefaultLogger.Printf(format, args...)
 }
 
 // Flush flushes any buffered log entries.

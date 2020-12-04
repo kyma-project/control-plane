@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/to"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/kyma-project/control-plane/components/metris/internal/gardener"
+	"github.com/kyma-project/control-plane/components/metris/internal/log"
 	"github.com/kyma-project/control-plane/components/metris/internal/provider/azure/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -24,7 +25,7 @@ var testVMCaps = make(vmCapabilities) // [vmtype][capname]capvalue
 func getMockClient() Client {
 	mockClient := mocks.Client{}
 
-	mockErrFn := func(_ context.Context, n string) error {
+	mockErrFn := func(_ context.Context, n string, logger log.Logger) error {
 		if strings.Contains(n, "error") {
 			return fmt.Errorf("error")
 		}
@@ -32,64 +33,76 @@ func getMockClient() Client {
 		return nil
 	}
 
-	mockClient.On("GetDisks", context.Background(), mock.AnythingOfType("string")).Return(func(_ context.Context, n string) (r []compute.Disk) {
-		if !strings.Contains(n, "diskempty") && !strings.Contains(n, "diskerror") {
-			r = *disklist.Value
-		}
-		return
-	}, mockErrFn)
-
-	mockClient.On("GetVirtualMachines", context.Background(), mock.AnythingOfType("string")).Return(func(_ context.Context, n string) (r []compute.VirtualMachine) {
-		if !strings.Contains(n, "vmempty") && !strings.Contains(n, "vmerror") {
-			r = *vmlist.Value
-		}
-
-		return
-	}, mockErrFn)
-
-	mockClient.On("GetLoadBalancers", context.Background(), mock.AnythingOfType("string")).Return(func(_ context.Context, n string) (r []network.LoadBalancer) {
-		if !strings.Contains(n, "lbempty") && !strings.Contains(n, "lberror") {
-			r = *lblist.Value
-		}
-		return
-	}, mockErrFn)
-
-	mockClient.On("GetVirtualNetworks", context.Background(), mock.AnythingOfType("string")).Return(func(_ context.Context, n string) (r []network.VirtualNetwork) {
-		if !strings.Contains(n, "vnetempty") && !strings.Contains(n, "vneterror") {
-			r = *netlist.Value
-		}
-		return
-	}, mockErrFn)
-
-	mockClient.On("GetPublicIPAddresses", context.Background(), mock.AnythingOfType("string")).Return(func(_ context.Context, n string) (r []network.PublicIPAddress) {
-		if !strings.Contains(n, "ipempty") && !strings.Contains(n, "iperror") {
-			r = *iplist.Value
-		}
-		return
-	}, mockErrFn)
-
-	mockClient.On("GetEHNamespaces", context.Background(), mock.AnythingOfType("string")).Return(func(_ context.Context, n string) (r []eventhub.EHNamespace) {
-		if !strings.Contains(n, "evnsempty") && !strings.Contains(n, "evnserror") {
-			r = *nslist.Value
-		}
-
-		if strings.Contains(n, "mverr") {
-			r = []eventhub.EHNamespace{
-				{
-					ID:       to.StringPtr("mverr"),
-					Name:     to.StringPtr("ns0"),
-					Type:     to.StringPtr("Microsoft.EventHub/namespaces"),
-					Location: to.StringPtr("eastus"),
-				},
+	mockClient.On("GetDisks", context.Background(), mock.AnythingOfType("string"), mock.Anything).Return(
+		func(_ context.Context, n string, logger log.Logger) (r []compute.Disk) {
+			if !strings.Contains(n, "diskempty") && !strings.Contains(n, "diskerror") {
+				r = *disklist.Value
 			}
-		}
+			return
+		}, mockErrFn,
+	)
 
-		return
-	}, mockErrFn)
+	mockClient.On("GetVirtualMachines", context.Background(), mock.AnythingOfType("string"), mock.Anything).Return(
+		func(_ context.Context, n string, logger log.Logger) (r []compute.VirtualMachine) {
+			if !strings.Contains(n, "vmempty") && !strings.Contains(n, "vmerror") {
+				r = *vmlist.Value
+			}
 
-	mockClient.On("GetMetricValues", context.Background(), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("[]string")).Return(
-		func(_ context.Context, uri, interval string, mnames, agg []string) (r map[string]insights.MetricValue) {
-			if !strings.Contains(uri, "mvempty") && !strings.Contains(uri, "mverr") {
+			return
+		}, mockErrFn,
+	)
+
+	mockClient.On("GetLoadBalancers", context.Background(), mock.AnythingOfType("string"), mock.Anything).Return(
+		func(_ context.Context, n string, logger log.Logger) (r []network.LoadBalancer) {
+			if !strings.Contains(n, "lbempty") && !strings.Contains(n, "lberror") {
+				r = *lblist.Value
+			}
+			return
+		}, mockErrFn,
+	)
+
+	mockClient.On("GetVirtualNetworks", context.Background(), mock.AnythingOfType("string"), mock.Anything).Return(
+		func(_ context.Context, n string, logger log.Logger) (r []network.VirtualNetwork) {
+			if !strings.Contains(n, "vnetempty") && !strings.Contains(n, "vneterror") {
+				r = *netlist.Value
+			}
+			return
+		}, mockErrFn,
+	)
+
+	mockClient.On("GetPublicIPAddresses", context.Background(), mock.AnythingOfType("string"), mock.Anything).Return(
+		func(_ context.Context, n string, logger log.Logger) (r []network.PublicIPAddress) {
+			if !strings.Contains(n, "ipempty") && !strings.Contains(n, "iperror") {
+				r = *iplist.Value
+			}
+			return
+		}, mockErrFn,
+	)
+
+	mockClient.On("GetEHNamespaces", context.Background(), mock.AnythingOfType("string"), mock.Anything).Return(
+		func(_ context.Context, n string, logger log.Logger) (r []eventhub.EHNamespace) {
+			if !strings.Contains(n, "evnsempty") && !strings.Contains(n, "evnserror") {
+				r = *nslist.Value
+			}
+
+			if strings.Contains(n, "mverr") || strings.Contains(n, "rgerr") {
+				r = []eventhub.EHNamespace{
+					{
+						ID:       to.StringPtr("err"),
+						Name:     to.StringPtr("ns0"),
+						Type:     to.StringPtr("Microsoft.EventHub/namespaces"),
+						Location: to.StringPtr("eastus"),
+					},
+				}
+			}
+
+			return
+		}, mockErrFn,
+	)
+
+	mockClient.On("GetMetricValues", context.Background(), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("[]string"), mock.Anything).Return(
+		func(_ context.Context, uri, interval string, mnames, agg []string, logger log.Logger) (r map[string]insights.MetricValue) {
+			if !strings.Contains(uri, "mvempty") && !strings.Contains(uri, "mverr") && !strings.Contains(uri, "rgerr") {
 				r = make(map[string]insights.MetricValue, 3)
 				r["IncomingBytes"] = insights.MetricValue{TimeStamp: &date.Time{Time: time.Now()}, Maximum: to.Float64Ptr(41)}
 				r["OutgoingBytes"] = insights.MetricValue{TimeStamp: &date.Time{Time: time.Now()}, Maximum: to.Float64Ptr(12)}
@@ -97,14 +110,12 @@ func getMockClient() Client {
 			}
 			return
 		},
-		func(_ context.Context, uri, interval string, mnames, agg []string) []error {
-			errs := make([]error, 0)
-
-			if strings.Contains(uri, "mverr") {
-				errs = append(errs, fmt.Errorf("error"))
+		func(_ context.Context, uri, interval string, mnames, agg []string, logger log.Logger) error {
+			if strings.Contains(uri, "err") {
+				return fmt.Errorf("error")
 			}
 
-			return errs
+			return nil
 		},
 	)
 
@@ -123,9 +134,8 @@ func TestInstance_getComputeMetrics(t *testing.T) {
 	asserts := assert.New(t)
 
 	type fields struct {
-		cluster   *gardener.Cluster
-		client    Client
-		lastEvent *EventData
+		cluster *gardener.Cluster
+		client  Client
 	}
 
 	type args struct {
@@ -155,45 +165,39 @@ func TestInstance_getComputeMetrics(t *testing.T) {
 		VMTypes:            vmtypes,
 		ProvisionedCpus:    uint32(16),
 		ProvisionedRAMGB:   float64(48),
-		ProvisionedVolumes: ProvisionedVolume{},
-	}
-
-	metricsNoCaps := Compute{
-		VMTypes:            vmtypes,
-		ProvisionedCpus:    0,
-		ProvisionedRAMGB:   0,
-		ProvisionedVolumes: pvol,
+		ProvisionedVolumes: ProvisionedVolume{Count: 0},
 	}
 
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   Compute
+		name    string
+		fields  fields
+		args    args
+		want    Compute
+		wantErr bool
 	}{
 		{
 			name:   "normal metrics",
-			fields: fields{cluster: testCluster, client: mockclient, lastEvent: &EventData{}},
+			fields: fields{cluster: testCluster, client: mockclient},
 			args:   args{resourceGroupName: "test-resourcegroup", vmcaps: &testVMCaps},
 			want:   metricsBase,
 		},
 		{
 			name:   "with no disk",
-			fields: fields{cluster: testCluster, client: mockclient, lastEvent: &EventData{}},
+			fields: fields{cluster: testCluster, client: mockclient},
 			args:   args{resourceGroupName: "diskempty", vmcaps: &testVMCaps},
 			want:   metricsNoDisk,
 		},
 		{
-			name:   "with last event",
-			fields: fields{cluster: testCluster, client: mockclient, lastEvent: &EventData{Compute: &metricsBase}},
-			args:   args{resourceGroupName: "vmerror", vmcaps: &testVMCaps},
-			want:   metricsBase,
+			name:    "with last event",
+			fields:  fields{cluster: testCluster, client: mockclient},
+			args:    args{resourceGroupName: "vmerror", vmcaps: &testVMCaps},
+			wantErr: true,
 		},
 		{
-			name:   "with no capabilities",
-			fields: fields{cluster: testCluster, client: mockclient, lastEvent: &EventData{}},
-			args:   args{resourceGroupName: "test-resourcegroup", vmcaps: &vmCapabilities{}},
-			want:   metricsNoCaps,
+			name:    "with no capabilities",
+			fields:  fields{cluster: testCluster, client: mockclient},
+			args:    args{resourceGroupName: "test-resourcegroup", vmcaps: &vmCapabilities{}},
+			wantErr: true,
 		},
 	}
 
@@ -201,13 +205,19 @@ func TestInstance_getComputeMetrics(t *testing.T) {
 		tt := tt // pin
 
 		t.Run(tt.name, func(t *testing.T) {
-			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client, lastEvent: tt.fields.lastEvent, clusterResourceGroupName: tt.args.resourceGroupName}
-			got := i.getComputeMetrics(context.Background(), noopLogger, tt.args.vmcaps)
+			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client}
+			i.cluster.TechnicalID = tt.args.resourceGroupName
+			got, err := i.getComputeMetrics(context.Background(), noopLogger, tt.args.vmcaps)
 
-			asserts.ElementsMatch(tt.want.VMTypes, got.VMTypes)
-			asserts.Equal(tt.want.ProvisionedCpus, got.ProvisionedCpus)
-			asserts.Equal(tt.want.ProvisionedRAMGB, got.ProvisionedRAMGB)
-			asserts.Equal(tt.want.ProvisionedVolumes, got.ProvisionedVolumes)
+			if tt.wantErr {
+				asserts.Error(err)
+			} else {
+				asserts.NoError(err)
+				asserts.ElementsMatch(tt.want.VMTypes, got.VMTypes)
+				asserts.Equal(tt.want.ProvisionedCpus, got.ProvisionedCpus)
+				asserts.Equal(tt.want.ProvisionedRAMGB, got.ProvisionedRAMGB)
+				asserts.Equal(tt.want.ProvisionedVolumes, got.ProvisionedVolumes)
+			}
 		})
 	}
 }
@@ -217,9 +227,8 @@ func TestInstance_getNetworkMetrics(t *testing.T) {
 	asserts := assert.New(t)
 
 	type fields struct {
-		cluster   *gardener.Cluster
-		client    Client
-		lastEvent *EventData
+		cluster *gardener.Cluster
+		client  Client
 	}
 
 	type args struct {
@@ -227,34 +236,35 @@ func TestInstance_getNetworkMetrics(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *Networking
+		name    string
+		fields  fields
+		args    args
+		want    *Networking
+		wantErr bool
 	}{
 		{
 			name:   "normal metrics",
-			fields: fields{cluster: testCluster, client: mockclient, lastEvent: &EventData{}},
+			fields: fields{cluster: testCluster, client: mockclient},
 			args:   args{resourceGroupName: "test-resourcegroup"},
 			want:   &Networking{ProvisionedIps: uint32(2), ProvisionedLoadBalancers: uint32(2), ProvisionedVnets: uint32(2)},
 		},
 		{
 			name:   "with no lb",
-			fields: fields{cluster: testCluster, client: mockclient, lastEvent: &EventData{}},
+			fields: fields{cluster: testCluster, client: mockclient},
 			args:   args{resourceGroupName: "lbempty"},
 			want:   &Networking{ProvisionedIps: uint32(2), ProvisionedLoadBalancers: 0, ProvisionedVnets: uint32(2)},
 		},
 		{
 			name:   "with no metrics",
-			fields: fields{cluster: testCluster, client: mockclient, lastEvent: &EventData{}},
+			fields: fields{cluster: testCluster, client: mockclient},
 			args:   args{resourceGroupName: "ipempty,lbempty,vnetempty"},
 			want:   &Networking{ProvisionedIps: 0, ProvisionedLoadBalancers: 0, ProvisionedVnets: 0},
 		},
 		{
-			name:   "with error but last event",
-			fields: fields{cluster: testCluster, client: mockclient, lastEvent: &EventData{Networking: &Networking{ProvisionedIps: uint32(2), ProvisionedLoadBalancers: uint32(2), ProvisionedVnets: uint32(2)}}},
-			args:   args{resourceGroupName: "iperror,lberror,vneterror"},
-			want:   &Networking{ProvisionedIps: uint32(2), ProvisionedLoadBalancers: uint32(2), ProvisionedVnets: uint32(2)},
+			name:    "with error",
+			fields:  fields{cluster: testCluster, client: mockclient},
+			args:    args{resourceGroupName: "iperror,lberror,vneterror"},
+			wantErr: true,
 		},
 	}
 
@@ -262,9 +272,16 @@ func TestInstance_getNetworkMetrics(t *testing.T) {
 		tt := tt // pin
 
 		t.Run(tt.name, func(t *testing.T) {
-			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client, lastEvent: tt.fields.lastEvent, clusterResourceGroupName: tt.args.resourceGroupName}
-			got := i.getNetworkMetrics(context.Background(), noopLogger)
-			asserts.Equal(tt.want, got)
+			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client}
+			i.cluster.TechnicalID = tt.args.resourceGroupName
+			got, err := i.getNetworkMetrics(context.Background(), noopLogger)
+
+			if tt.wantErr {
+				asserts.Error(err)
+			} else {
+				asserts.NoError(err)
+				asserts.Equal(tt.want, got)
+			}
 		})
 	}
 }
@@ -274,9 +291,8 @@ func TestInstance_getEventHubMetrics(t *testing.T) {
 	asserts := assert.New(t)
 
 	type fields struct {
-		cluster   *gardener.Cluster
-		client    Client
-		lastEvent *EventData
+		cluster *gardener.Cluster
+		client  Client
 	}
 
 	type args struct {
@@ -285,46 +301,41 @@ func TestInstance_getEventHubMetrics(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *EventHub
+		name    string
+		fields  fields
+		args    args
+		want    *EventHub
+		wantErr bool
 	}{
 		{
 			name:   "metric PT5M values",
-			fields: fields{cluster: testCluster, client: mockclient, lastEvent: &EventData{}},
+			fields: fields{cluster: testCluster, client: mockclient},
 			args:   args{resourceGroupName: "test-ehresourcegroup", pollinterval: intervalPT5M},
 			want:   &EventHub{NumberNamespaces: uint32(1), IncomingRequestsPT5M: float64(136), MaxOutgoingBytesPT5M: float64(12), MaxIncomingBytesPT5M: float64(41)},
 		},
 		{
 			name:   "metric PT1M values",
-			fields: fields{cluster: testCluster, client: mockclient, lastEvent: &EventData{}},
+			fields: fields{cluster: testCluster, client: mockclient},
 			args:   args{resourceGroupName: "test-ehresourcegroup"},
 			want:   &EventHub{NumberNamespaces: uint32(1), IncomingRequestsPT1M: float64(136), MaxOutgoingBytesPT1M: float64(12), MaxIncomingBytesPT1M: float64(41)},
 		},
 		{
-			name:   "no namespace error and no lastevent",
-			fields: fields{cluster: testCluster, client: mockclient, lastEvent: &EventData{}},
-			args:   args{resourceGroupName: "ehnserror"},
-			want:   &EventHub{},
+			name:    "no namespace error",
+			fields:  fields{cluster: testCluster, client: mockclient},
+			args:    args{resourceGroupName: "ehnserror"},
+			wantErr: true,
 		},
 		{
-			name:   "no namespace error with lastevent",
-			fields: fields{cluster: testCluster, client: mockclient, lastEvent: &EventData{EventHub: &EventHub{NumberNamespaces: uint32(1), IncomingRequestsPT5M: float64(136), MaxOutgoingBytesPT5M: float64(12), MaxIncomingBytesPT5M: float64(41)}}},
-			args:   args{resourceGroupName: "ehnserror"},
-			want:   &EventHub{NumberNamespaces: uint32(1), IncomingRequestsPT5M: float64(136), MaxOutgoingBytesPT5M: float64(12), MaxIncomingBytesPT5M: float64(41)},
+			name:    "metric value error",
+			fields:  fields{cluster: testCluster, client: mockclient},
+			args:    args{resourceGroupName: "mverr"},
+			wantErr: true,
 		},
 		{
-			name:   "metric value error with no lastevent",
-			fields: fields{cluster: testCluster, client: mockclient, lastEvent: &EventData{}},
-			args:   args{resourceGroupName: "mverr"},
-			want:   &EventHub{NumberNamespaces: uint32(1)},
-		},
-		{
-			name:   "no resource group and no lastevent",
-			fields: fields{cluster: testCluster, client: mockclient, lastEvent: &EventData{}},
-			args:   args{resourceGroupName: ""},
-			want:   &EventHub{},
+			name:    "no resource group error",
+			fields:  fields{cluster: testCluster, client: mockclient},
+			args:    args{resourceGroupName: "rgerr"},
+			wantErr: true,
 		},
 	}
 
@@ -332,9 +343,15 @@ func TestInstance_getEventHubMetrics(t *testing.T) {
 		tt := tt // pinned
 
 		t.Run(tt.name, func(t *testing.T) {
-			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client, lastEvent: tt.fields.lastEvent, eventHubResourceGroupName: tt.args.resourceGroupName}
-			got := i.getEventHubMetrics(context.Background(), tt.args.pollinterval, noopLogger)
-			asserts.Equal(tt.want, got)
+			i := &Instance{cluster: tt.fields.cluster, client: tt.fields.client, eventHubResourceGroupName: tt.args.resourceGroupName}
+			got, err := i.getEventHubMetrics(context.Background(), tt.args.pollinterval, noopLogger)
+
+			if tt.wantErr {
+				asserts.Error(err)
+			} else {
+				asserts.NoError(err)
+				asserts.Equal(tt.want, got)
+			}
 		})
 	}
 }

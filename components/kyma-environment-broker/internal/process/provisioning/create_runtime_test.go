@@ -55,6 +55,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	err = memoryStorage.Instances().Insert(fixInstance())
 	assert.NoError(t, err)
 
+	profile := gqlschema.KymaProfileProduction
 	provisionerInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "dummy",
@@ -98,6 +99,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				},
 			},
 			Configuration: []*gqlschema.ConfigEntryInput{},
+			Profile:       &profile,
 		},
 	}
 
