@@ -33,7 +33,7 @@ func NewClient(ctx context.Context, avsConfig Config, log logrus.FieldLogger) (*
 	}, nil
 }
 
-func (c *Client) CreateEvaluation(evaluationRequest *BasicEvaluationCreateRequest) (_ *BasicEvaluationCreateResponse, err error) {
+func (c *Client) CreateEvaluation(evaluationRequest *BasicEvaluationCreateRequest) (*BasicEvaluationCreateResponse, error) {
 	var responseObject BasicEvaluationCreateResponse
 
 	objAsBytes, err := json.Marshal(evaluationRequest)
@@ -92,7 +92,7 @@ func (c *Client) GetEvaluation(evaluationID string) (*BasicEvaluationCreateRespo
 	return &responseObject, nil
 }
 
-func (c *Client) UpdateEvaluation(evaluationID string, evaluationRequest *BasicEvaluationCreateRequest) (_ *BasicEvaluationCreateResponse, err error) {
+func (c *Client) UpdateEvaluation(evaluationID string, evaluationRequest *BasicEvaluationCreateRequest) (*BasicEvaluationCreateResponse, error) {
 	var responseObject BasicEvaluationCreateResponse
 
 	objAsBytes, err := json.Marshal(evaluationRequest)
