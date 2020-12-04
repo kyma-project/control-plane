@@ -280,7 +280,7 @@ func fixAvsEvaluation() *avs.BasicEvaluationCreateResponse {
 		Status:           "ACTIVE",
 		Alerts:           nil,
 		Tags: []*avs.Tag{
-			&avs.Tag{
+			{
 				Content:      "already-exist-tag",
 				TagClassId:   123456,
 				TagClassName: "already-exist-tag-classname",

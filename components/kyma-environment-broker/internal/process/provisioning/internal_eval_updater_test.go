@@ -19,70 +19,129 @@ const (
 )
 
 func TestInternalEvalUpdater_AddTagsToEval(t *testing.T) {
-	// given
-	log := logrus.New()
-	memoryStorage := storage.NewMemoryStorage()
-	operation := internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:          operationID,
-			InstanceID:  instanceID,
-			Description: "",
-			UpdatedAt:   time.Now(),
-			State:       domain.InProgress,
-		},
-		ProvisioningParameters: fixProvisioningParameters(t),
-		InputCreator:           newInputCreator(),
-		Avs: internal.AvsLifecycleData{
-			AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
-			AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
-			AVSInternalEvaluationDeleted: false,
-			AVSExternalEvaluationDeleted: false,
-		},
-	}
+	t.Run("should add Tags to Evaluation when enabled", func(t *testing.T) {
+		// given
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
+		operation := internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ID:          operationID,
+				InstanceID:  instanceID,
+				Description: "",
+				UpdatedAt:   time.Now(),
+				State:       domain.InProgress,
+			},
+			ProvisioningParameters: fixProvisioningParameters(t),
+			InputCreator:           newInputCreator(),
+			Avs: internal.AvsLifecycleData{
+				AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
+				AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
+				AVSInternalEvaluationDeleted: false,
+				AVSExternalEvaluationDeleted: false,
+			},
+		}
 
-	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
-	assert.NoError(t, err)
+		err := memoryStorage.Operations().InsertProvisioningOperation(operation)
+		assert.NoError(t, err)
 
-	mockOauthServer := newMockAvsOauthServer()
-	defer mockOauthServer.Close()
-	mockAvsSvc := newMockAvsService(t, true)
-	mockAvsSvc.startServer()
-	mockAvsSvc.evals[FixAvsEvaluationInternalId] = &avs.BasicEvaluationCreateResponse{
-		Name: "test-eval",
-		Tags: []*avs.Tag{
-			&avs.Tag{
-				Content:      "already-exist-tag",
-				TagClassId:   00,
-				TagClassName: "already-exist-class-name",
-			}},
-		Id: FixAvsEvaluationInternalId,
-	}
-	defer mockAvsSvc.server.Close()
+		mockOauthServer := newMockAvsOauthServer()
+		defer mockOauthServer.Close()
+		mockAvsSvc := newMockAvsService(t, true)
+		mockAvsSvc.startServer()
+		mockAvsSvc.evals[FixAvsEvaluationInternalId] = &avs.BasicEvaluationCreateResponse{
+			Name: "test-eval",
+			Tags: []*avs.Tag{
+				{
+					Content:      "already-exist-tag",
+					TagClassId:   00,
+					TagClassName: "already-exist-class-name",
+				}},
+			Id: FixAvsEvaluationInternalId,
+		}
+		defer mockAvsSvc.server.Close()
 
-	avsConfig := avsConfig(mockOauthServer, mockAvsSvc.server)
-	avsClient, err := avs.NewClient(context.TODO(), avsConfig, logrus.New())
-	assert.NoError(t, err)
-	avsDel := avs.NewDelegator(avsClient, avsConfig, memoryStorage.Operations())
-	internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
-	evalUpdater := NewInternalEvalUpdater(avsDel, internalEvalAssistant, avsConfig)
+		avsConfig := avsConfig(mockOauthServer, mockAvsSvc.server)
+		avsClient, err := avs.NewClient(context.TODO(), avsConfig, logrus.New())
+		assert.NoError(t, err)
+		avsDel := avs.NewDelegator(avsClient, avsConfig, memoryStorage.Operations())
+		internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
+		evalUpdater := NewInternalEvalUpdater(avsDel, internalEvalAssistant, avsConfig)
 
-	// when
-	_, repeat, err := evalUpdater.AddTagsToEval([]*avs.Tag{
-		&avs.Tag{
-			Content:      "first-tag",
-			TagClassId:   11,
-			TagClassName: "first-tag-class-name",
-		},
-		&avs.Tag{
-			Content:      "second-tag",
-			TagClassId:   22,
-			TagClassName: "second-tag-class-name",
-		},
-	}, operation, "", log)
+		// when
+		_, repeat, err := evalUpdater.AddTagsToEval([]*avs.Tag{
+			{
+				Content:      "first-tag",
+				TagClassId:   11,
+				TagClassName: "first-tag-class-name",
+			},
+			{
+				Content:      "second-tag",
+				TagClassId:   22,
+				TagClassName: "second-tag-class-name",
+			},
+		}, operation, "", log)
 
-	// then
-	assert.NoError(t, err)
-	assert.Equal(t, time.Duration(0), repeat)
-	assert.Equal(t, 3, len(mockAvsSvc.evals[FixAvsEvaluationInternalId].Tags))
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, time.Duration(0), repeat)
+		assert.Equal(t, 3, len(mockAvsSvc.evals[FixAvsEvaluationInternalId].Tags))
+	})
 
+	t.Run("should skip adding Tags to Evaluation when disabled", func(t *testing.T) {
+		// given
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
+		operation := internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ID:          operationID,
+				InstanceID:  instanceID,
+				Description: "",
+				UpdatedAt:   time.Now(),
+				State:       domain.InProgress,
+			},
+			ProvisioningParameters: fixProvisioningParameters(t),
+			InputCreator:           newInputCreator(),
+			Avs: internal.AvsLifecycleData{
+				AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
+				AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
+				AVSInternalEvaluationDeleted: false,
+				AVSExternalEvaluationDeleted: false,
+			},
+		}
+
+		err := memoryStorage.Operations().InsertProvisioningOperation(operation)
+		assert.NoError(t, err)
+
+		mockOauthServer := newMockAvsOauthServer()
+		defer mockOauthServer.Close()
+		mockAvsSvc := newMockAvsService(t, true)
+		mockAvsSvc.startServer()
+		mockAvsSvc.evals[FixAvsEvaluationInternalId] = &avs.BasicEvaluationCreateResponse{
+			Name: "test-eval",
+			Tags: []*avs.Tag{
+				{
+					Content:      "already-exist-tag",
+					TagClassId:   00,
+					TagClassName: "already-exist-class-name",
+				}},
+			Id: FixAvsEvaluationInternalId,
+		}
+		defer mockAvsSvc.server.Close()
+
+		avsConfig := avsConfig(mockOauthServer, mockAvsSvc.server)
+		avsConfig.AdditionalTagsEnabled = false
+		avsClient, err := avs.NewClient(context.TODO(), avsConfig, logrus.New())
+		assert.NoError(t, err)
+		avsDel := avs.NewDelegator(avsClient, avsConfig, memoryStorage.Operations())
+		internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
+		evalUpdater := NewInternalEvalUpdater(avsDel, internalEvalAssistant, avsConfig)
+
+		// when
+		_, repeat, err := evalUpdater.AddTagsToEval([]*avs.Tag{}, operation, "", log)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, time.Duration(0), repeat)
+		assert.Equal(t, 1, len(mockAvsSvc.evals[FixAvsEvaluationInternalId].Tags))
+	})
 }

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -404,7 +405,7 @@ func (s *server) updateEvaluation(w http.ResponseWriter, r *http.Request) {
 	response := BasicEvaluationCreateResponse{
 		Name: existingEvaluationName,
 	}
-	responseObjAsBytes, _ := json.Marshal(response)
+	responseObjAsBytes, _ := yaml.Marshal(response)
 	_, err = w.Write(responseObjAsBytes)
 	assert.NoError(s.t, err)
 }

@@ -223,7 +223,7 @@ func avsConfig(mockOauthServer *httptest.Server, mockAvsServer *httptest.Server)
 		ExternalTesterAccessId: 5678,
 		ExternalTesterService:  dummyStrAvsTest,
 		ExternalTesterTags: []*avs.Tag{
-			&avs.Tag{
+			{
 				Content:      dummyStrAvsTest,
 				TagClassId:   123,
 				TagClassName: dummyStrAvsTest,

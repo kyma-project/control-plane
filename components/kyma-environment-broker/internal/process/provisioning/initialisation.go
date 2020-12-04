@@ -227,7 +227,7 @@ func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOp
 	}
 
 	// action #2
-	tags, operation, repeat, err := s.createTagsForRuntime(operation)
+	tags, operation, repeat, err := s.createTagsForRuntime(operation, instance)
 	if err != nil || repeat != 0 {
 		log.Errorf("while adding Tags to Evaluation: %s", err)
 		return operation, repeat, nil
@@ -256,11 +256,7 @@ func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOp
 	return s.operationManager.OperationSucceeded(operation, msg)
 }
 
-func (s *InitialisationStep) createTagsForRuntime(operation internal.ProvisioningOperation) ([]*avs.Tag, internal.ProvisioningOperation, time.Duration, error) {
-	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
-	if err != nil {
-		return []*avs.Tag{}, operation, 10 * time.Second, err
-	}
+func (s *InitialisationStep) createTagsForRuntime(operation internal.ProvisioningOperation, instance *internal.Instance) ([]*avs.Tag, internal.ProvisioningOperation, time.Duration, error) {
 
 	status, err := s.provisionerClient.RuntimeStatus(instance.GlobalAccountID, operation.RuntimeID)
 	if err != nil {
@@ -268,20 +264,17 @@ func (s *InitialisationStep) createTagsForRuntime(operation internal.Provisionin
 	}
 
 	result := []*avs.Tag{
-		&avs.Tag{
-			Content:      ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Name),
-			TagClassId:   s.internalEvalUpdater.avsConfig.GardenerShootNameTagClassId,
-			TagClassName: "gardener_shoot_name",
+		{
+			Content:    ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Name),
+			TagClassId: s.internalEvalUpdater.avsConfig.GardenerShootNameTagClassId,
 		},
-		&avs.Tag{
-			Content:      ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Seed),
-			TagClassId:   s.internalEvalUpdater.avsConfig.GardenerSeedNameTagClassId,
-			TagClassName: "gardener_seed_name",
+		{
+			Content:    ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Seed),
+			TagClassId: s.internalEvalUpdater.avsConfig.GardenerSeedNameTagClassId,
 		},
-		&avs.Tag{
-			Content:      ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Region),
-			TagClassId:   s.internalEvalUpdater.avsConfig.RegionTagClassId,
-			TagClassName: "region",
+		{
+			Content:    ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Region),
+			TagClassId: s.internalEvalUpdater.avsConfig.RegionTagClassId,
 		},
 	}
 

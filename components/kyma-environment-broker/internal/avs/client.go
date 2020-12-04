@@ -65,7 +65,7 @@ func (c *Client) CreateEvaluation(evaluationRequest *BasicEvaluationCreateReques
 	return &responseObject, nil
 }
 
-func (c *Client) GetEvaluation(evaluationID string) (_ *BasicEvaluationCreateResponse, err error) {
+func (c *Client) GetEvaluation(evaluationID string) (*BasicEvaluationCreateResponse, error) {
 	var responseObject BasicEvaluationCreateResponse
 
 	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", c.avsConfig.ApiEndpoint, evaluationID), nil)
