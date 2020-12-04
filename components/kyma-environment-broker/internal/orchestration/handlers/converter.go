@@ -10,7 +10,7 @@ import (
 
 type Converter struct{}
 
-func (*Converter) OrchestrationToDTO(o *orchestration.Orchestration) (*orchestration.StatusResponse, error) {
+func (*Converter) OrchestrationToDTO(o *internal.Orchestration) (*orchestration.StatusResponse, error) {
 	return &orchestration.StatusResponse{
 		OrchestrationID: o.OrchestrationID,
 		State:           o.State,
@@ -21,7 +21,7 @@ func (*Converter) OrchestrationToDTO(o *orchestration.Orchestration) (*orchestra
 	}, nil
 }
 
-func (c *Converter) OrchestrationListToDTO(orchestrations []orchestration.Orchestration, count, totalCount int) (orchestration.StatusResponseList, error) {
+func (c *Converter) OrchestrationListToDTO(orchestrations []internal.Orchestration, count, totalCount int) (orchestration.StatusResponseList, error) {
 	responses := make([]orchestration.StatusResponse, 0)
 
 	for _, o := range orchestrations {

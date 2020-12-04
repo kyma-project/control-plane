@@ -227,7 +227,7 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 
 func (s *OrchestrationSuite) CreateOrchestration(runtimeID string) string {
 	now := time.Now()
-	o := orchestration.Orchestration{
+	o := internal.Orchestration{
 		OrchestrationID: uuid.New(),
 		State:           orchestration.Pending,
 		Description:     "started processing of Kyma upgrade",
@@ -266,7 +266,7 @@ func (s *OrchestrationSuite) FinishUpgradeOperationByProvisioner(runtimeID strin
 }
 
 func (s *OrchestrationSuite) WaitForOrchestrationState(orchestrationID string, state string) {
-	var orchestration *orchestration.Orchestration
+	var orchestration *internal.Orchestration
 	err := wait.PollImmediate(100*time.Millisecond, 15*time.Second, func() (done bool, err error) {
 		orchestration, _ = s.storage.Orchestrations().GetByID(orchestrationID)
 		return orchestration.State == state, nil

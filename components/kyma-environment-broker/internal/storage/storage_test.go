@@ -437,7 +437,7 @@ func TestSchemaInitializer(t *testing.T) {
 			brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
 			require.NoError(t, err)
 
-			err = brokerStorage.Orchestrations().Insert(orchestration.Orchestration{OrchestrationID: orchestrationID})
+			err = brokerStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: orchestrationID})
 			require.NoError(t, err)
 
 			svc := brokerStorage.Operations()
@@ -739,7 +739,7 @@ func TestSchemaInitializer(t *testing.T) {
 		now := time.Now()
 
 		const fixID = "test"
-		givenOrchestration := orchestration.Orchestration{
+		givenOrchestration := internal.Orchestration{
 			OrchestrationID: fixID,
 			State:           "test",
 			Description:     "test",

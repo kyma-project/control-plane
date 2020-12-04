@@ -5,10 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 
 	"github.com/sirupsen/logrus"
@@ -35,16 +31,10 @@ func (t *testExecutor) Execute(opID string) (time.Duration, error) {
 	}
 }
 
-const (
-	fixOrchestrationID = "test"
-)
-
 func TestNewParallelOrchestrationStrategy_Immediate(t *testing.T) {
 	// given
 	executor := &testExecutor{opCalled: map[string]bool{}}
-	db := storage.NewMemoryStorage()
-
-	s := NewParallelOrchestrationStrategy(executor, db.Orchestrations(), fixOrchestrationID, time.Millisecond*100, logrus.New())
+	s := NewParallelOrchestrationStrategy(executor, logrus.New())
 
 	ops := make([]orchestration.RuntimeOperation, 3)
 	for i := range ops {
@@ -64,9 +54,7 @@ func TestNewParallelOrchestrationStrategy_Immediate(t *testing.T) {
 func TestNewParallelOrchestrationStrategy_MaintenanceWindow(t *testing.T) {
 	// given
 	executor := &testExecutor{opCalled: map[string]bool{}}
-	db := storage.NewMemoryStorage()
-
-	s := NewParallelOrchestrationStrategy(executor, db.Orchestrations(), fixOrchestrationID, time.Millisecond*100, logrus.New())
+	s := NewParallelOrchestrationStrategy(executor, logrus.New())
 
 	start := time.Now().Add(5 * time.Second)
 
@@ -89,14 +77,7 @@ func TestNewParallelOrchestrationStrategy_MaintenanceWindow(t *testing.T) {
 func TestNewParallelOrchestrationStrategy_Canceled(t *testing.T) {
 	// given
 	executor := &testExecutor{opCalled: map[string]bool{}}
-	db := storage.NewMemoryStorage()
-	err := db.Orchestrations().Insert(orchestration.Orchestration{
-		OrchestrationID: fixOrchestrationID,
-		State:           orchestration.Canceled,
-	})
-	require.NoError(t, err)
-
-	s := NewParallelOrchestrationStrategy(executor, db.Orchestrations(), fixOrchestrationID, time.Millisecond*100, logrus.New())
+	s := NewParallelOrchestrationStrategy(executor, logrus.New())
 
 	start := time.Now().Add(15 * time.Second)
 

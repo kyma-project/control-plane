@@ -131,6 +131,22 @@ type Operation struct {
 	OrchestrationID string
 }
 
+// Orchestration holds all information about an orchestration.
+// Orchestration performs operations of a specific type (UpgradeKymaOperation, UpgradeClusterOperation)
+// on specific targets of SKRs.
+type Orchestration struct {
+	OrchestrationID string
+	State           string
+	Description     string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	Parameters      orchestration.Parameters
+}
+
+func (o *Orchestration) IsFinished() bool {
+	return o.State == orchestration.Succeeded || o.State == orchestration.Failed
+}
+
 type InstanceWithOperation struct {
 	Instance
 

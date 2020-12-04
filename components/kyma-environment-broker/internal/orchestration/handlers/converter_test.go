@@ -17,7 +17,7 @@ func TestConverter_OrchestrationToDTO(t *testing.T) {
 	c := handlers.Converter{}
 
 	id := "id"
-	givenOrchestration := &orchestration.Orchestration{OrchestrationID: id}
+	givenOrchestration := &internal.Orchestration{OrchestrationID: id}
 
 	// when
 	resp, err := c.OrchestrationToDTO(givenOrchestration)
@@ -32,7 +32,7 @@ func TestConverter_OrchestrationListToDTO(t *testing.T) {
 	c := handlers.Converter{}
 
 	id := "id"
-	givenOrchestration := []orchestration.Orchestration{{OrchestrationID: id}}
+	givenOrchestration := []internal.Orchestration{{OrchestrationID: id}}
 
 	// when
 	resp, err := c.OrchestrationListToDTO(givenOrchestration, 1, 5)

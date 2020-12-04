@@ -4,7 +4,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 
@@ -15,16 +15,16 @@ import (
 type orchestrations struct {
 	mu sync.Mutex
 
-	orchestrations map[string]orchestration.Orchestration
+	orchestrations map[string]internal.Orchestration
 }
 
 func NewOrchestrations() *orchestrations {
 	return &orchestrations{
-		orchestrations: make(map[string]orchestration.Orchestration, 0),
+		orchestrations: make(map[string]internal.Orchestration, 0),
 	}
 }
 
-func (s *orchestrations) Insert(orchestration orchestration.Orchestration) error {
+func (s *orchestrations) Insert(orchestration internal.Orchestration) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.orchestrations[orchestration.OrchestrationID] = orchestration
@@ -32,7 +32,7 @@ func (s *orchestrations) Insert(orchestration orchestration.Orchestration) error
 	return nil
 }
 
-func (s *orchestrations) GetByID(orchestrationID string) (*orchestration.Orchestration, error) {
+func (s *orchestrations) GetByID(orchestrationID string) (*internal.Orchestration, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -44,11 +44,11 @@ func (s *orchestrations) GetByID(orchestrationID string) (*orchestration.Orchest
 	return &inst, nil
 }
 
-func (s *orchestrations) List(filter dbmodel.OrchestrationFilter) ([]orchestration.Orchestration, int, int, error) {
+func (s *orchestrations) List(filter dbmodel.OrchestrationFilter) ([]internal.Orchestration, int, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	result := make([]orchestration.Orchestration, 0)
+	result := make([]internal.Orchestration, 0)
 	offset := pagination.ConvertPageAndPageSizeToOffset(filter.PageSize, filter.Page)
 
 	orchestrations := s.filter(filter)
@@ -64,7 +64,7 @@ func (s *orchestrations) List(filter dbmodel.OrchestrationFilter) ([]orchestrati
 		nil
 }
 
-func (s *orchestrations) Update(orchestration orchestration.Orchestration) error {
+func (s *orchestrations) Update(orchestration internal.Orchestration) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.orchestrations[orchestration.OrchestrationID]; !ok {
@@ -76,10 +76,10 @@ func (s *orchestrations) Update(orchestration orchestration.Orchestration) error
 	return nil
 }
 
-func (s *orchestrations) ListByState(state string) ([]orchestration.Orchestration, error) {
+func (s *orchestrations) ListByState(state string) ([]internal.Orchestration, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	result := make([]orchestration.Orchestration, 0)
+	result := make([]internal.Orchestration, 0)
 
 	for _, o := range s.orchestrations {
 		if o.State == state {
@@ -90,14 +90,14 @@ func (s *orchestrations) ListByState(state string) ([]orchestration.Orchestratio
 	return result, nil
 }
 
-func (s *orchestrations) sortByCreatedAt(orchestrations []orchestration.Orchestration) {
+func (s *orchestrations) sortByCreatedAt(orchestrations []internal.Orchestration) {
 	sort.Slice(orchestrations, func(i, j int) bool {
 		return orchestrations[i].CreatedAt.Before(orchestrations[j].CreatedAt)
 	})
 }
 
-func (s *orchestrations) filter(filter dbmodel.OrchestrationFilter) []orchestration.Orchestration {
-	orchestrations := make([]orchestration.Orchestration, 0, len(s.orchestrations))
+func (s *orchestrations) filter(filter dbmodel.OrchestrationFilter) []internal.Orchestration {
+	orchestrations := make([]internal.Orchestration, 0, len(s.orchestrations))
 	equal := func(a, b string) bool { return a == b }
 	for _, v := range s.orchestrations {
 		if ok := matchFilter(v.State, filter.States, equal); !ok {

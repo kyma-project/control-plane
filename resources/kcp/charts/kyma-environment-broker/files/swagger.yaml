@@ -58,24 +58,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StatusResponseList'
-    delete:
-      summary: Cancels in progress orchestration
-      operationId: cancelDynamic
-      description: |
-        Cancels in progress orchestration
-      responses:
-        '200':
-          description: returns Orchestration ID
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UpgradeResponse'
-        '404':
-          description: Orchestration in progress doesn't exist or is already finished
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/errObj'
 
   /orchestrations/{orchestration_id}:
     get:
@@ -103,11 +85,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/errObj'
-    delete:
-      summary: Cancels in progress orchestration
+
+  /orchestrations/{orchestration_id}/canceled:
+    put:
+      summary: Cancels a given in progress or pending orchestration
       operationId: cancelByID
       description: |
-        Cancels given orchestration in progress
+        Cancels a given in progress or pending orchestration
       parameters:
         - in: path
           name: orchestration_id
@@ -122,8 +106,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UpgradeResponse'
+        '400':
+          description: Orchestration is already finished
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errObj'
         '404':
-          description: Orchestration doesn't exist or is already finished
+          description: Orchestration doesn't exist
           content:
             application/json:
               schema:

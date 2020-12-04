@@ -3,6 +3,8 @@ package handlers
 import (
 	"net/http"
 
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
@@ -30,8 +32,8 @@ type orchestrationHandler struct {
 	defaultMaxPage int
 }
 
-// NewOrchstrationStatusHandler exposes data about orchestrations and allows to manage them
-func NewOrchstrationStatusHandler(operations storage.Operations, orchestrations storage.Orchestrations, runtimeStates storage.RuntimeStates, defaultMaxPage int, log logrus.FieldLogger) *orchestrationHandler {
+// NewOrchestrationStatusHandler exposes data about orchestrations and allows to manage them
+func NewOrchestrationStatusHandler(operations storage.Operations, orchestrations storage.Orchestrations, runtimeStates storage.RuntimeStates, defaultMaxPage int, log logrus.FieldLogger) *orchestrationHandler {
 	return &orchestrationHandler{
 		operations:     operations,
 		orchestrations: orchestrations,
@@ -39,15 +41,14 @@ func NewOrchstrationStatusHandler(operations storage.Operations, orchestrations 
 		log:            log,
 		defaultMaxPage: defaultMaxPage,
 		converter:      Converter{},
-		canceler:       NewCanceler(operations, orchestrations, log),
+		canceler:       NewCanceler(orchestrations, log),
 	}
 }
 
 func (h *orchestrationHandler) AttachRoutes(router *mux.Router) {
 	router.HandleFunc("/orchestrations", h.listOrchestration).Methods(http.MethodGet)
-	router.HandleFunc("/orchestrations", h.cancelOrchestration).Methods(http.MethodDelete)
 	router.HandleFunc("/orchestrations/{orchestration_id}", h.getOrchestration).Methods(http.MethodGet)
-	router.HandleFunc("/orchestrations/{orchestration_id}", h.cancelOrchestrationByID).Methods(http.MethodDelete)
+	router.HandleFunc("/orchestrations/{orchestration_id}/canceled", h.cancelOrchestrationByID).Methods(http.MethodPut)
 	router.HandleFunc("/orchestrations/{orchestration_id}/operations", h.listOperations).Methods(http.MethodGet)
 	router.HandleFunc("/orchestrations/{orchestration_id}/operations/{operation_id}", h.getOperation).Methods(http.MethodGet)
 }
@@ -68,18 +69,6 @@ func (h *orchestrationHandler) getOrchestration(w http.ResponseWriter, r *http.R
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting orchestration"))
 		return
 	}
-
-	httputil.WriteResponse(w, http.StatusOK, response)
-}
-
-func (h *orchestrationHandler) cancelOrchestration(w http.ResponseWriter, r *http.Request) {
-	id, err := h.canceler.Cancel()
-	if err != nil {
-		h.log.Errorf("while canceling orchestration: %v", err)
-		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while canceling orchestration"))
-		return
-	}
-	response := commonOrchestration.UpgradeResponse{OrchestrationID: id}
 
 	httputil.WriteResponse(w, http.StatusOK, response)
 }
@@ -202,6 +191,8 @@ func (h *orchestrationHandler) resolveErrorStatus(err error) int {
 	switch {
 	case dberr.IsNotFound(cause):
 		return http.StatusNotFound
+	case apiErrors.IsBadRequest(cause):
+		return http.StatusBadRequest
 	default:
 		return http.StatusInternalServerError
 	}

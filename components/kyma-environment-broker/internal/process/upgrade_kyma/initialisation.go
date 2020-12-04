@@ -29,7 +29,6 @@ const (
 type InitialisationStep struct {
 	operationManager       *process.UpgradeKymaOperationManager
 	operationStorage       storage.Operations
-	orchestrationStorage   storage.Orchestrations
 	instanceStorage        storage.Instances
 	provisionerClient      provisioner.Client
 	inputBuilder           input.CreatorForPlan
@@ -37,7 +36,7 @@ type InitialisationStep struct {
 	runtimeVerConfigurator RuntimeVersionConfiguratorForUpgrade
 }
 
-func NewInitialisationStep(os storage.Operations, orc storage.Orchestrations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, timeSchedule *TimeSchedule,
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, timeSchedule *TimeSchedule,
 	rvc RuntimeVersionConfiguratorForUpgrade) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
@@ -50,7 +49,6 @@ func NewInitialisationStep(os storage.Operations, orc storage.Orchestrations, is
 	return &InitialisationStep{
 		operationManager:       process.NewUpgradeKymaOperationManager(os),
 		operationStorage:       os,
-		orchestrationStorage:   orc,
 		instanceStorage:        is,
 		provisionerClient:      pc,
 		inputBuilder:           b,
@@ -64,20 +62,9 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	o, err := s.orchestrationStorage.GetByID(operation.OrchestrationID)
-	if err != nil {
-		if dberr.IsNotFound(err) {
-			log.Errorf("orchestration %s not found: %v", err)
-			return s.operationManager.OperationFailed(operation, fmt.Sprintf("orchestration %s not found", operation.OrchestrationID))
-		}
-		log.Errorf("while getting orchestration from storage: %v", err)
-		return operation, s.timeSchedule.Retry, nil
-	}
-	if o.State == orchestrationExt.Canceled {
-		if operation.State == orchestrationExt.Pending || operation.State == orchestrationExt.Canceled {
-			log.Info("Skipping processing because orchestration was cancelled")
-			return s.operationManager.OperationCanceled(operation, fmt.Sprintf("orchestration %s was cancelled", operation.OrchestrationID))
-		}
+	if operation.State == orchestrationExt.Canceled {
+		log.Infof("Skipping processing because orchestration %s was cancelled", operation.OrchestrationID)
+		return s.operationManager.OperationCanceled(operation, fmt.Sprintf("orchestration %s was cancelled", operation.OrchestrationID))
 	}
 	if operation.State == orchestrationExt.Pending {
 		operation.State = orchestrationExt.InProgress
@@ -90,23 +77,18 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		operation = *op
 	}
 
-	// if schedule is maintenanceWindow and time window for this operation has finished we reprocess on next time window
-	if !operation.MaintenanceWindowEnd.IsZero() && operation.MaintenanceWindowEnd.Before(time.Now()) {
-		return s.rescheduleAtNextMaintenanceWindow(operation, log)
-	}
-
 	// rewrite necessary data from ProvisioningOperation to operation internal.UpgradeOperation
-	op, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
+	provisioningOperation, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
 	if err != nil {
 		log.Errorf("while getting provisioning operation from storage")
 		return operation, s.timeSchedule.Retry, nil
 	}
-	if op.State == domain.InProgress {
+	if provisioningOperation.State == domain.InProgress {
 		log.Info("waiting for provisioning operation to finish")
 		return operation, s.timeSchedule.UpgradeKymaTimeout, nil
 	}
 
-	parameters, err := op.GetProvisioningParameters()
+	parameters, err := provisioningOperation.GetProvisioningParameters()
 	if err != nil {
 		return s.operationManager.OperationFailed(operation, "cannot get provisioning parameters from operation")
 	}

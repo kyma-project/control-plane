@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 )
 
@@ -23,7 +25,7 @@ type OrchestrationDTO struct {
 	Parameters      string
 }
 
-func NewOrchestrationDTO(o orchestration.Orchestration) (OrchestrationDTO, error) {
+func NewOrchestrationDTO(o internal.Orchestration) (OrchestrationDTO, error) {
 	params, err := json.Marshal(o.Parameters)
 	if err != nil {
 		return OrchestrationDTO{}, err
@@ -40,13 +42,13 @@ func NewOrchestrationDTO(o orchestration.Orchestration) (OrchestrationDTO, error
 	return dto, nil
 }
 
-func (o *OrchestrationDTO) ToOrchestration() (orchestration.Orchestration, error) {
+func (o *OrchestrationDTO) ToOrchestration() (internal.Orchestration, error) {
 	var params orchestration.Parameters
 	err := json.Unmarshal([]byte(o.Parameters), &params)
 	if err != nil {
-		return orchestration.Orchestration{}, err
+		return internal.Orchestration{}, err
 	}
-	return orchestration.Orchestration{
+	return internal.Orchestration{
 		OrchestrationID: o.OrchestrationID,
 		State:           o.State,
 		Description:     o.Description,

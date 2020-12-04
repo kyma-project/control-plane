@@ -39,4 +39,6 @@ type Strategy interface {
 	Execute(operations []RuntimeOperation, strategySpec StrategySpec) (string, error)
 	// Wait blocks and waits until the execution with the given ID is finished.
 	Wait(executionID string)
+	// Cancel shutdowns a given execution.
+	Cancel(executionID string)
 }

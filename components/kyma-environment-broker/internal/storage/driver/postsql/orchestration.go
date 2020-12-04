@@ -1,7 +1,7 @@
 package postsql
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
@@ -20,7 +20,7 @@ func NewOrchestrations(sess dbsession.Factory) *orchestrations {
 	}
 }
 
-func (s *orchestrations) Insert(orchestration orchestration.Orchestration) error {
+func (s *orchestrations) Insert(orchestration internal.Orchestration) error {
 	_, err := s.GetByID(orchestration.OrchestrationID)
 	if err == nil {
 		return dberr.AlreadyExists("orchestration with id %s already exist", orchestration.OrchestrationID)
@@ -42,9 +42,9 @@ func (s *orchestrations) Insert(orchestration orchestration.Orchestration) error
 	})
 }
 
-func (s *orchestrations) GetByID(orchestrationID string) (*orchestration.Orchestration, error) {
+func (s *orchestrations) GetByID(orchestrationID string) (*internal.Orchestration, error) {
 	sess := s.NewReadSession()
-	orchestration := orchestration.Orchestration{}
+	orchestration := internal.Orchestration{}
 	var lastErr error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		var dto dbmodel.OrchestrationDTO
@@ -65,10 +65,10 @@ func (s *orchestrations) GetByID(orchestrationID string) (*orchestration.Orchest
 	return &orchestration, nil
 }
 
-func (s *orchestrations) List(filter dbmodel.OrchestrationFilter) ([]orchestration.Orchestration, int, int, error) {
+func (s *orchestrations) List(filter dbmodel.OrchestrationFilter) ([]internal.Orchestration, int, int, error) {
 	sess := s.NewReadSession()
 	var (
-		orchestrations    = make([]orchestration.Orchestration, 0)
+		orchestrations    = make([]internal.Orchestration, 0)
 		lastErr           error
 		count, totalCount int
 	)
@@ -83,7 +83,7 @@ func (s *orchestrations) List(filter dbmodel.OrchestrationFilter) ([]orchestrati
 			return false, nil
 		}
 		for _, dto := range dtos {
-			var o orchestration.Orchestration
+			var o internal.Orchestration
 			o, lastErr = dto.ToOrchestration()
 			if lastErr != nil {
 				return false, lastErr
@@ -98,7 +98,7 @@ func (s *orchestrations) List(filter dbmodel.OrchestrationFilter) ([]orchestrati
 	return orchestrations, count, totalCount, nil
 }
 
-func (s *orchestrations) Update(orchestration orchestration.Orchestration) error {
+func (s *orchestrations) Update(orchestration internal.Orchestration) error {
 	dto, err := dbmodel.NewOrchestrationDTO(orchestration)
 	if err != nil {
 		return errors.Wrapf(err, "while converting Orchestration to DTO")
@@ -123,11 +123,11 @@ func (s *orchestrations) Update(orchestration orchestration.Orchestration) error
 	return nil
 }
 
-func (s *orchestrations) ListByState(state string) ([]orchestration.Orchestration, error) {
+func (s *orchestrations) ListByState(state string) ([]internal.Orchestration, error) {
 	sess := s.NewReadSession()
 	var (
 		lastErr error
-		result  []orchestration.Orchestration
+		result  []internal.Orchestration
 		filter  = dbmodel.OrchestrationFilter{
 			States: []string{state},
 		}
@@ -140,7 +140,7 @@ func (s *orchestrations) ListByState(state string) ([]orchestration.Orchestratio
 			return false, nil
 		}
 		for _, dto := range dtos {
-			var o orchestration.Orchestration
+			var o internal.Orchestration
 			o, lastErr = dto.ToOrchestration()
 			if lastErr != nil {
 				return false, lastErr

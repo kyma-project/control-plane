@@ -23,13 +23,13 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 		// given
 		db := storage.NewMemoryStorage()
 
-		err := db.Orchestrations().Insert(orchestration.Orchestration{OrchestrationID: fixID})
+		err := db.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixID})
 		require.NoError(t, err)
-		err = db.Orchestrations().Insert(orchestration.Orchestration{OrchestrationID: "id-2"})
+		err = db.Orchestrations().Insert(internal.Orchestration{OrchestrationID: "id-2"})
 		require.NoError(t, err)
 
 		logs := logrus.New()
-		kymaHandler := NewOrchstrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), 100, logs)
+		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), 100, logs)
 
 		req, err := http.NewRequest("GET", "/orchestrations?page_size=1", nil)
 		require.NoError(t, err)
@@ -93,7 +93,7 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 		db := storage.NewMemoryStorage()
 		secondID := "id-2"
 
-		err := db.Orchestrations().Insert(orchestration.Orchestration{OrchestrationID: fixID})
+		err := db.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixID})
 		require.NoError(t, err)
 		err = db.Operations().InsertUpgradeKymaOperation(internal.UpgradeKymaOperation{
 			Operation: internal.Operation{
@@ -120,7 +120,7 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 		require.NoError(t, err)
 
 		logs := logrus.New()
-		kymaHandler := NewOrchstrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), 100, logs)
+		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), 100, logs)
 
 		urlPath := fmt.Sprintf("/orchestrations/%s/operations", fixID)
 		req, err := http.NewRequest("GET", urlPath, nil)
@@ -162,5 +162,39 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, dto.OrchestrationID, fixID)
 		assert.Equal(t, dto.OperationID, fixID)
+	})
+
+	t.Run("cancel orchestration", func(t *testing.T) {
+		// given
+		db := storage.NewMemoryStorage()
+
+		err := db.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixID, State: orchestration.InProgress})
+		require.NoError(t, err)
+
+		logs := logrus.New()
+		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), 100, logs)
+
+		req, err := http.NewRequest("PUT", fmt.Sprintf("/orchestrations/%s/canceled", fixID), nil)
+		require.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		kymaHandler.AttachRoutes(router)
+
+		// when
+		router.ServeHTTP(rr, req)
+
+		// then
+		require.Equal(t, http.StatusOK, rr.Code)
+
+		var out orchestration.UpgradeResponse
+
+		err = json.Unmarshal(rr.Body.Bytes(), &out)
+		require.NoError(t, err)
+		assert.Equal(t, out.OrchestrationID, fixID)
+
+		o, err := db.Orchestrations().GetByID(fixID)
+		require.NoError(t, err)
+		assert.Equal(t, o.State, orchestration.Canceled)
 	})
 }

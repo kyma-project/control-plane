@@ -5,11 +5,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	commonOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -60,7 +61,7 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 	h.defaultOrchestrationStrategy(&params.Strategy)
 
 	now := time.Now()
-	o := orchestration.Orchestration{
+	o := internal.Orchestration{
 		OrchestrationID: uuid.New().String(),
 		State:           commonOrchestration.Pending,
 		Description:     "started processing of Kyma upgrade",

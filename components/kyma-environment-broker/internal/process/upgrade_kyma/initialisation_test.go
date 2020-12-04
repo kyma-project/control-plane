@@ -42,9 +42,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		err := memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 		require.NoError(t, err)
 
-		err = memoryStorage.Orchestrations().Insert(fixOrchestration())
-		require.NoError(t, err)
-
 		upgradeOperation := fixUpgradeKymaOperation(t)
 		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
 		require.NoError(t, err)
@@ -62,7 +59,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, nil, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, nil, nil, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -88,9 +85,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		err := memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 		require.NoError(t, err)
 
-		err = memoryStorage.Orchestrations().Insert(fixOrchestration())
-		require.NoError(t, err)
-
 		upgradeOperation := fixUpgradeKymaOperation(t)
 		upgradeOperation.ProvisionerOperationID = ""
 		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
@@ -111,7 +105,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		expectedOperation.State = orchestration.InProgress
 		rvc.On("ForUpgrade", expectedOperation).Return(ver, nil).Once()
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, inputBuilder, nil, rvc)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, inputBuilder, nil, rvc)
 
 		// when
 		op, repeat, err := step.Run(upgradeOperation, log)
@@ -127,25 +121,21 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("should mark operation as Canceled if orchestration was canceled", func(t *testing.T) {
+	t.Run("should mark finish if operation was canceled", func(t *testing.T) {
 		// given
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
 
-		o := fixOrchestration()
-		o.State = orchestration.Canceled
-		err := memoryStorage.Orchestrations().Insert(o)
-		require.NoError(t, err)
-
 		upgradeOperation := fixUpgradeKymaOperation(t)
-		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		upgradeOperation.State = orchestration.Canceled
+		err := memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation(t)
 		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 		require.NoError(t, err)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), nil, nil, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), nil, nil, nil, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -160,17 +150,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.NoError(t, err)
 
 	})
-}
-
-func fixOrchestration() orchestration.Orchestration {
-	n := time.Now()
-	return orchestration.Orchestration{
-		OrchestrationID: fixOrchestrationID,
-		State:           orchestration.InProgress,
-		CreatedAt:       n,
-		UpdatedAt:       n,
-		Parameters:      orchestration.Parameters{},
-	}
 }
 
 func fixUpgradeKymaOperation(t *testing.T) internal.UpgradeKymaOperation {

@@ -32,7 +32,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		}).Return([]orchestration.Runtime{}, nil)
 
 		id := "id"
-		err := store.Orchestrations().Insert(orchestration.Orchestration{OrchestrationID: id, State: orchestration.Pending})
+		err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, State: orchestration.Pending})
 		require.NoError(t, err)
 
 		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, 20*time.Millisecond, logrus.New())
@@ -54,7 +54,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		defer resolver.AssertExpectations(t)
 
 		id := "id"
-		err := store.Orchestrations().Insert(orchestration.Orchestration{
+		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
 			State:           orchestration.InProgress,
 			Parameters: orchestration.Parameters{
@@ -88,7 +88,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		resolver.On("Resolve", orchestration.TargetSpec{}).Return([]orchestration.Runtime{}, nil).Once()
 
 		id := "id"
-		err := store.Orchestrations().Insert(orchestration.Orchestration{
+		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
 			State:           orchestration.Pending,
 			Parameters: orchestration.Parameters{
@@ -142,7 +142,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		err := store.Operations().InsertUpgradeKymaOperation(upgradeOperation)
 		require.NoError(t, err)
 
-		givenO := orchestration.Orchestration{
+		givenO := internal.Orchestration{
 			OrchestrationID: id,
 			State:           orchestration.InProgress,
 			Parameters: orchestration.Parameters{
@@ -174,7 +174,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		defer resolver.AssertExpectations(t)
 
 		id := "id"
-		err := store.Orchestrations().Insert(orchestration.Orchestration{
+		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
 			State:           orchestration.Canceled,
 			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
