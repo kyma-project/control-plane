@@ -421,6 +421,30 @@ func TestShouldTrimRuntimeNameAndAddSuffix(t *testing.T) {
 	assert.Equal(t, 36, len(input.RuntimeInput.Name))
 }
 
+func TestShouldSetOneNodeForNewTrialClusters(t *testing.T) {
+	// given
+	optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+	componentsProvider := &automock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+
+	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
+	assert.NoError(t, err)
+
+	pp := fixProvisioningParameters(broker.TrialPlanID, "")
+
+	creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.17.0", Origin: internal.Defaults})
+	require.NoError(t, err)
+	creator.SetProvisioningParameters(pp)
+
+	// when
+	input, err := creator.CreateProvisionRuntimeInput()
+	require.NoError(t, err)
+
+	// then
+	assert.Equal(t, 2, input.ClusterConfig.GardenerConfig.AutoScalerMin)
+	assert.Equal(t, 2, input.ClusterConfig.GardenerConfig.AutoScalerMax)
+}
+
 func assertOverrides(t *testing.T, componentName string, components internal.ComponentConfigurationInputList, overrides []*gqlschema.ConfigEntryInput) {
 	overriddenComponent, found := find(components, componentName)
 	require.True(t, found)

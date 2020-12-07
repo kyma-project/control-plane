@@ -5,6 +5,8 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -129,6 +131,10 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 		{
 			name:    "adding random string to runtime name",
 			execute: r.addRandomStringToRuntimeName,
+		},
+		{
+			name:    "setting two nodes for runtimes without eval profile",
+			execute: r.setMoreNodesForRuntimesWithoutEvalProfile,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -294,6 +300,14 @@ func (r *RuntimeInput) addRandomStringToRuntimeName() error {
 	}
 	r.provisionRuntimeInput.RuntimeInput.Name =
 		fmt.Sprintf("%s-%s", r.provisionRuntimeInput.RuntimeInput.Name, randomString(trialSuffixLength))
+	return nil
+}
+
+func (r *RuntimeInput) setMoreNodesForRuntimesWithoutEvalProfile() error {
+	if r.provisionRuntimeInput.KymaConfig.Version < "1.18.0" && broker.IsTrialPlan(r.provisioningParameters.PlanID) {
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMin = 2
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax = 2
+	}
 	return nil
 }
 
