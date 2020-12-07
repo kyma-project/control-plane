@@ -11,8 +11,6 @@ import (
 	"strings"
 
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
-	"gopkg.in/yaml.v2"
-
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
@@ -65,60 +63,34 @@ func (c *Client) CreateEvaluation(evaluationRequest *BasicEvaluationCreateReques
 	return &responseObject, nil
 }
 
-func (c *Client) GetEvaluation(evaluationID string) (*BasicEvaluationCreateResponse, error) {
+func (c *Client) AddTag(evaluationID int64, tag *Tag) (*BasicEvaluationCreateResponse, error) {
 	var responseObject BasicEvaluationCreateResponse
 
-	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", c.avsConfig.ApiEndpoint, evaluationID), nil)
+	objAsBytes, err := json.Marshal(tag)
 	if err != nil {
-		return &responseObject, errors.Wrap(err, "while creating request")
+		return &responseObject, errors.Wrap(err, "while marshaling AddTag request")
+	}
+	absoluteURL := appendId(c.avsConfig.ApiEndpoint, evaluationID)
+
+	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/tag", absoluteURL), bytes.NewReader(objAsBytes))
+	if err != nil {
+		return &responseObject, errors.Wrap(err, "while creating AddTag request")
 	}
 	request.Header.Set("Content-Type", "application/json")
 
 	response, err := c.execute(request, false, true)
 	if err != nil {
-		return &responseObject, errors.Wrap(err, "while executing CreateEvaluation request")
+		return &responseObject, errors.Wrap(err, "while executing AddTag request")
 	}
 	defer func() {
 		if closeErr := c.closeResponseBody(response); closeErr != nil {
-			err = kebError.AsTemporaryError(closeErr, "while closing CreateEvaluation response")
+			err = kebError.AsTemporaryError(closeErr, "while closing AddTag response")
 		}
 	}()
 
 	err = json.NewDecoder(response.Body).Decode(&responseObject)
 	if err != nil {
-		return nil, errors.Wrap(err, "while decode create evaluation response")
-	}
-
-	return &responseObject, nil
-}
-
-func (c *Client) UpdateEvaluation(evaluationID string, evaluationRequest *BasicEvaluationCreateRequest) (*BasicEvaluationCreateResponse, error) {
-	var responseObject BasicEvaluationCreateResponse
-
-	objAsBytes, err := json.Marshal(evaluationRequest)
-	if err != nil {
-		return &responseObject, errors.Wrap(err, "while marshaling evaluation request")
-	}
-
-	request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/%s", c.avsConfig.ApiEndpoint, evaluationID), bytes.NewReader(objAsBytes))
-	if err != nil {
-		return &responseObject, errors.Wrap(err, "while creating request")
-	}
-	request.Header.Set("Content-Type", "application/json")
-
-	response, err := c.execute(request, false, true)
-	if err != nil {
-		return &responseObject, errors.Wrap(err, "while executing UpdateEvaluation request")
-	}
-	defer func() {
-		if closeErr := c.closeResponseBody(response); closeErr != nil {
-			err = kebError.AsTemporaryError(closeErr, "while closing UpdateEvaluation response")
-		}
-	}()
-
-	err = yaml.NewDecoder(response.Body).Decode(&responseObject)
-	if err != nil {
-		return nil, errors.Wrap(err, "while decode UpdateEvaluation response")
+		return nil, errors.Wrap(err, "while decode AddTag response")
 	}
 
 	return &responseObject, nil

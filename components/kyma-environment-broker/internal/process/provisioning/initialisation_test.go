@@ -80,11 +80,7 @@ func TestInitialisationStep(t *testing.T) {
 		externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
 		externalEvalCreator := NewExternalEvalCreator(avsDel, false, externalEvalAssistant)
 		internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
-		InternalEvalUpdater := NewInternalEvalUpdater(avsDel, internalEvalAssistant, avs.Config{
-			GardenerShootNameTagClassId: 11111,
-			GardenerSeedNameTagClassId:  22222,
-			RegionTagClassId:            33333,
-		})
+		InternalEvalUpdater := NewInternalEvalUpdater(avsDel, internalEvalAssistant, avsConfig)
 		iasType := NewIASType(nil, true)
 
 		rvc := &automock.RuntimeVersionConfiguratorForProvisioning{}
@@ -112,6 +108,8 @@ func TestInitialisationStep(t *testing.T) {
 		inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(operation.ID)
 		assert.NoError(t, err)
 		assert.Contains(t, mockAvsSvc.evals, inDB.Avs.AVSEvaluationExternalId)
+		assert.Contains(t, mockAvsSvc.evals, inDB.Avs.AvsEvaluationInternalId)
+		assert.Equal(t, 4, len(mockAvsSvc.evals[inDB.Avs.AvsEvaluationInternalId].Tags))
 	})
 
 	t.Run("run unintialized", func(t *testing.T) {
@@ -159,11 +157,7 @@ func TestInitialisationStep(t *testing.T) {
 		externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
 		externalEvalCreator := NewExternalEvalCreator(avsDel, false, externalEvalAssistant)
 		internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
-		InternalEvalUpdater := NewInternalEvalUpdater(avsDel, internalEvalAssistant, avs.Config{
-			GardenerShootNameTagClassId: 11111,
-			GardenerSeedNameTagClassId:  22222,
-			RegionTagClassId:            33333,
-		})
+		InternalEvalUpdater := NewInternalEvalUpdater(avsDel, internalEvalAssistant, avsConfig)
 		iasType := NewIASType(nil, true)
 
 		rvc := &automock.RuntimeVersionConfiguratorForProvisioning{}
@@ -191,6 +185,8 @@ func TestInitialisationStep(t *testing.T) {
 		inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(operation.ID)
 		assert.NoError(t, err)
 		assert.Contains(t, mockAvsSvc.evals, inDB.Avs.AVSEvaluationExternalId)
+		assert.Contains(t, mockAvsSvc.evals, inDB.Avs.AvsEvaluationInternalId)
+		assert.Equal(t, 4, len(mockAvsSvc.evals[inDB.Avs.AvsEvaluationInternalId].Tags))
 	})
 }
 

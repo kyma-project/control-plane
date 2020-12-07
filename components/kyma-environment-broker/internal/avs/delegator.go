@@ -1,14 +1,12 @@
 package avs
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-
 	"github.com/sirupsen/logrus"
 )
 
@@ -84,77 +82,31 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 	return updatedOperation, d, nil
 }
 
-func (del *Delegator) GetEvaluation(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant) (internal.ProvisioningOperation, *BasicEvaluationCreateResponse, time.Duration, error) {
-	logger.Infof("starting the step avs internal id [%d] and avs external id [%d]", operation.Avs.AvsEvaluationInternalId, operation.Avs.AVSEvaluationExternalId)
-
+func (del *Delegator) AddTags(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant, tags []*Tag) (internal.ProvisioningOperation, time.Duration, error) {
+	logger.Infof("starting the AddTag to avs internal id [%d]", operation.Avs.AvsEvaluationInternalId)
 	var updatedOperation internal.ProvisioningOperation
 	d := 0 * time.Second
 
-	logger.Infof("making avs calls to get the Evaluation")
+	logger.Infof("making avs calls to add tags to the Evaluation")
 	evalId := evalAssistant.GetEvaluationId(operation.Avs)
-	evalResp, err := del.client.GetEvaluation(strconv.FormatInt(evalId, 10))
-	switch {
-	case err == nil:
-	case kebError.IsTemporaryError(err):
-		errMsg := "cannot get AVS evaluation (temporary)"
-		logger.Errorf("%s: %s", errMsg, err)
-		retryConfig := evalAssistant.provideRetryConfig()
-		op, duration, err := del.operationManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
-		return op, &BasicEvaluationCreateResponse{}, duration, err
-	default:
-		errMsg := "cannot get AVS evaluation"
-		logger.Errorf("%s: %s", errMsg, err)
-		op, duration, err := del.operationManager.OperationFailed(operation, errMsg)
-		return op, &BasicEvaluationCreateResponse{}, duration, err
+
+	for _, tag := range tags {
+		_, err := del.client.AddTag(evalId, tag)
+		switch {
+		case err == nil:
+		case kebError.IsTemporaryError(err):
+			errMsg := "cannot add tags to AVS evaluation (temporary)"
+			logger.Errorf("%s: %s", errMsg, err)
+			retryConfig := evalAssistant.provideRetryConfig()
+			op, duration, err := del.operationManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
+			return op, duration, err
+		default:
+			errMsg := "cannot add tags to AVS evaluation"
+			logger.Errorf("%s: %s", errMsg, err)
+			op, duration, err := del.operationManager.OperationFailed(operation, errMsg)
+			return op, duration, err
+		}
 	}
-
-	updatedOperation, d = del.operationManager.UpdateOperation(operation)
-
-	return updatedOperation, evalResp, d, nil
-}
-
-func (del *Delegator) UpdateEvaluation(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evaluation *BasicEvaluationCreateResponse, evalAssistant EvalAssistant, url string) (internal.ProvisioningOperation, time.Duration, error) {
-	logger.Infof("starting the update avs internal id [%d]", operation.Avs.AvsEvaluationInternalId)
-
-	var updatedOperation internal.ProvisioningOperation
-	d := 0 * time.Second
-
-	updatedEvaluation := &BasicEvaluationCreateRequest{
-		DefinitionType:   evaluation.DefinitionType,
-		Name:             evaluation.Name,
-		Description:      evaluation.Description,
-		Service:          evaluation.Service,
-		URL:              evaluation.URL,
-		CheckType:        evaluation.CheckType,
-		Interval:         evaluation.Interval,
-		TesterAccessId:   evaluation.TesterAccessId,
-		Timeout:          evaluation.Timeout,
-		ReadOnly:         evaluation.ReadOnly,
-		ContentCheck:     evaluation.ContentCheck,
-		ContentCheckType: evaluation.ContentCheckType,
-		Threshold:        strconv.FormatInt(evaluation.Threshold, 10),
-		GroupId:          evaluation.GroupId,
-		Visibility:       evaluation.Visibility,
-		Tags:             evaluation.Tags,
-	}
-	logger.Infof("making avs calls to update the Evaluation")
-
-	evalId := evalAssistant.GetEvaluationId(operation.Avs)
-	updateResp, err := del.client.UpdateEvaluation(strconv.FormatInt(evalId, 10), updatedEvaluation)
-	switch {
-	case err == nil:
-	case kebError.IsTemporaryError(err):
-		errMsg := "cannot update AVS evaluation (temporary)"
-		logger.Errorf("%s: %s", errMsg, err)
-		retryConfig := evalAssistant.provideRetryConfig()
-		return del.operationManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
-	default:
-		errMsg := "cannot update AVS evaluation"
-		logger.Errorf("%s: %s", errMsg, err)
-		return del.operationManager.OperationFailed(operation, errMsg)
-	}
-
-	logger.Infof("Successfully updated evaluation %s", strconv.FormatInt(updateResp.Id, 10))
 
 	updatedOperation, d = del.operationManager.UpdateOperation(operation)
 

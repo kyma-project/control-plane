@@ -27,13 +27,6 @@ func (ieu *InternalEvalUpdater) AddTagsToEval(tags []*avs.Tag, operation interna
 		logger.Infof("Adding additional tags to AVS evaluation is disabled")
 		return operation, 0 * time.Second, nil
 	}
-	op, eval, duration, err := ieu.delegator.GetEvaluation(logger, operation, ieu.assistant)
-	if err != nil {
-		logger.Errorf("while getting Evaluations: %s", err)
-		return op, duration, err
-	}
 
-	eval.Tags = append(eval.Tags, tags...)
-
-	return ieu.delegator.UpdateEvaluation(logger, op, eval, ieu.assistant, url)
+	return ieu.delegator.AddTags(logger, operation, ieu.assistant, tags)
 }

@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"gopkg.in/yaml.v2"
-
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
@@ -136,13 +134,12 @@ func newMockAvsService(t *testing.T, isInternal bool) *mockAvsService {
 
 func (svc *mockAvsService) startServer() {
 	r := mux.NewRouter()
-	r.HandleFunc("/", svc.handleCreateEvalutation).Methods(http.MethodPost)
-	r.HandleFunc("/{id}", svc.handleGetEvaluation).Methods(http.MethodGet)
-	r.HandleFunc("/{id}", svc.handleUpdateEvaluation).Methods(http.MethodPut)
+	r.HandleFunc("/", svc.handleCreateEvaluation).Methods(http.MethodPost)
+	r.HandleFunc("/{id}/tag", svc.handleAddTag).Methods(http.MethodPost)
 	svc.server = httptest.NewServer(r)
 }
 
-func (svc *mockAvsService) handleCreateEvalutation(w http.ResponseWriter, r *http.Request) {
+func (svc *mockAvsService) handleCreateEvaluation(w http.ResponseWriter, r *http.Request) {
 	assert.Equal(svc.t, r.Header.Get("Content-Type"), "application/json")
 	dec := json.NewDecoder(r.Body)
 	var requestObj avs.BasicEvaluationCreateRequest
@@ -165,27 +162,9 @@ func (svc *mockAvsService) handleCreateEvalutation(w http.ResponseWriter, r *htt
 	}
 }
 
-func (svc *mockAvsService) handleGetEvaluation(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	evalId, err := strconv.ParseInt(vars["id"], 10, 64)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-	eval, exists := svc.evals[evalId]
-	if !exists {
-		w.WriteHeader(http.StatusNotFound)
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(eval); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-}
-
-func (svc *mockAvsService) handleUpdateEvaluation(w http.ResponseWriter, r *http.Request) {
+func (svc *mockAvsService) handleAddTag(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
-	var requestObj avs.BasicEvaluationCreateRequest
+	var requestObj *avs.Tag
 	err := dec.Decode(&requestObj)
 	assert.NoError(svc.t, err)
 
@@ -196,15 +175,13 @@ func (svc *mockAvsService) handleUpdateEvaluation(w http.ResponseWriter, r *http
 	}
 	_, exists := svc.evals[evalId]
 	if !exists {
-		w.WriteHeader(http.StatusInternalServerError) // avs API returns 500 when trying to update non-existing evaluation
+		w.WriteHeader(http.StatusNotFound)
 	}
+	svc.evals[evalId].Tags = append(svc.evals[evalId].Tags, requestObj)
 
-	updatedEval := createResponseObj(requestObj, svc.t)
-	svc.evals[evalId] = updatedEval
-
-	w.Header().Set("Content-Type", "application/yaml")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	if err := yaml.NewEncoder(w).Encode(updatedEval); err != nil {
+	if err := json.NewEncoder(w).Encode(svc.evals[evalId]); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
