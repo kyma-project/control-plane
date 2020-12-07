@@ -460,7 +460,7 @@ func TestDefaultAuthConfig_GetAuthConfig(t *testing.T) {
 		envName      = ""
 	)
 
-	t.Run("default auth config with default environement", func(t *testing.T) {
+	t.Run("default auth config with default environment", func(t *testing.T) {
 		authConfig := &DefaultAuthConfig{}
 		authz, env, err := authConfig.GetAuthConfig(clientID, clientSecret, tenantID, envName)
 		asserts.NoError(err, "should not get an error")
@@ -468,7 +468,7 @@ func TestDefaultAuthConfig_GetAuthConfig(t *testing.T) {
 		asserts.IsType((*autorest.BearerAuthorizer)(nil), authz)
 	})
 
-	t.Run("default auth config with bad environement", func(t *testing.T) {
+	t.Run("default auth config with bad environment", func(t *testing.T) {
 		authConfig := &DefaultAuthConfig{}
 		_, _, err := authConfig.GetAuthConfig(clientID, clientSecret, tenantID, "envName")
 		asserts.Error(err, "should get an error")

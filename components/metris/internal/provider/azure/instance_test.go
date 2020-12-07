@@ -188,7 +188,7 @@ func TestInstance_getComputeMetrics(t *testing.T) {
 			want:   metricsNoDisk,
 		},
 		{
-			name:    "with last event",
+			name:    "with last eventData",
 			fields:  fields{cluster: testCluster, client: mockclient},
 			args:    args{resourceGroupName: "vmerror", vmcaps: &testVMCaps},
 			wantErr: true,

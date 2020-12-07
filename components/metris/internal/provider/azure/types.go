@@ -48,10 +48,7 @@ const (
 	// PT5M ...
 	PT5M TimeGrain = "PT5M"
 
-	// maximum number of failed attempt to get metrics, after that instance is remove from cache/storage.
-	maxRetryAttempts int = 5
-
-	responseErrCodeResourceGroupNotFound string = "ResourceGroupNotFound"
+	ResponseErrCodeResourceGroupNotFound string = "ResourceGroupNotFound"
 )
 
 // ResponseError represent the error message structure return by Azure REST API.
@@ -106,14 +103,12 @@ type Instance struct {
 	cluster *gardener.Cluster
 	// client holds the Azure base clients for the different API calls.
 	client Client
-	// lastEvent store the last successful event sent to EDP.
+	// lastEvent store the last successful eventData sent to EDP.
 	lastEvent *EventData
 	// eventHubResourceGroupName store the Azure Event Hub resource group name associated with the subaccountid.
 	eventHubResourceGroupName string
 	// retryAttempts store the number of retry attempts to get metrics.
 	retryAttempts int
-	// retryBackoff indicate to backing off between requests.
-	retryBackoff bool
 }
 
 //go:generate mockery --name AuthConfig
@@ -130,7 +125,7 @@ type Azure struct {
 	config           *provider.Config
 	instanceStorage  storage.Storage
 	vmCapsStorage    storage.Storage
-	queue            workqueue.DelayingInterface
+	queue            workqueue.RateLimitingInterface
 	ClientAuthConfig AuthConfig
 }
 
@@ -143,20 +138,20 @@ type ClientSecretMap struct {
 	EnvironmentName string
 }
 
-// VMType defines the event format for the virtual machine metrics.
+// VMType defines the eventData format for the virtual machine metrics.
 type VMType struct {
 	Name  string `json:"name"`
 	Count uint32 `json:"count"`
 }
 
-// ProvisionedVolume defines the event format for the volume metrics.
+// ProvisionedVolume defines the eventData format for the volume metrics.
 type ProvisionedVolume struct {
 	SizeGBTotal   uint32 `json:"size_gb_total"`
 	SizeGBRounded uint32 `json:"size_gb_rounded"`
 	Count         uint32 `json:"count"`
 }
 
-// Compute defines the event format for the compute metrics.
+// Compute defines the eventData format for the compute metrics.
 type Compute struct {
 	VMTypes            []VMType          `json:"vm_types"`
 	ProvisionedRAMGB   float64           `json:"provisioned_ram_gb"`
@@ -164,14 +159,14 @@ type Compute struct {
 	ProvisionedCpus    uint32            `json:"provisioned_cpus"`
 }
 
-// Networking defines the event format for the network metrics.
+// Networking defines the eventData format for the network metrics.
 type Networking struct {
 	ProvisionedLoadBalancers uint32 `json:"provisioned_loadbalancers"`
 	ProvisionedVnets         uint32 `json:"provisioned_vnets"`
 	ProvisionedIps           uint32 `json:"provisioned_ips"`
 }
 
-// EventHub defines the event format for the event hub metrics.
+// EventHub defines the eventData format for the eventData hub metrics.
 type EventHub struct {
 	NumberNamespaces     uint32  `json:"number_namespaces"`
 	IncomingRequestsPT1M float64 `json:"incoming_requests_pt1m"`
@@ -182,7 +177,7 @@ type EventHub struct {
 	MaxOutgoingBytesPT5M float64 `json:"max_outgoing_bytes_pt5m"`
 }
 
-// EventData defines the event information to send to EDP.
+// EventData defines the eventData information to send to EDP.
 type EventData struct {
 	ResourceGroups []string    `json:"resource_groups"`
 	Compute        *Compute    `json:"compute"`
