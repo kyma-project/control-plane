@@ -7,13 +7,11 @@ import (
 	"syscall"
 
 	"github.com/kyma-project/control-plane/tools/cli/pkg/command"
-	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 )
 
 func main() {
 	setupCloseHandler()
-	log := logger.New()
-	cmd := command.New(log)
+	cmd := command.New()
 
 	err := cmd.Execute()
 	if err != nil {

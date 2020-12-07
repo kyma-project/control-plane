@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/kyma-project/control-plane/tools/cli/pkg/command"
-	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 )
 
 const (
@@ -23,8 +22,7 @@ const (
 )
 
 func main() {
-	log := logger.New()
-	cmd := command.New(log)
+	cmd := command.New()
 
 	err := genMarkdownTree(cmd, docsTargetDir)
 	if err != nil {

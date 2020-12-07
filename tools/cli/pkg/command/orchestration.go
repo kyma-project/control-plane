@@ -120,8 +120,8 @@ Kyma Version       : {{.KymaConfig.Version}}
 `
 
 // NewOrchestrationCmd constructs a new instance of OrchestrationCommand and configures it in terms of a cobra.Command
-func NewOrchestrationCmd(log logger.Logger) *cobra.Command {
-	cmd := OrchestrationCommand{log: log}
+func NewOrchestrationCmd() *cobra.Command {
+	cmd := OrchestrationCommand{}
 	cobraCmd := &cobra.Command{
 		Use:     "orchestrations [id]",
 		Aliases: []string{"orchestration", "o"},
@@ -170,6 +170,7 @@ func (cmd *OrchestrationCommand) validateTransformOrchestrationStates() error {
 
 // Run executes the orchestrations command
 func (cmd *OrchestrationCommand) Run(args []string) error {
+	cmd.log = logger.New()
 	cmd.client = orchestration.NewClient(cmd.cobraCmd.Context(), GlobalOpts.KEBAPIURL(), CLICredentialManager(cmd.log))
 	if len(args) == 0 {
 		return cmd.showOrchestrations()

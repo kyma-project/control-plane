@@ -37,8 +37,8 @@ type kubeconfig struct {
 }
 
 // NewKubeconfigCmd constructs a new instance of KubeconfigCommand and configures it in terms of a cobra.Command
-func NewKubeconfigCmd(log logger.Logger) *cobra.Command {
-	cmd := KubeconfigCommand{log: log}
+func NewKubeconfigCmd() *cobra.Command {
+	cmd := KubeconfigCommand{}
 	cobraCmd := &cobra.Command{
 		Use:     "kubeconfig",
 		Aliases: []string{"kc"},
@@ -69,6 +69,7 @@ By default, the kubeconfig file is saved to the current directory. The output fi
 
 // Run executes the kubeconfig command
 func (cmd *KubeconfigCommand) Run() error {
+	cmd.log = logger.New()
 	cred := CLICredentialManager(cmd.log)
 	client := client.NewClient(cmd.cobraCmd.Context(), GlobalOpts.KubeconfigAPIURL(), cred)
 

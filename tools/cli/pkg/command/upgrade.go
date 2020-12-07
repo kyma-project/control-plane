@@ -26,7 +26,7 @@ var scheduleInputToParam = map[string]orchestration.ScheduleType{
 }
 
 // NewUpgradeCmd constructs the upgrade command and all subcommands under the upgrade command
-func NewUpgradeCmd(log logger.Logger) *cobra.Command {
+func NewUpgradeCmd() *cobra.Command {
 	cobraCmd := &cobra.Command{
 		Use:     "upgrade",
 		Aliases: []string{"u"},
@@ -34,7 +34,7 @@ func NewUpgradeCmd(log logger.Logger) *cobra.Command {
 		Long:    "Performs upgrade operations on Kyma Runtimes.",
 	}
 
-	cobraCmd.AddCommand(NewUpgradeKymaCmd(log))
+	cobraCmd.AddCommand(NewUpgradeKymaCmd())
 	return cobraCmd
 }
 

@@ -45,6 +45,7 @@ type GlobalOptionsKey struct {
 	kebAPIURL          string
 	kubeconfigAPIURL   string
 	gardenerKubeconfig string
+	gardenerNamespace  string
 }
 
 // GlobalOpts is the convenience object for storing the fixed global conifguration (parameter) keys
@@ -55,6 +56,7 @@ var GlobalOpts = GlobalOptionsKey{
 	kebAPIURL:          "keb-api-url",
 	kubeconfigAPIURL:   "kubeconfig-api-url",
 	gardenerKubeconfig: "gardener-kubeconfig",
+	gardenerNamespace:  "gardener-namespace",
 }
 
 // SetGlobalOpts configures the global parameters on the given root command
@@ -76,6 +78,9 @@ func SetGlobalOpts(cmd *cobra.Command) {
 
 	cmd.PersistentFlags().String(GlobalOpts.gardenerKubeconfig, "", "Path to the kubeconfig file of the corresponding Gardener project which has permissions to list/get Shoots. Can also be set using the KCP_GARDENER_KUBECONFIG environment variable.")
 	viper.BindPFlag(GlobalOpts.gardenerKubeconfig, cmd.PersistentFlags().Lookup(GlobalOpts.gardenerKubeconfig))
+
+	cmd.PersistentFlags().String(GlobalOpts.gardenerNamespace, "", "Gardener namespace (project) to use. Can also be set using the KCP_GARDENER_NAMESPACE environment variable.")
+	viper.BindPFlag(GlobalOpts.gardenerNamespace, cmd.PersistentFlags().Lookup(GlobalOpts.gardenerNamespace))
 }
 
 // ValidateGlobalOpts checks the presence of the required global configuration parameters
@@ -122,6 +127,11 @@ func (keys *GlobalOptionsKey) KubeconfigAPIURL() string {
 // GardenerKubeconfig gets the gardener-kubeconfig global parameter
 func (keys *GlobalOptionsKey) GardenerKubeconfig() string {
 	return viper.GetString(keys.gardenerKubeconfig)
+}
+
+// GardenerNamespace gets the gardener-namespace global parameter
+func (keys *GlobalOptionsKey) GardenerNamespace() string {
+	return viper.GetString(keys.gardenerNamespace)
 }
 
 // SetOutputOpt configures the optput type option on the given command
