@@ -96,6 +96,27 @@ func (_m *Client) RuntimeOperationStatus(accountID string, operationID string) (
 	return r0, r1
 }
 
+// RuntimeStatus provides a mock function with given fields: accountID, runtimeID
+func (_m *Client) RuntimeStatus(accountID string, runtimeID string) (gqlschema.RuntimeStatus, error) {
+	ret := _m.Called(accountID, runtimeID)
+
+	var r0 gqlschema.RuntimeStatus
+	if rf, ok := ret.Get(0).(func(string, string) gqlschema.RuntimeStatus); ok {
+		r0 = rf(accountID, runtimeID)
+	} else {
+		r0 = ret.Get(0).(gqlschema.RuntimeStatus)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(accountID, runtimeID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // UpgradeRuntime provides a mock function with given fields: accountID, runtimeID, config
 func (_m *Client) UpgradeRuntime(accountID string, runtimeID string, config gqlschema.UpgradeRuntimeInput) (gqlschema.OperationStatus, error) {
 	ret := _m.Called(accountID, runtimeID, config)

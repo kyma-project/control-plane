@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
@@ -18,8 +19,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type idHolder struct {
-	id int64
+type evaluationRepository map[int64]*avs.BasicEvaluationCreateResponse
+
+type mockAvsService struct {
+	server     *httptest.Server
+	evals      evaluationRepository
+	isInternal bool
+	t          *testing.T
 }
 
 const dummyStrAvsTest = "dummy"
@@ -36,12 +42,12 @@ func TestInternalEvaluationStep_Run(t *testing.T) {
 	err := memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 	assert.NoError(t, err)
 
-	idh := &idHolder{}
 	mockOauthServer := newMockAvsOauthServer()
 	defer mockOauthServer.Close()
-	mockAvsServer := newMockAvsServer(t, idh, true)
-	defer mockAvsServer.Close()
-	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
+	mockAvsSvc := newMockAvsService(t, true)
+	mockAvsSvc.startServer()
+	defer mockAvsSvc.server.Close()
+	avsConfig := avsConfig(mockOauthServer, mockAvsSvc.server)
 	avsClient, err := avs.NewClient(context.TODO(), avsConfig, logrus.New())
 	assert.NoError(t, err)
 	avsDel := avs.NewDelegator(avsClient, avsConfig, memoryStorage.Operations())
@@ -55,14 +61,13 @@ func TestInternalEvaluationStep_Run(t *testing.T) {
 	//then
 	assert.NoError(t, err)
 	assert.Equal(t, 0*time.Second, repeat)
-	assert.Equal(t, idh.id, provisioningOperation.Avs.AvsEvaluationInternalId)
 
 	inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(provisioningOperation.ID)
 	assert.NoError(t, err)
-	assert.Equal(t, inDB.Avs.AvsEvaluationInternalId, idh.id)
+	assert.Contains(t, mockAvsSvc.evals, inDB.Avs.AvsEvaluationInternalId)
 
 	inputCreator.AssertOverride(t, avs.ComponentName, gqlschema.ConfigEntryInput{
-		Key: avs.EvaluationIdKey, Value: strconv.FormatInt(idh.id, 10)})
+		Key: avs.EvaluationIdKey, Value: strconv.FormatInt(mockAvsSvc.evals[inDB.Avs.AvsEvaluationInternalId].Id, 10)})
 	inputCreator.AssertOverride(t, avs.ComponentName, gqlschema.ConfigEntryInput{
 		Key: avs.AvsBridgeAPIKey, Value: dummyStrAvsTest})
 }
@@ -81,12 +86,12 @@ func TestInternalEvaluationStep_WhenOperationIsRepeatedWithIdPresent(t *testing.
 	err := memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 	assert.NoError(t, err)
 
-	idh := &idHolder{}
 	mockOauthServer := newMockAvsOauthServer()
 	defer mockOauthServer.Close()
-	mockAvsServer := newMockAvsServer(t, idh, true)
-	defer mockAvsServer.Close()
-	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
+	mockAvsServer := newMockAvsService(t, true)
+	mockAvsServer.startServer()
+	defer mockAvsServer.server.Close()
+	avsConfig := avsConfig(mockOauthServer, mockAvsServer.server)
 	avsClient, err := avs.NewClient(context.TODO(), avsConfig, logrus.New())
 	assert.NoError(t, err)
 	avsDel := avs.NewDelegator(avsClient, avsConfig, memoryStorage.Operations())
@@ -100,7 +105,6 @@ func TestInternalEvaluationStep_WhenOperationIsRepeatedWithIdPresent(t *testing.
 	//then
 	assert.NoError(t, err)
 	assert.Equal(t, 0*time.Second, repeat)
-	assert.Equal(t, idh.id, int64(0))
 
 	inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(provisioningOperation.ID)
 	assert.NoError(t, err)
@@ -120,28 +124,66 @@ func newMockAvsOauthServer() *httptest.Server {
 		}))
 }
 
-func newMockAvsServer(t *testing.T, idh *idHolder, isInternal bool) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
+func newMockAvsService(t *testing.T, isInternal bool) *mockAvsService {
+	return &mockAvsService{
+		evals:      make(evaluationRepository, 0),
+		isInternal: isInternal,
+		t:          t,
+	}
+}
 
-		dec := json.NewDecoder(r.Body)
-		var requestObj avs.BasicEvaluationCreateRequest
-		err := dec.Decode(&requestObj)
-		assert.NoError(t, err)
+func (svc *mockAvsService) startServer() {
+	r := mux.NewRouter()
+	r.HandleFunc("/", svc.handleCreateEvaluation).Methods(http.MethodPost)
+	r.HandleFunc("/{id}/tag", svc.handleAddTag).Methods(http.MethodPost)
+	svc.server = httptest.NewServer(r)
+}
 
-		if isInternal {
-			assert.Empty(t, requestObj.URL)
-		} else {
-			assert.NotEmpty(t, requestObj.URL)
-		}
+func (svc *mockAvsService) handleCreateEvaluation(w http.ResponseWriter, r *http.Request) {
+	assert.Equal(svc.t, r.Header.Get("Content-Type"), "application/json")
+	dec := json.NewDecoder(r.Body)
+	var requestObj avs.BasicEvaluationCreateRequest
+	err := dec.Decode(&requestObj)
+	assert.NoError(svc.t, err)
 
-		evalCreateResponse := createResponseObj(err, requestObj, t)
-		idh.id = evalCreateResponse.Id
-		responseObjAsBytes, _ := json.Marshal(evalCreateResponse)
+	if svc.isInternal {
+		assert.Empty(svc.t, requestObj.URL)
+	} else {
+		assert.NotEmpty(svc.t, requestObj.URL)
+	}
 
-		_, _ = w.Write(responseObjAsBytes)
-		w.WriteHeader(http.StatusOK)
-	}))
+	evalCreateResponse := createResponseObj(requestObj, svc.t)
+	svc.evals[evalCreateResponse.Id] = evalCreateResponse
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(evalCreateResponse); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
+func (svc *mockAvsService) handleAddTag(w http.ResponseWriter, r *http.Request) {
+	dec := json.NewDecoder(r.Body)
+	var requestObj *avs.Tag
+	err := dec.Decode(&requestObj)
+	assert.NoError(svc.t, err)
+
+	vars := mux.Vars(r)
+	evalId, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	_, exists := svc.evals[evalId]
+	if !exists {
+		w.WriteHeader(http.StatusNotFound)
+	}
+	svc.evals[evalId].Tags = append(svc.evals[evalId].Tags, requestObj)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(svc.evals[evalId]); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 func avsConfig(mockOauthServer *httptest.Server, mockAvsServer *httptest.Server) avs.Config {
@@ -158,19 +200,23 @@ func avsConfig(mockOauthServer *httptest.Server, mockAvsServer *httptest.Server)
 		ExternalTesterAccessId: 5678,
 		ExternalTesterService:  dummyStrAvsTest,
 		ExternalTesterTags: []*avs.Tag{
-			&avs.Tag{
+			{
 				Content:      dummyStrAvsTest,
 				TagClassId:   123,
 				TagClassName: dummyStrAvsTest,
 			},
 		},
-		GroupId:  5555,
-		ParentId: 9101112,
-		ApiKey:   dummyStrAvsTest,
+		GroupId:                     5555,
+		ParentId:                    9101112,
+		ApiKey:                      dummyStrAvsTest,
+		AdditionalTagsEnabled:       true,
+		GardenerSeedNameTagClassId:  111111,
+		GardenerShootNameTagClassId: 111112,
+		RegionTagClassId:            111113,
 	}
 }
 
-func createResponseObj(err error, requestObj avs.BasicEvaluationCreateRequest, t *testing.T) *avs.BasicEvaluationCreateResponse {
+func createResponseObj(requestObj avs.BasicEvaluationCreateRequest, t *testing.T) *avs.BasicEvaluationCreateResponse {
 	parseInt, err := strconv.ParseInt(requestObj.Threshold, 10, 64)
 	assert.NoError(t, err)
 

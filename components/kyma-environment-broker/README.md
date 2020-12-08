@@ -64,3 +64,7 @@ KEB binary allows you to override some configuration parameters. You can specify
 | **APP_LMS_MANDATORY** | Defines whether failing LMS activation will break provisioning. | `true` |
 | **APP_LMS_REGION** | Defines the region for the LMS system. If set, this region is always used. If empty, the region is mapped from the OSB API request. | None |
 | **APP_LMS_TOKEN** | Specifies the token for the LMS system. | None |
+| **APP_AVS_ADDITIONAL_TAGS_ENABLED** | Specifies additional tags that are added to the internal Evaluation after the cluster is provisioned. | `false` |
+| **APP_AVS_GARDENER_SHOOT_NAME_TAG_CLASS_ID** | Specifies the **TagClassId** of the tag that contains Gardener cluster's shoot name. | None |
+| **APP_AVS_GARDENER_SEED_NAME_TAG_CLASS_ID** | Specifies the **TagClassId** of the tag that contains Gardener cluster's seed name. | None |
+| **APP_AVS_REGION_TAG_CLASS_ID** | Specifies the **TagClassId** of the tag that contains Gardener cluster's region. | None |

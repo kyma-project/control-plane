@@ -5,9 +5,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
@@ -45,6 +47,7 @@ type InitialisationStep struct {
 	directorClient              DirectorClient
 	inputBuilder                input.CreatorForPlan
 	externalEvalCreator         *ExternalEvalCreator
+	internalEvalUpdater         *InternalEvalUpdater
 	iasType                     *IASType
 	provisioningTimeout         time.Duration
 	runtimeVerConfigurator      RuntimeVersionConfiguratorForProvisioning
@@ -57,6 +60,7 @@ func NewInitialisationStep(os storage.Operations,
 	dc DirectorClient,
 	b input.CreatorForPlan,
 	avsExternalEvalCreator *ExternalEvalCreator,
+	avsInternalEvalUpdater *InternalEvalUpdater,
 	iasType *IASType,
 	timeout time.Duration,
 	rvc RuntimeVersionConfiguratorForProvisioning,
@@ -68,6 +72,7 @@ func NewInitialisationStep(os storage.Operations,
 		directorClient:              dc,
 		inputBuilder:                b,
 		externalEvalCreator:         avsExternalEvalCreator,
+		internalEvalUpdater:         avsInternalEvalUpdater,
 		iasType:                     iasType,
 		provisioningTimeout:         timeout,
 		runtimeVerConfigurator:      rvc,
@@ -222,6 +227,18 @@ func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOp
 	}
 
 	// action #2
+	tags, operation, repeat, err := s.createTagsForRuntime(operation, instance)
+	if err != nil || repeat != 0 {
+		log.Errorf("while adding Tags to Evaluation: %s", err)
+		return operation, repeat, nil
+	}
+	operation, repeat, err = s.internalEvalUpdater.AddTagsToEval(tags, operation, "", log)
+	if err != nil || repeat != 0 {
+		log.Errorf("while adding Tags to Evaluation: %s", err)
+		return operation, repeat, nil
+	}
+
+	// action #3
 	repeat, err = s.iasType.ConfigureType(operation, instance.DashboardURL, log)
 	if err != nil || repeat != 0 {
 		return operation, repeat, nil
@@ -237,4 +254,29 @@ func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOp
 	}
 
 	return s.operationManager.OperationSucceeded(operation, msg)
+}
+
+func (s *InitialisationStep) createTagsForRuntime(operation internal.ProvisioningOperation, instance *internal.Instance) ([]*avs.Tag, internal.ProvisioningOperation, time.Duration, error) {
+
+	status, err := s.provisionerClient.RuntimeStatus(instance.GlobalAccountID, operation.RuntimeID)
+	if err != nil {
+		return []*avs.Tag{}, operation, 1 * time.Minute, err
+	}
+
+	result := []*avs.Tag{
+		{
+			Content:    ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Name),
+			TagClassId: s.internalEvalUpdater.avsConfig.GardenerShootNameTagClassId,
+		},
+		{
+			Content:    ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Seed),
+			TagClassId: s.internalEvalUpdater.avsConfig.GardenerSeedNameTagClassId,
+		},
+		{
+			Content:    ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Region),
+			TagClassId: s.internalEvalUpdater.avsConfig.RegionTagClassId,
+		},
+	}
+
+	return result, operation, 0 * time.Second, nil
 }
