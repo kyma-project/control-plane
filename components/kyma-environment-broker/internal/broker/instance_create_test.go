@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker/automock"
@@ -50,6 +51,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure"}},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -71,6 +73,7 @@ func TestProvision_Provision(t *testing.T) {
 		require.NoError(t, err)
 		assert.Regexp(t, "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$", response.OperationData)
 		assert.NotEqual(t, instanceID, response.OperationData)
+		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.test\.example\.com`, response.DashboardURL)
 
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)
@@ -87,6 +90,7 @@ func TestProvision_Provision(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, instance.ProvisioningParameters, operation.ProvisioningParameters)
+		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.test\.example\.com`, instance.DashboardURL)
 		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
 	})
 
@@ -103,6 +107,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			nil,
@@ -144,6 +149,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite", broker.TrialPlanName}},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			nil,
@@ -183,6 +189,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "trial"}},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -238,6 +245,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			nil,
@@ -276,6 +284,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			nil,
@@ -318,6 +327,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			nil,
@@ -359,6 +369,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -399,6 +410,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			nil,
 			nil,
 			nil,
@@ -435,6 +447,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -480,6 +493,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -522,6 +536,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite", "trial"}},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,

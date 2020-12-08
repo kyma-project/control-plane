@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
@@ -103,6 +104,21 @@ func (c *FakeClient) RuntimeOperationStatus(accountID, operationID string) (sche
 		return schema.OperationStatus{}, fmt.Errorf("operation not found")
 	}
 	return o, nil
+}
+
+func (c *FakeClient) RuntimeStatus(accountID, runtimeID string) (schema.RuntimeStatus, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return schema.RuntimeStatus{
+		RuntimeConfiguration: &schema.RuntimeConfig{
+			ClusterConfig: &schema.GardenerConfig{
+				Name:   ptr.String("fake-name"),
+				Region: ptr.String("fake-region"),
+				Seed:   ptr.String("fake-seed"),
+			},
+		},
+	}, nil
 }
 
 func (c *FakeClient) UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (schema.OperationStatus, error) {

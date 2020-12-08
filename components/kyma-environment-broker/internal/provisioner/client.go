@@ -27,6 +27,7 @@ type Client interface {
 	UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (schema.OperationStatus, error)
 	ReconnectRuntimeAgent(accountID, runtimeID string) (string, error)
 	RuntimeOperationStatus(accountID, operationID string) (schema.OperationStatus, error)
+	RuntimeStatus(accountID, runtimeID string) (schema.RuntimeStatus, error)
 }
 
 type client struct {
@@ -123,6 +124,19 @@ func (c *client) RuntimeOperationStatus(accountID, operationID string) (schema.O
 	err := c.executeRequest(req, &response)
 	if err != nil {
 		return schema.OperationStatus{}, errors.Wrap(err, "Failed to get Runtime operation status")
+	}
+	return response, nil
+}
+
+func (c *client) RuntimeStatus(accountID, runtimeID string) (schema.RuntimeStatus, error) {
+	query := c.queryProvider.runtimeStatus(runtimeID)
+	req := gcli.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
+
+	var response schema.RuntimeStatus
+	err := c.executeRequest(req, &response)
+	if err != nil {
+		return schema.RuntimeStatus{}, errors.Wrap(err, "Failed to get Runtime status")
 	}
 	return response, nil
 }

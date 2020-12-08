@@ -134,6 +134,7 @@ func (s *CreateRuntimeStep) createProvisionInput(operation internal.Provisioning
 	var request gqlschema.ProvisionRuntimeInput
 
 	operation.InputCreator.SetProvisioningParameters(parameters)
+	operation.InputCreator.SetShootName(operation.ShootName)
 	operation.InputCreator.SetLabel(brokerKeyPrefix+"instance_id", operation.InstanceID)
 	operation.InputCreator.SetLabel(globalKeyPrefix+"subaccount_id", parameters.ErsContext.SubAccountID)
 	request, err := operation.InputCreator.CreateProvisionRuntimeInput()

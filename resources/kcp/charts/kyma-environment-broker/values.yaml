@@ -76,6 +76,7 @@ enablePlans: "azure,gcp,azure_lite,trial"
 
 gardener:
   project: "kyma-dev" # Gardener project connected to SA for HAP credentials lookup
+  shootDomain: "shoot.canary.k8s-hana.ondemand.com"
   kubeconfigPath: "/gardener/kubeconfig/kubeconfig"
   secretName: "gardener-credentials"
   kubernetesVersion: "1.16.9"
@@ -120,6 +121,10 @@ avs:
   #     tag_name: value-B
   internalTesterTags: ""
   externalTesterTags: ""
+  additionalTagsEnabled: "false"
+  gardenerSeedNameTagClassId: "0"
+  gardenerShootNameTagClassId: "0"
+  regionTagClassId: "0"
 
 lms:
   secretName: "lms-creds"

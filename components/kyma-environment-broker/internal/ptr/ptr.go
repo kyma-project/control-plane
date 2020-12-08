@@ -10,6 +10,13 @@ func String(str string) *string {
 	return &str
 }
 
+func ToString(s *string) string {
+	if s != nil {
+		return *s
+	}
+	return ""
+}
+
 func Integer(in int) *int {
 	return &in
 }

@@ -2,13 +2,14 @@ package provisioning
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
@@ -46,6 +47,7 @@ type InitialisationStep struct {
 	directorClient              DirectorClient
 	inputBuilder                input.CreatorForPlan
 	externalEvalCreator         *ExternalEvalCreator
+	internalEvalUpdater         *InternalEvalUpdater
 	iasType                     *IASType
 	provisioningTimeout         time.Duration
 	runtimeVerConfigurator      RuntimeVersionConfiguratorForProvisioning
@@ -58,6 +60,7 @@ func NewInitialisationStep(os storage.Operations,
 	dc DirectorClient,
 	b input.CreatorForPlan,
 	avsExternalEvalCreator *ExternalEvalCreator,
+	avsInternalEvalUpdater *InternalEvalUpdater,
 	iasType *IASType,
 	timeout time.Duration,
 	rvc RuntimeVersionConfiguratorForProvisioning,
@@ -69,6 +72,7 @@ func NewInitialisationStep(os storage.Operations,
 		directorClient:              dc,
 		inputBuilder:                b,
 		externalEvalCreator:         avsExternalEvalCreator,
+		internalEvalUpdater:         avsInternalEvalUpdater,
 		iasType:                     iasType,
 		provisioningTimeout:         timeout,
 		runtimeVerConfigurator:      rvc,
@@ -165,11 +169,6 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 		return operation, 10 * time.Second, nil
 	}
 
-	_, err = url.ParseRequestURI(instance.DashboardURL)
-	if err == nil {
-		return s.launchPostActions(operation, instance, log, "Operation succeeded")
-	}
-
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
 	if err != nil {
 		return operation, 1 * time.Minute, nil
@@ -184,8 +183,12 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
 		repeat, err := s.handleDashboardURL(instance, log)
-		if err != nil || repeat != 0 {
-			return operation, repeat, err
+		if repeat != 0 {
+			return operation, repeat, nil
+		}
+		if err != nil {
+			log.Errorf("cannot handle dashboard URL: %s", err)
+			return s.operationManager.OperationFailed(operation, "cannot handle dashboard URL")
 		}
 		return s.launchPostActions(operation, instance, log, msg)
 	case gqlschema.OperationStateInProgress:
@@ -206,14 +209,11 @@ func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance, log
 		return 3 * time.Minute, nil
 	}
 	if err != nil {
-		return 0, errors.Wrapf(err, "while geting URL from director")
+		return 0, errors.Wrapf(err, "while getting URL from director")
 	}
 
-	instance.DashboardURL = dashboardURL
-	err = s.instanceStorage.Update(*instance)
-	if err != nil {
-		log.Errorf("cannot update instance: %s", err)
-		return 10 * time.Second, nil
+	if instance.DashboardURL != dashboardURL {
+		return 0, errors.Errorf("dashboard URL from instance %s is not equal to dashboard URL from director %s", instance.DashboardURL, dashboardURL)
 	}
 
 	return 0, nil
@@ -227,6 +227,18 @@ func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOp
 	}
 
 	// action #2
+	tags, operation, repeat, err := s.createTagsForRuntime(operation, instance)
+	if err != nil || repeat != 0 {
+		log.Errorf("while adding Tags to Evaluation: %s", err)
+		return operation, repeat, nil
+	}
+	operation, repeat, err = s.internalEvalUpdater.AddTagsToEval(tags, operation, "", log)
+	if err != nil || repeat != 0 {
+		log.Errorf("while adding Tags to Evaluation: %s", err)
+		return operation, repeat, nil
+	}
+
+	// action #3
 	repeat, err = s.iasType.ConfigureType(operation, instance.DashboardURL, log)
 	if err != nil || repeat != 0 {
 		return operation, repeat, nil
@@ -242,4 +254,29 @@ func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOp
 	}
 
 	return s.operationManager.OperationSucceeded(operation, msg)
+}
+
+func (s *InitialisationStep) createTagsForRuntime(operation internal.ProvisioningOperation, instance *internal.Instance) ([]*avs.Tag, internal.ProvisioningOperation, time.Duration, error) {
+
+	status, err := s.provisionerClient.RuntimeStatus(instance.GlobalAccountID, operation.RuntimeID)
+	if err != nil {
+		return []*avs.Tag{}, operation, 1 * time.Minute, err
+	}
+
+	result := []*avs.Tag{
+		{
+			Content:    ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Name),
+			TagClassId: s.internalEvalUpdater.avsConfig.GardenerShootNameTagClassId,
+		},
+		{
+			Content:    ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Seed),
+			TagClassId: s.internalEvalUpdater.avsConfig.GardenerSeedNameTagClassId,
+		},
+		{
+			Content:    ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Region),
+			TagClassId: s.internalEvalUpdater.avsConfig.RegionTagClassId,
+		},
+	}
+
+	return result, operation, 0 * time.Second, nil
 }

@@ -5,6 +5,8 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -36,6 +38,7 @@ type RuntimeInput struct {
 	hyperscalerInputProvider  HyperscalerInputProvider
 	optionalComponentsService OptionalComponentService
 	provisioningParameters    internal.ProvisioningParameters
+	shootName                 *string
 
 	componentsDisabler        ComponentsDisabler
 	enabledOptionalComponents map[string]struct{}
@@ -50,6 +53,11 @@ func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.Pr
 
 func (r *RuntimeInput) SetProvisioningParameters(params internal.ProvisioningParameters) internal.ProvisionerInputCreator {
 	r.provisioningParameters = params
+	return r
+}
+
+func (r *RuntimeInput) SetShootName(name string) internal.ProvisionerInputCreator {
+	r.shootName = &name
 	return r
 }
 
@@ -124,6 +132,10 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 			name:    "adding random string to runtime name",
 			execute: r.addRandomStringToRuntimeName,
 		},
+		{
+			name:    "setting two nodes for runtimes without eval profile",
+			execute: r.setMoreNodesForRuntimesWithoutEvalProfile,
+		},
 	} {
 		if err := step.execute(); err != nil {
 			return gqlschema.ProvisionRuntimeInput{}, errors.Wrapf(err, "while %s", step.name)
@@ -172,6 +184,7 @@ func (r *RuntimeInput) applyProvisioningParameters() error {
 	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMin, params.AutoScalerMin)
 	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax, params.AutoScalerMax)
 	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.VolumeSizeGb, params.VolumeSizeGb)
+	updateString(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Name, r.shootName)
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Region, params.Region)
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.MachineType, params.MachineType)
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.TargetSecret, params.TargetSecret)
@@ -287,6 +300,14 @@ func (r *RuntimeInput) addRandomStringToRuntimeName() error {
 	}
 	r.provisionRuntimeInput.RuntimeInput.Name =
 		fmt.Sprintf("%s-%s", r.provisionRuntimeInput.RuntimeInput.Name, randomString(trialSuffixLength))
+	return nil
+}
+
+func (r *RuntimeInput) setMoreNodesForRuntimesWithoutEvalProfile() error {
+	if r.provisionRuntimeInput.KymaConfig.Version < "1.18.0" && broker.IsTrialPlan(r.provisioningParameters.PlanID) {
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMin = 2
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax = 2
+	}
 	return nil
 }
 

@@ -263,6 +263,14 @@ spec:
                 secretKeyRef:
                   key: parentId
                   name: {{ .Values.avs.secretName }}
+            - name: APP_AVS_ADDITIONAL_TAGS_ENABLED
+              value: "{{ .Values.avs.additionalTagsEnabled }}"
+            - name: APP_AVS_GARDENER_SHOOT_NAME_TAG_CLASS_ID
+              value: "{{ .Values.avs.gardenerShootNameTagClassId }}"
+            - name: APP_AVS_GARDENER_SEED_NAME_TAG_CLASS_ID
+              value: "{{ .Values.avs.gardenerSeedNameTagClassId }}"
+            - name: APP_AVS_REGION_TAG_CLASS_ID
+              value: "{{ .Values.avs.regionTagClassId }}"
             - name: APP_KYMA_VERSION
               value: {{ .Values.kymaVersion }}
             - name: APP_ENABLE_ON_DEMAND_VERSION
@@ -273,6 +281,8 @@ spec:
               value: /config/trialRegionMapping.yaml
             - name: APP_GARDENER_PROJECT
               value: {{ .Values.gardener.project }}
+            - name: APP_GARDENER_SHOOT_DOMAIN
+              value: "{{ .Values.gardener.shootDomain }}"
             - name: APP_GARDENER_KUBECONFIG_PATH
               value: {{ .Values.gardener.kubeconfigPath }}
             - name: APP_PROVISIONING_KUBERNETES_VERSION

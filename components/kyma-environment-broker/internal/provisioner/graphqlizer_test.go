@@ -133,6 +133,7 @@ func Test_GardenerConfigInputToGraphQL(t *testing.T) {
 	// given
 	sut := Graphqlizer{}
 	exp := `{
+		name: "c-90a3016",
 		kubernetesVersion: "1.18",
 		volumeSizeGB: 50,
 		machineType: "Standard_D4_v3",
@@ -148,7 +149,9 @@ func Test_GardenerConfigInputToGraphQL(t *testing.T) {
 	}`
 
 	// when
+	name := "c-90a3016"
 	got, err := sut.GardenerConfigInputToGraphQL(gqlschema.GardenerConfigInput{
+		Name:              &name,
 		Region:            "europe",
 		VolumeSizeGb:      50,
 		WorkerCidr:        "10.250.0.0/19",
@@ -168,6 +171,7 @@ func Test_GardenerConfigInputToGraphQLWithMachineImage(t *testing.T) {
 	// given
 	sut := Graphqlizer{}
 	exp := `{
+		name: "c-90a3016",
 		kubernetesVersion: "1.18",
 		volumeSizeGB: 50,
 		machineType: "Standard_D4_v3",
@@ -185,7 +189,9 @@ func Test_GardenerConfigInputToGraphQLWithMachineImage(t *testing.T) {
 	}`
 
 	// when
+	name := "c-90a3016"
 	got, err := sut.GardenerConfigInputToGraphQL(gqlschema.GardenerConfigInput{
+		Name:                &name,
 		Region:              "europe",
 		VolumeSizeGb:        50,
 		WorkerCidr:          "10.250.0.0/19",

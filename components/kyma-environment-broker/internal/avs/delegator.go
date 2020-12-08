@@ -7,7 +7,6 @@ import (
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-
 	"github.com/sirupsen/logrus"
 )
 
@@ -79,6 +78,37 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 	}
 
 	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.Avs.AvsEvaluationInternalId)
+
+	return updatedOperation, d, nil
+}
+
+func (del *Delegator) AddTags(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant, tags []*Tag) (internal.ProvisioningOperation, time.Duration, error) {
+	logger.Infof("starting the AddTag to avs internal id [%d]", operation.Avs.AvsEvaluationInternalId)
+	var updatedOperation internal.ProvisioningOperation
+	d := 0 * time.Second
+
+	logger.Infof("making avs calls to add tags to the Evaluation")
+	evalId := evalAssistant.GetEvaluationId(operation.Avs)
+
+	for _, tag := range tags {
+		_, err := del.client.AddTag(evalId, tag)
+		switch {
+		case err == nil:
+		case kebError.IsTemporaryError(err):
+			errMsg := "cannot add tags to AVS evaluation (temporary)"
+			logger.Errorf("%s: %s", errMsg, err)
+			retryConfig := evalAssistant.provideRetryConfig()
+			op, duration, err := del.operationManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
+			return op, duration, err
+		default:
+			errMsg := "cannot add tags to AVS evaluation"
+			logger.Errorf("%s: %s", errMsg, err)
+			op, duration, err := del.operationManager.OperationFailed(operation, errMsg)
+			return op, duration, err
+		}
+	}
+
+	updatedOperation, d = del.operationManager.UpdateOperation(operation)
 
 	return updatedOperation, d, nil
 }

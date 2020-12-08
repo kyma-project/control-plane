@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
-
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
@@ -28,12 +27,11 @@ func NewClient(ctx context.Context, avsConfig Config, log logrus.FieldLogger) (*
 	return &Client{
 		avsConfig: avsConfig,
 		log:       log,
-
-		ctx: ctx,
+		ctx:       ctx,
 	}, nil
 }
 
-func (c *Client) CreateEvaluation(evaluationRequest *BasicEvaluationCreateRequest) (_ *BasicEvaluationCreateResponse, err error) {
+func (c *Client) CreateEvaluation(evaluationRequest *BasicEvaluationCreateRequest) (*BasicEvaluationCreateResponse, error) {
 	var responseObject BasicEvaluationCreateResponse
 
 	objAsBytes, err := json.Marshal(evaluationRequest)
@@ -60,6 +58,39 @@ func (c *Client) CreateEvaluation(evaluationRequest *BasicEvaluationCreateReques
 	err = json.NewDecoder(response.Body).Decode(&responseObject)
 	if err != nil {
 		return nil, errors.Wrap(err, "while decode create evaluation response")
+	}
+
+	return &responseObject, nil
+}
+
+func (c *Client) AddTag(evaluationID int64, tag *Tag) (*BasicEvaluationCreateResponse, error) {
+	var responseObject BasicEvaluationCreateResponse
+
+	objAsBytes, err := json.Marshal(tag)
+	if err != nil {
+		return &responseObject, errors.Wrap(err, "while marshaling AddTag request")
+	}
+	absoluteURL := appendId(c.avsConfig.ApiEndpoint, evaluationID)
+
+	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/tag", absoluteURL), bytes.NewReader(objAsBytes))
+	if err != nil {
+		return &responseObject, errors.Wrap(err, "while creating AddTag request")
+	}
+	request.Header.Set("Content-Type", "application/json")
+
+	response, err := c.execute(request, false, true)
+	if err != nil {
+		return &responseObject, errors.Wrap(err, "while executing AddTag request")
+	}
+	defer func() {
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing AddTag response")
+		}
+	}()
+
+	err = json.NewDecoder(response.Body).Decode(&responseObject)
+	if err != nil {
+		return nil, errors.Wrap(err, "while decode AddTag response")
 	}
 
 	return &responseObject, nil

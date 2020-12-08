@@ -180,6 +180,7 @@ type simpleInputCreator struct {
 	overrides         map[string][]*gqlschema.ConfigEntryInput
 	labels            map[string]string
 	enabledComponents []string
+	shootName         *string
 }
 
 func (c *simpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionerInputCreator {
@@ -189,6 +190,11 @@ func (c *simpleInputCreator) EnableOptionalComponent(name string) internal.Provi
 
 func (c *simpleInputCreator) SetLabel(key, val string) internal.ProvisionerInputCreator {
 	c.labels[key] = val
+	return c
+}
+
+func (c *simpleInputCreator) SetShootName(name string) internal.ProvisionerInputCreator {
+	c.shootName = &name
 	return c
 }
 
