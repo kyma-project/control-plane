@@ -94,6 +94,7 @@ type Config struct {
 
 	KymaVersion                          string
 	EnableOnDemandVersion                bool `envconfig:"default=false"`
+	DisableEvaluationProfile             bool `envconfig:"default=true"`
 	ManagedRuntimeComponentsYAMLFilePath string
 	DefaultRequestRegion                 string `envconfig:"default=cf-eu10"`
 
@@ -200,7 +201,7 @@ func main() {
 	regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)
 	fatalOnError(err)
 	logs.Infof("Platform region mapping for trial: %v", regions)
-	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider, cfg.Provisioning, cfg.KymaVersion, regions)
+	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider, cfg.Provisioning, cfg.KymaVersion, regions, cfg.DisableEvaluationProfile)
 	fatalOnError(err)
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
