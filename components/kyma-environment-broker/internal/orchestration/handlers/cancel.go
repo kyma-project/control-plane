@@ -1,10 +1,7 @@
 package handlers
 
 import (
-	"fmt"
 	"time"
-
-	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 
 	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -30,11 +27,8 @@ func (c *Canceler) CancelForID(orchestrationID string) error {
 	if err != nil {
 		return errors.Wrap(err, "while getting orchestration")
 	}
-	if o.State == orchestrationExt.Canceled {
+	if o.IsFinished() || o.State == orchestrationExt.Canceled {
 		return nil
-	}
-	if o.IsFinished() {
-		return apiErrors.NewBadRequest(fmt.Sprintf("orchestration %s has finished state %s, unable to cancel", orchestrationID, o.State))
 	}
 
 	o.UpdatedAt = time.Now()

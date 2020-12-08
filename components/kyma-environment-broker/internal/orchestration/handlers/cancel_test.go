@@ -6,7 +6,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/api/errors"
 
 	"testing"
 	"time"
@@ -50,23 +49,6 @@ func TestCanceler_CancelForID(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.True(t, isCanceled)
-	})
-	t.Run("already finished", func(t *testing.T) {
-		s := storage.NewMemoryStorage()
-		o := fixOrchestration()
-		o.State = orchestration.Succeeded
-		err := s.Orchestrations().Insert(o)
-		require.NoError(t, err)
-
-		c := NewCanceler(s.Orchestrations(), logrus.New())
-
-		err = c.CancelForID(fixOrchestrationID)
-		require.Error(t, err)
-		assert.True(t, errors.IsBadRequest(err))
-
-		isCanceled, err := isCanceled(s.Orchestrations())
-		require.NoError(t, err)
-		assert.False(t, isCanceled)
 	})
 	t.Run("should return error when orchestration not found", func(t *testing.T) {
 		s := storage.NewMemoryStorage()
