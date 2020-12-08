@@ -76,7 +76,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 		Timeout:                     time.Minute,
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"})
+	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, false)
 	require.NoError(t, err)
 
 	ctx, _ := context.WithTimeout(context.Background(), 20*time.Minute)
