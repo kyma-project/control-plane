@@ -3,14 +3,12 @@ package azure
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/client-go/util/workqueue"
 
 	"github.com/kyma-project/control-plane/components/metris/internal/edp"
 	"github.com/kyma-project/control-plane/components/metris/internal/gardener"
@@ -47,73 +45,6 @@ var (
 func TestNewAzureProvider(t *testing.T) {
 	p := NewAzureProvider(providerConfig)
 	assert.Implements(t, (*provider.Provider)(nil), p, "")
-}
-
-func TestAzure_processInstance(t *testing.T) {
-	type fields struct {
-		config           *provider.Config
-		instanceStorage  storage.Storage
-		vmCapsStorage    storage.Storage
-		queue            workqueue.RateLimitingInterface
-		ClientAuthConfig AuthConfig
-	}
-	type args struct {
-		workerlogger log.Logger
-		instance     *Instance
-		ctx          context.Context
-		getMetric    metricsGetter
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   bool
-	}{
-		// TODO: Add test cases.
-		{
-			name: "bla",
-			fields: fields{
-				config:          &provider.Config{},
-				instanceStorage: storage.NewMemoryStorage("clusters"),
-				vmCapsStorage:   storage.NewMemoryStorage("vm_capabilities"),
-				queue: func() workqueue.RateLimitingInterface {
-					ratelimiter := workqueue.NewItemExponentialFailureRateLimiter(time.Second, 5*time.Second)
-					return workqueue.NewNamedRateLimitingQueue(ratelimiter, "clients")
-				}(),
-			},
-			args: args{
-				workerlogger: log.Named("bla"),
-				instance:     &Instance{},
-				ctx:          nil,
-				getMetric: func(_ context.Context, _ log.Logger, instance *Instance, _ *vmCapabilities, _ time.Duration, _ time.Duration) (*EventData, error) {
-					return &EventData{}, autorest.DetailedError{
-						Original:     nil,
-						PackageType:  "",
-						Method:       "",
-						StatusCode:   http.StatusNotFound,
-						Message:      "",
-						ServiceError: nil,
-						Response:     nil,
-					}
-				},
-			},
-			want: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			a := &Azure{
-				config:           tt.fields.config,
-				instanceStorage:  tt.fields.instanceStorage,
-				vmCapsStorage:    tt.fields.vmCapsStorage,
-				queue:            tt.fields.queue,
-				ClientAuthConfig: tt.fields.ClientAuthConfig,
-			}
-			if got := a.processInstance(tt.args.workerlogger, tt.args.instance, tt.args.ctx, tt.args.getMetric); got != tt.want {
-				t.Errorf("processInstance() = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }
 
 func Test_processError(t *testing.T) {
@@ -278,7 +209,7 @@ func Test_processError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			eventData, throttled, instanceDeleted := processError(tt.args.workerlogger, tt.args.instance, tt.args.eventData, tt.args.err, tt.args.maxRetries, tt.args.instanceStorage)
+			eventData, throttled, instanceDeleted := processError(context.Background(), tt.args.workerlogger, tt.args.instance, tt.args.eventData, tt.args.err, tt.args.maxRetries, tt.args.instanceStorage)
 			if !reflect.DeepEqual(eventData, tt.want.eventData) {
 				t.Errorf("eventData got = %#v, want %#v", eventData, tt.want.eventData)
 			}
