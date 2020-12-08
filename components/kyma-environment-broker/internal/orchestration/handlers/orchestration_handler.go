@@ -48,7 +48,7 @@ func NewOrchestrationStatusHandler(operations storage.Operations, orchestrations
 func (h *orchestrationHandler) AttachRoutes(router *mux.Router) {
 	router.HandleFunc("/orchestrations", h.listOrchestration).Methods(http.MethodGet)
 	router.HandleFunc("/orchestrations/{orchestration_id}", h.getOrchestration).Methods(http.MethodGet)
-	router.HandleFunc("/orchestrations/{orchestration_id}/canceled", h.cancelOrchestrationByID).Methods(http.MethodPut)
+	router.HandleFunc("/orchestrations/{orchestration_id}/cancel", h.cancelOrchestrationByID).Methods(http.MethodPut)
 	router.HandleFunc("/orchestrations/{orchestration_id}/operations", h.listOperations).Methods(http.MethodGet)
 	router.HandleFunc("/orchestrations/{orchestration_id}/operations/{operation_id}", h.getOperation).Methods(http.MethodGet)
 }

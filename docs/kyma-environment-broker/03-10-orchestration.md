@@ -5,15 +5,15 @@ type: Details
 
 Orchestration is a mechanism that allows you to upgrade Kyma Runtimes. To create an orchestration, [follow this tutorial](#tutorials-orchestrate-kyma-upgrade). After sending the request, the orchestration is processed by `KymaUpgradeManager`. It lists Shoots (Kyma Runtimes) in the Gardener cluster and narrows them to the IDs that you have specified in the request body. Then, `KymaUpgradeManager` performs the [upgrade steps](#details-runtime-operations) logic on the selected Runtimes.
 
-If Kyma Environment Broker is restarted, it reprocesses the orchestration with the `IN PROGRESS` state.
+If Kyma Environment Broker is restarted, it reprocesses the orchestration with the `CANCELING`, `IN PROGRESS`, and `PENDING` state.
 
 >**NOTE:** You need an OIDC ID token in the JWT format issued by a (configurable) OIDC provider which is trusted by Kyma Environment Broker. The `groups` claim must be present in the token, and furthermore the user must belong to the configurable admin group (`runtimeAdmin` by default) to create an orchestration. To fetch the orchestrations, the user must belong to the configurable operator group (`runtimeOperator` by default).
 
 Orchestration API consist of the following handlers:
 
 - `GET /orchestrations` - exposes data about all orchestrations.
-- `GET /orchestrations/{orchestration_id}` - exposes status of a single orchestration.
-- `PUT /orchestrations/{orchestration_id}/canceled` - cancels the orchestration with a given ID that is in progress or pending.
+- `GET /orchestrations/{orchestration_id}` - exposes the status of a single orchestration.
+- `PUT /orchestrations/{orchestration_id}/cancel` - cancels the orchestration with a given ID that is in progress or pending.
 - `GET /orchestrations/{orchestration_id}/operations` - exposes data about operations scheduled by the orchestration with a given ID.
 - `GET /orchestrations/{orchestration_id}/operations/{operation_id}` - exposes the detailed data about a single operation with a given ID.
 - `POST /upgrade/kyma` - schedules the orchestration. It requires specifying a request body.
@@ -46,8 +46,6 @@ The example strategy configuration looks as follows:
 
 ## Cancelation
 
-You can cancel any orchestration that is in progress or pending using the `PUT /orchestrations/{orchestration_id}/canceled` endpoint described above.
-
-After you cancel an orchestration, KEB sets its state to `Canceled`. An orchestration with such a state does not schedule any new operations. 
-
-To provide consistency, a canceled orchestration waits for already processed operations to finish. When operations are finished, the orchestration is canceled and the next orchestration from the queue is processed.
+You can cancel any orchestration that is in progress or pending using the `PUT /orchestrations/{orchestration_id}/cancel` endpoint. 
+After you cancel an orchestration, KEB sets its state to `Canceling`. An orchestration with such a state does not schedule any new operations.
+To provide consistency, a canceled orchestration waits for already processed operations to finish. When operations are finished, the processed orchestration's state is set to `Canceled` and the next orchestration from the queue is start to being processed.

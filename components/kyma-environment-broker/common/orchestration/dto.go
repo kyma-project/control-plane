@@ -22,9 +22,10 @@ const (
 const (
 	Pending    = "pending"
 	InProgress = "in progress"
+	Canceling  = "canceling"
+	Canceled   = "canceled"
 	Succeeded  = "succeeded"
 	Failed     = "failed"
-	Canceled   = "canceled"
 )
 
 // ListParameters hold attributes of list orchestrations / operations queries.

@@ -27,13 +27,13 @@ func (c *Canceler) CancelForID(orchestrationID string) error {
 	if err != nil {
 		return errors.Wrap(err, "while getting orchestration")
 	}
-	if o.IsFinished() || o.State == orchestrationExt.Canceled {
+	if o.IsFinished() || o.State == orchestrationExt.Canceling {
 		return nil
 	}
 
 	o.UpdatedAt = time.Now()
 	o.Description = "Orchestration was canceled"
-	o.State = orchestrationExt.Canceled
+	o.State = orchestrationExt.Canceling
 	err = c.orchestrations.Update(*o)
 	if err != nil {
 		return errors.Wrap(err, "while updating orchestration")

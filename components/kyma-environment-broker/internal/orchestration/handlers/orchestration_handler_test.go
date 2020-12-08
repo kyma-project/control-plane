@@ -174,7 +174,7 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 		logs := logrus.New()
 		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), 100, logs)
 
-		req, err := http.NewRequest("PUT", fmt.Sprintf("/orchestrations/%s/canceled", fixID), nil)
+		req, err := http.NewRequest("PUT", fmt.Sprintf("/orchestrations/%s/cancel", fixID), nil)
 		require.NoError(t, err)
 
 		rr := httptest.NewRecorder()
@@ -195,6 +195,6 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 
 		o, err := db.Orchestrations().GetByID(fixID)
 		require.NoError(t, err)
-		assert.Equal(t, o.State, orchestration.Canceled)
+		assert.Equal(t, orchestration.Canceling, o.State)
 	})
 }

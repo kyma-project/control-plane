@@ -144,7 +144,7 @@ type Orchestration struct {
 }
 
 func (o *Orchestration) IsFinished() bool {
-	return o.State == orchestration.Succeeded || o.State == orchestration.Failed
+	return o.State == orchestration.Succeeded || o.State == orchestration.Failed || o.State == orchestration.Canceled
 }
 
 type InstanceWithOperation struct {
@@ -386,7 +386,7 @@ func (do *UpgradeKymaOperation) SetProvisioningParameters(parameters Provisionin
 }
 
 func (o *Operation) IsFinished() bool {
-	return o.State != domain.InProgress && o.State != orchestration.Pending
+	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceled
 }
 
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput

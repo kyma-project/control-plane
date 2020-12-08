@@ -28,10 +28,27 @@ func TestCanceler_CancelForID(t *testing.T) {
 		err = c.CancelForID(fixOrchestrationID)
 		require.NoError(t, err)
 
-		isCanceled, err := isCanceled(s.Orchestrations())
+		isCanceling, err := isCanceling(s.Orchestrations())
 		require.NoError(t, err)
 
-		assert.True(t, isCanceled)
+		assert.True(t, isCanceling)
+	})
+	t.Run("already canceling", func(t *testing.T) {
+		s := storage.NewMemoryStorage()
+		o := fixOrchestration()
+		o.State = orchestration.Canceling
+		err := s.Orchestrations().Insert(o)
+		require.NoError(t, err)
+
+		c := NewCanceler(s.Orchestrations(), logrus.New())
+
+		err = c.CancelForID(fixOrchestrationID)
+		require.NoError(t, err)
+
+		isCanceling, err := isCanceling(s.Orchestrations())
+		require.NoError(t, err)
+
+		assert.True(t, isCanceling)
 	})
 	t.Run("already canceled", func(t *testing.T) {
 		s := storage.NewMemoryStorage()
@@ -45,10 +62,10 @@ func TestCanceler_CancelForID(t *testing.T) {
 		err = c.CancelForID(fixOrchestrationID)
 		require.NoError(t, err)
 
-		isCanceled, err := isCanceled(s.Orchestrations())
+		isCanceling, err := isCanceling(s.Orchestrations())
 		require.NoError(t, err)
 
-		assert.True(t, isCanceled)
+		assert.False(t, isCanceling)
 	})
 	t.Run("should return error when orchestration not found", func(t *testing.T) {
 		s := storage.NewMemoryStorage()
@@ -59,12 +76,12 @@ func TestCanceler_CancelForID(t *testing.T) {
 	})
 }
 
-func isCanceled(s storage.Orchestrations) (bool, error) {
+func isCanceling(s storage.Orchestrations) (bool, error) {
 	o, err := s.GetByID(fixOrchestrationID)
 	if err != nil {
 		return false, err
 	}
-	if o.State == orchestration.Canceled {
+	if o.State == orchestration.Canceling {
 		return true, nil
 	}
 	return false, nil

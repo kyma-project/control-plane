@@ -446,7 +446,7 @@ func processOperationsInProgressByType(opType dbmodel.OperationType, op storage.
 }
 
 func reprocessOrchestrations(orchestrationsStorage storage.Orchestrations, operationsStorage storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
-	if err := processCanceledOrchestration(orchestrationsStorage, operationsStorage, queue, log); err != nil {
+	if err := processCancelingOrchestrations(orchestrationsStorage, operationsStorage, queue, log); err != nil {
 		return errors.Wrap(err, "while processing canceled orchestrations")
 	}
 	if err := processOrchestration(orchestrationExt.InProgress, orchestrationsStorage, queue, log); err != nil {
@@ -474,12 +474,12 @@ func processOrchestration(state string, orchestrationsStorage storage.Orchestrat
 	return nil
 }
 
-// processCanceledOrchestration reprocess canceled orchestrations only when some in progress operations exists
-// reprocess only one orchestration to not clog up the orchestration queue
-func processCanceledOrchestration(orchestrationsStorage storage.Orchestrations, operationsStorage storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
-	orchestrations, err := orchestrationsStorage.ListByState(orchestrationExt.Canceled)
+// processCancelingOrchestrations reprocess orchestrations with canceling state only when some in progress operations exists
+// reprocess only one orchestration to not clog up the orchestration queue on start
+func processCancelingOrchestrations(orchestrationsStorage storage.Orchestrations, operationsStorage storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
+	orchestrations, err := orchestrationsStorage.ListByState(orchestrationExt.Canceling)
 	if err != nil {
-		return errors.Wrap(err, "while getting canceled orchestrations from storage")
+		return errors.Wrap(err, "while getting canceling orchestrations from storage")
 	}
 	sort.Slice(orchestrations, func(i, j int) bool {
 		return orchestrations[i].CreatedAt.Before(orchestrations[j].CreatedAt)
@@ -491,8 +491,8 @@ func processCanceledOrchestration(orchestrationsStorage storage.Orchestrations, 
 			return errors.Wrapf(err, "while listing upgrade kyma operations for orchestration %s", o.OrchestrationID)
 		}
 		if len(ops) > 0 {
+			log.Infof("Resuming the processing of %s orchestration ID: %s", orchestrationExt.Canceling, o.OrchestrationID)
 			queue.Add(o.OrchestrationID)
-			log.Infof("Resuming the processing of %s orchestration ID: %s", orchestrationExt.Canceled, o.OrchestrationID)
 			return nil
 		}
 	}

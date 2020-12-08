@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	commonOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -40,7 +40,7 @@ func (h *kymaHandler) AttachRoutes(router *mux.Router) {
 }
 
 func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request) {
-	params := commonOrchestration.Parameters{}
+	params := orchestration.Parameters{}
 
 	if r.Body != nil {
 		err := json.NewDecoder(r.Body).Decode(&params)
@@ -63,7 +63,7 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 	now := time.Now()
 	o := internal.Orchestration{
 		OrchestrationID: uuid.New().String(),
-		State:           commonOrchestration.Pending,
+		State:           orchestration.Pending,
 		Description:     "started processing of Kyma upgrade",
 		Parameters:      params,
 		CreatedAt:       now,
@@ -79,7 +79,7 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 
 	h.queue.Add(o.OrchestrationID)
 
-	response := commonOrchestration.UpgradeResponse{OrchestrationID: o.OrchestrationID}
+	response := orchestration.UpgradeResponse{OrchestrationID: o.OrchestrationID}
 
 	httputil.WriteResponse(w, http.StatusAccepted, response)
 }
@@ -94,28 +94,28 @@ func (h *kymaHandler) resolveErrorStatus(err error) int {
 	}
 }
 
-func (h *kymaHandler) validateTarget(spec commonOrchestration.TargetSpec) error {
+func (h *kymaHandler) validateTarget(spec orchestration.TargetSpec) error {
 	if spec.Include == nil || len(spec.Include) == 0 {
 		return errors.New("targets.include array must be not empty")
 	}
 	return nil
 }
 
-func (h *kymaHandler) defaultOrchestrationStrategy(spec *commonOrchestration.StrategySpec) {
+func (h *kymaHandler) defaultOrchestrationStrategy(spec *orchestration.StrategySpec) {
 	if spec.Parallel.Workers == 0 {
 		spec.Parallel.Workers = 1
 	}
 
 	switch spec.Type {
-	case commonOrchestration.ParallelStrategy:
+	case orchestration.ParallelStrategy:
 	default:
-		spec.Type = commonOrchestration.ParallelStrategy
+		spec.Type = orchestration.ParallelStrategy
 	}
 
 	switch spec.Schedule {
-	case commonOrchestration.MaintenanceWindow:
-	case commonOrchestration.Immediate:
+	case orchestration.MaintenanceWindow:
+	case orchestration.Immediate:
 	default:
-		spec.Schedule = commonOrchestration.Immediate
+		spec.Schedule = orchestration.Immediate
 	}
 }

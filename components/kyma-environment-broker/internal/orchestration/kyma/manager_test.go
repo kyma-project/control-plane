@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -126,7 +125,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				UpdatedAt:              time.Now(),
 				InstanceID:             "",
 				ProvisionerOperationID: "",
-				State:                  domain.Succeeded,
+				State:                  orchestration.Succeeded,
 				Description:            "operation created",
 			},
 			RuntimeOperation: orchestration.RuntimeOperation{
@@ -176,7 +175,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		id := "id"
 		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
-			State:           orchestration.Canceled,
+			State:           orchestration.Canceling,
 			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
 				Type:     orchestration.ParallelStrategy,
 				Schedule: orchestration.Immediate,

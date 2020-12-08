@@ -63,8 +63,8 @@ func (s *InitialisationStep) Name() string {
 
 func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if operation.State == orchestrationExt.Canceled {
-		log.Infof("Skipping processing because orchestration %s was cancelled", operation.OrchestrationID)
-		return s.operationManager.OperationCanceled(operation, fmt.Sprintf("orchestration %s was cancelled", operation.OrchestrationID))
+		log.Infof("Skipping processing because orchestration %s was canceled", operation.OrchestrationID)
+		return s.operationManager.OperationCanceled(operation, fmt.Sprintf("orchestration %s was canceled", operation.OrchestrationID))
 	}
 	if operation.State == orchestrationExt.Pending {
 		operation.State = orchestrationExt.InProgress

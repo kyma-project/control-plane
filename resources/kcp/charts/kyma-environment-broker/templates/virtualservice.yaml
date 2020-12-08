@@ -55,7 +55,7 @@ spec:
       allowHeaders:
       - Authorization
       - Content-Type
-      allowMethods: ["GET"]
+      allowMethods: ["GET", "PUT"]
       allowOrigin: ["*"]
     match:
     - uri:
