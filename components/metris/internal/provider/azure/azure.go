@@ -203,6 +203,8 @@ func processError(ctx context.Context, workerlogger log.Logger, instance *Instan
 			span.Annotate(nil, "Status not found")
 			if strings.Contains(errdetail.Original.Error(), ResponseErrCodeResourceGroupNotFound) {
 				span.Annotate(nil, "ResourceGroup not found")
+				span.Annotate(nil, "rate limiting")
+				rateLimited = true
 				instance.retryAttempts++
 				if instance.retryAttempts < maxRetries {
 					instanceStorage.Put(instance.cluster.TechnicalID, instance)
@@ -220,6 +222,7 @@ func processError(ctx context.Context, workerlogger log.Logger, instance *Instan
 
 		case http.StatusTooManyRequests:
 			span.Annotate(nil, "Status too many requests")
+			span.Annotate(nil, "rate limiting")
 			workerlogger.With("error", err).Warn("received \"StatusTooManyRequests\", throttling")
 			rateLimited = true
 

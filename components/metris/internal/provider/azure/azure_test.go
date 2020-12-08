@@ -164,7 +164,7 @@ func Test_processError(t *testing.T) {
 				},
 				want: want{
 					eventData: nil,
-					throttled: false,
+					throttled: true,
 					instance: &Instance{
 						lastEvent:     nil,
 						retryAttempts: 1,
@@ -197,10 +197,43 @@ func Test_processError(t *testing.T) {
 				want: want{
 					instanceDeleted: true,
 					eventData:       &EventData{},
-					throttled:       false,
+					throttled:       true,
 					instance: &Instance{
 						lastEvent:     nil,
 						retryAttempts: 1,
+						cluster:       testCluster,
+					},
+				},
+			}
+		}(),
+		func() test {
+			instanceStorage := storage.NewMemoryStorage("clusters")
+			instance := &Instance{
+				lastEvent:     &EventData{},
+				retryAttempts: 0,
+				cluster:       testCluster,
+			}
+			instanceStorage.Put(testInstance.cluster.TechnicalID, instance)
+
+			return test{
+				name: "not found error",
+				args: args{
+					workerlogger:    noopLogger,
+					instanceStorage: instanceStorage,
+					err: autorest.DetailedError{
+						StatusCode: 404,
+						Original:   fmt.Errorf("BLA"),
+					},
+					instance:   instance,
+					maxRetries: 1,
+				},
+				want: want{
+					instanceDeleted: false,
+					eventData:       &EventData{},
+					throttled:       false,
+					instance: &Instance{
+						lastEvent:     &EventData{},
+						retryAttempts: 0,
 						cluster:       testCluster,
 					},
 				},
