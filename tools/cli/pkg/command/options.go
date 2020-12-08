@@ -79,7 +79,7 @@ func SetGlobalOpts(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(GlobalOpts.gardenerKubeconfig, "", "Path to the kubeconfig file of the corresponding Gardener project which has permissions to list/get Shoots. Can also be set using the KCP_GARDENER_KUBECONFIG environment variable.")
 	viper.BindPFlag(GlobalOpts.gardenerKubeconfig, cmd.PersistentFlags().Lookup(GlobalOpts.gardenerKubeconfig))
 
-	cmd.PersistentFlags().String(GlobalOpts.gardenerNamespace, "", "Gardener namespace (project) to use. Can also be set using the KCP_GARDENER_NAMESPACE environment variable.")
+	cmd.PersistentFlags().String(GlobalOpts.gardenerNamespace, "", "Gardener Namespace (project) to use. Can also be set using the KCP_GARDENER_NAMESPACE environment variable.")
 	viper.BindPFlag(GlobalOpts.gardenerNamespace, cmd.PersistentFlags().Lookup(GlobalOpts.gardenerNamespace))
 }
 

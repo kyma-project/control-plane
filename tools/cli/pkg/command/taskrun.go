@@ -38,21 +38,25 @@ type TaskRunCommand struct {
 	taskCommand         *exec.Cmd
 }
 
+// RuntimeLister implements the interface to obtains runtimes info from KEB for resolver
 type RuntimeLister struct {
 	client runtime.Client
 }
 
+// RuntimeTask is the runtime operation executed by RuntimeTaskMakager via strategy.
 type RuntimeTask struct {
 	operation orchestration.RuntimeOperation
 	result    error
 }
 
+// RuntimeTaskMakager implements Executor interface needed by strategy to execute the runtime task operations.
 type RuntimeTaskMakager struct {
 	cmd              *TaskRunCommand
 	tasks            map[string]*RuntimeTask
 	kubeconfigClient client.Client
 }
 
+// TaskRunError represents failure in task execution for one or more runtimes
 type TaskRunError struct {
 	failed int
 	total  int
@@ -96,8 +100,8 @@ For each subprocess, the following Runtime-specific data are passed as environme
 	cobraCmd.Flags().IntVarP(&cmd.parallelism, "parallelism", "p", 4, "Number of parallel commands to execute.")
 	cobraCmd.Flags().StringVar(&cmd.kubeconfigDir, "kubeconfig-dir", "", "Directory to download Runtime kubeconfig files to. By default, it is a random-generated directory in the OS-specific default temporary directory (e.g. /tmp in Linux).")
 	cobraCmd.Flags().BoolVar(&cmd.keepKubeconfigs, "keep-kubeconfig", false, "Option that allows you to keep downloaded kubeconfig files after execution for caching purposes.")
-	cobraCmd.Flags().BoolVar(&cmd.noKubeconfig, "no-kubeconfig", false, "Option to turn off the downloading and exposure of kubeconfig for each runtime.")
-	cobraCmd.Flags().BoolVar(&cmd.noPrefixOutput, "no-prefix-output", false, "Option to omit prefixing each output line with the Runtime name. By default, all output lines are prepended for better traceability.")
+	cobraCmd.Flags().BoolVar(&cmd.noKubeconfig, "no-kubeconfig", false, "Option that turns off the downloading and exposure of the kubeconfig file for each Runtime.")
+	cobraCmd.Flags().BoolVar(&cmd.noPrefixOutput, "no-prefix-output", false, "Option that omits the prefixing of each output line with the Runtime name. By default, all output lines are prepended for better traceability.")
 	return cobraCmd
 }
 
@@ -209,10 +213,12 @@ func (cmd *TaskRunCommand) cleanupTempKubeConfigDir() error {
 	return err
 }
 
+// NewRuntimeLister constructs a RuntimeLister with the given runtime.Client
 func NewRuntimeLister(client runtime.Client) *RuntimeLister {
 	return &RuntimeLister{client: client}
 }
 
+// ListAllRuntimes fetches all runtimes from KEB using the runtime client
 func (rl RuntimeLister) ListAllRuntimes() ([]runtime.RuntimeDTO, error) {
 	res, err := rl.client.ListRuntimes(runtime.ListParameters{})
 	if err != nil {
@@ -222,6 +228,7 @@ func (rl RuntimeLister) ListAllRuntimes() ([]runtime.RuntimeDTO, error) {
 	return res.Data, nil
 }
 
+// NewRuntimeTaskMakager constructs a new RuntimeTaskMakager for the given runtime operations
 func NewRuntimeTaskMakager(cmd *TaskRunCommand, operations []orchestration.RuntimeOperation) *RuntimeTaskMakager {
 	mgr := &RuntimeTaskMakager{
 		cmd:              cmd,
@@ -237,6 +244,7 @@ func NewRuntimeTaskMakager(cmd *TaskRunCommand, operations []orchestration.Runti
 	return mgr
 }
 
+// Execute runs the task on the runtime identified by the operationID
 func (mgr *RuntimeTaskMakager) Execute(operationID string) (time.Duration, error) {
 	task := mgr.tasks[operationID]
 	log := mgr.cmd.log.WithField("shoot", task.operation.ShootName)
