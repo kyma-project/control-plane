@@ -317,6 +317,8 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: APP_VERSION_CONFIG_NAME
               value: "kyma-versions"
+            - name: APP_DISABLE_EVALUATION_PROFILE
+              value: "{{ .Values.disableEvaluationProfile }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}
