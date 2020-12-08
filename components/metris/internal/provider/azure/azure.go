@@ -129,6 +129,13 @@ func (a *Azure) Run(ctx context.Context) {
 type metricsGetter func(context.Context, log.Logger, *Instance, *vmCapabilities, time.Duration, time.Duration) (*EventData, error)
 
 func (a *Azure) processInstance(workerlogger log.Logger, instance *Instance, ctx context.Context, getMetrics metricsGetter) bool {
+	if tracing.IsEnabled() {
+		var span *trace.Span
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/processInstance")
+		defer span.End()
+
+		workerlogger = workerlogger.With("traceID", span.SpanContext().TraceID).With("spanID", span.SpanContext().SpanID)
+	}
 
 	vmcaps := make(vmCapabilities)
 
@@ -152,7 +159,7 @@ func (a *Azure) processInstance(workerlogger log.Logger, instance *Instance, ctx
 
 	if err != nil {
 		errorOccurred = true
-		eventData, rateLimited, instanceDeleted = processError(workerlogger, instance, eventData, err, a.config.MaxRetries, a.instanceStorage)
+		eventData, rateLimited, instanceDeleted = processError(ctx, workerlogger, instance, eventData, err, a.config.MaxRetries, a.instanceStorage)
 	}
 
 	if !errorOccurred {
@@ -160,7 +167,7 @@ func (a *Azure) processInstance(workerlogger log.Logger, instance *Instance, ctx
 		a.instanceStorage.Put(instance.cluster.TechnicalID, instance)
 	}
 	if eventData != nil {
-		if err := a.sendMetrics(workerlogger, instance, eventData); err != nil {
+		if err := a.sendMetrics(ctx, workerlogger, instance, eventData); err != nil {
 			workerlogger.With("error", err).Error("error parsing metric information, could not send eventData to EDP")
 		}
 		if !instanceDeleted {
@@ -170,7 +177,12 @@ func (a *Azure) processInstance(workerlogger log.Logger, instance *Instance, ctx
 	return rateLimited
 }
 
-func processError(workerlogger log.Logger, instance *Instance, eventData *EventData, err error, maxRetries int, instanceStorage storage.Storage) (*EventData, bool, bool) {
+func processError(ctx context.Context, workerlogger log.Logger, instance *Instance, eventData *EventData, err error, maxRetries int, instanceStorage storage.Storage) (*EventData, bool, bool) {
+	var span *trace.Span
+	if tracing.IsEnabled() {
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/processError")
+		defer span.End()
+	}
 	eventData = instance.lastEvent
 	workerlogger.With("error", err).Error("could not get metrics, using information from cache")
 	if eventData == nil {
@@ -188,13 +200,16 @@ func processError(workerlogger log.Logger, instance *Instance, eventData *EventD
 		// the delete eventData or metris did not yet remove it from its cache.
 		// Start retry attempt, then remove from storage if it reach max attempt.
 		case http.StatusNotFound:
+			span.Annotate(nil, "Status not found")
 			if strings.Contains(errdetail.Original.Error(), ResponseErrCodeResourceGroupNotFound) {
+				span.Annotate(nil, "ResourceGroup not found")
 				instance.retryAttempts++
 				if instance.retryAttempts < maxRetries {
 					instanceStorage.Put(instance.cluster.TechnicalID, instance)
 					workerlogger.Warnf("can't find resource group in azure, attempts: %d/%d", instance.retryAttempts, maxRetries)
 					workerlogger.With("error", err).Warnf("resource group not found, retrying later")
 				} else {
+					span.Annotatef(nil, "Deleting cluster %v", instance.cluster.TechnicalID)
 					instanceStorage.Delete(instance.cluster.TechnicalID)
 					workerlogger.Warnf("removing cluster after %d attempts", maxRetries)
 					isDeleted = true
@@ -204,10 +219,12 @@ func processError(workerlogger log.Logger, instance *Instance, eventData *EventD
 			}
 
 		case http.StatusTooManyRequests:
+			span.Annotate(nil, "Status too many requests")
 			workerlogger.With("error", err).Warn("received \"StatusTooManyRequests\", throttling")
 			rateLimited = true
 
 		default:
+			span.Annotate(nil, "other error")
 			workerlogger.With("error", err).Warn("check error")
 		}
 
@@ -368,7 +385,12 @@ func getMetricsFromAzure(parentctx context.Context, workerlogger log.Logger, ins
 }
 
 // sendMetrics - send events to EDP.
-func (a *Azure) sendMetrics(workerlogger log.Logger, instance *Instance, eventData *EventData) error {
+func (a *Azure) sendMetrics(ctx context.Context, workerlogger log.Logger, instance *Instance, eventData *EventData) error {
+	if tracing.IsEnabled() {
+		var span *trace.Span
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/sendMetrics")
+		defer span.End()
+	}
 	eventDataRaw, err := json.Marshal(&eventData)
 	if err != nil {
 		return err
