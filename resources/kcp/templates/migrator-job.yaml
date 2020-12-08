@@ -15,8 +15,10 @@ spec:
             labels:
                 app: {{ .Chart.Name }}
                 release: {{ .Release.Name }}
+            {{if eq .Values.global.database.embedded.enabled false}}
             annotations:
                 sidecar.istio.io/inject: "false"
+            {{end}}
         spec:
             restartPolicy: Never
             shareProcessNamespace: true
@@ -100,8 +102,10 @@ spec:
             labels:
                 app: {{ .Chart.Name }}
                 release: {{ .Release.Name }}
+            {{if eq .Values.global.database.embedded.enabled false}}
             annotations:
                 sidecar.istio.io/inject: "false"
+            {{end}}
         spec:
             restartPolicy: Never
             shareProcessNamespace: true
