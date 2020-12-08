@@ -159,7 +159,7 @@ func Test_processError(t *testing.T) {
 						StatusCode: 404,
 						Original:   fmt.Errorf(ResponseErrCodeResourceGroupNotFound),
 					},
-					instance: testInstance,
+					instance:   testInstance,
 					maxRetries: 5,
 				},
 				want: want{
