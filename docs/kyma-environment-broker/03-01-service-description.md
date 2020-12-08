@@ -103,7 +103,7 @@ Trial plan allows you to install Kyma either on Azure or GCP. The Trial plan ass
 - Kyma is uninstalled after 30 days and the Kyma cluster is deprovisioned after this time.
 - It's possible to provision only one Kyma Runtime per global account.
 
-To reduce the costs, the Trial plan skips some of the [provisioning steps](./03-03-runtime-provisioning-and-deprovisioning.md#provisioning).
+To reduce the costs, the Trial plan skips some of the [provisioning steps](./03-03-runtime-operations.md#provisioning).
 These are the steps that are skipped during the Trial plan provisioning:
 - `Create_LMS_Tenant`
 - `Provision_Azure_Event_Hubs`
