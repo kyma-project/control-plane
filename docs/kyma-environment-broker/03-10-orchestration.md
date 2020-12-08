@@ -13,7 +13,7 @@ Orchestration API consist of the following handlers:
 
 - `GET /orchestrations` - exposes data about all orchestrations.
 - `GET /orchestrations/{orchestration_id}` - exposes status of a single orchestration.
-- `PUT /orchestrations/{orchestration_id}/canceled` - cancels in progress or pending orchestration with a given ID.
+- `PUT /orchestrations/{orchestration_id}/canceled` - cancels the orchestration with a given ID that is in progress or pending.
 - `GET /orchestrations/{orchestration_id}/operations` - exposes data about operations scheduled by the orchestration with a given ID.
 - `GET /orchestrations/{orchestration_id}/operations/{operation_id}` - exposes the detailed data about a single operation with a given ID.
 - `POST /upgrade/kyma` - schedules the orchestration. It requires specifying a request body.
@@ -44,10 +44,10 @@ The example strategy configuration looks as follows:
 }
 ```
 
-## Cancellation
+## Cancelation
 
-You may cancel any in progress orchestration using one of two DELETE endpoints described above.
+You can cancel any orchestration that is in progress or pending using the `PUT /orchestrations/{orchestration_id}/canceled` endpoint described above.
 
-After you cancel an orchestration, the KEB sets its state to `Canceled`. Orchestration with such state is not scheduling any new operations. Every pending operation in case of cancel are also marked with `Canceled` state.
+After you cancel an orchestration, KEB sets its state to `Canceled`. An orchestration with such a state does not schedule any new operations. 
 
-To provide consistency, cancelled orchestration waits for already processed operations to finish. When operations are finished the orchestration queue processing becomes unblocked.
+To provide consistency, a canceled orchestration waits for already processed operations to finish. When operations are finished, the orchestration is canceled and the next orchestration from the queue is processed.
