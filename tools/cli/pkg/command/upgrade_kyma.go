@@ -16,12 +16,8 @@ type UpgradeKymaCommand struct {
 }
 
 // NewUpgradeKymaCmd constructs a new instance of UpgradeKymaCommand and configures it in terms of a cobra.Command
-func NewUpgradeKymaCmd(log logger.Logger) *cobra.Command {
-	cmd := UpgradeKymaCommand{
-		UpgradeCommand: UpgradeCommand{
-			log: log,
-		},
-	}
+func NewUpgradeKymaCmd() *cobra.Command {
+	cmd := UpgradeKymaCommand{UpgradeCommand: UpgradeCommand{}}
 	cobraCmd := &cobra.Command{
 		Use:   "kyma --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...]",
 		Short: "Upgrades or reconfigures Kyma on one or more Kyma Runtimes.",
@@ -44,6 +40,7 @@ The Kyma version and configurations to use for the upgrade are taken from Kyma C
 
 // Run executes the upgrade kyma command
 func (cmd *UpgradeKymaCommand) Run() error {
+	cmd.log = logger.New()
 	client := orchestration.NewClient(cmd.cobraCmd.Context(), GlobalOpts.KEBAPIURL(), CLICredentialManager(cmd.log))
 	ur, err := client.UpgradeKyma(cmd.orchestrationParams)
 	if err != nil {

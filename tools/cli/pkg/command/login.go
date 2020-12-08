@@ -16,8 +16,8 @@ type LoginCommand struct {
 }
 
 // NewLoginCmd constructs a new instance of LoginCommand and configures it in terms of a cobra.Command
-func NewLoginCmd(log logger.Logger) *cobra.Command {
-	cmd := LoginCommand{log: log}
+func NewLoginCmd() *cobra.Command {
+	cmd := LoginCommand{}
 	cobraCmd := &cobra.Command{
 		Use:     "login",
 		Aliases: []string{"l"},
@@ -37,6 +37,7 @@ Service accounts can execute the resource owner credentials flow by specifying t
 
 // Run executes the login command
 func (cmd *LoginCommand) Run() error {
+	cmd.log = logger.New()
 	cred := CLICredentialManager(cmd.log)
 	var err error
 	if cmd.username == "" {

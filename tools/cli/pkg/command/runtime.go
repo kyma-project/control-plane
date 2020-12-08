@@ -50,8 +50,8 @@ var tableColumns = []printer.Column{
 }
 
 // NewRuntimeCmd constructs a new instance of RuntimeCommand and configures it in terms of a cobra.Command
-func NewRuntimeCmd(log logger.Logger) *cobra.Command {
-	cmd := RuntimeCommand{log: log}
+func NewRuntimeCmd() *cobra.Command {
+	cmd := RuntimeCommand{}
 	cobraCmd := &cobra.Command{
 		Use:     "runtimes",
 		Aliases: []string{"runtime", "rt"},
@@ -78,6 +78,7 @@ The command supports filtering Runtimes based on various attributes. See the lis
 
 // Run executes the runtimes command
 func (cmd *RuntimeCommand) Run() error {
+	cmd.log = logger.New()
 	client := runtime.NewClient(cmd.cobraCmd.Context(), GlobalOpts.KEBAPIURL(), CLICredentialManager(cmd.log))
 
 	rp, err := client.ListRuntimes(cmd.params)

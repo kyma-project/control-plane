@@ -15,7 +15,7 @@ import (
 var Version string = "N/A"
 
 // New constructs a new root command for the kcp CLI.
-func New(log logger.Logger) *cobra.Command {
+func New() *cobra.Command {
 	cobra.OnInitialize(initConfig)
 	description := fmt.Sprintf(`KCP CLI (Kyma Control Plane CLI) is a day-two operations tool for Kyma Runtimes, which allows you to view and manage the Runtimes in scale.
 It is possible to list and observe attributes and state of each Kyma Runtime, and perform various operations on them, such as upgrading the Kyma version.
@@ -45,16 +45,16 @@ See the **Global Options** section of each command for the description of these 
 
 	cmd.PersistentFlags().StringVar(&configPath, "config", os.Getenv(configEnv), "Path to the KCP CLI config file. Can also be set using the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml .")
 	SetGlobalOpts(cmd)
-	log.AddFlags(cmd.PersistentFlags())
+	logger.AddFlags(cmd.PersistentFlags())
 	cmd.PersistentFlags().BoolP("help", "h", false, "Option that displays help for the CLI.")
 
 	cmd.AddCommand(
-		NewLoginCmd(log),
-		NewRuntimeCmd(log),
-		NewOrchestrationCmd(log),
-		NewKubeconfigCmd(log),
-		NewUpgradeCmd(log),
-		NewTaskRunCmd(log),
+		NewLoginCmd(),
+		NewRuntimeCmd(),
+		NewOrchestrationCmd(),
+		NewKubeconfigCmd(),
+		NewUpgradeCmd(),
+		NewTaskRunCmd(),
 	)
 	return cmd
 }
