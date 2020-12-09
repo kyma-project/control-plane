@@ -194,7 +194,7 @@ func processError(ctx context.Context, workerlogger log.Logger, instance *Instan
 
 		switch errdetail.StatusCode {
 		// Check if the error is a resource group not found, then it would mean
-						// that the cluster may have been deleted, and gardener did not trigger
+		// that the cluster may have been deleted, and gardener did not trigger
 		// the delete event or metris did not yet remove it from its cache.
 		// Start retry attempt, then remove from storage if it reach max attempt.
 		case http.StatusNotFound:

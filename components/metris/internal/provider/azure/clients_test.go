@@ -23,9 +23,10 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
-	"github.com/kyma-project/control-plane/components/metris/internal/provider/azure/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/kyma-project/control-plane/components/metris/internal/provider/azure/mocks"
 )
 
 var (
@@ -744,7 +745,7 @@ func Test_client_getMetricValues(t *testing.T) {
 		urlEscape("%s?%s", rguri, novalueparams):  novalueList,
 		urlEscape("%s?%s", rguri, notsparams):     notsList,
 		urlEscape("%s?%s", rguri, notsdataparams): notsdatalist,
-	}components/metris/internal/provider/azure/instance.go)
+	})
 	defer s.Close()
 
 	authConfig := setupMockAuthConfig(t, s.URL)
