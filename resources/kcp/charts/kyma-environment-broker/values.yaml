@@ -74,7 +74,7 @@ kymaVersionOnDemand: "false"
 
 enablePlans: "azure,gcp,azure_lite,trial"
 
-disableEvaluationProfile: "true"
+setTwoNodesForEvaluationProfile: "true"
 
 gardener:
   project: "kyma-dev" # Gardener project connected to SA for HAP credentials lookup

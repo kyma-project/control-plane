@@ -43,7 +43,7 @@ type RuntimeInput struct {
 	componentsDisabler        ComponentsDisabler
 	enabledOptionalComponents map[string]struct{}
 
-	disableEvaluationProfile bool
+	set2Nodes bool
 }
 
 func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
@@ -135,8 +135,8 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 			execute: r.addRandomStringToRuntimeName,
 		},
 		{
-			name:    "disable eval profile",
-			execute: r.disableEvalProfile,
+			name:    "set 2 nodes for eval profile",
+			execute: r.set2NodesForEvalProfile,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -305,9 +305,9 @@ func (r *RuntimeInput) addRandomStringToRuntimeName() error {
 	return nil
 }
 
-func (r *RuntimeInput) disableEvalProfile() error {
+func (r *RuntimeInput) set2NodesForEvalProfile() error {
 	if broker.IsTrialPlan(r.provisioningParameters.PlanID) || broker.IsAzureLitePlan(r.provisioningParameters.PlanID) {
-		if r.disableEvaluationProfile {
+		if r.set2Nodes {
 			r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMin = 2
 			r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax = 2
 		}
