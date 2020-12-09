@@ -22,6 +22,8 @@ const (
 const (
 	Pending    = "pending"
 	InProgress = "in progress"
+	Canceling  = "canceling"
+	Canceled   = "canceled"
 	Succeeded  = "succeeded"
 	Failed     = "failed"
 )

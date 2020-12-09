@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -126,7 +125,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				UpdatedAt:              time.Now(),
 				InstanceID:             "",
 				ProvisionerOperationID: "",
-				State:                  domain.Succeeded,
+				State:                  orchestration.Succeeded,
 				Description:            "operation created",
 			},
 			RuntimeOperation: orchestration.RuntimeOperation{
@@ -145,10 +144,11 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		givenO := internal.Orchestration{
 			OrchestrationID: id,
 			State:           orchestration.InProgress,
-			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
-				Type:     orchestration.ParallelStrategy,
-				Schedule: orchestration.Immediate,
-			}},
+			Parameters: orchestration.Parameters{
+				Strategy: orchestration.StrategySpec{
+					Type:     orchestration.ParallelStrategy,
+					Schedule: orchestration.Immediate,
+				}},
 		}
 		err = store.Orchestrations().Insert(givenO)
 		require.NoError(t, err)
@@ -163,7 +163,49 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, orchestration.Succeeded, o.State)
+	})
 
+	t.Run("Canceled", func(t *testing.T) {
+		// given
+		store := storage.NewMemoryStorage()
+
+		resolver := &automock.RuntimeResolver{}
+		defer resolver.AssertExpectations(t)
+
+		id := "id"
+		err := store.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: id,
+			State:           orchestration.Canceling,
+			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
+				Type:     orchestration.ParallelStrategy,
+				Schedule: orchestration.Immediate,
+			}},
+		})
+
+		require.NoError(t, err)
+		err = store.Operations().InsertUpgradeKymaOperation(internal.UpgradeKymaOperation{
+			Operation: internal.Operation{
+				ID:              id,
+				OrchestrationID: id,
+				State:           orchestration.Pending,
+			},
+		})
+
+		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), &testExecutor{}, resolver, poolingInterval, logrus.New())
+
+		// when
+		_, err = svc.Execute(id)
+		require.NoError(t, err)
+
+		o, err := store.Orchestrations().GetByID(id)
+		require.NoError(t, err)
+
+		assert.Equal(t, orchestration.Canceled, o.State)
+
+		op, err := store.Operations().GetUpgradeKymaOperationByID(id)
+		require.NoError(t, err)
+
+		assert.Equal(t, orchestration.Canceled, string(op.State))
 	})
 }
 

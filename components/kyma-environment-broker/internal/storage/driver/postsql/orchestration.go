@@ -10,17 +10,17 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-type orchestration struct {
+type orchestrations struct {
 	dbsession.Factory
 }
 
-func NewOrchestrations(sess dbsession.Factory) *orchestration {
-	return &orchestration{
+func NewOrchestrations(sess dbsession.Factory) *orchestrations {
+	return &orchestrations{
 		Factory: sess,
 	}
 }
 
-func (s *orchestration) Insert(orchestration internal.Orchestration) error {
+func (s *orchestrations) Insert(orchestration internal.Orchestration) error {
 	_, err := s.GetByID(orchestration.OrchestrationID)
 	if err == nil {
 		return dberr.AlreadyExists("orchestration with id %s already exist", orchestration.OrchestrationID)
@@ -42,7 +42,7 @@ func (s *orchestration) Insert(orchestration internal.Orchestration) error {
 	})
 }
 
-func (s *orchestration) GetByID(orchestrationID string) (*internal.Orchestration, error) {
+func (s *orchestrations) GetByID(orchestrationID string) (*internal.Orchestration, error) {
 	sess := s.NewReadSession()
 	orchestration := internal.Orchestration{}
 	var lastErr error
@@ -65,7 +65,7 @@ func (s *orchestration) GetByID(orchestrationID string) (*internal.Orchestration
 	return &orchestration, nil
 }
 
-func (s *orchestration) List(filter dbmodel.OrchestrationFilter) ([]internal.Orchestration, int, int, error) {
+func (s *orchestrations) List(filter dbmodel.OrchestrationFilter) ([]internal.Orchestration, int, int, error) {
 	sess := s.NewReadSession()
 	var (
 		orchestrations    = make([]internal.Orchestration, 0)
@@ -98,7 +98,7 @@ func (s *orchestration) List(filter dbmodel.OrchestrationFilter) ([]internal.Orc
 	return orchestrations, count, totalCount, nil
 }
 
-func (s *orchestration) Update(orchestration internal.Orchestration) error {
+func (s *orchestrations) Update(orchestration internal.Orchestration) error {
 	dto, err := dbmodel.NewOrchestrationDTO(orchestration)
 	if err != nil {
 		return errors.Wrapf(err, "while converting Orchestration to DTO")
@@ -123,7 +123,7 @@ func (s *orchestration) Update(orchestration internal.Orchestration) error {
 	return nil
 }
 
-func (s *orchestration) ListByState(state string) ([]internal.Orchestration, error) {
+func (s *orchestrations) ListByState(state string) ([]internal.Orchestration, error) {
 	sess := s.NewReadSession()
 	var (
 		lastErr error

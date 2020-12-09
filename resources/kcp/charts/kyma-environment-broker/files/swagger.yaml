@@ -86,6 +86,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/errObj'
 
+  /orchestrations/{orchestration_id}/cancel:
+    put:
+      summary: Cancels a given in progress or pending orchestration
+      operationId: cancelByID
+      description: |
+        Cancels a given in progress or pending orchestration
+      parameters:
+        - in: path
+          name: orchestration_id
+          required: true
+          schema:
+            type: string
+          description: Orchestration ID
+      responses:
+        '200':
+          description: returns Orchestration ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpgradeResponse'
+        '404':
+          description: Orchestration doesn't exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errObj'
+
   /orchestrations/{orchestration_id}/operations:
     get:
       summary: Returns a list of operations scheduled by the orchestration

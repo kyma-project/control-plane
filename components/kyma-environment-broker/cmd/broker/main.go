@@ -402,7 +402,7 @@ func main() {
 		fatalOnError(err)
 		err = processOperationsInProgressByType(dbmodel.OperationTypeDeprovision, db.Operations(), deprovisionQueue, logs)
 		fatalOnError(err)
-		err = reprocessOrchestrations(db.Orchestrations(), kymaQueue, logs)
+		err = reprocessOrchestrations(db.Orchestrations(), db.Operations(), kymaQueue, logs)
 		fatalOnError(err)
 	} else {
 		logger.Info("Skipping processing operation in progress on start")
@@ -446,20 +446,23 @@ func processOperationsInProgressByType(opType dbmodel.OperationType, op storage.
 	return nil
 }
 
-func reprocessOrchestrations(op storage.Orchestrations, queue *process.Queue, log logrus.FieldLogger) error {
-	if err := processOrchestration(orchestrationExt.InProgress, op, queue, log); err != nil {
+func reprocessOrchestrations(orchestrationsStorage storage.Orchestrations, operationsStorage storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
+	if err := processCancelingOrchestrations(orchestrationsStorage, operationsStorage, queue, log); err != nil {
+		return errors.Wrap(err, "while processing canceled orchestrations")
+	}
+	if err := processOrchestration(orchestrationExt.InProgress, orchestrationsStorage, queue, log); err != nil {
 		return errors.Wrap(err, "while processing in progress orchestrations")
 	}
-	if err := processOrchestration(orchestrationExt.Pending, op, queue, log); err != nil {
+	if err := processOrchestration(orchestrationExt.Pending, orchestrationsStorage, queue, log); err != nil {
 		return errors.Wrap(err, "while processing pending orchestrations")
 	}
 	return nil
 }
 
-func processOrchestration(state string, op storage.Orchestrations, queue *process.Queue, log logrus.FieldLogger) error {
-	orchestrations, err := op.ListByState(state)
+func processOrchestration(state string, orchestrationsStorage storage.Orchestrations, queue *process.Queue, log logrus.FieldLogger) error {
+	orchestrations, err := orchestrationsStorage.ListByState(state)
 	if err != nil {
-		return errors.Wrap(err, "while getting in progress orchestrations from storage")
+		return errors.Wrapf(err, "while getting %s orchestrations from storage", state)
 	}
 	sort.Slice(orchestrations, func(i, j int) bool {
 		return orchestrations[i].CreatedAt.Before(orchestrations[j].CreatedAt)
@@ -468,6 +471,31 @@ func processOrchestration(state string, op storage.Orchestrations, queue *proces
 	for _, o := range orchestrations {
 		queue.Add(o.OrchestrationID)
 		log.Infof("Resuming the processing of %s orchestration ID: %s", state, o.OrchestrationID)
+	}
+	return nil
+}
+
+// processCancelingOrchestrations reprocess orchestrations with canceling state only when some in progress operations exists
+// reprocess only one orchestration to not clog up the orchestration queue on start
+func processCancelingOrchestrations(orchestrationsStorage storage.Orchestrations, operationsStorage storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
+	orchestrations, err := orchestrationsStorage.ListByState(orchestrationExt.Canceling)
+	if err != nil {
+		return errors.Wrap(err, "while getting canceling orchestrations from storage")
+	}
+	sort.Slice(orchestrations, func(i, j int) bool {
+		return orchestrations[i].CreatedAt.Before(orchestrations[j].CreatedAt)
+	})
+
+	for _, o := range orchestrations {
+		ops, _, _, err := operationsStorage.ListUpgradeKymaOperationsByOrchestrationID(o.OrchestrationID, dbmodel.OperationFilter{States: []string{orchestrationExt.InProgress}})
+		if err != nil {
+			return errors.Wrapf(err, "while listing upgrade kyma operations for orchestration %s", o.OrchestrationID)
+		}
+		if len(ops) > 0 {
+			log.Infof("Resuming the processing of %s orchestration ID: %s", orchestrationExt.Canceling, o.OrchestrationID)
+			queue.Add(o.OrchestrationID)
+			return nil
+		}
 	}
 	return nil
 }

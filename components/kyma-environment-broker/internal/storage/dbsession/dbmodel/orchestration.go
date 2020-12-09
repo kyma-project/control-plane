@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 )
 
 // OrchestrationFilter holds the filters when listing orchestrations

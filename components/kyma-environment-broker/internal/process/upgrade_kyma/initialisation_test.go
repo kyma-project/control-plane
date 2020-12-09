@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -21,6 +23,7 @@ import (
 
 const (
 	fixProvisioningOperationID = "17f3ddba-1132-466d-a3c5-920f544d7ea6"
+	fixOrchestrationID         = "fd5cee4d-0eeb-40d0-a7a7-0708eseba470"
 	fixUpgradeOperationID      = "fd5cee4d-0eeb-40d0-a7a7-0708e5eba470"
 	fixInstanceID              = "9d75a545-2e1e-4786-abd8-a37b14e185b9"
 	fixRuntimeID               = "ef4e3210-652c-453e-8015-bba1c1cd1e1c"
@@ -37,15 +40,15 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		provisioningOperation := fixProvisioningOperation(t)
 		err := memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		upgradeOperation := fixUpgradeKymaOperation(t)
 		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
 		err = memoryStorage.Instances().Insert(instance)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		provisionerClient := &provisionerAutomock.Client{}
 		provisionerClient.On("RuntimeOperationStatus", fixGlobalAccountID, fixProvisionerOperationID).Return(gqlschema.OperationStatus{
@@ -80,16 +83,16 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		provisioningOperation := fixProvisioningOperation(t)
 		err := memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		upgradeOperation := fixUpgradeKymaOperation(t)
 		upgradeOperation.ProvisionerOperationID = ""
 		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
 		err = memoryStorage.Instances().Insert(instance)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		provisionerClient := &provisionerAutomock.Client{}
 		inputBuilder := &automock.CreatorForPlan{}
@@ -98,7 +101,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 		rvc := &automock.RuntimeVersionConfiguratorForUpgrade{}
 		defer rvc.AssertExpectations(t)
 		expectedOperation := upgradeOperation
-		expectedOperation.Version++
+		expectedOperation.Version += 2
+		expectedOperation.State = orchestration.InProgress
 		rvc.On("ForUpgrade", expectedOperation).Return(ver, nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, inputBuilder, nil, rvc)
@@ -116,6 +120,36 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.Equal(t, op, *storedOp)
 		assert.NoError(t, err)
 	})
+
+	t.Run("should mark finish if operation was canceled", func(t *testing.T) {
+		// given
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
+
+		upgradeOperation := fixUpgradeKymaOperation(t)
+		upgradeOperation.State = orchestration.Canceled
+		err := memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		require.NoError(t, err)
+
+		provisioningOperation := fixProvisioningOperation(t)
+		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		require.NoError(t, err)
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), nil, nil, nil, nil)
+
+		// when
+		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, time.Duration(0), repeat)
+		assert.Equal(t, orchestration.Canceled, string(upgradeOperation.State))
+
+		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
+		assert.Equal(t, upgradeOperation, *storedOp)
+		assert.NoError(t, err)
+
+	})
 }
 
 func fixUpgradeKymaOperation(t *testing.T) internal.UpgradeKymaOperation {
@@ -125,7 +159,9 @@ func fixUpgradeKymaOperation(t *testing.T) internal.UpgradeKymaOperation {
 		Operation: internal.Operation{
 			ID:                     fixUpgradeOperationID,
 			InstanceID:             fixInstanceID,
+			OrchestrationID:        fixOrchestrationID,
 			ProvisionerOperationID: fixProvisionerOperationID,
+			State:                  orchestration.Pending,
 			Description:            "",
 			UpdatedAt:              n,
 		},

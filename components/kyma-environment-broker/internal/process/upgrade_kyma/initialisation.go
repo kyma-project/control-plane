@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+
+	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -25,7 +28,7 @@ const (
 
 type InitialisationStep struct {
 	operationManager       *process.UpgradeKymaOperationManager
-	operationStorage       storage.Provisioning
+	operationStorage       storage.Operations
 	instanceStorage        storage.Instances
 	provisionerClient      provisioner.Client
 	inputBuilder           input.CreatorForPlan
@@ -59,18 +62,33 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	if operation.State == orchestrationExt.Canceled {
+		log.Infof("Skipping processing because orchestration %s was canceled", operation.OrchestrationID)
+		return s.operationManager.OperationCanceled(operation, fmt.Sprintf("orchestration %s was canceled", operation.OrchestrationID))
+	}
+	if operation.State == orchestrationExt.Pending {
+		operation.State = orchestrationExt.InProgress
+
+		op, err := s.operationStorage.UpdateUpgradeKymaOperation(operation)
+		if err != nil {
+			log.Errorf("while updating operation: %v", err)
+			return operation, s.timeSchedule.Retry, nil
+		}
+		operation = *op
+	}
+
 	// rewrite necessary data from ProvisioningOperation to operation internal.UpgradeOperation
-	op, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
+	provisioningOperation, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
 	if err != nil {
 		log.Errorf("while getting provisioning operation from storage")
 		return operation, s.timeSchedule.Retry, nil
 	}
-	if op.State == domain.InProgress {
+	if provisioningOperation.State == domain.InProgress {
 		log.Info("waiting for provisioning operation to finish")
 		return operation, s.timeSchedule.UpgradeKymaTimeout, nil
 	}
 
-	parameters, err := op.GetProvisioningParameters()
+	parameters, err := provisioningOperation.GetProvisioningParameters()
 	if err != nil {
 		return s.operationManager.OperationFailed(operation, "cannot get provisioning parameters from operation")
 	}

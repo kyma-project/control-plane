@@ -100,7 +100,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 		gardenerNamespace, eventBroker, inputFactory, &upgrade_kyma.TimeSchedule{
 			Retry:              10 * time.Millisecond,
 			StatusCheck:        100 * time.Millisecond,
-			UpgradeKymaTimeout: 2 * time.Second,
+			UpgradeKymaTimeout: 4 * time.Second,
 		}, 250*time.Millisecond, runtimeVerConfigurator, defaultRegion, logs)
 
 	return &OrchestrationSuite{
@@ -254,10 +254,15 @@ func (s *OrchestrationSuite) CreateOrchestration(runtimeID string) string {
 }
 
 func (s *OrchestrationSuite) FinishUpgradeOperationByProvisioner(runtimeID string) {
-	status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, gqlschema.OperationTypeUpgrade)
-	if status.ID != nil {
-		s.provisionerClient.FinishProvisionerOperation(*status.ID)
-	}
+	err := wait.Poll(time.Millisecond*100, 15*time.Second, func() (bool, error) {
+		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, gqlschema.OperationTypeUpgrade)
+		if status.ID != nil {
+			s.provisionerClient.FinishProvisionerOperation(*status.ID)
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err, "timeout waiting for provisioner operation to exist")
 }
 
 func (s *OrchestrationSuite) WaitForOrchestrationState(orchestrationID string, state string) {
