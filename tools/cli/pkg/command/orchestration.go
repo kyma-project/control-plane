@@ -15,6 +15,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	cancelCommand     = "cancel"
+	operationsCommand = "operations"
+	opsCommand        = "ops"
+)
+
 // OrchestrationCommand represents an execution of the kcp orchestrations command
 type OrchestrationCommand struct {
 	cobraCmd   *cobra.Command
@@ -23,12 +29,8 @@ type OrchestrationCommand struct {
 	output     string
 	states     []string
 	operation  string
+	subCommand string
 	listParams orchestration.ListParameters
-}
-
-type orchestrationDetails struct {
-	Orchestration orchestration.StatusResponse        `json:"orchestration"`
-	Operations    orchestration.OperationResponseList `json:"operations"`
 }
 
 var cliStates = map[string]string{
@@ -127,14 +129,16 @@ func NewOrchestrationCmd() *cobra.Command {
 		Aliases: []string{"orchestration", "o"},
 		Short:   "Displays Kyma Control Plane (KCP) orchestrations.",
 		Long: `Displays KCP orchestrations and their primary attributes, such as identifiers, type, state, parameters, or Runtime operations.
-The command has two modes:
+The command has the following modes:
   - Without specifying an orchestration ID as an argument. In this mode, the command lists all orchestrations, or orchestrations matching the --state option, if provided.
   - When specifying an orchestration ID as an argument. In this mode, the command displays details about the specific orchestration.
-     If the optional --operation flag is provided, it displays details of the specified Runtime operation within the orchestration.`,
+      If the optional --operation flag is provided, it displays details of the specified Runtime operation within the orchestration.
+  - When specifying an orchestration ID, and ` + "`operations` or `ops`" + ` as arguments. In this mode, the command displays the Runtime operations for the given orchestration.`,
 		Example: `  kcp orchestrations --state inprogress                                   Display all orchestrations which are in progress.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                  Display details about a specific orchestration.
-  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified Runtime operation within the orchestration.`,
-		Args:    cobra.MaximumNArgs(1),
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified Runtime operation within the orchestration.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 operations       Display the operations of the given orchestration.`,
+		Args:    cobra.MaximumNArgs(2),
 		PreRunE: func(_ *cobra.Command, args []string) error { return cmd.Validate(args) },
 		RunE:    func(_ *cobra.Command, args []string) error { return cmd.Run(args) },
 	}
@@ -172,13 +176,28 @@ func (cmd *OrchestrationCommand) validateTransformOrchestrationStates() error {
 func (cmd *OrchestrationCommand) Run(args []string) error {
 	cmd.log = logger.New()
 	cmd.client = orchestration.NewClient(cmd.cobraCmd.Context(), GlobalOpts.KEBAPIURL(), CLICredentialManager(cmd.log))
-	if len(args) == 0 {
+
+	switch len(args) {
+	case 0:
+		// Called without any arguments: list orchestrations
 		return cmd.showOrchestrations()
-	} else if cmd.operation == "" {
-		return cmd.showOneOrchestration(args[0])
-	} else {
+	case 1:
+		// Called with orchestration ID but without subcommand
+		if cmd.operation == "" {
+			return cmd.showOneOrchestration(args[0])
+		}
 		return cmd.showOperationDetails(args[0])
+	case 2:
+		// Called with orchestration ID and subcommand
+		switch cmd.subCommand {
+		case cancelCommand:
+			return errors.New("not implemented")
+		case operationsCommand, opsCommand:
+			return cmd.showOperations(args[0])
+		}
 	}
+
+	return nil
 }
 
 // Validate checks the input parameters of the orchestrations command
@@ -198,6 +217,15 @@ func (cmd *OrchestrationCommand) Validate(args []string) error {
 	}
 	if cmd.operation != "" && len(cmd.states) > 0 {
 		return errors.New("--state should not be used together with --operation")
+	}
+
+	if len(args) == 2 {
+		cmd.subCommand = args[1]
+		switch cmd.subCommand {
+		case cancelCommand, operationsCommand, opsCommand:
+		default:
+			return fmt.Errorf("invalid subcommand: %s", cmd.subCommand)
+		}
 	}
 
 	return nil
@@ -229,10 +257,6 @@ func (cmd *OrchestrationCommand) showOneOrchestration(orchestrationID string) er
 	if err != nil {
 		return errors.Wrap(err, "while getting orchestration")
 	}
-	orl, err := cmd.client.ListOperations(orchestrationID, cmd.listParams)
-	if err != nil {
-		return errors.Wrap(err, "while listing operations")
-	}
 
 	switch cmd.output {
 	case tableOutput:
@@ -248,10 +272,24 @@ func (cmd *OrchestrationCommand) showOneOrchestration(orchestrationID string) er
 		if err != nil {
 			return errors.Wrap(err, "while printing orchestration details")
 		}
+	case jsonOutput:
+		jp := printer.NewJSONPrinter("  ")
+		jp.PrintObj(sr)
+	}
 
+	return nil
+}
+
+func (cmd *OrchestrationCommand) showOperations(orchestrationID string) error {
+	orl, err := cmd.client.ListOperations(orchestrationID, cmd.listParams)
+	if err != nil {
+		return errors.Wrap(err, "while listing operations")
+	}
+
+	switch cmd.output {
+	case tableOutput:
 		// Print operation table
 		if len(orl.Data) > 0 {
-			fmt.Println("\nRuntime Operations :")
 			tp, err := printer.NewTablePrinter(operationColumns, false)
 			if err != nil {
 				return err
@@ -259,12 +297,8 @@ func (cmd *OrchestrationCommand) showOneOrchestration(orchestrationID string) er
 			return tp.PrintObj(orl.Data)
 		}
 	case jsonOutput:
-		od := orchestrationDetails{
-			Orchestration: sr,
-			Operations:    orl,
-		}
 		jp := printer.NewJSONPrinter("  ")
-		jp.PrintObj(od)
+		jp.PrintObj(orl)
 	}
 
 	return nil
