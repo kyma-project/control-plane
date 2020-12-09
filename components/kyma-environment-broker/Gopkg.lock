@@ -701,7 +701,7 @@
   version = "v1.2"
 
 [[projects]]
-  digest = "1:a4a7e15e43bc64f5c551d18ed4b52a42a9636927ae6c77ac50eb6e0e06c0c380"
+  digest = "1:cc98755d16141bc0081d2bbc78393cede688f3276d7a561fa1651ae167dd0f2d"
   name = "github.com/pivotal-cf/brokerapi"
   packages = [
     "v7/domain",
@@ -711,8 +711,7 @@
     "v7/utils",
   ]
   pruneopts = "NUT"
-  revision = "c6d8338e2a6ae0313e16c8658f916bfdf2441f03"
-  version = "v7.1.0"
+  revision = "bd576b03a845f13ad564075efdd24d10b1f4703a"
 
 [[projects]]
   digest = "1:14715f705ff5dfe0ffd6571d7d201dd8e921030f8070321a79380d8ca4ec1a24"

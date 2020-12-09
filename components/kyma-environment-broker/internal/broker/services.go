@@ -58,22 +58,23 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 
 	return []domain.Service{
 		{
-			ID:          KymaServiceID,
-			Name:        KymaServiceName,
-			Description: "[EXPERIMENTAL] Service Class for Kyma Runtime",
-			Bindable:    true,
-			Plans:       availableServicePlans,
+			ID:                   KymaServiceID,
+			Name:                 KymaServiceName,
+			Description:          "[EXPERIMENTAL] Service Class for Kyma Runtime",
+			Bindable:             true,
+			InstancesRetrievable: true,
+			Tags: []string{
+				"SAP",
+				"Kyma",
+			},
+			Plans: availableServicePlans,
 			Metadata: &domain.ServiceMetadata{
 				DisplayName:         "Kyma Runtime",
 				LongDescription:     "Kyma Runtime experimental service class",
 				DocumentationUrl:    "kyma-project.io",
 				ProviderDisplayName: "SAP",
 			},
-			Tags: []string{
-				"SAP",
-				"Kyma",
-			},
-			InstancesRetrievable: true,
+			AllowContextUpdates: true,
 		},
 	}, nil
 }

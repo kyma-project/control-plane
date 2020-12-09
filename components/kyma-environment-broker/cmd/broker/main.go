@@ -401,7 +401,7 @@ func main() {
 		broker.NewServices(cfg.Broker, optComponentsSvc, logs),
 		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, plansValidator, cfg.EnableOnDemandVersion, logs),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
-		broker.NewUpdate(logs),
+		broker.NewUpdate(db.Instances(), logs),
 		broker.NewGetInstance(db.Instances(), logs),
 		broker.NewLastOperation(db.Operations(), db.Instances(), logs),
 		broker.NewBind(logs),
