@@ -157,7 +157,7 @@ func Test_processError(t *testing.T) {
 					instanceStorage: instanceStorage,
 					err: autorest.DetailedError{
 						StatusCode: 404,
-						Original:   fmt.Errorf(ResponseErrCodeResourceGroupNotFound),
+						Original:   fmt.Errorf(responseErrCodeResourceGroupNotFound),
 					},
 					instance:   testInstance,
 					maxRetries: 5,
@@ -189,7 +189,7 @@ func Test_processError(t *testing.T) {
 					instanceStorage: instanceStorage,
 					err: autorest.DetailedError{
 						StatusCode: 404,
-						Original:   fmt.Errorf(ResponseErrCodeResourceGroupNotFound),
+						Original:   fmt.Errorf(responseErrCodeResourceGroupNotFound),
 					},
 					instance:   instance,
 					maxRetries: 1,

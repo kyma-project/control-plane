@@ -781,12 +781,12 @@ func Test_client_getMetricValues(t *testing.T) {
 	t.Run("get metric with no timeseries error", func(t *testing.T) {
 		_, err := client.GetMetricValues(context.Background(), resourceURI, interval, []string{"NoTSMetric"}, aggregations, noopLogger)
 		asserts.Error(err)
-		asserts.True(errors.Is(err, ErrTimeseriesNotFound))
+		asserts.True(errors.Is(err, ErrTimeSeriesNotFound))
 	})
 
 	t.Run("get metric with no timeserie data error", func(t *testing.T) {
 		_, err := client.GetMetricValues(context.Background(), resourceURI, interval, []string{"NoTSDataMetric"}, aggregations, noopLogger)
 		asserts.Error(err)
-		asserts.True(errors.Is(err, ErrTimeseriesDataNotFound))
+		asserts.True(errors.Is(err, ErrTimeSeriesDataNotFound))
 	})
 }

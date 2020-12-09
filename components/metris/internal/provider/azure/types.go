@@ -23,8 +23,8 @@ var (
 	ErrResourceGroupNotFound  = errors.New("resource group not found")
 	ErrMetricClient           = errors.New("metric client error")
 	ErrMetricNotFound         = errors.New("no metric found")
-	ErrTimeseriesNotFound     = errors.New("no timeseries found")
-	ErrTimeseriesDataNotFound = errors.New("no timeserie data found")
+	ErrTimeSeriesNotFound     = errors.New("no time series found")
+	ErrTimeSeriesDataNotFound = errors.New("no time series data found")
 )
 
 const (
@@ -48,7 +48,7 @@ const (
 	// PT5M ...
 	PT5M TimeGrain = "PT5M"
 
-	ResponseErrCodeResourceGroupNotFound string = "ResourceGroupNotFound"
+	responseErrCodeResourceGroupNotFound string = "ResourceGroupNotFound"
 )
 
 // ResponseError represent the error message structure return by Azure REST API.

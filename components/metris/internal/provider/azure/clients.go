@@ -475,12 +475,12 @@ func (c *client) GetMetricValues(ctx context.Context, resourceURI, interval stri
 			ts := *metric.Timeseries
 
 			if len(ts) == 0 {
-				return nil, fmt.Errorf("%w: %s", ErrTimeseriesNotFound, fmt.Sprintf("metric %s at target %s", metricName, *metric.ID))
+				return nil, fmt.Errorf("%w: %s", ErrTimeSeriesNotFound, fmt.Sprintf("metric %s at target %s", metricName, *metric.ID))
 			}
 
 			tsdata := *ts[0].Data
 			if len(tsdata) == 0 {
-				return nil, fmt.Errorf("%w: %s", ErrTimeseriesDataNotFound, fmt.Sprintf("metric %s at target %s", metricName, *metric.ID))
+				return nil, fmt.Errorf("%w: %s", ErrTimeSeriesDataNotFound, fmt.Sprintf("metric %s at target %s", metricName, *metric.ID))
 			}
 
 			metricValue := tsdata[len(tsdata)-1]

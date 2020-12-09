@@ -171,6 +171,8 @@ func (a *Azure) processInstance(workerlogger log.Logger, instance *Instance, ctx
 		if !instanceDeleted {
 			a.instanceStorage.Put(instance.cluster.TechnicalID, instance)
 		}
+	} else {
+		workerlogger.With("error", err).Error("could not get metrics from cache, not sending to EDP")
 	}
 	return rateLimited
 }
@@ -183,9 +185,6 @@ func processError(ctx context.Context, workerlogger log.Logger, instance *Instan
 	}
 	eventData = instance.lastEvent
 	workerlogger.With("error", err).Error("could not get metrics, using information from cache")
-	if eventData == nil {
-		workerlogger.With("error", err).Error("could not get metrics from cache, dropping events because no cached information")
-	}
 
 	rateLimited := false
 	isDeleted := false
@@ -199,7 +198,7 @@ func processError(ctx context.Context, workerlogger log.Logger, instance *Instan
 		// Start retry attempt, then remove from storage if it reach max attempt.
 		case http.StatusNotFound:
 			span.Annotate(nil, "Status not found")
-			if strings.Contains(errdetail.Original.Error(), ResponseErrCodeResourceGroupNotFound) {
+			if strings.Contains(errdetail.Original.Error(), responseErrCodeResourceGroupNotFound) {
 				span.Annotate(nil, "ResourceGroup not found")
 				span.Annotate(nil, "rate limiting")
 				rateLimited = true
