@@ -90,7 +90,7 @@ func (a *Azure) Run(ctx context.Context) {
 
 				obj, ok := a.instanceStorage.Get(clusterid.(string))
 				if !ok {
-					workerlogger.Warn("cluster not found in storage, must have been instanceDeleted")
+					workerlogger.Warn("cluster not found in storage, must have been deleted")
 					a.queue.Done(clusterid)
 
 					continue
@@ -194,8 +194,8 @@ func processError(ctx context.Context, workerlogger log.Logger, instance *Instan
 
 		switch errdetail.StatusCode {
 		// Check if the error is a resource group not found, then it would mean
-		// that the cluster may have been instanceDeleted, and gardener did not trigger
-		// the delete eventData or metris did not yet remove it from its cache.
+						// that the cluster may have been deleted, and gardener did not trigger
+		// the delete event or metris did not yet remove it from its cache.
 		// Start retry attempt, then remove from storage if it reach max attempt.
 		case http.StatusNotFound:
 			span.Annotate(nil, "Status not found")
@@ -247,7 +247,7 @@ func (a *Azure) clusterHandler(parentctx context.Context) {
 
 			logger.Debug("received cluster from gardener controller")
 
-			// if cluster was flag as instanceDeleted, remove it from storage and exit.
+			// if cluster was flag as deleted, remove it from storage and exit.
 			if cluster.Deleted {
 				logger.Info("removing cluster from storage")
 
@@ -282,7 +282,7 @@ func (a *Azure) clusterHandler(parentctx context.Context) {
 
 				if rg, err := instance.client.GetResourceGroup(parentctx, "", filter, logger); err != nil {
 					if !cluster.Trial {
-						logger.Warnf("could not find a resource group for eventData hub, cluster may not be ready, retrying in %s: %s", a.config.PollInterval, err)
+						logger.Warnf("could not find a resource group for event hub, cluster may not be ready, retrying in %s: %s", a.config.PollInterval, err)
 						time.AfterFunc(a.config.PollInterval, func() { a.config.ClusterChannel <- cluster })
 
 						continue
@@ -342,7 +342,7 @@ func getMetricsFromAzure(parentctx context.Context, workerlogger log.Logger, ins
 
 	// Using a timeout context to prevent azure api to hang for too long,
 	// sometimes client get stuck waiting even with a max poll duration is set.
-	// If it reach the time limit, last successful eventData data will be returned.
+	// If it reach the time limit, last successful event data will be returned.
 	ctx, cancel := context.WithTimeout(parentctx, pollingDuration)
 	defer cancel()
 
@@ -397,7 +397,7 @@ func (a *Azure) sendMetrics(ctx context.Context, workerlogger log.Logger, instan
 		return err
 	}
 
-	// save a copy of the eventData data in case of error next time
+	// save a copy of the event data in case of error next time
 	instance.lastEvent = eventData
 
 	eventDataJSON := json.RawMessage(eventDataRaw)
@@ -407,7 +407,7 @@ func (a *Azure) sendMetrics(ctx context.Context, workerlogger log.Logger, instan
 		Data:       &eventDataJSON,
 	}
 
-	workerlogger.Debug("sending eventData to EDP")
+	workerlogger.Debug("sending event to EDP")
 
 	a.config.EventsChannel <- &eventBuffer
 

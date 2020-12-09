@@ -103,7 +103,7 @@ type Instance struct {
 	cluster *gardener.Cluster
 	// client holds the Azure base clients for the different API calls.
 	client Client
-	// lastEvent store the last successful eventData sent to EDP.
+	// lastEvent store the last successful event sent to EDP.
 	lastEvent *EventData
 	// eventHubResourceGroupName store the Azure Event Hub resource group name associated with the subaccountid.
 	eventHubResourceGroupName string
@@ -138,20 +138,20 @@ type ClientSecretMap struct {
 	EnvironmentName string
 }
 
-// VMType defines the eventData format for the virtual machine metrics.
+// VMType defines the event format for the virtual machine metrics.
 type VMType struct {
 	Name  string `json:"name"`
 	Count uint32 `json:"count"`
 }
 
-// ProvisionedVolume defines the eventData format for the volume metrics.
+// ProvisionedVolume defines the event format for the volume metrics.
 type ProvisionedVolume struct {
 	SizeGBTotal   uint32 `json:"size_gb_total"`
 	SizeGBRounded uint32 `json:"size_gb_rounded"`
 	Count         uint32 `json:"count"`
 }
 
-// Compute defines the eventData format for the compute metrics.
+// Compute defines the event format for the compute metrics.
 type Compute struct {
 	VMTypes            []VMType          `json:"vm_types"`
 	ProvisionedRAMGB   float64           `json:"provisioned_ram_gb"`
@@ -159,14 +159,14 @@ type Compute struct {
 	ProvisionedCpus    uint32            `json:"provisioned_cpus"`
 }
 
-// Networking defines the eventData format for the network metrics.
+// Networking defines the event format for the network metrics.
 type Networking struct {
 	ProvisionedLoadBalancers uint32 `json:"provisioned_loadbalancers"`
 	ProvisionedVnets         uint32 `json:"provisioned_vnets"`
 	ProvisionedIps           uint32 `json:"provisioned_ips"`
 }
 
-// EventHub defines the eventData format for the eventData hub metrics.
+// EventHub defines the event format for the event hub metrics.
 type EventHub struct {
 	NumberNamespaces     uint32  `json:"number_namespaces"`
 	IncomingRequestsPT1M float64 `json:"incoming_requests_pt1m"`
@@ -177,7 +177,7 @@ type EventHub struct {
 	MaxOutgoingBytesPT5M float64 `json:"max_outgoing_bytes_pt5m"`
 }
 
-// EventData defines the eventData information to send to EDP.
+// EventData defines the event information to send to EDP.
 type EventData struct {
 	ResourceGroups []string    `json:"resource_groups"`
 	Compute        *Compute    `json:"compute"`

@@ -744,7 +744,7 @@ func Test_client_getMetricValues(t *testing.T) {
 		urlEscape("%s?%s", rguri, novalueparams):  novalueList,
 		urlEscape("%s?%s", rguri, notsparams):     notsList,
 		urlEscape("%s?%s", rguri, notsdataparams): notsdatalist,
-	})
+	}components/metris/internal/provider/azure/instance.go)
 	defer s.Close()
 
 	authConfig := setupMockAuthConfig(t, s.URL)
