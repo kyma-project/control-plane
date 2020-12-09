@@ -4,10 +4,11 @@ Displays Kyma Control Plane (KCP) orchestrations.
 ## Synopsis
 
 Displays KCP orchestrations and their primary attributes, such as identifiers, type, state, parameters, or Runtime operations.
-The command has two modes:
+The command has the following modes:
   - Without specifying an orchestration ID as an argument. In this mode, the command lists all orchestrations, or orchestrations matching the `--state` option, if provided.
   - When specifying an orchestration ID as an argument. In this mode, the command displays details about the specific orchestration.
-     If the optional `--operation` flag is provided, it displays details of the specified Runtime operation within the orchestration.
+      If the optional `--operation` flag is provided, it displays details of the specified Runtime operation within the orchestration.
+  - When specifying an orchestration ID, and "operations" or "ops" as arguments. In this mode, the command displays the runtime operations for the given orchestration.
 
 ```bash
 kcp orchestrations [id] [flags]
@@ -19,6 +20,7 @@ kcp orchestrations [id] [flags]
   kcp orchestrations --state inprogress                                   Display all orchestrations which are in progress.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                  Display details about a specific orchestration.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified Runtime operation within the orchestration.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 operations       Display the operations of the given orchestration.
 ```
 
 ## Options

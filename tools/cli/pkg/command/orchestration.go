@@ -136,8 +136,8 @@ The command has the following modes:
   - When specifying an orchestration ID, and "operations" or "ops" as arguments. In this mode, the command displays the runtime operations for the given orchestration.`,
 		Example: `  kcp orchestrations --state inprogress                                   Display all orchestrations which are in progress.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                  Display details about a specific orchestration.
-	kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified Runtime operation within the orchestration.
-	kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 operations       Display the operations of the given orchestration.`,
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified Runtime operation within the orchestration.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 operations       Display the operations of the given orchestration.`,
 		Args:    cobra.MaximumNArgs(2),
 		PreRunE: func(_ *cobra.Command, args []string) error { return cmd.Validate(args) },
 		RunE:    func(_ *cobra.Command, args []string) error { return cmd.Run(args) },
