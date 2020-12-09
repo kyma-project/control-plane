@@ -129,8 +129,8 @@ func (a *Azure) Run(ctx context.Context) {
 type metricsGetter func(context.Context, log.Logger, *Instance, *vmCapabilities, time.Duration, time.Duration) (*EventData, error)
 
 func (a *Azure) processInstance(workerlogger log.Logger, instance *Instance, ctx context.Context, getMetrics metricsGetter) bool {
+	var span *trace.Span
 	if tracing.IsEnabled() {
-		var span *trace.Span
 		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/processInstance")
 		defer span.End()
 
@@ -150,7 +150,6 @@ func (a *Azure) processInstance(workerlogger log.Logger, instance *Instance, ctx
 	var (
 		eventData       *EventData
 		err             error
-		errorOccurred   bool
 		rateLimited     bool
 		instanceDeleted bool
 	)
@@ -158,14 +157,13 @@ func (a *Azure) processInstance(workerlogger log.Logger, instance *Instance, ctx
 	eventData, err = getMetrics(ctx, workerlogger, instance, &vmcaps, a.config.PollInterval, a.config.PollingDuration)
 
 	if err != nil {
-		errorOccurred = true
 		eventData, rateLimited, instanceDeleted = processError(ctx, workerlogger, instance, eventData, err, a.config.MaxRetries, a.instanceStorage)
-	}
-
-	if !errorOccurred {
+	} else {
+		span.Annotate(nil, "Reset retry attempts")
 		instance.retryAttempts = 0
 		a.instanceStorage.Put(instance.cluster.TechnicalID, instance)
 	}
+
 	if eventData != nil {
 		if err := a.sendMetrics(ctx, workerlogger, instance, eventData); err != nil {
 			workerlogger.With("error", err).Error("error parsing metric information, could not send eventData to EDP")
