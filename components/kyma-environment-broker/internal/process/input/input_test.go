@@ -215,8 +215,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
+		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.10.0", Origin: internal.Defaults})
 		require.NoError(t, err)
@@ -254,8 +253,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "")
-		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
+		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.10.0", Origin: internal.Defaults})
 		require.NoError(t, err)
@@ -290,8 +288,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "1.14.0")
-		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
+		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		creator, err := builder.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.14.0", Origin: internal.Defaults})
 		require.NoError(t, err)
@@ -383,8 +380,7 @@ func TestShouldAddSuffixToRuntimeName(t *testing.T) {
 	componentsProvider := &automock.ComponentListProvider{}
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-		componentsProvider, Config{TrialNodesNumber: 0}, "not-important", fixTrialRegionMapping())
+	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{TrialNodesNumber: 0}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
 
 	pp := fixProvisioningParameters(broker.TrialPlanID, "")
@@ -413,8 +409,7 @@ func TestShouldTrimRuntimeNameAndAddSuffix(t *testing.T) {
 	componentsProvider := &automock.ComponentListProvider{}
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-		componentsProvider, Config{TrialNodesNumber: 3}, "not-important", fixTrialRegionMapping())
+	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{TrialNodesNumber: 3}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
 
 	pp := fixProvisioningParameters(broker.TrialPlanID, "")
@@ -442,8 +437,7 @@ func TestShouldSetTwoNodesForWhenEvalProfileDisable(t *testing.T) {
 	componentsProvider := &automock.ComponentListProvider{}
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-		componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
+	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
 
 	pp := fixProvisioningParameters(broker.TrialPlanID, "")

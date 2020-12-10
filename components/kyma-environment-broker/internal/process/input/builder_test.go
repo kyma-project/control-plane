@@ -93,8 +93,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		componentsProvider.On("AllComponents", "PR-1").Return([]v1alpha1.KymaComponent{}, nil).Once()
 		defer componentsProvider.AssertExpectations(t)
 
-		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "1.10", fixTrialRegionMapping())
+		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "1.10", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "PR-1")
 
