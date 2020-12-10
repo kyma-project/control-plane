@@ -19,7 +19,7 @@ type Config struct {
 	PollingDuration time.Duration `kong:"help='Time limit for requests made by the provider client.',env='PROVIDER_POLLDURATION',required=false,default='5m'"`
 	Workers         int           `kong:"help='Number of workers to fetch metrics.',env='PROVIDER_WORKERS',required=true,default=10"`
 	Buffer          int           `kong:"help='Number of cluster that the buffer can have.',env='PROVIDER_BUFFER',required=true,default=100"`
-	MaxRetries      int           `kong:"help='Number of maximum retries until a cluster is removed from the cache in case of not being found on the provider. This will stop sending events for the removed cluster!',env='PROVIDER_MAXRETRIES',required=true,default=20"`
+	MaxRetries      int           `kong:"help='Maximum number of retries before a cluster is removed from the cache if it is not found on the provider. NOTE: This will stop sending events for the removed cluster',env='PROVIDER_MAXRETRIES',required=true,default=20"`
 
 	// ClusterChannel define the channel to exchange clusters information with Gardener controller.
 	ClusterChannel chan *gardener.Cluster `kong:"-"`
