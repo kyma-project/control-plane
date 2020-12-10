@@ -17,6 +17,10 @@ spec:
         metadata:
           labels:
             cronjob: subaccount-cleaner-v1.0
+          {{- if eq .Values.global.database.embedded.enabled false }}
+          annotations:
+            sidecar.istio.io/inject: "false"
+          {{ end }}
         spec:
           restartPolicy: Never
           shareProcessNamespace: true
@@ -142,6 +146,10 @@ spec:
         metadata:
           labels:
             cronjob: subaccount-cleaner-v2.0
+          {{- if eq .Values.global.database.embedded.enabled false }}
+          annotations:
+            sidecar.istio.io/inject: "false"
+          {{ end }}
         spec:
           restartPolicy: Never
           shareProcessNamespace: true

@@ -19,6 +19,10 @@ spec:
           name: kyma-environments-cleanup
           labels:
             cronjob: environments-cleanup
+          {{- if eq .Values.global.database.embedded.enabled false }}
+          annotations:
+            sidecar.istio.io/inject: "false"
+          {{ end }}
         spec:
           serviceAccountName: kcp-kyma-environment-broker
           securityContext:
