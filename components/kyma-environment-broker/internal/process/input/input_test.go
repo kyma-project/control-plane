@@ -42,7 +42,7 @@ func TestShouldEnableComponents(t *testing.T) {
 			}, nil)
 
 		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers),
-			runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), false)
+			runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "")
@@ -83,7 +83,7 @@ func TestShouldEnableComponents(t *testing.T) {
 			}, nil)
 
 		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers),
-			runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), false)
+			runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "1.14.0")
@@ -121,7 +121,7 @@ func TestShouldDisableComponents(t *testing.T) {
 			}, nil)
 
 		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers),
-			runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), false)
+			runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.10.0", Origin: internal.Defaults})
 		require.NoError(t, err)
@@ -154,7 +154,7 @@ func TestShouldDisableComponents(t *testing.T) {
 			}, nil)
 
 		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers),
-			runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), false)
+			runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		creator, err := builder.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.14.0", Origin: "not-relevant"})
 		require.NoError(t, err)
@@ -188,7 +188,7 @@ func TestDisabledComponentsForPlanNotExist(t *testing.T) {
 		}, nil)
 
 	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers),
-		runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), false)
+		runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
 	// when
 	_, err = builder.CreateProvisionInput(pp, emptyVersion)
@@ -216,7 +216,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
 		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), false)
+			componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.10.0", Origin: internal.Defaults})
 		require.NoError(t, err)
@@ -255,7 +255,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "")
 		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), false)
+			componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.10.0", Origin: internal.Defaults})
 		require.NoError(t, err)
@@ -291,7 +291,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "1.14.0")
 		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), false)
+			componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		creator, err := builder.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.14.0", Origin: internal.Defaults})
 		require.NoError(t, err)
@@ -334,7 +334,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	defer componentsProvider.AssertExpectations(t)
 
 	factory, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-		componentsProvider, config, "1.10.0", fixTrialRegionMapping(), false)
+		componentsProvider, config, "1.10.0", fixTrialRegionMapping())
 	assert.NoError(t, err)
 	pp := fixProvisioningParameters(broker.AzurePlanID, "")
 
@@ -384,7 +384,7 @@ func TestShouldAddSuffixToRuntimeName(t *testing.T) {
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
 	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-		componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), false)
+		componentsProvider, Config{TrialNodesNumber: 0}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
 
 	pp := fixProvisioningParameters(broker.TrialPlanID, "")
@@ -401,6 +401,8 @@ func TestShouldAddSuffixToRuntimeName(t *testing.T) {
 	// then
 	assert.NotEqual(t, pp.Parameters.Name, input.RuntimeInput.Name)
 	assert.Greater(t, len(input.RuntimeInput.Name), len(pp.Parameters.Name))
+	assert.Equal(t, 1, input.ClusterConfig.GardenerConfig.AutoScalerMin)
+	assert.Equal(t, 1, input.ClusterConfig.GardenerConfig.AutoScalerMax)
 }
 
 func TestShouldTrimRuntimeNameAndAddSuffix(t *testing.T) {
@@ -412,7 +414,7 @@ func TestShouldTrimRuntimeNameAndAddSuffix(t *testing.T) {
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
 	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-		componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), false)
+		componentsProvider, Config{TrialNodesNumber: 3}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
 
 	pp := fixProvisioningParameters(broker.TrialPlanID, "")
@@ -430,6 +432,8 @@ func TestShouldTrimRuntimeNameAndAddSuffix(t *testing.T) {
 	assert.NotEqual(t, pp.Parameters.Name, input.RuntimeInput.Name)
 	assert.True(t, strings.HasPrefix(input.RuntimeInput.Name, testPrefix))
 	assert.Equal(t, 36, len(input.RuntimeInput.Name))
+	assert.Equal(t, 3, input.ClusterConfig.GardenerConfig.AutoScalerMin)
+	assert.Equal(t, 3, input.ClusterConfig.GardenerConfig.AutoScalerMax)
 }
 
 func TestShouldSetTwoNodesForWhenEvalProfileDisable(t *testing.T) {
@@ -439,7 +443,7 @@ func TestShouldSetTwoNodesForWhenEvalProfileDisable(t *testing.T) {
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
 	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-		componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), true)
+		componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
 
 	pp := fixProvisioningParameters(broker.TrialPlanID, "")

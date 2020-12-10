@@ -377,12 +377,3 @@ func IsTrialPlan(planID string) bool {
 		return false
 	}
 }
-
-func IsAzureLitePlan(planID string) bool {
-	switch planID {
-	case AzureLitePlanID:
-		return true
-	default:
-		return false
-	}
-}

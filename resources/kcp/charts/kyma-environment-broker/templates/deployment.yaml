@@ -291,6 +291,8 @@ spec:
               value: {{ .Values.gardener.machineImage }}
             - name: APP_PROVISIONING_MACHINE_IMAGE_VERSION
               value: {{ .Values.gardener.machineImageVersion }}
+            - name: APP_PROVISIONING_TRIAL_NODES_NUMBER
+              value: {{ .Values.gardener.machineImageVersion }}
             - name: APP_DEFAULT_REQUEST_REGION
               value: "{{ .Values.broker.defaultRequestRegion }}"
             - name: APP_AUDITLOG_URL
@@ -317,8 +319,6 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: APP_VERSION_CONFIG_NAME
               value: "kyma-versions"
-            - name: APP_SET_TWO_NODES_FOR_EVALUATION_PROFILE
-              value: "{{ .Values.setTwoNodesForEvaluationProfile }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

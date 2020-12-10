@@ -26,7 +26,7 @@ func TestInputBuilderFactory_IsPlanSupport(t *testing.T) {
 	defer componentsProvider.AssertExpectations(t)
 
 	ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-		Config{}, "1.10", fixTrialRegionMapping(), false)
+		Config{}, "1.10", fixTrialRegionMapping())
 	assert.NoError(t, err)
 
 	// when/then
@@ -43,7 +43,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		defer componentsProvider.AssertExpectations(t)
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-			Config{}, "1.10", fixTrialRegionMapping(), false)
+			Config{}, "1.10", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 
@@ -67,7 +67,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		defer componentsProvider.AssertExpectations(t)
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-			Config{}, "1.10", fixTrialRegionMapping(), false)
+			Config{}, "1.10", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 
@@ -94,7 +94,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		defer componentsProvider.AssertExpectations(t)
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "1.10", fixTrialRegionMapping(), false)
+			componentsProvider, Config{}, "1.10", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "PR-1")
 
@@ -113,7 +113,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		defer componentsProvider.AssertExpectations(t)
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-			Config{}, "1.10", fixTrialRegionMapping(), false)
+			Config{}, "1.10", fixTrialRegionMapping())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 

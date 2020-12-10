@@ -56,11 +56,10 @@ type InputBuilderFactory struct {
 	componentsProvider         ComponentListProvider
 	disabledComponentsProvider DisabledComponentsProvider
 	trialPlatformRegionMapping map[string]string
-	disableEvaluationProfile   bool
 }
 
 func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledComponentsProvider DisabledComponentsProvider, componentsListProvider ComponentListProvider, config Config,
-	defaultKymaVersion string, trialPlatformRegionMapping map[string]string, disableEvaluationProfile bool) (CreatorForPlan, error) {
+	defaultKymaVersion string, trialPlatformRegionMapping map[string]string) (CreatorForPlan, error) {
 
 	components, err := componentsListProvider.AllComponents(defaultKymaVersion)
 	if err != nil {
@@ -75,7 +74,6 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 		componentsProvider:         componentsListProvider,
 		disabledComponentsProvider: disabledComponentsProvider,
 		trialPlatformRegionMapping: trialPlatformRegionMapping,
-		disableEvaluationProfile:   disableEvaluationProfile,
 	}, nil
 }
 
@@ -129,7 +127,7 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 		optionalComponentsService: f.optComponentsSvc,
 		componentsDisabler:        runtime.NewDisabledComponentsService(disabledComponents),
 		enabledOptionalComponents: map[string]struct{}{},
-		set2Nodes:                 f.disableEvaluationProfile,
+		trialNodesNumber:          f.config.TrialNodesNumber,
 	}, nil
 }
 
@@ -220,7 +218,7 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 		optionalComponentsService: f.optComponentsSvc,
 		componentsDisabler:        runtime.NewDisabledComponentsService(disabledComponents),
 		enabledOptionalComponents: map[string]struct{}{},
-		set2Nodes:                 f.disableEvaluationProfile,
+		trialNodesNumber:          f.config.TrialNodesNumber,
 	}, nil
 }
 
