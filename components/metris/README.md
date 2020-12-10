@@ -21,7 +21,7 @@ Metris is a metering component that collects data and sends them to EDP.
 | `--provider-poll-interval` | **PROVIDER_POLLINTERVAL** | Interval at which metrics are fetched | `5m` |
 | `--provider-poll-max-interval` | **PROVIDER_POLLMAXINTERVAL** | maximum Interval at which metrics are fetch | `15m` |
 | `--provider-poll-duration` | **PROVIDER_POLLDURATION** | Time limit for requests made by the provider client | `5m` |
-| `--provider-max-retries` | **PROVIDER_MAXRETRIES** | Number of maximum retries until a cluster is removed from the cache in case of not being found on the provider. This will stop sending events for the removed cluster! | `20` |
+| `--provider-max-retries` | **PROVIDER_MAXRETRIES** | Maximum number of retries before a cluster is removed from the cache if it is not found on the provider. NOTE: This will stop sending events for the removed cluster | `20` |
 | `--provider-workers` | **PROVIDER_WORKERS** | Number of workers to fetch metrics | `10` |
 | `--provider-buffer` | **PROVIDER_BUFFER** | Number of clusters that the buffer can have | `100` |
 | `--listen-addr` | **METRIS_LISTEN_ADDRESS** | Address and port the metrics and health HTTP endpoints will bind to | None |
