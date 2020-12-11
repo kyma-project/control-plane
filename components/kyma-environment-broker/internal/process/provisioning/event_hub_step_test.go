@@ -350,7 +350,7 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionerInputCreator 
 		},
 	}
 
-	creator, err := ibf.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: kymaVersion})
+	creator, err := ibf.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: kymaVersion, Origin: internal.Defaults})
 	if err != nil {
 		t.Errorf("cannot create input creator for %q plan", broker.GCPPlanID)
 	}
@@ -404,6 +404,10 @@ func fixProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
 			}
 		}`,
 		InputCreator: fixKnativeKafkaInputCreator(t),
+		RuntimeVersion: internal.RuntimeVersionData{
+			Version: "1.8.0",
+			Origin:  internal.Defaults,
+		},
 	}
 	return op
 }

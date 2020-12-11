@@ -48,7 +48,10 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 
 		// when
-		input, err := ibf.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.10"})
+		input, err := ibf.CreateProvisionInput(pp, internal.RuntimeVersionData{
+			Version: "1.10",
+			Origin:  internal.Defaults,
+		})
 
 		// Then
 		assert.NoError(t, err)
@@ -72,7 +75,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 
 		// when
-		input, err := ibf.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.1.0"})
+		input, err := ibf.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.1.0", Origin: internal.Defaults})
 
 		// Then
 		assert.NoError(t, err)
@@ -83,7 +86,32 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		assert.Nil(t, result.provisionRuntimeInput.KymaConfig)
 		assert.Nil(t, result.provisionRuntimeInput.RuntimeInput)
 		assert.Nil(t, result.provisionRuntimeInput.ClusterConfig)
+	})
 
+	t.Run("should build RuntimeInput with GA version Kyma components and UpgradeRuntimeInput", func(t *testing.T) {
+		// given
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", "1.10").Return([]v1alpha1.KymaComponent{}, nil).Once()
+		componentsProvider.On("AllComponents", "1.1.0").Return([]v1alpha1.KymaComponent{}, nil).Once()
+		defer componentsProvider.AssertExpectations(t)
+
+		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.10", fixTrialRegionMapping())
+		assert.NoError(t, err)
+		pp := fixProvisioningParameters(broker.GCPPlanID, "")
+
+		// when
+		input, err := ibf.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.1.0", Origin: internal.GlobalAccount})
+
+		// Then
+		assert.NoError(t, err)
+		require.IsType(t, &RuntimeInput{}, input)
+
+		result := input.(*RuntimeInput)
+		assert.NotNil(t, result.upgradeRuntimeInput)
+		assert.Nil(t, result.provisionRuntimeInput.KymaConfig)
+		assert.Nil(t, result.provisionRuntimeInput.RuntimeInput)
+		assert.Nil(t, result.provisionRuntimeInput.ClusterConfig)
 	})
 
 	t.Run("should build RuntimeInput with set version Kyma components", func(t *testing.T) {
@@ -117,7 +145,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 
 		// when
-		input, err := ibf.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.1.0"})
+		input, err := ibf.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.1.0", Origin: internal.Defaults})
 
 		// Then
 		assert.NoError(t, err)
@@ -130,7 +158,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		pp = fixProvisioningParameters(broker.TrialPlanID, "")
 
 		// when
-		input, err = ibf.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.1.0"})
+		input, err = ibf.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.1.0", Origin: internal.Defaults})
 
 		// Then
 		assert.NoError(t, err)
