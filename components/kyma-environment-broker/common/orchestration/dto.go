@@ -53,6 +53,8 @@ type RuntimeTarget struct {
 	RuntimeID string `json:"runtimeID,omitempty"`
 	// PlanName is used to match runtimes with the same plan
 	PlanName string `json:"planName,omitempty"`
+	// Shoot is used to indicate a sepcific runtime by shoot name
+	Shoot string `json:"shoot,omitempty"`
 }
 
 type StrategyType string
@@ -87,12 +89,13 @@ type TargetSpec struct {
 }
 
 type StatusResponse struct {
-	OrchestrationID string     `json:"orchestrationID"`
-	State           string     `json:"state"`
-	Description     string     `json:"description"`
-	CreatedAt       time.Time  `json:"createdAt"`
-	UpdatedAt       time.Time  `json:"updatedAt"`
-	Parameters      Parameters `json:"parameters"`
+	OrchestrationID string         `json:"orchestrationID"`
+	State           string         `json:"state"`
+	Description     string         `json:"description"`
+	CreatedAt       time.Time      `json:"createdAt"`
+	UpdatedAt       time.Time      `json:"updatedAt"`
+	Parameters      Parameters     `json:"parameters"`
+	OperationStats  map[string]int `json:"operationStats,omitempty"`
 }
 
 type OperationResponse struct {

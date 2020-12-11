@@ -435,14 +435,14 @@ func (s *operations) GetOperationStats() (internal.OperationStats, error) {
 	return result, nil
 }
 
-func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (map[domain.LastOperationState]int, error) {
+func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (map[string]int, error) {
 	entries, err := s.NewReadSession().GetOperationStatsForOrchestration(orchestrationID)
 	if err != nil {
-		return map[domain.LastOperationState]int{}, err
+		return map[string]int{}, err
 	}
-	result := make(map[domain.LastOperationState]int, 3)
+	result := make(map[string]int, 5)
 	for _, entry := range entries {
-		result[domain.LastOperationState(entry.State)] = entry.Total
+		result[entry.State] = entry.Total
 	}
 	return result, nil
 }

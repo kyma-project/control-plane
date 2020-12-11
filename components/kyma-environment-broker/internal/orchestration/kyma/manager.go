@@ -14,7 +14,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -192,7 +191,7 @@ func (u *upgradeKymaManager) filterNotFinishedOperations(ops []internal.UpgradeK
 func (u *upgradeKymaManager) waitForCompletion(o *internal.Orchestration, strategy orchestration.Strategy, execID string, log logrus.FieldLogger) (*internal.Orchestration, error) {
 	canceled := false
 	var err error
-	var stats map[domain.LastOperationState]int
+	var stats map[string]int
 	err = wait.PollImmediateInfinite(u.pollingInterval, func() (bool, error) {
 		// check if orchestration wasn't canceled
 		o, err = u.orchestrationStorage.GetByID(o.OrchestrationID)
@@ -239,7 +238,7 @@ func (u *upgradeKymaManager) waitForCompletion(o *internal.Orchestration, strate
 
 	return u.resolveOrchestration(o, strategy, execID, stats)
 }
-func (u *upgradeKymaManager) resolveOrchestration(o *internal.Orchestration, strategy orchestration.Strategy, execID string, stats map[domain.LastOperationState]int) (*internal.Orchestration, error) {
+func (u *upgradeKymaManager) resolveOrchestration(o *internal.Orchestration, strategy orchestration.Strategy, execID string, stats map[string]int) (*internal.Orchestration, error) {
 	if o.State == orchestration.Canceling {
 		err := u.resolveCanceledOperations(o)
 		if err != nil {

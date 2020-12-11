@@ -18,13 +18,15 @@ func TestConverter_OrchestrationToDTO(t *testing.T) {
 
 	id := "id"
 	givenOrchestration := &internal.Orchestration{OrchestrationID: id}
+	stats := map[string]int{"in progress": 5, "succeeded": 3}
 
 	// when
-	resp, err := c.OrchestrationToDTO(givenOrchestration)
+	resp, err := c.OrchestrationToDTO(givenOrchestration, stats)
 
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, id, resp.OrchestrationID)
+	assert.Equal(t, stats, resp.OperationStats)
 }
 
 func TestConverter_OrchestrationListToDTO(t *testing.T) {

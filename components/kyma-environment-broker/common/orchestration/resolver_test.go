@@ -158,6 +158,17 @@ func TestResolver_Resolve(t *testing.T) {
 			},
 			ExpectedRuntimes: []expectedRuntime{expectedRuntime2, expectedRuntime3},
 		},
+		"IncludeShoot": {
+			Target: TargetSpec{
+				Include: []RuntimeTarget{
+					{
+						Shoot: expectedRuntime1.shoot.Name,
+					},
+				},
+				Exclude: nil,
+			},
+			ExpectedRuntimes: []expectedRuntime{expectedRuntime1},
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			// when

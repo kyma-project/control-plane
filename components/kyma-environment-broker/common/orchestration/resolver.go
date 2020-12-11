@@ -177,6 +177,11 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 			continue
 		}
 
+		// Match exact shoot by name
+		if rt.Shoot != "" && rt.Shoot != shoot.Name {
+			continue
+		}
+
 		// Perform match against a specific PlanName
 		if rt.PlanName != "" {
 			if rt.PlanName != runtime.ServicePlanName {

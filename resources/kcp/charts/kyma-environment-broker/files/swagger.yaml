@@ -336,6 +336,10 @@ components:
           type: string
           example: azure
           description: Specifies plan name
+        shoot:
+          type: string
+          example: c-0ab3fe0
+          description: Match Runtime by shoot name
 
     StatusResponse:
       type: object
@@ -348,6 +352,11 @@ components:
           example: Orchestration scheduled
         parameters:
           $ref: '#/components/schemas/OrchestrationParameters'
+        operationStats:
+          type: object
+          description: Number of operations per operation state
+          additionalProperties:
+            type: integer
 
     StatusResponseList:
       type: object
