@@ -103,6 +103,8 @@ spec:
                 secretKeyRef:
                   name: "{{ .Values.lms.secretName}}"
                   key: token
+            - name: APP_XSUAA_DISABLED
+              value: "{{ .Values.xsuaa.disabled }}"
             - name: APP_IAS_URL
               value: "{{ .Values.ias.url }}"
             - name: APP_IAS_USER_ID
