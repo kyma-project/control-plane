@@ -50,7 +50,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		// when
 		input, err := ibf.CreateProvisionInput(pp, internal.RuntimeVersionData{
 			Version: "1.10",
-			Origin: internal.Defaults,
+			Origin:  internal.Defaults,
 		})
 
 		// Then
