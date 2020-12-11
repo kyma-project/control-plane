@@ -53,6 +53,17 @@ spec:
     when:
     - key: request.auth.claims[groups]
       values: ["{{ .Values.oidc.groups.admin }}", "{{ .Values.oidc.groups.operator }}"]
+  # Allow /orchestrations PUT (cancel) endpoints only with principal present from JWT, for admins
+  - from:
+    - source:
+        requestPrincipals: ["*"]
+    to:
+    - operation:
+        methods: ["PUT"]
+        paths: [/orchestrations*"]
+    when:
+    - key: request.auth.claims[groups]
+      values: ["{{ .Values.oidc.groups.admin }}"]
   # Allow /upgrade POST endpoints only with principal present from JWT, for admins
   - from:
     - source:

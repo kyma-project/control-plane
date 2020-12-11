@@ -63,7 +63,14 @@ func (h *orchestrationHandler) getOrchestration(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	response, err := h.converter.OrchestrationToDTO(o)
+	stats, err := h.operations.GetOperationStatsForOrchestration(orchestrationID)
+	if err != nil {
+		h.log.Errorf("while getting orchestration %s operation statistics: %v", orchestrationID, err)
+		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting orchestration %s operation stats", orchestrationID))
+		return
+	}
+
+	response, err := h.converter.OrchestrationToDTO(o, stats)
 	if err != nil {
 		h.log.Errorf("while converting orchestration: %v", err)
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting orchestration"))

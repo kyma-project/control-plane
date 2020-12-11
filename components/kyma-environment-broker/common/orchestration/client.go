@@ -26,6 +26,7 @@ type Client interface {
 	ListOperations(orchestrationID string, params ListParameters) (OperationResponseList, error)
 	GetOperation(orchestrationID, operationID string) (OperationDetailResponse, error)
 	UpgradeKyma(params Parameters) (UpgradeResponse, error)
+	CancelOrchestration(orchestrationID string) error
 }
 
 type client struct {
@@ -277,6 +278,38 @@ func (c client) UpgradeKyma(params Parameters) (UpgradeResponse, error) {
 	}
 
 	return ur, nil
+}
+
+func (c client) CancelOrchestration(orchestrationID string) error {
+	url := fmt.Sprintf("%s/orchestrations/%s/cancel", c.url, orchestrationID)
+
+	req, err := http.NewRequest(http.MethodPut, url, nil)
+	if err != nil {
+		return errors.Wrap(err, "while creating cancel request")
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return errors.Wrapf(err, "while calling %s", url)
+	}
+
+	// Drain response body and close, return error to context if there isn't any.
+	defer func() {
+		derr := drainResponseBody(resp.Body)
+		if err == nil {
+			err = derr
+		}
+		cerr := resp.Body.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("calling %s returned %s status", url, resp.Status)
+	}
+
+	return nil
 }
 
 func setQuery(url *url.URL, params ListParameters) {
