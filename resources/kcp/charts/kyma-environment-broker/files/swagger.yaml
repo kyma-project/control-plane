@@ -356,7 +356,7 @@ components:
           type: object
           description: Number of operations per operation state
           additionalProperties:
-            type: int
+            type: integer
 
     StatusResponseList:
       type: object
