@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,19 +20,18 @@ const (
 func TestAccountVersionMapping_Get(t *testing.T) {
 	t.Run("Should get version for SubAccount when both GlobalAccount and SubAccount are provided", func(t *testing.T) {
 		// given
-	svc := fixAccountVersionMapping(t, map[string]string{
-		fmt.Sprintf("%s%s", globalAccountPrefix, fixGlobalAccountID): versionForGA,
-		fmt.Sprintf("%s%s", subaccountPrefix, fixSubAccountID):    versionForSA,
-	})
+		svc := fixAccountVersionMapping(t, map[string]string{
+			fmt.Sprintf("%s%s", globalAccountPrefix, fixGlobalAccountID): versionForGA,
+			fmt.Sprintf("%s%s", subaccountPrefix, fixSubAccountID):       versionForSA,
+		})
 
-	// when
-	version, origin, found, err := svc.Get(fixGlobalAccountID, fixSubAccountID)
-	require.NoError(t, err)
+		// when
+		version, found, err := svc.Get(fixGlobalAccountID, fixSubAccountID)
+		require.NoError(t, err)
 
-	// then
-	assert.True(t, found)
-	assert.Equal(t, versionForSA, version)
-	assert.Equal(t, internal.SubAccount, origin)
+		// then
+		assert.True(t, found)
+		assert.Equal(t, versionForSA, version)
 	})
 
 	t.Run("Should get version for GlobalAccount when only GlobalAccount is provided", func(t *testing.T) {
@@ -44,29 +41,27 @@ func TestAccountVersionMapping_Get(t *testing.T) {
 		})
 
 		// when
-		version, origin, found, err := svc.Get(fixGlobalAccountID, fixSubAccountID)
+		version, found, err := svc.Get(fixGlobalAccountID, fixSubAccountID)
 		require.NoError(t, err)
 
 		// then
 		assert.True(t, found)
 		assert.Equal(t, versionForGA, version)
-		assert.Equal(t, internal.GlobalAccount, origin)
 	})
 
 	t.Run("Should get version for SubAccount when only SubAccount is provided", func(t *testing.T) {
 		// given
 		svc := fixAccountVersionMapping(t, map[string]string{
-			fmt.Sprintf("%s%s", subaccountPrefix, fixSubAccountID):    versionForSA,
+			fmt.Sprintf("%s%s", subaccountPrefix, fixSubAccountID): versionForSA,
 		})
 
 		// when
-		version, origin, found, err := svc.Get(fixGlobalAccountID, fixSubAccountID)
+		version, found, err := svc.Get(fixGlobalAccountID, fixSubAccountID)
 		require.NoError(t, err)
 
 		// then
 		assert.True(t, found)
 		assert.Equal(t, versionForSA, version)
-		assert.Equal(t, internal.SubAccount, origin)
 	})
 
 	t.Run("Should not get version when nothing is provided", func(t *testing.T) {
@@ -74,12 +69,11 @@ func TestAccountVersionMapping_Get(t *testing.T) {
 		svc := fixAccountVersionMapping(t, map[string]string{})
 
 		// when
-		version, origin, found, err := svc.Get(fixGlobalAccountID, fixSubAccountID)
+		version, found, err := svc.Get(fixGlobalAccountID, fixSubAccountID)
 		require.NoError(t, err)
 
 		// then
 		assert.False(t, found)
 		assert.Empty(t, version)
-		assert.Empty(t, origin)
 	})
 }

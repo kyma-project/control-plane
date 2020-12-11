@@ -34,7 +34,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		runtimeVer := "1.1.1"
 		parameters := internal.ProvisioningParameters{}
 		operation := internal.ProvisioningOperation{}
-		rvc := NewRuntimeVersionConfigurator(runtimeVer, &AccountVersionMapping{})
+		rvc := NewRuntimeVersionConfigurator(runtimeVer, fixAccountVersionMapping(t, map[string]string{}))
 
 		// when
 		ver, err := rvc.ForProvisioning(operation, parameters)
@@ -61,19 +61,19 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		// then
 		require.NoError(t, err)
 		require.Equal(t, versionForGA, ver.Version)
-		require.Equal(t, internal.GlobalAccount, ver.Origin)
+		require.Equal(t, internal.AccountMapping, ver.Origin)
 	})
 	t.Run("should return version from SubAccount mapping when both GA and SA mapping provided", func(t *testing.T) {
 		// given
 		runtimeVer := "1.12"
 		parameters := internal.ProvisioningParameters{
 			ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID,
-			SubAccountID: fixSubAccountID},
+				SubAccountID: fixSubAccountID},
 		}
 		operation := internal.ProvisioningOperation{}
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, fixAccountVersionMapping(t, map[string]string{
 			fmt.Sprintf("%s%s", globalAccountPrefix, fixGlobalAccountID): versionForGA,
-			fmt.Sprintf("%s%s", subaccountPrefix, fixSubAccountID):    versionForSA,
+			fmt.Sprintf("%s%s", subaccountPrefix, fixSubAccountID):       versionForSA,
 		}))
 
 		// when
@@ -82,7 +82,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		// then
 		require.NoError(t, err)
 		require.Equal(t, versionForSA, ver.Version)
-		require.Equal(t, internal.SubAccount, ver.Origin)
+		require.Equal(t, internal.AccountMapping, ver.Origin)
 	})
 }
 

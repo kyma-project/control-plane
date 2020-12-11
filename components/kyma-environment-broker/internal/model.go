@@ -55,10 +55,9 @@ type AvsLifecycleData struct {
 type RuntimeVersionOrigin string
 
 const (
-	Parameters    RuntimeVersionOrigin = "parameters"
-	Defaults      RuntimeVersionOrigin = "defaults"
-	GlobalAccount RuntimeVersionOrigin = "global-account"
-	SubAccount    RuntimeVersionOrigin = "sub-account"
+	Parameters     RuntimeVersionOrigin = "parameters"
+	Defaults       RuntimeVersionOrigin = "defaults"
+	AccountMapping RuntimeVersionOrigin = "account-mapping"
 )
 
 // RuntimeVersionData describes the Kyma Version used for the cluser
@@ -80,12 +79,8 @@ func NewRuntimeVersionFromDefaults(version string) *RuntimeVersionData {
 	return &RuntimeVersionData{Version: version, Origin: Defaults}
 }
 
-func NewRuntimeVersionFromGlobalAccount(version string) *RuntimeVersionData {
-	return &RuntimeVersionData{Version: version, Origin: GlobalAccount}
-}
-
-func NewRuntimeVersionFromSubAccount(version string) *RuntimeVersionData {
-	return &RuntimeVersionData{Version: version, Origin: SubAccount}
+func NewRuntimeVersionFromAccountMapping(version string) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: AccountMapping}
 }
 
 type EventHub struct {

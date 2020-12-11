@@ -16,12 +16,12 @@ func NewRuntimeVersionConfigurator(defaultVersion string, accountMapping *Accoun
 
 func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.ProvisioningOperation, pp internal.ProvisioningParameters) (*internal.RuntimeVersionData, error) {
 	if pp.Parameters.KymaVersion == "" {
-		version, origin, found, err := rvc.accountMapping.Get(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID)
+		version, found, err := rvc.accountMapping.Get(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID)
 		if err != nil {
 			return nil, err
 		}
 		if found {
-			return provideRuntimeVersionData(version, origin), nil
+			return internal.NewRuntimeVersionFromAccountMapping(version), nil
 		}
 		return internal.NewRuntimeVersionFromDefaults(rvc.defaultVersion), nil
 	}
@@ -30,24 +30,13 @@ func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.ProvisioningO
 }
 
 func (rvc *RuntimeVersionConfigurator) ForUpgrade(op internal.UpgradeKymaOperation) (*internal.RuntimeVersionData, error) {
-	version, origin, found, err := rvc.accountMapping.Get(op.GlobalAccountID, op.SubAccountID)
+	version, found, err := rvc.accountMapping.Get(op.GlobalAccountID, op.SubAccountID)
 	if err != nil {
 		return nil, err
 	}
 	if found {
-		return provideRuntimeVersionData(version, origin), nil
+		return internal.NewRuntimeVersionFromAccountMapping(version), nil
 	}
 
 	return internal.NewRuntimeVersionFromDefaults(rvc.defaultVersion), nil
-}
-
-func provideRuntimeVersionData(version string, origin internal.RuntimeVersionOrigin) *internal.RuntimeVersionData {
-	switch origin {
-	case internal.SubAccount:
-		return internal.NewRuntimeVersionFromSubAccount(version)
-	case internal.GlobalAccount:
-		return internal.NewRuntimeVersionFromGlobalAccount(version)
-	default:
-		return nil
-	}
 }

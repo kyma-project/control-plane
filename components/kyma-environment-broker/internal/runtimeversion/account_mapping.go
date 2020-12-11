@@ -3,7 +3,6 @@ package runtimeversion
 import (
 	"context"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
@@ -39,7 +38,7 @@ func NewAccountVersionMapping(ctx context.Context, cli client.Client,
 }
 
 // Get retrieves Kyma version from ConfigMap for given accounts IDs
-func (m *AccountVersionMapping) Get(globalAccountID, subaccountID string) (string, internal.RuntimeVersionOrigin, bool, error) {
+func (m *AccountVersionMapping) Get(globalAccountID, subaccountID string) (string, bool, error) {
 	config := &v1.ConfigMap{}
 	key := client.ObjectKey{Namespace: m.namespace, Name: m.name}
 	err := m.k8sClient.Get(m.ctx, key, config)
@@ -47,20 +46,17 @@ func (m *AccountVersionMapping) Get(globalAccountID, subaccountID string) (strin
 	switch {
 	case apierr.IsNotFound(err):
 		m.log.Infof("Kyma Version per Account configuration %s/%s not found", m.namespace, m.name)
-		return "", "", false, nil
+		return "", false, nil
 	case err != nil:
-		return "", "", false, errors.Wrap(err, "while getting kyma version config map")
+		return "", false, errors.Wrap(err, "while getting kyma version config map")
 	}
 
 	// SubAccount version mapping has higher priority than GlobalAccount version
 	ver, found := config.Data[subaccountPrefix+subaccountID]
 	if !found {
 		ver, found = config.Data[globalAccountPrefix+globalAccountID]
-		if !found {
-			return ver, "", found, nil
-		}
-		return ver, internal.GlobalAccount, found, nil
+		return ver, found, nil
 	}
 
-	return ver, internal.SubAccount, found, nil
+	return ver, found, nil
 }
