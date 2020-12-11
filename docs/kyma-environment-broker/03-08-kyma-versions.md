@@ -4,7 +4,11 @@ type: Details
 ---
 
 Kyma Environment Broker is configured with a default Kyma version specified in the **APP_KYMA_VERSION** environment variable. This means that each Kyma Runtime provisioned by Kyma Environment Broker in a given global account is installed in the default Kyma version.
-You can also specify a different Kyma version for a global account using a ConfigMap. See the example:
+You can also specify a different Kyma version for a global account or subaccount using a ConfigMap. To specify version for a given account use following prefixes in ConfigMap keys:
+- `GA_` for global account
+- `SA_` for subaccount
+
+Subaccount version has higher priority than global account mapping - version for subaccount will always be used when provided and subaccount ID in provisioning request matches the ID in ConfigMap. See the example:
 
 ```yaml
 apiVersion: v1
@@ -13,10 +17,11 @@ metadata:
   name: kyma-versions
   namespace: "kcp-system"
 data:
-  3e64ebae-38b5-46a0-b1ed-9ccee153a0ae: "1.15.0-rc1"
+  GA_3e64ebae-38b5-46a0-b1ed-9ccee153a0ae: "1.15.0-rc1"
+  SA_df29c526-0c3d-4e2c-ba41-8b69cde41961: "PR-3721"
 ```
 
-This ConfigMap contains a default version for a global account. The **3e64ebae-38b5-46a0-b1ed-9ccee153a0ae** parameter is a global account ID, and the value is the Kyma version specified for this global account.
+This ConfigMap contains a default version for a global account and a subaccount. The **3e64ebae-38b5-46a0-b1ed-9ccee153a0ae** parameter is a global account ID, and the value is the Kyma version specified for this global account. The **df29c526-0c3d-4e2c-ba41-8b69cde41961** parameter is a subaccount ID, and the value is the Kyma version specified for this subaccount.
 
 You can also specify a Kyma version using the **kymaVersion** provisioning parameter, for example:
 
