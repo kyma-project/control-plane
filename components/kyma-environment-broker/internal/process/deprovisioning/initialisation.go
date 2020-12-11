@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 
@@ -23,21 +25,28 @@ const (
 	CheckStatusTimeout = 5 * time.Hour
 )
 
-type InitialisationStep struct {
-	operationManager  *process.DeprovisionOperationManager
-	operationStorage  storage.Provisioning
-	instanceStorage   storage.Instances
-	provisionerClient provisioner.Client
-	accountProvider   hyperscaler.AccountProvider
+type SMClientFactory interface {
+	ForCustomerCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (servicemanager.Client, error)
+	ProvideCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (*servicemanager.Credentials, error)
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, accountProvider hyperscaler.AccountProvider) *InitialisationStep {
+type InitialisationStep struct {
+	operationManager            *process.DeprovisionOperationManager
+	operationStorage            storage.Provisioning
+	instanceStorage             storage.Instances
+	provisionerClient           provisioner.Client
+	accountProvider             hyperscaler.AccountProvider
+	serviceManagerClientFactory SMClientFactory
+}
+
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, accountProvider hyperscaler.AccountProvider, smcf SMClientFactory) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:  process.NewDeprovisionOperationManager(os),
-		operationStorage:  os,
-		instanceStorage:   is,
-		provisionerClient: pc,
-		accountProvider:   accountProvider,
+		operationManager:            process.NewDeprovisionOperationManager(os),
+		operationStorage:            os,
+		instanceStorage:             is,
+		provisionerClient:           pc,
+		accountProvider:             accountProvider,
+		serviceManagerClientFactory: smcf,
 	}
 }
 
@@ -68,6 +77,8 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 		log.Info("waiting for provisioning operation to finish")
 		return operation, time.Minute, nil
 	}
+	operation.SMClientFactory = s.serviceManagerClientFactory
+	operation.XSUAA = op.XSUAA
 
 	setAvsIds(&operation, op, log)
 

@@ -258,8 +258,6 @@ func (c *client) call(method, path string, response interface{}, q *query.Parame
 }
 
 func (c *client) get(path string, response interface{}, q *query.Parameters) error {
-	r, err := c.call(http.MethodGet, path, response, q, nil)
-	fmt.Println("status code: ")
-	fmt.Println(r)
+	_, err := c.call(http.MethodGet, path, response, q, nil)
 	return err
 }
