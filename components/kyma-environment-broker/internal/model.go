@@ -58,6 +58,7 @@ const (
 	Parameters    RuntimeVersionOrigin = "parameters"
 	Defaults      RuntimeVersionOrigin = "defaults"
 	GlobalAccount RuntimeVersionOrigin = "global-account"
+	SubAccount    RuntimeVersionOrigin = "sub-account"
 )
 
 // RuntimeVersionData describes the Kyma Version used for the cluser
@@ -81,6 +82,10 @@ func NewRuntimeVersionFromDefaults(version string) *RuntimeVersionData {
 
 func NewRuntimeVersionFromGlobalAccount(version string) *RuntimeVersionData {
 	return &RuntimeVersionData{Version: version, Origin: GlobalAccount}
+}
+
+func NewRuntimeVersionFromSubAccount(version string) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: SubAccount}
 }
 
 type EventHub struct {

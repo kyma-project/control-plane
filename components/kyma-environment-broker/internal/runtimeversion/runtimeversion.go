@@ -3,27 +3,26 @@ package runtimeversion
 import "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
 type RuntimeVersionConfigurator struct {
-	defaultVersion       string
-	globalAccountMapping *GlobalAccountVersionMapping
+	defaultVersion string
+	accountMapping *AccountVersionMapping
 }
 
-func NewRuntimeVersionConfigurator(defaultVersion string, globalAccountMapping *GlobalAccountVersionMapping) *RuntimeVersionConfigurator {
+func NewRuntimeVersionConfigurator(defaultVersion string, accountMapping *AccountVersionMapping) *RuntimeVersionConfigurator {
 	return &RuntimeVersionConfigurator{
-		defaultVersion:       defaultVersion,
-		globalAccountMapping: globalAccountMapping,
+		defaultVersion: defaultVersion,
+		accountMapping: accountMapping,
 	}
 }
 
 func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.ProvisioningOperation, pp internal.ProvisioningParameters) (*internal.RuntimeVersionData, error) {
 	if pp.Parameters.KymaVersion == "" {
-		version, found, err := rvc.globalAccountMapping.Get(pp.ErsContext.GlobalAccountID)
+		version, origin, found, err := rvc.accountMapping.Get(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID)
 		if err != nil {
 			return nil, err
 		}
 		if found {
-			return internal.NewRuntimeVersionFromGlobalAccount(version), nil
+			return provideRuntimeVersionData(version, origin), nil
 		}
-
 		return internal.NewRuntimeVersionFromDefaults(rvc.defaultVersion), nil
 	}
 
@@ -31,13 +30,24 @@ func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.ProvisioningO
 }
 
 func (rvc *RuntimeVersionConfigurator) ForUpgrade(op internal.UpgradeKymaOperation) (*internal.RuntimeVersionData, error) {
-	version, found, err := rvc.globalAccountMapping.Get(op.GlobalAccountID)
+	version, origin, found, err := rvc.accountMapping.Get(op.GlobalAccountID, op.SubAccountID)
 	if err != nil {
 		return nil, err
 	}
 	if found {
-		return internal.NewRuntimeVersionFromGlobalAccount(version), nil
+		return provideRuntimeVersionData(version, origin), nil
 	}
 
 	return internal.NewRuntimeVersionFromDefaults(rvc.defaultVersion), nil
+}
+
+func provideRuntimeVersionData(version string, origin internal.RuntimeVersionOrigin) *internal.RuntimeVersionData {
+	switch origin {
+	case internal.SubAccount:
+		return internal.NewRuntimeVersionFromSubAccount(version)
+	case internal.GlobalAccount:
+		return internal.NewRuntimeVersionFromGlobalAccount(version)
+	default:
+		return nil
+	}
 }

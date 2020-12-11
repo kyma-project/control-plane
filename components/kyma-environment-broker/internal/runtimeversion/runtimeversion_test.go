@@ -17,7 +17,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 	// given
 	runtimeVer := "1.1.1"
 	parameters := internal.ProvisioningParameters{Parameters: internal.ProvisioningParametersDTO{KymaVersion: runtimeVer}}
-	rvc := NewRuntimeVersionConfigurator("not-relevant", &GlobalAccountVersionMapping{})
+	rvc := NewRuntimeVersionConfigurator("not-relevant", &AccountVersionMapping{})
 
 	// when
 	ver, err := rvc.ForProvisioning(internal.ProvisioningOperation{}, parameters)
@@ -63,7 +63,7 @@ func Test_NewRuntimeVersionConfigurator_ForProvisioning_FromGlobalAccount(t *tes
 	require.Equal(t, internal.GlobalAccount, ver.Origin)
 }
 
-func fixGlobalAccountVersionMapping(t *testing.T) *GlobalAccountVersionMapping {
+func fixGlobalAccountVersionMapping(t *testing.T) *AccountVersionMapping {
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
 	client := fake.NewFakeClientWithScheme(sch, &coreV1.ConfigMap{
@@ -77,5 +77,5 @@ func fixGlobalAccountVersionMapping(t *testing.T) *GlobalAccountVersionMapping {
 		},
 	})
 
-	return NewGlobalAccountVersionMapping(context.TODO(), client, namespace, cmName, logrus.New())
+	return NewAccountVersionMapping(context.TODO(), client, namespace, cmName, logrus.New())
 }
