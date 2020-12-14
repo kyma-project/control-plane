@@ -33,7 +33,7 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 
 	instance, err := b.instanceStorage.GetByID(instanceID)
 	if err != nil {
-		logger.Errorf("unable to get instance")
+		logger.Errorf("unable to get instance: %s", err.Error())
 		return domain.UpdateServiceSpec{}, errors.New("unable to get instance")
 	}
 	logger.Infof("Plan ID/Name: %s/%s", instance.ServicePlanID, PlanIDsMapping[instance.ServicePlanID])
@@ -42,12 +42,16 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 	err = json.Unmarshal(details.RawContext, &ersContext)
 	if err != nil {
 		logger.Errorf("unable to decode context: %s", err.Error())
-		return domain.UpdateServiceSpec{}, nil
+		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal context")
 	}
 	logger.Infof("Global account ID: %s active: %v", instance.GlobalAccountID, ersContext.Active)
 
 	var contextData map[string]interface{}
-	_ = json.Unmarshal(details.RawContext, contextData)
+	err = json.Unmarshal(details.RawContext, &contextData)
+	if err != nil {
+		logger.Errorf("unable to unmarshal context: %s", err.Error())
+		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal context")
+	}
 	logger.Infof("Context with keys:")
 	for k, _ := range contextData {
 		logger.Info(k)
