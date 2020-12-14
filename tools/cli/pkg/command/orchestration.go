@@ -1,6 +1,7 @@
 package command
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"sort"
@@ -38,6 +39,8 @@ var cliStates = map[string]string{
 	"failed":     orchestration.Failed,
 	"succeeded":  orchestration.Succeeded,
 	"inprogress": orchestration.InProgress,
+	"canceled":   orchestration.Canceled,
+	"canceling":  orchestration.Canceling,
 }
 
 var orchestrationColumns = []printer.Column{
@@ -86,46 +89,56 @@ var operationColumns = []printer.Column{
 	},
 }
 
-var orchestrationDetailsTpl = `Orchestration ID : {{.OrchestrationID}}
-Type             : kyma upgrade
-Created At       : {{.CreatedAt}}
-Updated At       : {{.UpdatedAt}}
-Dry Run          : {{.Parameters.DryRun}}
-State            : {{.State}}
-Description      : {{.Description}}
-Strategy         : {{.Parameters.Strategy.Type}}
-Schedule         : {{.Parameters.Strategy.Schedule}}
-Workers          : {{.Parameters.Strategy.Parallel.Workers}}
-Targets          :
+var orchestrationDetailsTpl = `Orchestration ID: {{.OrchestrationID}}
+Type:             kyma upgrade
+Created At:       {{.CreatedAt}}
+Updated At:       {{.UpdatedAt}}
+Dry Run:          {{.Parameters.DryRun}}
+State:            {{.State}}
+Description:      {{.Description}}
+Strategy:         {{.Parameters.Strategy.Type}}
+Schedule:         {{.Parameters.Strategy.Schedule}}
+Workers:          {{.Parameters.Strategy.Parallel.Workers}}
+Targets:
 {{- range $i, $t := .Parameters.Targets.Include }}
-  - {{ orchestrationTarget $t }}
+  {{ orchestrationTarget $t }}
 {{- end -}}
 {{- if gt (len .Parameters.Targets.Exclude) 0 }}
-Exclude Targets  :
+Exclude Targets:
 {{- range $i, $t := .Parameters.Targets.Exclude }}
-  - {{ orchestrationTarget $t }}
+  {{ orchestrationTarget $t }}
+{{- end -}}
+{{- end -}}
+{{- if gt (len .OperationStats) 0 }}
+Operations:
+{{- range $i, $s := cliOrchestrationStates }}
+{{- if gt (index $.OperationStats $s) 0 }}
+  {{ printf "%11s: %d" $s (index $.OperationStats $s) }}
+{{- end -}}
 {{- end -}}
 {{- end }}
 `
-var operationDetailsTpl = `Operation ID       : {{.OperationID}}
-Orchestration ID   : {{.OrchestrationID}}
-Global Account ID  : {{.GlobalAccountID}}
-Subaccount ID      : {{.SubAccountID}}
-Runtime ID         : {{.RuntimeID}}
-Shoot Name         : {{.ShootName}}
-Service Plan       : {{.ServicePlanName}}
-Maintenance Window : {{.MaintenanceWindowBegin}} - {{.MaintenanceWindowEnd}}
-State              : {{.State}}
-Description        : {{.Description}}
-Kubernetes Version : {{.ClusterConfig.KubernetesVersion}}
-Kyma Version       : {{.KymaConfig.Version}}
+
+var operationDetailsTpl = `
+Operation ID:       {{.OperationID}}
+Orchestration ID:   {{.OrchestrationID}}
+Global Account ID:  {{.GlobalAccountID}}
+Subaccount ID:      {{.SubAccountID}}
+Runtime ID:         {{.RuntimeID}}
+Shoot Name:         {{.ShootName}}
+Service Plan:       {{.ServicePlanName}}
+Maintenance Window: {{.MaintenanceWindowBegin}} - {{.MaintenanceWindowEnd}}
+State:              {{.State}}
+Description:        {{.Description}}
+Kubernetes Version: {{.ClusterConfig.KubernetesVersion}}
+Kyma Version:       {{.KymaConfig.Version}}
 `
 
 // NewOrchestrationCmd constructs a new instance of OrchestrationCommand and configures it in terms of a cobra.Command
 func NewOrchestrationCmd() *cobra.Command {
 	cmd := OrchestrationCommand{}
 	cobraCmd := &cobra.Command{
-		Use:     "orchestrations [id]",
+		Use:     "orchestrations [id] [ops|operations] [cancel]",
 		Aliases: []string{"orchestration", "o"},
 		Short:   "Displays Kyma Control Plane (KCP) orchestrations.",
 		Long: `Displays KCP orchestrations and their primary attributes, such as identifiers, type, state, parameters, or Runtime operations.
@@ -133,11 +146,13 @@ The command has the following modes:
   - Without specifying an orchestration ID as an argument. In this mode, the command lists all orchestrations, or orchestrations matching the --state option, if provided.
   - When specifying an orchestration ID as an argument. In this mode, the command displays details about the specific orchestration.
       If the optional --operation flag is provided, it displays details of the specified Runtime operation within the orchestration.
-  - When specifying an orchestration ID, and ` + "`operations` or `ops`" + ` as arguments. In this mode, the command displays the Runtime operations for the given orchestration.`,
+  - When specifying an orchestration ID, and ` + "`operations` or `ops`" + ` as arguments. In this mode, the command displays the Runtime operations for the given orchestration.
+  - When specifying an orchestration ID, and ` + "`cancel`" + ` as arguments. In this mode, the command cancels the orchestration and all pending Runtime operations.`,
 		Example: `  kcp orchestrations --state inprogress                                   Display all orchestrations which are in progress.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                  Display details about a specific orchestration.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified Runtime operation within the orchestration.
-  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 operations       Display the operations of the given orchestration.`,
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 operations       Display the operations of the given orchestration.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 cancel           Cancel the given orchestration.`,
 		Args:    cobra.MaximumNArgs(2),
 		PreRunE: func(_ *cobra.Command, args []string) error { return cmd.Validate(args) },
 		RunE:    func(_ *cobra.Command, args []string) error { return cmd.Run(args) },
@@ -191,7 +206,7 @@ func (cmd *OrchestrationCommand) Run(args []string) error {
 		// Called with orchestration ID and subcommand
 		switch cmd.subCommand {
 		case cancelCommand:
-			return errors.New("not implemented")
+			return cmd.cancelOrchestration(args[0])
 		case operationsCommand, opsCommand:
 			return cmd.showOperations(args[0])
 		}
@@ -262,7 +277,8 @@ func (cmd *OrchestrationCommand) showOneOrchestration(orchestrationID string) er
 	case tableOutput:
 		// Print orchestration details via template
 		funcMap := template.FuncMap{
-			"orchestrationTarget": orchestrationTarget,
+			"orchestrationTarget":    orchestrationTarget,
+			"cliOrchestrationStates": cliOrchestrationStates,
 		}
 		tmpl, err := template.New("orchestrationDetails").Funcs(funcMap).Parse(orchestrationDetailsTpl)
 		if err != nil {
@@ -328,6 +344,29 @@ func (cmd *OrchestrationCommand) showOperationDetails(orchestrationID string) er
 	return nil
 }
 
+func (cmd *OrchestrationCommand) cancelOrchestration(orchestrationID string) error {
+	sr, err := cmd.client.GetOrchestration(orchestrationID)
+	if err != nil {
+		return errors.Wrap(err, "while getting orchestration")
+	}
+	if sr.State == orchestration.Canceling || sr.State == orchestration.Canceled {
+		fmt.Println("Orchestration is already canceled.")
+		return nil
+	}
+
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Printf("%d pending operations(s) will be canceled, %d in progress operation(s) will still be completed.\n", sr.OperationStats[orchestration.Pending], sr.OperationStats[orchestration.InProgress])
+	fmt.Print("Are you sure you would like to continue? (Y/N) ")
+	scanner.Scan()
+	if scanner.Text() != "Y" {
+		fmt.Println("Aborting.")
+		return nil
+	}
+
+	return cmd.client.CancelOrchestration(orchestrationID)
+
+}
+
 // Currently only orchestrations of type "kyma upgrade" are supported,
 // and the type is not reflected in the StatusResponse object
 func orchestrationType(obj interface{}) string {
@@ -359,6 +398,9 @@ func orchestrationTarget(t orchestration.RuntimeTarget) string {
 	}
 	if t.PlanName != "" {
 		targets = append(targets, fmt.Sprintf("plan = %s", t.PlanName))
+	}
+	if t.Shoot != "" {
+		targets = append(targets, fmt.Sprintf("shoot = %s", t.Shoot))
 	}
 
 	return strings.Join(targets, ",")
