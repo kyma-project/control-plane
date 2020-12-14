@@ -119,8 +119,7 @@ Operations:
 {{- end }}
 `
 
-var operationDetailsTpl = `
-Operation ID:       {{.OperationID}}
+var operationDetailsTpl = `Operation ID:       {{.OperationID}}
 Orchestration ID:   {{.OrchestrationID}}
 Global Account ID:  {{.GlobalAccountID}}
 Subaccount ID:      {{.SubAccountID}}
