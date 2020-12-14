@@ -21,7 +21,7 @@ import (
 // export SM_PASSWORD=
 // export SM_URL=
 // go test -v -tags=sm_integration ./internal/process/provisioning/... -run TestEmsSteps -count=1
-func TestEmsSteps(t *testing.T) {
+func TestEmsProvisioningSteps(t *testing.T) {
 	repo := storage.NewMemoryStorage().Operations()
 	cliFactory := servicemanager.NewClientFactory(servicemanager.Config{
 		OverrideMode: servicemanager.SMOverrideModeNever,

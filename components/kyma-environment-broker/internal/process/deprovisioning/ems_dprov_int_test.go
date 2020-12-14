@@ -25,7 +25,7 @@ import (
 // export SERVICE_ID=
 // export PLAN_ID=
 // go test -v -tags=sm_integration ./internal/process/deprovisioning/... -run TestDeprovisioningSteps -count=1
-func TestDeprovisioningSteps(t *testing.T) {
+func TestEmsDeprovisioningSteps(t *testing.T) {
 	repo := storage.NewMemoryStorage().Operations()
 	cliFactory := servicemanager.NewClientFactory(servicemanager.Config{
 		OverrideMode: servicemanager.SMOverrideModeNever,
@@ -61,7 +61,7 @@ func TestDeprovisioningSteps(t *testing.T) {
 				PlanID:                os.Getenv("PLAN_ID"),
 				InstanceID:            os.Getenv("INSTANCE_ID"),
 				Provisioned:           true,
-				//ProvisioningTriggered: true,
+				ProvisioningTriggered: false,
 			},
 			BindingID: os.Getenv("BINDING_ID"),
 		},

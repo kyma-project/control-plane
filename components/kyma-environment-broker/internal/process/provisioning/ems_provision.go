@@ -53,14 +53,13 @@ func (s *EmsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 	offering := offs.ServiceOfferings[0]
 	// get plan
 	plans, err := smCli.ListPlansByName(EmsPlanName, offering.ID)
-	for _, plan := range plans.ServicePlans {
-		log.Infof("plan: %s %s %s", plan.Name, plan.Description, plan.Message())
+	if err != nil {
+		return s.handleError(operation, err, log, "ListPlansByName() failed for:"+EmsPlanName)
 	}
 	if plans.IsEmpty() {
 		return s.handleError(operation, fmt.Errorf("no plans for: %s", EmsPlanName), log, "")
 	}
 	plan := plans.ServicePlans[0]
-	log.Print(">>> plan: %#v\n", plan)
 
 	// provision
 	operation, _, err = s.provision(smCli, operation, log, offering, plan)
@@ -68,9 +67,10 @@ func (s *EmsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 		return s.handleError(operation, err, log, "EMS provision operation failed")
 	}
 
+	operation.Ems.Instance.ProvisioningTriggered = true
 	operation, retry := s.operationManager.UpdateOperation(operation)
 	if retry > 0 {
-		log.Errorf("unable to update operation")
+		log.Errorf("provisioning %s, unable to update operation", s.Name())
 		return operation, time.Second, nil
 	}
 
@@ -81,7 +81,7 @@ func (s *EmsProvisionStep) provision(smCli servicemanager.Client, operation inte
 	offering types.ServiceOffering, plan types.ServicePlan) (internal.ProvisioningOperation, time.Duration, error) {
 
 	var input servicemanager.ProvisioningInput
-	input.ID = uuid.New().String()  // is this OK?
+	input.ID = uuid.New().String()
 	input.ServiceID = offering.CatalogID
 	input.PlanID = plan.CatalogID
 	input.SpaceGUID = uuid.New().String()
@@ -119,7 +119,10 @@ func (s *EmsProvisionStep) provision(smCli servicemanager.Client, operation inte
 	}
 
 	resp, err := smCli.Provision(offering.BrokerID, input, true)
-	log.Printf(">>> Response from Provision() err: %s; resp: %#v\n", err, resp)
+	if err != nil {
+		return s.handleError(operation, err, log, fmt.Sprintf("EMS provision failed for brokerID: %s; input: %#v", offering.BrokerID, input))
+	}
+	log.Infof("response from EMS provisioning call: %#v", resp)
 
 	operation.Ems.Instance.BrokerID = offering.BrokerID
 	operation.Ems.Instance.InstanceID = input.ID
