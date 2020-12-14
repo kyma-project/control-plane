@@ -45,6 +45,7 @@ func (s *EmsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 	log.Infof("deprovisioning for EMS instance: %s finished", operation.Ems.Instance.InstanceID)
 
 	operation.Ems.Instance.InstanceID = ""
+	operation.Ems.Instance.Provisioned = false
 	return s.operationManager.UpdateOperation(operation)
 }
 

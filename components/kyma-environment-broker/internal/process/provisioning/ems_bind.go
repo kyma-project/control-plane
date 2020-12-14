@@ -55,28 +55,24 @@ func (s *EmsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 	// execute binding
 	if operation.Ems.BindingID == "" {
 		operation.Ems.BindingID = uuid.New().String()
-		operation, retry := s.operationManager.UpdateOperation(operation)
-		if retry > 0 {
-			log.Errorf("unable to update operation")
-			return operation, time.Second, nil
-		}
 	}
-
 	respBinding, err := smCli.Bind(operation.Ems.Instance.InstanceKey(), operation.Ems.BindingID, nil, false)
 	if err != nil {
 		return s.handleError(operation, err, log, "Ems binding failed")
 	}
-	log.Printf(">>> binding resp: %#v\n", resp) //TODO: delete it
 
 	// TODO get values for EV2 from the response and put them as overrides
 	err = getCredentials(respBinding.Binding, log)
 	if err != nil {
 		return s.handleError(operation, err, log, "get credentials failed")
 	}
-	// TODO save EV2 credentials in DB ?? Use "encrypt" for credentials. Only if they are different
+
+	// save the status:
+	operation.Ems.Instance.Provisioned = true
+	operation.Ems.Instance.ProvisioningTriggered = false
 	operation, retry := s.operationManager.UpdateOperation(operation)
 	if retry > 0 {
-		log.Errorf("unable to update operation")
+		log.Errorf("binding %s, unable to update operation", s.Name())
 		return operation, time.Second, nil
 	}
 

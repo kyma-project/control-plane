@@ -38,8 +38,12 @@ func TestEmsProvisioningSteps(t *testing.T) {
 // export SM_PASSWORD=
 // export SM_URL=
 // go test -v -tags=sm_integration ./internal/process/provisioning/... -run TestEmsSteps -count=1
+<<<<<<< HEAD
 func TestEmsSteps(t *testing.T) {
 >>>>>>> 7b4ea82d... Add int tests
+=======
+func TestEmsProvisioningSteps(t *testing.T) {
+>>>>>>> 3ac83ef0... Update integration tests
 	repo := storage.NewMemoryStorage().Operations()
 	cliFactory := servicemanager.NewClientFactory(servicemanager.Config{
 		OverrideMode: servicemanager.SMOverrideModeNever,
