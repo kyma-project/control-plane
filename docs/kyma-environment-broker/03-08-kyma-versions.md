@@ -4,11 +4,11 @@ type: Details
 ---
 
 Kyma Environment Broker is configured with a default Kyma version specified in the **APP_KYMA_VERSION** environment variable. This means that each Kyma Runtime provisioned by Kyma Environment Broker in a given global account is installed in the default Kyma version.
-You can also specify a different Kyma version for a global account or subaccount using a ConfigMap. To specify version for a given account use following prefixes in ConfigMap keys:
-- `GA_` for global account
-- `SA_` for subaccount
+You can also specify a different Kyma version for a global account or subaccount using a ConfigMap. To specify a version for a given account, use the following prefixes in ConfigMap keys:
+- `GA_` for a global account
+- `SA_` for a subaccount
 
-Subaccount version has higher priority than global account mapping - version for subaccount will always be used when provided and subaccount ID in provisioning request matches the ID in ConfigMap. See the example:
+The subaccount version has a higher priority than the global account mapping. When provided, the version for a subaccount is used as long as the subaccount ID in the provisioning request matches the subaccount ID in the ConfigMap. See the example:
 
 ```yaml
 apiVersion: v1
