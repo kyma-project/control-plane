@@ -348,17 +348,20 @@ func (cmd *OrchestrationCommand) cancelOrchestration(orchestrationID string) err
 	if err != nil {
 		return errors.Wrap(err, "while getting orchestration")
 	}
-	if sr.State == orchestration.Canceling || sr.State == orchestration.Canceled {
+	switch sr.State {
+	case orchestration.Canceling, orchestration.Canceled:
 		fmt.Println("Orchestration is already canceled.")
 		return nil
+	case orchestration.Failed, orchestration.Succeeded:
+		return fmt.Errorf("orchestration is already %s", sr.State)
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Printf("%d pending operations(s) will be canceled, %d in progress operation(s) will still be completed.\n", sr.OperationStats[orchestration.Pending], sr.OperationStats[orchestration.InProgress])
-	fmt.Print("Are you sure you would like to continue? (Y/N) ")
+	fmt.Print("Do you want to continue? (Y/N) ")
 	scanner.Scan()
 	if scanner.Text() != "Y" {
-		fmt.Println("Aborting.")
+		fmt.Println("Aborted.")
 		return nil
 	}
 
