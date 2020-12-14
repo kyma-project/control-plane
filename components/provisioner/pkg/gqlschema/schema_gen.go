@@ -82,6 +82,7 @@ type ComplexityRoot struct {
 		DiskType                            func(childComplexity int) int
 		EnableKubernetesVersionAutoUpdate   func(childComplexity int) int
 		EnableMachineImageVersionAutoUpdate func(childComplexity int) int
+		Hibernated                          func(childComplexity int) int
 		KubernetesVersion                   func(childComplexity int) int
 		LicenceType                         func(childComplexity int) int
 		MachineImage                        func(childComplexity int) int
@@ -109,6 +110,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		DeprovisionRuntime       func(childComplexity int, id string) int
+		HibernateRuntime         func(childComplexity int, id string) int
 		ProvisionRuntime         func(childComplexity int, config ProvisionRuntimeInput) int
 		ReconnectRuntimeAgent    func(childComplexity int, id string) int
 		RollBackUpgradeOperation func(childComplexity int, id string) int
@@ -152,6 +154,7 @@ type MutationResolver interface {
 	UpgradeRuntime(ctx context.Context, id string, config UpgradeRuntimeInput) (*OperationStatus, error)
 	DeprovisionRuntime(ctx context.Context, id string) (string, error)
 	UpgradeShoot(ctx context.Context, id string, config UpgradeShootInput) (*OperationStatus, error)
+	HibernateRuntime(ctx context.Context, id string) (*OperationStatus, error)
 	RollBackUpgradeOperation(ctx context.Context, id string) (*RuntimeStatus, error)
 	ReconnectRuntimeAgent(ctx context.Context, id string) (string, error)
 }
@@ -322,6 +325,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GardenerConfig.EnableMachineImageVersionAutoUpdate(childComplexity), true
 
+	case "GardenerConfig.hibernated":
+		if e.complexity.GardenerConfig.Hibernated == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.Hibernated(childComplexity), true
+
 	case "GardenerConfig.kubernetesVersion":
 		if e.complexity.GardenerConfig.KubernetesVersion == nil {
 			break
@@ -473,6 +483,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeprovisionRuntime(childComplexity, args["id"].(string)), true
+
+	case "Mutation.hibernateRuntime":
+		if e.complexity.Mutation.HibernateRuntime == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_hibernateRuntime_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.HibernateRuntime(childComplexity, args["id"].(string)), true
 
 	case "Mutation.provisionRuntime":
 		if e.complexity.Mutation.ProvisionRuntime == nil {
@@ -742,6 +764,7 @@ type GardenerConfig {
     enableMachineImageVersionAutoUpdate: Boolean
     allowPrivilegedContainers: Boolean
     providerSpecificConfig: ProviderSpecificConfig
+    hibernated: Boolean
 }
 
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig
@@ -796,6 +819,7 @@ enum OperationType {
     UpgradeShoot
     Deprovision
     ReconnectRuntime
+    Hibernate
 }
 
 type Error {
@@ -952,6 +976,7 @@ type Mutation {
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): OperationStatus
     deprovisionRuntime(id: String!): String!
     upgradeShoot(id: String!, config: UpgradeShootInput!): OperationStatus
+    hibernateRuntime(id: String!): OperationStatus
 
     # rollbackUpgradeOperation rolls back last upgrade operation for the Runtime but does not affect cluster in any way
     # can be used in case upgrade failed and the cluster was restored from the backup to align data stored in Provisioner database
@@ -976,6 +1001,20 @@ type Query {
 // region    ***************************** args.gotpl *****************************
 
 func (ec *executionContext) field_Mutation_deprovisionRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_hibernateRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -2426,6 +2465,40 @@ func (ec *executionContext) _GardenerConfig_providerSpecificConfig(ctx context.C
 	return ec.marshalOProviderSpecificConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificConfig(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _GardenerConfig_hibernated(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Hibernated, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _KymaConfig_version(ctx context.Context, field graphql.CollectedField, obj *KymaConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -2715,6 +2788,47 @@ func (ec *executionContext) _Mutation_upgradeShoot(ctx context.Context, field gr
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().UpgradeShoot(rctx, args["id"].(string), args["config"].(UpgradeShootInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*OperationStatus)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_hibernateRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_hibernateRuntime_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().HibernateRuntime(rctx, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5398,6 +5512,8 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_allowPrivilegedContainers(ctx, field, obj)
 		case "providerSpecificConfig":
 			out.Values[i] = ec._GardenerConfig_providerSpecificConfig(ctx, field, obj)
+		case "hibernated":
+			out.Values[i] = ec._GardenerConfig_hibernated(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5465,6 +5581,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "upgradeShoot":
 			out.Values[i] = ec._Mutation_upgradeShoot(ctx, field)
+		case "hibernateRuntime":
+			out.Values[i] = ec._Mutation_hibernateRuntime(ctx, field)
 		case "rollBackUpgradeOperation":
 			out.Values[i] = ec._Mutation_rollBackUpgradeOperation(ctx, field)
 		case "reconnectRuntimeAgent":

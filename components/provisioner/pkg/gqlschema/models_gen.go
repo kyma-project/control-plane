@@ -107,6 +107,7 @@ type GardenerConfig struct {
 	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
 	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
 	ProviderSpecificConfig              ProviderSpecificConfig `json:"providerSpecificConfig"`
+	Hibernated                          *bool                  `json:"hibernated"`
 }
 
 type GardenerConfigInput struct {
@@ -310,6 +311,7 @@ const (
 	OperationTypeUpgradeShoot     OperationType = "UpgradeShoot"
 	OperationTypeDeprovision      OperationType = "Deprovision"
 	OperationTypeReconnectRuntime OperationType = "ReconnectRuntime"
+	OperationTypeHibernate        OperationType = "Hibernate"
 )
 
 var AllOperationType = []OperationType{
@@ -318,11 +320,12 @@ var AllOperationType = []OperationType{
 	OperationTypeUpgradeShoot,
 	OperationTypeDeprovision,
 	OperationTypeReconnectRuntime,
+	OperationTypeHibernate,
 }
 
 func (e OperationType) IsValid() bool {
 	switch e {
-	case OperationTypeProvision, OperationTypeUpgrade, OperationTypeUpgradeShoot, OperationTypeDeprovision, OperationTypeReconnectRuntime:
+	case OperationTypeProvision, OperationTypeUpgrade, OperationTypeUpgradeShoot, OperationTypeDeprovision, OperationTypeReconnectRuntime, OperationTypeHibernate:
 		return true
 	}
 	return false
