@@ -5,14 +5,18 @@ package deprovisioning
 import (
 	"encoding/json"
 	"fmt"
+<<<<<<< HEAD
 	"os"
 	"testing"
 
+=======
+>>>>>>> 7b4ea82d... Add int tests
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+<<<<<<< HEAD
 )
 
 // TestProvisioningSteps tests all XSUAA steps with real Service Manager
@@ -27,6 +31,24 @@ import (
 // export PLAN_ID=c267fe4e-de8e-44b6-825b-9d0cf233b318
 // go test -v -tags=sm_integration ./internal/process/deprovisioning/... -run TestDeprovisioningSteps
 func TestEmsDeprovisioningSteps(t *testing.T) {
+=======
+	"os"
+	"testing"
+)
+
+// TestProvisioningSteps tests all Ems steps with real Service Manager
+// Usage:
+// export SM_USERNAME=
+// export SM_PASSWORD=
+// export SM_URL=
+// export INSTANCE_ID=
+// export BINDING_ID=
+// export BROKER_ID=
+// export SERVICE_ID=
+// export PLAN_ID=
+// go test -v -tags=sm_integration ./internal/process/deprovisioning/... -run TestDeprovisioningSteps -count=1
+func TestDeprovisioningSteps(t *testing.T) {
+>>>>>>> 7b4ea82d... Add int tests
 	repo := storage.NewMemoryStorage().Operations()
 	cliFactory := servicemanager.NewClientFactory(servicemanager.Config{
 		OverrideMode: servicemanager.SMOverrideModeNever,
@@ -40,7 +62,11 @@ func TestEmsDeprovisioningSteps(t *testing.T) {
 	deprovisioningStep := NewEmsDeprovisionStep(repo)
 	pp := internal.ProvisioningParameters{
 		ErsContext: internal.ERSContext{
+<<<<<<< HEAD
 			ServiceManager: &internal.ServiceManagerEntryDTO{
+=======
+			ServiceManager: &internal.ServiceManagerEntryDTO {
+>>>>>>> 7b4ea82d... Add int tests
 				URL: os.Getenv("SM_URL"),
 				Credentials: internal.ServiceManagerCredentials{
 					BasicAuth: internal.ServiceManagerBasicAuth{
@@ -52,6 +78,7 @@ func TestEmsDeprovisioningSteps(t *testing.T) {
 		},
 	}
 	ppBytes, _ := json.Marshal(pp)
+<<<<<<< HEAD
 	operation := internal.DeprovisioningOperation{
 		ProvisioningParameters: string(ppBytes),
 		SMClientFactory:        cliFactory,
@@ -62,6 +89,18 @@ func TestEmsDeprovisioningSteps(t *testing.T) {
 				PlanID:      os.Getenv("PLAN_ID"),
 				InstanceID:  os.Getenv("INSTANCE_ID"),
 				Provisioned: true,
+=======
+	operation := internal.DeprovisioningOperation {
+		ProvisioningParameters: string(ppBytes),
+		SMClientFactory:        cliFactory,
+		Ems: internal.EmsData{
+			Instance:  internal.ServiceManagerInstanceInfo{
+				BrokerID:              os.Getenv("BROKER_ID"),  // saved in InstanceKey, see the provisioning step
+				ServiceID:             os.Getenv("SERVICE_ID"),
+				PlanID:                os.Getenv("PLAN_ID"),
+				InstanceID:            os.Getenv("INSTANCE_ID"),
+				Provisioned:           true,
+>>>>>>> 7b4ea82d... Add int tests
 				//ProvisioningTriggered: true,
 			},
 			BindingID: os.Getenv("BINDING_ID"),
@@ -80,4 +119,8 @@ func TestEmsDeprovisioningSteps(t *testing.T) {
 	fmt.Printf(">>> %#v\n", operation.Ems)
 	require.NoError(t, err)
 	require.Zero(t, retry)
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 7b4ea82d... Add int tests

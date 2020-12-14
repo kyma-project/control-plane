@@ -5,24 +5,41 @@ package provisioning
 import (
 	"encoding/json"
 	"fmt"
+<<<<<<< HEAD
 	"os"
 	"testing"
 	"time"
 
+=======
+>>>>>>> 7b4ea82d... Add int tests
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+<<<<<<< HEAD
+=======
+	"os"
+	"testing"
+	"time"
+>>>>>>> 7b4ea82d... Add int tests
 )
 
 // TestEmsSteps tests all EMS steps with real Service Manager
 // Usage:
+<<<<<<< HEAD
 // export SM_USERNAME=+9/MttPOR3JTo2LLYOYR/WkWa1T72pyuhWiQJB3ieIk=
 // export SM_PASSWORD=p+gmv1gcsN1V3qqZpugwH5aru5sp9my2fsTTdido20o=
 // export SM_URL=https://service-manager.cfapps.sap.hana.ondemand.com
 // go test -v -tags=sm_integration ./internal/process/provisioning/... -run TestEmsSteps -count=1
 func TestEmsProvisioningSteps(t *testing.T) {
+=======
+// export SM_USERNAME=
+// export SM_PASSWORD=
+// export SM_URL=
+// go test -v -tags=sm_integration ./internal/process/provisioning/... -run TestEmsSteps -count=1
+func TestEmsSteps(t *testing.T) {
+>>>>>>> 7b4ea82d... Add int tests
 	repo := storage.NewMemoryStorage().Operations()
 	cliFactory := servicemanager.NewClientFactory(servicemanager.Config{
 		OverrideMode: servicemanager.SMOverrideModeNever,
@@ -74,9 +91,15 @@ func TestEmsProvisioningSteps(t *testing.T) {
 	operation, retry, err = bindingStep.Run(operation, log)
 	fmt.Printf(">>> %#v\n", operation.Ems)
 	require.NoError(t, err)
+<<<<<<< HEAD
 	//	require.Zero(t, retry)
 
 	for i := 0; i < 30; i++ { //wait 5 min
+=======
+//	require.Zero(t, retry)
+
+	for i:=0; i < 30 ; i++ {  //wait 5 min
+>>>>>>> 7b4ea82d... Add int tests
 		time.Sleep(retry)
 		operation, retry, err = bindingStep.Run(operation, log)
 		fmt.Printf(">>> %#v\n", operation.Ems)
@@ -91,5 +114,9 @@ func TestEmsProvisioningSteps(t *testing.T) {
 	require.NotEmpty(t, operation.Ems.Instance.InstanceID)
 	require.NotEmpty(t, operation.Ems.BindingID)
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7b4ea82d... Add int tests
 	fmt.Printf("\nexport INSTANCE_ID=%s\nexport BINDING_ID=%s\n", operation.Ems.Instance.InstanceID, operation.Ems.BindingID)
 }
