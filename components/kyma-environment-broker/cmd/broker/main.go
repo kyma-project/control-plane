@@ -114,6 +114,9 @@ type Config struct {
 	XSUAA struct {
 		Disabled bool `envconfig:"default=true"`
 	}
+	Ems struct {
+		Disabled bool `envconfig:"default=true"`
+	}
 
 	AuditLog auditlog.Config
 
@@ -268,6 +271,14 @@ func main() {
 					return &op.XSUAA.Instance
 				}, db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
+		},
+		{
+			weight: 1,
+			step: provisioning.NewServiceManagerOfferingStep("EMS_Offering",
+				provisioning.EmsOfferingName, provisioning.EmsPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
+					return &op.Ems.Instance
+				}, db.Operations()),
+			disabled: cfg.Ems.Disabled, // TODO: should be disabled by default?
 		},
 		{
 			weight: 2,
