@@ -8,8 +8,8 @@ The command has the following modes:
   - Without specifying an orchestration ID as an argument. In this mode, the command lists all orchestrations, or orchestrations matching the `--state` option, if provided.
   - When specifying an orchestration ID as an argument. In this mode, the command displays details about the specific orchestration.
       If the optional `--operation` flag is provided, it displays details of the specified Runtime operation within the orchestration.
-  - When specifying an orchestration ID, and `operations` or `ops` as arguments. In this mode, the command displays the Runtime operations for the given orchestration.
-  - When specifying an orchestration ID, and `cancel` as arguments. In this mode, the command cancels the orchestration and all pending Runtime operations.
+  - When specifying an orchestration ID and `operations` or `ops` as arguments. In this mode, the command displays the Runtime operations for the given orchestration.
+  - When specifying an orchestration ID and `cancel` as arguments. In this mode, the command cancels the orchestration and all pending Runtime operations.
 
 ```bash
 kcp orchestrations [id] [ops|operations] [cancel] [flags]
