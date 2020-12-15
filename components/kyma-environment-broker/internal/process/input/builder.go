@@ -155,7 +155,7 @@ func (f *InputBuilderFactory) provideComponentList(version internal.RuntimeVersi
 	switch version.Origin {
 	case internal.Defaults:
 		return f.fullComponentsList, nil
-	case internal.Parameters, internal.GlobalAccount:
+	case internal.Parameters, internal.AccountMapping:
 		allComponents, err := f.componentsProvider.AllComponents(version.Version)
 		if err != nil {
 			return internal.ComponentConfigurationInputList{}, errors.Wrapf(err, "while fetching components for %s Kyma version", version.Version)

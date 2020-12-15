@@ -239,8 +239,8 @@ func main() {
 	serviceManagerClientFactory := servicemanager.NewClientFactory(cfg.ServiceManager)
 
 	// define steps
-	globalAccountVersionMapping := runtimeversion.NewGlobalAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, globalAccountVersionMapping)
+	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, accountVersionMapping)
 	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),
 		provisionerClient, directorClient, inputFactory, externalEvalCreator, internalEvalUpdater, iasTypeSetter, cfg.Provisioning.Timeout,
 		runtimeVerConfigurator, serviceManagerClientFactory)
