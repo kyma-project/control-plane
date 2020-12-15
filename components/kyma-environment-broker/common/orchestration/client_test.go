@@ -226,6 +226,31 @@ func TestClient_UpgradeKyma(t *testing.T) {
 	})
 }
 
+func TestClient_CancelOrchestration(t *testing.T) {
+	t.Run("test_URL__NoError_path", func(t *testing.T) {
+		// given
+		called := 0
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			called++
+			assert.Equal(t, http.MethodPut, r.Method)
+			assert.Equal(t, fmt.Sprintf("/orchestrations/%s/cancel", orch1.OrchestrationID), r.URL.Path)
+			assert.Equal(t, fmt.Sprintf("Bearer %s", fixToken), r.Header.Get("Authorization"))
+
+			err := respondStatus(w, orch1)
+			require.NoError(t, err)
+		}))
+		defer ts.Close()
+		client := NewClient(context.TODO(), ts.URL, fixToken)
+
+		// when
+		err := client.CancelOrchestration(orch1.OrchestrationID)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, 1, called)
+	})
+}
+
 func fixStatusResponse(id string) StatusResponse {
 	return StatusResponse{
 		OrchestrationID: id,
@@ -234,6 +259,9 @@ func fixStatusResponse(id string) StatusResponse {
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
 		Parameters:      Parameters{},
+		OperationStats: map[string]int{
+			"succeeded": 5,
+		},
 	}
 }
 

@@ -103,6 +103,8 @@ spec:
                 secretKeyRef:
                   name: "{{ .Values.lms.secretName}}"
                   key: token
+            - name: APP_XSUAA_DISABLED
+              value: "{{ .Values.xsuaa.disabled }}"
             - name: APP_IAS_URL
               value: "{{ .Values.ias.url }}"
             - name: APP_IAS_USER_ID
@@ -291,6 +293,8 @@ spec:
               value: {{ .Values.gardener.machineImage }}
             - name: APP_PROVISIONING_MACHINE_IMAGE_VERSION
               value: {{ .Values.gardener.machineImageVersion }}
+            - name: APP_PROVISIONING_TRIAL_NODES_NUMBER
+              value: "{{ .Values.gardener.trialNodesNumber }}"
             - name: APP_DEFAULT_REQUEST_REGION
               value: "{{ .Values.broker.defaultRequestRegion }}"
             - name: APP_AUDITLOG_URL

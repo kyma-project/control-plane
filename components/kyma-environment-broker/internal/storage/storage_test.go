@@ -481,7 +481,7 @@ func TestSchemaInitializer(t *testing.T) {
 			opStats, err := svc.GetOperationStatsForOrchestration(orchestrationID)
 			require.NoError(t, err)
 
-			assert.Equal(t, 1, opStats[domain.InProgress])
+			assert.Equal(t, 1, opStats[orchestration.InProgress])
 
 		})
 

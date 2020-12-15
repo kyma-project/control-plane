@@ -127,6 +127,7 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 		optionalComponentsService: f.optComponentsSvc,
 		componentsDisabler:        runtime.NewDisabledComponentsService(disabledComponents),
 		enabledOptionalComponents: map[string]struct{}{},
+		trialNodesNumber:          f.config.TrialNodesNumber,
 	}, nil
 }
 
@@ -149,21 +150,26 @@ func (f *InputBuilderFactory) forTrialPlan(provider *internal.TrialCloudProvider
 	}
 
 }
-func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInputProvider, version internal.RuntimeVersionData) (gqlschema.ProvisionRuntimeInput, error) {
-	var (
-		components internal.ComponentConfigurationInputList
-	)
 
+func (f *InputBuilderFactory) provideComponentList(version internal.RuntimeVersionData) (internal.ComponentConfigurationInputList, error) {
 	switch version.Origin {
 	case internal.Defaults:
-		components = f.fullComponentsList
+		return f.fullComponentsList, nil
 	case internal.Parameters, internal.GlobalAccount:
 		allComponents, err := f.componentsProvider.AllComponents(version.Version)
 		if err != nil {
-			return gqlschema.ProvisionRuntimeInput{}, errors.Wrapf(err, "while fetching components for %s Kyma version", version.Version)
+			return internal.ComponentConfigurationInputList{}, errors.Wrapf(err, "while fetching components for %s Kyma version", version.Version)
 		}
+		return mapToGQLComponentConfigurationInput(allComponents), nil
+	}
 
-		components = mapToGQLComponentConfigurationInput(allComponents)
+	return internal.ComponentConfigurationInputList{}, errors.Errorf("Unknown version.Origin: %s", version.Origin)
+}
+
+func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInputProvider, version internal.RuntimeVersionData) (gqlschema.ProvisionRuntimeInput, error) {
+	components, err := f.provideComponentList(version)
+	if err != nil {
+		return gqlschema.ProvisionRuntimeInput{}, err
 	}
 	kymaProfile := provider.Profile()
 
@@ -217,18 +223,24 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 		optionalComponentsService: f.optComponentsSvc,
 		componentsDisabler:        runtime.NewDisabledComponentsService(disabledComponents),
 		enabledOptionalComponents: map[string]struct{}{},
+		trialNodesNumber:          f.config.TrialNodesNumber,
 	}, nil
 }
 
 func (f *InputBuilderFactory) initUpgradeRuntimeInput(version internal.RuntimeVersionData) (gqlschema.UpgradeRuntimeInput, error) {
 	if version.Version == "" {
-		return gqlschema.UpgradeRuntimeInput{}, errors.New("desired runtiem version cannot be empty")
+		return gqlschema.UpgradeRuntimeInput{}, errors.New("desired runtime version cannot be empty")
+	}
+
+	components, err := f.provideComponentList(version)
+	if err != nil {
+		return gqlschema.UpgradeRuntimeInput{}, err
 	}
 
 	return gqlschema.UpgradeRuntimeInput{
 		KymaConfig: &gqlschema.KymaConfigInput{
 			Version:    version.Version,
-			Components: f.fullComponentsList.DeepCopy(),
+			Components: components,
 		},
 	}, nil
 }

@@ -40,7 +40,7 @@
 
 [[constraint]]
   name = "github.com/pivotal-cf/brokerapi"
-  version = "7.1.0"
+  revision = "bd576b03a845f13ad564075efdd24d10b1f4703a"
 
 [[constraint]]
   name = "github.com/pkg/errors"

@@ -25,6 +25,7 @@ type Config struct {
 	DefaultGardenerShootPurpose string        `envconfig:"default=development"`
 	MachineImage                string        `envconfig:"optional"`
 	MachineImageVersion         string        `envconfig:"optional"`
+	TrialNodesNumber            int           `envconfig:"optional"`
 }
 
 type RuntimeInput struct {
@@ -42,6 +43,8 @@ type RuntimeInput struct {
 
 	componentsDisabler        ComponentsDisabler
 	enabledOptionalComponents map[string]struct{}
+
+	trialNodesNumber int
 }
 
 func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
@@ -133,8 +136,8 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 			execute: r.addRandomStringToRuntimeName,
 		},
 		{
-			name:    "setting two nodes for runtimes without eval profile",
-			execute: r.setMoreNodesForRuntimesWithoutEvalProfile,
+			name:    "set number of nodes from configuration",
+			execute: r.setNodesForTrial,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -165,6 +168,10 @@ func (r *RuntimeInput) CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInpu
 		{
 			name:    "applying global overrides",
 			execute: r.applyGlobalOverridesForUpgradeRuntime,
+		},
+		{
+			name:    "set number of nodes from configuration",
+			execute: r.setNodesForTrial,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -303,10 +310,14 @@ func (r *RuntimeInput) addRandomStringToRuntimeName() error {
 	return nil
 }
 
-func (r *RuntimeInput) setMoreNodesForRuntimesWithoutEvalProfile() error {
-	if r.provisionRuntimeInput.KymaConfig.Version < "1.18.0" && broker.IsTrialPlan(r.provisioningParameters.PlanID) {
-		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMin = 2
-		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax = 2
+func (r *RuntimeInput) setNodesForTrial() error {
+	// parameter with number of notes for trial plan is optional; if parameter is not set value is equal to 0
+	if r.trialNodesNumber == 0 {
+		return nil
+	}
+	if broker.IsTrialPlan(r.provisioningParameters.PlanID) {
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMin = r.trialNodesNumber
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax = r.trialNodesNumber
 	}
 	return nil
 }

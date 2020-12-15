@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/client"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration/strategies"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/credential"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
@@ -98,7 +99,7 @@ For each subprocess, the following Runtime-specific data are passed as environme
 
 	SetRuntimeTargetOpts(cobraCmd, &cmd.targetInputs, &cmd.targetExcludeInputs)
 	cobraCmd.Flags().IntVarP(&cmd.parallelism, "parallelism", "p", 4, "Number of parallel commands to execute.")
-	cobraCmd.Flags().StringVar(&cmd.kubeconfigDir, "kubeconfig-dir", "", "Directory to download Runtime kubeconfig files to. By default, it is a random-generated directory in the OS-specific default temporary directory (e.g. /tmp in Linux).")
+	cobraCmd.Flags().StringVarP(&cmd.kubeconfigDir, "kubeconfig-dir", "k", "", "Directory to download Runtime kubeconfig files to. By default, it is a random-generated directory in the OS-specific default temporary directory (e.g. /tmp in Linux).")
 	cobraCmd.Flags().BoolVar(&cmd.keepKubeconfigs, "keep-kubeconfig", false, "Option that allows you to keep downloaded kubeconfig files after execution for caching purposes.")
 	cobraCmd.Flags().BoolVar(&cmd.noKubeconfig, "no-kubeconfig", false, "Option that turns off the downloading and exposure of the kubeconfig file for each Runtime.")
 	cobraCmd.Flags().BoolVar(&cmd.noPrefixOutput, "no-prefix-output", false, "Option that omits the prefixing of each output line with the Runtime name. By default, all output lines are prepended for better traceability.")
@@ -117,7 +118,7 @@ func (cmd *TaskRunCommand) Run(args []string) error {
 	}
 
 	mgr := NewRuntimeTaskMakager(cmd, operations)
-	strategy := orchestration.NewParallelOrchestrationStrategy(mgr, cmd.log)
+	strategy := strategies.NewParallelOrchestrationStrategy(mgr, cmd.log)
 	execID, err := strategy.Execute(operations, orchestration.StrategySpec{
 		Type:     orchestration.ParallelStrategy,
 		Schedule: orchestration.Immediate,

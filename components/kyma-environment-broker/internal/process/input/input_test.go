@@ -85,7 +85,7 @@ func TestShouldEnableComponents(t *testing.T) {
 		assert.NoError(t, err)
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "1.14.0")
-		creator, err := builder.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.14.0", Origin: "not-relevant"})
+		creator, err := builder.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.14.0", Origin: internal.Defaults})
 		require.NoError(t, err)
 
 		// when
@@ -152,7 +152,7 @@ func TestShouldDisableComponents(t *testing.T) {
 
 		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
 		assert.NoError(t, err)
-		creator, err := builder.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.14.0", Origin: "not-relevant"})
+		creator, err := builder.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.14.0", Origin: internal.Defaults})
 		require.NoError(t, err)
 
 		// when
@@ -325,7 +325,8 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(inputComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
-	factory, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, config, "1.10.0", fixTrialRegionMapping())
+	factory, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
+		componentsProvider, config, "1.10.0", fixTrialRegionMapping())
 	assert.NoError(t, err)
 	pp := fixProvisioningParameters(broker.AzurePlanID, "")
 
@@ -374,7 +375,7 @@ func TestShouldAddSuffixToRuntimeName(t *testing.T) {
 	componentsProvider := &automock.ComponentListProvider{}
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
+	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{TrialNodesNumber: 0}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
 
 	pp := fixProvisioningParameters(broker.TrialPlanID, "")
@@ -391,6 +392,8 @@ func TestShouldAddSuffixToRuntimeName(t *testing.T) {
 	// then
 	assert.NotEqual(t, pp.Parameters.Name, input.RuntimeInput.Name)
 	assert.Greater(t, len(input.RuntimeInput.Name), len(pp.Parameters.Name))
+	assert.Equal(t, 1, input.ClusterConfig.GardenerConfig.AutoScalerMin)
+	assert.Equal(t, 1, input.ClusterConfig.GardenerConfig.AutoScalerMax)
 }
 
 func TestShouldTrimRuntimeNameAndAddSuffix(t *testing.T) {
@@ -401,7 +404,7 @@ func TestShouldTrimRuntimeNameAndAddSuffix(t *testing.T) {
 	componentsProvider := &automock.ComponentListProvider{}
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
+	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{TrialNodesNumber: 3}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
 
 	pp := fixProvisioningParameters(broker.TrialPlanID, "")
@@ -419,15 +422,17 @@ func TestShouldTrimRuntimeNameAndAddSuffix(t *testing.T) {
 	assert.NotEqual(t, pp.Parameters.Name, input.RuntimeInput.Name)
 	assert.True(t, strings.HasPrefix(input.RuntimeInput.Name, testPrefix))
 	assert.Equal(t, 36, len(input.RuntimeInput.Name))
+	assert.Equal(t, 3, input.ClusterConfig.GardenerConfig.AutoScalerMin)
+	assert.Equal(t, 3, input.ClusterConfig.GardenerConfig.AutoScalerMax)
 }
 
-func TestShouldSetOneNodeForNewTrialClusters(t *testing.T) {
+func TestShouldSetNumberOfNodesForTrialPlan(t *testing.T) {
 	// given
 	optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 	componentsProvider := &automock.ComponentListProvider{}
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "not-important", fixTrialRegionMapping())
+	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{TrialNodesNumber: 2}, "not-important", fixTrialRegionMapping())
 	assert.NoError(t, err)
 
 	pp := fixProvisioningParameters(broker.TrialPlanID, "")

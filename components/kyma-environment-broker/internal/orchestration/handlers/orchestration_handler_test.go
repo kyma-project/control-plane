@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/gorilla/mux"
@@ -74,6 +75,25 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 		req, err = http.NewRequest(http.MethodGet, urlPath, nil)
 		require.NoError(t, err)
 		rr = httptest.NewRecorder()
+		err = db.Operations().InsertUpgradeKymaOperation(internal.UpgradeKymaOperation{
+			Operation: internal.Operation{
+				ID:              fixID,
+				InstanceID:      fixID,
+				OrchestrationID: fixID,
+				State:           domain.Succeeded,
+			},
+			RuntimeOperation: orchestration.RuntimeOperation{
+				ID: fixID,
+			},
+			PlanID: "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+		})
+		err = db.Operations().InsertProvisioningOperation(internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ID:         "id-2",
+				InstanceID: fixID,
+			},
+		})
+		require.NoError(t, err)
 
 		dto := orchestration.StatusResponse{}
 
@@ -86,6 +106,8 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 		err = json.Unmarshal(rr.Body.Bytes(), &dto)
 		require.NoError(t, err)
 		assert.Equal(t, dto.OrchestrationID, fixID)
+		assert.Len(t, dto.OperationStats, 6)
+		assert.Equal(t, 1, dto.OperationStats[orchestration.Succeeded])
 	})
 
 	t.Run("operations", func(t *testing.T) {

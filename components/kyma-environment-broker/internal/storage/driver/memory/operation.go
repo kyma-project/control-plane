@@ -4,6 +4,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
@@ -271,17 +272,20 @@ func (s *operations) GetOperationStats() (internal.OperationStats, error) {
 	return result, nil
 }
 
-func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (map[domain.LastOperationState]int, error) {
+func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (map[string]int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	result := map[domain.LastOperationState]int{
-		domain.InProgress: 0,
-		domain.Succeeded:  0,
-		domain.Failed:     0,
+	result := map[string]int{
+		orchestration.Canceled:   0,
+		orchestration.Canceling:  0,
+		orchestration.InProgress: 0,
+		orchestration.Pending:    0,
+		orchestration.Succeeded:  0,
+		orchestration.Failed:     0,
 	}
 	for _, op := range s.upgradeKymaOperations {
-		result[op.State] = result[op.State] + 1
+		result[string(op.State)] = result[string(op.State)] + 1
 	}
 	return result, nil
 }
