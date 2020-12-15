@@ -38,8 +38,8 @@ data:
   global.adminPassword: ""
   global.minikubeIP: ""
   global.ingress.domainName: "kyma.local"
-  global.istio.gateway.name: "compass-istio-gateway"
-  global.istio.gateway.namespace: "compass-system"
+  global.istio.gateway.name: "kyma-gateway"
+  global.istio.gateway.namespace: "kyma-system"
   global.externalServicesMock.enabled: "true"
 ---
 apiVersion: v1
