@@ -54,6 +54,9 @@ func TestEmsProvisioningSteps(t *testing.T) {
 		ProvisioningParameters: string(ppBytes),
 		SMClientFactory:        cliFactory,
 	}
+	simpleInputCreator := newInputCreator()
+	operation.InputCreator = simpleInputCreator
+
 	repo.InsertProvisioningOperation(operation)
 
 	bindingStep := NewEmsBindStep(repo)
@@ -86,10 +89,8 @@ func TestEmsProvisioningSteps(t *testing.T) {
 	}
 	require.NoError(t, err)
 	require.Zero(t, retry)
-
 	require.NotEmpty(t, operation.Ems.Instance.InstanceID)
 	require.NotEmpty(t, operation.Ems.BindingID)
-
 
 	fmt.Printf("\nexport INSTANCE_ID=%s\nexport BINDING_ID=%s\n", operation.Ems.Instance.InstanceID, operation.Ems.BindingID)
 }
