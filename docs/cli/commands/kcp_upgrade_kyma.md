@@ -36,6 +36,7 @@ kcp upgrade kyma --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...]
                                        region={REGEXP}     : Regex pattern to match against the Runtime's provider region field, e.g. "europe|eu-"
                                        runtime-id={ID}     : Specific Runtime by Runtime ID
                                        plan={NAME}         : Name of the Runtime's service plan. The possible values are: azure, azure_lite, trial, gcp
+                                       shoot={NAME}        : Specific Runtime by Shoot cluster name
   -e, --target-exclude stringArray   List of Runtime target specifiers to exclude. You can specify this option multiple times.
                                      A target specifier is a comma-separated list of the selectors described under the --target option.
 ```

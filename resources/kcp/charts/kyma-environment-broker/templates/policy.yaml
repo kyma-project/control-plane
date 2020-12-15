@@ -60,7 +60,7 @@ spec:
     to:
     - operation:
         methods: ["PUT"]
-        paths: [/orchestrations*"]
+        paths: ["/orchestrations*"]
     when:
     - key: request.auth.claims[groups]
       values: ["{{ .Values.oidc.groups.admin }}"]

@@ -34,7 +34,7 @@ kcp taskrun --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...] COMM
 
 ```
       --keep-kubeconfig              Option that allows you to keep downloaded kubeconfig files after execution for caching purposes.
-      --kubeconfig-dir string        Directory to download Runtime kubeconfig files to. By default, it is a random-generated directory in the OS-specific default temporary directory (e.g. /tmp in Linux).
+  -k, --kubeconfig-dir string        Directory to download Runtime kubeconfig files to. By default, it is a random-generated directory in the OS-specific default temporary directory (e.g. /tmp in Linux).
       --no-kubeconfig                Option that turns off the downloading and exposure of the kubeconfig file for each Runtime.
       --no-prefix-output             Option that omits the prefixing of each output line with the Runtime name. By default, all output lines are prepended for better traceability.
   -p, --parallelism int              Number of parallel commands to execute. (default 4)
@@ -46,6 +46,7 @@ kcp taskrun --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...] COMM
                                        region={REGEXP}     : Regex pattern to match against the Runtime's provider region field, e.g. "europe|eu-"
                                        runtime-id={ID}     : Specific Runtime by Runtime ID
                                        plan={NAME}         : Name of the Runtime's service plan. The possible values are: azure, azure_lite, trial, gcp
+                                       shoot={NAME}        : Specific Runtime by Shoot cluster name
   -e, --target-exclude stringArray   List of Runtime target specifiers to exclude. You can specify this option multiple times.
                                      A target specifier is a comma-separated list of the selectors described under the --target option.
 ```

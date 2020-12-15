@@ -8,10 +8,11 @@ The command has the following modes:
   - Without specifying an orchestration ID as an argument. In this mode, the command lists all orchestrations, or orchestrations matching the `--state` option, if provided.
   - When specifying an orchestration ID as an argument. In this mode, the command displays details about the specific orchestration.
       If the optional `--operation` flag is provided, it displays details of the specified Runtime operation within the orchestration.
-  - When specifying an orchestration ID, and `operations` or `ops` as arguments. In this mode, the command displays the Runtime operations for the given orchestration.
+  - When specifying an orchestration ID and `operations` or `ops` as arguments. In this mode, the command displays the Runtime operations for the given orchestration.
+  - When specifying an orchestration ID and `cancel` as arguments. In this mode, the command cancels the orchestration and all pending Runtime operations.
 
 ```bash
-kcp orchestrations [id] [flags]
+kcp orchestrations [id] [ops|operations] [cancel] [flags]
 ```
 
 ## Examples
@@ -21,6 +22,7 @@ kcp orchestrations [id] [flags]
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                  Display details about a specific orchestration.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified Runtime operation within the orchestration.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 operations       Display the operations of the given orchestration.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 cancel           Cancel the given orchestration.
 ```
 
 ## Options
@@ -28,7 +30,7 @@ kcp orchestrations [id] [flags]
 ```
       --operation string   Option that displays details of the specified Runtime operation when a given orchestration is selected.
   -o, --output string      Output type of displayed Runtime(s). The possible values are: table, json. (default "table")
-  -s, --state strings      Filter output by state. You can provide multiple values, either separated by a comma (e.g. failed,inprogress), or by specifying the option multiple times. The possible values are: failed, inprogress, pending, succeeded.
+  -s, --state strings      Filter output by state. You can provide multiple values, either separated by a comma (e.g. failed,inprogress), or by specifying the option multiple times. The possible values are: canceled, canceling, failed, inprogress, pending, succeeded.
 ```
 
 ## Global Options
