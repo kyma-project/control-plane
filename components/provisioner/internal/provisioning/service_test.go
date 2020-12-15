@@ -473,7 +473,16 @@ func TestService_RuntimeStatus(t *testing.T) {
 		readSession.On("GetLastOperation", operationID).Return(operation, nil)
 		readSession.On("GetCluster", operationID).Return(cluster, nil)
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil)
+		provisioner := &mocks2.Provisioner{}
+
+		// TODO: consider using matcher instead of mock.Anything
+
+		provisioner.On("GetHibernationStatus", mock.Anything, mock.Anything).Return(model.HibernationStatus{
+			HibernationPossible: true,
+			Hibernated:          true,
+		}, nil)
+
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil)
 
 		//when
 		status, err := resolver.RuntimeStatus(operationID)
@@ -523,6 +532,10 @@ func TestService_RuntimeStatus(t *testing.T) {
 		require.Error(t, err)
 		sessionFactoryMock.AssertExpectations(t)
 		readSession.AssertExpectations(t)
+	})
+
+	t.Run("Should return error when failed to get hibernation status", func(t *testing.T) {
+
 	})
 }
 
