@@ -82,7 +82,6 @@ type ComplexityRoot struct {
 		DiskType                            func(childComplexity int) int
 		EnableKubernetesVersionAutoUpdate   func(childComplexity int) int
 		EnableMachineImageVersionAutoUpdate func(childComplexity int) int
-		Hibernated                          func(childComplexity int) int
 		KubernetesVersion                   func(childComplexity int) int
 		LicenceType                         func(childComplexity int) int
 		MachineImage                        func(childComplexity int) int
@@ -99,6 +98,11 @@ type ComplexityRoot struct {
 		TargetSecret                        func(childComplexity int) int
 		VolumeSizeGb                        func(childComplexity int) int
 		WorkerCidr                          func(childComplexity int) int
+	}
+
+	HibernationStatus struct {
+		Hibernated          func(childComplexity int) int
+		HibernationPossible func(childComplexity int) int
 	}
 
 	KymaConfig struct {
@@ -143,6 +147,7 @@ type ComplexityRoot struct {
 	}
 
 	RuntimeStatus struct {
+		HibernationStatus       func(childComplexity int) int
 		LastOperationStatus     func(childComplexity int) int
 		RuntimeConfiguration    func(childComplexity int) int
 		RuntimeConnectionStatus func(childComplexity int) int
@@ -325,13 +330,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GardenerConfig.EnableMachineImageVersionAutoUpdate(childComplexity), true
 
-	case "GardenerConfig.hibernated":
-		if e.complexity.GardenerConfig.Hibernated == nil {
-			break
-		}
-
-		return e.complexity.GardenerConfig.Hibernated(childComplexity), true
-
 	case "GardenerConfig.kubernetesVersion":
 		if e.complexity.GardenerConfig.KubernetesVersion == nil {
 			break
@@ -443,6 +441,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GardenerConfig.WorkerCidr(childComplexity), true
+
+	case "HibernationStatus.hibernated":
+		if e.complexity.HibernationStatus.Hibernated == nil {
+			break
+		}
+
+		return e.complexity.HibernationStatus.Hibernated(childComplexity), true
+
+	case "HibernationStatus.hibernationPossible":
+		if e.complexity.HibernationStatus.HibernationPossible == nil {
+			break
+		}
+
+		return e.complexity.HibernationStatus.HibernationPossible(childComplexity), true
 
 	case "KymaConfig.components":
 		if e.complexity.KymaConfig.Components == nil {
@@ -650,6 +662,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RuntimeConnectionStatus.Status(childComplexity), true
 
+	case "RuntimeStatus.hibernationStatus":
+		if e.complexity.RuntimeStatus.HibernationStatus == nil {
+			break
+		}
+
+		return e.complexity.RuntimeStatus.HibernationStatus(childComplexity), true
+
 	case "RuntimeStatus.lastOperationStatus":
 		if e.complexity.RuntimeStatus.LastOperationStatus == nil {
 			break
@@ -764,7 +783,6 @@ type GardenerConfig {
     enableMachineImageVersionAutoUpdate: Boolean
     allowPrivilegedContainers: Boolean
     providerSpecificConfig: ProviderSpecificConfig
-    hibernated: Boolean
 }
 
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig
@@ -831,11 +849,18 @@ type RuntimeConnectionStatus {
     errors: [Error!]
 }
 
+
+type HibernationStatus {
+    hibernated: Boolean
+    hibernationPossible: Boolean
+}
+
 # We should consider renamig this type, as it contains more than just status.
 type RuntimeStatus {
     lastOperationStatus: OperationStatus
     runtimeConnectionStatus: RuntimeConnectionStatus
     runtimeConfiguration: RuntimeConfig
+    hibernationStatus: HibernationStatus
 }
 
 enum OperationState {
@@ -2465,7 +2490,7 @@ func (ec *executionContext) _GardenerConfig_providerSpecificConfig(ctx context.C
 	return ec.marshalOProviderSpecificConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificConfig(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GardenerConfig_hibernated(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _HibernationStatus_hibernated(ctx context.Context, field graphql.CollectedField, obj *HibernationStatus) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -2475,7 +2500,7 @@ func (ec *executionContext) _GardenerConfig_hibernated(ctx context.Context, fiel
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "GardenerConfig",
+		Object:   "HibernationStatus",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -2485,6 +2510,40 @@ func (ec *executionContext) _GardenerConfig_hibernated(ctx context.Context, fiel
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Hibernated, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HibernationStatus_hibernationPossible(ctx context.Context, field graphql.CollectedField, obj *HibernationStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "HibernationStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HibernationPossible, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3534,6 +3593,40 @@ func (ec *executionContext) _RuntimeStatus_runtimeConfiguration(ctx context.Cont
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalORuntimeConfig2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RuntimeStatus_hibernationStatus(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "RuntimeStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HibernationStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*HibernationStatus)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOHibernationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐHibernationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -5512,8 +5605,32 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_allowPrivilegedContainers(ctx, field, obj)
 		case "providerSpecificConfig":
 			out.Values[i] = ec._GardenerConfig_providerSpecificConfig(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var hibernationStatusImplementors = []string{"HibernationStatus"}
+
+func (ec *executionContext) _HibernationStatus(ctx context.Context, sel ast.SelectionSet, obj *HibernationStatus) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, hibernationStatusImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("HibernationStatus")
 		case "hibernated":
-			out.Values[i] = ec._GardenerConfig_hibernated(ctx, field, obj)
+			out.Values[i] = ec._HibernationStatus_hibernated(ctx, field, obj)
+		case "hibernationPossible":
+			out.Values[i] = ec._HibernationStatus_hibernationPossible(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5765,6 +5882,8 @@ func (ec *executionContext) _RuntimeStatus(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._RuntimeStatus_runtimeConnectionStatus(ctx, field, obj)
 		case "runtimeConfiguration":
 			out.Values[i] = ec._RuntimeStatus_runtimeConfiguration(ctx, field, obj)
+		case "hibernationStatus":
+			out.Values[i] = ec._RuntimeStatus_hibernationStatus(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6717,6 +6836,17 @@ func (ec *executionContext) marshalOGardenerConfig2ᚖgithubᚗcomᚋkymaᚑproj
 		return graphql.Null
 	}
 	return ec._GardenerConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOHibernationStatus2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐHibernationStatus(ctx context.Context, sel ast.SelectionSet, v HibernationStatus) graphql.Marshaler {
+	return ec._HibernationStatus(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOHibernationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐHibernationStatus(ctx context.Context, sel ast.SelectionSet, v *HibernationStatus) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._HibernationStatus(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}) (int, error) {

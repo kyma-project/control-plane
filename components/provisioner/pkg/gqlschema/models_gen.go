@@ -107,7 +107,6 @@ type GardenerConfig struct {
 	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
 	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
 	ProviderSpecificConfig              ProviderSpecificConfig `json:"providerSpecificConfig"`
-	Hibernated                          *bool                  `json:"hibernated"`
 }
 
 type GardenerConfigInput struct {
@@ -150,6 +149,11 @@ type GardenerUpgradeInput struct {
 	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate"`
 	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
+}
+
+type HibernationStatus struct {
+	Hibernated          *bool `json:"hibernated"`
+	HibernationPossible *bool `json:"hibernationPossible"`
 }
 
 type KymaConfig struct {
@@ -207,6 +211,7 @@ type RuntimeStatus struct {
 	LastOperationStatus     *OperationStatus         `json:"lastOperationStatus"`
 	RuntimeConnectionStatus *RuntimeConnectionStatus `json:"runtimeConnectionStatus"`
 	RuntimeConfiguration    *RuntimeConfig           `json:"runtimeConfiguration"`
+	HibernationStatus       *HibernationStatus       `json:"hibernationStatus"`
 }
 
 type UpgradeRuntimeInput struct {
