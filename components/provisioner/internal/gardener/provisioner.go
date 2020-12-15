@@ -20,6 +20,8 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -109,6 +111,34 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 	return nil
 }
 
+func (g *GardenerProvisioner) HibernateCluster(clusterID string, gardenerConfig model.GardenerConfig) apperrors.AppError {
+	shoot, err := g.shootClient.Get(context.Background(), gardenerConfig.Name, v1.GetOptions{})
+	if err != nil {
+		appErr := util.K8SErrorToAppError(err)
+		return appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, gardenerConfig.Name)
+	}
+
+	condition := gardencorev1beta1helper.GetOrInitCondition(shoot.Status.Constraints, v1beta1.ShootHibernationPossible)
+	if condition.Status == v1beta1.ConditionFalse {
+		return apperrors.BadRequest(fmt.Sprintf("cannot hibernate cluster: %s", condition.Message))
+	}
+
+	enabled := true
+	shoot.Spec.Hibernation.Enabled = &enabled
+
+	err = retry.Do(func() error {
+		_, err := g.shootClient.Update(context.Background(), shoot, v1.UpdateOptions{})
+		return err
+	}, retry.Attempts(5))
+
+	if err != nil {
+		apperr := util.K8SErrorToAppError(err)
+		return apperr.Append("error executing update shoot configuration")
+	}
+
+	return nil
+}
+
 func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, apperrors.AppError) {
 	shoot, err := g.shootClient.Get(context.Background(), cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
@@ -142,6 +172,23 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 
 	message := fmt.Sprintf("Deprovisioning started")
 	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.CleanupCluster, deletionTime), nil
+}
+
+func (g *GardenerProvisioner) GetHibernationStatus(clusterID string, gardenerConfig model.GardenerConfig) (model.HibernationStatus, apperrors.AppError) {
+	shoot, err := g.shootClient.Get(context.Background(), gardenerConfig.Name, v1.GetOptions{})
+	if err != nil {
+		appErr := util.K8SErrorToAppError(err)
+		return model.HibernationStatus{}, appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, gardenerConfig.Name)
+	}
+
+	condition := gardencorev1beta1helper.GetOrInitCondition(shoot.Status.Constraints, v1beta1.ShootHibernationPossible)
+	hibernationPossible := condition.Status == v1beta1.ConditionTrue
+	hibernated := shoot.Status.IsHibernated
+
+	return model.HibernationStatus{
+		Hibernated:          hibernated,
+		HibernationPossible: hibernationPossible,
+	}, nil
 }
 
 func annotateWithConfirmDeletion(shoot *gardener_types.Shoot) {

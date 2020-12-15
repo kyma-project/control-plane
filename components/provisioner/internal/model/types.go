@@ -20,6 +20,7 @@ const (
 	UpgradeShoot     OperationType = "UPGRADE_SHOOT"
 	Deprovision      OperationType = "DEPROVISION"
 	ReconnectRuntime OperationType = "RECONNECT_RUNTIME"
+	Hibernate        OperationType = "HIBERNATE"
 )
 
 type OperationStage string
@@ -43,6 +44,10 @@ const (
 
 	WaitingForShootUpgrade    OperationStage = "WaitingForShootUpgrade"
 	WaitingForShootNewVersion OperationStage = "WaitingForShootNewVersion"
+
+	CheckHibernationConditions OperationStage = "CheckHibernationConditions"
+	HibernateCluster           OperationStage = "HibernateCluster"
+	WaitForHibernation         OperationStage = "WaitForHibernation"
 
 	FinishedStage OperationStage = "Finished"
 )
@@ -84,8 +89,14 @@ type RuntimeStatus struct {
 	LastOperationStatus     Operation
 	RuntimeConnectionStatus RuntimeAgentConnectionStatus
 	RuntimeConfiguration    Cluster
+	HibernationStatus       HibernationStatus
 }
 
 type OperationsCount struct {
 	Count map[OperationType]int
+}
+
+type HibernationStatus struct {
+	Hibernated          bool
+	HibernationPossible bool
 }

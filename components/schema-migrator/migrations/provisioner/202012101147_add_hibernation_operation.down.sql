@@ -1,7 +1,5 @@
 BEGIN;
 
-ALTER TABLE gardener_config DROP COLUMN hibernated;
-
 DELETE FROM operation WHERE type = 'HIBERNATE';
 
 ALTER TYPE operation_type RENAME TO operation_type_old;

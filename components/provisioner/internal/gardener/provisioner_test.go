@@ -236,6 +236,41 @@ func newClusterConfig(name string, subAccountID *string, providerConfig model.Ga
 	}
 }
 
+func TestGardenerProvisioner_HibernateCluster(t *testing.T) {
+
+	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{Zones: []string{"zone-1"}})
+	require.NoError(t, err)
+	cluster := newClusterConfig(clusterName, nil, gcpGardenerConfig, region)
+
+	t.Run("should return error if failed to get shoot", func(t *testing.T) {
+		clientset := fake.NewSimpleClientset()
+		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
+
+		sessionFactory := &sessionMocks.Factory{}
+		provisioner := NewProvisioner(gardenerNamespace, shootClient, sessionFactory, auditLogsPolicyCMName, "")
+
+		// when
+		apperr := provisioner.HibernateCluster(cluster.ID, cluster.ClusterConfig)
+
+		// then
+		require.Error(t, apperr)
+		assert.Equal(t, apperrors.CodeInternal, apperr.Code())
+	})
+
+	t.Run("should return error if cluster cannot be hibernated", func(t *testing.T) {
+
+	})
+
+	t.Run("should hibernate cluster", func(t *testing.T) {
+
+	})
+
+	t.Run("should return error if failed to update shoot", func(t *testing.T) {
+
+	})
+
+}
+
 func assertAnnotation(t *testing.T, shoot *gardener_types.Shoot, name, value string) {
 	annotations := shoot.Annotations
 	if annotations == nil {

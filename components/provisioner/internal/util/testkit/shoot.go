@@ -1,7 +1,7 @@
 package testkit
 
 import (
-	v1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -116,5 +116,26 @@ func (ts *TestShoot) WithOperationSucceeded() *TestShoot {
 // WithOperationNil sets shoot.Status.LastOperation to nil
 func (ts *TestShoot) WithOperationNil() *TestShoot {
 	ts.shoot.Status.LastOperation = nil
+	return ts
+}
+
+// WithOperationNil sets shoot.Status.LastOperation to nil
+func (ts *TestShoot) WithHibernationState(hibernationPossible bool, hibernated bool) *TestShoot {
+	var condition v1beta1.ConditionStatus
+	if hibernationPossible {
+		condition = v1beta1.ConditionTrue
+	} else {
+		condition = v1beta1.ConditionFalse
+	}
+
+	hibernationImpossibleCondition := v1beta1.Condition{
+		Type:    v1beta1.ShootHibernationPossible,
+		Status:  condition,
+		Message: "NO",
+	}
+
+	ts.shoot.Status.Constraints = []v1beta1.Condition{hibernationImpossibleCondition}
+	ts.shoot.Status.IsHibernated = hibernated
+
 	return ts
 }

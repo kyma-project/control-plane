@@ -96,11 +96,18 @@ type RuntimeConnectionStatus {
     errors: [Error!]
 }
 
+
+type HibernationStatus {
+    hibernated: Boolean
+    hibernationPossible: Boolean
+}
+
 # We should consider renamig this type, as it contains more than just status.
 type RuntimeStatus {
     lastOperationStatus: OperationStatus
     runtimeConnectionStatus: RuntimeConnectionStatus
     runtimeConfiguration: RuntimeConfig
+    hibernationStatus: HibernationStatus
 }
 
 enum OperationState {
