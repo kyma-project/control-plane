@@ -21,6 +21,10 @@ func (c graphQLConverter) RuntimeStatusToGraphQLStatus(status model.RuntimeStatu
 		LastOperationStatus:     c.OperationStatusToGQLOperationStatus(status.LastOperationStatus),
 		RuntimeConnectionStatus: c.runtimeConnectionStatusToGraphQLStatus(status.RuntimeConnectionStatus),
 		RuntimeConfiguration:    c.clusterToToGraphQLRuntimeConfiguration(status.RuntimeConfiguration),
+		HibernationStatus: &gqlschema.HibernationStatus{
+			HibernationPossible: &status.HibernationStatus.HibernationPossible,
+			Hibernated:          &status.HibernationStatus.Hibernated,
+		},
 	}
 }
 
