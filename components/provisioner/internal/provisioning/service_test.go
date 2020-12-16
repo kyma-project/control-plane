@@ -867,6 +867,7 @@ func TestService_RollBackLastUpgrade(t *testing.T) {
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
 		readSessionMock := &sessionMocks.ReadSession{}
+		provisioner := &mocks2.Provisioner{}
 
 		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
 		readSessionMock.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
@@ -878,7 +879,14 @@ func TestService_RollBackLastUpgrade(t *testing.T) {
 		writeSessionWithinTransactionMock.On("Commit").Return(nil)
 		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil)
+		// TODO: consider using matcher instead of mock.Anything
+
+		provisioner.On("GetHibernationStatus", mock.Anything, mock.Anything).Return(model.HibernationStatus{
+			HibernationPossible: true,
+			Hibernated:          true,
+		}, nil)
+
+		service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil)
 
 		//when
 		runtimeStatus, err := service.RollBackLastUpgrade(runtimeID)
