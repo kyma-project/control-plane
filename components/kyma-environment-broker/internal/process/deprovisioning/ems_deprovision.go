@@ -1,8 +1,12 @@
 package deprovisioning
 
 import (
+<<<<<<< HEAD
 	"time"
 
+=======
+	"fmt"
+>>>>>>> 1b013b52... Use generic get offerings step
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
@@ -34,15 +38,15 @@ func (s *EmsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 
 	smCli, err := operation.ServiceManagerClient(log)
 	if err != nil {
-		return s.handleError(operation, err, log, "unable to create Service Manage client")
+		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : unable to create Service Manage client", s.Name()))
 	}
 
-	log.Infof("deprovisioning for EMS instance: %s started", operation.Ems.Instance.InstanceID)
+	log.Infof("Step %s : deprovisioning for EMS instance: %s started", s.Name(), operation.Ems.Instance.InstanceID)
 	_, err = smCli.Deprovision(operation.Ems.Instance.InstanceKey(), false)
 	if err != nil {
-		return s.handleError(operation, err, log, "unable to deprovision")
+		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : unable to deprovision", s.Name()))
 	}
-	log.Infof("deprovisioning for EMS instance: %s finished", operation.Ems.Instance.InstanceID)
+	log.Infof("Step %s : deprovisioning for EMS instance: %s finished", s.Name(), operation.Ems.Instance.InstanceID)
 
 	operation.Ems.Instance.InstanceID = ""
 	operation.Ems.Instance.Provisioned = false

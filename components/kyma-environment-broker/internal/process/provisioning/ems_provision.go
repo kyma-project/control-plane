@@ -2,9 +2,12 @@ package provisioning
 
 import (
 	"fmt"
+<<<<<<< HEAD
 	"time"
 
 	"github.com/Peripli/service-manager-cli/pkg/types"
+=======
+>>>>>>> 1b013b52... Use generic get offerings step
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -41,54 +44,40 @@ func (s *EmsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 
 	smCli, err := operation.ServiceManagerClient(log)
 	if err != nil {
-		return s.handleError(operation, err, log, "unable to create Service Manage client")
+		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : unable to create Service Manage client", s.Name()))
 	}
-	// get offering
-	offs, err := smCli.ListOfferingsByName(EmsOfferingName)
-	if err != nil {
-		return s.handleError(operation, err, log, "ListOfferingsByName() failed for:"+EmsOfferingName)
-	}
-	if offs.IsEmpty() {
-		return s.handleError(operation, fmt.Errorf("no offering for: %s", EmsOfferingName), log, "")
-	}
-	offering := offs.ServiceOfferings[0]
-	// get plan
-	plans, err := smCli.ListPlansByName(EmsPlanName, offering.ID)
-	if err != nil {
-		return s.handleError(operation, err, log, "ListPlansByName() failed for:"+EmsPlanName)
-	}
-	if plans.IsEmpty() {
-		return s.handleError(operation, fmt.Errorf("no plans for: %s", EmsPlanName), log, "")
-	}
-	plan := plans.ServicePlans[0]
 
 	// provision
-	operation, _, err = s.provision(smCli, operation, log, offering, plan)
+	operation, _, err = s.provision(smCli, operation, log)
 	if err != nil {
-		return s.handleError(operation, err, log, "EMS provision operation failed")
+		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : provision()  call failed", s.Name()))
 	}
 
 	operation.Ems.Instance.ProvisioningTriggered = true
 	operation, retry := s.operationManager.UpdateOperation(operation)
 	if retry > 0 {
-		log.Errorf("provisioning %s, unable to update operation", s.Name())
+		log.Errorf("step %s : unable to update operation", s.Name())
 		return operation, time.Second, nil
 	}
 
 	return operation, 0, nil
 }
 
-func (s *EmsProvisionStep) provision(smCli servicemanager.Client, operation internal.ProvisioningOperation, log logrus.FieldLogger,
-	offering types.ServiceOffering, plan types.ServicePlan) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *EmsProvisionStep) provision(smCli servicemanager.Client, operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
 	var input servicemanager.ProvisioningInput
 <<<<<<< HEAD
 	input.ID = uuid.New().String() // is this OK?
 =======
 	input.ID = uuid.New().String()
+<<<<<<< HEAD
 >>>>>>> 3ac83ef0... Update integration tests
 	input.ServiceID = offering.CatalogID
 	input.PlanID = plan.CatalogID
+=======
+	input.ServiceID = operation.Ems.Instance.ServiceID
+	input.PlanID = operation.Ems.Instance.PlanID
+>>>>>>> 1b013b52... Use generic get offerings step
 	input.SpaceGUID = uuid.New().String()
 	input.OrganizationGUID = uuid.New().String()
 	input.Context = map[string]interface{}{
@@ -122,16 +111,14 @@ func (s *EmsProvisionStep) provision(smCli servicemanager.Client, operation inte
 		"namespace": "default/sap.kyma/" + uuid.New().String(),
 	}
 
-	resp, err := smCli.Provision(offering.BrokerID, input, true)
+	resp, err := smCli.Provision(operation.Ems.Instance.BrokerID, input, true)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("EMS provision failed for brokerID: %s; input: %#v", offering.BrokerID, input))
+		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : EMS provision failed for brokerID: %s; input: %#v",
+			s.Name(), operation.Ems.Instance.BrokerID, input))
 	}
-	log.Infof("response from EMS provisioning call: %#v", resp)
+	log.Infof("Step %s : response from EMS provisioning call: %#v", s.Name(), resp)
 
-	operation.Ems.Instance.BrokerID = offering.BrokerID
 	operation.Ems.Instance.InstanceID = input.ID
-	operation.Ems.Instance.ServiceID = offering.CatalogID
-	operation.Ems.Instance.PlanID = input.PlanID
 
 	return operation, 0, nil
 }

@@ -278,7 +278,11 @@ func main() {
 				provisioning.EmsOfferingName, provisioning.EmsPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
 					return &op.Ems.Instance
 				}, db.Operations()),
+<<<<<<< HEAD
 			disabled: cfg.Ems.Disabled, // TODO: should be disabled by default?
+=======
+			disabled: cfg.Ems.Disabled,
+>>>>>>> 1b013b52... Use generic get offerings step
 		},
 		{
 			weight: 2,
@@ -294,6 +298,11 @@ func main() {
 				NamespaceAdminRole:  "nar",
 			}),
 			disabled: cfg.XSUAA.Disabled,
+		},
+		{
+			weight:   2,
+			step: provisioning.NewEmsProvisionStep(db.Operations()),
+			disabled: cfg.Ems.Disabled,
 		},
 		{
 			weight:   2,
@@ -344,6 +353,11 @@ func main() {
 			disabled: cfg.XSUAA.Disabled,
 		},
 		{
+			weight:   7,
+			step:     provisioning.NewEmsBindStep(db.Operations()),
+			disabled: cfg.Ems.Disabled,
+		},
+		{
 			weight: 10,
 			step:   provisioning.NewCreateRuntimeStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
 		},
@@ -385,9 +399,19 @@ func main() {
 			disabled: cfg.XSUAA.Disabled,
 		},
 		{
+			weight:   1,
+			step:     deprovisioning.NewEmsUnbindStep(db.Operations()),
+			disabled: cfg.Ems.Disabled,
+		},
+		{
 			weight:   2,
 			step:     deprovisioning.NewXSUAADeprovisionStep(db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
+		},
+		{
+			weight:   2,
+			step:     deprovisioning.NewEmsDeprovisionStep(db.Operations()),
+			disabled: cfg.Ems.Disabled,
 		},
 		{
 			weight: 10,
