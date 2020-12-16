@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,8 +35,8 @@ func TestAvsEvaluationConfigs(t *testing.T) {
 	externalEvalAssistant := NewExternalEvalAssistant(avsConfig)
 
 	// verify assistant configs
-	assert.Equal(internalEvalId, internalEvalAssistant.ProvideTesterAccessId())
-	assert.Equal(externalEvalId, externalEvalAssistant.ProvideTesterAccessId())
+	assert.Equal(internalEvalId, internalEvalAssistant.ProvideTesterAccessId(internal.ProvisioningParameters{}))
+	assert.Equal(externalEvalId, externalEvalAssistant.ProvideTesterAccessId(internal.ProvisioningParameters{}))
 
 	assert.Equal("int", internalEvalAssistant.ProvideSuffix())
 	assert.Equal("ext", externalEvalAssistant.ProvideSuffix())

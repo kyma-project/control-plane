@@ -7,8 +7,8 @@ import (
 )
 
 type EvalAssistant interface {
-	CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, configForModel *configForModel, url string) (*BasicEvaluationCreateRequest, error)
-	AppendOverrides(inputCreator internal.ProvisionerInputCreator, evaluationId int64)
+	CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, url string) (*BasicEvaluationCreateRequest, error)
+	AppendOverrides(inputCreator internal.ProvisionerInputCreator, evaluationId int64, pp internal.ProvisioningParameters)
 	IsAlreadyCreated(lifecycleData internal.AvsLifecycleData) bool
 	SetEvalId(lifecycleData *internal.AvsLifecycleData, evalId int64)
 	IsAlreadyDeleted(lifecycleData internal.AvsLifecycleData) bool

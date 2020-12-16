@@ -20,11 +20,11 @@ func NewExternalEvalAssistant(avsConfig Config) *ExternalEvalAssistant {
 	}
 }
 
-func (eea *ExternalEvalAssistant) CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, configForModel *configForModel, url string) (*BasicEvaluationCreateRequest, error) {
-	return newBasicEvaluationCreateRequest(operations, eea, configForModel, url)
+func (eea *ExternalEvalAssistant) CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, url string) (*BasicEvaluationCreateRequest, error) {
+	return newBasicEvaluationCreateRequest(operations, eea, url)
 }
 
-func (eea *ExternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionerInputCreator, evaluationId int64) {
+func (eea *ExternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionerInputCreator, evaluationId int64, _ internal.ProvisioningParameters) {
 	//do nothing
 }
 
@@ -36,8 +36,16 @@ func (eea *ExternalEvalAssistant) ProvideSuffix() string {
 	return "ext"
 }
 
-func (eea *ExternalEvalAssistant) ProvideTesterAccessId() int64 {
+func (eea *ExternalEvalAssistant) ProvideTesterAccessId(_ internal.ProvisioningParameters) int64 {
 	return eea.avsConfig.ExternalTesterAccessId
+}
+
+func (eea *ExternalEvalAssistant) ProvideGroupId(_ internal.ProvisioningParameters) int64 {
+	return eea.avsConfig.GroupId
+}
+
+func (eea *ExternalEvalAssistant) ProvideParentId(_ internal.ProvisioningParameters) int64 {
+	return eea.avsConfig.ParentId
 }
 
 func (eea *ExternalEvalAssistant) ProvideTags() []*Tag {
