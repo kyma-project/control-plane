@@ -159,6 +159,9 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		IsAsync:       true,
 		OperationData: operation.ID,
 		DashboardURL:  dashboardURL,
+		Metadata: domain.InstanceMetadata{
+			Labels: b.responseLabels(provisioningParameters, dashboardURL),
+		},
 	}, nil
 }
 
@@ -271,4 +274,12 @@ func (b *ProvisionEndpoint) determineLicenceType(planId string) *string {
 	}
 
 	return nil
+}
+
+func (b *ProvisionEndpoint) responseLabels(parameters internal.ProvisioningParameters, dashboardURL string) map[string]string {
+	responseLabels := make(map[string]string, 0)
+	responseLabels["Name"] = parameters.Parameters.Name
+	responseLabels["GrafanaURL"] = strings.Replace(dashboardURL, "console.", "grafana.", 1)
+
+	return responseLabels
 }

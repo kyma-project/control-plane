@@ -74,6 +74,8 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Regexp(t, "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$", response.OperationData)
 		assert.NotEqual(t, instanceID, response.OperationData)
 		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.test\.example\.com`, response.DashboardURL)
+		assert.Equal(t, clusterName, response.Metadata.Labels["Name"])
+		assert.Regexp(t, `^https:\/\/grafana\.[a-z0-9\-]{7,9}\.test\.example\.com`, response.Metadata.Labels["GrafanaURL"])
 
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)

@@ -50,6 +50,18 @@ spec:
               value: "false"
             - name: APP_BROKER_ENABLE_PLANS
               value: "{{ .Values.enablePlans }}"
+            - name: APP_BROKER_SERVICE_DISPLAY_NAME
+              value: "{{ .Values.brokerService.displayName }}"
+            - name: APP_BROKER_SERVICE_IMAGE_URL
+              value: "{{ .Values.brokerService.imageUrl }}"
+            - name: APP_BROKER_SERVICE_LONG_DESCRIPTION
+              value: "{{ .Values.brokerService.longDescription }}"
+            - name: APP_BROKER_SERVICE_PROVIDER_DISPLAY_NAME
+              value: "{{ .Values.brokerService.providerDisplayName }}"
+            - name: APP_BROKER_SERVICE_DOCUMENTATION_URL
+              value: "{{ .Values.brokerService.documentationUrl }}"
+            - name: APP_BROKER_SERVICE_SUPPORT_URL
+              value: "{{ .Values.brokerService.supportUrl }}"
             - name: APP_PROVISIONING_URL
               value: "{{ .Values.provisioner.URL }}"
             - name: APP_PROVISIONING_TIMEOUT
