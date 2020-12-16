@@ -235,12 +235,22 @@ type DeprovisioningOperation struct {
 	Operation       `json:"-"`
 	SMClientFactory SMClientFactory `json:"-"`
 
+<<<<<<< HEAD
 	Avs          AvsLifecycleData `json:"avs"`
 	EventHub     EventHub         `json:"eh"`
 	SubAccountID string           `json:"-"`
 	RuntimeID    string           `json:"runtime_id"`
 	XSUAA        XSUAAData        `json:"xsuaa"`
 	Ems          EmsData          `json:"ems"`
+=======
+	ProvisioningParameters string           `json:"provisioning_parameters"`
+	Avs                    AvsLifecycleData `json:"avs"`
+	EventHub               EventHub         `json:"eh"`
+	SubAccountID           string           `json:"-"`
+	RuntimeID              string           `json:"runtime_id"`
+	XSUAA                  XSUAAData        `json:"xsuaa"`
+	Ems                    EmsData          `json:"ems"`
+>>>>>>> ec1e40a0... Solve check-imports issues
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation

@@ -20,11 +20,11 @@ type EmsBindStep struct {
 }
 
 type eventingOverrides struct {
-	oauthClientId 		string
-	oauthClientSecret   string
-	oauthTokenEndpoint  string
-	publishUrl			string
-	bebNamespace		string
+	oauthClientId      string
+	oauthClientSecret  string
+	oauthTokenEndpoint string
+	publishUrl         string
+	bebNamespace       string
 }
 
 func NewEmsBindStep(os storage.Operations) *EmsBindStep {
@@ -69,7 +69,7 @@ func (s *EmsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : Bind() call failed", s.Name()))
 	}
 	// append overrides
-	evOverrides, err := getCredentials(respBinding.Binding, log)
+	evOverrides, err := getCredentials(respBinding.Binding)
 	if err != nil {
 		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : getCredentials() call failed", s.Name()))
 	}
@@ -87,7 +87,7 @@ func (s *EmsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 	return operation, 0, nil
 }
 
-func getCredentials(binding servicemanager.Binding, log logrus.FieldLogger) (*eventingOverrides, error) {
+func getCredentials(binding servicemanager.Binding) (*eventingOverrides, error) {
 	evOverrides := &eventingOverrides{}
 	credentials := binding.Credentials
 	evOverrides.bebNamespace = credentials["namespace"].(string)
@@ -122,28 +122,28 @@ func getCredentials(binding servicemanager.Binding, log logrus.FieldLogger) (*ev
 func getEventingOverrides(evOverrides *eventingOverrides) []*gqlschema.ConfigEntryInput {
 	return []*gqlschema.ConfigEntryInput{
 		{
-			Key:   "authentication.oauthClientId",
-			Value: evOverrides.oauthClientId,
+			Key:    "authentication.oauthClientId",
+			Value:  evOverrides.oauthClientId,
 			Secret: ptr.Bool(true),
 		},
 		{
-			Key:   "authentication.oauthClientSecret",
-			Value: evOverrides.oauthClientSecret,
+			Key:    "authentication.oauthClientSecret",
+			Value:  evOverrides.oauthClientSecret,
 			Secret: ptr.Bool(true),
 		},
 		{
-			Key:   "authentication.oauthTokenEndpoint",
-			Value: evOverrides.oauthTokenEndpoint,
+			Key:    "authentication.oauthTokenEndpoint",
+			Value:  evOverrides.oauthTokenEndpoint,
 			Secret: ptr.Bool(true),
 		},
 		{
-			Key:   "authentication.publishUrl",
-			Value: evOverrides.publishUrl,
+			Key:    "authentication.publishUrl",
+			Value:  evOverrides.publishUrl,
 			Secret: ptr.Bool(true),
 		},
 		{
-			Key:   "authentication.bebNamespace",
-			Value: evOverrides.bebNamespace,
+			Key:    "authentication.bebNamespace",
+			Value:  evOverrides.bebNamespace,
 			Secret: ptr.Bool(true),
 		},
 	}

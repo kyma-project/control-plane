@@ -6,7 +6,12 @@ import (
 
 =======
 	"fmt"
+<<<<<<< HEAD
 >>>>>>> 1b013b52... Use generic get offerings step
+=======
+	"time"
+
+>>>>>>> ec1e40a0... Solve check-imports issues
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"

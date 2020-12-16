@@ -6,23 +6,32 @@ import (
 	"encoding/json"
 	"fmt"
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> ec1e40a0... Solve check-imports issues
 	"os"
 	"testing"
 	"time"
 
+<<<<<<< HEAD
 =======
 >>>>>>> 7b4ea82d... Add int tests
+=======
+>>>>>>> ec1e40a0... Solve check-imports issues
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	"os"
 	"testing"
 	"time"
 >>>>>>> 7b4ea82d... Add int tests
+=======
+>>>>>>> ec1e40a0... Solve check-imports issues
 )
 
 // TestEmsSteps tests all EMS steps with real Service Manager
@@ -99,6 +108,7 @@ func TestEmsProvisioningSteps(t *testing.T) {
 	fmt.Printf(">>> %#v\n", operation.Ems)
 	require.NoError(t, err)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	//	require.Zero(t, retry)
 
 	for i := 0; i < 30; i++ { //wait 5 min
@@ -107,6 +117,11 @@ func TestEmsProvisioningSteps(t *testing.T) {
 
 	for i:=0; i < 30 ; i++ {  //wait 5 min
 >>>>>>> 7b4ea82d... Add int tests
+=======
+	//	require.Zero(t, retry)
+
+	for i := 0; i < 30; i++ { //wait 5 min
+>>>>>>> ec1e40a0... Solve check-imports issues
 		time.Sleep(retry)
 		operation, retry, err = bindingStep.Run(operation, log)
 		fmt.Printf(">>> %#v\n", operation.Ems)

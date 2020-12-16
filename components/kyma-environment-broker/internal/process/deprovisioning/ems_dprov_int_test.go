@@ -6,16 +6,23 @@ import (
 	"encoding/json"
 	"fmt"
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"os"
 	"testing"
 
 =======
 >>>>>>> 7b4ea82d... Add int tests
+=======
+	"os"
+	"testing"
+
+>>>>>>> ec1e40a0... Solve check-imports issues
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+<<<<<<< HEAD
 <<<<<<< HEAD
 )
 
@@ -34,6 +41,8 @@ func TestEmsDeprovisioningSteps(t *testing.T) {
 =======
 	"os"
 	"testing"
+=======
+>>>>>>> ec1e40a0... Solve check-imports issues
 )
 
 // TestProvisioningSteps tests all Ems steps with real Service Manager
@@ -67,10 +76,14 @@ func TestEmsDeprovisioningSteps(t *testing.T) {
 	pp := internal.ProvisioningParameters{
 		ErsContext: internal.ERSContext{
 <<<<<<< HEAD
+<<<<<<< HEAD
 			ServiceManager: &internal.ServiceManagerEntryDTO{
 =======
 			ServiceManager: &internal.ServiceManagerEntryDTO {
 >>>>>>> 7b4ea82d... Add int tests
+=======
+			ServiceManager: &internal.ServiceManagerEntryDTO{
+>>>>>>> ec1e40a0... Solve check-imports issues
 				URL: os.Getenv("SM_URL"),
 				Credentials: internal.ServiceManagerCredentials{
 					BasicAuth: internal.ServiceManagerBasicAuth{
@@ -82,6 +95,7 @@ func TestEmsDeprovisioningSteps(t *testing.T) {
 		},
 	}
 	ppBytes, _ := json.Marshal(pp)
+<<<<<<< HEAD
 <<<<<<< HEAD
 	operation := internal.DeprovisioningOperation{
 		ProvisioningParameters: string(ppBytes),
@@ -95,11 +109,14 @@ func TestEmsDeprovisioningSteps(t *testing.T) {
 				Provisioned: true,
 =======
 	operation := internal.DeprovisioningOperation {
+=======
+	operation := internal.DeprovisioningOperation{
+>>>>>>> ec1e40a0... Solve check-imports issues
 		ProvisioningParameters: string(ppBytes),
 		SMClientFactory:        cliFactory,
 		Ems: internal.EmsData{
-			Instance:  internal.ServiceManagerInstanceInfo{
-				BrokerID:              os.Getenv("BROKER_ID"),  // saved in InstanceKey, see the provisioning step
+			Instance: internal.ServiceManagerInstanceInfo{
+				BrokerID:              os.Getenv("BROKER_ID"), // saved in InstanceKey, see the provisioning step
 				ServiceID:             os.Getenv("SERVICE_ID"),
 				PlanID:                os.Getenv("PLAN_ID"),
 				InstanceID:            os.Getenv("INSTANCE_ID"),
@@ -128,7 +145,11 @@ func TestEmsDeprovisioningSteps(t *testing.T) {
 	require.NoError(t, err)
 	require.Zero(t, retry)
 <<<<<<< HEAD
+<<<<<<< HEAD
 }
 =======
 }
 >>>>>>> 7b4ea82d... Add int tests
+=======
+}
+>>>>>>> ec1e40a0... Solve check-imports issues

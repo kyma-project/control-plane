@@ -11,5 +11,5 @@ const (
 	Backup                  = "backup"
 	BackupInit              = "backup-init"
 	AvSBridge               = "avs-bridge"
-	Eventing				= "eventing"
+	Eventing                = "eventing"
 )

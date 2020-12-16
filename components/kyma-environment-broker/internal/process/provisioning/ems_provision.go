@@ -3,11 +3,16 @@ package provisioning
 import (
 	"fmt"
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"time"
 
 	"github.com/Peripli/service-manager-cli/pkg/types"
 =======
 >>>>>>> 1b013b52... Use generic get offerings step
+=======
+	"time"
+
+>>>>>>> ec1e40a0... Solve check-imports issues
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
