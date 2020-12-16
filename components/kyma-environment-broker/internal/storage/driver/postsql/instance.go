@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -133,24 +134,37 @@ func (s *Instance) Insert(instance internal.Instance) error {
 	})
 }
 
-func (s *Instance) Update(instance internal.Instance) error {
+func (s *Instance) Update(instance internal.Instance) (*internal.Instance, error) {
 	sess := s.NewWriteSession()
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		lastErr = sess.UpdateInstance(instance)
-		if lastErr != nil {
+
+		switch {
+		case dberr.IsNotFound(lastErr):
+			_, lastErr = s.NewReadSession().GetInstanceByID(instance.InstanceID)
 			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("Instance with id %s not exist", instance.InstanceID)
 			}
+			if lastErr != nil {
+				log.Warn(errors.Wrapf(lastErr, "while getting Operation").Error())
+				return false, nil
+			}
+
+			// the operation exists but the version is different
+			lastErr = dberr.Conflict("operation update conflict, operation ID: %s", instance.InstanceID)
+			return false, lastErr
+		case lastErr != nil:
 			log.Errorf("while updating instance ID %s: %v", instance.InstanceID, lastErr)
 			return false, nil
 		}
 		return true, nil
 	})
 	if err != nil {
-		return lastErr
+		return nil, lastErr
 	}
-	return nil
+	instance.Version = instance.Version + 1
+	return &instance, nil
 }
 
 func (s *Instance) Delete(instanceID string) error {

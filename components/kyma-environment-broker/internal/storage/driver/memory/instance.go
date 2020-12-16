@@ -148,12 +148,20 @@ func (s *instances) Insert(instance internal.Instance) error {
 	return nil
 }
 
-func (s *instances) Update(instance internal.Instance) error {
+func (s *instances) Update(instance internal.Instance) (*internal.Instance, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	oldInst, exists := s.instances[instance.InstanceID]
+	if !exists {
+		return nil, dberr.NotFound("instance %s not found", instance.InstanceID)
+	}
+	if oldInst.Version != instance.Version {
+		return nil, dberr.Conflict("unable to update instance %s - conflict", instance.InstanceID)
+	}
+	instance.Version = instance.Version + 1
 	s.instances[instance.InstanceID] = instance
 
-	return nil
+	return &instance, nil
 }
 
 func (s *instances) GetInstanceStats() (internal.InstanceStats, error) {

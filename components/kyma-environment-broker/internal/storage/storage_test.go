@@ -91,7 +91,7 @@ func TestSchemaInitializer(t *testing.T) {
 			require.NoError(t, err)
 
 			fixInstance.DashboardURL = "diff"
-			err = brokerStorage.Instances().Update(*fixInstance)
+			_, err = brokerStorage.Instances().Update(*fixInstance)
 			require.NoError(t, err)
 
 			// then
@@ -727,6 +727,55 @@ func TestSchemaInitializer(t *testing.T) {
 			// then
 			assertError(t, dberr.CodeAlreadyExists, err)
 		})
+	})
+
+	t.Run("Conflict Instances", func(t *testing.T) {
+		containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+		require.NoError(t, err)
+		defer containerCleanupFunc()
+
+		err = InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+
+		brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+		require.NoError(t, err)
+
+		svc := brokerStorage.Instances()
+
+		inst := internal.Instance{
+			InstanceID:             "abcd-01234",
+			RuntimeID:              "r-id-001",
+			GlobalAccountID:        "ga-001",
+			SubAccountID:           "sa-001",
+			ServiceID:              "service-id-001",
+			ServiceName:            "awesome-service",
+			ServicePlanID:          "plan-id",
+			ServicePlanName:        "awesome-plan",
+			DashboardURL:           "",
+			ProvisioningParameters: "",
+			ProviderRegion:         "",
+			CreatedAt:              time.Now(),
+			Version:                0,
+		}
+
+		err = svc.Insert(inst)
+		require.NoError(t, err)
+
+		// try an update
+		inst.DashboardURL = "http://kyma.org"
+		newInst, err := svc.Update(inst)
+		require.NoError(t, err)
+
+		// try another update with old version - expect conflict
+		inst.DashboardURL = "---"
+		_, err = svc.Update(inst)
+		require.Error(t, err)
+		assert.True(t, dberr.IsConflict(err))
+
+		// try second update with correct version
+		newInst.DashboardURL = "http://new.kyma.com"
+		_, err = svc.Update(*newInst)
+		require.NoError(t, err)
 	})
 
 	t.Run("Orchestrations", func(t *testing.T) {

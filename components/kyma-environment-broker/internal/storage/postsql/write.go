@@ -35,6 +35,7 @@ func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
 		Pair("provider_region", instance.ProviderRegion).
 		// in postgres database it will be equal to "0001-01-01 00:00:00+00"
 		Pair("deleted_at", time.Time{}).
+		Pair("version", instance.Version).
 		Exec()
 
 	if err != nil {
@@ -61,8 +62,9 @@ func (ws writeSession) DeleteInstance(instanceID string) dberr.Error {
 }
 
 func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
-	_, err := ws.update(InstancesTableName).
+	res, err := ws.update(InstancesTableName).
 		Where(dbr.Eq("instance_id", instance.InstanceID)).
+		Where(dbr.Eq("version", instance.Version)).
 		Set("instance_id", instance.InstanceID).
 		Set("runtime_id", instance.RuntimeID).
 		Set("global_account_id", instance.GlobalAccountID).
@@ -72,9 +74,18 @@ func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
 		Set("provisioning_parameters", instance.ProvisioningParameters).
 		Set("provider_region", instance.ProviderRegion).
 		Set("updated_at", time.Now()).
+		Set("version", instance.Version+1).
 		Exec()
 	if err != nil {
 		return dberr.Internal("Failed to update record to Instance table: %s", err)
+	}
+	rAffected, err := res.RowsAffected()
+	if err != nil {
+		// the optimistic locking requires numbers of rows affected
+		return dberr.Internal("the DB driver does not support RowsAffected operation")
+	}
+	if rAffected == int64(0) {
+		return dberr.NotFound("Cannot find Instance with ID:'%s' Version: %v", instance.InstanceID, instance.Version)
 	}
 
 	return nil
