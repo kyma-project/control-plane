@@ -146,6 +146,8 @@ func (c graphQLConverter) operationTypeToGraphQLType(operationType model.Operati
 		return gqlschema.OperationTypeUpgradeShoot
 	case model.ReconnectRuntime:
 		return gqlschema.OperationTypeReconnectRuntime
+	case model.Hibernate:
+		return gqlschema.OperationTypeHibernate
 	default:
 		return ""
 	}

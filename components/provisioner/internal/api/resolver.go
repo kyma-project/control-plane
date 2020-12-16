@@ -198,13 +198,13 @@ func (r *Resolver) HibernateRuntime(ctx context.Context, runtimeID string) (*gql
 
 	_, err := r.getAndValidateTenant(ctx, runtimeID)
 	if err != nil {
-		log.Errorf("Failed to upgrade Gardener Shoot cluster specification for Runtime  %s: %s", runtimeID, err)
+		log.Errorf("Failed to hibernate Runtime  %s: %s", runtimeID, err)
 		return nil, err
 	}
 
 	status, err := r.provisioning.HibernateCluster(runtimeID)
 	if err != nil {
-		log.Errorf("Failed to hibernate cluster %s: %s", runtimeID, err)
+		log.Errorf("Failed to hibernate Runtime %s: %s", runtimeID, err)
 		return nil, err
 	}
 

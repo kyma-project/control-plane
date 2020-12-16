@@ -38,19 +38,23 @@ func (c *WaitForHibernation) TimeLimit() time.Duration {
 	return c.timeLimit
 }
 
-func (c *WaitForHibernation) Run(cluster model.Cluster, operation model.Operation, _ logrus.FieldLogger) (operations.StageResult, error) {
+func (c *WaitForHibernation) Run(cluster model.Cluster, operation model.Operation, log logrus.FieldLogger) (operations.StageResult, error) {
 
+	log.Debugf("Starting WaitForHibernation stage for %s ...", cluster.ID)
 	shoot, err := c.gardenerClient.Get(context.Background(), cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err
 	}
 
 	if shoot.Status.IsHibernated {
+		log.Debugf("Cluster: %s is hibernated, proceeding to the next stage ...", cluster.ID)
 		return operations.StageResult{
 			Stage: c.nextStep,
 			Delay: 0,
 		}, nil
 	}
+
+	log.Debugf("Cluster: %s is not hibernated ...", cluster.ID)
 
 	return operations.StageResult{
 		Stage: c.Name(),

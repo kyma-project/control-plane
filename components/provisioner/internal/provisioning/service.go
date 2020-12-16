@@ -230,7 +230,7 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 }
 
 func (r *service) HibernateCluster(runtimeID string) (*gqlschema.OperationStatus, apperrors.AppError) {
-	log.Infof("Starting Upgrade of Gardener Shoot for Runtime '%s'...", runtimeID)
+	log.Infof("Starting hibernation for Runtime '%s'...", runtimeID)
 
 	session := r.dbSessionFactory.NewReadSession()
 
@@ -496,14 +496,9 @@ func (r *service) setUpgradeStarted(txSession dbsession.WriteSession, cluster mo
 }
 
 func (r *service) setHibernationStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig) (model.Operation, error) {
-	log.Infof("Starting Upgrade of Gardener Shoot operation")
+	log.Infof("Starting hibernation operation")
 
-	dberr := txSession.UpdateGardenerClusterConfig(gardenerConfig)
-	if dberr != nil {
-		return model.Operation{}, dberrors.Internal("Failed to set Shoot Upgrade started: %s", dberr.Error())
-	}
-
-	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.Hibernate, model.HibernateCluster, time.Now(), "Starting Gardener Shoot upgrade")
+	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.Hibernate, model.HibernateCluster, time.Now(), "Starting ")
 
 	if dbError != nil {
 		return model.Operation{}, dbError.Append("Failed to start operation of Gardener Shoot upgrade %s", dbError.Error())

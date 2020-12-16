@@ -124,7 +124,13 @@ func (g *GardenerProvisioner) HibernateCluster(clusterID string, gardenerConfig 
 	}
 
 	enabled := true
-	shoot.Spec.Hibernation.Enabled = &enabled
+	if shoot.Spec.Hibernation != nil {
+		shoot.Spec.Hibernation.Enabled = &enabled
+	} else {
+		shoot.Spec.Hibernation = &v1beta1.Hibernation{
+			Enabled: &enabled,
+		}
+	}
 
 	err = retry.Do(func() error {
 		_, err := g.shootClient.Update(context.Background(), shoot, v1.UpdateOptions{})

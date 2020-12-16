@@ -182,7 +182,7 @@ func CreateHibernationQueue(
 
 	hibernateClusterExecutor := operations.NewExecutor(
 		factory.NewReadWriteSession(),
-		model.UpgradeShoot,
+		model.Hibernate,
 		upgradeSteps,
 		failure.NewNoopFailureHandler(),
 		directorClient,
