@@ -54,6 +54,7 @@ const (
 	RuntimeIDParam       = "runtime_id"
 	RegionParam          = "region"
 	ShootParam           = "shoot"
+	PlanParam            = "plan"
 )
 
 type ListParameters struct {
@@ -65,4 +66,5 @@ type ListParameters struct {
 	RuntimeIDs       []string
 	Regions          []string
 	Shoots           []string
+	Plans            []string
 }
