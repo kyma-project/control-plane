@@ -45,9 +45,7 @@ const (
 	WaitingForShootUpgrade    OperationStage = "WaitingForShootUpgrade"
 	WaitingForShootNewVersion OperationStage = "WaitingForShootNewVersion"
 
-	CheckHibernationConditions OperationStage = "CheckHibernationConditions"
-	HibernateCluster           OperationStage = "HibernateCluster"
-	WaitForHibernation         OperationStage = "WaitForHibernation"
+	WaitForHibernation OperationStage = "WaitForHibernation"
 
 	FinishedStage OperationStage = "Finished"
 )

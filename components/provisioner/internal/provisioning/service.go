@@ -498,7 +498,7 @@ func (r *service) setUpgradeStarted(txSession dbsession.WriteSession, cluster mo
 func (r *service) setHibernationStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig) (model.Operation, error) {
 	log.Infof("Starting hibernation operation")
 
-	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.Hibernate, model.HibernateCluster, time.Now(), "Starting ")
+	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.Hibernate, model.WaitForHibernation, time.Now(), "Starting ")
 
 	if dbError != nil {
 		return model.Operation{}, dbError.Append("Failed to start operation of Gardener Shoot upgrade %s", dbError.Error())
