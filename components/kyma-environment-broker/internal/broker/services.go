@@ -15,7 +15,7 @@ type OptionalComponentNamesProvider interface {
 
 type ServicesEndpoint struct {
 	log logrus.FieldLogger
-	cfg Config
+	cfg Service
 
 	optionalComponents OptionalComponentNamesProvider
 	enabledPlanIDs     map[string]struct{}
@@ -30,7 +30,7 @@ func NewServices(cfg Config, optComponentsSvc OptionalComponentNamesProvider, lo
 
 	return &ServicesEndpoint{
 		log:                log.WithField("service", "ServicesEndpoint"),
-		cfg:                cfg,
+		cfg:                cfg.Service,
 		optionalComponents: optComponentsSvc,
 		enabledPlanIDs:     enabledPlanIDs,
 	}
