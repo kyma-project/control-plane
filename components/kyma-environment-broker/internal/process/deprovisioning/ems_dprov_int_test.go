@@ -129,6 +129,7 @@ func TestEmsDeprovisioningSteps(t *testing.T) {
 >>>>>>> 3ac83ef0... Update integration tests
 			},
 			BindingID: os.Getenv("BINDING_ID"),
+			Overrides: "encryptedEventingOverrides",
 		},
 	}
 	repo.InsertDeprovisioningOperation(operation)

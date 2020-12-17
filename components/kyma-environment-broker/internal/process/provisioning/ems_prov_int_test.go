@@ -48,9 +48,16 @@ func TestEmsProvisioningSteps(t *testing.T) {
 // export SM_URL=
 // go test -v -tags=sm_integration ./internal/process/provisioning/... -run TestEmsSteps -count=1
 <<<<<<< HEAD
+<<<<<<< HEAD
 func TestEmsSteps(t *testing.T) {
 >>>>>>> 7b4ea82d... Add int tests
 =======
+=======
+const (
+	secretKey = "1234567890123456"
+)
+
+>>>>>>> 89a5fd0f... Persist EMS overrides in DB
 func TestEmsProvisioningSteps(t *testing.T) {
 >>>>>>> 3ac83ef0... Update integration tests
 	repo := storage.NewMemoryStorage().Operations()
@@ -90,7 +97,7 @@ func TestEmsProvisioningSteps(t *testing.T) {
 
 	repo.InsertProvisioningOperation(operation)
 
-	bindingStep := NewEmsBindStep(repo)
+	bindingStep := NewEmsBindStep(repo, secretKey)
 
 	log := logrus.New()
 
@@ -137,10 +144,17 @@ func TestEmsProvisioningSteps(t *testing.T) {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> 7b4ea82d... Add int tests
 =======
 >>>>>>> 96ead07e... Add eventing overrides
+=======
+	overridesOut, err := decryptOverrides(secretKey, operation.Ems.Overrides)
+	require.NoError(t, err)
+
+>>>>>>> 89a5fd0f... Persist EMS overrides in DB
 	fmt.Printf("\nexport INSTANCE_ID=%s\nexport BINDING_ID=%s\n", operation.Ems.Instance.InstanceID, operation.Ems.BindingID)
+	fmt.Printf("\nexport OVERRIDES=%#v\n", overridesOut)
 }

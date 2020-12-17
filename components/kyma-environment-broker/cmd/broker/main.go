@@ -354,7 +354,7 @@ func main() {
 		},
 		{
 			weight:   7,
-			step:     provisioning.NewEmsBindStep(db.Operations()),
+			step:     provisioning.NewEmsBindStep(db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Ems.Disabled,
 		},
 		{

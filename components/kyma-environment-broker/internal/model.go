@@ -217,8 +217,10 @@ type XSUAAData struct {
 }
 
 type EmsData struct {
-	Instance  ServiceManagerInstanceInfo `json:"instance"`
-	BindingID string                     `json:"bindingId"`
+	Instance ServiceManagerInstanceInfo `json:"instance"`
+
+	BindingID string `json:"bindingId"`
+	Overrides string `json:"overrides"`
 }
 
 func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {

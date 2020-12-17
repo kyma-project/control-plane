@@ -43,7 +43,8 @@ func (s *EmsProvisionStep) Name() string {
 }
 
 func (s *EmsProvisionStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	if operation.Ems.Instance.InstanceID != "" {
+	if operation.Ems.Instance.ProvisioningTriggered {
+		log.Infof("Step %s : Ems Provisioning step was already triggered", s.Name())
 		return operation, 0, nil
 	}
 
@@ -57,7 +58,7 @@ func (s *EmsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 	if err != nil {
 		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : provision()  call failed", s.Name()))
 	}
-
+	// save the status
 	operation.Ems.Instance.ProvisioningTriggered = true
 	operation, retry := s.operationManager.UpdateOperation(operation)
 	if retry > 0 {
