@@ -243,15 +243,15 @@ func main() {
 	defer cancel()
 	go downloader.FetchPeriodically(ctx, release.ShortInterval, release.LongInterval)
 
-	// Run installation queue
 	provisioningQueue.Run(ctx.Done())
 
 	deprovisioningQueue.Run(ctx.Done())
 
-	// Run upgrade queue
 	upgradeQueue.Run(ctx.Done())
 
 	shootUpgradeQueue.Run(ctx.Done())
+
+	hibernationQueue.Run(ctx.Done())
 
 	gqlCfg := gqlschema.Config{
 		Resolvers: resolver,
