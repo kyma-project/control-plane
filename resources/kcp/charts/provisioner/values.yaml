@@ -66,6 +66,6 @@ tests:
     version: "1.14.0"
     preUpgradeVersion: "1.13.0"
   kubernetes:
-    version: "1.18.5"
-    upgradeVersion: "1.18.5"
+    version: "1.18.12"
+    upgradeVersion: "1.18.12"
   queryLogging: false
