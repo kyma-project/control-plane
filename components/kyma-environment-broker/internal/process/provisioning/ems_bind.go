@@ -113,7 +113,7 @@ func (s *EmsBindStep) handleError(operation internal.ProvisioningOperation, err 
 }
 
 func getCredentials(binding servicemanager.Binding) (*EventingOverrides, error) {
-	evOverrides := &EventingOverrides{}
+	evOverrides := EventingOverrides{}
 	credentials := binding.Credentials
 	evOverrides.BebNamespace = credentials["namespace"].(string)
 	messaging, ok := credentials["messaging"].([]interface{})
@@ -141,7 +141,7 @@ func getCredentials(binding servicemanager.Binding) (*EventingOverrides, error) 
 			break
 		}
 	}
-	return evOverrides, nil
+	return &evOverrides, nil
 }
 
 func getEventingOverrides(evOverrides *EventingOverrides) []*gqlschema.ConfigEntryInput {
@@ -193,9 +193,9 @@ func decryptOverrides(secretKey string, encryptedOverrides string) (*EventingOve
 	if err != nil {
 		return nil, errors.Wrap(err, "while decrypting eventing overrides")
 	}
-	eventingOverrides := new(EventingOverrides)
+	eventingOverrides := EventingOverrides{}
 	if err := json.Unmarshal(decryptedOverrides, &eventingOverrides); err != nil {
 		return nil, errors.Wrap(err, "while unmarshall eventing overrides")
 	}
-	return eventingOverrides, nil
+	return &eventingOverrides, nil
 }
