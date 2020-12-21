@@ -486,7 +486,7 @@ func testHibernateRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 	require.NotEmpty(t, hibernationOperation.ID)
 
 	// when
-	simulateHibernation(shoot)
+	simulateHibernation(t, shootInterface, shoot)
 
 	// when
 	// wait for Shoot to update
