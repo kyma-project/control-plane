@@ -481,16 +481,16 @@ func testHibernateRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 	readSession := dbsFactory.NewReadSession()
 
 	// when
+	simulateHibernation(t, shootInterface, shoot)
+
+	// when
 	hibernationOperation, err := resolver.HibernateRuntime(ctx, runtimeID)
 	require.NoError(t, err)
 	require.NotEmpty(t, hibernationOperation.ID)
 
 	// when
-	simulateHibernation(t, shootInterface, shoot)
-
-	// when
 	// wait for Shoot to update
-	time.Sleep(15 * waitPeriod)
+	time.Sleep(waitPeriod)
 
 	// assert database content
 	operation, err := readSession.GetOperation(*hibernationOperation.ID)
