@@ -241,6 +241,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			testUpgradeGardenerShoot(t, ctx, resolver, dbsFactory, config.runtimeID, config.upgradeShootInput, shootInterface, inputConverter)
 
 			testDeprovisionRuntime(t, ctx, resolver, dbsFactory, config.runtimeID, shootInterface)
+
+			testHibernateRuntime(t, ctx, resolver, dbsFactory, config.runtimeID, shootInterface)
 		})
 	}
 
@@ -467,6 +469,32 @@ func testDeprovisionRuntime(t *testing.T, ctx context.Context, resolver *api.Res
 	assert.Equal(t, strings.ToUpper(gqlschema.OperationStateSucceeded.String()), string(operation.State))
 }
 
+func testHibernateRuntime(t *testing.T, ctx context.Context, resolver *api.Resolver, dbsFactory dbsession.Factory, runtimeID string, shootInterface gardener_apis.ShootInterface) {
+
+	list, err := shootInterface.List(context.Background(), metav1.ListOptions{})
+	require.NoError(t, err)
+	shoot := &list.Items[0]
+
+	readSession := dbsFactory.NewReadSession()
+
+	// when
+	hibernationOperation, err := resolver.HibernateRuntime(ctx, runtimeID)
+	require.NoError(t, err)
+	require.NotEmpty(t, hibernationOperation.ID)
+
+	// when
+	simulateHibernation(t, shootInterface, shoot)
+
+	// when
+	// wait for Shoot to update
+	time.Sleep(2 * waitPeriod)
+
+	// assert database content
+	operation, err := readSession.GetOperation(*hibernationOperation.ID)
+	require.NoError(t, err)
+	assert.Equal(t, strings.ToUpper(gqlschema.OperationStateSucceeded.String()), string(operation.State))
+}
+
 func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.OperationStatus {
 	return &gqlschema.OperationStatus{
 		ID:        operationId,
@@ -540,6 +568,12 @@ func setShootStatusToSuccessful(t *testing.T, f gardener_apis.ShootInterface, sh
 	_, err := f.Update(context.Background(), shoot, metav1.UpdateOptions{})
 
 	require.NoError(t, err)
+}
+
+func simulateHibernation(t *testing.T, shoots gardener_apis.ShootInterface, shoot *gardener_types.Shoot) {
+	if shoot != nil {
+		shoot.Status.IsHibernated = true
+	}
 }
 
 func createKubeconfigSecret(t *testing.T, s v1core.SecretInterface, shootName string) {

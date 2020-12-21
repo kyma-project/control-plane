@@ -638,3 +638,84 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		require.Empty(t, status)
 	})
 }
+
+func TestResolver_HibernateCluster(t *testing.T) {
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
+	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
+
+	t.Run("Should hibernate cluster", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+		provisioner := api.NewResolver(provisioningService, validator)
+
+		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
+		message := "some message"
+
+		operationStatus := &gqlschema.OperationStatus{
+			ID:        &operationID,
+			Operation: gqlschema.OperationTypeProvision,
+			State:     gqlschema.OperationStateInProgress,
+			RuntimeID: &runtimeID,
+			Message:   &message,
+		}
+
+		provisioningService.On("HibernateCluster", operationID).Return(operationStatus, nil)
+		validator.On("ValidateTenant", operationID, tenant).Return(nil)
+
+		//when
+		status, err := provisioner.HibernateRuntime(ctx, operationID)
+
+		//then
+		require.NoError(t, err)
+		assert.Equal(t, operationStatus, status)
+	})
+
+	t.Run("Should return error when hibernation fails", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+		provisioner := api.NewResolver(provisioningService, validator)
+
+		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
+
+		provisioningService.On("HibernateCluster", operationID).Return(nil, apperrors.Internal("Some error"))
+		validator.On("ValidateTenant", operationID, tenant).Return(nil)
+
+		//when
+		status, err := provisioner.HibernateRuntime(ctx, operationID)
+
+		//then
+		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
+		require.Empty(t, status)
+	})
+
+	t.Run("Should return error when tenant validation fails", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+		provisioner := api.NewResolver(provisioningService, validator)
+
+		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
+		message := "some message"
+
+		operationStatus := &gqlschema.OperationStatus{
+			ID:        &operationID,
+			Operation: gqlschema.OperationTypeProvision,
+			State:     gqlschema.OperationStateInProgress,
+			RuntimeID: &runtimeID,
+			Message:   &message,
+		}
+
+		provisioningService.On("HibernateCluster", operationID).Return(operationStatus, nil)
+		validator.On("ValidateTenant", operationID, tenant).Return(apperrors.BadRequest("oh no"))
+		//when
+		status, err := provisioner.HibernateRuntime(ctx, operationID)
+
+		//then
+		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
+		require.Empty(t, status)
+	})
+}

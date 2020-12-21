@@ -475,9 +475,7 @@ func TestService_RuntimeStatus(t *testing.T) {
 
 		provisioner := &mocks2.Provisioner{}
 
-		// TODO: consider using matcher instead of mock.Anything
-
-		provisioner.On("GetHibernationStatus", mock.Anything, mock.Anything).Return(model.HibernationStatus{
+		provisioner.On("GetHibernationStatus", mock.AnythingOfType("string"), cluster.ClusterConfig).Return(model.HibernationStatus{
 			HibernationPossible: true,
 			Hibernated:          true,
 		}, nil)
@@ -944,6 +942,158 @@ func TestService_RollBackLastUpgrade(t *testing.T) {
 			readSessionMock.AssertExpectations(t)
 		})
 	}
+}
+
+func TestService_HibernateShoot(t *testing.T) {
+	releaseProvider := &releaseMocks.Provider{}
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseProvider, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
+	uuidGenerator := uuid.NewUUIDGenerator()
+	graphQLConverter := NewGraphQLConverter()
+
+	lastOperation := model.Operation{ID: operationID, State: model.Succeeded, Type: model.Upgrade}
+
+	cluster := model.Cluster{
+		ID: runtimeID,
+	}
+
+	time := time.Now()
+	hibernationOperation := model.Operation{
+		ID:             operationID,
+		Type:           model.Hibernate,
+		StartTimestamp: time,
+		State:          model.InProgress,
+		Message:        "",
+		ClusterID:      runtimeID,
+		Stage:          model.WaitForHibernation,
+		LastTransition: &time,
+	}
+
+	for _, testCase := range []struct {
+		description string
+		mockFunc    func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, provisioner *mocks2.Provisioner)
+	}{
+		{
+			description: "should fail failed to get last operation",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, provisioner *mocks2.Provisioner) {
+				sessionFactory.On("NewReadSession").Return(readSession, nil)
+				readSession.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("error"))
+			},
+		},
+		{
+			description: "should fail when operation in progress",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, provisioner *mocks2.Provisioner) {
+				sessionFactory.On("NewReadSession").Return(readSession, nil)
+				readSession.On("GetLastOperation", runtimeID).Return(model.Operation{ID: operationID, State: model.InProgress, Type: model.Upgrade}, nil)
+			},
+		},
+		{
+			description: "should fail when failed to get cluster",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, provisioner *mocks2.Provisioner) {
+				sessionFactory.On("NewReadSession").Return(readSession, nil)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(model.Cluster{}, dberrors.Internal("error"))
+			},
+		},
+		{
+			description: "should fail when failed to start transaction",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, provisioner *mocks2.Provisioner) {
+				sessionFactory.On("NewReadSession").Return(readSession, nil)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
+				sessionFactory.On("NewSessionWithinTransaction").Return(nil, dberrors.Internal("error"))
+			},
+		},
+		{
+			description: "should fail when failed to set operation started",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, provisioner *mocks2.Provisioner) {
+				sessionFactory.On("NewReadSession").Return(readSession, nil)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
+				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
+				writeSession.On("InsertOperation", mock.MatchedBy(getOperationMatcher(hibernationOperation))).Return(dberrors.Internal("error"))
+				writeSession.On("RollbackUnlessCommitted").Return(nil)
+			},
+		},
+		{
+			description: "should fail when failed to hibernate cluster",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, provisioner *mocks2.Provisioner) {
+				sessionFactory.On("NewReadSession").Return(readSession, nil)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
+				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
+				writeSession.On("InsertOperation", mock.MatchedBy(getOperationMatcher(hibernationOperation))).Return(nil)
+				writeSession.On("RollbackUnlessCommitted").Return(nil)
+				provisioner.On("HibernateCluster", cluster.ID, cluster.ClusterConfig).Return(apperrors.Internal("some error"))
+			},
+		},
+		{
+			description: "should fail when failed to commit transaction",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, provisioner *mocks2.Provisioner) {
+				sessionFactory.On("NewReadSession").Return(readSession, nil)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
+				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
+				writeSession.On("InsertOperation", mock.MatchedBy(getOperationMatcher(hibernationOperation))).Return(nil)
+				writeSession.On("RollbackUnlessCommitted").Return(nil)
+				provisioner.On("HibernateCluster", cluster.ID, cluster.ClusterConfig).Return(nil)
+				writeSession.On("Commit").Return(dberrors.Internal("error"))
+			},
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			//given
+			sessionFactoryMock := &sessionMocks.Factory{}
+			writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
+			readSessionMock := &sessionMocks.ReadSession{}
+			provisioner := &mocks2.Provisioner{}
+
+			testCase.mockFunc(sessionFactoryMock, writeSessionWithinTransactionMock, readSessionMock, provisioner)
+
+			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil)
+
+			//when
+			_, err := service.HibernateCluster(runtimeID)
+			require.Error(t, err)
+
+			//then
+			sessionFactoryMock.AssertExpectations(t)
+			writeSessionWithinTransactionMock.AssertExpectations(t)
+			readSessionMock.AssertExpectations(t)
+			provisioner.AssertExpectations(t)
+		})
+	}
+
+	t.Run("Should hibernate cluster and return operation ID", func(t *testing.T) {
+		//given
+		sessionFactoryMock := &sessionMocks.Factory{}
+		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
+		readSessionMock := &sessionMocks.ReadSession{}
+		provisionerMock := &mocks2.Provisioner{}
+		hibernationQueue := &mocks.OperationQueue{}
+
+		sessionFactoryMock.On("NewReadSession").Return(readSessionMock, nil)
+		readSessionMock.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+		readSessionMock.On("GetCluster", runtimeID).Return(cluster, nil)
+		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
+		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(getOperationMatcher(hibernationOperation))).Return(nil)
+		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return(nil)
+		provisionerMock.On("HibernateCluster", cluster.ID, cluster.ClusterConfig).Return(nil)
+		writeSessionWithinTransactionMock.On("Commit").Return(nil)
+		hibernationQueue.On("Add", mock.AnythingOfType("string")).Return()
+
+		service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisionerMock, uuidGenerator, nil, nil, nil, nil, hibernationQueue)
+
+		//when
+		runtimeStatus, err := service.HibernateCluster(runtimeID)
+		require.NoError(t, err)
+
+		//then
+		assert.NotEmpty(t, runtimeStatus)
+		sessionFactoryMock.AssertExpectations(t)
+		writeSessionWithinTransactionMock.AssertExpectations(t)
+		readSessionMock.AssertExpectations(t)
+		provisionerMock.AssertExpectations(t)
+	})
 }
 
 func getOperationMatcher(expected model.Operation) func(model.Operation) bool {

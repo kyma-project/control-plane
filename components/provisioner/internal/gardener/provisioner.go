@@ -22,15 +22,21 @@ import (
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
-	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 )
 
+//go:generate mockery -name=Client
+type Client interface {
+	Create(ctx context.Context, shoot *v1beta1.Shoot, opts v1.CreateOptions) (*v1beta1.Shoot, error)
+	Update(ctx context.Context, shoot *v1beta1.Shoot, opts v1.UpdateOptions) (*v1beta1.Shoot, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1beta1.Shoot, error)
+}
+
 func NewProvisioner(
 	namespace string,
-	shootClient gardener_apis.ShootInterface,
+	shootClient Client,
 	factory dbsession.Factory,
 	policyConfigMapName string, maintenanceWindowConfigPath string) *GardenerProvisioner {
 	return &GardenerProvisioner{
@@ -44,7 +50,7 @@ func NewProvisioner(
 
 type GardenerProvisioner struct {
 	namespace                   string
-	shootClient                 gardener_apis.ShootInterface
+	shootClient                 Client
 	dbSessionFactory            dbsession.Factory
 	directorService             director.DirectorClient
 	policyConfigMapName         string
