@@ -2,7 +2,6 @@ package storage
 
 import (
 	"github.com/gocraft/dbr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/memory"
 	postgres "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
@@ -36,7 +35,7 @@ func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, *dbr.Conn
 	connection.SetMaxIdleConns(cfg.MaxIdleConns)
 	connection.SetMaxOpenConns(cfg.MaxOpenConns)
 
-	fact := dbsession.NewFactory(connection)
+	fact := postsql.NewFactory(connection)
 
 	enc := NewEncrypter(cfg.SecretKey)
 

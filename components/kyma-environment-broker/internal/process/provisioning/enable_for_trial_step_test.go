@@ -17,10 +17,10 @@ func TestEnableForTrialPlanStepShouldEnable(t *testing.T) {
 	// Given
 	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
-	operation := fixOperationWithPlanID(t, broker.TrialPlanID)
+	operation := fixOperationWithPlanID(broker.TrialPlanID)
 	simpleInputCreator := newInputCreator()
 	operation.InputCreator = simpleInputCreator
-	anotherOperation := fixOperationWithPlanID(t, "enabled")
+	anotherOperation := fixOperationWithPlanID("enabled")
 	var runTime time.Duration = 10
 
 	mockStep := &automock.Step{}
@@ -43,10 +43,10 @@ func TestEnableForTrialPlanStepShouldNotEnable(t *testing.T) {
 	// Given
 	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
-	operation := fixOperationWithPlanID(t, "another")
+	operation := fixOperationWithPlanID("another")
 	simpleInputCreator := newInputCreator()
 	operation.InputCreator = simpleInputCreator
-	anotherOperation := fixOperationWithPlanID(t, "not enabled")
+	anotherOperation := fixOperationWithPlanID("not enabled")
 	var runTime time.Duration = 0
 
 	mockStep := &automock.Step{}

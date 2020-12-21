@@ -68,13 +68,9 @@ type BasicEvaluationCreateResponse struct {
 }
 
 func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, evalTypeSpecificConfig ModelConfigurator, url string) (*BasicEvaluationCreateRequest, error) {
-	provisionParams, err := operation.GetProvisioningParameters()
-	if err != nil {
-		return nil, err
-	}
 
-	beName, beDescription := generateNameAndDescription(provisionParams.ErsContext.GlobalAccountID,
-		provisionParams.ErsContext.SubAccountID, provisionParams.Parameters.Name, evalTypeSpecificConfig.ProvideSuffix())
+	beName, beDescription := generateNameAndDescription(operation.ProvisioningParameters.ErsContext.GlobalAccountID,
+		operation.ProvisioningParameters.ErsContext.SubAccountID, operation.ProvisioningParameters.Parameters.Name, evalTypeSpecificConfig.ProvideSuffix())
 
 	return &BasicEvaluationCreateRequest{
 		DefinitionType:   DefinitionType,

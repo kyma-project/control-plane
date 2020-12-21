@@ -48,14 +48,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout))
 	}
-
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("Unable to get provisioning parameters: %s", err.Error())
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-
-	requestInput, err := s.createProvisionInput(operation, pp)
+	requestInput, err := s.createProvisionInput(operation, operation.ProvisioningParameters)
 	if err != nil {
 		log.Errorf("Unable to create provisioning input: %s", err.Error())
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create provisioning input")
@@ -69,7 +62,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 			requestInput.ClusterConfig.GardenerConfig.Region,
 			requestInput.KymaConfig.Profile)
 
-		provisionerResponse, err := s.provisionerClient.ProvisionRuntime(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID, requestInput)
+		provisionerResponse, err := s.provisionerClient.ProvisionRuntime(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisioningParameters.ErsContext.SubAccountID, requestInput)
 		switch {
 		case kebError.IsTemporaryError(err):
 			log.Errorf("call to provisioner failed (temporary error): %s", err)
@@ -91,7 +84,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 	}
 
 	if provisionerResponse.RuntimeID == nil {
-		provisionerResponse, err = s.provisionerClient.RuntimeOperationStatus(pp.ErsContext.GlobalAccountID, operation.ProvisionerOperationID)
+		provisionerResponse, err = s.provisionerClient.RuntimeOperationStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisionerOperationID)
 		if err != nil {
 			log.Errorf("call to provisioner about operation status failed: %s", err)
 			return operation, 1 * time.Minute, nil

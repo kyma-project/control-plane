@@ -42,19 +42,13 @@ func (s *OverridesFromSecretsAndConfigStep) Name() string {
 }
 
 func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-
-	planName, exists := broker.PlanNamesMapping[pp.PlanID]
+	planName, exists := broker.PlanNamesMapping[operation.ProvisioningParameters.PlanID]
 	if !exists {
-		log.Errorf("cannot map planID '%s' to planName", pp.PlanID)
+		log.Errorf("cannot map planID '%s' to planName", operation.ProvisioningParameters.PlanID)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 
-	version, err := s.getRuntimeVersion(operation, pp)
+	version, err := s.getRuntimeVersion(operation, operation.ProvisioningParameters)
 	if err != nil {
 		errMsg := fmt.Sprintf("error while getting the runtime version for operation %s", operation.ID)
 		log.Error(errMsg)

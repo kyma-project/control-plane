@@ -1,7 +1,6 @@
 package deprovisioning
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -122,7 +121,6 @@ func fixDeprovisioningOperation() internal.DeprovisioningOperation {
 			ID:                     fixOperationID,
 			InstanceID:             fixInstanceID,
 			ProvisionerOperationID: fixProvisionerOperationID,
-			Description:            "",
 			UpdatedAt:              time.Now(),
 		},
 	}
@@ -136,10 +134,12 @@ func fixProvisioningOperation() internal.ProvisioningOperation {
 			ID:                     fixOperationID,
 			InstanceID:             fixInstanceID,
 			ProvisionerOperationID: fixProvisionerOperationID,
-			Description:            "",
 			UpdatedAt:              time.Now(),
+			ProvisioningParameters: internal.ProvisioningParameters{
+				ErsContext: internal.ERSContext{GlobalAccountID: "1"},
+				PlanID:     planID,
+			},
 		},
-		ProvisioningParameters: fmt.Sprintf(`{"ers_context":{"globalaccount_id":"1"},"plan_id":"%s"}`, planID),
 	}
 }
 

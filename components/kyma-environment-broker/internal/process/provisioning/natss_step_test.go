@@ -31,7 +31,7 @@ func TestNatssWithInitialOverrides(t *testing.T) {
 	// Given
 	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
-	operation := fixOperationWithPlanID(t, "any")
+	operation := fixOperationWithPlanID("any")
 	simpleInputCreator := newInputCreator()
 	simpleInputCreator.AppendOverrides(components.NatsStreaming, []*gqlschema.ConfigEntryInput{&cei})
 	operation.InputCreator = simpleInputCreator
@@ -55,7 +55,7 @@ func TestNatssWithEmptyOverrides(t *testing.T) {
 	// Given
 	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
-	operation := fixOperationWithPlanID(t, "any")
+	operation := fixOperationWithPlanID("any")
 	simpleInputCreator := newInputCreator()
 	simpleInputCreator.AssertNoOverrides(t)
 	operation.InputCreator = simpleInputCreator

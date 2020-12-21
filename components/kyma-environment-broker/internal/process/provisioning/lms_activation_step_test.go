@@ -22,7 +22,7 @@ func TestLmsActivationStepShouldNotActivate(t *testing.T) {
 	memoryStorage := storage.NewMemoryStorage()
 	cfg := lms.Config{EnabledForGlobalAccounts: "none"}
 	log := logrus.New()
-	operation := fixOperationWithPlanID(t, broker.TrialPlanID)
+	operation := fixOperationWithPlanID(broker.TrialPlanID)
 	var activationTime time.Duration = 0
 
 	mockStep := &automock.Step{}
@@ -46,8 +46,8 @@ func TestLmsActivationStepShouldActivateForAll(t *testing.T) {
 	memoryStorage := storage.NewMemoryStorage()
 	cfg := lms.Config{EnabledForGlobalAccounts: "all"}
 	log := logrus.New()
-	operation := fixOperationWithPlanID(t, "another")
-	anotherOperation := fixOperationWithPlanID(t, "activated")
+	operation := fixOperationWithPlanID("another")
+	anotherOperation := fixOperationWithPlanID("activated")
 	var activationTime time.Duration = 10
 
 	mockStep := &automock.Step{}
@@ -71,8 +71,8 @@ func TestLmsActivationStepShouldActivateForOne(t *testing.T) {
 	memoryStorage := storage.NewMemoryStorage()
 	cfg := lms.Config{EnabledForGlobalAccounts: globalAccountID}
 	log := logrus.New()
-	operation := fixOperationWithPlanID(t, "another")
-	anotherOperation := fixOperationWithPlanID(t, "activated")
+	operation := fixOperationWithPlanID("another")
+	anotherOperation := fixOperationWithPlanID("activated")
 	var activationTime time.Duration = 10
 
 	mockStep := &automock.Step{}

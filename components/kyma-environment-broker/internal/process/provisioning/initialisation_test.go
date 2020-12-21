@@ -2,7 +2,6 @@ package provisioning
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -39,7 +38,7 @@ func TestInitialisationStep(t *testing.T) {
 		// given
 		memoryStorage := storage.NewMemoryStorage()
 
-		operation := fixOperationRuntimeStatus(t, broker.GCPPlanID)
+		operation := fixOperationRuntimeStatus(broker.GCPPlanID)
 		err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 		assert.NoError(t, err)
 
@@ -116,7 +115,7 @@ func TestInitialisationStep(t *testing.T) {
 		// given
 		memoryStorage := storage.NewMemoryStorage()
 
-		operation := fixOperationRuntimeStatus(t, broker.GCPPlanID)
+		operation := fixOperationRuntimeStatus(broker.GCPPlanID)
 		err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 		assert.NoError(t, err)
 
@@ -190,39 +189,37 @@ func TestInitialisationStep(t *testing.T) {
 	})
 }
 
-func fixOperationRuntimeStatus(t *testing.T, planId string) internal.ProvisioningOperation {
+func fixOperationRuntimeStatus(planId string) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ID:                     statusOperationID,
 			InstanceID:             statusInstanceID,
 			ProvisionerOperationID: statusProvisionerOperationID,
-			Description:            "",
 			UpdatedAt:              time.Now(),
+			ProvisioningParameters: fixProvisioningParametersRuntimeStatus(planId),
 		},
-		ProvisioningParameters: fixProvisioningParametersRuntimeStatus(t, planId),
-		RuntimeID:              runtimeID,
+		RuntimeID: runtimeID,
 	}
 }
 
-func fixOperationRuntimeStatusWithProvider(t *testing.T, planId string, provider internal.TrialCloudProvider) internal.ProvisioningOperation {
+func fixOperationRuntimeStatusWithProvider(planId string, provider internal.TrialCloudProvider) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ID:                     statusOperationID,
 			InstanceID:             statusInstanceID,
 			ProvisionerOperationID: statusProvisionerOperationID,
-			Description:            "",
 			UpdatedAt:              time.Now(),
+			ProvisioningParameters: fixProvisioningParametersRuntimeStatusWithProvider(planId, &provider),
 		},
-		ProvisioningParameters: fixProvisioningParametersRuntimeStatusWithProvider(t, planId, &provider),
 	}
 }
 
-func fixProvisioningParametersRuntimeStatus(t *testing.T, planId string) string {
-	return fixProvisioningParametersRuntimeStatusWithProvider(t, planId, nil)
+func fixProvisioningParametersRuntimeStatus(planId string) internal.ProvisioningParameters {
+	return fixProvisioningParametersRuntimeStatusWithProvider(planId, nil)
 }
 
-func fixProvisioningParametersRuntimeStatusWithProvider(t *testing.T, planId string, provider *internal.TrialCloudProvider) string {
-	parameters := internal.ProvisioningParameters{
+func fixProvisioningParametersRuntimeStatusWithProvider(planId string, provider *internal.TrialCloudProvider) internal.ProvisioningParameters {
+	return internal.ProvisioningParameters{
 		PlanID:    planId,
 		ServiceID: "",
 		ErsContext: internal.ERSContext{
@@ -232,13 +229,6 @@ func fixProvisioningParametersRuntimeStatusWithProvider(t *testing.T, planId str
 			Provider: provider,
 		},
 	}
-
-	rawParameters, err := json.Marshal(parameters)
-	if err != nil {
-		t.Errorf("cannot marshal provisioning parameters: %s", err)
-	}
-
-	return string(rawParameters)
 }
 
 func fixInstanceRuntimeStatus() internal.Instance {

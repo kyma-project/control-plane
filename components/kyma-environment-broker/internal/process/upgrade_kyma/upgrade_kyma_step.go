@@ -49,11 +49,6 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeKymaTimeout))
 	}
 
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-
 	requestInput, err := s.createUpgradeKymaInput(operation)
 	if err != nil {
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeKyma input")
@@ -73,7 +68,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 	var provisionerResponse gqlschema.OperationStatus
 	if operation.ProvisionerOperationID == "" {
 		// trigger upgradeRuntime mutation
-		provisionerResponse, err := s.provisionerClient.UpgradeRuntime(pp.ErsContext.GlobalAccountID, operation.RuntimeID, requestInput)
+		provisionerResponse, err := s.provisionerClient.UpgradeRuntime(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.RuntimeID, requestInput)
 		if err != nil {
 			log.Errorf("call to provisioner failed: %s", err)
 			return operation, s.timeSchedule.Retry, nil
@@ -89,7 +84,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 	}
 
 	if provisionerResponse.RuntimeID == nil {
-		provisionerResponse, err = s.provisionerClient.RuntimeOperationStatus(pp.ErsContext.GlobalAccountID, operation.ProvisionerOperationID)
+		provisionerResponse, err = s.provisionerClient.RuntimeOperationStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisionerOperationID)
 		if err != nil {
 			log.Errorf("call to provisioner about operation status failed: %s", err)
 			return operation, s.timeSchedule.Retry, nil

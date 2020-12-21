@@ -28,12 +28,7 @@ func (s *SkipForTrialPlanStep) Name() string {
 }
 
 func (s *SkipForTrialPlanStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-	if broker.IsTrialPlan(pp.PlanID) {
+	if broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) {
 		log.Infof("Skipping step %s", s.Name())
 		return operation, 0, nil
 	}

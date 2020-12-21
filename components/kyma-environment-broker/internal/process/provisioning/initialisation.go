@@ -85,12 +85,7 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-	if pp.PlanID == broker.TrialPlanID {
+	if operation.ProvisioningParameters.PlanID == broker.TrialPlanID {
 		s.externalEvalCreator.disabled = true
 	}
 	operation.SMClientFactory = s.serviceManagerClientFactory
@@ -114,28 +109,22 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 }
 
 func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-
-	err = s.configureKymaVersion(&operation, &pp)
+	err := s.configureKymaVersion(&operation, &operation.ProvisioningParameters)
 	if err != nil {
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	}
 
-	log.Infof("create provisioner input creator for %q plan ID", pp.PlanID)
-	creator, err := s.inputBuilder.CreateProvisionInput(pp, operation.RuntimeVersion)
+	log.Infof("create provisioner input creator for %q plan ID", operation.ProvisioningParameters.PlanID)
+	creator, err := s.inputBuilder.CreateProvisionInput(operation.ProvisioningParameters, operation.RuntimeVersion)
 	switch {
 	case err == nil:
 		operation.InputCreator = creator
 		return operation, 0, nil
 	case kebError.IsTemporaryError(err):
-		log.Errorf("cannot create input creator at the moment for plan %s and version %s: %s", pp.PlanID, pp.Parameters.KymaVersion, err)
+		log.Errorf("cannot create input creator at the moment for plan %s and version %s: %s", operation.ProvisioningParameters.PlanID, operation.ProvisioningParameters.Parameters.KymaVersion, err)
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	default:
-		log.Errorf("cannot create input creator for plan %s: %s", pp.PlanID, err)
+		log.Errorf("cannot create input creator for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
 		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
 	}
 }

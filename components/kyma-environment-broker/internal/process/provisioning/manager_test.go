@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -100,12 +102,11 @@ func TestManager_Execute(t *testing.T) {
 func fixProvisionOperation(ID string) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
-			ID:          ID,
-			State:       domain.InProgress,
-			InstanceID:  "fea2c1a1-139d-43f6-910a-a618828a79d5",
-			Description: "",
+			ID:                     ID,
+			State:                  domain.InProgress,
+			InstanceID:             "fea2c1a1-139d-43f6-910a-a618828a79d5",
+			ProvisioningParameters: fixProvisioningParameters(broker.AzurePlanID, "westeurope"),
 		},
-		ProvisioningParameters: `{"plan_id":"7b2a9156-884c-4586-a630-3e644fc8ec0f"}`,
 	}
 }
 

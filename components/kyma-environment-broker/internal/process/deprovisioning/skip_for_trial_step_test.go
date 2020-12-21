@@ -1,7 +1,6 @@
 package deprovisioning
 
 import (
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -31,7 +30,7 @@ func TestSkipForTrialPlanStepShouldSkip(t *testing.T) {
 	log := logrus.New()
 	wantSkipTime := time.Duration(0)
 	givenStorage := storage.NewMemoryStorage()
-	wantOperation := fixOperationWithPlanID(t, broker.TrialPlanID)
+	wantOperation := fixOperationWithPlanID(broker.TrialPlanID)
 
 	mockStep := new(automock.Step)
 	mockStep.On("Name").Return("Test")
@@ -52,8 +51,8 @@ func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 	log := logrus.New()
 	wantSkipTime := time.Duration(10)
 	givenStorage := storage.NewMemoryStorage()
-	givenOperation1 := fixOperationWithPlanID(t, "operation1")
-	wantOperation2 := fixOperationWithPlanID(t, "operation2")
+	givenOperation1 := fixOperationWithPlanID("operation1")
+	wantOperation2 := fixOperationWithPlanID("operation2")
 
 	mockStep := new(automock.Step)
 	mockStep.On("Run", givenOperation1, log).Return(wantOperation2, wantSkipTime, nil)
@@ -69,48 +68,33 @@ func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 	assert.Equal(t, wantOperation2, gotOperation)
 }
 
-func fixOperationWithPlanID(t *testing.T, planID string) internal.DeprovisioningOperation {
-	t.Helper()
-
+func fixOperationWithPlanID(planID string) internal.DeprovisioningOperation {
 	return internal.DeprovisioningOperation{
 		Operation: internal.Operation{
 			ID:         operationID,
 			InstanceID: instanceID,
 			UpdatedAt:  time.Now(),
-		},
-		ProvisioningParameters: fixProvisioningParametersWithPlanID(t, planID),
-	}
-}
-
-func fixProvisioningParametersWithPlanID(t *testing.T, planID string) string {
-	t.Helper()
-
-	parameters := internal.ProvisioningParameters{
-		PlanID: planID,
-		ErsContext: internal.ERSContext{
-			GlobalAccountID: globalAccountID,
-			SubAccountID:    subAccountID,
-			ServiceManager: &internal.ServiceManagerEntryDTO{
-				Credentials: internal.ServiceManagerCredentials{
-					BasicAuth: internal.ServiceManagerBasicAuth{
-						Username: serviceManagerUser,
-						Password: serviceManagerPassword,
+			ProvisioningParameters: internal.ProvisioningParameters{
+				PlanID: planID,
+				ErsContext: internal.ERSContext{
+					GlobalAccountID: globalAccountID,
+					SubAccountID:    subAccountID,
+					ServiceManager: &internal.ServiceManagerEntryDTO{
+						Credentials: internal.ServiceManagerCredentials{
+							BasicAuth: internal.ServiceManagerBasicAuth{
+								Username: serviceManagerUser,
+								Password: serviceManagerPassword,
+							},
+						},
+						URL: serviceManagerURL,
 					},
 				},
-				URL: serviceManagerURL,
+				Parameters: internal.ProvisioningParametersDTO{
+					Name:   "dummy",
+					Region: ptr.String("europe-west4-a"),
+					Zones:  []string{"europe-west4-b", "europe-west4-c"},
+				},
 			},
 		},
-		Parameters: internal.ProvisioningParametersDTO{
-			Name:   "dummy",
-			Region: ptr.String("europe-west4-a"),
-			Zones:  []string{"europe-west4-b", "europe-west4-c"},
-		},
 	}
-
-	rawParameters, err := json.Marshal(parameters)
-	if err != nil {
-		t.Errorf("cannot marshal provisioning parameters: %s", err)
-	}
-
-	return string(rawParameters)
 }

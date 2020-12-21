@@ -32,12 +32,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
-const (
-	fixSubAccountID = "test-sub-account-id"
-	fixInstanceID   = "test-instance-id"
-	fixOperationID  = "test-operation-id"
-)
-
 func fixLogger() logrus.FieldLogger {
 	return logrus.StandardLogger()
 }
@@ -49,7 +43,7 @@ func Test_HappyPath(t *testing.T) {
 	accountProvider := fixAccountProvider()
 	namespaceClient := azuretesting.NewFakeNamespaceClientHappyPath()
 	step := fixEventHubStep(memoryStorage.Operations(), azuretesting.NewFakeHyperscalerProvider(namespaceClient), accountProvider)
-	op := fixProvisioningOperation(t)
+	op := fixProvisioningOperation(t, broker.AzurePlanID, "westeurope")
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
 	err := memoryStorage.Operations().InsertProvisioningOperation(op)
 	require.NoError(t, err)
@@ -72,19 +66,10 @@ func Test_HappyPath(t *testing.T) {
 func Test_StepsUnhappyPath(t *testing.T) {
 	tests := []struct {
 		name                string
-		giveOperation       func(t *testing.T) internal.ProvisioningOperation
+		giveOperation       func(t *testing.T, planID, region string) internal.ProvisioningOperation
 		giveStep            func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep
 		wantRepeatOperation bool
 	}{
-		{
-			name:          "Provision parameter errors",
-			giveOperation: fixInvalidProvisioningOperation,
-			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
-				accountProvider := fixAccountProvider()
-				return *fixEventHubStep(storage.Operations(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
-			},
-			wantRepeatOperation: false,
-		},
 		{
 			name:          "AccountProvider cannot get gardener credentials",
 			giveOperation: fixProvisioningOperation,
@@ -170,7 +155,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 
 			// given
 			memoryStorage := storage.NewMemoryStorage()
-			op := tt.giveOperation(t)
+			op := tt.giveOperation(t, broker.AzurePlanID, "westeurope")
 			step := tt.giveStep(t, memoryStorage)
 			// this is required to avoid storage retries (without this statement there will be an error => retry)
 			err := memoryStorage.Operations().InsertProvisioningOperation(op)
@@ -386,23 +371,13 @@ func fixEventHubStep(memoryStorageOp storage.Operations, hyperscalerProvider azu
 	return NewProvisionAzureEventHubStep(memoryStorageOp, hyperscalerProvider, accountProvider, context.Background())
 }
 
-func fixProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
+func fixProvisioningOperation(t *testing.T, planID, region string) internal.ProvisioningOperation {
 	op := internal.ProvisioningOperation{
 		Operation: internal.Operation{
-			ID:         fixOperationID,
-			InstanceID: fixInstanceID,
+			ID:                     operationID,
+			InstanceID:             instanceID,
+			ProvisioningParameters: fixProvisioningParameters(planID, region),
 		},
-		ProvisioningParameters: `{
-			"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
-			"ers_context": {
-				"subaccount_id": "` + fixSubAccountID + `"
-			},
-			"parameters": {
-				"name": "nachtmaar-15",
-				"components": [],
-				"region": "westeurope"
-			}
-		}`,
 		InputCreator: fixKnativeKafkaInputCreator(t),
 		RuntimeVersion: internal.RuntimeVersionData{
 			Version: "1.8.0",
@@ -412,23 +387,11 @@ func fixProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
 	return op
 }
 
-func fixInvalidProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
-	op := internal.ProvisioningOperation{
-		Operation: internal.Operation{},
-		// ups .. invalid json
-		ProvisioningParameters: `{
-			"parameters": a{}a
-		}`,
-		InputCreator: fixKnativeKafkaInputCreator(t),
-	}
-	return op
-}
-
 func fixTags() azure.Tags {
 	return azure.Tags{
-		azure.TagSubAccountID: ptr.String(fixSubAccountID),
-		azure.TagOperationID:  ptr.String(fixOperationID),
-		azure.TagInstanceID:   ptr.String(fixInstanceID),
+		azure.TagSubAccountID: ptr.String(subAccountID),
+		azure.TagOperationID:  ptr.String(operationID),
+		azure.TagInstanceID:   ptr.String(instanceID),
 	}
 }
 

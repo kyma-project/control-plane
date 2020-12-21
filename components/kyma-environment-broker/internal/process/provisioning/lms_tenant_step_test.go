@@ -20,11 +20,11 @@ func TestProvideLmsTenantStep_TenantProviderWithRetry(t *testing.T) {
 	inputCreator := newInputCreator()
 	operation := internal.ProvisioningOperation{
 		Operation: internal.Operation{
-			UpdatedAt: now,
+			UpdatedAt:              now,
+			ProvisioningParameters: internal.ProvisioningParameters{Parameters: internal.ProvisioningParametersDTO{Name: "awesome"}},
 		},
-		Lms:                    internal.LMS{},
-		ProvisioningParameters: `{"Parameters": {"name":"Awesome Lms"}}`,
-		InputCreator:           inputCreator,
+		Lms:          internal.LMS{},
+		InputCreator: inputCreator,
 	}
 	opRepo.InsertProvisioningOperation(operation)
 
@@ -46,11 +46,11 @@ func TestProvideLmsTenantStep_TenantProviderWithError(t *testing.T) {
 		inputCreator := newInputCreator()
 		operation := internal.ProvisioningOperation{
 			Operation: internal.Operation{
-				UpdatedAt: now,
+				UpdatedAt:              now,
+				ProvisioningParameters: internal.ProvisioningParameters{Parameters: internal.ProvisioningParametersDTO{Name: "awesome"}},
 			},
-			Lms:                    internal.LMS{},
-			ProvisioningParameters: `{"Parameters": {"name":"Awesome Lms"}}`,
-			InputCreator:           inputCreator,
+			Lms:          internal.LMS{},
+			InputCreator: inputCreator,
 		}
 		opRepo.InsertProvisioningOperation(operation)
 

@@ -20,8 +20,10 @@ func TestXSUAADeprovisionStep_Run(t *testing.T) {
 	clientFactory := servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{}, []types.ServicePlan{})
 
 	operation := internal.DeprovisioningOperation{
-		ProvisioningParameters: "{}",
-		SMClientFactory:        clientFactory,
+		Operation: internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{},
+		},
+		SMClientFactory: clientFactory,
 		XSUAA: internal.XSUAAData{
 			Instance: internal.ServiceManagerInstanceInfo{
 				BrokerID:   "broker-id",
@@ -33,7 +35,8 @@ func TestXSUAADeprovisionStep_Run(t *testing.T) {
 			BindingID: "binding-id",
 		},
 	}
-	repo.InsertDeprovisioningOperation(operation)
+	err := repo.InsertDeprovisioningOperation(operation)
+	require.NoError(t, err)
 
 	// when
 	operation, retry, err := step.Run(operation, logger.NewLogDummy())

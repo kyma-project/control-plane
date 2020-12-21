@@ -35,11 +35,13 @@ func TestCertStep_Run(t *testing.T) {
 	repo := storage.NewMemoryStorage().Operations()
 	svc := NewLmsCertificatesStep(cli, repo, false)
 	operation := internal.ProvisioningOperation{
+		Operation: internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{},
+		},
 		Lms: internal.LMS{
 			TenantID: tID,
 		},
-		ProvisioningParameters: `{"name": "awesome"}`,
-		InputCreator:           newInputCreator(),
+		InputCreator: newInputCreator(),
 	}
 	repo.InsertProvisioningOperation(operation)
 
@@ -61,11 +63,13 @@ func TestCertStep_TenantNotReady(t *testing.T) {
 		repo := storage.NewMemoryStorage().Operations()
 		svc := NewLmsCertificatesStep(cli, repo, isMandatory)
 		operation := internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{},
+			},
 			Lms: internal.LMS{
 				TenantID:    tID,
 				RequestedAt: time.Now(),
 			},
-			ProvisioningParameters: "{}",
 		}
 		repo.InsertProvisioningOperation(operation)
 
@@ -89,11 +93,13 @@ func TestCertStep_TenantNotReadyTimeout(t *testing.T) {
 		repo := storage.NewMemoryStorage().Operations()
 		svc := NewLmsCertificatesStep(cli, repo, isMandatory)
 		operation := internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{},
+			},
 			Lms: internal.LMS{
 				TenantID:    tID,
 				RequestedAt: time.Now().Add(-10 * time.Hour), // very old
 			},
-			ProvisioningParameters: `{"name": "awesome"}`,
 		}
 		repo.InsertProvisioningOperation(operation)
 
@@ -121,9 +127,11 @@ func TestLmsStepsHappyPath(t *testing.T) {
 
 	inputCreator := newInputCreator()
 	operation := internal.ProvisioningOperation{
-		Lms:                    internal.LMS{},
-		ProvisioningParameters: `{"Parameters": {"name":"Awesome Lms"}}`,
-		InputCreator:           inputCreator,
+		Operation: internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{},
+		},
+		Lms:          internal.LMS{},
+		InputCreator: inputCreator,
 	}
 	opRepo.InsertProvisioningOperation(operation)
 

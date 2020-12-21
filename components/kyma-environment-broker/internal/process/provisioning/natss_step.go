@@ -30,12 +30,7 @@ func (s *NatsStreamingStep) Name() string {
 }
 
 func (s *NatsStreamingStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	parameters, err := operation.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-	log.Infof("Provisioning for PlanID: %s", parameters.PlanID)
+	log.Infof("Provisioning for PlanID: %s", operation.ProvisioningParameters.PlanID)
 	operation.InputCreator.AppendOverrides(components.NatsStreaming, getNatsStreamingOverrides())
 	return operation, 0, nil
 }

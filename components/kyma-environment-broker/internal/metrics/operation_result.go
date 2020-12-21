@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/prometheus/client_golang/prometheus"
@@ -66,11 +64,6 @@ func (c *OperationResultCollector) OnProvisioningStepProcessed(ctx context.Conte
 		return fmt.Errorf("expected ProvisioningStepProcessed but got %+v", ev)
 	}
 
-	pp, err := stepProcessed.Operation.GetProvisioningParameters()
-	if err != nil {
-		return errors.Wrap(err, "while getting provisioning parameters")
-	}
-
 	var resultValue float64
 	switch stepProcessed.Operation.State {
 	case domain.InProgress:
@@ -82,7 +75,8 @@ func (c *OperationResultCollector) OnProvisioningStepProcessed(ctx context.Conte
 	}
 	op := stepProcessed.Operation
 	c.provisioningResultGauge.
-		WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).
+		WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, stepProcessed.Operation.ProvisioningParameters.ErsContext.GlobalAccountID,
+			stepProcessed.Operation.ProvisioningParameters.PlanID).
 		Set(resultValue)
 
 	return nil
@@ -92,11 +86,6 @@ func (c *OperationResultCollector) OnDeprovisioningStepProcessed(ctx context.Con
 	stepProcessed, ok := ev.(process.DeprovisioningStepProcessed)
 	if !ok {
 		return fmt.Errorf("expected DeprovisioningStepProcessed but got %+v", ev)
-	}
-
-	pp, err := stepProcessed.Operation.GetProvisioningParameters()
-	if err != nil {
-		return errors.Wrap(err, "while getting provisioning parameters")
 	}
 
 	var resultValue float64
@@ -110,7 +99,8 @@ func (c *OperationResultCollector) OnDeprovisioningStepProcessed(ctx context.Con
 	}
 	op := stepProcessed.Operation
 	c.deprovisioningResultGauge.
-		WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).
+		WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, stepProcessed.Operation.ProvisioningParameters.ErsContext.GlobalAccountID,
+			stepProcessed.Operation.ProvisioningParameters.PlanID).
 		Set(resultValue)
 	return nil
 }

@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"testing"
@@ -49,7 +48,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationCreateRuntime(t)
+	operation := fixOperationCreateRuntime(t, broker.GCPPlanID, "europe-west4-a")
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
@@ -149,7 +148,7 @@ func TestCreateRuntimeStep_RunWithBadRequestError(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationCreateRuntime(t)
+	operation := fixOperationCreateRuntime(t, broker.AzurePlanID, "westeurope")
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
@@ -170,18 +169,17 @@ func TestCreateRuntimeStep_RunWithBadRequestError(t *testing.T) {
 
 }
 
-func fixOperationCreateRuntime(t *testing.T) internal.ProvisioningOperation {
+func fixOperationCreateRuntime(t *testing.T, planID, region string) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
-			ID:          operationID,
-			InstanceID:  instanceID,
-			Description: "",
-			UpdatedAt:   time.Now(),
-			State:       domain.InProgress,
+			ID:                     operationID,
+			InstanceID:             instanceID,
+			UpdatedAt:              time.Now(),
+			State:                  domain.InProgress,
+			ProvisioningParameters: fixProvisioningParameters(planID, region),
 		},
-		ShootName:              shootName,
-		ProvisioningParameters: fixProvisioningParameters(t),
-		InputCreator:           fixInputCreator(t),
+		ShootName:    shootName,
+		InputCreator: fixInputCreator(t),
 	}
 }
 
@@ -192,12 +190,12 @@ func fixInstance() internal.Instance {
 	}
 }
 
-func fixProvisioningParameters(t *testing.T) string {
-	return fixProvisioningParametersWithPlanID(t, broker.GCPPlanID)
+func fixProvisioningParameters(planID, region string) internal.ProvisioningParameters {
+	return fixProvisioningParametersWithPlanID(planID, region)
 }
 
-func fixProvisioningParametersWithPlanID(t *testing.T, planID string) string {
-	parameters := internal.ProvisioningParameters{
+func fixProvisioningParametersWithPlanID(planID, region string) internal.ProvisioningParameters {
+	return internal.ProvisioningParameters{
 		PlanID:    planID,
 		ServiceID: "",
 		ErsContext: internal.ERSContext{
@@ -214,18 +212,11 @@ func fixProvisioningParametersWithPlanID(t *testing.T, planID string) string {
 			},
 		},
 		Parameters: internal.ProvisioningParametersDTO{
-			Region: ptr.String("europe-west4-a"),
+			Region: ptr.String(region),
 			Name:   "dummy",
 			Zones:  []string{"europe-west4-b", "europe-west4-c"},
 		},
 	}
-
-	rawParameters, err := json.Marshal(parameters)
-	if err != nil {
-		t.Errorf("cannot marshal provisioning parameters: %s", err)
-	}
-
-	return string(rawParameters)
 }
 
 func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {

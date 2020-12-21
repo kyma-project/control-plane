@@ -21,7 +21,7 @@ func TestSkipForTrialPlanStepShouldSkip(t *testing.T) {
 	// Given
 	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
-	operation := fixOperationWithPlanID(t, broker.TrialPlanID)
+	operation := fixOperationWithPlanID(broker.TrialPlanID)
 	var skipTime time.Duration = 0
 
 	mockStep := &automock.Step{}
@@ -44,8 +44,8 @@ func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 	// Given
 	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
-	operation := fixOperationWithPlanID(t, "another")
-	anotherOperation := fixOperationWithPlanID(t, "not skipped")
+	operation := fixOperationWithPlanID("another")
+	anotherOperation := fixOperationWithPlanID("not skipped")
 	var skipTime time.Duration = 10
 
 	mockStep := &automock.Step{}
@@ -64,14 +64,13 @@ func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 
 }
 
-func fixOperationWithPlanID(t *testing.T, planID string) internal.ProvisioningOperation {
+func fixOperationWithPlanID(planID string) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
-			ID:          operationID,
-			InstanceID:  instanceID,
-			Description: "",
-			UpdatedAt:   time.Now(),
+			ID:                     operationID,
+			InstanceID:             instanceID,
+			UpdatedAt:              time.Now(),
+			ProvisioningParameters: fixProvisioningParametersWithPlanID(planID, "region"),
 		},
-		ProvisioningParameters: fixProvisioningParametersWithPlanID(t, planID),
 	}
 }
