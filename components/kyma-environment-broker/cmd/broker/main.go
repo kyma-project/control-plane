@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/migrations"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"sort"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/migrations"
 
 	uaa "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/xsuaa"
 
@@ -68,7 +69,8 @@ import (
 
 // Config holds configuration for the whole application
 type Config struct {
-	DbInMemory bool `envconfig:"default=false"`
+	DbInMemory                bool `envconfig:"default=false"`
+	EnableParametersMigration bool `envconfig:"default=false"`
 
 	// DisableProcessOperationsInProgress allows to disable processing operations
 	// which are in progress on starting application. Set to true if you are
@@ -172,8 +174,10 @@ func main() {
 
 	// todo: remove
 	// provisioning parameters migration
-	err = migrations.NewParametersMigration(db.Operations(), logs).Migrate()
-	fatalOnError(err)
+	if cfg.EnableParametersMigration {
+		err = migrations.NewParametersMigration(db.Operations(), logs).Migrate()
+		fatalOnError(err)
+	}
 
 	// LMS
 	fatalOnError(cfg.LMS.Validate())

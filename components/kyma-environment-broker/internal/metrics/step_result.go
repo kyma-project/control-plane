@@ -3,7 +3,6 @@ package metrics
 import (
 	"context"
 	"fmt"
-
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"

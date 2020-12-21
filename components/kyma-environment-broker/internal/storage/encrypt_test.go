@@ -15,7 +15,7 @@ func TestNewEncrypter(t *testing.T) {
 		Data string `json:"data"`
 	}
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("success json", func(t *testing.T) {
 		secretKey := rand.String(32)
 
 		e := NewEncrypter(secretKey)
@@ -36,6 +36,21 @@ func TestNewEncrypter(t *testing.T) {
 
 		err = json.Unmarshal(enc, &dto)
 		require.NoError(t, err)
+	})
+
+	t.Run("success string", func(t *testing.T) {
+		secretKey := rand.String(32)
+
+		e := NewEncrypter(secretKey)
+		dto := []byte("test")
+
+		enc, err := e.Encrypt(dto)
+		require.NoError(t, err)
+		assert.NotEqual(t, dto, enc)
+
+		enc, err = e.Decrypt(enc)
+		require.NoError(t, err)
+		assert.Equal(t, dto, enc)
 	})
 
 	t.Run("wrong key", func(t *testing.T) {
