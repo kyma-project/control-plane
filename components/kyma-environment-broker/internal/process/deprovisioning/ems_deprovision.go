@@ -38,21 +38,21 @@ func (s *EmsDeprovisionStep) Name() string {
 func (s *EmsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (
 	internal.DeprovisioningOperation, time.Duration, error) {
 	if !operation.Ems.Instance.Provisioned {
-		log.Infof("Step %s : Ems Deprovisioning step was already successfully finished", s.Name())
+		log.Infof("Ems Deprovisioning step was already successfully finished")
 		return operation, 0, nil
 	}
 
 	smCli, err := operation.ServiceManagerClient(log)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : unable to create Service Manage client", s.Name()))
+		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manage client"))
 	}
 
-	log.Infof("Step %s : deprovisioning for EMS instance: %s started", s.Name(), operation.Ems.Instance.InstanceID)
+	log.Infof("deprovisioning for EMS instance: %s started", operation.Ems.Instance.InstanceID)
 	_, err = smCli.Deprovision(operation.Ems.Instance.InstanceKey(), false)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : unable to deprovision", s.Name()))
+		return s.handleError(operation, err, log, fmt.Sprintf("Deprovision() call failed"))
 	}
-	log.Infof("Step %s : deprovisioning for EMS instance: %s finished", s.Name(), operation.Ems.Instance.InstanceID)
+	log.Infof("deprovisioning for EMS instance: %s finished", operation.Ems.Instance.InstanceID)
 
 	operation.Ems.Instance.InstanceID = ""
 	operation.Ems.Instance.Provisioned = false

@@ -44,25 +44,25 @@ func (s *EmsProvisionStep) Name() string {
 
 func (s *EmsProvisionStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if operation.Ems.Instance.ProvisioningTriggered {
-		log.Infof("Step %s : Ems Provisioning step was already triggered", s.Name())
+		log.Infof("Ems Provisioning step was already triggered")
 		return operation, 0, nil
 	}
 
 	smCli, err := operation.ServiceManagerClient(log)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : unable to create Service Manage client", s.Name()))
+		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manage client"))
 	}
 
 	// provision
 	operation, _, err = s.provision(smCli, operation, log)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : provision()  call failed", s.Name()))
+		return s.handleError(operation, err, log, fmt.Sprintf("provision()  call failed"))
 	}
 	// save the status
 	operation.Ems.Instance.ProvisioningTriggered = true
 	operation, retry := s.operationManager.UpdateOperation(operation)
 	if retry > 0 {
-		log.Errorf("step %s : unable to update operation", s.Name())
+		log.Errorf("unable to update operation")
 		return operation, time.Second, nil
 	}
 
@@ -119,10 +119,9 @@ func (s *EmsProvisionStep) provision(smCli servicemanager.Client, operation inte
 
 	resp, err := smCli.Provision(operation.Ems.Instance.BrokerID, input, true)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : EMS provision failed for brokerID: %s; input: %#v",
-			s.Name(), operation.Ems.Instance.BrokerID, input))
+		return s.handleError(operation, err, log, fmt.Sprintf("Provision() call failed for brokerID: %s; input: %#v", operation.Ems.Instance.BrokerID, input))
 	}
-	log.Infof("Step %s : response from EMS provisioning call: %#v", s.Name(), resp)
+	log.Infof("response from EMS provisioning call: %#v", resp)
 
 	operation.Ems.Instance.InstanceID = input.ID
 

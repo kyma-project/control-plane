@@ -46,24 +46,24 @@ func (s *EmsBindStep) Name() string {
 
 func (s *EmsBindStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if !operation.Ems.Instance.ProvisioningTriggered {
-		return s.handleError(operation, fmt.Errorf("Step %s : Ems Provisioning step was not triggered", s.Name()), log, "")
+		return s.handleError(operation, fmt.Errorf("Ems Provisioning step was not triggered"), log, "")
 	}
 
 	smCli, err := operation.ServiceManagerClient(log)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : unable to create Service Manage client", s.Name()))
+		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manage client"))
 	}
 	// test if the provisioning is finished, if not, retry after 10s
 	resp, err := smCli.LastInstanceOperation(operation.Ems.Instance.InstanceKey(), "")
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : LastInstanceOperation() call failed", s.Name()))
+		return s.handleError(operation, err, log, fmt.Sprintf("LastInstanceOperation() call failed"))
 	}
-	log.Infof("Step %s : Provisioning Ems (instanceID=%s) state: %s", s.Name(), operation.Ems.Instance.InstanceID, resp.State)
+	log.Infof("Provisioning Ems (instanceID=%s) state: %s", operation.Ems.Instance.InstanceID, resp.State)
 	switch resp.State {
 	case servicemanager.InProgress:
 		return operation, 10 * time.Second, nil
 	case servicemanager.Failed:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("Step %s : Ems provisioning failed: %s", s.Name(), resp.Description))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("Ems provisioning failed: %s", resp.Description))
 	}
 	// execute binding
 	var eventingOverrides *EventingOverrides
@@ -73,16 +73,16 @@ func (s *EmsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		}
 		respBinding, err := smCli.Bind(operation.Ems.Instance.InstanceKey(), operation.Ems.BindingID, nil, false)
 		if err != nil {
-			return s.handleError(operation, err, log, fmt.Sprintf("Step %s : Bind() call failed", s.Name()))
+			return s.handleError(operation, err, log, fmt.Sprintf("Bind() call failed"))
 		}
 		// get overrides
 		eventingOverrides, err = getCredentials(respBinding.Binding)
 		if err != nil {
-			return s.handleError(operation, err, log, fmt.Sprintf("Step %s : getCredentials() call failed", s.Name()))
+			return s.handleError(operation, err, log, fmt.Sprintf("getCredentials() call failed"))
 		}
 		encryptedOverrides, err := encryptOverrides(s.secretKey, eventingOverrides)
 		if err != nil {
-			return s.handleError(operation, err, log, fmt.Sprintf("Step %s : encryptOverrides() call failed", s.Name()))
+			return s.handleError(operation, err, log, fmt.Sprintf("encryptOverrides() call failed"))
 		}
 		operation.Ems.Overrides = encryptedOverrides
 		operation.Ems.Instance.Provisioned = true
@@ -90,14 +90,14 @@ func (s *EmsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		// save the status
 		operation, retry := s.operationManager.UpdateOperation(operation)
 		if retry > 0 {
-			log.Errorf("step %s : unable to update operation", s.Name())
+			log.Errorf("unable to update operation")
 			return operation, time.Second, nil
 		}
 	} else {
 		// get the credentials from encrypted string in operation.Ems.Instance.
 		eventingOverrides, err = decryptOverrides(s.secretKey, operation.Ems.Overrides)
 		if err != nil {
-			return s.handleError(operation, err, log, fmt.Sprintf("Step %s : decryptOverrides() call failed", s.Name()))
+			return s.handleError(operation, err, log, fmt.Sprintf("decryptOverrides() call failed"))
 		}
 	}
 

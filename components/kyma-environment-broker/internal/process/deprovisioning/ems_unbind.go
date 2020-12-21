@@ -34,17 +34,16 @@ func (s *EmsUnbindStep) Run(operation internal.DeprovisioningOperation, log logr
 
 	smCli, err := operation.ServiceManagerClient(log)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : unable to create Service Manage client", s.Name()))
+		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manage client"))
 	}
 
 	// Unbind
-	log.Infof("Step %s : unbinding for EMS instance: %s started; binding: %s", s.Name(), operation.Ems.Instance.InstanceID, operation.Ems.BindingID)
+	log.Infof("unbinding for EMS instance: %s started; binding: %s", operation.Ems.Instance.InstanceID, operation.Ems.BindingID)
 	_, err = smCli.Unbind(operation.Ems.Instance.InstanceKey(), operation.Ems.BindingID, true)
 	if err != nil {
-		// TODO: if not bound should not be an error. but continue to trying to delete the service
-		return s.handleError(operation, err, log, fmt.Sprintf("Step %s : unable to unbind, bindingId=%s", s.Name(), operation.Ems.BindingID))
+		return s.handleError(operation, err, log, fmt.Sprintf("unable to unbind, bindingId=%s", operation.Ems.BindingID))
 	}
-	log.Infof("Step %s : unbinding for EMS instance: %s finished", s.Name(), operation.Ems.Instance.InstanceID)
+	log.Infof("unbinding for EMS instance: %s finished", operation.Ems.Instance.InstanceID)
 	operation.Ems.BindingID = ""
 	operation.Ems.Overrides = ""
 
