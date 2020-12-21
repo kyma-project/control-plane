@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/migrations"
 	"io"
 	"log"
 	"net/http"
@@ -168,6 +169,11 @@ func main() {
 		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 		prometheus.MustRegister(dbStatsCollector)
 	}
+
+	// todo: remove
+	// provisioning parameters migration
+	err = migrations.NewParametersMigration(db.Operations(), logs).Migrate()
+	fatalOnError(err)
 
 	// LMS
 	fatalOnError(cfg.LMS.Validate())
