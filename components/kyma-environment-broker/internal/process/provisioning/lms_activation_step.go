@@ -9,21 +9,17 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
 type LmsActivationStep struct {
-	operationManager *process.ProvisionOperationManager
-	cfg              lms.Config
-	step             Step
+	cfg  lms.Config
+	step Step
 }
 
-func NewLmsActivationStep(os storage.Operations, cfg lms.Config, step Step) *LmsActivationStep {
+func NewLmsActivationStep(cfg lms.Config, step Step) *LmsActivationStep {
 	return &LmsActivationStep{
-		operationManager: process.NewProvisionOperationManager(os),
-		cfg:              cfg,
-		step:             step,
+		cfg:  cfg,
+		step: step,
 	}
 }
 

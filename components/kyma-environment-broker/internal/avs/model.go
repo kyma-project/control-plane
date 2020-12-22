@@ -80,16 +80,16 @@ func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, e
 		URL:              url,
 		CheckType:        evalTypeSpecificConfig.ProvideCheckType(),
 		Interval:         interval,
-		TesterAccessId:   evalTypeSpecificConfig.ProvideTesterAccessId(provisionParams),
+		TesterAccessId:   evalTypeSpecificConfig.ProvideTesterAccessId(operation.ProvisioningParameters),
 		Tags:             evalTypeSpecificConfig.ProvideTags(),
 		Timeout:          timeout,
 		ReadOnly:         false,
 		ContentCheck:     contentCheck,
 		ContentCheckType: contentCheckType,
 		Threshold:        threshold,
-		GroupId:          evalTypeSpecificConfig.ProvideGroupId(provisionParams),
+		GroupId:          evalTypeSpecificConfig.ProvideGroupId(operation.ProvisioningParameters),
 		Visibility:       visibility,
-		ParentId:         evalTypeSpecificConfig.ProvideParentId(provisionParams),
+		ParentId:         evalTypeSpecificConfig.ProvideParentId(operation.ProvisioningParameters),
 	}, nil
 }
 

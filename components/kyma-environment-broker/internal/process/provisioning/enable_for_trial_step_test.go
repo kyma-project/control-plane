@@ -10,12 +10,10 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
 func TestEnableForTrialPlanStepShouldEnable(t *testing.T) {
 	// Given
-	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
 	operation := fixOperationWithPlanID(broker.TrialPlanID)
 	simpleInputCreator := newInputCreator()
@@ -27,7 +25,7 @@ func TestEnableForTrialPlanStepShouldEnable(t *testing.T) {
 	mockStep.On("Name").Return("Test")
 	mockStep.On("Run", operation, log).Return(anotherOperation, runTime, nil)
 
-	enableStep := NewEnableForTrialPlanStep(memoryStorage.Operations(), mockStep)
+	enableStep := NewEnableForTrialPlanStep(mockStep)
 
 	// When
 	returnedOperation, time, err := enableStep.Run(operation, log)
@@ -41,7 +39,6 @@ func TestEnableForTrialPlanStepShouldEnable(t *testing.T) {
 
 func TestEnableForTrialPlanStepShouldNotEnable(t *testing.T) {
 	// Given
-	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
 	operation := fixOperationWithPlanID("another")
 	simpleInputCreator := newInputCreator()
@@ -53,7 +50,7 @@ func TestEnableForTrialPlanStepShouldNotEnable(t *testing.T) {
 	mockStep.On("Name").Return("Test")
 	mockStep.On("Run", operation, log).Return(anotherOperation, runTime, nil)
 
-	enableStep := NewEnableForTrialPlanStep(memoryStorage.Operations(), mockStep)
+	enableStep := NewEnableForTrialPlanStep(mockStep)
 
 	// When
 	returnedOperation, time, err := enableStep.Run(operation, log)

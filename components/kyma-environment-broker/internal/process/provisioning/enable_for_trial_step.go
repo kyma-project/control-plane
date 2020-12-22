@@ -7,22 +7,18 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
 type EnableForTrialPlanStep struct {
-	step             Step
-	operationManager *process.ProvisionOperationManager
+	step Step
 }
 
 // ensure the interface is implemented
 var _ Step = (*EnableForTrialPlanStep)(nil)
 
-func NewEnableForTrialPlanStep(os storage.Operations, step Step) *EnableForTrialPlanStep {
+func NewEnableForTrialPlanStep(step Step) *EnableForTrialPlanStep {
 	return &EnableForTrialPlanStep{
-		step:             step,
-		operationManager: process.NewProvisionOperationManager(os),
+		step: step,
 	}
 }
 

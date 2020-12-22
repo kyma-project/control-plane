@@ -83,6 +83,7 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 	setAvsIds(&operation, op, log)
 
 	operation.SubAccountID = operation.ProvisioningParameters.ErsContext.SubAccountID
+	operation.ProvisioningParameters = op.ProvisioningParameters
 	operation, repeat, _ := s.operationManager.UpdateOperation(operation)
 	if repeat != 0 {
 		log.Errorf("cannot save the operation")

@@ -87,6 +87,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		log.Info("waiting for provisioning operation to finish")
 		return operation, s.timeSchedule.UpgradeKymaTimeout, nil
 	}
+	operation.ProvisioningParameters = provisioningOperation.ProvisioningParameters
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {

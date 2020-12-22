@@ -14,25 +14,56 @@ import (
 )
 
 func TestParametersMigration_Migrate(t *testing.T) {
-	s := storage.NewMemoryStorage()
-	log := logrus.New()
+	for tn, tc := range map[string]struct {
+		operations []internal.LegacyOperation
+		isError    bool
+	}{
+		"none": {
+			operations: []internal.LegacyOperation{},
+			isError:    true,
+		},
+		"single": {
+			operations: []internal.LegacyOperation{
+				fixLegacyOperation("test-1"),
+			},
+			isError: false,
+		},
+		"many": {
+			operations: []internal.LegacyOperation{
+				fixLegacyOperation("test-1"),
+				fixLegacyOperation("test-2"),
+			},
+			isError: false,
+		},
+	} {
+		t.Run(tn, func(t *testing.T) {
+			s := storage.NewMemoryStorage()
+			log := logrus.New()
 
-	operationID := "test"
+			for _, op := range tc.operations {
+				err := s.Operations().InsertLegacyOperation(op)
+				require.NoError(t, err)
+			}
 
-	err := s.Operations().InsertLegacyOperation(fixLegacyOperation(operationID))
-	require.NoError(t, err)
+			err := migrations.NewParametersMigration(s.Operations(), log).Migrate()
+			if tc.isError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 
-	err = migrations.NewParametersMigration(s.Operations(), log).Migrate()
-	require.NoError(t, err)
+				for _, op := range tc.operations {
+					operation, err := s.Operations().GetLegacyOperation(op.ID)
+					require.NoError(t, err)
 
-	operation, err := s.Operations().GetOperationByID(operationID)
-	require.NoError(t, err)
+					pp := internal.ProvisioningParameters{}
+					err = json.Unmarshal([]byte(fixProvisioningParameters()), &pp)
+					require.NoError(t, err)
 
-	pp := internal.ProvisioningParameters{}
-	err = json.Unmarshal([]byte(fixProvisioningParameters()), &pp)
-	require.NoError(t, err)
-
-	assert.Equal(t, pp, operation.ProvisioningParameters)
+					assert.Equal(t, pp, operation.Operation.ProvisioningParameters)
+				}
+			}
+		})
+	}
 }
 
 func fixLegacyOperation(id string) internal.LegacyOperation {

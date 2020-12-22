@@ -32,6 +32,7 @@ type Operations interface {
 	ListOperations(filter dbmodel.OperationFilter) ([]internal.Operation, int, int, error)
 
 	// todo: remove, used in migration
+	GetLegacyOperation(operationID string) (*internal.LegacyOperation, error)
 	InsertLegacyOperation(operation internal.LegacyOperation) error
 	UpdateOperationParameters(operation internal.Operation) (*internal.Operation, error)
 	ListOperationsParameters() (map[string]internal.ProvisioningParameters, error)

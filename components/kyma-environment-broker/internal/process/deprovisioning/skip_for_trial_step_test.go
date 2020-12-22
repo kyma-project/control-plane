@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
 const (
@@ -29,12 +28,11 @@ func TestSkipForTrialPlanStepShouldSkip(t *testing.T) {
 	// Given
 	log := logrus.New()
 	wantSkipTime := time.Duration(0)
-	givenStorage := storage.NewMemoryStorage()
 	wantOperation := fixOperationWithPlanID(broker.TrialPlanID)
 
 	mockStep := new(automock.Step)
 	mockStep.On("Name").Return("Test")
-	skipStep := NewSkipForTrialPlanStep(givenStorage.Operations(), mockStep)
+	skipStep := NewSkipForTrialPlanStep(mockStep)
 
 	// When
 	gotOperation, gotSkipTime, gotErr := skipStep.Run(wantOperation, log)
@@ -50,13 +48,12 @@ func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 	// Given
 	log := logrus.New()
 	wantSkipTime := time.Duration(10)
-	givenStorage := storage.NewMemoryStorage()
 	givenOperation1 := fixOperationWithPlanID("operation1")
 	wantOperation2 := fixOperationWithPlanID("operation2")
 
 	mockStep := new(automock.Step)
 	mockStep.On("Run", givenOperation1, log).Return(wantOperation2, wantSkipTime, nil)
-	skipStep := NewSkipForTrialPlanStep(givenStorage.Operations(), mockStep)
+	skipStep := NewSkipForTrialPlanStep(mockStep)
 
 	// When
 	gotOperation, gotSkipTime, gotErr := skipStep.Run(givenOperation1, log)

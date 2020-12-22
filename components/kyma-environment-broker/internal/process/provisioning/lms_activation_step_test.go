@@ -11,15 +11,12 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
 //go:generate mockery -name=Step -output=automock -outpkg=automock -case=underscore
 
 func TestLmsActivationStepShouldNotActivate(t *testing.T) {
-
 	// Given
-	memoryStorage := storage.NewMemoryStorage()
 	cfg := lms.Config{EnabledForGlobalAccounts: "none"}
 	log := logrus.New()
 	operation := fixOperationWithPlanID(broker.TrialPlanID)
@@ -28,7 +25,7 @@ func TestLmsActivationStepShouldNotActivate(t *testing.T) {
 	mockStep := &automock.Step{}
 	mockStep.On("Name").Return("Test")
 
-	activationStep := NewLmsActivationStep(memoryStorage.Operations(), cfg, mockStep)
+	activationStep := NewLmsActivationStep(cfg, mockStep)
 
 	// When
 	returnedOperation, time, err := activationStep.Run(operation, log)
@@ -41,9 +38,7 @@ func TestLmsActivationStepShouldNotActivate(t *testing.T) {
 }
 
 func TestLmsActivationStepShouldActivateForAll(t *testing.T) {
-
 	// Given
-	memoryStorage := storage.NewMemoryStorage()
 	cfg := lms.Config{EnabledForGlobalAccounts: "all"}
 	log := logrus.New()
 	operation := fixOperationWithPlanID("another")
@@ -53,7 +48,7 @@ func TestLmsActivationStepShouldActivateForAll(t *testing.T) {
 	mockStep := &automock.Step{}
 	mockStep.On("Run", operation, log).Return(anotherOperation, activationTime, nil)
 
-	activationStep := NewLmsActivationStep(memoryStorage.Operations(), cfg, mockStep)
+	activationStep := NewLmsActivationStep(cfg, mockStep)
 
 	// When
 	returnedOperation, time, err := activationStep.Run(operation, log)
@@ -66,9 +61,7 @@ func TestLmsActivationStepShouldActivateForAll(t *testing.T) {
 }
 
 func TestLmsActivationStepShouldActivateForOne(t *testing.T) {
-
 	// Given
-	memoryStorage := storage.NewMemoryStorage()
 	cfg := lms.Config{EnabledForGlobalAccounts: globalAccountID}
 	log := logrus.New()
 	operation := fixOperationWithPlanID("another")
@@ -78,7 +71,7 @@ func TestLmsActivationStepShouldActivateForOne(t *testing.T) {
 	mockStep := &automock.Step{}
 	mockStep.On("Run", operation, log).Return(anotherOperation, activationTime, nil)
 
-	activationStep := NewLmsActivationStep(memoryStorage.Operations(), cfg, mockStep)
+	activationStep := NewLmsActivationStep(cfg, mockStep)
 
 	// When
 	returnedOperation, time, err := activationStep.Run(operation, log)

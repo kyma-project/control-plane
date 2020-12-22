@@ -6,23 +6,17 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 )
 
-type NatsStreamingStep struct {
-	operationManager *process.ProvisionOperationManager
-}
+type NatsStreamingStep struct{}
 
 // ensure the interface is implemented
 var _ Step = (*NatsStreamingStep)(nil)
 
-func NewNatsStreamingOverridesStep(os storage.Operations) *NatsStreamingStep {
-	return &NatsStreamingStep{
-		operationManager: process.NewProvisionOperationManager(os),
-	}
+func NewNatsStreamingOverridesStep() *NatsStreamingStep {
+	return &NatsStreamingStep{}
 }
 
 func (s *NatsStreamingStep) Name() string {

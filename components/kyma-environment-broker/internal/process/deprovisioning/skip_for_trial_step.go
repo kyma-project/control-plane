@@ -7,21 +7,17 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
 type SkipForTrialPlanStep struct {
-	step             Step
-	OperationManager *process.DeprovisionOperationManager
+	step Step
 }
 
 var _ Step = &SkipForTrialPlanStep{}
 
-func NewSkipForTrialPlanStep(os storage.Operations, step Step) SkipForTrialPlanStep {
+func NewSkipForTrialPlanStep(step Step) SkipForTrialPlanStep {
 	return SkipForTrialPlanStep{
-		step:             step,
-		OperationManager: process.NewDeprovisionOperationManager(os),
+		step: step,
 	}
 }
 

@@ -291,8 +291,7 @@ func main() {
 		},
 		{
 			weight: 2,
-			step: provisioning.NewLmsActivationStep(db.Operations(), cfg.LMS,
-				provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
+			step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
 		},
 		{
 			weight:   2,
@@ -301,13 +300,11 @@ func main() {
 		},
 		{
 			weight: 3,
-			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
-				provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+			step:   provisioning.NewSkipForTrialPlanStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
 		{
 			weight: 3,
-			step: provisioning.NewEnableForTrialPlanStep(db.Operations(),
-				provisioning.NewNatsStreamingOverridesStep(db.Operations())),
+			step:   provisioning.NewEnableForTrialPlanStep(provisioning.NewNatsStreamingOverridesStep()),
 		},
 		{
 			weight: 3,
@@ -323,8 +320,7 @@ func main() {
 		},
 		{
 			weight: 5,
-			step: provisioning.NewLmsActivationStep(db.Operations(), cfg.LMS,
-				provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
+			step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
 		},
 		{
 			weight:   6,
@@ -360,8 +356,7 @@ func main() {
 		},
 		{
 			weight: 1,
-			step: deprovisioning.NewSkipForTrialPlanStep(db.Operations(),
-				deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+			step:   deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
 		{
 			weight:   1,

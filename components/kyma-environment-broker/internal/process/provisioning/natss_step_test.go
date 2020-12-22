@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +28,6 @@ var (
 
 func TestNatssWithInitialOverrides(t *testing.T) {
 	// Given
-	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
 	operation := fixOperationWithPlanID("any")
 	simpleInputCreator := newInputCreator()
@@ -37,7 +35,7 @@ func TestNatssWithInitialOverrides(t *testing.T) {
 	operation.InputCreator = simpleInputCreator
 	var runTime time.Duration = 0
 
-	step := NewNatsStreamingOverridesStep(memoryStorage.Operations())
+	step := NewNatsStreamingOverridesStep()
 
 	// When
 	returnedOperation, time, err := step.Run(operation, log)
@@ -53,7 +51,6 @@ func TestNatssWithInitialOverrides(t *testing.T) {
 
 func TestNatssWithEmptyOverrides(t *testing.T) {
 	// Given
-	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
 	operation := fixOperationWithPlanID("any")
 	simpleInputCreator := newInputCreator()
@@ -61,7 +58,7 @@ func TestNatssWithEmptyOverrides(t *testing.T) {
 	operation.InputCreator = simpleInputCreator
 	var runTime time.Duration = 0
 
-	step := NewNatsStreamingOverridesStep(memoryStorage.Operations())
+	step := NewNatsStreamingOverridesStep()
 
 	// When
 	returnedOperation, time, err := step.Run(operation, log)

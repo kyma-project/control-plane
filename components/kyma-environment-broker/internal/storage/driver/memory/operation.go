@@ -42,11 +42,19 @@ func (s *operations) InsertLegacyOperation(operation internal.LegacyOperation) e
 
 	id := operation.ID
 	if _, exists := s.legacyOperations[id]; exists {
-		return dberr.AlreadyExists("instance operation with id %s already exist", id)
+		return dberr.AlreadyExists("legacy operation with id %s already exist", id)
 	}
 
 	s.legacyOperations[id] = operation
 	return nil
+}
+
+func (s *operations) GetLegacyOperation(operationID string) (*internal.LegacyOperation, error) {
+	op, exists := s.legacyOperations[operationID]
+	if !exists {
+		return nil, dberr.NotFound("legacy operation with id %s not found", operationID)
+	}
+	return &op, nil
 }
 
 func (s *operations) ListOperationsParameters() (map[string]internal.ProvisioningParameters, error) {
@@ -303,6 +311,13 @@ func (s *operations) GetOperationsForIDs(opIdList []string) ([]internal.Operatio
 			}
 		}
 	}
+	for _, opID := range opIdList {
+		for _, op := range s.legacyOperations {
+			if op.Operation.ID == opID {
+				ops = append(ops, op.Operation)
+			}
+		}
+	}
 	if len(ops) == 0 {
 		return nil, dberr.NotFound("operations with ids from list %+q not exist", opIdList)
 	}
@@ -455,17 +470,17 @@ func (s *operations) updateOperation(operation internal.Operation) (internal.Ope
 	}
 	for i, op := range s.deprovisioningOperations {
 		if op.Operation.ID == operation.ID {
-			temp := s.provisioningOperations[i]
+			temp := s.deprovisioningOperations[i]
 			temp.ProvisioningParameters = operation.ProvisioningParameters
-			s.provisioningOperations[i] = temp
+			s.deprovisioningOperations[i] = temp
 			return operation, nil
 		}
 	}
 	for i, op := range s.legacyOperations {
 		if op.Operation.ID == operation.ID {
-			temp := s.provisioningOperations[i]
-			temp.ProvisioningParameters = operation.ProvisioningParameters
-			s.provisioningOperations[i] = temp
+			temp := s.legacyOperations[i]
+			temp.Operation.ProvisioningParameters = operation.ProvisioningParameters
+			s.legacyOperations[i] = temp
 			return operation, nil
 		}
 	}

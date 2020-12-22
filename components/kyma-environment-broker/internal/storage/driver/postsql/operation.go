@@ -33,6 +33,9 @@ func NewOperation(sess postsql.Factory, cipher Cipher) *operations {
 }
 
 // used only as memory storage in the unit test
+func (s *operations) GetLegacyOperation(operationID string) (*internal.LegacyOperation, error) {
+	return nil, nil
+}
 func (s *operations) InsertLegacyOperation(operation internal.LegacyOperation) error {
 	return nil
 }

@@ -51,7 +51,6 @@ func forTrialProvider(provider *internal.TrialCloudProvider) (hyperscaler.Type, 
 }
 
 func NewResolveCredentialsStep(os storage.Operations, accountProvider hyperscaler.AccountProvider) *ResolveCredentialsStep {
-
 	return &ResolveCredentialsStep{
 		operationManager: process.NewProvisionOperationManager(os),
 		opStorage:        os,
