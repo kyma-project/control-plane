@@ -92,7 +92,7 @@ spec:
               value: "{{ .Values.lms.environment }}"
             - name: APP_LMS_SAML_TENANT
               value: "{{ .Values.lms.samlTenant }}"
-            - name: APP_LMS_ENABLED_FOR_GLOBAL_ACCOUNTS 
+            - name: APP_LMS_ENABLED_FOR_GLOBAL_ACCOUNTS
               value: "{{ .Values.lms.enabledForGlobalAccounts }}"
             - name: APP_LMS_MANDATORY
               value: "{{ .Values.lms.mandatory }}"
@@ -264,6 +264,26 @@ spec:
               valueFrom:
                 secretKeyRef:
                   key: parentId
+                  name: {{ .Values.avs.secretName }}
+            - name: APP_AVS_TRIAL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: trialApiKey
+                  name: {{ .Values.avs.secretName }}
+            - name: APP_AVS_TRIAL_INTERNAL_TESTER_ACCESS_ID
+              valueFrom:
+                secretKeyRef:
+                  key: trialInternalTesterAccessId
+                  name: {{ .Values.avs.secretName }}
+            - name: APP_AVS_TRIAL_GROUP_ID
+              valueFrom:
+                secretKeyRef:
+                  key: trialGroupId
+                  name: {{ .Values.avs.secretName }}
+            - name: APP_AVS_TRIAL_PARENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: trialParentId
                   name: {{ .Values.avs.secretName }}
             - name: APP_AVS_ADDITIONAL_TAGS_ENABLED
               value: "{{ .Values.avs.additionalTagsEnabled }}"

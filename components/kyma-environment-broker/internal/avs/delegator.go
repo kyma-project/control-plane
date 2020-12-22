@@ -15,12 +15,6 @@ type Delegator struct {
 	avsConfig         Config
 	client            *Client
 	operationsStorage storage.Operations
-	configForModel    *configForModel
-}
-
-type configForModel struct {
-	groupId  int64
-	parentId int64
 }
 
 type avsNonSuccessResp struct {
@@ -34,10 +28,6 @@ func NewDelegator(client *Client, avsConfig Config, operationsStorage storage.Op
 		avsConfig:         avsConfig,
 		client:            client,
 		operationsStorage: operationsStorage,
-		configForModel: &configForModel{
-			groupId:  avsConfig.GroupId,
-			parentId: avsConfig.ParentId,
-		},
 	}
 }
 
@@ -52,7 +42,7 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 		updatedOperation = operation
 	} else {
 		logger.Infof("making avs calls to create the Evaluation")
-		evaluationObject, err := evalAssistant.CreateBasicEvaluationRequest(operation, del.configForModel, url)
+		evaluationObject, err := evalAssistant.CreateBasicEvaluationRequest(operation, url)
 		if err != nil {
 			logger.Errorf("step failed with error %v", err)
 			return operation, 5 * time.Second, nil
@@ -77,7 +67,11 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 		updatedOperation, d = del.operationManager.UpdateOperation(operation)
 	}
 
-	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.Avs.AvsEvaluationInternalId)
+	provisionParams, err := updatedOperation.GetProvisioningParameters()
+	if err != nil {
+		return del.operationManager.OperationFailed(updatedOperation, err.Error())
+	}
+	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.Avs.AvsEvaluationInternalId, provisionParams)
 
 	return updatedOperation, d, nil
 }
