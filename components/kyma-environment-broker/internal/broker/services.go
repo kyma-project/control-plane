@@ -15,6 +15,7 @@ type OptionalComponentNamesProvider interface {
 
 type ServicesEndpoint struct {
 	log logrus.FieldLogger
+	cfg Service
 
 	optionalComponents OptionalComponentNamesProvider
 	enabledPlanIDs     map[string]struct{}
@@ -29,6 +30,7 @@ func NewServices(cfg Config, optComponentsSvc OptionalComponentNamesProvider, lo
 
 	return &ServicesEndpoint{
 		log:                log.WithField("service", "ServicesEndpoint"),
+		cfg:                cfg.Service,
 		optionalComponents: optComponentsSvc,
 		enabledPlanIDs:     enabledPlanIDs,
 	}
@@ -69,10 +71,12 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 			},
 			Plans: availableServicePlans,
 			Metadata: &domain.ServiceMetadata{
-				DisplayName:         "Kyma Runtime",
-				LongDescription:     "Kyma Runtime experimental service class",
-				DocumentationUrl:    "kyma-project.io",
-				ProviderDisplayName: "SAP",
+				DisplayName:         b.cfg.DisplayName,
+				ImageUrl:            b.cfg.ImageUrl,
+				LongDescription:     b.cfg.LongDescription,
+				ProviderDisplayName: b.cfg.ProviderDisplayName,
+				DocumentationUrl:    b.cfg.DocumentationUrl,
+				SupportUrl:          b.cfg.SupportUrl,
 			},
 			AllowContextUpdates: true,
 		},
