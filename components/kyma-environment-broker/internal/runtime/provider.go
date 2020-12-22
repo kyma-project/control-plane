@@ -165,6 +165,9 @@ func (r *ComponentsListProvider) checkStatusCode(resp *http.Response) error {
 
 func (r *ComponentsListProvider) getInstallerYamlURL(kymaVersion string) string {
 	if r.isOnDemandRelease(kymaVersion) {
+		if strings.HasPrefix(kymaVersion, "pr-") {
+			kymaVersion = strings.ToUpper(kymaVersion)
+		}
 		return fmt.Sprintf(onDemandInstallerURLFormat, kymaVersion)
 	}
 	return fmt.Sprintf(releaseInstallerURLFormat, kymaVersion)
@@ -173,12 +176,12 @@ func (r *ComponentsListProvider) getInstallerYamlURL(kymaVersion string) string 
 // isOnDemandRelease returns true if the version is recognized as on-demand.
 //
 // Detection rules:
-//   For pull requests: PR-<number>
+//   For pull requests: pr-<number>
 //   For changes to the master branch: master-<commit_sha>
 //
 // source: https://github.com/kyma-project/test-infra/blob/master/docs/prow/prow-architecture.md#generate-development-artifacts
 func (r *ComponentsListProvider) isOnDemandRelease(version string) bool {
-	isOnDemandVersion := strings.HasPrefix(version, "PR-") ||
+	isOnDemandVersion := strings.HasPrefix(version, "pr-") ||
 		strings.HasPrefix(version, "master-")
 	return isOnDemandVersion
 }

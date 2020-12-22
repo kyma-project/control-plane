@@ -118,15 +118,15 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", "1.10").Return([]v1alpha1.KymaComponent{}, nil).Once()
-		componentsProvider.On("AllComponents", "PR-1").Return([]v1alpha1.KymaComponent{}, nil).Once()
+		componentsProvider.On("AllComponents", "pr-1").Return([]v1alpha1.KymaComponent{}, nil).Once()
 		defer componentsProvider.AssertExpectations(t)
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "1.10", fixTrialRegionMapping())
 		assert.NoError(t, err)
-		pp := fixProvisioningParameters(broker.GCPPlanID, "PR-1")
+		pp := fixProvisioningParameters(broker.GCPPlanID, "pr-1")
 
 		// when
-		input, err := ibf.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "PR-1", Origin: internal.Parameters})
+		input, err := ibf.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "pr-1", Origin: internal.Parameters})
 
 		// Then
 		assert.NoError(t, err)
