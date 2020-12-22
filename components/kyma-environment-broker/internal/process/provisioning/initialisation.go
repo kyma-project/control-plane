@@ -85,9 +85,6 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	if operation.ProvisioningParameters.PlanID == broker.TrialPlanID {
-		s.externalEvalCreator.disabled = true
-	}
 	operation.SMClientFactory = s.serviceManagerClientFactory
 
 	inst, err := s.instanceStorage.GetByID(operation.InstanceID)
@@ -210,9 +207,12 @@ func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance, log
 
 func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOperation, instance *internal.Instance, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
 	// action #1
-	operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL, log)
-	if err != nil || repeat != 0 {
-		return operation, repeat, nil
+	if operation.ProvisioningParameters.PlanID != broker.TrialPlanID {
+		log.Infof("creating external evaluation for instance %", instance.InstanceID)
+		operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL, log)
+		if err != nil || repeat != 0 {
+			return operation, repeat, nil
+		}
 	}
 
 	// action #2
