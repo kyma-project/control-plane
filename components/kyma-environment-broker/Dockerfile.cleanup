@@ -15,7 +15,7 @@ FROM alpine:latest as certs
 RUN apk --update add ca-certificates
 
 # Final image
-FROM alpine:3.12.0
+FROM alpine:3.12.3
 LABEL source = git@github.com:kyma-project/control-plane.git
 
 RUN apk --no-cache add curl
