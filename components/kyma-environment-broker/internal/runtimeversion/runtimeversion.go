@@ -14,7 +14,8 @@ func NewRuntimeVersionConfigurator(defaultVersion string, accountMapping *Accoun
 	}
 }
 
-func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.ProvisioningOperation, pp internal.ProvisioningParameters) (*internal.RuntimeVersionData, error) {
+func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.ProvisioningOperation) (*internal.RuntimeVersionData, error) {
+	pp := op.ProvisioningParameters
 	if pp.Parameters.KymaVersion == "" {
 		version, found, err := rvc.accountMapping.Get(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID)
 		if err != nil {

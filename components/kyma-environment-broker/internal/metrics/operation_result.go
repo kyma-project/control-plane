@@ -74,9 +74,9 @@ func (c *OperationResultCollector) OnProvisioningStepProcessed(ctx context.Conte
 		resultValue = resultFailed
 	}
 	op := stepProcessed.Operation
+	pp := op.ProvisioningParameters
 	c.provisioningResultGauge.
-		WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, stepProcessed.Operation.ProvisioningParameters.ErsContext.GlobalAccountID,
-			stepProcessed.Operation.ProvisioningParameters.PlanID).
+		WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).
 		Set(resultValue)
 
 	return nil
@@ -87,7 +87,6 @@ func (c *OperationResultCollector) OnDeprovisioningStepProcessed(ctx context.Con
 	if !ok {
 		return fmt.Errorf("expected DeprovisioningStepProcessed but got %+v", ev)
 	}
-
 	var resultValue float64
 	switch stepProcessed.Operation.State {
 	case domain.InProgress:
@@ -98,9 +97,9 @@ func (c *OperationResultCollector) OnDeprovisioningStepProcessed(ctx context.Con
 		resultValue = resultFailed
 	}
 	op := stepProcessed.Operation
+	pp := op.ProvisioningParameters
 	c.deprovisioningResultGauge.
-		WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, stepProcessed.Operation.ProvisioningParameters.ErsContext.GlobalAccountID,
-			stepProcessed.Operation.ProvisioningParameters.PlanID).
+		WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).
 		Set(resultValue)
 	return nil
 }

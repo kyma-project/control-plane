@@ -48,7 +48,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout))
 	}
-	requestInput, err := s.createProvisionInput(operation, operation.ProvisioningParameters)
+	requestInput, err := s.createProvisionInput(operation)
 	if err != nil {
 		log.Errorf("Unable to create provisioning input: %s", err.Error())
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create provisioning input")
@@ -123,13 +123,13 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 	return operation, 1 * time.Second, nil
 }
 
-func (s *CreateRuntimeStep) createProvisionInput(operation internal.ProvisioningOperation, parameters internal.ProvisioningParameters) (gqlschema.ProvisionRuntimeInput, error) {
+func (s *CreateRuntimeStep) createProvisionInput(operation internal.ProvisioningOperation) (gqlschema.ProvisionRuntimeInput, error) {
 	var request gqlschema.ProvisionRuntimeInput
 
-	operation.InputCreator.SetProvisioningParameters(parameters)
+	operation.InputCreator.SetProvisioningParameters(operation.ProvisioningParameters)
 	operation.InputCreator.SetShootName(operation.ShootName)
 	operation.InputCreator.SetLabel(brokerKeyPrefix+"instance_id", operation.InstanceID)
-	operation.InputCreator.SetLabel(globalKeyPrefix+"subaccount_id", parameters.ErsContext.SubAccountID)
+	operation.InputCreator.SetLabel(globalKeyPrefix+"subaccount_id", operation.ProvisioningParameters.ErsContext.SubAccountID)
 	request, err := operation.InputCreator.CreateProvisionRuntimeInput()
 	if err != nil {
 		return request, errors.Wrap(err, "while building input for provisioner")

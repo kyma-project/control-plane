@@ -31,7 +31,7 @@ type Operations interface {
 	GetOperationStatsForOrchestration(orchestrationID string) (map[string]int, error)
 	ListOperations(filter dbmodel.OperationFilter) ([]internal.Operation, int, int, error)
 
-	// todo: remove, used in migration
+	// todo: remove below after parameters migration was done on each environment
 	GetLegacyOperation(operationID string) (*internal.LegacyOperation, error)
 	InsertLegacyOperation(operation internal.LegacyOperation) error
 	UpdateOperationParameters(operation internal.Operation) (*internal.Operation, error)

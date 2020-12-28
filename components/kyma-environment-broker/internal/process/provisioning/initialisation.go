@@ -109,7 +109,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 }
 
 func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	err := s.configureKymaVersion(&operation, &operation.ProvisioningParameters)
+	err := s.configureKymaVersion(&operation)
 	if err != nil {
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	}
@@ -129,11 +129,11 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 	}
 }
 
-func (s *InitialisationStep) configureKymaVersion(operation *internal.ProvisioningOperation, pp *internal.ProvisioningParameters) error {
+func (s *InitialisationStep) configureKymaVersion(operation *internal.ProvisioningOperation) error {
 	if !operation.RuntimeVersion.IsEmpty() {
 		return nil
 	}
-	version, err := s.runtimeVerConfigurator.ForProvisioning(*operation, *pp)
+	version, err := s.runtimeVerConfigurator.ForProvisioning(*operation)
 	if err != nil {
 		return errors.Wrap(err, "while getting the runtime version")
 	}

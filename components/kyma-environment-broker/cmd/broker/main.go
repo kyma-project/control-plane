@@ -172,7 +172,7 @@ func main() {
 		prometheus.MustRegister(dbStatsCollector)
 	}
 
-	// todo: remove
+	// todo: remove after parameters migration was done on each environment
 	// provisioning parameters migration
 	if cfg.EnableParametersMigration {
 		err = migrations.NewParametersMigration(db.Operations(), logs).Migrate()
