@@ -5,22 +5,22 @@
 # For more details, read the following article on GitHub: https://help.github.com/articles/about-codeowners/.
 
 # These are the default owners for the whole content of the `control-plane` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
-* @PK85 @crabtree @kfurgol @tgorgol @dbadura @kjaksik @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
+* @PK85 @crabtree @kfurgol @tgorgol @kjaksik @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa @piotrmiskiewicz @polskikiel @ksputo @jasiu001
 
 # All developers working on this repository are able to edit main values.yaml file.
-/resources/kcp/values.yaml @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @dbadura @kjaksik @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @koala7659 @rafalpotempa
+/resources/kcp/values.yaml @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @kjaksik @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @koala7659 @rafalpotempa
 
 # All developers working on this repository are able to edit scripts directory.
-/scripts @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @dbadura @kjaksik @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @koala7659 @rafalpotempa
+/scripts @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @kjaksik @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @koala7659 @rafalpotempa
 
 # Registration job is used by provisioner and kyma-environment-broker
-/resources/kcp/templates/registration-job.yaml @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @dbadura @kjaksik @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @koala7659 @rafalpotempa
+/resources/kcp/templates/registration-job.yaml @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @kjaksik @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @koala7659 @rafalpotempa
 
 # Kyma Environment Broker
-/resources/kcp/charts/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @crabtree @kjaksik
-/components/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @crabtree @kjaksik
-/docs/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @crabtree @kjaksik
-/components/schema-migrator/migrations/kyma-environment-broker @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @crabtree @kjaksik
+/resources/kcp/charts/kyma-environment-broker @PK85 @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @crabtree @kjaksik
+/components/kyma-environment-broker @PK85 @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @crabtree @kjaksik
+/docs/kyma-environment-broker @PK85 @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @crabtree @kjaksik
+/components/schema-migrator/migrations/kyma-environment-broker @PK85 @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @crabtree @kjaksik
 
 # Runtime Provisioner
 /resources/kcp/charts/provisioner @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
@@ -31,7 +31,7 @@
 
 
 # e2e-provisioning
-/tests/e2e/provisioning @PK85 @mszostok @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @crabtree @kjaksik
+/tests/e2e/provisioning @PK85 @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @crabtree @kjaksik
 
 # Metris
 /resources/kcp/charts/metris @maksd @anishj0shi @k15r @lilitgh @marcobebway @montaro @nachtmaar @radufa @sayanh

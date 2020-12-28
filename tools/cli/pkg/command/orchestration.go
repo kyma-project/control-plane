@@ -111,7 +111,7 @@ Exclude Targets:
 {{- end -}}
 {{- if gt (len .OperationStats) 0 }}
 Operations:
-{{- range $i, $s := cliOrchestrationStates }}
+{{- range $i, $s := orchestrationStates }}
 {{- if gt (index $.OperationStats $s) 0 }}
   {{ printf "%11s: %d" $s (index $.OperationStats $s) }}
 {{- end -}}
@@ -167,6 +167,16 @@ The command has the following modes:
 func cliOrchestrationStates() []string {
 	s := []string{}
 	for state := range cliStates {
+		s = append(s, state)
+	}
+	sort.Strings(s)
+
+	return s
+}
+
+func orchestrationStates() []string {
+	s := []string{}
+	for _, state := range cliStates {
 		s = append(s, state)
 	}
 	sort.Strings(s)
@@ -276,8 +286,8 @@ func (cmd *OrchestrationCommand) showOneOrchestration(orchestrationID string) er
 	case tableOutput:
 		// Print orchestration details via template
 		funcMap := template.FuncMap{
-			"orchestrationTarget":    orchestrationTarget,
-			"cliOrchestrationStates": cliOrchestrationStates,
+			"orchestrationTarget": orchestrationTarget,
+			"orchestrationStates": orchestrationStates,
 		}
 		tmpl, err := template.New("orchestrationDetails").Funcs(funcMap).Parse(orchestrationDetailsTpl)
 		if err != nil {

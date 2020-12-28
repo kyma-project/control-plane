@@ -27,4 +27,12 @@ type Config struct {
 	GardenerShootNameTagClassId int
 	GardenerSeedNameTagClassId  int
 	RegionTagClassId            int
+	TrialApiKey                 string `envconfig:"optional"`
+	TrialInternalTesterAccessId int64  `envconfig:"optional"`
+	TrialParentId               int64  `envconfig:"optional"`
+	TrialGroupId                int64  `envconfig:"optional"`
+}
+
+func (c Config) IsTrialConfigured() bool {
+	return c.TrialApiKey != "" && c.TrialInternalTesterAccessId != 0 && c.TrialParentId != 0 && c.TrialGroupId != 0
 }

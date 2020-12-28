@@ -275,9 +275,8 @@ func main() {
 			disabled: cfg.XSUAA.Disabled,
 		},
 		{
-			weight: 2,
-			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
-				provisioning.NewInternalEvaluationStep(avsDel, internalEvalAssistant)),
+			weight:   2,
+			step:     provisioning.NewInternalEvaluationStep(avsDel, internalEvalAssistant),
 			disabled: cfg.Avs.Disabled,
 		},
 		{

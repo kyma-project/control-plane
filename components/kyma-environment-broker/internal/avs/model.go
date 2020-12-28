@@ -67,8 +67,7 @@ type BasicEvaluationCreateResponse struct {
 	IdOnTester                 string `json:"id_on_tester"`
 }
 
-func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, evalTypeSpecificConfig ModelConfigurator,
-	configForModel *configForModel, url string) (*BasicEvaluationCreateRequest, error) {
+func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, evalTypeSpecificConfig ModelConfigurator, url string) (*BasicEvaluationCreateRequest, error) {
 	provisionParams, err := operation.GetProvisioningParameters()
 	if err != nil {
 		return nil, err
@@ -85,16 +84,16 @@ func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, e
 		URL:              url,
 		CheckType:        evalTypeSpecificConfig.ProvideCheckType(),
 		Interval:         interval,
-		TesterAccessId:   evalTypeSpecificConfig.ProvideTesterAccessId(),
+		TesterAccessId:   evalTypeSpecificConfig.ProvideTesterAccessId(provisionParams),
 		Tags:             evalTypeSpecificConfig.ProvideTags(),
 		Timeout:          timeout,
 		ReadOnly:         false,
 		ContentCheck:     contentCheck,
 		ContentCheckType: contentCheckType,
 		Threshold:        threshold,
-		GroupId:          configForModel.groupId,
+		GroupId:          evalTypeSpecificConfig.ProvideGroupId(provisionParams),
 		Visibility:       visibility,
-		ParentId:         configForModel.parentId,
+		ParentId:         evalTypeSpecificConfig.ProvideParentId(provisionParams),
 	}, nil
 }
 
