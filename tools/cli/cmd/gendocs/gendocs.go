@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	docsTargetDir = "../../docs/cli/commands"
+	docsTargetDir = "../../../../docs/cli/commands"
 	fmTemplate    = `# %s
 `
 )

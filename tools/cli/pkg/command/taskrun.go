@@ -71,7 +71,7 @@ func (e *TaskRunError) Error() string {
 func NewTaskRunCmd() *cobra.Command {
 	cmd := TaskRunCommand{}
 	cobraCmd := &cobra.Command{
-		Use:     "taskrun --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...] COMMAND [ARGS ...]",
+		Use:     "taskrun --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...] -- COMMAND [ARGS ...]",
 		Aliases: []string{"task", "t"},
 		Short:   "Runs generic tasks on one or more Kyma Runtimes.",
 		Long: `Runs a command, which can be a script or a program with arbitrary arguments, on targets of Kyma Runtimes.
@@ -85,11 +85,11 @@ For each subprocess, the following Runtime-specific data are passed as environme
   - RUNTIME_ID       : Runtime ID of the Runtime
 
 	If all subprocesses finish successfully with the zero status code, the exit status is zero (0). If one or more subprocesses exit with a non-zero status, the command will also exit with a non-zero status.`,
-		Example: `  kcp taskrun --target all kubectl patch deployment valid-deployment -p '{"metadata":{"labels":{"my-label": "my-value"}}}'
+		Example: `  kcp taskrun --target all -- kubectl patch deployment valid-deployment -p '{"metadata":{"labels":{"my-label": "my-value"}}}'
     Execute a kubectl patch operation for all Runtimes.
   kcp taskrun --target account=CA4836781TID000000000123456789 /usr/local/bin/awesome-script.sh
     Run a maintenance script for all Runtimes of a given global account.
-  kcp taskrun --target all helm upgrade -i -n kyma-system my-kyma-addon --values overrides.yaml
+  kcp taskrun --target all -- helm upgrade -i -n kyma-system my-kyma-addon --values overrides.yaml
     Deploy a Helm chart on all Runtimes.`,
 		Args:    cobra.MinimumNArgs(1),
 		PreRunE: func(_ *cobra.Command, args []string) error { return cmd.Validate(args) },
