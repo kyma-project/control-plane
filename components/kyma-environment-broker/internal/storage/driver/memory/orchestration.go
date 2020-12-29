@@ -9,7 +9,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 )
 
 type orchestrations struct {

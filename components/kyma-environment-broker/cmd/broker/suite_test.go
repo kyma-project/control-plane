@@ -188,12 +188,12 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 
 	provisioningOperation := internal.ProvisioningOperation{
 		Operation: internal.Operation{
-			State:      domain.Succeeded,
-			ID:         uuid.New(),
-			InstanceID: instanceID,
+			State:                  domain.Succeeded,
+			ID:                     uuid.New(),
+			InstanceID:             instanceID,
+			ProvisioningParameters: provisioningParameters,
 		},
-		RuntimeID:              instance.RuntimeID,
-		ProvisioningParameters: string(serializedProvisioningParams),
+		RuntimeID: instance.RuntimeID,
 	}
 	shoot := &gardenerapi.Shoot{
 		ObjectMeta: metaV1.ObjectMeta{

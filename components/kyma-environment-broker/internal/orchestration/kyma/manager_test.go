@@ -127,6 +127,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				ProvisionerOperationID: "",
 				State:                  orchestration.Succeeded,
 				Description:            "operation created",
+				ProvisioningParameters: internal.ProvisioningParameters{},
 			},
 			RuntimeOperation: orchestration.RuntimeOperation{
 				Runtime: orchestration.Runtime{
@@ -135,8 +136,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				},
 				DryRun: false,
 			},
-			ProvisioningParameters: "",
-			InputCreator:           nil,
+			InputCreator: nil,
 		}
 		err := store.Operations().InsertUpgradeKymaOperation(upgradeOperation)
 		require.NoError(t, err)

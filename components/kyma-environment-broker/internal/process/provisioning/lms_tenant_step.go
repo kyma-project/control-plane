@@ -46,21 +46,14 @@ func (s *provideLmsTenantStep) Run(operation internal.ProvisioningOperation, log
 		return operation, 0, nil
 	}
 
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		msg := fmt.Sprintf("Unable to get provisioning parameters: %s", err.Error())
-		logger.Errorf(msg)
-		return s.operationManager.OperationFailed(operation, msg)
-	}
-	region := s.provideRegion(pp.Parameters.Region)
-
-	lmsTenantID, err := s.tenantProvider.ProvideLMSTenantID(pp.ErsContext.GlobalAccountID, region)
+	region := s.provideRegion(operation.ProvisioningParameters.Parameters.Region)
+	lmsTenantID, err := s.tenantProvider.ProvideLMSTenantID(operation.ProvisioningParameters.ErsContext.GlobalAccountID, region)
 	if err != nil {
 		return s.handleError(
 			operation,
 			logger,
 			time.Since(operation.UpdatedAt),
-			fmt.Sprintf("Unable to get tenant for GlobalaccountID/region %s/%s", pp.ErsContext.GlobalAccountID, region),
+			fmt.Sprintf("Unable to get tenant for GlobalaccountID/region %s/%s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, region),
 			err)
 	}
 

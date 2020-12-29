@@ -68,13 +68,9 @@ type BasicEvaluationCreateResponse struct {
 }
 
 func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, evalTypeSpecificConfig ModelConfigurator, url string) (*BasicEvaluationCreateRequest, error) {
-	provisionParams, err := operation.GetProvisioningParameters()
-	if err != nil {
-		return nil, err
-	}
 
-	beName, beDescription := generateNameAndDescription(provisionParams.ErsContext.GlobalAccountID,
-		provisionParams.ErsContext.SubAccountID, provisionParams.Parameters.Name, evalTypeSpecificConfig.ProvideSuffix())
+	beName, beDescription := generateNameAndDescription(operation.ProvisioningParameters.ErsContext.GlobalAccountID,
+		operation.ProvisioningParameters.ErsContext.SubAccountID, operation.ProvisioningParameters.Parameters.Name, evalTypeSpecificConfig.ProvideSuffix())
 
 	return &BasicEvaluationCreateRequest{
 		DefinitionType:   DefinitionType,
@@ -84,16 +80,16 @@ func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, e
 		URL:              url,
 		CheckType:        evalTypeSpecificConfig.ProvideCheckType(),
 		Interval:         interval,
-		TesterAccessId:   evalTypeSpecificConfig.ProvideTesterAccessId(provisionParams),
+		TesterAccessId:   evalTypeSpecificConfig.ProvideTesterAccessId(operation.ProvisioningParameters),
 		Tags:             evalTypeSpecificConfig.ProvideTags(),
 		Timeout:          timeout,
 		ReadOnly:         false,
 		ContentCheck:     contentCheck,
 		ContentCheckType: contentCheckType,
 		Threshold:        threshold,
-		GroupId:          evalTypeSpecificConfig.ProvideGroupId(provisionParams),
+		GroupId:          evalTypeSpecificConfig.ProvideGroupId(operation.ProvisioningParameters),
 		Visibility:       visibility,
-		ParentId:         evalTypeSpecificConfig.ProvideParentId(provisionParams),
+		ParentId:         evalTypeSpecificConfig.ProvideParentId(operation.ProvisioningParameters),
 	}, nil
 }
 

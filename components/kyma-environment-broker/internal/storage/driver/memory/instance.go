@@ -11,23 +11,23 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
 )
 
-type Instance struct {
+type instances struct {
 	mu                sync.Mutex
 	instances         map[string]internal.Instance
 	operationsStorage *operations
 }
 
-func NewInstance(operations *operations) *Instance {
-	return &Instance{
+func NewInstance(operations *operations) *instances {
+	return &instances{
 		instances:         make(map[string]internal.Instance, 0),
 		operationsStorage: operations,
 	}
 }
-func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, error) {
+func (s *instances) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, error) {
 	var instances []internal.InstanceWithOperation
 
 	// simulate left join without grouping on column
@@ -81,7 +81,7 @@ func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]i
 	return instances, nil
 }
 
-func (s *Instance) FindAllInstancesForRuntimes(runtimeIdList []string) ([]internal.Instance, error) {
+func (s *instances) FindAllInstancesForRuntimes(runtimeIdList []string) ([]internal.Instance, error) {
 	var instances []internal.Instance
 
 	for _, runtimeID := range runtimeIdList {
@@ -99,7 +99,7 @@ func (s *Instance) FindAllInstancesForRuntimes(runtimeIdList []string) ([]intern
 	return instances, nil
 }
 
-func (s *Instance) FindAllInstancesForSubAccounts(subAccountslist []string) ([]internal.Instance, error) {
+func (s *instances) FindAllInstancesForSubAccounts(subAccountslist []string) ([]internal.Instance, error) {
 	var instances []internal.Instance
 
 	for _, subAccount := range subAccountslist {
@@ -113,7 +113,7 @@ func (s *Instance) FindAllInstancesForSubAccounts(subAccountslist []string) ([]i
 	return instances, nil
 }
 
-func (s *Instance) GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error) {
+func (s *instances) GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error) {
 	numberOfInstances := 0
 	for _, inst := range s.instances {
 		if inst.GlobalAccountID == globalAccountID {
@@ -123,7 +123,7 @@ func (s *Instance) GetNumberOfInstancesForGlobalAccountID(globalAccountID string
 	return numberOfInstances, nil
 }
 
-func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
+func (s *instances) GetByID(instanceID string) (*internal.Instance, error) {
 	inst, ok := s.instances[instanceID]
 	if !ok {
 		return nil, dberr.NotFound("instance with id %s not exist", instanceID)
@@ -132,7 +132,7 @@ func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	return &inst, nil
 }
 
-func (s *Instance) Delete(instanceID string) error {
+func (s *instances) Delete(instanceID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -140,7 +140,7 @@ func (s *Instance) Delete(instanceID string) error {
 	return nil
 }
 
-func (s *Instance) Insert(instance internal.Instance) error {
+func (s *instances) Insert(instance internal.Instance) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.instances[instance.InstanceID] = instance
@@ -148,7 +148,7 @@ func (s *Instance) Insert(instance internal.Instance) error {
 	return nil
 }
 
-func (s *Instance) Update(instance internal.Instance) error {
+func (s *instances) Update(instance internal.Instance) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.instances[instance.InstanceID] = instance
@@ -156,11 +156,11 @@ func (s *Instance) Update(instance internal.Instance) error {
 	return nil
 }
 
-func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
+func (s *instances) GetInstanceStats() (internal.InstanceStats, error) {
 	return internal.InstanceStats{}, fmt.Errorf("not implemented")
 }
 
-func (s *Instance) List(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
+func (s *instances) List(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var toReturn []internal.Instance
@@ -186,7 +186,7 @@ func sortInstancesByCreatedAt(instances []internal.Instance) {
 	})
 }
 
-func (s *Instance) filterInstances(filter dbmodel.InstanceFilter) []internal.Instance {
+func (s *instances) filterInstances(filter dbmodel.InstanceFilter) []internal.Instance {
 	inst := make([]internal.Instance, 0, len(s.instances))
 	var ok bool
 	equal := func(a, b string) bool {

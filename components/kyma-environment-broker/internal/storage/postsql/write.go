@@ -1,14 +1,13 @@
-package dbsession
+package postsql
 
 import (
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 
 	"github.com/gocraft/dbr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/lib/pq"
 )
 
@@ -22,7 +21,7 @@ type writeSession struct {
 }
 
 func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
-	_, err := ws.insertInto(postsql.InstancesTableName).
+	_, err := ws.insertInto(InstancesTableName).
 		Pair("instance_id", instance.InstanceID).
 		Pair("runtime_id", instance.RuntimeID).
 		Pair("global_account_id", instance.GlobalAccountID).
@@ -51,7 +50,7 @@ func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
 }
 
 func (ws writeSession) DeleteInstance(instanceID string) dberr.Error {
-	_, err := ws.deleteFrom(postsql.InstancesTableName).
+	_, err := ws.deleteFrom(InstancesTableName).
 		Where(dbr.Eq("instance_id", instanceID)).
 		Exec()
 
@@ -62,7 +61,7 @@ func (ws writeSession) DeleteInstance(instanceID string) dberr.Error {
 }
 
 func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
-	_, err := ws.update(postsql.InstancesTableName).
+	_, err := ws.update(InstancesTableName).
 		Where(dbr.Eq("instance_id", instance.InstanceID)).
 		Set("instance_id", instance.InstanceID).
 		Set("runtime_id", instance.RuntimeID).
@@ -82,7 +81,7 @@ func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
 }
 
 func (ws writeSession) InsertOperation(op dbmodel.OperationDTO) dberr.Error {
-	_, err := ws.insertInto(postsql.OperationTableName).
+	_, err := ws.insertInto(OperationTableName).
 		Pair("id", op.ID).
 		Pair("instance_id", op.InstanceID).
 		Pair("version", op.Version).
@@ -94,6 +93,7 @@ func (ws writeSession) InsertOperation(op dbmodel.OperationDTO) dberr.Error {
 		Pair("type", op.Type).
 		Pair("data", op.Data).
 		Pair("orchestration_id", op.OrchestrationID.String).
+		Pair("provisioning_parameters", op.ProvisioningParameters).
 		Exec()
 
 	if err != nil {
@@ -109,7 +109,7 @@ func (ws writeSession) InsertOperation(op dbmodel.OperationDTO) dberr.Error {
 }
 
 func (ws writeSession) InsertOrchestration(o dbmodel.OrchestrationDTO) dberr.Error {
-	_, err := ws.insertInto(postsql.OrchestrationTableName).
+	_, err := ws.insertInto(OrchestrationTableName).
 		Pair("orchestration_id", o.OrchestrationID).
 		Pair("created_at", o.CreatedAt).
 		Pair("updated_at", o.UpdatedAt).
@@ -131,7 +131,7 @@ func (ws writeSession) InsertOrchestration(o dbmodel.OrchestrationDTO) dberr.Err
 }
 
 func (ws writeSession) UpdateOrchestration(o dbmodel.OrchestrationDTO) dberr.Error {
-	res, err := ws.update(postsql.OrchestrationTableName).
+	res, err := ws.update(OrchestrationTableName).
 		Where(dbr.Eq("orchestration_id", o.OrchestrationID)).
 		Set("created_at", o.CreatedAt).
 		Set("updated_at", o.UpdatedAt).
@@ -159,7 +159,7 @@ func (ws writeSession) UpdateOrchestration(o dbmodel.OrchestrationDTO) dberr.Err
 }
 
 func (ws writeSession) InsertRuntimeState(state dbmodel.RuntimeStateDTO) dberr.Error {
-	_, err := ws.insertInto(postsql.RuntimeStateTableName).
+	_, err := ws.insertInto(RuntimeStateTableName).
 		Pair("id", state.ID).
 		Pair("operation_id", state.OperationID).
 		Pair("runtime_id", state.RuntimeID).
@@ -183,7 +183,7 @@ func (ws writeSession) InsertRuntimeState(state dbmodel.RuntimeStateDTO) dberr.E
 }
 
 func (ws writeSession) InsertLMSTenant(dto dbmodel.LMSTenantDTO) dberr.Error {
-	_, err := ws.insertInto(postsql.LMSTenantTableName).
+	_, err := ws.insertInto(LMSTenantTableName).
 		Pair("id", dto.ID).
 		Pair("name", dto.Name).
 		Pair("region", dto.Region).
@@ -203,7 +203,7 @@ func (ws writeSession) InsertLMSTenant(dto dbmodel.LMSTenantDTO) dberr.Error {
 }
 
 func (ws writeSession) UpdateOperation(op dbmodel.OperationDTO) dberr.Error {
-	res, err := ws.update(postsql.OperationTableName).
+	res, err := ws.update(OperationTableName).
 		Where(dbr.Eq("id", op.ID)).
 		Where(dbr.Eq("version", op.Version)).
 		Set("instance_id", op.InstanceID).
@@ -216,6 +216,33 @@ func (ws writeSession) UpdateOperation(op dbmodel.OperationDTO) dberr.Error {
 		Set("type", op.Type).
 		Set("data", op.Data).
 		Set("orchestration_id", op.OrchestrationID.String).
+		Set("provisioning_parameters", op.ProvisioningParameters).
+		Exec()
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return dberr.NotFound("Cannot find Operation with ID:'%s'", op.ID)
+		}
+		return dberr.Internal("Failed to update record to Operation table: %s", err)
+	}
+	rAffected, e := res.RowsAffected()
+	if e != nil {
+		// the optimistic locking requires numbers of rows affected
+		return dberr.Internal("the DB driver does not support RowsAffected operation")
+	}
+	if rAffected == int64(0) {
+		return dberr.NotFound("Cannot find Operation with ID:'%s' Version: %v", op.ID, op.Version)
+	}
+
+	return nil
+}
+
+func (ws writeSession) UpdateOperationParameters(op dbmodel.OperationDTO) dberr.Error {
+	res, err := ws.update(OperationTableName).
+		Where(dbr.Eq("id", op.ID)).
+		Where(dbr.Eq("version", op.Version)).
+		Set("version", op.Version+1).
+		Set("provisioning_parameters", op.ProvisioningParameters).
 		Exec()
 
 	if err != nil {

@@ -75,12 +75,6 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 		return operation, 0, errors.New("the step needs to be run after 'Create LMS tenant' step")
 	}
 
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		logger.Errorf("Unable to get provisioning parameters: %s", err.Error())
-		return operation, 0, errors.New("unable to get provisioning parameters")
-	}
-
 	// check if LMS tenant is ready
 	status, err := s.provider.GetTenantStatus(operation.Lms.TenantID)
 	if err != nil {
@@ -113,7 +107,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 	// request certificates
 	subj := pkix.Name{
 		CommonName:         "fluentbit", // do not modify
-		Organization:       []string{pp.ErsContext.GlobalAccountID},
+		Organization:       []string{operation.ProvisioningParameters.ErsContext.GlobalAccountID},
 		OrganizationalUnit: []string{uuid.New().String()},
 	}
 	certURL, pKey, err := s.provider.RequestCertificate(operation.Lms.TenantID, subj)
@@ -185,7 +179,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 		{Key: "fluent-bit.conf.Filter.record_modifier.enabled", Value: "true"},
 		{Key: "fluent-bit.conf.Filter.record_modifier.Match", Value: "kube.*"},
 		{Key: "fluent-bit.conf.Filter.record_modifier.Key", Value: "subaccount_id"},
-		{Key: "fluent-bit.conf.Filter.record_modifier.Value", Value: pp.ErsContext.SubAccountID}, // cluster_name is a tag added to log entry, allows to filter logs by a cluster
+		{Key: "fluent-bit.conf.Filter.record_modifier.Value", Value: operation.ProvisioningParameters.ErsContext.SubAccountID}, // cluster_name is a tag added to log entry, allows to filter logs by a cluster
 		//kubernetes filter should not parse the document to avoid indexing on LMS side
 		{Key: "fluent-bit.conf.Filter.Kubernetes.Merge_Log", Value: "Off"},
 		//input should not contain dex logs as it contains sensitive data

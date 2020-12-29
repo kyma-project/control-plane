@@ -29,8 +29,12 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionComputed(t *testing.T)
 		runtimeOverridesMock.On("Append", inputCreatorMock, planName, kymaVersion).Return(nil).Once()
 
 		operation := internal.ProvisioningOperation{
-			InputCreator:           inputCreatorMock,
-			ProvisioningParameters: `{ "plan_id": "ca6e5357-707f-4565-bbbd-b3ab732597c6", "parameters": { "kymaVersion": "` + kymaVersion + `" } }`,
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{
+					PlanID:     "ca6e5357-707f-4565-bbbd-b3ab732597c6",
+					Parameters: internal.ProvisioningParametersDTO{KymaVersion: kymaVersion}},
+			},
+			InputCreator: inputCreatorMock,
 		}
 
 		rcvMock := &automock.RuntimeVersionConfiguratorForProvisioning{}
@@ -64,8 +68,10 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionFromOperation(t *testi
 		runtimeOverridesMock.On("Append", inputCreatorMock, planName, kymaVersion).Return(nil).Once()
 
 		operation := internal.ProvisioningOperation{
-			InputCreator:           inputCreatorMock,
-			ProvisioningParameters: `{ "plan_id": "ca6e5357-707f-4565-bbbd-b3ab732597c6" }`,
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{PlanID: "ca6e5357-707f-4565-bbbd-b3ab732597c6"},
+			},
+			InputCreator: inputCreatorMock,
 			RuntimeVersion: internal.RuntimeVersionData{
 				Version: kymaVersion,
 			},

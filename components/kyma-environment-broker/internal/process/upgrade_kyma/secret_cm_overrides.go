@@ -42,15 +42,9 @@ func (s *OverridesFromSecretsAndConfigStep) Name() string {
 }
 
 func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-
-	planName, exists := broker.PlanNamesMapping[pp.PlanID]
+	planName, exists := broker.PlanNamesMapping[operation.ProvisioningParameters.PlanID]
 	if !exists {
-		log.Errorf("cannot map planID '%s' to planName", pp.PlanID)
+		log.Errorf("cannot map planID '%s' to planName", operation.ProvisioningParameters.PlanID)
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
 	}
 

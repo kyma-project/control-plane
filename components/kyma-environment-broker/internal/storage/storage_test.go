@@ -1,5 +1,3 @@
-// +build database_integration
-
 package storage
 
 import (
@@ -15,7 +13,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
 
@@ -426,9 +424,9 @@ func TestSchemaInitializer(t *testing.T) {
 					ProvisionerOperationID: "target-op-id",
 					Description:            "description",
 					Version:                1,
+					ProvisioningParameters: internal.ProvisioningParameters{},
 				},
-				Lms:                    internal.LMS{TenantID: "tenant-id"},
-				ProvisioningParameters: `{"k":"v"}`,
+				Lms: internal.LMS{TenantID: "tenant-id"},
 			}
 
 			err = InitTestDBTables(t, cfg.ConnectionURL())
@@ -577,6 +575,7 @@ func TestSchemaInitializer(t *testing.T) {
 					Description:            "description",
 					Version:                1,
 					OrchestrationID:        orchestrationID,
+					ProvisioningParameters: internal.ProvisioningParameters{},
 				},
 				RuntimeOperation: orchestration.RuntimeOperation{
 					ID: "operation-id-2",
@@ -590,7 +589,6 @@ func TestSchemaInitializer(t *testing.T) {
 					},
 					DryRun: false,
 				},
-				ProvisioningParameters: "{}",
 			}
 
 			err = InitTestDBTables(t, cfg.ConnectionURL())
@@ -636,9 +634,9 @@ func TestSchemaInitializer(t *testing.T) {
 					InstanceID:             "inst-id",
 					ProvisionerOperationID: "target-op-id",
 					Description:            "description",
+					ProvisioningParameters: internal.ProvisioningParameters{},
 				},
-				Lms:                    internal.LMS{TenantID: "tenant-id"},
-				ProvisioningParameters: `{"key":"value"}`,
+				Lms: internal.LMS{TenantID: "tenant-id"},
 			}
 
 			err = InitTestDBTables(t, cfg.ConnectionURL())
@@ -865,7 +863,7 @@ func TestSchemaInitializer(t *testing.T) {
 func assertProvisioningOperation(t *testing.T, expected, got internal.ProvisioningOperation) {
 	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
 	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
-	assert.JSONEq(t, expected.ProvisioningParameters, got.ProvisioningParameters)
+	assert.Equal(t, expected.ProvisioningParameters, got.ProvisioningParameters)
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
@@ -995,6 +993,7 @@ func fixSucceededOperation(testData string) internal.Operation {
 		ProvisionerOperationID: testData,
 		State:                  domain.Succeeded,
 		Description:            testData,
+		ProvisioningParameters: internal.ProvisioningParameters{},
 	}
 }
 

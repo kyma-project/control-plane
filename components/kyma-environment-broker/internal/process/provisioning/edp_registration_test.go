@@ -52,7 +52,14 @@ func TestEDPRegistration_Run(t *testing.T) {
 
 	// when
 	_, repeat, err := step.Run(internal.ProvisioningOperation{
-		ProvisioningParameters: `{"platform_region":"` + edpRegion + `", "ers_context":{"subaccount_id":"` + edpName + `"}}`,
+		Operation: internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{
+				PlatformRegion: edpRegion,
+				ErsContext: internal.ERSContext{
+					SubAccountID: edpName,
+				},
+			},
+		},
 	}, logger.NewLogDummy())
 
 	// then

@@ -67,11 +67,7 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 		updatedOperation, d = del.operationManager.UpdateOperation(operation)
 	}
 
-	provisionParams, err := updatedOperation.GetProvisioningParameters()
-	if err != nil {
-		return del.operationManager.OperationFailed(updatedOperation, err.Error())
-	}
-	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.Avs.AvsEvaluationInternalId, provisionParams)
+	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.Avs.AvsEvaluationInternalId, updatedOperation.ProvisioningParameters)
 
 	return updatedOperation, d, nil
 }

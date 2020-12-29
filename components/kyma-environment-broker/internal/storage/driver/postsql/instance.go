@@ -3,19 +3,18 @@ package postsql
 import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 type Instance struct {
-	dbsession.Factory
+	postsql.Factory
 }
 
-func NewInstance(sess dbsession.Factory) *Instance {
+func NewInstance(sess postsql.Factory) *Instance {
 	return &Instance{
 		Factory: sess,
 	}
@@ -30,7 +29,7 @@ func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]i
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		instances, lastErr = sess.FindAllInstancesJoinedWithOperation(prct...)
 		if lastErr != nil {
-			log.Warn(errors.Wrapf(lastErr, "while fetching all instances").Error())
+			log.Errorf("while fetching all instances: %v", lastErr)
 			return false, nil
 		}
 		return true, nil
@@ -52,7 +51,7 @@ func (s *Instance) FindAllInstancesForRuntimes(runtimeIdList []string) ([]intern
 			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("Instances with runtime IDs from list '%+q' not exist", runtimeIdList)
 			}
-			log.Warn(errors.Wrapf(lastErr, "while getting instances from runtime ID list '%+q'", runtimeIdList).Error())
+			log.Errorf("while getting instances from runtime ID list '%+q': %v", runtimeIdList, lastErr)
 			return false, nil
 		}
 		return true, nil
@@ -72,7 +71,7 @@ func (s *Instance) FindAllInstancesForSubAccounts(subAccountslist []string) ([]i
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		instances, lastErr = sess.FindAllInstancesForSubAccounts(subAccountslist)
 		if lastErr != nil {
-			log.Warn(errors.Wrapf(lastErr, "while fetching instances by subaccount list").Error())
+			log.Errorf("while fetching instances by subaccount list: %v", lastErr)
 			return false, nil
 		}
 		return true, nil
@@ -106,7 +105,7 @@ func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("Instance with id %s not exist", instanceID)
 			}
-			log.Warn(errors.Wrapf(lastErr, "while getting instance by ID %s", instanceID).Error())
+			log.Errorf("while getting instance by ID %s: %v", instanceID, lastErr)
 			return false, nil
 		}
 		return true, nil
@@ -127,7 +126,7 @@ func (s *Instance) Insert(instance internal.Instance) error {
 	return wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		err := sess.InsertInstance(instance)
 		if err != nil {
-			log.Warn(errors.Wrapf(err, "while saving instance ID %s", instance.InstanceID).Error())
+			log.Errorf("while saving instance ID %s: %v", instance.InstanceID, err)
 			return false, nil
 		}
 		return true, nil
@@ -143,7 +142,7 @@ func (s *Instance) Update(instance internal.Instance) error {
 			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("Instance with id %s not exist", instance.InstanceID)
 			}
-			log.Warn(errors.Wrapf(lastErr, "while updating instance ID %s", instance.InstanceID).Error())
+			log.Errorf("while updating instance ID %s: %v", instance.InstanceID, lastErr)
 			return false, nil
 		}
 		return true, nil

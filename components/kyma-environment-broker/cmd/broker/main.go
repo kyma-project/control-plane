@@ -10,6 +10,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/migrations"
+
 	uaa "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/xsuaa"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
@@ -52,7 +54,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeoverrides"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -67,7 +69,8 @@ import (
 
 // Config holds configuration for the whole application
 type Config struct {
-	DbInMemory bool `envconfig:"default=false"`
+	DbInMemory                bool `envconfig:"default=false"`
+	EnableParametersMigration bool `envconfig:"default=false"`
 
 	// DisableProcessOperationsInProgress allows to disable processing operations
 	// which are in progress on starting application. Set to true if you are
@@ -167,6 +170,13 @@ func main() {
 		db = store
 		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 		prometheus.MustRegister(dbStatsCollector)
+	}
+
+	// todo: remove after parameters migration was done on each environment
+	// provisioning parameters migration
+	if cfg.EnableParametersMigration {
+		err = migrations.NewParametersMigration(db.Operations(), logs).Migrate()
+		fatalOnError(err)
 	}
 
 	// LMS
@@ -281,8 +291,7 @@ func main() {
 		},
 		{
 			weight: 2,
-			step: provisioning.NewLmsActivationStep(db.Operations(), cfg.LMS,
-				provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
+			step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
 		},
 		{
 			weight:   2,
@@ -291,13 +300,11 @@ func main() {
 		},
 		{
 			weight: 3,
-			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
-				provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+			step:   provisioning.NewSkipForTrialPlanStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
 		{
 			weight: 3,
-			step: provisioning.NewEnableForTrialPlanStep(db.Operations(),
-				provisioning.NewNatsStreamingOverridesStep(db.Operations())),
+			step:   provisioning.NewEnableForTrialPlanStep(provisioning.NewNatsStreamingOverridesStep()),
 		},
 		{
 			weight: 3,
@@ -313,8 +320,7 @@ func main() {
 		},
 		{
 			weight: 5,
-			step: provisioning.NewLmsActivationStep(db.Operations(), cfg.LMS,
-				provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
+			step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
 		},
 		{
 			weight:   6,
@@ -350,8 +356,7 @@ func main() {
 		},
 		{
 			weight: 1,
-			step: deprovisioning.NewSkipForTrialPlanStep(db.Operations(),
-				deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+			step:   deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
 		{
 			weight:   1,

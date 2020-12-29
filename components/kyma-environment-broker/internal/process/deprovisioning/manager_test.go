@@ -104,24 +104,22 @@ func TestManager_Execute(t *testing.T) {
 func fixDeprovisionOperation(ID string) internal.DeprovisioningOperation {
 	return internal.DeprovisioningOperation{
 		Operation: internal.Operation{
-			ID:          ID,
-			State:       domain.InProgress,
-			InstanceID:  fakeInstanceID,
-			Description: "",
+			ID:                     ID,
+			State:                  domain.InProgress,
+			InstanceID:             fakeInstanceID,
+			ProvisioningParameters: internal.ProvisioningParameters{PlanID: "321"},
 		},
-		ProvisioningParameters: `{"plan_id":"7b2a9156-884c-4586-a630-3e644fc8ec0f"}`,
 	}
 }
 
 func fixProvisionOperation() internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
-			ID:          "6bc401aa-2ec4-4303-bf3f-2e04990f6d8f",
-			InstanceID:  fakeInstanceID,
-			State:       domain.Succeeded,
-			Description: "",
+			ID:                     "6bc401aa-2ec4-4303-bf3f-2e04990f6d8f",
+			InstanceID:             fakeInstanceID,
+			State:                  domain.Succeeded,
+			ProvisioningParameters: internal.ProvisioningParameters{PlanID: "321"},
 		},
-		ProvisioningParameters: `{"plan_id":"7b2a9156-884c-4586-a630-3e644fc8ec0f"}`,
 	}
 }
 

@@ -2,7 +2,7 @@ package storage
 
 import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
 )
 
@@ -29,6 +29,13 @@ type Operations interface {
 	GetOperationStats() (internal.OperationStats, error)
 	GetOperationsForIDs(operationIDList []string) ([]internal.Operation, error)
 	GetOperationStatsForOrchestration(orchestrationID string) (map[string]int, error)
+	ListOperations(filter dbmodel.OperationFilter) ([]internal.Operation, int, int, error)
+
+	// todo: remove below after parameters migration was done on each environment
+	GetLegacyOperation(operationID string) (*internal.LegacyOperation, error)
+	InsertLegacyOperation(operation internal.LegacyOperation) error
+	UpdateOperationParameters(operation internal.Operation) (*internal.Operation, error)
+	ListOperationsParameters() (map[string]internal.ProvisioningParameters, error)
 }
 
 type Provisioning interface {

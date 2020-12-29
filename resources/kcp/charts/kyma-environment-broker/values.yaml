@@ -224,3 +224,6 @@ e2e:
   upgrade:
     configName: "e2e-upgrade-runtime-config-azure"
     timeout: "100m"
+
+migration:
+  enabled: true

@@ -57,29 +57,18 @@ func (p *ProvisionAzureEventHubStep) Name() string {
 	return "Provision Azure Event Hubs"
 }
 
-func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperation,
-	log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-
+func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	hypType := hyperscaler.Azure
-
-	// parse provisioning parameters
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		// if the parameters are incorrect, there is no reason to retry the operation
-		// a new request has to be issued by the user
-		log.Errorf("Aborting after failing to get valid operation provisioning parameters: %v", err)
-		return p.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
+	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
 
 	// get hyperscaler credentials from HAP
-	credentials, err := p.EventHub.AccountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+	credentials, err := p.EventHub.AccountProvider.GardenerCredentials(hypType, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
 	if err != nil {
 		// retrying might solve the issue, the HAP could be temporarily unavailable
 		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
 		return p.operationManager.RetryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
-	azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, pp)
+	azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, operation.ProvisioningParameters)
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure config: %v", err)
@@ -96,7 +85,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 
 	// prepare azure tags
 	tags := azure.Tags{
-		azure.TagSubAccountID: &pp.ErsContext.SubAccountID,
+		azure.TagSubAccountID: &operation.ProvisioningParameters.ErsContext.SubAccountID,
 		azure.TagInstanceID:   &operation.InstanceID,
 		azure.TagOperationID:  &operation.ID,
 	}

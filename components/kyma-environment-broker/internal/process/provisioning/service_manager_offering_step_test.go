@@ -3,6 +3,8 @@ package provisioning_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/Peripli/service-manager-cli/pkg/types"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
@@ -18,7 +20,9 @@ func TestServiceManagerOfferingStep_Run(t *testing.T) {
 	step := provisioning.NewServiceManagerOfferingStep("xsuaa-offering", "xsuaa", "application",
 		xsuaaExtractor, repo)
 	operation := internal.ProvisioningOperation{
-		ProvisioningParameters: "{}",
+		Operation: internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{},
+		},
 		SMClientFactory: servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{{
 			ID:        "id-001",
 			Name:      "xsuaa",
@@ -31,7 +35,8 @@ func TestServiceManagerOfferingStep_Run(t *testing.T) {
 		},
 		}),
 	}
-	repo.InsertProvisioningOperation(operation)
+	err := repo.InsertProvisioningOperation(operation)
+	require.NoError(t, err)
 
 	// when
 	op, retry, err := step.Run(operation, logger.NewLogDummy())

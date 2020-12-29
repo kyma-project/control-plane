@@ -45,29 +45,18 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.DeprovisioningOpera
 		log.Info("Event Hub is already deprovisioned")
 		return operation, 0, nil
 	}
-
 	hypType := hyperscaler.Azure
-
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		// if the parameters are incorrect, there is no reason to retry the operation
-		// a new request has to be issued by the user
-		errorMessage := fmt.Sprintf("aborting deprovisioning after failing to get valid operation provisioning"+
-			" parameters: %v", err)
-		log.Errorf(errorMessage)
-		return operation, 0, nil
-	}
 	log.Infof("HAP lookup for credentials to deprovision cluster for global account ID %s on Hyperscaler %s",
-		pp.ErsContext.GlobalAccountID, hypType)
+		operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
 
 	//get hyperscaler credentials from HAP
-	credentials, err := s.EventHub.AccountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+	credentials, err := s.EventHub.AccountProvider.GardenerCredentials(hypType, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
 	if err != nil {
 		// retrying might solve the issue, the HAP could be temporarily unavailable
 		errorMessage := fmt.Sprintf("unable to retrieve Gardener Credentials from HAP lookup: %v", err)
 		return s.OperationManager.RetryOperationWithoutFail(operation, errorMessage, time.Minute, 30*time.Minute, log)
 	}
-	azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, pp)
+	azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, operation.ProvisioningParameters)
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		log.Errorf("failed to create Azure config: %v", err)

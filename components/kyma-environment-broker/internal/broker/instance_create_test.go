@@ -81,17 +81,17 @@ func TestProvision_Provision(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, operation.InstanceID, instanceID)
 
-		var instanceParameters internal.ProvisioningParameters
-		assert.NoError(t, json.Unmarshal([]byte(operation.ProvisioningParameters), &instanceParameters))
-
-		assert.Equal(t, globalAccountID, instanceParameters.ErsContext.GlobalAccountID)
-		assert.Equal(t, clusterName, instanceParameters.Parameters.Name)
-		assert.Equal(t, "req-region", instanceParameters.PlatformRegion)
+		assert.Equal(t, globalAccountID, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
+		assert.Equal(t, clusterName, operation.ProvisioningParameters.Parameters.Name)
+		assert.Equal(t, "req-region", operation.ProvisioningParameters.PlatformRegion)
 
 		instance, err := memoryStorage.Instances().GetByID(instanceID)
 		require.NoError(t, err)
 
-		assert.Equal(t, instance.ProvisioningParameters, operation.ProvisioningParameters)
+		var instanceParameters internal.ProvisioningParameters
+		assert.NoError(t, json.Unmarshal([]byte(instance.ProvisioningParameters), &instanceParameters))
+
+		assert.Equal(t, instanceParameters, operation.ProvisioningParameters)
 		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.test\.example\.com`, instance.DashboardURL)
 		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
 	})
@@ -218,17 +218,17 @@ func TestProvision_Provision(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, operation.InstanceID, instanceID)
 
-		var instanceParameters internal.ProvisioningParameters
-		assert.NoError(t, json.Unmarshal([]byte(operation.ProvisioningParameters), &instanceParameters))
-
-		assert.Equal(t, globalAccountID, instanceParameters.ErsContext.GlobalAccountID)
-		assert.Equal(t, clusterName, instanceParameters.Parameters.Name)
-		assert.Equal(t, "req-region", instanceParameters.PlatformRegion)
+		assert.Equal(t, globalAccountID, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
+		assert.Equal(t, clusterName, operation.ProvisioningParameters.Parameters.Name)
+		assert.Equal(t, "req-region", operation.ProvisioningParameters.PlatformRegion)
 
 		instance, err := memoryStorage.Instances().GetByID(instanceID)
 		require.NoError(t, err)
 
-		assert.Equal(t, instance.ProvisioningParameters, operation.ProvisioningParameters)
+		var instanceParameters internal.ProvisioningParameters
+		assert.NoError(t, json.Unmarshal([]byte(instance.ProvisioningParameters), &instanceParameters))
+
+		assert.Equal(t, instanceParameters, operation.ProvisioningParameters)
 		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
 	})
 
@@ -397,9 +397,7 @@ func TestProvision_Provision(t *testing.T) {
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)
 
-		parameters, err := operation.GetProvisioningParameters()
-		assert.NoError(t, err)
-		assert.Equal(t, "master-00e83e99", parameters.Parameters.KymaVersion)
+		assert.Equal(t, "master-00e83e99", operation.ProvisioningParameters.Parameters.KymaVersion)
 	})
 
 	t.Run("should return error when region is not specified", func(t *testing.T) {
@@ -475,9 +473,7 @@ func TestProvision_Provision(t *testing.T) {
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)
 
-		parameters, err := operation.GetProvisioningParameters()
-		assert.NoError(t, err)
-		assert.Equal(t, "", parameters.Parameters.KymaVersion)
+		assert.Equal(t, "", operation.ProvisioningParameters.Parameters.KymaVersion)
 	})
 
 	t.Run("licence type lite should be saved in parameters", func(t *testing.T) {
@@ -518,9 +514,7 @@ func TestProvision_Provision(t *testing.T) {
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)
 
-		parameters, err := operation.GetProvisioningParameters()
-		assert.NoError(t, err)
-		assert.Equal(t, ptr.String(internal.LicenceTypeLite), parameters.Parameters.LicenceType)
+		assert.Equal(t, ptr.String(internal.LicenceTypeLite), operation.ProvisioningParameters.Parameters.LicenceType)
 	})
 
 	t.Run("licence type lite should be saved in parameters for Trial Plan", func(t *testing.T) {
@@ -561,9 +555,7 @@ func TestProvision_Provision(t *testing.T) {
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)
 
-		parameters, err := operation.GetProvisioningParameters()
-		assert.NoError(t, err)
-		assert.Equal(t, ptr.String(internal.LicenceTypeLite), parameters.Parameters.LicenceType)
+		assert.Equal(t, ptr.String(internal.LicenceTypeLite), operation.ProvisioningParameters.Parameters.LicenceType)
 	})
 }
 
@@ -572,10 +564,17 @@ func fixExistOperation() internal.ProvisioningOperation {
 		Operation: internal.Operation{
 			ID:         existOperationID,
 			InstanceID: instanceID,
+			ProvisioningParameters: internal.ProvisioningParameters{
+				PlanID:    planID,
+				ServiceID: serviceID,
+				ErsContext: internal.ERSContext{
+					SubAccountID:    subAccountID,
+					GlobalAccountID: globalAccountID,
+				},
+				Parameters:     internal.ProvisioningParametersDTO{Name: clusterName},
+				PlatformRegion: region,
+			},
 		},
-		ProvisioningParameters: fmt.Sprintf(
-			`{"plan_id":"%s", "service_id": "%s", "ers_context":{"globalaccount_id": "%s", "subaccount_id": "%s"}, "parameters":{"name": "%s"}, "platform_region": "%s"}`,
-			planID, serviceID, globalAccountID, subAccountID, clusterName, region),
 	}
 }
 
