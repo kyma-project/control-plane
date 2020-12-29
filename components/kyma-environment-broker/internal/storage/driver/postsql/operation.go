@@ -487,7 +487,7 @@ func (s *operations) ListOperationsParameters() (map[string]internal.Provisionin
 		parameters = make(map[string]internal.ProvisioningParameters, 0)
 	)
 
-	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+	_ = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		parameters, lastErr = session.ListOperationsParameters()
 		if lastErr != nil {
 			log.Errorf("while getting operations from the storage: %v", lastErr)
@@ -495,10 +495,7 @@ func (s *operations) ListOperationsParameters() (map[string]internal.Provisionin
 		}
 		return true, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return parameters, nil
+	return parameters, lastErr
 }
 
 func (s *operations) ListOperations(filter dbmodel.OperationFilter) ([]internal.Operation, int, int, error) {
@@ -590,6 +587,10 @@ func (s *operations) encryptBasicAuth(pp *internal.ProvisioningParameters) error
 	if pp.ErsContext.ServiceManager == nil {
 		return nil
 	}
+	creds := pp.ErsContext.ServiceManager.Credentials.BasicAuth
+	if creds.Username == "" || creds.Password == "" {
+		return nil
+	}
 	username, err := s.cipher.Encrypt([]byte(pp.ErsContext.ServiceManager.Credentials.BasicAuth.Username))
 	if err != nil {
 		return errors.Wrap(err, "while encrypting username")
@@ -607,16 +608,20 @@ func (s *operations) decryptBasicAuth(pp *internal.ProvisioningParameters) error
 	if pp.ErsContext.ServiceManager == nil {
 		return nil
 	}
-	username, err := s.cipher.Decrypt([]byte(pp.ErsContext.ServiceManager.Credentials.BasicAuth.Username))
+	creds := pp.ErsContext.ServiceManager.Credentials.BasicAuth
+	if creds.Username == "" || creds.Password == "" {
+		return nil
+	}
+	username, err := s.cipher.Decrypt([]byte(creds.Username))
 	if err != nil {
 		return errors.Wrap(err, "while decrypting username")
 	}
-	password, err := s.cipher.Decrypt([]byte(pp.ErsContext.ServiceManager.Credentials.BasicAuth.Password))
+	password, err := s.cipher.Decrypt([]byte(creds.Password))
 	if err != nil {
 		return errors.Wrap(err, "while decrypting password")
 	}
-	pp.ErsContext.ServiceManager.Credentials.BasicAuth.Username = string(username)
-	pp.ErsContext.ServiceManager.Credentials.BasicAuth.Password = string(password)
+	creds.Username = string(username)
+	creds.Password = string(password)
 	return nil
 }
 
@@ -640,18 +645,20 @@ func (s *operations) operationToDB(op *internal.Operation) (dbmodel.OperationDTO
 		Version:                op.Version,
 		InstanceID:             op.InstanceID,
 		OrchestrationID:        storage.StringToSQLNullString(op.OrchestrationID),
-		ProvisioningParameters: string(pp),
+		ProvisioningParameters: storage.StringToSQLNullString(string(pp)),
 	}, nil
 }
 
 func (s *operations) toOperation(op *dbmodel.OperationDTO) (internal.Operation, error) {
 	pp := internal.ProvisioningParameters{}
-	err := json.Unmarshal([]byte(op.ProvisioningParameters), &pp)
-	if err != nil {
-		return internal.Operation{}, errors.Wrap(err, "while unmarshal provisioning parameters")
+	if op.ProvisioningParameters.Valid {
+		err := json.Unmarshal([]byte(op.ProvisioningParameters.String), &pp)
+		if err != nil {
+			return internal.Operation{}, errors.Wrap(err, "while unmarshal provisioning parameters")
+		}
 	}
 
-	err = s.decryptBasicAuth(&pp)
+	err := s.decryptBasicAuth(&pp)
 	if err != nil {
 		return internal.Operation{}, errors.Wrap(err, "while encrypting basic auth")
 	}
