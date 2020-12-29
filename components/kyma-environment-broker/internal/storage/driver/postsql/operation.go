@@ -536,16 +536,14 @@ func (s *operations) UpdateOperationParameters(operation internal.Operation) (*i
 	_ = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		lastErr = session.UpdateOperationParameters(dto)
 		if lastErr != nil && dberr.IsNotFound(lastErr) {
-			_, lastErr = s.NewReadSession().GetOperationByID(operation.ID)
+			newOp, lastErr := s.NewReadSession().GetOperationByID(operation.ID)
 			if lastErr != nil {
 				log.Errorf("while getting operation: %v", lastErr)
 				return false, nil
 			}
 
 			// the operation exists but the version is different
-			lastErr = dberr.Conflict("operation update conflict, operation ID: %s", operation.ID)
-			log.Warn(lastErr.Error())
-			return false, lastErr
+			dto.Version = newOp.Version
 		}
 		return true, nil
 	})
@@ -626,7 +624,7 @@ func (s *operations) decryptBasicAuth(pp *internal.ProvisioningParameters) error
 }
 
 func (s *operations) operationToDB(op *internal.Operation) (dbmodel.OperationDTO, error) {
-	err := s.decryptBasicAuth(&op.ProvisioningParameters)
+	err := s.encryptBasicAuth(&op.ProvisioningParameters)
 	if err != nil {
 		return dbmodel.OperationDTO{}, errors.Wrap(err, "while encrypting basic auth")
 	}

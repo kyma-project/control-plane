@@ -42,7 +42,6 @@ func (p *ParametersMigration) Migrate() error {
 			p.log.Infof("Old provisioning parameters for operation %s were not found, skipping", op.ID)
 			continue
 		}
-		p.log.Info(oldProvisioningParameters)
 		op.ProvisioningParameters = oldProvisioningParameters
 		_, err := p.operations.UpdateOperationParameters(op)
 		if err != nil {
