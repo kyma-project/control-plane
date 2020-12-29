@@ -39,7 +39,7 @@ type OperationDTO struct {
 	Data                   string
 	State                  string
 	Description            string
-	ProvisioningParameters string
+	ProvisioningParameters sql.NullString
 
 	Type OperationType
 }

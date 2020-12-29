@@ -155,17 +155,29 @@ func (r readSession) ListOperationsParameters() (map[string]internal.Provisionin
 		return nil, err
 	}
 
+	type oldOperation struct {
+		ProvisioningParameters string `json:"provisioning_parameters"`
+	}
+
 	for _, op := range operations {
 		pp := internal.ProvisioningParameters{}
-		err := json.Unmarshal([]byte(op.ProvisioningParameters), &pp)
+		o := oldOperation{}
+		err := json.Unmarshal([]byte(op.Data), &o)
 		if err != nil {
-			return nil, errors.Wrapf(err, "while unmarshaling provisioning parameters: %s, ProvisioningOperations: %+v", op.ProvisioningParameters, op)
+			return nil, errors.Wrapf(err, "while unmarshaling old operation: %s", op.ID)
+		}
+		if o.ProvisioningParameters == "" {
+			parameters[op.ID] = pp
+			continue
+		}
+		err = json.Unmarshal([]byte(o.ProvisioningParameters), &pp)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while unmarshaling provisioning parameters: %s", o.ProvisioningParameters)
 		}
 		parameters[op.ID] = pp
 	}
 
-	return parameters,
-		nil
+	return parameters, nil
 }
 
 func (r readSession) GetOrchestrationByID(oID string) (dbmodel.OrchestrationDTO, dberr.Error) {
@@ -292,7 +304,7 @@ func (r readSession) ListOperationsByOrchestrationID(orchestrationID string, fil
 		Where(condition).
 		OrderBy(CreatedAtField)
 
-		// Add pagination if provided
+	// Add pagination if provided
 	if filter.Page > 0 && filter.PageSize > 0 {
 		stmt.Paginate(uint64(filter.Page), uint64(filter.PageSize))
 	}

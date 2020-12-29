@@ -101,6 +101,10 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 			if err != nil {
 				return nil, errors.Wrapf(err, "while getting provisioning operation for instance id %s", r.InstanceID)
 			}
+			if po.ProvisioningParameters.PlanID == "" {
+				u.log.Infof("Operation %s does not have correct ProvisioningParameters")
+				continue
+			}
 			windowBegin := time.Time{}
 			windowEnd := time.Time{}
 			if params.Strategy.Schedule == orchestration.MaintenanceWindow {
