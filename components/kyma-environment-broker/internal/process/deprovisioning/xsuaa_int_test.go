@@ -3,7 +3,6 @@
 package deprovisioning
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -50,10 +49,9 @@ func TestDeprovisioningSteps(t *testing.T) {
 			},
 		},
 	}
-	ppBytes, _ := json.Marshal(pp)
 	operation := internal.DeprovisioningOperation{
-		ProvisioningParameters: string(ppBytes),
-		SMClientFactory:        cliFactory,
+		Operation:       internal.Operation{ProvisioningParameters: pp},
+		SMClientFactory: cliFactory,
 		XSUAA: internal.XSUAAData{
 			Instance: internal.ServiceManagerInstanceInfo{
 				BrokerID:              os.Getenv("BROKER_ID"),

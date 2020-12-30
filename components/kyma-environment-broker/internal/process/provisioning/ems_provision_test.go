@@ -21,8 +21,7 @@ func TestEmsProvisioningStep_Run(t *testing.T) {
 	clientFactory := servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{}, []types.ServicePlan{})
 	clientFactory.SynchronousProvisioning()
 	operation := internal.ProvisioningOperation{
-		ProvisioningParameters: "{}",
-		SMClientFactory:        clientFactory,
+		SMClientFactory: clientFactory,
 		Ems: internal.EmsData{Instance: internal.ServiceManagerInstanceInfo{
 			BrokerID:  "broker-id",
 			ServiceID: "svc-id",

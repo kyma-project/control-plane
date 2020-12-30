@@ -278,11 +278,7 @@ func main() {
 				provisioning.EmsOfferingName, provisioning.EmsPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
 					return &op.Ems.Instance
 				}, db.Operations()),
-<<<<<<< HEAD
-			disabled: cfg.Ems.Disabled, // TODO: should be disabled by default?
-=======
 			disabled: cfg.Ems.Disabled,
->>>>>>> 1b013b52... Use generic get offerings step
 		},
 		{
 			weight: 2,

@@ -2,17 +2,8 @@ package provisioning
 
 import (
 	"fmt"
-<<<<<<< HEAD
-<<<<<<< HEAD
 	"time"
 
-	"github.com/Peripli/service-manager-cli/pkg/types"
-=======
->>>>>>> 1b013b52... Use generic get offerings step
-=======
-	"time"
-
->>>>>>> ec1e40a0... Solve check-imports issues
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -72,18 +63,9 @@ func (s *EmsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 func (s *EmsProvisionStep) provision(smCli servicemanager.Client, operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
 	var input servicemanager.ProvisioningInput
-<<<<<<< HEAD
-	input.ID = uuid.New().String() // is this OK?
-=======
 	input.ID = uuid.New().String()
-<<<<<<< HEAD
->>>>>>> 3ac83ef0... Update integration tests
-	input.ServiceID = offering.CatalogID
-	input.PlanID = plan.CatalogID
-=======
 	input.ServiceID = operation.Ems.Instance.ServiceID
 	input.PlanID = operation.Ems.Instance.PlanID
->>>>>>> 1b013b52... Use generic get offerings step
 	input.SpaceGUID = uuid.New().String()
 	input.OrganizationGUID = uuid.New().String()
 	input.Context = map[string]interface{}{

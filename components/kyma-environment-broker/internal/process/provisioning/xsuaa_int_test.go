@@ -3,7 +3,6 @@
 package provisioning
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -57,11 +56,10 @@ func TestProvisioningSteps(t *testing.T) {
 			},
 		},
 	}
-	ppBytes, _ := json.Marshal(pp)
 	operation := internal.ProvisioningOperation{
-		ProvisioningParameters: string(ppBytes),
-		SMClientFactory:        cliFactory,
-		ShootDomain:            "uaa-test.kyma-dev.shoot.canary.k8s-hana.ondemand.com",
+		Operation:       internal.Operation{ProvisioningParameters: pp},
+		SMClientFactory: cliFactory,
+		ShootDomain:     "uaa-test.kyma-dev.shoot.canary.k8s-hana.ondemand.com",
 	}
 	repo.InsertProvisioningOperation(operation)
 	log := logrus.New()
