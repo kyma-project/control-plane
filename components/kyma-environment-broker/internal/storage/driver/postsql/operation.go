@@ -465,22 +465,28 @@ func (s *operations) GetOperationsInProgressByType(operationType dbmodel.Operati
 	return s.toOperations(operations)
 }
 
-func (s *operations) GetOperationStats() (internal.OperationStats, error) {
+func (s *operations) GetOperationStatsByPlan() (map[string]internal.OperationStats, error) {
 	entries, err := s.NewReadSession().GetOperationStats()
 	if err != nil {
-		return internal.OperationStats{}, err
+		return nil, err
 	}
+	result := make(map[string]internal.OperationStats)
 
-	result := internal.OperationStats{
-		Provisioning:   make(map[domain.LastOperationState]int),
-		Deprovisioning: make(map[domain.LastOperationState]int),
-	}
 	for _, e := range entries {
+		if e.PlanID == "" {
+			continue
+		}
+		if _, ok := result[e.PlanID]; !ok {
+			result[e.PlanID] = internal.OperationStats{
+				Provisioning:   make(map[domain.LastOperationState]int),
+				Deprovisioning: make(map[domain.LastOperationState]int),
+			}
+		}
 		switch dbmodel.OperationType(e.Type) {
 		case dbmodel.OperationTypeProvision:
-			result.Provisioning[domain.LastOperationState(e.State)] = e.Total
+			result[e.PlanID].Provisioning[domain.LastOperationState(e.State)] += 1
 		case dbmodel.OperationTypeDeprovision:
-			result.Deprovisioning[domain.LastOperationState(e.State)] = e.Total
+			result[e.PlanID].Deprovisioning[domain.LastOperationState(e.State)] += 1
 		}
 	}
 	return result, nil
@@ -491,9 +497,9 @@ func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (
 	if err != nil {
 		return map[string]int{}, err
 	}
-	result := make(map[string]int, 5)
+	result := make(map[string]int)
 	for _, entry := range entries {
-		result[entry.State] = entry.Total
+		result[entry.State] += 1
 	}
 	return result, nil
 }
