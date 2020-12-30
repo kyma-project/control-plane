@@ -14,19 +14,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestProvisioningSteps tests all XSUAA steps with real Service Manager
+// TestProvisioningSteps tests all Ems steps with real Service Manager
 // Usage:
 // export SM_USERNAME=
 // export SM_PASSWORD=
 // export SM_URL=
 // export INSTANCE_ID=
 // export BINDING_ID=
-// export BROKER_ID=b122df80-b1ea-44d2-839f-3d17199a5b78 #for staging
-// export BROKER_ID=fb8e7037-0c56-405f-8110-187ef9d39273 #for canary
-// export SERVICE_ID=xsuaa
-// export PLAN_ID=ThGdx5loQ6XhvcdY6dLlEXcTgQD7641pDKXJfzwYGLg=
+// export BROKER_ID=
+// export SERVICE_ID=
+// export PLAN_ID=
 // go test -v -tags=sm_integration ./internal/process/deprovisioning/... -run TestDeprovisioningSteps -count=1
-func TestDeprovisioningSteps(t *testing.T) {
+func TestEmsDeprovisioningSteps(t *testing.T) {
 	repo := storage.NewMemoryStorage().Operations()
 	cliFactory := servicemanager.NewClientFactory(servicemanager.Config{
 		OverrideMode: servicemanager.SMOverrideModeNever,
@@ -34,8 +33,10 @@ func TestDeprovisioningSteps(t *testing.T) {
 		Password:     "",
 		Username:     "",
 	})
-	unbindingStep := NewXSUAAUnbindStep(repo)
-	deprovisioningStep := NewXSUAADeprovisionStep(repo)
+
+	unbindingStep := NewEmsUnbindStep(repo)
+
+	deprovisioningStep := NewEmsDeprovisionStep(repo)
 	pp := internal.ProvisioningParameters{
 		ErsContext: internal.ERSContext{
 			ServiceManager: &internal.ServiceManagerEntryDTO{
@@ -52,29 +53,30 @@ func TestDeprovisioningSteps(t *testing.T) {
 	operation := internal.DeprovisioningOperation{
 		Operation:       internal.Operation{ProvisioningParameters: pp},
 		SMClientFactory: cliFactory,
-		XSUAA: internal.XSUAAData{
+		Ems: internal.EmsData{
 			Instance: internal.ServiceManagerInstanceInfo{
-				BrokerID:              os.Getenv("BROKER_ID"),
+				BrokerID:              os.Getenv("BROKER_ID"), // saved in InstanceKey, see the provisioning step
 				ServiceID:             os.Getenv("SERVICE_ID"),
 				PlanID:                os.Getenv("PLAN_ID"),
 				InstanceID:            os.Getenv("INSTANCE_ID"),
 				Provisioned:           true,
-				ProvisioningTriggered: true,
+				ProvisioningTriggered: false,
 			},
-			XSAppname: "",
 			BindingID: os.Getenv("BINDING_ID"),
+			Overrides: "encryptedEventingOverrides",
 		},
 	}
 	repo.InsertDeprovisioningOperation(operation)
+
 	log := logrus.New()
 
 	operation, retry, err := unbindingStep.Run(operation, log)
-	fmt.Printf(">>> %+v\n", operation.XSUAA)
+	fmt.Printf(">>> %#v\n", operation.Ems)
 	require.NoError(t, err)
 	require.Zero(t, retry)
 
-	operation, _, _ = deprovisioningStep.Run(operation, log)
-	fmt.Printf(">>> %+v\n", operation.XSUAA)
+	operation, retry, err = deprovisioningStep.Run(operation, log)
+	fmt.Printf(">>> %#v\n", operation.Ems)
 	require.NoError(t, err)
 	require.Zero(t, retry)
 }

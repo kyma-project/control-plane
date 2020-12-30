@@ -194,6 +194,8 @@ type ProvisioningOperation struct {
 
 	XSUAA XSUAAData `json:"xsuaa"`
 
+	Ems EmsData `json:"ems"`
+
 	// following fields are not stored in the storage
 	InputCreator ProvisionerInputCreator `json:"-"`
 
@@ -216,6 +218,13 @@ type XSUAAData struct {
 	BindingID string `json:"bindingId"`
 }
 
+type EmsData struct {
+	Instance ServiceManagerInstanceInfo `json:"instance"`
+
+	BindingID string `json:"bindingId"`
+	Overrides string `json:"overrides"`
+}
+
 func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {
 	return servicemanager.InstanceKey{
 		BrokerID:   s.BrokerID,
@@ -235,6 +244,7 @@ type DeprovisioningOperation struct {
 	SubAccountID string           `json:"-"`
 	RuntimeID    string           `json:"runtime_id"`
 	XSUAA        XSUAAData        `json:"xsuaa"`
+	Ems          EmsData          `json:"ems"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
