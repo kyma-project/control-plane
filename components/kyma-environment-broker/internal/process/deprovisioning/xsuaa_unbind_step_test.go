@@ -22,18 +22,18 @@ func TestXSUAAUnbindStep_Run(t *testing.T) {
 	operation := internal.DeprovisioningOperation{
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{},
+			InstanceDetails: internal.InstanceDetails{XSUAA: internal.XSUAAData{
+				Instance: internal.ServiceManagerInstanceInfo{
+					BrokerID:   "broker-id",
+					ServiceID:  "svc-id",
+					PlanID:     "plan-id",
+					InstanceID: "instance-id",
+				},
+				XSAppname: "",
+				BindingID: "binding-id",
+			}},
 		},
 		SMClientFactory: clientFactory,
-		XSUAA: internal.XSUAAData{
-			Instance: internal.ServiceManagerInstanceInfo{
-				BrokerID:   "broker-id",
-				ServiceID:  "svc-id",
-				PlanID:     "plan-id",
-				InstanceID: "instance-id",
-			},
-			XSAppname: "",
-			BindingID: "binding-id",
-		},
 	}
 	repo.InsertDeprovisioningOperation(operation)
 

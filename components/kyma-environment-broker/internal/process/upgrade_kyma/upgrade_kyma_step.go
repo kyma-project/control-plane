@@ -57,7 +57,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 	if operation.DryRun {
 		// runtimeID is set with prefix to indicate the fake runtime state
 		err = s.runtimeStateStorage.Insert(
-			internal.NewRuntimeState(fmt.Sprintf("%s%s", DryRunPrefix, operation.RuntimeID), operation.Operation.ID, requestInput.KymaConfig, nil),
+			internal.NewRuntimeState(fmt.Sprintf("%s%s", DryRunPrefix, operation.InstanceDetails.RuntimeID), operation.Operation.ID, requestInput.KymaConfig, nil),
 		)
 		if err != nil {
 			return operation, 10 * time.Second, nil
@@ -68,7 +68,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 	var provisionerResponse gqlschema.OperationStatus
 	if operation.ProvisionerOperationID == "" {
 		// trigger upgradeRuntime mutation
-		provisionerResponse, err := s.provisionerClient.UpgradeRuntime(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.RuntimeID, requestInput)
+		provisionerResponse, err := s.provisionerClient.UpgradeRuntime(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.InstanceDetails.RuntimeID, requestInput)
 		if err != nil {
 			log.Errorf("call to provisioner failed: %s", err)
 			return operation, s.timeSchedule.Retry, nil

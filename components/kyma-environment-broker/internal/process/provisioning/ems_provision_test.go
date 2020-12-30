@@ -21,13 +21,17 @@ func TestEmsProvisioningStep_Run(t *testing.T) {
 	clientFactory := servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{}, []types.ServicePlan{})
 	clientFactory.SynchronousProvisioning()
 	operation := internal.ProvisioningOperation{
+		Operation: internal.Operation{
+			InstanceDetails: internal.InstanceDetails{
+				Ems: internal.EmsData{Instance: internal.ServiceManagerInstanceInfo{
+					BrokerID:  "broker-id",
+					ServiceID: "svc-id",
+					PlanID:    "plan-id",
+				}},
+				ShootDomain: "ems-test.sap.com",
+			},
+		},
 		SMClientFactory: clientFactory,
-		Ems: internal.EmsData{Instance: internal.ServiceManagerInstanceInfo{
-			BrokerID:  "broker-id",
-			ServiceID: "svc-id",
-			PlanID:    "plan-id",
-		}},
-		ShootDomain: "ems-test.sap.com",
 	}
 	offeringStep := NewServiceManagerOfferingStep("EMS_Offering",
 		EmsOfferingName, EmsPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {

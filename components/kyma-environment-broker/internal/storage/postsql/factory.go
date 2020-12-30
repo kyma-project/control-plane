@@ -21,6 +21,7 @@ type ReadSession interface {
 	FindAllInstancesForRuntimes(runtimeIdList []string) ([]internal.Instance, dberr.Error)
 	FindAllInstancesForSubAccounts(subAccountslist []string) ([]internal.Instance, dberr.Error)
 	GetInstanceByID(instanceID string) (internal.Instance, dberr.Error)
+	GetLastOperation(instanceID string) (dbmodel.OperationDTO, dberr.Error)
 	GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.Error)
 	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
 	GetOperationByTypeAndInstanceID(inID string, opType dbmodel.OperationType) (dbmodel.OperationDTO, dberr.Error)

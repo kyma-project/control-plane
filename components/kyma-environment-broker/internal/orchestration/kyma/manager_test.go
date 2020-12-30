@@ -34,7 +34,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, State: orchestration.Pending})
 		require.NoError(t, err)
 
-		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, 20*time.Millisecond, logrus.New())
+		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), nil, resolver, 20*time.Millisecond, logrus.New())
 
 		// when
 		_, err = svc.Execute(id)
@@ -65,7 +65,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), &testExecutor{}, resolver, poolingInterval, logrus.New())
+		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{}, resolver, poolingInterval, logrus.New())
 
 		// when
 		_, err = svc.Execute(id)
@@ -95,7 +95,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 			}})
 		require.NoError(t, err)
 
-		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), nil, resolver, poolingInterval, logrus.New())
+		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), nil, resolver, poolingInterval, logrus.New())
 
 		// when
 		_, err = svc.Execute(id)
@@ -153,7 +153,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		err = store.Orchestrations().Insert(givenO)
 		require.NoError(t, err)
 
-		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), &testExecutor{}, resolver, poolingInterval, logrus.New())
+		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{}, resolver, poolingInterval, logrus.New())
 
 		// when
 		_, err = svc.Execute(id)
@@ -191,7 +191,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 			},
 		})
 
-		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), &testExecutor{}, resolver, poolingInterval, logrus.New())
+		svc := kyma.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{}, resolver, poolingInterval, logrus.New())
 
 		// when
 		_, err = svc.Execute(id)

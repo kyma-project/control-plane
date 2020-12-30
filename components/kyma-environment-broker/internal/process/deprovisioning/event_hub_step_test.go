@@ -393,9 +393,11 @@ func fixDeprovisioningOperationWithParameters() internal.DeprovisioningOperation
 
 func fixDeprovisioningOperationWithDeletedEventHub() internal.DeprovisioningOperation {
 	return internal.DeprovisioningOperation{
-		EventHub: internal.EventHub{
-			Deleted: true,
-		},
+		Operation: internal.Operation{InstanceDetails: internal.InstanceDetails{
+			EventHub: internal.EventHub{
+				Deleted: true,
+			},
+		}},
 	}
 }
 

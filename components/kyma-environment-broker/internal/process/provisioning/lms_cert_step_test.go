@@ -19,7 +19,9 @@ func TestCertStep_RunFreshOperation(t *testing.T) {
 	svc := NewLmsCertificatesStep(nil, repo, false)
 	// a fresh operation
 	operation := internal.ProvisioningOperation{
-		Lms: internal.LMS{},
+		Operation: internal.Operation{
+			InstanceDetails: internal.InstanceDetails{Lms: internal.LMS{}},
+		},
 	}
 
 	// when
@@ -37,9 +39,9 @@ func TestCertStep_Run(t *testing.T) {
 	operation := internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{},
-		},
-		Lms: internal.LMS{
-			TenantID: tID,
+			InstanceDetails: internal.InstanceDetails{Lms: internal.LMS{
+				TenantID: tID,
+			}},
 		},
 		InputCreator: newInputCreator(),
 	}
@@ -65,10 +67,10 @@ func TestCertStep_TenantNotReady(t *testing.T) {
 		operation := internal.ProvisioningOperation{
 			Operation: internal.Operation{
 				ProvisioningParameters: internal.ProvisioningParameters{},
-			},
-			Lms: internal.LMS{
-				TenantID:    tID,
-				RequestedAt: time.Now(),
+				InstanceDetails: internal.InstanceDetails{Lms: internal.LMS{
+					TenantID:    tID,
+					RequestedAt: time.Now(),
+				}},
 			},
 		}
 		repo.InsertProvisioningOperation(operation)
@@ -95,10 +97,10 @@ func TestCertStep_TenantNotReadyTimeout(t *testing.T) {
 		operation := internal.ProvisioningOperation{
 			Operation: internal.Operation{
 				ProvisioningParameters: internal.ProvisioningParameters{},
-			},
-			Lms: internal.LMS{
-				TenantID:    tID,
-				RequestedAt: time.Now().Add(-10 * time.Hour), // very old
+				InstanceDetails: internal.InstanceDetails{Lms: internal.LMS{
+					TenantID:    tID,
+					RequestedAt: time.Now().Add(-10 * time.Hour), // very old
+				}},
 			},
 		}
 		repo.InsertProvisioningOperation(operation)
@@ -129,8 +131,8 @@ func TestLmsStepsHappyPath(t *testing.T) {
 	operation := internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{},
+			InstanceDetails:        internal.InstanceDetails{Lms: internal.LMS{}},
 		},
-		Lms:          internal.LMS{},
 		InputCreator: inputCreator,
 	}
 	opRepo.InsertProvisioningOperation(operation)

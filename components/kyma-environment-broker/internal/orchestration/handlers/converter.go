@@ -47,14 +47,14 @@ func (c *Converter) UpgradeKymaOperationToDTO(op internal.UpgradeKymaOperation) 
 	}
 	return orchestration.OperationResponse{
 		OperationID:            op.Operation.ID,
-		RuntimeID:              op.RuntimeID,
+		RuntimeID:              op.InstanceDetails.RuntimeID,
 		GlobalAccountID:        op.GlobalAccountID,
-		SubAccountID:           op.SubAccountID,
+		SubAccountID:           op.InstanceDetails.SubAccountID,
 		OrchestrationID:        op.OrchestrationID,
 		ServicePlanID:          op.ProvisioningParameters.PlanID,
 		ServicePlanName:        plan.PlanDefinition.Name,
 		DryRun:                 op.DryRun,
-		ShootName:              op.ShootName,
+		ShootName:              op.InstanceDetails.ShootName,
 		MaintenanceWindowBegin: op.MaintenanceWindowBegin,
 		MaintenanceWindowEnd:   op.MaintenanceWindowEnd,
 		State:                  string(op.Operation.State),

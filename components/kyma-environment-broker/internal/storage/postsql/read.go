@@ -62,6 +62,7 @@ func (r readSession) GetInstanceByID(instanceID string) (internal.Instance, dber
 		}
 		return internal.Instance{}, dberr.Internal("Failed to get Instance: %s", err)
 	}
+
 	return instance, nil
 }
 
@@ -99,6 +100,20 @@ func (r readSession) FindAllInstancesForSubAccounts(subAccountslist []string) ([
 		return []internal.Instance{}, dberr.Internal("Failed to get Instances: %s", err)
 	}
 	return instances, nil
+}
+
+func (r readSession) GetLastOperation(instanceID string) (dbmodel.OperationDTO, dberr.Error) {
+	condition := dbr.Eq("instance_id", instanceID)
+	operation, err := r.getLastOperation(condition)
+	if err != nil {
+		switch {
+		case dberr.IsNotFound(err):
+			return dbmodel.OperationDTO{}, dberr.NotFound("for instance ID: %s %s", instanceID, err)
+		default:
+			return dbmodel.OperationDTO{}, err
+		}
+	}
+	return operation, nil
 }
 
 func (r readSession) GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.Error) {
@@ -376,6 +391,29 @@ func (r readSession) getOperation(condition dbr.Builder) (dbmodel.OperationDTO, 
 		}
 		return dbmodel.OperationDTO{}, dberr.Internal("Failed to get operation: %s", err)
 	}
+	return operation, nil
+}
+
+func (r readSession) getLastOperation(condition dbr.Builder) (dbmodel.OperationDTO, dberr.Error) {
+	var operation dbmodel.OperationDTO
+
+	count, err := r.session.
+		Select("*").
+		From(OperationTableName).
+		Where(condition).
+		OrderDesc(CreatedAtField).
+		Limit(1).
+		Load(&operation)
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return dbmodel.OperationDTO{}, dberr.NotFound("cannot find operation: %s", err)
+		}
+		return dbmodel.OperationDTO{}, dberr.Internal("Failed to get operation: %s", err)
+	}
+	if count == 0 {
+		return dbmodel.OperationDTO{}, dberr.NotFound("cannot find operation: %s", err)
+	}
+
 	return operation, nil
 }
 

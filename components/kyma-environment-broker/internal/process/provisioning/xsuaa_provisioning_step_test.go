@@ -29,14 +29,16 @@ func TestXSUAAProvisioningStep_Run(t *testing.T) {
 	operation := internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{},
+			InstanceDetails: internal.InstanceDetails{
+				XSUAA: internal.XSUAAData{Instance: internal.ServiceManagerInstanceInfo{
+					BrokerID:  "broker-id",
+					ServiceID: "svc-id",
+					PlanID:    "plan-id",
+				},
+				},
+				ShootDomain: "uaa-test.sap.com"},
 		},
 		SMClientFactory: clientFactory,
-		XSUAA: internal.XSUAAData{Instance: internal.ServiceManagerInstanceInfo{
-			BrokerID:  "broker-id",
-			ServiceID: "svc-id",
-			PlanID:    "plan-id",
-		}},
-		ShootDomain: "uaa-test.sap.com",
 	}
 	err := repo.InsertProvisioningOperation(operation)
 	require.NoError(t, err)

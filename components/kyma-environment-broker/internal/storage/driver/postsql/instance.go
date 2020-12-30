@@ -13,11 +13,13 @@ import (
 
 type Instance struct {
 	postsql.Factory
+	operations *operations
 }
 
-func NewInstance(sess postsql.Factory) *Instance {
+func NewInstance(sess postsql.Factory, operations *operations) *Instance {
 	return &Instance{
-		Factory: sess,
+		Factory:    sess,
+		operations: operations,
 	}
 }
 
@@ -114,6 +116,16 @@ func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	if err != nil {
 		return nil, lastErr
 	}
+
+	lastOp, err := s.operations.GetLastOperation(instanceID)
+	if err != nil {
+		if dberr.IsNotFound(err) {
+			return &instance, nil
+		}
+		return nil, err
+	}
+	instance.InstanceDetails = lastOp.InstanceDetails
+
 	return &instance, nil
 }
 

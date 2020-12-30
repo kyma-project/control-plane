@@ -31,7 +31,7 @@ func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.ProvisioningO
 }
 
 func (rvc *RuntimeVersionConfigurator) ForUpgrade(op internal.UpgradeKymaOperation) (*internal.RuntimeVersionData, error) {
-	version, found, err := rvc.accountMapping.Get(op.GlobalAccountID, op.SubAccountID)
+	version, found, err := rvc.accountMapping.Get(op.GlobalAccountID, op.InstanceDetails.SubAccountID)
 	if err != nil {
 		return nil, err
 	}

@@ -197,8 +197,10 @@ func fixOperationRuntimeStatus(planId string) internal.ProvisioningOperation {
 			ProvisionerOperationID: statusProvisionerOperationID,
 			UpdatedAt:              time.Now(),
 			ProvisioningParameters: fixProvisioningParametersRuntimeStatus(planId),
+			InstanceDetails: internal.InstanceDetails{
+				RuntimeID: runtimeID,
+			},
 		},
-		RuntimeID: runtimeID,
 	}
 }
 

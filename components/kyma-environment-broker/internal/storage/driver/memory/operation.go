@@ -238,6 +238,36 @@ func (s *operations) UpdateUpgradeKymaOperation(op internal.UpgradeKymaOperation
 	return &op, nil
 }
 
+func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, error) {
+	var rows []internal.Operation
+
+	for _, op := range s.provisioningOperations {
+		if op.InstanceID == instanceID {
+			rows = append(rows, op.Operation)
+		}
+	}
+	for _, op := range s.deprovisioningOperations {
+		if op.InstanceID == instanceID {
+			rows = append(rows, op.Operation)
+		}
+	}
+	for _, op := range s.upgradeKymaOperations {
+		if op.InstanceID == instanceID {
+			rows = append(rows, op.Operation)
+		}
+	}
+
+	if len(rows) == 0 {
+		return nil, dberr.NotFound("instance operation with instance_id %s not found", instanceID)
+	}
+
+	sort.Slice(rows, func(i, j int) bool {
+		return rows[i].CreatedAt.Before(rows[j].CreatedAt)
+	})
+
+	return &rows[0], nil
+}
+
 func (s *operations) GetOperationByID(operationID string) (*internal.Operation, error) {
 	var res *internal.Operation
 

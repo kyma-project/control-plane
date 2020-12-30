@@ -21,18 +21,20 @@ import (
 type upgradeKymaManager struct {
 	orchestrationStorage storage.Orchestrations
 	operationStorage     storage.Operations
+	instanceStorage      storage.Instances
 	resolver             orchestration.RuntimeResolver
 	kymaUpgradeExecutor  process.Executor
 	log                  logrus.FieldLogger
 	pollingInterval      time.Duration
 }
 
-func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations,
+func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
 	kymaUpgradeExecutor process.Executor, resolver orchestration.RuntimeResolver,
 	pollingInterval time.Duration, log logrus.FieldLogger) process.Executor {
 	return &upgradeKymaManager{
 		orchestrationStorage: orchestrationStorage,
 		operationStorage:     operationStorage,
+		instanceStorage:      instanceStorage,
 		resolver:             resolver,
 		kymaUpgradeExecutor:  kymaUpgradeExecutor,
 		pollingInterval:      pollingInterval,
@@ -111,6 +113,10 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 				windowBegin, windowEnd = u.resolveWindowTime(r.MaintenanceWindowBegin, r.MaintenanceWindowEnd)
 			}
 
+			inst, err := u.instanceStorage.GetByID(r.InstanceID)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while getting instance %s", r.InstanceID)
+			}
 			id := uuid.New().String()
 			op := internal.UpgradeKymaOperation{
 				Operation: internal.Operation{
@@ -123,6 +129,7 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 					Description:            "Operation created",
 					OrchestrationID:        o.OrchestrationID,
 					ProvisioningParameters: po.ProvisioningParameters,
+					InstanceDetails:        inst.InstanceDetails,
 				},
 				RuntimeOperation: orchestration.RuntimeOperation{
 					ID: id,

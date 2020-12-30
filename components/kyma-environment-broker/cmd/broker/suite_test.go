@@ -184,6 +184,9 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 		SubAccountID:           subAccountID,
 		ProvisioningParameters: string(serializedProvisioningParams),
 		ProviderRegion:         *options.ProvideRegion(),
+		InstanceDetails: internal.InstanceDetails{
+			RuntimeID: runtimeID,
+		},
 	}
 
 	provisioningOperation := internal.ProvisioningOperation{
@@ -192,8 +195,10 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 			ID:                     uuid.New(),
 			InstanceID:             instanceID,
 			ProvisioningParameters: provisioningParameters,
+			InstanceDetails: internal.InstanceDetails{
+				RuntimeID: instance.RuntimeID,
+			},
 		},
-		RuntimeID: instance.RuntimeID,
 	}
 	shoot := &gardenerapi.Shoot{
 		ObjectMeta: metaV1.ObjectMeta{
