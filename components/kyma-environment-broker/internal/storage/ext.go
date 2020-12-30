@@ -12,7 +12,7 @@ type Instances interface {
 	FindAllInstancesForSubAccounts(subAccountslist []string) ([]internal.Instance, error)
 	GetByID(instanceID string) (*internal.Instance, error)
 	Insert(instance internal.Instance) error
-	Update(instance internal.Instance) error
+	Update(instance internal.Instance) (*internal.Instance, error)
 	Delete(instanceID string) error
 	GetInstanceStats() (internal.InstanceStats, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)

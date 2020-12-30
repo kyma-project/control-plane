@@ -104,6 +104,8 @@ type Instance struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt time.Time
+
+	Version int
 }
 
 func (instance Instance) GetProvisioningParameters() (ProvisioningParameters, error) {
