@@ -23,6 +23,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	fixInstanceId = "inst-id"
+)
+
 func TestSchemaInitializer(t *testing.T) {
 	ctx := context.Background()
 
@@ -83,6 +87,8 @@ func TestSchemaInitializer(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, brokerStorage)
 
+			// given
+
 			testData := "test"
 			instanceData := instanceData{val: testData}
 
@@ -92,6 +98,42 @@ func TestSchemaInitializer(t *testing.T) {
 
 			fixInstance.DashboardURL = "diff"
 			_, err = brokerStorage.Instances().Update(*fixInstance)
+			require.NoError(t, err)
+
+			err = brokerStorage.Operations().InsertProvisioningOperation(internal.ProvisioningOperation{
+				Operation: internal.Operation{
+					InstanceDetails: internal.InstanceDetails{
+						Lms: internal.LMS{
+							TenantID: "lms-tenant-id",
+						},
+						SubAccountID: instanceData.subAccountID,
+					},
+					ID:                     "op-id",
+					Version:                0,
+					CreatedAt:              time.Now(),
+					UpdatedAt:              time.Now().Add(time.Second),
+					InstanceID:             fixInstance.InstanceID,
+					ProvisionerOperationID: "provisioner-op-id",
+					State:                  domain.Succeeded,
+				},
+			})
+			err = brokerStorage.Operations().InsertProvisioningOperation(internal.ProvisioningOperation{
+				Operation: internal.Operation{
+					InstanceDetails: internal.InstanceDetails{
+						Lms: internal.LMS{
+							TenantID: "lms-tenant-id",
+						},
+						SubAccountID: instanceData.subAccountID,
+					},
+					ID:                     "latest-op-id",
+					Version:                0,
+					CreatedAt:              time.Now().Add(time.Minute),
+					UpdatedAt:              time.Now().Add(2 * time.Minute),
+					InstanceID:             fixInstance.InstanceID,
+					ProvisionerOperationID: "provisioner-op-id",
+					State:                  domain.Succeeded,
+				},
+			})
 			require.NoError(t, err)
 
 			// then
@@ -106,6 +148,7 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, fixInstance.ServicePlanID, inst.ServicePlanID)
 			assert.Equal(t, fixInstance.DashboardURL, inst.DashboardURL)
 			assert.Equal(t, fixInstance.ProvisioningParameters, inst.ProvisioningParameters)
+			assert.Equal(t, "lms-tenant-id", inst.InstanceDetails.Lms.TenantID)
 			assert.NotEmpty(t, inst.CreatedAt)
 			assert.NotEmpty(t, inst.UpdatedAt)
 			assert.Equal(t, "0001-01-01 00:00:00 +0000 UTC", inst.DeletedAt.String())
@@ -419,14 +462,34 @@ func TestSchemaInitializer(t *testing.T) {
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now().Truncate(time.Millisecond),
 					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second),
-					InstanceID:             "inst-id",
+					InstanceID:             fixInstanceId,
 					OrchestrationID:        orchestrationID,
 					ProvisionerOperationID: "target-op-id",
 					Description:            "description",
 					Version:                1,
 					ProvisioningParameters: internal.ProvisioningParameters{},
+					InstanceDetails: internal.InstanceDetails{
+						Lms: internal.LMS{TenantID: "tenant-id"},
+					},
 				},
-				Lms: internal.LMS{TenantID: "tenant-id"},
+			}
+			latestOperation := internal.ProvisioningOperation{
+				Operation: internal.Operation{
+					ID:    "latest-id",
+					State: domain.InProgress,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Minute),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Minute),
+					InstanceID:             fixInstanceId,
+					OrchestrationID:        orchestrationID,
+					ProvisionerOperationID: "target-op-id",
+					Description:            "description",
+					Version:                1,
+					ProvisioningParameters: internal.ProvisioningParameters{},
+					InstanceDetails: internal.InstanceDetails{
+						Lms: internal.LMS{TenantID: "tenant-id"},
+					},
+				},
 			}
 
 			err = InitTestDBTables(t, cfg.ConnectionURL())
@@ -443,10 +506,12 @@ func TestSchemaInitializer(t *testing.T) {
 			// when
 			err = svc.InsertProvisioningOperation(givenOperation)
 			require.NoError(t, err)
+			err = svc.InsertProvisioningOperation(latestOperation)
+			require.NoError(t, err)
 
 			ops, err := svc.GetOperationsInProgressByType(dbmodel.OperationTypeProvision)
 			require.NoError(t, err)
-			assert.Len(t, ops, 1)
+			assert.Len(t, ops, 2)
 			assertOperation(t, givenOperation.Operation, ops[0])
 
 			gotOperation, err := svc.GetProvisioningOperationByID("operation-id")
@@ -455,6 +520,10 @@ func TestSchemaInitializer(t *testing.T) {
 			op, err := svc.GetOperationByID("operation-id")
 			require.NoError(t, err)
 			assert.Equal(t, givenOperation.Operation.ID, op.ID)
+
+			lastOp, err := svc.GetLastOperation(fixInstanceId)
+			require.NoError(t, err)
+			assert.Equal(t, latestOperation.Operation.ID, lastOp.ID)
 
 			// then
 			assertProvisioningOperation(t, givenOperation, *gotOperation)
@@ -474,12 +543,12 @@ func TestSchemaInitializer(t *testing.T) {
 			stats, err := svc.GetOperationStats()
 			require.NoError(t, err)
 
-			assert.Equal(t, 1, stats.Provisioning[domain.InProgress])
+			assert.Equal(t, 2, stats.Provisioning[domain.InProgress])
 
 			opStats, err := svc.GetOperationStatsForOrchestration(orchestrationID)
 			require.NoError(t, err)
 
-			assert.Equal(t, 1, opStats[orchestration.InProgress])
+			assert.Equal(t, 2, opStats[orchestration.InProgress])
 
 		})
 
@@ -495,7 +564,7 @@ func TestSchemaInitializer(t *testing.T) {
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now().Truncate(time.Millisecond),
 					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second),
-					InstanceID:             "inst-id",
+					InstanceID:             fixInstanceId,
 					ProvisionerOperationID: "target-op-id",
 					Description:            "description",
 					Version:                1,
@@ -554,7 +623,7 @@ func TestSchemaInitializer(t *testing.T) {
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now().Truncate(time.Millisecond),
 					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second),
-					InstanceID:             "inst-id",
+					InstanceID:             fixInstanceId,
 					ProvisionerOperationID: "target-op-id",
 					Description:            "description",
 					Version:                1,
@@ -570,7 +639,7 @@ func TestSchemaInitializer(t *testing.T) {
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Minute),
 					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second).Add(time.Minute),
-					InstanceID:             "inst-id",
+					InstanceID:             fixInstanceId,
 					ProvisionerOperationID: "target-op-id",
 					Description:            "description",
 					Version:                1,
@@ -605,7 +674,7 @@ func TestSchemaInitializer(t *testing.T) {
 			err = svc.InsertUpgradeKymaOperation(givenOperation2)
 			require.NoError(t, err)
 
-			op, err := svc.GetUpgradeKymaOperationByInstanceID("inst-id")
+			op, err := svc.GetUpgradeKymaOperationByInstanceID(fixInstanceId)
 			require.NoError(t, err)
 
 			assertUpgradeKymaOperation(t, givenOperation2, *op)
@@ -631,12 +700,14 @@ func TestSchemaInitializer(t *testing.T) {
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now(),
 					UpdatedAt:              time.Now().Add(time.Second),
-					InstanceID:             "inst-id",
+					InstanceID:             fixInstanceId,
 					ProvisionerOperationID: "target-op-id",
 					Description:            "description",
 					ProvisioningParameters: internal.ProvisioningParameters{},
+					InstanceDetails: internal.InstanceDetails{
+						Lms: internal.LMS{TenantID: "tenant-id"},
+					},
 				},
-				Lms: internal.LMS{TenantID: "tenant-id"},
 			}
 
 			err = InitTestDBTables(t, cfg.ConnectionURL())
@@ -686,7 +757,7 @@ func TestSchemaInitializer(t *testing.T) {
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now(),
 					UpdatedAt:              time.Now().Add(time.Second),
-					InstanceID:             "inst-id",
+					InstanceID:             fixInstanceId,
 					ProvisionerOperationID: "target-op-id",
 					Description:            "description",
 				},
@@ -913,6 +984,7 @@ func assertProvisioningOperation(t *testing.T, expected, got internal.Provisioni
 	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
 	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
 	assert.Equal(t, expected.ProvisioningParameters, got.ProvisioningParameters)
+	assert.Equal(t, expected.InstanceDetails, got.InstanceDetails)
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
@@ -923,6 +995,7 @@ func assertProvisioningOperation(t *testing.T, expected, got internal.Provisioni
 func assertDeprovisioningOperation(t *testing.T, expected, got internal.DeprovisioningOperation) {
 	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
 	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
+	assert.Equal(t, expected.InstanceDetails, got.InstanceDetails)
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
@@ -934,6 +1007,7 @@ func assertUpgradeKymaOperation(t *testing.T, expected, got internal.UpgradeKyma
 	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
 	assert.True(t, expected.MaintenanceWindowBegin.Equal(got.MaintenanceWindowBegin))
 	assert.True(t, expected.MaintenanceWindowEnd.Equal(got.MaintenanceWindowEnd))
+	assert.Equal(t, expected.InstanceDetails, got.InstanceDetails)
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
@@ -945,6 +1019,7 @@ func assertUpgradeKymaOperation(t *testing.T, expected, got internal.UpgradeKyma
 func assertOperation(t *testing.T, expected, got internal.Operation) {
 	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
 	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
+	assert.Equal(t, expected.InstanceDetails, got.InstanceDetails)
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt

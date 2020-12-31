@@ -383,6 +383,37 @@ func (s *operations) UpdateUpgradeKymaOperation(operation internal.UpgradeKymaOp
 	return &operation, lastErr
 }
 
+// GetLastOperation returns Operation for given instance ID. Returns an error if the operation does not exists.
+func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, error) {
+	session := s.NewReadSession()
+	operation := dbmodel.OperationDTO{}
+	var lastErr dberr.Error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		operation, lastErr = session.GetLastOperation(instanceID)
+		if lastErr != nil {
+			if dberr.IsNotFound(lastErr) {
+				lastErr = dberr.NotFound("Operation with instance_id %s not exist", instanceID)
+				return false, lastErr
+			}
+			log.Errorf("while reading operation from the storage: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, lastErr
+	}
+	op, err := s.toOperation(&operation)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal([]byte(operation.Data), &op)
+	if err != nil {
+		return nil, errors.New("unable to unmarshall provisioning data")
+	}
+	return &op, nil
+}
+
 // GetOperationByID returns Operation with given ID. Returns an error if the operation does not exists.
 func (s *operations) GetOperationByID(operationID string) (*internal.Operation, error) {
 	session := s.NewReadSession()
@@ -406,6 +437,10 @@ func (s *operations) GetOperationByID(operationID string) (*internal.Operation, 
 	op, err := s.toOperation(&operation)
 	if err != nil {
 		return nil, err
+	}
+	err = json.Unmarshal([]byte(operation.Data), &op)
+	if err != nil {
+		return nil, errors.New("unable to unmarshall provisioning data")
 	}
 	return &op, nil
 }
@@ -682,6 +717,10 @@ func (s *operations) toOperations(op []dbmodel.OperationDTO) ([]internal.Operati
 		if err != nil {
 			return nil, err
 		}
+		err = json.Unmarshal([]byte(o.Data), &operation)
+		if err != nil {
+			return nil, errors.New("unable to unmarshall provisioning data")
+		}
 		operations = append(operations, operation)
 	}
 	return operations, nil
@@ -692,13 +731,14 @@ func (s *operations) toProvisioningOperation(op *dbmodel.OperationDTO) (*interna
 		return nil, errors.New(fmt.Sprintf("expected operation type Provisioning, but was %s", op.Type))
 	}
 	var operation internal.ProvisioningOperation
-	err := json.Unmarshal([]byte(op.Data), &operation)
-	if err != nil {
-		return nil, errors.New("unable to unmarshall provisioning data")
-	}
+	var err error
 	operation.Operation, err = s.toOperation(op)
 	if err != nil {
 		return nil, err
+	}
+	err = json.Unmarshal([]byte(op.Data), &operation)
+	if err != nil {
+		return nil, errors.New("unable to unmarshall provisioning data")
 	}
 
 	return &operation, nil
@@ -724,13 +764,14 @@ func (s *operations) toDeprovisioningOperation(op *dbmodel.OperationDTO) (*inter
 		return nil, errors.New(fmt.Sprintf("expected operation type Provisioning, but was %s", op.Type))
 	}
 	var operation internal.DeprovisioningOperation
-	err := json.Unmarshal([]byte(op.Data), &operation)
-	if err != nil {
-		return nil, errors.New("unable to unmarshall provisioning data")
-	}
+	var err error
 	operation.Operation, err = s.toOperation(op)
 	if err != nil {
 		return nil, err
+	}
+	err = json.Unmarshal([]byte(op.Data), &operation)
+	if err != nil {
+		return nil, errors.New("unable to unmarshall provisioning data")
 	}
 
 	return &operation, nil
@@ -756,13 +797,14 @@ func (s *operations) toUpgradeKymaOperation(op *dbmodel.OperationDTO) (*internal
 		return nil, errors.New(fmt.Sprintf("expected operation type Upgrade Kyma, but was %s", op.Type))
 	}
 	var operation internal.UpgradeKymaOperation
-	err := json.Unmarshal([]byte(op.Data), &operation)
-	if err != nil {
-		return nil, errors.New("unable to unmarshall provisioning data")
-	}
+	var err error
 	operation.Operation, err = s.toOperation(op)
 	if err != nil {
 		return nil, err
+	}
+	err = json.Unmarshal([]byte(op.Data), &operation)
+	if err != nil {
+		return nil, errors.New("unable to unmarshall provisioning data")
 	}
 	operation.RuntimeOperation.ID = op.ID
 	if op.OrchestrationID.Valid {

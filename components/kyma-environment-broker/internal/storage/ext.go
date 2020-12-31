@@ -24,6 +24,7 @@ type Operations interface {
 	Deprovisioning
 	UpgradeKyma
 
+	GetLastOperation(instanceID string) (*internal.Operation, error)
 	GetOperationByID(operationID string) (*internal.Operation, error)
 	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]internal.Operation, error)
 	GetOperationStats() (internal.OperationStats, error)

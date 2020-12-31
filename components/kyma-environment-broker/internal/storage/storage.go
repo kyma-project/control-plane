@@ -38,10 +38,10 @@ func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, *dbr.Conn
 	fact := postsql.NewFactory(connection)
 
 	enc := NewEncrypter(cfg.SecretKey)
-
+	operation := postgres.NewOperation(fact, enc)
 	return storage{
-		instance:       postgres.NewInstance(fact),
-		operation:      postgres.NewOperation(fact, enc),
+		instance:       postgres.NewInstance(fact, operation),
+		operation:      operation,
 		lmsTenants:     postgres.NewLMSTenants(fact),
 		orchestrations: postgres.NewOrchestrations(fact),
 		runtimeStates:  postgres.NewRuntimeStates(fact, enc),

@@ -101,6 +101,8 @@ type Instance struct {
 	ProvisioningParameters string
 	ProviderRegion         string
 
+	InstanceDetails InstanceDetails
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt time.Time
@@ -120,19 +122,22 @@ func (instance Instance) GetProvisioningParameters() (ProvisioningParameters, er
 }
 
 type Operation struct {
-	ID        string
-	Version   int
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	// following fields are serialized to JSON and stored in the storage
+	InstanceDetails
 
-	InstanceID             string
-	ProvisionerOperationID string
-	State                  domain.LastOperationState
-	Description            string
-	ProvisioningParameters ProvisioningParameters
+	ID        string    `json:"-"`
+	Version   int       `json:"-"`
+	CreatedAt time.Time `json:"-"`
+	UpdatedAt time.Time `json:"-"`
+
+	InstanceID             string                    `json:"-"`
+	ProvisionerOperationID string                    `json:"-"`
+	State                  domain.LastOperationState `json:"-"`
+	Description            string                    `json:"-"`
+	ProvisioningParameters ProvisioningParameters    `json:"-"`
 
 	// OrchestrationID specifies the origin orchestration which triggers the operation, empty for OSB operations (provisioning/deprovisioning)
-	OrchestrationID string
+	OrchestrationID string `json:"-"`
 }
 
 func (o *Operation) IsFinished() bool {
@@ -177,24 +182,25 @@ type SMClientFactory interface {
 	ProvideCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (*servicemanager.Credentials, error)
 }
 
-// ProvisioningOperation holds all information about provisioning operation
-type ProvisioningOperation struct {
-	Operation `json:"-"`
-
-	// following fields are serialized to JSON and stored in the storage
+type InstanceDetails struct {
 	Lms LMS `json:"lms"`
 
-	Avs AvsLifecycleData `json:"avs"`
+	Avs      AvsLifecycleData `json:"avs"`
+	EventHub EventHub         `json:"eh"`
 
-	RuntimeID   string `json:"runtime_id"`
-	ShootName   string `json:"shoot_name"`
-	ShootDomain string `json:"shoot_domain"`
+	SubAccountID string    `json:"-"`
+	RuntimeID    string    `json:"runtime_id"`
+	ShootName    string    `json:"shoot_name"`
+	ShootDomain  string    `json:"shoot_domain"`
+	XSUAA        XSUAAData `json:"xsuaa"`
+	Ems          EmsData   `json:"ems"`
+}
+
+// ProvisioningOperation holds all information about provisioning operation
+type ProvisioningOperation struct {
+	Operation
 
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
-
-	XSUAA XSUAAData `json:"xsuaa"`
-
-	Ems EmsData `json:"ems"`
 
 	// following fields are not stored in the storage
 	InputCreator ProvisionerInputCreator `json:"-"`
@@ -236,20 +242,15 @@ func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {
 
 // DeprovisioningOperation holds all information about de-provisioning operation
 type DeprovisioningOperation struct {
-	Operation       `json:"-"`
-	SMClientFactory SMClientFactory `json:"-"`
+	Operation
 
-	Avs          AvsLifecycleData `json:"avs"`
-	EventHub     EventHub         `json:"eh"`
-	SubAccountID string           `json:"-"`
-	RuntimeID    string           `json:"runtime_id"`
-	XSUAA        XSUAAData        `json:"xsuaa"`
-	Ems          EmsData          `json:"ems"`
+	SMClientFactory SMClientFactory `json:"-"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
 type UpgradeKymaOperation struct {
-	Operation                      `json:"-"`
+	Operation
+
 	orchestration.RuntimeOperation `json:"runtime_operation"`
 	InputCreator                   ProvisionerInputCreator `json:"-"`
 
@@ -319,6 +320,9 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			CreatedAt:              time.Now(),
 			UpdatedAt:              time.Now(),
 			ProvisioningParameters: parameters,
+			InstanceDetails: InstanceDetails{
+				SubAccountID: parameters.ErsContext.SubAccountID,
+			},
 		},
 	}, nil
 }

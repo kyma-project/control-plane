@@ -177,8 +177,8 @@ func fixOperationCreateRuntime(t *testing.T, planID, region string) internal.Pro
 			UpdatedAt:              time.Now(),
 			State:                  domain.InProgress,
 			ProvisioningParameters: fixProvisioningParameters(planID, region),
+			InstanceDetails:        internal.InstanceDetails{ShootName: shootName},
 		},
-		ShootName:    shootName,
 		InputCreator: fixInputCreator(t),
 	}
 }

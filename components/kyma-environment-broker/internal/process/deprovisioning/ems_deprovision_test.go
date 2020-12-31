@@ -19,18 +19,22 @@ func TestEmsDeprovisionStep_Run(t *testing.T) {
 	clientFactory := servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{}, []types.ServicePlan{})
 
 	operation := internal.DeprovisioningOperation{
-		SMClientFactory: clientFactory,
-		Ems: internal.EmsData{
-			Instance: internal.ServiceManagerInstanceInfo{
-				BrokerID:    "broker-id",
-				ServiceID:   "svc-id",
-				PlanID:      "plan-id",
-				InstanceID:  "instance-id",
-				Provisioned: true,
+		Operation: internal.Operation{
+			InstanceDetails: internal.InstanceDetails{
+				Ems: internal.EmsData{
+					Instance: internal.ServiceManagerInstanceInfo{
+						BrokerID:    "broker-id",
+						ServiceID:   "svc-id",
+						PlanID:      "plan-id",
+						InstanceID:  "instance-id",
+						Provisioned: true,
+					},
+					BindingID: "",
+					Overrides: "",
+				},
 			},
-			BindingID: "",
-			Overrides: "",
 		},
+		SMClientFactory: clientFactory,
 	}
 	repo.InsertDeprovisioningOperation(operation)
 

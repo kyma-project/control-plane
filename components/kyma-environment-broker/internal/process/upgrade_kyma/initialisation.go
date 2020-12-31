@@ -101,7 +101,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 			return s.initializeUpgradeRuntimeRequest(operation, log)
 		}
 		log.Infof("runtime being upgraded, check operation status")
-		operation.RuntimeID = instance.RuntimeID
+		operation.InstanceDetails.RuntimeID = instance.RuntimeID
 		return s.checkRuntimeStatus(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
 	case dberr.IsNotFound(err):
 		log.Info("instance does not exist, it may have been deprovisioned")

@@ -32,14 +32,14 @@ func TestInternalEvalUpdater_AddTagsToEval(t *testing.T) {
 				UpdatedAt:              time.Now(),
 				State:                  domain.InProgress,
 				ProvisioningParameters: fixProvisioningParameters(broker.AzurePlanID, "westeurope"),
+				InstanceDetails: internal.InstanceDetails{Avs: internal.AvsLifecycleData{
+					AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
+					AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
+					AVSInternalEvaluationDeleted: false,
+					AVSExternalEvaluationDeleted: false,
+				}},
 			},
 			InputCreator: newInputCreator(),
-			Avs: internal.AvsLifecycleData{
-				AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
-				AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
-				AVSInternalEvaluationDeleted: false,
-				AVSExternalEvaluationDeleted: false,
-			},
 		}
 
 		err := memoryStorage.Operations().InsertProvisioningOperation(operation)
@@ -99,14 +99,14 @@ func TestInternalEvalUpdater_AddTagsToEval(t *testing.T) {
 				UpdatedAt:              time.Now(),
 				State:                  domain.InProgress,
 				ProvisioningParameters: fixProvisioningParameters(broker.AzurePlanID, "westeurope"),
+				InstanceDetails: internal.InstanceDetails{Avs: internal.AvsLifecycleData{
+					AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
+					AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
+					AVSInternalEvaluationDeleted: false,
+					AVSExternalEvaluationDeleted: false,
+				}},
 			},
 			InputCreator: newInputCreator(),
-			Avs: internal.AvsLifecycleData{
-				AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
-				AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
-				AVSInternalEvaluationDeleted: false,
-				AVSExternalEvaluationDeleted: false,
-			},
 		}
 
 		err := memoryStorage.Operations().InsertProvisioningOperation(operation)
