@@ -207,12 +207,13 @@ func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance, log
 
 func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOperation, instance *internal.Instance, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
 	// action #1
-	if operation.ProvisioningParameters.PlanID != broker.TrialPlanID {
-		log.Infof("creating external evaluation for instance %", instance.InstanceID)
-		operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL, log)
-		if err != nil || repeat != 0 {
-			return operation, repeat, nil
+	operation, repeat, err := s.createExternalEval(operation, instance, log)
+	if err != nil || repeat != 0 {
+		if err != nil {
+			log.Errorf("while creating external Evaluation: %s", err)
+			return operation, repeat, err
 		}
+		return operation, repeat, nil
 	}
 
 	// action #2
@@ -246,19 +247,14 @@ func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOp
 }
 
 func (s *InitialisationStep) createExternalEval(operation internal.ProvisioningOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-	if pp.PlanID == broker.TrialPlanID {
+	if operation.ProvisioningParameters.PlanID == broker.TrialPlanID {
 		log.Info("skipping AVS external evaluation creation for trial plan")
 		return operation, 0, nil
 	}
 	log.Infof("creating external evaluation for instance %", instance.InstanceID)
 	operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL, log)
 	if err != nil || repeat != 0 {
-		return operation, repeat, nil
+		return operation, repeat, err
 	}
 	return operation, 0, nil
 }
