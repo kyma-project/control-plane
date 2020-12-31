@@ -21,7 +21,6 @@ func TestEmsDeprovisionStep_Run(t *testing.T) {
 	operation := internal.DeprovisioningOperation{
 		Operation: internal.Operation{
 			InstanceDetails: internal.InstanceDetails{
-
 				Ems: internal.EmsData{
 					Instance: internal.ServiceManagerInstanceInfo{
 						BrokerID:    "broker-id",

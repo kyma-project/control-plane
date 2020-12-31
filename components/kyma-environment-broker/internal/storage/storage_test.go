@@ -148,6 +148,7 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, fixInstance.ServicePlanID, inst.ServicePlanID)
 			assert.Equal(t, fixInstance.DashboardURL, inst.DashboardURL)
 			assert.Equal(t, fixInstance.ProvisioningParameters, inst.ProvisioningParameters)
+			assert.Equal(t, "lms-tenant-id", inst.InstanceDetails.Lms.TenantID)
 			assert.NotEmpty(t, inst.CreatedAt)
 			assert.NotEmpty(t, inst.UpdatedAt)
 			assert.Equal(t, "0001-01-01 00:00:00 +0000 UTC", inst.DeletedAt.String())
@@ -983,6 +984,7 @@ func assertProvisioningOperation(t *testing.T, expected, got internal.Provisioni
 	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
 	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
 	assert.Equal(t, expected.ProvisioningParameters, got.ProvisioningParameters)
+	assert.Equal(t, expected.InstanceDetails, got.InstanceDetails)
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
@@ -993,6 +995,7 @@ func assertProvisioningOperation(t *testing.T, expected, got internal.Provisioni
 func assertDeprovisioningOperation(t *testing.T, expected, got internal.DeprovisioningOperation) {
 	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
 	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
+	assert.Equal(t, expected.InstanceDetails, got.InstanceDetails)
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
@@ -1004,6 +1007,7 @@ func assertUpgradeKymaOperation(t *testing.T, expected, got internal.UpgradeKyma
 	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
 	assert.True(t, expected.MaintenanceWindowBegin.Equal(got.MaintenanceWindowBegin))
 	assert.True(t, expected.MaintenanceWindowEnd.Equal(got.MaintenanceWindowEnd))
+	assert.Equal(t, expected.InstanceDetails, got.InstanceDetails)
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
@@ -1015,6 +1019,7 @@ func assertUpgradeKymaOperation(t *testing.T, expected, got internal.UpgradeKyma
 func assertOperation(t *testing.T, expected, got internal.Operation) {
 	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
 	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
+	assert.Equal(t, expected.InstanceDetails, got.InstanceDetails)
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
