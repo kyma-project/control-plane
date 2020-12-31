@@ -97,6 +97,9 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 	inst, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:
+
+		// TODO: checking, if runtimeID is present is not a good idea - the unsuspension process starts with runtimeID set
+
 		if inst.RuntimeID == "" {
 			log.Info("runtimeID not exist, initialize runtime input request")
 			return s.initializeRuntimeInputRequest(operation, log)

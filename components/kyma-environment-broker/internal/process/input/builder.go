@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/vburenin/nsync"
 )
 
@@ -106,6 +107,7 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 		return nil, errors.Errorf("case with plan %s is not supported", pp.PlanID)
 	}
 
+	logrus.Infof("init provisioning input")
 	initInput, err := f.initProvisionRuntimeInput(provider, version)
 	if err != nil {
 		return nil, errors.Wrap(err, "while initializing ProvisionRuntimeInput")
@@ -168,6 +170,7 @@ func (f *InputBuilderFactory) provideComponentList(version internal.RuntimeVersi
 
 func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInputProvider, version internal.RuntimeVersionData) (gqlschema.ProvisionRuntimeInput, error) {
 	components, err := f.provideComponentList(version)
+	logrus.Infof("component list provided")
 	if err != nil {
 		return gqlschema.ProvisionRuntimeInput{}, err
 	}
