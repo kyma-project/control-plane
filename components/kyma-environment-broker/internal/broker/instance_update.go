@@ -11,16 +11,24 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type ContextUpdateHandler interface {
+	Handle(instance *internal.Instance, newCtx internal.ERSContext) error
+}
+
 type UpdateEndpoint struct {
 	log logrus.FieldLogger
 
-	instanceStorage storage.Instances
+	instanceStorage      storage.Instances
+	contextUpdateHandler ContextUpdateHandler
+	processingEnabled    bool
 }
 
-func NewUpdate(instanceStorage storage.Instances, log logrus.FieldLogger) *UpdateEndpoint {
+func NewUpdate(instanceStorage storage.Instances, ctxUpdateHandler ContextUpdateHandler, processingEnabled bool, log logrus.FieldLogger) *UpdateEndpoint {
 	return &UpdateEndpoint{
-		log:             log.WithField("service", "UpdateEndpoint"),
-		instanceStorage: instanceStorage,
+		log:                  log.WithField("service", "UpdateEndpoint"),
+		instanceStorage:      instanceStorage,
+		contextUpdateHandler: ctxUpdateHandler,
+		processingEnabled:    processingEnabled,
 	}
 }
 
@@ -55,6 +63,25 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 	logger.Infof("Context with keys:")
 	for k, _ := range contextData {
 		logger.Info(k)
+	}
+
+	if b.processingEnabled {
+		err = b.contextUpdateHandler.Handle(instance, ersContext)
+		if err != nil {
+			logger.Errorf("processing context updated failed: %s", err.Error())
+			return domain.UpdateServiceSpec{
+				IsAsync:       false,
+				DashboardURL:  instance.DashboardURL,
+				OperationData: "",
+			}, errors.New("unable to process update")
+		}
+
+		// save the instance
+		instance.Parameters.ErsContext = ersContext
+		_, err = b.instanceStorage.Update(*instance)
+		if err != nil {
+			logger.Errorf("processing context updated failed: %s", err.Error())
+		}
 	}
 
 	return domain.UpdateServiceSpec{

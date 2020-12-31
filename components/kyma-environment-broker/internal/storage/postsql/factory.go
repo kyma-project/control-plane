@@ -18,12 +18,12 @@ type Factory interface {
 //go:generate mockery -name=ReadSession
 type ReadSession interface {
 	FindAllInstancesJoinedWithOperation(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, dberr.Error)
-	FindAllInstancesForRuntimes(runtimeIdList []string) ([]internal.Instance, dberr.Error)
-	FindAllInstancesForSubAccounts(subAccountslist []string) ([]internal.Instance, dberr.Error)
-	GetInstanceByID(instanceID string) (internal.Instance, dberr.Error)
+	FindAllInstancesForRuntimes(runtimeIdList []string) ([]dbmodel.InstanceDTO, dberr.Error)
+	FindAllInstancesForSubAccounts(subAccountslist []string) ([]dbmodel.InstanceDTO, dberr.Error)
+	GetInstanceByID(instanceID string) (dbmodel.InstanceDTO, dberr.Error)
 	GetLastOperation(instanceID string) (dbmodel.OperationDTO, dberr.Error)
 	GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.Error)
-	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
+	GetNotFinishedOperationsByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
 	GetOperationByTypeAndInstanceID(inID string, opType dbmodel.OperationType) (dbmodel.OperationDTO, dberr.Error)
 	GetOperationsByTypeAndInstanceID(inID string, opType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
 	GetOperationsForIDs(opIdList []string) ([]dbmodel.OperationDTO, dberr.Error)
@@ -44,8 +44,8 @@ type ReadSession interface {
 
 //go:generate mockery -name=WriteSession
 type WriteSession interface {
-	InsertInstance(instance internal.Instance) dberr.Error
-	UpdateInstance(instance internal.Instance) dberr.Error
+	InsertInstance(instance dbmodel.InstanceDTO) dberr.Error
+	UpdateInstance(instance dbmodel.InstanceDTO) dberr.Error
 	DeleteInstance(instanceID string) dberr.Error
 	InsertOperation(dto dbmodel.OperationDTO) dberr.Error
 	UpdateOperation(dto dbmodel.OperationDTO) dberr.Error

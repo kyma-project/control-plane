@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 
 	"github.com/stretchr/testify/mock"
@@ -70,6 +72,9 @@ func TestInitialisationStep_Run(t *testing.T) {
 		storedOp, err := memoryStorage.Operations().GetDeprovisioningOperationByID(operation.ID)
 		assert.Equal(t, operation, *storedOp)
 		assert.NoError(t, err)
+
+		_, err = memoryStorage.Instances().GetByID(instance.InstanceID)
+		assert.True(t, dberr.IsNotFound(err))
 	})
 
 	t.Run("Should delete instance when operation has succeeded due to runtime not existing", func(t *testing.T) {

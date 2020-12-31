@@ -226,7 +226,7 @@ func (s *operations) GetOperationByID(operationID string) (*internal.Operation, 
 	return res, nil
 }
 
-func (s *operations) GetOperationsInProgressByType(opType dbmodel.OperationType) ([]internal.Operation, error) {
+func (s *operations) GetNotFinishedOperationsByType(opType dbmodel.OperationType) ([]internal.Operation, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

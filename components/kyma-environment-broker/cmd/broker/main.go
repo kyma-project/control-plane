@@ -10,6 +10,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/migrations"
 	uaa "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/xsuaa"
 
@@ -105,6 +107,7 @@ type Config struct {
 	EnableOnDemandVersion                bool `envconfig:"default=false"`
 	ManagedRuntimeComponentsYAMLFilePath string
 	DefaultRequestRegion                 string `envconfig:"default=cf-eu10"`
+	UpdateProcessingEnabled              bool   `envconfig:"default=false"`
 
 	Broker broker.Config
 
@@ -231,7 +234,6 @@ func main() {
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
 	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 	internalEvalUpdater := provisioning.NewInternalEvalUpdater(avsDel, internalEvalAssistant, cfg.Avs)
-	upgradeEvalManager := upgrade_kyma.NewEvaluationManager(avsDel, cfg.Avs)
 
 	clientHTTPForIAS := httputil.NewClient(60, cfg.IAS.SkipCertVerification)
 	if cfg.IAS.TLSRenegotiationEnable {
@@ -435,12 +437,14 @@ func main() {
 	plansValidator, err := broker.NewPlansSchemaValidator()
 	fatalOnError(err)
 
+	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
+
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
 		broker.NewServices(cfg.Broker, optComponentsSvc, logs),
 		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, plansValidator, cfg.EnableOnDemandVersion, logs),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
-		broker.NewUpdate(db.Instances(), logs),
+		broker.NewUpdate(db.Instances(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, logs),
 		broker.NewGetInstance(db.Instances(), logs),
 		broker.NewLastOperation(db.Operations(), db.Instances(), logs),
 		broker.NewBind(logs),
@@ -506,7 +510,7 @@ func main() {
 
 // queues all in progress operations by type
 func processOperationsInProgressByType(opType dbmodel.OperationType, op storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
-	operations, err := op.GetOperationsInProgressByType(opType)
+	operations, err := op.GetNotFinishedOperationsByType(opType)
 	if err != nil {
 		return errors.Wrap(err, "while getting in progress operations from storage")
 	}
