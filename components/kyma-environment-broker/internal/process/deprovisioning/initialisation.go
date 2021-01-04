@@ -23,6 +23,8 @@ import (
 const (
 	// the time after which the operation is marked as expired
 	CheckStatusTimeout = 5 * time.Hour
+
+	operationTimeout = time.Hour * 24
 )
 
 type SMClientFactory interface {
@@ -67,6 +69,11 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 }
 
 func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+	if time.Since(operation.CreatedAt) > operationTimeout {
+		log.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", operationTimeout))
+	}
+
 	// rewrite necessary data from ProvisioningOperation to operation internal.DeprovisioningOperation
 	op, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
 	if err != nil {

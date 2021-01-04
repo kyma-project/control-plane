@@ -27,6 +27,8 @@ import (
 const (
 	// label key used to send to director
 	grafanaURLLabel = "operator_grafanaUrl"
+
+	operationTimeout = time.Hour * 24
 )
 
 //go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
@@ -85,6 +87,11 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	if time.Since(operation.CreatedAt) > operationTimeout {
+		log.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", operationTimeout))
+	}
+
 	if operation.ProvisioningParameters.PlanID == broker.TrialPlanID {
 		s.externalEvalCreator.disabled = true
 	}
