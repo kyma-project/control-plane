@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -218,15 +218,19 @@ func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance, log
 
 func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOperation, instance *internal.Instance, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
 	// action #1
-	operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL, log)
+	operation, repeat, err := s.createExternalEval(operation, instance, log)
 	if err != nil || repeat != 0 {
+		if err != nil {
+			log.Errorf("while creating external Evaluation: %s", err)
+			return operation, repeat, err
+		}
 		return operation, repeat, nil
 	}
 
 	// action #2
 	tags, operation, repeat, err := s.createTagsForRuntime(operation, instance)
 	if err != nil || repeat != 0 {
-		log.Errorf("while adding Tags to Evaluation: %s", err)
+		log.Errorf("while creating Tags for Evaluation: %s", err)
 		return operation, repeat, nil
 	}
 	operation, repeat, err = s.internalEvalUpdater.AddTagsToEval(tags, operation, "", log)
@@ -251,6 +255,19 @@ func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOp
 	}
 
 	return s.operationManager.OperationSucceeded(operation, msg)
+}
+
+func (s *InitialisationStep) createExternalEval(operation internal.ProvisioningOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	if operation.ProvisioningParameters.PlanID == broker.TrialPlanID {
+		log.Info("skipping AVS external evaluation creation for trial plan")
+		return operation, 0, nil
+	}
+	log.Infof("creating external evaluation for instance %", instance.InstanceID)
+	operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL, log)
+	if err != nil || repeat != 0 {
+		return operation, repeat, err
+	}
+	return operation, 0, nil
 }
 
 func (s *InitialisationStep) createTagsForRuntime(operation internal.ProvisioningOperation, instance *internal.Instance) ([]*avs.Tag, internal.ProvisioningOperation, time.Duration, error) {
