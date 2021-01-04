@@ -92,10 +92,6 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 		log.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout))
 	}
-
-	if operation.ProvisioningParameters.PlanID == broker.TrialPlanID {
-		s.externalEvalCreator.disabled = true
-	}
 	operation.SMClientFactory = s.serviceManagerClientFactory
 
 	inst, err := s.instanceStorage.GetByID(operation.InstanceID)
