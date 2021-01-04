@@ -87,6 +87,10 @@ type Config struct {
 	// because some data must not be visible in the log file.
 	DumpProvisionerRequests bool `envconfig:"default=false"`
 
+	// OperationTimeout is used to check on a top-level if any operation didn't exceed the time for processing.
+	// It is used for provisioning and deprovisioning operations.
+	OperationTimeout time.Duration `envconfig:"default=24h"`
+
 	Host       string `envconfig:"optional"`
 	Port       string `envconfig:"default=8080"`
 	StatusPort string `envconfig:"default=8071"`
@@ -255,8 +259,8 @@ func main() {
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
 	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, accountVersionMapping)
 	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),
-		provisionerClient, directorClient, inputFactory, externalEvalCreator, internalEvalUpdater, iasTypeSetter, cfg.Provisioning.Timeout,
-		runtimeVerConfigurator, serviceManagerClientFactory)
+		provisionerClient, directorClient, inputFactory, externalEvalCreator, internalEvalUpdater, iasTypeSetter,
+		cfg.Provisioning.Timeout, cfg.OperationTimeout, runtimeVerConfigurator, serviceManagerClientFactory)
 	provisionManager.InitStep(provisioningInit)
 
 	provisioningSteps := []struct {
@@ -364,7 +368,7 @@ func main() {
 		}
 	}
 
-	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, serviceManagerClientFactory)
+	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, serviceManagerClientFactory, cfg.OperationTimeout)
 	deprovisionManager.InitStep(deprovisioningInit)
 	deprovisioningSteps := []struct {
 		disabled bool

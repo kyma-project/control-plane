@@ -57,7 +57,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: nil,
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock, nil, time.Hour)
 
 		// when
 		operation, repeat, err := step.Run(operation, log)
@@ -94,7 +94,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		provisionerClient := &provisionerAutomock.Client{}
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock, nil, time.Hour)
 
 		// when
 		operation, repeat, err := step.Run(operation, log)
@@ -121,6 +121,7 @@ func fixDeprovisioningOperation() internal.DeprovisioningOperation {
 			ID:                     fixOperationID,
 			InstanceID:             fixInstanceID,
 			ProvisionerOperationID: fixProvisionerOperationID,
+			CreatedAt:              time.Now(),
 			UpdatedAt:              time.Now(),
 		},
 	}
@@ -134,6 +135,7 @@ func fixProvisioningOperation() internal.ProvisioningOperation {
 			ID:                     fixOperationID,
 			InstanceID:             fixInstanceID,
 			ProvisionerOperationID: fixProvisionerOperationID,
+			CreatedAt:              time.Now(),
 			UpdatedAt:              time.Now(),
 			ProvisioningParameters: internal.ProvisioningParameters{
 				ErsContext: internal.ERSContext{GlobalAccountID: "1"},

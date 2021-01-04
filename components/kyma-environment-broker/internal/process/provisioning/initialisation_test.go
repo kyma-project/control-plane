@@ -90,7 +90,7 @@ func TestInitialisationStep(t *testing.T) {
 		mockAvsSvc.evals[fixAvsEvaluationInternalId] = fixAvsEvaluation()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient,
-			directorClient, nil, externalEvalCreator, InternalEvalUpdater, iasType, time.Hour, rvc, nil)
+			directorClient, nil, externalEvalCreator, InternalEvalUpdater, iasType, time.Hour, time.Hour, rvc, nil)
 
 		// when
 		operation, repeat, err := step.Run(operation, logger.NewLogDummy())
@@ -167,7 +167,7 @@ func TestInitialisationStep(t *testing.T) {
 		mockAvsSvc.evals[fixAvsEvaluationInternalId] = fixAvsEvaluation()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient,
-			directorClient, nil, externalEvalCreator, InternalEvalUpdater, iasType, time.Hour, rvc, nil)
+			directorClient, nil, externalEvalCreator, InternalEvalUpdater, iasType, time.Hour, time.Hour, rvc, nil)
 
 		// when
 		operation, repeat, err := step.Run(operation, logger.NewLogDummy())
@@ -195,6 +195,7 @@ func fixOperationRuntimeStatus(planId string) internal.ProvisioningOperation {
 			ID:                     statusOperationID,
 			InstanceID:             statusInstanceID,
 			ProvisionerOperationID: statusProvisionerOperationID,
+			CreatedAt:              time.Now(),
 			UpdatedAt:              time.Now(),
 			ProvisioningParameters: fixProvisioningParametersRuntimeStatus(planId),
 			InstanceDetails: internal.InstanceDetails{
@@ -210,6 +211,7 @@ func fixOperationRuntimeStatusWithProvider(planId string, provider internal.Tria
 			ID:                     statusOperationID,
 			InstanceID:             statusInstanceID,
 			ProvisionerOperationID: statusProvisionerOperationID,
+			CreatedAt:              time.Now(),
 			UpdatedAt:              time.Now(),
 			ProvisioningParameters: fixProvisioningParametersRuntimeStatusWithProvider(planId, &provider),
 		},
