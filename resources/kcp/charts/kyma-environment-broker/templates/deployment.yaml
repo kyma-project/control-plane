@@ -50,6 +50,8 @@ spec:
               value: "false"
             - name: APP_BROKER_ENABLE_PLANS
               value: "{{ .Values.enablePlans }}"
+            - name: APP_OPERATION_TIMEOUT
+              value: "{{ .Values.broker.operationTimeout }}"
             - name: APP_BROKER_SERVICE_DISPLAY_NAME
               value: "{{ .Values.brokerService.displayName }}"
             - name: APP_BROKER_SERVICE_IMAGE_URL

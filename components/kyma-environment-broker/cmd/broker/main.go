@@ -87,6 +87,10 @@ type Config struct {
 	// because some data must not be visible in the log file.
 	DumpProvisionerRequests bool `envconfig:"default=false"`
 
+	// OperationTimeout is used to check on a top-level if any operation didn't exceed the time for processing.
+	// It is used for provisioning and deprovisioning operations.
+	OperationTimeout time.Duration `envconfig:"default=24h"`
+
 	Host       string `envconfig:"optional"`
 	Port       string `envconfig:"default=8080"`
 	StatusPort string `envconfig:"default=8071"`

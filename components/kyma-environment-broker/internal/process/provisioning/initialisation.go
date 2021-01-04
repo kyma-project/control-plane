@@ -27,8 +27,6 @@ import (
 const (
 	// label key used to send to director
 	grafanaURLLabel = "operator_grafanaUrl"
-
-	operationTimeout = time.Hour * 24
 )
 
 //go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
@@ -51,6 +49,7 @@ type InitialisationStep struct {
 	externalEvalCreator         *ExternalEvalCreator
 	internalEvalUpdater         *InternalEvalUpdater
 	iasType                     *IASType
+	operationTimeout            time.Duration
 	provisioningTimeout         time.Duration
 	runtimeVerConfigurator      RuntimeVersionConfiguratorForProvisioning
 	serviceManagerClientFactory *servicemanager.ClientFactory
@@ -64,7 +63,8 @@ func NewInitialisationStep(os storage.Operations,
 	avsExternalEvalCreator *ExternalEvalCreator,
 	avsInternalEvalUpdater *InternalEvalUpdater,
 	iasType *IASType,
-	timeout time.Duration,
+	provisioningTimeout time.Duration,
+	operationTimeout time.Duration,
 	rvc RuntimeVersionConfiguratorForProvisioning,
 	smcf *servicemanager.ClientFactory) *InitialisationStep {
 	return &InitialisationStep{
@@ -76,7 +76,8 @@ func NewInitialisationStep(os storage.Operations,
 		externalEvalCreator:         avsExternalEvalCreator,
 		internalEvalUpdater:         avsInternalEvalUpdater,
 		iasType:                     iasType,
-		provisioningTimeout:         timeout,
+		operationTimeout:            operationTimeout,
+		provisioningTimeout:         provisioningTimeout,
 		runtimeVerConfigurator:      rvc,
 		serviceManagerClientFactory: smcf,
 	}
@@ -87,9 +88,9 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	if time.Since(operation.CreatedAt) > operationTimeout {
+	if time.Since(operation.CreatedAt) > s.operationTimeout {
 		log.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", operationTimeout))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout))
 	}
 
 	if operation.ProvisioningParameters.PlanID == broker.TrialPlanID {

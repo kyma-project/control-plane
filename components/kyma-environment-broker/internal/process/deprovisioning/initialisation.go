@@ -23,8 +23,6 @@ import (
 const (
 	// the time after which the operation is marked as expired
 	CheckStatusTimeout = 5 * time.Hour
-
-	operationTimeout = time.Hour * 24
 )
 
 type SMClientFactory interface {
@@ -39,9 +37,10 @@ type InitialisationStep struct {
 	provisionerClient           provisioner.Client
 	accountProvider             hyperscaler.AccountProvider
 	serviceManagerClientFactory SMClientFactory
+	operationTimeout            time.Duration
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, accountProvider hyperscaler.AccountProvider, smcf SMClientFactory) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, accountProvider hyperscaler.AccountProvider, smcf SMClientFactory, operationTimeout time.Duration) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:            process.NewDeprovisionOperationManager(os),
 		operationStorage:            os,
@@ -49,6 +48,7 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 		provisionerClient:           pc,
 		accountProvider:             accountProvider,
 		serviceManagerClientFactory: smcf,
+		operationTimeout:            operationTimeout,
 	}
 }
 
@@ -69,9 +69,9 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 }
 
 func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
-	if time.Since(operation.CreatedAt) > operationTimeout {
+	if time.Since(operation.CreatedAt) > s.operationTimeout {
 		log.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", operationTimeout))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout))
 	}
 
 	// rewrite necessary data from ProvisioningOperation to operation internal.DeprovisioningOperation
