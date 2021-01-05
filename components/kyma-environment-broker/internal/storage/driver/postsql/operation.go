@@ -736,10 +736,12 @@ func (s *operations) toProvisioningOperation(op *dbmodel.OperationDTO) (*interna
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
+	instanceDetails := operation.Operation.InstanceDetails
 	operation.Operation, err = s.toOperation(op)
 	if err != nil {
 		return nil, err
 	}
+	operation.InstanceDetails = instanceDetails
 
 	return &operation, nil
 }
@@ -769,10 +771,12 @@ func (s *operations) toDeprovisioningOperation(op *dbmodel.OperationDTO) (*inter
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
+	instanceDetails := operation.Operation.InstanceDetails
 	operation.Operation, err = s.toOperation(op)
 	if err != nil {
 		return nil, err
 	}
+	operation.InstanceDetails = instanceDetails
 
 	return &operation, nil
 }
@@ -802,6 +806,7 @@ func (s *operations) toUpgradeKymaOperation(op *dbmodel.OperationDTO) (*internal
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
+	instanceDetails := operation.Operation.InstanceDetails
 	operation.Operation, err = s.toOperation(op)
 	if err != nil {
 		return nil, err
@@ -810,6 +815,7 @@ func (s *operations) toUpgradeKymaOperation(op *dbmodel.OperationDTO) (*internal
 	if op.OrchestrationID.Valid {
 		operation.OrchestrationID = op.OrchestrationID.String
 	}
+	operation.InstanceDetails = instanceDetails
 
 	return &operation, nil
 }
