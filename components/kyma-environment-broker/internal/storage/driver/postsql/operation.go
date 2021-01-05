@@ -693,7 +693,7 @@ func (s *operations) toOperation(op *dbmodel.OperationDTO) (internal.Operation, 
 
 	err := s.decryptBasicAuth(&pp)
 	if err != nil {
-		return internal.Operation{}, errors.Wrap(err, "while encrypting basic auth")
+		return internal.Operation{}, errors.Wrap(err, "while decrypting basic auth")
 	}
 
 	return internal.Operation{
@@ -732,14 +732,16 @@ func (s *operations) toProvisioningOperation(op *dbmodel.OperationDTO) (*interna
 	}
 	var operation internal.ProvisioningOperation
 	var err error
-	operation.Operation, err = s.toOperation(op)
-	if err != nil {
-		return nil, err
-	}
 	err = json.Unmarshal([]byte(op.Data), &operation)
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
+	instanceDetails := operation.Operation.InstanceDetails
+	operation.Operation, err = s.toOperation(op)
+	if err != nil {
+		return nil, err
+	}
+	operation.InstanceDetails = instanceDetails
 
 	return &operation, nil
 }
@@ -765,14 +767,16 @@ func (s *operations) toDeprovisioningOperation(op *dbmodel.OperationDTO) (*inter
 	}
 	var operation internal.DeprovisioningOperation
 	var err error
-	operation.Operation, err = s.toOperation(op)
-	if err != nil {
-		return nil, err
-	}
 	err = json.Unmarshal([]byte(op.Data), &operation)
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
+	instanceDetails := operation.Operation.InstanceDetails
+	operation.Operation, err = s.toOperation(op)
+	if err != nil {
+		return nil, err
+	}
+	operation.InstanceDetails = instanceDetails
 
 	return &operation, nil
 }
@@ -798,18 +802,20 @@ func (s *operations) toUpgradeKymaOperation(op *dbmodel.OperationDTO) (*internal
 	}
 	var operation internal.UpgradeKymaOperation
 	var err error
-	operation.Operation, err = s.toOperation(op)
-	if err != nil {
-		return nil, err
-	}
 	err = json.Unmarshal([]byte(op.Data), &operation)
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
+	}
+	instanceDetails := operation.Operation.InstanceDetails
+	operation.Operation, err = s.toOperation(op)
+	if err != nil {
+		return nil, err
 	}
 	operation.RuntimeOperation.ID = op.ID
 	if op.OrchestrationID.Valid {
 		operation.OrchestrationID = op.OrchestrationID.String
 	}
+	operation.InstanceDetails = instanceDetails
 
 	return &operation, nil
 }
