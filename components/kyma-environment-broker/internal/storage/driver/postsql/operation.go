@@ -302,7 +302,7 @@ func (s *operations) GetUpgradeKymaOperationByID(operationID string) (*internal.
 	return ret, nil
 }
 
-// GetUpgradeKymaOperationByInstanceID fetches the UpgradeKymaOperation by given instanceID, returns error if not found
+// GetUpgradeKymaOperationByInstanceID fetches the latest UpgradeKymaOperation by given instanceID, returns error if not found
 func (s *operations) GetUpgradeKymaOperationByInstanceID(instanceID string) (*internal.UpgradeKymaOperation, error) {
 	session := s.NewReadSession()
 	operation := dbmodel.OperationDTO{}
@@ -383,7 +383,7 @@ func (s *operations) UpdateUpgradeKymaOperation(operation internal.UpgradeKymaOp
 	return &operation, lastErr
 }
 
-// GetLastOperation returns Operation for given instance ID. Returns an error if the operation does not exists.
+// GetLastOperation returns Operation for given instance ID which is not in 'pending' state. Returns an error if the operation does not exists.
 func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, error) {
 	session := s.NewReadSession()
 	operation := dbmodel.OperationDTO{}

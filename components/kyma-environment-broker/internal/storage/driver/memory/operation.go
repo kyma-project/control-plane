@@ -242,17 +242,17 @@ func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, e
 	var rows []internal.Operation
 
 	for _, op := range s.provisioningOperations {
-		if op.InstanceID == instanceID {
+		if op.InstanceID == instanceID && op.State != orchestration.Pending {
 			rows = append(rows, op.Operation)
 		}
 	}
 	for _, op := range s.deprovisioningOperations {
-		if op.InstanceID == instanceID {
+		if op.InstanceID == instanceID && op.State != orchestration.Pending {
 			rows = append(rows, op.Operation)
 		}
 	}
 	for _, op := range s.upgradeKymaOperations {
-		if op.InstanceID == instanceID {
+		if op.InstanceID == instanceID && op.State != orchestration.Pending {
 			rows = append(rows, op.Operation)
 		}
 	}

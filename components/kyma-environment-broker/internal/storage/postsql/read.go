@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -103,7 +104,9 @@ func (r readSession) FindAllInstancesForSubAccounts(subAccountslist []string) ([
 }
 
 func (r readSession) GetLastOperation(instanceID string) (dbmodel.OperationDTO, dberr.Error) {
-	condition := dbr.Eq("instance_id", instanceID)
+	inst := dbr.Eq("instance_id", instanceID)
+	state := dbr.Neq("state", orchestration.Pending)
+	condition := dbr.And(inst, state)
 	operation, err := r.getLastOperation(condition)
 	if err != nil {
 		switch {
