@@ -491,6 +491,24 @@ func TestSchemaInitializer(t *testing.T) {
 					},
 				},
 			}
+			latestPendingOperation := internal.ProvisioningOperation{
+				Operation: internal.Operation{
+					ID:    "latest-id-pending",
+					State: orchestration.Pending,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Minute),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(3 * time.Minute),
+					InstanceID:             fixInstanceId,
+					OrchestrationID:        orchestrationID,
+					ProvisionerOperationID: "target-op-id",
+					Description:            "description",
+					Version:                1,
+					ProvisioningParameters: internal.ProvisioningParameters{},
+					InstanceDetails: internal.InstanceDetails{
+						Lms: internal.LMS{TenantID: "tenant-id"},
+					},
+				},
+			}
 
 			err = InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
@@ -507,6 +525,8 @@ func TestSchemaInitializer(t *testing.T) {
 			err = svc.InsertProvisioningOperation(givenOperation)
 			require.NoError(t, err)
 			err = svc.InsertProvisioningOperation(latestOperation)
+			require.NoError(t, err)
+			err = svc.InsertProvisioningOperation(latestPendingOperation)
 			require.NoError(t, err)
 
 			ops, err := svc.GetOperationsInProgressByType(dbmodel.OperationTypeProvision)
@@ -646,18 +666,23 @@ func TestSchemaInitializer(t *testing.T) {
 					OrchestrationID:        orchestrationID,
 					ProvisioningParameters: internal.ProvisioningParameters{},
 				},
-				RuntimeOperation: orchestration.RuntimeOperation{
-					ID: "operation-id-2",
-					Runtime: orchestration.Runtime{
-						ShootName:              "shoot-stage",
-						MaintenanceWindowBegin: time.Now().Truncate(time.Millisecond).Add(time.Hour),
-						MaintenanceWindowEnd:   time.Now().Truncate(time.Millisecond).Add(time.Minute).Add(time.Hour),
-						RuntimeID:              "runtime-id",
-						GlobalAccountID:        "global-account-if",
-						SubAccountID:           "subaccount-id",
-					},
-					DryRun: false,
+				RuntimeOperation: fixRuntimeOperation("operation-id-3"),
+			}
+
+			givenOperation3 := internal.UpgradeKymaOperation{
+				Operation: internal.Operation{
+					ID:    "operation-id-3",
+					State: orchestration.Pending,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Hour),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Hour).Add(10 * time.Minute),
+					InstanceID:             fixInstanceId,
+					ProvisionerOperationID: "target-op-id",
+					Description:            "pending-operation",
+					Version:                1,
+					OrchestrationID:        orchestrationID,
 				},
+				RuntimeOperation: fixRuntimeOperation("operation-id-3"),
 			}
 
 			err = InitTestDBTables(t, cfg.ConnectionURL())
@@ -673,17 +698,23 @@ func TestSchemaInitializer(t *testing.T) {
 			require.NoError(t, err)
 			err = svc.InsertUpgradeKymaOperation(givenOperation2)
 			require.NoError(t, err)
+			err = svc.InsertUpgradeKymaOperation(givenOperation3)
+			require.NoError(t, err)
 
 			op, err := svc.GetUpgradeKymaOperationByInstanceID(fixInstanceId)
 			require.NoError(t, err)
 
-			assertUpgradeKymaOperation(t, givenOperation2, *op)
+			lastOp, err := svc.GetLastOperation(fixInstanceId)
+			require.NoError(t, err)
+			assert.Equal(t, givenOperation2.Operation.ID, lastOp.ID)
+
+			assertUpgradeKymaOperation(t, givenOperation3, *op)
 
 			ops, count, totalCount, err := svc.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{PageSize: 10, Page: 1})
 			require.NoError(t, err)
-			assert.Len(t, ops, 2)
-			assert.Equal(t, count, 2)
-			assert.Equal(t, totalCount, 2)
+			assert.Len(t, ops, 3)
+			assert.Equal(t, count, 3)
+			assert.Equal(t, totalCount, 3)
 		})
 	})
 
@@ -1123,4 +1154,19 @@ func fixSucceededOperation(testData string) internal.Operation {
 
 func fixTime() time.Time {
 	return time.Date(2020, 04, 21, 0, 0, 23, 42, time.UTC)
+}
+
+func fixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
+	return orchestration.RuntimeOperation{
+		ID: operationId,
+		Runtime: orchestration.Runtime{
+			ShootName:              "shoot-stage",
+			MaintenanceWindowBegin: time.Now().Truncate(time.Millisecond).Add(time.Hour),
+			MaintenanceWindowEnd:   time.Now().Truncate(time.Millisecond).Add(time.Minute).Add(time.Hour),
+			RuntimeID:              "runtime-id",
+			GlobalAccountID:        "global-account-if",
+			SubAccountID:           "subaccount-id",
+		},
+		DryRun: false,
+	}
 }
