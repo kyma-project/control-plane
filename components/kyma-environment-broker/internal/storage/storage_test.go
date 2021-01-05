@@ -135,6 +135,22 @@ func TestSchemaInitializer(t *testing.T) {
 				},
 			})
 			require.NoError(t, err)
+			err = brokerStorage.Operations().InsertUpgradeKymaOperation(internal.UpgradeKymaOperation{
+				Operation: internal.Operation{
+					ID:    "operation-id-3",
+					State: orchestration.Pending,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Hour),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Hour).Add(10 * time.Minute),
+					InstanceID:             fixInstanceId,
+					ProvisionerOperationID: "target-op-id",
+					Description:            "pending-operation",
+					Version:                1,
+					OrchestrationID:        "orch-id",
+				},
+				RuntimeOperation: fixRuntimeOperation("operation-id-3"),
+			})
+			require.NoError(t, err)
 
 			// then
 			inst, err := brokerStorage.Instances().GetByID(testData)
