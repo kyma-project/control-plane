@@ -1,4 +1,4 @@
-FROM eu.gcr.io/kyma-project/external/golang:1.14.8-alpine as builder
+FROM eu.gcr.io/kyma-project/external/golang:1.15.6-alpine as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-project/control-plane/components/provisioner
 WORKDIR ${BASE_APP_DIR}
@@ -23,7 +23,7 @@ RUN go build -v -o main ./cmd/
 RUN mkdir /app && mv ./main /app/main
 RUN mv ./licenses /app/licenses
 
-FROM eu.gcr.io/kyma-project/external/alpine:3.12.0
+FROM eu.gcr.io/kyma-project/external/alpine:3.12.2
 LABEL source = git@github.com:kyma-project/control-plane.git
 
 WORKDIR /app
