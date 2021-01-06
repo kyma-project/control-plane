@@ -632,6 +632,7 @@ func (s *operations) encryptBasicAuth(pp *internal.ProvisioningParameters) error
 	if err != nil {
 		return errors.Wrap(err, "while encrypting password")
 	}
+
 	pp.ErsContext.ServiceManager.Credentials.BasicAuth.Username = string(username)
 	pp.ErsContext.ServiceManager.Credentials.BasicAuth.Password = string(password)
 	return nil
@@ -653,8 +654,9 @@ func (s *operations) decryptBasicAuth(pp *internal.ProvisioningParameters) error
 	if err != nil {
 		return errors.Wrap(err, "while decrypting password")
 	}
-	creds.Username = string(username)
-	creds.Password = string(password)
+
+	pp.ErsContext.ServiceManager.Credentials.BasicAuth.Username = string(username)
+	pp.ErsContext.ServiceManager.Credentials.BasicAuth.Password = string(password)
 	return nil
 }
 
