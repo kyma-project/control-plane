@@ -1,6 +1,7 @@
 global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
+    cloudsql_proxy_image: eu.gcr.io/kyma-project/incubator/pr/cloudsql-docker/gce-proxy:v1.19.1-alpine-PR-50
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
