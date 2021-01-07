@@ -8,15 +8,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
-
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -483,10 +482,8 @@ func TestSchemaInitializer(t *testing.T) {
 					ProvisionerOperationID: "target-op-id",
 					Description:            "description",
 					Version:                1,
-					ProvisioningParameters: internal.ProvisioningParameters{},
-					InstanceDetails: internal.InstanceDetails{
-						Lms: internal.LMS{TenantID: "tenant-id"},
-					},
+					ProvisioningParameters: fixProvisioningParameters(),
+					InstanceDetails:        fixInstanceDetails(),
 				},
 			}
 			latestOperation := internal.ProvisioningOperation{
@@ -501,10 +498,8 @@ func TestSchemaInitializer(t *testing.T) {
 					ProvisionerOperationID: "target-op-id",
 					Description:            "description",
 					Version:                1,
-					ProvisioningParameters: internal.ProvisioningParameters{},
-					InstanceDetails: internal.InstanceDetails{
-						Lms: internal.LMS{TenantID: "tenant-id"},
-					},
+					ProvisioningParameters: fixProvisioningParameters(),
+					InstanceDetails:        fixInstanceDetails(),
 				},
 			}
 			latestPendingOperation := internal.ProvisioningOperation{
@@ -519,10 +514,8 @@ func TestSchemaInitializer(t *testing.T) {
 					ProvisionerOperationID: "target-op-id",
 					Description:            "description",
 					Version:                1,
-					ProvisioningParameters: internal.ProvisioningParameters{},
-					InstanceDetails: internal.InstanceDetails{
-						Lms: internal.LMS{TenantID: "tenant-id"},
-					},
+					ProvisioningParameters: fixProvisioningParameters(),
+					InstanceDetails:        fixInstanceDetails(),
 				},
 			}
 
@@ -1184,5 +1177,42 @@ func fixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
 			SubAccountID:           "subaccount-id",
 		},
 		DryRun: false,
+	}
+}
+
+func fixProvisioningParameters() internal.ProvisioningParameters {
+	return internal.ProvisioningParameters{
+		PlanID:    "test",
+		ServiceID: "test",
+		ErsContext: internal.ERSContext{
+			TenantID:        "test",
+			SubAccountID:    "test",
+			GlobalAccountID: "test",
+			ServiceManager: &internal.ServiceManagerEntryDTO{
+				Credentials: internal.ServiceManagerCredentials{
+					BasicAuth: internal.ServiceManagerBasicAuth{
+						Username: "username",
+						Password: "password",
+					}},
+			},
+			Active: false,
+		},
+		Parameters: internal.ProvisioningParametersDTO{
+			Name:        "test",
+			KymaVersion: "test",
+		},
+		PlatformRegion: "region",
+	}
+}
+
+func fixInstanceDetails() internal.InstanceDetails {
+	return internal.InstanceDetails{
+		Lms: internal.LMS{
+			TenantID: "tenant-id",
+		},
+		SubAccountID: "test",
+		RuntimeID:    "test",
+		ShootName:    "test",
+		ShootDomain:  "test",
 	}
 }
