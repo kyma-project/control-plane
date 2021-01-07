@@ -163,7 +163,7 @@ func TestClient_RemoveReferenceFromParentEval(t *testing.T) {
 		assert.NoError(t, err)
 
 		// When
-		err = client.RemoveReferenceFromParentEval(resp.Id)
+		err = client.RemoveReferenceFromParentEval(parentEvaluationID, resp.Id)
 
 		// Then
 		assert.NoError(t, err)
@@ -181,7 +181,7 @@ func TestClient_RemoveReferenceFromParentEval(t *testing.T) {
 		assert.NoError(t, err)
 
 		// When
-		err = client.RemoveReferenceFromParentEval(111)
+		err = client.RemoveReferenceFromParentEval(parentEvaluationID, 111)
 
 		// then
 		assert.Error(t, err)
