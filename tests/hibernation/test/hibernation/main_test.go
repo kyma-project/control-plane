@@ -6,7 +6,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit"
+	"github.com/kyma-project/control-plane/tests/hibernation/test/testkit"
 )
 
 var (

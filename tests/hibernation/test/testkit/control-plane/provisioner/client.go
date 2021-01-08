@@ -1,7 +1,7 @@
 package provisioner
 
 import (
-	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/graphql"
+	"github.com/kyma-project/control-plane/tests/hibernation/test/testkit/graphql"
 
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	gcli "github.com/machinebox/graphql"

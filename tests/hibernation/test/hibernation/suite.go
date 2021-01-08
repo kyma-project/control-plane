@@ -7,27 +7,20 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/control-plane/tests/hibernation/test/testkit"
-	"github.com/kyma-project/control-plane/tests/hibernation/test/testkit/compass/director"
-	"github.com/kyma-project/control-plane/tests/hibernation/test/testkit/compass/director/oauth"
 	"github.com/kyma-project/control-plane/tests/hibernation/test/testkit/control-plane/provisioner"
-	"github.com/kyma-project/control-plane/tests/hibernation/test/testkit/graphql"
 
 	"k8s.io/client-go/kubernetes"
 	v1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

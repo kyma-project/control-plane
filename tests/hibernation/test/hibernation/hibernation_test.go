@@ -11,7 +11,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/control-plane/tests/hibernation/test/testkit"
-	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/assertions"
+	"github.com/kyma-project/control-plane/tests/hibernation/test/testkit/assertions"
 )
 
 func TestShootUpgrade(t *testing.T) {
