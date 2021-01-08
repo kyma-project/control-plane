@@ -77,7 +77,7 @@ func TestHibernation(t *testing.T) {
 				log.Log("Waiting for hibernation to finish...")
 				hibernationOperationStatus, err := testSuite.WaitUntilOperationIsFinished(HibernationTimeout, hibernationOperationID, log)
 				assertions.RequireNoError(t, err)
-				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeID, hibernationOperationStatus)
+				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeHibernate, runtimeID, hibernationOperationStatus)
 
 				// Deprovisioning runtime
 				log.Log("Starting Runtime deprovisioning...")
