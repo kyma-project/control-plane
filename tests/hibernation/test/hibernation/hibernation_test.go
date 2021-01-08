@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-project/control-plane/tests/hibernation/test/testkit/assertions"
 )
 
-func TestShootUpgrade(t *testing.T) {
+func TestHibernation(t *testing.T) {
 	t.Parallel()
 
 	globalLog := logrus.WithField("TestID", testSuite.TestID)
@@ -31,7 +31,7 @@ func TestShootUpgrade(t *testing.T) {
 			t.Run(provider, func(t *testing.T) {
 				log := testkit.NewLogger(t, logrus.Fields{
 					"Provider": provider,
-					"TestType": "upgrade-shoot",
+					"TestType": "hibernation",
 				})
 
 				// Provisioning runtime

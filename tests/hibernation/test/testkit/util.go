@@ -63,15 +63,15 @@ func GetAndParseInstallerCR(installationCRURL string) ([]*gqlschema.ComponentCon
 }
 
 func createInstallationCRURL(kymaVersion string) string {
-	return fmt.Sprintf("https://raw.githubusercontent.com/kyma-project/kyma/%s/installation/resources/installer-cr-cluster-runtime.yaml.tpl", kymaVersion)
+	if isOnDemandVersion(kymaVersion) {
+		return fmt.Sprintf("https://storage.googleapis.com/kyma-prow-artifacts/%s/kyma-installer-cluster.yaml", kymaVersion)
+	}
+
+	return fmt.Sprintf("https://storage.googleapis.com/kyma-prow-artifacts/%s/kyma-installer-cluster.yaml", kymaVersion)
 }
 
 func toLowerCase(provider string) string {
 	return strings.ToLower(provider)
-}
-
-func intToPtr(i int) *int {
-	return &i
 }
 
 func strToPtr(s string) *string {
@@ -83,4 +83,10 @@ func strToPtr(s string) *string {
 
 func boolToPtr(b bool) *bool {
 	return &b
+}
+
+func isOnDemandVersion(version string) bool {
+	return strings.HasPrefix(version, "PR-") ||
+		strings.HasPrefix(version, "master-") ||
+		strings.EqualFold(version, "master")
 }
