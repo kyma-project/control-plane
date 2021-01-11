@@ -1,11 +1,5 @@
 package avs
 
-type Tag struct {
-	Content      string `json:"content"`
-	TagClassId   int    `json:"tag_class_id"`
-	TagClassName string `json:"tag_class_name"`
-}
-
 type Config struct {
 	OauthTokenEndpoint          string
 	OauthUsername               string

@@ -11,10 +11,12 @@ import (
 )
 
 type Delegator struct {
-	operationManager  *process.ProvisionOperationManager
-	avsConfig         Config
-	client            *Client
-	operationsStorage storage.Operations
+	provisionManager   *process.ProvisionOperationManager
+	deprovisionManager *process.DeprovisionOperationManager
+	upgradeManager     *process.UpgradeKymaOperationManager
+	avsConfig          Config
+	client             *Client
+	operationsStorage  storage.Operations
 }
 
 type avsNonSuccessResp struct {
@@ -22,12 +24,14 @@ type avsNonSuccessResp struct {
 	Message string `json:"message"`
 }
 
-func NewDelegator(client *Client, avsConfig Config, operationsStorage storage.Operations) *Delegator {
+func NewDelegator(client *Client, avsConfig Config, os storage.Operations) *Delegator {
 	return &Delegator{
-		operationManager:  process.NewProvisionOperationManager(operationsStorage),
-		avsConfig:         avsConfig,
-		client:            client,
-		operationsStorage: operationsStorage,
+		provisionManager:   process.NewProvisionOperationManager(os),
+		deprovisionManager: process.NewDeprovisionOperationManager(os),
+		upgradeManager:     process.NewUpgradeKymaOperationManager(os),
+		avsConfig:          avsConfig,
+		client:             client,
+		operationsStorage:  os,
 	}
 }
 
@@ -55,16 +59,16 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 			errMsg := "cannot create AVS evaluation (temporary)"
 			logger.Errorf("%s: %s", errMsg, err)
 			retryConfig := evalAssistant.provideRetryConfig()
-			return del.operationManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
+			return del.provisionManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
 		default:
 			errMsg := "cannot create AVS evaluation"
 			logger.Errorf("%s: %s", errMsg, err)
-			return del.operationManager.OperationFailed(operation, errMsg)
+			return del.provisionManager.OperationFailed(operation, errMsg)
 		}
 
 		evalAssistant.SetEvalId(&operation.Avs, evalResp.Id)
 
-		updatedOperation, d = del.operationManager.UpdateOperation(operation)
+		updatedOperation, d = del.provisionManager.UpdateOperation(operation)
 	}
 
 	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.Avs.AvsEvaluationInternalId, updatedOperation.ProvisioningParameters)
@@ -88,17 +92,46 @@ func (del *Delegator) AddTags(logger logrus.FieldLogger, operation internal.Prov
 			errMsg := "cannot add tags to AVS evaluation (temporary)"
 			logger.Errorf("%s: %s", errMsg, err)
 			retryConfig := evalAssistant.provideRetryConfig()
-			op, duration, err := del.operationManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
+			op, duration, err := del.provisionManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
 			return op, duration, err
 		default:
 			errMsg := "cannot add tags to AVS evaluation"
 			logger.Errorf("%s: %s", errMsg, err)
-			op, duration, err := del.operationManager.OperationFailed(operation, errMsg)
+			op, duration, err := del.provisionManager.OperationFailed(operation, errMsg)
 			return op, duration, err
 		}
 	}
 
-	updatedOperation, d = del.operationManager.UpdateOperation(operation)
+	updatedOperation, d = del.provisionManager.UpdateOperation(operation)
+
+	return updatedOperation, d, nil
+}
+
+func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.UpgradeKymaOperation, evalAssistant EvalAssistant, status Status) (internal.UpgradeKymaOperation, time.Duration, error) {
+	logger.Infof("starting the SetStatus to avs internal id [%d]", operation.Avs.AvsEvaluationInternalId)
+	var updatedOperation internal.UpgradeKymaOperation
+	d := 0 * time.Second
+
+	logger.Infof("making avs calls to set status to the Evaluation")
+	evalId := evalAssistant.GetEvaluationId(operation.Avs)
+
+	_, err := del.client.SetStatus(evalId, status)
+	switch {
+	case err == nil:
+	case kebError.IsTemporaryError(err):
+		errMsg := "cannot set status to AVS evaluation (temporary)"
+		logger.Errorf("%s: %s", errMsg, err)
+		retryConfig := evalAssistant.provideRetryConfig()
+		op, duration, err := del.upgradeManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
+		return op, duration, err
+	default:
+		errMsg := "cannot set status to AVS evaluation"
+		logger.Errorf("%s: %s", errMsg, err)
+		op, duration, err := del.upgradeManager.OperationFailed(operation, errMsg)
+		return op, duration, err
+	}
+
+	updatedOperation, d = del.upgradeManager.UpdateOperation(operation)
 
 	return updatedOperation, d, nil
 }

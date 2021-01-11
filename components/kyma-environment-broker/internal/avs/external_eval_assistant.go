@@ -63,6 +63,14 @@ func (eea *ExternalEvalAssistant) SetEvalId(lifecycleData *internal.AvsLifecycle
 	lifecycleData.AVSEvaluationExternalId = evalId
 }
 
+func (eea *ExternalEvalAssistant) SetEvalStatus(lifecycleData *internal.AvsLifecycleData, status Status) {
+	lifecycleData.AvsExternalEvaluationStatus = status
+}
+
+func (eea *ExternalEvalAssistant) GetEvalStatus(lifecycleData *internal.AvsLifecycleData) Status {
+	return lifecycleData.AvsExternalEvaluationStatus
+}
+
 func (eea *ExternalEvalAssistant) ProvideCheckType() string {
 	return externalEvalCheckType
 }

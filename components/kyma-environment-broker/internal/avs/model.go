@@ -16,6 +16,22 @@ const (
 	visibility       = "PUBLIC"
 )
 
+type Status string
+
+const (
+	StatusActive      Status = "ACTIVE"
+	StatusMaintenance        = "MAINTENANCE"
+	StatusInactive           = "INACTIVE"
+	StatusRetired            = "RETIRED"
+	StatusDeleted            = "DELETED"
+)
+
+type Tag struct {
+	Content      string `json:"content"`
+	TagClassId   int    `json:"tag_class_id"`
+	TagClassName string `json:"tag_class_name"`
+}
+
 type BasicEvaluationCreateRequest struct {
 	DefinitionType   string `json:"definition_type"`
 	Name             string `json:"name"`
