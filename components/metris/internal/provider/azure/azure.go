@@ -3,7 +3,6 @@ package azure
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -12,13 +11,14 @@ import (
 
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/tracing/opencensus"
+	"go.opencensus.io/trace"
+	"k8s.io/client-go/util/workqueue"
+
 	"github.com/kyma-project/control-plane/components/metris/internal/edp"
 	"github.com/kyma-project/control-plane/components/metris/internal/log"
 	"github.com/kyma-project/control-plane/components/metris/internal/provider"
 	"github.com/kyma-project/control-plane/components/metris/internal/storage"
 	"github.com/kyma-project/control-plane/components/metris/internal/tracing"
-	"go.opencensus.io/trace"
-	"k8s.io/client-go/util/workqueue"
 )
 
 var (
@@ -41,11 +41,14 @@ func NewAzureProvider(config *provider.Config) provider.Provider {
 		}
 	}
 
+	// retry after baseDelay*2^<num-failures>
+	ratelimiter := workqueue.NewItemExponentialFailureRateLimiter(config.PollInterval, config.PollMaxInterval)
+
 	return &Azure{
 		config:           config,
 		instanceStorage:  storage.NewMemoryStorage("clusters"),
 		vmCapsStorage:    storage.NewMemoryStorage("vm_capabilities"),
-		queue:            workqueue.NewNamedDelayingQueue("clients"),
+		queue:            workqueue.NewNamedRateLimitingQueue(ratelimiter, "clients"),
 		ClientAuthConfig: &DefaultAuthConfig{},
 	}
 }
@@ -103,86 +106,17 @@ func (a *Azure) Run(ctx context.Context) {
 				}
 
 				workerlogger = workerlogger.With("account", instance.cluster.AccountID).With("subaccount", instance.cluster.SubAccountID)
-
-				vmcaps := make(vmCapabilities)
-
-				if obj, exists := a.vmCapsStorage.Get(instance.cluster.Region); exists {
-					if caps, ok := obj.(*vmCapabilities); ok {
-						vmcaps = *caps
-					}
-				} else {
-					workerlogger.Warnf("vm capabilities for region %s not found, some metrics won't be available", instance.cluster.Region)
-				}
-
-				var (
-					eventData *EventData
-					err       error
-				)
-
-				// if last api call was rate limited, we skip this call to release some pressure on azure and return last events
-				if instance.retryBackoff {
-					instance.retryBackoff = false
-					err = errors.New("client-side self-throttling, skip fetching metrics")
-				} else {
-					eventData, err = a.getMetrics(ctx, workerlogger, instance, &vmcaps)
-				}
-
-				if err != nil {
-					if errdetail, ok := err.(autorest.DetailedError); ok {
-						err = errdetail
-
-						switch errdetail.StatusCode {
-						// Check if the error is a resource group not found, then it would mean
-						// that the cluster may have been deleted, and gardener did not trigger
-						// the delete event or metris did not yet remove it from its cache.
-						// Start retry attempt, then remove from storage if it reach max attempt.
-						case http.StatusNotFound:
-							if strings.Contains(errdetail.Original.Error(), responseErrCodeResourceGroupNotFound) {
-								instance.retryAttempts++
-
-								if instance.retryAttempts < maxRetryAttempts {
-									a.instanceStorage.Put(instance.cluster.TechnicalID, instance)
-									workerlogger.Warnf("can't find resource group in azure, attempts: %d/%d", instance.retryAttempts, maxRetryAttempts)
-								} else {
-									a.instanceStorage.Delete(instance.cluster.TechnicalID)
-									workerlogger.Warnf("removing cluster after %d attempts", maxRetryAttempts)
-								}
-							}
-
-						case http.StatusTooManyRequests:
-							// request is being throttled, skip next call to release pressure on API
-							instance.retryBackoff = true
-
-							workerlogger.Debug("=============> THROTTLING - setting retryBackoff")
-						}
-					}
-
-					if instance.lastEvent == nil {
-						workerlogger.With("error", err).Error("could not get metrics, dropping events because no cached information")
-					} else {
-						workerlogger.With("error", err).Error("could not get metrics, using information from cache")
-
-						eventData = instance.lastEvent
-					}
-				}
-
-				if eventData != nil {
-					if err := a.sendMetrics(workerlogger, instance, eventData); err != nil {
-						workerlogger.With("error", err).Error("error parsing metric information, could not send event to EDP")
-					}
-				}
-
-				// save changes to storage
-				a.instanceStorage.Put(instance.cluster.TechnicalID, instance)
+				rateLimited := a.processInstance(workerlogger, instance, ctx, getMetricsFromAzure)
 
 				a.queue.Done(clusterid)
-
-				// requeue item after X duration if client still in storage
-				if !a.queue.ShuttingDown() {
-					workerlogger.Debugf("requeuing cluster in %s", a.config.PollInterval)
-					a.queue.AddAfter(clusterid, a.config.PollInterval)
+				if !rateLimited {
+					a.queue.Forget(clusterid)
+				}
+				if a.queue.ShuttingDown() {
+					workerlogger.Debugf("queue is shutting down, can't requeue cluster, processing cluster %s one last time", clusterid)
 				} else {
-					workerlogger.Debug("queue is shutting down, can't requeue cluster")
+					workerlogger.Debugf("enqueueing '%s'", clusterid)
+					a.queue.AddRateLimited(clusterid)
 				}
 			}
 		}(i)
@@ -190,6 +124,112 @@ func (a *Azure) Run(ctx context.Context) {
 
 	wg.Wait()
 	a.config.Logger.Info("provider stopped")
+}
+
+type metricsGetter func(context.Context, log.Logger, *Instance, *vmCapabilities, time.Duration, time.Duration) (*EventData, error)
+
+func (a *Azure) processInstance(workerlogger log.Logger, instance *Instance, ctx context.Context, getMetrics metricsGetter) bool {
+	var span *trace.Span
+	if tracing.IsEnabled() {
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/processInstance")
+		defer span.End()
+
+		workerlogger = workerlogger.With("traceID", span.SpanContext().TraceID).With("spanID", span.SpanContext().SpanID)
+	}
+
+	vmcaps := make(vmCapabilities)
+
+	if obj, exists := a.vmCapsStorage.Get(instance.cluster.Region); exists {
+		if caps, ok := obj.(*vmCapabilities); ok {
+			vmcaps = *caps
+		}
+	} else {
+		workerlogger.Warnf("vm capabilities for region %s not found, some metrics won't be available", instance.cluster.Region)
+	}
+
+	var (
+		eventData       *EventData
+		err             error
+		rateLimited     bool
+		instanceDeleted bool
+	)
+
+	eventData, err = getMetrics(ctx, workerlogger, instance, &vmcaps, a.config.PollInterval, a.config.PollingDuration)
+
+	if err != nil {
+		eventData, rateLimited, instanceDeleted = processError(ctx, workerlogger, instance, eventData, err, a.config.MaxRetries, a.instanceStorage)
+	} else {
+		span.Annotate(nil, "Reset retry attempts")
+		instance.retryAttempts = 0
+		a.instanceStorage.Put(instance.cluster.TechnicalID, instance)
+	}
+
+	if eventData != nil {
+		if err := a.sendMetrics(ctx, workerlogger, instance, eventData); err != nil {
+			workerlogger.With("error", err).Error("error parsing metric information, could not send eventData to EDP")
+		}
+		if !instanceDeleted {
+			a.instanceStorage.Put(instance.cluster.TechnicalID, instance)
+		}
+	} else {
+		workerlogger.With("error", err).Error("could not get metrics from cache, not sending to EDP")
+	}
+	return rateLimited
+}
+
+func processError(ctx context.Context, workerlogger log.Logger, instance *Instance, eventData *EventData, err error, maxRetries int, instanceStorage storage.Storage) (*EventData, bool, bool) {
+	var span *trace.Span
+	if tracing.IsEnabled() {
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/processError")
+		defer span.End()
+	}
+	eventData = instance.lastEvent
+	workerlogger.With("error", err).Error("could not get metrics, using information from cache")
+
+	rateLimited := false
+	isDeleted := false
+	if errdetail, ok := err.(autorest.DetailedError); ok {
+		err = errdetail
+
+		switch errdetail.StatusCode {
+		// Check if the error is a resource group not found, then it would mean
+		// that the cluster may have been deleted, and gardener did not trigger
+		// the delete event or metris did not yet remove it from its cache.
+		// Start retry attempt, then remove from storage if it reach max attempt.
+		case http.StatusNotFound:
+			span.Annotate(nil, "Status not found")
+			if strings.Contains(errdetail.Original.Error(), responseErrCodeResourceGroupNotFound) {
+				span.Annotate(nil, "ResourceGroup not found")
+				span.Annotate(nil, "rate limiting")
+				rateLimited = true
+				instance.retryAttempts++
+				if instance.retryAttempts < maxRetries {
+					instanceStorage.Put(instance.cluster.TechnicalID, instance)
+					workerlogger.Warnf("can't find resource group in azure, attempts: %d/%d", instance.retryAttempts, maxRetries)
+					workerlogger.With("error", err).Warnf("resource group not found, retrying later")
+				} else {
+					span.Annotatef(nil, "Deleting cluster %v", instance.cluster.TechnicalID)
+					instanceStorage.Delete(instance.cluster.TechnicalID)
+					workerlogger.Warnf("removing cluster after %d attempts", maxRetries)
+					isDeleted = true
+				}
+			} else {
+				workerlogger.With("error", err).Warn("check error")
+			}
+
+		case http.StatusTooManyRequests:
+			span.Annotate(nil, "Status too many requests")
+			span.Annotate(nil, "rate limiting")
+			workerlogger.With("error", err).Warn("received \"StatusTooManyRequests\", throttling")
+			rateLimited = true
+
+		default:
+			span.Annotate(nil, "other error")
+			workerlogger.With("error", err).Warn("check error")
+		}
+
+	}
+	return eventData, rateLimited, isDeleted
 }
 
 // clusterHandler listen on the cluster channel then update the storage and the queue.
@@ -287,7 +327,7 @@ func (a *Azure) clusterHandler(parentctx context.Context) {
 }
 
 // getMetrics - collect results from different Azure API and create edp events.
-func (a *Azure) getMetrics(parentctx context.Context, workerlogger log.Logger, instance *Instance, vmcaps *vmCapabilities) (*EventData, error) {
+func getMetricsFromAzure(parentctx context.Context, workerlogger log.Logger, instance *Instance, vmcaps *vmCapabilities, pollInterval time.Duration, pollingDuration time.Duration) (*EventData, error) {
 	if tracing.IsEnabled() {
 		var span *trace.Span
 
@@ -302,7 +342,7 @@ func (a *Azure) getMetrics(parentctx context.Context, workerlogger log.Logger, i
 	// Using a timeout context to prevent azure api to hang for too long,
 	// sometimes client get stuck waiting even with a max poll duration is set.
 	// If it reach the time limit, last successful event data will be returned.
-	ctx, cancel := context.WithTimeout(parentctx, a.config.PollingDuration)
+	ctx, cancel := context.WithTimeout(parentctx, pollingDuration)
 	defer cancel()
 
 	computeData, err := instance.getComputeMetrics(ctx, workerlogger, vmcaps)
@@ -332,7 +372,7 @@ func (a *Azure) getMetrics(parentctx context.Context, workerlogger log.Logger, i
 	}
 
 	if len(instance.eventHubResourceGroupName) > 0 {
-		eventhubData, err := instance.getEventHubMetrics(ctx, a.config.PollInterval, workerlogger)
+		eventhubData, err := instance.getEventHubMetrics(ctx, pollInterval, workerlogger)
 		if err != nil {
 			return nil, err
 		}
@@ -345,7 +385,12 @@ func (a *Azure) getMetrics(parentctx context.Context, workerlogger log.Logger, i
 }
 
 // sendMetrics - send events to EDP.
-func (a *Azure) sendMetrics(workerlogger log.Logger, instance *Instance, eventData *EventData) error {
+func (a *Azure) sendMetrics(ctx context.Context, workerlogger log.Logger, instance *Instance, eventData *EventData) error {
+	if tracing.IsEnabled() {
+		var span *trace.Span
+		ctx, span = trace.StartSpan(ctx, "metris/provider/azure/sendMetrics")
+		defer span.End()
+	}
 	eventDataRaw, err := json.Marshal(&eventData)
 	if err != nil {
 		return err

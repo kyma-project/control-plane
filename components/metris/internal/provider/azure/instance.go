@@ -132,6 +132,7 @@ func (i *Instance) getNetworkMetrics(ctx context.Context, logger log.Logger) (*N
 }
 
 func (i *Instance) getEventHubMetrics(ctx context.Context, pollinterval time.Duration, logger log.Logger) (*EventHub, error) {
+	logger.Debugf("getting EH Metrics")
 	var (
 		result = &EventHub{
 			NumberNamespaces:     0,
