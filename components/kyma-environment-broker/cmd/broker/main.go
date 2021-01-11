@@ -10,8 +10,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/migrations"
-
 	uaa "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/xsuaa"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
@@ -177,13 +175,6 @@ func main() {
 		db = store
 		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 		prometheus.MustRegister(dbStatsCollector)
-	}
-
-	// todo: remove after parameters migration was done on each environment
-	// provisioning parameters migration
-	if cfg.EnableParametersMigration {
-		err = migrations.NewParametersMigration(db.Operations(), logs).Migrate()
-		fatalOnError(err)
 	}
 
 	// LMS

@@ -1,7 +1,6 @@
 package memory
 
 import (
-	"encoding/json"
 	"sort"
 	"sync"
 
@@ -23,7 +22,6 @@ type operations struct {
 	provisioningOperations   map[string]internal.ProvisioningOperation
 	deprovisioningOperations map[string]internal.DeprovisioningOperation
 	upgradeKymaOperations    map[string]internal.UpgradeKymaOperation
-	legacyOperations         map[string]internal.LegacyOperation
 }
 
 // NewOperation creates in-memory storage for OSB operations.
@@ -32,46 +30,7 @@ func NewOperation() *operations {
 		provisioningOperations:   make(map[string]internal.ProvisioningOperation, 0),
 		deprovisioningOperations: make(map[string]internal.DeprovisioningOperation, 0),
 		upgradeKymaOperations:    make(map[string]internal.UpgradeKymaOperation, 0),
-		legacyOperations:         make(map[string]internal.LegacyOperation, 0),
 	}
-}
-
-func (s *operations) InsertLegacyOperation(operation internal.LegacyOperation) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	id := operation.ID
-	if _, exists := s.legacyOperations[id]; exists {
-		return dberr.AlreadyExists("legacy operation with id %s already exist", id)
-	}
-
-	s.legacyOperations[id] = operation
-	return nil
-}
-
-func (s *operations) GetLegacyOperation(operationID string) (*internal.LegacyOperation, error) {
-	op, exists := s.legacyOperations[operationID]
-	if !exists {
-		return nil, dberr.NotFound("legacy operation with id %s not found", operationID)
-	}
-	return &op, nil
-}
-
-func (s *operations) ListOperationsParameters() (map[string]internal.ProvisioningParameters, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	result := make(map[string]internal.ProvisioningParameters, 0)
-
-	for _, op := range s.legacyOperations {
-		pp := internal.ProvisioningParameters{}
-		err := json.Unmarshal([]byte(op.ProvisioningParameters), &pp)
-		if err != nil {
-			return nil, errors.Wrap(err, "while unmarshaling provisioning parameters")
-		}
-		result[op.ID] = pp
-	}
-	return result, nil
 }
 
 func (s *operations) UpdateOperationParameters(operation internal.Operation) (*internal.Operation, error) {
@@ -341,13 +300,7 @@ func (s *operations) GetOperationsForIDs(opIdList []string) ([]internal.Operatio
 			}
 		}
 	}
-	for _, opID := range opIdList {
-		for _, op := range s.legacyOperations {
-			if op.Operation.ID == opID {
-				ops = append(ops, op.Operation)
-			}
-		}
-	}
+
 	if len(ops) == 0 {
 		return nil, dberr.NotFound("operations with ids from list %+q not exist", opIdList)
 	}
@@ -490,11 +443,7 @@ func (s *operations) getOperation(id string) (internal.Operation, error) {
 			return op.Operation, nil
 		}
 	}
-	for _, op := range s.legacyOperations {
-		if op.Operation.ID == id {
-			return op.Operation, nil
-		}
-	}
+
 	return internal.Operation{}, dberr.NotFound("operation not found")
 }
 
@@ -523,14 +472,6 @@ func (s *operations) updateOperation(operation internal.Operation) (internal.Ope
 			return operation, nil
 		}
 	}
-	for i, op := range s.legacyOperations {
-		if op.Operation.ID == operation.ID {
-			temp := s.legacyOperations[i]
-			temp.Operation.ProvisioningParameters = operation.ProvisioningParameters
-			s.legacyOperations[i] = temp
-			return operation, nil
-		}
-	}
 	return internal.Operation{}, dberr.NotFound("operation not found")
 }
 
@@ -543,9 +484,6 @@ func (s *operations) getAll() ([]internal.Operation, error) {
 		ops = append(ops, op.Operation)
 	}
 	for _, op := range s.deprovisioningOperations {
-		ops = append(ops, op.Operation)
-	}
-	for _, op := range s.legacyOperations {
 		ops = append(ops, op.Operation)
 	}
 	if len(ops) == 0 {
