@@ -490,7 +490,7 @@ func testHibernateRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 
 	// when
 	// wait for Shoot to update
-	time.Sleep(waitPeriod)
+	time.Sleep(8 * waitPeriod)
 
 	// assert database content
 	operation, err := readSession.GetOperation(*hibernationOperation.ID)
