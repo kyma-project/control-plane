@@ -345,7 +345,7 @@ Metris collects information about billabe hyperscaler usage and sends it to EDP.
 }
 ```
 
-An example of data sent:
+See the example of data sent to EDP:
 
 ```json
 {
