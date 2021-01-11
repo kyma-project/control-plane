@@ -389,4 +389,4 @@ See the example of data sent to EDP:
 }
 ```
 
-As can be seen, the `event_hub` part of the data is specific for Azure, whereas the other sections can be used with other hyperscalers as well.
+The `event_hub` part of the data is specific for Azure but the other sections can be used with other hyperscalers as well.
