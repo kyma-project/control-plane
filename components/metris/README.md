@@ -34,7 +34,7 @@ Metris is a metering component that collects data and sends them to EDP.
 
 ## Data collection
 
-Metris collects information about billabe hyperscaler usage and sends it to EDP. This data has to adhere to the following schema:
+Metris collects information about billable hyperscaler usage and sends it to EDP. This data has to adhere to the following schema:
 
 ```json
 {
