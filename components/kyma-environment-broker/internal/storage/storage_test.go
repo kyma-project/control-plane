@@ -1,5 +1,3 @@
-// +build database_integration
-
 package storage_test
 
 import (
@@ -284,7 +282,6 @@ func TestPostgres(t *testing.T) {
 			assertEqualOperation(t, fixProvisionOp[2], out[4])
 			assertEqualOperation(t, fixDeprovisionOp[2], out[5])
 		})
-
 		t.Run("Should fetch instances based on subaccount list", func(t *testing.T) {
 			// given
 			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
@@ -1172,8 +1169,8 @@ func fixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
 
 func fixProvisioningParameters() internal.ProvisioningParameters {
 	return internal.ProvisioningParameters{
-		PlanID:    "test",
-		ServiceID: "test",
+		PlanID:    broker.TrialPlanID,
+		ServiceID: broker.KymaServiceID,
 		ErsContext: internal.ERSContext{
 			TenantID:        "test",
 			SubAccountID:    "test",
@@ -1189,7 +1186,7 @@ func fixProvisioningParameters() internal.ProvisioningParameters {
 		},
 		Parameters: internal.ProvisioningParametersDTO{
 			Name:        "test",
-			KymaVersion: "test",
+			KymaVersion: "0.0.0",
 		},
 		PlatformRegion: "region",
 	}
