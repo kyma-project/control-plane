@@ -50,6 +50,7 @@ func CreateGardenerProvisioningInput(config *TestConfig, version, provider strin
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				Name:                                strToPtr(createGardenerClusterName()),
+				AllowPrivilegedContainers:           boolToPtr(true),
 				KubernetesVersion:                   config.KubernetesVersion,
 				DiskType:                            gardenerInputs[provider].DiskType,
 				VolumeSizeGb:                        35,
