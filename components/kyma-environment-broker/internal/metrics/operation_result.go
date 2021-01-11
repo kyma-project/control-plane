@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/prometheus/client_golang/prometheus"
@@ -66,11 +64,6 @@ func (c *OperationResultCollector) OnProvisioningStepProcessed(ctx context.Conte
 		return fmt.Errorf("expected ProvisioningStepProcessed but got %+v", ev)
 	}
 
-	pp, err := stepProcessed.Operation.GetProvisioningParameters()
-	if err != nil {
-		return errors.Wrap(err, "while getting provisioning parameters")
-	}
-
 	var resultValue float64
 	switch stepProcessed.Operation.State {
 	case domain.InProgress:
@@ -81,6 +74,7 @@ func (c *OperationResultCollector) OnProvisioningStepProcessed(ctx context.Conte
 		resultValue = resultFailed
 	}
 	op := stepProcessed.Operation
+	pp := op.ProvisioningParameters
 	c.provisioningResultGauge.
 		WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).
 		Set(resultValue)
@@ -93,12 +87,6 @@ func (c *OperationResultCollector) OnDeprovisioningStepProcessed(ctx context.Con
 	if !ok {
 		return fmt.Errorf("expected DeprovisioningStepProcessed but got %+v", ev)
 	}
-
-	pp, err := stepProcessed.Operation.GetProvisioningParameters()
-	if err != nil {
-		return errors.Wrap(err, "while getting provisioning parameters")
-	}
-
 	var resultValue float64
 	switch stepProcessed.Operation.State {
 	case domain.InProgress:
@@ -109,6 +97,7 @@ func (c *OperationResultCollector) OnDeprovisioningStepProcessed(ctx context.Con
 		resultValue = resultFailed
 	}
 	op := stepProcessed.Operation
+	pp := op.ProvisioningParameters
 	c.deprovisioningResultGauge.
 		WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).
 		Set(resultValue)

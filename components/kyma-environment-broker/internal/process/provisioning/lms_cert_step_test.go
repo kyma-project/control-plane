@@ -19,7 +19,9 @@ func TestCertStep_RunFreshOperation(t *testing.T) {
 	svc := NewLmsCertificatesStep(nil, repo, false)
 	// a fresh operation
 	operation := internal.ProvisioningOperation{
-		Lms: internal.LMS{},
+		Operation: internal.Operation{
+			InstanceDetails: internal.InstanceDetails{Lms: internal.LMS{}},
+		},
 	}
 
 	// when
@@ -35,11 +37,13 @@ func TestCertStep_Run(t *testing.T) {
 	repo := storage.NewMemoryStorage().Operations()
 	svc := NewLmsCertificatesStep(cli, repo, false)
 	operation := internal.ProvisioningOperation{
-		Lms: internal.LMS{
-			TenantID: tID,
+		Operation: internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{},
+			InstanceDetails: internal.InstanceDetails{Lms: internal.LMS{
+				TenantID: tID,
+			}},
 		},
-		ProvisioningParameters: `{"name": "awesome"}`,
-		InputCreator:           newInputCreator(),
+		InputCreator: newInputCreator(),
 	}
 	repo.InsertProvisioningOperation(operation)
 
@@ -61,11 +65,13 @@ func TestCertStep_TenantNotReady(t *testing.T) {
 		repo := storage.NewMemoryStorage().Operations()
 		svc := NewLmsCertificatesStep(cli, repo, isMandatory)
 		operation := internal.ProvisioningOperation{
-			Lms: internal.LMS{
-				TenantID:    tID,
-				RequestedAt: time.Now(),
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{},
+				InstanceDetails: internal.InstanceDetails{Lms: internal.LMS{
+					TenantID:    tID,
+					RequestedAt: time.Now(),
+				}},
 			},
-			ProvisioningParameters: "{}",
 		}
 		repo.InsertProvisioningOperation(operation)
 
@@ -89,11 +95,13 @@ func TestCertStep_TenantNotReadyTimeout(t *testing.T) {
 		repo := storage.NewMemoryStorage().Operations()
 		svc := NewLmsCertificatesStep(cli, repo, isMandatory)
 		operation := internal.ProvisioningOperation{
-			Lms: internal.LMS{
-				TenantID:    tID,
-				RequestedAt: time.Now().Add(-10 * time.Hour), // very old
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{},
+				InstanceDetails: internal.InstanceDetails{Lms: internal.LMS{
+					TenantID:    tID,
+					RequestedAt: time.Now().Add(-10 * time.Hour), // very old
+				}},
 			},
-			ProvisioningParameters: `{"name": "awesome"}`,
 		}
 		repo.InsertProvisioningOperation(operation)
 
@@ -121,9 +129,11 @@ func TestLmsStepsHappyPath(t *testing.T) {
 
 	inputCreator := newInputCreator()
 	operation := internal.ProvisioningOperation{
-		Lms:                    internal.LMS{},
-		ProvisioningParameters: `{"Parameters": {"name":"Awesome Lms"}}`,
-		InputCreator:           inputCreator,
+		Operation: internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{},
+			InstanceDetails:        internal.InstanceDetails{Lms: internal.LMS{}},
+		},
+		InputCreator: inputCreator,
 	}
 	opRepo.InsertProvisioningOperation(operation)
 

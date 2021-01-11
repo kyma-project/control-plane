@@ -20,10 +20,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
-const (
-	fixSubAccountID = "test-sub-account-id"
-)
-
 type wantStateFunction = func(t *testing.T, operation internal.DeprovisioningOperation, when time.Duration, err error,
 	azureClient azuretesting.FakeNamespaceClient)
 
@@ -337,7 +333,7 @@ func fixInstance() internal.Instance {
 		ProvisioningParameters: `{
 			"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
 			"ers_context": {
-				"subaccount_id": "` + fixSubAccountID + `"
+				"subaccount_id": "` + subAccountID + `"
 			},
 			"parameters": {
 				"name": "nachtmaar-15",
@@ -377,30 +373,31 @@ func fixLogger() logrus.FieldLogger {
 }
 
 func fixDeprovisioningOperationWithParameters() internal.DeprovisioningOperation {
-	pp := internal.DeprovisioningOperation{
+	return internal.DeprovisioningOperation{
 		Operation: internal.Operation{
 			ID:                     fixOperationID,
 			InstanceID:             fixInstanceID,
 			ProvisionerOperationID: fixProvisionerOperationID,
 			Description:            "",
 			UpdatedAt:              time.Now(),
+			ProvisioningParameters: internal.ProvisioningParameters{
+				PlanID:         "",
+				ServiceID:      "",
+				ErsContext:     internal.ERSContext{},
+				Parameters:     internal.ProvisioningParametersDTO{},
+				PlatformRegion: "",
+			},
 		},
 	}
-	_ = pp.SetProvisioningParameters(internal.ProvisioningParameters{
-		PlanID:         "",
-		ServiceID:      "",
-		ErsContext:     internal.ERSContext{},
-		Parameters:     internal.ProvisioningParametersDTO{},
-		PlatformRegion: "",
-	})
-	return pp
 }
 
 func fixDeprovisioningOperationWithDeletedEventHub() internal.DeprovisioningOperation {
 	return internal.DeprovisioningOperation{
-		EventHub: internal.EventHub{
-			Deleted: true,
-		},
+		Operation: internal.Operation{InstanceDetails: internal.InstanceDetails{
+			EventHub: internal.EventHub{
+				Deleted: true,
+			},
+		}},
 	}
 }
 

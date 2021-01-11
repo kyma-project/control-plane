@@ -36,9 +36,10 @@ type OperationDTO struct {
 	OrchestrationID   sql.NullString
 	TargetOperationID string
 
-	Data        string
-	State       string
-	Description string
+	Data                   string
+	State                  string
+	Description            string
+	ProvisioningParameters sql.NullString
 
 	Type OperationType
 }

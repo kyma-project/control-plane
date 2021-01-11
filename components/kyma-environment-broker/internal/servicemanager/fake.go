@@ -14,8 +14,8 @@ type fakeServiceManagerClient struct {
 	plans                []types.ServicePlan
 	provisioningResponse *ProvisionResponse
 	provisionings        map[string]provisioningInfo
-
-	unbindings map[string]InstanceKey
+	unbindings           map[string]InstanceKey
+	deprovisions         map[string]InstanceKey
 }
 
 type provisioningInfo struct {
@@ -34,6 +34,7 @@ func NewFakeServiceManagerClientFactory(offerings []types.ServiceOffering, plans
 			plans:         plans,
 			provisionings: map[string]provisioningInfo{},
 			unbindings:    map[string]InstanceKey{},
+			deprovisions:  map[string]InstanceKey{},
 		},
 	}
 }
@@ -81,7 +82,11 @@ func (f *fakeServiceManagerClient) Provision(brokerID string, request Provisioni
 }
 
 func (f *fakeServiceManagerClient) Deprovision(instanceKey InstanceKey, acceptsIncomplete bool) (*DeprovisionResponse, error) {
-	return nil, nil
+	f.deprovisions[instanceKey.InstanceID] = instanceKey
+	return &DeprovisionResponse{
+		OperationResponse: OperationResponse{},
+		HTTPResponse:      HTTPResponse{StatusCode: http.StatusOK},
+	}, nil
 }
 
 func (f *fakeServiceManagerClient) Bind(instanceKey InstanceKey, bindingID string, parameters interface{}, acceptsIncomplete bool) (*BindingResponse, error) {
@@ -129,4 +134,11 @@ func (f *fakeServiceManagerClientFactory) AssertUnbindCalled(t *testing.T, key I
 	assert.True(t, exists, "unbind endpoint was not called")
 
 	assert.Equal(t, unbinding, key)
+}
+
+func (f *fakeServiceManagerClientFactory) AssertDeprovisionCalled(t *testing.T, key InstanceKey) {
+	deprovision, exists := f.cli.deprovisions[key.InstanceID]
+	assert.True(t, exists, "deprovision endpoint was not called")
+
+	assert.Equal(t, deprovision, key)
 }

@@ -3,6 +3,8 @@ package provisioning_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/Peripli/service-manager-cli/pkg/types"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
@@ -25,16 +27,21 @@ func TestXSUAAProvisioningStep_Run(t *testing.T) {
 	clientFactory := servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{}, []types.ServicePlan{})
 	clientFactory.SynchronousProvisioning()
 	operation := internal.ProvisioningOperation{
-		ProvisioningParameters: "{}",
-		SMClientFactory:        clientFactory,
-		XSUAA: internal.XSUAAData{Instance: internal.ServiceManagerInstanceInfo{
-			BrokerID:  "broker-id",
-			ServiceID: "svc-id",
-			PlanID:    "plan-id",
-		}},
-		ShootDomain: "uaa-test.sap.com",
+		Operation: internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{},
+			InstanceDetails: internal.InstanceDetails{
+				XSUAA: internal.XSUAAData{Instance: internal.ServiceManagerInstanceInfo{
+					BrokerID:  "broker-id",
+					ServiceID: "svc-id",
+					PlanID:    "plan-id",
+				},
+				},
+				ShootDomain: "uaa-test.sap.com"},
+		},
+		SMClientFactory: clientFactory,
 	}
-	repo.InsertProvisioningOperation(operation)
+	err := repo.InsertProvisioningOperation(operation)
+	require.NoError(t, err)
 
 	// when
 	operation, retry, err := step.Run(operation, logger.NewLogDummy())

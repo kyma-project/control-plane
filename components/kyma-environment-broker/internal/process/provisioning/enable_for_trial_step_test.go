@@ -10,24 +10,22 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
 func TestEnableForTrialPlanStepShouldEnable(t *testing.T) {
 	// Given
-	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
-	operation := fixOperationWithPlanID(t, broker.TrialPlanID)
+	operation := fixOperationWithPlanID(broker.TrialPlanID)
 	simpleInputCreator := newInputCreator()
 	operation.InputCreator = simpleInputCreator
-	anotherOperation := fixOperationWithPlanID(t, "enabled")
+	anotherOperation := fixOperationWithPlanID("enabled")
 	var runTime time.Duration = 10
 
 	mockStep := &automock.Step{}
 	mockStep.On("Name").Return("Test")
 	mockStep.On("Run", operation, log).Return(anotherOperation, runTime, nil)
 
-	enableStep := NewEnableForTrialPlanStep(memoryStorage.Operations(), mockStep)
+	enableStep := NewEnableForTrialPlanStep(mockStep)
 
 	// When
 	returnedOperation, time, err := enableStep.Run(operation, log)
@@ -41,19 +39,18 @@ func TestEnableForTrialPlanStepShouldEnable(t *testing.T) {
 
 func TestEnableForTrialPlanStepShouldNotEnable(t *testing.T) {
 	// Given
-	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
-	operation := fixOperationWithPlanID(t, "another")
+	operation := fixOperationWithPlanID("another")
 	simpleInputCreator := newInputCreator()
 	operation.InputCreator = simpleInputCreator
-	anotherOperation := fixOperationWithPlanID(t, "not enabled")
+	anotherOperation := fixOperationWithPlanID("not enabled")
 	var runTime time.Duration = 0
 
 	mockStep := &automock.Step{}
 	mockStep.On("Name").Return("Test")
 	mockStep.On("Run", operation, log).Return(anotherOperation, runTime, nil)
 
-	enableStep := NewEnableForTrialPlanStep(memoryStorage.Operations(), mockStep)
+	enableStep := NewEnableForTrialPlanStep(mockStep)
 
 	// When
 	returnedOperation, time, err := enableStep.Run(operation, log)

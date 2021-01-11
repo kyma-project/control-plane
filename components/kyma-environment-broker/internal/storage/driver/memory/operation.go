@@ -1,8 +1,11 @@
 package memory
 
 import (
+	"encoding/json"
 	"sort"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
@@ -11,7 +14,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 )
 
 type operations struct {
@@ -20,6 +23,7 @@ type operations struct {
 	provisioningOperations   map[string]internal.ProvisioningOperation
 	deprovisioningOperations map[string]internal.DeprovisioningOperation
 	upgradeKymaOperations    map[string]internal.UpgradeKymaOperation
+	legacyOperations         map[string]internal.LegacyOperation
 }
 
 // NewOperation creates in-memory storage for OSB operations.
@@ -28,7 +32,67 @@ func NewOperation() *operations {
 		provisioningOperations:   make(map[string]internal.ProvisioningOperation, 0),
 		deprovisioningOperations: make(map[string]internal.DeprovisioningOperation, 0),
 		upgradeKymaOperations:    make(map[string]internal.UpgradeKymaOperation, 0),
+		legacyOperations:         make(map[string]internal.LegacyOperation, 0),
 	}
+}
+
+func (s *operations) InsertLegacyOperation(operation internal.LegacyOperation) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	id := operation.ID
+	if _, exists := s.legacyOperations[id]; exists {
+		return dberr.AlreadyExists("legacy operation with id %s already exist", id)
+	}
+
+	s.legacyOperations[id] = operation
+	return nil
+}
+
+func (s *operations) GetLegacyOperation(operationID string) (*internal.LegacyOperation, error) {
+	op, exists := s.legacyOperations[operationID]
+	if !exists {
+		return nil, dberr.NotFound("legacy operation with id %s not found", operationID)
+	}
+	return &op, nil
+}
+
+func (s *operations) ListOperationsParameters() (map[string]internal.ProvisioningParameters, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	result := make(map[string]internal.ProvisioningParameters, 0)
+
+	for _, op := range s.legacyOperations {
+		pp := internal.ProvisioningParameters{}
+		err := json.Unmarshal([]byte(op.ProvisioningParameters), &pp)
+		if err != nil {
+			return nil, errors.Wrap(err, "while unmarshaling provisioning parameters")
+		}
+		result[op.ID] = pp
+	}
+	return result, nil
+}
+
+func (s *operations) UpdateOperationParameters(operation internal.Operation) (*internal.Operation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	oldOp, err := s.getOperation(operation.ID)
+	if err != nil {
+		return nil, err
+	}
+	if oldOp.Version != operation.Version {
+		return nil, dberr.Conflict("unable to update provisioning operation with id %s (for instance id %s) - conflict", operation.ID, operation.InstanceID)
+	}
+	operation.Version = operation.Version + 1
+
+	op, err := s.updateOperation(operation)
+	if err != nil {
+		return nil, errors.Wrap(err, "while updating operation")
+	}
+
+	return &op, nil
 }
 
 func (s *operations) InsertProvisioningOperation(operation internal.ProvisioningOperation) error {
@@ -174,6 +238,36 @@ func (s *operations) UpdateUpgradeKymaOperation(op internal.UpgradeKymaOperation
 	return &op, nil
 }
 
+func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, error) {
+	var rows []internal.Operation
+
+	for _, op := range s.provisioningOperations {
+		if op.InstanceID == instanceID && op.State != orchestration.Pending {
+			rows = append(rows, op.Operation)
+		}
+	}
+	for _, op := range s.deprovisioningOperations {
+		if op.InstanceID == instanceID && op.State != orchestration.Pending {
+			rows = append(rows, op.Operation)
+		}
+	}
+	for _, op := range s.upgradeKymaOperations {
+		if op.InstanceID == instanceID && op.State != orchestration.Pending {
+			rows = append(rows, op.Operation)
+		}
+	}
+
+	if len(rows) == 0 {
+		return nil, dberr.NotFound("instance operation with instance_id %s not found", instanceID)
+	}
+
+	sort.Slice(rows, func(i, j int) bool {
+		return rows[i].CreatedAt.Before(rows[j].CreatedAt)
+	})
+
+	return &rows[0], nil
+}
+
 func (s *operations) GetOperationByID(operationID string) (*internal.Operation, error) {
 	var res *internal.Operation
 
@@ -247,6 +341,13 @@ func (s *operations) GetOperationsForIDs(opIdList []string) ([]internal.Operatio
 			}
 		}
 	}
+	for _, opID := range opIdList {
+		for _, op := range s.legacyOperations {
+			if op.Operation.ID == opID {
+				ops = append(ops, op.Operation)
+			}
+		}
+	}
 	if len(ops) == 0 {
 		return nil, dberr.NotFound("operations with ids from list %+q not exist", opIdList)
 	}
@@ -290,6 +391,29 @@ func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (
 	return result, nil
 }
 
+func (s *operations) ListOperations(filter dbmodel.OperationFilter) ([]internal.Operation, int, int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	result := make([]internal.Operation, 0)
+	offset := pagination.ConvertPageAndPageSizeToOffset(filter.PageSize, filter.Page)
+
+	operations, err := s.filterAll(filter)
+	if err != nil {
+		return nil, 0, 0, errors.Wrap(err, "while listing operations")
+	}
+	s.sortByCreatedAt(operations)
+
+	for i := offset; (filter.PageSize < 1 || i < offset+filter.PageSize) && i < len(operations)+offset; i++ {
+		result = append(result, operations[i])
+	}
+
+	return result,
+		len(result),
+		len(operations),
+		nil
+}
+
 func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeKymaOperation, int, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -327,11 +451,112 @@ func (s *operations) sortUpgradeByCreatedAt(operations []internal.UpgradeKymaOpe
 	})
 }
 
+func (s *operations) sortByCreatedAt(operations []internal.Operation) {
+	sort.Slice(operations, func(i, j int) bool {
+		return operations[i].CreatedAt.Before(operations[j].CreatedAt)
+	})
+}
+
+func (s *operations) getOperation(id string) (internal.Operation, error) {
+	for _, op := range s.upgradeKymaOperations {
+		if op.Operation.ID == id {
+			return op.Operation, nil
+		}
+	}
+	for _, op := range s.provisioningOperations {
+		if op.Operation.ID == id {
+			return op.Operation, nil
+		}
+	}
+	for _, op := range s.deprovisioningOperations {
+		if op.Operation.ID == id {
+			return op.Operation, nil
+		}
+	}
+	for _, op := range s.legacyOperations {
+		if op.Operation.ID == id {
+			return op.Operation, nil
+		}
+	}
+	return internal.Operation{}, dberr.NotFound("operation not found")
+}
+
+func (s *operations) updateOperation(operation internal.Operation) (internal.Operation, error) {
+	for i, op := range s.upgradeKymaOperations {
+		if op.Operation.ID == operation.ID {
+			temp := s.upgradeKymaOperations[i]
+			temp.ProvisioningParameters = operation.ProvisioningParameters
+			s.upgradeKymaOperations[i] = temp
+			return operation, nil
+		}
+	}
+	for i, op := range s.provisioningOperations {
+		if op.Operation.ID == operation.ID {
+			temp := s.provisioningOperations[i]
+			temp.ProvisioningParameters = operation.ProvisioningParameters
+			s.provisioningOperations[i] = temp
+			return operation, nil
+		}
+	}
+	for i, op := range s.deprovisioningOperations {
+		if op.Operation.ID == operation.ID {
+			temp := s.deprovisioningOperations[i]
+			temp.ProvisioningParameters = operation.ProvisioningParameters
+			s.deprovisioningOperations[i] = temp
+			return operation, nil
+		}
+	}
+	for i, op := range s.legacyOperations {
+		if op.Operation.ID == operation.ID {
+			temp := s.legacyOperations[i]
+			temp.Operation.ProvisioningParameters = operation.ProvisioningParameters
+			s.legacyOperations[i] = temp
+			return operation, nil
+		}
+	}
+	return internal.Operation{}, dberr.NotFound("operation not found")
+}
+
+func (s *operations) getAll() ([]internal.Operation, error) {
+	ops := make([]internal.Operation, 0)
+	for _, op := range s.upgradeKymaOperations {
+		ops = append(ops, op.Operation)
+	}
+	for _, op := range s.provisioningOperations {
+		ops = append(ops, op.Operation)
+	}
+	for _, op := range s.deprovisioningOperations {
+		ops = append(ops, op.Operation)
+	}
+	for _, op := range s.legacyOperations {
+		ops = append(ops, op.Operation)
+	}
+	if len(ops) == 0 {
+		return nil, dberr.NotFound("operations not found")
+	}
+
+	return ops, nil
+}
+
+func (s *operations) filterAll(filter dbmodel.OperationFilter) ([]internal.Operation, error) {
+	result := make([]internal.Operation, 0)
+	ops, err := s.getAll()
+	if err != nil {
+		return nil, err
+	}
+	for _, op := range ops {
+		if ok := matchFilter(string(op.State), filter.States, s.equalFilter); !ok {
+			continue
+		}
+		result = append(result, op)
+	}
+	return result, nil
+}
+
 func (s *operations) filterUpgrade(filter dbmodel.OperationFilter) []internal.UpgradeKymaOperation {
 	operations := make([]internal.UpgradeKymaOperation, 0, len(s.upgradeKymaOperations))
-	equal := func(a, b string) bool { return a == b }
 	for _, v := range s.upgradeKymaOperations {
-		if ok := matchFilter(string(v.State), filter.States, equal); !ok {
+		if ok := matchFilter(string(v.State), filter.States, s.equalFilter); !ok {
 			continue
 		}
 
@@ -339,4 +564,8 @@ func (s *operations) filterUpgrade(filter dbmodel.OperationFilter) []internal.Up
 	}
 
 	return operations
+}
+
+func (s *operations) equalFilter(a, b string) bool {
+	return a == b
 }

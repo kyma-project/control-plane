@@ -1,6 +1,7 @@
 global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
+    cloudsql_proxy_image: eu.gcr.io/kyma-project/incubator/pr/cloudsql-docker/gce-proxy:v1.19.1-alpine-PR-50
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
@@ -11,13 +12,13 @@ global:
       version: "PR-390"
     kyma_environment_broker:
       dir:
-      version: "PR-379"
+      version: "PR-426"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-131"
+      version: "PR-416"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-262"
+      version: "PR-407"
     subscription_cleanup_job:
       dir:
       version: "PR-313"

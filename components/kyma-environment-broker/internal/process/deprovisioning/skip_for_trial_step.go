@@ -7,21 +7,17 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
 type SkipForTrialPlanStep struct {
-	step             Step
-	OperationManager *process.DeprovisionOperationManager
+	step Step
 }
 
 var _ Step = &SkipForTrialPlanStep{}
 
-func NewSkipForTrialPlanStep(os storage.Operations, step Step) SkipForTrialPlanStep {
+func NewSkipForTrialPlanStep(step Step) SkipForTrialPlanStep {
 	return SkipForTrialPlanStep{
-		step:             step,
-		OperationManager: process.NewDeprovisionOperationManager(os),
+		step: step,
 	}
 }
 
@@ -30,13 +26,7 @@ func (s SkipForTrialPlanStep) Name() string {
 }
 
 func (s SkipForTrialPlanStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
-		return s.OperationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-
-	if broker.IsTrialPlan(pp.PlanID) {
+	if broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) {
 		log.Infof("Skipping step %s", s.Name())
 		return operation, 0, nil
 	}

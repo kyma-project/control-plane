@@ -44,6 +44,7 @@ func TestClient_ListRuntimes(t *testing.T) {
 			RuntimeIDs:       []string{"rid1", "rid2"},
 			Regions:          []string{"region1", "region2"},
 			Shoots:           []string{"shoot1", "shoot2"},
+			Plans:            []string{"plan1", "plan2"},
 		}
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			called++
@@ -59,6 +60,7 @@ func TestClient_ListRuntimes(t *testing.T) {
 			assert.ElementsMatch(t, params.RuntimeIDs, query[RuntimeIDParam])
 			assert.ElementsMatch(t, params.Regions, query[RegionParam])
 			assert.ElementsMatch(t, params.Shoots, query[ShootParam])
+			assert.ElementsMatch(t, params.Plans, query[PlanParam])
 
 			err := respondRuntimes(w, []RuntimeDTO{runtime1, runtime2}, 2)
 			require.NoError(t, err)

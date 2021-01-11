@@ -3,15 +3,15 @@ package postsql
 import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 )
 
 type lmsTenants struct {
-	dbsession.Factory
+	postsql.Factory
 }
 
-func NewLMSTenants(sess dbsession.Factory) *lmsTenants {
+func NewLMSTenants(sess postsql.Factory) *lmsTenants {
 	return &lmsTenants{
 		Factory: sess,
 	}

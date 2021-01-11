@@ -55,9 +55,9 @@ type AvsLifecycleData struct {
 type RuntimeVersionOrigin string
 
 const (
-	Parameters    RuntimeVersionOrigin = "parameters"
-	Defaults      RuntimeVersionOrigin = "defaults"
-	GlobalAccount RuntimeVersionOrigin = "global-account"
+	Parameters     RuntimeVersionOrigin = "parameters"
+	Defaults       RuntimeVersionOrigin = "defaults"
+	AccountMapping RuntimeVersionOrigin = "account-mapping"
 )
 
 // RuntimeVersionData describes the Kyma Version used for the cluser
@@ -79,8 +79,8 @@ func NewRuntimeVersionFromDefaults(version string) *RuntimeVersionData {
 	return &RuntimeVersionData{Version: version, Origin: Defaults}
 }
 
-func NewRuntimeVersionFromGlobalAccount(version string) *RuntimeVersionData {
-	return &RuntimeVersionData{Version: version, Origin: GlobalAccount}
+func NewRuntimeVersionFromAccountMapping(version string) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: AccountMapping}
 }
 
 type EventHub struct {
@@ -101,9 +101,13 @@ type Instance struct {
 	ProvisioningParameters string
 	ProviderRegion         string
 
+	InstanceDetails InstanceDetails
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt time.Time
+
+	Version int
 }
 
 func (instance Instance) GetProvisioningParameters() (ProvisioningParameters, error) {
@@ -118,18 +122,35 @@ func (instance Instance) GetProvisioningParameters() (ProvisioningParameters, er
 }
 
 type Operation struct {
-	ID        string
-	Version   int
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	// following fields are serialized to JSON and stored in the storage
+	InstanceDetails
 
-	InstanceID             string
-	ProvisionerOperationID string
-	State                  domain.LastOperationState
-	Description            string
+	ID        string    `json:"-"`
+	Version   int       `json:"-"`
+	CreatedAt time.Time `json:"-"`
+	UpdatedAt time.Time `json:"-"`
+
+	InstanceID             string                    `json:"-"`
+	ProvisionerOperationID string                    `json:"-"`
+	State                  domain.LastOperationState `json:"-"`
+	Description            string                    `json:"-"`
+	ProvisioningParameters ProvisioningParameters    `json:"-"`
 
 	// OrchestrationID specifies the origin orchestration which triggers the operation, empty for OSB operations (provisioning/deprovisioning)
-	OrchestrationID string
+	OrchestrationID string `json:"-"`
+}
+
+func (o *Operation) IsFinished() bool {
+	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceled
+}
+
+// todo: remove after parameters migration was done on each environment
+// LegacyOperation represents old structure of the Operation struct which now has provisioning parameters inside
+type LegacyOperation struct {
+	Operation `json:"-"`
+
+	Type                   string `json:"type"`
+	ProvisioningParameters string `json:"provisioning_parameters"`
 }
 
 // Orchestration holds all information about an orchestration.
@@ -161,23 +182,25 @@ type SMClientFactory interface {
 	ProvideCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (*servicemanager.Credentials, error)
 }
 
+type InstanceDetails struct {
+	Lms LMS `json:"lms"`
+
+	Avs      AvsLifecycleData `json:"avs"`
+	EventHub EventHub         `json:"eh"`
+
+	SubAccountID string    `json:"sub_account_id"`
+	RuntimeID    string    `json:"runtime_id"`
+	ShootName    string    `json:"shoot_name"`
+	ShootDomain  string    `json:"shoot_domain"`
+	XSUAA        XSUAAData `json:"xsuaa"`
+	Ems          EmsData   `json:"ems"`
+}
+
 // ProvisioningOperation holds all information about provisioning operation
 type ProvisioningOperation struct {
-	Operation `json:"-"`
-
-	// following fields are serialized to JSON and stored in the storage
-	Lms                    LMS    `json:"lms"`
-	ProvisioningParameters string `json:"provisioning_parameters"`
-
-	Avs AvsLifecycleData `json:"avs"`
-
-	RuntimeID   string `json:"runtime_id"`
-	ShootName   string `json:"shoot_name"`
-	ShootDomain string `json:"shoot_domain"`
+	Operation
 
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
-
-	XSUAA XSUAAData `json:"xsuaa"`
 
 	// following fields are not stored in the storage
 	InputCreator ProvisionerInputCreator `json:"-"`
@@ -201,6 +224,13 @@ type XSUAAData struct {
 	BindingID string `json:"bindingId"`
 }
 
+type EmsData struct {
+	Instance ServiceManagerInstanceInfo `json:"instance"`
+
+	BindingID string `json:"bindingId"`
+	Overrides string `json:"overrides"`
+}
+
 func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {
 	return servicemanager.InstanceKey{
 		BrokerID:   s.BrokerID,
@@ -212,25 +242,17 @@ func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {
 
 // DeprovisioningOperation holds all information about de-provisioning operation
 type DeprovisioningOperation struct {
-	Operation       `json:"-"`
-	SMClientFactory SMClientFactory `json:"-"`
+	Operation
 
-	ProvisioningParameters string           `json:"provisioning_parameters"`
-	Avs                    AvsLifecycleData `json:"avs"`
-	EventHub               EventHub         `json:"eh"`
-	SubAccountID           string           `json:"-"`
-	RuntimeID              string           `json:"runtime_id"`
-	XSUAA                  XSUAAData        `json:"xsuaa"`
+	SMClientFactory SMClientFactory `json:"-"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
 type UpgradeKymaOperation struct {
-	Operation                      `json:"-"`
+	Operation
+
 	orchestration.RuntimeOperation `json:"runtime_operation"`
 	InputCreator                   ProvisionerInputCreator `json:"-"`
-
-	PlanID                 string `json:"plan_id"`
-	ProvisioningParameters string `json:"provisioning_parameters"`
 
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 }
@@ -288,22 +310,20 @@ func NewProvisioningOperation(instanceID string, parameters ProvisioningParamete
 
 // NewProvisioningOperationWithID creates a fresh (just starting) instance of the ProvisioningOperation with provided ID
 func NewProvisioningOperationWithID(operationID, instanceID string, parameters ProvisioningParameters) (ProvisioningOperation, error) {
-	params, err := json.Marshal(parameters)
-	if err != nil {
-		return ProvisioningOperation{}, errors.Wrap(err, "while marshaling provisioning parameters")
-	}
-
 	return ProvisioningOperation{
 		Operation: Operation{
-			ID:          operationID,
-			Version:     0,
-			Description: "Operation created",
-			InstanceID:  instanceID,
-			State:       domain.InProgress,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+			ID:                     operationID,
+			Version:                0,
+			Description:            "Operation created",
+			InstanceID:             instanceID,
+			State:                  domain.InProgress,
+			CreatedAt:              time.Now(),
+			UpdatedAt:              time.Now(),
+			ProvisioningParameters: parameters,
+			InstanceDetails: InstanceDetails{
+				SubAccountID: parameters.ErsContext.SubAccountID,
+			},
 		},
-		ProvisioningParameters: string(params),
 	}, nil
 }
 
@@ -322,101 +342,16 @@ func NewDeprovisioningOperationWithID(operationID, instanceID string) (Deprovisi
 	}, nil
 }
 
-func (po *ProvisioningOperation) GetProvisioningParameters() (ProvisioningParameters, error) {
-	var pp ProvisioningParameters
-
-	err := json.Unmarshal([]byte(po.ProvisioningParameters), &pp)
-	if err != nil {
-		return pp, errors.Wrapf(err, "while unmarshaling provisioning parameters: %s, ProvisioningOperations: %+v", po.ProvisioningParameters, po)
-	}
-
-	return pp, nil
-}
-
-func (po *ProvisioningOperation) SetProvisioningParameters(parameters ProvisioningParameters) error {
-	params, err := json.Marshal(parameters)
-	if err != nil {
-		return errors.Wrap(err, "while marshaling provisioning parameters")
-	}
-
-	po.ProvisioningParameters = string(params)
-	return nil
-}
-
 func (po *ProvisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {
-	pp, err := po.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("unable to get Provisioning Parameters: %s", err.Error())
-		return nil, errors.New("invalid operation provisioning parameters")
-	}
-
-	return po.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(pp), log)
+	return po.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(po.ProvisioningParameters), log)
 }
 
 func (po *ProvisioningOperation) ProvideServiceManagerCredentials(log logrus.FieldLogger) (*servicemanager.Credentials, error) {
-	pp, err := po.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("unable to get Provisioning Parameters: %s", err.Error())
-		return nil, errors.New("invalid operation provisioning parameters")
-	}
-
-	return po.SMClientFactory.ProvideCredentials(serviceManagerRequestCreds(pp), log)
+	return po.SMClientFactory.ProvideCredentials(serviceManagerRequestCreds(po.ProvisioningParameters), log)
 }
 
 func (do *DeprovisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {
-	pp, err := do.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("unable to get Provisioning Parameters: %s", err.Error())
-		return nil, errors.New("invalid operation provisioning parameters")
-	}
-
-	return do.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(pp), log)
-}
-
-func (do *DeprovisioningOperation) GetProvisioningParameters() (ProvisioningParameters, error) {
-	var pp ProvisioningParameters
-
-	err := json.Unmarshal([]byte(do.ProvisioningParameters), &pp)
-	if err != nil {
-		return pp, errors.Wrapf(err, "while unmarshaling provisioning parameters: %s, ProvisioningOperations: %+v", do.ProvisioningParameters, do)
-	}
-
-	return pp, nil
-}
-
-func (do *DeprovisioningOperation) SetProvisioningParameters(parameters ProvisioningParameters) error {
-	params, err := json.Marshal(parameters)
-	if err != nil {
-		return errors.Wrap(err, "while marshaling provisioning parameters")
-	}
-
-	do.ProvisioningParameters = string(params)
-	return nil
-}
-
-func (do *UpgradeKymaOperation) GetProvisioningParameters() (ProvisioningParameters, error) {
-	var pp ProvisioningParameters
-
-	err := json.Unmarshal([]byte(do.ProvisioningParameters), &pp)
-	if err != nil {
-		return pp, errors.Wrapf(err, "while unmarshaling provisioning parameters: %s, ProvisioningOperations: %+v", do.ProvisioningParameters, do)
-	}
-
-	return pp, nil
-}
-
-func (do *UpgradeKymaOperation) SetProvisioningParameters(parameters ProvisioningParameters) error {
-	params, err := json.Marshal(parameters)
-	if err != nil {
-		return errors.Wrap(err, "while marshaling provisioning parameters")
-	}
-
-	do.ProvisioningParameters = string(params)
-	return nil
-}
-
-func (o *Operation) IsFinished() bool {
-	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceled
+	return do.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(do.ProvisioningParameters), log)
 }
 
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput

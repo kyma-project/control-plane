@@ -97,6 +97,7 @@ func fixUpgradeKymaOperation() internal.UpgradeKymaOperation {
 			ProvisionerOperationID: "",
 			State:                  domain.InProgress,
 			Description:            "op description",
+			ProvisioningParameters: internal.ProvisioningParameters{},
 		},
 		RuntimeOperation: orchestration.RuntimeOperation{
 			Runtime: orchestration.Runtime{
@@ -105,7 +106,6 @@ func fixUpgradeKymaOperation() internal.UpgradeKymaOperation {
 			},
 			DryRun: false,
 		},
-		ProvisioningParameters: "",
-		InputCreator:           nil,
+		InputCreator: nil,
 	}
 }

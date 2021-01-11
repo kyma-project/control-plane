@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
 //go:generate mockery -name=Step -output=automock -outpkg=automock -case=underscore
@@ -19,15 +18,14 @@ import (
 func TestSkipForTrialPlanStepShouldSkip(t *testing.T) {
 
 	// Given
-	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
-	operation := fixOperationWithPlanID(t, broker.TrialPlanID)
+	operation := fixOperationWithPlanID(broker.TrialPlanID)
 	var skipTime time.Duration = 0
 
 	mockStep := &automock.Step{}
 	mockStep.On("Name").Return("Test")
 
-	skipStep := NewSkipForTrialPlanStep(memoryStorage.Operations(), mockStep)
+	skipStep := NewSkipForTrialPlanStep(mockStep)
 
 	// When
 	returnedOperation, time, err := skipStep.Run(operation, log)
@@ -42,16 +40,15 @@ func TestSkipForTrialPlanStepShouldSkip(t *testing.T) {
 func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 
 	// Given
-	memoryStorage := storage.NewMemoryStorage()
 	log := logrus.New()
-	operation := fixOperationWithPlanID(t, "another")
-	anotherOperation := fixOperationWithPlanID(t, "not skipped")
+	operation := fixOperationWithPlanID("another")
+	anotherOperation := fixOperationWithPlanID("not skipped")
 	var skipTime time.Duration = 10
 
 	mockStep := &automock.Step{}
 	mockStep.On("Run", operation, log).Return(anotherOperation, skipTime, nil)
 
-	skipStep := NewSkipForTrialPlanStep(memoryStorage.Operations(), mockStep)
+	skipStep := NewSkipForTrialPlanStep(mockStep)
 
 	// When
 	returnedOperation, time, err := skipStep.Run(operation, log)
@@ -64,14 +61,13 @@ func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 
 }
 
-func fixOperationWithPlanID(t *testing.T, planID string) internal.ProvisioningOperation {
+func fixOperationWithPlanID(planID string) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
-			ID:          operationID,
-			InstanceID:  instanceID,
-			Description: "",
-			UpdatedAt:   time.Now(),
+			ID:                     operationID,
+			InstanceID:             instanceID,
+			UpdatedAt:              time.Now(),
+			ProvisioningParameters: fixProvisioningParametersWithPlanID(planID, "region"),
 		},
-		ProvisioningParameters: fixProvisioningParametersWithPlanID(t, planID),
 	}
 }

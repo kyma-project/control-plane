@@ -136,6 +136,12 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		logger.Errorf("cannot save operation: %s", err)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot save operation")
 	}
+
+	pp, err := json.Marshal(operation.ProvisioningParameters)
+	if err != nil {
+		return domain.ProvisionedServiceSpec{}, errors.Wrap(err, "while marshaling provisioning parameters")
+	}
+
 	err = b.instanceStorage.Insert(internal.Instance{
 		InstanceID:             instanceID,
 		GlobalAccountID:        ersContext.GlobalAccountID,
@@ -145,7 +151,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		ServicePlanID:          provisioningParameters.PlanID,
 		ServicePlanName:        Plans[provisioningParameters.PlanID].PlanDefinition.Name,
 		DashboardURL:           dashboardURL,
-		ProvisioningParameters: operation.ProvisioningParameters,
+		ProvisioningParameters: string(pp),
 	})
 	if err != nil {
 		logger.Errorf("cannot save instance in storage: %s", err)
@@ -159,6 +165,9 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		IsAsync:       true,
 		OperationData: operation.ID,
 		DashboardURL:  dashboardURL,
+		Metadata: domain.InstanceMetadata{
+			Labels: b.responseLabels(provisioningParameters, dashboardURL),
+		},
 	}, nil
 }
 
@@ -247,12 +256,7 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 }
 
 func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.ProvisioningOperation, input internal.ProvisioningParameters, log logrus.FieldLogger) (domain.ProvisionedServiceSpec, error) {
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("cannot get provisioning parameters from exist operation", err)
-		return domain.ProvisionedServiceSpec{}, errors.New("cannot get provisioning parameters from exist operation")
-	}
-	if pp.IsEqual(input) {
+	if operation.ProvisioningParameters.IsEqual(input) {
 		return domain.ProvisionedServiceSpec{
 			IsAsync:       true,
 			AlreadyExists: true,
@@ -260,7 +264,7 @@ func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.Provisio
 		}, nil
 	}
 
-	err = errors.New("provisioning operation already exist")
+	err := errors.New("provisioning operation already exist")
 	msg := fmt.Sprintf("provisioning operation with InstanceID %s already exist", operation.InstanceID)
 	return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusConflict, msg)
 }
@@ -271,4 +275,12 @@ func (b *ProvisionEndpoint) determineLicenceType(planId string) *string {
 	}
 
 	return nil
+}
+
+func (b *ProvisionEndpoint) responseLabels(parameters internal.ProvisioningParameters, dashboardURL string) map[string]string {
+	responseLabels := make(map[string]string, 0)
+	responseLabels["Name"] = parameters.Parameters.Name
+	responseLabels["GrafanaURL"] = strings.Replace(dashboardURL, "console.", "grafana.", 1)
+
+	return responseLabels
 }

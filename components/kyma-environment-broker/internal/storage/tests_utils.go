@@ -211,6 +211,7 @@ func FixTables() map[string]string {
 			dashboard_url varchar(255) NOT NULL,
 			provisioning_parameters text NOT NULL,
 			provider_region varchar(32) NOT NULL,
+            version integer NOT NULL DEFAULT 0,
 			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			deleted_at TIMESTAMPTZ NOT NULL DEFAULT '0001-01-01 00:00:00+00'
@@ -225,6 +226,7 @@ func FixTables() map[string]string {
 			description text NOT NULL,
 			type varchar(32) NOT NULL,
 			data json NOT NULL,
+			provisioning_parameters json NOT NULL,
 			orchestration_id varchar(64),
 			created_at TIMESTAMPTZ NOT NULL,
 			updated_at TIMESTAMPTZ NOT NULL

@@ -23,7 +23,7 @@ func TestResolveCredentialsStepHappyPath_Run(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationRuntimeStatus(t, broker.GCPPlanID)
+	operation := fixOperationRuntimeStatus(broker.GCPPlanID)
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
@@ -46,14 +46,12 @@ func TestResolveCredentialsStepHappyPath_Run(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	pp, err := operation.GetProvisioningParameters()
-
 	// then
 	assert.NoError(t, err)
 	assert.Equal(t, time.Duration(0), repeat)
 	assert.Empty(t, operation.State)
-	require.NotNil(t, pp.Parameters.TargetSecret)
-	assert.Equal(t, "gardener-secret-gcp", *pp.Parameters.TargetSecret)
+	require.NotNil(t, operation.ProvisioningParameters.Parameters.TargetSecret)
+	assert.Equal(t, "gardener-secret-gcp", *operation.ProvisioningParameters.Parameters.TargetSecret)
 }
 
 func TestResolveCredentialsStepHappyPathTrialDefaultProvider_Run(t *testing.T) {
@@ -61,7 +59,7 @@ func TestResolveCredentialsStepHappyPathTrialDefaultProvider_Run(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationRuntimeStatus(t, broker.TrialPlanID)
+	operation := fixOperationRuntimeStatus(broker.TrialPlanID)
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
@@ -84,14 +82,12 @@ func TestResolveCredentialsStepHappyPathTrialDefaultProvider_Run(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	pp, err := operation.GetProvisioningParameters()
-
 	// then
 	assert.NoError(t, err)
 	assert.Equal(t, time.Duration(0), repeat)
 	assert.Empty(t, operation.State)
-	require.NotNil(t, pp.Parameters.TargetSecret)
-	assert.Equal(t, "gardener-secret-azure", *pp.Parameters.TargetSecret)
+	require.NotNil(t, operation.ProvisioningParameters.Parameters.TargetSecret)
+	assert.Equal(t, "gardener-secret-azure", *operation.ProvisioningParameters.Parameters.TargetSecret)
 }
 
 func TestResolveCredentialsStepHappyPathTrialGivenProvider_Run(t *testing.T) {
@@ -99,7 +95,7 @@ func TestResolveCredentialsStepHappyPathTrialGivenProvider_Run(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationRuntimeStatusWithProvider(t, broker.TrialPlanID, internal.Gcp)
+	operation := fixOperationRuntimeStatusWithProvider(broker.TrialPlanID, internal.Gcp)
 
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
@@ -123,14 +119,12 @@ func TestResolveCredentialsStepHappyPathTrialGivenProvider_Run(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	pp, err := operation.GetProvisioningParameters()
-
 	// then
 	assert.NoError(t, err)
 	assert.Equal(t, time.Duration(0), repeat)
 	assert.Empty(t, operation.State)
-	require.NotNil(t, pp.Parameters.TargetSecret)
-	assert.Equal(t, "gardener-secret-gcp", *pp.Parameters.TargetSecret)
+	require.NotNil(t, operation.ProvisioningParameters.Parameters.TargetSecret)
+	assert.Equal(t, "gardener-secret-gcp", *operation.ProvisioningParameters.Parameters.TargetSecret)
 }
 
 func TestResolveCredentialsStepRetry_Run(t *testing.T) {
@@ -138,7 +132,7 @@ func TestResolveCredentialsStepRetry_Run(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationRuntimeStatus(t, broker.GCPPlanID)
+	operation := fixOperationRuntimeStatus(broker.GCPPlanID)
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
@@ -159,23 +153,17 @@ func TestResolveCredentialsStepRetry_Run(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	pp, err := operation.GetProvisioningParameters()
-	assert.NoError(t, err)
-
 	// then
 	assert.NoError(t, err)
 	assert.Equal(t, 10*time.Second, repeat)
-	assert.Nil(t, pp.Parameters.TargetSecret)
+	assert.Nil(t, operation.ProvisioningParameters.Parameters.TargetSecret)
 	assert.Empty(t, operation.State)
 
 	time.Sleep(repeat)
 	operation, repeat, err = step.Run(operation, log)
 
-	pp, err = operation.GetProvisioningParameters()
-	assert.NoError(t, err)
-
 	assert.NoError(t, err)
 	assert.Equal(t, 10*time.Second, repeat)
 	assert.Empty(t, operation.State)
-	assert.Nil(t, pp.Parameters.TargetSecret)
+	assert.Nil(t, operation.ProvisioningParameters.Parameters.TargetSecret)
 }

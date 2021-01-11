@@ -94,7 +94,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(defaultKymaVer, runtimeversion.NewGlobalAccountVersionMapping(ctx, cli, defaultNamespace, kymaVersionsConfigName, logs))
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(defaultKymaVer, runtimeversion.NewAccountVersionMapping(ctx, cli, defaultNamespace, kymaVersionsConfigName, logs))
 
 	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, gardenerClient.CoreV1beta1(),
 		gardenerNamespace, eventBroker, inputFactory, &upgrade_kyma.TimeSchedule{
@@ -184,16 +184,21 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 		SubAccountID:           subAccountID,
 		ProvisioningParameters: string(serializedProvisioningParams),
 		ProviderRegion:         *options.ProvideRegion(),
+		InstanceDetails: internal.InstanceDetails{
+			RuntimeID: runtimeID,
+		},
 	}
 
 	provisioningOperation := internal.ProvisioningOperation{
 		Operation: internal.Operation{
-			State:      domain.Succeeded,
-			ID:         uuid.New(),
-			InstanceID: instanceID,
+			State:                  domain.Succeeded,
+			ID:                     uuid.New(),
+			InstanceID:             instanceID,
+			ProvisioningParameters: provisioningParameters,
+			InstanceDetails: internal.InstanceDetails{
+				RuntimeID: instance.RuntimeID,
+			},
 		},
-		RuntimeID:              instance.RuntimeID,
-		ProvisioningParameters: string(serializedProvisioningParams),
 	}
 	shoot := &gardenerapi.Shoot{
 		ObjectMeta: metaV1.ObjectMeta{

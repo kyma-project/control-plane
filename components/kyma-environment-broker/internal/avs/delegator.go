@@ -15,12 +15,6 @@ type Delegator struct {
 	avsConfig         Config
 	client            *Client
 	operationsStorage storage.Operations
-	configForModel    *configForModel
-}
-
-type configForModel struct {
-	groupId  int64
-	parentId int64
 }
 
 type avsNonSuccessResp struct {
@@ -34,10 +28,6 @@ func NewDelegator(client *Client, avsConfig Config, operationsStorage storage.Op
 		avsConfig:         avsConfig,
 		client:            client,
 		operationsStorage: operationsStorage,
-		configForModel: &configForModel{
-			groupId:  avsConfig.GroupId,
-			parentId: avsConfig.ParentId,
-		},
 	}
 }
 
@@ -52,7 +42,7 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 		updatedOperation = operation
 	} else {
 		logger.Infof("making avs calls to create the Evaluation")
-		evaluationObject, err := evalAssistant.CreateBasicEvaluationRequest(operation, del.configForModel, url)
+		evaluationObject, err := evalAssistant.CreateBasicEvaluationRequest(operation, url)
 		if err != nil {
 			logger.Errorf("step failed with error %v", err)
 			return operation, 5 * time.Second, nil
@@ -77,7 +67,7 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 		updatedOperation, d = del.operationManager.UpdateOperation(operation)
 	}
 
-	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.Avs.AvsEvaluationInternalId)
+	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.Avs.AvsEvaluationInternalId, updatedOperation.ProvisioningParameters)
 
 	return updatedOperation, d, nil
 }
@@ -119,7 +109,7 @@ func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.Depro
 		return deProvisioningOperation, nil
 	}
 
-	if err := del.tryDeleting(assistant, deProvisioningOperation.Avs, logger); err != nil {
+	if err := del.tryDeleting(assistant, deProvisioningOperation, logger); err != nil {
 		return deProvisioningOperation, err
 	}
 
@@ -132,15 +122,16 @@ func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.Depro
 	return *updatedDeProvisioningOp, nil
 }
 
-func (del *Delegator) tryDeleting(assistant EvalAssistant, lifecycleData internal.AvsLifecycleData, logger logrus.FieldLogger) error {
-	evaluationId := assistant.GetEvaluationId(lifecycleData)
-	err := del.client.RemoveReferenceFromParentEval(evaluationId)
+func (del *Delegator) tryDeleting(assistant EvalAssistant, deProvisioningOperation internal.DeprovisioningOperation, logger logrus.FieldLogger) error {
+	evaluationID := assistant.GetEvaluationId(deProvisioningOperation.Avs)
+	parentID := assistant.ProvideParentId(deProvisioningOperation.ProvisioningParameters)
+	err := del.client.RemoveReferenceFromParentEval(parentID, evaluationID)
 	if err != nil {
 		logger.Errorf("error while deleting reference for evaluation %v", err)
 		return err
 	}
 
-	err = del.client.DeleteEvaluation(evaluationId)
+	err = del.client.DeleteEvaluation(evaluationID)
 	if err != nil {
 		logger.Errorf("error while deleting evaluation %v", err)
 	}

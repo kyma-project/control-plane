@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"fmt"
 	"io/ioutil"
 	"testing"
 
@@ -25,7 +24,7 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 	ts := SMOverrideTestSuite{}
 
 	tests := map[string]struct {
-		requestParams        string
+		requestParams        internal.ProvisioningParameters
 		overrideParams       servicemanager.Config
 		expCredentialsValues []*gqlschema.ConfigEntryInput
 	}{
@@ -50,7 +49,7 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 			},
 		},
 		"apply override for Service Manager credentials because they are not present in request": {
-			requestParams:  "{}",
+			requestParams:  internal.ProvisioningParameters{},
 			overrideParams: ts.SMOverrideConfig(servicemanager.SMOverrideModeWhenNotSentInRequest, "over-url", "over-user", "over-pass"),
 
 			expCredentialsValues: []*gqlschema.ConfigEntryInput{
@@ -79,9 +78,11 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 
 			factory := servicemanager.NewClientFactory(tC.overrideParams)
 			operation := internal.ProvisioningOperation{
-				ProvisioningParameters: tC.requestParams,
-				InputCreator:           inputCreatorMock,
-				SMClientFactory:        factory,
+				Operation: internal.Operation{
+					ProvisioningParameters: tC.requestParams,
+				},
+				InputCreator:    inputCreatorMock,
+				SMClientFactory: factory,
 			}
 
 			memoryStorage := storage.NewMemoryStorage()
@@ -102,17 +103,12 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 
 func TestServiceManagerOverridesStepError(t *testing.T) {
 	tests := map[string]struct {
-		givenReqParams string
+		givenReqParams internal.ProvisioningParameters
 		expErr         string
 	}{
 		"return error when creds in request are not provided and overrides should not be applied": {
-			givenReqParams: "{}",
+			givenReqParams: internal.ProvisioningParameters{},
 			expErr:         "Service Manager Credentials are required to be send in provisioning request.",
-		},
-		"return retry type instead of error when not able to get provisioning parameters": {
-			givenReqParams: "{malformed params..",
-
-			expErr: "invalid operation provisioning parameters",
 		},
 	}
 	for tN, tC := range tests {
@@ -125,9 +121,11 @@ func TestServiceManagerOverridesStepError(t *testing.T) {
 				Username:     "",
 			})
 			operation := internal.ProvisioningOperation{
-				Operation:              internal.Operation{ID: "123"},
-				ProvisioningParameters: tC.givenReqParams,
-				SMClientFactory:        factory,
+				Operation: internal.Operation{
+					ID:                     "123",
+					ProvisioningParameters: tC.givenReqParams,
+				},
+				SMClientFactory: factory,
 			}
 
 			memoryStorage := storage.NewMemoryStorage()
@@ -147,19 +145,17 @@ func TestServiceManagerOverridesStepError(t *testing.T) {
 
 type SMOverrideTestSuite struct{}
 
-func (SMOverrideTestSuite) SMRequestParameters(smURL, smUser, smPass string) string {
-	return fmt.Sprintf(`{
-		"ers_context": {
-		  "sm_platform_credentials": {
-		    "url": "%s",
-			"credentials": {
-			  "basic": {
-				"username": "%s",
-				"password": "%s"
-			  }
-			}
-		  }
-		}}`, smURL, smUser, smPass)
+func (SMOverrideTestSuite) SMRequestParameters(smURL, smUser, smPass string) internal.ProvisioningParameters {
+	return internal.ProvisioningParameters{
+		ErsContext: internal.ERSContext{
+			ServiceManager: &internal.ServiceManagerEntryDTO{URL: smURL,
+				Credentials: internal.ServiceManagerCredentials{
+					BasicAuth: internal.ServiceManagerBasicAuth{
+						Username: smUser,
+						Password: smPass,
+					}}},
+		},
+	}
 }
 
 func (s SMOverrideTestSuite) SMOverrideConfig(mode servicemanager.ServiceManagerOverrideMode, url string, user string, pass string) servicemanager.Config {

@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
@@ -34,7 +36,7 @@ func TestInternalEvaluationStep_Run(t *testing.T) {
 	// given
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
-	provisioningOperation := fixOperationCreateRuntime(t)
+	provisioningOperation := fixOperationCreateRuntime(t, broker.AzurePlanID, "westeurope")
 
 	inputCreator := newInputCreator()
 	provisioningOperation.InputCreator = inputCreator
@@ -76,7 +78,7 @@ func TestInternalEvaluationStep_WhenOperationIsRepeatedWithIdPresent(t *testing.
 	// given
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
-	provisioningOperation := fixOperationCreateRuntime(t)
+	provisioningOperation := fixOperationCreateRuntime(t, broker.AzurePlanID, "westeurope")
 	_, id := generateId()
 	provisioningOperation.Avs.AvsEvaluationInternalId = id
 

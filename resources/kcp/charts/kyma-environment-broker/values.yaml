@@ -18,6 +18,7 @@ broker:
   # serving health probes routes on statusPort
   statusPort: "8071"
   defaultRequestRegion: "cf-eu10"
+  operationTimeout: "24h"
 
 service:
   type: ClusterIP
@@ -73,6 +74,13 @@ kymaVersion: "1.13.0"
 kymaVersionOnDemand: "false"
 
 enablePlans: "azure,gcp,azure_lite,trial"
+brokerService:
+  displayName: "Kyma Environment"
+  imageUrl: "https://digitalmarketplace-sapcpprd.s3.eu-central-1.amazonaws.com/VESdFNPDVsKUx3gJ_-DpVM1CcgX6nPRU5uZYQzNlaNonA6lSr9X3qNznYIlEDG4U.svg"
+  longDescription: "Kyma environment is a runtime you can use to build cloud-native Kubernetes-based applications by using microservices and serverless functions."
+  providerDisplayName: "SAP"
+  documentationUrl: "https://help.sap.com/viewer/65de2977205c403bbc107264b8eccf4b/Cloud/en-US/468c2f3c3ca24c2c8497ef9f83154c44.html"
+  supportUrl: "https://launchpad.support.sap.com/"
 
 gardener:
   project: "kyma-dev" # Gardener project connected to SA for HAP credentials lookup
@@ -129,6 +137,10 @@ avs:
   gardenerSeedNameTagClassId: "0"
   gardenerShootNameTagClassId: "0"
   regionTagClassId: "0"
+  trialApiKey: ""
+  trialInternalTesterAccessId: "0"
+  trialGroupId: "0"
+  trialParentId: "0"
 
 lms:
   secretName: "lms-creds"
@@ -213,3 +225,6 @@ e2e:
   upgrade:
     configName: "e2e-upgrade-runtime-config-azure"
     timeout: "100m"
+
+migration:
+  enabled: true

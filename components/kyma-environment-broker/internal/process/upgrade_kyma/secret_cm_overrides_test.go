@@ -28,8 +28,10 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionComputed(t *testing.T)
 		runtimeOverridesMock.On("Append", inputCreatorMock, planName, kymaVersion).Return(nil).Once()
 
 		operation := internal.UpgradeKymaOperation{
-			InputCreator:           inputCreatorMock,
-			ProvisioningParameters: `{ "plan_id": "ca6e5357-707f-4565-bbbd-b3ab732597c6" }`,
+			Operation: internal.Operation{
+				ProvisioningParameters: fixProvisioningParameters(),
+			},
+			InputCreator: inputCreatorMock,
 		}
 
 		rvcMock := &automock.RuntimeVersionConfiguratorForUpgrade{}
@@ -63,8 +65,10 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionFromOperation(t *testi
 		runtimeOverridesMock.On("Append", inputCreatorMock, planName, kymaVersion).Return(nil).Once()
 
 		operation := internal.UpgradeKymaOperation{
-			InputCreator:           inputCreatorMock,
-			ProvisioningParameters: `{ "plan_id": "ca6e5357-707f-4565-bbbd-b3ab732597c6" }`,
+			Operation: internal.Operation{
+				ProvisioningParameters: fixProvisioningParameters(),
+			},
+			InputCreator: inputCreatorMock,
 			RuntimeVersion: internal.RuntimeVersionData{
 				Version: kymaVersion,
 			},

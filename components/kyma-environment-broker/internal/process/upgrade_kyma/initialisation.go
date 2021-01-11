@@ -87,23 +87,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		log.Info("waiting for provisioning operation to finish")
 		return operation, s.timeSchedule.UpgradeKymaTimeout, nil
 	}
-
-	parameters, err := provisioningOperation.GetProvisioningParameters()
-	if err != nil {
-		return s.operationManager.OperationFailed(operation, "cannot get provisioning parameters from operation")
-	}
-
-	err = operation.SetProvisioningParameters(parameters)
-	if err != nil {
-		log.Error("Aborting after failing to save provisioning parameters for operation")
-		return s.operationManager.OperationFailed(operation, err.Error())
-	}
-
-	operation, repeat := s.operationManager.UpdateOperation(operation)
-	if repeat != 0 {
-		log.Errorf("cannot save the operation")
-		return operation, time.Second, nil
-	}
+	operation.ProvisioningParameters = provisioningOperation.ProvisioningParameters
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
@@ -117,7 +101,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 			return s.initializeUpgradeRuntimeRequest(operation, log)
 		}
 		log.Infof("runtime being upgraded, check operation status")
-		operation.RuntimeID = instance.RuntimeID
+		operation.InstanceDetails.RuntimeID = instance.RuntimeID
 		return s.checkRuntimeStatus(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
 	case dberr.IsNotFound(err):
 		log.Info("instance does not exist, it may have been deprovisioned")
@@ -143,18 +127,12 @@ func (s *InitialisationStep) rescheduleAtNextMaintenanceWindow(operation interna
 }
 
 func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-
 	if err := s.configureKymaVersion(&operation); err != nil {
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	}
 
-	log.Infof("create provisioner input creator for plan ID %q", pp.PlanID)
-	creator, err := s.inputBuilder.CreateUpgradeInput(pp, operation.RuntimeVersion)
+	log.Infof("create provisioner input creator for plan ID %q", operation.ProvisioningParameters.PlanID)
+	creator, err := s.inputBuilder.CreateUpgradeInput(operation.ProvisioningParameters, operation.RuntimeVersion)
 	switch {
 	case err == nil:
 		operation.InputCreator = creator
@@ -167,10 +145,10 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 
 		return operation, 0, nil // go to next step
 	case kebError.IsTemporaryError(err):
-		log.Errorf("cannot create upgrade runtime input creator at the moment for plan %s: %s", pp.PlanID, err)
+		log.Errorf("cannot create upgrade runtime input creator at the moment for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	default:
-		log.Errorf("cannot create input creator for plan %s: %s", pp.PlanID, err)
+		log.Errorf("cannot create input creator for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
 		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
 	}
 }

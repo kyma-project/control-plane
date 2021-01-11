@@ -9,7 +9,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -121,6 +121,7 @@ func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {
 	filter.RuntimeIDs = query[pkg.RuntimeIDParam]
 	filter.Regions = query[pkg.RegionParam]
 	filter.Domains = query[pkg.ShootParam]
+	filter.Plans = query[pkg.PlanParam]
 
 	return filter
 }

@@ -106,8 +106,10 @@ func fixOperation(id string) internal.UpgradeKymaOperation {
 	return internal.UpgradeKymaOperation{
 		Operation: internal.Operation{
 			OrchestrationID: id,
+			ProvisioningParameters: internal.ProvisioningParameters{
+				PlanID: "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+			},
 		},
 		RuntimeOperation: orchestration.RuntimeOperation{},
-		PlanID:           "4deee563-e5ec-4731-b9b1-53b42d855f0c",
 	}
 }
