@@ -20,7 +20,7 @@ func (qp queryProvider) deprovisionRuntime(runtimeID string) string {
 
 func (qp queryProvider) hibernateCluster(runtimeID string) string {
 	return fmt.Sprintf(`mutation {
-	hibernateRuntime(id: "%s") {
+	result: hibernateRuntime(id: "%s") {
 		%s 
 	}
 }`, runtimeID, operationStatusData())
