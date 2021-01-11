@@ -119,7 +119,7 @@ func (ts *TestShoot) WithOperationNil() *TestShoot {
 	return ts
 }
 
-// WithOperationNil sets shoot.Status.LastOperation to nil
+// WithHibernationState sets shoot.Status.IsHibernated and shoot.Status.Constraints
 func (ts *TestShoot) WithHibernationState(hibernationPossible bool, hibernated bool) *TestShoot {
 	var condition v1beta1.ConditionStatus
 	if hibernationPossible {
@@ -128,13 +128,12 @@ func (ts *TestShoot) WithHibernationState(hibernationPossible bool, hibernated b
 		condition = v1beta1.ConditionFalse
 	}
 
-	hibernationImpossibleCondition := v1beta1.Condition{
-		Type:    v1beta1.ShootHibernationPossible,
-		Status:  condition,
-		Message: "NO",
+	hibernationPossibleCondition := v1beta1.Condition{
+		Type:   v1beta1.ShootHibernationPossible,
+		Status: condition,
 	}
 
-	ts.shoot.Status.Constraints = []v1beta1.Condition{hibernationImpossibleCondition}
+	ts.shoot.Status.Constraints = []v1beta1.Condition{hibernationPossibleCondition}
 	ts.shoot.Status.IsHibernated = hibernated
 
 	return ts

@@ -2,13 +2,14 @@ package hibernation
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/sirupsen/logrus"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 //go:generate mockery -name=GardenerClient
@@ -22,7 +23,7 @@ type WaitForHibernation struct {
 	timeLimit      time.Duration
 }
 
-func NewWaitForHibernation(gardenerClient GardenerClient, nextStep model.OperationStage, timeLimit time.Duration) *WaitForHibernation {
+func NewWaitForHibernationStep(gardenerClient GardenerClient, nextStep model.OperationStage, timeLimit time.Duration) *WaitForHibernation {
 	return &WaitForHibernation{
 		gardenerClient: gardenerClient,
 		nextStep:       nextStep,
@@ -44,6 +45,11 @@ func (c *WaitForHibernation) Run(cluster model.Cluster, operation model.Operatio
 	shoot, err := c.gardenerClient.Get(context.Background(), cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err
+	}
+
+	if shoot.Status.LastOperation.State == gardener_types.LastOperationStateFailed {
+		err := fmt.Errorf(fmt.Sprintf("Cluster hibernation failed. Last Shoot state: %s, Shoot description: %s", shoot.Status.LastOperation.State, shoot.Status.LastOperation.Description))
+		return operations.StageResult{}, operations.NewNonRecoverableError(err)
 	}
 
 	if shoot.Status.IsHibernated {

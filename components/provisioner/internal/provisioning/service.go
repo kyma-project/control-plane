@@ -252,7 +252,7 @@ func (r *service) HibernateCluster(runtimeID string) (*gqlschema.OperationStatus
 
 	operation, gardError := r.setHibernationStarted(txSession, cluster, cluster.ClusterConfig)
 	if gardError != nil {
-		return nil, apperrors.Internal("Failed to set shoot upgrade started: %s", gardError.Error())
+		return nil, apperrors.Internal("Failed to set hibernation started: %s", gardError.Error())
 	}
 
 	err = r.provisioner.HibernateCluster(cluster.ID, cluster.ClusterConfig)
@@ -262,7 +262,7 @@ func (r *service) HibernateCluster(runtimeID string) (*gqlschema.OperationStatus
 
 	dbErr = txSession.Commit()
 	if dbErr != nil {
-		return nil, apperrors.Internal("Failed to commit upgrade transaction: %s", dbErr.Error())
+		return nil, apperrors.Internal("Failed to commit hibernation transaction: %s", dbErr.Error())
 	}
 
 	r.hibernationQueue.Add(operation.ID)
@@ -501,7 +501,7 @@ func (r *service) setHibernationStarted(txSession dbsession.WriteSession, curren
 	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.Hibernate, model.WaitForHibernation, time.Now(), "Starting ")
 
 	if dbError != nil {
-		return model.Operation{}, dbError.Append("Failed to start operation of Gardener Shoot upgrade %s", dbError.Error())
+		return model.Operation{}, dbError.Append("Failed to start hibernation operation:  %s", dbError.Error())
 	}
 
 	return operation, nil

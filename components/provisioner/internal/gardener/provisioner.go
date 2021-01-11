@@ -194,12 +194,10 @@ func (g *GardenerProvisioner) GetHibernationStatus(clusterID string, gardenerCon
 	}
 
 	condition := gardencorev1beta1helper.GetOrInitCondition(shoot.Status.Constraints, v1beta1.ShootHibernationPossible)
-	hibernationPossible := condition.Status == v1beta1.ConditionTrue
-	hibernated := shoot.Status.IsHibernated
 
 	return model.HibernationStatus{
-		Hibernated:          hibernated,
-		HibernationPossible: hibernationPossible,
+		Hibernated:          shoot.Status.IsHibernated,
+		HibernationPossible: condition.Status == v1beta1.ConditionTrue,
 	}, nil
 }
 

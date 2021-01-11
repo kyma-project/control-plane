@@ -301,7 +301,7 @@ func TestGardenerProvisioner_HibernateCluster(t *testing.T) {
 		require.NoError(t, apperr)
 	})
 
-	t.Run("should return error if failed to update shoot", func(t *testing.T) {
+	t.Run("should return error if failed to hibernate cluster", func(t *testing.T) {
 		shoot := testkit.NewTestShoot(clusterName).
 			InNamespace(gardenerNamespace).
 			WithHibernationState(true, false).

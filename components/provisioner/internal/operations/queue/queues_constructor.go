@@ -174,16 +174,16 @@ func CreateHibernationQueue(
 	directorClient director.DirectorClient,
 	shootClient gardener_apis.ShootInterface) OperationQueue {
 
-	waitForHibernation := hibernation.NewWaitForHibernation(shootClient, model.FinishedStage, timeouts.WaitingForClusterHibernation)
+	waitForHibernation := hibernation.NewWaitForHibernationStep(shootClient, model.FinishedStage, timeouts.WaitingForClusterHibernation)
 
-	upgradeSteps := map[model.OperationStage]operations.Step{
+	hibernationSteps := map[model.OperationStage]operations.Step{
 		model.WaitForHibernation: waitForHibernation,
 	}
 
 	hibernateClusterExecutor := operations.NewExecutor(
 		factory.NewReadWriteSession(),
 		model.Hibernate,
-		upgradeSteps,
+		hibernationSteps,
 		failure.NewNoopFailureHandler(),
 		directorClient,
 	)

@@ -654,7 +654,7 @@ func TestResolver_HibernateCluster(t *testing.T) {
 
 		operationStatus := &gqlschema.OperationStatus{
 			ID:        &operationID,
-			Operation: gqlschema.OperationTypeProvision,
+			Operation: gqlschema.OperationTypeHibernate,
 			State:     gqlschema.OperationStateInProgress,
 			RuntimeID: &runtimeID,
 			Message:   &message,
@@ -702,7 +702,7 @@ func TestResolver_HibernateCluster(t *testing.T) {
 
 		operationStatus := &gqlschema.OperationStatus{
 			ID:        &operationID,
-			Operation: gqlschema.OperationTypeProvision,
+			Operation: gqlschema.OperationTypeHibernate,
 			State:     gqlschema.OperationStateInProgress,
 			RuntimeID: &runtimeID,
 			Message:   &message,

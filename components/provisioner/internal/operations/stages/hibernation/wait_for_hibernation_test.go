@@ -66,7 +66,7 @@ func TestWaitForHibernation(t *testing.T) {
 
 			testCase.mockFunc(gardenerClient)
 
-			checkHibernationConditionStep := NewWaitForHibernation(gardenerClient, nextStageName, time.Minute)
+			checkHibernationConditionStep := NewWaitForHibernationStep(gardenerClient, nextStageName, time.Minute)
 
 			// when
 			result, err := checkHibernationConditionStep.Run(cluster, model.Operation{}, logrus.New())
@@ -79,22 +79,45 @@ func TestWaitForHibernation(t *testing.T) {
 		})
 	}
 
-	t.Run("should return error if failed to get shoot", func(t *testing.T) {
-		// given
-		gardenerClient := &mocks.GardenerClient{}
+	for _, testCase := range []struct {
+		description        string
+		mockFunc           func(gardenerClient *mocks.GardenerClient)
+		unrecoverableError bool
+	}{
+		{
+			description: "should return error if failed to get shoot",
+			mockFunc: func(gardenerClient *mocks.GardenerClient) {
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
+					nil, errors.New("some error"))
+			},
+			unrecoverableError: false,
+		},
+		{
+			description: "should go to the next state if cluster is hibernated",
+			mockFunc: func(gardenerClient *mocks.GardenerClient) {
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(testkit.NewTestShoot(clusterName).
+					WithOperationFailed().
+					ToShoot(), nil)
+			},
+			unrecoverableError: true,
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			// given
+			gardenerClient := &mocks.GardenerClient{}
 
-		gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(nil, errors.New("some error"))
+			testCase.mockFunc(gardenerClient)
 
-		checkHibernationConditionStep := NewWaitForHibernation(gardenerClient, model.FinishedStage, time.Minute)
+			checkHibernationConditionStep := NewWaitForHibernationStep(gardenerClient, nextStageName, time.Minute)
 
-		// when
-		_, err := checkHibernationConditionStep.Run(cluster, model.Operation{}, logrus.New())
+			// when
+			_, err := checkHibernationConditionStep.Run(cluster, model.Operation{}, logrus.New())
 
-		// then
-		require.Error(t, err)
-		nonRecoverable := operations.NonRecoverableError{}
-		require.Equal(t, false, errors.As(err, &nonRecoverable))
-		gardenerClient.AssertExpectations(t)
-	})
-
+			// then
+			require.Error(t, err)
+			nonRecoverable := operations.NonRecoverableError{}
+			require.Equal(t, testCase.unrecoverableError, errors.As(err, &nonRecoverable))
+			gardenerClient.AssertExpectations(t)
+		})
+	}
 }
