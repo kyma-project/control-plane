@@ -355,20 +355,35 @@ func (s *operations) GetOperationsForIDs(opIdList []string) ([]internal.Operatio
 	return ops, nil
 }
 
-func (s *operations) GetOperationStats() (internal.OperationStats, error) {
+func (s *operations) GetOperationStatsByPlan() (map[string]internal.OperationStats, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	result := internal.OperationStats{
-		Provisioning:   map[domain.LastOperationState]int{domain.InProgress: 0, domain.Succeeded: 0, domain.Failed: 0},
-		Deprovisioning: map[domain.LastOperationState]int{domain.InProgress: 0, domain.Succeeded: 0, domain.Failed: 0},
-	}
+	result := make(map[string]internal.OperationStats)
 
 	for _, op := range s.provisioningOperations {
-		result.Provisioning[op.State] = result.Provisioning[op.State] + 1
+		if op.ProvisioningParameters.PlanID == "" {
+			continue
+		}
+		if _, ok := result[op.ProvisioningParameters.PlanID]; !ok {
+			result[op.ProvisioningParameters.PlanID] = internal.OperationStats{
+				Provisioning:   make(map[domain.LastOperationState]int),
+				Deprovisioning: make(map[domain.LastOperationState]int),
+			}
+		}
+		result[op.ProvisioningParameters.PlanID].Provisioning[op.State] += 1
 	}
 	for _, op := range s.deprovisioningOperations {
-		result.Deprovisioning[op.State] = result.Deprovisioning[op.State] + 1
+		if op.ProvisioningParameters.PlanID == "" {
+			continue
+		}
+		if _, ok := result[op.ProvisioningParameters.PlanID]; !ok {
+			result[op.ProvisioningParameters.PlanID] = internal.OperationStats{
+				Provisioning:   make(map[domain.LastOperationState]int),
+				Deprovisioning: make(map[domain.LastOperationState]int),
+			}
+		}
+		result[op.ProvisioningParameters.PlanID].Deprovisioning[op.State] += 1
 	}
 	return result, nil
 }
@@ -386,7 +401,9 @@ func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (
 		orchestration.Failed:     0,
 	}
 	for _, op := range s.upgradeKymaOperations {
-		result[string(op.State)] = result[string(op.State)] + 1
+		if op.OrchestrationID == orchestrationID {
+			result[string(op.State)] = result[string(op.State)] + 1
+		}
 	}
 	return result, nil
 }

@@ -67,13 +67,15 @@ func (c *StepResultCollector) OnProvisioningStepProcessed(ctx context.Context, e
 	case stepProcessed.Error != nil:
 		resultValue = resultFailed
 	}
+	op := stepProcessed.Operation
+	pp := op.ProvisioningParameters
 	c.provisioningResultGauge.WithLabelValues(
-		stepProcessed.Operation.ID,
-		stepProcessed.Operation.RuntimeID,
-		stepProcessed.Operation.InstanceID,
+		op.ID,
+		op.RuntimeID,
+		op.InstanceID,
 		stepProcessed.StepName,
-		stepProcessed.Operation.ProvisioningParameters.ErsContext.GlobalAccountID,
-		stepProcessed.Operation.ProvisioningParameters.PlanID).Set(resultValue)
+		pp.ErsContext.GlobalAccountID,
+		pp.PlanID).Set(resultValue)
 
 	return nil
 }
@@ -99,12 +101,15 @@ func (c *StepResultCollector) OnDeprovisioningStepProcessed(ctx context.Context,
 	if stepProcessed.StepName == "Create_Runtime" && stepProcessed.When == time.Second {
 		resultValue = resultSucceeded
 	}
+
+	op := stepProcessed.Operation
+	pp := op.ProvisioningParameters
 	c.deprovisioningResultGauge.WithLabelValues(
-		stepProcessed.Operation.ID,
-		stepProcessed.Operation.RuntimeID,
-		stepProcessed.Operation.InstanceID,
+		op.ID,
+		op.RuntimeID,
+		op.InstanceID,
 		stepProcessed.StepName,
-		stepProcessed.Operation.ProvisioningParameters.ErsContext.GlobalAccountID,
-		stepProcessed.Operation.ProvisioningParameters.PlanID).Set(resultValue)
+		pp.ErsContext.GlobalAccountID,
+		pp.PlanID).Set(resultValue)
 	return nil
 }

@@ -27,7 +27,7 @@ type Operations interface {
 	GetLastOperation(instanceID string) (*internal.Operation, error)
 	GetOperationByID(operationID string) (*internal.Operation, error)
 	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]internal.Operation, error)
-	GetOperationStats() (internal.OperationStats, error)
+	GetOperationStatsByPlan() (map[string]internal.OperationStats, error)
 	GetOperationsForIDs(operationIDList []string) ([]internal.Operation, error)
 	GetOperationStatsForOrchestration(orchestrationID string) (map[string]int, error)
 	ListOperations(filter dbmodel.OperationFilter) ([]internal.Operation, int, int, error)
