@@ -16,6 +16,7 @@ import (
 	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -96,12 +97,17 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 
 	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(defaultKymaVer, runtimeversion.NewAccountVersionMapping(ctx, cli, defaultNamespace, kymaVersionsConfigName, logs))
 
+	avsClient, _ := avs.NewClient(ctx, avs.Config{}, logs)
+	avsDel := avs.NewDelegator(avsClient, avs.Config{}, db.Operations())
+	internalEvalAssistant := avs.NewInternalEvalAssistant(avs.Config{})
+	upgradeInternalEvalUpdater := upgrade_kyma.NewInternalEvalUpdater(avsDel, internalEvalAssistant, avs.Config{})
+
 	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, gardenerClient.CoreV1beta1(),
 		gardenerNamespace, eventBroker, inputFactory, &upgrade_kyma.TimeSchedule{
 			Retry:              10 * time.Millisecond,
 			StatusCheck:        100 * time.Millisecond,
 			UpgradeKymaTimeout: 4 * time.Second,
-		}, 250*time.Millisecond, runtimeVerConfigurator, defaultRegion, logs)
+		}, 250*time.Millisecond, runtimeVerConfigurator, defaultRegion, upgradeInternalEvalUpdater, logs)
 
 	return &OrchestrationSuite{
 		gardenerNamespace:  gardenerNamespace,

@@ -135,7 +135,7 @@ func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.Up
 		}
 	}
 
-	// update previous status to ensure
+	// update status to ensure restore option
 	evalAssistant.SetEvalStatus(&operation.Avs, status)
 	updatedOperation, d = del.upgradeManager.UpdateOperation(operation)
 	if d != 0 {
