@@ -97,11 +97,16 @@ func (iec *InternalEvalAssistant) SetEvalId(lifecycleData *internal.AvsLifecycle
 }
 
 func (iec *InternalEvalAssistant) SetEvalStatus(lifecycleData *internal.AvsLifecycleData, status string) {
-	lifecycleData.AvsInternalEvaluationStatus = status
+	lifecycleData.AvsInternalEvaluationStatus.Original = lifecycleData.AvsInternalEvaluationStatus.Current
+	lifecycleData.AvsInternalEvaluationStatus.Current = status
 }
 
 func (iec *InternalEvalAssistant) GetEvalStatus(lifecycleData internal.AvsLifecycleData) string {
-	return lifecycleData.AvsInternalEvaluationStatus
+	return lifecycleData.AvsInternalEvaluationStatus.Current
+}
+
+func (iec *InternalEvalAssistant) GetOriginalEvalStatus(lifecycleData internal.AvsLifecycleData) string {
+	return lifecycleData.AvsInternalEvaluationStatus.Original
 }
 
 func (iec *InternalEvalAssistant) IsAlreadyDeleted(lifecycleData internal.AvsLifecycleData) bool {

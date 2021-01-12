@@ -1,9 +1,12 @@
 package upgrade_kyma
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 
 	"github.com/stretchr/testify/require"
 
@@ -32,6 +35,15 @@ const (
 	fixProvisionerOperationID  = "e04de524-53b3-4890-b05a-296be393e4ba"
 )
 
+func createEvalMngr(storage storage.BrokerStorage, log *logrus.Logger) *InternalEvalUpdater {
+	ctx, _ := context.WithCancel(context.Background())
+	avsClient, _ := avs.NewClient(ctx, avs.Config{}, log)
+	avsDel := avs.NewDelegator(avsClient, avs.Config{}, storage.Operations())
+	internalEvalAssistant := avs.NewInternalEvalAssistant(avs.Config{})
+	upgradeInternalEvalUpdater := NewInternalEvalUpdater(avsDel, internalEvalAssistant, avs.Config{})
+	return upgradeInternalEvalUpdater
+}
+
 func TestInitialisationStep_Run(t *testing.T) {
 	t.Run("should mark operation as Succeeded when upgrade was successful", func(t *testing.T) {
 		// given
@@ -59,7 +71,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, nil, nil, nil)
+		evalManager := createEvalMngr(memoryStorage, log)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, nil, evalManager, nil, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -105,7 +118,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 		expectedOperation.State = orchestration.InProgress
 		rvc.On("ForUpgrade", expectedOperation).Return(ver, nil).Once()
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, inputBuilder, nil, rvc)
+		evalManager := createEvalMngr(memoryStorage, log)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManager, nil, rvc)
 
 		// when
 		op, repeat, err := step.Run(upgradeOperation, log)
@@ -135,7 +149,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 		require.NoError(t, err)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), nil, nil, nil, nil)
+		evalManager := createEvalMngr(memoryStorage, log)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), nil, nil, evalManager, nil, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)

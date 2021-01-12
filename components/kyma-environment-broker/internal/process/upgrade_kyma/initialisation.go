@@ -69,8 +69,8 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 	if operation.State == orchestrationExt.Canceled {
 		log.Infof("Skipping processing because orchestration %s was canceled", operation.OrchestrationID)
 
-		// set previous avs status
-		operation, _, err := s.resetEvalStatus(operation, log)
+		// revert to original evaluation status
+		operation, _, err := s.internalEvalUpdater.RestoreStatusToEval(operation, log)
 		if err != nil {
 			log.Errorf("cannot set status %s for upgrade operation", err)
 			return operation, s.timeSchedule.Retry, nil
@@ -114,7 +114,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		}
 		log.Infof("runtime being upgraded, check operation status")
 		operation.InstanceDetails.RuntimeID = instance.RuntimeID
-		return s.checkRuntimeStatus(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
+		return s.performRuntimeChecks(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
 	case dberr.IsNotFound(err):
 		log.Info("instance does not exist, it may have been deprovisioned")
 		return s.operationManager.OperationSucceeded(operation, "instance was not found")
@@ -123,13 +123,6 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		return operation, s.timeSchedule.Retry, nil
 	}
 
-}
-
-func (s *InitialisationStep) resetEvalStatus(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if operation.InstanceDetails.Avs.AvsInternalEvaluationStatus == avs.StatusMaintenance {
-		return s.internalEvalUpdater.SetStatusToEval(operation.InstanceDetails.Avs.AvsOriginalInternalEvaluationStatus, operation, log)
-	}
-	return operation, 0, nil
 }
 
 func (s *InitialisationStep) rescheduleAtNextMaintenanceWindow(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
@@ -190,22 +183,34 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 	return nil
 }
 
-func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	operation, delay, err := s.checkRuntimeStatusWrapped(operation, instance, log)
+func (s *InitialisationStep) performRuntimeChecks(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	var errStatus error
+	operation, delay, err := s.checkRuntimeStatus(operation, instance, log)
+	inMaintenance := s.internalEvalUpdater.assistant.GetEvalStatus(operation.Avs) == avs.StatusMaintenance
 
-	// set previous avs status
-	if operation.State == orchestrationExt.Succeeded || operation.State == orchestrationExt.Failed {
-		var errReset error
-		operation, _, errReset = s.resetEvalStatus(operation, log)
-		if err != nil && errReset != nil {
-			err = errors.Wrap(err, errReset.Error())
+	// ensures that required pre- and post- logic is executed
+	if operation.State == orchestrationExt.InProgress {
+		// set maintenance evaluation state on init
+		if !inMaintenance {
+			operation, _, errStatus = s.internalEvalUpdater.SetStatusToEval(avs.StatusMaintenance, operation, log)
+			if errStatus != nil {
+				err = errors.Wrap(err, errStatus.Error())
+			}
+		}
+	} else if operation.State == orchestrationExt.Succeeded || operation.State == orchestrationExt.Failed {
+		// restore previous evaluation state on finish
+		if inMaintenance {
+			operation, _, errStatus = s.internalEvalUpdater.RestoreStatusToEval(operation, log)
+			if errStatus != nil {
+				err = errors.Wrap(err, errStatus.Error())
+			}
 		}
 	}
 
 	return operation, delay, err
 }
 
-func (s *InitialisationStep) checkRuntimeStatusWrapped(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout))

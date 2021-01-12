@@ -43,15 +43,18 @@ type LMS struct {
 	RequestedAt time.Time `json:"requested_at"`
 }
 
+type AvsEvaluationStatus struct {
+	Configured bool   `json:"configured"`
+	Current    string `json:"current_value"`
+	Original   string `json:"original_value"`
+}
+
 type AvsLifecycleData struct {
 	AvsEvaluationInternalId int64 `json:"avs_evaluation_internal_id"`
 	AVSEvaluationExternalId int64 `json:"avs_evaluation_external_id"`
 
-	AvsInternalEvaluationStatus string `json:"avs_internal_evaluation_status"`
-	AvsExternalEvaluationStatus string `json:"avs_external_evaluation_status"`
-
-	AvsOriginalInternalEvaluationStatus string `json:"avs_original_internal_evaluation_status"`
-	AvsOriginalExternalEvaluationStatus string `json:"avs_original_external_evaluation_status"`
+	AvsInternalEvaluationStatus AvsEvaluationStatus `json:"avs_internal_evaluation_status"`
+	AvsExternalEvaluationStatus AvsEvaluationStatus `json:"avs_external_evaluation_status"`
 
 	AVSInternalEvaluationDeleted bool `json:"avs_internal_evaluation_deleted"`
 	AVSExternalEvaluationDeleted bool `json:"avs_external_evaluation_deleted"`

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -112,15 +110,6 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 	if err != nil {
 		log.Errorf("cannot insert runtimeState: %s", err)
 		return operation, 10 * time.Second, nil
-	}
-
-	// set maintenance mode
-	if operation.InstanceDetails.Avs.AvsInternalEvaluationStatus != avs.StatusMaintenance {
-		operation, _, err = s.internalEvalUpdater.SetStatusToEval(avs.StatusMaintenance, operation, log)
-		if err != nil {
-			log.Errorf("cannot set status %s for upgrade operation", err)
-			return operation, s.timeSchedule.Retry, nil
-		}
 	}
 
 	log.Infof("kyma upgrade process initiated successfully")

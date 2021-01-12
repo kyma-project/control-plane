@@ -7,6 +7,7 @@ import (
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -112,28 +113,34 @@ func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.Up
 	var updatedOperation internal.UpgradeKymaOperation
 	d := 0 * time.Second
 
-	logger.Infof("making avs calls to set status to the Evaluation")
 	evalId := evalAssistant.GetEvaluationId(operation.Avs)
+	currentStatus := evalAssistant.GetEvalStatus(operation.Avs)
 
-	prevStatus := operation.InstanceDetails.Avs.AvsInternalEvaluationStatus
-	_, err := del.client.SetStatus(evalId, status)
-	switch {
-	case err == nil:
-	case kebError.IsTemporaryError(err):
-		errMsg := "cannot set status to AVS evaluation (temporary)"
-		logger.Errorf("%s: %s", errMsg, err)
-		retryConfig := evalAssistant.provideRetryConfig()
-		op, duration, err := del.upgradeManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
-		return op, duration, err
-	default:
-		errMsg := "cannot set status to AVS evaluation"
-		logger.Errorf("%s: %s", errMsg, err)
-		op, duration, err := del.upgradeManager.OperationFailed(operation, errMsg)
-		return op, duration, err
+	// do api call iff current and requested status are different
+	if currentStatus != status {
+		logger.Infof("making avs calls to set status to the Evaluation")
+		_, err := del.client.SetStatus(evalId, status)
+
+		switch {
+		case err == nil:
+		case kebError.IsTemporaryError(err):
+			errMsg := "cannot set status to AVS evaluation (temporary)"
+			logger.Errorf("%s: %s", errMsg, err)
+			retryConfig := evalAssistant.provideRetryConfig()
+			return del.upgradeManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
+		default:
+			errMsg := "cannot set status to AVS evaluation"
+			logger.Errorf("%s: %s", errMsg, err)
+			return del.upgradeManager.OperationFailed(operation, errMsg)
+		}
 	}
 
-	operation.InstanceDetails.Avs.AvsOriginalInternalEvaluationStatus = prevStatus
+	// update previous status to ensure
+	evalAssistant.SetEvalStatus(&operation.Avs, status)
 	updatedOperation, d = del.upgradeManager.UpdateOperation(operation)
+	if d != 0 {
+		return updatedOperation, d, errors.New("cannot update avs operation status")
+	}
 
 	return updatedOperation, d, nil
 }
