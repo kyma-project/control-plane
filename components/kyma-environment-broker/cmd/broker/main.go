@@ -67,8 +67,7 @@ import (
 
 // Config holds configuration for the whole application
 type Config struct {
-	DbInMemory                bool `envconfig:"default=false"`
-	EnableParametersMigration bool `envconfig:"default=false"`
+	DbInMemory bool `envconfig:"default=false"`
 
 	// DisableProcessOperationsInProgress allows to disable processing operations
 	// which are in progress on starting application. Set to true if you are
