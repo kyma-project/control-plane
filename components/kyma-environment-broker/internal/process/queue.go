@@ -1,6 +1,7 @@
 package process
 
 import (
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -68,7 +69,7 @@ func worker(queue workqueue.RateLimitingInterface, process func(key string) (tim
 				log = log.WithField("operationID", id)
 				defer func() {
 					if err := recover(); err != nil {
-						log.Errorf("panic error from process: %v", err)
+						log.Errorf("panic error from process: %v\n%s", err, debug.Stack())
 					}
 					queue.Done(key)
 				}()
