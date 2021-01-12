@@ -67,7 +67,7 @@ func (eea *ExternalEvalAssistant) SetEvalStatus(lifecycleData *internal.AvsLifec
 	lifecycleData.AvsExternalEvaluationStatus = status
 }
 
-func (eea *ExternalEvalAssistant) GetEvalStatus(lifecycleData *internal.AvsLifecycleData) Status {
+func (eea *ExternalEvalAssistant) GetEvalStatus(lifecycleData internal.AvsLifecycleData) Status {
 	return lifecycleData.AvsExternalEvaluationStatus
 }
 

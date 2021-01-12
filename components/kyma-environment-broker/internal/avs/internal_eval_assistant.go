@@ -100,7 +100,7 @@ func (iec *InternalEvalAssistant) SetEvalStatus(lifecycleData *internal.AvsLifec
 	lifecycleData.AvsInternalEvaluationStatus = status
 }
 
-func (iec *InternalEvalAssistant) GetEvalStatus(lifecycleData *internal.AvsLifecycleData) Status {
+func (iec *InternalEvalAssistant) GetEvalStatus(lifecycleData internal.AvsLifecycleData) Status {
 	return lifecycleData.AvsInternalEvaluationStatus
 }
 

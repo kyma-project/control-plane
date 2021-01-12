@@ -11,7 +11,7 @@ type EvalAssistant interface {
 	AppendOverrides(inputCreator internal.ProvisionerInputCreator, evaluationId int64, pp internal.ProvisioningParameters)
 	IsAlreadyCreated(lifecycleData internal.AvsLifecycleData) bool
 	SetEvalId(lifecycleData *internal.AvsLifecycleData, evalId int64)
-	SetEvalStatus(lifecycleData internal.AvsLifecycleData, status Status)
+	SetEvalStatus(lifecycleData *internal.AvsLifecycleData, status Status)
 	GetEvalStatus(lifecycleData internal.AvsLifecycleData) Status
 	IsAlreadyDeleted(lifecycleData internal.AvsLifecycleData) bool
 	GetEvaluationId(lifecycleData internal.AvsLifecycleData) int64
