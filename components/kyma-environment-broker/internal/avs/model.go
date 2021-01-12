@@ -16,10 +16,8 @@ const (
 	visibility       = "PUBLIC"
 )
 
-type Status string
-
 const (
-	StatusActive      Status = "ACTIVE"
+	StatusActive      string = "ACTIVE"
 	StatusMaintenance        = "MAINTENANCE"
 	StatusInactive           = "INACTIVE"
 	StatusRetired            = "RETIRED"

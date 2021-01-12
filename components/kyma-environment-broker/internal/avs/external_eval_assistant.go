@@ -63,11 +63,11 @@ func (eea *ExternalEvalAssistant) SetEvalId(lifecycleData *internal.AvsLifecycle
 	lifecycleData.AVSEvaluationExternalId = evalId
 }
 
-func (eea *ExternalEvalAssistant) SetEvalStatus(lifecycleData *internal.AvsLifecycleData, status Status) {
+func (eea *ExternalEvalAssistant) SetEvalStatus(lifecycleData *internal.AvsLifecycleData, status string) {
 	lifecycleData.AvsExternalEvaluationStatus = status
 }
 
-func (eea *ExternalEvalAssistant) GetEvalStatus(lifecycleData internal.AvsLifecycleData) Status {
+func (eea *ExternalEvalAssistant) GetEvalStatus(lifecycleData internal.AvsLifecycleData) string {
 	return lifecycleData.AvsExternalEvaluationStatus
 }
 

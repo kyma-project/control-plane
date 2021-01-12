@@ -96,7 +96,7 @@ func (c *Client) AddTag(evaluationID int64, tag *Tag) (*BasicEvaluationCreateRes
 	return &responseObject, nil
 }
 
-func (c *Client) SetStatus(evaluationID int64, status Status) (*BasicEvaluationCreateResponse, error) {
+func (c *Client) SetStatus(evaluationID int64, status string) (*BasicEvaluationCreateResponse, error) {
 	var responseObject BasicEvaluationCreateResponse
 
 	objAsBytes, err := json.Marshal(status)

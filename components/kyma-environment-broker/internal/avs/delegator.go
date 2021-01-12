@@ -107,7 +107,7 @@ func (del *Delegator) AddTags(logger logrus.FieldLogger, operation internal.Prov
 	return updatedOperation, d, nil
 }
 
-func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.UpgradeKymaOperation, evalAssistant EvalAssistant, status Status) (internal.UpgradeKymaOperation, time.Duration, error) {
+func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.UpgradeKymaOperation, evalAssistant EvalAssistant, status string) (internal.UpgradeKymaOperation, time.Duration, error) {
 	logger.Infof("starting the SetStatus to avs internal id [%d]", operation.Avs.AvsEvaluationInternalId)
 	var updatedOperation internal.UpgradeKymaOperation
 	d := 0 * time.Second

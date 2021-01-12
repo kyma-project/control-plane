@@ -22,6 +22,6 @@ func NewInternalEvalUpdater(delegator *avs.Delegator, assistant *avs.InternalEva
 	}
 }
 
-func (ieu *InternalEvalUpdater) SetStatusToEval(status avs.Status, operation internal.UpgradeKymaOperation, logger logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+func (ieu *InternalEvalUpdater) SetStatusToEval(status string, operation internal.UpgradeKymaOperation, logger logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	return ieu.delegator.SetStatus(logger, operation, ieu.assistant, status)
 }

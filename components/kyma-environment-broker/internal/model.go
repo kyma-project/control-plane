@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/sirupsen/logrus"
 
@@ -48,11 +47,11 @@ type AvsLifecycleData struct {
 	AvsEvaluationInternalId int64 `json:"avs_evaluation_internal_id"`
 	AVSEvaluationExternalId int64 `json:"avs_evaluation_external_id"`
 
-	AvsInternalEvaluationStatus avs.Status `json:"avs_internal_evaluation_status"`
-	AvsExternalEvaluationStatus avs.Status `json:"avs_external_evaluation_status"`
+	AvsInternalEvaluationStatus string `json:"avs_internal_evaluation_status"`
+	AvsExternalEvaluationStatus string `json:"avs_external_evaluation_status"`
 
-	AvsOriginalInternalEvaluationStatus avs.Status `json:"avs_original_internal_evaluation_status"`
-	AvsOriginalExternalEvaluationStatus avs.Status `json:"avs_original_external_evaluation_status"`
+	AvsOriginalInternalEvaluationStatus string `json:"avs_original_internal_evaluation_status"`
+	AvsOriginalExternalEvaluationStatus string `json:"avs_original_external_evaluation_status"`
 
 	AVSInternalEvaluationDeleted bool `json:"avs_internal_evaluation_deleted"`
 	AVSExternalEvaluationDeleted bool `json:"avs_external_evaluation_deleted"`

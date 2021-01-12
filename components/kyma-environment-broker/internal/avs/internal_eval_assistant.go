@@ -96,11 +96,11 @@ func (iec *InternalEvalAssistant) SetEvalId(lifecycleData *internal.AvsLifecycle
 	lifecycleData.AvsEvaluationInternalId = evalId
 }
 
-func (iec *InternalEvalAssistant) SetEvalStatus(lifecycleData *internal.AvsLifecycleData, status Status) {
+func (iec *InternalEvalAssistant) SetEvalStatus(lifecycleData *internal.AvsLifecycleData, status string) {
 	lifecycleData.AvsInternalEvaluationStatus = status
 }
 
-func (iec *InternalEvalAssistant) GetEvalStatus(lifecycleData internal.AvsLifecycleData) Status {
+func (iec *InternalEvalAssistant) GetEvalStatus(lifecycleData internal.AvsLifecycleData) string {
 	return lifecycleData.AvsInternalEvaluationStatus
 }
 
