@@ -2,8 +2,9 @@ package upgrade_kyma
 
 import (
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
