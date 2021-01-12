@@ -511,25 +511,6 @@ func (s *operations) GetOperationsForIDs(operationIDList []string) ([]internal.O
 	return s.toOperations(operations)
 }
 
-func (s *operations) ListOperationsParameters() (map[string]internal.ProvisioningParameters, error) {
-	session := s.NewReadSession()
-
-	var (
-		lastErr    error
-		parameters = make(map[string]internal.ProvisioningParameters, 0)
-	)
-
-	_ = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		parameters, lastErr = session.ListOperationsParameters()
-		if lastErr != nil {
-			log.Errorf("while getting operations from the storage: %v", lastErr)
-			return false, nil
-		}
-		return true, nil
-	})
-	return parameters, lastErr
-}
-
 func (s *operations) ListOperations(filter dbmodel.OperationFilter) ([]internal.Operation, int, int, error) {
 	session := s.NewReadSession()
 
