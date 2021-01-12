@@ -66,7 +66,7 @@ func NewOperationResultCollector() *OperationResultCollector {
 			Subsystem: prometheusSubsystem,
 			Name:      "upgrade_result",
 			Help:      "Result of the upgrade",
-		}, []string{"instance_id", "global_account_id", "plan_id"}),
+		}, []string{"operation_id", "runtime_id", "instance_id", "global_account_id", "plan_id"}),
 	}
 }
 
@@ -106,7 +106,7 @@ func (c *OperationResultCollector) OnUpgradeStepProcessed(ctx context.Context, e
 	op := stepProcessed.Operation
 	pp := op.ProvisioningParameters
 	c.upgradeResultGauge.
-		WithLabelValues(op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).
+		WithLabelValues(op.Operation.ID, op.Operation.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).
 		Set(resultValue)
 
 	return nil
