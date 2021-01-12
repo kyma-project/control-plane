@@ -32,12 +32,13 @@ type InitialisationStep struct {
 	instanceStorage        storage.Instances
 	provisionerClient      provisioner.Client
 	inputBuilder           input.CreatorForPlan
+	internalEvalUpdater    *InternalEvalUpdater
 	timeSchedule           TimeSchedule
 	runtimeVerConfigurator RuntimeVersionConfiguratorForUpgrade
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, timeSchedule *TimeSchedule,
-	rvc RuntimeVersionConfiguratorForUpgrade) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, ieu *InternalEvalUpdater,
+	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
 		ts = &TimeSchedule{
@@ -52,6 +53,7 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 		instanceStorage:        is,
 		provisionerClient:      pc,
 		inputBuilder:           b,
+		internalEvalUpdater:    ieu,
 		timeSchedule:           *ts,
 		runtimeVerConfigurator: rvc,
 	}
@@ -64,6 +66,14 @@ func (s *InitialisationStep) Name() string {
 func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if operation.State == orchestrationExt.Canceled {
 		log.Infof("Skipping processing because orchestration %s was canceled", operation.OrchestrationID)
+
+		// set previous avs status
+		operation, _, err := s.resetEvalStatus(operation, log)
+		if err != nil {
+			log.Errorf("cannot set status %s for upgrade operation", err)
+			return operation, s.timeSchedule.Retry, nil
+		}
+
 		return s.operationManager.OperationCanceled(operation, fmt.Sprintf("orchestration %s was canceled", operation.OrchestrationID))
 	}
 	if operation.State == orchestrationExt.Pending {
@@ -111,6 +121,13 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		return operation, s.timeSchedule.Retry, nil
 	}
 
+}
+
+func (s *InitialisationStep) resetEvalStatus(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	if operation.InstanceDetails.Avs.AvsInternalEvaluationStatus == avs.StatusMaintenance {
+		return internalEvalUpdater.SetStatusToEval(operation.InstanceDetails.Avs.AvsOriginalInternalEvaluationStatus, operation, log)
+	}
+	return operation, 0, nil
 }
 
 func (s *InitialisationStep) rescheduleAtNextMaintenanceWindow(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
@@ -172,6 +189,20 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 }
 
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	operation, delay, err := s.checkRuntimeStatusWrapped(operation, instance, log)
+
+	// set previous avs status
+	if operation.State == orchestrationExt.Succeeded || operation.State == orchestrationExt.Failed {
+		operation, _, errReset := s.resetEvalStatus(operation, log)
+		if err != nil && errReset != nil {
+			err = errors.Wrap(err, errReset.Error())
+		}
+	}
+
+	return operation, delay, err
+}
+
+func (s *InitialisationStep) checkRuntimeStatusWrapped(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout))

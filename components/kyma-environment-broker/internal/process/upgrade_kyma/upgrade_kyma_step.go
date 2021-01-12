@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -20,11 +19,16 @@ type UpgradeKymaStep struct {
 	operationManager    *process.UpgradeKymaOperationManager
 	provisionerClient   provisioner.Client
 	runtimeStateStorage storage.RuntimeStates
-	avsDelegator  *avs.Delegator
+	internalEvalUpdater *InternalEvalUpdater
 	timeSchedule        TimeSchedule
 }
 
-func NewUpgradeKymaStep(os storage.Operations, runtimeStorage storage.RuntimeStates, cli provisioner.Client, avsDelegator *avs.Delegator, timeSchedule *TimeSchedule) *UpgradeKymaStep {
+func NewUpgradeKymaStep(
+	os storage.Operations,
+	runtimeStorage storage.RuntimeStates,
+	cli provisioner.Client,
+	internalEvalUpdater *InternalEvalUpdater,
+	timeSchedule *TimeSchedule) *UpgradeKymaStep {
 	ts := timeSchedule
 	if ts == nil {
 		ts = &TimeSchedule{
@@ -33,11 +37,12 @@ func NewUpgradeKymaStep(os storage.Operations, runtimeStorage storage.RuntimeSta
 			UpgradeKymaTimeout: time.Hour,
 		}
 	}
+
 	return &UpgradeKymaStep{
 		operationManager:    process.NewUpgradeKymaOperationManager(os),
 		provisionerClient:   cli,
 		runtimeStateStorage: runtimeStorage,
-		avsDelegator: avsDelegator,
+		internalEvalUpdater: internalEvalUpdater,
 		timeSchedule:        *ts,
 	}
 }
@@ -109,17 +114,9 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 
 	// set maintenance mode
 	if operation.InstanceDetails.Avs.AvsInternalEvaluationStatus != avs.StatusMaintenance {
-		internalEvalUpdater.SetStatusToEval(avs.StatusMaintenance, 
-		_, err = s.avsClient.SetStatus(operation.InstanceDetails.Avs.AvsEvaluationInternalId, avs.StatusMaintenance)
+		operation, _, err = internalEvalUpdater.SetStatusToEval(avs.StatusMaintenance, operation, log)
 		if err != nil {
 			log.Errorf("cannot set status %s for upgrade operation", err)
-			return operation, s.timeSchedule.Retry, nil
-		}
-
-		// trigger upgradeRuntime mutation
-		operation, repeat := s.operationManager.UpdateOperation(operation)
-		if repeat != 0 {
-			log.Errorf("cannot save operation ID from provisioner")
 			return operation, s.timeSchedule.Retry, nil
 		}
 	}

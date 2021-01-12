@@ -51,6 +51,9 @@ type AvsLifecycleData struct {
 	AvsInternalEvaluationStatus avs.Status `json:"avs_internal_evaluation_status"`
 	AvsExternalEvaluationStatus avs.Status `json:"avs_external_evaluation_status"`
 
+	AvsOriginalInternalEvaluationStatus avs.Status `json:"avs_original_internal_evaluation_status"`
+	AvsOriginalExternalEvaluationStatus avs.Status `json:"avs_original_external_evaluation_status"`
+
 	AVSInternalEvaluationDeleted bool `json:"avs_internal_evaluation_deleted"`
 	AVSExternalEvaluationDeleted bool `json:"avs_external_evaluation_deleted"`
 }

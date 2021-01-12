@@ -115,6 +115,7 @@ func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.Up
 	logger.Infof("making avs calls to set status to the Evaluation")
 	evalId := evalAssistant.GetEvaluationId(operation.Avs)
 
+	prevStatus := operation.InstanceDetails.Avs.AvsInternalEvaluationStatus
 	_, err := del.client.SetStatus(evalId, status)
 	switch {
 	case err == nil:
@@ -131,6 +132,7 @@ func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.Up
 		return op, duration, err
 	}
 
+	operation.InstanceDetails.Avs.AvsOriginalInternalEvaluationStatus = prevStatus
 	updatedOperation, d = del.upgradeManager.UpdateOperation(operation)
 
 	return updatedOperation, d, nil
