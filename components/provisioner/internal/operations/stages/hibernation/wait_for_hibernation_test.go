@@ -93,7 +93,7 @@ func TestWaitForHibernation(t *testing.T) {
 			unrecoverableError: false,
 		},
 		{
-			description: "should go to the next state if cluster is hibernated",
+			description: "should return unrecoverable error when last operation failed",
 			mockFunc: func(gardenerClient *mocks.GardenerClient) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(testkit.NewTestShoot(clusterName).
 					WithOperationFailed().

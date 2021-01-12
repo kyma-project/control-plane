@@ -406,7 +406,7 @@ func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, error
 	}
 
 	hibernationStatus, apperr := r.provisioner.GetHibernationStatus(runtimeID, cluster.ClusterConfig)
-	if err != nil {
+	if apperr != nil {
 		return model.RuntimeStatus{}, apperr
 	}
 
