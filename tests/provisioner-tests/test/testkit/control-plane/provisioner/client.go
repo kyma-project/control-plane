@@ -140,6 +140,21 @@ func (c client) RuntimeOperationStatus(operationID string) (schema.OperationStat
 	return response, nil
 }
 
+func (c client) HibernateRuntime(runtimeID string) (string, error) {
+	query := c.queryProvider.hibernateCluster(runtimeID)
+	req := c.newRequest(query)
+
+	var operationStatus schema.OperationStatus
+	err := c.graphQLClient.ExecuteRequest(req, &operationStatus)
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to hibernate runtime")
+	}
+	if operationStatus.ID == nil || operationStatus.RuntimeID == nil {
+		return "", errors.New("Failed to receive proper Operation Status response")
+	}
+	return *operationStatus.ID, nil
+}
+
 func (c client) newRequest(query string) *gcli.Request {
 	req := gcli.NewRequest(query)
 

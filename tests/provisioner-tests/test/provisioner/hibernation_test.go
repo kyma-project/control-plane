@@ -10,8 +10,8 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-project/control-plane/tests/hibernation/test/testkit"
-	"github.com/kyma-project/control-plane/tests/hibernation/test/testkit/assertions"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit"
+	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/assertions"
 )
 
 func TestHibernation(t *testing.T) {
@@ -100,33 +100,4 @@ func TestHibernation(t *testing.T) {
 		}(provider)
 	}
 	wg.Wait()
-
-}
-
-func ensureClusterIsDeprovisioned(runtimeId string, log *testkit.Logger) {
-	log.Logf("Ensuring the cluster is deprovisioned...")
-	deprovisioningOperationId, err := testSuite.ProvisionerClient.DeprovisionRuntime(runtimeId)
-	if err != nil {
-		log.Errorf("Ensuring the cluster is deprovisioned failed, cluster might have already been deprovisioned: %s", err.Error())
-		return
-	}
-
-	log.Logf("Deprovisioning operation id: %s", deprovisioningOperationId)
-	deprovisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationId, log)
-	if err != nil {
-		log.Errorf("Error while waiting for deprovisioning operation to finish: %s", err.Error())
-		return
-	}
-
-	if deprovisioningOperationStatus.State != gqlschema.OperationStateSucceeded {
-		log.Errorf("Ensuring the cluster is deprovisioned failed with operation status %s with message %s", deprovisioningOperationStatus.State, unwrapString(deprovisioningOperationStatus.Message))
-	}
-}
-
-func unwrapString(str *string) string {
-	if str != nil {
-		return *str
-	}
-
-	return ""
 }

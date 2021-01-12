@@ -50,6 +50,7 @@ func CreateGardenerProvisioningInput(config *TestConfig, version, provider strin
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				Name:                                strToPtr(createGardenerClusterName()),
+				AllowPrivilegedContainers:           boolToPtr(true),
 				KubernetesVersion:                   config.KubernetesVersion,
 				DiskType:                            gardenerInputs[provider].DiskType,
 				VolumeSizeGb:                        35,
@@ -99,12 +100,63 @@ func CreateGardenerUpgradeInput(config *TestConfig) *gqlschema.UpgradeShootInput
 func CreateKymaConfigInput(version string) (*gqlschema.KymaConfigInput, error) {
 	installationCRURL := createInstallationCRURL(version)
 	logrus.Infof("Getting and parsing Kyma modules from Installation CR at: %s", installationCRURL)
-	componentConfigInput, err := GetAndParseInstallerCR(installationCRURL)
-	if err != nil {
-		return &gqlschema.KymaConfigInput{}, fmt.Errorf("failed to create component config input: %s", err.Error())
-	}
+	componentConfigInput := fixKymaComponentList()
 
 	return &gqlschema.KymaConfigInput{Version: version, Components: componentConfigInput}, nil
+}
+
+func fixKymaComponentList() []*gqlschema.ComponentConfigurationInput {
+	clusterEssentials := &gqlschema.ComponentConfigurationInput{
+		Component: "cluster-essentials",
+		Namespace: "kyma-system",
+	}
+
+	testing := &gqlschema.ComponentConfigurationInput{
+		Component: "testing",
+		Namespace: "kyma-system",
+	}
+
+	istio := &gqlschema.ComponentConfigurationInput{
+		Component: "istio",
+		Namespace: "istio-system",
+	}
+
+	xipPatch := &gqlschema.ComponentConfigurationInput{
+		Component: "xip-patch",
+		Namespace: "kyma-installer",
+	}
+
+	core := &gqlschema.ComponentConfigurationInput{
+		Component: "core",
+		Namespace: "kyma-system",
+	}
+
+	applicationConnector := &gqlschema.ComponentConfigurationInput{
+		Component: "application-connector",
+		Namespace: "kyma-integration",
+	}
+
+	runtimeAgent := &gqlschema.ComponentConfigurationInput{
+		Component: "compass-runtime-agent",
+		Namespace: "compass-system",
+		Configuration: []*gqlschema.ConfigEntryInput{
+			{
+				Key:    "global.disableLegacyConnectivity",
+				Value:  "true",
+				Secret: boolToPtr(false),
+			},
+		},
+	}
+
+	return []*gqlschema.ComponentConfigurationInput{
+		clusterEssentials,
+		testing,
+		istio,
+		xipPatch,
+		core,
+		applicationConnector,
+		runtimeAgent,
+	}
 }
 
 func createGardenerClusterName() string {

@@ -28,6 +28,7 @@ require (
 
 replace (
 	github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
+	github.com/kyma-project/control-plane/components/provisioner => github.com/akgalwas/control-plane/components/provisioner v0.0.0-20210111075349-07d94a79cbda
 	github.com/containerd/containerd => github.com/containerd/containerd v1.4.1
 	github.com/coreos/etcd => go.etcd.io/etcd v0.5.0-alpha.5.0.20200824191128-ae9734ed278b
 	github.com/kyma-project/control-plane/components/provisioner => github.com/Maladie/control-plane/components/provisioner v0.0.0-20201109133615-89df11747893
