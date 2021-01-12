@@ -2,6 +2,7 @@ package upgrade_kyma
 
 import (
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -125,7 +126,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 
 func (s *InitialisationStep) resetEvalStatus(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if operation.InstanceDetails.Avs.AvsInternalEvaluationStatus == avs.StatusMaintenance {
-		return internalEvalUpdater.SetStatusToEval(operation.InstanceDetails.Avs.AvsOriginalInternalEvaluationStatus, operation, log)
+		return s.internalEvalUpdater.SetStatusToEval(operation.InstanceDetails.Avs.AvsOriginalInternalEvaluationStatus, operation, log)
 	}
 	return operation, 0, nil
 }
@@ -193,7 +194,8 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 
 	// set previous avs status
 	if operation.State == orchestrationExt.Succeeded || operation.State == orchestrationExt.Failed {
-		operation, _, errReset := s.resetEvalStatus(operation, log)
+		var errReset error
+		operation, _, errReset = s.resetEvalStatus(operation, log)
 		if err != nil && errReset != nil {
 			err = errors.Wrap(err, errReset.Error())
 		}

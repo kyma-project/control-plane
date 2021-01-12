@@ -2,6 +2,7 @@ package upgrade_kyma
 
 import (
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -114,7 +115,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 
 	// set maintenance mode
 	if operation.InstanceDetails.Avs.AvsInternalEvaluationStatus != avs.StatusMaintenance {
-		operation, _, err = internalEvalUpdater.SetStatusToEval(avs.StatusMaintenance, operation, log)
+		operation, _, err = s.internalEvalUpdater.SetStatusToEval(avs.StatusMaintenance, operation, log)
 		if err != nil {
 			log.Errorf("cannot set status %s for upgrade operation", err)
 			return operation, s.timeSchedule.Retry, nil
