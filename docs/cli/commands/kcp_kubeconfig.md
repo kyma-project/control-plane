@@ -1,4 +1,5 @@
 # kcp kubeconfig
+
 Downloads the kubeconfig file for a given Kyma Runtime
 
 ## Synopsis

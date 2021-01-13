@@ -1,4 +1,5 @@
 # kcp upgrade
+
 Performs upgrade operations on Kyma Runtimes.
 
 ## Synopsis

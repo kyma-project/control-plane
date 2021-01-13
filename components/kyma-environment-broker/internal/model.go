@@ -188,7 +188,7 @@ type InstanceDetails struct {
 	Avs      AvsLifecycleData `json:"avs"`
 	EventHub EventHub         `json:"eh"`
 
-	SubAccountID string    `json:"-"`
+	SubAccountID string    `json:"sub_account_id"`
 	RuntimeID    string    `json:"runtime_id"`
 	ShootName    string    `json:"shoot_name"`
 	ShootDomain  string    `json:"shoot_domain"`

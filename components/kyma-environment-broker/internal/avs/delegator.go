@@ -109,7 +109,7 @@ func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.Depro
 		return deProvisioningOperation, nil
 	}
 
-	if err := del.tryDeleting(assistant, deProvisioningOperation.Avs, logger); err != nil {
+	if err := del.tryDeleting(assistant, deProvisioningOperation, logger); err != nil {
 		return deProvisioningOperation, err
 	}
 
@@ -122,15 +122,16 @@ func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.Depro
 	return *updatedDeProvisioningOp, nil
 }
 
-func (del *Delegator) tryDeleting(assistant EvalAssistant, lifecycleData internal.AvsLifecycleData, logger logrus.FieldLogger) error {
-	evaluationId := assistant.GetEvaluationId(lifecycleData)
-	err := del.client.RemoveReferenceFromParentEval(evaluationId)
+func (del *Delegator) tryDeleting(assistant EvalAssistant, deProvisioningOperation internal.DeprovisioningOperation, logger logrus.FieldLogger) error {
+	evaluationID := assistant.GetEvaluationId(deProvisioningOperation.Avs)
+	parentID := assistant.ProvideParentId(deProvisioningOperation.ProvisioningParameters)
+	err := del.client.RemoveReferenceFromParentEval(parentID, evaluationID)
 	if err != nil {
 		logger.Errorf("error while deleting reference for evaluation %v", err)
 		return err
 	}
 
-	err = del.client.DeleteEvaluation(evaluationId)
+	err = del.client.DeleteEvaluation(evaluationID)
 	if err != nil {
 		logger.Errorf("error while deleting evaluation %v", err)
 	}

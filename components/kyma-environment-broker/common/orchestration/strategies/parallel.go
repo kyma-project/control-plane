@@ -1,6 +1,7 @@
 package strategies
 
 import (
+	"runtime/debug"
 	"sort"
 	"sync"
 	"time"
@@ -122,7 +123,7 @@ func (p *ParallelOrchestrationStrategy) processOperation(op orchestration.Runtim
 			log = log.WithField("operationID", id)
 			defer func() {
 				if err := recover(); err != nil {
-					log.Errorf("panic error from process: %v", err)
+					log.Errorf("panic error from process: %v\n%s", err, debug.Stack())
 				}
 				p.dq[executionID].Done(key)
 			}()

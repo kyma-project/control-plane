@@ -72,6 +72,7 @@ type config struct {
 
 	ProvisioningTimeout   queue.ProvisioningTimeouts
 	DeprovisioningTimeout queue.DeprovisioningTimeouts
+	HibernationTimeout    queue.HibernationTimeouts
 
 	OperatorRoleBinding provisioningStages.OperatorRoleBinding
 
@@ -199,6 +200,8 @@ func main() {
 
 	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient)
 
+	hibernationQueue := queue.CreateHibernationQueue(cfg.HibernationTimeout, dbsFactory, directorClient, shootClient)
+
 	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
 	shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
 	exitOnError(err, "Failed to create Shoot controller.")
@@ -225,6 +228,7 @@ func main() {
 		deprovisioningQueue,
 		upgradeQueue,
 		shootUpgradeQueue,
+		hibernationQueue,
 		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
 		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate,
 		cfg.Gardener.ForceAllowPrivilegedContainers)
@@ -239,15 +243,15 @@ func main() {
 	defer cancel()
 	go downloader.FetchPeriodically(ctx, release.ShortInterval, release.LongInterval)
 
-	// Run installation queue
 	provisioningQueue.Run(ctx.Done())
 
 	deprovisioningQueue.Run(ctx.Done())
 
-	// Run upgrade queue
 	upgradeQueue.Run(ctx.Done())
 
 	shootUpgradeQueue.Run(ctx.Done())
+
+	hibernationQueue.Run(ctx.Done())
 
 	gqlCfg := gqlschema.Config{
 		Resolvers: resolver,
@@ -298,14 +302,14 @@ func main() {
 	}()
 
 	if cfg.EnqueueInProgressOperations {
-		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue)
+		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue)
 		exitOnError(err, "Failed to enqueue in progress operations")
 	}
 
 	wg.Wait()
 }
 
-func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue queue.OperationQueue) error {
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue queue.OperationQueue) error {
 	readSession := dbFactory.NewReadSession()
 
 	var inProgressOps []model.Operation
@@ -341,6 +345,10 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue,
 
 		if op.Type == model.UpgradeShoot {
 			shootUpgradeQueue.Add(op.ID)
+		}
+
+		if op.Type == model.Hibernate {
+			hibernationQueue.Add(op.ID)
 		}
 	}
 

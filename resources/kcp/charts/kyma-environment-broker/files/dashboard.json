@@ -352,7 +352,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "SUM(compass_keb_operations_provisioning_in_progress_total{service=\"kcp-kyma-environment-broker\"})",
+          "expr": "SUM(compass_keb_operations_azure_provisioning_in_progress_total{service=\"kcp-kyma-environment-broker\"})",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -470,7 +470,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "SUM(compass_keb_operations_deprovisioning_in_progress_total{service=\"kcp-kyma-environment-broker\"})",
+          "expr": "SUM(compass_keb_operations_azure_deprovisioning_in_progress_total{service=\"kcp-kyma-environment-broker\"})",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -561,14 +561,14 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "(SUM(compass_keb_operations_provisioning_succeeded_total) / (SUM(compass_keb_operations_provisioning_failed_total) + SUM(compass_keb_operations_provisioning_succeeded_total))) * 100",
+          "expr": "(SUM(compass_keb_operations_azure_provisioning_succeeded_total) / (SUM(compass_keb_operations_azure_provisioning_failed_total) + SUM(compass_keb_operations_azure_provisioning_succeeded_total))) * 100",
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "Provisioning",
           "refId": "A"
         },
         {
-          "expr": "(SUM(compass_keb_operations_deprovisioning_succeeded_total) / (SUM(compass_keb_operations_deprovisioning_failed_total) + SUM(compass_keb_operations_deprovisioning_succeeded_total))) * 100",
+          "expr": "(SUM(compass_keb_operations_azure_deprovisioning_succeeded_total) / (SUM(compass_keb_operations_azure_deprovisioning_failed_total) + SUM(compass_keb_operations_azure_deprovisioning_succeeded_total))) * 100",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -878,7 +878,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "delta(compass_keb_operations_provisioning_failed_total[1h])",
+          "expr": "delta(compass_keb_operations_azure_provisioning_failed_total[1h])",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -972,7 +972,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "delta(compass_keb_operations_deprovisioning_failed_total[40m])",
+          "expr": "delta(compass_keb_operations_azure_deprovisioning_failed_total[40m])",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -1064,13 +1064,13 @@
       "pluginVersion": "7.0.6",
       "targets": [
         {
-          "expr": "sum(increase(compass_keb_operations_provisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_provisioning_failed_total[1h]))) > 0) *100",
+          "expr": "sum(increase(compass_keb_operations_azure_provisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_azure_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_azure_provisioning_failed_total[1h]))) > 0) *100",
           "interval": "",
           "legendFormat": "provisioning",
           "refId": "A"
         },
         {
-          "expr": "sum(increase(compass_keb_operations_deprovisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_deprovisioning_succeeded_total[1h]) + increase(compass_keb_operations_deprovisioning_failed_total[1h]))) >0) *100",
+          "expr": "sum(increase(compass_keb_operations_azure_deprovisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_azure_deprovisioning_succeeded_total[1h]) + increase(compass_keb_operations_azure_deprovisioning_failed_total[1h]))) >0) *100",
           "interval": "",
           "legendFormat": "deprovisioning",
           "refId": "B"

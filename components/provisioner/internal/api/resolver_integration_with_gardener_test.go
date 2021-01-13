@@ -176,6 +176,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	shootUpgradeQueue := queue.CreateShootUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface)
 	shootUpgradeQueue.Run(queueCtx.Done())
 
+	shootHibernationQueue := queue.CreateHibernationQueue(testHibernationTimeouts(), dbsFactory, directorServiceMock, shootInterface)
+	shootHibernationQueue.Run(queueCtx.Done())
+
 	controler, err := gardener.NewShootController(mgr, dbsFactory, auditLogsConfigPath)
 	require.NoError(t, err)
 
@@ -223,7 +226,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, provider, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
 
 			validator := api.NewValidator(dbsFactory.NewReadSession())
 
@@ -239,6 +242,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			testUpgradeRuntimeAndRollback(t, ctx, resolver, dbsFactory, config.runtimeID)
 
 			testUpgradeGardenerShoot(t, ctx, resolver, dbsFactory, config.runtimeID, config.upgradeShootInput, shootInterface, inputConverter)
+
+			testHibernateRuntime(t, ctx, resolver, dbsFactory, config.runtimeID, shootInterface)
 
 			testDeprovisionRuntime(t, ctx, resolver, dbsFactory, config.runtimeID, shootInterface)
 		})
@@ -467,6 +472,32 @@ func testDeprovisionRuntime(t *testing.T, ctx context.Context, resolver *api.Res
 	assert.Equal(t, strings.ToUpper(gqlschema.OperationStateSucceeded.String()), string(operation.State))
 }
 
+func testHibernateRuntime(t *testing.T, ctx context.Context, resolver *api.Resolver, dbsFactory dbsession.Factory, runtimeID string, shootInterface gardener_apis.ShootInterface) {
+
+	list, err := shootInterface.List(context.Background(), metav1.ListOptions{})
+	require.NoError(t, err)
+	shoot := &list.Items[0]
+
+	readSession := dbsFactory.NewReadSession()
+
+	// when
+	hibernationOperation, err := resolver.HibernateRuntime(ctx, runtimeID)
+	require.NoError(t, err)
+	require.NotEmpty(t, hibernationOperation.ID)
+
+	// when
+	simulateHibernation(t, shootInterface, shoot)
+
+	// when
+	// wait for Shoot to update
+	time.Sleep(8 * waitPeriod)
+
+	// assert database content
+	operation, err := readSession.GetOperation(*hibernationOperation.ID)
+	require.NoError(t, err)
+	assert.Equal(t, strings.ToUpper(gqlschema.OperationStateSucceeded.String()), string(operation.State))
+}
+
 func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.OperationStatus {
 	return &gqlschema.OperationStatus{
 		ID:        operationId,
@@ -507,6 +538,12 @@ func testOperatorRoleBinding() provisioning2.OperatorRoleBinding {
 	}
 }
 
+func testHibernationTimeouts() queue.HibernationTimeouts {
+	return queue.HibernationTimeouts{
+		WaitingForClusterHibernation: 5 * time.Minute,
+	}
+}
+
 func removeFinalizers(t *testing.T, shootInterface gardener_apis.ShootInterface, shoot *gardener_types.Shoot) *gardener_types.Shoot {
 	shoot.SetFinalizers([]string{})
 
@@ -540,6 +577,18 @@ func setShootStatusToSuccessful(t *testing.T, f gardener_apis.ShootInterface, sh
 	_, err := f.Update(context.Background(), shoot, metav1.UpdateOptions{})
 
 	require.NoError(t, err)
+}
+
+func simulateHibernation(t *testing.T, f gardener_apis.ShootInterface, shoot *gardener_types.Shoot) {
+	if shoot != nil {
+		s, err := f.Get(context.Background(), shoot.Name, metav1.GetOptions{})
+		require.NoError(t, err)
+
+		s.Status.IsHibernated = true
+
+		_, err = f.Update(context.Background(), s, metav1.UpdateOptions{})
+		require.NoError(t, err)
+	}
 }
 
 func createKubeconfigSecret(t *testing.T, s v1core.SecretInterface, shootName string) {

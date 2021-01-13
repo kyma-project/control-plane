@@ -96,8 +96,8 @@ func (c *Client) AddTag(evaluationID int64, tag *Tag) (*BasicEvaluationCreateRes
 	return &responseObject, nil
 }
 
-func (c *Client) RemoveReferenceFromParentEval(evaluationId int64) (err error) {
-	absoluteURL := fmt.Sprintf("%s/child/%d", appendId(c.avsConfig.ApiEndpoint, c.avsConfig.ParentId), evaluationId)
+func (c *Client) RemoveReferenceFromParentEval(parentID, evaluationID int64) (err error) {
+	absoluteURL := fmt.Sprintf("%s/child/%d", appendId(c.avsConfig.ApiEndpoint, parentID), evaluationID)
 	response, err := c.deleteRequest(absoluteURL)
 	if err == nil {
 		return nil
@@ -112,7 +112,7 @@ func (c *Client) RemoveReferenceFromParentEval(evaluationId int64) (err error) {
 		var responseObject avsNonSuccessResp
 		err := json.NewDecoder(response.Body).Decode(&responseObject)
 		if err != nil {
-			return errors.Wrapf(err, "while decoding avs non success response body for ID: %d", evaluationId)
+			return errors.Wrapf(err, "while decoding avs non success response body for ID: %d", evaluationID)
 		}
 
 		if strings.Contains(strings.ToLower(responseObject.Message), "does not contain subevaluation") {
@@ -120,7 +120,7 @@ func (c *Client) RemoveReferenceFromParentEval(evaluationId int64) (err error) {
 		}
 	}
 
-	return fmt.Errorf("unexpected response for evaluationId: %d while deleting reference from parent evaluation, error: %s", evaluationId, err)
+	return fmt.Errorf("unexpected response for evaluationId: %d while deleting reference from parent evaluation, error: %s", evaluationID, err)
 }
 
 func (c *Client) DeleteEvaluation(evaluationId int64) (err error) {
