@@ -17,12 +17,21 @@ const (
 )
 
 const (
-	StatusActive      string = "ACTIVE"
-	StatusMaintenance        = "MAINTENANCE"
-	StatusInactive           = "INACTIVE"
-	StatusRetired            = "RETIRED"
-	StatusDeleted            = "DELETED"
+	StatusActive      = "ACTIVE"
+	StatusMaintenance = "MAINTENANCE"
+	StatusInactive    = "INACTIVE"
+	StatusRetired     = "RETIRED"
+	StatusDeleted     = "DELETED"
 )
+
+func ValidStatus(status string) bool {
+	switch status {
+	case StatusActive, StatusMaintenance, StatusInactive, StatusRetired, StatusDeleted:
+		return true
+	}
+
+	return false
+}
 
 type Tag struct {
 	Content      string `json:"content"`

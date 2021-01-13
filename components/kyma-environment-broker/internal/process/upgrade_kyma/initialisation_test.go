@@ -35,13 +35,12 @@ const (
 	fixProvisionerOperationID  = "e04de524-53b3-4890-b05a-296be393e4ba"
 )
 
-func createEvalMngr(storage storage.BrokerStorage, log *logrus.Logger) *InternalEvalUpdater {
+func createEvalManager(storage storage.BrokerStorage, log *logrus.Logger) *EvaluationManager {
 	ctx, _ := context.WithCancel(context.Background())
 	avsClient, _ := avs.NewClient(ctx, avs.Config{}, log)
 	avsDel := avs.NewDelegator(avsClient, avs.Config{}, storage.Operations())
-	internalEvalAssistant := avs.NewInternalEvalAssistant(avs.Config{})
-	upgradeInternalEvalUpdater := NewInternalEvalUpdater(avsDel, internalEvalAssistant, avs.Config{})
-	return upgradeInternalEvalUpdater
+	upgradeEvalManager := NewEvaluationManager(avsDel, avs.Config{})
+	return upgradeEvalManager
 }
 
 func TestInitialisationStep_Run(t *testing.T) {
@@ -71,7 +70,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		evalManager := createEvalMngr(memoryStorage, log)
+		evalManager := createEvalManager(memoryStorage, log)
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, nil, evalManager, nil, nil)
 
 		// when
@@ -118,7 +117,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		expectedOperation.State = orchestration.InProgress
 		rvc.On("ForUpgrade", expectedOperation).Return(ver, nil).Once()
 
-		evalManager := createEvalMngr(memoryStorage, log)
+		evalManager := createEvalManager(memoryStorage, log)
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManager, nil, rvc)
 
 		// when
@@ -149,7 +148,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 		require.NoError(t, err)
 
-		evalManager := createEvalMngr(memoryStorage, log)
+		evalManager := createEvalManager(memoryStorage, log)
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), nil, nil, evalManager, nil, nil)
 
 		// when

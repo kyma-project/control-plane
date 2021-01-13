@@ -108,17 +108,40 @@ func (del *Delegator) AddTags(logger logrus.FieldLogger, operation internal.Prov
 	return updatedOperation, d, nil
 }
 
+func (del *Delegator) ResetStatus(logger logrus.FieldLogger, operation internal.UpgradeKymaOperation, evalAssistant EvalAssistant) (internal.UpgradeKymaOperation, time.Duration, error) {
+	return del.SetStatus(logger, operation, evalAssistant, evalAssistant.GetOriginalEvalStatus(operation.Avs))
+}
+
 func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.UpgradeKymaOperation, evalAssistant EvalAssistant, status string) (internal.UpgradeKymaOperation, time.Duration, error) {
-	logger.Infof("starting the SetStatus to avs internal id [%d]", operation.Avs.AvsEvaluationInternalId)
-	var updatedOperation internal.UpgradeKymaOperation
-	d := 0 * time.Second
+	// skip for non-existent or deleted evaluation
+	if !evalAssistant.IsAlreadyCreated(operation.Avs) || evalAssistant.IsAlreadyDeleted(operation.Avs) {
+		return operation, 0, nil
+	}
 
 	evalId := evalAssistant.GetEvaluationId(operation.Avs)
 	currentStatus := evalAssistant.GetEvalStatus(operation.Avs)
 
+	logger.Infof("starting the SetStatus to avs id [%d]", evalId)
+
+	// obtain status if not loaded, fallback to active on error
+	if !ValidStatus(currentStatus) {
+		logger.Infof("making avs calls to get evaluation data")
+		eval, err := del.client.GetEvaluation(evalId)
+		if err != nil || eval == nil {
+			logger.Errorf("cannot obtain evaluation data: %s", err)
+			currentStatus = StatusActive
+		} else {
+			currentStatus = eval.Status
+		}
+
+		// update operation with current status
+		evalAssistant.SetEvalStatus(&operation.Avs, currentStatus)
+	}
+
 	// do api call iff current and requested status are different
+	// if evaluation has (additional) critical errors, fail the operation
 	if currentStatus != status {
-		logger.Infof("making avs calls to set status to the Evaluation")
+		logger.Infof("making avs calls to set status %s to the evaluation", status)
 		_, err := del.client.SetStatus(evalId, status)
 
 		switch {
@@ -135,14 +158,16 @@ func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.Up
 		}
 	}
 
-	// update status to ensure restore option
+	// update operation with newly configured status
 	evalAssistant.SetEvalStatus(&operation.Avs, status)
-	updatedOperation, d = del.upgradeManager.UpdateOperation(operation)
-	if d != 0 {
-		return updatedOperation, d, errors.New("cannot update avs operation status")
+
+	// save
+	operation, delay := del.upgradeManager.UpdateOperation(operation)
+	if delay != 0 {
+		return operation, delay, errors.New("cannot update avs operation status")
 	}
 
-	return updatedOperation, d, nil
+	return operation, 0, nil
 }
 
 func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.DeprovisioningOperation, logger logrus.FieldLogger, assistant EvalAssistant) (internal.DeprovisioningOperation, error) {

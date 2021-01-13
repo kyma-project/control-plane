@@ -99,15 +99,14 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 
 	avsClient, _ := avs.NewClient(ctx, avs.Config{}, logs)
 	avsDel := avs.NewDelegator(avsClient, avs.Config{}, db.Operations())
-	internalEvalAssistant := avs.NewInternalEvalAssistant(avs.Config{})
-	upgradeInternalEvalUpdater := upgrade_kyma.NewInternalEvalUpdater(avsDel, internalEvalAssistant, avs.Config{})
+	upgradeEvaluationManager := upgrade_kyma.NewEvaluationManager(avsDel, avs.Config{})
 
 	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, gardenerClient.CoreV1beta1(),
 		gardenerNamespace, eventBroker, inputFactory, &upgrade_kyma.TimeSchedule{
 			Retry:              10 * time.Millisecond,
 			StatusCheck:        100 * time.Millisecond,
 			UpgradeKymaTimeout: 4 * time.Second,
-		}, 250*time.Millisecond, runtimeVerConfigurator, defaultRegion, upgradeInternalEvalUpdater, logs)
+		}, 250*time.Millisecond, runtimeVerConfigurator, defaultRegion, upgradeEvaluationManager, logs)
 
 	return &OrchestrationSuite{
 		gardenerNamespace:  gardenerNamespace,

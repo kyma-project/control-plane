@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
 	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -34,12 +32,12 @@ type InitialisationStep struct {
 	instanceStorage        storage.Instances
 	provisionerClient      provisioner.Client
 	inputBuilder           input.CreatorForPlan
-	internalEvalUpdater    *InternalEvalUpdater
+	evaluationManager      *EvaluationManager
 	timeSchedule           TimeSchedule
 	runtimeVerConfigurator RuntimeVersionConfiguratorForUpgrade
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, ieu *InternalEvalUpdater,
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, em *EvaluationManager,
 	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
@@ -55,7 +53,7 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 		instanceStorage:        is,
 		provisionerClient:      pc,
 		inputBuilder:           b,
-		internalEvalUpdater:    ieu,
+		evaluationManager:      em,
 		timeSchedule:           *ts,
 		runtimeVerConfigurator: rvc,
 	}
@@ -68,14 +66,6 @@ func (s *InitialisationStep) Name() string {
 func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if operation.State == orchestrationExt.Canceled {
 		log.Infof("Skipping processing because orchestration %s was canceled", operation.OrchestrationID)
-
-		// revert to original evaluation status
-		operation, _, err := s.internalEvalUpdater.RestoreStatusToEval(operation, log)
-		if err != nil {
-			log.Errorf("cannot set status %s for upgrade operation", err)
-			return operation, s.timeSchedule.Retry, nil
-		}
-
 		return s.operationManager.OperationCanceled(operation, fmt.Sprintf("orchestration %s was canceled", operation.OrchestrationID))
 	}
 	if operation.State == orchestrationExt.Pending {
@@ -186,21 +176,21 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 func (s *InitialisationStep) performRuntimeChecks(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	var errStatus error
 	operation, delay, err := s.checkRuntimeStatus(operation, instance, log)
-	inMaintenance := s.internalEvalUpdater.assistant.GetEvalStatus(operation.Avs) == avs.StatusMaintenance
+	inMaintenance := s.evaluationManager.InMaintenance(operation)
 
 	// ensures that required pre- and post- logic is executed
 	if operation.State == orchestrationExt.InProgress {
-		// set maintenance evaluation state on init
+		// set maintenance evaluation status on init
 		if !inMaintenance {
-			operation, _, errStatus = s.internalEvalUpdater.SetStatusToEval(avs.StatusMaintenance, operation, log)
+			operation, delay, errStatus = s.evaluationManager.SetMaintenanceStatus(operation, log)
 			if errStatus != nil {
 				err = errors.Wrap(err, errStatus.Error())
 			}
 		}
 	} else if operation.State == orchestrationExt.Succeeded || operation.State == orchestrationExt.Failed {
-		// restore previous evaluation state on finish
+		// restore evaluation status on finish
 		if inMaintenance {
-			operation, _, errStatus = s.internalEvalUpdater.RestoreStatusToEval(operation, log)
+			operation, delay, errStatus = s.evaluationManager.RestoreStatus(operation, log)
 			if errStatus != nil {
 				err = errors.Wrap(err, errStatus.Error())
 			}

@@ -64,8 +64,10 @@ func (eea *ExternalEvalAssistant) SetEvalId(lifecycleData *internal.AvsLifecycle
 }
 
 func (eea *ExternalEvalAssistant) SetEvalStatus(lifecycleData *internal.AvsLifecycleData, status string) {
-	lifecycleData.AvsExternalEvaluationStatus.Original = lifecycleData.AvsExternalEvaluationStatus.Current
-	lifecycleData.AvsExternalEvaluationStatus.Current = status
+	if lifecycleData.AvsExternalEvaluationStatus.Current != status {
+		lifecycleData.AvsExternalEvaluationStatus.Original = lifecycleData.AvsExternalEvaluationStatus.Current
+		lifecycleData.AvsExternalEvaluationStatus.Current = status
+	}
 }
 
 func (eea *ExternalEvalAssistant) GetEvalStatus(lifecycleData internal.AvsLifecycleData) string {
@@ -74,6 +76,10 @@ func (eea *ExternalEvalAssistant) GetEvalStatus(lifecycleData internal.AvsLifecy
 
 func (eea *ExternalEvalAssistant) GetOriginalEvalStatus(lifecycleData internal.AvsLifecycleData) string {
 	return lifecycleData.AvsExternalEvaluationStatus.Original
+}
+
+func (eea *ExternalEvalAssistant) IsInMaintenance(lifecycleData internal.AvsLifecycleData) bool {
+	return lifecycleData.AvsExternalEvaluationStatus.Current == StatusMaintenance
 }
 
 func (eea *ExternalEvalAssistant) ProvideCheckType() string {
