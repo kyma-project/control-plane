@@ -66,7 +66,7 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 		RuntimeID: ptr.String(fixRuntimeID),
 	}, nil)
 
-	evalManager := createEvalMngr(memoryStorage, log)
+	evalManager := createEvalManager(memoryStorage, log)
 	step := NewUpgradeKymaStep(memoryStorage.Operations(), memoryStorage.RuntimeStates(), provisionerClient, evalManager, nil)
 
 	// when
