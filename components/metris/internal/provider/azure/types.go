@@ -23,8 +23,8 @@ var (
 	ErrResourceGroupNotFound  = errors.New("resource group not found")
 	ErrMetricClient           = errors.New("metric client error")
 	ErrMetricNotFound         = errors.New("no metric found")
-	ErrTimeseriesNotFound     = errors.New("no timeseries found")
-	ErrTimeseriesDataNotFound = errors.New("no timeserie data found")
+	ErrTimeSeriesNotFound     = errors.New("no time series found")
+	ErrTimeSeriesDataNotFound = errors.New("no time series data found")
 )
 
 const (
@@ -47,9 +47,6 @@ const (
 	PT1M TimeGrain = "PT1M"
 	// PT5M ...
 	PT5M TimeGrain = "PT5M"
-
-	// maximum number of failed attempt to get metrics, after that instance is remove from cache/storage.
-	maxRetryAttempts int = 5
 
 	responseErrCodeResourceGroupNotFound string = "ResourceGroupNotFound"
 )
@@ -112,8 +109,6 @@ type Instance struct {
 	eventHubResourceGroupName string
 	// retryAttempts store the number of retry attempts to get metrics.
 	retryAttempts int
-	// retryBackoff indicate to backing off between requests.
-	retryBackoff bool
 }
 
 //go:generate mockery --name AuthConfig
@@ -130,7 +125,7 @@ type Azure struct {
 	config           *provider.Config
 	instanceStorage  storage.Storage
 	vmCapsStorage    storage.Storage
-	queue            workqueue.DelayingInterface
+	queue            workqueue.RateLimitingInterface
 	ClientAuthConfig AuthConfig
 }
 

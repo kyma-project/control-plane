@@ -1,4 +1,5 @@
 # kcp upgrade kyma
+
 Upgrades or reconfigures Kyma on one or more Kyma Runtimes.
 
 ## Synopsis

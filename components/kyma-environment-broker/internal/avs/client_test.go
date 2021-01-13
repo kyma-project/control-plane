@@ -163,7 +163,7 @@ func TestClient_RemoveReferenceFromParentEval(t *testing.T) {
 		assert.NoError(t, err)
 
 		// When
-		err = client.RemoveReferenceFromParentEval(resp.Id)
+		err = client.RemoveReferenceFromParentEval(parentEvaluationID, resp.Id)
 
 		// Then
 		assert.NoError(t, err)
@@ -181,11 +181,30 @@ func TestClient_RemoveReferenceFromParentEval(t *testing.T) {
 		assert.NoError(t, err)
 
 		// When
-		err = client.RemoveReferenceFromParentEval(111)
+		err = client.RemoveReferenceFromParentEval(parentEvaluationID, 111)
 
 		// then
 		assert.Error(t, err)
 	})
+	t.Run("should return error when parent evaluation does not contain subevaluation", func(t *testing.T) {
+		// Given
+		server := newServer(t)
+		mockServer := fixHTTPServer(server)
+		client, err := NewClient(context.TODO(), Config{
+			OauthTokenEndpoint: fmt.Sprintf("%s/oauth/token", mockServer.URL),
+			ApiEndpoint:        fmt.Sprintf("%s/api/v2/evaluationmetadata", mockServer.URL),
+			ParentId:           parentEvaluationID,
+		}, logrus.New())
+		assert.NoError(t, err)
+
+		// When
+		err = client.RemoveReferenceFromParentEval(int64(9999), 111)
+
+		// then
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "400")
+	})
+
 }
 
 func TestClient_AddTag(t *testing.T) {
@@ -408,7 +427,7 @@ func (s *server) removeReferenceFromParentEval(w http.ResponseWriter, r *http.Re
 
 	_, exists := s.evaluations.parentIDrefs[parentID]
 	if !exists {
-		w.WriteHeader(http.StatusNotFound)
+		w.WriteHeader(http.StatusBadRequest)
 	}
 
 	s.evaluations.removeParentRef(parentID, evalID)

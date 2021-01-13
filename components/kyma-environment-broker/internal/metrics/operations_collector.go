@@ -4,79 +4,102 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	namespace = "keb_operations"
-	subsystem = "operations"
+// OperationsStatsGetter provides metrics, which shows how many operations were done for the following plans:
+
+// - compass_keb_operations_{plan_name}_provisioning_failed_total
+// - compass_keb_operations_{plan_name}_provisioning_in_progress_total
+// - compass_keb_operations_{plan_name}_provisioning_succeeded_total
+// - compass_keb_operations_{plan_name}_deprovisioning_failed_total
+// - compass_keb_operations_{plan_name}_deprovisioning_in_progress_total
+// - compass_keb_operations_{plan_name}_deprovisioning_succeeded_total
+
+var (
+	supportedPlansIDs = []string{broker.AzurePlanID, broker.AzureLitePlanID, broker.TrialPlanID}
 )
 
-// OperationsStatsGetter provides metrics, which shows how many operations were done:
-// - compass_keb_operations_provisioning_failed_total
-// - compass_keb_operations_provisioning_in_progress_total
-// - compass_keb_operations_provisioning_succeeded_total
-// - compass_keb_operations_deprovisioning_failed_total
-// - compass_keb_operations_deprovisioning_in_progress_total
-// - compass_keb_operations_deprovisioning_secceeded_total
 type OperationsStatsGetter interface {
-	GetOperationStats() (internal.OperationStats, error)
+	GetOperationStatsByPlan() (map[string]internal.OperationStats, error)
+}
+
+type OperationStat struct {
+	failedProvisioning   *prometheus.Desc
+	failedDeprovisioning *prometheus.Desc
+
+	succeededProvisioning   *prometheus.Desc
+	succeededDeprovisioning *prometheus.Desc
+
+	inProgressProvisioning   *prometheus.Desc
+	inProgressDeprovisioning *prometheus.Desc
+}
+
+func (c *OperationStat) Describe(ch chan<- *prometheus.Desc) {
+	ch <- c.inProgressProvisioning
+	ch <- c.succeededProvisioning
+	ch <- c.failedProvisioning
+
+	ch <- c.inProgressDeprovisioning
+	ch <- c.succeededDeprovisioning
+	ch <- c.failedDeprovisioning
 }
 
 type OperationsCollector struct {
 	statsGetter OperationsStatsGetter
 
-	provisioningInProgressDesc *prometheus.Desc
-	provisioningSucceededDesc  *prometheus.Desc
-	provisioningFailedDesc     *prometheus.Desc
-
-	deprovisioningInProgressDesc *prometheus.Desc
-	deprovisioningSucceededDesc  *prometheus.Desc
-	deprovisioningFailedDesc     *prometheus.Desc
+	operationStats map[string]OperationStat
 }
 
 func NewOperationsCollector(statsGetter OperationsStatsGetter) *OperationsCollector {
+	opStats := make(map[string]OperationStat, len(supportedPlansIDs))
+
+	for _, p := range supportedPlansIDs {
+		opStats[p] = OperationStat{
+			inProgressProvisioning: prometheus.NewDesc(
+				fqName(broker.PlanNamesMapping[p], dbmodel.OperationTypeProvision, domain.InProgress),
+				"The number of provisioning operations in progress",
+				[]string{},
+				nil),
+			succeededProvisioning: prometheus.NewDesc(
+				fqName(broker.PlanNamesMapping[p], dbmodel.OperationTypeProvision, domain.Succeeded),
+				"The number of succeeded provisioning operations",
+				[]string{},
+				nil),
+			failedProvisioning: prometheus.NewDesc(
+				fqName(broker.PlanNamesMapping[p], dbmodel.OperationTypeProvision, domain.Failed),
+				"The number of failed provisioning operations",
+				[]string{},
+				nil),
+			inProgressDeprovisioning: prometheus.NewDesc(
+				fqName(broker.PlanNamesMapping[p], dbmodel.OperationTypeDeprovision, domain.InProgress),
+				"The number of deprovisioning operations in progress",
+				[]string{},
+				nil),
+			succeededDeprovisioning: prometheus.NewDesc(
+				fqName(broker.PlanNamesMapping[p], dbmodel.OperationTypeDeprovision, domain.Succeeded),
+				"The number of succeeded deprovisioning operations",
+				[]string{},
+				nil),
+			failedDeprovisioning: prometheus.NewDesc(
+				fqName(broker.PlanNamesMapping[p], dbmodel.OperationTypeDeprovision, domain.Failed),
+				"The number of failed deprovisioning operations",
+				[]string{},
+				nil),
+		}
+	}
+
 	return &OperationsCollector{
-		statsGetter: statsGetter,
-
-		provisioningInProgressDesc: prometheus.NewDesc(
-			fqName(dbmodel.OperationTypeProvision, domain.InProgress),
-			"The number of provisioning operations in progress",
-			[]string{},
-			nil),
-		provisioningFailedDesc: prometheus.NewDesc(
-			fqName(dbmodel.OperationTypeProvision, domain.Failed),
-			"The number of failed provisioning operations",
-			[]string{},
-			nil),
-		provisioningSucceededDesc: prometheus.NewDesc(
-			fqName(dbmodel.OperationTypeProvision, domain.Succeeded),
-			"The number of succeeded provisioning operations",
-			[]string{},
-			nil),
-
-		deprovisioningInProgressDesc: prometheus.NewDesc(
-			fqName(dbmodel.OperationTypeDeprovision, domain.InProgress),
-			"The number of deprovisioning operations in progress",
-			[]string{},
-			nil),
-		deprovisioningFailedDesc: prometheus.NewDesc(
-			fqName(dbmodel.OperationTypeDeprovision, domain.Failed),
-			"The number of failed deprovisioning operations",
-			[]string{},
-			nil),
-		deprovisioningSucceededDesc: prometheus.NewDesc(
-			fqName(dbmodel.OperationTypeDeprovision, domain.Succeeded),
-			"The number of succeeded deprovisioning operations",
-			[]string{},
-			nil),
+		statsGetter:    statsGetter,
+		operationStats: opStats,
 	}
 }
 
-func fqName(operationType dbmodel.OperationType, state domain.LastOperationState) string {
+func fqName(planName string, operationType dbmodel.OperationType, state domain.LastOperationState) string {
 	var opType string
 	switch operationType {
 	case dbmodel.OperationTypeProvision:
@@ -94,51 +117,50 @@ func fqName(operationType dbmodel.OperationType, state domain.LastOperationState
 	case domain.InProgress:
 		st = "in_progress"
 	}
-	name := fmt.Sprintf("operations_%s_%s_total", opType, st)
+	name := fmt.Sprintf("operations_%s_%s_%s_total", planName, opType, st)
 	return prometheus.BuildFQName(prometheusNamespace, prometheusSubsystem, name)
 }
 
 func (c *OperationsCollector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- c.deprovisioningFailedDesc
-	ch <- c.deprovisioningSucceededDesc
-	ch <- c.deprovisioningInProgressDesc
-	ch <- c.provisioningFailedDesc
-	ch <- c.provisioningSucceededDesc
-	ch <- c.deprovisioningInProgressDesc
+	for _, op := range c.operationStats {
+		op.Describe(ch)
+	}
 }
 
 // Collect implements the prometheus.Collector interface.
 func (c *OperationsCollector) Collect(ch chan<- prometheus.Metric) {
-	stats, err := c.statsGetter.GetOperationStats()
+	stats, err := c.statsGetter.GetOperationStatsByPlan()
 	if err != nil {
 		return
 	}
 
-	collect(ch,
-		c.provisioningInProgressDesc,
-		stats.Provisioning[domain.InProgress],
-	)
-	collect(ch,
-		c.provisioningSucceededDesc,
-		stats.Provisioning[domain.Succeeded],
-	)
-	collect(ch,
-		c.provisioningFailedDesc,
-		stats.Provisioning[domain.Failed],
-	)
+	for planID, ops := range c.operationStats {
+		collect(ch,
+			ops.inProgressProvisioning,
+			stats[planID].Provisioning[domain.InProgress],
+		)
+		collect(ch,
+			ops.succeededProvisioning,
+			stats[planID].Provisioning[domain.Succeeded],
+		)
+		collect(ch,
+			ops.failedProvisioning,
+			stats[planID].Provisioning[domain.Failed],
+		)
+		collect(ch,
+			ops.inProgressDeprovisioning,
+			stats[planID].Deprovisioning[domain.InProgress],
+		)
+		collect(ch,
+			ops.succeededDeprovisioning,
+			stats[planID].Deprovisioning[domain.Succeeded],
+		)
+		collect(ch,
+			ops.failedDeprovisioning,
+			stats[planID].Deprovisioning[domain.Failed],
+		)
+	}
 
-	collect(ch,
-		c.deprovisioningInProgressDesc,
-		stats.Deprovisioning[domain.InProgress],
-	)
-	collect(ch,
-		c.deprovisioningSucceededDesc,
-		stats.Deprovisioning[domain.Succeeded],
-	)
-	collect(ch,
-		c.deprovisioningFailedDesc,
-		stats.Deprovisioning[domain.Failed],
-	)
 }
 
 func collect(ch chan<- prometheus.Metric, desc *prometheus.Desc, value int, labelValues ...string) {

@@ -45,9 +45,9 @@ type OperationDTO struct {
 }
 
 type OperationStatEntry struct {
-	Type  string
-	State string
-	Total int
+	Type   string
+	State  string
+	PlanID string
 }
 
 type InstanceByGlobalAccountIDStatEntry struct {
