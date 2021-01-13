@@ -44,9 +44,8 @@ type LMS struct {
 }
 
 type AvsEvaluationStatus struct {
-	Configured bool   `json:"configured"`
-	Current    string `json:"current_value"`
-	Original   string `json:"original_value"`
+	Current  string `json:"current_value"`
+	Original string `json:"original_value"`
 }
 
 type AvsLifecycleData struct {
