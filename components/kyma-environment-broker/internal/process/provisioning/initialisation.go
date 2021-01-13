@@ -88,11 +88,6 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	var test *string
-	test = nil
-	test2 := *test
-	fmt.Print(test2)
-
 	if time.Since(operation.CreatedAt) > s.operationTimeout {
 		log.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout))
