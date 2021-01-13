@@ -33,27 +33,6 @@ func NewOperation() *operations {
 	}
 }
 
-func (s *operations) UpdateOperationParameters(operation internal.Operation) (*internal.Operation, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	oldOp, err := s.getOperation(operation.ID)
-	if err != nil {
-		return nil, err
-	}
-	if oldOp.Version != operation.Version {
-		return nil, dberr.Conflict("unable to update provisioning operation with id %s (for instance id %s) - conflict", operation.ID, operation.InstanceID)
-	}
-	operation.Version = operation.Version + 1
-
-	op, err := s.updateOperation(operation)
-	if err != nil {
-		return nil, errors.Wrap(err, "while updating operation")
-	}
-
-	return &op, nil
-}
-
 func (s *operations) InsertProvisioningOperation(operation internal.ProvisioningOperation) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
