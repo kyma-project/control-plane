@@ -64,8 +64,11 @@ func (eea *ExternalEvalAssistant) SetEvalId(lifecycleData *internal.AvsLifecycle
 }
 
 func (eea *ExternalEvalAssistant) SetEvalStatus(lifecycleData *internal.AvsLifecycleData, status string) {
-	if lifecycleData.AvsExternalEvaluationStatus.Current != status {
-		lifecycleData.AvsExternalEvaluationStatus.Original = lifecycleData.AvsExternalEvaluationStatus.Current
+	current := lifecycleData.AvsExternalEvaluationStatus.Current
+	if current != status {
+		if ValidStatus(current) {
+			lifecycleData.AvsExternalEvaluationStatus.Original = current
+		}
 		lifecycleData.AvsExternalEvaluationStatus.Current = status
 	}
 }

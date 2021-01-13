@@ -97,8 +97,11 @@ func (iec *InternalEvalAssistant) SetEvalId(lifecycleData *internal.AvsLifecycle
 }
 
 func (iec *InternalEvalAssistant) SetEvalStatus(lifecycleData *internal.AvsLifecycleData, status string) {
-	if lifecycleData.AvsInternalEvaluationStatus.Current != status {
-		lifecycleData.AvsInternalEvaluationStatus.Original = lifecycleData.AvsInternalEvaluationStatus.Current
+	current := lifecycleData.AvsInternalEvaluationStatus.Current
+	if current != status {
+		if ValidStatus(current) {
+			lifecycleData.AvsInternalEvaluationStatus.Original = current
+		}
 		lifecycleData.AvsInternalEvaluationStatus.Current = status
 	}
 }

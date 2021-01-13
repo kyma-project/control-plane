@@ -1,6 +1,7 @@
 package avs
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -109,7 +110,19 @@ func (del *Delegator) AddTags(logger logrus.FieldLogger, operation internal.Prov
 }
 
 func (del *Delegator) ResetStatus(logger logrus.FieldLogger, operation internal.UpgradeKymaOperation, evalAssistant EvalAssistant) (internal.UpgradeKymaOperation, time.Duration, error) {
-	return del.SetStatus(logger, operation, evalAssistant, evalAssistant.GetOriginalEvalStatus(operation.Avs))
+	status := evalAssistant.GetOriginalEvalStatus(operation.Avs)
+	// For cases when operation is not loaded (properly) from DB, status fields will be rendered
+	// invalid. This will lead to a failing operation on reset in the following scenario:
+	//
+	// Upgrade operation when loaded (for the first time, on init) was InProgress and was later switched to complete.
+	// When launching post operation logic, SetStatus will be invoked with invalid value, failing the operation.
+	// One of possible hotfixes is to ensure that for invalid status there is a default value (such as Active).
+	if !ValidStatus(status) {
+		logger.Errorf("invalid status for ResetStatus: %s", status)
+		status = StatusActive
+	}
+
+	return del.SetStatus(logger, operation, evalAssistant, status)
 }
 
 func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.UpgradeKymaOperation, evalAssistant EvalAssistant, status string) (internal.UpgradeKymaOperation, time.Duration, error) {
@@ -118,12 +131,20 @@ func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.Up
 		return operation, 0, nil
 	}
 
+	// fail for invalid status
+	if !ValidStatus(status) {
+		errMsg := fmt.Sprintf("avs SetStatus tried invalid status: %s", status)
+		logger.Error(errMsg)
+		return del.upgradeManager.OperationFailed(operation, errMsg)
+	}
+
+	delay := time.Duration(0)
 	evalId := evalAssistant.GetEvaluationId(operation.Avs)
 	currentStatus := evalAssistant.GetEvalStatus(operation.Avs)
 
 	logger.Infof("starting the SetStatus to avs id [%d]", evalId)
 
-	// obtain status if not loaded, fallback to active on error
+	// obtain status from avs if not loaded, fallback to active on error
 	if !ValidStatus(currentStatus) {
 		logger.Infof("making avs calls to get evaluation data")
 		eval, err := del.client.GetEvaluation(evalId)
@@ -134,12 +155,10 @@ func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.Up
 			currentStatus = eval.Status
 		}
 
-		// update operation with current status
 		evalAssistant.SetEvalStatus(&operation.Avs, currentStatus)
 	}
 
 	// do api call iff current and requested status are different
-	// if evaluation has (additional) critical errors, fail the operation
 	if currentStatus != status {
 		logger.Infof("making avs calls to set status %s to the evaluation", status)
 		_, err := del.client.SetStatus(evalId, status)
@@ -162,12 +181,12 @@ func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.Up
 	evalAssistant.SetEvalStatus(&operation.Avs, status)
 
 	// save
-	operation, delay := del.upgradeManager.UpdateOperation(operation)
+	operation, delay = del.upgradeManager.UpdateOperation(operation)
 	if delay != 0 {
 		return operation, delay, errors.New("cannot update avs operation status")
 	}
 
-	return operation, 0, nil
+	return operation, delay, nil
 }
 
 func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.DeprovisioningOperation, logger logrus.FieldLogger, assistant EvalAssistant) (internal.DeprovisioningOperation, error) {
