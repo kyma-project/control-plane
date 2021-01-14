@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
@@ -106,6 +107,7 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 func (b *DeprovisionEndpoint) reprocessOperation(operation *internal.DeprovisioningOperation) error {
 	operation.State = domain.InProgress
 	operation.ProvisionerOperationID = ""
+	operation.CreatedAt = time.Now()
 	_, err := b.operationsStorage.UpdateDeprovisioningOperation(*operation)
 	if err != nil {
 		return errors.New("cannot update existing operation")
