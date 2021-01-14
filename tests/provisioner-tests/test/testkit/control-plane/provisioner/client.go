@@ -20,6 +20,7 @@ type Client interface {
 	ReconnectRuntimeAgent(runtimeID string) (string, error)
 	RuntimeStatus(runtimeID string) (schema.RuntimeStatus, error)
 	RuntimeOperationStatus(operationID string) (schema.OperationStatus, error)
+	HibernateRuntime(runtimeID string) (string, error)
 }
 
 type client struct {
