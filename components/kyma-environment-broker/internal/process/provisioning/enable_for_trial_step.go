@@ -7,22 +7,18 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
 type EnableForTrialPlanStep struct {
-	step             Step
-	operationManager *process.ProvisionOperationManager
+	step Step
 }
 
 // ensure the interface is implemented
 var _ Step = (*EnableForTrialPlanStep)(nil)
 
-func NewEnableForTrialPlanStep(os storage.Operations, step Step) *EnableForTrialPlanStep {
+func NewEnableForTrialPlanStep(step Step) *EnableForTrialPlanStep {
 	return &EnableForTrialPlanStep{
-		step:             step,
-		operationManager: process.NewProvisionOperationManager(os),
+		step: step,
 	}
 }
 
@@ -31,12 +27,7 @@ func (s *EnableForTrialPlanStep) Name() string {
 }
 
 func (s *EnableForTrialPlanStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-	if broker.IsTrialPlan(pp.PlanID) {
+	if broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) {
 		log.Infof("Running step %s", s.Name())
 		return s.step.Run(operation, log)
 	}

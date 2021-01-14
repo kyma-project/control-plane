@@ -76,16 +76,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 		return 0, err
 	}
 
-	var pp internal.ProvisioningParameters
-	if provisioningOp != nil {
-		pp, err = provisioningOp.GetProvisioningParameters()
-		if err != nil {
-			m.log.Errorf("while getting ProvisioningParameters from operation id %q: %s", operation.ID, err)
-			return 0, err
-		}
-	}
-
-	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID, "planID": pp.PlanID})
+	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID, "planID": provisioningOp.ProvisioningParameters.PlanID})
 
 	var when time.Duration
 	logOperation.Info("Start process operation steps")

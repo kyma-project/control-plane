@@ -30,12 +30,15 @@ func TestAuditLog_ScriptFileDoesNotExist(t *testing.T) {
 	svc.fs = mm
 
 	operation := internal.ProvisioningOperation{
-		ProvisioningParameters: `{"ers_context": {"subaccount_id": "1234567890"}}`,
+		Operation: internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{SubAccountID: "1234567890"}},
+		},
 	}
-	repo.InsertProvisioningOperation(operation)
+	err := repo.InsertProvisioningOperation(operation)
+	require.NoError(t, err)
 
 	// when
-	_, _, err := svc.Run(operation, NewLogDummy())
+	_, _, err = svc.Run(operation, NewLogDummy())
 	//then
 	require.Error(t, err)
 	require.EqualError(t, err, "open /auditlog-script/script: file does not exist")
@@ -142,8 +145,10 @@ return "fooBar"
 	}).Return(nil).Once()
 
 	operation := internal.ProvisioningOperation{
-		InputCreator:           inputCreatorMock,
-		ProvisioningParameters: `{"ers_context": {"subaccount_id": "1234567890"}}`,
+		InputCreator: inputCreatorMock,
+		Operation: internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{SubAccountID: "1234567890"}},
+		},
 	}
 	repo.InsertProvisioningOperation(operation)
 	// when

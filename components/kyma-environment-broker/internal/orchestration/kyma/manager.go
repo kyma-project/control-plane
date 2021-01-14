@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -21,18 +21,20 @@ import (
 type upgradeKymaManager struct {
 	orchestrationStorage storage.Orchestrations
 	operationStorage     storage.Operations
+	instanceStorage      storage.Instances
 	resolver             orchestration.RuntimeResolver
 	kymaUpgradeExecutor  process.Executor
 	log                  logrus.FieldLogger
 	pollingInterval      time.Duration
 }
 
-func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations,
+func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
 	kymaUpgradeExecutor process.Executor, resolver orchestration.RuntimeResolver,
 	pollingInterval time.Duration, log logrus.FieldLogger) process.Executor {
 	return &upgradeKymaManager{
 		orchestrationStorage: orchestrationStorage,
 		operationStorage:     operationStorage,
+		instanceStorage:      instanceStorage,
 		resolver:             resolver,
 		kymaUpgradeExecutor:  kymaUpgradeExecutor,
 		pollingInterval:      pollingInterval,
@@ -101,9 +103,9 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 			if err != nil {
 				return nil, errors.Wrapf(err, "while getting provisioning operation for instance id %s", r.InstanceID)
 			}
-			provisioningParams, err := po.GetProvisioningParameters()
-			if err != nil {
-				return nil, errors.Wrap(err, "while getting provisioning operation")
+			if po.ProvisioningParameters.PlanID == "" {
+				u.log.Infof("Operation %s does not have correct ProvisioningParameters")
+				continue
 			}
 			windowBegin := time.Time{}
 			windowEnd := time.Time{}
@@ -111,17 +113,23 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 				windowBegin, windowEnd = u.resolveWindowTime(r.MaintenanceWindowBegin, r.MaintenanceWindowEnd)
 			}
 
+			inst, err := u.instanceStorage.GetByID(r.InstanceID)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while getting instance %s", r.InstanceID)
+			}
 			id := uuid.New().String()
 			op := internal.UpgradeKymaOperation{
 				Operation: internal.Operation{
-					ID:              id,
-					Version:         0,
-					CreatedAt:       time.Now(),
-					UpdatedAt:       time.Now(),
-					InstanceID:      r.InstanceID,
-					State:           orchestration.Pending,
-					Description:     "Operation created",
-					OrchestrationID: o.OrchestrationID,
+					ID:                     id,
+					Version:                0,
+					CreatedAt:              time.Now(),
+					UpdatedAt:              time.Now(),
+					InstanceID:             r.InstanceID,
+					State:                  orchestration.Pending,
+					Description:            "Operation created",
+					OrchestrationID:        o.OrchestrationID,
+					ProvisioningParameters: po.ProvisioningParameters,
+					InstanceDetails:        inst.InstanceDetails,
 				},
 				RuntimeOperation: orchestration.RuntimeOperation{
 					ID: id,
@@ -135,7 +143,6 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 					},
 					DryRun: params.DryRun,
 				},
-				PlanID: provisioningParams.PlanID,
 			}
 			result = append(result, op)
 			err = u.operationStorage.InsertUpgradeKymaOperation(op)

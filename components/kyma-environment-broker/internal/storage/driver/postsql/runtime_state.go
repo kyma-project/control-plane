@@ -3,10 +3,11 @@ package postsql
 import (
 	"encoding/json"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -14,12 +15,12 @@ import (
 )
 
 type runtimeState struct {
-	dbsession.Factory
+	postsql.Factory
 
 	cipher Cipher
 }
 
-func NewRuntimeStates(sess dbsession.Factory, cipher Cipher) *runtimeState {
+func NewRuntimeStates(sess postsql.Factory, cipher Cipher) *runtimeState {
 	return &runtimeState{
 		Factory: sess,
 		cipher:  cipher,
@@ -35,7 +36,7 @@ func (s *runtimeState) Insert(runtimeState internal.RuntimeState) error {
 	return wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		err := sess.InsertRuntimeState(state)
 		if err != nil {
-			log.Warnf("while saving runtime state ID %s: %v", runtimeState.ID, err)
+			log.Errorf("while saving runtime state ID %s: %v", runtimeState.ID, err)
 			return false, nil
 		}
 		return true, nil
@@ -52,7 +53,7 @@ func (s *runtimeState) ListByRuntimeID(runtimeID string) ([]internal.RuntimeStat
 			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("RuntimeStates not found")
 			}
-			log.Warnf("while getting RuntimeState: %v", lastErr)
+			log.Errorf("while getting RuntimeState: %v", lastErr)
 			return false, nil
 		}
 		return true, nil
@@ -77,7 +78,7 @@ func (s *runtimeState) GetByOperationID(operationID string) (internal.RuntimeSta
 			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("RuntimeState for operation %s not found", operationID)
 			}
-			log.Warnf("while getting RuntimeState: %v", lastErr)
+			log.Errorf("while getting RuntimeState: %v", lastErr)
 			return false, nil
 		}
 		return true, nil

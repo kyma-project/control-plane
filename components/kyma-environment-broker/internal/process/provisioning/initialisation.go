@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -49,6 +49,7 @@ type InitialisationStep struct {
 	externalEvalCreator         *ExternalEvalCreator
 	internalEvalUpdater         *InternalEvalUpdater
 	iasType                     *IASType
+	operationTimeout            time.Duration
 	provisioningTimeout         time.Duration
 	runtimeVerConfigurator      RuntimeVersionConfiguratorForProvisioning
 	serviceManagerClientFactory *servicemanager.ClientFactory
@@ -62,7 +63,8 @@ func NewInitialisationStep(os storage.Operations,
 	avsExternalEvalCreator *ExternalEvalCreator,
 	avsInternalEvalUpdater *InternalEvalUpdater,
 	iasType *IASType,
-	timeout time.Duration,
+	provisioningTimeout time.Duration,
+	operationTimeout time.Duration,
 	rvc RuntimeVersionConfiguratorForProvisioning,
 	smcf *servicemanager.ClientFactory) *InitialisationStep {
 	return &InitialisationStep{
@@ -74,7 +76,8 @@ func NewInitialisationStep(os storage.Operations,
 		externalEvalCreator:         avsExternalEvalCreator,
 		internalEvalUpdater:         avsInternalEvalUpdater,
 		iasType:                     iasType,
-		provisioningTimeout:         timeout,
+		operationTimeout:            operationTimeout,
+		provisioningTimeout:         provisioningTimeout,
 		runtimeVerConfigurator:      rvc,
 		serviceManagerClientFactory: smcf,
 	}
@@ -85,13 +88,9 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-	if pp.PlanID == broker.TrialPlanID {
-		s.externalEvalCreator.disabled = true
+	if time.Since(operation.CreatedAt) > s.operationTimeout {
+		log.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout))
 	}
 	operation.SMClientFactory = s.serviceManagerClientFactory
 
@@ -114,37 +113,31 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 }
 
 func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-
-	err = s.configureKymaVersion(&operation, &pp)
+	err := s.configureKymaVersion(&operation)
 	if err != nil {
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	}
 
-	log.Infof("create provisioner input creator for %q plan ID", pp.PlanID)
-	creator, err := s.inputBuilder.CreateProvisionInput(pp, operation.RuntimeVersion)
+	log.Infof("create provisioner input creator for %q plan ID", operation.ProvisioningParameters.PlanID)
+	creator, err := s.inputBuilder.CreateProvisionInput(operation.ProvisioningParameters, operation.RuntimeVersion)
 	switch {
 	case err == nil:
 		operation.InputCreator = creator
 		return operation, 0, nil
 	case kebError.IsTemporaryError(err):
-		log.Errorf("cannot create input creator at the moment for plan %s and version %s: %s", pp.PlanID, pp.Parameters.KymaVersion, err)
+		log.Errorf("cannot create input creator at the moment for plan %s and version %s: %s", operation.ProvisioningParameters.PlanID, operation.ProvisioningParameters.Parameters.KymaVersion, err)
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	default:
-		log.Errorf("cannot create input creator for plan %s: %s", pp.PlanID, err)
+		log.Errorf("cannot create input creator for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
 		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
 	}
 }
 
-func (s *InitialisationStep) configureKymaVersion(operation *internal.ProvisioningOperation, pp *internal.ProvisioningParameters) error {
+func (s *InitialisationStep) configureKymaVersion(operation *internal.ProvisioningOperation) error {
 	if !operation.RuntimeVersion.IsEmpty() {
 		return nil
 	}
-	version, err := s.runtimeVerConfigurator.ForProvisioning(*operation, *pp)
+	version, err := s.runtimeVerConfigurator.ForProvisioning(*operation)
 	if err != nil {
 		return errors.Wrap(err, "while getting the runtime version")
 	}
@@ -221,15 +214,19 @@ func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance, log
 
 func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOperation, instance *internal.Instance, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
 	// action #1
-	operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL, log)
+	operation, repeat, err := s.createExternalEval(operation, instance, log)
 	if err != nil || repeat != 0 {
+		if err != nil {
+			log.Errorf("while creating external Evaluation: %s", err)
+			return operation, repeat, err
+		}
 		return operation, repeat, nil
 	}
 
 	// action #2
 	tags, operation, repeat, err := s.createTagsForRuntime(operation, instance)
 	if err != nil || repeat != 0 {
-		log.Errorf("while adding Tags to Evaluation: %s", err)
+		log.Errorf("while creating Tags for Evaluation: %s", err)
 		return operation, repeat, nil
 	}
 	operation, repeat, err = s.internalEvalUpdater.AddTagsToEval(tags, operation, "", log)
@@ -254,6 +251,19 @@ func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOp
 	}
 
 	return s.operationManager.OperationSucceeded(operation, msg)
+}
+
+func (s *InitialisationStep) createExternalEval(operation internal.ProvisioningOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	if operation.ProvisioningParameters.PlanID == broker.TrialPlanID {
+		log.Info("skipping AVS external evaluation creation for trial plan")
+		return operation, 0, nil
+	}
+	log.Infof("creating external evaluation for instance %", instance.InstanceID)
+	operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL, log)
+	if err != nil || repeat != 0 {
+		return operation, repeat, err
+	}
+	return operation, 0, nil
 }
 
 func (s *InitialisationStep) createTagsForRuntime(operation internal.ProvisioningOperation, instance *internal.Instance) ([]*avs.Tag, internal.ProvisioningOperation, time.Duration, error) {

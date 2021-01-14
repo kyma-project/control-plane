@@ -39,20 +39,13 @@ func NewAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config) *Audit
 }
 
 func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-
-	// Fetch the region
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		logger.Errorf("Unable to get provisioning parameters", err.Error())
-		return operation, 0, errors.New("unable to get provisioning parameters")
-	}
 	luaScript, err := alo.readFile("/auditlog-script/script")
 	if err != nil {
 		logger.Errorf("Unable to read audit config script: %v", err)
 		return operation, 0, err
 	}
 
-	replaceSubAccountID := strings.Replace(string(luaScript), "sub_account_id", pp.ErsContext.SubAccountID, -1)
+	replaceSubAccountID := strings.Replace(string(luaScript), "sub_account_id", operation.ProvisioningParameters.ErsContext.SubAccountID, -1)
 	replaceTenantID := strings.Replace(replaceSubAccountID, "tenant_id", alo.auditLogConfig.Tenant, -1)
 
 	u, err := url.Parse(alo.auditLogConfig.URL)

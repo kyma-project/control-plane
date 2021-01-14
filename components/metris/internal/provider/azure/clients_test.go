@@ -23,9 +23,10 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
-	"github.com/kyma-project/control-plane/components/metris/internal/provider/azure/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/kyma-project/control-plane/components/metris/internal/provider/azure/mocks"
 )
 
 var (
@@ -460,7 +461,7 @@ func TestDefaultAuthConfig_GetAuthConfig(t *testing.T) {
 		envName      = ""
 	)
 
-	t.Run("default auth config with default environement", func(t *testing.T) {
+	t.Run("default auth config with default environment", func(t *testing.T) {
 		authConfig := &DefaultAuthConfig{}
 		authz, env, err := authConfig.GetAuthConfig(clientID, clientSecret, tenantID, envName)
 		asserts.NoError(err, "should not get an error")
@@ -468,7 +469,7 @@ func TestDefaultAuthConfig_GetAuthConfig(t *testing.T) {
 		asserts.IsType((*autorest.BearerAuthorizer)(nil), authz)
 	})
 
-	t.Run("default auth config with bad environement", func(t *testing.T) {
+	t.Run("default auth config with bad environment", func(t *testing.T) {
 		authConfig := &DefaultAuthConfig{}
 		_, _, err := authConfig.GetAuthConfig(clientID, clientSecret, tenantID, "envName")
 		asserts.Error(err, "should get an error")
@@ -780,12 +781,12 @@ func Test_client_getMetricValues(t *testing.T) {
 	t.Run("get metric with no timeseries error", func(t *testing.T) {
 		_, err := client.GetMetricValues(context.Background(), resourceURI, interval, []string{"NoTSMetric"}, aggregations, noopLogger)
 		asserts.Error(err)
-		asserts.True(errors.Is(err, ErrTimeseriesNotFound))
+		asserts.True(errors.Is(err, ErrTimeSeriesNotFound))
 	})
 
 	t.Run("get metric with no timeserie data error", func(t *testing.T) {
 		_, err := client.GetMetricValues(context.Background(), resourceURI, interval, []string{"NoTSDataMetric"}, aggregations, noopLogger)
 		asserts.Error(err)
-		asserts.True(errors.Is(err, ErrTimeseriesDataNotFound))
+		asserts.True(errors.Is(err, ErrTimeSeriesDataNotFound))
 	})
 }

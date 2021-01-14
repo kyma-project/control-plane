@@ -81,18 +81,21 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 func fixUpgradeKymaOperationWithInputCreator(t *testing.T) internal.UpgradeKymaOperation {
 	return internal.UpgradeKymaOperation{
 		Operation: internal.Operation{
-			ID:          fixUpgradeOperationID,
-			InstanceID:  fixInstanceID,
-			Description: "",
-			UpdatedAt:   time.Now(),
+			ID:                     fixUpgradeOperationID,
+			InstanceID:             fixInstanceID,
+			Description:            "",
+			UpdatedAt:              time.Now(),
+			ProvisioningParameters: fixProvisioningParameters(),
+			InstanceDetails: internal.InstanceDetails{
+				RuntimeID: fixRuntimeID,
+			},
 		},
 		RuntimeOperation: orchestration.RuntimeOperation{
 			Runtime: orchestration.Runtime{
 				RuntimeID: fixRuntimeID,
 			},
 		},
-		ProvisioningParameters: fixRawProvisioningParameters(t),
-		InputCreator:           fixInputCreator(t),
+		InputCreator: fixInputCreator(t),
 	}
 }
 

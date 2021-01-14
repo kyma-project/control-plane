@@ -50,6 +50,20 @@ spec:
               value: "false"
             - name: APP_BROKER_ENABLE_PLANS
               value: "{{ .Values.enablePlans }}"
+            - name: APP_OPERATION_TIMEOUT
+              value: "{{ .Values.broker.operationTimeout }}"
+            - name: APP_BROKER_SERVICE_DISPLAY_NAME
+              value: "{{ .Values.brokerService.displayName }}"
+            - name: APP_BROKER_SERVICE_IMAGE_URL
+              value: "{{ .Values.brokerService.imageUrl }}"
+            - name: APP_BROKER_SERVICE_LONG_DESCRIPTION
+              value: "{{ .Values.brokerService.longDescription }}"
+            - name: APP_BROKER_SERVICE_PROVIDER_DISPLAY_NAME
+              value: "{{ .Values.brokerService.providerDisplayName }}"
+            - name: APP_BROKER_SERVICE_DOCUMENTATION_URL
+              value: "{{ .Values.brokerService.documentationUrl }}"
+            - name: APP_BROKER_SERVICE_SUPPORT_URL
+              value: "{{ .Values.brokerService.supportUrl }}"
             - name: APP_PROVISIONING_URL
               value: "{{ .Values.provisioner.URL }}"
             - name: APP_PROVISIONING_TIMEOUT
@@ -92,7 +106,7 @@ spec:
               value: "{{ .Values.lms.environment }}"
             - name: APP_LMS_SAML_TENANT
               value: "{{ .Values.lms.samlTenant }}"
-            - name: APP_LMS_ENABLED_FOR_GLOBAL_ACCOUNTS 
+            - name: APP_LMS_ENABLED_FOR_GLOBAL_ACCOUNTS
               value: "{{ .Values.lms.enabledForGlobalAccounts }}"
             - name: APP_LMS_MANDATORY
               value: "{{ .Values.lms.mandatory }}"
@@ -265,6 +279,26 @@ spec:
                 secretKeyRef:
                   key: parentId
                   name: {{ .Values.avs.secretName }}
+            - name: APP_AVS_TRIAL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: trialApiKey
+                  name: {{ .Values.avs.secretName }}
+            - name: APP_AVS_TRIAL_INTERNAL_TESTER_ACCESS_ID
+              valueFrom:
+                secretKeyRef:
+                  key: trialInternalTesterAccessId
+                  name: {{ .Values.avs.secretName }}
+            - name: APP_AVS_TRIAL_GROUP_ID
+              valueFrom:
+                secretKeyRef:
+                  key: trialGroupId
+                  name: {{ .Values.avs.secretName }}
+            - name: APP_AVS_TRIAL_PARENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: trialParentId
+                  name: {{ .Values.avs.secretName }}
             - name: APP_AVS_ADDITIONAL_TAGS_ENABLED
               value: "{{ .Values.avs.additionalTagsEnabled }}"
             - name: APP_AVS_GARDENER_SHOOT_NAME_TAG_CLASS_ID
@@ -321,6 +355,8 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: APP_VERSION_CONFIG_NAME
               value: "kyma-versions"
+            - name: APP_ENABLE_PARAMETERS_MIGRATION
+              value: "{{ .Values.migration.enabled }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}
@@ -359,7 +395,7 @@ spec:
 
         {{- if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
-          image: gcr.io/cloudsql-docker/gce-proxy:1.19.1
+          image: {{ .Values.global.images.cloudsql_proxy_image }}
           command: ["/cloud_sql_proxy",
                     "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
                     "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]

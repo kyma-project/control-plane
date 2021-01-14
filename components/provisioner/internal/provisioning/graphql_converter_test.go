@@ -123,11 +123,18 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				Kubeconfig: &kubeconfig,
 				KymaConfig: fixKymaConfig(nil),
 			},
+			HibernationStatus: model.HibernationStatus{
+				HibernationPossible: true,
+				Hibernated:          true,
+			},
 		}
 
 		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
 		message := "Some message"
 		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
+
+		hibernationPossible := true
+		hibernated := true
 
 		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
 			LastOperationStatus: &gqlschema.OperationStatus{
@@ -169,6 +176,10 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				},
 				KymaConfig: fixKymaGraphQLConfig(nil),
 				Kubeconfig: &kubeconfig,
+			},
+			HibernationStatus: &gqlschema.HibernationStatus{
+				HibernationPossible: &hibernationPossible,
+				Hibernated:          &hibernated,
 			},
 		}
 
@@ -249,11 +260,17 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				Kubeconfig: &kubeconfig,
 				KymaConfig: fixKymaConfig(&modelProductionProfile),
 			},
+			HibernationStatus: model.HibernationStatus{
+				HibernationPossible: true,
+				Hibernated:          true,
+			},
 		}
 
 		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
 		message := "Some message"
 		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
+		hibernationPossible := true
+		hibernated := true
 
 		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
 			LastOperationStatus: &gqlschema.OperationStatus{
@@ -296,6 +313,10 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				},
 				KymaConfig: fixKymaGraphQLConfig(&gqlProductionProfile),
 				Kubeconfig: &kubeconfig,
+			},
+			HibernationStatus: &gqlschema.HibernationStatus{
+				HibernationPossible: &hibernationPossible,
+				Hibernated:          &hibernated,
 			},
 		}
 

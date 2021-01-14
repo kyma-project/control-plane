@@ -37,9 +37,10 @@ type InitialisationStep struct {
 	provisionerClient           provisioner.Client
 	accountProvider             hyperscaler.AccountProvider
 	serviceManagerClientFactory SMClientFactory
+	operationTimeout            time.Duration
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, accountProvider hyperscaler.AccountProvider, smcf SMClientFactory) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, accountProvider hyperscaler.AccountProvider, smcf SMClientFactory, operationTimeout time.Duration) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:            process.NewDeprovisionOperationManager(os),
 		operationStorage:            os,
@@ -47,6 +48,7 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 		provisionerClient:           pc,
 		accountProvider:             accountProvider,
 		serviceManagerClientFactory: smcf,
+		operationTimeout:            operationTimeout,
 	}
 }
 
@@ -67,6 +69,11 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 }
 
 func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+	if time.Since(operation.CreatedAt) > s.operationTimeout {
+		log.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout))
+	}
+
 	// rewrite necessary data from ProvisioningOperation to operation internal.DeprovisioningOperation
 	op, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
 	if err != nil {
@@ -79,21 +86,12 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 	}
 	operation.SMClientFactory = s.serviceManagerClientFactory
 	operation.XSUAA = op.XSUAA
+	operation.Ems = op.Ems
 
 	setAvsIds(&operation, op, log)
 
-	parameters, err := op.GetProvisioningParameters()
-	if err != nil {
-		return s.operationManager.OperationFailed(operation, "cannot get provisioning parameters from operation")
-	}
-	operation.SubAccountID = parameters.ErsContext.SubAccountID
-
-	err = operation.SetProvisioningParameters(parameters)
-	if err != nil {
-		log.Error("Aborting after failing to save provisioning parameters for operation")
-		return s.operationManager.OperationFailed(operation, err.Error())
-	}
-
+	operation.SubAccountID = operation.ProvisioningParameters.ErsContext.SubAccountID
+	operation.ProvisioningParameters = op.ProvisioningParameters
 	operation, repeat, _ := s.operationManager.UpdateOperation(operation)
 	if repeat != 0 {
 		log.Errorf("cannot save the operation")

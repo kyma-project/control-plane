@@ -17,17 +17,20 @@ import (
 
 func TestServices_Services(t *testing.T) {
 	// given
+	var (
+		name       = "testServiceName"
+		supportURL = "example.com/support"
+	)
 	optComponentsProviderMock := &automock.OptionalComponentNamesProvider{}
 	defer optComponentsProviderMock.AssertExpectations(t)
 
 	optComponentsNames := []string{"kiali", "tracing"}
 	optComponentsProviderMock.On("GetAllOptionalComponentsNames").Return(optComponentsNames)
 
-	servicesEndpoint := broker.NewServices(
-		broker.Config{EnablePlans: []string{"gcp", "azure"}},
-		optComponentsProviderMock,
-		logrus.StandardLogger(),
-	)
+	cfg := broker.Config{EnablePlans: []string{"gcp", "azure"}}
+	cfg.DisplayName = name
+	cfg.SupportUrl = supportURL
+	servicesEndpoint := broker.NewServices(cfg, optComponentsProviderMock, logrus.StandardLogger())
 
 	// when
 	services, err := servicesEndpoint.Services(context.TODO())
@@ -36,6 +39,9 @@ func TestServices_Services(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, services, 1)
 	assert.Len(t, services[0].Plans, 2)
+
+	assert.Equal(t, name, services[0].Metadata.DisplayName)
+	assert.Equal(t, supportURL, services[0].Metadata.SupportUrl)
 
 	// assert provisioning schema
 	componentItem := services[0].Plans[0].Schemas.Instance.Create.Parameters["properties"].(map[string]interface{})["components"]

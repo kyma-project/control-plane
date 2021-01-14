@@ -101,7 +101,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		rvc := &automock.RuntimeVersionConfiguratorForUpgrade{}
 		defer rvc.AssertExpectations(t)
 		expectedOperation := upgradeOperation
-		expectedOperation.Version += 2
+		expectedOperation.Version++
 		expectedOperation.State = orchestration.InProgress
 		rvc.On("ForUpgrade", expectedOperation).Return(ver, nil).Once()
 
@@ -163,14 +163,15 @@ func fixUpgradeKymaOperation(t *testing.T) internal.UpgradeKymaOperation {
 			ProvisionerOperationID: fixProvisionerOperationID,
 			State:                  orchestration.Pending,
 			Description:            "",
+			CreatedAt:              n,
 			UpdatedAt:              n,
+			ProvisioningParameters: fixProvisioningParameters(),
 		},
 		RuntimeOperation: orchestration.RuntimeOperation{
 			Runtime: orchestration.Runtime{
 				MaintenanceWindowEnd: windowEnd,
 			},
 		},
-		ProvisioningParameters: fixRawProvisioningParameters(t),
 	}
 }
 
@@ -181,9 +182,10 @@ func fixProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
 			InstanceID:             fixInstanceID,
 			ProvisionerOperationID: fixProvisionerOperationID,
 			Description:            "",
+			CreatedAt:              time.Now(),
 			UpdatedAt:              time.Now(),
+			ProvisioningParameters: fixProvisioningParameters(),
 		},
-		ProvisioningParameters: fixRawProvisioningParameters(t),
 	}
 }
 

@@ -10,6 +10,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/migrations"
+
 	uaa "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/xsuaa"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
@@ -52,7 +54,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeoverrides"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -67,7 +69,8 @@ import (
 
 // Config holds configuration for the whole application
 type Config struct {
-	DbInMemory bool `envconfig:"default=false"`
+	DbInMemory                bool `envconfig:"default=false"`
+	EnableParametersMigration bool `envconfig:"default=false"`
 
 	// DisableProcessOperationsInProgress allows to disable processing operations
 	// which are in progress on starting application. Set to true if you are
@@ -83,6 +86,10 @@ type Config struct {
 	// DumpProvisionerRequests enables dumping Provisioner requests. Must be disabled on Production environments
 	// because some data must not be visible in the log file.
 	DumpProvisionerRequests bool `envconfig:"default=false"`
+
+	// OperationTimeout is used to check on a top-level if any operation didn't exceed the time for processing.
+	// It is used for provisioning and deprovisioning operations.
+	OperationTimeout time.Duration `envconfig:"default=24h"`
 
 	Host       string `envconfig:"optional"`
 	Port       string `envconfig:"default=8080"`
@@ -109,6 +116,9 @@ type Config struct {
 
 	// Service Manager services
 	XSUAA struct {
+		Disabled bool `envconfig:"default=true"`
+	}
+	Ems struct {
 		Disabled bool `envconfig:"default=true"`
 	}
 
@@ -167,6 +177,13 @@ func main() {
 		db = store
 		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 		prometheus.MustRegister(dbStatsCollector)
+	}
+
+	// todo: remove after parameters migration was done on each environment
+	// provisioning parameters migration
+	if cfg.EnableParametersMigration {
+		err = migrations.NewParametersMigration(db.Operations(), logs).Migrate()
+		fatalOnError(err)
 	}
 
 	// LMS
@@ -242,8 +259,8 @@ func main() {
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
 	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, accountVersionMapping)
 	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),
-		provisionerClient, directorClient, inputFactory, externalEvalCreator, internalEvalUpdater, iasTypeSetter, cfg.Provisioning.Timeout,
-		runtimeVerConfigurator, serviceManagerClientFactory)
+		provisionerClient, directorClient, inputFactory, externalEvalCreator, internalEvalUpdater, iasTypeSetter,
+		cfg.Provisioning.Timeout, cfg.OperationTimeout, runtimeVerConfigurator, serviceManagerClientFactory)
 	provisionManager.InitStep(provisioningInit)
 
 	provisioningSteps := []struct {
@@ -258,6 +275,14 @@ func main() {
 					return &op.XSUAA.Instance
 				}, db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
+		},
+		{
+			weight: 1,
+			step: provisioning.NewServiceManagerOfferingStep("EMS_Offering",
+				provisioning.EmsOfferingName, provisioning.EmsPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
+					return &op.Ems.Instance
+				}, db.Operations()),
+			disabled: cfg.Ems.Disabled,
 		},
 		{
 			weight: 2,
@@ -275,15 +300,18 @@ func main() {
 			disabled: cfg.XSUAA.Disabled,
 		},
 		{
-			weight: 2,
-			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
-				provisioning.NewInternalEvaluationStep(avsDel, internalEvalAssistant)),
+			weight:   2,
+			step:     provisioning.NewEmsProvisionStep(db.Operations()),
+			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   2,
+			step:     provisioning.NewInternalEvaluationStep(avsDel, internalEvalAssistant),
 			disabled: cfg.Avs.Disabled,
 		},
 		{
 			weight: 2,
-			step: provisioning.NewLmsActivationStep(db.Operations(), cfg.LMS,
-				provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
+			step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
 		},
 		{
 			weight:   2,
@@ -292,13 +320,11 @@ func main() {
 		},
 		{
 			weight: 3,
-			step: provisioning.NewSkipForTrialPlanStep(db.Operations(),
-				provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+			step:   provisioning.NewSkipForTrialPlanStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
 		{
 			weight: 3,
-			step: provisioning.NewEnableForTrialPlanStep(db.Operations(),
-				provisioning.NewNatsStreamingOverridesStep(db.Operations())),
+			step:   provisioning.NewEnableForTrialPlanStep(provisioning.NewNatsStreamingOverridesStep()),
 		},
 		{
 			weight: 3,
@@ -314,8 +340,7 @@ func main() {
 		},
 		{
 			weight: 5,
-			step: provisioning.NewLmsActivationStep(db.Operations(), cfg.LMS,
-				provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
+			step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
 		},
 		{
 			weight:   6,
@@ -328,6 +353,11 @@ func main() {
 			disabled: cfg.XSUAA.Disabled,
 		},
 		{
+			weight:   7,
+			step:     provisioning.NewEmsBindStep(db.Operations(), cfg.Database.SecretKey),
+			disabled: cfg.Ems.Disabled,
+		},
+		{
 			weight: 10,
 			step:   provisioning.NewCreateRuntimeStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
 		},
@@ -338,7 +368,7 @@ func main() {
 		}
 	}
 
-	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, serviceManagerClientFactory)
+	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, serviceManagerClientFactory, cfg.OperationTimeout)
 	deprovisionManager.InitStep(deprovisioningInit)
 	deprovisioningSteps := []struct {
 		disabled bool
@@ -351,8 +381,7 @@ func main() {
 		},
 		{
 			weight: 1,
-			step: deprovisioning.NewSkipForTrialPlanStep(db.Operations(),
-				deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+			step:   deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
 		{
 			weight:   1,
@@ -370,9 +399,19 @@ func main() {
 			disabled: cfg.XSUAA.Disabled,
 		},
 		{
+			weight:   1,
+			step:     deprovisioning.NewEmsUnbindStep(db.Operations()),
+			disabled: cfg.Ems.Disabled,
+		},
+		{
 			weight:   2,
 			step:     deprovisioning.NewXSUAADeprovisionStep(db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
+		},
+		{
+			weight:   2,
+			step:     deprovisioning.NewEmsDeprovisionStep(db.Operations()),
+			disabled: cfg.Ems.Disabled,
 		},
 		{
 			weight: 10,
@@ -593,7 +632,7 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 	runtimeLister := orchestration.NewRuntimeLister(db.Instances(), db.Operations(), runtime.NewConverter(defaultRegion), logs)
 	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
 
-	orchestrateKymaManager := kyma.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(),
+	orchestrateKymaManager := kyma.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(), db.Instances(),
 		upgradeKymaManager, runtimeResolver, pollingInterval, logs)
 	queue := process.NewQueue(orchestrateKymaManager, logs)
 

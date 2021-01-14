@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -25,20 +27,19 @@ func TestInternalEvalUpdater_AddTagsToEval(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 		operation := internal.ProvisioningOperation{
 			Operation: internal.Operation{
-				ID:          operationID,
-				InstanceID:  instanceID,
-				Description: "",
-				UpdatedAt:   time.Now(),
-				State:       domain.InProgress,
+				ID:                     operationID,
+				InstanceID:             instanceID,
+				UpdatedAt:              time.Now(),
+				State:                  domain.InProgress,
+				ProvisioningParameters: fixProvisioningParameters(broker.AzurePlanID, "westeurope"),
+				InstanceDetails: internal.InstanceDetails{Avs: internal.AvsLifecycleData{
+					AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
+					AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
+					AVSInternalEvaluationDeleted: false,
+					AVSExternalEvaluationDeleted: false,
+				}},
 			},
-			ProvisioningParameters: fixProvisioningParameters(t),
-			InputCreator:           newInputCreator(),
-			Avs: internal.AvsLifecycleData{
-				AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
-				AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
-				AVSInternalEvaluationDeleted: false,
-				AVSExternalEvaluationDeleted: false,
-			},
+			InputCreator: newInputCreator(),
 		}
 
 		err := memoryStorage.Operations().InsertProvisioningOperation(operation)
@@ -93,20 +94,19 @@ func TestInternalEvalUpdater_AddTagsToEval(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 		operation := internal.ProvisioningOperation{
 			Operation: internal.Operation{
-				ID:          operationID,
-				InstanceID:  instanceID,
-				Description: "",
-				UpdatedAt:   time.Now(),
-				State:       domain.InProgress,
+				ID:                     operationID,
+				InstanceID:             instanceID,
+				UpdatedAt:              time.Now(),
+				State:                  domain.InProgress,
+				ProvisioningParameters: fixProvisioningParameters(broker.AzurePlanID, "westeurope"),
+				InstanceDetails: internal.InstanceDetails{Avs: internal.AvsLifecycleData{
+					AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
+					AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
+					AVSInternalEvaluationDeleted: false,
+					AVSExternalEvaluationDeleted: false,
+				}},
 			},
-			ProvisioningParameters: fixProvisioningParameters(t),
-			InputCreator:           newInputCreator(),
-			Avs: internal.AvsLifecycleData{
-				AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
-				AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
-				AVSInternalEvaluationDeleted: false,
-				AVSExternalEvaluationDeleted: false,
-			},
+			InputCreator: newInputCreator(),
 		}
 
 		err := memoryStorage.Operations().InsertProvisioningOperation(operation)

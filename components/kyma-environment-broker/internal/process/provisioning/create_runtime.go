@@ -48,14 +48,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout))
 	}
-
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("Unable to get provisioning parameters: %s", err.Error())
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-
-	requestInput, err := s.createProvisionInput(operation, pp)
+	requestInput, err := s.createProvisionInput(operation)
 	if err != nil {
 		log.Errorf("Unable to create provisioning input: %s", err.Error())
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create provisioning input")
@@ -69,7 +62,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 			requestInput.ClusterConfig.GardenerConfig.Region,
 			requestInput.KymaConfig.Profile)
 
-		provisionerResponse, err := s.provisionerClient.ProvisionRuntime(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID, requestInput)
+		provisionerResponse, err := s.provisionerClient.ProvisionRuntime(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisioningParameters.ErsContext.SubAccountID, requestInput)
 		switch {
 		case kebError.IsTemporaryError(err):
 			log.Errorf("call to provisioner failed (temporary error): %s", err)
@@ -91,7 +84,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 	}
 
 	if provisionerResponse.RuntimeID == nil {
-		provisionerResponse, err = s.provisionerClient.RuntimeOperationStatus(pp.ErsContext.GlobalAccountID, operation.ProvisionerOperationID)
+		provisionerResponse, err = s.provisionerClient.RuntimeOperationStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisionerOperationID)
 		if err != nil {
 			log.Errorf("call to provisioner about operation status failed: %s", err)
 			return operation, 1 * time.Minute, nil
@@ -119,7 +112,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 	instance.RuntimeID = *provisionerResponse.RuntimeID
 	instance.ProviderRegion = requestInput.ClusterConfig.GardenerConfig.Region
 
-	err = s.instanceStorage.Update(*instance)
+	_, err = s.instanceStorage.Update(*instance)
 	if err != nil {
 		log.Errorf("cannot update instance in storage: %s", err)
 		return operation, 10 * time.Second, nil
@@ -130,13 +123,13 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 	return operation, 1 * time.Second, nil
 }
 
-func (s *CreateRuntimeStep) createProvisionInput(operation internal.ProvisioningOperation, parameters internal.ProvisioningParameters) (gqlschema.ProvisionRuntimeInput, error) {
+func (s *CreateRuntimeStep) createProvisionInput(operation internal.ProvisioningOperation) (gqlschema.ProvisionRuntimeInput, error) {
 	var request gqlschema.ProvisionRuntimeInput
 
-	operation.InputCreator.SetProvisioningParameters(parameters)
+	operation.InputCreator.SetProvisioningParameters(operation.ProvisioningParameters)
 	operation.InputCreator.SetShootName(operation.ShootName)
 	operation.InputCreator.SetLabel(brokerKeyPrefix+"instance_id", operation.InstanceID)
-	operation.InputCreator.SetLabel(globalKeyPrefix+"subaccount_id", parameters.ErsContext.SubAccountID)
+	operation.InputCreator.SetLabel(globalKeyPrefix+"subaccount_id", operation.ProvisioningParameters.ErsContext.SubAccountID)
 	request, err := operation.InputCreator.CreateProvisionRuntimeInput()
 	if err != nil {
 		return request, errors.Wrap(err, "while building input for provisioner")

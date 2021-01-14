@@ -18,11 +18,14 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 	t.Run("should return version from ProvisioningParameters when version provided", func(t *testing.T) {
 		// given
 		runtimeVer := "1.1.1"
-		parameters := internal.ProvisioningParameters{Parameters: internal.ProvisioningParametersDTO{KymaVersion: runtimeVer}}
 		rvc := NewRuntimeVersionConfigurator("not-relevant", &AccountVersionMapping{})
 
 		// when
-		ver, err := rvc.ForProvisioning(internal.ProvisioningOperation{}, parameters)
+		ver, err := rvc.ForProvisioning(internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{Parameters: internal.ProvisioningParametersDTO{KymaVersion: runtimeVer}},
+			},
+		})
 
 		// then
 		require.NoError(t, err)
@@ -32,12 +35,15 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 	t.Run("should return version from Defaults when version not provided", func(t *testing.T) {
 		// given
 		runtimeVer := "1.1.1"
-		parameters := internal.ProvisioningParameters{}
-		operation := internal.ProvisioningOperation{}
+		operation := internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{},
+			},
+		}
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, fixAccountVersionMapping(t, map[string]string{}))
 
 		// when
-		ver, err := rvc.ForProvisioning(operation, parameters)
+		ver, err := rvc.ForProvisioning(operation)
 
 		// then
 		require.NoError(t, err)
@@ -47,16 +53,19 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 	t.Run("should return version from GlobalAccount mapping when only GlobalAccount mapping provided", func(t *testing.T) {
 		// given
 		runtimeVer := "1.12"
-		parameters := internal.ProvisioningParameters{
-			ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID, SubAccountID: versionForSA},
+		operation := internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{
+					ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID, SubAccountID: versionForSA},
+				},
+			},
 		}
-		operation := internal.ProvisioningOperation{}
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, fixAccountVersionMapping(t, map[string]string{
 			fmt.Sprintf("%s%s", globalAccountPrefix, fixGlobalAccountID): versionForGA,
 		}))
 
 		// when
-		ver, err := rvc.ForProvisioning(operation, parameters)
+		ver, err := rvc.ForProvisioning(operation)
 
 		// then
 		require.NoError(t, err)
@@ -66,18 +75,21 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 	t.Run("should return version from SubAccount mapping when both GA and SA mapping provided", func(t *testing.T) {
 		// given
 		runtimeVer := "1.12"
-		parameters := internal.ProvisioningParameters{
-			ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID,
-				SubAccountID: fixSubAccountID},
+		operation := internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{
+					ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID,
+						SubAccountID: fixSubAccountID},
+				},
+			},
 		}
-		operation := internal.ProvisioningOperation{}
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, fixAccountVersionMapping(t, map[string]string{
 			fmt.Sprintf("%s%s", globalAccountPrefix, fixGlobalAccountID): versionForGA,
 			fmt.Sprintf("%s%s", subaccountPrefix, fixSubAccountID):       versionForSA,
 		}))
 
 		// when
-		ver, err := rvc.ForProvisioning(operation, parameters)
+		ver, err := rvc.ForProvisioning(operation)
 
 		// then
 		require.NoError(t, err)

@@ -81,11 +81,13 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 				InstanceID:      fixID,
 				OrchestrationID: fixID,
 				State:           domain.Succeeded,
+				ProvisioningParameters: internal.ProvisioningParameters{
+					PlanID: "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+				},
 			},
 			RuntimeOperation: orchestration.RuntimeOperation{
 				ID: fixID,
 			},
-			PlanID: "4deee563-e5ec-4731-b9b1-53b42d855f0c",
 		})
 		err = db.Operations().InsertProvisioningOperation(internal.ProvisioningOperation{
 			Operation: internal.Operation{
@@ -122,11 +124,13 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 				ID:              fixID,
 				InstanceID:      fixID,
 				OrchestrationID: fixID,
+				ProvisioningParameters: internal.ProvisioningParameters{
+					PlanID: "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+				},
 			},
 			RuntimeOperation: orchestration.RuntimeOperation{
 				ID: fixID,
 			},
-			PlanID: "4deee563-e5ec-4731-b9b1-53b42d855f0c",
 		})
 		err = db.Operations().InsertProvisioningOperation(internal.ProvisioningOperation{
 			Operation: internal.Operation{

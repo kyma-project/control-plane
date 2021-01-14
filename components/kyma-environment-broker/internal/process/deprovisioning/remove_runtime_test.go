@@ -83,6 +83,7 @@ func fixOperationRemoveRuntime() internal.DeprovisioningOperation {
 			ID:          fixOperationID,
 			InstanceID:  fixInstanceID,
 			Description: "",
+			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 		},
 	}

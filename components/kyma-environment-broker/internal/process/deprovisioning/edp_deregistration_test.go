@@ -35,7 +35,12 @@ func TestEDPDeregistration_Run(t *testing.T) {
 	})
 
 	// when
-	_, repeat, err := step.Run(internal.DeprovisioningOperation{SubAccountID: edpName}, logrus.New())
+	_, repeat, err := step.Run(internal.DeprovisioningOperation{
+		Operation: internal.Operation{
+			InstanceDetails: internal.InstanceDetails{
+				SubAccountID: edpName,
+			},
+		}}, logrus.New())
 
 	// then
 	assert.Equal(t, 0*time.Second, repeat)

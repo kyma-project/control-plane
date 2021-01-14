@@ -21,6 +21,10 @@ func (c graphQLConverter) RuntimeStatusToGraphQLStatus(status model.RuntimeStatu
 		LastOperationStatus:     c.OperationStatusToGQLOperationStatus(status.LastOperationStatus),
 		RuntimeConnectionStatus: c.runtimeConnectionStatusToGraphQLStatus(status.RuntimeConnectionStatus),
 		RuntimeConfiguration:    c.clusterToToGraphQLRuntimeConfiguration(status.RuntimeConfiguration),
+		HibernationStatus: &gqlschema.HibernationStatus{
+			HibernationPossible: &status.HibernationStatus.HibernationPossible,
+			Hibernated:          &status.HibernationStatus.Hibernated,
+		},
 	}
 }
 
@@ -142,6 +146,8 @@ func (c graphQLConverter) operationTypeToGraphQLType(operationType model.Operati
 		return gqlschema.OperationTypeUpgradeShoot
 	case model.ReconnectRuntime:
 		return gqlschema.OperationTypeReconnectRuntime
+	case model.Hibernate:
+		return gqlschema.OperationTypeHibernate
 	default:
 		return ""
 	}

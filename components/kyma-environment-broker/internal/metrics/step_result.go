@@ -3,9 +3,6 @@ package metrics
 import (
 	"context"
 	"fmt"
-
-	"github.com/pkg/errors"
-
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -59,11 +56,6 @@ func (c *StepResultCollector) OnProvisioningStepProcessed(ctx context.Context, e
 		return fmt.Errorf("expected ProvisioningStepProcessed but got %+v", ev)
 	}
 
-	pp, err := stepProcessed.Operation.GetProvisioningParameters()
-	if err != nil {
-		return errors.Wrap(err, "while getting provisioning parameters")
-	}
-
 	var resultValue float64
 	switch {
 	case stepProcessed.Operation.State == domain.Succeeded:
@@ -75,10 +67,12 @@ func (c *StepResultCollector) OnProvisioningStepProcessed(ctx context.Context, e
 	case stepProcessed.Error != nil:
 		resultValue = resultFailed
 	}
+	op := stepProcessed.Operation
+	pp := op.ProvisioningParameters
 	c.provisioningResultGauge.WithLabelValues(
-		stepProcessed.Operation.ID,
-		stepProcessed.Operation.RuntimeID,
-		stepProcessed.Operation.InstanceID,
+		op.ID,
+		op.RuntimeID,
+		op.InstanceID,
 		stepProcessed.StepName,
 		pp.ErsContext.GlobalAccountID,
 		pp.PlanID).Set(resultValue)
@@ -90,11 +84,6 @@ func (c *StepResultCollector) OnDeprovisioningStepProcessed(ctx context.Context,
 	stepProcessed, ok := ev.(process.DeprovisioningStepProcessed)
 	if !ok {
 		return fmt.Errorf("expected DeprovisioningStepProcessed but got %+v", ev)
-	}
-
-	pp, err := stepProcessed.Operation.GetProvisioningParameters()
-	if err != nil {
-		return errors.Wrap(err, "while getting provisioning parameters")
 	}
 
 	var resultValue float64
@@ -112,10 +101,13 @@ func (c *StepResultCollector) OnDeprovisioningStepProcessed(ctx context.Context,
 	if stepProcessed.StepName == "Create_Runtime" && stepProcessed.When == time.Second {
 		resultValue = resultSucceeded
 	}
+
+	op := stepProcessed.Operation
+	pp := op.ProvisioningParameters
 	c.deprovisioningResultGauge.WithLabelValues(
-		stepProcessed.Operation.ID,
-		stepProcessed.Operation.RuntimeID,
-		stepProcessed.Operation.InstanceID,
+		op.ID,
+		op.RuntimeID,
+		op.InstanceID,
 		stepProcessed.StepName,
 		pp.ErsContext.GlobalAccountID,
 		pp.PlanID).Set(resultValue)
