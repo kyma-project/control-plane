@@ -537,33 +537,6 @@ func (s *operations) ListOperations(filter dbmodel.OperationFilter) ([]internal.
 	return result, size, total, err
 }
 
-func (s *operations) UpdateOperationParameters(operation internal.Operation) (*internal.Operation, error) {
-	session := s.NewWriteSession()
-	operation.UpdatedAt = time.Now()
-	dto, err := s.operationToDB(operation)
-	if err != nil {
-		return &internal.Operation{}, errors.Wrapf(err, "while converting to operationDB %v", operation)
-	}
-
-	var lastErr error
-	_ = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		lastErr = session.UpdateOperationParameters(dto)
-		if lastErr != nil && dberr.IsNotFound(lastErr) {
-			newOp, lastErr := s.NewReadSession().GetOperationByID(operation.ID)
-			if lastErr != nil {
-				log.Errorf("while getting operation: %v", lastErr)
-				return false, nil
-			}
-
-			// the operation exists but the version is different
-			dto.Version = newOp.Version
-		}
-		return true, nil
-	})
-	operation.Version = operation.Version + 1
-	return &operation, lastErr
-}
-
 func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeKymaOperation, int, int, error) {
 	session := s.NewReadSession()
 	var (

@@ -48,7 +48,6 @@ type WriteSession interface {
 	DeleteInstance(instanceID string) dberr.Error
 	InsertOperation(dto dbmodel.OperationDTO) dberr.Error
 	UpdateOperation(dto dbmodel.OperationDTO) dberr.Error
-	UpdateOperationParameters(op dbmodel.OperationDTO) dberr.Error
 	InsertOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
 	UpdateOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
 	InsertRuntimeState(state dbmodel.RuntimeStateDTO) dberr.Error
