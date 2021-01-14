@@ -458,19 +458,15 @@ func (r readSession) GetLMSTenant(name, region string) (dbmodel.LMSTenantDTO, db
 
 func (r readSession) GetOperationStats() ([]dbmodel.OperationStatEntry, error) {
 	var rows []dbmodel.OperationStatEntry
-	_, err := r.session.SelectBySql(fmt.Sprintf("select type, state, count(*) as total from %s group by type, state",
+	_, err := r.session.SelectBySql(fmt.Sprintf("select type, state, provisioning_parameters ->> 'plan_id' AS plan_id from %s",
 		OperationTableName)).Load(&rows)
 	return rows, err
 }
 
 func (r readSession) GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error) {
 	var rows []dbmodel.OperationStatEntry
-	_, err := r.session.Select("state, count(*) as total").
-		From(OperationTableName).
-		Where(dbr.Eq("orchestration_id", orchestrationID)).
-		GroupBy("state").
-		Load(&rows)
-
+	_, err := r.session.SelectBySql(fmt.Sprintf("select type, state, provisioning_parameters ->> 'plan_id' AS plan_id from %s where orchestration_id='%s'",
+		OperationTableName, orchestrationID)).Load(&rows)
 	return rows, err
 }
 

@@ -151,6 +151,11 @@ type GardenerUpgradeInput struct {
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
 }
 
+type HibernationStatus struct {
+	Hibernated          *bool `json:"hibernated"`
+	HibernationPossible *bool `json:"hibernationPossible"`
+}
+
 type KymaConfig struct {
 	Version       *string                   `json:"version"`
 	Profile       *KymaProfile              `json:"profile"`
@@ -206,6 +211,7 @@ type RuntimeStatus struct {
 	LastOperationStatus     *OperationStatus         `json:"lastOperationStatus"`
 	RuntimeConnectionStatus *RuntimeConnectionStatus `json:"runtimeConnectionStatus"`
 	RuntimeConfiguration    *RuntimeConfig           `json:"runtimeConfiguration"`
+	HibernationStatus       *HibernationStatus       `json:"hibernationStatus"`
 }
 
 type UpgradeRuntimeInput struct {
@@ -310,6 +316,7 @@ const (
 	OperationTypeUpgradeShoot     OperationType = "UpgradeShoot"
 	OperationTypeDeprovision      OperationType = "Deprovision"
 	OperationTypeReconnectRuntime OperationType = "ReconnectRuntime"
+	OperationTypeHibernate        OperationType = "Hibernate"
 )
 
 var AllOperationType = []OperationType{
@@ -318,11 +325,12 @@ var AllOperationType = []OperationType{
 	OperationTypeUpgradeShoot,
 	OperationTypeDeprovision,
 	OperationTypeReconnectRuntime,
+	OperationTypeHibernate,
 }
 
 func (e OperationType) IsValid() bool {
 	switch e {
-	case OperationTypeProvision, OperationTypeUpgrade, OperationTypeUpgradeShoot, OperationTypeDeprovision, OperationTypeReconnectRuntime:
+	case OperationTypeProvision, OperationTypeUpgrade, OperationTypeUpgradeShoot, OperationTypeDeprovision, OperationTypeReconnectRuntime, OperationTypeHibernate:
 		return true
 	}
 	return false
