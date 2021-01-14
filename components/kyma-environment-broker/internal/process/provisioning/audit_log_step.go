@@ -93,7 +93,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
         Match   dex.*
         Regex   data .*\"xsuaa
 [OUTPUT]
-        Name             http
+        Name             sequentialhttp
         Match            dex.*
         Retry_Limit      False
         Host             %s
