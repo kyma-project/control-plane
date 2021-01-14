@@ -1,7 +1,6 @@
 package postsql
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -159,43 +158,6 @@ func (r readSession) ListOperations(filter dbmodel.OperationFilter) ([]dbmodel.O
 		len(operations),
 		totalCount,
 		nil
-}
-
-func (r readSession) ListOperationsParameters() (map[string]internal.ProvisioningParameters, error) {
-	var operations []dbmodel.OperationDTO
-	parameters := make(map[string]internal.ProvisioningParameters, 0)
-
-	stmt := r.session.Select("*").
-		From(OperationTableName)
-
-	_, err := stmt.Load(&operations)
-	if err != nil {
-		return nil, err
-	}
-
-	type oldOperation struct {
-		ProvisioningParameters string `json:"provisioning_parameters"`
-	}
-
-	for _, op := range operations {
-		pp := internal.ProvisioningParameters{}
-		o := oldOperation{}
-		err := json.Unmarshal([]byte(op.Data), &o)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while unmarshaling old operation: %s", op.ID)
-		}
-		if o.ProvisioningParameters == "" {
-			parameters[op.ID] = pp
-			continue
-		}
-		err = json.Unmarshal([]byte(o.ProvisioningParameters), &pp)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while unmarshaling provisioning parameters: %s", o.ProvisioningParameters)
-		}
-		parameters[op.ID] = pp
-	}
-
-	return parameters, nil
 }
 
 func (r readSession) GetOrchestrationByID(oID string) (dbmodel.OrchestrationDTO, dberr.Error) {

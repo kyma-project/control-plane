@@ -10,8 +10,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/migrations"
-
 	uaa "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/xsuaa"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
@@ -69,8 +67,7 @@ import (
 
 // Config holds configuration for the whole application
 type Config struct {
-	DbInMemory                bool `envconfig:"default=false"`
-	EnableParametersMigration bool `envconfig:"default=false"`
+	DbInMemory bool `envconfig:"default=false"`
 
 	// DisableProcessOperationsInProgress allows to disable processing operations
 	// which are in progress on starting application. Set to true if you are
@@ -177,13 +174,6 @@ func main() {
 		db = store
 		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 		prometheus.MustRegister(dbStatsCollector)
-	}
-
-	// todo: remove after parameters migration was done on each environment
-	// provisioning parameters migration
-	if cfg.EnableParametersMigration {
-		err = migrations.NewParametersMigration(db.Operations(), logs).Migrate()
-		fatalOnError(err)
 	}
 
 	// LMS
@@ -606,8 +596,9 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 	defaultRegion string, logs logrus.FieldLogger) (*process.Queue, error) {
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
+	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Orchestrations(), db.Instances(),
+		provisionerClient, inputFactory, icfg, runtimeVerConfigurator)
 
-	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, inputFactory, icfg, runtimeVerConfigurator)
 	upgradeKymaManager.InitStep(upgradeKymaInit)
 	upgradeKymaSteps := []struct {
 		disabled bool
