@@ -34,7 +34,7 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	err := memoryStorage.Operations().InsertUpgradeKymaOperation(operation)
 	assert.NoError(t, err)
 
-	provisioningOperation := fixProvisioningOperation(t)
+	provisioningOperation := fixProvisioningOperation()
 	err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 	assert.NoError(t, err)
 

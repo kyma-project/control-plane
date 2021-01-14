@@ -169,6 +169,11 @@ func (o *Orchestration) IsFinished() bool {
 	return o.State == orchestration.Succeeded || o.State == orchestration.Failed || o.State == orchestration.Canceled
 }
 
+// IsCanceled returns true if orchestration's cancellation endpoint was ever triggered
+func (o *Orchestration) IsCanceled() bool {
+	return o.State == orchestration.Canceling || o.State == orchestration.Canceled
+}
+
 type InstanceWithOperation struct {
 	Instance
 
