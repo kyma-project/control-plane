@@ -154,17 +154,17 @@ func TestLmsStepsHappyPath(t *testing.T) {
 	lmsClient.IsCertRequestedForTenant(op.Lms.TenantID)
 
 	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-		Key: "fluent-bit.conf.Output.forward.enabled", Value: "true"})
+		Key: "fluent-bit.config.outputs.forward.enabled", Value: "true"})
 	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-		Key: "fluent-bit.backend.forward.host", Value: fmt.Sprintf("forward.%s", lms.FakeLmsHost)})
+		Key: "fluent-bit.config.outputs.forward.host", Value: fmt.Sprintf("forward.%s", lms.FakeLmsHost)})
 	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-		Key: "fluent-bit.backend.forward.port", Value: "8443"})
+		Key: "fluent-bit.config.outputs.forward.port", Value: "8443"})
 	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-		Key: "fluent-bit.backend.forward.tls.ca", Value: "Y2VydC1jYS1wYXlsb2Fk"})
+		Key: "fluent-bit.config.outputs.forward.tls.ca", Value: "Y2VydC1jYS1wYXlsb2Fk"})
 	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-		Key: "fluent-bit.backend.forward.tls.cert", Value: "c2lnbmVkLWNlcnQtcGF5bG9hZA=="})
+		Key: "fluent-bit.config.outputs.forward.tls.cert", Value: "c2lnbmVkLWNlcnQtcGF5bG9hZA=="})
 	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
-		Key: "fluent-bit.backend.forward.tls.key", Value: "cHJpdmF0ZS1rZXk="})
+		Key: "fluent-bit.config.outputs.forward.tls.key", Value: "cHJpdmF0ZS1rZXk="})
 
 	inputCreator.AssertLabel(t, "operator_lmsUrl", fmt.Sprintf("https://kibana.%s", lms.FakeLmsHost))
 }

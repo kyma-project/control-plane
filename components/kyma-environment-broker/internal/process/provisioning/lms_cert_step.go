@@ -162,28 +162,28 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 	operation.InputCreator.SetLabel(kibanaURLLabelKey, fmt.Sprintf("https://kibana.%s", tenantInfo.DNS))
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
-		{Key: "fluent-bit.conf.Output.forward.enabled", Value: "true"},
-		{Key: "fluent-bit.conf.Output.forward.Match", Value: "kube.*"},
+		{Key: "fluent-bit.config.outputs.forward.enabled", Value: "true"},
+		{Key: "fluent-bit.config.outputs.forward.match", Value: "kube.*"},
 
-		{Key: "fluent-bit.backend.forward.host", Value: fmt.Sprintf("forward.%s", tenantInfo.DNS)},
-		{Key: "fluent-bit.backend.forward.port", Value: "8443"},
-		{Key: "fluent-bit.backend.forward.tls.enabled", Value: "true"},
-		{Key: "fluent-bit.backend.forward.tls.verify", Value: "On"},
+		{Key: "fluent-bit.config.outputs.forward.host", Value: fmt.Sprintf("forward.%s", tenantInfo.DNS)},
+		{Key: "fluent-bit.config.outputs.forward.port", Value: "8443"},
+		{Key: "fluent-bit.config.outputs.forward.tls.enabled", Value: "true"},
+		{Key: "fluent-bit.config.outputs.forward.tls.verify", Value: "On"},
 
 		// certs and private key must be encoded by base64
-		{Key: "fluent-bit.backend.forward.tls.ca", Value: base64.StdEncoding.EncodeToString([]byte(caCert))},
-		{Key: "fluent-bit.backend.forward.tls.cert", Value: base64.StdEncoding.EncodeToString([]byte(signedCert))},
-		{Key: "fluent-bit.backend.forward.tls.key", Value: base64.StdEncoding.EncodeToString(pKey)},
+		{Key: "fluent-bit.config.outputs.forward.tls.ca", Value: base64.StdEncoding.EncodeToString([]byte(caCert))},
+		{Key: "fluent-bit.config.outputs.forward.tls.cert", Value: base64.StdEncoding.EncodeToString([]byte(signedCert))},
+		{Key: "fluent-bit.config.outputs.forward.tls.key", Value: base64.StdEncoding.EncodeToString(pKey)},
 
 		// record modifier filter
-		{Key: "fluent-bit.conf.Filter.record_modifier.enabled", Value: "true"},
-		{Key: "fluent-bit.conf.Filter.record_modifier.Match", Value: "kube.*"},
-		{Key: "fluent-bit.conf.Filter.record_modifier.Key", Value: "subaccount_id"},
-		{Key: "fluent-bit.conf.Filter.record_modifier.Value", Value: operation.ProvisioningParameters.ErsContext.SubAccountID}, // cluster_name is a tag added to log entry, allows to filter logs by a cluster
+		{Key: "fluent-bit.config.filters.recordModifier.enabled", Value: "true"},
+		{Key: "fluent-bit.config.filters.recordModifier.match", Value: "kube.*"},
+		{Key: "fluent-bit.config.filters.recordModifier.key", Value: "subaccount_id"},
+		{Key: "fluent-bit.config.filters.recordModifier.value", Value: operation.ProvisioningParameters.ErsContext.SubAccountID}, // cluster_name is a tag added to log entry, allows to filter logs by a cluster
 		//kubernetes filter should not parse the document to avoid indexing on LMS side
-		{Key: "fluent-bit.conf.Filter.Kubernetes.Merge_Log", Value: "Off"},
+		{Key: "fluent-bit.config.filters.kubernetes.mergeLog", Value: "Off"},
 		//input should not contain dex logs as it contains sensitive data
-		{Key: "fluent-bit.conf.Input.Kubernetes.Exclude_Path", Value: "/var/log/containers/*_dex-*.log,/var/log/containers/*_kcproxy-*.log"},
+		{Key: "fluent-bit.config.inputs.tail.excludePath", Value: "/var/log/containers/*_dex-*.log,/var/log/containers/*_kcproxy-*.log"},
 	})
 	return operation, 0, nil
 }
