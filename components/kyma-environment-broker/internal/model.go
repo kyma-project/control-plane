@@ -144,15 +144,6 @@ func (o *Operation) IsFinished() bool {
 	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceled
 }
 
-// todo: remove after parameters migration was done on each environment
-// LegacyOperation represents old structure of the Operation struct which now has provisioning parameters inside
-type LegacyOperation struct {
-	Operation `json:"-"`
-
-	Type                   string `json:"type"`
-	ProvisioningParameters string `json:"provisioning_parameters"`
-}
-
 // Orchestration holds all information about an orchestration.
 // Orchestration performs operations of a specific type (UpgradeKymaOperation, UpgradeClusterOperation)
 // on specific targets of SKRs.
@@ -167,6 +158,11 @@ type Orchestration struct {
 
 func (o *Orchestration) IsFinished() bool {
 	return o.State == orchestration.Succeeded || o.State == orchestration.Failed || o.State == orchestration.Canceled
+}
+
+// IsCanceled returns true if orchestration's cancellation endpoint was ever triggered
+func (o *Orchestration) IsCanceled() bool {
+	return o.State == orchestration.Canceling || o.State == orchestration.Canceled
 }
 
 type InstanceWithOperation struct {
