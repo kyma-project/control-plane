@@ -28,15 +28,15 @@ func NewEvaluationManager(delegator *avs.Delegator, config avs.Config) *Evaluati
 // Note that this operation should be called twice (reason behind the zero delay)
 // to configure both monitors.
 func (em *EvaluationManager) SetStatus(status string, operation internal.UpgradeKymaOperation, logger logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	avsCfg := operation.Avs
+	avsData := operation.Avs
 
 	// do internal monitor status update
-	if em.internalAssistant.IsInMaintenance(avsCfg) {
+	if !em.internalAssistant.IsInMaintenance(avsData) {
 		return em.delegator.SetStatus(logger, operation, em.internalAssistant, status)
 	}
 
 	// do external monitor status update
-	if em.externalAssistant.IsInMaintenance(avsCfg) {
+	if !em.externalAssistant.IsInMaintenance(avsData) {
 		return em.delegator.SetStatus(logger, operation, em.externalAssistant, status)
 	}
 
@@ -46,15 +46,15 @@ func (em *EvaluationManager) SetStatus(status string, operation internal.Upgrade
 // RestoreStatus reverts previously set evaluation monitors status.
 // Similarly to SetStatus, this method should also be called twice.
 func (em *EvaluationManager) RestoreStatus(operation internal.UpgradeKymaOperation, logger logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	avsCfg := operation.Avs
+	avsData := operation.Avs
 
 	// do internal monitor status reset
-	if em.internalAssistant.IsInMaintenance(avsCfg) {
+	if em.internalAssistant.IsInMaintenance(avsData) {
 		return em.delegator.ResetStatus(logger, operation, em.internalAssistant)
 	}
 
 	// do external monitor status reset
-	if em.externalAssistant.IsInMaintenance(avsCfg) {
+	if em.externalAssistant.IsInMaintenance(avsData) {
 		return em.delegator.ResetStatus(logger, operation, em.externalAssistant)
 	}
 
