@@ -29,14 +29,6 @@ func NewOperation(sess postsql.Factory, cipher Cipher) *operations {
 	}
 }
 
-// used only as memory storage in the unit test
-func (s *operations) GetLegacyOperation(operationID string) (*internal.LegacyOperation, error) {
-	return nil, nil
-}
-func (s *operations) InsertLegacyOperation(operation internal.LegacyOperation) error {
-	return nil
-}
-
 // InsertProvisioningOperation insert new ProvisioningOperation to storage
 func (s *operations) InsertProvisioningOperation(operation internal.ProvisioningOperation) error {
 	session := s.NewWriteSession()
@@ -519,25 +511,6 @@ func (s *operations) GetOperationsForIDs(operationIDList []string) ([]internal.O
 	return s.toOperations(operations)
 }
 
-func (s *operations) ListOperationsParameters() (map[string]internal.ProvisioningParameters, error) {
-	session := s.NewReadSession()
-
-	var (
-		lastErr    error
-		parameters = make(map[string]internal.ProvisioningParameters, 0)
-	)
-
-	_ = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		parameters, lastErr = session.ListOperationsParameters()
-		if lastErr != nil {
-			log.Errorf("while getting operations from the storage: %v", lastErr)
-			return false, nil
-		}
-		return true, nil
-	})
-	return parameters, lastErr
-}
-
 func (s *operations) ListOperations(filter dbmodel.OperationFilter) ([]internal.Operation, int, int, error) {
 	session := s.NewReadSession()
 
@@ -562,33 +535,6 @@ func (s *operations) ListOperations(filter dbmodel.OperationFilter) ([]internal.
 	result, err := s.toOperations(operations)
 
 	return result, size, total, err
-}
-
-func (s *operations) UpdateOperationParameters(operation internal.Operation) (*internal.Operation, error) {
-	session := s.NewWriteSession()
-	operation.UpdatedAt = time.Now()
-	dto, err := s.operationToDB(operation)
-	if err != nil {
-		return &internal.Operation{}, errors.Wrapf(err, "while converting to operationDB %v", operation)
-	}
-
-	var lastErr error
-	_ = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		lastErr = session.UpdateOperationParameters(dto)
-		if lastErr != nil && dberr.IsNotFound(lastErr) {
-			newOp, lastErr := s.NewReadSession().GetOperationByID(operation.ID)
-			if lastErr != nil {
-				log.Errorf("while getting operation: %v", lastErr)
-				return false, nil
-			}
-
-			// the operation exists but the version is different
-			dto.Version = newOp.Version
-		}
-		return true, nil
-	})
-	operation.Version = operation.Version + 1
-	return &operation, lastErr
 }
 
 func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeKymaOperation, int, int, error) {

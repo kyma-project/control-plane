@@ -6,7 +6,7 @@ global:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-390"
+      version: "PR-432"
     provisioner:
       dir:
       version: "PR-390"
