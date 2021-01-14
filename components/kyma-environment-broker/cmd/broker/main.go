@@ -180,7 +180,7 @@ func main() {
 	// todo: remove after instance details was done on each environment
 	// instance details migration to upgradeKyma operations
 	if cfg.EnableInstanceDetailsMigration {
-		err = migrations.NewInstanceDetailsMigration(db.Operations(), logs).Migrate()
+		err = migrations.NewInstanceDetailsMigration(db.Operations(), logs.WithField("service", "instanceDetailsMigration")).Migrate()
 		fatalOnError(err)
 	}
 
