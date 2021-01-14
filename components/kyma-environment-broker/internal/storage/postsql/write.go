@@ -248,31 +248,6 @@ func (ws writeSession) UpdateOperation(op dbmodel.OperationDTO) dberr.Error {
 	return nil
 }
 
-func (ws writeSession) UpdateOperationParameters(op dbmodel.OperationDTO) dberr.Error {
-	res, err := ws.update(OperationTableName).
-		Where(dbr.Eq("id", op.ID)).
-		Set("version", op.Version+1).
-		Set("provisioning_parameters", op.ProvisioningParameters.String).
-		Exec()
-
-	if err != nil {
-		if err == dbr.ErrNotFound {
-			return dberr.NotFound("Cannot find Operation with ID:'%s'", op.ID)
-		}
-		return dberr.Internal("Failed to update record to Operation table: %s", err)
-	}
-	rAffected, e := res.RowsAffected()
-	if e != nil {
-		// the optimistic locking requires numbers of rows affected
-		return dberr.Internal("the DB driver does not support RowsAffected operation")
-	}
-	if rAffected == int64(0) {
-		return dberr.NotFound("Cannot find Operation with ID:'%s' Version: %v", op.ID, op.Version)
-	}
-
-	return nil
-}
-
 func (ws writeSession) Commit() dberr.Error {
 	err := ws.transaction.Commit()
 	if err != nil {
