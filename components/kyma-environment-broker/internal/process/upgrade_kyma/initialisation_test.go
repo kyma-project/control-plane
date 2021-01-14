@@ -49,11 +49,14 @@ func TestInitialisationStep_Run(t *testing.T) {
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
 
-		provisioningOperation := fixProvisioningOperation(t)
-		err := memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
 		require.NoError(t, err)
 
-		upgradeOperation := fixUpgradeKymaOperation(t)
+		provisioningOperation := fixProvisioningOperation()
+		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		require.NoError(t, err)
+
+		upgradeOperation := fixUpgradeKymaOperation()
 		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
 		require.NoError(t, err)
 
@@ -93,11 +96,14 @@ func TestInitialisationStep_Run(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 		ver := &internal.RuntimeVersionData{}
 
-		provisioningOperation := fixProvisioningOperation(t)
-		err := memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
 		require.NoError(t, err)
 
-		upgradeOperation := fixUpgradeKymaOperation(t)
+		provisioningOperation := fixProvisioningOperation()
+		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		require.NoError(t, err)
+
+		upgradeOperation := fixUpgradeKymaOperation()
 		upgradeOperation.ProvisionerOperationID = ""
 		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
 		require.NoError(t, err)
@@ -134,17 +140,19 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("should mark finish if operation was canceled", func(t *testing.T) {
+	t.Run("should mark finish if orchestration was canceled", func(t *testing.T) {
 		// given
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
 
-		upgradeOperation := fixUpgradeKymaOperation(t)
-		upgradeOperation.State = orchestration.Canceled
-		err := memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.Canceled})
 		require.NoError(t, err)
 
-		provisioningOperation := fixProvisioningOperation(t)
+		upgradeOperation := fixUpgradeKymaOperation()
+		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		require.NoError(t, err)
+
+		provisioningOperation := fixProvisioningOperation()
 		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 		require.NoError(t, err)
 
@@ -155,18 +163,17 @@ func TestInitialisationStep_Run(t *testing.T) {
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
 
 		// then
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, time.Duration(0), repeat)
 		assert.Equal(t, orchestration.Canceled, string(upgradeOperation.State))
 
 		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
+		require.NoError(t, err)
 		assert.Equal(t, upgradeOperation, *storedOp)
-		assert.NoError(t, err)
-
 	})
 }
 
-func fixUpgradeKymaOperation(t *testing.T) internal.UpgradeKymaOperation {
+func fixUpgradeKymaOperation() internal.UpgradeKymaOperation {
 	n := time.Now()
 	windowEnd := n.Add(time.Minute)
 	return internal.UpgradeKymaOperation{
@@ -189,7 +196,7 @@ func fixUpgradeKymaOperation(t *testing.T) internal.UpgradeKymaOperation {
 	}
 }
 
-func fixProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
+func fixProvisioningOperation() internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ID:                     fixProvisioningOperationID,
@@ -213,15 +220,6 @@ func fixProvisioningParameters() internal.ProvisioningParameters {
 		},
 		Parameters: internal.ProvisioningParametersDTO{},
 	}
-}
-
-func fixRawProvisioningParameters(t *testing.T) string {
-	rawParameters, err := json.Marshal(fixProvisioningParameters())
-	if err != nil {
-		t.Errorf("cannot marshal provisioning parameters: %s", err)
-	}
-
-	return string(rawParameters)
 }
 
 func fixInstanceRuntimeStatus() internal.Instance {

@@ -29,6 +29,7 @@ const (
 type InitialisationStep struct {
 	operationManager       *process.UpgradeKymaOperationManager
 	operationStorage       storage.Operations
+	orchestrationStorage   storage.Orchestrations
 	instanceStorage        storage.Instances
 	provisionerClient      provisioner.Client
 	inputBuilder           input.CreatorForPlan
@@ -50,6 +51,7 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 	return &InitialisationStep{
 		operationManager:       process.NewUpgradeKymaOperationManager(os),
 		operationStorage:       os,
+		orchestrationStorage:   ors,
 		instanceStorage:        is,
 		provisionerClient:      pc,
 		inputBuilder:           b,
@@ -64,7 +66,11 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if operation.State == orchestrationExt.Canceled {
+	orchestration, err := s.orchestrationStorage.GetByID(operation.OrchestrationID)
+	if err != nil {
+		return operation, s.timeSchedule.Retry, nil
+	}
+	if orchestration.IsCanceled() {
 		log.Infof("Skipping processing because orchestration %s was canceled", operation.OrchestrationID)
 		return s.operationManager.OperationCanceled(operation, fmt.Sprintf("orchestration %s was canceled", operation.OrchestrationID))
 	}
