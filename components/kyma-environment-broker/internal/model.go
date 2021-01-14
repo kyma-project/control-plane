@@ -43,12 +43,6 @@ type LMS struct {
 	RequestedAt time.Time `json:"requested_at"`
 }
 
-type AvsEvaluationStatusState int
-
-const (
-	EvalStateSet AvsEvaluationStatusState = 1
-)
-
 type AvsEvaluationStatus struct {
 	Current  string `json:"current_value"`
 	Original string `json:"original_value"`
