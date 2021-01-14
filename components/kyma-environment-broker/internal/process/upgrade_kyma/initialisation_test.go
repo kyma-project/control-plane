@@ -73,7 +73,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}, nil)
 
 		evalManager := createEvalManager(memoryStorage, log)
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, nil, evalManager, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, nil, evalManager, nil, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -123,7 +123,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		rvc.On("ForUpgrade", expectedOperation).Return(ver, nil).Once()
 
 		evalManager := createEvalManager(memoryStorage, log)
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManager, nil, rvc)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManager, nil, rvc)
 
 		// when
 		op, repeat, err := step.Run(upgradeOperation, log)
@@ -156,7 +156,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		evalManager := createEvalManager(memoryStorage, log)
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), nil, nil, evalManager, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), nil, nil, evalManager, nil, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)

@@ -38,7 +38,7 @@ type InitialisationStep struct {
 	runtimeVerConfigurator RuntimeVersionConfiguratorForUpgrade
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, em *EvaluationManager,
+func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, em *EvaluationManager,
 	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {

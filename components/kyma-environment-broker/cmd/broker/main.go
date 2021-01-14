@@ -608,9 +608,8 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Orchestrations(), db.Instances(),
-		provisionerClient, inputFactory, icfg, runtimeVerConfigurator)
+		provisionerClient, inputFactory, updateEvalManager, icfg, runtimeVerConfigurator)
 
-	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, inputFactory, updateEvalManager, icfg, runtimeVerConfigurator)
 	upgradeKymaManager.InitStep(upgradeKymaInit)
 	upgradeKymaSteps := []struct {
 		disabled bool
