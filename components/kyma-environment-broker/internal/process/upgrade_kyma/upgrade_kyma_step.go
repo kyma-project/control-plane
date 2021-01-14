@@ -19,7 +19,6 @@ type UpgradeKymaStep struct {
 	operationManager    *process.UpgradeKymaOperationManager
 	provisionerClient   provisioner.Client
 	runtimeStateStorage storage.RuntimeStates
-	evaluationManager   *EvaluationManager
 	timeSchedule        TimeSchedule
 }
 
@@ -27,7 +26,6 @@ func NewUpgradeKymaStep(
 	os storage.Operations,
 	runtimeStorage storage.RuntimeStates,
 	cli provisioner.Client,
-	em *EvaluationManager,
 	timeSchedule *TimeSchedule) *UpgradeKymaStep {
 	ts := timeSchedule
 	if ts == nil {
@@ -42,7 +40,6 @@ func NewUpgradeKymaStep(
 		operationManager:    process.NewUpgradeKymaOperationManager(os),
 		provisionerClient:   cli,
 		runtimeStateStorage: runtimeStorage,
-		evaluationManager:   em,
 		timeSchedule:        *ts,
 	}
 }

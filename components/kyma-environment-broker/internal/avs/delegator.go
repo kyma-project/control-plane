@@ -13,12 +13,11 @@ import (
 )
 
 type Delegator struct {
-	provisionManager   *process.ProvisionOperationManager
-	deprovisionManager *process.DeprovisionOperationManager
-	upgradeManager     *process.UpgradeKymaOperationManager
-	avsConfig          Config
-	client             *Client
-	operationsStorage  storage.Operations
+	provisionManager  *process.ProvisionOperationManager
+	upgradeManager    *process.UpgradeKymaOperationManager
+	avsConfig         Config
+	client            *Client
+	operationsStorage storage.Operations
 }
 
 type avsNonSuccessResp struct {
@@ -28,12 +27,11 @@ type avsNonSuccessResp struct {
 
 func NewDelegator(client *Client, avsConfig Config, os storage.Operations) *Delegator {
 	return &Delegator{
-		provisionManager:   process.NewProvisionOperationManager(os),
-		deprovisionManager: process.NewDeprovisionOperationManager(os),
-		upgradeManager:     process.NewUpgradeKymaOperationManager(os),
-		avsConfig:          avsConfig,
-		client:             client,
-		operationsStorage:  os,
+		provisionManager:  process.NewProvisionOperationManager(os),
+		upgradeManager:    process.NewUpgradeKymaOperationManager(os),
+		avsConfig:         avsConfig,
+		client:            client,
+		operationsStorage: os,
 	}
 }
 

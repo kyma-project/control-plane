@@ -232,7 +232,7 @@ func main() {
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
 	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 	internalEvalUpdater := provisioning.NewInternalEvalUpdater(avsDel, internalEvalAssistant, cfg.Avs)
-	updateEvalManager := upgrade_kyma.NewEvaluationManager(avsDel, cfg.Avs)
+	upgradeEvalManager := upgrade_kyma.NewEvaluationManager(avsDel, cfg.Avs)
 
 	clientHTTPForIAS := httputil.NewClient(60, cfg.IAS.SkipCertVerification)
 	if cfg.IAS.TLSRenegotiationEnable {
@@ -463,7 +463,7 @@ func main() {
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, gardenerClient,
-		gardenerNamespace, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, cfg.DefaultRequestRegion, updateEvalManager, logs)
+		gardenerNamespace, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, cfg.DefaultRequestRegion, upgradeEvalManager, logs)
 	fatalOnError(err)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
@@ -621,7 +621,7 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 		},
 		{
 			weight: 10,
-			step:   upgrade_kyma.NewUpgradeKymaStep(db.Operations(), db.RuntimeStates(), provisionerClient, updateEvalManager, icfg),
+			step:   upgrade_kyma.NewUpgradeKymaStep(db.Operations(), db.RuntimeStates(), provisionerClient, icfg),
 		},
 	}
 	for _, step := range upgradeKymaSteps {
