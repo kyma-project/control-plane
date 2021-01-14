@@ -2,7 +2,6 @@ package upgrade_kyma
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
