@@ -31,12 +31,12 @@ func (em *EvaluationManager) SetStatus(status string, operation internal.Upgrade
 	avsData := operation.Avs
 
 	// do internal monitor status update
-	if !em.internalAssistant.IsInMaintenance(avsData) {
+	if em.internalAssistant.IsValid(avsData) && !em.internalAssistant.IsInMaintenance(avsData) {
 		return em.delegator.SetStatus(logger, operation, em.internalAssistant, status)
 	}
 
 	// do external monitor status update
-	if !em.externalAssistant.IsInMaintenance(avsData) {
+	if em.externalAssistant.IsValid(avsData) && !em.externalAssistant.IsInMaintenance(avsData) {
 		return em.delegator.SetStatus(logger, operation, em.externalAssistant, status)
 	}
 
@@ -49,12 +49,12 @@ func (em *EvaluationManager) RestoreStatus(operation internal.UpgradeKymaOperati
 	avsData := operation.Avs
 
 	// do internal monitor status reset
-	if em.internalAssistant.IsInMaintenance(avsData) {
+	if em.internalAssistant.IsValid(avsData) && em.internalAssistant.IsInMaintenance(avsData) {
 		return em.delegator.ResetStatus(logger, operation, em.internalAssistant)
 	}
 
 	// do external monitor status reset
-	if em.externalAssistant.IsInMaintenance(avsData) {
+	if em.externalAssistant.IsValid(avsData) && em.externalAssistant.IsInMaintenance(avsData) {
 		return em.delegator.ResetStatus(logger, operation, em.externalAssistant)
 	}
 

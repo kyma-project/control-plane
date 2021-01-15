@@ -594,11 +594,11 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 	gardenerClient gardenerclient.CoreV1beta1Interface, gardenerNamespace string, pub event.Publisher,
 	inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
-	defaultRegion string, updateEvalManager *upgrade_kyma.EvaluationManager, logs logrus.FieldLogger) (*process.Queue, error) {
+	defaultRegion string, upgradeEvalManager *upgrade_kyma.EvaluationManager, logs logrus.FieldLogger) (*process.Queue, error) {
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Orchestrations(), db.Instances(),
-		provisionerClient, inputFactory, updateEvalManager, icfg, runtimeVerConfigurator)
+		provisionerClient, inputFactory, upgradeEvalManager, icfg, runtimeVerConfigurator)
 
 	upgradeKymaManager.InitStep(upgradeKymaInit)
 	upgradeKymaSteps := []struct {
