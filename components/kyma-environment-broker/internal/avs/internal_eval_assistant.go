@@ -52,6 +52,10 @@ func (iec *InternalEvalAssistant) IsAlreadyCreated(lifecycleData internal.AvsLif
 	return lifecycleData.AvsEvaluationInternalId != 0
 }
 
+func (iec *InternalEvalAssistant) IsValid(lifecycleData internal.AvsLifecycleData) bool {
+	return iec.IsAlreadyCreated(lifecycleData) && !iec.IsAlreadyDeleted(lifecycleData)
+}
+
 func (iec *InternalEvalAssistant) ProvideSuffix() string {
 	return "int"
 }

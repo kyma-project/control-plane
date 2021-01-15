@@ -125,7 +125,7 @@ func (del *Delegator) ResetStatus(logger logrus.FieldLogger, operation internal.
 
 func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.UpgradeKymaOperation, evalAssistant EvalAssistant, status string) (internal.UpgradeKymaOperation, time.Duration, error) {
 	// skip for non-existent or deleted evaluation
-	if !evalAssistant.IsAlreadyCreated(operation.Avs) || evalAssistant.IsAlreadyDeleted(operation.Avs) {
+	if !evalAssistant.IsValid(operation.Avs) {
 		return operation, 0, nil
 	}
 

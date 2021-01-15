@@ -66,5 +66,18 @@ func (em *EvaluationManager) SetMaintenanceStatus(operation internal.UpgradeKyma
 }
 
 func (em *EvaluationManager) InMaintenance(operation internal.UpgradeKymaOperation) bool {
-	return em.internalAssistant.IsInMaintenance(operation.Avs) && em.externalAssistant.IsInMaintenance(operation.Avs)
+	avsData := operation.Avs
+	inMaintenance := true
+
+	// check for internal monitor
+	if em.internalAssistant.IsValid(avsData) {
+		inMaintenance = inMaintenance && em.internalAssistant.IsInMaintenance(avsData)
+	}
+
+	// check for external monitor
+	if em.externalAssistant.IsValid(avsData) {
+		inMaintenance = inMaintenance && em.externalAssistant.IsInMaintenance(avsData)
+	}
+
+	return inMaintenance
 }

@@ -32,6 +32,10 @@ func (eea *ExternalEvalAssistant) IsAlreadyCreated(lifecycleData internal.AvsLif
 	return lifecycleData.AVSEvaluationExternalId != 0
 }
 
+func (eea *ExternalEvalAssistant) IsValid(lifecycleData internal.AvsLifecycleData) bool {
+	return eea.IsAlreadyCreated(lifecycleData) && !eea.IsAlreadyDeleted(lifecycleData)
+}
+
 func (eea *ExternalEvalAssistant) ProvideSuffix() string {
 	return "ext"
 }
