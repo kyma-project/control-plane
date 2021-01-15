@@ -18,6 +18,7 @@ require (
 	github.com/openzipkin/zipkin-go v0.2.5
 	github.com/prometheus/client_golang v1.8.0
 	github.com/stretchr/testify v1.6.1
+	github.com/xeipuuv/gojsonschema v1.2.0
 	go.opencensus.io v0.22.5
 	go.uber.org/zap v1.16.0
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect

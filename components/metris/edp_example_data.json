@@ -1,0 +1,40 @@
+{
+  "resource_groups": [
+    "group1",
+    "group2"
+  ],
+  "compute": {
+    "vm_types": [
+      {
+        "name": "Standard_D8_v3",
+        "count": 3
+      },
+      {
+        "name": "Standard_D6_v3",
+        "count": 2
+      }
+    ],
+    "provisioned_cpus": 24,
+    "provisioned_ram_gb": 96,
+    "provisioned_volumes": {
+      "size_gb_total": 150,
+      "count": 3,
+      "size_gb_rounded": 192
+    }
+  },
+  "networking": {
+    "provisioned_loadbalancers": 1,
+    "provisioned_vnets": 2,
+    "provisioned_ips": 3
+  },
+  "event_hub": {
+    "number_namespaces": 3,
+    "incoming_requests_pt1m": 3,
+    "max_incoming_bytes_pt1m": 5600,
+    "max_outgoing_bytes_pt1m": 5600,
+    "incoming_requests_pt5m": 0,
+    "max_incoming_bytes_pt5m": 0,
+    "max_outgoing_bytes_pt5m": 0
+  },
+  "timestamp": "2020-03-25T09:16:41+00:00"
+}
