@@ -76,11 +76,15 @@ func httpEcho() http.HandlerFunc {
 		result, err := gojsonschema.Validate(schemaLoader, documentLoader)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
+			if _, err = w.Write([]byte(err.Error())); err != nil {
+				panic(err)
+			}
 			return
 		}
 
-		buf.WriteTo(os.Stdout)
+		if _, err = buf.WriteTo(os.Stdout); err != nil {
+			panic(err)
+		}
 		if result.Valid() {
 			w.WriteHeader(http.StatusCreated)
 			fmt.Print("Valid request")
@@ -88,7 +92,9 @@ func httpEcho() http.HandlerFunc {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Print("Invalid request")
 			for _, desc := range result.Errors() {
-				w.Write([]byte(fmt.Sprintf("- %s\n", desc)))
+				if _, err = w.Write([]byte(fmt.Sprintf("- %s\n", desc))); err != nil {
+					panic(err)
+				}
 				fmt.Printf("- %s\n", desc)
 			}
 		}
