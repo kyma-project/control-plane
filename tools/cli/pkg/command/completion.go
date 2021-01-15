@@ -1,18 +1,26 @@
 package command
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
 // CompletionCommand represents an execution of the kcp completion command
 type CompletionCommand struct {
-	cobraCmd *cobra.Command
-	output   string
+	cobraCmd       *cobra.Command
+	completeTarget string
 }
 
-var validArgements = []string{"bash", "zsh", "fish", "powershell"}
+var defaultFile string
+var validArguements = []string{"bash", "zsh", "fish", "powershell"}
+
+const errorMsg = "Error: accepts 1 arg(s), received 0 \n"
+const suggestionMsg = "Please use `kcp completion [bash|zsh|fish|powershell]`"
+const savedInMsg = "Saved in"
+const savedFileName = "kcp_completion"
 
 // NewCompletionCmd constructs a new instance of CompletionCommand and configures it in terms of a cobra.Command
 func NewCompletionCommand() *cobra.Command {
@@ -61,37 +69,50 @@ PS> kcp completion powershell > kcp.ps1
 `,
 		Example:               `kcp completion bash                            Display completions in bash.`,
 		DisableFlagsInUseLine: true,
-		ValidArgs:             validArgements,
-		Args:                  cobra.ExactValidArgs(1),
-		PreRunE:               func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
-		RunE:                  func(comd *cobra.Command, args []string) error { return cmd.Run(comd, args) },
+		ValidArgs:             validArguements,
+		Args:                  cobra.MaximumNArgs(1),
+		PreRunE:               func(_ *cobra.Command, args []string) error { return cmd.Validate(args) },
+		RunE: func(comd *cobra.Command, args []string) error {
+			switch args[0] {
+			case "bash":
+				comd.Root().GenBashCompletionFile(cmd.completeTarget)
+				fmt.Println(savedInMsg, cmd.completeTarget)
+			case "zsh":
+				comd.Root().GenZshCompletionFile(cmd.completeTarget)
+				fmt.Println(savedInMsg, cmd.completeTarget)
+			case "fish":
+				comd.Root().GenFishCompletionFile(cmd.completeTarget, true)
+				fmt.Println(savedInMsg, cmd.completeTarget)
+			case "powershell":
+				comd.Root().GenPowerShellCompletionFile(cmd.completeTarget)
+				fmt.Println(savedInMsg, cmd.completeTarget)
+			default:
+				return errors.New(suggestionMsg)
+			}
+			return nil
+		},
 	}
-	SetOutputOpt(cobraCmd, &cmd.output)
+
+	setDefaultFile()
+	cobraCmd.PersistentFlags().StringVarP(&cmd.completeTarget, "completionfile", "", defaultFile, "autocompletion file")
 
 	return cobraCmd
 }
 
-// Run executes the completion command
-func (cmd *CompletionCommand) Run(comd *cobra.Command, args []string) error {
-	//var comd *cobra.Command
-	switch args[0] {
-	case "bash":
-		comd.Root().GenBashCompletion(os.Stdout)
-	case "zsh":
-		comd.Root().GenZshCompletion(os.Stdout)
-	case "fish":
-		comd.Root().GenFishCompletion(os.Stdout, true)
-	case "powershell":
-		comd.Root().GenPowerShellCompletion(os.Stdout)
+// Validate checks the input parameters of the runtimes command
+func (cmd *CompletionCommand) Validate(args []string) error {
+	if len(args) == 0 {
+		return errors.New(errorMsg + suggestionMsg)
 	}
 	return nil
 }
 
-// Validate checks the input parameters of the runtimes command
-func (cmd *CompletionCommand) Validate() error {
-	err := ValidateOutputOpt(cmd.output)
+// Set defaultFile for saving the completion files.
+func setDefaultFile() {
+	home, err := os.UserHomeDir()
 	if err != nil {
-		return err
+		fmt.Println("Error:", err)
+		os.Exit(1)
 	}
-	return nil
+	defaultFile = home + "/" + savedFileName
 }
