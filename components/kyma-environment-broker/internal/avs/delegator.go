@@ -123,26 +123,13 @@ func (del *Delegator) ResetStatus(logger logrus.FieldLogger, operation internal.
 	return del.SetStatus(logger, operation, evalAssistant, status)
 }
 
-func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.UpgradeKymaOperation, evalAssistant EvalAssistant, status string) (internal.UpgradeKymaOperation, time.Duration, error) {
-	// skip for non-existent or deleted evaluation
-	if !evalAssistant.IsValid(operation.Avs) {
-		return operation, 0, nil
-	}
+// RefreshStatus ensures that operation AVS lifecycle data is fetched from Avs API
+// in case it hasn't been (properly) loaded from db.
+func (del *Delegator) RefreshStatus(logger logrus.FieldLogger, lifecycleData *internal.AvsLifecycleData, evalAssistant EvalAssistant) string {
+	evalId := evalAssistant.GetEvaluationId(*lifecycleData)
+	currentStatus := evalAssistant.GetEvalStatus(*lifecycleData)
 
-	// fail for invalid status
-	if !ValidStatus(status) {
-		errMsg := fmt.Sprintf("avs SetStatus tried invalid status: %s", status)
-		logger.Error(errMsg)
-		return del.upgradeManager.OperationFailed(operation, errMsg)
-	}
-
-	delay := time.Duration(0)
-	evalId := evalAssistant.GetEvaluationId(operation.Avs)
-	currentStatus := evalAssistant.GetEvalStatus(operation.Avs)
-
-	logger.Infof("starting the SetStatus to avs id [%d]", evalId)
-
-	// obtain status from avs if not loaded, fallback to active on error
+	// obtain status from avs if invalid or not loaded, fallback to active on error
 	if !ValidStatus(currentStatus) {
 		logger.Infof("making avs calls to get evaluation data")
 		eval, err := del.client.GetEvaluation(evalId)
@@ -153,8 +140,30 @@ func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.Up
 			currentStatus = eval.Status
 		}
 
-		evalAssistant.SetEvalStatus(&operation.Avs, currentStatus)
+		evalAssistant.SetEvalStatus(lifecycleData, currentStatus)
 	}
+
+	return currentStatus
+}
+
+func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.UpgradeKymaOperation, evalAssistant EvalAssistant, status string) (internal.UpgradeKymaOperation, time.Duration, error) {
+	// skip for non-existent or deleted evaluation
+	if !evalAssistant.IsValid(operation.Avs) {
+		return operation, 0, nil
+	}
+
+	// fail for invalid status request
+	if !ValidStatus(status) {
+		errMsg := fmt.Sprintf("avs SetStatus tried invalid status: %s", status)
+		logger.Error(errMsg)
+		return del.upgradeManager.OperationFailed(operation, errMsg)
+	}
+
+	delay := time.Duration(0)
+	evalId := evalAssistant.GetEvaluationId(operation.Avs)
+	currentStatus := del.RefreshStatus(logger, &operation.Avs, evalAssistant)
+
+	logger.Infof("starting the SetStatus to avs id [%d]", evalId)
 
 	// do api call iff current and requested status are different
 	if currentStatus != status {
