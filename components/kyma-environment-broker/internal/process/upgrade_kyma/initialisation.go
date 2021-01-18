@@ -29,15 +29,17 @@ const (
 type InitialisationStep struct {
 	operationManager       *process.UpgradeKymaOperationManager
 	operationStorage       storage.Operations
+	orchestrationStorage   storage.Orchestrations
 	instanceStorage        storage.Instances
 	provisionerClient      provisioner.Client
 	inputBuilder           input.CreatorForPlan
+	evaluationManager      *EvaluationManager
 	timeSchedule           TimeSchedule
 	runtimeVerConfigurator RuntimeVersionConfiguratorForUpgrade
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, timeSchedule *TimeSchedule,
-	rvc RuntimeVersionConfiguratorForUpgrade) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, em *EvaluationManager,
+	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
 		ts = &TimeSchedule{
@@ -49,9 +51,11 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 	return &InitialisationStep{
 		operationManager:       process.NewUpgradeKymaOperationManager(os),
 		operationStorage:       os,
+		orchestrationStorage:   ors,
 		instanceStorage:        is,
 		provisionerClient:      pc,
 		inputBuilder:           b,
+		evaluationManager:      em,
 		timeSchedule:           *ts,
 		runtimeVerConfigurator: rvc,
 	}
@@ -62,7 +66,11 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if operation.State == orchestrationExt.Canceled {
+	orchestration, err := s.orchestrationStorage.GetByID(operation.OrchestrationID)
+	if err != nil {
+		return operation, s.timeSchedule.Retry, nil
+	}
+	if orchestration.IsCanceled() {
 		log.Infof("Skipping processing because orchestration %s was canceled", operation.OrchestrationID)
 		return s.operationManager.OperationCanceled(operation, fmt.Sprintf("orchestration %s was canceled", operation.OrchestrationID))
 	}
@@ -102,7 +110,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		}
 		log.Infof("runtime being upgraded, check operation status")
 		operation.InstanceDetails.RuntimeID = instance.RuntimeID
-		return s.checkRuntimeStatus(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
+		return s.performRuntimeChecks(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
 	case dberr.IsNotFound(err):
 		log.Info("instance does not exist, it may have been deprovisioned")
 		return s.operationManager.OperationSucceeded(operation, "instance was not found")
@@ -169,6 +177,33 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 	}
 
 	return nil
+}
+
+func (s *InitialisationStep) performRuntimeChecks(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	var errStatus error
+	operation, delay, err := s.checkRuntimeStatus(operation, instance, log)
+	inMaintenance := s.evaluationManager.InMaintenance(operation)
+
+	// ensures that required pre- and post- logic is executed
+	if operation.State == orchestrationExt.InProgress {
+		// set maintenance evaluation status on init
+		if !inMaintenance {
+			operation, delay, errStatus = s.evaluationManager.SetMaintenanceStatus(operation, log)
+			if errStatus != nil {
+				err = errors.Wrap(err, errStatus.Error())
+			}
+		}
+	} else if operation.State == orchestrationExt.Succeeded || operation.State == orchestrationExt.Failed {
+		// restore evaluation status on finish
+		if inMaintenance {
+			operation, delay, errStatus = s.evaluationManager.RestoreStatus(operation, log)
+			if errStatus != nil {
+				err = errors.Wrap(err, errStatus.Error())
+			}
+		}
+	}
+
+	return operation, delay, err
 }
 
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {

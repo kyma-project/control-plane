@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -144,6 +145,118 @@ func TestClient_DeleteEvaluation(t *testing.T) {
 	})
 }
 
+func TestClient_GetEvaluation(t *testing.T) {
+	t.Run("should get existing evaluation", func(t *testing.T) {
+		// Given
+		server := newServer(t)
+		mockServer := fixHTTPServer(server)
+		client, err := NewClient(context.TODO(), Config{
+			OauthTokenEndpoint: fmt.Sprintf("%s/oauth/token", mockServer.URL),
+			ApiEndpoint:        fmt.Sprintf("%s/api/v2/evaluationmetadata", mockServer.URL),
+			ParentId:           parentEvaluationID,
+		}, logrus.New())
+		assert.NoError(t, err)
+
+		resp, err := client.CreateEvaluation(&BasicEvaluationCreateRequest{
+			Name:        "test_evaluation_create",
+			Description: "custom description",
+		})
+		assert.NoError(t, err)
+
+		// When
+		getResp, err := client.GetEvaluation(resp.Id)
+
+		// Then
+		assert.NoError(t, err)
+		assert.Equal(t, getResp, resp)
+	})
+
+	t.Run("should return error when trying to get not existing evaluation", func(t *testing.T) {
+		// Given
+		server := newServer(t)
+		mockServer := fixHTTPServer(server)
+		client, err := NewClient(context.TODO(), Config{
+			OauthTokenEndpoint: fmt.Sprintf("%s/oauth/token", mockServer.URL),
+			ApiEndpoint:        fmt.Sprintf("%s/api/v2/evaluationmetadata", mockServer.URL),
+			ParentId:           parentEvaluationID,
+		}, logrus.New())
+		assert.NoError(t, err)
+
+		// When
+		_, err = client.GetEvaluation(1)
+
+		// Then
+		assert.Contains(t, err.Error(), "404")
+	})
+}
+
+func TestClient_Status(t *testing.T) {
+	t.Run("should get status", func(t *testing.T) {
+		// Given
+		server := newServer(t)
+		mockServer := fixHTTPServer(server)
+		client, err := NewClient(context.TODO(), Config{
+			OauthTokenEndpoint: fmt.Sprintf("%s/oauth/token", mockServer.URL),
+			ApiEndpoint:        fmt.Sprintf("%s/api/v2/evaluationmetadata", mockServer.URL),
+			ParentId:           parentEvaluationID,
+		}, logrus.New())
+		assert.NoError(t, err)
+
+		resp, err := client.CreateEvaluation(&BasicEvaluationCreateRequest{})
+		assert.NoError(t, err)
+
+		// When
+		getResp, err := client.GetEvaluation(resp.Id)
+
+		// Then
+		assert.NoError(t, err)
+		assert.Equal(t, getResp.Status, StatusActive)
+	})
+
+	t.Run("should update status", func(t *testing.T) {
+		// Given
+		server := newServer(t)
+		mockServer := fixHTTPServer(server)
+		client, err := NewClient(context.TODO(), Config{
+			OauthTokenEndpoint: fmt.Sprintf("%s/oauth/token", mockServer.URL),
+			ApiEndpoint:        fmt.Sprintf("%s/api/v2/evaluationmetadata", mockServer.URL),
+			ParentId:           parentEvaluationID,
+		}, logrus.New())
+		assert.NoError(t, err)
+
+		resp, err := client.CreateEvaluation(&BasicEvaluationCreateRequest{})
+		assert.NoError(t, err)
+
+		// When
+		resp, err = client.SetStatus(resp.Id, StatusDeleted)
+
+		// Then
+		assert.NoError(t, err)
+		assert.Equal(t, resp.Status, StatusDeleted)
+	})
+
+	t.Run("should not update invalid status", func(t *testing.T) {
+		// Given
+		server := newServer(t)
+		mockServer := fixHTTPServer(server)
+		client, err := NewClient(context.TODO(), Config{
+			OauthTokenEndpoint: fmt.Sprintf("%s/oauth/token", mockServer.URL),
+			ApiEndpoint:        fmt.Sprintf("%s/api/v2/evaluationmetadata", mockServer.URL),
+			ParentId:           parentEvaluationID,
+		}, logrus.New())
+		assert.NoError(t, err)
+
+		resp, err := client.CreateEvaluation(&BasicEvaluationCreateRequest{})
+		assert.NoError(t, err)
+
+		// When
+		resp, err = client.SetStatus(resp.Id, "")
+
+		// Then
+		assert.Contains(t, err.Error(), "500")
+	})
+}
+
 func TestClient_RemoveReferenceFromParentEval(t *testing.T) {
 	t.Run("should remove reference from parent eval", func(t *testing.T) {
 		// Given
@@ -241,11 +354,13 @@ func TestClient_AddTag(t *testing.T) {
 //and parentIDrefs is mapping CompoundEvaluation ID (parentID) to BasicEvaluations (Subevaluations) IDs
 type evaluationRepository struct {
 	basicEvals   map[int64]*BasicEvaluationCreateResponse
+	evalSet      map[int64]bool
 	parentIDrefs map[int64][]int64
 }
 
 func (er *evaluationRepository) addEvaluation(parentID int64, eval *BasicEvaluationCreateResponse) {
 	er.basicEvals[eval.Id] = eval
+	er.evalSet[eval.Id] = true
 	er.parentIDrefs[parentID] = append(er.parentIDrefs[parentID], eval.Id)
 }
 
@@ -271,6 +386,7 @@ func newServer(t *testing.T) *server {
 		t: t,
 		evaluations: &evaluationRepository{
 			basicEvals:   make(map[int64]*BasicEvaluationCreateResponse, 0),
+			evalSet:      make(map[int64]bool, 0),
 			parentIDrefs: make(map[int64][]int64, 0),
 		},
 	}
@@ -284,6 +400,7 @@ func fixHTTPServer(srv *server) *httptest.Server {
 	r.HandleFunc("/api/v2/evaluationmetadata/{evalId}", srv.deleteEvaluation).Methods(http.MethodDelete)
 	r.HandleFunc("/api/v2/evaluationmetadata/{evalId}", srv.getEvaluation).Methods(http.MethodGet)
 	r.HandleFunc("/api/v2/evaluationmetadata/{evalId}/tag", srv.addTagToEvaluation).Methods(http.MethodPost)
+	r.HandleFunc("/api/v2/evaluationmetadata/{evalId}/lifecycle", srv.setStatus).Methods(http.MethodPut)
 	r.HandleFunc("/api/v2/evaluationmetadata/{parentId}/child/{evalId}", srv.removeReferenceFromParentEval).Methods(http.MethodDelete)
 
 	return httptest.NewServer(r)
@@ -329,7 +446,7 @@ func (s *server) createEvaluation(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&requestObj)
 	assert.NoError(s.t, err)
 
-	evalCreateResponse := createResponseObj(requestObj)
+	evalCreateResponse := s.createResponseObj(requestObj)
 	s.evaluations.addEvaluation(requestObj.ParentId, evalCreateResponse)
 
 	createdEval := s.evaluations.basicEvals[evalCreateResponse.Id]
@@ -352,14 +469,11 @@ func (s *server) getEvaluation(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-	_, exists := s.evaluations.basicEvals[evalId]
+	response, exists := s.evaluations.basicEvals[evalId]
 	if !exists {
 		w.WriteHeader(http.StatusNotFound)
 	}
 
-	response := BasicEvaluationCreateResponse{
-		Name: existingEvaluationName,
-	}
 	responseObjAsBytes, _ := json.Marshal(response)
 	_, err = w.Write(responseObjAsBytes)
 	assert.NoError(s.t, err)
@@ -393,6 +507,38 @@ func (s *server) addTagToEvaluation(w http.ResponseWriter, r *http.Request) {
 	assert.NoError(s.t, err)
 }
 
+func (s *server) setStatus(w http.ResponseWriter, r *http.Request) {
+	assert.Equal(s.t, r.Header.Get("Content-Type"), "application/json")
+	if !s.hasAccess(r.Header.Get("Authorization")) {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	var requestObj string
+	err := json.NewDecoder(r.Body).Decode(&requestObj)
+	assert.NoError(s.t, err)
+
+	if !ValidStatus(requestObj) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	vars := mux.Vars(r)
+	evalId, err := strconv.ParseInt(vars["evalId"], 10, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	evaluation, exists := s.evaluations.basicEvals[evalId]
+	if !exists {
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	evaluation.Status = requestObj
+
+	responseObjAsBytes, _ := json.Marshal(evaluation)
+	_, err = w.Write(responseObjAsBytes)
+	assert.NoError(s.t, err)
+}
+
 func (s *server) deleteEvaluation(w http.ResponseWriter, r *http.Request) {
 	if !s.hasAccess(r.Header.Get("Authorization")) {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -405,6 +551,7 @@ func (s *server) deleteEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	if _, exists := s.evaluations.basicEvals[id]; exists {
 		delete(s.evaluations.basicEvals, id)
+		delete(s.evaluations.evalSet, id)
 		w.WriteHeader(http.StatusOK)
 		return
 	}
@@ -440,13 +587,13 @@ func fixTag() *Tag {
 	}
 }
 
-func createResponseObj(requestObj BasicEvaluationCreateRequest) *BasicEvaluationCreateResponse {
+func (s *server) createResponseObj(requestObj BasicEvaluationCreateRequest) *BasicEvaluationCreateResponse {
 	parsedThreshold, err := strconv.ParseInt(requestObj.Threshold, 10, 64)
 	if err != nil {
 		parsedThreshold = int64(1234)
 	}
 
-	timeUnixEpoch, id := generateId()
+	timeUnixEpoch, id := s.generateId()
 
 	evalCreateResponse := &BasicEvaluationCreateResponse{
 		DefinitionType:             requestObj.DefinitionType,
@@ -480,8 +627,12 @@ func createResponseObj(requestObj BasicEvaluationCreateRequest) *BasicEvaluation
 	return evalCreateResponse
 }
 
-func generateId() (int64, int64) {
-	timeUnixEpoch := time.Now().Unix()
-	id := time.Now().Unix()
-	return timeUnixEpoch, id
+func (s *server) generateId() (int64, int64) {
+	for {
+		timeUnixEpoch := time.Now().Unix()
+		id := rand.Int63() + time.Now().Unix()
+		if _, exists := s.evaluations.evalSet[id]; !exists {
+			return timeUnixEpoch, id
+		}
+	}
 }

@@ -123,7 +123,7 @@ func (p *ParallelOrchestrationStrategy) processOperation(op orchestration.Runtim
 			log = log.WithField("operationID", id)
 			defer func() {
 				if err := recover(); err != nil {
-					log.Errorf("panic error from process: %v\n%s", err, debug.Stack())
+					log.Errorf("panic error from process: %v. Stacktrace: %s", err, debug.Stack())
 				}
 				p.dq[executionID].Done(key)
 			}()
