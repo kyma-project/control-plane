@@ -68,7 +68,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 	}
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
-		{Key: "fluent-bit.config.extraFiles", fmt.Sprintf(`script.lua: |`, replaceTenantID)},
+		{Key: "fluent-bit.config.extraFiles", Value: fmt.Sprintf(`script.lua: |-`, replaceTenantID)},
 		{Key: "fluent-bit.conf.extra", Value: fmt.Sprintf(`
 [INPUT]
         Name              tail
