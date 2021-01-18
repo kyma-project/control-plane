@@ -1334,7 +1334,7 @@
         {
           "expr": "avg_over_time((sum(compass_keb_provisioning_duration_minutes_sum{plan_id=\"7d55d31d-35ae-4438-bf13-6ffdfa107d9f\"})/ sum(compass_keb_provisioning_duration_minutes_count{plan_id=\"7d55d31d-35ae-4438-bf13-6ffdfa107d9f\"}))[1h:5m])",
           "interval": "",
-          "legendFormat": "azure_trial",
+          "legendFormat": "trial",
           "refId": "A"
         }
       ],
@@ -1430,7 +1430,7 @@
         {
           "expr": "delta(compass_keb_operations_trial_provisioning_failed_total[1h])",
           "interval": "",
-          "legendFormat": "azure_trial",
+          "legendFormat": "trial",
           "refId": "B"
         }
       ],
@@ -1870,7 +1870,7 @@
         {
           "expr": "avg_over_time((sum(compass_keb_provisioning_duration_minutes_sum{plan_id=\"8cb22518-aa26-44c5-91a0-e669ec9bf443\"})/ sum(compass_keb_provisioning_duration_minutes_count{plan_id=\"8cb22518-aa26-44c5-91a0-e669ec9bf443\"}))[1h:5m])",
           "interval": "",
-          "legendFormat": "azure-lite",
+          "legendFormat": "trial",
           "refId": "A"
         }
       ],
@@ -1966,7 +1966,7 @@
         {
           "expr": "delta(compass_keb_operations_azure_lite_provisioning_failed_total[1h])",
           "interval": "",
-          "legendFormat": "azure_lite",
+          "legendFormat": "trial",
           "refId": "B"
         }
       ],
@@ -3448,5 +3448,5 @@
   "timezone": "",
   "title": "KCP / Kyma Environment Broker",
   "uid": "_MIdIJiZh",
-  "version": 5
+  "version": 587
 }
