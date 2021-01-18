@@ -38,7 +38,7 @@ type Operation struct {
 	Description     string    `json:"description"`
 	CreatedAt       time.Time `json:"createdAt"`
 	OperationID     string    `json:"operationID"`
-	OrchestrationID *string   `json:"orchestrationID,omitempty"`
+	OrchestrationID string    `json:"orchestrationID,omitempty"`
 }
 
 type RuntimesPage struct {
