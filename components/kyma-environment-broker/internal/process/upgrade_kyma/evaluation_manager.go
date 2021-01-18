@@ -56,14 +56,20 @@ func (em *EvaluationManager) RestoreStatus(operation internal.UpgradeKymaOperati
 
 	// do internal monitor status reset
 	if em.internalAssistant.IsValid(avsData) && em.internalAssistant.IsInMaintenance(avsData) {
-		op, _, err := em.delegator.ResetStatus(logger, operation, em.internalAssistant)
-		return op, delay, err
+		op, d, err := em.delegator.ResetStatus(logger, operation, em.internalAssistant)
+		if d == 0 {
+			d = delay
+		}
+		return op, d, err
 	}
 
 	// do external monitor status reset
 	if em.externalAssistant.IsValid(avsData) && em.externalAssistant.IsInMaintenance(avsData) {
-		op, _, err := em.delegator.ResetStatus(logger, operation, em.externalAssistant)
-		return op, delay, err
+		op, d, err := em.delegator.ResetStatus(logger, operation, em.externalAssistant)
+		if d == 0 {
+			d = delay
+		}
+		return op, d, err
 	}
 
 	return operation, delay, nil
