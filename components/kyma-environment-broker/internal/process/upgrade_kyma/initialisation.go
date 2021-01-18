@@ -180,37 +180,36 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 }
 
 func (s *InitialisationStep) performRuntimeChecks(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	var errStatus error
 	operation, delay, err := s.checkRuntimeStatus(operation, instance, log)
 	inMaintenance := s.evaluationManager.InMaintenance(operation)
 
 	// Ensures that required pre- and post- logic is executed
 	// Should never return zero delay as Upgrade Manager will pickup operation as completed.
 	// See: Manager.Execute
+	var (
+		exErr   error
+		exDelay time.Duration
+	)
 	if operation.State == orchestrationExt.InProgress {
 		// set maintenance evaluation status on init
 		if !inMaintenance {
-			operation, delay, errStatus = s.evaluationManager.SetMaintenanceStatus(operation, log)
-			if errStatus != nil {
-				err = errors.Wrap(err, errStatus.Error())
-			}
-
-			if delay == 0 {
-				delay = 1 * time.Second
-			}
+			operation, exDelay, exErr = s.evaluationManager.SetMaintenanceStatus(operation, log)
 		}
 	} else if operation.State == orchestrationExt.Succeeded || operation.State == orchestrationExt.Failed {
 		// restore evaluation status on finish
 		if inMaintenance {
-			operation, delay, errStatus = s.evaluationManager.RestoreStatus(operation, log)
-			if errStatus != nil {
-				err = errors.Wrap(err, errStatus.Error())
-			}
-
-			if delay == 0 {
-				delay = 1 * time.Second
-			}
+			operation, exDelay, exErr = s.evaluationManager.RestoreStatus(operation, log)
 		}
+	}
+
+	// Handle pre- and post- responses and their impact
+	// on Kyma upgrade logic flow.
+	if exErr != nil {
+		err = errors.Wrap(err, exErr.Error())
+	}
+
+	if exDelay != 0 {
+		delay = exDelay
 	}
 
 	return operation, delay, err
