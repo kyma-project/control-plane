@@ -78,6 +78,22 @@ func (s *operations) UpdateProvisioningOperation(op internal.ProvisioningOperati
 	return &op, nil
 }
 
+func (s *operations) ListProvisioningOperationsByInstanceID(instanceID string) ([]internal.ProvisioningOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	operations := make([]internal.ProvisioningOperation, 0)
+	for _, op := range s.provisioningOperations {
+		if op.InstanceID == instanceID {
+			operations = append(operations, op)
+		}
+	}
+
+	s.sortProvisioningByCreatedAtDesc(operations)
+
+	return operations, nil
+}
+
 func (s *operations) InsertDeprovisioningOperation(operation internal.DeprovisioningOperation) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -124,6 +140,22 @@ func (s *operations) UpdateDeprovisioningOperation(op internal.DeprovisioningOpe
 	s.deprovisioningOperations[op.ID] = op
 
 	return &op, nil
+}
+
+func (s *operations) ListDeprovisioningOperationsByInstanceID(instanceID string) ([]internal.DeprovisioningOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	operations := make([]internal.DeprovisioningOperation, 0)
+	for _, op := range s.deprovisioningOperations {
+		if op.InstanceID == instanceID {
+			operations = append(operations, op)
+		}
+	}
+
+	s.sortDeprovisioningByCreatedAtDesc(operations)
+
+	return operations, nil
 }
 
 func (s *operations) InsertUpgradeKymaOperation(operation internal.UpgradeKymaOperation) error {
@@ -409,6 +441,18 @@ func (s *operations) sortUpgradeByCreatedAt(operations []internal.UpgradeKymaOpe
 	})
 }
 
+func (s *operations) sortProvisioningByCreatedAtDesc(operations []internal.ProvisioningOperation) {
+	sort.Slice(operations, func(i, j int) bool {
+		return operations[i].CreatedAt.After(operations[j].CreatedAt)
+	})
+}
+
+func (s *operations) sortDeprovisioningByCreatedAtDesc(operations []internal.DeprovisioningOperation) {
+	sort.Slice(operations, func(i, j int) bool {
+		return operations[i].CreatedAt.After(operations[j].CreatedAt)
+	})
+}
+
 func (s *operations) sortByCreatedAt(operations []internal.Operation) {
 	sort.Slice(operations, func(i, j int) bool {
 		return operations[i].CreatedAt.Before(operations[j].CreatedAt)
@@ -494,6 +538,19 @@ func (s *operations) filterAll(filter dbmodel.OperationFilter) ([]internal.Opera
 		result = append(result, op)
 	}
 	return result, nil
+}
+
+func (s *operations) filterDeprovisioning(filter dbmodel.OperationFilter) []internal.DeprovisioningOperation {
+	operations := make([]internal.DeprovisioningOperation, 0, len(s.deprovisioningOperations))
+	for _, v := range s.deprovisioningOperations {
+		if ok := matchFilter(string(v.State), filter.States, s.equalFilter); !ok {
+			continue
+		}
+
+		operations = append(operations, v)
+	}
+
+	return operations
 }
 
 func (s *operations) filterUpgrade(filter dbmodel.OperationFilter) []internal.UpgradeKymaOperation {

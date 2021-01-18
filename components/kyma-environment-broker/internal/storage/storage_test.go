@@ -572,6 +572,12 @@ func TestPostgres(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, 2, opStats[orchestration.InProgress])
+
+			// when
+			opList, err := svc.ListProvisioningOperationsByInstanceID(fixInstanceId)
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, 3, len(opList))
 		})
 		t.Run("Deprovisioning", func(t *testing.T) {
 			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
@@ -629,6 +635,22 @@ func TestPostgres(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, "new modified description", gotOperation2.Description)
+
+			// given
+			err = svc.InsertDeprovisioningOperation(internal.DeprovisioningOperation{
+				Operation: internal.Operation{
+					ID:         "other-op-id",
+					InstanceID: fixInstanceId,
+					CreatedAt:  time.Now().Add(1 * time.Hour),
+					UpdatedAt:  time.Now().Add(1 * time.Hour),
+				},
+			})
+			require.NoError(t, err)
+			// when
+			opList, err := svc.ListDeprovisioningOperationsByInstanceID(fixInstanceId)
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, 2, len(opList))
 
 		})
 		t.Run("Upgrade", func(t *testing.T) {
