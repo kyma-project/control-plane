@@ -110,7 +110,7 @@ return "fooBar"
         Format           json_stream
         tls              on
 `
-	expectedFileScript := `
+	expectedFileScript := `script.lua: |- 
 func myScript() {
 foo: 1234567890
 bar: tenant
@@ -123,11 +123,11 @@ return "fooBar"
   protocol: TLS`
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
 		{
-			Key:   "fluent-bit.conf.script",
+			Key:   "fluent-bit.config.extraFiles",
 			Value: expectedFileScript,
 		},
 		{
-			Key:   "fluent-bit.conf.extra",
+			Key:   "fluent-bit.config.extra",
 			Value: expectedOverride,
 		},
 		{
