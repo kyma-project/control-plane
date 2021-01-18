@@ -32,6 +32,10 @@ func (eea *ExternalEvalAssistant) IsAlreadyCreated(lifecycleData internal.AvsLif
 	return lifecycleData.AVSEvaluationExternalId != 0
 }
 
+func (eea *ExternalEvalAssistant) IsValid(lifecycleData internal.AvsLifecycleData) bool {
+	return eea.IsAlreadyCreated(lifecycleData) && !eea.IsAlreadyDeleted(lifecycleData)
+}
+
 func (eea *ExternalEvalAssistant) ProvideSuffix() string {
 	return "ext"
 }
@@ -61,6 +65,28 @@ func (eea *ExternalEvalAssistant) ProvideNewOrDefaultServiceName(defaultServiceN
 
 func (eea *ExternalEvalAssistant) SetEvalId(lifecycleData *internal.AvsLifecycleData, evalId int64) {
 	lifecycleData.AVSEvaluationExternalId = evalId
+}
+
+func (eea *ExternalEvalAssistant) SetEvalStatus(lifecycleData *internal.AvsLifecycleData, status string) {
+	current := lifecycleData.AvsExternalEvaluationStatus.Current
+	if current != status {
+		if ValidStatus(current) {
+			lifecycleData.AvsExternalEvaluationStatus.Original = current
+		}
+		lifecycleData.AvsExternalEvaluationStatus.Current = status
+	}
+}
+
+func (eea *ExternalEvalAssistant) GetEvalStatus(lifecycleData internal.AvsLifecycleData) string {
+	return lifecycleData.AvsExternalEvaluationStatus.Current
+}
+
+func (eea *ExternalEvalAssistant) GetOriginalEvalStatus(lifecycleData internal.AvsLifecycleData) string {
+	return lifecycleData.AvsExternalEvaluationStatus.Original
+}
+
+func (eea *ExternalEvalAssistant) IsInMaintenance(lifecycleData internal.AvsLifecycleData) bool {
+	return lifecycleData.AvsExternalEvaluationStatus.Current == StatusMaintenance
 }
 
 func (eea *ExternalEvalAssistant) ProvideCheckType() string {
