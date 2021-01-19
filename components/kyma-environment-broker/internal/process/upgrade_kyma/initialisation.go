@@ -22,6 +22,11 @@ import (
 )
 
 const (
+	UpgradePreSteps int = iota + 1
+	UpgradePostSteps
+)
+
+const (
 	// the time after which the operation is marked as expired
 	CheckStatusTimeout = 3 * time.Hour
 )
@@ -110,7 +115,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		}
 		log.Infof("runtime being upgraded, check operation status")
 		operation.InstanceDetails.RuntimeID = instance.RuntimeID
-		return s.performRuntimeChecks(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
+		return s.checkRuntimeStatus(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
 	case dberr.IsNotFound(err):
 		log.Info("instance does not exist, it may have been deprovisioned")
 		return s.operationManager.OperationSucceeded(operation, "instance was not found")
@@ -179,40 +184,44 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 	return nil
 }
 
-func (s *InitialisationStep) performRuntimeChecks(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	operation, delay, err := s.checkRuntimeStatus(operation, instance, log)
+// executePreTasks performs tasks when the upgrade is initiated.
+//
+// This method will be called multiple times until the last step
+// either fails the operation or returns null delay.
+func (s *InitialisationStep) executePreTasks(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	// additional pre- logic should be executed before configuring status
+	return s.evaluationManager.SetMaintenanceStatus(operation, log)
+}
+
+// executePostTasks performs tasks when the upgrade is finished.
+//
+// This method will be called multiple times until the last step
+// either fails the operation or returns null delay.
+func (s *InitialisationStep) executePostTasks(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	// additional post- logic should be executed before reverting status
+	return s.evaluationManager.RestoreStatus(operation, log)
+}
+
+// performRuntimeTasks Ensures that required pre- and post- logic is executed
+// It is not the best way to ensure step execution using Maintenance status,
+// as an edge-case where the monitors are already in required state.
+// This will skip the step execution.
+// TODO: Use custom states for required step execution.
+func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	inMaintenance := s.evaluationManager.InMaintenance(operation)
 
-	// Ensures that required pre- and post- logic is executed
-	// Should never return zero delay as Upgrade Manager will pickup operation as completed.
-	// See: Manager.Execute
-	var (
-		exErr   error
-		exDelay time.Duration
-	)
-	if operation.State == orchestrationExt.InProgress {
-		// set maintenance evaluation status on init
+	switch step {
+	case UpgradePreSteps:
 		if !inMaintenance {
-			operation, exDelay, exErr = s.evaluationManager.SetMaintenanceStatus(operation, log)
+			return s.executePreTasks(operation, log)
 		}
-	} else if operation.State == orchestrationExt.Succeeded || operation.State == orchestrationExt.Failed {
-		// restore evaluation status on finish
+	case UpgradePostSteps:
 		if inMaintenance {
-			operation, exDelay, exErr = s.evaluationManager.RestoreStatus(operation, log)
+			return s.executePostTasks(operation, log)
 		}
 	}
 
-	// Handle pre- and post- responses and their impact
-	// on Kyma upgrade logic flow.
-	if exErr != nil {
-		err = errors.Wrap(err, exErr.Error())
-	}
-
-	if exDelay != 0 {
-		delay = exDelay
-	}
-
-	return operation, delay, err
+	return operation, 0, nil
 }
 
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
@@ -232,14 +241,30 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 		msg = *status.Message
 	}
 
+	// execute pre- steps
+	operation, delay, err := s.performRuntimeTasks(UpgradePreSteps, operation, instance, log)
+	if delay != 0 {
+		return operation, delay, err
+	}
+
 	switch status.State {
+	case gqlschema.OperationStateInProgress, gqlschema.OperationStatePending:
+		return operation, s.timeSchedule.StatusCheck, nil
 	case gqlschema.OperationStateSucceeded:
+		// execute post- steps
+		operation, delay, err = s.performRuntimeTasks(UpgradePostSteps, operation, instance, log)
+		if delay != 0 {
+			return operation, delay, err
+		}
+
 		return s.operationManager.OperationSucceeded(operation, msg)
-	case gqlschema.OperationStateInProgress:
-		return operation, s.timeSchedule.StatusCheck, nil
-	case gqlschema.OperationStatePending:
-		return operation, s.timeSchedule.StatusCheck, nil
 	case gqlschema.OperationStateFailed:
+		// execute post- steps
+		operation, delay, err = s.performRuntimeTasks(UpgradePostSteps, operation, instance, log)
+		if delay != 0 {
+			return operation, delay, err
+		}
+
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg))
 	}
 
