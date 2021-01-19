@@ -184,31 +184,50 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 	return nil
 }
 
-// performRuntimeTasks Ensures that required pre- and post- logic is executed
-// It is not the best way to ensure step execution using Maintenance status,
-// as for edge-cases where the monitors are already in required state or
-// no monitors found, this will skip execution.
+// executePreUpgradeTasks perform tasks when the upgrade is initiated.
+func (s *InitialisationStep) executePreUpgradeTasks(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	log.Infof("executing preUpgrade steps")
+
+	// Additional pre- logic should be executed before configuring Avs monitors' status.
+	// When this step finishes with null delay, executePreUpgradeTasks will not be invoked again.
+	return s.evaluationManager.SetMaintenanceStatus(operation, log)
+}
+
+// executePostUpgradeTasks perform tasks when the upgrade is finished.
+func (s *InitialisationStep) executePostUpgradeTasks(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	log.Infof("executing postUpgrade steps")
+
+	// Additional post- logic should be executed before restoring Avs monitors' status.
+	// When this step finishes with null delay, executePostUpgradeTasks will not be invoked again.
+	return s.evaluationManager.RestoreStatus(operation, log)
+}
+
+// performRuntimeTasks Ensures that required pre- and post- logic is executed.
+// Uses internal and external Avs monitor statuses to verify state.
+// Not the most optimal way to ensure step execution. Edge-cases where
+// monitors are in required state or not present will skip execution.
 // TODO: Use custom states for required step execution.
 func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	inMaintenance := s.evaluationManager.InMaintenance(operation)
 	hasMonitors := s.evaluationManager.HasMonitors(operation)
+	inMaintenance := s.evaluationManager.InMaintenance(operation)
 
 	switch step {
 	case UpgradePreSteps:
 		if hasMonitors && !inMaintenance {
-			log.Infof("executing preUpgrade steps")
-			return s.evaluationManager.SetMaintenanceStatus(operation, log)
+			return s.executePreUpgradeTasks(operation, log)
 		}
 	case UpgradePostSteps:
 		if hasMonitors && inMaintenance {
-			log.Infof("executing postUpgrade steps")
-			return s.evaluationManager.RestoreStatus(operation, log)
+			return s.executePostUpgradeTasks(operation, log)
 		}
 	}
 
 	return operation, 0, nil
 }
 
+// checkRuntimeStatus will check operation runtime status
+// It will also trigger performRuntimeTasks upgrade steps to ensure
+// all the required dependencies have been fulfilled for upgrade operation.
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
@@ -228,35 +247,28 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 
 	// execute pre- steps
 	operation, delay, err := s.performRuntimeTasks(UpgradePreSteps, operation, instance, log)
-	if delay != 0 {
+	if delay != 0 || err != nil {
 		return operation, delay, err
 	}
 
+	// wait for operation completion
 	switch status.State {
 	case gqlschema.OperationStateInProgress, gqlschema.OperationStatePending:
 		return operation, s.timeSchedule.StatusCheck, nil
-	case gqlschema.OperationStateSucceeded:
-		// execute post- steps
-		operation, delay, err = s.performRuntimeTasks(UpgradePostSteps, operation, instance, log)
-		if delay != 0 {
-			return operation, delay, err
-		}
-
-		return s.operationManager.OperationSucceeded(operation, msg)
-	case gqlschema.OperationStateFailed:
-		// execute post- steps
-		operation, delay, err = s.performRuntimeTasks(UpgradePostSteps, operation, instance, log)
-		if delay != 0 {
-			return operation, delay, err
-		}
-
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg))
 	}
 
 	// execute post- steps
 	operation, delay, err = s.performRuntimeTasks(UpgradePostSteps, operation, instance, log)
-	if delay != 0 {
+	if delay != 0 || err != nil {
 		return operation, delay, err
+	}
+
+	// handle operation completion
+	switch status.State {
+	case gqlschema.OperationStateSucceeded:
+		return s.operationManager.OperationSucceeded(operation, msg)
+	case gqlschema.OperationStateFailed:
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg))
 	}
 
 	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()))
