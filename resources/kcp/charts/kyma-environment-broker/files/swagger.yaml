@@ -272,14 +272,14 @@ components:
               type: string
               example: parallel
               enum: [
-                "parallel"
+                  "parallel"
               ]
               description: "Specifies the type of the orchestration"
             schedule:
               type: string
               enum: [
-                "immediate",
-                "maintenanceWindow"
+                  "immediate",
+                  "maintenanceWindow"
               ]
               example: immediate
               description: "Specifies the schedule type for an orchestration"
@@ -312,7 +312,7 @@ components:
         target:
           type: string
           enum: [
-            "all"
+              "all"
           ]
           example: all
           description: "Selects Runtimes in a specified way"
@@ -399,9 +399,9 @@ components:
           type: string
           example: in progress
           enum: [
-            "suceeded",
-            "failed",
-            "in progress"
+              "suceeded",
+              "failed",
+              "in progress"
           ]
         description:
           type: string
@@ -458,9 +458,9 @@ components:
         state:
           type: string
           enum: [
-            "suceeded",
-            "failed",
-            "in progress"
+              "suceeded",
+              "failed",
+              "in progress"
           ]
           example: in progress
         description:
@@ -587,7 +587,7 @@ components:
         deprovisioning:
           $ref: '#/components/schemas/OperationStateDTO'
         upgradingKyma:
-          $ref: '#/components/schemas/OperationStateDTO'
+          $ref: '#/components/schemas/OperationsDataDTO'
 
     OperationStateDTO:
       type: object
@@ -596,13 +596,31 @@ components:
           type: string
           example: in progress
           enum: [
-            "suceeded",
-            "failed",
-            "in progress"
+              "suceeded",
+              "failed",
+              "in progress"
           ]
         description:
           type: string
           example: Operation scheduled
+        createdAt:
+          type: string
+          format: timestamp
+        operationID:
+          type: string
+          format: uuid
+
+    OperationsDataDTO:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/OperationStateDTO'
+        count:
+          type: integer
+        totalCount:
+          type: integer
 
     errObj:
       type: object
