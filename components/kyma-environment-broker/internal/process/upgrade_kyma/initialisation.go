@@ -196,10 +196,12 @@ func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.Up
 	switch step {
 	case UpgradePreSteps:
 		if hasMonitors && !inMaintenance {
+			log.Infof("executing preUpgrade steps")
 			return s.evaluationManager.SetMaintenanceStatus(operation, log)
 		}
 	case UpgradePostSteps:
 		if hasMonitors && inMaintenance {
+			log.Infof("executing postUpgrade steps")
 			return s.evaluationManager.RestoreStatus(operation, log)
 		}
 	}
