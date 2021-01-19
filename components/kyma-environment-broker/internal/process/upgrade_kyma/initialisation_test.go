@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
-	"runtime/debug"
 	"strconv"
 	"testing"
 	"time"
@@ -236,7 +235,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.Equal(t, upgradeOperation, *storedOp)
 	})
 
-	t.Run("should call pre and post methods on instant Success (both monitors, empty Avs status)", func(t *testing.T) {
+	t.Run("should refresh avs on success (both monitors, empty init)", func(t *testing.T) {
 		// given
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
@@ -276,15 +275,273 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		// then
 		assert.NoError(t, err)
-		debug.PrintStack()
-
 		assert.Equal(t, time.Duration(0), repeat)
 		assert.Equal(t, domain.Succeeded, upgradeOperation.State)
+		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: avs.StatusActive, Original: avs.StatusMaintenance})
+		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: avs.StatusActive, Original: avs.StatusMaintenance})
 
 		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
 		assert.Equal(t, upgradeOperation, *storedOp)
 		assert.NoError(t, err)
+	})
 
+	t.Run("should refresh avs on success (both monitors)", func(t *testing.T) {
+		// given
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
+		evalManager, client := createEvalManager(t, memoryStorage, log)
+		inputBuilder := &automock.CreatorForPlan{}
+
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		require.NoError(t, err)
+
+		provisioningOperation := fixProvisioningOperation()
+		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		require.NoError(t, err)
+
+		internalStatus, externalStatus := avs.StatusActive, avs.StatusInactive
+		avsData := createMonitors(t, client, internalStatus, externalStatus)
+		upgradeOperation := fixUpgradeKymaOperationWithAvs(avsData)
+
+		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		require.NoError(t, err)
+
+		instance := fixInstanceRuntimeStatus()
+		err = memoryStorage.Instances().Insert(instance)
+		require.NoError(t, err)
+
+		provisionerClient := &provisionerAutomock.Client{}
+		provisionerClient.On("RuntimeOperationStatus", fixGlobalAccountID, fixProvisionerOperationID).Return(gqlschema.OperationStatus{
+			ID:        ptr.String(fixProvisionerOperationID),
+			Operation: "",
+			State:     gqlschema.OperationStateSucceeded,
+			Message:   nil,
+			RuntimeID: StringPtr(fixRuntimeID),
+		}, nil)
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManager, nil, nil)
+
+		// when
+		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, time.Duration(0), repeat)
+		assert.Equal(t, domain.Succeeded, upgradeOperation.State)
+		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: internalStatus, Original: avs.StatusMaintenance})
+		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: externalStatus, Original: avs.StatusMaintenance})
+
+		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
+		assert.Equal(t, upgradeOperation, *storedOp)
+		assert.NoError(t, err)
+	})
+
+	t.Run("should refresh avs on fail (both monitors)", func(t *testing.T) {
+		// given
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
+		evalManager, client := createEvalManager(t, memoryStorage, log)
+		inputBuilder := &automock.CreatorForPlan{}
+
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		require.NoError(t, err)
+
+		provisioningOperation := fixProvisioningOperation()
+		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		require.NoError(t, err)
+
+		internalStatus, externalStatus := avs.StatusActive, avs.StatusInactive
+		avsData := createMonitors(t, client, internalStatus, externalStatus)
+		upgradeOperation := fixUpgradeKymaOperationWithAvs(avsData)
+
+		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		require.NoError(t, err)
+
+		instance := fixInstanceRuntimeStatus()
+		err = memoryStorage.Instances().Insert(instance)
+		require.NoError(t, err)
+
+		provisionerClient := &provisionerAutomock.Client{}
+		provisionerClient.On("RuntimeOperationStatus", fixGlobalAccountID, fixProvisionerOperationID).Return(gqlschema.OperationStatus{
+			ID:        ptr.String(fixProvisionerOperationID),
+			Operation: "",
+			State:     gqlschema.OperationStateFailed,
+			Message:   nil,
+			RuntimeID: StringPtr(fixRuntimeID),
+		}, nil)
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManager, nil, nil)
+
+		// when
+		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
+
+		// then
+		assert.NotNil(t, err)
+		assert.Equal(t, time.Duration(0), repeat)
+		assert.Equal(t, domain.Failed, upgradeOperation.State)
+		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: internalStatus, Original: avs.StatusMaintenance})
+		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: externalStatus, Original: avs.StatusMaintenance})
+
+		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
+		assert.Equal(t, upgradeOperation, *storedOp)
+		assert.NoError(t, err)
+	})
+
+	t.Run("should refresh avs on success (internal monitor)", func(t *testing.T) {
+		// given
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
+		evalManager, client := createEvalManager(t, memoryStorage, log)
+		inputBuilder := &automock.CreatorForPlan{}
+
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		require.NoError(t, err)
+
+		provisioningOperation := fixProvisioningOperation()
+		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		require.NoError(t, err)
+
+		internalStatus, externalStatus := avs.StatusActive, ""
+		avsData := createMonitors(t, client, internalStatus, externalStatus)
+		avsData.AVSEvaluationExternalId = 0
+		upgradeOperation := fixUpgradeKymaOperationWithAvs(avsData)
+
+		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		require.NoError(t, err)
+
+		instance := fixInstanceRuntimeStatus()
+		err = memoryStorage.Instances().Insert(instance)
+		require.NoError(t, err)
+
+		provisionerClient := &provisionerAutomock.Client{}
+		provisionerClient.On("RuntimeOperationStatus", fixGlobalAccountID, fixProvisionerOperationID).Return(gqlschema.OperationStatus{
+			ID:        ptr.String(fixProvisionerOperationID),
+			Operation: "",
+			State:     gqlschema.OperationStateSucceeded,
+			Message:   nil,
+			RuntimeID: StringPtr(fixRuntimeID),
+		}, nil)
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManager, nil, nil)
+
+		// when
+		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, time.Duration(0), repeat)
+		assert.Equal(t, domain.Succeeded, upgradeOperation.State)
+		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: internalStatus, Original: avs.StatusMaintenance})
+		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: "", Original: ""})
+
+		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
+		assert.Equal(t, upgradeOperation, *storedOp)
+		assert.NoError(t, err)
+	})
+
+	t.Run("should refresh avs on success (external monitor)", func(t *testing.T) {
+		// given
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
+		evalManager, client := createEvalManager(t, memoryStorage, log)
+		inputBuilder := &automock.CreatorForPlan{}
+
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		require.NoError(t, err)
+
+		provisioningOperation := fixProvisioningOperation()
+		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		require.NoError(t, err)
+
+		internalStatus, externalStatus := "", avs.StatusInactive
+		avsData := createMonitors(t, client, internalStatus, externalStatus)
+		avsData.AvsEvaluationInternalId = 0
+		upgradeOperation := fixUpgradeKymaOperationWithAvs(avsData)
+
+		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		require.NoError(t, err)
+
+		instance := fixInstanceRuntimeStatus()
+		err = memoryStorage.Instances().Insert(instance)
+		require.NoError(t, err)
+
+		provisionerClient := &provisionerAutomock.Client{}
+		provisionerClient.On("RuntimeOperationStatus", fixGlobalAccountID, fixProvisionerOperationID).Return(gqlschema.OperationStatus{
+			ID:        ptr.String(fixProvisionerOperationID),
+			Operation: "",
+			State:     gqlschema.OperationStateSucceeded,
+			Message:   nil,
+			RuntimeID: StringPtr(fixRuntimeID),
+		}, nil)
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManager, nil, nil)
+
+		// when
+		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, time.Duration(0), repeat)
+		assert.Equal(t, domain.Succeeded, upgradeOperation.State)
+		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: "", Original: ""})
+		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: externalStatus, Original: avs.StatusMaintenance})
+
+		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
+		assert.Equal(t, upgradeOperation, *storedOp)
+		assert.NoError(t, err)
+	})
+
+	t.Run("should refresh avs on success (no monitors)", func(t *testing.T) {
+		// given
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
+		evalManager, client := createEvalManager(t, memoryStorage, log)
+		inputBuilder := &automock.CreatorForPlan{}
+
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		require.NoError(t, err)
+
+		provisioningOperation := fixProvisioningOperation()
+		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		require.NoError(t, err)
+
+		internalStatus, externalStatus := "", ""
+		avsData := createMonitors(t, client, internalStatus, externalStatus)
+		avsData.AvsEvaluationInternalId = 0
+		avsData.AVSEvaluationExternalId = 0
+		upgradeOperation := fixUpgradeKymaOperationWithAvs(avsData)
+
+		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		require.NoError(t, err)
+
+		instance := fixInstanceRuntimeStatus()
+		err = memoryStorage.Instances().Insert(instance)
+		require.NoError(t, err)
+
+		provisionerClient := &provisionerAutomock.Client{}
+		provisionerClient.On("RuntimeOperationStatus", fixGlobalAccountID, fixProvisionerOperationID).Return(gqlschema.OperationStatus{
+			ID:        ptr.String(fixProvisionerOperationID),
+			Operation: "",
+			State:     gqlschema.OperationStateSucceeded,
+			Message:   nil,
+			RuntimeID: StringPtr(fixRuntimeID),
+		}, nil)
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManager, nil, nil)
+
+		// when
+		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, time.Duration(0), repeat)
+		assert.Equal(t, domain.Succeeded, upgradeOperation.State)
+		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: "", Original: ""})
+		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: "", Original: ""})
+
+		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
+		assert.Equal(t, upgradeOperation, *storedOp)
+		assert.NoError(t, err)
 	})
 
 }

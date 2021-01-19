@@ -184,40 +184,23 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 	return nil
 }
 
-// executePreTasks performs tasks when the upgrade is initiated.
-//
-// This method will be called multiple times until the last step
-// either fails the operation or returns null delay.
-func (s *InitialisationStep) executePreTasks(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	// additional pre- logic should be executed before configuring status
-	return s.evaluationManager.SetMaintenanceStatus(operation, log)
-}
-
-// executePostTasks performs tasks when the upgrade is finished.
-//
-// This method will be called multiple times until the last step
-// either fails the operation or returns null delay.
-func (s *InitialisationStep) executePostTasks(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	// additional post- logic should be executed before reverting status
-	return s.evaluationManager.RestoreStatus(operation, log)
-}
-
 // performRuntimeTasks Ensures that required pre- and post- logic is executed
 // It is not the best way to ensure step execution using Maintenance status,
-// as an edge-case where the monitors are already in required state.
-// This will skip the step execution.
+// as for edge-cases where the monitors are already in required state or
+// no monitors found, this will skip execution.
 // TODO: Use custom states for required step execution.
 func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	inMaintenance := s.evaluationManager.InMaintenance(operation)
+	hasMonitors := s.evaluationManager.HasMonitors(operation)
 
 	switch step {
 	case UpgradePreSteps:
-		if !inMaintenance {
-			return s.executePreTasks(operation, log)
+		if hasMonitors && !inMaintenance {
+			return s.evaluationManager.SetMaintenanceStatus(operation, log)
 		}
 	case UpgradePostSteps:
-		if inMaintenance {
-			return s.executePostTasks(operation, log)
+		if hasMonitors && inMaintenance {
+			return s.evaluationManager.RestoreStatus(operation, log)
 		}
 	}
 
@@ -266,6 +249,12 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 		}
 
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg))
+	}
+
+	// execute post- steps
+	operation, delay, err = s.performRuntimeTasks(UpgradePostSteps, operation, instance, log)
+	if delay != 0 {
+		return operation, delay, err
 	}
 
 	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()))

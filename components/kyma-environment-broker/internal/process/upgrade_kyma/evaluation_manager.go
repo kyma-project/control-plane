@@ -97,3 +97,7 @@ func (em *EvaluationManager) InMaintenance(operation internal.UpgradeKymaOperati
 
 	return inMaintenance
 }
+
+func (em *EvaluationManager) HasMonitors(operation internal.UpgradeKymaOperation) bool {
+	return em.internalAssistant.IsValid(operation.Avs) || em.externalAssistant.IsValid(operation.Avs)
+}
