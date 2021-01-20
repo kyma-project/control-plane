@@ -122,7 +122,7 @@ func CreateDeprovisioningQueue(
 
 	waitForClusterDeletion := deprovisioning.NewWaitForClusterDeletionStep(shootClient, factory, directorClient, model.FinishedStage, timeouts.WaitingForClusterDeletion)
 	deleteCluster := deprovisioning.NewDeleteClusterStep(shootClient, waitForClusterDeletion.Name(), timeouts.ClusterDeletion)
-	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(installationClient, deleteCluster.Name(), 5*time.Minute, deleteDelay)
+	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(shootClient, installationClient, deleteCluster.Name(), 5*time.Minute, deleteDelay)
 	cleanupCluster := deprovisioning.NewCleanupClusterStep(shootClient, installationClient, triggerKymaUninstall.Name(), timeouts.ClusterCleanup)
 
 	deprovisioningSteps := map[model.OperationStage]operations.Step{

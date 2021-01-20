@@ -49,7 +49,7 @@ func (s *CleanupClusterStep) Run(cluster model.Cluster, _ model.Operation, logge
 		return operations.StageResult{}, err
 	}
 
-	if shoot.Spec.Hibernation != nil && shoot.Spec.Hibernation.Enabled != nil && *shoot.Spec.Hibernation.Enabled {
+	if shoot.Status.IsHibernated {
 		// The cluster is hibernated we must go to the next step
 		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 	}

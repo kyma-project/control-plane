@@ -37,18 +37,23 @@ func TestCleanupCluster_Run(t *testing.T) {
 		},
 	}
 
-	invalidKubeconfig := "invalid"
+	clusterWithInvalidKubeconfig := model.Cluster{
+		ClusterConfig: model.GardenerConfig{
+			Name: clusterName,
+		},
+		Kubeconfig: util.StringPtr("invalid"),
+	}
 
 	for _, testCase := range []struct {
 		description   string
-		mockFunc      func(installationSvc *installationMocks.Service, gardenerClient *gardener_mocks.GardenerClient)
+		mockFunc      func(gardenerClient *gardener_mocks.GardenerClient, installationSvc *installationMocks.Service)
 		expectedStage model.OperationStage
 		expectedDelay time.Duration
 		cluster       model.Cluster
 	}{
 		{
 			description: "should go to the next step when kubeconfig is empty",
-			mockFunc: func(installationSvc *installationMocks.Service, gardenerClient *gardener_mocks.GardenerClient) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, installationSvc *installationMocks.Service) {
 			},
 			expectedStage: nextStageName,
 			expectedDelay: 0,
@@ -56,14 +61,13 @@ func TestCleanupCluster_Run(t *testing.T) {
 		},
 		{
 			description: "should go to the next step when cluster is hibernated",
-			mockFunc: func(installationSvc *installationMocks.Service, gardenerClient *gardener_mocks.GardenerClient) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, installationSvc *installationMocks.Service) {
 				shoot := testkit.NewTestShoot(clusterName).
 					InNamespace(gardenerNamespace).
 					WithHibernationState(true, true).
 					ToShoot()
 
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(shoot, nil)
-				installationSvc.On("PerformCleanup", mock.Anything).Return(nil).Times(0)
 			},
 			expectedStage: nextStageName,
 			expectedDelay: 0,
@@ -71,7 +75,7 @@ func TestCleanupCluster_Run(t *testing.T) {
 		},
 		{
 			description: "should go to the next step when cleanup was performed successfully",
-			mockFunc: func(installationSvc *installationMocks.Service, gardenerClient *gardener_mocks.GardenerClient) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, installationSvc *installationMocks.Service) {
 				shoot := testkit.NewTestShoot(clusterName).
 					InNamespace(gardenerNamespace).
 					WithHibernationState(true, false).
@@ -90,7 +94,7 @@ func TestCleanupCluster_Run(t *testing.T) {
 			installationSvc := &installationMocks.Service{}
 			gardenerClient := &gardener_mocks.GardenerClient{}
 
-			testCase.mockFunc(installationSvc, gardenerClient)
+			testCase.mockFunc(gardenerClient, installationSvc)
 
 			cleanupClusterStep := NewCleanupClusterStep(gardenerClient, installationSvc, nextStageName, 10*time.Minute)
 
@@ -102,17 +106,18 @@ func TestCleanupCluster_Run(t *testing.T) {
 			assert.Equal(t, testCase.expectedStage, result.Stage)
 			assert.Equal(t, testCase.expectedDelay, result.Delay)
 			installationSvc.AssertExpectations(t)
+			gardenerClient.AssertExpectations(t)
 		})
 	}
 
 	for _, testCase := range []struct {
 		description        string
-		mockFunc           func(installationSvc *installationMocks.Service, gardenerClient *gardener_mocks.GardenerClient)
+		mockFunc           func(gardenerClient *gardener_mocks.GardenerClient, installationSvc *installationMocks.Service)
 		cluster            model.Cluster
 		unrecoverableError bool
 	}{{
 		description: "should return error if failed to get shoot",
-		mockFunc: func(installationSvc *installationMocks.Service, gardenerClient *gardener_mocks.GardenerClient) {
+		mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, installationSvc *installationMocks.Service) {
 			gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(nil, errors.New("some error"))
 		},
 		cluster:            clusterWithKubeconfig,
@@ -120,7 +125,7 @@ func TestCleanupCluster_Run(t *testing.T) {
 	},
 		{
 			description: "should return error is failed to parse kubeconfig",
-			mockFunc: func(installationSvc *installationMocks.Service, gardenerClient *gardener_mocks.GardenerClient) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, installationSvc *installationMocks.Service) {
 				shoot := testkit.NewTestShoot(clusterName).
 					InNamespace(gardenerNamespace).
 					WithHibernationState(true, false).
@@ -128,17 +133,12 @@ func TestCleanupCluster_Run(t *testing.T) {
 
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(shoot, nil)
 			},
-			cluster: model.Cluster{
-				ClusterConfig: model.GardenerConfig{
-					Name: clusterName,
-				},
-				Kubeconfig: &invalidKubeconfig,
-			},
+			cluster:            clusterWithInvalidKubeconfig,
 			unrecoverableError: true,
 		},
 		{
 			description: "should return error when failed to perform cleanup",
-			mockFunc: func(installationSvc *installationMocks.Service, gardenerClient *gardener_mocks.GardenerClient) {
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, installationSvc *installationMocks.Service) {
 				shoot := testkit.NewTestShoot(clusterName).
 					InNamespace(gardenerNamespace).
 					WithHibernationState(true, false).
@@ -156,7 +156,7 @@ func TestCleanupCluster_Run(t *testing.T) {
 			installationSvc := &installationMocks.Service{}
 			gardenerClient := &gardener_mocks.GardenerClient{}
 
-			testCase.mockFunc(installationSvc, gardenerClient)
+			testCase.mockFunc(gardenerClient, installationSvc)
 
 			cleanupClusterStep := NewCleanupClusterStep(gardenerClient, installationSvc, nextStageName, 10*time.Minute)
 
@@ -168,6 +168,7 @@ func TestCleanupCluster_Run(t *testing.T) {
 			nonRecoverable := operations.NonRecoverableError{}
 			require.Equal(t, testCase.unrecoverableError, errors.As(err, &nonRecoverable))
 			installationSvc.AssertExpectations(t)
+			gardenerClient.AssertExpectations(t)
 		})
 	}
 }
