@@ -355,6 +355,8 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: APP_VERSION_CONFIG_NAME
               value: "kyma-versions"
+            - name: APP_ENABLE_INSTANCE_DETAILS_MIGRATION
+              value: "{{ .Values.enableInstanceDetailsMigration }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}
