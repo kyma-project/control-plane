@@ -42,7 +42,6 @@ func NewAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config, kymaVe
 }
 
 func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	
 	c, err := semver.NewConstraint(">= 1.19.x")
     if err != nil {
 	   // Handle constraint not being parsable.
