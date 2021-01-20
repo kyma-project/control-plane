@@ -16,29 +16,51 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+	"github.com/Masterminds/semver"
 )
 
 type AuditLogOverrides struct {
 	operationManager *process.ProvisionOperationManager
 	fs               afero.Fs
 	auditLogConfig   auditlog.Config
+	kymaVersion		 string
 }
 
 func (alo *AuditLogOverrides) Name() string {
 	return "Audit_Log_Overrides"
 }
 
-func NewAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config) *AuditLogOverrides {
+func NewAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config, kymaVersion string) *AuditLogOverrides {
 	fileSystem := afero.NewOsFs()
 
 	return &AuditLogOverrides{
 		process.NewProvisionOperationManager(os),
 		fileSystem,
 		cfg,
+		kymaVersion,
 	}
 }
 
 func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	
+	c, err := semver.NewConstraint(">= 1.19.x")
+    if err != nil {
+	   // Handle constraint not being parsable.
+	   logger.Errorf("Unable to parse constraint for kyma version to set correct fluent bit plugin: %v", err)
+		return operation, 0, err
+	}
+	fluenBitPlugin := "http"
+	v, err := semver.NewVersion(alo.kymaVersion)
+	if err != nil {
+		logger.Errorf("Unable to set semver for the current kyma version to set correct fluent bit plugin: %v", err)
+		return operation, 0, err
+	}
+
+	check := c.Check(v)
+	if check {
+		fluenBitPlugin = "sequentialhttp"
+	}
+
 	luaScript, err := alo.readFile("/auditlog-script/script")
 	if err != nil {
 		logger.Errorf("Unable to read audit config script: %v", err)
@@ -93,7 +115,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
         Match   dex.*
         Regex   data .*\"xsuaa
 [OUTPUT]
-        Name             sequentialhttp
+        Name             %s
         Match            dex.*
         Retry_Limit      False
         Host             %s
@@ -104,7 +126,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
         HTTP_Passwd      %s
         Format           json_stream
         tls              on
-`, auditLogHost, auditLogPort, u.Path, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
+`, fluenBitPlugin, auditLogHost, auditLogPort, u.Path, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},
 		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf(`- %s`, auditLogHost)},
 		{Key: "fluent-bit.externalServiceEntry.ports", Value: fmt.Sprintf(`- number: %s

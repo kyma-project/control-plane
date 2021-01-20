@@ -1371,6 +1371,7 @@
     "github.com/Azure/go-autorest/autorest",
     "github.com/Azure/go-autorest/autorest/adal",
     "github.com/Azure/go-autorest/autorest/azure",
+    "github.com/Masterminds/semver",
     "github.com/Masterminds/sprig",
     "github.com/Peripli/service-manager-cli/pkg/query",
     "github.com/Peripli/service-manager-cli/pkg/types",
