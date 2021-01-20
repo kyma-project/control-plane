@@ -1,6 +1,7 @@
 package deprovisioning
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -9,19 +10,22 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type CleanupClusterStep struct {
 	installationService installation.Service
 	nextStep            model.OperationStage
 	timeLimit           time.Duration
+	gardenerClient      GardenerClient
 }
 
-func NewCleanupClusterStep(installationService installation.Service, nextStep model.OperationStage, timeLimit time.Duration) *CleanupClusterStep {
+func NewCleanupClusterStep(gardenerClient GardenerClient, installationService installation.Service, nextStep model.OperationStage, timeLimit time.Duration) *CleanupClusterStep {
 	return &CleanupClusterStep{
 		installationService: installationService,
 		nextStep:            nextStep,
 		timeLimit:           timeLimit,
+		gardenerClient:      gardenerClient,
 	}
 }
 
@@ -37,6 +41,16 @@ func (s *CleanupClusterStep) Run(cluster model.Cluster, _ model.Operation, logge
 	logger.Debugf("Starting cleanup cluster step for %s ...", cluster.ID)
 	if cluster.Kubeconfig == nil {
 		// Kubeconfig can be nil if Gardener failed to create cluster. We must go to the next step to finalize deprovisioning
+		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
+	}
+
+	shoot, err := s.gardenerClient.Get(context.Background(), cluster.ClusterConfig.Name, metav1.GetOptions{})
+	if err != nil {
+		return operations.StageResult{}, err
+	}
+
+	if shoot.Spec.Hibernation != nil && shoot.Spec.Hibernation.Enabled != nil && *shoot.Spec.Hibernation.Enabled {
+		// The cluster is hibernated we must go to the next step
 		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 	}
 
