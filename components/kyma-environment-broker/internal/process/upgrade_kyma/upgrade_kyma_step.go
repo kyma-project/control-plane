@@ -22,7 +22,11 @@ type UpgradeKymaStep struct {
 	timeSchedule        TimeSchedule
 }
 
-func NewUpgradeKymaStep(os storage.Operations, runtimeStorage storage.RuntimeStates, cli provisioner.Client, timeSchedule *TimeSchedule) *UpgradeKymaStep {
+func NewUpgradeKymaStep(
+	os storage.Operations,
+	runtimeStorage storage.RuntimeStates,
+	cli provisioner.Client,
+	timeSchedule *TimeSchedule) *UpgradeKymaStep {
 	ts := timeSchedule
 	if ts == nil {
 		ts = &TimeSchedule{
@@ -31,6 +35,7 @@ func NewUpgradeKymaStep(os storage.Operations, runtimeStorage storage.RuntimeSta
 			UpgradeKymaTimeout: time.Hour,
 		}
 	}
+
 	return &UpgradeKymaStep{
 		operationManager:    process.NewUpgradeKymaOperationManager(os),
 		provisionerClient:   cli,
@@ -105,6 +110,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 	}
 
 	log.Infof("kyma upgrade process initiated successfully")
+
 	// return repeat mode to start the initialization step which will now check the runtime status
 	return operation, s.timeSchedule.Retry, nil
 }

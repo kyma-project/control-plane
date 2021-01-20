@@ -240,7 +240,7 @@ func (f *InputBuilderFactory) initUpgradeRuntimeInput(version internal.RuntimeVe
 	return gqlschema.UpgradeRuntimeInput{
 		KymaConfig: &gqlschema.KymaConfigInput{
 			Version:    version.Version,
-			Components: components,
+			Components: components.DeepCopy(),
 		},
 	}, nil
 }

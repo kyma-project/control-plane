@@ -43,9 +43,17 @@ type LMS struct {
 	RequestedAt time.Time `json:"requested_at"`
 }
 
+type AvsEvaluationStatus struct {
+	Current  string `json:"current_value"`
+	Original string `json:"original_value"`
+}
+
 type AvsLifecycleData struct {
 	AvsEvaluationInternalId int64 `json:"avs_evaluation_internal_id"`
 	AVSEvaluationExternalId int64 `json:"avs_evaluation_external_id"`
+
+	AvsInternalEvaluationStatus AvsEvaluationStatus `json:"avs_internal_evaluation_status"`
+	AvsExternalEvaluationStatus AvsEvaluationStatus `json:"avs_external_evaluation_status"`
 
 	AVSInternalEvaluationDeleted bool `json:"avs_internal_evaluation_deleted"`
 	AVSExternalEvaluationDeleted bool `json:"avs_external_evaluation_deleted"`
@@ -144,15 +152,6 @@ func (o *Operation) IsFinished() bool {
 	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceled
 }
 
-// todo: remove after parameters migration was done on each environment
-// LegacyOperation represents old structure of the Operation struct which now has provisioning parameters inside
-type LegacyOperation struct {
-	Operation `json:"-"`
-
-	Type                   string `json:"type"`
-	ProvisioningParameters string `json:"provisioning_parameters"`
-}
-
 // Orchestration holds all information about an orchestration.
 // Orchestration performs operations of a specific type (UpgradeKymaOperation, UpgradeClusterOperation)
 // on specific targets of SKRs.
@@ -167,6 +166,11 @@ type Orchestration struct {
 
 func (o *Orchestration) IsFinished() bool {
 	return o.State == orchestration.Succeeded || o.State == orchestration.Failed || o.State == orchestration.Canceled
+}
+
+// IsCanceled returns true if orchestration's cancellation endpoint was ever triggered
+func (o *Orchestration) IsCanceled() bool {
+	return o.State == orchestration.Canceling || o.State == orchestration.Canceled
 }
 
 type InstanceWithOperation struct {
