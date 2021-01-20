@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	UpgradePreSteps int = iota + 1
-	UpgradePostSteps
+	UpgradeInitSteps int = iota + 1
+	UpgradeFinishSteps
 )
 
 const (
@@ -184,41 +184,23 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 	return nil
 }
 
-// executePreUpgradeTasks perform tasks when the upgrade is initiated.
-func (s *InitialisationStep) executePreUpgradeTasks(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	log.Infof("executing preUpgrade steps")
-
-	// Additional pre- logic should be executed before configuring Avs monitors' status.
-	// When this step finishes with null delay, executePreUpgradeTasks will not be invoked again.
-	return s.evaluationManager.SetMaintenanceStatus(operation, log)
-}
-
-// executePostUpgradeTasks perform tasks when the upgrade is finished.
-func (s *InitialisationStep) executePostUpgradeTasks(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	log.Infof("executing postUpgrade steps")
-
-	// Additional post- logic should be executed before restoring Avs monitors' status.
-	// When this step finishes with null delay, executePostUpgradeTasks will not be invoked again.
-	return s.evaluationManager.RestoreStatus(operation, log)
-}
-
-// performRuntimeTasks Ensures that required pre- and post- logic is executed.
+// performRuntimeTasks Ensures that required logic on init and finish is executed.
 // Uses internal and external Avs monitor statuses to verify state.
-// Not the most optimal way to ensure step execution. Edge-cases where
-// monitors are in required state or not present will skip execution.
 // TODO: Use custom states for required step execution.
 func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	hasMonitors := s.evaluationManager.HasMonitors(operation)
 	inMaintenance := s.evaluationManager.InMaintenance(operation)
 
 	switch step {
-	case UpgradePreSteps:
+	case UpgradeInitSteps:
 		if hasMonitors && !inMaintenance {
-			return s.executePreUpgradeTasks(operation, log)
+			log.Infof("executing init upgrade steps")
+			return s.evaluationManager.SetMaintenanceStatus(operation, log)
 		}
-	case UpgradePostSteps:
+	case UpgradeFinishSteps:
 		if hasMonitors && inMaintenance {
-			return s.executePostUpgradeTasks(operation, log)
+			log.Infof("executing finish upgrade steps")
+			return s.evaluationManager.RestoreStatus(operation, log)
 		}
 	}
 
@@ -245,8 +227,8 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 		msg = *status.Message
 	}
 
-	// execute pre- steps
-	operation, delay, err := s.performRuntimeTasks(UpgradePreSteps, operation, instance, log)
+	// do required steps on init
+	operation, delay, err := s.performRuntimeTasks(UpgradeInitSteps, operation, instance, log)
 	if delay != 0 || err != nil {
 		return operation, delay, err
 	}
@@ -257,8 +239,8 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 		return operation, s.timeSchedule.StatusCheck, nil
 	}
 
-	// execute post- steps
-	operation, delay, err = s.performRuntimeTasks(UpgradePostSteps, operation, instance, log)
+	// do required steps on finish
+	operation, delay, err = s.performRuntimeTasks(UpgradeFinishSteps, operation, instance, log)
 	if delay != 0 || err != nil {
 		return operation, delay, err
 	}
