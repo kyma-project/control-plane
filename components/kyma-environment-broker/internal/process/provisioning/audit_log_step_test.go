@@ -98,7 +98,7 @@ return "fooBar"
         Match   dex.*
         Regex   data .*\"xsuaa
 [OUTPUT]
-        Name             http
+        Name             sequentialhttp
         Match            dex.*
         Retry_Limit      False
         Host             host1

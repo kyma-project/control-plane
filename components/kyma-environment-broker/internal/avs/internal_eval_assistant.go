@@ -52,6 +52,10 @@ func (iec *InternalEvalAssistant) IsAlreadyCreated(lifecycleData internal.AvsLif
 	return lifecycleData.AvsEvaluationInternalId != 0
 }
 
+func (iec *InternalEvalAssistant) IsValid(lifecycleData internal.AvsLifecycleData) bool {
+	return iec.IsAlreadyCreated(lifecycleData) && !iec.IsAlreadyDeleted(lifecycleData)
+}
+
 func (iec *InternalEvalAssistant) ProvideSuffix() string {
 	return "int"
 }
@@ -94,6 +98,28 @@ func (iec *InternalEvalAssistant) ProvideNewOrDefaultServiceName(defaultServiceN
 
 func (iec *InternalEvalAssistant) SetEvalId(lifecycleData *internal.AvsLifecycleData, evalId int64) {
 	lifecycleData.AvsEvaluationInternalId = evalId
+}
+
+func (iec *InternalEvalAssistant) SetEvalStatus(lifecycleData *internal.AvsLifecycleData, status string) {
+	current := lifecycleData.AvsInternalEvaluationStatus.Current
+	if current != status {
+		if ValidStatus(current) {
+			lifecycleData.AvsInternalEvaluationStatus.Original = current
+		}
+		lifecycleData.AvsInternalEvaluationStatus.Current = status
+	}
+}
+
+func (iec *InternalEvalAssistant) GetEvalStatus(lifecycleData internal.AvsLifecycleData) string {
+	return lifecycleData.AvsInternalEvaluationStatus.Current
+}
+
+func (iec *InternalEvalAssistant) GetOriginalEvalStatus(lifecycleData internal.AvsLifecycleData) string {
+	return lifecycleData.AvsInternalEvaluationStatus.Original
+}
+
+func (iec *InternalEvalAssistant) IsInMaintenance(lifecycleData internal.AvsLifecycleData) bool {
+	return lifecycleData.AvsInternalEvaluationStatus.Current == StatusMaintenance
 }
 
 func (iec *InternalEvalAssistant) IsAlreadyDeleted(lifecycleData internal.AvsLifecycleData) bool {

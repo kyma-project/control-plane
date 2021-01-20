@@ -31,12 +31,6 @@ type Operations interface {
 	GetOperationsForIDs(operationIDList []string) ([]internal.Operation, error)
 	GetOperationStatsForOrchestration(orchestrationID string) (map[string]int, error)
 	ListOperations(filter dbmodel.OperationFilter) ([]internal.Operation, int, int, error)
-
-	// todo: remove below after parameters migration was done on each environment
-	GetLegacyOperation(operationID string) (*internal.LegacyOperation, error)
-	InsertLegacyOperation(operation internal.LegacyOperation) error
-	UpdateOperationParameters(operation internal.Operation) (*internal.Operation, error)
-	ListOperationsParameters() (map[string]internal.ProvisioningParameters, error)
 }
 
 type Provisioning interface {
@@ -72,6 +66,7 @@ type UpgradeKyma interface {
 	UpdateUpgradeKymaOperation(operation internal.UpgradeKymaOperation) (*internal.UpgradeKymaOperation, error)
 	GetUpgradeKymaOperationByID(operationID string) (*internal.UpgradeKymaOperation, error)
 	GetUpgradeKymaOperationByInstanceID(instanceID string) (*internal.UpgradeKymaOperation, error)
+	ListUpgradeKymaOperations() ([]internal.UpgradeKymaOperation, error)
 	ListUpgradeKymaOperationsByInstanceID(instanceID string) ([]internal.UpgradeKymaOperation, error)
 	ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeKymaOperation, int, int, error)
 }
