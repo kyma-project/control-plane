@@ -10,20 +10,20 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 
+	"github.com/Masterminds/semver"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"github.com/Masterminds/semver"
 )
 
 type AuditLogOverrides struct {
 	operationManager *process.ProvisionOperationManager
 	fs               afero.Fs
 	auditLogConfig   auditlog.Config
-	kymaVersion		 string
+	kymaVersion      string
 }
 
 func (alo *AuditLogOverrides) Name() string {
@@ -43,9 +43,9 @@ func NewAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config, kymaVe
 
 func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	c, err := semver.NewConstraint(">= 1.19.x")
-    if err != nil {
-	   // Handle constraint not being parsable.
-	   logger.Errorf("Unable to parse constraint for kyma version to set correct fluent bit plugin: %v", err)
+	if err != nil {
+		// Handle constraint not being parsable.
+		logger.Errorf("Unable to parse constraint for kyma version to set correct fluent bit plugin: %v", err)
 		return operation, 0, err
 	}
 	fluenBitPlugin := "http"
