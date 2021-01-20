@@ -104,7 +104,7 @@ return "fooBar"
     Host             host1
     Port             8080
     URI              /aaa/v2/security-events
-	Header           Content-Type application/json
+    Header           Content-Type application/json
     HTTP_User        aaaa
     HTTP_Passwd      aaaa
     Format           json_stream
