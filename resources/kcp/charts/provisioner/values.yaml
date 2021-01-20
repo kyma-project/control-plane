@@ -58,6 +58,8 @@ logs:
 
 tests:
   enabled: false
+  hibernation:
+    enabled: false
   gardener:
     providers: "Azure"
     azureSecret: "" # Name of Gardener secret for Azure
