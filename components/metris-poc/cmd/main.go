@@ -33,8 +33,13 @@ func main() {
 		requestTimeout: *requestTimeout,
 	}
 
+	// TODO remove me
+	fmt.Println(cfg)
+
 	// Create client for gardener
-	gardenerClient, err := createClientForGardener()
+
+	// TODO enable me again
+	//gardenerClient, err := createClientForGardener()
 
 	// Create client for KEB
 
@@ -49,7 +54,8 @@ func main() {
 	go start(server)
 }
 
-func createClientForGardener()
+func createClientForGardener() {
+}
 
 func start(server *http.Server) {
 	if server == nil {
