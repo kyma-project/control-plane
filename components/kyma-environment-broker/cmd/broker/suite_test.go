@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
+
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
@@ -105,7 +107,8 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 			Retry:              10 * time.Millisecond,
 			StatusCheck:        100 * time.Millisecond,
 			UpgradeKymaTimeout: 4 * time.Second,
-		}, 250*time.Millisecond, runtimeVerConfigurator, defaultRegion, upgradeEvaluationManager, logs)
+		}, 250*time.Millisecond, runtimeVerConfigurator, defaultRegion, upgradeEvaluationManager,
+		&Config{}, hyperscaler.NewAccountProvider(nil, nil), logs)
 
 	return &OrchestrationSuite{
 		gardenerNamespace:  gardenerNamespace,
