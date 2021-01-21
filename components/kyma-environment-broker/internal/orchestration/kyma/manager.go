@@ -143,6 +143,7 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 					},
 					DryRun: params.DryRun,
 				},
+				SMClientFactory: po.SMClientFactory,
 			}
 			result = append(result, op)
 			err = u.operationStorage.InsertUpgradeKymaOperation(op)

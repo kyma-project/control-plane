@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vrischmann/envconfig"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -66,7 +64,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 	logs.Formatter.(*logrus.TextFormatter).TimestampFormat = "15:04:05.000"
 
 	var cfg Config
-	envconfig.InitWithPrefix(&cfg, "APP")
+	cfg.Ems.Disabled = true
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
