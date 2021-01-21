@@ -5,5 +5,5 @@ type Config struct {
 	User          string `envconfig:"APP_AUDITLOG_USER"`
 	Password      string `envconfig:"APP_AUDITLOG_PASSWORD"`
 	Tenant        string `envconfig:"APP_AUDITLOG_TENANT"`
-	EnableSeqHttp bool   `envconfig:"default=false"`
+	EnableSeqHttp bool   `envconfig:"APP_AUDITLOG_ENABLE_SEQ_HTTP"`
 }
