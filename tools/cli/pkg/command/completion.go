@@ -100,7 +100,7 @@ func (cmd *CompletionCommand) Run(comd *cobra.Command, args []string) error {
 	return nil
 }
 
-// Validate checks the input parameters of the runtimes command
+// Validate checks the input parameters of the completion command
 func (cmd *CompletionCommand) Validate(args []string) error {
 	if len(args) == 0 {
 		return errors.New(errorMsg + suggestionMsg)
