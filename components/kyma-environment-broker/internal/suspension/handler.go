@@ -33,9 +33,11 @@ func NewContextUpdateHandler(operations storage.Operations, provisioningQueue Ad
 }
 
 func (h *ContextUpdateHandler) Handle(instance *internal.Instance, newCtx internal.ERSContext) error {
-	l := h.log.WithField("instanceID", instance.InstanceID).
-		WithField("runtimeID", instance.RuntimeID).
-		WithField("globalAccountID", instance.GlobalAccountID)
+	l := h.log.WithFields(logrus.Fields{
+		"instanceID":      instance.InstanceID,
+		"runtimeID":       instance.RuntimeID,
+		"globalAccountID": instance.GlobalAccountID,
+	})
 
 	if !broker.IsTrialPlan(instance.ServicePlanID) {
 		l.Info("Context update for non-trial instance, skipping")
@@ -73,8 +75,7 @@ func (h *ContextUpdateHandler) suspend(instance *internal.Instance, log logrus.F
 	}
 
 	id := uuid.New().String()
-	operation, err := internal.NewSuspensionOperationWithID(id, instance)
-	operation.State = orchestration.Pending
+	operation := internal.NewSuspensionOperationWithID(id, instance)
 	err = h.operations.InsertDeprovisioningOperation(operation)
 	if err != nil {
 		return err

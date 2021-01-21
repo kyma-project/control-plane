@@ -337,20 +337,20 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 }
 
 // NewSuspensionOperationWithID creates a fresh (just starting) instance of the DeprovisioningOperation which does not remove the instance.
-func NewSuspensionOperationWithID(operationID string, instance *Instance) (DeprovisioningOperation, error) {
+func NewSuspensionOperationWithID(operationID string, instance *Instance) DeprovisioningOperation {
 	return DeprovisioningOperation{
 		Operation: Operation{
 			ID:              operationID,
 			Version:         0,
 			Description:     "Operation created",
 			InstanceID:      instance.InstanceID,
-			State:           domain.InProgress,
+			State:           orchestration.Pending,
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
 			InstanceDetails: instance.InstanceDetails,
 		},
 		Temporary: true,
-	}, nil
+	}
 }
 
 func (po *ProvisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {

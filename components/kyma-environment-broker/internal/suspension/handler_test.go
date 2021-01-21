@@ -4,15 +4,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
 func TestSuspension(t *testing.T) {
@@ -26,7 +26,8 @@ func TestSuspension(t *testing.T) {
 	st.Instances().Insert(*instance)
 
 	// when
-	svc.Handle(instance, fixInactiveErsContext())
+	err := svc.Handle(instance, fixInactiveErsContext())
+	require.NoError(t, err)
 
 	// then
 	op, _ := st.Operations().GetDeprovisioningOperationByInstanceID("instance-id")
@@ -57,7 +58,8 @@ func TestUnsuspension(t *testing.T) {
 	st.Instances().Insert(*instance)
 
 	// when
-	svc.Handle(instance, fixActiveErsContext())
+	err := svc.Handle(instance, fixActiveErsContext())
+	require.NoError(t, err)
 
 	// then
 	op, err := st.Operations().GetProvisioningOperationByInstanceID("instance-id")
@@ -96,16 +98,14 @@ func fixInstance(ersContext internal.ERSContext) *internal.Instance {
 }
 
 func fixActiveErsContext() internal.ERSContext {
-	f := true
 	return internal.ERSContext{
-		Active: &f,
+		Active: ptr.Bool(true),
 	}
 }
 
 func fixInactiveErsContext() internal.ERSContext {
-	f := false
 	return internal.ERSContext{
-		Active: &f,
+		Active: ptr.Bool(false),
 	}
 }
 

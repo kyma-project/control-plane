@@ -26,7 +26,8 @@ func NewGetInstance(instancesStorage storage.Instances, log logrus.FieldLogger) 
 // GetInstance fetches information about a service instance
 //   GET /v2/service_instances/{instance_id}
 func (b *GetInstanceEndpoint) GetInstance(ctx context.Context, instanceID string) (domain.GetInstanceDetailsSpec, error) {
-	b.log.Infof("GetInstance instanceID: %s", instanceID)
+	logger := b.log.WithField("instanceID", instanceID)
+	logger.Infof("GetInstance called")
 
 	inst, err := b.instancesStorage.GetByID(instanceID)
 	if err != nil {

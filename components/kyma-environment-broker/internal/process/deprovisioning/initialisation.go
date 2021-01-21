@@ -128,7 +128,6 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 			}
 			log.Info("Setting state 'in progress' and refreshing instance details")
 			operation.State = domain.InProgress
-			// refresh InstanceDetails
 			operation.InstanceDetails = instance.InstanceDetails
 			operation, retry, _ := s.operationManager.UpdateOperation(operation)
 			if retry > 0 {
