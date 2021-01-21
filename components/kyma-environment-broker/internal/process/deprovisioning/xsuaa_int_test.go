@@ -50,20 +50,24 @@ func TestDeprovisioningSteps(t *testing.T) {
 		},
 	}
 	operation := internal.DeprovisioningOperation{
-		Operation:       internal.Operation{ProvisioningParameters: pp},
-		SMClientFactory: cliFactory,
-		XSUAA: internal.XSUAAData{
-			Instance: internal.ServiceManagerInstanceInfo{
-				BrokerID:              os.Getenv("BROKER_ID"),
-				ServiceID:             os.Getenv("SERVICE_ID"),
-				PlanID:                os.Getenv("PLAN_ID"),
-				InstanceID:            os.Getenv("INSTANCE_ID"),
-				Provisioned:           true,
-				ProvisioningTriggered: true,
+		Operation: internal.Operation{
+			InstanceDetails: internal.InstanceDetails{
+				XSUAA: internal.XSUAAData{
+					Instance: internal.ServiceManagerInstanceInfo{
+						BrokerID:              os.Getenv("BROKER_ID"),
+						ServiceID:             os.Getenv("SERVICE_ID"),
+						PlanID:                os.Getenv("PLAN_ID"),
+						InstanceID:            os.Getenv("INSTANCE_ID"),
+						Provisioned:           true,
+						ProvisioningTriggered: true,
+					},
+					XSAppname: "",
+					BindingID: os.Getenv("BINDING_ID"),
+				},
 			},
-			XSAppname: "",
-			BindingID: os.Getenv("BINDING_ID"),
+			ProvisioningParameters: pp,
 		},
+		SMClientFactory: cliFactory,
 	}
 	repo.InsertDeprovisioningOperation(operation)
 	log := logrus.New()
