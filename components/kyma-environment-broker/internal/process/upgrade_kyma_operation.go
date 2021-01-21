@@ -93,7 +93,6 @@ func (om *UpgradeKymaOperationManager) RetryOperationWithoutFail(operation inter
 	return updatedOperation, 0, nil
 }
 
-
 func (om *UpgradeKymaOperationManager) update(operation internal.UpgradeKymaOperation, state domain.LastOperationState, description string) (internal.UpgradeKymaOperation, time.Duration) {
 	operation.State = state
 	operation.Description = description

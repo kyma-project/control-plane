@@ -636,8 +636,8 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
 		{
-			weight: 3,
-			step:   upgrade_kyma.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
+			weight:   3,
+			step:     upgrade_kyma.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
 			disabled: cfg.Ems.Disabled,
 		},
 		{

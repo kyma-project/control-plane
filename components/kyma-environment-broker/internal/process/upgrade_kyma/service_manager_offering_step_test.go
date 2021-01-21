@@ -1,8 +1,9 @@
 package upgrade_kyma_test
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 	"testing"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 
 	"github.com/stretchr/testify/require"
 
