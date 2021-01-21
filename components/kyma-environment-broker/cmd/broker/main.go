@@ -148,7 +148,6 @@ func main() {
 
 	logger.Info("Starting Kyma Environment Broker")
 
-
 	logs := logrus.New()
 	logs.SetFormatter(&logrus.JSONFormatter{})
 
