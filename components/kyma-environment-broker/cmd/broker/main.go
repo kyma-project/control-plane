@@ -148,8 +148,11 @@ func main() {
 
 	logger.Info("Starting Kyma Environment Broker")
 
+
 	logs := logrus.New()
 	logs.SetFormatter(&logrus.JSONFormatter{})
+
+	logs.Infof("DEBUG: Config: %v", cfg.AuditLog)
 
 	logger.Info("Registering healthz endpoint for health probes")
 	health.NewServer(cfg.Host, cfg.StatusPort, logs).ServeAsync()
