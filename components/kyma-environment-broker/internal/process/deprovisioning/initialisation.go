@@ -122,7 +122,7 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 			for _, op := range upgrades {
 				// check if there is not finished operation
 				if op.State != domain.Failed && op.State != domain.Succeeded {
-					log.Infof("waiting for the operation %s to be finished", op.Operation.ID)
+					log.Debugf("waiting for the operation %s to be finished", op.Operation.ID)
 					return operation, time.Minute, nil
 				}
 			}
