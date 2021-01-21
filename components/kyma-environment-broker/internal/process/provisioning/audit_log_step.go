@@ -66,7 +66,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		auditLogPort = "443"
 		logger.Infof("There is no Port passed in the URL. Setting default to 443")
 	}
-	var fluentbitPlugin = "http"
+	fluentbitPlugin := "http"
 	if alo.auditLogConfig.EnableSeqHttp {
 		fluentbitPlugin = "sequentialhttp"
 	}
