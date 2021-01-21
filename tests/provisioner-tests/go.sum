@@ -83,8 +83,6 @@ github.com/agnivade/levenshtein v1.0.3 h1:M5ZnqLOoZR8ygVq0FfkXsNOKzMCk0xRiow0R5+
 github.com/agnivade/levenshtein v1.0.3/go.mod h1:4SFRZbbXWLF4MU1T9Qg0pGgH3Pjs+t6ie5efyrwRJXs=
 github.com/ahmetb/gen-crd-api-reference-docs v0.1.5/go.mod h1:P/XzJ+c2+khJKNKABcm2biRwk2QAuwbLf8DlXuaL7WM=
 github.com/ahmetb/gen-crd-api-reference-docs v0.2.0/go.mod h1:P/XzJ+c2+khJKNKABcm2biRwk2QAuwbLf8DlXuaL7WM=
-github.com/akgalwas/control-plane/components/provisioner v0.0.0-20210111075349-07d94a79cbda h1:HdLu4GQmTLKqHcjCW++F6UPRA2lPSjtfHoat9BSvqKI=
-github.com/akgalwas/control-plane/components/provisioner v0.0.0-20210111075349-07d94a79cbda/go.mod h1:F1TRdDqxIwwP5j48k/drPJ9Yc30NjOOTsmVmpBUtzCc=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
@@ -566,6 +564,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1
 github.com/kyma-incubator/compass/components/director v0.0.0-20200903080103-6ec34d89c49a h1:eaYsy1DpEothWYbe9n3Rt20sa1JAlqpUie8hG9tzKXY=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200903080103-6ec34d89c49a/go.mod h1:d739T2fuE6O/NtR0E6kVBfEZOtha4r+ig8k2WP8mrrs=
 github.com/kyma-incubator/hydroform/install v0.0.0-20200817114824-fd8c8876066c/go.mod h1:/qouJL+g8Tsllh/VcxK1Li6NCyuqyXSlq1i9InKSZJk=
+github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210120142319-59773cf02de4 h1:DnHFyk1CRwfr+FbagDdEPwsSw5l1+kL0qZQEbCcbc0Q=
+github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210120142319-59773cf02de4/go.mod h1:F1TRdDqxIwwP5j48k/drPJ9Yc30NjOOTsmVmpBUtzCc=
 github.com/kyma-project/kyma/components/application-operator v0.0.0-20200818080816-8c81ea09adc7/go.mod h1:LUlTpeBF6hz7DyOtROez1IjluZOrFFgJH9vx8/me5p8=
 github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200902131640-31c29c8feb0c/go.mod h1:aR7hDBCzR0sN0tEF6+RnwsvAM/FYlBR+tYxZs0BmmvA=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20200817094157-8392259f5be1/go.mod h1:Svisep1qUjML69qtRee5OcDOpWVjxID2Nb6E/xyhQ5k=
