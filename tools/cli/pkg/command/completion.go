@@ -14,10 +14,9 @@ type CompletionCommand struct {
 	completeTarget string
 }
 
-var defaultFile string
 var validArguements = []string{"bash", "zsh", "fish", "powershell"}
 
-const errorMsg = "Error: accepts 1 arg(s), received 0 \n"
+const errorMsg = "accepts 1 arg(s), received 0 \n"
 const suggestionMsg = "Please use `kcp completion [bash|zsh|fish|powershell]`"
 const savedInMsg = "Saved in"
 const savedFileName = "kcp_completion"
@@ -70,33 +69,35 @@ PS> kcp completion powershell > kcp.ps1
 		Example:               `kcp completion bash                            Display completions in bash.`,
 		DisableFlagsInUseLine: true,
 		ValidArgs:             validArguements,
-		Args:                  cobra.MaximumNArgs(1),
 		PreRunE:               func(_ *cobra.Command, args []string) error { return cmd.Validate(args) },
-		RunE: func(comd *cobra.Command, args []string) error {
-			switch args[0] {
-			case "bash":
-				comd.Root().GenBashCompletionFile(cmd.completeTarget)
-				fmt.Println(savedInMsg, cmd.completeTarget)
-			case "zsh":
-				comd.Root().GenZshCompletionFile(cmd.completeTarget)
-				fmt.Println(savedInMsg, cmd.completeTarget)
-			case "fish":
-				comd.Root().GenFishCompletionFile(cmd.completeTarget, true)
-				fmt.Println(savedInMsg, cmd.completeTarget)
-			case "powershell":
-				comd.Root().GenPowerShellCompletionFile(cmd.completeTarget)
-				fmt.Println(savedInMsg, cmd.completeTarget)
-			default:
-				return errors.New(suggestionMsg)
-			}
-			return nil
-		},
+		RunE:                  func(comd *cobra.Command, args []string) error { return cmd.Run(comd, args) },
 	}
 
-	setDefaultFile()
-	cobraCmd.PersistentFlags().StringVarP(&cmd.completeTarget, "completionfile", "", defaultFile, "autocompletion file")
+	defaultOutputFile := setDefaultFile()
+	cobraCmd.PersistentFlags().StringVarP(&cmd.completeTarget, "o", "", defaultOutputFile, "autocompletion file")
 
 	return cobraCmd
+}
+
+// Run executes the completion command
+func (cmd *CompletionCommand) Run(comd *cobra.Command, args []string) error {
+	switch args[0] {
+	case "bash":
+		comd.Root().GenBashCompletionFile(cmd.completeTarget)
+		fmt.Println(savedInMsg, cmd.completeTarget)
+	case "zsh":
+		comd.Root().GenZshCompletionFile(cmd.completeTarget)
+		fmt.Println(savedInMsg, cmd.completeTarget)
+	case "fish":
+		comd.Root().GenFishCompletionFile(cmd.completeTarget, true)
+		fmt.Println(savedInMsg, cmd.completeTarget)
+	case "powershell":
+		comd.Root().GenPowerShellCompletionFile(cmd.completeTarget)
+		fmt.Println(savedInMsg, cmd.completeTarget)
+	default:
+		return errors.New(suggestionMsg)
+	}
+	return nil
 }
 
 // Validate checks the input parameters of the runtimes command
@@ -108,11 +109,11 @@ func (cmd *CompletionCommand) Validate(args []string) error {
 }
 
 // Set defaultFile for saving the completion files.
-func setDefaultFile() {
+func setDefaultFile() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
-	defaultFile = home + "/" + savedFileName
+	return home + "/" + savedFileName
 }
