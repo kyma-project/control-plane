@@ -22,6 +22,11 @@ import (
 )
 
 const (
+	UpgradeInitSteps int = iota + 1
+	UpgradeFinishSteps
+)
+
+const (
 	// the time after which the operation is marked as expired
 	CheckStatusTimeout = 3 * time.Hour
 )
@@ -110,7 +115,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		}
 		log.Infof("runtime being upgraded, check operation status")
 		operation.InstanceDetails.RuntimeID = instance.RuntimeID
-		return s.performRuntimeChecks(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
+		return s.checkRuntimeStatus(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
 	case dberr.IsNotFound(err):
 		log.Info("instance does not exist, it may have been deprovisioned")
 		return s.operationManager.OperationSucceeded(operation, "instance was not found")
@@ -179,42 +184,32 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 	return nil
 }
 
-func (s *InitialisationStep) performRuntimeChecks(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	operation, delay, err := s.checkRuntimeStatus(operation, instance, log)
+// performRuntimeTasks Ensures that required logic on init and finish is executed.
+// Uses internal and external Avs monitor statuses to verify state.
+// TODO: Use custom states for required step execution.
+func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	hasMonitors := s.evaluationManager.HasMonitors(operation)
 	inMaintenance := s.evaluationManager.InMaintenance(operation)
 
-	// Ensures that required pre- and post- logic is executed
-	// Should never return zero delay as Upgrade Manager will pickup operation as completed.
-	// See: Manager.Execute
-	var (
-		exErr   error
-		exDelay time.Duration
-	)
-	if operation.State == orchestrationExt.InProgress {
-		// set maintenance evaluation status on init
-		if !inMaintenance {
-			operation, exDelay, exErr = s.evaluationManager.SetMaintenanceStatus(operation, log)
+	switch step {
+	case UpgradeInitSteps:
+		if hasMonitors && !inMaintenance {
+			log.Infof("executing init upgrade steps")
+			return s.evaluationManager.SetMaintenanceStatus(operation, log)
 		}
-	} else if operation.State == orchestrationExt.Succeeded || operation.State == orchestrationExt.Failed {
-		// restore evaluation status on finish
-		if inMaintenance {
-			operation, exDelay, exErr = s.evaluationManager.RestoreStatus(operation, log)
+	case UpgradeFinishSteps:
+		if hasMonitors && inMaintenance {
+			log.Infof("executing finish upgrade steps")
+			return s.evaluationManager.RestoreStatus(operation, log)
 		}
 	}
 
-	// Handle pre- and post- responses and their impact
-	// on Kyma upgrade logic flow.
-	if exErr != nil {
-		err = errors.Wrap(err, exErr.Error())
-	}
-
-	if exDelay != 0 {
-		delay = exDelay
-	}
-
-	return operation, delay, err
+	return operation, 0, nil
 }
 
+// checkRuntimeStatus will check operation runtime status
+// It will also trigger performRuntimeTasks upgrade steps to ensure
+// all the required dependencies have been fulfilled for upgrade operation.
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
@@ -232,13 +227,28 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 		msg = *status.Message
 	}
 
+	// do required steps on init
+	operation, delay, err := s.performRuntimeTasks(UpgradeInitSteps, operation, instance, log)
+	if delay != 0 || err != nil {
+		return operation, delay, err
+	}
+
+	// wait for operation completion
+	switch status.State {
+	case gqlschema.OperationStateInProgress, gqlschema.OperationStatePending:
+		return operation, s.timeSchedule.StatusCheck, nil
+	}
+
+	// do required steps on finish
+	operation, delay, err = s.performRuntimeTasks(UpgradeFinishSteps, operation, instance, log)
+	if delay != 0 || err != nil {
+		return operation, delay, err
+	}
+
+	// handle operation completion
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
 		return s.operationManager.OperationSucceeded(operation, msg)
-	case gqlschema.OperationStateInProgress:
-		return operation, s.timeSchedule.StatusCheck, nil
-	case gqlschema.OperationStatePending:
-		return operation, s.timeSchedule.StatusCheck, nil
 	case gqlschema.OperationStateFailed:
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg))
 	}
