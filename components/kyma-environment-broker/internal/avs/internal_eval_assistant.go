@@ -6,6 +6,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
@@ -42,8 +43,9 @@ func (iec *InternalEvalAssistant) AppendOverrides(inputCreator internal.Provisio
 			Value: strconv.FormatInt(evaluationId, 10),
 		},
 		{
-			Key:   AvsBridgeAPIKey,
-			Value: apiKey,
+			Key:    AvsBridgeAPIKey,
+			Value:  apiKey,
+			Secret: ptr.Bool(true),
 		},
 	})
 }

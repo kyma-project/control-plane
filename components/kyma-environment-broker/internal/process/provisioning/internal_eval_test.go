@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -71,7 +72,7 @@ func TestInternalEvaluationStep_Run(t *testing.T) {
 	inputCreator.AssertOverride(t, avs.ComponentName, gqlschema.ConfigEntryInput{
 		Key: avs.EvaluationIdKey, Value: strconv.FormatInt(mockAvsSvc.evals[inDB.Avs.AvsEvaluationInternalId].Id, 10)})
 	inputCreator.AssertOverride(t, avs.ComponentName, gqlschema.ConfigEntryInput{
-		Key: avs.AvsBridgeAPIKey, Value: dummyStrAvsTest})
+		Key: avs.AvsBridgeAPIKey, Value: dummyStrAvsTest, Secret: ptr.Bool(true)})
 }
 
 func TestInternalEvaluationStep_WhenOperationIsRepeatedWithIdPresent(t *testing.T) {
@@ -115,7 +116,7 @@ func TestInternalEvaluationStep_WhenOperationIsRepeatedWithIdPresent(t *testing.
 	inputCreator.AssertOverride(t, avs.ComponentName, gqlschema.ConfigEntryInput{
 		Key: avs.EvaluationIdKey, Value: strconv.FormatInt(id, 10)})
 	inputCreator.AssertOverride(t, avs.ComponentName, gqlschema.ConfigEntryInput{
-		Key: avs.AvsBridgeAPIKey, Value: dummyStrAvsTest})
+		Key: avs.AvsBridgeAPIKey, Value: dummyStrAvsTest, Secret: ptr.Bool(true)})
 }
 
 func newMockAvsOauthServer() *httptest.Server {
