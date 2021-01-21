@@ -108,7 +108,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
         HTTP_Passwd      %s
         Format           json_stream
         tls              on
-`,fluentbitPlugin, auditLogHost, auditLogPort, u.Path, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
+`, fluentbitPlugin, auditLogHost, auditLogPort, u.Path, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},
 		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf(`- %s`, auditLogHost)},
 		{Key: "fluent-bit.externalServiceEntry.ports", Value: fmt.Sprintf(`- number: %s

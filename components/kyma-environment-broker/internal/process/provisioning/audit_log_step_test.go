@@ -177,10 +177,10 @@ return "fooBar"
 
 	repo := storage.NewMemoryStorage().Operations()
 	cfg := auditlog.Config{
-		URL:      "https://host1:8080/aaa/v2/",
-		User:     "aaaa",
-		Password: "aaaa",
-		Tenant:   "tenant",
+		URL:           "https://host1:8080/aaa/v2/",
+		User:          "aaaa",
+		Password:      "aaaa",
+		Tenant:        "tenant",
 		EnableSeqHttp: true,
 	}
 	svc := NewAuditLogOverridesStep(repo, cfg)
