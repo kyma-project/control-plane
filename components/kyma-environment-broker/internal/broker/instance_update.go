@@ -73,7 +73,7 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 				IsAsync:       false,
 				DashboardURL:  instance.DashboardURL,
 				OperationData: "",
-			}, errors.New("unable to process update")
+			}, errors.New("unable to process the update")
 		}
 
 		// save the instance
@@ -81,6 +81,11 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 		_, err = b.instanceStorage.Update(*instance)
 		if err != nil {
 			logger.Errorf("processing context updated failed: %s", err.Error())
+			return domain.UpdateServiceSpec{
+				IsAsync:       false,
+				DashboardURL:  instance.DashboardURL,
+				OperationData: "",
+			}, errors.New("unable to process the update")
 		}
 	}
 
