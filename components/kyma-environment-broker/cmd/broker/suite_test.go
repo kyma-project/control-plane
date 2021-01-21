@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/vrischmann/envconfig"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -62,6 +64,10 @@ type OrchestrationSuite struct {
 func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 	logs := logrus.New()
 	logs.Formatter.(*logrus.TextFormatter).TimestampFormat = "15:04:05.000"
+
+	var cfg Config
+	envconfig.InitWithPrefix(&cfg, "APP")
+
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
 
@@ -108,7 +114,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 			StatusCheck:        100 * time.Millisecond,
 			UpgradeKymaTimeout: 4 * time.Second,
 		}, 250*time.Millisecond, runtimeVerConfigurator, defaultRegion, upgradeEvaluationManager,
-		&Config{}, hyperscaler.NewAccountProvider(nil, nil), logs)
+		&cfg, hyperscaler.NewAccountProvider(nil, nil), logs)
 
 	return &OrchestrationSuite{
 		gardenerNamespace:  gardenerNamespace,
