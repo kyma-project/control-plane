@@ -99,7 +99,7 @@ func TestEmsUpgradeProvisioningSteps(t *testing.T) {
 	require.NotEmpty(t, operation.Ems.Instance.InstanceID)
 	require.NotEmpty(t, operation.Ems.BindingID)
 
-	overridesOut, err := decryptOverrides(secretKey, operation.Ems.Overrides)
+	overridesOut, err := provisioning.DecryptEventingOverrides(secretKey, operation.Ems.Overrides)
 	require.NoError(t, err)
 
 	fmt.Printf("\nexport INSTANCE_ID=%s\nexport BINDING_ID=%s\n", operation.Ems.Instance.InstanceID, operation.Ems.BindingID)

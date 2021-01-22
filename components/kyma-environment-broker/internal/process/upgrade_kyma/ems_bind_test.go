@@ -1,8 +1,10 @@
-package provisioning
+package upgrade_kyma
 
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
@@ -12,7 +14,7 @@ import (
 func TestEmsEncryptDecrypt(t *testing.T) {
 	// given
 	secretKey := "1234567890123456"
-	overridesIn := EventingOverrides{
+	overridesIn := provisioning.EventingOverrides{
 		OauthClientId:      "oauthclientid",
 		OauthClientSecret:  "oauthclientsecret",
 		OauthTokenEndpoint: "oauthtokenendpoint",
@@ -21,9 +23,9 @@ func TestEmsEncryptDecrypt(t *testing.T) {
 	}
 
 	// when
-	encrypted, err := EncryptEventingOverrides(secretKey, &overridesIn)
+	encrypted, err := provisioning.EncryptEventingOverrides(secretKey, &overridesIn)
 	assert.NoError(t, err)
-	overridesOut, err := DecryptEventingOverrides(secretKey, encrypted)
+	overridesOut, err := provisioning.DecryptEventingOverrides(secretKey, encrypted)
 	assert.NoError(t, err)
 
 	// then
@@ -40,7 +42,7 @@ func TestEmsGetCredentials(t *testing.T) {
 	assert.NotNil(t, binding.Credentials)
 
 	// then
-	eventingOverrides, err := GetEventingCredentials(binding)
+	eventingOverrides, err := provisioning.GetEventingCredentials(binding)
 	assert.NoError(t, err)
 	assert.NotNil(t, eventingOverrides)
 	assert.Equal(t, "messaging-httprest-oa2-clientid", eventingOverrides.OauthClientId)

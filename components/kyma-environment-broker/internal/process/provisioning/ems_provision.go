@@ -62,10 +62,29 @@ func (s *EmsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 
 func (s *EmsProvisionStep) provision(smCli servicemanager.Client, operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
+	input := GetEventingProvisioningData(operation.Ems)
+	resp, err := smCli.Provision(operation.Ems.Instance.BrokerID, *input, true)
+	if err != nil {
+		return s.handleError(operation, err, log, fmt.Sprintf("Provision() call failed for brokerID: %s; input: %#v", operation.Ems.Instance.BrokerID, input))
+	}
+	log.Infof("response from EMS provisioning call: %#v", resp)
+
+	operation.Ems.Instance.InstanceID = input.ID
+
+	return operation, 0, nil
+}
+
+func (s *EmsProvisionStep) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
+	log.Errorf("%s: %s", msg, err)
+	return s.operationManager.OperationFailed(operation, msg)
+}
+
+func GetEventingProvisioningData(emsInstanceDetails internal.EmsData) *servicemanager.ProvisioningInput {
 	var input servicemanager.ProvisioningInput
+
 	input.ID = uuid.New().String()
-	input.ServiceID = operation.Ems.Instance.ServiceID
-	input.PlanID = operation.Ems.Instance.PlanID
+	input.ServiceID = emsInstanceDetails.Instance.ServiceID
+	input.PlanID = emsInstanceDetails.Instance.PlanID
 	input.SpaceGUID = uuid.New().String()
 	input.OrganizationGUID = uuid.New().String()
 	input.Context = map[string]interface{}{
@@ -99,18 +118,5 @@ func (s *EmsProvisionStep) provision(smCli servicemanager.Client, operation inte
 		"namespace": "default/sap.kyma/" + uuid.New().String(),
 	}
 
-	resp, err := smCli.Provision(operation.Ems.Instance.BrokerID, input, true)
-	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("Provision() call failed for brokerID: %s; input: %#v", operation.Ems.Instance.BrokerID, input))
-	}
-	log.Infof("response from EMS provisioning call: %#v", resp)
-
-	operation.Ems.Instance.InstanceID = input.ID
-
-	return operation, 0, nil
-}
-
-func (s *EmsProvisionStep) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
-	log.Errorf("%s: %s", msg, err)
-	return s.operationManager.OperationFailed(operation, msg)
+	return &input
 }

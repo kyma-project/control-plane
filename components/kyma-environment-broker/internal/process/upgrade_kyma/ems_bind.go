@@ -1,31 +1,18 @@
 package upgrade_kyma
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 )
-
-// TODO common code
-type EventingOverrides struct {
-	OauthClientId      string `json:"oauthClientId"`
-	OauthClientSecret  string `json:"oauthClientSecret"`
-	OauthTokenEndpoint string `json:"oauthTokenEndpoint"`
-	PublishUrl         string `json:"publishUrl"`
-	BebNamespace       string `json:"bebNamespace"`
-}
 
 type EmsUpgradeBindStep struct {
 	operationManager *process.UpgradeKymaOperationManager
@@ -71,7 +58,7 @@ func (s *EmsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("Ems provisioning failed: %s", resp.Description))
 	}
 	// execute binding
-	var eventingOverrides *EventingOverrides
+	var eventingOverrides *provisioning.EventingOverrides
 	if !operation.Ems.Instance.Provisioned {
 		if operation.Ems.BindingID == "" {
 			operation.Ems.BindingID = uuid.New().String()
@@ -81,11 +68,11 @@ func (s *EmsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 			return s.handleError(operation, err, log, fmt.Sprintf("Bind() call failed"))
 		}
 		// get overrides
-		eventingOverrides, err = getCredentials(respBinding.Binding)
+		eventingOverrides, err = provisioning.GetEventingCredentials(respBinding.Binding)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("getCredentials() call failed"))
 		}
-		encryptedOverrides, err := encryptOverrides(s.secretKey, eventingOverrides)
+		encryptedOverrides, err := provisioning.EncryptEventingOverrides(s.secretKey, eventingOverrides)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("encryptOverrides() call failed"))
 		}
@@ -100,14 +87,14 @@ func (s *EmsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 		}
 	} else {
 		// get the credentials from encrypted string in operation.Ems.Instance.
-		eventingOverrides, err = decryptOverrides(s.secretKey, operation.Ems.Overrides)
+		eventingOverrides, err = provisioning.DecryptEventingOverrides(s.secretKey, operation.Ems.Overrides)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("decryptOverrides() call failed"))
 		}
 	}
 
 	// append overrides
-	operation.InputCreator.AppendOverrides(components.Eventing, getEventingOverrides(eventingOverrides))
+	operation.InputCreator.AppendOverrides(components.Eventing, provisioning.GetEventingOverrides(eventingOverrides))
 
 	return operation, 0, nil
 }
@@ -115,92 +102,4 @@ func (s *EmsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 func (s *EmsUpgradeBindStep) handleError(operation internal.UpgradeKymaOperation, err error, log logrus.FieldLogger, msg string) (internal.UpgradeKymaOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
 	return s.operationManager.OperationFailed(operation, msg)
-}
-
-func getCredentials(binding servicemanager.Binding) (*EventingOverrides, error) {
-	evOverrides := EventingOverrides{}
-	credentials := binding.Credentials
-	evOverrides.BebNamespace = credentials["namespace"].(string)
-	messaging, ok := credentials["messaging"].([]interface{})
-	if !ok {
-		return nil, fmt.Errorf("false type for %s", "messaging")
-	}
-	for i, m := range messaging {
-		m, ok := m.(map[string]interface{})
-		if !ok {
-			return nil, fmt.Errorf("false type for %s", fmt.Sprintf("messaging[%d]", i))
-		}
-		p, ok := m["protocol"].([]interface{})
-		if !ok {
-			return nil, fmt.Errorf("false type for %s", fmt.Sprintf("messaging[%d] -> protocol", i))
-		}
-		if p[0] == "httprest" {
-			evOverrides.PublishUrl = m["uri"].(string)
-			oa2, ok := m["oa2"].(map[string]interface{})
-			if !ok {
-				return nil, fmt.Errorf("false type for %s", fmt.Sprintf("messaging[%d] -> oa2", i))
-			}
-			evOverrides.OauthClientId = oa2["clientid"].(string)
-			evOverrides.OauthClientSecret = oa2["clientsecret"].(string)
-			evOverrides.OauthTokenEndpoint = oa2["tokenendpoint"].(string)
-			break
-		}
-	}
-	return &evOverrides, nil
-}
-
-func getEventingOverrides(evOverrides *EventingOverrides) []*gqlschema.ConfigEntryInput {
-	return []*gqlschema.ConfigEntryInput{
-		{
-			Key:    "authentication.oauthClientId",
-			Value:  evOverrides.OauthClientId,
-			Secret: ptr.Bool(true),
-		},
-		{
-			Key:    "authentication.oauthClientSecret",
-			Value:  evOverrides.OauthClientSecret,
-			Secret: ptr.Bool(true),
-		},
-		{
-			Key:    "authentication.oauthTokenEndpoint",
-			Value:  evOverrides.OauthTokenEndpoint,
-			Secret: ptr.Bool(true),
-		},
-		{
-			Key:    "authentication.publishUrl",
-			Value:  evOverrides.PublishUrl,
-			Secret: ptr.Bool(true),
-		},
-		{
-			Key:    "authentication.bebNamespace",
-			Value:  evOverrides.BebNamespace,
-			Secret: ptr.Bool(true),
-		},
-	}
-}
-
-func encryptOverrides(secretKey string, overrides *EventingOverrides) (string, error) {
-	ovrs, err := json.Marshal(*overrides)
-	if err != nil {
-		return "", errors.Wrap(err, "while encoding eventing overrides")
-	}
-	encrypter := storage.NewEncrypter(secretKey)
-	encryptedOverrides, err := encrypter.Encrypt(ovrs)
-	if err != nil {
-		return "", errors.Wrap(err, "while encrypting eventing overrides")
-	}
-	return string(encryptedOverrides), nil
-}
-
-func decryptOverrides(secretKey string, encryptedOverrides string) (*EventingOverrides, error) {
-	encrypter := storage.NewEncrypter(secretKey)
-	decryptedOverrides, err := encrypter.Decrypt([]byte(encryptedOverrides))
-	if err != nil {
-		return nil, errors.Wrap(err, "while decrypting eventing overrides")
-	}
-	eventingOverrides := EventingOverrides{}
-	if err := json.Unmarshal(decryptedOverrides, &eventingOverrides); err != nil {
-		return nil, errors.Wrap(err, "while unmarshall eventing overrides")
-	}
-	return &eventingOverrides, nil
 }
