@@ -1,0 +1,31 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: metris-poc
+  name: metris-poc
+  namespace: default
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: metris-poc
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: metris-poc
+    spec:
+      containers:
+      - image: ko://github.com/kyma-project/control-plane/components/metris-poc/cmd
+        imagePullPolicy: Always
+        name: metris-poc
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30

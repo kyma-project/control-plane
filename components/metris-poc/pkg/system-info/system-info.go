@@ -8,6 +8,6 @@ type Shoot struct {
 	name string
 }
 
-func GetSystemInfo() (Information, error) {
+func GetShootInfo() (Information, error) {
 	return Information{}, nil
 }
