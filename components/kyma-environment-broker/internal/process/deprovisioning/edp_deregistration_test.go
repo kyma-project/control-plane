@@ -6,8 +6,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning/automock"
-
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,16 +17,7 @@ const (
 
 func TestEDPDeregistration_Run(t *testing.T) {
 	// given
-	client := &automock.EDPClient{}
-	client.On("DeleteMetadataTenant", edpName, edpEnvironment, edp.MaasConsumerSubAccountKey).
-		Return(nil).Once()
-	client.On("DeleteMetadataTenant", edpName, edpEnvironment, edp.MaasConsumerRegionKey).
-		Return(nil).Once()
-	client.On("DeleteMetadataTenant", edpName, edpEnvironment, edp.MaasConsumerEnvironmentKey).
-		Return(nil).Once()
-	client.On("DeleteDataTenant", edpName, edpEnvironment).
-		Return(nil).Once()
-	defer client.AssertExpectations(t)
+	client := edp.NewFakeClient()
 
 	step := NewEDPDeregistrationStep(client, edp.Config{
 		Environment: edpEnvironment,
