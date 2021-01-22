@@ -57,7 +57,8 @@ logs:
   level: "info"
 
 tests:
-  enabled: false
+  e2e:
+    enabled: false
   hibernation:
     enabled: false
   gardener:
