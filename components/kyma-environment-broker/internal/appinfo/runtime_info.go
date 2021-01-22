@@ -10,8 +10,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
-
-	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=InstanceFinder -output=automock -outpkg=automock -case=underscore
@@ -63,10 +61,7 @@ func (h *RuntimeInfoHandler) mapToDTO(instances []internal.InstanceWithOperation
 	indexer := map[string]int{}
 
 	for _, inst := range instances {
-		region, err := h.getRegionOrDefault(inst)
-		if err != nil {
-			return nil, errors.Wrap(err, "while getting region")
-		}
+		region := h.getRegionOrDefault(inst)
 
 		idx, found := indexer[inst.InstanceID]
 		if !found {
@@ -106,16 +101,11 @@ func (h *RuntimeInfoHandler) mapToDTO(instances []internal.InstanceWithOperation
 	return items, nil
 }
 
-func (h *RuntimeInfoHandler) getRegionOrDefault(inst internal.InstanceWithOperation) (string, error) {
-	pp, err := inst.GetProvisioningParameters()
-	if err != nil {
-		return "", errors.Wrap(err, "while getting provisioning parameters")
+func (h *RuntimeInfoHandler) getRegionOrDefault(inst internal.InstanceWithOperation) string {
+	if inst.Parameters.PlatformRegion == "" {
+		return h.defaultSubaccountRegion
 	}
-
-	if pp.PlatformRegion == "" {
-		return h.defaultSubaccountRegion, nil
-	}
-	return pp.PlatformRegion, nil
+	return inst.Parameters.PlatformRegion
 }
 
 func svcNameOrDefault(inst internal.InstanceWithOperation) string {

@@ -459,11 +459,11 @@ func (s *operations) GetOperationByID(operationID string) (*internal.Operation, 
 	return &op, nil
 }
 
-func (s *operations) GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]internal.Operation, error) {
+func (s *operations) GetNotFinishedOperationsByType(operationType dbmodel.OperationType) ([]internal.Operation, error) {
 	session := s.NewReadSession()
 	operations := make([]dbmodel.OperationDTO, 0)
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		dto, err := session.GetOperationsInProgressByType(operationType)
+		dto, err := session.GetNotFinishedOperationsByType(operationType)
 		if err != nil {
 			log.Errorf("while getting operations from the storage: %v", err)
 			return false, nil

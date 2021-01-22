@@ -30,14 +30,14 @@ func TestRuntimeHandler(t *testing.T) {
 		testTime1 := time.Now()
 		testTime2 := time.Now().Add(time.Minute)
 		testInstance1 := internal.Instance{
-			InstanceID:             testID1,
-			CreatedAt:              testTime1,
-			ProvisioningParameters: "{}",
+			InstanceID: testID1,
+			CreatedAt:  testTime1,
+			Parameters: internal.ProvisioningParameters{},
 		}
 		testInstance2 := internal.Instance{
-			InstanceID:             testID2,
-			CreatedAt:              testTime2,
-			ProvisioningParameters: "{}",
+			InstanceID: testID2,
+			CreatedAt:  testTime2,
+			Parameters: internal.ProvisioningParameters{},
 		}
 
 		err := instances.Insert(testInstance1)
@@ -169,17 +169,17 @@ func TestRuntimeHandler(t *testing.T) {
 
 func fixInstance(id string, t time.Time) internal.Instance {
 	return internal.Instance{
-		InstanceID:             id,
-		CreatedAt:              t,
-		GlobalAccountID:        id,
-		SubAccountID:           id,
-		RuntimeID:              id,
-		ServiceID:              id,
-		ServiceName:            id,
-		ServicePlanID:          id,
-		ServicePlanName:        id,
-		DashboardURL:           fmt.Sprintf("https://console.%s.kyma.local", id),
-		ProviderRegion:         id,
-		ProvisioningParameters: "{}",
+		InstanceID:      id,
+		CreatedAt:       t,
+		GlobalAccountID: id,
+		SubAccountID:    id,
+		RuntimeID:       id,
+		ServiceID:       id,
+		ServiceName:     id,
+		ServicePlanID:   id,
+		ServicePlanName: id,
+		DashboardURL:    fmt.Sprintf("https://console.%s.kyma.local", id),
+		ProviderRegion:  id,
+		Parameters:      internal.ProvisioningParameters{},
 	}
 }

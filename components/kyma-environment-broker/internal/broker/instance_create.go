@@ -137,21 +137,16 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot save operation")
 	}
 
-	pp, err := json.Marshal(operation.ProvisioningParameters)
-	if err != nil {
-		return domain.ProvisionedServiceSpec{}, errors.Wrap(err, "while marshaling provisioning parameters")
-	}
-
 	err = b.instanceStorage.Insert(internal.Instance{
-		InstanceID:             instanceID,
-		GlobalAccountID:        ersContext.GlobalAccountID,
-		SubAccountID:           ersContext.SubAccountID,
-		ServiceID:              provisioningParameters.ServiceID,
-		ServiceName:            KymaServiceName,
-		ServicePlanID:          provisioningParameters.PlanID,
-		ServicePlanName:        Plans[provisioningParameters.PlanID].PlanDefinition.Name,
-		DashboardURL:           dashboardURL,
-		ProvisioningParameters: string(pp),
+		InstanceID:      instanceID,
+		GlobalAccountID: ersContext.GlobalAccountID,
+		SubAccountID:    ersContext.SubAccountID,
+		ServiceID:       provisioningParameters.ServiceID,
+		ServiceName:     KymaServiceName,
+		ServicePlanID:   provisioningParameters.PlanID,
+		ServicePlanName: Plans[provisioningParameters.PlanID].PlanDefinition.Name,
+		DashboardURL:    dashboardURL,
+		Parameters:      operation.ProvisioningParameters,
 	})
 	if err != nil {
 		logger.Errorf("cannot save instance in storage: %s", err)

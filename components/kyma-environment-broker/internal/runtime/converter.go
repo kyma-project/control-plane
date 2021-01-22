@@ -5,7 +5,6 @@ import (
 
 	pkg "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/pkg/errors"
 )
 
 type Converter interface {
@@ -25,18 +24,12 @@ func NewConverter(platformRegion string) Converter {
 	}
 }
 
-func (c *converter) setRegionOrDefault(instance internal.Instance, runtime *pkg.RuntimeDTO) error {
-	pp, err := instance.GetProvisioningParameters()
-	if err != nil {
-		return errors.Wrap(err, "while getting provisioning parameters")
-	}
-
-	if pp.PlatformRegion == "" {
+func (c *converter) setRegionOrDefault(instance internal.Instance, runtime *pkg.RuntimeDTO) {
+	if instance.Parameters.PlatformRegion == "" {
 		runtime.SubAccountRegion = c.defaultSubaccountRegion
 	} else {
-		runtime.SubAccountRegion = pp.PlatformRegion
+		runtime.SubAccountRegion = instance.Parameters.PlatformRegion
 	}
-	return nil
 }
 
 func (c *converter) ApplyProvisioningOperation(dto *pkg.RuntimeDTO, pOpr *internal.ProvisioningOperation) {
@@ -82,10 +75,7 @@ func (c *converter) NewDTO(instance internal.Instance) (pkg.RuntimeDTO, error) {
 		},
 	}
 
-	err := c.setRegionOrDefault(instance, &toReturn)
-	if err != nil {
-		return pkg.RuntimeDTO{}, errors.Wrap(err, "while setting region")
-	}
+	c.setRegionOrDefault(instance, &toReturn)
 
 	urlSplitted := strings.Split(instance.DashboardURL, ".")
 	if len(urlSplitted) > 1 {
