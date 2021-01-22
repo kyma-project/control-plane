@@ -49,6 +49,7 @@ global:
     secretName: "kcp-auditlog-secret"
     script:
       configMapName: "kcp-auditlog-script"
+    enableSeqHttp: false
 
   provisioning:
     enabled: false
