@@ -53,11 +53,18 @@ func (s *operations) GetProvisioningOperationByID(operationID string) (*internal
 }
 
 func (s *operations) GetProvisioningOperationByInstanceID(instanceID string) (*internal.ProvisioningOperation, error) {
+	var result []internal.ProvisioningOperation
+
 	for _, op := range s.provisioningOperations {
 		if op.InstanceID == instanceID {
-			return &op, nil
+			result = append(result, op)
 		}
 	}
+	if len(result) != 0 {
+		s.sortProvisioningByCreatedAtDesc(result)
+		return &result[0], nil
+	}
+
 	return nil, dberr.NotFound("instance provisioning operation with instanceID %s not found", instanceID)
 }
 
@@ -116,10 +123,16 @@ func (s *operations) GetDeprovisioningOperationByID(operationID string) (*intern
 }
 
 func (s *operations) GetDeprovisioningOperationByInstanceID(instanceID string) (*internal.DeprovisioningOperation, error) {
+	var result []internal.DeprovisioningOperation
+
 	for _, op := range s.deprovisioningOperations {
 		if op.InstanceID == instanceID {
-			return &op, nil
+			result = append(result, op)
 		}
+	}
+	if len(result) != 0 {
+		s.sortDeprovisioningByCreatedAtDesc(result)
+		return &result[0], nil
 	}
 
 	return nil, dberr.NotFound("instance deprovisioning operation with instanceID %s not found", instanceID)
