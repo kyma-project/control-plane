@@ -10,6 +10,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/migrations"
 	uaa "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/xsuaa"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
@@ -67,7 +68,8 @@ import (
 
 // Config holds configuration for the whole application
 type Config struct {
-	DbInMemory bool `envconfig:"default=false"`
+	DbInMemory                     bool `envconfig:"default=false"`
+	EnableInstanceDetailsMigration bool `envconfig:"default=false"`
 
 	// DisableProcessOperationsInProgress allows to disable processing operations
 	// which are in progress on starting application. Set to true if you are
@@ -174,6 +176,13 @@ func main() {
 		db = store
 		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 		prometheus.MustRegister(dbStatsCollector)
+	}
+
+	// todo: remove after instance details was done on each environment
+	// instance details migration to upgradeKyma operations
+	if cfg.EnableInstanceDetailsMigration {
+		err = migrations.NewInstanceDetailsMigration(db.Operations(), logs.WithField("service", "instanceDetailsMigration")).Migrate()
+		fatalOnError(err)
 	}
 
 	// LMS

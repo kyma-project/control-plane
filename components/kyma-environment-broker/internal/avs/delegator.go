@@ -8,7 +8,6 @@ import (
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -159,7 +158,6 @@ func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.Up
 		return del.upgradeManager.OperationFailed(operation, errMsg)
 	}
 
-	delay := time.Duration(0)
 	evalId := evalAssistant.GetEvaluationId(operation.Avs)
 	currentStatus := del.RefreshStatus(logger, &operation.Avs, evalAssistant)
 
@@ -188,10 +186,7 @@ func (del *Delegator) SetStatus(logger logrus.FieldLogger, operation internal.Up
 	evalAssistant.SetEvalStatus(&operation.Avs, status)
 
 	// save
-	operation, delay = del.upgradeManager.UpdateOperation(operation)
-	if delay != 0 {
-		return operation, delay, errors.New("cannot update avs operation status")
-	}
+	operation, delay := del.upgradeManager.UpdateOperation(operation)
 
 	return operation, delay, nil
 }

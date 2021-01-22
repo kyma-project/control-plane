@@ -319,6 +319,29 @@ func (s *operations) GetUpgradeKymaOperationByInstanceID(instanceID string) (*in
 	return ret, nil
 }
 
+func (s *operations) ListUpgradeKymaOperations() ([]internal.UpgradeKymaOperation, error) {
+	session := s.NewReadSession()
+	var operations []dbmodel.OperationDTO
+	var lastErr dberr.Error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		operations, lastErr = session.ListOperationsByType(dbmodel.OperationTypeUpgradeKyma)
+		if lastErr != nil {
+			log.Errorf("while reading operation from the storage: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, lastErr
+	}
+	ret, err := s.toUpgradeKymaOperationList(operations)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting DTO to Operation")
+	}
+
+	return ret, nil
+}
+
 func (s *operations) ListUpgradeKymaOperationsByInstanceID(instanceID string) ([]internal.UpgradeKymaOperation, error) {
 	session := s.NewReadSession()
 	operations := []dbmodel.OperationDTO{}

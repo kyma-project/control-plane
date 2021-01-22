@@ -13,10 +13,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newTestParams(t *testing.T) (*Client, *server, Config, *InternalEvalAssistant, *ExternalEvalAssistant, *logrus.Logger) {
+func newTestParams(t *testing.T) (*Client, *MockAvsServer, Config, *InternalEvalAssistant, *ExternalEvalAssistant, *logrus.Logger) {
 	// Given
-	server := newServer(t)
-	mockServer := fixHTTPServer(server)
+	server := NewMockAvsServer(t)
+	mockServer := FixMockAvsServer(server)
 	avsCfg := Config{
 		OauthTokenEndpoint: fmt.Sprintf("%s/oauth/token", mockServer.URL),
 		ApiEndpoint:        fmt.Sprintf("%s/api/v2/evaluationmetadata", mockServer.URL),
@@ -328,7 +328,7 @@ func TestDelegator_SetStatus(t *testing.T) {
 		delegator, op := newDelOpsParams(params)
 
 		instanceStatus := StatusInactive
-		server.evaluations.basicEvals[params.internalMonitor.Id].Status = instanceStatus
+		server.Evaluations.BasicEvals[params.internalMonitor.Id].Status = instanceStatus
 
 		_, original := setOpAvsStatus(&op, "", StatusMaintenance)
 
@@ -380,7 +380,7 @@ func TestDelegator_SetStatus(t *testing.T) {
 		delegator, op := newDelOpsParams(params)
 
 		instanceStatus := "invalidField"
-		server.evaluations.basicEvals[params.internalMonitor.Id].Status = instanceStatus
+		server.Evaluations.BasicEvals[params.internalMonitor.Id].Status = instanceStatus
 
 		current, _ := setOpAvsStatus(&op, StatusInactive, "invalid")
 
@@ -400,7 +400,7 @@ func TestDelegator_SetStatus(t *testing.T) {
 		delegator, op := newDelOpsParams(params)
 
 		instanceStatus := "invalidField"
-		server.evaluations.basicEvals[params.internalMonitor.Id].Status = instanceStatus
+		server.Evaluations.BasicEvals[params.internalMonitor.Id].Status = instanceStatus
 
 		current, _ := setOpAvsStatus(&op, StatusInactive, instanceStatus)
 
@@ -420,7 +420,7 @@ func TestDelegator_SetStatus(t *testing.T) {
 		delegator, op := newDelOpsParams(params)
 
 		instanceStatus := "invalidField"
-		server.evaluations.basicEvals[params.internalMonitor.Id].Status = instanceStatus
+		server.Evaluations.BasicEvals[params.internalMonitor.Id].Status = instanceStatus
 
 		_, original := setOpAvsStatus(&op, "invalid", StatusInactive)
 
@@ -439,7 +439,7 @@ func TestDelegator_SetStatus(t *testing.T) {
 		delegator, op := newDelOpsParams(params)
 
 		instanceStatus := "invalidField"
-		server.evaluations.basicEvals[params.internalMonitor.Id].Status = instanceStatus
+		server.Evaluations.BasicEvals[params.internalMonitor.Id].Status = instanceStatus
 
 		_, original := setOpAvsStatus(&op, instanceStatus, StatusInactive)
 
