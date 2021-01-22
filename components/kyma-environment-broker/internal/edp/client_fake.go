@@ -5,7 +5,7 @@ type FakeClient struct{}
 
 // NewFakeClient creates edp fake client
 func NewFakeClient() *FakeClient {
-	return &FakeClient {}
+	return &FakeClient{}
 }
 
 func (f *FakeClient) CreateDataTenant(data DataTenantPayload) error {
