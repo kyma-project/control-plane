@@ -97,17 +97,17 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
     Match   dex.*
     Regex   data .*\"xsuaa
 [OUTPUT]
-        Name             %s
-        Match            dex.*
-        Retry_Limit      False
-        Host             %s
-        Port             %s
-        URI              %ssecurity-events
-        Header           Content-Type application/json
-        HTTP_User        %s
-        HTTP_Passwd      %s
-        Format           json_stream
-        tls              on
+    Name             %s
+    Match            dex.*
+    Retry_Limit      False
+    Host             %s
+    Port             %s
+    URI              %ssecurity-events
+    Header           Content-Type application/json
+    HTTP_User        %s
+    HTTP_Passwd      %s
+    Format           json_stream
+    tls              on
 `, fluentbitPlugin, auditLogHost, auditLogPort, u.Path, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},
 		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf(`- %s`, auditLogHost)},
