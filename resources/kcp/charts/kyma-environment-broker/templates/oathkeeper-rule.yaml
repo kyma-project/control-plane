@@ -21,7 +21,7 @@ metadata:
   name: keb-api
 spec:
   match:
-    methods: ["GET", "PUT", "DELETE"]
+    methods: ["GET", "PUT", "DELETE", "PATCH"]
     url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></oauth/([^/]+/)?v2/.*>
   authenticators:
   - handler: oauth2_introspection

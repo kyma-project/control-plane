@@ -66,6 +66,7 @@ type UpgradeKyma interface {
 	UpdateUpgradeKymaOperation(operation internal.UpgradeKymaOperation) (*internal.UpgradeKymaOperation, error)
 	GetUpgradeKymaOperationByID(operationID string) (*internal.UpgradeKymaOperation, error)
 	GetUpgradeKymaOperationByInstanceID(instanceID string) (*internal.UpgradeKymaOperation, error)
+	ListUpgradeKymaOperations() ([]internal.UpgradeKymaOperation, error)
 	ListUpgradeKymaOperationsByInstanceID(instanceID string) ([]internal.UpgradeKymaOperation, error)
 	ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeKymaOperation, int, int, error)
 }

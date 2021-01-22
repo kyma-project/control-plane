@@ -274,6 +274,21 @@ func (r readSession) GetOperationsForIDs(opIDlist []string) ([]dbmodel.Operation
 	return operations, nil
 }
 
+func (r readSession) ListOperationsByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
+	typeCondition := dbr.Eq("type", operationType)
+	var operations []dbmodel.OperationDTO
+
+	_, err := r.session.
+		Select("*").
+		From(OperationTableName).
+		Where(typeCondition).
+		Load(&operations)
+	if err != nil {
+		return nil, dberr.Internal("Failed to get operations: %s", err)
+	}
+	return operations, nil
+}
+
 func (r readSession) ListOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error) {
 	var ops []dbmodel.OperationDTO
 	condition := dbr.Eq("orchestration_id", orchestrationID)

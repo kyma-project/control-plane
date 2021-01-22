@@ -331,6 +331,8 @@ spec:
               value: "{{ .Values.gardener.trialNodesNumber }}"
             - name: APP_DEFAULT_REQUEST_REGION
               value: "{{ .Values.broker.defaultRequestRegion }}"
+            - name: APP_AUDITLOG_ENABLE_SEQ_HTTP
+              value: "{{ .Values.global.auditlog.enableSeqHttp }}"
             - name: APP_AUDITLOG_URL
               valueFrom:
                 configMapKeyRef:
@@ -355,6 +357,8 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: APP_VERSION_CONFIG_NAME
               value: "kyma-versions"
+            - name: APP_ENABLE_INSTANCE_DETAILS_MIGRATION
+              value: "{{ .Values.enableInstanceDetailsMigration }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

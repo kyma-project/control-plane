@@ -4,16 +4,14 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/pkg/errors"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
-
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pkg/errors"
 )
 
 type operations struct {
@@ -361,6 +359,17 @@ func (s *operations) ListOperations(filter dbmodel.OperationFilter) ([]internal.
 		len(result),
 		len(operations),
 		nil
+}
+
+func (s *operations) ListUpgradeKymaOperations() ([]internal.UpgradeKymaOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Empty filter means get all
+	operations := s.filterUpgrade(dbmodel.OperationFilter{})
+	s.sortUpgradeByCreatedAt(operations)
+
+	return operations, nil
 }
 
 func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeKymaOperation, int, int, error) {
