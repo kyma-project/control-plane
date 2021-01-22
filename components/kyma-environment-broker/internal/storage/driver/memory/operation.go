@@ -540,19 +540,6 @@ func (s *operations) filterAll(filter dbmodel.OperationFilter) ([]internal.Opera
 	return result, nil
 }
 
-func (s *operations) filterDeprovisioning(filter dbmodel.OperationFilter) []internal.DeprovisioningOperation {
-	operations := make([]internal.DeprovisioningOperation, 0, len(s.deprovisioningOperations))
-	for _, v := range s.deprovisioningOperations {
-		if ok := matchFilter(string(v.State), filter.States, s.equalFilter); !ok {
-			continue
-		}
-
-		operations = append(operations, v)
-	}
-
-	return operations
-}
-
 func (s *operations) filterUpgrade(filter dbmodel.OperationFilter) []internal.UpgradeKymaOperation {
 	operations := make([]internal.UpgradeKymaOperation, 0, len(s.upgradeKymaOperations))
 	for _, v := range s.upgradeKymaOperations {
