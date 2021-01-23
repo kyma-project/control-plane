@@ -2,6 +2,7 @@ package upgrade_kyma
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -333,25 +334,30 @@ func Test_StepsUnhappyPath(t *testing.T) {
 }
 
 func fixInstance() internal.Instance {
-	return internal.Instance{
-		InstanceID: fixInstanceID,
-		ProvisioningParameters: `{
+	var pp2 internal.ProvisioningParameters
+	json.Unmarshal([]byte(
+		`{
 			"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
 			"ers_context": {
-				"subaccount_id": "` + subAccountID + `"
+				"subaccount_id": "`+subAccountID+`"
 			},
 			"parameters": {
 				"name": "nachtmaar-15",
 				"components": [],
 				"region": "westeurope"
 			}
-		}`}
+		}`), &pp2)
+	return internal.Instance{
+		InstanceID: fixInstanceID,
+		Parameters: pp2}
 }
 
 func fixInvalidInstance() internal.Instance {
+	var pp2 internal.ProvisioningParameters
+	json.Unmarshal([]byte(`}{INVALID JSON}{`), &pp2)
 	return internal.Instance{
-		InstanceID:             fixInstanceID,
-		ProvisioningParameters: `}{INVALID JSON}{`}
+		InstanceID: fixInstanceID,
+		Parameters: pp2}
 }
 
 func fixAccountProvider() *hyperscalerautomock.AccountProvider {
