@@ -50,6 +50,7 @@ global:
     script:
       configMapName: "kcp-auditlog-script"
     enableSeqHttp: false
+    enableNewLogConfig: false
 
   provisioning:
     enabled: false

@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -42,24 +40,12 @@ func NewAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config) *Audit
 
 func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
-	fluentbitConfigScriptKey := "fluent-bit.config.script"
-	fluentbitConfigExtratKey := "fluent-bit.config.extra"
+	fluentbitConfigScriptKey := "fluent-bit.conf.script"
+	fluentbitConfigExtratKey := "fluent-bit.conf.extra"
 
-	c, err := semver.NewConstraint("< 1.20.x")
-	if err != nil {
-		// Handle constraint not being parsable.
-		logger.Errorf("Unable to parse constraint for kyma version to set correct fluent bit plugin: %v", err)
-		return operation, 0, err
-	}
-	v, err := semver.NewVersion(operation.RuntimeVersion.Version)
-	if err != nil {
-		logger.Errorf("Unable to set semver for the current kyma version to set correct fluent bit plugin: %v", err)
-		return operation, 0, err
-	}
-	check := c.Check(v)
-	if check {
-		fluentbitConfigScriptKey = "fluent-bit.conf.script"
-		fluentbitConfigExtratKey = "fluent-bit.conf.extra"
+	if alo.auditLogConfig.NewLogConfig {
+		fluentbitConfigScriptKey = "fluent-bit.config.script"
+		fluentbitConfigExtratKey = "fluent-bit.config.extra"
 	}
 
 	luaScript, err := alo.readFile("/auditlog-script/script")

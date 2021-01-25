@@ -30,10 +30,6 @@ func TestAuditLog_ScriptFileDoesNotExist(t *testing.T) {
 	svc.fs = mm
 
 	operation := internal.ProvisioningOperation{
-		RuntimeVersion: internal.RuntimeVersionData{
-			Version: "1.10",
-			Origin:  "foo",
-		},
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{SubAccountID: "1234567890"}},
 		},
@@ -149,10 +145,6 @@ return "fooBar"
 	}).Return(nil).Once()
 
 	operation := internal.ProvisioningOperation{
-		RuntimeVersion: internal.RuntimeVersionData{
-			Version: "1.10",
-			Origin:  "foo",
-		},
 		InputCreator: inputCreatorMock,
 		Operation: internal.Operation{
 
@@ -191,6 +183,7 @@ return "fooBar"
 		Password:      "aaaa",
 		Tenant:        "tenant",
 		EnableSeqHttp: true,
+		NewLogConfig:  true,
 	}
 	svc := NewAuditLogOverridesStep(repo, cfg)
 	svc.fs = mm
