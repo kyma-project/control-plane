@@ -5,6 +5,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -91,7 +93,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 				logStep.Errorf("Process operation failed: %s", err)
 				return 0, err
 			}
-			if operation.State != domain.InProgress {
+			if operation.State != domain.InProgress && operation.State != orchestration.Pending {
 				if operation.RuntimeID == "" && operation.State == domain.Succeeded {
 					logStep.Infof("Operation %q has no runtime ID. Process finished.", operation.ID)
 					return when, nil

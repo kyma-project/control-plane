@@ -64,7 +64,9 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 	case errStorage != nil && !dberr.IsNotFound(errStorage):
 		logger.Errorf("cannot get existing operation from storage %s", errStorage)
 		return domain.DeprovisionServiceSpec{}, errors.New("cannot get existing operation from storage")
-	case existingOperation != nil && !dberr.IsNotFound(errStorage):
+
+		// there is an operation and it is not a temporary deprovision
+	case existingOperation != nil && !existingOperation.Temporary && !dberr.IsNotFound(errStorage):
 		logger = logger.WithField("operationID", existingOperation.ID)
 		if existingOperation.State == domain.Failed {
 			err := b.reprocessOperation(existingOperation)
@@ -83,7 +85,7 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 	// create and save new operation
 	operationID := uuid.New().String()
 	logger = logger.WithField("operationID", operationID)
-	operation, err := internal.NewDeprovisioningOperationWithID(operationID, instanceID)
+	operation, err := internal.NewDeprovisioningOperationWithID(operationID, instance)
 	if err != nil {
 		logger.Errorf("cannot create new operation: %s", err)
 		return domain.DeprovisionServiceSpec{}, errors.New("cannot create new operation")

@@ -53,7 +53,7 @@ func TestRuntimeInfoHandlerSuccess(t *testing.T) {
 			instances: func() []internal.Instance {
 				i := fixInstance(1)
 				// the platform_region is not specified
-				i.ProvisioningParameters = `{}`
+				i.Parameters = internal.ProvisioningParameters{}
 				return []internal.Instance{i}
 			}(),
 		},
@@ -153,19 +153,21 @@ func fixTime() time.Time {
 
 func fixInstance(idx int) internal.Instance {
 	return internal.Instance{
-		InstanceID:             fmt.Sprintf("InstanceID field. IDX: %d", idx),
-		RuntimeID:              fmt.Sprintf("RuntimeID field. IDX: %d", idx),
-		GlobalAccountID:        fmt.Sprintf("GlobalAccountID field. IDX: %d", idx),
-		SubAccountID:           fmt.Sprintf("SubAccountID field. IDX: %d", idx),
-		ServiceID:              fmt.Sprintf("ServiceID field. IDX: %d", idx),
-		ServiceName:            fmt.Sprintf("ServiceName field. IDX: %d", idx),
-		ServicePlanID:          fmt.Sprintf("ServicePlanID field. IDX: %d", idx),
-		ServicePlanName:        fmt.Sprintf("ServicePlanName field. IDX: %d", idx),
-		DashboardURL:           fmt.Sprintf("DashboardURL field. IDX: %d", idx),
-		ProvisioningParameters: fmt.Sprintf(`{"platform_region": "region-value-idx-%d"}`, idx),
-		CreatedAt:              fixTime().Add(time.Duration(idx) * time.Second),
-		UpdatedAt:              fixTime().Add(time.Duration(idx) * time.Minute),
-		DeletedAt:              fixTime().Add(time.Duration(idx) * time.Hour),
+		InstanceID:      fmt.Sprintf("InstanceID field. IDX: %d", idx),
+		RuntimeID:       fmt.Sprintf("RuntimeID field. IDX: %d", idx),
+		GlobalAccountID: fmt.Sprintf("GlobalAccountID field. IDX: %d", idx),
+		SubAccountID:    fmt.Sprintf("SubAccountID field. IDX: %d", idx),
+		ServiceID:       fmt.Sprintf("ServiceID field. IDX: %d", idx),
+		ServiceName:     fmt.Sprintf("ServiceName field. IDX: %d", idx),
+		ServicePlanID:   fmt.Sprintf("ServicePlanID field. IDX: %d", idx),
+		ServicePlanName: fmt.Sprintf("ServicePlanName field. IDX: %d", idx),
+		DashboardURL:    fmt.Sprintf("DashboardURL field. IDX: %d", idx),
+		Parameters: internal.ProvisioningParameters{
+			PlatformRegion: fmt.Sprintf("region-value-idx-%d", idx),
+		},
+		CreatedAt: fixTime().Add(time.Duration(idx) * time.Second),
+		UpdatedAt: fixTime().Add(time.Duration(idx) * time.Minute),
+		DeletedAt: fixTime().Add(time.Duration(idx) * time.Hour),
 	}
 }
 

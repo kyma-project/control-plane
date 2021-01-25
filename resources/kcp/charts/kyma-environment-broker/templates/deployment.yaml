@@ -331,6 +331,8 @@ spec:
               value: "{{ .Values.gardener.trialNodesNumber }}"
             - name: APP_DEFAULT_REQUEST_REGION
               value: "{{ .Values.broker.defaultRequestRegion }}"
+            - name: APP_UPDATE_PROCESSING_ENABLED
+              value: "{{ .Values.osbUpdateProcessingEnabled }}"
             - name: APP_AUDITLOG_ENABLE_NEW_LOG_CONFIG
               value: "{{ .Values.global.auditlog.enableNewLogConfig }}"
             - name: APP_AUDITLOG_ENABLE_SEQ_HTTP

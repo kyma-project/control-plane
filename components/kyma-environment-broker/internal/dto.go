@@ -73,7 +73,7 @@ type ERSContext struct {
 	SubAccountID    string                  `json:"subaccount_id"`
 	GlobalAccountID string                  `json:"globalaccount_id"`
 	ServiceManager  *ServiceManagerEntryDTO `json:"sm_platform_credentials,omitempty"`
-	Active          bool                    `json:"active"`
+	Active          *bool                   `json:"active,omitempty"`
 }
 
 type ServiceManagerEntryDTO struct {

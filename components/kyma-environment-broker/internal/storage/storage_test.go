@@ -162,7 +162,7 @@ func TestPostgres(t *testing.T) {
 			assert.Equal(t, fixInstance.ServiceID, inst.ServiceID)
 			assert.Equal(t, fixInstance.ServicePlanID, inst.ServicePlanID)
 			assert.Equal(t, fixInstance.DashboardURL, inst.DashboardURL)
-			assert.Equal(t, fixInstance.ProvisioningParameters, inst.ProvisioningParameters)
+			assert.Equal(t, fixInstance.Parameters, inst.Parameters)
 			assert.Equal(t, "lms-tenant-id", inst.InstanceDetails.Lms.TenantID)
 			assert.NotEmpty(t, inst.CreatedAt)
 			assert.NotEmpty(t, inst.UpdatedAt)
@@ -532,9 +532,9 @@ func TestPostgres(t *testing.T) {
 			err = svc.InsertProvisioningOperation(latestPendingOperation)
 			require.NoError(t, err)
 
-			ops, err := svc.GetOperationsInProgressByType(dbmodel.OperationTypeProvision)
+			ops, err := svc.GetNotFinishedOperationsByType(dbmodel.OperationTypeProvision)
 			require.NoError(t, err)
-			assert.Len(t, ops, 2)
+			assert.Len(t, ops, 3)
 			assertOperation(t, givenOperation.Operation, ops[0])
 
 			gotOperation, err := svc.GetProvisioningOperationByID("operation-id")
@@ -572,6 +572,12 @@ func TestPostgres(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, 2, opStats[orchestration.InProgress])
+
+			// when
+			opList, err := svc.ListProvisioningOperationsByInstanceID(fixInstanceId)
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, 3, len(opList))
 		})
 		t.Run("Deprovisioning", func(t *testing.T) {
 			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
@@ -604,7 +610,7 @@ func TestPostgres(t *testing.T) {
 			err = svc.InsertDeprovisioningOperation(givenOperation)
 			require.NoError(t, err)
 
-			ops, err := svc.GetOperationsInProgressByType(dbmodel.OperationTypeDeprovision)
+			ops, err := svc.GetNotFinishedOperationsByType(dbmodel.OperationTypeDeprovision)
 			require.NoError(t, err)
 			assert.Len(t, ops, 1)
 			assertOperation(t, givenOperation.Operation, ops[0])
@@ -629,6 +635,22 @@ func TestPostgres(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, "new modified description", gotOperation2.Description)
+
+			// given
+			err = svc.InsertDeprovisioningOperation(internal.DeprovisioningOperation{
+				Operation: internal.Operation{
+					ID:         "other-op-id",
+					InstanceID: fixInstanceId,
+					CreatedAt:  time.Now().Add(1 * time.Hour),
+					UpdatedAt:  time.Now().Add(1 * time.Hour),
+				},
+			})
+			require.NoError(t, err)
+			// when
+			opList, err := svc.ListDeprovisioningOperationsByInstanceID(fixInstanceId)
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, 2, len(opList))
 
 		})
 		t.Run("Upgrade", func(t *testing.T) {
@@ -844,19 +866,19 @@ func TestPostgres(t *testing.T) {
 		svc := brokerStorage.Instances()
 
 		inst := internal.Instance{
-			InstanceID:             "abcd-01234",
-			RuntimeID:              "r-id-001",
-			GlobalAccountID:        "ga-001",
-			SubAccountID:           "sa-001",
-			ServiceID:              "service-id-001",
-			ServiceName:            "awesome-service",
-			ServicePlanID:          "plan-id",
-			ServicePlanName:        "awesome-plan",
-			DashboardURL:           "",
-			ProvisioningParameters: "",
-			ProviderRegion:         "",
-			CreatedAt:              time.Now(),
-			Version:                0,
+			InstanceID:      "abcd-01234",
+			RuntimeID:       "r-id-001",
+			GlobalAccountID: "ga-001",
+			SubAccountID:    "sa-001",
+			ServiceID:       "service-id-001",
+			ServiceName:     "awesome-service",
+			ServicePlanID:   "plan-id",
+			ServicePlanName: "awesome-plan",
+			DashboardURL:    "",
+			Parameters:      internal.ProvisioningParameters{},
+			ProviderRegion:  "",
+			CreatedAt:       time.Now(),
+			Version:         0,
 		}
 
 		err = svc.Insert(inst)
@@ -1121,6 +1143,7 @@ func fixInstance(testData instanceData) *internal.Instance {
 		ServicePlanName: testData.val,
 		DashboardURL:    fmt.Sprintf("https://console.%s.kyma.local", testData.val),
 		ProviderRegion:  testData.val,
+		Parameters:      internal.ProvisioningParameters{},
 	}
 }
 
@@ -1168,6 +1191,7 @@ func fixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
 }
 
 func fixProvisioningParameters() internal.ProvisioningParameters {
+	active := true
 	return internal.ProvisioningParameters{
 		PlanID:    broker.TrialPlanID,
 		ServiceID: broker.KymaServiceID,
@@ -1182,7 +1206,7 @@ func fixProvisioningParameters() internal.ProvisioningParameters {
 						Password: "password",
 					}},
 			},
-			Active: false,
+			Active: &active,
 		},
 		Parameters: internal.ProvisioningParametersDTO{
 			Name:        "test",

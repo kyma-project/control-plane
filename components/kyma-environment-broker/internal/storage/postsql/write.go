@@ -6,7 +6,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 
 	"github.com/gocraft/dbr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/lib/pq"
 )
@@ -20,7 +19,7 @@ type writeSession struct {
 	transaction *dbr.Tx
 }
 
-func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
+func (ws writeSession) InsertInstance(instance dbmodel.InstanceDTO) dberr.Error {
 	_, err := ws.insertInto(InstancesTableName).
 		Pair("instance_id", instance.InstanceID).
 		Pair("runtime_id", instance.RuntimeID).
@@ -61,7 +60,7 @@ func (ws writeSession) DeleteInstance(instanceID string) dberr.Error {
 	return nil
 }
 
-func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
+func (ws writeSession) UpdateInstance(instance dbmodel.InstanceDTO) dberr.Error {
 	res, err := ws.update(InstancesTableName).
 		Where(dbr.Eq("instance_id", instance.InstanceID)).
 		Where(dbr.Eq("version", instance.Version)).
