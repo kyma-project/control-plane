@@ -30,6 +30,10 @@ func TestAuditLog_ScriptFileDoesNotExist(t *testing.T) {
 	svc.fs = mm
 
 	operation := internal.ProvisioningOperation{
+		RuntimeVersion: internal.RuntimeVersionData{
+			Version: "1.10",
+			Origin:  "foo",
+		},
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{SubAccountID: "1234567890"}},
 		},
