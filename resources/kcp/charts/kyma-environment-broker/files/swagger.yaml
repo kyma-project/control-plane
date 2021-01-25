@@ -588,6 +588,10 @@ components:
           $ref: '#/components/schemas/OperationStateDTO'
         upgradingKyma:
           $ref: '#/components/schemas/OperationsDataDTO'
+        suspension:
+          $ref: '#/components/schemas/OperationsDataDTO'
+        unsuspension:
+          $ref: '#/components/schemas/OperationsDataDTO'
 
     OperationStateDTO:
       type: object
