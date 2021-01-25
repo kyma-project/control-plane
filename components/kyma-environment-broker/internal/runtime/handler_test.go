@@ -20,7 +20,6 @@ import (
 )
 
 func TestRuntimeHandler(t *testing.T) {
-
 	t.Run("test pagination should work", func(t *testing.T) {
 		// given
 		operations := memory.NewOperation()
@@ -164,6 +163,86 @@ func TestRuntimeHandler(t *testing.T) {
 		assert.Equal(t, 1, out.TotalCount)
 		assert.Equal(t, 1, out.Count)
 		assert.Equal(t, testID1, out.Data[0].InstanceID)
+	})
+
+	t.Run("should show suspension and unsuspension operations", func(t *testing.T) {
+		// given
+		operations := memory.NewOperation()
+		instances := memory.NewInstance(operations)
+		testID1 := "Test1"
+		testTime1 := time.Now()
+		testInstance1 := fixInstance(testID1, testTime1)
+
+		unsuspensionOpId := "unsuspension-op-id"
+		suspensionOpId := "suspension-op-id"
+
+		err := instances.Insert(testInstance1)
+		require.NoError(t, err)
+
+		err = operations.InsertProvisioningOperation(internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ID:         "first-provisioning-id",
+				Version:    0,
+				CreatedAt:  time.Now(),
+				UpdatedAt:  time.Now(),
+				InstanceID: testID1,
+			},
+		})
+		require.NoError(t, err)
+		err = operations.InsertProvisioningOperation(internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ID:         unsuspensionOpId,
+				Version:    0,
+				CreatedAt:  time.Now().Add(1 * time.Hour),
+				UpdatedAt:  time.Now().Add(1 * time.Hour),
+				InstanceID: testID1,
+			},
+		})
+
+		require.NoError(t, err)
+		err = operations.InsertDeprovisioningOperation(internal.DeprovisioningOperation{
+			Operation: internal.Operation{
+				ID:         suspensionOpId,
+				Version:    0,
+				CreatedAt:  time.Now(),
+				UpdatedAt:  time.Now(),
+				InstanceID: testID1,
+			},
+			Temporary: true,
+		})
+		require.NoError(t, err)
+
+		runtimeHandler := runtime.NewHandler(instances, operations, 2, "")
+
+		req, err := http.NewRequest("GET", "/runtimes", nil)
+		require.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		runtimeHandler.AttachRoutes(router)
+
+		// when
+		router.ServeHTTP(rr, req)
+
+		// then
+		require.Equal(t, http.StatusOK, rr.Code)
+
+		var out pkg.RuntimesPage
+
+		err = json.Unmarshal(rr.Body.Bytes(), &out)
+		require.NoError(t, err)
+
+		assert.Equal(t, 1, out.TotalCount)
+		assert.Equal(t, 1, out.Count)
+		assert.Equal(t, testID1, out.Data[0].InstanceID)
+
+		unsuspensionOps := out.Data[0].Status.Unsuspension.Data
+		assert.Equal(t, 1, len(unsuspensionOps))
+		assert.Equal(t, unsuspensionOpId, unsuspensionOps[0].OperationID)
+
+		suspensionOps := out.Data[0].Status.Suspension.Data
+		assert.Equal(t, 1, len(suspensionOps))
+		assert.Equal(t, suspensionOpId, suspensionOps[0].OperationID)
 	})
 }
 
