@@ -182,8 +182,6 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 		{Key: "fluent-bit.config.filters.recordModifier.value", Value: operation.ProvisioningParameters.ErsContext.SubAccountID}, // cluster_name is a tag added to log entry, allows to filter logs by a cluster
 		//kubernetes filter should not parse the document to avoid indexing on LMS side
 		{Key: "fluent-bit.config.filters.kubernetes.mergeLog", Value: "Off"},
-		//input should not contain dex logs as it contains sensitive data
-		{Key: "fluent-bit.config.inputs.tail.excludePath", Value: "/var/log/containers/*_dex-*.log,/var/log/containers/*_kcproxy-*.log"},
 	})
 	return operation, 0, nil
 }
