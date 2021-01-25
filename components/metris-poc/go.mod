@@ -7,7 +7,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kyma-project/control-plane v0.0.0-20210122120316-efdace16a3fc
-	github.com/kyma-project/kyma/components/event-publisher-proxy v0.0.0-20210121145257-56404c125b3d
+	github.com/kyma-project/kyma/components/event-publisher-proxy v0.0.0-20210121145257-56404c125b3d // indirect
 	github.com/sirupsen/logrus v1.7.0
 	k8s.io/api v0.19.7
 	k8s.io/apimachinery v0.19.7

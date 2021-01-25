@@ -8,9 +8,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/metris-poc/pkg/signals"
+
 	"github.com/kyma-project/control-plane/components/metris-poc/pkg/env"
 	"github.com/kyma-project/control-plane/components/metris-poc/pkg/keb"
-	restclient "k8s.io/client-go/rest"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -37,9 +38,10 @@ import (
 )
 
 const (
-	livenessURI         = "/healthz"
-	readinessURI        = "/readyz"
-	DefaultResyncPeriod = 10 * time.Second
+	livenessURI            = "/healthz"
+	readinessURI           = "/readyz"
+	DefaultResyncPeriod    = 20 * time.Second
+	defaultShutdownTimeout = time.Minute * 1
 )
 
 var (
@@ -52,6 +54,11 @@ var (
 		Version:  v1.SchemeGroupVersion.Version,
 		Group:    v1.SchemeGroupVersion.Group,
 		Resource: "secrets",
+	}
+	nodeGVK = schema.GroupVersionResource{
+		Version:  v1.SchemeGroupVersion.Version,
+		Group:    v1.SchemeGroupVersion.Group,
+		Resource: "nodes",
 	}
 )
 
@@ -72,17 +79,27 @@ func main() {
 		cfg:            cfg,
 	}
 
-	config, err := GetGardenerKubeconfig(cfg)
+	kubeConfig := GetGardenerKubeconfig(cfg)
+
+	ns, _, err := kubeConfig.Namespace()
+	if err != nil {
+		log.Fatalf("failed to get ns: %v", err)
+	}
+	config, err := kubeConfig.ClientConfig()
+	if err != nil {
+		log.Fatalf("failed to get client config: %v", err)
+	}
+
 	if err != nil {
 		log.Fatalf("failed to get client kubeconfig: %v", err)
 	}
 	log.Print("gardener kubeconfig fetched successfully")
 
-	shootDynamicSharedInfFactory := GenerateShootInfFactory(config)
-	shootLister := shootDynamicSharedInfFactory.ForResource(shootGVR).Lister().ByNamespace("garden-kyma-dev")
+	shootDynamicSharedInfFactory := GenerateShootInfFactory(config, ns)
+	shootLister := shootDynamicSharedInfFactory.ForResource(shootGVR).Lister().ByNamespace(ns)
 
-	secretDynamicSharedInfFactory := GenerateSecretInfFactory(config)
-	secretLister := secretDynamicSharedInfFactory.ForResource(secretGVR).Lister().ByNamespace("garden-kyma-dev")
+	secretDynamicSharedInfFactory := GenerateSecretInfFactory(config, ns)
+	secretLister := secretDynamicSharedInfFactory.ForResource(secretGVR).Lister().ByNamespace(ns)
 
 	sysInfoHandler := SysInfoHandler{
 		SecretLister: &secretLister,
@@ -102,36 +119,38 @@ func main() {
 		WriteTimeout: time.Duration(*opts.requestTimeout) * time.Second,
 	}
 
-	go start(server)
+	ctxServer := signals.NewContext()
+	startServer(ctxServer, server)
+
 }
 
-func GenerateSecretInfFactory(k8sConfig *rest.Config) dynamicinformer.DynamicSharedInformerFactory {
+func GenerateSecretInfFactory(k8sConfig *rest.Config, ns string) dynamicinformer.DynamicSharedInformerFactory {
 	dynamicClient := dynamic.NewForConfigOrDie(k8sConfig)
 	dFilteredSharedInfFactory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(dynamicClient,
 		DefaultResyncPeriod,
-		v1.NamespaceAll,
+		ns,
 		nil,
 	)
 	dFilteredSharedInfFactory.ForResource(secretGVR)
 	return dFilteredSharedInfFactory
 }
 
-func GenerateShootInfFactory(k8sConfig *rest.Config) dynamicinformer.DynamicSharedInformerFactory {
+func GenerateShootInfFactory(k8sConfig *rest.Config, ns string) dynamicinformer.DynamicSharedInformerFactory {
 	dynamicClient := dynamic.NewForConfigOrDie(k8sConfig)
 	dFilteredSharedInfFactory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(dynamicClient,
 		DefaultResyncPeriod,
-		v1.NamespaceAll,
+		ns,
 		nil,
 	)
 	dFilteredSharedInfFactory.ForResource(shootGVR)
 	return dFilteredSharedInfFactory
 }
 
-func GetGardenerKubeconfig(cfg *env.Config) (*restclient.Config, error) {
+func GetGardenerKubeconfig(cfg *env.Config) clientcmd.ClientConfig {
 	loadingRules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: cfg.GardenerKubeconfig}
 	configOverrides := &clientcmd.ConfigOverrides{}
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-	return kubeConfig.ClientConfig()
+	return kubeConfig
 }
 
 type SysInfoHandler struct {
@@ -140,14 +159,28 @@ type SysInfoHandler struct {
 	KEBEndpoint  string
 }
 
-func start(server *http.Server) {
+func startServer(ctx context.Context, server *http.Server) {
 	if server == nil {
-		log.Error("cannot start a nil HTTP server")
+		log.Fatalf("cannot start a nil HTTP server")
 		return
 	}
-
-	if err := server.ListenAndServe(); err != nil {
-		log.Errorf("failed to start server: %v", err)
+	errChan := make(chan error, 1)
+	go func() {
+		log.Printf("Starting server at %s", server.Addr)
+		errChan <- server.ListenAndServe()
+	}()
+	select {
+	case <-ctx.Done():
+		ctx, cancel := context.WithTimeout(context.Background(), defaultShutdownTimeout)
+		defer cancel()
+		err := server.Shutdown(ctx)
+		if err != nil {
+			log.Fatalf("Server is shutting down: %v", err)
+		}
+		errMsg := <-errChan // Wait for server goroutine to exit
+		log.Fatalf("Server is shutting down: %v", errMsg)
+	case err := <-errChan:
+		log.Fatalf("Failed, server is shutting down: %v", err)
 	}
 }
 
@@ -174,7 +207,7 @@ func (sh SysInfoHandler) NewSystemStatsHandler() http.Handler {
 		scannedShoots := make([]*gardenerv1beta1.Shoot, 0)
 		var testShoot *gardenerv1beta1.Shoot
 		for _, sObj := range runtimeObjs {
-			shoot, err := ConvertRuntimeObjToSubscription(sObj)
+			shoot, err := ConvertRuntimeObjToShoot(sObj)
 			if err != nil {
 				log.Errorf("failed to convert a runtime obj to a Shoot: %v", err)
 				continue
@@ -184,6 +217,8 @@ func (sh SysInfoHandler) NewSystemStatsHandler() http.Handler {
 				testShoot = shoot
 			}
 		}
+
+		log.Printf("shoot cluster under scan: %s", testShoot)
 
 		runtimes, err := keb.GetRuntimes(sh.KEBEndpoint)
 		if err != nil {
@@ -196,27 +231,33 @@ func (sh SysInfoHandler) NewSystemStatsHandler() http.Handler {
 				if err != nil {
 					log.Errorf("failed to list secrets for shoots: %v", err)
 				}
-				if secret, ok := secretObj.(*corev1.Secret); ok {
-					// connect to skr cluster
-					skrKubeConfigStr := secret.Data["kubeconfig"]
-					skrKubeConfig, err := kebgardenerclient.RESTConfig([]byte(skrKubeConfigStr))
-					if err != nil {
-						log.Errorf("failed to create kubeconfig client: %v", skrKubeConfig)
-					}
-					dynamicClient, err := dynamic.NewForConfig(skrKubeConfig)
-					nodeGVK := schema.GroupVersionResource{
-						Version:  v1.SchemeGroupVersion.Version,
-						Group:    v1.SchemeGroupVersion.Group,
-						Resource: "nodes",
-					}
-					nodeClient := dynamicClient.Resource(nodeGVK)
-					ctx := context.Background()
-					nodes, err := nodeClient.List(ctx, metav1.ListOptions{})
-					if err != nil {
-						log.Errorf("failed to fetch nodes from shoot: %s, err: %v", testShoot, err)
-					}
-					log.Printf("%v", nodes)
+
+				secret, err := ConvertRuntimeObjToSecret(secretObj)
+				if err != nil {
+					log.Errorf("failed to convert secret: %v", secret)
+					continue
 				}
+				log.Printf("fetched secret: %v", secret)
+				// connect to skr cluster
+				skrKubeConfigStr := secret.Data["kubeconfig"]
+				skrKubeConfig, err := kebgardenerclient.RESTConfig([]byte(skrKubeConfigStr))
+				if err != nil {
+					log.Errorf("failed to create kubeconfig client: %v", skrKubeConfig)
+					continue
+				}
+				dynamicClient, err := dynamic.NewForConfig(skrKubeConfig)
+				if err != nil {
+					log.Errorf("failed to get dynamic config for skr: %v", err)
+					continue
+				}
+
+				nodeClient := dynamicClient.Resource(nodeGVK)
+				ctx := context.Background()
+				nodes, err := nodeClient.List(ctx, metav1.ListOptions{})
+				if err != nil {
+					log.Errorf("failed to fetch nodes from shoot: %s, err: %v", testShoot, err)
+				}
+				log.Printf("%v", nodes)
 			}
 		}
 
@@ -240,7 +281,7 @@ func (sh SysInfoHandler) NewSystemStatsHandler() http.Handler {
 	})
 }
 
-func ConvertRuntimeObjToSubscription(shootObj runtime.Object) (*gardenerv1beta1.Shoot, error) {
+func ConvertRuntimeObjToShoot(shootObj runtime.Object) (*gardenerv1beta1.Shoot, error) {
 	shoot := &gardenerv1beta1.Shoot{}
 	if shootUnstructured, ok := shootObj.(*unstructured.Unstructured); ok {
 		err := runtime.DefaultUnstructuredConverter.FromUnstructured(shootUnstructured.Object, shoot)
@@ -251,10 +292,20 @@ func ConvertRuntimeObjToSubscription(shootObj runtime.Object) (*gardenerv1beta1.
 	return shoot, nil
 }
 
+func ConvertRuntimeObjToSecret(secretObj runtime.Object) (*corev1.Secret, error) {
+	secret := &corev1.Secret{}
+	if shootUnstructured, ok := secretObj.(*unstructured.Unstructured); ok {
+		err := runtime.DefaultUnstructuredConverter.FromUnstructured(shootUnstructured.Object, secret)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return secret, nil
+}
+
 func CheckHealth() http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
-		return
 	})
 }
 
