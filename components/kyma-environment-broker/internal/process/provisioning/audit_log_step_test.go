@@ -145,8 +145,13 @@ return "fooBar"
 	}).Return(nil).Once()
 
 	operation := internal.ProvisioningOperation{
+		RuntimeVersion: internal.RuntimeVersionData{
+			Version: "1.10",
+			Origin:  "foo",
+		},
 		InputCreator: inputCreatorMock,
 		Operation: internal.Operation{
+
 			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{SubAccountID: "1234567890"}},
 		},
 	}
@@ -259,6 +264,10 @@ return "fooBar"
 	}).Return(nil).Once()
 
 	operation := internal.ProvisioningOperation{
+		RuntimeVersion: internal.RuntimeVersionData{
+			Version: "1.20",
+			Origin:  "foo",
+		},
 		InputCreator: inputCreatorMock,
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{SubAccountID: "1234567890"}},
