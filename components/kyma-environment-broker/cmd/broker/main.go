@@ -124,6 +124,9 @@ type Config struct {
 	Ems struct {
 		Disabled bool `envconfig:"default=true"`
 	}
+	Cls struct {
+		Disabled bool `envconfig:"default=true"`
+	}
 
 	AuditLog auditlog.Config
 
@@ -287,6 +290,14 @@ func main() {
 					return &op.Ems.Instance
 				}, db.Operations()),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight: 1,
+			step: provisioning.NewServiceManagerOfferingStep("CLS_Offering",
+				provisioning.ClsOfferingName, provisioning.ClsPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
+					return &op.Ems.Instance
+				}, db.Operations()),
+			disabled: cfg.Cls.Disabled,
 		},
 		{
 			weight: 2,
