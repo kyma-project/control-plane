@@ -8,19 +8,27 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/metris-poc/pkg/env"
+	"github.com/kyma-project/control-plane/components/metris-poc/pkg/keb"
+	restclient "k8s.io/client-go/rest"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	corev1 "k8s.io/api/core/v1"
 
 	kebgardenerclient "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
+	"k8s.io/client-go/tools/clientcmd"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/dynamic"
 
 	"k8s.io/client-go/tools/cache"
 
+	gardenerv1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gorilla/mux"
-	"github.com/kyma-project/control-plane/components/metris-poc/pkg/env"
 	system_info "github.com/kyma-project/control-plane/components/metris-poc/pkg/system-info"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -29,16 +37,18 @@ import (
 )
 
 const (
-	livenessURI  = "/healthz"
-	readinessURI = "/readyz"
-)
-
-const (
+	livenessURI         = "/healthz"
+	readinessURI        = "/readyz"
 	DefaultResyncPeriod = 10 * time.Second
 )
 
 var (
-	secretGVK = schema.GroupVersionResource{
+	shootGVR = schema.GroupVersionResource{
+		Version:  gardenerv1beta1.SchemeGroupVersion.Version,
+		Group:    gardenerv1beta1.SchemeGroupVersion.Group,
+		Resource: "shoots",
+	}
+	secretGVR = schema.GroupVersionResource{
 		Version:  v1.SchemeGroupVersion.Version,
 		Group:    v1.SchemeGroupVersion.Group,
 		Resource: "secrets",
@@ -46,13 +56,13 @@ var (
 )
 
 type options struct {
-	requestTimeout *int
+	requestTimeout *time.Duration
 	cfg            *env.Config
 }
 
 func main() {
-	fmt.Println("Starting POC")
-	requestTimeout := flag.Int("requestTimeout", 1, "Timeout for services.")
+	log.Print("Starting POC")
+	requestTimeout := flag.Duration("requestTimeout", 10*time.Second, "Timeout for services.")
 	flag.Parse()
 
 	cfg := env.GetConfig()
@@ -62,26 +72,29 @@ func main() {
 		cfg:            cfg,
 	}
 
-	k8sConfig, err := kebgardenerclient.NewGardenerClusterConfig(opts.cfg.GardenerKubeconfig)
+	config, err := GetGardenerKubeconfig(cfg)
 	if err != nil {
-		log.Fatalf("failed to initialize Gerdener cluster client")
+		log.Fatalf("failed to get client kubeconfig: %v", err)
 	}
-	secretDynamicFactory := GenerateSecretInfFactory(k8sConfig)
-	secretLister := secretDynamicFactory.ForResource(secretGVK).Lister()
-	sysInfoHandler := &SysInfoHandler{
+	log.Print("gardener kubeconfig fetched successfully")
+
+	shootDynamicSharedInfFactory := GenerateShootInfFactory(config)
+	shootLister := shootDynamicSharedInfFactory.ForResource(shootGVR).Lister().ByNamespace("garden-kyma-dev")
+
+	secretDynamicSharedInfFactory := GenerateSecretInfFactory(config)
+	secretLister := secretDynamicSharedInfFactory.ForResource(secretGVR).Lister().ByNamespace("garden-kyma-dev")
+
+	sysInfoHandler := SysInfoHandler{
 		SecretLister: &secretLister,
+		ShootLister:  &shootLister,
+		KEBEndpoint:  cfg.KEBEndpoint,
 	}
+	ctx := context.Background()
+	WaitForCacheSyncOrDie(ctx, shootDynamicSharedInfFactory)
+	WaitForCacheSyncOrDie(ctx, secretDynamicSharedInfFactory)
 
-	// TODO remove me
-	fmt.Println(cfg)
-
-	// Create client for gardener
-
-	//gardenerClient, err := createClientForGardener()
-
-	// Create client for KEB
-
-	// Create client for SKRs
+	log.Printf("Shoot informers are synced")
+	log.Printf("Secret informers are synced")
 
 	server := &http.Server{
 		Addr:         ":8080",
@@ -99,12 +112,32 @@ func GenerateSecretInfFactory(k8sConfig *rest.Config) dynamicinformer.DynamicSha
 		v1.NamespaceAll,
 		nil,
 	)
-	dFilteredSharedInfFactory.ForResource(secretGVK)
+	dFilteredSharedInfFactory.ForResource(secretGVR)
 	return dFilteredSharedInfFactory
 }
 
+func GenerateShootInfFactory(k8sConfig *rest.Config) dynamicinformer.DynamicSharedInformerFactory {
+	dynamicClient := dynamic.NewForConfigOrDie(k8sConfig)
+	dFilteredSharedInfFactory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(dynamicClient,
+		DefaultResyncPeriod,
+		v1.NamespaceAll,
+		nil,
+	)
+	dFilteredSharedInfFactory.ForResource(shootGVR)
+	return dFilteredSharedInfFactory
+}
+
+func GetGardenerKubeconfig(cfg *env.Config) (*restclient.Config, error) {
+	loadingRules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: cfg.GardenerKubeconfig}
+	configOverrides := &clientcmd.ConfigOverrides{}
+	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+	return kubeConfig.ClientConfig()
+}
+
 type SysInfoHandler struct {
-	SecretLister *cache.GenericLister
+	SecretLister *cache.GenericNamespaceLister
+	ShootLister  *cache.GenericNamespaceLister
+	KEBEndpoint  string
 }
 
 func start(server *http.Server) {
@@ -133,33 +166,58 @@ func (sh SysInfoHandler) NewHandler() http.Handler {
 func (sh SysInfoHandler) NewSystemStatsHandler() http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 
-		shootName := "foo"
-		secretForShoot := fmt.Sprintf("%s.kubeconfig", shootName)
-		secretObj, err := (*sh.SecretLister).Get(secretForShoot)
+		runtimeObjs, err := (*sh.ShootLister).List(labels.Everything())
 		if err != nil {
-			log.Errorf("failed to list secrets for shoots: %v", err)
+			log.Errorf("failed to fetch shoots from gardener: %v", err)
+			writer.WriteHeader(http.StatusInternalServerError)
 		}
-		if secret, ok := secretObj.(*corev1.Secret); ok {
-			// connect to skr cluster
-			skrKubeConfigStr := secret.Data["kubeconfig"]
-			skrKubeConfig, err := kebgardenerclient.RESTConfig([]byte(skrKubeConfigStr))
+		scannedShoots := make([]*gardenerv1beta1.Shoot, 0)
+		var testShoot *gardenerv1beta1.Shoot
+		for _, sObj := range runtimeObjs {
+			shoot, err := ConvertRuntimeObjToSubscription(sObj)
 			if err != nil {
-				log.Errorf("failed to create kubeconfig client: %v", skrKubeConfig)
+				log.Errorf("failed to convert a runtime obj to a Shoot: %v", err)
+				continue
 			}
-			dynamicClient, err := dynamic.NewForConfig(skrKubeConfig)
-			nodeGVK := schema.GroupVersionResource{
-				Version:  v1.SchemeGroupVersion.Version,
-				Group:    v1.SchemeGroupVersion.Group,
-				Resource: "nodes",
+			scannedShoots = append(scannedShoots, shoot)
+			if !shoot.Status.IsHibernated {
+				testShoot = shoot
 			}
-			nodeClient := dynamicClient.Resource(nodeGVK)
-			ctx := context.Background()
-			nodes, err := nodeClient.List(ctx, metav1.ListOptions{})
-			if err != nil {
-				log.Errorf("failed to fetch nodes from shoot: %s, err: %v", shootName, err)
-			}
+		}
 
-			log.Printf("%v", nodes)
+		runtimes, err := keb.GetRuntimes(sh.KEBEndpoint)
+		if err != nil {
+			log.Errorf("failed to fetch the runtimes: %v", err)
+		}
+		for _, runtime := range (*runtimes).Data {
+			if runtime.Status.Provisioning.State == "succeeded" {
+				secretForShoot := fmt.Sprintf("%s.kubeconfig", testShoot)
+				secretObj, err := (*sh.SecretLister).Get(secretForShoot)
+				if err != nil {
+					log.Errorf("failed to list secrets for shoots: %v", err)
+				}
+				if secret, ok := secretObj.(*corev1.Secret); ok {
+					// connect to skr cluster
+					skrKubeConfigStr := secret.Data["kubeconfig"]
+					skrKubeConfig, err := kebgardenerclient.RESTConfig([]byte(skrKubeConfigStr))
+					if err != nil {
+						log.Errorf("failed to create kubeconfig client: %v", skrKubeConfig)
+					}
+					dynamicClient, err := dynamic.NewForConfig(skrKubeConfig)
+					nodeGVK := schema.GroupVersionResource{
+						Version:  v1.SchemeGroupVersion.Version,
+						Group:    v1.SchemeGroupVersion.Group,
+						Resource: "nodes",
+					}
+					nodeClient := dynamicClient.Resource(nodeGVK)
+					ctx := context.Background()
+					nodes, err := nodeClient.List(ctx, metav1.ListOptions{})
+					if err != nil {
+						log.Errorf("failed to fetch nodes from shoot: %s, err: %v", testShoot, err)
+					}
+					log.Printf("%v", nodes)
+				}
+			}
 		}
 
 		// GetNodes from SKR shoot
@@ -182,9 +240,65 @@ func (sh SysInfoHandler) NewSystemStatsHandler() http.Handler {
 	})
 }
 
+func ConvertRuntimeObjToSubscription(shootObj runtime.Object) (*gardenerv1beta1.Shoot, error) {
+	shoot := &gardenerv1beta1.Shoot{}
+	if shootUnstructured, ok := shootObj.(*unstructured.Unstructured); ok {
+		err := runtime.DefaultUnstructuredConverter.FromUnstructured(shootUnstructured.Object, shoot)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return shoot, nil
+}
+
 func CheckHealth() http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 		return
 	})
+}
+
+type waitForCacheSyncFunc func(stopCh <-chan struct{}) map[schema.GroupVersionResource]bool
+
+func WaitForCacheSyncOrDie(ctx context.Context, dc dynamicinformer.DynamicSharedInformerFactory) {
+	dc.Start(ctx.Done())
+
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultResyncPeriod)
+	defer cancel()
+
+	err := hasSynced(ctx, dc.WaitForCacheSync)
+	if err != nil {
+		log.Fatalf("Failed to sync informer caches: %v", err)
+	}
+}
+
+func hasSynced(ctx context.Context, fn waitForCacheSyncFunc) error {
+	// synced gets closed as soon as fn returns
+	synced := make(chan struct{})
+	// closing stopWait forces fn to return, which happens whenever ctx
+	// gets canceled
+	stopWait := make(chan struct{})
+	defer close(stopWait)
+
+	// close the synced channel if the `WaitForCacheSync()` finished the execution cleanly
+	go func() {
+		informersCacheSync := fn(stopWait)
+		res := true
+		for _, sync := range informersCacheSync {
+			if !sync {
+				res = false
+			}
+		}
+		if res {
+			close(synced)
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-synced:
+	}
+
+	return nil
 }

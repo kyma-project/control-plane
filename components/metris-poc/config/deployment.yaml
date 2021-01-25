@@ -5,7 +5,7 @@ metadata:
   labels:
     app: metris-poc
   name: metris-poc
-  namespace: default
+  namespace: kcp-system
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -26,6 +26,22 @@ spec:
       - image: ko://github.com/kyma-project/control-plane/components/metris-poc/cmd
         imagePullPolicy: Always
         name: metris-poc
+#        command:
+#          - "sleep"
+#          - "36000"
+        env:
+          - name: GARDENER_KUBECONFIG
+            value: /gardener/kubeconfig
+          - name: KEB_ENDPOINT
+            value: http://kcp-kyma-environment-broker.kcp-system:8080
+        volumeMounts:
+          - mountPath: /gardener
+            name: gardener-kubeconfig
+            readOnly: true
       restartPolicy: Always
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 30
+      volumes:
+      - name: gardener-kubeconfig
+        secret:
+          secretName: gardener-credentials

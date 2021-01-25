@@ -8,11 +8,12 @@ import (
 
 type Config struct {
 	GardenerKubeconfig string `envconfig:"GARDENER_KUBECONFIG" default:"/gardener/kubeconfig"`
+	KEBEndpoint        string `envconfig:"KEB_ENDPOINT" default:"kcp-kyma-environment-broker.kcp-system:8080"`
 }
 
 func GetConfig() *Config {
 	cfg := new(Config)
-	if err := envconfig.Process("", &cfg); err != nil {
+	if err := envconfig.Process("", cfg); err != nil {
 		log.Fatalf("Invalid configuration: %v", err)
 	}
 	return cfg

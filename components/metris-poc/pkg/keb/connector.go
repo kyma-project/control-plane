@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func getRuntimes(endpoint string) (*Runtimes, error) {
+func GetRuntimes(endpoint string) (*Runtimes, error) {
 	resp, err := http.Get(endpoint)
 	if err != nil {
 		panic(err)
