@@ -113,6 +113,9 @@ func GetEventingProvisioningData(emsInstanceDetails internal.EmsData) *servicema
 				},
 			},
 		},
+		"resources": map[string]interface{}{
+			"units": "50",
+		},
 		"version":   "1.1.0",
 		"emname":    uuid.New().String(),
 		"namespace": "default/sap.kyma/" + uuid.New().String(),
