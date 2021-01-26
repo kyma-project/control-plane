@@ -126,12 +126,22 @@ func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
 func runtimeStatus(obj interface{}) string {
 	rt := obj.(runtime.RuntimeDTO)
 	if rt.Status.Deprovisioning != nil {
+		isSuspension := rt.Status.Suspension.Count > 0 && rt.Status.Suspension.Data[0].OperationID == rt.Status.Deprovisioning.OperationID
 		switch rt.Status.Deprovisioning.State {
 		case inProgress:
+			if isSuspension {
+				return "deprovisioning (suspending)"
+			}
 			return "deprovisioning"
 		case failed:
+			if isSuspension {
+				return "failed (suspension)"
+			}
 			return "failed (deprovision)"
 		case succeeded:
+			if isSuspension {
+				return "deprovisioned (suspended)"
+			}
 			return "deprovisioned"
 		}
 	}
@@ -146,6 +156,16 @@ func runtimeStatus(obj interface{}) string {
 			return "failed (upgrade)"
 		case succeeded:
 			return "succeeded"
+		}
+	}
+
+	if rt.Status.Unsuspension.Count > 0 {
+		// Take the first unsuspension operation, assuming that Data is sorted by CreatedBy DESC.
+		switch rt.Status.Unsuspension.Data[0].State {
+		case inProgress:
+			return "provisioning (unsuspending)"
+		case failed:
+			return "failed (unsuspension)"
 		}
 	}
 
