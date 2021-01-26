@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
@@ -32,7 +34,7 @@ type SMClientFactory interface {
 
 type InitialisationStep struct {
 	operationManager            *process.DeprovisionOperationManager
-	operationStorage            storage.Provisioning
+	operationStorage            storage.Operations
 	instanceStorage             storage.Instances
 	provisionerClient           provisioner.Client
 	accountProvider             hyperscaler.AccountProvider
@@ -60,9 +62,18 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 	op, when, err := s.run(operation, log)
 
 	if op.State == domain.Succeeded {
-		repeat, err := s.removeInstance(operation.InstanceID)
-		if err != nil || repeat != 0 {
-			return operation, repeat, err
+		if op.Temporary {
+			log.Info("Removing RuntimeID from the instance")
+			err := s.removeRuntimeID(operation.InstanceID)
+			if err != nil {
+				return operation, time.Second, err
+			}
+		} else {
+			log.Info("Removing the instance")
+			repeat, err := s.removeInstance(operation.InstanceID)
+			if err != nil || repeat != 0 {
+				return operation, repeat, err
+			}
 		}
 	}
 	return op, when, err
@@ -101,6 +112,29 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:
+		if operation.State == orchestration.Pending {
+			upgrades, err := s.operationStorage.ListUpgradeKymaOperationsByInstanceID(operation.InstanceID)
+			if err != nil {
+				log.Errorf("unable to get upgrade operations for the instance")
+				return operation, time.Second, nil
+			}
+
+			for _, op := range upgrades {
+				// check if there is not finished operation
+				if op.State != domain.Failed && op.State != domain.Succeeded {
+					log.Debugf("waiting for the operation %s to be finished", op.Operation.ID)
+					return operation, time.Minute, nil
+				}
+			}
+			log.Info("Setting state 'in progress' and refreshing instance details")
+			operation.State = domain.InProgress
+			operation.InstanceDetails = instance.InstanceDetails
+			operation, retry, _ := s.operationManager.UpdateOperation(operation)
+			if retry > 0 {
+				return operation, retry, nil
+			}
+		}
+
 		if operation.ProvisionerOperationID == "" {
 			return operation, 0, nil
 		}
@@ -181,4 +215,17 @@ func (s *InitialisationStep) removeInstance(instanceID string) (time.Duration, e
 	}
 
 	return 0, nil
+}
+
+func (s *InitialisationStep) removeRuntimeID(instanceID string) error {
+	inst, err := s.instanceStorage.GetByID(instanceID)
+	if err != nil {
+		return err
+	}
+
+	// empty RuntimeID means there is no runtime in the Provisioner Domain
+	inst.RuntimeID = ""
+
+	_, err = s.instanceStorage.Update(*inst)
+	return err
 }

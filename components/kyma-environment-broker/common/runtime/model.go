@@ -25,6 +25,9 @@ type RuntimeStatus struct {
 	Provisioning   *Operation     `json:"provisioning"`
 	Deprovisioning *Operation     `json:"deprovisioning,omitempty"`
 	UpgradingKyma  OperationsData `json:"upgradingKyma,omitempty"`
+
+	Suspension   OperationsData `json:"suspension,omitempty"`
+	Unsuspension OperationsData `json:"unsuspension,omitempty"`
 }
 
 type OperationsData struct {

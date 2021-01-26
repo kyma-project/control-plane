@@ -2,19 +2,16 @@ package internal
 
 import (
 	"database/sql"
-	"encoding/json"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-	"github.com/pkg/errors"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
 type ProvisionerInputCreator interface {
@@ -105,9 +102,9 @@ type Instance struct {
 	ServicePlanID   string
 	ServicePlanName string
 
-	DashboardURL           string
-	ProvisioningParameters string
-	ProviderRegion         string
+	DashboardURL   string
+	Parameters     ProvisioningParameters
+	ProviderRegion string
 
 	InstanceDetails InstanceDetails
 
@@ -116,17 +113,6 @@ type Instance struct {
 	DeletedAt time.Time
 
 	Version int
-}
-
-func (instance Instance) GetProvisioningParameters() (ProvisioningParameters, error) {
-	var pp ProvisioningParameters
-
-	err := json.Unmarshal([]byte(instance.ProvisioningParameters), &pp)
-	if err != nil {
-		return pp, errors.Wrap(err, "while unmarshalling provisioning parameters")
-	}
-
-	return pp, nil
 }
 
 type Operation struct {
@@ -249,6 +235,9 @@ type DeprovisioningOperation struct {
 	Operation
 
 	SMClientFactory SMClientFactory `json:"-"`
+
+	// Temporary indicates that this deprovisioning operation must not remove the instance
+	Temporary bool `json:"temporary"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
@@ -331,19 +320,37 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 	}, nil
 }
 
-// NewProvisioningOperationWithID creates a fresh (just starting) instance of the ProvisioningOperation with provided ID
-func NewDeprovisioningOperationWithID(operationID, instanceID string) (DeprovisioningOperation, error) {
+// NewDeprovisioningOperationWithID creates a fresh (just starting) instance of the DeprovisioningOperation with provided ID
+func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (DeprovisioningOperation, error) {
 	return DeprovisioningOperation{
 		Operation: Operation{
-			ID:          operationID,
-			Version:     0,
-			Description: "Operation created",
-			InstanceID:  instanceID,
-			State:       domain.InProgress,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+			ID:              operationID,
+			Version:         0,
+			Description:     "Operation created",
+			InstanceID:      instance.InstanceID,
+			State:           domain.InProgress,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
+			InstanceDetails: instance.InstanceDetails,
 		},
 	}, nil
+}
+
+// NewSuspensionOperationWithID creates a fresh (just starting) instance of the DeprovisioningOperation which does not remove the instance.
+func NewSuspensionOperationWithID(operationID string, instance *Instance) DeprovisioningOperation {
+	return DeprovisioningOperation{
+		Operation: Operation{
+			ID:              operationID,
+			Version:         0,
+			Description:     "Operation created",
+			InstanceID:      instance.InstanceID,
+			State:           orchestration.Pending,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
+			InstanceDetails: instance.InstanceDetails,
+		},
+		Temporary: true,
+	}
 }
 
 func (po *ProvisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {

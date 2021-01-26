@@ -5,7 +5,6 @@ import (
 
 	pkg "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/pkg/errors"
 )
 
 type Converter interface {
@@ -13,6 +12,8 @@ type Converter interface {
 	ApplyProvisioningOperation(dto *pkg.RuntimeDTO, pOpr *internal.ProvisioningOperation)
 	ApplyDeprovisioningOperation(dto *pkg.RuntimeDTO, dOpr *internal.DeprovisioningOperation)
 	ApplyUpgradingKymaOperations(dto *pkg.RuntimeDTO, oprs []internal.UpgradeKymaOperation, totalCount int)
+	ApplySuspensionOperations(dto *pkg.RuntimeDTO, oprs []internal.DeprovisioningOperation)
+	ApplyUnsuspensionOperations(dto *pkg.RuntimeDTO, oprs []internal.ProvisioningOperation)
 }
 
 type converter struct {
@@ -25,18 +26,12 @@ func NewConverter(platformRegion string) Converter {
 	}
 }
 
-func (c *converter) setRegionOrDefault(instance internal.Instance, runtime *pkg.RuntimeDTO) error {
-	pp, err := instance.GetProvisioningParameters()
-	if err != nil {
-		return errors.Wrap(err, "while getting provisioning parameters")
-	}
-
-	if pp.PlatformRegion == "" {
+func (c *converter) setRegionOrDefault(instance internal.Instance, runtime *pkg.RuntimeDTO) {
+	if instance.Parameters.PlatformRegion == "" {
 		runtime.SubAccountRegion = c.defaultSubaccountRegion
 	} else {
-		runtime.SubAccountRegion = pp.PlatformRegion
+		runtime.SubAccountRegion = instance.Parameters.PlatformRegion
 	}
-	return nil
 }
 
 func (c *converter) ApplyProvisioningOperation(dto *pkg.RuntimeDTO, pOpr *internal.ProvisioningOperation) {
@@ -80,10 +75,7 @@ func (c *converter) NewDTO(instance internal.Instance) (pkg.RuntimeDTO, error) {
 		},
 	}
 
-	err := c.setRegionOrDefault(instance, &toReturn)
-	if err != nil {
-		return pkg.RuntimeDTO{}, errors.Wrap(err, "while setting region")
-	}
+	c.setRegionOrDefault(instance, &toReturn)
 
 	urlSplitted := strings.Split(instance.DashboardURL, ".")
 	if len(urlSplitted) > 1 {
@@ -101,5 +93,38 @@ func (c *converter) ApplyUpgradingKymaOperations(dto *pkg.RuntimeDTO, oprs []int
 		op := pkg.Operation{}
 		c.applyOperation(&o.Operation, &op)
 		dto.Status.UpgradingKyma.Data = append(dto.Status.UpgradingKyma.Data, op)
+	}
+}
+
+func (c *converter) ApplySuspensionOperations(dto *pkg.RuntimeDTO, oprs []internal.DeprovisioningOperation) {
+	dto.Status.Suspension.Data = make([]pkg.Operation, 0)
+
+	for _, o := range oprs {
+		if !o.Temporary {
+			continue
+		}
+		op := pkg.Operation{}
+		c.applyOperation(&o.Operation, &op)
+		dto.Status.Suspension.Data = append(dto.Status.Suspension.Data, op)
+	}
+	dto.Status.Suspension.TotalCount = len(dto.Status.Suspension.Data)
+	dto.Status.Suspension.Count = len(dto.Status.Suspension.Data)
+}
+
+func (c *converter) ApplyUnsuspensionOperations(dto *pkg.RuntimeDTO, oprs []internal.ProvisioningOperation) {
+	dto.Status.Unsuspension.Data = make([]pkg.Operation, 0)
+	if len(oprs) <= 1 {
+		return
+	}
+
+	unsuspensionOps := oprs[:len(oprs)-1]
+
+	dto.Status.Unsuspension.TotalCount = len(unsuspensionOps)
+	dto.Status.Unsuspension.Count = len(unsuspensionOps)
+
+	for _, o := range unsuspensionOps {
+		op := pkg.Operation{}
+		c.applyOperation(&o.Operation, &op)
+		dto.Status.Unsuspension.Data = append(dto.Status.Unsuspension.Data, op)
 	}
 }
