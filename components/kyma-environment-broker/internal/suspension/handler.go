@@ -32,6 +32,8 @@ func NewContextUpdateHandler(operations storage.Operations, provisioningQueue Ad
 	}
 }
 
+// Handle performs suspension/unsuspension for given instance.
+// Applies only when 'Active' parameter has changes and ServicePlanID is `Trial`
 func (h *ContextUpdateHandler) Handle(instance *internal.Instance, newCtx internal.ERSContext) error {
 	l := h.log.WithFields(logrus.Fields{
 		"instanceID":      instance.InstanceID,
