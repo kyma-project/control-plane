@@ -73,6 +73,7 @@ trialRegionsMapping: |-
 kymaVersion: "1.13.0"
 kymaVersionOnDemand: "false"
 
+disableProcessOperationsInProgress: "false"
 enablePlans: "azure,gcp,azure_lite,trial"
 
 osbUpdateProcessingEnabled: "false"
