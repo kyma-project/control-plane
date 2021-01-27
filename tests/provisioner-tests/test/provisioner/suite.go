@@ -37,6 +37,7 @@ const (
 	UpgradeTimeout        = 90 * time.Minute
 	UpgradeShootTimeout   = 35 * time.Minute
 	DeprovisioningTimeout = 240 * time.Minute
+	HibernationTimeout    = 20 * time.Minute
 
 	checkInterval = 10 * time.Second
 )
