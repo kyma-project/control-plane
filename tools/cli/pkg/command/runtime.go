@@ -1,6 +1,8 @@
 package command
 
 import (
+	"fmt"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
@@ -20,6 +22,16 @@ const (
 	inProgress = "in progress"
 	succeeded  = "succeeded"
 	failed     = "failed"
+)
+
+type operationType string
+
+const (
+	provision    operationType = "provision"
+	deprovision  operationType = "deprovision"
+	upgradeKyma  operationType = "kyma upgrade"
+	suspension   operationType = "suspension"
+	unsuspension operationType = "unsuspension"
 )
 
 var tableColumns = []printer.Column{
@@ -125,55 +137,57 @@ func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
 
 func runtimeStatus(obj interface{}) string {
 	rt := obj.(runtime.RuntimeDTO)
-	if rt.Status.Deprovisioning != nil {
-		isSuspension := rt.Status.Suspension.Count > 0 && rt.Status.Suspension.Data[0].OperationID == rt.Status.Deprovisioning.OperationID
-		switch rt.Status.Deprovisioning.State {
-		case inProgress:
-			if isSuspension {
-				return "deprovisioning (suspending)"
-			}
-			return "deprovisioning"
-		case failed:
-			if isSuspension {
-				return "failed (suspension)"
-			}
-			return "failed (deprovision)"
-		case succeeded:
-			if isSuspension {
-				return "deprovisioned (suspended)"
-			}
-			return "deprovisioned"
-		}
+	return operationStatusToString(findLastOperation(rt))
+}
+
+func findLastOperation(rt runtime.RuntimeDTO) (runtime.Operation, operationType) {
+	op := *rt.Status.Provisioning
+	opType := provision
+	// Take the first upgrade operation, assuming that Data is sorted by CreatedAt DESC.
+	if rt.Status.UpgradingKyma.Count > 0 {
+		op = rt.Status.UpgradingKyma.Data[0]
+		opType = upgradeKyma
 	}
 
-	upgradeCount := rt.Status.UpgradingKyma.Count
-	if upgradeCount > 0 {
-		// Take the first upgrade operation, assuming that Data is sorted by CreatedBy DESC.
-		switch rt.Status.UpgradingKyma.Data[0].State {
-		case inProgress:
-			return "upgrading"
-		case failed:
-			return "failed (upgrade)"
-		case succeeded:
-			return "succeeded"
-		}
+	// Take the first unsuspension operation, assuming that Data is sorted by CreatedAt DESC.
+	if rt.Status.Unsuspension.Count > 0 && rt.Status.Unsuspension.Data[0].CreatedAt.After(op.CreatedAt) {
+		op = rt.Status.Unsuspension.Data[0]
+		opType = unsuspension
 	}
 
-	if rt.Status.Unsuspension.Count > 0 {
-		// Take the first unsuspension operation, assuming that Data is sorted by CreatedBy DESC.
-		switch rt.Status.Unsuspension.Data[0].State {
-		case inProgress:
-			return "provisioning (unsuspending)"
-		case failed:
-			return "failed (unsuspension)"
-		}
+	// Take the first suspension operation, assuming that Data is sorted by CreatedAt DESC.
+	if rt.Status.Suspension.Count > 0 && rt.Status.Suspension.Data[0].CreatedAt.After(op.CreatedAt) {
+		op = rt.Status.Suspension.Data[0]
+		opType = suspension
 	}
 
-	switch rt.Status.Provisioning.State {
-	case inProgress:
-		return "provisioning"
+	if rt.Status.Deprovisioning != nil && rt.Status.Deprovisioning.CreatedAt.After(op.CreatedAt) {
+		op = *rt.Status.Deprovisioning
+		opType = deprovision
+	}
+
+	return op, opType
+}
+
+func operationStatusToString(op runtime.Operation, t operationType) string {
+	switch op.State {
+	case succeeded:
+		return "succeeded"
 	case failed:
-		return "failed (provision)"
+		return fmt.Sprintf("%s (%s)", "failed", t)
+	case inProgress:
+		switch t {
+		case provision:
+			return "provisioning"
+		case unsuspension:
+			return "provisioning (unsuspending)"
+		case deprovision:
+			return "deprovisioning"
+		case suspension:
+			return "deprovisioning (suspending)"
+		case upgradeKyma:
+			return "upgrading"
+		}
 	}
 
 	return "succeeded"
