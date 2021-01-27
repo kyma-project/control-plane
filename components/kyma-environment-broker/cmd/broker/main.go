@@ -313,6 +313,11 @@ func main() {
 		},
 		{
 			weight:   2,
+			step:     provisioning.NewClsProvisioningStep(db.Operations()),
+			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   2,
 			step:     provisioning.NewEmsProvisionStep(db.Operations()),
 			disabled: cfg.Ems.Disabled,
 		},
