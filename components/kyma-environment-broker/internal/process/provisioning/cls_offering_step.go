@@ -43,7 +43,7 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 	// 1. parse CLS SM creds
 	// 2. fetch the relevant (by region)
 	// 3. init the SM client
-	smCli, err := operation.SMClientFactory.ForCustomerCredentials(log)
+	smCli, err := operation.ServiceManagerClient(log)
 	if err != nil {
 		return s.handleError(operation, err, "unable to create Service Manager client", log)
 	}
