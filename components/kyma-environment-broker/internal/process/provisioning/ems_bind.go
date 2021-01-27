@@ -24,7 +24,7 @@ type EventingOverrides struct {
 	OauthTokenEndpoint string `json:"oauthTokenEndpoint"`
 	PublishUrl         string `json:"publishUrl"`
 	BebNamespace       string `json:"bebNamespace"`
-	IsBEBEnabled	   string `json:"isBEBEnabled"`
+	IsBEBEnabled       string `json:"isBEBEnabled"`
 }
 
 type EmsBindStep struct {
