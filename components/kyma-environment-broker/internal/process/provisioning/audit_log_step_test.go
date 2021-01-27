@@ -127,7 +127,15 @@ return "fooBar"
 			Value: expectedFileScript,
 		},
 		{
+			Key:   "fluent-bit.config.script",
+			Value: expectedFileScript,
+		},
+		{
 			Key:   "fluent-bit.conf.extra",
+			Value: expectedOverride,
+		},
+		{
+			Key:   "fluent-bit.config.extra",
 			Value: expectedOverride,
 		},
 		{
@@ -183,7 +191,6 @@ return "fooBar"
 		Password:      "aaaa",
 		Tenant:        "tenant",
 		EnableSeqHttp: true,
-		NewLogConfig:  true,
 	}
 	svc := NewAuditLogOverridesStep(repo, cfg)
 	svc.fs = mm
@@ -239,8 +246,16 @@ return "fooBar"
   protocol: TLS`
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
 		{
+			Key:   "fluent-bit.conf.script",
+			Value: expectedFileScript,
+		},
+		{
 			Key:   "fluent-bit.config.script",
 			Value: expectedFileScript,
+		},
+		{
+			Key:   "fluent-bit.conf.extra",
+			Value: expectedOverride,
 		},
 		{
 			Key:   "fluent-bit.config.extra",

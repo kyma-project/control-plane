@@ -333,8 +333,6 @@ spec:
               value: "{{ .Values.broker.defaultRequestRegion }}"
             - name: APP_UPDATE_PROCESSING_ENABLED
               value: "{{ .Values.osbUpdateProcessingEnabled }}"
-            - name: APP_AUDITLOG_NEWLOGCONFIG
-              value: "{{ .Values.global.auditlog.enableNewLogConfig }}"
             - name: APP_AUDITLOG_ENABLE_SEQ_HTTP
               value: "{{ .Values.global.auditlog.enableSeqHttp }}"
             - name: APP_AUDITLOG_URL

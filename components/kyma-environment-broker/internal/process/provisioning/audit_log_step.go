@@ -39,15 +39,6 @@ func NewAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config) *Audit
 }
 
 func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-
-	fluentbitConfigScriptKey := "fluent-bit.conf.script"
-	fluentbitConfigExtratKey := "fluent-bit.conf.extra"
-
-	if alo.auditLogConfig.NewLogConfig {
-		fluentbitConfigScriptKey = "fluent-bit.config.script"
-		fluentbitConfigExtratKey = "fluent-bit.config.extra"
-	}
-
 	luaScript, err := alo.readFile("/auditlog-script/script")
 	if err != nil {
 		logger.Errorf("Unable to read audit config script: %v", err)
@@ -81,8 +72,45 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 	}
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
-		{Key: fmt.Sprintf("%s", fluentbitConfigScriptKey), Value: replaceTenantID},
-		{Key: fmt.Sprintf("%s", fluentbitConfigExtratKey), Value: fmt.Sprintf(`
+		{Key: "fluent-bit.conf.script", Value: replaceTenantID},
+		{Key: "fluent-bit.config.script", Value: replaceTenantID},
+		{Key: "fluent-bit.conf.extra", Value: fmt.Sprintf(`
+[INPUT]
+    Name              tail
+    Tag               dex.*
+    Path              /var/log/containers/*_dex-*.log
+    DB                /var/log/flb_kube_dex.db
+    parser            docker
+    Mem_Buf_Limit     5MB
+    Skip_Long_Lines   On
+    Refresh_Interval  10
+[FILTER]
+    Name    lua
+    Match   dex.*
+    script  script.lua
+    call    reformat
+[FILTER]
+    Name    grep
+    Match   dex.*
+    Regex   time .*
+[FILTER]
+    Name    grep
+    Match   dex.*
+    Regex   data .*\"xsuaa
+[OUTPUT]
+    Name             %s
+    Match            dex.*
+    Retry_Limit      False
+    Host             %s
+    Port             %s
+    URI              %ssecurity-events
+    Header           Content-Type application/json
+    HTTP_User        %s
+    HTTP_Passwd      %s
+    Format           json_stream
+    tls              on
+`, fluentbitPlugin, auditLogHost, auditLogPort, u.Path, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
+		{Key: "fluent-bit.config.extra", Value: fmt.Sprintf(`
 [INPUT]
     Name              tail
     Tag               dex.*
