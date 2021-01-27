@@ -24,6 +24,7 @@ type EventingOverrides struct {
 	OauthTokenEndpoint string `json:"oauthTokenEndpoint"`
 	PublishUrl         string `json:"publishUrl"`
 	BebNamespace       string `json:"bebNamespace"`
+	IsBEBEnabled	   string `json:"isBEBEnabled"`
 }
 
 type EmsBindStep struct {
@@ -116,6 +117,7 @@ func GetEventingCredentials(binding servicemanager.Binding) (*EventingOverrides,
 	evOverrides := EventingOverrides{}
 	credentials := binding.Credentials
 	evOverrides.BebNamespace = credentials["namespace"].(string)
+	evOverrides.IsBEBEnabled = "true"
 	messaging, ok := credentials["messaging"].([]interface{})
 	if !ok {
 		return nil, fmt.Errorf("false type for %s", "messaging")
@@ -170,6 +172,11 @@ func GetEventingOverrides(evOverrides *EventingOverrides) []*gqlschema.ConfigEnt
 			Key:    "authentication.bebNamespace",
 			Value:  evOverrides.BebNamespace,
 			Secret: ptr.Bool(true),
+		},
+		{
+			Key:    "global.isBEBEnabled",
+			Value:  evOverrides.IsBEBEnabled,
+			Secret: ptr.Bool(false),
 		},
 	}
 }
