@@ -292,11 +292,8 @@ func main() {
 			disabled: cfg.Ems.Disabled,
 		},
 		{
-			weight: 1,
-			step: provisioning.NewServiceManagerOfferingStep("CLS_Offering",
-				provisioning.ClsOfferingName, provisioning.ClsPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
-					return &op.Ems.Instance
-				}, db.Operations()),
+			weight:   1,
+			step:     provisioning.NewClsOfferingStep(db.Operations()),
 			disabled: cfg.Cls.Disabled,
 		},
 		{

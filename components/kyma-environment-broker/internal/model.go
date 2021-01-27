@@ -184,6 +184,7 @@ type InstanceDetails struct {
 	ShootDomain  string    `json:"shoot_domain"`
 	XSUAA        XSUAAData `json:"xsuaa"`
 	Ems          EmsData   `json:"ems"`
+	Cls          ClsData   `json:"cls"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -219,6 +220,10 @@ type EmsData struct {
 
 	BindingID string `json:"bindingId"`
 	Overrides string `json:"overrides"`
+}
+
+type ClsData struct {
+	Instance ServiceManagerInstanceInfo `json:"instance"`
 }
 
 func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {
