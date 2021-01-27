@@ -196,7 +196,7 @@ cis:
 
 oidc:
   issuer: https://dex.{{ .Values.global.ingress.domainName }}
-  keysURL: http://dex-service.kyma-system.svc.cluster.local/keys
+  keysURL: http://dex-service.kyma-system.svc.cluster.local:5556/keys
   client: "kyma-env-broker"
   groups:
     admin: runtimeAdmin
