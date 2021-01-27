@@ -25,6 +25,7 @@ spec:
       app.kubernetes.io/instance: {{ .Release.Name }}
   jwtRules:
     - issuer: {{ tpl .Values.oidc.issuer $ | quote }}
+      jwksUri: {{ tpl .Values.oidc.keysURL $ | quote }}
       audiences:
       - {{ .Values.oidc.client | quote }}
 ---
