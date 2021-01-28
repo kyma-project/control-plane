@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
+
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -22,6 +24,12 @@ type config struct {
 	Gardener      gardener.Config
 	Database      storage.Config
 	Broker        broker.ClientConfig
+	Provisioner   provisionerConfig
+}
+
+type provisionerConfig struct {
+	URL          string
+	queryDumping bool
 }
 
 func main() {
@@ -38,6 +46,7 @@ func main() {
 
 	ctx := context.Background()
 	brokerClient := broker.NewClient(ctx, cfg.Broker)
+	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioner.URL, cfg.Provisioner.queryDumping)
 
 	// create storage
 
@@ -48,7 +57,7 @@ func main() {
 
 	logger := log.New()
 
-	svc := environmentscleanup.NewService(shootClient, brokerClient, db.Instances(), logger, cfg.MaxAgeHours, cfg.LabelSelector)
+	svc := environmentscleanup.NewService(shootClient, brokerClient, provisionerClient, db.Instances(), logger, cfg.MaxAgeHours, cfg.LabelSelector)
 	err = svc.PerformCleanup()
 	if err != nil {
 		fatalOnError(err)

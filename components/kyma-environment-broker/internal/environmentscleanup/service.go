@@ -16,6 +16,7 @@ import (
 
 const (
 	shootAnnotationRuntimeId = "kcp.provisioner.kyma-project.io/runtime-id"
+	shootLabelAccountId      = "account"
 )
 
 //go:generate mockery -name=GardenerClient -output=automock
@@ -28,23 +29,30 @@ type BrokerClient interface {
 	Deprovision(instance internal.Instance) (string, error)
 }
 
-type Service struct {
-	gardenerService GardenerClient
-	brokerService   BrokerClient
-	instanceStorage storage.Instances
-	logger          *log.Logger
-	MaxShootAge     time.Duration
-	LabelSelector   string
+//go:generate mockery -name=ProvisionerClient -output=automock
+type ProvisionerClient interface {
+	DeprovisionRuntime(accountID, runtimeID string) (string, error)
 }
 
-func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, instanceStorage storage.Instances, logger *log.Logger, maxShootAge time.Duration, labelSelector string) *Service {
+type Service struct {
+	gardenerService   GardenerClient
+	brokerService     BrokerClient
+	instanceStorage   storage.Instances
+	logger            *log.Logger
+	MaxShootAge       time.Duration
+	LabelSelector     string
+	provisionerClient ProvisionerClient
+}
+
+func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, provisionerClient ProvisionerClient, instanceStorage storage.Instances, logger *log.Logger, maxShootAge time.Duration, labelSelector string) *Service {
 	return &Service{
-		gardenerService: gardenerClient,
-		brokerService:   brokerClient,
-		instanceStorage: instanceStorage,
-		logger:          logger,
-		MaxShootAge:     maxShootAge,
-		LabelSelector:   labelSelector,
+		gardenerService:   gardenerClient,
+		brokerService:     brokerClient,
+		instanceStorage:   instanceStorage,
+		logger:            logger,
+		MaxShootAge:       maxShootAge,
+		LabelSelector:     labelSelector,
+		provisionerClient: provisionerClient,
 	}
 }
 
@@ -80,25 +88,13 @@ func (s *Service) PerformCleanup() error {
 		return nil
 	}
 
-	instancesToDelete, err := s.getInstancesForRuntimes(runtimeIDsToDelete)
-	if err != nil {
-		s.logger.Error(errors.Wrap(err, "while getting instance IDs for Runtimes"))
-		result = multierror.Append(result, err)
-		result.ErrorFormat = formatFunc
-		return result
-	}
-
-	for _, instance := range instancesToDelete {
-		s.logger.Infof("Triggering environment deprovisioning for instance ID %q", instance.InstanceID)
-		currentErr := s.triggerEnvironmentDeprovisioning(instance)
-		if currentErr != nil {
-			s.logger.Error(errors.Wrapf(currentErr, "while triggering deprovisioning for instance ID %q", instance.InstanceID))
-			result = multierror.Append(result, currentErr)
-		}
-	}
+	deletedInstances, result := s.cleanUpKEBInstances(runtimeIDsToDelete, formatFunc)
 	if result != nil {
 		result.ErrorFormat = formatFunc
 	}
+
+	s.cleanProvisionerInstances(shootsToDelete, deletedInstances, formatFunc)
+
 	return result.ErrorOrNil()
 }
 
@@ -141,4 +137,68 @@ func (s *Service) triggerEnvironmentDeprovisioning(instance internal.Instance) e
 	}
 	log.Infof("Successfully send deprovision request, got operation ID %q", opID)
 	return nil
+}
+
+func (s *Service) cleanUpKEBInstances(runtimeIDsToDelete []string, formatFunc func(i []error) string) ([]internal.Instance, *multierror.Error) {
+	var result *multierror.Error
+
+	instancesToDelete, err := s.getInstancesForRuntimes(runtimeIDsToDelete)
+	if err != nil {
+		s.logger.Error(errors.Wrap(err, "while getting instance IDs for Runtimes"))
+		result = multierror.Append(result, err)
+		result.ErrorFormat = formatFunc
+		return []internal.Instance{}, result
+	}
+
+	for _, instance := range instancesToDelete {
+		s.logger.Infof("Triggering environment deprovisioning for instance ID %q", instance.InstanceID)
+		currentErr := s.triggerEnvironmentDeprovisioning(instance)
+		if currentErr != nil {
+			s.logger.Error(errors.Wrapf(currentErr, "while triggering deprovisioning for instance ID %q", instance.InstanceID))
+			result = multierror.Append(result, currentErr)
+		}
+	}
+
+	return instancesToDelete, result
+}
+
+func (s *Service) cleanProvisionerInstances(shootsToDelete []v1beta1.Shoot, kebInstancesToDelete []internal.Instance, formatFunc func(i []error) string) *multierror.Error {
+	kebInstanceExists := func(runtimeID string) bool {
+		for _, instance := range kebInstancesToDelete {
+			if instance.RuntimeID == runtimeID {
+				return true
+			}
+		}
+
+		return false
+	}
+
+	var result *multierror.Error
+
+	for _, shoot := range shootsToDelete {
+		runtimeID, ok := shoot.Annotations[shootAnnotationRuntimeId]
+		if !ok {
+			err := errors.New(fmt.Sprintf("shoot %q has no runtime-id annotation", shoot.Name))
+			s.logger.Error(err)
+			continue
+		}
+
+		accountID, ok := shoot.Labels[shootLabelAccountId]
+		if !ok {
+			err := errors.New(fmt.Sprintf("shoot %q has no account label", shoot.Name))
+			s.logger.Error(err)
+			continue
+		}
+
+		if !kebInstanceExists(runtimeID) {
+			_, err := s.provisionerClient.DeprovisionRuntime(runtimeID, accountID)
+			if err != nil {
+				s.logger.Error(errors.Wrap(err, "while deprovisioning isntance with Provisioner"))
+				result = multierror.Append(result, err)
+				result.ErrorFormat = formatFunc
+			}
+		}
+	}
+
+	return result
 }
