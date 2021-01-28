@@ -1,17 +1,23 @@
 package provisioning
 
 import (
-"fmt"
-"time"
+	"fmt"
+	"time"
 
-"github.com/google/uuid"
-"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
-"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-"github.com/sirupsen/logrus"
+	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/sirupsen/logrus"
 )
 
+type clsParameters struct {
+	RetentionPeriod    int  `json:"retentionPeriod"`
+	MaxDataInstances   int  `json:"maxDataInstances"`
+	MaxIngestInstances int  `json:"maxIngestInstances"`
+	EsAPIEnabled       bool `json:"esApiEnabled"`
+}
 
 type ClsProvisioningStep struct {
 	operationManager *process.ProvisionOperationManager
@@ -57,7 +63,6 @@ func (s *ClsProvisioningStep) Run(operation internal.ProvisioningOperation, log 
 }
 
 func (s *ClsProvisioningStep) provision(smCli servicemanager.Client, operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-
 	var input servicemanager.ProvisioningInput
 	input.ID = uuid.New().String()
 	input.ServiceID = operation.Cls.Instance.ServiceID
@@ -67,8 +72,12 @@ func (s *ClsProvisioningStep) provision(smCli servicemanager.Client, operation i
 	input.Context = map[string]interface{}{
 		"platform": "kubernetes",
 	}
-	// TODO: Pass the parameters required for cls
-	input.Parameters = ""
+	input.Parameters = clsParameters{
+		RetentionPeriod:    7,
+		MaxDataInstances:   2,
+		MaxIngestInstances: 2,
+		EsAPIEnabled:       false,
+	}
 
 	resp, err := smCli.Provision(operation.Cls.Instance.BrokerID, input, true)
 	if err != nil {

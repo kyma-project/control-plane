@@ -30,6 +30,7 @@ func TestClsSteps(t *testing.T) {
 	})
 
 	offeringStep := NewClsOfferingStep(repo)
+	provisioningStep := NewClsProvisioningStep(repo)
 
 	pp := internal.ProvisioningParameters{
 		ErsContext: internal.ERSContext{
@@ -49,12 +50,20 @@ func TestClsSteps(t *testing.T) {
 		SMClientFactory: cliFactory,
 	}
 
+	simpleInputCreator := newInputCreator()
+	operation.InputCreator = simpleInputCreator
+
 	repo.InsertProvisioningOperation(operation)
 
 	log := logrus.New()
 
 	operation, retry, err := offeringStep.Run(operation, log)
-	fmt.Printf(">>> %#v\n", operation.Cls)
+	fmt.Printf(">>> %#v\n", operation.Ems)
+	require.NoError(t, err)
+	require.Zero(t, retry)
+
+	operation, retry, err = provisioningStep.Run(operation, log)
+	fmt.Printf(">>> %#v\n", operation.Ems)
 	require.NoError(t, err)
 	require.Zero(t, retry)
 }
