@@ -26,45 +26,46 @@ func NewCompletionCommand() *cobra.Command {
 	cmd := CompletionCommand{}
 	cobraCmd := &cobra.Command{
 		Use:   "completion [bash|zsh|fish|powershell]",
-		Short: "Generate completion script",
-		Long: `To load completions:
+		Short: "Generates completion script",
+		Long:  `Generates completion script for Bash, Zsh, Fish, or Powershell.
+###Bash:
 
-Bash:
+To load completions for Bash, run:
+` + "`$ source <(kcp completion bash)`" + `
 
-$ source <(kcp completion bash)
+To load completions for each session, execute once:
 
-# To load completions for each session, execute once:
-Linux:
-  $ kcp completion bash > /etc/bash_completion.d/kcp
-MacOS:
-  $ kcp completion bash > /usr/local/etc/bash_completion.d/kcp
+- Linux:
+` + "`$ kcp completion bash > /etc/bash_completion.d/kcp`" + `
 
-Zsh:
+- MacOS:
+` + "`$ kcp completion bash > /usr/local/etc/bash_completion.d/kcp`" + `
+
+###Zsh:
 
 # If shell completion is not already enabled in your environment you will need
 # to enable it.  You can execute the following once:
-
-$ echo "autoload -U compinit; compinit" >> ~/.zshrc
+` + "`$ echo \"autoload -U compinit; compinit\" >> ~/.zshrc`" + `
 
 # To load completions for each session, execute once:
-$ kcp completion zsh > "${fpath[1]}/_kcp"
+` + "`$ kcp completion zsh > \"${fpath[1]}/_kcp\"`" + `
 
 # You will need to start a new shell for this setup to take effect.
 
-Fish:
+###Fish:
 
-$ kcp completion fish | source
+To load completions for Fish, run:
+` + "`$ kcp completion fish | source`" + `
 
 # To load completions for each session, execute once:
-$ kcp completion fish > ~/.config/fish/completions/kcp.fish
+` + "`$ kcp completion fish > ~/.config/fish/completions/kcp.fish`" + `
 
 Powershell:
-
-PS> kcp completion powershell | Out-String | Invoke-Expression
-
+` + "`PS> kcp completion powershell | Out-String | Invoke-Expression`" + `
 # To load completions for every new session, run:
-PS> kcp completion powershell > kcp.ps1
-# and source this file from your powershell profile.
+` + "`PS> kcp completion powershell > kcp.ps1`" + `
+
+Source this file from your Powershell profile.
 `,
 		Example:               `kcp completion bash                            Display completions in bash.`,
 		DisableFlagsInUseLine: true,

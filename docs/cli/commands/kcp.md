@@ -32,6 +32,7 @@ See the **Global Options** section of each command for the description of these 
 
 ## See also
 
+* [kcp completion](kcp_completion.md)	 - Generates completion script
 * [kcp kubeconfig](kcp_kubeconfig.md)	 - Downloads the kubeconfig file for a given Kyma Runtime
 * [kcp login](kcp_login.md)	 - Performs OIDC login required by all commands.
 * [kcp orchestrations](kcp_orchestrations.md)	 - Displays Kyma Control Plane (KCP) orchestrations.
