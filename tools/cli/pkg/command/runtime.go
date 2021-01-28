@@ -172,6 +172,12 @@ func findLastOperation(rt runtime.RuntimeDTO) (runtime.Operation, operationType)
 func operationStatusToString(op runtime.Operation, t operationType) string {
 	switch op.State {
 	case succeeded:
+		switch t {
+		case deprovision:
+			return "deprovisioned"
+		case suspension:
+			return "suspended"
+		}
 		return "succeeded"
 	case failed:
 		return fmt.Sprintf("%s (%s)", "failed", t)
