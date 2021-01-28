@@ -36,6 +36,7 @@ func (s *ClsProvisioningStep) Name() string {
 }
 
 func (s *ClsProvisioningStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+
 	if operation.Cls.Instance.ProvisioningTriggered {
 		log.Infof("CLS Provisioning step was already triggered")
 		return operation, 0, nil

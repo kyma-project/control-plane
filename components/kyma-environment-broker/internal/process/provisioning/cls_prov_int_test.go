@@ -58,12 +58,12 @@ func TestClsSteps(t *testing.T) {
 	log := logrus.New()
 
 	operation, retry, err := offeringStep.Run(operation, log)
-	fmt.Printf(">>> %#v\n", operation.Ems)
+	fmt.Printf(">>> %#v\n", operation.Cls)
 	require.NoError(t, err)
 	require.Zero(t, retry)
 
 	operation, retry, err = provisioningStep.Run(operation, log)
-	fmt.Printf(">>> %#v\n", operation.Ems)
+	fmt.Printf(">>> %#v\n", operation.Cls)
 	require.NoError(t, err)
 	require.Zero(t, retry)
 }
