@@ -36,10 +36,10 @@ func (s *ClsOfferingStep) Name() string {
 
 func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	info := &operation.Cls.Instance
+
 	if info.ServiceID != "" && info.PlanID != "" {
 		return operation, 0, nil
 	}
-
 	// 1. parse CLS SM creds
 	// 2. fetch the relevant (by region)
 	// 3. init the SM client
