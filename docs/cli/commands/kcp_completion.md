@@ -4,7 +4,7 @@ Generates completion script
 ## Synopsis
 
 Generates completion script for Bash, Zsh, Fish, or Powershell.
-###Bash:
+### Bash
 
 To load completions for Bash, run:
 `$ source <(kcp completion bash)`
@@ -17,7 +17,7 @@ To load completions for each session, execute once:
 - MacOS:
 `$ kcp completion bash > /usr/local/etc/bash_completion.d/kcp`
 
-###Zsh:
+### Zsh
 
 If shell completion is not already enabled in your environment you will need
 to enable it.  You can execute the following once:
@@ -28,7 +28,7 @@ To load completions for each session, execute once:
 
 You will need to start a new shell for this setup to take effect.
 
-###Fish:
+### Fish
 
 To load completions for Fish, run:
 `$ kcp completion fish | source`
@@ -36,7 +36,8 @@ To load completions for Fish, run:
 To load completions for each session, execute once:
 `$ kcp completion fish > ~/.config/fish/completions/kcp.fish`
 
-Powershell:
+### Powershell
+
 `PS> kcp completion powershell | Out-String | Invoke-Expression`
 
 To load completions for every new session, run:
@@ -58,7 +59,7 @@ kcp completion bash                            Display completions in bash.
 ## Options
 
 ```
-      --o string   autocompletion file (default "/Users/i356558/kcp_completion")
+      --o string   autocompletion file (default "$HOME/kcp_completion")
 ```
 
 ## Global Options
