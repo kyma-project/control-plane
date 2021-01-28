@@ -23,7 +23,7 @@ type Config struct {
 	ClientName   string
 	TokenURL     string
 	URL          string
-	ProvisionGCP bool
+	PlanID string
 }
 
 type BrokerOAuthConfig struct {
@@ -66,8 +66,6 @@ func NewClient(ctx context.Context, config Config, globalAccountID, instanceID, 
 
 const (
 	kymaClassID = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
-	gcpPlanID   = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
-	azurePlanID = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
 
 	instancesURL = "/oauth/v2/service_instances"
 )
@@ -130,10 +128,7 @@ func (c *Client) ProvisionRuntime(kymaVersion string) (string, error) {
 
 func (c *Client) DeprovisionRuntime() (string, error) {
 	format := "%s%s/%s?service_id=%s&plan_id=%s"
-	deprovisionURL := fmt.Sprintf(format, c.brokerConfig.URL, instancesURL, c.instanceID, kymaClassID, azurePlanID)
-	if c.brokerConfig.ProvisionGCP {
-		deprovisionURL = fmt.Sprintf(format, c.brokerConfig.URL, instancesURL, c.instanceID, kymaClassID, gcpPlanID)
-	}
+	deprovisionURL := fmt.Sprintf(format, c.brokerConfig.URL, instancesURL, c.instanceID, kymaClassID, c.brokerConfig.PlanID)
 
 	response := provisionResponse{}
 	c.log.Infof("Deprovisioning Runtime [ID: %s, NAME: %s]", c.instanceID, c.clusterName)
@@ -249,7 +244,7 @@ func (c *Client) prepareProvisionDetails(customVersion string) ([]byte, error) {
 	}
 	requestBody := domain.ProvisionDetails{
 		ServiceID:        kymaClassID,
-		PlanID:           azurePlanID,
+		PlanID:           c.brokerConfig.PlanID,
 		OrganizationGUID: uuid.New().String(),
 		SpaceGUID:        uuid.New().String(),
 		RawContext:       rawContext,
@@ -259,9 +254,7 @@ func (c *Client) prepareProvisionDetails(customVersion string) ([]byte, error) {
 			Description: "Kyma environment broker e2e-provisioning test",
 		},
 	}
-	if c.brokerConfig.ProvisionGCP {
-		requestBody.PlanID = gcpPlanID
-	}
+
 	requestByte, err := json.Marshal(requestBody)
 	if err != nil {
 		return nil, errors.Wrap(err, "while marshalling request body")
