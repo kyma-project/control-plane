@@ -27,7 +27,7 @@ func NewCompletionCommand() *cobra.Command {
 	cobraCmd := &cobra.Command{
 		Use:   "completion [bash|zsh|fish|powershell]",
 		Short: "Generates completion script",
-		Long:  `Generates completion script for Bash, Zsh, Fish, or Powershell.
+		Long: `Generates completion script for Bash, Zsh, Fish, or Powershell.
 ###Bash:
 
 To load completions for Bash, run:
@@ -43,26 +43,27 @@ To load completions for each session, execute once:
 
 ###Zsh:
 
-# If shell completion is not already enabled in your environment you will need
-# to enable it.  You can execute the following once:
+If shell completion is not already enabled in your environment you will need
+to enable it.  You can execute the following once:
 ` + "`$ echo \"autoload -U compinit; compinit\" >> ~/.zshrc`" + `
 
-# To load completions for each session, execute once:
+To load completions for each session, execute once:
 ` + "`$ kcp completion zsh > \"${fpath[1]}/_kcp\"`" + `
 
-# You will need to start a new shell for this setup to take effect.
+You will need to start a new shell for this setup to take effect.
 
 ###Fish:
 
 To load completions for Fish, run:
 ` + "`$ kcp completion fish | source`" + `
 
-# To load completions for each session, execute once:
+To load completions for each session, execute once:
 ` + "`$ kcp completion fish > ~/.config/fish/completions/kcp.fish`" + `
 
 Powershell:
 ` + "`PS> kcp completion powershell | Out-String | Invoke-Expression`" + `
-# To load completions for every new session, run:
+
+To load completions for every new session, run:
 ` + "`PS> kcp completion powershell > kcp.ps1`" + `
 
 Source this file from your Powershell profile.
