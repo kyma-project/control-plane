@@ -79,6 +79,7 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 				SupportUrl:          b.cfg.SupportUrl,
 			},
 			AllowContextUpdates: true,
+			PlanUpdatable: true,
 		},
 	}, nil
 }
