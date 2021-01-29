@@ -3,11 +3,11 @@ package broker
 import (
 	"context"
 	"encoding/json"
-	"errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 

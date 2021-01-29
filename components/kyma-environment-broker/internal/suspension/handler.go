@@ -72,10 +72,15 @@ func (h *ContextUpdateHandler) suspend(instance *internal.Instance, log logrus.F
 		return "", err
 	}
 
-	// no error, deprovisioning operation exists and is in progress - fail
+	// no error, deprovisioning operation exists and is in progress
 	if err == nil && (lastDeprovisioning.State == domain.InProgress || lastDeprovisioning.State == orchestration.Pending) {
-		log.Warnf("Deprovisioning operation already started for instance %s", instance.InstanceID)
-		return "", errors.New("cannot suspend instance - deprovisioning operation already started")
+		if !lastDeprovisioning.Temporary {
+			// found ordinary deprovisioning operation in progress - fail suspension
+			log.Warnf("Deprovisioning operation already started for instance %s", instance.InstanceID)
+			return "", errors.New("cannot suspend instance - deprovisioning operation already started")
+		}
+		// else found deprovisioning operation is suspension in progress
+		return lastDeprovisioning.ID, nil
 	}
 
 	id := uuid.New().String()
@@ -89,6 +94,18 @@ func (h *ContextUpdateHandler) suspend(instance *internal.Instance, log logrus.F
 }
 
 func (h *ContextUpdateHandler) unsuspend(instance *internal.Instance, log logrus.FieldLogger) (string, error) {
+	lastProvisioning, err := h.operations.GetProvisioningOperationByInstanceID(instance.InstanceID)
+	// there was an error - fail
+	if err != nil && !dberr.IsNotFound(err) {
+		return "", err
+	}
+
+	// no error, unsuspension operation exists and is in progress
+	if err == nil && (lastProvisioning.State == domain.InProgress || lastProvisioning.State == orchestration.Pending) {
+		log.Infof("Provisioning operation already started for instance %s", instance.InstanceID)
+		return lastProvisioning.ID, nil
+	}
+
 	id := uuid.New().String()
 
 	operation, err := internal.NewProvisioningOperationWithID(id, instance.InstanceID, instance.Parameters)
