@@ -1,6 +1,8 @@
 package deprovisioning
 
 import (
+	"encoding/base64"
+	"fmt"
 	"testing"
 	"time"
 
@@ -18,6 +20,24 @@ const (
 func TestEDPDeregistration_Run(t *testing.T) {
 	// given
 	client := edp.NewFakeClient()
+	client.CreateDataTenant(edp.DataTenantPayload{
+		Name:        edpName,
+		Environment: edpEnvironment,
+		Secret:      base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s%s", edpName, edpEnvironment))),
+	})
+
+	metadataTenantKeys := []string{
+		edp.MaasConsumerEnvironmentKey,
+		edp.MaasConsumerRegionKey,
+		edp.MaasConsumerSubAccountKey,
+	}
+
+	for _, key := range metadataTenantKeys {
+		client.CreateMetadataTenant(edpName, edpEnvironment, edp.MetadataTenantPayload{
+			Key:   key,
+			Value: "-",
+		})
+	}
 
 	step := NewEDPDeregistrationStep(client, edp.Config{
 		Environment: edpEnvironment,
@@ -34,4 +54,14 @@ func TestEDPDeregistration_Run(t *testing.T) {
 	// then
 	assert.Equal(t, 0*time.Second, repeat)
 	assert.NoError(t, err)
+
+	for _, key := range metadataTenantKeys {
+		metadataTenant, metadataTenantExists := client.GetMetadataItem(edpName, edpEnvironment, key)
+		assert.False(t, metadataTenantExists)
+		assert.Equal(t, edp.MetadataItem{}, metadataTenant)
+	}
+
+	dataTenant, dataTenantExists := client.GetDataTenantItem(edpName, edpEnvironment)
+	assert.False(t, dataTenantExists)
+	assert.Equal(t, edp.DataTenantItem{}, dataTenant)
 }

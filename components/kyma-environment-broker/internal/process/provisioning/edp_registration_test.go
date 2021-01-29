@@ -43,6 +43,31 @@ func TestEDPRegistration_Run(t *testing.T) {
 	// then
 	assert.Equal(t, 0*time.Second, repeat)
 	assert.NoError(t, err)
+
+	dataTenant, dataTenantExists := client.GetDataTenantItem(edpName, edpEnvironment)
+	assert.True(t, dataTenantExists)
+	assert.Equal(t, edp.DataTenantItem{
+		Name:        edpName,
+		Environment: edpEnvironment,
+	}, dataTenant)
+
+	for key, value := range map[string]string{
+		edp.MaasConsumerEnvironmentKey: step.selectEnvironmentKey(edpRegion, logger.NewLogDummy()),
+		edp.MaasConsumerRegionKey:      edpRegion,
+		edp.MaasConsumerSubAccountKey:  edpName,
+	} {
+		metadataTenant, metadataTenantExists := client.GetMetadataItem(edpName, edpEnvironment, key)
+		assert.True(t, metadataTenantExists)
+		assert.Equal(t, edp.MetadataItem{
+			DataTenant: edp.DataTenantItem{
+				Name:        edpName,
+				Environment: edpEnvironment,
+			},
+			Key:   key,
+			Value: value,
+		}, metadataTenant)
+	}
+
 }
 
 func TestEDPRegistrationStep_selectEnvironmentKey(t *testing.T) {
