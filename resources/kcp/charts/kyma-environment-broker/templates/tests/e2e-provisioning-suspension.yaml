@@ -2,7 +2,7 @@
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: e2e-azure
+  name: e2e-provisioning-suspension
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
@@ -43,7 +43,7 @@ spec:
             - name: APP_BROKER_URL
               value: 'https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}'
             - name: APP_BROKER_PLAN_ID
-              value: "{{ .Values.e2e.azure.planID }}"
+              value: "{{ .Values.e2e.trial.planID }}"
             - name: APP_BROKER_CLIENT_NAME
               value: {{ include "kyma-env-broker.fullname" . | quote }}
             - name: APP_BROKER_TOKEN_URL
@@ -51,7 +51,7 @@ spec:
             - name: APP_PROVISIONER_URL
               value: "{{ .Values.provisioner.URL }}"
             - name: APP_CONFIG_NAME
-              value: "{{ .Values.e2e.azure.configName }}"
+              value: "{{ .Values.e2e.trial.configName }}"
             - name: APP_DEPLOY_NAMESPACE
               value: "kcp-system"
             - name: APP_DIRECTOR_URL
@@ -91,7 +91,7 @@ spec:
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: e2e-azure-cleanup
+  name: e2e-provisioning-suspension-cleanup
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
@@ -128,7 +128,7 @@ spec:
             - name: APP_BROKER_URL
               value: 'https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}'
             - name: APP_BROKER_PLAN_ID
-              value: "{{ .Values.e2e.azure.planID }}"
+              value: "{{ .Values.e2e.trial.planID }}"
             - name: APP_BROKER_CLIENT_NAME
               value: {{ include "kyma-env-broker.fullname" . | quote }}
             - name: APP_BROKER_TOKEN_URL

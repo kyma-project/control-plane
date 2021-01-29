@@ -219,7 +219,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:d3505bb0d9b8d3038f9259b8fac2c1b2580bece8dee0ea6c45b22adb4cb07c41"
+  digest = "1:32f7170bf9b3983fa5ebcc34691951f5bed075c1262b1b2a3cdaa99c3829d684"
   name = "github.com/kyma-incubator/compass"
   packages = [
     "components/director/internal/model",
@@ -230,21 +230,24 @@
     "components/director/pkg/pagination",
     "components/director/pkg/resource",
     "components/director/pkg/scalar",
+    "tests/director/pkg/ptr",
   ]
   pruneopts = "UT"
   revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
 
 [[projects]]
-  digest = "1:67c319de6100353ad5a319c4444b5d43cb27217be3e9c9bbf27303bcf08a70b1"
+  digest = "1:37545a79230c4d78e9167b19dc8a0c61c19a3694370892b4ec2e1e20c03be806"
   name = "github.com/kyma-project/control-plane"
   packages = [
     "components/kyma-environment-broker/common/director",
     "components/kyma-environment-broker/common/gardener",
+    "components/kyma-environment-broker/common/pagination",
+    "components/kyma-environment-broker/common/runtime",
     "components/kyma-environment-broker/internal/error",
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "e0437b7ac8d66565e1253b46f42f10b20f3dda48"
+  revision = "c5a01b1a0147891184075378477713cab222e81b"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -727,8 +730,10 @@
     "github.com/Azure/go-autorest/autorest/adal",
     "github.com/Azure/go-autorest/autorest/azure",
     "github.com/google/uuid",
+    "github.com/kyma-incubator/compass/tests/director/pkg/ptr",
     "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director",
     "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener",
+    "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime",
     "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema",
     "github.com/machinebox/graphql",
     "github.com/ory/hydra-maester/api/v1alpha1",
