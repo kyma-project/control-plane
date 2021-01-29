@@ -53,7 +53,7 @@ func TestRuntimeUpgrade(t *testing.T) {
 
 				// Wait for provisioning to finish
 				log.Log("Waiting for provisioning to finish...")
-				provisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.ProvisioningTimeout, provisioningOperationID, log)
+				provisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.Provisioning, provisioningOperationID, log)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtimeID, provisioningOperationStatus)
 				log.Log("Provisioning finished.")
@@ -83,7 +83,7 @@ func TestRuntimeUpgrade(t *testing.T) {
 				log.WithField("UpgradeOperationID", *upgradeOperationStatus.ID)
 
 				log.Log("Waiting for upgrade to finish...")
-				upgradeOperationStatus, err = testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.UpgradeTimeout, *upgradeOperationStatus.ID, log)
+				upgradeOperationStatus, err = testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.Upgrade, *upgradeOperationStatus.ID, log)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeUpgrade, runtimeID, upgradeOperationStatus)
 				log.Log("Upgrade finished.")
@@ -107,7 +107,7 @@ func TestRuntimeUpgrade(t *testing.T) {
 				assertions.AssertOperationInProgress(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
 
 				log.Log("Waiting for deprovisioning to finish...")
-				deprovisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.DeprovisioningTimeout, deprovisioningOperationID, log)
+				deprovisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.Deprovisioning, deprovisioningOperationID, log)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
 				log.Log("Deprovisioning finished.")

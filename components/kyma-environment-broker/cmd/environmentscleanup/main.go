@@ -28,8 +28,8 @@ type config struct {
 }
 
 type provisionerConfig struct {
-	URL          string
-	queryDumping bool
+	URL          string `envconfig:"default=kcp-provisioner:3000"`
+	QueryDumping bool   `envconfig:"default=false"`
 }
 
 func main() {
@@ -46,7 +46,7 @@ func main() {
 
 	ctx := context.Background()
 	brokerClient := broker.NewClient(ctx, cfg.Broker)
-	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioner.URL, cfg.Provisioner.queryDumping)
+	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioner.URL, cfg.Provisioner.QueryDumping)
 
 	// create storage
 

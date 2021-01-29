@@ -26,11 +26,11 @@ type TestConfig struct {
 }
 
 type Timeouts struct {
-	ProvisioningTimeout   time.Duration `envconfig:"default=4h"`
-	UpgradeTimeout        time.Duration `envconfig:"default=4h"`
-	UpgradeShootTimeout   time.Duration `envconfig:"default=4h"`
-	DeprovisioningTimeout time.Duration `envconfig:"default=4h"`
-	HibernationTimeout    time.Duration `envconfig:"default=30m"`
+	Provisioning   time.Duration `envconfig:"default=4h"`
+	Upgrade        time.Duration `envconfig:"default=4h"`
+	UpgradeShoot   time.Duration `envconfig:"default=4h"`
+	Deprovisioning time.Duration `envconfig:"default=4h"`
+	Hibernation    time.Duration `envconfig:"default=30m"`
 }
 
 type KymaConfig struct {

@@ -53,7 +53,7 @@ func TestShootUpgrade(t *testing.T) {
 
 				// Wait for provisioning to finish
 				log.Log("Waiting for provisioning to finish...")
-				provisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.ProvisioningTimeout, provisioningOperationID, log)
+				provisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.Provisioning, provisioningOperationID, log)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtimeID, provisioningOperationStatus)
 				log.Log("Provisioning finished.")
@@ -76,7 +76,7 @@ func TestShootUpgrade(t *testing.T) {
 				upgradeOperationStatus, err := testSuite.ProvisionerClient.UpgradeShoot(runtimeID, *upgradeShootConfig)
 				assertions.RequireNoError(t, err)
 
-				upgradeOperationStatus, err = testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.UpgradeShootTimeout, *upgradeOperationStatus.ID, log)
+				upgradeOperationStatus, err = testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.UpgradeShoot, *upgradeOperationStatus.ID, log)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeUpgradeShoot, runtimeID, upgradeOperationStatus)
 				log.Log("Shoot upgrade finished.")
@@ -106,7 +106,7 @@ func TestShootUpgrade(t *testing.T) {
 				assertions.AssertOperationInProgress(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
 
 				log.Log("Waiting for deprovisioning to finish...")
-				deprovisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.DeprovisioningTimeout, deprovisioningOperationID, log)
+				deprovisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.Deprovisioning, deprovisioningOperationID, log)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
 				log.Log("Deprovisioning finished.")
