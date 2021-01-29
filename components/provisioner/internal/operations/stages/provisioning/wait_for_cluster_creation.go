@@ -57,11 +57,6 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, operation model.
 
 	if lastOperation != nil {
 		if lastOperation.State == gardencorev1beta1.LastOperationStateSucceeded {
-
-			if shoot.Spec.SeedName != nil {
-				logger.Infof("Saving seed %s to database: %s", *shoot.Spec.SeedName)
-			}
-
 			return s.proceedToInstallation(cluster, shoot, operation.ID)
 		}
 
@@ -79,9 +74,18 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, operation model.
 
 func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster, shoot *gardener_types.Shoot, operationId string) (operations.StageResult, error) {
 
-	if shoot.Spec.SeedName != nil {
-		log.Infof("Saving seed %s to database: ", *shoot.Spec.SeedName)
+	if shoot.Spec.SeedName != nil && cluster.ClusterConfig.Seed == "" && *shoot.Spec.SeedName != "" {
+
+		log.Infof("Saving gardener seed %s to the database: ", *shoot.Spec.SeedName)
+		cluster.ClusterConfig.Seed = *shoot.Spec.SeedName
+
+		dberr := s.dbSession.UpdateGardenerClusterConfig(cluster.ClusterConfig)
+
+		if dberr != nil {
+			return operations.StageResult{}, dberr
+		}
 	}
+
 	kubeconfig, err := s.kubeconfigProvider.FetchRaw(shoot.Name)
 	if err != nil {
 		return operations.StageResult{}, err
