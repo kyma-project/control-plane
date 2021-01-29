@@ -1,6 +1,8 @@
 package suspension
 
 import (
+	"errors"
+
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -34,7 +36,7 @@ func NewContextUpdateHandler(operations storage.Operations, provisioningQueue Ad
 
 // Handle performs suspension/unsuspension for given instance.
 // Applies only when 'Active' parameter has changes and ServicePlanID is `Trial`
-func (h *ContextUpdateHandler) Handle(instance *internal.Instance, newCtx internal.ERSContext) error {
+func (h *ContextUpdateHandler) Handle(instance *internal.Instance, newCtx internal.ERSContext) (string, error) {
 	l := h.log.WithFields(logrus.Fields{
 		"instanceID":      instance.InstanceID,
 		"runtimeID":       instance.RuntimeID,
@@ -43,7 +45,7 @@ func (h *ContextUpdateHandler) Handle(instance *internal.Instance, newCtx intern
 
 	if !broker.IsTrialPlan(instance.ServicePlanID) {
 		l.Info("Context update for non-trial instance, skipping")
-		return nil
+		return "", nil
 	}
 
 	isActivated := true
@@ -53,7 +55,7 @@ func (h *ContextUpdateHandler) Handle(instance *internal.Instance, newCtx intern
 
 	if newCtx.Active == nil || isActivated == *newCtx.Active {
 		logrus.Debugf("Context.Active flag was not changed, the current value: %v", newCtx.Active)
-		return nil
+		return "", nil
 	}
 
 	if *newCtx.Active {
@@ -63,30 +65,30 @@ func (h *ContextUpdateHandler) Handle(instance *internal.Instance, newCtx intern
 	}
 }
 
-func (h *ContextUpdateHandler) suspend(instance *internal.Instance, log logrus.FieldLogger) error {
+func (h *ContextUpdateHandler) suspend(instance *internal.Instance, log logrus.FieldLogger) (string, error) {
 	lastDeprovisioning, err := h.operations.GetDeprovisioningOperationByInstanceID(instance.InstanceID)
 	// there was an error - fail
 	if err != nil && !dberr.IsNotFound(err) {
-		return err
+		return "", err
 	}
 
-	// no error, operation exists and is in progress
+	// no error, deprovisioning operation exists and is in progress - fail
 	if err == nil && (lastDeprovisioning.State == domain.InProgress || lastDeprovisioning.State == orchestration.Pending) {
-		log.Infof("Suspension already started")
-		return nil
+		log.Warnf("Deprovisioning operation already started for instance %s", instance.InstanceID)
+		return "", errors.New("cannot suspend instance - deprovisioning operation already started")
 	}
 
 	id := uuid.New().String()
 	operation := internal.NewSuspensionOperationWithID(id, instance)
 	err = h.operations.InsertDeprovisioningOperation(operation)
 	if err != nil {
-		return err
+		return "", err
 	}
 	h.deprovisioningQueue.Add(operation.ID)
-	return nil
+	return id, nil
 }
 
-func (h *ContextUpdateHandler) unsuspend(instance *internal.Instance, log logrus.FieldLogger) error {
+func (h *ContextUpdateHandler) unsuspend(instance *internal.Instance, log logrus.FieldLogger) (string, error) {
 	id := uuid.New().String()
 
 	operation, err := internal.NewProvisioningOperationWithID(id, instance.InstanceID, instance.Parameters)
@@ -97,8 +99,8 @@ func (h *ContextUpdateHandler) unsuspend(instance *internal.Instance, log logrus
 
 	err = h.operations.InsertProvisioningOperation(operation)
 	if err != nil {
-		return err
+		return "", err
 	}
 	h.provisioningQueue.Add(operation.ID)
-	return nil
+	return id, nil
 }

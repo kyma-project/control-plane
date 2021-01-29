@@ -26,7 +26,7 @@ func TestSuspension(t *testing.T) {
 	st.Instances().Insert(*instance)
 
 	// when
-	err := svc.Handle(instance, fixInactiveErsContext())
+	opID, err := svc.Handle(instance, fixInactiveErsContext())
 	require.NoError(t, err)
 
 	// then
@@ -34,6 +34,7 @@ func TestSuspension(t *testing.T) {
 	assertQueue(t, deprovisioning, op.ID)
 	assertQueue(t, provisioning)
 
+	assert.Equal(t, opID, op.ID)
 	assert.Equal(t, domain.LastOperationState("pending"), op.State)
 	assert.Equal(t, instance.InstanceID, op.InstanceID)
 }
@@ -58,7 +59,7 @@ func TestUnsuspension(t *testing.T) {
 	st.Instances().Insert(*instance)
 
 	// when
-	err := svc.Handle(instance, fixActiveErsContext())
+	opID, err := svc.Handle(instance, fixActiveErsContext())
 	require.NoError(t, err)
 
 	// then
@@ -67,6 +68,7 @@ func TestUnsuspension(t *testing.T) {
 	assertQueue(t, deprovisioning)
 	assertQueue(t, provisioning, op.ID)
 
+	assert.Equal(t, opID, op.ID)
 	assert.Equal(t, domain.InProgress, op.State)
 	assert.Equal(t, instance.InstanceID, op.InstanceID)
 }

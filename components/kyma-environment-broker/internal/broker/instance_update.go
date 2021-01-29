@@ -12,7 +12,7 @@ import (
 )
 
 type ContextUpdateHandler interface {
-	Handle(instance *internal.Instance, newCtx internal.ERSContext) error
+	Handle(instance *internal.Instance, newCtx internal.ERSContext) (string, error)
 }
 
 type UpdateEndpoint struct {
@@ -65,33 +65,39 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 		logger.Info(k)
 	}
 
-	if b.processingEnabled {
-		err = b.contextUpdateHandler.Handle(instance, ersContext)
-		if err != nil {
-			logger.Errorf("processing context updated failed: %s", err.Error())
-			return domain.UpdateServiceSpec{
-				IsAsync:       false,
-				DashboardURL:  instance.DashboardURL,
-				OperationData: "",
-			}, errors.New("unable to process the update")
-		}
+	if !b.processingEnabled {
+		return domain.UpdateServiceSpec{
+			IsAsync:       false,
+			DashboardURL:  instance.DashboardURL,
+			OperationData: "",
+		}, nil
+	}
 
-		// save the instance
-		instance.Parameters.ErsContext = ersContext
-		_, err = b.instanceStorage.Update(*instance)
-		if err != nil {
-			logger.Errorf("processing context updated failed: %s", err.Error())
-			return domain.UpdateServiceSpec{
-				IsAsync:       false,
-				DashboardURL:  instance.DashboardURL,
-				OperationData: "",
-			}, errors.New("unable to process the update")
-		}
+	operationID, err := b.contextUpdateHandler.Handle(instance, ersContext)
+	if err != nil {
+		logger.Errorf("processing context updated failed: %s", err.Error())
+		return domain.UpdateServiceSpec{
+			IsAsync:       false,
+			DashboardURL:  instance.DashboardURL,
+			OperationData: "",
+		}, errors.New("unable to process the update")
+	}
+
+	// save the instance
+	instance.Parameters.ErsContext = ersContext
+	_, err = b.instanceStorage.Update(*instance)
+	if err != nil {
+		logger.Errorf("processing context updated failed: %s", err.Error())
+		return domain.UpdateServiceSpec{
+			IsAsync:       false,
+			DashboardURL:  instance.DashboardURL,
+			OperationData: "",
+		}, errors.New("unable to process the update")
 	}
 
 	return domain.UpdateServiceSpec{
-		IsAsync:       false,
+		IsAsync:       true,
 		DashboardURL:  instance.DashboardURL,
-		OperationData: "",
+		OperationData: operationID,
 	}, nil
 }
