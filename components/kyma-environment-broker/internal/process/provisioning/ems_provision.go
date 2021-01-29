@@ -114,7 +114,7 @@ func GetEventingProvisioningData(emsInstanceDetails internal.EmsData) *servicema
 			},
 		},
 		"resources": map[string]interface{}{
-			"units": "50",
+			"units": "30",
 		},
 		"version":   "1.1.0",
 		"emname":    uuid.New().String(),
