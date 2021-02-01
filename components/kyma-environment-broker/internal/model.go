@@ -27,6 +27,12 @@ type ProvisionerInputCreator interface {
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 }
 
+type CLSInstance struct {
+	ID string
+	Name string
+	Region string
+	CreatedAt time.Time
+}
 type LMSTenant struct {
 	ID        string
 	Name      string
@@ -224,6 +230,9 @@ type EmsData struct {
 
 type ClsData struct {
 	Instance ServiceManagerInstanceInfo `json:"instance"`
+
+	BindingID string `json:"bindingId"`
+	Overrides string `json:"overrides"`
 }
 
 func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {

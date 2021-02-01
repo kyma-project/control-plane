@@ -7,6 +7,16 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type CreateInstanceInput struct {
+	Name            string
+	Region          string
+	GlobalAccountID string
+}
+
+type CreateInstanceOutput struct {
+	ID string `json:"id"`
+}
+
 //Config is the top-level CLS provisioning configuration
 type Config struct {
 	ServiceManagerCredentials ServiceManagerCredentials `yaml:"serviceManagerCredentials"`
