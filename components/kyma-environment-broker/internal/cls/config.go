@@ -8,10 +8,31 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var (
+	//DefaultConfig is the default top-level configuration.
+	DefaultConfig = Config{
+		RetentionPeriod:         7,
+		MaxDataInstances:        2,
+		MaxIngestInstances:      2,
+		ElasticsearchAPIEnabled: false,
+	}
+)
+
 //Config is the top-level CLS provisioning configuration
 type Config struct {
-	ServiceManager *ServiceManagerConfig `yaml:"serviceManager"`
-	SAML           *SAMLConfig           `yaml:"saml"`
+	//Log retention period specified in days
+	RetentionPeriod int `yaml:"retentionPeriod"`
+
+	//Number of Elasticsearch data nodes to be provisioned
+	MaxDataInstances int `yaml:"maxDataInstances"`
+
+	//Number of FluentD instances to be provisioned
+	MaxIngestInstances int `yaml:"maxIngestInstances"`
+
+	//Set to true to expose the Elasticsearch API
+	ElasticsearchAPIEnabled bool                  `yaml:"esApiEnabled"`
+	ServiceManager          *ServiceManagerConfig `yaml:"serviceManager"`
+	SAML                    *SAMLConfig           `yaml:"saml"`
 }
 
 //ServiceManagerConfig contains service manager credentials per region
@@ -71,9 +92,9 @@ type SAMLConfig struct {
 
 // Load parses the YAML input s into a Config
 func Load(s string) (*Config, error) {
-	config := &Config{}
+	config := DefaultConfig
 
-	if err := yaml.UnmarshalStrict([]byte(s), config); err != nil {
+	if err := yaml.UnmarshalStrict([]byte(s), &config); err != nil {
 		return nil, err
 	}
 
@@ -81,7 +102,7 @@ func Load(s string) (*Config, error) {
 		return nil, fmt.Errorf("invalid config: %v", err)
 	}
 
-	return config, nil
+	return &config, nil
 }
 
 func (c *Config) validate() error {

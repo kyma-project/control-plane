@@ -87,3 +87,24 @@ serviceManager:
 		require.EqualError(t, err, tc.expected)
 	}
 }
+
+func TestLoadDefaultParams(t *testing.T) {
+	in := `
+serviceManager:
+  credentials:
+    - region: us
+      url: https://service-manager.cfapps.sap.hana.ondemand.com
+      username: sm
+      password: qwerty
+saml:
+  enabled: false  
+`
+
+	config, err := Load(in)
+
+	require.NoError(t, err)
+	require.Equal(t, 7, config.RetentionPeriod)
+	require.Equal(t, 2, config.MaxDataInstances)
+	require.Equal(t, 2, config.MaxIngestInstances)
+	require.Equal(t, false, config.ElasticsearchAPIEnabled)
+}
