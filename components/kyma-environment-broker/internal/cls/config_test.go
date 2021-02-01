@@ -27,6 +27,8 @@ serviceManager:
       url: https://service-manager.cfapps.sap.hana.ondemand.com
       username: sm
       password: 
+saml:
+  enabled: false
 `, expected: "invalid config: service manager credentials: no password"},
 		{in: `
 serviceManager:
@@ -35,6 +37,8 @@ serviceManager:
       url: https://service-manager.cfapps.sap.hana.ondemand.com
       username: 
       password: qwerty
+saml:
+  enabled: false
 `, expected: "invalid config: service manager credentials: no username"},
 		{in: `
 serviceManager:
@@ -43,6 +47,8 @@ serviceManager:
       url: 
       username: sm
       password: qwerty
+saml:
+  enabled: false
 `, expected: "invalid config: service manager credentials: no url"},
 		{in: `
 serviceManager:
@@ -51,6 +57,8 @@ serviceManager:
       url: https://service-manager.cfapps.sap.hana.ondemand.com
       username: sm
       password: qwerty
+saml:
+  enabled: false
 `, expected: "invalid config: service manager credentials: no region"},
 		{in: `
 serviceManager:
@@ -59,7 +67,17 @@ serviceManager:
       url: https://service-manager.cfapps.sap.hana.ondemand.com
       username: sm
       password: qwerty
+saml:
+  enabled: false  
 `, expected: "invalid config: service manager credentials: unsupported region: aus (eu,us supported only)"},
+		{in: `
+serviceManager:
+  credentials:
+    - region: us
+      url: https://service-manager.cfapps.sap.hana.ondemand.com
+      username: sm
+      password: qwerty
+`, expected: "invalid config: no saml"},
 	}
 
 	for _, tc := range tests {

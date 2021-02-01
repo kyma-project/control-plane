@@ -11,6 +11,7 @@ import (
 //Config is the top-level CLS provisioning configuration
 type Config struct {
 	ServiceManager *ServiceManagerConfig `yaml:"serviceManager"`
+	SAML           *SAMLConfig           `yaml:"saml"`
 }
 
 //ServiceManagerConfig contains service manager credentials per region
@@ -34,6 +35,39 @@ const (
 	RegionEurope Region = "eu"
 	RegionUS     Region = "us"
 )
+
+// SAMLConfig to be used by Kibana
+type SAMLConfig struct {
+	//Set to true to enabled SAML authentication
+	Enabled bool `yaml:"enabled" json:"enabled"`
+
+	//New admin backend role that maps to any of your SAML group. It will have the right to modify the security module
+	AdminGroup string `yaml:"admin_group" json:"admin_group"`
+
+	//Set to true to use IdP-initiated SSO
+	Initiated bool `yaml:"initiated" json:"initiated"`
+
+	//The key to sign tokens
+	ExchangeKey string `yaml:"exchange_key" json:"exchange_key"`
+
+	//The list of backend_roles will be read from this attribute
+	RolesKey string `yaml:"roles_key" json:"roles_key"`
+
+	Idp struct {
+		//URL to get the SAML metadata
+		MetadataURL string `yaml:"metadata_url" json:"metadata_url"`
+
+		//SAML entity id
+		EntityID string `yaml:"entity_id" json:"entity_id"`
+	} `yaml:"idp" json:"idp"`
+	Sp struct {
+		//Entity ID of the service provider
+		EntityID string `yaml:"entity_id" json:"entity_id"`
+
+		//The private key used to sign the requests (base64 encoded)
+		SignaturePrivateKey string `yaml:"signature_private_key" json:"signature_private_key"`
+	} `yaml:"sp" json:"sp"`
+}
 
 // Load parses the YAML input s into a Config
 func Load(s string) (*Config, error) {
@@ -59,6 +93,10 @@ func (c *Config) validate() error {
 		if err := creds.validate(); err != nil {
 			return fmt.Errorf("service manager credentials: %v", err)
 		}
+	}
+
+	if c.SAML == nil {
+		return errors.New("no saml")
 	}
 
 	return nil
