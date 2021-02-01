@@ -21,29 +21,37 @@ func TestLoadInvalidCredentials(t *testing.T) {
 		expected string
 	}{
 		{in: `
-serviceManagerCredentials:
-  regions:
-    eu:
-      url: http://service-manager.com
+serviceManager:
+  credentials:
+    - region: eu
+      url: https://service-manager.cfapps.sap.hana.ondemand.com
       username: sm
       password: 
-`, expected: "invalid config: no password"},
+`, expected: "invalid config: service manager credentials: no password"},
 		{in: `
-serviceManagerCredentials:
-  regions:
-    eu:
-      url: http://service-manager.com
+serviceManager:
+  credentials:
+    - region: eu
+      url: https://service-manager.cfapps.sap.hana.ondemand.com
       username: 
       password: qwerty
-`, expected: "invalid config: no username"},
+`, expected: "invalid config: service manager credentials: no username"},
 		{in: `
-serviceManagerCredentials:
-  regions:
-    eu:
+serviceManager:
+  credentials:
+    - region: eu
       url: 
       username: sm
       password: qwerty
-`, expected: "invalid config: no url"},
+`, expected: "invalid config: service manager credentials: no url"},
+		{in: `
+serviceManager:
+  credentials:
+    - region:
+      url: https://service-manager.cfapps.sap.hana.ondemand.com
+      username: sm
+      password: qwerty
+`, expected: "invalid config: service manager credentials: no region"},
 	}
 
 	for _, tc := range tests {

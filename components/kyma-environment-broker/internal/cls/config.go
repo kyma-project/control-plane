@@ -9,16 +9,17 @@ import (
 
 //Config is the top-level CLS provisioning configuration
 type Config struct {
-	ServiceManagerCredentials ServiceManagerCredentials `yaml:"serviceManagerCredentials"`
+	ServiceManager *ServiceManagerConfig `yaml:"serviceManager"`
 }
 
-//ServiceManagerCredentials contains basic auth credentials for ServiceManager in different regions
+//ServiceManagerConfig contains service manager credentials per region
+type ServiceManagerConfig struct {
+	Credentials []*ServiceManagerCredentials `yaml:"credentials"`
+}
+
+//ServiceManagerCredentials contains basic auth credentials for a ServiceManager tenant in a particular region
 type ServiceManagerCredentials struct {
-	Regions map[string]RegionServiceManagerCredentials `yaml:"regions"`
-}
-
-//RegionServiceManagerCredentials contains basic auth credentials for ServiceManager in a particular region
-type RegionServiceManagerCredentials struct {
+	Region   string `yaml:"region"`
 	URL      string `yaml:"url"`
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
@@ -40,20 +41,24 @@ func Load(s string) (*Config, error) {
 }
 
 func (c *Config) validate() error {
-	if len(c.ServiceManagerCredentials.Regions) == 0 {
+	if c.ServiceManager == nil || len(c.ServiceManager.Credentials) == 0 {
 		return errors.New("no service manager credentials")
 	}
 
-	for _, creds := range c.ServiceManagerCredentials.Regions {
+	for _, creds := range c.ServiceManager.Credentials {
 		if err := creds.validate(); err != nil {
-			return err
+			return fmt.Errorf("service manager credentials: %v", err)
 		}
 	}
 
 	return nil
 }
 
-func (c *RegionServiceManagerCredentials) validate() error {
+func (c *ServiceManagerCredentials) validate() error {
+	if len(c.Region) == 0 {
+		return errors.New("no region")
+	}
+
 	if len(c.URL) == 0 {
 		return errors.New("no url")
 	}
