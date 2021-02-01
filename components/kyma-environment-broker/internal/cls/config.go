@@ -3,6 +3,7 @@ package cls
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -19,11 +20,20 @@ type ServiceManagerConfig struct {
 
 //ServiceManagerCredentials contains basic auth credentials for a ServiceManager tenant in a particular region
 type ServiceManagerCredentials struct {
-	Region   string `yaml:"region"`
+	Region   Region `yaml:"region"`
 	URL      string `yaml:"url"`
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 }
+
+//Region represents an SAP Cloud Platform region, where a CLS instance can be provisioned
+type Region string
+
+//Supported regions
+const (
+	RegionEurope Region = "eu"
+	RegionUS     Region = "us"
+)
 
 // Load parses the YAML input s into a Config
 func Load(s string) (*Config, error) {
@@ -59,6 +69,10 @@ func (c *ServiceManagerCredentials) validate() error {
 		return errors.New("no region")
 	}
 
+	if err := c.Region.validate(); err != nil {
+		return err
+	}
+
 	if len(c.URL) == 0 {
 		return errors.New("no url")
 	}
@@ -72,4 +86,15 @@ func (c *ServiceManagerCredentials) validate() error {
 	}
 
 	return nil
+}
+
+func (r Region) validate() error {
+	supportedRegions := []string{string(RegionEurope), string(RegionUS)}
+	for _, sr := range supportedRegions {
+		if sr == string(r) {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("unsupported region: %s (%s supported only)", r, strings.Join(supportedRegions, ","))
 }

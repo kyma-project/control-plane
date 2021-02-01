@@ -52,6 +52,14 @@ serviceManager:
       username: sm
       password: qwerty
 `, expected: "invalid config: service manager credentials: no region"},
+		{in: `
+serviceManager:
+  credentials:
+    - region: aus
+      url: https://service-manager.cfapps.sap.hana.ondemand.com
+      username: sm
+      password: qwerty
+`, expected: "invalid config: service manager credentials: unsupported region: aus (eu,us supported only)"},
 	}
 
 	for _, tc := range tests {
