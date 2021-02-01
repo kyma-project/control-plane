@@ -51,7 +51,7 @@ func (h *ContextUpdateHandler) Handle(instance *internal.Instance, newCtx intern
 		isActivated = *instance.Parameters.ErsContext.Active
 	}
 
-	if newCtx.Active == nil || isActivated == *newCtx.Active {
+	if newCtx.Active == nil || isActivated && *newCtx.Active {
 		logrus.Debugf("Context.Active flag was not changed, the current value: %v", newCtx.Active)
 		return nil
 	}
