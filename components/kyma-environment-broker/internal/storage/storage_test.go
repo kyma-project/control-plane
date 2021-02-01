@@ -212,16 +212,14 @@ func TestPostgres(t *testing.T) {
 			numberOfInstancesC, err := psqlStorage.Instances().GetNumberOfInstancesForGlobalAccountID("C")
 			require.NoError(t, err)
 
-			t.Logf("%+v", stats)
-
 			// then
 			assert.Equal(t, internal.InstanceStats{
 				TotalNumberOfInstances: 3,
 				PerGlobalAccountID:     map[string]int{"A": 2, "C": 1},
+				PerPlanID:              map[string]int{"A1": 1, "A2": 1, "C1": 1},
 			}, stats)
 			assert.Equal(t, 2, numberOfInstancesA)
 			assert.Equal(t, 1, numberOfInstancesC)
-
 		})
 		t.Run("Should fetch instances along with their operations", func(t *testing.T) {
 			// given

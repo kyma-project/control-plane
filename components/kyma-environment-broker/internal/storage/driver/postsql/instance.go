@@ -274,9 +274,11 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 	}
 
 	result := internal.InstanceStats{
+		PerPlanID:          make(map[string]int),
 		PerGlobalAccountID: make(map[string]int),
 	}
 	for _, e := range entries {
+		result.PerPlanID[e.PlanID] = e.Total
 		result.PerGlobalAccountID[e.GlobalAccountID] = e.Total
 		result.TotalNumberOfInstances = result.TotalNumberOfInstances + e.Total
 	}

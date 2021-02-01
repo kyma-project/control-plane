@@ -50,7 +50,8 @@ type OperationStatEntry struct {
 	PlanID string
 }
 
-type InstanceByGlobalAccountIDStatEntry struct {
+type InstanceStatEntry struct {
 	GlobalAccountID string
+	PlanID          string
 	Total           int
 }

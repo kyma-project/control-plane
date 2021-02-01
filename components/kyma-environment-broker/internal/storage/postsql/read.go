@@ -449,9 +449,9 @@ func (r readSession) GetOperationStatsForOrchestration(orchestrationID string) (
 	return rows, err
 }
 
-func (r readSession) GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error) {
-	var rows []dbmodel.InstanceByGlobalAccountIDStatEntry
-	_, err := r.session.SelectBySql(fmt.Sprintf("select global_account_id, count(*) as total from %s group by global_account_id",
+func (r readSession) GetInstanceStats() ([]dbmodel.InstanceStatEntry, error) {
+	var rows []dbmodel.InstanceStatEntry
+	_, err := r.session.SelectBySql(fmt.Sprintf("select service_plan_id, global_account_id, count(*) as total from %s group by service_plan_id, global_account_id",
 		InstancesTableName)).Load(&rows)
 	return rows, err
 }

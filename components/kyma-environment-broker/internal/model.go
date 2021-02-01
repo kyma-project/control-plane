@@ -294,6 +294,7 @@ type OperationStats struct {
 type InstanceStats struct {
 	TotalNumberOfInstances int
 	PerGlobalAccountID     map[string]int
+	PerPlanID              map[string]int
 }
 
 // NewProvisioningOperation creates a fresh (just starting) instance of the ProvisioningOperation
