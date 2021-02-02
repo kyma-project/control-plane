@@ -72,8 +72,8 @@ type provisioningInput struct {
 func newTestProvisioningConfigs() []testCase {
 	return []testCase{
 		{name: "GCP on Gardener",
-			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct GCP configuration for Gardener",
-			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bbb",
+			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct GCP configuration for Gardener",
+			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bbb",
 			auditLogTenant: "e7382275-e835-4549-94e1-3b1101ebd5ab",
 			provisioningInput: provisioningInput{
 				config: gcpGardenerClusterConfigInput(),
@@ -84,8 +84,8 @@ func newTestProvisioningConfigs() []testCase {
 			upgradeShootInput: NewUpgradeShootInput(),
 		},
 		{name: "Azure on Gardener (with zones)",
-			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones passed",
-			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bb4",
+			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones passed",
+			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb4",
 			auditLogTenant: "12d68c35-556b-4966-a061-235d4a060929",
 			provisioningInput: provisioningInput{
 				config: azureGardenerClusterConfigInput("1", "2"),
@@ -96,8 +96,8 @@ func newTestProvisioningConfigs() []testCase {
 			upgradeShootInput: NewUpgradeShootInput(),
 		},
 		{name: "Azure on Gardener (without zones)",
-			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones are empty",
-			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bb1",
+			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones are empty",
+			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb1",
 			auditLogTenant: "12d68c35-556b-4966-a061-235d4a060929",
 			provisioningInput: provisioningInput{
 				config: azureGardenerClusterConfigInput(),
@@ -108,8 +108,8 @@ func newTestProvisioningConfigs() []testCase {
 			upgradeShootInput: NewUpgradeShootInput(),
 		},
 		{name: "AWS on Gardener",
-			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct AWS configuration for Gardener",
-			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bb5",
+			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct AWS configuration for Gardener",
+			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb5",
 			auditLogTenant: "e7382275-e835-4549-94e1-3b1101ebda55",
 			provisioningInput: provisioningInput{
 				config: awsGardenerClusterConfigInput(),
@@ -120,8 +120,8 @@ func newTestProvisioningConfigs() []testCase {
 			upgradeShootInput: NewUpgradeShootInput(),
 		},
 		{name: "Azure on Gardener seed is empty",
-			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when seed is empty",
-			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bb2",
+			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when seed is empty",
+			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb2",
 			auditLogTenant: "e7382275-e835-4549-94e1-3b1101e3a1fa",
 			provisioningInput: provisioningInput{
 				config: azureGardenerClusterConfigInputNoSeed(),

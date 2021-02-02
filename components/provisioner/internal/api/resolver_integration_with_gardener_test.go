@@ -249,10 +249,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		})
 	}
 
-	// Clear seed in shoot
-
-	//clearShootSeedName(t, shootInterface)
-
 	t.Run("should ignore Shoot with unknown runtime id", func(t *testing.T) {
 		// given
 		installationServiceMock.Calls = nil
@@ -590,7 +586,6 @@ func ensureShootSeedName(t *testing.T, shoots gardener_apis.ShootInterface, shoo
 		}
 	}
 }
-
 
 func simulateDNSAdmissionPluginRun(shoot *gardener_types.Shoot) {
 	shoot.Spec.DNS = &gardener_types.DNS{Domain: util.StringPtr("domain")}

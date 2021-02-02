@@ -60,12 +60,28 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 			expectedDelay: 20 * time.Second,
 		},
 		{
-			description: "should go to the next stage if cluster was created",
+			description: "should go to the next stage if cluster was created based on configuration with gardener seed provided",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInSucceededState(clusterName), nil)
 				kubeconfigProvider.On("FetchRaw", clusterName).Return([]byte("kubeconfig"), nil)
 
 				dbSession.On("UpdateKubeconfig", cluster.ID, "kubeconfig").Return(nil)
+
+			},
+			expectedStage: nextStageName,
+			expectedDelay: 0,
+		},
+		{
+			description: "should go to the next stage if cluster was created based on configuration without gardener seed provided",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInSucceededStateWithSeed(clusterName, "az-eu2"), nil)
+				kubeconfigProvider.On("FetchRaw", clusterName).Return([]byte("kubeconfig"), nil)
+
+				configWithSeed := cluster.ClusterConfig
+				configWithSeed.Seed = "az-eu2"
+
+				dbSession.On("UpdateKubeconfig", cluster.ID, "kubeconfig").Return(nil)
+				dbSession.On("UpdateGardenerClusterConfig", configWithSeed).Return(nil)
 
 			},
 			expectedStage: nextStageName,
@@ -124,12 +140,25 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 			cluster:            cluster,
 		},
 		{
-			description: "should return error if failed to update data in database",
+			description: "should return error if failed to update kubeconfig data in database",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInSucceededState(clusterName), nil)
 				kubeconfigProvider.On("FetchRaw", clusterName).Return([]byte("kubeconfig"), nil)
 
 				dbSession.On("UpdateKubeconfig", cluster.ID, "kubeconfig").Return(dberrors.Internal("some error"))
+			},
+			unrecoverableError: false,
+			cluster:            cluster,
+		},
+		{
+			description: "should return error if failed to update seed in database",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInSucceededStateWithSeed(clusterName, "az-eu2"), nil)
+
+				configWithSeed := cluster.ClusterConfig
+				configWithSeed.Seed = "az-eu2"
+
+				dbSession.On("UpdateGardenerClusterConfig", configWithSeed).Return(dberrors.Internal("some error"))
 			},
 			unrecoverableError: false,
 			cluster:            cluster,
@@ -164,6 +193,12 @@ func fixShootInSucceededState(name string) *gardener_types.Shoot {
 	return fixShoot(name, &gardener_types.LastOperation{
 		State: gardencorev1beta1.LastOperationStateSucceeded,
 	})
+}
+
+func fixShootInSucceededStateWithSeed(name string, seed string) *gardener_types.Shoot {
+	shoot := fixShootInSucceededState(name)
+	shoot.Spec.SeedName = &seed
+	return shoot
 }
 
 func fixShootInFailedState(name string) *gardener_types.Shoot {
