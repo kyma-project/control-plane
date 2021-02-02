@@ -49,7 +49,7 @@ func (om *ProvisionOperationManager) UpdateOperation(operation internal.Provisio
 	if err != nil {
 		logrus.WithField("operation", operation.ID).
 			WithField("instanceID", operation.InstanceID).
-			Error("Update provisioning operation failed: %s", err.Error())
+			Error("Update provisioning operation failed: ", err.Error())
 		return operation, 1 * time.Minute
 	}
 	return *updatedOperation, 0
