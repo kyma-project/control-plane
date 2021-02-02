@@ -47,6 +47,9 @@ func (om *ProvisionOperationManager) OperationFailed(operation internal.Provisio
 func (om *ProvisionOperationManager) UpdateOperation(operation internal.ProvisioningOperation) (internal.ProvisioningOperation, time.Duration) {
 	updatedOperation, err := om.storage.UpdateProvisioningOperation(operation)
 	if err != nil {
+		logrus.WithField("operation", operation.ID).
+			WithField("instanceID", operation.InstanceID).
+			Error("Update provisioning operation failed: %s", err.Error())
 		return operation, 1 * time.Minute
 	}
 	return *updatedOperation, 0
