@@ -59,6 +59,7 @@ type testCase struct {
 	name              string
 	description       string
 	runtimeID         string
+	auditLogTenant    string
 	provisioningInput provisioningInput
 	upgradeShootInput gqlschema.UpgradeShootInput
 }
@@ -73,6 +74,7 @@ func newTestProvisioningConfigs() []testCase {
 		{name: "GCP on Gardener",
 			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct GCP configuration for Gardener",
 			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bbb",
+			auditLogTenant: "e7382275-e835-4549-94e1-3b1101ebd5ab",
 			provisioningInput: provisioningInput{
 				config: gcpGardenerClusterConfigInput(),
 				runtimeInput: gqlschema.RuntimeInput{
@@ -84,6 +86,7 @@ func newTestProvisioningConfigs() []testCase {
 		{name: "Azure on Gardener (with zones)",
 			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones passed",
 			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bb4",
+			auditLogTenant: "12d68c35-556b-4966-a061-235d4a060929",
 			provisioningInput: provisioningInput{
 				config: azureGardenerClusterConfigInput("1", "2"),
 				runtimeInput: gqlschema.RuntimeInput{
@@ -95,6 +98,7 @@ func newTestProvisioningConfigs() []testCase {
 		{name: "Azure on Gardener (without zones)",
 			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones are empty",
 			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bb1",
+			auditLogTenant: "12d68c35-556b-4966-a061-235d4a060929",
 			provisioningInput: provisioningInput{
 				config: azureGardenerClusterConfigInput(),
 				runtimeInput: gqlschema.RuntimeInput{
@@ -106,10 +110,23 @@ func newTestProvisioningConfigs() []testCase {
 		{name: "AWS on Gardener",
 			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct AWS configuration for Gardener",
 			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bb5",
+			auditLogTenant: "e7382275-e835-4549-94e1-3b1101ebda55",
 			provisioningInput: provisioningInput{
 				config: awsGardenerClusterConfigInput(),
 				runtimeInput: gqlschema.RuntimeInput{
-					Name:        "test runtime4",
+					Name:        "test runtime 4",
+					Description: new(string),
+				}},
+			upgradeShootInput: NewUpgradeShootInput(),
+		},
+		{name: "Azure on Gardener seed is empty",
+			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when seed is empty",
+			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bb2",
+			auditLogTenant: "e7382275-e835-4549-94e1-3b1101e3a1fa",
+			provisioningInput: provisioningInput{
+				config: azureGardenerClusterConfigInputNoSeed(),
+				runtimeInput: gqlschema.RuntimeInput{
+					Name:        "test runtime 5",
 					Description: new(string),
 				}},
 			upgradeShootInput: NewUpgradeShootInput(),
@@ -152,7 +169,34 @@ func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInp
 			Purpose:           util.StringPtr("evaluation"),
 			Provider:          "Azure",
 			TargetSecret:      "secret",
-			Seed:              util.StringPtr("az-eu1"),
+			Seed:              util.StringPtr("az-eu2"),
+			Region:            "westeurope",
+			MachineType:       "Standard_D8_v3",
+			DiskType:          "Standard_LRS",
+			VolumeSizeGb:      40,
+			WorkerCidr:        "cidr",
+			AutoScalerMin:     1,
+			AutoScalerMax:     5,
+			MaxSurge:          1,
+			MaxUnavailable:    2,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				AzureConfig: &gqlschema.AzureProviderConfigInput{
+					VnetCidr: "cidr",
+					Zones:    zones,
+				},
+			},
+		},
+	}
+}
+
+func azureGardenerClusterConfigInputNoSeed(zones ...string) gqlschema.ClusterConfigInput {
+	return gqlschema.ClusterConfigInput{
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:              util.StringPtr(util.CreateGardenerClusterName()),
+			KubernetesVersion: "version",
+			Purpose:           util.StringPtr("evaluation"),
+			Provider:          "Azure",
+			TargetSecret:      "secret",
 			Region:            "westeurope",
 			MachineType:       "Standard_D8_v3",
 			DiskType:          "Standard_LRS",
