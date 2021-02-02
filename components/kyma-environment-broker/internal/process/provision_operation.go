@@ -2,6 +2,7 @@ package process
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -46,11 +47,14 @@ func (om *ProvisionOperationManager) OperationFailed(operation internal.Provisio
 // UpdateOperation updates a given operation
 func (om *ProvisionOperationManager) UpdateOperation(operation internal.ProvisioningOperation) (internal.ProvisioningOperation, time.Duration) {
 	updatedOperation, err := om.storage.UpdateProvisioningOperation(operation)
+	logrus.WithField("operation", operation.ID).
+		WithField("instanceID", operation.InstanceID).
+		Info("UpdateOperation called")
 	if err != nil {
+		log.Printf("ERROR !!! err: %s", err.Error())
 		logrus.WithField("operation", operation.ID).
 			WithField("instanceID", operation.InstanceID).
-			WithError(err).
-			Error("Update provisioning operation failed")
+			Errorf("Update provisioning operation failed: %s", err.Error())
 		return operation, 1 * time.Minute
 	}
 	return *updatedOperation, 0
