@@ -21,29 +21,63 @@ func TestLoadInvalidCredentials(t *testing.T) {
 		expected string
 	}{
 		{in: `
-serviceManagerCredentials:
-  regions:
-    eu:
-      url: http://service-manager.com
+serviceManager:
+  credentials:
+    - region: eu
+      url: https://service-manager.cfapps.sap.hana.ondemand.com
       username: sm
       password: 
-`, expected: "invalid config: no password"},
+saml:
+  enabled: false
+`, expected: "invalid config: service manager credentials: no password"},
 		{in: `
-serviceManagerCredentials:
-  regions:
-    eu:
-      url: http://service-manager.com
+serviceManager:
+  credentials:
+    - region: eu
+      url: https://service-manager.cfapps.sap.hana.ondemand.com
       username: 
       password: qwerty
-`, expected: "invalid config: no username"},
+saml:
+  enabled: false
+`, expected: "invalid config: service manager credentials: no username"},
 		{in: `
-serviceManagerCredentials:
-  regions:
-    eu:
+serviceManager:
+  credentials:
+    - region: eu
       url: 
       username: sm
       password: qwerty
-`, expected: "invalid config: no url"},
+saml:
+  enabled: false
+`, expected: "invalid config: service manager credentials: no url"},
+		{in: `
+serviceManager:
+  credentials:
+    - region:
+      url: https://service-manager.cfapps.sap.hana.ondemand.com
+      username: sm
+      password: qwerty
+saml:
+  enabled: false
+`, expected: "invalid config: service manager credentials: no region"},
+		{in: `
+serviceManager:
+  credentials:
+    - region: aus
+      url: https://service-manager.cfapps.sap.hana.ondemand.com
+      username: sm
+      password: qwerty
+saml:
+  enabled: false  
+`, expected: "invalid config: service manager credentials: unsupported region: aus (eu,us supported only)"},
+		{in: `
+serviceManager:
+  credentials:
+    - region: us
+      url: https://service-manager.cfapps.sap.hana.ondemand.com
+      username: sm
+      password: qwerty
+`, expected: "invalid config: no saml"},
 	}
 
 	for _, tc := range tests {
@@ -52,4 +86,25 @@ serviceManagerCredentials:
 		require.Error(t, err)
 		require.EqualError(t, err, tc.expected)
 	}
+}
+
+func TestLoadDefaultParams(t *testing.T) {
+	in := `
+serviceManager:
+  credentials:
+    - region: us
+      url: https://service-manager.cfapps.sap.hana.ondemand.com
+      username: sm
+      password: qwerty
+saml:
+  enabled: false  
+`
+
+	config, err := Load(in)
+
+	require.NoError(t, err)
+	require.Equal(t, 7, config.RetentionPeriod)
+	require.Equal(t, 2, config.MaxDataInstances)
+	require.Equal(t, 2, config.MaxIngestInstances)
+	require.Equal(t, false, config.ElasticsearchAPIEnabled)
 }
