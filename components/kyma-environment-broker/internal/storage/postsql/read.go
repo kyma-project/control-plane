@@ -435,6 +435,24 @@ func (r readSession) GetLMSTenant(name, region string) (dbmodel.LMSTenantDTO, db
 	return dto, nil
 }
 
+func (r readSession) GetCLSInstance(name, region string) (dbmodel.CLSInstanceDTO, dberr.Error) {
+	var dto dbmodel.CLSInstanceDTO
+	err := r.session.
+		Select("*").
+		From(CLSInstanceTableName).
+		Where(dbr.Eq("name", name)).
+		Where(dbr.Eq("region", region)).
+		LoadOne(&dto)
+
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return dbmodel.CLSInstanceDTO{}, dberr.NotFound("Cannot find lms tenant for name/region: '%s/%s'", name, region)
+		}
+		return dbmodel.CLSInstanceDTO{}, dberr.Internal("Failed to get operation: %s", err)
+	}
+	return dto, nil
+}
+
 func (r readSession) GetOperationStats() ([]dbmodel.OperationStatEntry, error) {
 	var rows []dbmodel.OperationStatEntry
 	_, err := r.session.SelectBySql(fmt.Sprintf("select type, state, provisioning_parameters ->> 'plan_id' AS plan_id from %s",

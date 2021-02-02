@@ -12,22 +12,22 @@ import (
 )
 
 type ClsInstanceProvider interface {
-	ProvideCLSInstanceID(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, globalAccountID string, region string) (internal.ProvisioningOperation, error)
+	ProvideClsInstanceID(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, globalAccountID string, region string) (internal.ProvisioningOperation, error)
 }
 
-// provideClsTenantStep creates (if not exists) CLS tenant and provides its ID.
+// provideClsInstaceStep creates (if not exists) CLS tenant and provides its ID.
 // The step does not breaks the provisioning flow.
 type provideClsInstnaceStep struct {
 	//ClsStep
-	instanceProvider   ClsInstanceProvider
+	instanceProvider ClsInstanceProvider
 	operationManager *process.ProvisionOperationManager
 	regionOverride   string
 }
 
-func NewProvideClsTenantStep(ip ClsInstanceProvider, repo storage.Operations, regionOverride string, isMandatory bool) *provideClsInstnaceStep {
+func NewProvideClsInstaceStep(ip ClsInstanceProvider, repo storage.Operations, regionOverride string, isMandatory bool) *provideClsInstnaceStep {
 	return &provideClsInstnaceStep{
 		operationManager: process.NewProvisionOperationManager(repo),
-		instanceProvider:   ip,
+		instanceProvider: ip,
 		regionOverride:   regionOverride,
 	}
 }
@@ -71,7 +71,7 @@ func (s *provideClsInstnaceStep) Run(operation internal.ProvisioningOperation, l
 
 	// TODO: Change to new instantiation
 	smCli, err := operation.ServiceManagerClient(log)
-	op, err := s.instanceProvider.ProvideCLSInstanceID(s.operationManager, smCli, operation, operation.ProvisioningParameters.ErsContext.GlobalAccountID, region)
+	op, err := s.instanceProvider.ProvideClsInstanceID(s.operationManager, smCli, operation, operation.ProvisioningParameters.ErsContext.GlobalAccountID, region)
 	if err != nil {
 		return s.handleError(
 			operation,

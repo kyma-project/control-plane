@@ -10,6 +10,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/migrations"
@@ -197,6 +198,9 @@ func main() {
 	lmsClient := lms.NewClient(cfg.LMS, logs.WithField("service", "lmsClient"))
 	lmsTenantManager := lms.NewTenantManager(db.LMSTenants(), lmsClient, logs.WithField("service", "lmsTenantManager"))
 
+	clsClient := cls.NewClient(logs.WithField("service", "lmsClient"))
+	clsInstanceManager := cls.NewInstanceManager(db.CLSInstances(), clsClient, logs.WithField("service", "clsInstanceManager"))
+
 	// Register disabler. Convention:
 	// {component-name} : {component-disabler-service}
 	//
@@ -313,7 +317,7 @@ func main() {
 		},
 		{
 			weight:   2,
-			step:     provisioning.NewProvideClsTenantStep(db.Operations()),
+			step:     provisioning.NewClsActivationStep(cfg.Cls.Disabled, provisioning.NewProvideClsInstaceStep(clsInstanceManager, db.Operations(), "region", false)),
 			disabled: cfg.Ems.Disabled,
 		},
 		{

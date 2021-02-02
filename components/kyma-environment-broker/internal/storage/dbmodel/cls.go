@@ -2,7 +2,7 @@ package dbmodel
 
 import "time"
 
-type CLSTenantDTO struct {
+type CLSInstanceDTO struct {
 	ID        string
 	Name      string
 	Region    string

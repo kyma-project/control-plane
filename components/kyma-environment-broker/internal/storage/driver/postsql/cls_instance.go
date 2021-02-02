@@ -19,7 +19,7 @@ func NewCLSInstances(sess postsql.Factory) *clsInstances {
 
 func (s *clsInstances) FindInstanceByName(name, region string) (internal.CLSInstance, bool, error) {
 	sess := s.NewReadSession()
-	dto, err := sess.GetCLSTenant(name, region)
+	dto, err := sess.GetCLSInstance(name, region)
 
 	switch {
 	case err == nil:
@@ -38,7 +38,7 @@ func (s *clsInstances) FindInstanceByName(name, region string) (internal.CLSInst
 
 func (s *clsInstances) InsertInstance(tenant internal.CLSInstance) error {
 	sess := s.NewWriteSession()
-	return sess.InsertCLSInstance(dbmodel.CLSTenantDTO{
+	return sess.InsertCLSInstance(dbmodel.CLSInstanceDTO{
 		Name:      tenant.Name,
 		Region:    tenant.Region,
 		CreatedAt: tenant.CreatedAt,

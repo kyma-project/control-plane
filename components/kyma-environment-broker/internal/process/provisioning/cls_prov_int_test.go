@@ -30,7 +30,8 @@ func TestClsSteps(t *testing.T) {
 	})
 
 	offeringStep := NewClsOfferingStep(repo)
-	provisioningStep := NewClsProvisioningStep(repo)
+	instanceStep := NewProvideClsInstaceStep()
+	// provisioningStep := NewClsProvisioningStep(repo)
 
 	pp := internal.ProvisioningParameters{
 		ErsContext: internal.ERSContext{

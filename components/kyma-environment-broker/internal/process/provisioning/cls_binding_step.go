@@ -2,14 +2,14 @@ package provisioning
 
 import (
 	"fmt"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
-	"github.com/sirupsen/logrus"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 
 	"time"
 )
@@ -83,14 +83,16 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		}
 	} else {
 		// get the credentials from encrypted string in operation.Cls.Instance.
-		clsOverrides, err = decryptOverrides(s.secretKey, operation.Cls.Overrides)
+		// clsOverrides, err = decryptOverrides(s.secretKey, operation.Cls.Overrides)
+		_, err = decryptOverrides(s.secretKey, operation.Cls.Overrides)
+
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("decryptOverrides() call failed"))
 		}
 	}
 
 	// append overrides
-	operation.InputCreator.AppendOverrides(components.Eventing, getEventingOverrides(clsOverrides))
+	// operation.InputCreator.AppendOverrides(components.Eventing, getEventingOverrides(clsOverrides))
 
 	return operation, 0, nil
 }
@@ -100,4 +102,4 @@ func (s *ClsBindStep) handleError(operation internal.ProvisioningOperation, err 
 	return s.operationManager.OperationFailed(operation, msg)
 }
 
-func getClsOverrides
+// func getClsOverrides

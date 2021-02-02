@@ -4,14 +4,25 @@ import (
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+)
 
 type client struct {
 	log logrus.FieldLogger
+}
+
+func NewClient(log logrus.FieldLogger) Client {
+	return &client{
+		log: log,
+	}
+}
+
+type Client interface {
+	CreateInstance(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, input CreateInstanceInput) (o CreateInstanceOutput, err error)
 }
 
 //type clsParameters struct {
@@ -20,16 +31,6 @@ type client struct {
 //	MaxIngestInstances int  `json:"maxIngestInstances"`
 //	EsAPIEnabled       bool `json:"esApiEnabled"`
 //}
-
-func NewClient(log logrus.FieldLogger) Client {
-	return &client{
-		log:         log,
-	}
-}
-
-type Client interface {
-	CreateInstance(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, input CreateInstanceInput) (o CreateInstanceOutput, err error)
-}
 
 // CreateTenant create the LMS tenant
 // Tenant creation means creation of a cluster, which must be reusable for the same tenant/region/project
@@ -65,7 +66,7 @@ func (c *client) CreateInstance(om *process.ProvisionOperationManager, smCli ser
 	_, retry := om.UpdateOperation(op)
 	if retry > 0 {
 		c.log.Errorf("unable to update operation")
-		return CreateInstanceOutput{},errors.Wrapf(err , "Unable to update operation for brokerID: %s, service manger: %#v", op.Cls.Instance.BrokerID, smInput)
+		return CreateInstanceOutput{}, errors.Wrapf(err, "Unable to update operation for brokerID: %s, service manger: %#v", op.Cls.Instance.BrokerID, smInput)
 	}
 
 	op.Cls.Instance.InstanceID = smInput.ID
