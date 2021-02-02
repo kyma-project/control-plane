@@ -178,6 +178,11 @@ func GetEventingOverrides(evOverrides *EventingOverrides) []*gqlschema.ConfigEnt
 			Value:  evOverrides.IsBEBEnabled,
 			Secret: ptr.Bool(false),
 		},
+		{
+			Key:    "global.eventing.backend",
+			Value:  "beb",
+			Secret: ptr.Bool(false),
+		},
 	}
 }
 
