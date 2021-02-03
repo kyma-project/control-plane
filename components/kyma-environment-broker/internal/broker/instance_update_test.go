@@ -76,7 +76,13 @@ func TestUpdateEndpoint_Update(t *testing.T) {
 	// check if original ERS context is set again in the Instance entity
 	assert.NotEmpty(t, inst.Parameters.ErsContext.ServiceManager.Credentials.BasicAuth.Password)
 	// check if the handler was called
-	assert.Equal(t, instance, handler.Instance)
+	assert.Equal(t, &internal.ServiceManagerEntryDTO{
+		Credentials: internal.ServiceManagerCredentials{
+			BasicAuth: internal.ServiceManagerBasicAuth{
+				Username: "u",
+				Password: "p",
+			},
+		}}, handler.Instance.Parameters.ErsContext.ServiceManager)
 	assert.Equal(t, internal.ERSContext{
 		Active: ptr.Bool(false),
 	}, handler.ersContext)
