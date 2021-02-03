@@ -51,9 +51,9 @@ spec:
         regex: /upgrade/.*
     route:
     - destination:
-        host: {{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        host: {{ .Values.global.oathkeeper.host }}
         port:
-          number: {{ .Values.service.port }}
+          number: {{ .Values.global.oathkeeper.port }}
   - corsPolicy:
       allowHeaders:
       - Authorization
@@ -66,9 +66,9 @@ spec:
         regex: /orchestrations.*
     route:
     - destination:
-        host: {{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        host: {{ .Values.global.oathkeeper.host }}
         port:
-          number: {{ .Values.service.port }}
+          number: {{ .Values.global.oathkeeper.port }}
   - corsPolicy:
       allowHeaders:
         - Authorization
@@ -81,9 +81,9 @@ spec:
           regex: /runtimes
     route:
       - destination:
-          host: {{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+          host: {{ .Values.global.oathkeeper.host }}
           port:
-            number: {{ .Values.service.port }}
+            number: {{ .Values.global.oathkeeper.port }}
   {{- if .Values.swagger.virtualService.enabled }}
   # swagger exposed without authorization on root endpoint also needs access to static resources placed under /swagger folder
   - corsPolicy:
