@@ -443,7 +443,7 @@ func main() {
 
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
-		broker.NewServices(cfg.Broker, optComponentsSvc, logs),
+		broker.NewServices(cfg.Broker, logs),
 		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, plansValidator, cfg.EnableOnDemandVersion, logs),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
 		broker.NewUpdate(db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, logs),

@@ -13,20 +13,10 @@ func TestNewPlansSchemaValidatorErrors(t *testing.T) {
 		inputJSON    string
 		expErr       string
 	}{
-		"missing name, not valid components list": {
-			againstPlans: []string{GCPPlanID, AzurePlanID},
-			inputJSON:    `{"components": ["wrong component name"]}`,
-			expErr:       `(root): name is required, components.0: components.0 must be one of the following: "kiali", "tracing"`,
-		},
-		"missing name, not valid machine type": {
-			againstPlans: []string{AzurePlanID},
-			inputJSON:    `{"name": "wrong-machType", "machineType": "WrongName"}`,
-			expErr:       `machineType: machineType must be one of the following: "Standard_D8_v3"`,
-		},
 		"missing name, not valid region": {
 			againstPlans: []string{TrialPlanID},
 			inputJSON:    `{"region": "munich"}`,
-			expErr:       `(root): name is required, region: region must be one of the following: "europe", "us"`,
+			expErr:       `(root): name is required`,
 		},
 	}
 	for tN, tC := range tests {
