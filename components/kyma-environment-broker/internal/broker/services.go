@@ -8,11 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// OptionalComponentNamesProvider provides optional components names
-type OptionalComponentNamesProvider interface {
-	GetAllOptionalComponentsNames() []string
-}
-
 type ServicesEndpoint struct {
 	log logrus.FieldLogger
 	cfg Service

@@ -92,6 +92,8 @@ type RootSchema struct {
 
 	// Specified to true enables form view on website
 	ShowFormView bool `json:"_show_form_view"`
+	// Specifies in what order properties will be displayed on the form
+	ControlsOrder []string `json:"_controlsOrder"`
 }
 
 type ProvisioningProperties struct {
@@ -104,10 +106,9 @@ type ProvisioningProperties struct {
 
 func NameProperty() Type {
 	return Type{
-		Type:        "string",
-		MinLength:   1,
-		Title:       "Cluster Name",
-		Description: "Specifies the name of the cluster",
+		Type:      "string",
+		Title:     "Cluster Name",
+		MinLength: 1,
 	}
 }
 
@@ -117,14 +118,12 @@ func NewProvisioningProperties(machineTypes []string, regions []string) Provisio
 	return ProvisioningProperties{
 		Name: NameProperty(),
 		Region: &Type{
-			Type:        "string",
-			Enum:        ToInterfaceSlice(regions),
-			Description: "Defines the cluster region",
+			Type: "string",
+			Enum: ToInterfaceSlice(regions),
 		},
 		MachineType: &Type{
-			Type:        "string",
-			Enum:        ToInterfaceSlice(machineTypes),
-			Description: "Specifies the provider-specific virtual machine type",
+			Type: "string",
+			Enum: ToInterfaceSlice(machineTypes),
 		},
 		AutoScalerMin: &Type{
 			Type:        "integer",
@@ -142,20 +141,26 @@ func NewProvisioningProperties(machineTypes []string, regions []string) Provisio
 	}
 }
 
-func NewSchema(properties ProvisioningProperties) RootSchema {
+func DefaultControlsOrder() []string {
+	return []string{"name", "region", "machineType", "autoScalerMin", "autoScalerMax"}
+}
+
+func NewSchema(properties ProvisioningProperties, controlsOrder []string) RootSchema {
 	return RootSchema{
 		Schema: "http://json-schema.org/draft-04/schema#",
 		Type: Type{
 			Type: "object",
 		},
-		Properties:   properties,
-		Required:     []string{"name"},
-		ShowFormView: true,
+		Properties:    properties,
+		ShowFormView:  true,
+		Required:      []string{"name"},
+		ControlsOrder: controlsOrder,
 	}
 }
 
 func GCPSchema(machineTypes []string) []byte {
-	schema := NewSchema(NewProvisioningProperties(machineTypes, GCPRegions()))
+	properties := NewProvisioningProperties(machineTypes, GCPRegions())
+	schema := NewSchema(properties, DefaultControlsOrder())
 
 	bytes, err := json.Marshal(schema)
 	if err != nil {
@@ -165,7 +170,8 @@ func GCPSchema(machineTypes []string) []byte {
 }
 
 func AzureSchema(machineTypes []string) []byte {
-	schema := NewSchema(NewProvisioningProperties(machineTypes, AzureRegions()))
+	properties := NewProvisioningProperties(machineTypes, AzureRegions())
+	schema := NewSchema(properties, DefaultControlsOrder())
 
 	bytes, err := json.Marshal(schema)
 	if err != nil {
@@ -178,7 +184,7 @@ func TrialSchema() []byte {
 	schema := NewSchema(
 		ProvisioningProperties{
 			Name: NameProperty(),
-		})
+		}, []string{"name"})
 
 	bytes, err := json.Marshal(schema)
 	if err != nil {

@@ -5,17 +5,14 @@
     "name": {
       "type": "string",
       "title": "Cluster Name",
-      "description": "Specifies the name of the cluster",
       "minLength": 1
     },
     "region": {
       "type": "string",
-      "description": "Defines the cluster region",
       "enum": [ "eastus", "centralus", "westus2", "uksouth", "northeurope", "westeurope", "japaneast", "southeastasia" ]
     },
     "machineType": {
       "type": "string",
-      "description": "Specifies the provider-specific virtual machine type",
       "enum": ["Standard_D8_v3"]
     },
     "autoScalerMin": {
@@ -34,5 +31,12 @@
   "required": [
     "name"
   ],
-  "_show_form_view": true
+  "_show_form_view": true,
+  "_controlsOrder": [
+    "name",
+    "region",
+    "machineType",
+    "autoScalerMin",
+    "autoScalerMax"
+  ]
 }
