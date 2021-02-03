@@ -70,6 +70,8 @@ func GCPRegions() []string {
 
 type Type struct {
 	Type            string        `json:"type"`
+	Title           string        `json:"title,omitempty"`
+	Description     string        `json:"description,omitempty"`
 	Minimum         int           `json:"minimum,omitempty"`
 	Maximum         int           `json:"maximum,omitempty"`
 	MinLength       int           `json:"minLength,omitempty"`
@@ -85,47 +87,58 @@ type Type struct {
 type RootSchema struct {
 	Schema string `json:"$schema"`
 	Type
-	Properties   interface{} `json:"properties"`
-	Required     []string    `json:"required"`
-	ShowFormView bool        `json:"_show_form_view"`
+	Properties interface{} `json:"properties"`
+	Required   []string    `json:"required"`
+
+	// Specified to true enables form view on website
+	ShowFormView bool `json:"_show_form_view"`
 }
 
 type ProvisioningProperties struct {
 	Name          Type  `json:"name"`
-	MachineType   *Type `json:"machineType,omitempty"`
 	Region        *Type `json:"region,omitempty"`
+	MachineType   *Type `json:"machineType,omitempty"`
 	AutoScalerMin *Type `json:"autoScalerMin,omitempty"`
 	AutoScalerMax *Type `json:"autoScalerMax,omitempty"`
 }
 
-func NewProvisioningProperties(machineTypes []string, regions []string) ProvisioningProperties {
-	return ProvisioningProperties{
-		Name: NameProperty(),
-		MachineType: &Type{
-			Type: "string",
-			Enum: ToInterfaceSlice(machineTypes),
-		},
-		Region: &Type{
-			Type: "string",
-			Enum: ToInterfaceSlice(regions),
-		},
-		AutoScalerMin: &Type{
-			Type:    "integer",
-			Minimum: 2,
-		},
-		AutoScalerMax: &Type{
-			Type:    "integer",
-			Minimum: 2,
-			Maximum: 40,
-			Default: 10,
-		},
+func NameProperty() Type {
+	return Type{
+		Type:        "string",
+		MinLength:   1,
+		Title:       "Cluster Name",
+		Description: "Specifies the name of the cluster",
 	}
 }
 
-func NameProperty() Type {
-	return Type{
-		Type:      "string",
-		MinLength: 1,
+// NewProvisioningProperties creates a new properties for different plans
+// Note that the order of properties will be the same in the form on the website
+func NewProvisioningProperties(machineTypes []string, regions []string) ProvisioningProperties {
+	return ProvisioningProperties{
+		Name: NameProperty(),
+		Region: &Type{
+			Type:        "string",
+			Enum:        ToInterfaceSlice(regions),
+			Description: "Defines the cluster region",
+		},
+		MachineType: &Type{
+			Type:        "string",
+			Enum:        ToInterfaceSlice(machineTypes),
+			Description: "Specifies the provider-specific virtual machine type",
+		},
+		AutoScalerMin: &Type{
+			Type:        "integer",
+			Minimum:     2,
+			Default:     2,
+			Description: "Specifies the minimum number of virtual machines to create",
+		},
+		AutoScalerMax: &Type{
+			Type:        "integer",
+			Minimum:     2,
+			Maximum:     40,
+			Default:     10,
+			Description: "Specifies the maximum number of virtual machines to create",
+		},
 	}
 }
 
