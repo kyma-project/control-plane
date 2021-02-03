@@ -53,9 +53,7 @@ func (c *converter) applyOperation(source *internal.Operation, target *pkg.Opera
 		target.CreatedAt = source.CreatedAt
 		target.State = string(source.State)
 		target.Description = source.Description
-		if source.OrchestrationID != "" {
-			target.OrchestrationID = &source.OrchestrationID
-		}
+		target.OrchestrationID = source.OrchestrationID
 	}
 }
 

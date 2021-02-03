@@ -26,6 +26,6 @@ spec:
         - content-type
         allowMethods:
         - GET
-        allowOrigin:
-        - '*'
+        allowOrigins:
+        - regex: ".*"
 {{- end }}

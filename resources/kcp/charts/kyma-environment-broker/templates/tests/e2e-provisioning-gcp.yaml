@@ -2,7 +2,7 @@
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: e2e-provisioning
+  name: e2e-gcp
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
@@ -90,7 +90,7 @@ spec:
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: e2e-provisioning-cleanup
+  name: e2e-gcp-cleanup
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:

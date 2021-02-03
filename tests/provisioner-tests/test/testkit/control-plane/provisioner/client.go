@@ -20,6 +20,7 @@ type Client interface {
 	ReconnectRuntimeAgent(runtimeID string) (string, error)
 	RuntimeStatus(runtimeID string) (schema.RuntimeStatus, error)
 	RuntimeOperationStatus(operationID string) (schema.OperationStatus, error)
+	HibernateRuntime(runtimeID string) (string, error)
 }
 
 type client struct {
@@ -138,6 +139,21 @@ func (c client) RuntimeOperationStatus(operationID string) (schema.OperationStat
 		return schema.OperationStatus{}, errors.Wrap(err, "Failed to get Runtime operation status")
 	}
 	return response, nil
+}
+
+func (c client) HibernateRuntime(runtimeID string) (string, error) {
+	query := c.queryProvider.hibernateCluster(runtimeID)
+	req := c.newRequest(query)
+
+	var operationStatus schema.OperationStatus
+	err := c.graphQLClient.ExecuteRequest(req, &operationStatus)
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to hibernate runtime")
+	}
+	if operationStatus.ID == nil || operationStatus.RuntimeID == nil {
+		return "", errors.New("Failed to receive proper Operation Status response")
+	}
+	return *operationStatus.ID, nil
 }
 
 func (c client) newRequest(query string) *gcli.Request {

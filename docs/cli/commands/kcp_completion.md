@@ -1,22 +1,68 @@
-# kcp
-
-Day-two operations tool for Kyma Runtimes.
+# kcp completion
+Generates completion script
 
 ## Synopsis
 
-KCP CLI (Kyma Control Plane CLI) is a day-two operations tool for Kyma Runtimes, which allows you to view and manage the Runtimes in scale.
-It is possible to list and observe attributes and state of each Kyma Runtime, and perform various operations on them, such as upgrading the Kyma version.
-You can find the complete list of possible operations as commands below.
+Generates completion script for Bash, Zsh, Fish, or Powershell.
+### Bash
 
-The CLI supports configuration file for common (global) options needed for all commands. The config file will be looked up in this order:
-  - `--config {PATH}` option
-  - KCPCONFIG environment variable which contains the path
-  - $HOME/.kcp/config.yaml (default path).
+To load completions for Bash, run:
+`$ source <(kcp completion bash)`
 
-The configuration file is in YAML format and supports the following global options: oidc-issuer-url, oidc-client-id, oidc-client-secret, keb-api-url, kubeconfig-api-url, gardener-kubeconfig.
-See the **Global Options** section of each command for the description of these options.
+To load completions for each session, execute once:
+
+- Linux:
+`$ kcp completion bash > /etc/bash_completion.d/kcp`
+
+- MacOS:
+`$ kcp completion bash > /usr/local/etc/bash_completion.d/kcp`
+
+### Zsh
+
+If shell completion is not already enabled in your environment you will need
+to enable it.  You can execute the following once:
+`$ echo "autoload -U compinit; compinit" >> ~/.zshrc`
+
+To load completions for each session, execute once:
+`$ kcp completion zsh > "${fpath[1]}/_kcp"`
+
+You will need to start a new shell for this setup to take effect.
+
+### Fish
+
+To load completions for Fish, run:
+`$ kcp completion fish | source`
+
+To load completions for each session, execute once:
+`$ kcp completion fish > ~/.config/fish/completions/kcp.fish`
+
+### Powershell
+
+`PS> kcp completion powershell | Out-String | Invoke-Expression`
+
+To load completions for every new session, run:
+`PS> kcp completion powershell > kcp.ps1`
+
+Source this file from your Powershell profile.
+
+
+```bash
+kcp completion [bash|zsh|fish|powershell]
+```
+
+## Examples
+
+```
+kcp completion bash                            Display completions in bash.
+```
 
 ## Options
+
+```
+      --o string   autocompletion file (default "$HOME/kcp_completion")
+```
+
+## Global Options
 
 ```
       --config string                Path to the KCP CLI config file. Can also be set using the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml .
@@ -33,11 +79,5 @@ See the **Global Options** section of each command for the description of these 
 
 ## See also
 
-* [kcp completion](kcp_completion.md)	 - Generates completion script
-* [kcp kubeconfig](kcp_kubeconfig.md)	 - Downloads the kubeconfig file for a given Kyma Runtime
-* [kcp login](kcp_login.md)	 - Performs OIDC login required by all commands.
-* [kcp orchestrations](kcp_orchestrations.md)	 - Displays Kyma Control Plane (KCP) orchestrations.
-* [kcp runtimes](kcp_runtimes.md)	 - Displays Kyma Runtimes.
-* [kcp taskrun](kcp_taskrun.md)	 - Runs generic tasks on one or more Kyma Runtimes.
-* [kcp upgrade](kcp_upgrade.md)	 - Performs upgrade operations on Kyma Runtimes.
+* [kcp](kcp.md)	 - Day-two operations tool for Kyma Runtimes.
 
