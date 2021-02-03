@@ -22,7 +22,7 @@ type InstanceStorage interface {
 
 // TODO: not sure if needed or we get instanceID from the service manager
 type InstanceCreator interface {
-	CreateInstance(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, input CreateInstanceInput) (o CreateInstanceOutput, err error)
+	CreateInstance(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, input CreateInstanceInput) (o internal.ProvisioningOperation, err error)
 }
 
 type manager struct {
@@ -47,7 +47,7 @@ func (c *manager) ProvideClsInstanceID(om *process.ProvisionOperationManager, sm
 	if len(name) > 50 {
 		name = name[:50]
 	}
-	tenant, exists, err := c.instanceStorage.FindInstanceByName(name, region)
+	instance, exists, err := c.instanceStorage.FindInstanceByName(name, region)
 	if err != nil {
 		return op, errors.Wrapf(err, "while checking if tenant is already created")
 	}
@@ -65,23 +65,24 @@ func (c *manager) ProvideClsInstanceID(om *process.ProvisionOperationManager, sm
 		// it is important to save the tenant ID because tenant creation means creation of a cluster.
 		err = wait.PollImmediate(3*time.Second, 30*time.Second, func() (bool, error) {
 			err := c.instanceStorage.InsertInstance(internal.CLSInstance{
-				ID:        output.ID,
+				ID:        output.Cls.Instance.BrokerID,
 				Name:      name,
 				Region:    region,
 				CreatedAt: time.Now(),
 			})
 			if err != nil {
-				c.log.Warn(errors.Wrapf(err, "while saving cls tenant %s with ID %s", name, output.ID).Error())
+				c.log.Warn(errors.Wrapf(err, "while saving cls instance %s with ID %s", name, output.ID).Error())
 				return false, nil
 			}
 			return true, nil
 		})
 		if err != nil {
-			return op, errors.Wrapf(err, "while saving tenant to storage")
+			return op, errors.Wrapf(err, "while saving instance to storage")
 		}
 		return op, nil
 	}
+	op.Cls.Instance.InstanceID = instance.ID
 
-	return tenant.ID, nil
+	return op, nil
 }
 

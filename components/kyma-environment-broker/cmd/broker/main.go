@@ -198,7 +198,7 @@ func main() {
 	lmsClient := lms.NewClient(cfg.LMS, logs.WithField("service", "lmsClient"))
 	lmsTenantManager := lms.NewTenantManager(db.LMSTenants(), lmsClient, logs.WithField("service", "lmsTenantManager"))
 
-	clsClient := cls.NewClient(logs.WithField("service", "lmsClient"))
+	clsClient := cls.NewClient(logs.WithField("service", "clsClient"))
 	clsInstanceManager := cls.NewInstanceManager(db.CLSInstances(), clsClient, logs.WithField("service", "clsInstanceManager"))
 
 	// Register disabler. Convention:

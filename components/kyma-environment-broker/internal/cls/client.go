@@ -22,7 +22,7 @@ func NewClient(log logrus.FieldLogger) Client {
 }
 
 type Client interface {
-	CreateInstance(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, input CreateInstanceInput) (o CreateInstanceOutput, err error)
+	CreateInstance(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, input CreateInstanceInput) (o internal.ProvisioningOperation, err error)
 }
 
 //type clsParameters struct {
@@ -34,7 +34,7 @@ type Client interface {
 
 // CreateTenant create the LMS tenant
 // Tenant creation means creation of a cluster, which must be reusable for the same tenant/region/project
-func (c *client) CreateInstance(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, input CreateInstanceInput) (o CreateInstanceOutput, err error) {
+func (c *client) CreateInstance(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, input CreateInstanceInput) (o internal.ProvisioningOperation, err error) {
 	// Check if we already have a cls instance assigned to the GA, if so use it
 
 	// No cls instance assigned to GA provision a new one.
@@ -58,7 +58,7 @@ func (c *client) CreateInstance(om *process.ProvisionOperationManager, smCli ser
 
 	resp, err := smCli.Provision(op.Cls.Instance.BrokerID, smInput, true)
 	if err != nil {
-		return CreateInstanceOutput{}, errors.Wrapf(err, "Provision() call failed for brokerID: %s; service manager : %#v", op.Cls.Instance.BrokerID, smInput)
+		return op, errors.Wrapf(err, "Provision() call failed for brokerID: %s; service manager : %#v", op.Cls.Instance.BrokerID, smInput)
 	}
 	c.log.Infof("response from CLS provisioning call: %#v", resp)
 
@@ -66,10 +66,10 @@ func (c *client) CreateInstance(om *process.ProvisionOperationManager, smCli ser
 	_, retry := om.UpdateOperation(op)
 	if retry > 0 {
 		c.log.Errorf("unable to update operation")
-		return CreateInstanceOutput{}, errors.Wrapf(err, "Unable to update operation for brokerID: %s, service manger: %#v", op.Cls.Instance.BrokerID, smInput)
+		return op, errors.Wrapf(err, "Unable to update operation for brokerID: %s, service manger: %#v", op.Cls.Instance.BrokerID, smInput)
 	}
 
 	op.Cls.Instance.InstanceID = smInput.ID
 
-	return CreateInstanceOutput{ID: smInput.ID}, nil
+	return op, nil
 }
