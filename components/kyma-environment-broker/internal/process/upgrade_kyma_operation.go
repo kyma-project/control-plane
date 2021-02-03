@@ -69,6 +69,9 @@ func (om *UpgradeKymaOperationManager) RetryOperation(operation internal.Upgrade
 func (om *UpgradeKymaOperationManager) UpdateOperation(operation internal.UpgradeKymaOperation) (internal.UpgradeKymaOperation, time.Duration) {
 	updatedOperation, err := om.storage.UpdateUpgradeKymaOperation(operation)
 	if err != nil {
+		logrus.WithField("orchestrationID", operation.OrchestrationID).
+			WithField("instanceID", operation.InstanceID).
+			Errorf("Update provisioning operation failed: %s", err.Error())
 		return operation, 1 * time.Minute
 	}
 	return *updatedOperation, 0

@@ -89,11 +89,12 @@ func (s *EmsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		operation.Ems.Instance.Provisioned = true
 		operation.Ems.Instance.ProvisioningTriggered = false
 		// save the status
-		operation, retry := s.operationManager.UpdateOperation(operation)
+		op, retry := s.operationManager.UpdateOperation(operation)
 		if retry > 0 {
 			log.Errorf("unable to update operation")
 			return operation, time.Second, nil
 		}
+		operation = op
 	} else {
 		// get the credentials from encrypted string in operation.Ems.Instance.
 		eventingOverrides, err = DecryptEventingOverrides(s.secretKey, operation.Ems.Overrides)
