@@ -18,7 +18,7 @@ type InstanceStorage interface {
 	InsertInstance(tenant internal.CLSInstance) error
 }
 
-//go:generate mockery -name=InstanceCreator -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=InstanceCreator --output=automock --outpkg=automock --case=underscore
 
 // TODO: not sure if needed or we get instanceID from the service manager
 type InstanceCreator interface {
