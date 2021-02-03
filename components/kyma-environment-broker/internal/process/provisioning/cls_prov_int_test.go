@@ -29,6 +29,8 @@ func TestClsSteps(t *testing.T) {
 		Username:     "",
 	})
 
+	clsClient := NewClient(logs.WithField("service", "lmsClient"))
+
 	offeringStep := NewClsOfferingStep(repo)
 	instanceStep := NewProvideClsInstaceStep()
 	// provisioningStep := NewClsProvisioningStep(repo)
