@@ -73,6 +73,7 @@ func (c *Client) CreateInstance(smClient servicemanager.Client, serviceID, planI
 	params.SAML.Idp.MetadataURL = c.config.SAML.Idp.MetadataURL
 	params.SAML.Sp.EntityID = c.config.SAML.Sp.EntityID
 	params.SAML.Sp.SignaturePrivateKey = c.config.SAML.Sp.SignaturePrivateKey
+	smInput.Parameters = params
 
 	resp, err := smClient.Provision(brokerID, smInput, true)
 	if err != nil {
