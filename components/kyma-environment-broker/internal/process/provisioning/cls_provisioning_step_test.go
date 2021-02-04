@@ -1,7 +1,13 @@
 package provisioning
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 func TestClsProvisioningStep_Run(t *testing.T) {
@@ -49,4 +55,47 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 	//	ServiceID:  "svc-id",
 	//	PlanID:     "plan-id",
 	//})
+}
+
+func TestClsActivationStepShouldActivateForOne(t *testing.T) {
+	// Given
+	log := logrus.New()
+	operation := fixOperationWithPlanID("another")
+	anotherOperation := fixOperationWithPlanID("activated")
+	var activationTime time.Duration = 10
+
+	mockStep := &automock.Step{}
+	mockStep.On("Run", operation, log).Return(anotherOperation, activationTime, nil)
+
+	activationStep := NewClsActivationStep(false, mockStep)
+
+	// When
+	returnedOperation, time, err := activationStep.Run(operation, log)
+
+	// Then
+	mockStep.AssertExpectations(t)
+	require.NoError(t, err)
+	assert.Equal(t, activationTime, time)
+	assert.Equal(t, anotherOperation, returnedOperation)
+}
+
+func TestClsActivationStepShouldNotActivate(t *testing.T) {
+	// Given
+	log := logrus.New()
+	operation := fixOperationWithPlanID(broker.TrialPlanID)
+	var activationTime time.Duration = 0
+
+	mockStep := &automock.Step{}
+	mockStep.On("Name").Return("Test")
+
+	activationStep := NewClsActivationStep(false, mockStep)
+
+	// When
+	returnedOperation, time, err := activationStep.Run(operation, log)
+
+	// Then
+	mockStep.AssertExpectations(t)
+	require.NoError(t, err)
+	assert.Equal(t, activationTime, time)
+	assert.Equal(t, operation, returnedOperation)
 }

@@ -20,7 +20,7 @@ const (
 	RuntimeStateTableName  = "runtime_states"
 	LMSTenantTableName     = "lms_tenants"
 	CreatedAtField         = "created_at"
-	CLSInstanceTableName   = "clas_instances"
+	CLSInstanceTableName   = "cls_instances"
 )
 
 // InitializeDatabase opens database connection and initializes schema if it does not exist
