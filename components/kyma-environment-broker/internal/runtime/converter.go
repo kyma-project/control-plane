@@ -68,6 +68,7 @@ func (c *converter) NewDTO(instance internal.Instance) (pkg.RuntimeDTO, error) {
 		ServicePlanID:    instance.ServicePlanID,
 		ServicePlanName:  instance.ServicePlanName,
 		ProviderRegion:   instance.ProviderRegion,
+		UserID:           instance.Parameters.ErsContext.UserID,
 		Status: pkg.RuntimeStatus{
 			CreatedAt:    instance.CreatedAt,
 			ModifiedAt:   instance.UpdatedAt,

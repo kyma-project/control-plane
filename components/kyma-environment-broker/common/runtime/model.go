@@ -17,6 +17,7 @@ type RuntimeDTO struct {
 	ServicePlanID    string        `json:"servicePlanID"`
 	ServicePlanName  string        `json:"servicePlanName"`
 	Status           RuntimeStatus `json:"status"`
+	UserID           string        `json:"userID"`
 }
 
 type RuntimeStatus struct {
