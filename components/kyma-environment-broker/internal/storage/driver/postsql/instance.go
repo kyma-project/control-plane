@@ -28,7 +28,7 @@ func NewInstance(sess postsql.Factory, operations *operations) *Instance {
 func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, error) {
 	sess := s.NewReadSession()
 	var (
-		instances []internal.InstanceWithOperation
+		instances []dbmodel.InstanceWithOperationDTO
 		lastErr   dberr.Error
 	)
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
@@ -43,7 +43,21 @@ func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]i
 		return nil, lastErr
 	}
 
-	return instances, nil
+	var result []internal.InstanceWithOperation
+	for _, dto := range instances {
+		inst, err := toInstance(dto.InstanceDTO)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, internal.InstanceWithOperation{
+			Instance:    inst,
+			Type:        dto.Type,
+			State:       dto.State,
+			Description: dto.Description,
+		})
+	}
+
+	return result, nil
 }
 
 func (s *Instance) FindAllInstancesForRuntimes(runtimeIdList []string) ([]internal.Instance, error) {
@@ -284,5 +298,17 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 }
 
 func (s *Instance) List(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
-	return s.NewReadSession().ListInstances(filter)
+	dtos, count, totalCount, err := s.NewReadSession().ListInstances(filter)
+	if err != nil {
+		return []internal.Instance{}, 0, 0, err
+	}
+	var instances []internal.Instance
+	for _, dto := range dtos {
+		instance, err := toInstance(dto)
+		if err != nil {
+			return []internal.Instance{}, 0, 0, err
+		}
+		instances = append(instances, instance)
+	}
+	return instances, count, totalCount, err
 }

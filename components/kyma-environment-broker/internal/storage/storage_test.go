@@ -3,6 +3,7 @@ package storage_test
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"math/rand"
 	"sort"
 	"testing"
@@ -350,8 +351,8 @@ func TestPostgres(t *testing.T) {
 			require.Equal(t, 2, count)
 			require.Equal(t, 3, totalCount)
 
-			assert.Equal(t, fixInstances[0].InstanceID, out[0].InstanceID)
-			assert.Equal(t, fixInstances[1].InstanceID, out[1].InstanceID)
+			assertInstanceByIgnoreTime(t, fixInstances[0], out[0])
+			assertInstanceByIgnoreTime(t, fixInstances[1], out[1])
 
 			// when
 			out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{PageSize: 2, Page: 2})
@@ -1143,7 +1144,23 @@ func fixInstance(testData instanceData) *internal.Instance {
 		ServicePlanName: testData.val,
 		DashboardURL:    fmt.Sprintf("https://console.%s.kyma.local", testData.val),
 		ProviderRegion:  testData.val,
-		Parameters:      internal.ProvisioningParameters{},
+		Parameters:      internal.ProvisioningParameters{
+			ErsContext:     internal.ERSContext{
+				SubAccountID:    suid,
+				GlobalAccountID: gaid,
+				Active:          ptr.Bool(true),
+				ServiceManager: &internal.ServiceManagerEntryDTO{
+					Credentials: internal.ServiceManagerCredentials{
+						BasicAuth: internal.ServiceManagerBasicAuth{
+							Username: "u",
+							Password: "p",
+						},
+					},
+					URL:         "http://url",
+				},
+			},
+			PlatformRegion: "eu",
+		},
 	}
 }
 
