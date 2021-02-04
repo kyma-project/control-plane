@@ -149,6 +149,9 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	fatalOnError(err)
 
+	clsConfig, err := cls.Load("/todo/provide/cls/config/path")
+	fatalOnError(err)
+
 	// create logger
 	logger := lager.NewLogger("kyma-env-broker")
 	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.DEBUG))
@@ -297,7 +300,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewClsOfferingStep(db.Operations()),
+			step:     provisioning.NewClsOfferingStep(clsConfig, db.Operations()),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
