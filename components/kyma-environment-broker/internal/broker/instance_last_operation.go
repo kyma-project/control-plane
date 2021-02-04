@@ -38,8 +38,15 @@ func (b *LastOperationEndpoint) LastOperation(ctx context.Context, instanceID st
 		_, err := b.instancesStorage.GetByID(instanceID)
 		switch {
 		case err == nil:
-			err = errors.New("operation data must be provided for asynchronous operations")
-			return domain.LastOperation{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, err.Error())
+			lastOp, err := b.operationStorage.GetLastOperation(instanceID)
+			if err != nil {
+				logger.Errorf("cannot get operation from storage: %s", err)
+				return domain.LastOperation{}, errors.Wrapf(err, "while getting last operation from storage")
+			}
+			return domain.LastOperation{
+				State:       lastOp.State,
+				Description: lastOp.Description,
+			}, nil
 		case dberr.IsNotFound(err):
 			return domain.LastOperation{}, apiresponses.NewFailureResponse(errors.Errorf("instance does not exist"), http.StatusGone, fmt.Sprintf("instance with ID %s is not found in DB", instanceID))
 		default:
