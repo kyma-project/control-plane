@@ -49,7 +49,7 @@ func (c *manager) ProvideClsInstanceID(om *process.ProvisionOperationManager, sm
 	}
 	instance, exists, err := c.instanceStorage.FindInstanceByName(name, region)
 	if err != nil {
-		return op, errors.Wrapf(err, "while checking if tenant is already created")
+		return op, errors.Wrapf(err, "while checking if instance is already created")
 	}
 
 	if !exists {
@@ -62,10 +62,10 @@ func (c *manager) ProvideClsInstanceID(om *process.ProvisionOperationManager, sm
 			return op, errors.Wrapf(err, "while creating instance name=%s region=%s in cls", name, region)
 		}
 
-		// it is important to save the tenant ID because tenant creation means creation of a cluster.
+		// it is important to save the instance ID because instance creation means creation of a cluster.
 		err = wait.PollImmediate(3*time.Second, 30*time.Second, func() (bool, error) {
 			err := c.instanceStorage.InsertInstance(internal.CLSInstance{
-				ID:        output.Cls.Instance.BrokerID,
+				ID:        output.Cls.Instance.InstanceID,
 				Name:      name,
 				Region:    region,
 				CreatedAt: time.Now(),
