@@ -18,8 +18,9 @@ const (
 )
 
 const (
-	tableOutput string = "table"
-	jsonOutput  string = "json"
+	tableOutput        string = "table"
+	jsonOutput         string = "json"
+	customcolumnOutput string = "custom-columns"
 )
 
 const (
@@ -137,13 +138,15 @@ func (keys *GlobalOptionsKey) GardenerNamespace() string {
 
 // SetOutputOpt configures the optput type option on the given command
 func SetOutputOpt(cmd *cobra.Command, opt *string) {
-	cmd.Flags().StringVarP(opt, "output", "o", tableOutput, fmt.Sprintf("Output type of displayed Runtime(s). The possible values are: %s, %s.", tableOutput, jsonOutput))
+	cmd.Flags().StringVarP(opt, "output", "o", tableOutput, fmt.Sprintf("Output type of displayed Runtime(s). The possible values are: %s, %s, %s.", tableOutput, jsonOutput, customcolumnOutput))
 }
 
 // ValidateOutputOpt checks whether the given optput type is one of the valid values
 func ValidateOutputOpt(opt string) error {
-	switch opt {
-	case tableOutput, jsonOutput:
+	switch {
+	case opt == tableOutput, opt == jsonOutput:
+		return nil
+	case strings.HasPrefix(opt, customcolumnOutput):
 		return nil
 	}
 	return fmt.Errorf("invalid value for output: %s", opt)

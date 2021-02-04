@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
@@ -120,18 +121,29 @@ func (cmd *RuntimeCommand) Validate() error {
 }
 
 func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
-	switch cmd.output {
-	case tableOutput:
+	switch {
+	case cmd.output == tableOutput:
 		tp, err := printer.NewTablePrinter(tableColumns, false)
 		if err != nil {
 			return err
 		}
 		return tp.PrintObj(runtimes.Data)
-	case jsonOutput:
+	case cmd.output == jsonOutput:
 		jp := printer.NewJSONPrinter("  ")
 		jp.PrintObj(runtimes)
-	}
+	case strings.HasPrefix(cmd.output, customcolumnOutput):
+		_, templateFile := printer.ParseOutputToTemplateTypeAndElement(cmd.output)
+		column, err := printer.ParseColumnToHeaderAndFieldSpec(templateFile)
+		if err != nil {
+			return err
+		}
 
+		ccp, err := printer.NewTablePrinter(column, false)
+		if err != nil {
+			return err
+		}
+		return ccp.PrintObj(runtimes.Data)
+	}
 	return nil
 }
 
