@@ -261,18 +261,29 @@ func (cmd *OrchestrationCommand) showOrchestrations() error {
 		return errors.Wrap(err, "while listing orchestrations")
 	}
 
-	switch cmd.output {
-	case tableOutput:
+	switch {
+	case cmd.output == tableOutput:
 		tp, err := printer.NewTablePrinter(orchestrationColumns, false)
 		if err != nil {
 			return err
 		}
 		return tp.PrintObj(srl.Data)
-	case jsonOutput:
+	case cmd.output == jsonOutput:
 		jp := printer.NewJSONPrinter("  ")
 		jp.PrintObj(srl)
-	}
+	case strings.HasPrefix(cmd.output, customcolumnOutput):
+		_, templateFile := printer.ParseOutputToTemplateTypeAndElement(cmd.output)
+		column, err := printer.ParseColumnToHeaderAndFieldSpec(templateFile)
+		if err != nil {
+			return err
+		}
 
+		ccp, err := printer.NewTablePrinter(column, false)
+		if err != nil {
+			return err
+		}
+		return ccp.PrintObj(srl.Data)
+	}
 	return nil
 }
 
