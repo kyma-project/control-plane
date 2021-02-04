@@ -1,23 +1,23 @@
 package provisioning_test
 
 import (
+	"github.com/Peripli/service-manager-cli/pkg/types"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/Peripli/service-manager-cli/pkg/types"
 
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestClsOfferingStep_Run(t *testing.T) {
 	// given
 	repo := storage.NewMemoryStorage().Operations()
-	step := provisioning.NewClsOfferingStep(repo)
+	step := provisioning.NewClsOfferingStep(nil, repo)
 	operation := internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{},

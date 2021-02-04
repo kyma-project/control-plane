@@ -19,8 +19,7 @@ type CreateInstanceOutput struct {
 }
 
 var (
-	//DefaultConfig is the default top-level configuration.
-	DefaultConfig = Config{
+	defaultConfig = Config{
 		RetentionPeriod:         7,
 		MaxDataInstances:        2,
 		MaxIngestInstances:      2,
@@ -102,7 +101,7 @@ type SAMLConfig struct {
 
 // Load parses the YAML input s into a Config
 func Load(s string) (*Config, error) {
-	config := DefaultConfig
+	config := defaultConfig
 
 	if err := yaml.UnmarshalStrict([]byte(s), &config); err != nil {
 		return nil, err
