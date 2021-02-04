@@ -32,7 +32,7 @@ type Client interface {
 //	EsAPIEnabled       bool `json:"esApiEnabled"`
 //}
 
-// CreateTenant create the LMS tenant
+// CreateTenant create the CLS Instance
 // Tenant creation means creation of a cluster, which must be reusable for the same tenant/region/project
 func (c *client) CreateInstance(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, input CreateInstanceInput) (o internal.ProvisioningOperation, err error) {
 	// Check if we already have a cls instance assigned to the GA, if so use it

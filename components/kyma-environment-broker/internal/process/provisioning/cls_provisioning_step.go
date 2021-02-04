@@ -71,6 +71,7 @@ func (s *provideClsInstnaceStep) Run(operation internal.ProvisioningOperation, l
 
 	// TODO: Change to new instantiation
 	smCli, err := operation.ServiceManagerClient(log)
+
 	op, err := s.instanceProvider.ProvideClsInstanceID(s.operationManager, smCli, operation, operation.ProvisioningParameters.ErsContext.GlobalAccountID, region)
 	if err != nil {
 		return s.handleError(

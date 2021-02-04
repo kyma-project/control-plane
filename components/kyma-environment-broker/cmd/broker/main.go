@@ -318,7 +318,7 @@ func main() {
 		{
 			weight:   2,
 			step:     provisioning.NewClsActivationStep(cfg.Cls.Disabled, provisioning.NewProvideClsInstaceStep(clsInstanceManager, db.Operations(), "region", false)),
-			disabled: cfg.Ems.Disabled,
+			disabled: cfg.Cls.Disabled,
 		},
 		{
 			weight:   2,
