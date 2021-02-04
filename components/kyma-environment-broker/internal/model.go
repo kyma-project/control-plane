@@ -28,9 +28,9 @@ type ProvisionerInputCreator interface {
 }
 
 type CLSInstance struct {
-	ID string
-	Name string
-	Region string
+	ID        string
+	Name      string
+	Region    string
 	CreatedAt time.Time
 }
 type LMSTenant struct {
@@ -174,6 +174,7 @@ type InstanceWithOperation struct {
 }
 
 type SMClientFactory interface {
+	ForCredentials(credentials *servicemanager.Credentials) servicemanager.Client
 	ForCustomerCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (servicemanager.Client, error)
 	ProvideCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (*servicemanager.Credentials, error)
 }

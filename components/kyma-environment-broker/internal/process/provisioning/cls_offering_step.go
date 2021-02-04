@@ -3,6 +3,7 @@ package provisioning
 import (
 	"fmt"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -21,11 +22,13 @@ const (
 )
 
 type ClsOfferingStep struct {
+	config           *cls.Config
 	operationManager *process.ProvisionOperationManager
 }
 
-func NewClsOfferingStep(repo storage.Operations) *ClsOfferingStep {
+func NewClsOfferingStep(config *cls.Config, repo storage.Operations) *ClsOfferingStep {
 	return &ClsOfferingStep{
+		config:           config,
 		operationManager: process.NewProvisionOperationManager(repo),
 	}
 }
@@ -43,7 +46,7 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 	// 1. parse CLS SM creds
 	// 2. fetch the relevant (by region)
 	// 3. init the SM client
-	smCli, err := operation.ServiceManagerClient(log)
+	smCli, err := cls.ServiceManagerClient(s.config.ServiceManager, &operation)
 	if err != nil {
 		return s.handleError(operation, err, "unable to create Service Manager client", log)
 	}
