@@ -320,7 +320,7 @@ func main() {
 		},
 		{
 			weight:   2,
-			step:     provisioning.NewClsActivationStep(cfg.Cls.Disabled, provisioning.NewProvideClsInstaceStep(clsInstanceManager, db.Operations(), "region", false)),
+			step:     provisioning.NewClsActivationStep(cfg.Cls.Disabled, provisioning.NewClsProvisioningStep(clsInstanceManager, db.Operations())),
 			disabled: cfg.Cls.Disabled,
 		},
 		{

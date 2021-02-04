@@ -18,19 +18,11 @@ import (
 
 // TestClsSteps tests all CLS steps with real Service Manager
 // Usage:
+// export SM_URL=
 // export SM_USERNAME=
 // export SM_PASSWORD=
-// export SM_URL=
 // go test -v -tags=sm_integration ./internal/process/provisioning/... -run TestClsSteps -count=1
 func TestClsSteps(t *testing.T) {
-	//db := storage.NewMemoryStorage()
-	repo := storage.NewMemoryStorage().Operations()
-	cliFactory := servicemanager.NewClientFactory(servicemanager.Config{
-		OverrideMode: servicemanager.SMOverrideModeNever,
-		URL:          "",
-		Password:     "",
-		Username:     "",
-	})
 	clsConfig := &cls.Config{
 		ServiceManager: &cls.ServiceManagerConfig{
 			Credentials: []*cls.ServiceManagerCredentials{
@@ -47,37 +39,30 @@ func TestClsSteps(t *testing.T) {
 	logs := logrus.New()
 	logs.SetFormatter(&logrus.JSONFormatter{})
 
-	offeringStep := NewClsOfferingStep(clsConfig, repo)
-	//clsClient := cls.NewClient(logs.WithField("service", "clsClient"))
-	//clsIM := cls.NewInstanceManager(db.CLSInstances(), clsClient, logs.WithField("service", "clsInstanceManager"))
-	//instanceStep := NewProvideClsInstaceStep(clsIM, repo, "region", false)
-
-	pp := internal.ProvisioningParameters{
-		Parameters: internal.ProvisioningParametersDTO{
-			Region: func() *string {
-				local := "westeurope"
-				return &local
-			}(),
-		},
-	}
 	operation := internal.ProvisioningOperation{
-		Operation:       internal.Operation{ProvisioningParameters: pp},
-		SMClientFactory: cliFactory,
+		Operation: internal.Operation{ProvisioningParameters: internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{
+				Region: func(s string) *string { return &s }("westeurope"),
+			},
+		}},
+		SMClientFactory: servicemanager.NewClientFactory(servicemanager.Config{}),
+		InputCreator:    newInputCreator(),
 	}
 
-	simpleInputCreator := newInputCreator()
-	operation.InputCreator = simpleInputCreator
-
+	repo := storage.NewMemoryStorage().Operations()
 	repo.InsertProvisioningOperation(operation)
 
-	log := logrus.New()
+	offeringStep := NewClsOfferingStep(clsConfig, repo)
+	clsClient := cls.NewClient(logs.WithField("service", "clsClient"))
+	clsIM := cls.NewInstanceManager(db.CLSInstances(), clsClient, logs.WithField("service", "clsInstanceManager"))
+	provisioningStep := NewProvideClsInstaceStep(clsIM, repo, "region", false)
 
 	operation, retry, err := offeringStep.Run(operation, log)
 	fmt.Printf(">>> %#v\n", operation.Cls)
 	require.NoError(t, err)
 	require.Zero(t, retry)
 
-	// operation, retry, err = instanceStep.Run(operation, log)
+	// operation, retry, err = provisioningStep.Run(operation, log)
 	// fmt.Printf(">>> %#v\n", operation.Cls)
 	// require.NoError(t, err)
 	// require.Zero(t, retry)

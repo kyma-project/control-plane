@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -15,25 +16,22 @@ type ClsInstanceProvider interface {
 	ProvideClsInstanceID(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, globalAccountID string, region string) (internal.ProvisioningOperation, error)
 }
 
-// provideClsInstaceStep creates (if not exists) CLS tenant and provides its ID.
-// The step does not breaks the provisioning flow.
-type provideClsInstnaceStep struct {
-	//ClsStep
+type clsProvisioningStep struct {
+	config           *cls.Config
 	instanceProvider ClsInstanceProvider
 	operationManager *process.ProvisionOperationManager
-	regionOverride   string
 }
 
-func NewProvideClsInstaceStep(ip ClsInstanceProvider, repo storage.Operations, regionOverride string, isMandatory bool) *provideClsInstnaceStep {
-	return &provideClsInstnaceStep{
+func NewClsProvisioningStep(config *cls.Config, ip ClsInstanceProvider, repo storage.Operations) *provideClsInstanceStep {
+	return &clsProvisioningStep{
+		config:           config,
 		operationManager: process.NewProvisionOperationManager(repo),
 		instanceProvider: ip,
-		regionOverride:   regionOverride,
 	}
 }
 
-func (s *provideClsInstnaceStep) Name() string {
-	return "Create_CLS_Tenant"
+func (s *clsProvisioningStep) Name() string {
+	return "CLS_Provision"
 }
 
 //type clsParameters struct {
@@ -59,18 +57,14 @@ func (s *provideClsInstnaceStep) Name() string {
 //	return "CLS_Provision"
 //}
 
-func (s *provideClsInstnaceStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *clsProvisioningStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
 	// TODO: Fetch if there is already a CLS assigned to the GA. If so then we dont need to provision a new one.
 	if operation.Cls.Instance.InstanceID != "" {
 		return operation, 0, nil
 	}
 
-	// TODO: Fetch Region
-	region := "cls_regions"
-
-	// TODO: Change to new instantiation
-	smCli, err := operation.ServiceManagerClient(log)
+	smCli, err := cls.ServiceManagerClient(s.config.ServiceManager, &operation)
 
 	op, err := s.instanceProvider.ProvideClsInstanceID(s.operationManager, smCli, operation, operation.ProvisioningParameters.ErsContext.GlobalAccountID, region)
 	if err != nil {
@@ -127,7 +121,7 @@ func (s *provideClsInstnaceStep) Run(operation internal.ProvisioningOperation, l
 //	return operation, 0, nil
 //}
 
-func (s *provideClsInstnaceStep) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *clsProvisioningStep) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
 	return s.operationManager.OperationFailed(operation, msg)
 }
