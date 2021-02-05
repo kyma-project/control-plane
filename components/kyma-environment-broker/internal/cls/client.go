@@ -45,16 +45,22 @@ func NewClient(config *Config, log logrus.FieldLogger) *Client {
 	}
 }
 
+type CreateInstanceRequest struct {
+	ServiceID string
+	PlanID    string
+	BrokerID  string
+}
+
 // CreateInstance create the CLS Instance
 // Instance creation means creation of a cluster, which must be reusable for the same instance/region/project
-func (c *Client) CreateInstance(smClient servicemanager.Client, serviceID, planID, brokerID string) (string, error) {
-	var smInput servicemanager.ProvisioningInput
-	smInput.ID = uuid.New().String()
-	smInput.ServiceID = serviceID
-	smInput.PlanID = planID
-	smInput.SpaceGUID = uuid.New().String()
-	smInput.OrganizationGUID = uuid.New().String()
-	smInput.Context = map[string]interface{}{
+func (c *Client) CreateInstance(smClient servicemanager.Client, request *CreateInstanceRequest) (string, error) {
+	var input servicemanager.ProvisioningInput
+	input.ID = uuid.New().String()
+	input.ServiceID = request.ServiceID
+	input.PlanID = request.PlanID
+	input.SpaceGUID = uuid.New().String()
+	input.OrganizationGUID = uuid.New().String()
+	input.Context = map[string]interface{}{
 		"platform": "kubernetes",
 	}
 
@@ -73,13 +79,13 @@ func (c *Client) CreateInstance(smClient servicemanager.Client, serviceID, planI
 	params.SAML.Idp.MetadataURL = c.config.SAML.Idp.MetadataURL
 	params.SAML.Sp.EntityID = c.config.SAML.Sp.EntityID
 	params.SAML.Sp.SignaturePrivateKey = c.config.SAML.Sp.SignaturePrivateKey
-	smInput.Parameters = params
+	input.Parameters = params
 
-	resp, err := smClient.Provision(brokerID, smInput, true)
+	resp, err := smClient.Provision(request.BrokerID, input, true)
 	if err != nil {
-		return "", errors.Wrapf(err, "Provision() call failed for brokerID: %s; service manager : %#v", brokerID, smInput)
+		return "", errors.Wrapf(err, "Provision() call failed for brokerID: %s; service manager : %#v", request.BrokerID, input)
 	}
 	c.log.Infof("response from CLS provisioning call: %#v", resp)
 
-	return smInput.ID, nil
+	return input.ID, nil
 }

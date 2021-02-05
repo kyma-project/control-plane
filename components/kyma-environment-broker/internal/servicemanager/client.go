@@ -42,6 +42,7 @@ func (c *client) ListOfferingsByName(name string) (*types.ServiceOfferings, erro
 	err := c.get(web.ServiceOfferingsURL, offerings, &query.Parameters{
 		FieldQuery: []string{fmt.Sprintf("name eq '%s'", name)},
 	})
+	fmt.Printf("ListOfferingsByName: %#v\n", offerings)
 	if err != nil {
 		return nil, err
 	}
@@ -75,26 +76,29 @@ func (c *client) ListPlansByName(planName, offeringID string) (*types.ServicePla
 }
 
 func (c *client) Provision(brokerID string, input ProvisioningInput, acceptsIncomplete bool) (*ProvisionResponse, error) {
-	url := fmt.Sprintf("%s/%s/v2/service_instances/%s", web.OSBURL, brokerID, input.ID)
+	//url := fmt.Sprintf("%s/%s/v2/service_instances/%s", web.OSBURL, brokerID, input.ID)
 
 	body, err := json.Marshal(input)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while encoding input body")
 	}
-	bufferedBody := bytes.NewBuffer(body)
+	fmt.Printf(string(body))
+	//bufferedBody := bytes.NewBuffer(body)
 
 	q := &query.Parameters{}
 	c.configureAcceptsIncompleteParam(q, acceptsIncomplete)
 
-	response := &ProvisionResponseBody{}
-	statusCode, err := c.call(http.MethodPut, url, response, q, bufferedBody)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while calling provision endpoint")
-	}
-	return &ProvisionResponse{
-		ProvisionResponseBody: *response,
-		HTTPResponse:          HTTPResponse{StatusCode: statusCode},
-	}, nil
+	// response := &ProvisionResponseBody{}
+	// statusCode, err := c.call(http.MethodPut, url, response, q, bufferedBody)
+	// if err != nil {
+	// 	return nil, errors.Wrapf(err, "while calling provision endpoint")
+	// }
+	// return &ProvisionResponse{
+	// 	ProvisionResponseBody: *response,
+	// 	HTTPResponse:          HTTPResponse{StatusCode: statusCode},
+	// }, nil
+
+	return nil, errors.New("dry-run")
 }
 
 func (c *client) configureAcceptsIncompleteParam(q *query.Parameters, acceptsIncomplete bool) {

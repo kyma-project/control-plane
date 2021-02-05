@@ -19,7 +19,7 @@ type InstanceStorage interface {
 }
 
 type InstanceCreator interface {
-	CreateInstance(smClient servicemanager.Client, serviceID, planID, brokerID string) (string, error)
+	CreateInstance(smClient servicemanager.Client, request *CreateInstanceRequest) (string, error)
 }
 
 type manager struct {
@@ -49,22 +49,27 @@ func (c *manager) CreateInstanceIfNoneExists(om *process.ProvisionOperationManag
 		return op, nil
 	}
 
-	output, err := c.creator.CreateInstance(smCli, op.Cls.Instance.ServiceID, op.Cls.Instance.PlanID, op.Cls.Instance.BrokerID)
+	instanceID, err := c.creator.CreateInstance(smCli, &CreateInstanceRequest{
+		ServiceID: op.Cls.Instance.ServiceID,
+		PlanID:    op.Cls.Instance.PlanID,
+		BrokerID:  op.Cls.Instance.BrokerID,
+	})
 	if err != nil {
 		return op, errors.Wrapf(err, "while creating instance name=%s", normalizedGlobalAccountID)
 	}
 
+	op.Cls.Instance.InstanceID = instanceID
 	op.Cls.Instance.ProvisioningTriggered = true
 
 	// it is important to save the instance ID because instance creation means creation of a cluster.
 	err = wait.PollImmediate(3*time.Second, 30*time.Second, func() (bool, error) {
 		err := c.storage.InsertInstance(internal.CLSInstance{
-			ID:        output,
+			ID:        instanceID,
 			Name:      normalizedGlobalAccountID,
 			CreatedAt: time.Now(),
 		})
 		if err != nil {
-			c.log.Warn(errors.Wrapf(err, "while saving cls instance %s with ID %s", normalizedGlobalAccountID, output).Error())
+			c.log.Warn(errors.Wrapf(err, "while saving cls instance %s with ID %s", normalizedGlobalAccountID, instanceID).Error())
 			return false, nil
 		}
 		return true, nil

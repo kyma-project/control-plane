@@ -26,6 +26,9 @@ import (
 // go test -v -tags=sm_integration ./internal/process/provisioning/... -run TestClsSteps -count=1
 func TestClsSteps(t *testing.T) {
 	clsConfig := &cls.Config{
+		RetentionPeriod:    7,
+		MaxDataInstances:   2,
+		MaxIngestInstances: 2,
 		ServiceManager: &cls.ServiceManagerConfig{
 			Credentials: []*cls.ServiceManagerCredentials{
 				{
