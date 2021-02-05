@@ -1,6 +1,9 @@
 package dbmodel
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 // InstanceFilter holds the filters when queryíing Instances
 type InstanceFilter struct {
@@ -34,4 +37,12 @@ type InstanceDTO struct {
 	DeletedAt time.Time
 
 	Version int
+}
+
+type InstanceWithOperationDTO struct {
+	InstanceDTO
+
+	Type        sql.NullString
+	State       sql.NullString
+	Description sql.NullString
 }
