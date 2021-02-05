@@ -43,7 +43,7 @@ spec:
     config:
       jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
       scope_strategy: exact
-      required_scope: ["{{ .Values.oidc.groups.operator }}"]
+      required_scope: ["{{ .Values.oidc.groups.operator }}", "{{ .Values.oidc.groups.admin }}"]
       target_audience: ["{{ .Values.oidc.client }}"]
       trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
   authorizer:
