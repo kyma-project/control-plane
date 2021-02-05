@@ -13,7 +13,7 @@ import (
 )
 
 type ClsInstanceProvider interface {
-	ProvideClsInstanceID(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, globalAccountID string) (internal.ProvisioningOperation, error)
+	CreateInstanceIfNoneExists(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, globalAccountID string) (internal.ProvisioningOperation, error)
 }
 
 type clsProvisioningStep struct {
@@ -35,34 +35,25 @@ func (s *clsProvisioningStep) Name() string {
 }
 
 func (s *clsProvisioningStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	// TODO: Fetch if there is already a CLS assigned to the GA. If so then we dont need to provision a new one.
-	if operation.Cls.Instance.InstanceID != "" {
+	if operation.Cls.Instance.ProvisioningTriggered {
 		return operation, 0, nil
 	}
 
 	smCli, err := cls.ServiceManagerClient(s.config.ServiceManager, &operation)
 
-	op, err := s.instanceProvider.ProvideClsInstanceID(s.operationManager, smCli, operation, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
+	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
+	op, err := s.instanceProvider.CreateInstanceIfNoneExists(s.operationManager, smCli, operation, globalAccountID)
 	if err != nil {
-		return s.handleError(
-			operation,
-			err,
-			log,
-			fmt.Sprintf("Unable to get tenant for GlobalaccountID %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID))
+		failureReason := fmt.Sprintf("Unable to create instance for GlobalAccountID: %s", globalAccountID)
+		log.Errorf("%s: %s", failureReason, err)
+		return s.operationManager.OperationFailed(operation, failureReason)
 	}
-
-	op.Cls.Instance.ProvisioningTriggered = true
 
 	_, repeat := s.operationManager.UpdateOperation(op)
 	if repeat != 0 {
-		s.handleError(op, err, log, fmt.Sprintf("cannot save LMS tenant ID"))
+		log.Errorf("Unable to update operation: %s", err)
 		return operation, time.Second, nil
 	}
 
 	return op, 0, nil
-}
-
-func (s *clsProvisioningStep) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
-	log.Errorf("%s: %s", msg, err)
-	return s.operationManager.OperationFailed(operation, msg)
 }

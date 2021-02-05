@@ -1,12 +1,11 @@
 package cls
 
 import (
+	"regexp"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
-
-	"regexp"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pkg/errors"
@@ -37,9 +36,7 @@ func NewInstanceManager(storage InstanceStorage, creator InstanceCreator, log lo
 	}
 }
 
-var instanceNameNormalizationRegexp = regexp.MustCompile("[^a-zA-Z0-9]+")
-
-func (c *manager) ProvideClsInstanceID(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, globalAccountID string) (internal.ProvisioningOperation, error) {
+func (c *manager) CreateInstanceIfNoneExists(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, globalAccountID string) (internal.ProvisioningOperation, error) {
 	normalizedGlobalAccountID := normalize(globalAccountID)
 
 	instance, exists, err := c.storage.FindInstance(normalizedGlobalAccountID)
@@ -56,6 +53,8 @@ func (c *manager) ProvideClsInstanceID(om *process.ProvisionOperationManager, sm
 	if err != nil {
 		return op, errors.Wrapf(err, "while creating instance name=%s", normalizedGlobalAccountID)
 	}
+
+	op.Cls.Instance.ProvisioningTriggered = true
 
 	// it is important to save the instance ID because instance creation means creation of a cluster.
 	err = wait.PollImmediate(3*time.Second, 30*time.Second, func() (bool, error) {
@@ -77,6 +76,7 @@ func (c *manager) ProvideClsInstanceID(om *process.ProvisionOperationManager, sm
 }
 
 func normalize(s string) string {
+	instanceNameNormalizationRegexp := regexp.MustCompile("[^a-zA-Z0-9]+")
 	normalized := instanceNameNormalizationRegexp.ReplaceAllString(s, "")
 	if len(normalized) > 50 {
 		normalized = normalized[:50]
