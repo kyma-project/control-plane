@@ -3,6 +3,14 @@ package upgrade_kyma
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma/automock"
+	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"testing"
 	"time"
 
@@ -13,15 +21,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma/automock"
-	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -189,7 +190,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 		expectedOperation := upgradeOperation
 		expectedOperation.Version++
 		expectedOperation.State = orchestration.InProgress
-		rvc.On("ForUpgrade", expectedOperation).Return(ver, nil).Once()
+		//rvc.On("ForUpgrade", expectedOperation).Return(ver, nil).Once()
+		rvc.On("ForUpgrade", mock.AnythingOfType("internal.UpgradeKymaOperation")).Return(ver, nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
 			inputBuilder, evalManager, nil, rvc, nil)
