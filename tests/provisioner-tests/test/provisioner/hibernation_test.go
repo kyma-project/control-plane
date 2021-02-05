@@ -53,7 +53,7 @@ func TestHibernation(t *testing.T) {
 
 				// Wait for provisioning to finish
 				log.Log("Waiting for provisioning to finish...")
-				provisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(ProvisioningTimeout, provisioningOperationID, log)
+				provisioningOperationStatus, err := testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.Provisioning, provisioningOperationID, log)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeProvision, runtimeID, provisioningOperationStatus)
 				log.Log("Provisioning finished.")
@@ -75,7 +75,7 @@ func TestHibernation(t *testing.T) {
 				assertions.RequireNoError(t, err)
 
 				log.Log("Waiting for hibernation to finish...")
-				hibernationOperationStatus, err := testSuite.WaitUntilOperationIsFinished(HibernationTimeout, hibernationOperationID, log)
+				hibernationOperationStatus, err := testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.Hibernation, hibernationOperationID, log)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeHibernate, runtimeID, hibernationOperationStatus)
 
@@ -92,7 +92,7 @@ func TestHibernation(t *testing.T) {
 				assertions.AssertOperationInProgress(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
 
 				log.Log("Waiting for deprovisioning to finish...")
-				deprovisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(DeprovisioningTimeout, deprovisioningOperationID, log)
+				deprovisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.Deprovisioning, deprovisioningOperationID, log)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeHibernate, runtimeID, deprovisioningOperationStatus)
 				log.Log("Deprovisioning finished.")
