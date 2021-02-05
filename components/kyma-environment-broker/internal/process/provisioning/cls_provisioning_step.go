@@ -39,7 +39,8 @@ func (s *clsProvisioningStep) Run(operation internal.ProvisioningOperation, log 
 		return operation, 0, nil
 	}
 
-	smCli, err := cls.ServiceManagerClient(s.config.ServiceManager, &operation)
+	skrRegion := operation.ProvisioningParameters.Parameters.Region
+	smCli, err := cls.ServiceManagerClient(operation.SMClientFactory, s.config.ServiceManager, skrRegion)
 
 	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
 	op, err := s.instanceProvider.CreateInstanceIfNoneExists(s.operationManager, smCli, operation, globalAccountID)

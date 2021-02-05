@@ -28,8 +28,8 @@ const (
 )
 
 //ServiceManagerClient creates an instance of servicemanager.Client that is initialized with credentials for the current SKR region
-func ServiceManagerClient(config *ServiceManagerConfig, operation *internal.ProvisioningOperation) (servicemanager.Client, error) {
-	serviceManagerRegion, err := determineServiceManagerRegion(operation)
+func ServiceManagerClient(factory internal.SMClientFactory, config *ServiceManagerConfig, skrRegion *string) (servicemanager.Client, error) {
+	serviceManagerRegion, err := determineServiceManagerRegion(skrRegion)
 	if err != nil {
 		return nil, err
 	}
@@ -39,14 +39,14 @@ func ServiceManagerClient(config *ServiceManagerConfig, operation *internal.Prov
 		return nil, fmt.Errorf("unable find credentials for the region: %s", serviceManagerRegion)
 	}
 
-	return operation.SMClientFactory.ForCredentials(credentials), nil
+	return factory.ForCredentials(credentials), nil
 }
 
-func determineServiceManagerRegion(operation *internal.ProvisioningOperation) (string, error) {
-	if operation.ProvisioningParameters.Parameters.Region == nil {
+func determineServiceManagerRegion(skrRegion *string) (string, error) {
+	if skrRegion == nil {
 		return defaultServiceManagerRegion, nil
 	} else {
-		skrRegion := *operation.ProvisioningParameters.Parameters.Region
+		skrRegion := *skrRegion
 		serviceManagerRegion, exists := regionMap[skrRegion]
 		if !exists {
 			return "", fmt.Errorf("unsupported region: %s", skrRegion)
