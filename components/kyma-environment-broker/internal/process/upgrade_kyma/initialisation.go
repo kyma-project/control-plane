@@ -83,6 +83,9 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		log.Infof("Skipping processing because orchestration %s was canceled", operation.OrchestrationID)
 		return s.operationManager.OperationCanceled(operation, fmt.Sprintf("orchestration %s was canceled", operation.OrchestrationID))
 	}
+
+	operation.SMClientFactory = s.serviceManagerClientFactory
+
 	if operation.State == orchestrationExt.Pending {
 		operation.State = orchestrationExt.InProgress
 
