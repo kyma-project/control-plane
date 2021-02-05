@@ -469,7 +469,7 @@ func main() {
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, gardenerClient,
 		gardenerNamespace, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, cfg.DefaultRequestRegion, upgradeEvalManager,
-		&cfg, accountProvider, logs)
+		&cfg, accountProvider, serviceManagerClientFactory, logs)
 	fatalOnError(err)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
@@ -611,11 +611,11 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 	inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
 	defaultRegion string, upgradeEvalManager *upgrade_kyma.EvaluationManager,
-	cfg *Config, accountProvider hyperscaler.AccountProvider, logs logrus.FieldLogger) (*process.Queue, error) {
+	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory, logs logrus.FieldLogger) (*process.Queue, error) {
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Orchestrations(), db.Instances(),
-		provisionerClient, inputFactory, upgradeEvalManager, icfg, runtimeVerConfigurator)
+		provisionerClient, inputFactory, upgradeEvalManager, icfg, runtimeVerConfigurator, smcf)
 
 	upgradeKymaManager.InitStep(upgradeKymaInit)
 	upgradeKymaSteps := []struct {
@@ -666,7 +666,7 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
 
 	orchestrateKymaManager := kyma.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(), db.Instances(),
-		upgradeKymaManager, runtimeResolver, pollingInterval, logs)
+		upgradeKymaManager, runtimeResolver, pollingInterval, smcf, logs)
 	queue := process.NewQueue(orchestrateKymaManager, logs)
 
 	// only one orchestration can be processed at the same time
