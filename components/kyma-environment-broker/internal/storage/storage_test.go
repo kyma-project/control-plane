@@ -3,11 +3,12 @@ package storage_test
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"math/rand"
 	"sort"
 	"testing"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -1144,8 +1145,8 @@ func fixInstance(testData instanceData) *internal.Instance {
 		ServicePlanName: testData.val,
 		DashboardURL:    fmt.Sprintf("https://console.%s.kyma.local", testData.val),
 		ProviderRegion:  testData.val,
-		Parameters:      internal.ProvisioningParameters{
-			ErsContext:     internal.ERSContext{
+		Parameters: internal.ProvisioningParameters{
+			ErsContext: internal.ERSContext{
 				SubAccountID:    suid,
 				GlobalAccountID: gaid,
 				Active:          ptr.Bool(true),
@@ -1156,7 +1157,7 @@ func fixInstance(testData instanceData) *internal.Instance {
 							Password: "p",
 						},
 					},
-					URL:         "http://url",
+					URL: "http://url",
 				},
 			},
 			PlatformRegion: "eu",
