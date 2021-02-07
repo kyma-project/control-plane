@@ -29,8 +29,8 @@ func (s *EmsDeprovisionStep) Name() string {
 
 func (s *EmsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (
 	internal.DeprovisioningOperation, time.Duration, error) {
-	if !operation.Ems.Instance.Provisioned && !operation.Ems.Instance.ProvisioningTriggered {
-		log.Infof("Ems Deprovisioning step was already successfully finished")
+	if operation.Ems.Instance.InstanceID == "" {
+		log.Infof("Ems Deprovision step skipped, instance not provisioned")
 		return operation, 0, nil
 	}
 
