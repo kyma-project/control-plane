@@ -178,66 +178,66 @@ func (c *Client) SuspendRuntime() error {
 	return nil
 }
 
-func (c *Client) GetSuspensionOperationID() (string, error) {
-	format := "%s/runtimes?instance_id=%s"
-	runtimesURL := fmt.Sprintf(format, c.brokerConfig.URL, c.instanceID)
-	c.log.Infof("formatted url: %s", runtimesURL)
-	response := runtime.RuntimesPage{}
-	err := wait.Poll(time.Second, time.Second*30, func() (bool, error) {
-		err := c.executeRequest(http.MethodGet, runtimesURL, http.StatusOK, nil, &response)
-		if err != nil {
-			c.log.Warn(errors.Wrap(err, "while executing request").Error())
-			return false, nil
-		}
-		if response.TotalCount == 0 {
-			c.log.Warnf("Got empty runtimes list for instance id %s", c.instanceID)
-			return false, nil
-		}
-		if response.Data[0].Status.Suspension.TotalCount == 0 {
-			c.log.Warnf("Got empty suspension list for instance id %s", c.instanceID)
-			return false, nil
-		}
-		if response.Data[0].Status.Suspension.Data[0].OperationID == "" {
-			c.log.Warnf("Got empty suspension operation ID for instance id %s", c.instanceID)
-			return false, nil
-		}
-		return true, nil
-	})
-	if err != nil {
-		return "", errors.Wrap(err, "while waiting for suspension operation ID")
-	}
-
-	suspensionOpID := response.Data[0].Status.Suspension.Data[0].OperationID
-	c.log.Infof("Got suspension operation ID %s for instance %s", suspensionOpID, c.instanceID)
-	return suspensionOpID, nil
-}
-
-func (c *Client) UnsuspendRuntime() error {
-	c.log.Infof("Unsuspending Runtime [instanceID: %s, NAME: %s]", c.instanceID, c.clusterName)
-	requestByte, err := c.prepareUpdateDetails(ptr.Bool(true))
-	if err != nil {
-		return errors.Wrap(err, "while preparing update details")
-	}
-	c.log.Infof("Suspension parameters: %v", string(requestByte))
-
-	format := "%s%s/%s?service_id=%s&plan_id=%s"
-	suspensionURL := fmt.Sprintf(format, c.brokerConfig.URL, instancesURL, c.instanceID, kymaClassID, c.brokerConfig.PlanID)
-
-	unsuspensionResponse := instanceDetailsResponse{}
-	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
-		err := c.executeRequest(http.MethodPatch, suspensionURL, http.StatusOK, bytes.NewReader(requestByte), &unsuspensionResponse)
-		if err != nil {
-			c.log.Warn(errors.Wrap(err, "while executing request").Error())
-			return false, nil
-		}
-		return true, nil
-	})
-	if err != nil {
-		return errors.Wrap(err, "while waiting for successful unsuspension call")
-	}
-	c.log.Infof("Successfully send suspension request for %s", unsuspensionResponse)
-	return nil
-}
+//func (c *Client) GetSuspensionOperationID() (string, error) {
+//	format := "%s/runtimes?instance_id=%s"
+//	runtimesURL := fmt.Sprintf(format, c.brokerConfig.URL, c.instanceID)
+//	c.log.Infof("formatted url: %s", runtimesURL)
+//	response := runtime.RuntimesPage{}
+//	err := wait.Poll(time.Second, time.Second*30, func() (bool, error) {
+//		err := c.executeRequest(http.MethodGet, runtimesURL, http.StatusOK, nil, &response)
+//		if err != nil {
+//			c.log.Warn(errors.Wrap(err, "while executing request").Error())
+//			return false, nil
+//		}
+//		if response.TotalCount == 0 {
+//			c.log.Warnf("Got empty runtimes list for instance id %s", c.instanceID)
+//			return false, nil
+//		}
+//		if response.Data[0].Status.Suspension.TotalCount == 0 {
+//			c.log.Warnf("Got empty suspension list for instance id %s", c.instanceID)
+//			return false, nil
+//		}
+//		if response.Data[0].Status.Suspension.Data[0].OperationID == "" {
+//			c.log.Warnf("Got empty suspension operation ID for instance id %s", c.instanceID)
+//			return false, nil
+//		}
+//		return true, nil
+//	})
+//	if err != nil {
+//		return "", errors.Wrap(err, "while waiting for suspension operation ID")
+//	}
+//
+//	suspensionOpID := response.Data[0].Status.Suspension.Data[0].OperationID
+//	c.log.Infof("Got suspension operation ID %s for instance %s", suspensionOpID, c.instanceID)
+//	return suspensionOpID, nil
+//}
+//
+//func (c *Client) UnsuspendRuntime() error {
+//	c.log.Infof("Unsuspending Runtime [instanceID: %s, NAME: %s]", c.instanceID, c.clusterName)
+//	requestByte, err := c.prepareUpdateDetails(ptr.Bool(true))
+//	if err != nil {
+//		return errors.Wrap(err, "while preparing update details")
+//	}
+//	c.log.Infof("Suspension parameters: %v", string(requestByte))
+//
+//	format := "%s%s/%s?service_id=%s&plan_id=%s"
+//	suspensionURL := fmt.Sprintf(format, c.brokerConfig.URL, instancesURL, c.instanceID, kymaClassID, c.brokerConfig.PlanID)
+//
+//	unsuspensionResponse := instanceDetailsResponse{}
+//	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
+//		err := c.executeRequest(http.MethodPatch, suspensionURL, http.StatusOK, bytes.NewReader(requestByte), &unsuspensionResponse)
+//		if err != nil {
+//			c.log.Warn(errors.Wrap(err, "while executing request").Error())
+//			return false, nil
+//		}
+//		return true, nil
+//	})
+//	if err != nil {
+//		return errors.Wrap(err, "while waiting for successful unsuspension call")
+//	}
+//	c.log.Infof("Successfully send suspension request for %s", unsuspensionResponse)
+//	return nil
+//}
 
 func (c *Client) GetUnsuspensionOperationID() (string, error) {
 	format := "%s/runtimes?instance_id=%s"
@@ -295,6 +295,10 @@ func (c *Client) ClusterName() string {
 
 func (c *Client) AwaitOperationSucceeded(operationID string, timeout time.Duration) error {
 	lastOperationURL := fmt.Sprintf("%s%s/%s/last_operation?operation=%s", c.brokerConfig.URL, instancesURL, c.instanceID, operationID)
+	if operationID == "" {
+		lastOperationURL = fmt.Sprintf("%s%s/%s/last_operation", c.brokerConfig.URL, instancesURL, c.instanceID)
+	}
+
 	c.log.Infof("Waiting for operation at most %s", timeout.String())
 
 	response := lastOperationResponse{}
