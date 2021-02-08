@@ -76,8 +76,8 @@ const (
 	tenant               = "tenant"
 	rafterSourceURL      = "github.com/kyma-project/kyma.git//resources/rafter"
 	auditLogPolicyCMName = "auditLogPolicyConfigMap"
-	auditLogTenant       = "e7382275-e835-4549-94e1-3b1101e3a1fa"
 	subAccountId         = "sub-account"
+	gardenerGenSeed      = "az-us2"
 
 	defaultEnableKubernetesVersionAutoUpdate   = false
 	defaultEnableMachineImageVersionAutoUpdate = false
@@ -237,7 +237,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig, KymaConfig: kymaConfig}
 
-			testProvisionRuntime(t, ctx, resolver, fullConfig, config.runtimeID, shootInterface, secretsInterface)
+			testProvisionRuntime(t, ctx, resolver, fullConfig, config.runtimeID, shootInterface, secretsInterface, config.auditLogTenant)
 
 			testUpgradeRuntimeAndRollback(t, ctx, resolver, dbsFactory, config.runtimeID)
 
@@ -290,7 +290,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	})
 }
 
-func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resolver, fullConfig gqlschema.ProvisionRuntimeInput, runtimeID string, shootInterface gardener_apis.ShootInterface, secretsInterface v1core.SecretInterface) {
+func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resolver, fullConfig gqlschema.ProvisionRuntimeInput, runtimeID string, shootInterface gardener_apis.ShootInterface, secretsInterface v1core.SecretInterface, auditLogTenant string) {
 
 	// when Provisioning Runtime
 	provisionRuntime, err := resolver.ProvisionRuntime(ctx, fullConfig)
@@ -307,6 +307,14 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 
 	shoot := &list.Items[0]
 
+	simulateSuccessfulClusterProvisioning(t, shootInterface, secretsInterface, shoot)
+
+	// wait for Shoot to update
+	time.Sleep(2 * waitPeriod)
+
+	shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
+	require.NoError(t, err)
+
 	// then
 	assert.Equal(t, runtimeID, shoot.Annotations["kcp.provisioner.kyma-project.io/runtime-id"])
 	assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
@@ -315,16 +323,6 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 	assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
 	assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
 
-	simulateSuccessfulClusterProvisioning(t, shootInterface, secretsInterface, shoot)
-
-	// wait for Shoot to update
-	time.Sleep(2 * waitPeriod)
-
-	shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
-	require.NoError(t, err)
-	assert.Equal(t, runtimeID, shoot.Annotations["kcp.provisioner.kyma-project.io/runtime-id"])
-	assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
-
 	// when checking Runtime Status
 	runtimeStatusProvisioned, err := resolver.RuntimeStatus(ctx, *provisionRuntime.RuntimeID)
 
@@ -332,6 +330,13 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 	require.NoError(t, err)
 	require.NotNil(t, runtimeStatusProvisioned)
 	assert.Equal(t, fixOperationStatusProvisioned(provisionRuntime.RuntimeID, provisionRuntime.ID), runtimeStatusProvisioned.LastOperationStatus)
+
+	var expectedSeed = gardenerGenSeed
+	if fullConfig.ClusterConfig.GardenerConfig.Seed != nil {
+		expectedSeed = *fullConfig.ClusterConfig.GardenerConfig.Seed
+	}
+
+	assert.Equal(t, expectedSeed, *runtimeStatusProvisioned.RuntimeConfiguration.ClusterConfig.Seed)
 	assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioned.RuntimeConfiguration.KymaConfig)
 }
 
@@ -556,6 +561,7 @@ func simulateSuccessfulClusterProvisioning(t *testing.T, f gardener_apis.ShootIn
 	simulateDNSAdmissionPluginRun(shoot)
 	setShootStatusToSuccessful(t, f, shoot)
 	createKubeconfigSecret(t, s, shoot.Name)
+	ensureShootSeedName(t, f, shoot)
 }
 
 func simulateShootUpgrade(t *testing.T, shoots gardener_apis.ShootInterface, shoot *gardener_types.Shoot) {
@@ -564,6 +570,20 @@ func simulateShootUpgrade(t *testing.T, shoots gardener_apis.ShootInterface, sho
 		shoot.Status.ObservedGeneration = shoot.ObjectMeta.Generation + 1
 		_, err = shoots.Update(context.Background(), shoot, metav1.UpdateOptions{})
 		require.NoError(t, err)
+	}
+}
+
+func ensureShootSeedName(t *testing.T, shoots gardener_apis.ShootInterface, shoot *gardener_types.Shoot) {
+
+	shoot, err := shoots.Get(context.Background(), shoot.Name, metav1.GetOptions{})
+
+	if shoot != nil {
+		if shoot.Spec.SeedName == nil || *shoot.Spec.SeedName == "" {
+			seed := gardenerGenSeed
+			shoot.Spec.SeedName = &seed
+			_, err = shoots.Update(context.Background(), shoot, metav1.UpdateOptions{})
+			require.NoError(t, err)
+		}
 	}
 }
 
