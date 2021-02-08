@@ -294,6 +294,10 @@ components:
           type: boolean
           default: false
           description: Specifies if the orchestration is used for testing purposes
+        version:
+          type: string
+          example: 1.18.0|master-00e83e99
+          description: Specifies Kyma version for the upgrade operation
         targets:
           type: object
           properties:

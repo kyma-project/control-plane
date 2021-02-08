@@ -171,13 +171,12 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 		return nil
 	}
 
-	// initialize
 	var (
-		version *internal.RuntimeVersionData
 		err     error
+		version *internal.RuntimeVersionData
 	)
 
-	// check Kyma version from orchestration or runtime parameters
+	// get Kyma version from orchestration or runtime parameters
 	if orchestration.HasVersion() {
 		version = internal.NewRuntimeVersionFromOrchestrationMapping(orchestration.Parameters.Version)
 	} else {
