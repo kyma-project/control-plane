@@ -69,6 +69,10 @@ func (h *ContextUpdateHandler) handleContextChange(newCtx internal.ERSContext, i
 			if err != nil && !dberr.IsNotFound(err) {
 				return err
 			}
+			if dberr.IsNotFound(err) || lastDeprovisioning == nil {
+				l.Info("Last deprovisioning operation not found, triggering suspension")
+				return h.suspend(instance, l)
+			}
 
 			if lastDeprovisioning.Temporary && lastDeprovisioning.State == domain.Failed {
 				l.Infof("Retriggering suspension for instance id %s", instance.InstanceID)
