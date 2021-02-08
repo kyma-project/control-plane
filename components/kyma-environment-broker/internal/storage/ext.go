@@ -26,17 +26,11 @@ type Operations interface {
 
 	GetLastOperation(instanceID string) (*internal.Operation, error)
 	GetOperationByID(operationID string) (*internal.Operation, error)
-	GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]internal.Operation, error)
-	GetOperationStats() (internal.OperationStats, error)
+	GetNotFinishedOperationsByType(operationType dbmodel.OperationType) ([]internal.Operation, error)
+	GetOperationStatsByPlan() (map[string]internal.OperationStats, error)
 	GetOperationsForIDs(operationIDList []string) ([]internal.Operation, error)
 	GetOperationStatsForOrchestration(orchestrationID string) (map[string]int, error)
 	ListOperations(filter dbmodel.OperationFilter) ([]internal.Operation, int, int, error)
-
-	// todo: remove below after parameters migration was done on each environment
-	GetLegacyOperation(operationID string) (*internal.LegacyOperation, error)
-	InsertLegacyOperation(operation internal.LegacyOperation) error
-	UpdateOperationParameters(operation internal.Operation) (*internal.Operation, error)
-	ListOperationsParameters() (map[string]internal.ProvisioningParameters, error)
 }
 
 type Provisioning interface {
@@ -44,6 +38,7 @@ type Provisioning interface {
 	GetProvisioningOperationByID(operationID string) (*internal.ProvisioningOperation, error)
 	GetProvisioningOperationByInstanceID(instanceID string) (*internal.ProvisioningOperation, error)
 	UpdateProvisioningOperation(operation internal.ProvisioningOperation) (*internal.ProvisioningOperation, error)
+	ListProvisioningOperationsByInstanceID(instanceID string) ([]internal.ProvisioningOperation, error)
 }
 
 type Deprovisioning interface {
@@ -51,6 +46,7 @@ type Deprovisioning interface {
 	GetDeprovisioningOperationByID(operationID string) (*internal.DeprovisioningOperation, error)
 	GetDeprovisioningOperationByInstanceID(instanceID string) (*internal.DeprovisioningOperation, error)
 	UpdateDeprovisioningOperation(operation internal.DeprovisioningOperation) (*internal.DeprovisioningOperation, error)
+	ListDeprovisioningOperationsByInstanceID(instanceID string) ([]internal.DeprovisioningOperation, error)
 }
 
 type Orchestrations interface {
@@ -72,6 +68,7 @@ type UpgradeKyma interface {
 	UpdateUpgradeKymaOperation(operation internal.UpgradeKymaOperation) (*internal.UpgradeKymaOperation, error)
 	GetUpgradeKymaOperationByID(operationID string) (*internal.UpgradeKymaOperation, error)
 	GetUpgradeKymaOperationByInstanceID(instanceID string) (*internal.UpgradeKymaOperation, error)
+	ListUpgradeKymaOperations() ([]internal.UpgradeKymaOperation, error)
 	ListUpgradeKymaOperationsByInstanceID(instanceID string) ([]internal.UpgradeKymaOperation, error)
 	ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeKymaOperation, int, int, error)
 }

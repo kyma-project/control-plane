@@ -37,6 +37,31 @@ func (_m *Service) DeprovisionRuntime(id string, tenant string) (string, apperro
 	return r0, r1
 }
 
+// HibernateCluster provides a mock function with given fields: clusterID
+func (_m *Service) HibernateCluster(clusterID string) (*gqlschema.OperationStatus, apperrors.AppError) {
+	ret := _m.Called(clusterID)
+
+	var r0 *gqlschema.OperationStatus
+	if rf, ok := ret.Get(0).(func(string) *gqlschema.OperationStatus); ok {
+		r0 = rf(clusterID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*gqlschema.OperationStatus)
+		}
+	}
+
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
+		r1 = rf(clusterID)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(apperrors.AppError)
+		}
+	}
+
+	return r0, r1
+}
+
 // ProvisionRuntime provides a mock function with given fields: config, tenant, subAccount
 func (_m *Service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant string, subAccount string) (*gqlschema.OperationStatus, apperrors.AppError) {
 	ret := _m.Called(config, tenant, subAccount)

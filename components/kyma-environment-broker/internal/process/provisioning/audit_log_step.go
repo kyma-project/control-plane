@@ -66,6 +66,10 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		auditLogPort = "443"
 		logger.Infof("There is no Port passed in the URL. Setting default to 443")
 	}
+	fluentbitPlugin := "http"
+	if alo.auditLogConfig.EnableSeqHttp {
+		fluentbitPlugin = "sequentialhttp"
+	}
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
 		{Key: "fluent-bit.conf.script", Value: replaceTenantID},
@@ -93,7 +97,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
         Match   dex.*
         Regex   data .*\"xsuaa
 [OUTPUT]
-        Name             http
+        Name             %s
         Match            dex.*
         Retry_Limit      False
         Host             %s
@@ -104,7 +108,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
         HTTP_Passwd      %s
         Format           json_stream
         tls              on
-`, auditLogHost, auditLogPort, u.Path, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
+`, fluentbitPlugin, auditLogHost, auditLogPort, u.Path, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},
 		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf(`- %s`, auditLogHost)},
 		{Key: "fluent-bit.externalServiceEntry.ports", Value: fmt.Sprintf(`- number: %s

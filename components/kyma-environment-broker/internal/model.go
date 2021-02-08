@@ -2,19 +2,16 @@ package internal
 
 import (
 	"database/sql"
-	"encoding/json"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-	"github.com/pkg/errors"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
 type ProvisionerInputCreator interface {
@@ -43,9 +40,17 @@ type LMS struct {
 	RequestedAt time.Time `json:"requested_at"`
 }
 
+type AvsEvaluationStatus struct {
+	Current  string `json:"current_value"`
+	Original string `json:"original_value"`
+}
+
 type AvsLifecycleData struct {
 	AvsEvaluationInternalId int64 `json:"avs_evaluation_internal_id"`
 	AVSEvaluationExternalId int64 `json:"avs_evaluation_external_id"`
+
+	AvsInternalEvaluationStatus AvsEvaluationStatus `json:"avs_internal_evaluation_status"`
+	AvsExternalEvaluationStatus AvsEvaluationStatus `json:"avs_external_evaluation_status"`
 
 	AVSInternalEvaluationDeleted bool `json:"avs_internal_evaluation_deleted"`
 	AVSExternalEvaluationDeleted bool `json:"avs_external_evaluation_deleted"`
@@ -97,9 +102,9 @@ type Instance struct {
 	ServicePlanID   string
 	ServicePlanName string
 
-	DashboardURL           string
-	ProvisioningParameters string
-	ProviderRegion         string
+	DashboardURL   string
+	Parameters     ProvisioningParameters
+	ProviderRegion string
 
 	InstanceDetails InstanceDetails
 
@@ -108,17 +113,6 @@ type Instance struct {
 	DeletedAt time.Time
 
 	Version int
-}
-
-func (instance Instance) GetProvisioningParameters() (ProvisioningParameters, error) {
-	var pp ProvisioningParameters
-
-	err := json.Unmarshal([]byte(instance.ProvisioningParameters), &pp)
-	if err != nil {
-		return pp, errors.Wrap(err, "while unmarshalling provisioning parameters")
-	}
-
-	return pp, nil
 }
 
 type Operation struct {
@@ -144,15 +138,6 @@ func (o *Operation) IsFinished() bool {
 	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceled
 }
 
-// todo: remove after parameters migration was done on each environment
-// LegacyOperation represents old structure of the Operation struct which now has provisioning parameters inside
-type LegacyOperation struct {
-	Operation `json:"-"`
-
-	Type                   string `json:"type"`
-	ProvisioningParameters string `json:"provisioning_parameters"`
-}
-
 // Orchestration holds all information about an orchestration.
 // Orchestration performs operations of a specific type (UpgradeKymaOperation, UpgradeClusterOperation)
 // on specific targets of SKRs.
@@ -167,6 +152,11 @@ type Orchestration struct {
 
 func (o *Orchestration) IsFinished() bool {
 	return o.State == orchestration.Succeeded || o.State == orchestration.Failed || o.State == orchestration.Canceled
+}
+
+// IsCanceled returns true if orchestration's cancellation endpoint was ever triggered
+func (o *Orchestration) IsCanceled() bool {
+	return o.State == orchestration.Canceling || o.State == orchestration.Canceled
 }
 
 type InstanceWithOperation struct {
@@ -188,7 +178,7 @@ type InstanceDetails struct {
 	Avs      AvsLifecycleData `json:"avs"`
 	EventHub EventHub         `json:"eh"`
 
-	SubAccountID string    `json:"-"`
+	SubAccountID string    `json:"sub_account_id"`
 	RuntimeID    string    `json:"runtime_id"`
 	ShootName    string    `json:"shoot_name"`
 	ShootDomain  string    `json:"shoot_domain"`
@@ -245,6 +235,9 @@ type DeprovisioningOperation struct {
 	Operation
 
 	SMClientFactory SMClientFactory `json:"-"`
+
+	// Temporary indicates that this deprovisioning operation must not remove the instance
+	Temporary bool `json:"temporary"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
@@ -327,19 +320,37 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 	}, nil
 }
 
-// NewProvisioningOperationWithID creates a fresh (just starting) instance of the ProvisioningOperation with provided ID
-func NewDeprovisioningOperationWithID(operationID, instanceID string) (DeprovisioningOperation, error) {
+// NewDeprovisioningOperationWithID creates a fresh (just starting) instance of the DeprovisioningOperation with provided ID
+func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (DeprovisioningOperation, error) {
 	return DeprovisioningOperation{
 		Operation: Operation{
-			ID:          operationID,
-			Version:     0,
-			Description: "Operation created",
-			InstanceID:  instanceID,
-			State:       domain.InProgress,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+			ID:              operationID,
+			Version:         0,
+			Description:     "Operation created",
+			InstanceID:      instance.InstanceID,
+			State:           domain.InProgress,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
+			InstanceDetails: instance.InstanceDetails,
 		},
 	}, nil
+}
+
+// NewSuspensionOperationWithID creates a fresh (just starting) instance of the DeprovisioningOperation which does not remove the instance.
+func NewSuspensionOperationWithID(operationID string, instance *Instance) DeprovisioningOperation {
+	return DeprovisioningOperation{
+		Operation: Operation{
+			ID:              operationID,
+			Version:         0,
+			Description:     "Operation created",
+			InstanceID:      instance.InstanceID,
+			State:           orchestration.Pending,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
+			InstanceDetails: instance.InstanceDetails,
+		},
+		Temporary: true,
+	}
 }
 
 func (po *ProvisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {

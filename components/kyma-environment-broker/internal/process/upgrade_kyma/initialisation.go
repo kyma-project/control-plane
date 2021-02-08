@@ -22,6 +22,11 @@ import (
 )
 
 const (
+	UpgradeInitSteps int = iota + 1
+	UpgradeFinishSteps
+)
+
+const (
 	// the time after which the operation is marked as expired
 	CheckStatusTimeout = 3 * time.Hour
 )
@@ -29,15 +34,17 @@ const (
 type InitialisationStep struct {
 	operationManager       *process.UpgradeKymaOperationManager
 	operationStorage       storage.Operations
+	orchestrationStorage   storage.Orchestrations
 	instanceStorage        storage.Instances
 	provisionerClient      provisioner.Client
 	inputBuilder           input.CreatorForPlan
+	evaluationManager      *EvaluationManager
 	timeSchedule           TimeSchedule
 	runtimeVerConfigurator RuntimeVersionConfiguratorForUpgrade
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, timeSchedule *TimeSchedule,
-	rvc RuntimeVersionConfiguratorForUpgrade) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, em *EvaluationManager,
+	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
 		ts = &TimeSchedule{
@@ -49,9 +56,11 @@ func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provi
 	return &InitialisationStep{
 		operationManager:       process.NewUpgradeKymaOperationManager(os),
 		operationStorage:       os,
+		orchestrationStorage:   ors,
 		instanceStorage:        is,
 		provisionerClient:      pc,
 		inputBuilder:           b,
+		evaluationManager:      em,
 		timeSchedule:           *ts,
 		runtimeVerConfigurator: rvc,
 	}
@@ -62,7 +71,11 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if operation.State == orchestrationExt.Canceled {
+	orchestration, err := s.orchestrationStorage.GetByID(operation.OrchestrationID)
+	if err != nil {
+		return operation, s.timeSchedule.Retry, nil
+	}
+	if orchestration.IsCanceled() {
 		log.Infof("Skipping processing because orchestration %s was canceled", operation.OrchestrationID)
 		return s.operationManager.OperationCanceled(operation, fmt.Sprintf("orchestration %s was canceled", operation.OrchestrationID))
 	}
@@ -171,6 +184,32 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 	return nil
 }
 
+// performRuntimeTasks Ensures that required logic on init and finish is executed.
+// Uses internal and external Avs monitor statuses to verify state.
+// TODO: Use custom states for required step execution.
+func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	hasMonitors := s.evaluationManager.HasMonitors(operation)
+	inMaintenance := s.evaluationManager.InMaintenance(operation)
+
+	switch step {
+	case UpgradeInitSteps:
+		if hasMonitors && !inMaintenance {
+			log.Infof("executing init upgrade steps")
+			return s.evaluationManager.SetMaintenanceStatus(operation, log)
+		}
+	case UpgradeFinishSteps:
+		if hasMonitors && inMaintenance {
+			log.Infof("executing finish upgrade steps")
+			return s.evaluationManager.RestoreStatus(operation, log)
+		}
+	}
+
+	return operation, 0, nil
+}
+
+// checkRuntimeStatus will check operation runtime status
+// It will also trigger performRuntimeTasks upgrade steps to ensure
+// all the required dependencies have been fulfilled for upgrade operation.
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
@@ -188,13 +227,28 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 		msg = *status.Message
 	}
 
+	// do required steps on init
+	operation, delay, err := s.performRuntimeTasks(UpgradeInitSteps, operation, instance, log)
+	if delay != 0 || err != nil {
+		return operation, delay, err
+	}
+
+	// wait for operation completion
+	switch status.State {
+	case gqlschema.OperationStateInProgress, gqlschema.OperationStatePending:
+		return operation, s.timeSchedule.StatusCheck, nil
+	}
+
+	// do required steps on finish
+	operation, delay, err = s.performRuntimeTasks(UpgradeFinishSteps, operation, instance, log)
+	if delay != 0 || err != nil {
+		return operation, delay, err
+	}
+
+	// handle operation completion
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
 		return s.operationManager.OperationSucceeded(operation, msg)
-	case gqlschema.OperationStateInProgress:
-		return operation, s.timeSchedule.StatusCheck, nil
-	case gqlschema.OperationStatePending:
-		return operation, s.timeSchedule.StatusCheck, nil
 	case gqlschema.OperationStateFailed:
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg))
 	}

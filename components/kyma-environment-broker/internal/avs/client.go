@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -63,6 +64,34 @@ func (c *Client) CreateEvaluation(evaluationRequest *BasicEvaluationCreateReques
 	return &responseObject, nil
 }
 
+func (c *Client) GetEvaluation(evaluationID int64) (*BasicEvaluationCreateResponse, error) {
+	var responseObject BasicEvaluationCreateResponse
+	absoluteURL := appendId(c.avsConfig.ApiEndpoint, evaluationID)
+
+	request, err := http.NewRequest(http.MethodGet, absoluteURL, nil)
+	if err != nil {
+		return &responseObject, errors.Wrap(err, "while creating request")
+	}
+	request.Header.Set("Content-Type", "application/json")
+
+	response, err := c.execute(request, false, true)
+	if err != nil {
+		return &responseObject, errors.Wrap(err, "while executing GetEvaluation request")
+	}
+	defer func() {
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing GetEvaluation response")
+		}
+	}()
+
+	err = json.NewDecoder(response.Body).Decode(&responseObject)
+	if err != nil {
+		return nil, errors.Wrap(err, "while decode create evaluation response")
+	}
+
+	return &responseObject, nil
+}
+
 func (c *Client) AddTag(evaluationID int64, tag *Tag) (*BasicEvaluationCreateResponse, error) {
 	var responseObject BasicEvaluationCreateResponse
 
@@ -96,8 +125,41 @@ func (c *Client) AddTag(evaluationID int64, tag *Tag) (*BasicEvaluationCreateRes
 	return &responseObject, nil
 }
 
-func (c *Client) RemoveReferenceFromParentEval(evaluationId int64) (err error) {
-	absoluteURL := fmt.Sprintf("%s/child/%d", appendId(c.avsConfig.ApiEndpoint, c.avsConfig.ParentId), evaluationId)
+func (c *Client) SetStatus(evaluationID int64, status string) (*BasicEvaluationCreateResponse, error) {
+	var responseObject BasicEvaluationCreateResponse
+
+	objAsBytes, err := json.Marshal(status)
+	if err != nil {
+		return &responseObject, errors.Wrap(err, "while marshaling SetStatus request")
+	}
+	absoluteURL := appendId(c.avsConfig.ApiEndpoint, evaluationID)
+
+	request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/lifecycle", absoluteURL), bytes.NewReader(objAsBytes))
+	if err != nil {
+		return &responseObject, errors.Wrap(err, "while creating SetStatus request")
+	}
+	request.Header.Set("Content-Type", "application/json")
+
+	response, err := c.execute(request, false, true)
+	if err != nil {
+		return &responseObject, errors.Wrap(err, "while executing SetStatus request")
+	}
+	defer func() {
+		if closeErr := c.closeResponseBody(response); closeErr != nil {
+			err = kebError.AsTemporaryError(closeErr, "while closing SetStatus response")
+		}
+	}()
+
+	err = json.NewDecoder(response.Body).Decode(&responseObject)
+	if err != nil {
+		return nil, errors.Wrap(err, "while decode SetStatus response")
+	}
+
+	return &responseObject, nil
+}
+
+func (c *Client) RemoveReferenceFromParentEval(parentID, evaluationID int64) (err error) {
+	absoluteURL := fmt.Sprintf("%s/child/%d", appendId(c.avsConfig.ApiEndpoint, parentID), evaluationID)
 	response, err := c.deleteRequest(absoluteURL)
 	if err == nil {
 		return nil
@@ -112,7 +174,7 @@ func (c *Client) RemoveReferenceFromParentEval(evaluationId int64) (err error) {
 		var responseObject avsNonSuccessResp
 		err := json.NewDecoder(response.Body).Decode(&responseObject)
 		if err != nil {
-			return errors.Wrapf(err, "while decoding avs non success response body for ID: %d", evaluationId)
+			return errors.Wrapf(err, "while decoding avs non success response body for ID: %d", evaluationID)
 		}
 
 		if strings.Contains(strings.ToLower(responseObject.Message), "does not contain subevaluation") {
@@ -120,7 +182,7 @@ func (c *Client) RemoveReferenceFromParentEval(evaluationId int64) (err error) {
 		}
 	}
 
-	return fmt.Errorf("unexpected response for evaluationId: %d while deleting reference from parent evaluation, error: %s", evaluationId, err)
+	return fmt.Errorf("unexpected response for evaluationId: %d while deleting reference from parent evaluation, error: %s", evaluationID, err)
 }
 
 func (c *Client) DeleteEvaluation(evaluationId int64) (err error) {
@@ -204,6 +266,9 @@ func (c *Client) closeResponseBody(response *http.Response) error {
 	if response.Body == nil {
 		return nil
 	}
+	// drain the body to let the transport reuse the connection
+	io.Copy(ioutil.Discard, response.Body)
+
 	return response.Body.Close()
 }
 

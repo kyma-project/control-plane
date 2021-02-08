@@ -55,6 +55,7 @@ See the **Global Options** section of each command for the description of these 
 		NewKubeconfigCmd(),
 		NewUpgradeCmd(),
 		NewTaskRunCmd(),
+		NewCompletionCommand(),
 	)
 	return cmd
 }

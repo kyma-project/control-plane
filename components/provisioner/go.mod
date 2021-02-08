@@ -1,6 +1,6 @@
 module github.com/kyma-project/control-plane/components/provisioner
 
-go 1.14
+go 1.15
 
 require (
 	github.com/99designs/gqlgen v0.9.3

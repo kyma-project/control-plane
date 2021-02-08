@@ -6,7 +6,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 
 	"github.com/gocraft/dbr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/lib/pq"
 )
@@ -20,7 +19,7 @@ type writeSession struct {
 	transaction *dbr.Tx
 }
 
-func (ws writeSession) InsertInstance(instance internal.Instance) dberr.Error {
+func (ws writeSession) InsertInstance(instance dbmodel.InstanceDTO) dberr.Error {
 	_, err := ws.insertInto(InstancesTableName).
 		Pair("instance_id", instance.InstanceID).
 		Pair("runtime_id", instance.RuntimeID).
@@ -61,7 +60,7 @@ func (ws writeSession) DeleteInstance(instanceID string) dberr.Error {
 	return nil
 }
 
-func (ws writeSession) UpdateInstance(instance internal.Instance) dberr.Error {
+func (ws writeSession) UpdateInstance(instance dbmodel.InstanceDTO) dberr.Error {
 	res, err := ws.update(InstancesTableName).
 		Where(dbr.Eq("instance_id", instance.InstanceID)).
 		Where(dbr.Eq("version", instance.Version)).
@@ -227,31 +226,6 @@ func (ws writeSession) UpdateOperation(op dbmodel.OperationDTO) dberr.Error {
 		Set("type", op.Type).
 		Set("data", op.Data).
 		Set("orchestration_id", op.OrchestrationID.String).
-		Set("provisioning_parameters", op.ProvisioningParameters.String).
-		Exec()
-
-	if err != nil {
-		if err == dbr.ErrNotFound {
-			return dberr.NotFound("Cannot find Operation with ID:'%s'", op.ID)
-		}
-		return dberr.Internal("Failed to update record to Operation table: %s", err)
-	}
-	rAffected, e := res.RowsAffected()
-	if e != nil {
-		// the optimistic locking requires numbers of rows affected
-		return dberr.Internal("the DB driver does not support RowsAffected operation")
-	}
-	if rAffected == int64(0) {
-		return dberr.NotFound("Cannot find Operation with ID:'%s' Version: %v", op.ID, op.Version)
-	}
-
-	return nil
-}
-
-func (ws writeSession) UpdateOperationParameters(op dbmodel.OperationDTO) dberr.Error {
-	res, err := ws.update(OperationTableName).
-		Where(dbr.Eq("id", op.ID)).
-		Set("version", op.Version+1).
 		Set("provisioning_parameters", op.ProvisioningParameters.String).
 		Exec()
 

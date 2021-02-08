@@ -1,28 +1,5 @@
-apiVersion: authentication.istio.io/v1alpha1
-kind: Policy
-metadata:
-  name: {{ include "kyma-env-broker.fullname" . }}
-  namespace: kcp-system
-spec:
-  peers:
-  - mtls:
-      mode: PERMISSIVE
-  targets:
-  - name: {{ include "kyma-env-broker.fullname" . }}
-  origins:
-  - jwt:
-      issuer: {{ tpl .Values.oidc.issuer $ | quote }}
-      audiences:
-      - {{ .Values.oidc.client | quote }}
-      triggerRules:
-      - includedPaths:
-        - prefix: /runtimes
-        - prefix: /orchestrations
-        - prefix: /upgrade
-  principalBinding: USE_ORIGIN
----
 apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
+kind: PeerAuthentication
 metadata:
   name: {{ include "kyma-env-broker.fullname" . }}
   namespace: {{ .Release.Namespace }}
@@ -31,47 +8,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
-  rules:
-  # Allow /metrics, /oauth, /info/runtimes without authorization
-  - to:
-    - operation:
-        paths: ["/metrics", "/oauth/*", "/info/runtimes"]
-  # Allow swagger endpoints without authorization
-  {{- if .Values.swagger.virtualService.enabled }}
-  - to:
-    - operation:
-        paths: ["/", "/swagger*", "/schema*"]
-  {{- end }}
-  # Allow /runtimes, /orchestrations query endpoints only with principal present from JWT, for operators and admins
-  - from:
-    - source:
-        requestPrincipals: ["*"]
-    to:
-    - operation:
-        methods: ["GET"]
-        paths: ["/runtimes*", "/orchestrations*"]
-    when:
-    - key: request.auth.claims[groups]
-      values: ["{{ .Values.oidc.groups.admin }}", "{{ .Values.oidc.groups.operator }}"]
-  # Allow /orchestrations PUT (cancel) endpoints only with principal present from JWT, for admins
-  - from:
-    - source:
-        requestPrincipals: ["*"]
-    to:
-    - operation:
-        methods: ["PUT"]
-        paths: ["/orchestrations*"]
-    when:
-    - key: request.auth.claims[groups]
-      values: ["{{ .Values.oidc.groups.admin }}"]
-  # Allow /upgrade POST endpoints only with principal present from JWT, for admins
-  - from:
-    - source:
-        requestPrincipals: ["*"]
-    to:
-    - operation:
-        methods: ["POST"]
-        paths: ["/upgrade/*"]
-    when:
-    - key: request.auth.claims[groups]
-      values: ["{{ .Values.oidc.groups.admin }}"]
+  peers:
+  - mtls:
+      allowTls: true
+      mode: PERMISSIVE

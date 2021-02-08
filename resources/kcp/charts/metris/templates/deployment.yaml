@@ -38,6 +38,8 @@ spec:
             - "--edp-workers={{ .Values.edp.workers }}"
             - "--edp-event-retry={{ .Values.edp.retry }}"
             - "--provider-poll-interval={{ .Values.provider.pollinterval }}"
+            - "--provider-poll-max-interval={{ .Values.provider.pollmaxinterval }}"
+            - "--provider-max-retries={{ .Values.provider.maxretries }}"
             - "--provider-workers={{ .Values.provider.workers }}"
             - "--provider-buffer={{ .Values.provider.buffer }}"
             - "--listen-addr=0.0.0.0:{{ .Values.port }}"

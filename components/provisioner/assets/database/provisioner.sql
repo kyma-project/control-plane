@@ -18,7 +18,7 @@ CREATE TABLE gardener_config
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     cluster_id uuid NOT NULL,
-    name varchar(256) NOT NULL UNIQUE,
+    name varchar(256) NOT NULL,
     project_name varchar(256) NOT NULL,
     kubernetes_version varchar(256) NOT NULL,
     volume_size_gb varchar(256) NOT NULL,
@@ -59,7 +59,8 @@ CREATE TYPE operation_type AS ENUM (
     'UPGRADE',
     'DEPROVISION',
     'RECONNECT_RUNTIME',
-    'UPGRADE_SHOOT'
+    'UPGRADE_SHOOT',
+    'HIBERNATE'
     );
 
 CREATE TABLE operation

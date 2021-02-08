@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -16,6 +15,7 @@ import (
 	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -96,12 +96,16 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 
 	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(defaultKymaVer, runtimeversion.NewAccountVersionMapping(ctx, cli, defaultNamespace, kymaVersionsConfigName, logs))
 
+	avsClient, _ := avs.NewClient(ctx, avs.Config{}, logs)
+	avsDel := avs.NewDelegator(avsClient, avs.Config{}, db.Operations())
+	upgradeEvaluationManager := upgrade_kyma.NewEvaluationManager(avsDel, avs.Config{})
+
 	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, gardenerClient.CoreV1beta1(),
 		gardenerNamespace, eventBroker, inputFactory, &upgrade_kyma.TimeSchedule{
 			Retry:              10 * time.Millisecond,
 			StatusCheck:        100 * time.Millisecond,
 			UpgradeKymaTimeout: 4 * time.Second,
-		}, 250*time.Millisecond, runtimeVerConfigurator, defaultRegion, logs)
+		}, 250*time.Millisecond, runtimeVerConfigurator, defaultRegion, upgradeEvaluationManager, logs)
 
 	return &OrchestrationSuite{
 		gardenerNamespace:  gardenerNamespace,
@@ -172,18 +176,16 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 			Region: options.ProvideRegion(),
 		},
 	}
-	serializedProvisioningParams, err := json.Marshal(provisioningParameters)
-	require.NoError(s.t, err)
 
 	instance := internal.Instance{
-		RuntimeID:              runtimeID,
-		ServicePlanID:          planID,
-		ServicePlanName:        planName,
-		InstanceID:             instanceID,
-		GlobalAccountID:        globalAccountID,
-		SubAccountID:           subAccountID,
-		ProvisioningParameters: string(serializedProvisioningParams),
-		ProviderRegion:         *options.ProvideRegion(),
+		RuntimeID:       runtimeID,
+		ServicePlanID:   planID,
+		ServicePlanName: planName,
+		InstanceID:      instanceID,
+		GlobalAccountID: globalAccountID,
+		SubAccountID:    subAccountID,
+		Parameters:      provisioningParameters,
+		ProviderRegion:  *options.ProvideRegion(),
 		InstanceDetails: internal.InstanceDetails{
 			RuntimeID: runtimeID,
 		},
@@ -225,7 +227,7 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 
 	require.NoError(s.t, s.storage.Instances().Insert(instance))
 	require.NoError(s.t, s.storage.Operations().InsertProvisioningOperation(provisioningOperation))
-	_, err = s.gardenerClient.CoreV1beta1().Shoots(s.gardenerNamespace).Create(shoot)
+	_, err := s.gardenerClient.CoreV1beta1().Shoots(s.gardenerNamespace).Create(shoot)
 	require.NoError(s.t, err)
 	return runtimeID
 }

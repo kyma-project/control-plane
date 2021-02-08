@@ -63,12 +63,17 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		pOpr, err := h.operationsDb.GetProvisioningOperationByInstanceID(instance.InstanceID)
+		provOprs, err := h.operationsDb.ListProvisioningOperationsByInstanceID(instance.InstanceID)
 		if err != nil && !dberr.IsNotFound(err) {
-			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching provisioning operation for instance"))
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching provisioning operations list for instance"))
 			return
 		}
-		h.converter.ApplyProvisioningOperation(&dto, pOpr)
+		var firstProvOp internal.ProvisioningOperation
+		if len(provOprs) != 0 {
+			firstProvOp = provOprs[len(provOprs)-1]
+		}
+		h.converter.ApplyProvisioningOperation(&dto, &firstProvOp)
+		h.converter.ApplyUnsuspensionOperations(&dto, provOprs)
 
 		dOpr, err := h.operationsDb.GetDeprovisioningOperationByInstanceID(instance.InstanceID)
 		if err != nil && !dberr.IsNotFound(err) {
@@ -84,6 +89,13 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 		}
 		ukOprs, totalCount := h.takeLastNonDryRunOperations(ukOprs)
 		h.converter.ApplyUpgradingKymaOperations(&dto, ukOprs, totalCount)
+
+		deprovOprs, err := h.operationsDb.ListDeprovisioningOperationsByInstanceID(instance.InstanceID)
+		if err != nil && !dberr.IsNotFound(err) {
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching deprovisioning operations list for instance"))
+			return
+		}
+		h.converter.ApplySuspensionOperations(&dto, deprovOprs)
 
 		toReturn = append(toReturn, dto)
 	}

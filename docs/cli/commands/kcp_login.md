@@ -1,4 +1,5 @@
 # kcp login
+
 Performs OIDC login required by all commands.
 
 ## Synopsis

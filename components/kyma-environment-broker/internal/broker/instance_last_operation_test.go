@@ -20,24 +20,47 @@ const (
 )
 
 func TestLastOperation_LastOperation(t *testing.T) {
-	// given
-	// #setup memory storage
-	memoryStorage := storage.NewMemoryStorage()
-	err := memoryStorage.Operations().InsertProvisioningOperation(fixOperation())
-	assert.NoError(t, err)
+	t.Run("Should return last operation when operation ID provided", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+		err := memoryStorage.Operations().InsertProvisioningOperation(fixOperation())
+		assert.NoError(t, err)
 
-	// #create LastOperation endpoint
-	lastOperationEndpoint := broker.NewLastOperation(memoryStorage.Operations(), memoryStorage.Instances(), logrus.StandardLogger())
+		lastOperationEndpoint := broker.NewLastOperation(memoryStorage.Operations(), memoryStorage.Instances(), logrus.StandardLogger())
 
-	// when
-	response, err := lastOperationEndpoint.LastOperation(context.TODO(), instID, domain.PollDetails{OperationData: operationID})
-	assert.NoError(t, err)
+		// when
+		response, err := lastOperationEndpoint.LastOperation(context.TODO(), instID, domain.PollDetails{OperationData: operationID})
+		assert.NoError(t, err)
 
-	// then
-	assert.Equal(t, domain.LastOperation{
-		State:       domain.Succeeded,
-		Description: operationDescription,
-	}, response)
+		// then
+		assert.Equal(t, domain.LastOperation{
+			State:       domain.Succeeded,
+			Description: operationDescription,
+		}, response)
+	})
+	t.Run("Should return last operation when operation ID not provided", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+		err := memoryStorage.Operations().InsertProvisioningOperation(fixOperation())
+		assert.NoError(t, err)
+
+		err = memoryStorage.Instances().Insert(internal.Instance{
+			InstanceID: instID,
+		})
+		assert.NoError(t, err)
+
+		lastOperationEndpoint := broker.NewLastOperation(memoryStorage.Operations(), memoryStorage.Instances(), logrus.StandardLogger())
+
+		// when
+		response, err := lastOperationEndpoint.LastOperation(context.TODO(), instID, domain.PollDetails{OperationData: ""})
+		assert.NoError(t, err)
+
+		// then
+		assert.Equal(t, domain.LastOperation{
+			State:       domain.Succeeded,
+			Description: operationDescription,
+		}, response)
+	})
 }
 
 func fixOperation() internal.ProvisioningOperation {

@@ -1,20 +1,21 @@
 global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
+    cloudsql_proxy_image: eu.gcr.io/kyma-project/incubator/pr/cloudsql-docker/gce-proxy:v1.19.1-alpine-PR-50
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-395"
+      version: "PR-440"
     provisioner:
       dir:
-      version: "737d74a8"
+      version: "PR-435"
     kyma_environment_broker:
       dir:
-      version: "PR-415"
+      version: "PR-490"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-416"
+      version: "PR-473"
     kyma_environments_subaccount_cleanup_job:
       dir:
       version: "PR-407"
@@ -23,14 +24,14 @@ global:
       version: "PR-313"
     metris:
       dir:
-      version: "PR-358"
+      version: "PR-376"
     tests:
       provisioner:
         dir:
-        version: "8ffaa220"
+        version: "PR-473"
       e2e_provisioning:
         dir:
-        version: "PR-314"
+        version: "PR-453"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -48,6 +49,7 @@ global:
     secretName: "kcp-auditlog-secret"
     script:
       configMapName: "kcp-auditlog-script"
+    enableSeqHttp: false
 
   provisioning:
     enabled: false
@@ -80,8 +82,8 @@ global:
 
   istio:
     gateway:
-      name: "compass-istio-gateway"
-      namespace: "compass-system"
+      name: "kyma-gateway"
+      namespace: "kyma-system"
     proxy:
       port: 15020
 

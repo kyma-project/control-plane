@@ -47,7 +47,7 @@ spec:
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           env:
             - name: APP_DISABLE_PROCESS_OPERATIONS_IN_PROGRESS
-              value: "false"
+              value: "{{ .Values.disableProcessOperationsInProgress }}"
             - name: APP_BROKER_ENABLE_PLANS
               value: "{{ .Values.enablePlans }}"
             - name: APP_OPERATION_TIMEOUT
@@ -331,6 +331,10 @@ spec:
               value: "{{ .Values.gardener.trialNodesNumber }}"
             - name: APP_DEFAULT_REQUEST_REGION
               value: "{{ .Values.broker.defaultRequestRegion }}"
+            - name: APP_UPDATE_PROCESSING_ENABLED
+              value: "{{ .Values.osbUpdateProcessingEnabled }}"
+            - name: APP_AUDITLOG_ENABLE_SEQ_HTTP
+              value: "{{ .Values.global.auditlog.enableSeqHttp }}"
             - name: APP_AUDITLOG_URL
               valueFrom:
                 configMapKeyRef:
@@ -355,8 +359,8 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: APP_VERSION_CONFIG_NAME
               value: "kyma-versions"
-            - name: APP_ENABLE_PARAMETERS_MIGRATION
-              value: "{{ .Values.migration.enabled }}"
+            - name: APP_ENABLE_INSTANCE_DETAILS_MIGRATION
+              value: "{{ .Values.enableInstanceDetailsMigration }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}
@@ -395,7 +399,7 @@ spec:
 
         {{- if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
-          image: gcr.io/cloudsql-docker/gce-proxy:1.19.1
+          image: {{ .Values.global.images.cloudsql_proxy_image }}
           command: ["/cloud_sql_proxy",
                     "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
                     "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]

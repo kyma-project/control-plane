@@ -1,4 +1,4 @@
-package storage
+package storage_test
 
 import (
 	"context"
@@ -8,14 +8,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
@@ -27,17 +30,17 @@ const (
 	fixInstanceId = "inst-id"
 )
 
-func TestSchemaInitializer(t *testing.T) {
+func TestPostgres(t *testing.T) {
 	ctx := context.Background()
 
-	cleanupNetwork, err := EnsureTestNetworkForDB(t, ctx)
+	cleanupNetwork, err := storage.EnsureTestNetworkForDB(t, ctx)
 	require.NoError(t, err)
 	defer cleanupNetwork()
 
 	t.Run("Init tests", func(t *testing.T) {
 		t.Run("Should initialize database when schema not applied", func(t *testing.T) {
 			// given
-			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
@@ -47,14 +50,14 @@ func TestSchemaInitializer(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, connection)
 
-			defer CloseDatabase(t, connection)
+			defer storage.CloseDatabase(t, connection)
 
 			// then
 			assert.NoError(t, err)
 		})
 
 		t.Run("Should return error when failed to connect to the database", func(t *testing.T) {
-			containerCleanupFunc, _, err := InitTestDBContainer(t, ctx, "test_DB_3")
+			containerCleanupFunc, _, err := storage.InitTestDBContainer(t, ctx, "test_DB_3")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
@@ -69,20 +72,18 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Nil(t, connection)
 		})
 	})
-
-	// Instances
 	t.Run("Instances", func(t *testing.T) {
 		t.Run("Should create and update instance", func(t *testing.T) {
 			// given
-			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
-			err = InitTestDBTables(t, cfg.ConnectionURL())
+			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
 			// when
-			brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			brokerStorage, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
 
 			require.NoError(t, err)
 			require.NotNil(t, brokerStorage)
@@ -135,6 +136,22 @@ func TestSchemaInitializer(t *testing.T) {
 				},
 			})
 			require.NoError(t, err)
+			err = brokerStorage.Operations().InsertUpgradeKymaOperation(internal.UpgradeKymaOperation{
+				Operation: internal.Operation{
+					ID:    "operation-id-3",
+					State: orchestration.Pending,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Hour),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Hour).Add(10 * time.Minute),
+					InstanceID:             fixInstanceId,
+					ProvisionerOperationID: "target-op-id",
+					Description:            "pending-operation",
+					Version:                1,
+					OrchestrationID:        "orch-id",
+				},
+				RuntimeOperation: fixRuntimeOperation("operation-id-3"),
+			})
+			require.NoError(t, err)
 
 			// then
 			inst, err := brokerStorage.Instances().GetByID(testData)
@@ -147,7 +164,7 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, fixInstance.ServiceID, inst.ServiceID)
 			assert.Equal(t, fixInstance.ServicePlanID, inst.ServicePlanID)
 			assert.Equal(t, fixInstance.DashboardURL, inst.DashboardURL)
-			assert.Equal(t, fixInstance.ProvisioningParameters, inst.ProvisioningParameters)
+			assert.Equal(t, fixInstance.Parameters, inst.Parameters)
 			assert.Equal(t, "lms-tenant-id", inst.InstanceDetails.Lms.TenantID)
 			assert.NotEmpty(t, inst.CreatedAt)
 			assert.NotEmpty(t, inst.UpdatedAt)
@@ -165,17 +182,16 @@ func TestSchemaInitializer(t *testing.T) {
 			err = brokerStorage.Instances().Delete(fixInstance.InstanceID)
 			assert.NoError(t, err, "deletion non existing instance must not cause any error")
 		})
-
 		t.Run("Should fetch instance statistics", func(t *testing.T) {
 			// given
-			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
-			err = InitTestDBTables(t, cfg.ConnectionURL())
+			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
-			psqlStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			psqlStorage, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
 			require.NoError(t, err)
 			require.NotNil(t, psqlStorage)
 
@@ -209,17 +225,16 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, 1, numberOfInstancesC)
 
 		})
-
 		t.Run("Should fetch instances along with their operations", func(t *testing.T) {
 			// given
-			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
-			err = InitTestDBTables(t, cfg.ConnectionURL())
+			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
-			psqlStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			psqlStorage, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
 			require.NoError(t, err)
 			require.NotNil(t, psqlStorage)
 
@@ -269,17 +284,16 @@ func TestSchemaInitializer(t *testing.T) {
 			assertEqualOperation(t, fixProvisionOp[2], out[4])
 			assertEqualOperation(t, fixDeprovisionOp[2], out[5])
 		})
-
 		t.Run("Should fetch instances based on subaccount list", func(t *testing.T) {
 			// given
-			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
-			err = InitTestDBTables(t, cfg.ConnectionURL())
+			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
-			psqlStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			psqlStorage, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
 			require.NoError(t, err)
 			require.NotNil(t, psqlStorage)
 
@@ -307,17 +321,16 @@ func TestSchemaInitializer(t *testing.T) {
 			require.Contains(t, []string{"1", "3", "4"}, out[1].InstanceID)
 			require.Contains(t, []string{"1", "3", "4"}, out[2].InstanceID)
 		})
-
 		t.Run("should list instances based on page and page size", func(t *testing.T) {
 			// given
-			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
-			err = InitTestDBTables(t, cfg.ConnectionURL())
+			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
-			psqlStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			psqlStorage, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
 			require.NoError(t, err)
 			require.NotNil(t, psqlStorage)
 
@@ -339,8 +352,8 @@ func TestSchemaInitializer(t *testing.T) {
 			require.Equal(t, 2, count)
 			require.Equal(t, 3, totalCount)
 
-			assert.Equal(t, fixInstances[0].InstanceID, out[0].InstanceID)
-			assert.Equal(t, fixInstances[1].InstanceID, out[1].InstanceID)
+			assertInstanceByIgnoreTime(t, fixInstances[0], out[0])
+			assertInstanceByIgnoreTime(t, fixInstances[1], out[1])
 
 			// when
 			out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{PageSize: 2, Page: 2})
@@ -352,17 +365,16 @@ func TestSchemaInitializer(t *testing.T) {
 
 			assert.Equal(t, fixInstances[2].InstanceID, out[0].InstanceID)
 		})
-
 		t.Run("should list instances based on filters", func(t *testing.T) {
 			// given
-			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
-			err = InitTestDBTables(t, cfg.ConnectionURL())
+			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
-			psqlStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			psqlStorage, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
 			require.NoError(t, err)
 			require.NotNil(t, psqlStorage)
 
@@ -447,10 +459,9 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
 		})
 	})
-
 	t.Run("Operations", func(t *testing.T) {
 		t.Run("Provisioning", func(t *testing.T) {
-			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
@@ -467,10 +478,8 @@ func TestSchemaInitializer(t *testing.T) {
 					ProvisionerOperationID: "target-op-id",
 					Description:            "description",
 					Version:                1,
-					ProvisioningParameters: internal.ProvisioningParameters{},
-					InstanceDetails: internal.InstanceDetails{
-						Lms: internal.LMS{TenantID: "tenant-id"},
-					},
+					ProvisioningParameters: fixProvisioningParameters(),
+					InstanceDetails:        fixInstanceDetails(),
 				},
 			}
 			latestOperation := internal.ProvisioningOperation{
@@ -485,17 +494,31 @@ func TestSchemaInitializer(t *testing.T) {
 					ProvisionerOperationID: "target-op-id",
 					Description:            "description",
 					Version:                1,
-					ProvisioningParameters: internal.ProvisioningParameters{},
-					InstanceDetails: internal.InstanceDetails{
-						Lms: internal.LMS{TenantID: "tenant-id"},
-					},
+					ProvisioningParameters: fixProvisioningParameters(),
+					InstanceDetails:        fixInstanceDetails(),
+				},
+			}
+			latestPendingOperation := internal.ProvisioningOperation{
+				Operation: internal.Operation{
+					ID:    "latest-id-pending",
+					State: orchestration.Pending,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Minute),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(3 * time.Minute),
+					InstanceID:             fixInstanceId,
+					OrchestrationID:        orchestrationID,
+					ProvisionerOperationID: "target-op-id",
+					Description:            "description",
+					Version:                1,
+					ProvisioningParameters: fixProvisioningParameters(),
+					InstanceDetails:        fixInstanceDetails(),
 				},
 			}
 
-			err = InitTestDBTables(t, cfg.ConnectionURL())
+			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
-			brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			brokerStorage, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
 			require.NoError(t, err)
 
 			err = brokerStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: orchestrationID})
@@ -508,10 +531,12 @@ func TestSchemaInitializer(t *testing.T) {
 			require.NoError(t, err)
 			err = svc.InsertProvisioningOperation(latestOperation)
 			require.NoError(t, err)
-
-			ops, err := svc.GetOperationsInProgressByType(dbmodel.OperationTypeProvision)
+			err = svc.InsertProvisioningOperation(latestPendingOperation)
 			require.NoError(t, err)
-			assert.Len(t, ops, 2)
+
+			ops, err := svc.GetNotFinishedOperationsByType(dbmodel.OperationTypeProvision)
+			require.NoError(t, err)
+			assert.Len(t, ops, 3)
 			assertOperation(t, givenOperation.Operation, ops[0])
 
 			gotOperation, err := svc.GetProvisioningOperationByID("operation-id")
@@ -540,20 +565,24 @@ func TestSchemaInitializer(t *testing.T) {
 			assert.Equal(t, "new modified description", gotOperation2.Description)
 
 			// when
-			stats, err := svc.GetOperationStats()
+			stats, err := svc.GetOperationStatsByPlan()
 			require.NoError(t, err)
 
-			assert.Equal(t, 2, stats.Provisioning[domain.InProgress])
+			assert.Equal(t, 2, stats[broker.TrialPlanID].Provisioning[domain.InProgress])
 
 			opStats, err := svc.GetOperationStatsForOrchestration(orchestrationID)
 			require.NoError(t, err)
 
 			assert.Equal(t, 2, opStats[orchestration.InProgress])
 
+			// when
+			opList, err := svc.ListProvisioningOperationsByInstanceID(fixInstanceId)
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, 3, len(opList))
 		})
-
 		t.Run("Deprovisioning", func(t *testing.T) {
-			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
@@ -571,10 +600,10 @@ func TestSchemaInitializer(t *testing.T) {
 				},
 			}
 
-			err = InitTestDBTables(t, cfg.ConnectionURL())
+			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
-			brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			brokerStorage, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
 			require.NoError(t, err)
 
 			svc := brokerStorage.Operations()
@@ -583,7 +612,7 @@ func TestSchemaInitializer(t *testing.T) {
 			err = svc.InsertDeprovisioningOperation(givenOperation)
 			require.NoError(t, err)
 
-			ops, err := svc.GetOperationsInProgressByType(dbmodel.OperationTypeDeprovision)
+			ops, err := svc.GetNotFinishedOperationsByType(dbmodel.OperationTypeDeprovision)
 			require.NoError(t, err)
 			assert.Len(t, ops, 1)
 			assertOperation(t, givenOperation.Operation, ops[0])
@@ -609,9 +638,25 @@ func TestSchemaInitializer(t *testing.T) {
 
 			assert.Equal(t, "new modified description", gotOperation2.Description)
 
+			// given
+			err = svc.InsertDeprovisioningOperation(internal.DeprovisioningOperation{
+				Operation: internal.Operation{
+					ID:         "other-op-id",
+					InstanceID: fixInstanceId,
+					CreatedAt:  time.Now().Add(1 * time.Hour),
+					UpdatedAt:  time.Now().Add(1 * time.Hour),
+				},
+			})
+			require.NoError(t, err)
+			// when
+			opList, err := svc.ListDeprovisioningOperationsByInstanceID(fixInstanceId)
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, 2, len(opList))
+
 		})
 		t.Run("Upgrade", func(t *testing.T) {
-			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
@@ -646,24 +691,29 @@ func TestSchemaInitializer(t *testing.T) {
 					OrchestrationID:        orchestrationID,
 					ProvisioningParameters: internal.ProvisioningParameters{},
 				},
-				RuntimeOperation: orchestration.RuntimeOperation{
-					ID: "operation-id-2",
-					Runtime: orchestration.Runtime{
-						ShootName:              "shoot-stage",
-						MaintenanceWindowBegin: time.Now().Truncate(time.Millisecond).Add(time.Hour),
-						MaintenanceWindowEnd:   time.Now().Truncate(time.Millisecond).Add(time.Minute).Add(time.Hour),
-						RuntimeID:              "runtime-id",
-						GlobalAccountID:        "global-account-if",
-						SubAccountID:           "subaccount-id",
-					},
-					DryRun: false,
-				},
+				RuntimeOperation: fixRuntimeOperation("operation-id-3"),
 			}
 
-			err = InitTestDBTables(t, cfg.ConnectionURL())
+			givenOperation3 := internal.UpgradeKymaOperation{
+				Operation: internal.Operation{
+					ID:    "operation-id-3",
+					State: orchestration.Pending,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Hour),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Hour).Add(10 * time.Minute),
+					InstanceID:             fixInstanceId,
+					ProvisionerOperationID: "target-op-id",
+					Description:            "pending-operation",
+					Version:                1,
+					OrchestrationID:        orchestrationID,
+				},
+				RuntimeOperation: fixRuntimeOperation("operation-id-3"),
+			}
+
+			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
-			brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			brokerStorage, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
 			require.NoError(t, err)
 
 			svc := brokerStorage.Operations()
@@ -673,23 +723,28 @@ func TestSchemaInitializer(t *testing.T) {
 			require.NoError(t, err)
 			err = svc.InsertUpgradeKymaOperation(givenOperation2)
 			require.NoError(t, err)
+			err = svc.InsertUpgradeKymaOperation(givenOperation3)
+			require.NoError(t, err)
 
 			op, err := svc.GetUpgradeKymaOperationByInstanceID(fixInstanceId)
 			require.NoError(t, err)
 
-			assertUpgradeKymaOperation(t, givenOperation2, *op)
+			lastOp, err := svc.GetLastOperation(fixInstanceId)
+			require.NoError(t, err)
+			assert.Equal(t, givenOperation2.Operation.ID, lastOp.ID)
+
+			assertUpgradeKymaOperation(t, givenOperation3, *op)
 
 			ops, count, totalCount, err := svc.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{PageSize: 10, Page: 1})
 			require.NoError(t, err)
-			assert.Len(t, ops, 2)
-			assert.Equal(t, count, 2)
-			assert.Equal(t, totalCount, 2)
+			assert.Len(t, ops, 3)
+			assert.Equal(t, count, 3)
+			assert.Equal(t, totalCount, 3)
 		})
 	})
-
 	t.Run("Operations conflicts", func(t *testing.T) {
 		t.Run("Provisioning", func(t *testing.T) {
-			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
@@ -710,10 +765,10 @@ func TestSchemaInitializer(t *testing.T) {
 				},
 			}
 
-			err = InitTestDBTables(t, cfg.ConnectionURL())
+			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
-			brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			brokerStorage, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
 			svc := brokerStorage.Provisioning()
 
 			require.NoError(t, err)
@@ -746,7 +801,7 @@ func TestSchemaInitializer(t *testing.T) {
 			assertError(t, dberr.CodeAlreadyExists, err)
 		})
 		t.Run("Deprovisioning", func(t *testing.T) {
-			containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
@@ -763,10 +818,10 @@ func TestSchemaInitializer(t *testing.T) {
 				},
 			}
 
-			err = InitTestDBTables(t, cfg.ConnectionURL())
+			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 
-			brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+			brokerStorage, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
 			require.NoError(t, err)
 
 			svc := brokerStorage.Deprovisioning()
@@ -799,34 +854,33 @@ func TestSchemaInitializer(t *testing.T) {
 			assertError(t, dberr.CodeAlreadyExists, err)
 		})
 	})
-
 	t.Run("Conflict Instances", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
-		err = InitTestDBTables(t, cfg.ConnectionURL())
+		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
 
-		brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
 		require.NoError(t, err)
 
 		svc := brokerStorage.Instances()
 
 		inst := internal.Instance{
-			InstanceID:             "abcd-01234",
-			RuntimeID:              "r-id-001",
-			GlobalAccountID:        "ga-001",
-			SubAccountID:           "sa-001",
-			ServiceID:              "service-id-001",
-			ServiceName:            "awesome-service",
-			ServicePlanID:          "plan-id",
-			ServicePlanName:        "awesome-plan",
-			DashboardURL:           "",
-			ProvisioningParameters: "",
-			ProviderRegion:         "",
-			CreatedAt:              time.Now(),
-			Version:                0,
+			InstanceID:      "abcd-01234",
+			RuntimeID:       "r-id-001",
+			GlobalAccountID: "ga-001",
+			SubAccountID:    "sa-001",
+			ServiceID:       "service-id-001",
+			ServiceName:     "awesome-service",
+			ServicePlanID:   "plan-id",
+			ServicePlanName: "awesome-plan",
+			DashboardURL:    "",
+			Parameters:      internal.ProvisioningParameters{},
+			ProviderRegion:  "",
+			CreatedAt:       time.Now(),
+			Version:         0,
 		}
 
 		err = svc.Insert(inst)
@@ -848,9 +902,8 @@ func TestSchemaInitializer(t *testing.T) {
 		_, err = svc.Update(*newInst)
 		require.NoError(t, err)
 	})
-
 	t.Run("Orchestrations", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -868,10 +921,10 @@ func TestSchemaInitializer(t *testing.T) {
 			},
 		}
 
-		err = InitTestDBTables(t, cfg.ConnectionURL())
+		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
 
-		brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
 		require.NoError(t, err)
 
 		svc := brokerStorage.Orchestrations()
@@ -901,9 +954,8 @@ func TestSchemaInitializer(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, l, 1)
 	})
-
 	t.Run("RuntimeStates", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -921,10 +973,10 @@ func TestSchemaInitializer(t *testing.T) {
 			},
 		}
 
-		err = InitTestDBTables(t, cfg.ConnectionURL())
+		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
 
-		brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
 		require.NoError(t, err)
 
 		svc := brokerStorage.RuntimeStates()
@@ -943,9 +995,8 @@ func TestSchemaInitializer(t *testing.T) {
 		assert.Equal(t, fixID, state.KymaConfig.Version)
 		assert.Equal(t, fixID, state.ClusterConfig.KubernetesVersion)
 	})
-
 	t.Run("LMS Tenants", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -954,10 +1005,10 @@ func TestSchemaInitializer(t *testing.T) {
 			Region: "na",
 			Name:   "some-company",
 		}
-		err = InitTestDBTables(t, cfg.ConnectionURL())
+		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
 
-		brokerStorage, _, err := NewFromConfig(cfg, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
 		svc := brokerStorage.LMSTenants()
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
@@ -1094,6 +1145,23 @@ func fixInstance(testData instanceData) *internal.Instance {
 		ServicePlanName: testData.val,
 		DashboardURL:    fmt.Sprintf("https://console.%s.kyma.local", testData.val),
 		ProviderRegion:  testData.val,
+		Parameters: internal.ProvisioningParameters{
+			ErsContext: internal.ERSContext{
+				SubAccountID:    suid,
+				GlobalAccountID: gaid,
+				Active:          ptr.Bool(true),
+				ServiceManager: &internal.ServiceManagerEntryDTO{
+					Credentials: internal.ServiceManagerCredentials{
+						BasicAuth: internal.ServiceManagerBasicAuth{
+							Username: "u",
+							Password: "p",
+						},
+					},
+					URL: "http://url",
+				},
+			},
+			PlatformRegion: "eu",
+		},
 	}
 }
 
@@ -1123,4 +1191,57 @@ func fixSucceededOperation(testData string) internal.Operation {
 
 func fixTime() time.Time {
 	return time.Date(2020, 04, 21, 0, 0, 23, 42, time.UTC)
+}
+
+func fixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
+	return orchestration.RuntimeOperation{
+		ID: operationId,
+		Runtime: orchestration.Runtime{
+			ShootName:              "shoot-stage",
+			MaintenanceWindowBegin: time.Now().Truncate(time.Millisecond).Add(time.Hour),
+			MaintenanceWindowEnd:   time.Now().Truncate(time.Millisecond).Add(time.Minute).Add(time.Hour),
+			RuntimeID:              "runtime-id",
+			GlobalAccountID:        "global-account-if",
+			SubAccountID:           "subaccount-id",
+		},
+		DryRun: false,
+	}
+}
+
+func fixProvisioningParameters() internal.ProvisioningParameters {
+	active := true
+	return internal.ProvisioningParameters{
+		PlanID:    broker.TrialPlanID,
+		ServiceID: broker.KymaServiceID,
+		ErsContext: internal.ERSContext{
+			TenantID:        "test",
+			SubAccountID:    "test",
+			GlobalAccountID: "test",
+			ServiceManager: &internal.ServiceManagerEntryDTO{
+				Credentials: internal.ServiceManagerCredentials{
+					BasicAuth: internal.ServiceManagerBasicAuth{
+						Username: "username",
+						Password: "password",
+					}},
+			},
+			Active: &active,
+		},
+		Parameters: internal.ProvisioningParametersDTO{
+			Name:        "test",
+			KymaVersion: "0.0.0",
+		},
+		PlatformRegion: "region",
+	}
+}
+
+func fixInstanceDetails() internal.InstanceDetails {
+	return internal.InstanceDetails{
+		Lms: internal.LMS{
+			TenantID: "tenant-id",
+		},
+		SubAccountID: "test",
+		RuntimeID:    "test",
+		ShootName:    "test",
+		ShootDomain:  "test",
+	}
 }

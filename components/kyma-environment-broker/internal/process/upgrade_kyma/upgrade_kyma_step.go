@@ -22,7 +22,11 @@ type UpgradeKymaStep struct {
 	timeSchedule        TimeSchedule
 }
 
-func NewUpgradeKymaStep(os storage.Operations, runtimeStorage storage.RuntimeStates, cli provisioner.Client, timeSchedule *TimeSchedule) *UpgradeKymaStep {
+func NewUpgradeKymaStep(
+	os storage.Operations,
+	runtimeStorage storage.RuntimeStates,
+	cli provisioner.Client,
+	timeSchedule *TimeSchedule) *UpgradeKymaStep {
 	ts := timeSchedule
 	if ts == nil {
 		ts = &TimeSchedule{
@@ -31,6 +35,7 @@ func NewUpgradeKymaStep(os storage.Operations, runtimeStorage storage.RuntimeSta
 			UpgradeKymaTimeout: time.Hour,
 		}
 	}
+
 	return &UpgradeKymaStep{
 		operationManager:    process.NewUpgradeKymaOperationManager(os),
 		provisionerClient:   cli,
@@ -57,7 +62,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 	if operation.DryRun {
 		// runtimeID is set with prefix to indicate the fake runtime state
 		err = s.runtimeStateStorage.Insert(
-			internal.NewRuntimeState(fmt.Sprintf("%s%s", DryRunPrefix, operation.InstanceDetails.RuntimeID), operation.Operation.ID, requestInput.KymaConfig, nil),
+			internal.NewRuntimeState(fmt.Sprintf("%s%s", DryRunPrefix, operation.RuntimeOperation.RuntimeID), operation.Operation.ID, requestInput.KymaConfig, nil),
 		)
 		if err != nil {
 			return operation, 10 * time.Second, nil
@@ -68,7 +73,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 	var provisionerResponse gqlschema.OperationStatus
 	if operation.ProvisionerOperationID == "" {
 		// trigger upgradeRuntime mutation
-		provisionerResponse, err := s.provisionerClient.UpgradeRuntime(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.InstanceDetails.RuntimeID, requestInput)
+		provisionerResponse, err := s.provisionerClient.UpgradeRuntime(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.RuntimeOperation.RuntimeID, requestInput)
 		if err != nil {
 			log.Errorf("call to provisioner failed: %s", err)
 			return operation, s.timeSchedule.Retry, nil
@@ -105,6 +110,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 	}
 
 	log.Infof("kyma upgrade process initiated successfully")
+
 	// return repeat mode to start the initialization step which will now check the runtime status
 	return operation, s.timeSchedule.Retry, nil
 }

@@ -3,6 +3,8 @@ package queue
 import (
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/hibernation"
+
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
@@ -37,6 +39,10 @@ type DeprovisioningTimeouts struct {
 	ClusterCleanup            time.Duration `envconfig:"default=20m"`
 	ClusterDeletion           time.Duration `envconfig:"default=30m"`
 	WaitingForClusterDeletion time.Duration `envconfig:"default=60m"`
+}
+
+type HibernationTimeouts struct {
+	WaitingForClusterHibernation time.Duration `envconfig:"default=60m"`
 }
 
 func CreateProvisioningQueue(
@@ -116,8 +122,8 @@ func CreateDeprovisioningQueue(
 
 	waitForClusterDeletion := deprovisioning.NewWaitForClusterDeletionStep(shootClient, factory, directorClient, model.FinishedStage, timeouts.WaitingForClusterDeletion)
 	deleteCluster := deprovisioning.NewDeleteClusterStep(shootClient, waitForClusterDeletion.Name(), timeouts.ClusterDeletion)
-	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(installationClient, deleteCluster.Name(), 5*time.Minute, deleteDelay)
-	cleanupCluster := deprovisioning.NewCleanupClusterStep(installationClient, triggerKymaUninstall.Name(), timeouts.ClusterCleanup)
+	triggerKymaUninstall := deprovisioning.NewTriggerKymaUninstallStep(shootClient, installationClient, deleteCluster.Name(), 5*time.Minute, deleteDelay)
+	cleanupCluster := deprovisioning.NewCleanupClusterStep(shootClient, installationClient, triggerKymaUninstall.Name(), timeouts.ClusterCleanup)
 
 	deprovisioningSteps := map[model.OperationStage]operations.Step{
 		model.CleanupCluster:         cleanupCluster,
@@ -160,4 +166,27 @@ func CreateShootUpgradeQueue(
 	)
 
 	return NewQueue(upgradeClusterExecutor)
+}
+
+func CreateHibernationQueue(
+	timeouts HibernationTimeouts,
+	factory dbsession.Factory,
+	directorClient director.DirectorClient,
+	shootClient gardener_apis.ShootInterface) OperationQueue {
+
+	waitForHibernation := hibernation.NewWaitForHibernationStep(shootClient, model.FinishedStage, timeouts.WaitingForClusterHibernation)
+
+	hibernationSteps := map[model.OperationStage]operations.Step{
+		model.WaitForHibernation: waitForHibernation,
+	}
+
+	hibernateClusterExecutor := operations.NewExecutor(
+		factory.NewReadWriteSession(),
+		model.Hibernate,
+		hibernationSteps,
+		failure.NewNoopFailureHandler(),
+		directorClient,
+	)
+
+	return NewQueue(hibernateClusterExecutor)
 }

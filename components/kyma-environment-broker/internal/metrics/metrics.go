@@ -16,6 +16,7 @@ func RegisterAll(sub event.Subscriber, operationStatsGetter OperationsStatsGette
 
 	sub.Subscribe(process.ProvisioningStepProcessed{}, opResultCollector.OnProvisioningStepProcessed)
 	sub.Subscribe(process.DeprovisioningStepProcessed{}, opResultCollector.OnDeprovisioningStepProcessed)
+	sub.Subscribe(process.UpgradeKymaStepProcessed{}, opResultCollector.OnUpgradeStepProcessed)
 	sub.Subscribe(process.ProvisioningStepProcessed{}, opDurationCollector.OnProvisioningStepProcessed)
 	sub.Subscribe(process.DeprovisioningStepProcessed{}, opDurationCollector.OnDeprovisioningStepProcessed)
 	sub.Subscribe(process.ProvisioningStepProcessed{}, stepResultCollector.OnProvisioningStepProcessed)
