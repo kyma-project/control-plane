@@ -38,6 +38,77 @@ func TestSuspension(t *testing.T) {
 	assert.Equal(t, instance.InstanceID, op.InstanceID)
 }
 
+func TestSuspension_Retrigger(t *testing.T) {
+	t.Run("should skip suspension when temporary deprovisioning operation already succeeded", func(t *testing.T) {
+		// given
+		provisioning := NewDummyQueue()
+		deprovisioning := NewDummyQueue()
+		st := storage.NewMemoryStorage()
+
+		svc := NewContextUpdateHandler(st.Operations(), provisioning, deprovisioning, logrus.New())
+		instance := fixInstance(fixInactiveErsContext())
+		st.Instances().Insert(*instance)
+		st.Operations().InsertDeprovisioningOperation(internal.DeprovisioningOperation{
+			Operation: internal.Operation{
+				ID:         "suspended-op-id",
+				Version:    0,
+				CreatedAt:  time.Now(),
+				UpdatedAt:  time.Now(),
+				InstanceID: instance.InstanceID,
+				State:      domain.Succeeded,
+			},
+			Temporary: true,
+		})
+
+		// when
+		err := svc.Handle(instance, fixInactiveErsContext())
+		require.NoError(t, err)
+
+		// then
+		op, _ := st.Operations().GetDeprovisioningOperationByInstanceID("instance-id")
+		assertQueue(t, deprovisioning)
+		assertQueue(t, provisioning)
+
+		assert.Equal(t, domain.Succeeded, op.State)
+		assert.Equal(t, instance.InstanceID, op.InstanceID)
+	})
+
+	t.Run("should retrigger deprovisioning when existing temporary deprovisioning operation failed", func(t *testing.T) {
+		// given
+		provisioning := NewDummyQueue()
+		deprovisioning := NewDummyQueue()
+		st := storage.NewMemoryStorage()
+
+		svc := NewContextUpdateHandler(st.Operations(), provisioning, deprovisioning, logrus.New())
+		instance := fixInstance(fixInactiveErsContext())
+		st.Instances().Insert(*instance)
+		st.Operations().InsertDeprovisioningOperation(internal.DeprovisioningOperation{
+			Operation: internal.Operation{
+				ID:         "suspended-op-id",
+				Version:    0,
+				CreatedAt:  time.Now(),
+				UpdatedAt:  time.Now(),
+				InstanceID: instance.InstanceID,
+				State:      domain.Failed,
+			},
+			Temporary: true,
+		})
+
+		// when
+		err := svc.Handle(instance, fixInactiveErsContext())
+		require.NoError(t, err)
+
+		// then
+		op, _ := st.Operations().GetDeprovisioningOperationByInstanceID("instance-id")
+		assertQueue(t, deprovisioning, op.ID)
+		assertQueue(t, provisioning)
+
+		assert.Equal(t, domain.LastOperationState("pending"), op.State)
+		assert.Equal(t, instance.InstanceID, op.InstanceID)
+	})
+
+}
+
 func assertQueue(t *testing.T, q *dummyQueue, id ...string) {
 	if len(id) == 0 {
 		assert.Empty(t, q.IDs)

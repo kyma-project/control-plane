@@ -21,12 +21,15 @@ type UpdateEndpoint struct {
 	instanceStorage      storage.Instances
 	contextUpdateHandler ContextUpdateHandler
 	processingEnabled    bool
+
+	operationStorage storage.Operations
 }
 
-func NewUpdate(instanceStorage storage.Instances, ctxUpdateHandler ContextUpdateHandler, processingEnabled bool, log logrus.FieldLogger) *UpdateEndpoint {
+func NewUpdate(instanceStorage storage.Instances, operationStorage storage.Operations, ctxUpdateHandler ContextUpdateHandler, processingEnabled bool, log logrus.FieldLogger) *UpdateEndpoint {
 	return &UpdateEndpoint{
 		log:                  log.WithField("service", "UpdateEndpoint"),
 		instanceStorage:      instanceStorage,
+		operationStorage:     operationStorage,
 		contextUpdateHandler: ctxUpdateHandler,
 		processingEnabled:    processingEnabled,
 	}
@@ -66,6 +69,19 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 	}
 
 	if b.processingEnabled {
+		// todo: remove the code below when we are sure the ERSContext contains required values.
+		// This code is done because the PATCH request contains only some of fields and that requests made the ERS context empty in the past.
+		provOperation, err := b.operationStorage.GetProvisioningOperationByInstanceID(instanceID)
+		if err != nil {
+			logger.Errorf("processing context updated failed: %s", err.Error())
+			return domain.UpdateServiceSpec{
+				IsAsync:       false,
+				DashboardURL:  instance.DashboardURL,
+				OperationData: "",
+			}, errors.New("unable to process the update")
+		}
+		instance.Parameters.ErsContext = provOperation.ProvisioningParameters.ErsContext
+
 		err = b.contextUpdateHandler.Handle(instance, ersContext)
 		if err != nil {
 			logger.Errorf("processing context updated failed: %s", err.Error())
@@ -76,8 +92,9 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 			}, errors.New("unable to process the update")
 		}
 
-		// save the instance
-		instance.Parameters.ErsContext = ersContext
+		//  copy only the Active flag
+		instance.Parameters.ErsContext.Active = ersContext.Active
+
 		_, err = b.instanceStorage.Update(*instance)
 		if err != nil {
 			logger.Errorf("processing context updated failed: %s", err.Error())

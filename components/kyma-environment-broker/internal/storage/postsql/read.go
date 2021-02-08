@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/pkg/errors"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
@@ -32,8 +31,8 @@ func (r readSession) getInstancesJoinedWithOperationStatement() *dbr.SelectStmt 
 	return stmt
 }
 
-func (r readSession) FindAllInstancesJoinedWithOperation(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, dberr.Error) {
-	var instances []internal.InstanceWithOperation
+func (r readSession) FindAllInstancesJoinedWithOperation(prct ...predicate.Predicate) ([]dbmodel.InstanceWithOperationDTO, dberr.Error) {
+	var instances []dbmodel.InstanceWithOperationDTO
 
 	stmt := r.getInstancesJoinedWithOperationStatement()
 	for _, p := range prct {
@@ -468,8 +467,8 @@ func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID stri
 	return res.Total, err
 }
 
-func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
-	var instances []internal.Instance
+func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]dbmodel.InstanceDTO, int, int, error) {
+	var instances []dbmodel.InstanceDTO
 
 	// Base select and order by created at
 	stmt := r.session.
