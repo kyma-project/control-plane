@@ -41,6 +41,7 @@ resources: {}
   #   memory: 128Mi
 
 provisioner:
+  Host: "kcp-provisioner.kcp-system.svc.cluster.local"
   URL: "http://kcp-provisioner.kcp-system.svc.cluster.local:3000/graphql"
 
   # Defines how long should the Kyma Environment Broker checks the status of the provisioning in the Provisioner.
@@ -73,7 +74,11 @@ trialRegionsMapping: |-
 kymaVersion: "1.13.0"
 kymaVersionOnDemand: "false"
 
+disableProcessOperationsInProgress: "false"
 enablePlans: "azure,gcp,azure_lite,trial"
+
+osbUpdateProcessingEnabled: "false"
+
 brokerService:
   displayName: "Kyma Environment"
   imageUrl: "https://digitalmarketplace-sapcpprd.s3.eu-central-1.amazonaws.com/VESdFNPDVsKUx3gJ_-DpVM1CcgX6nPRU5uZYQzNlaNonA6lSr9X3qNznYIlEDG4U.svg"
@@ -95,7 +100,7 @@ gardener:
   machineImage: ""
   # if empty, the Gardener default value is used
   machineImageVersion: ""
-  trialNodesNumber: "2"
+  trialNodesNumber: "1"
 
 # It is used to provide own creds for Service Manager instead of using the one provided by external system
 # who execute provision call on Kyma Environment Broker. You can define `overrideMode` to be one of: Always, WhenNotSentInRequest, Never
@@ -193,6 +198,7 @@ cis:
 
 oidc:
   issuer: https://dex.{{ .Values.global.ingress.domainName }}
+  keysURL: http://dex-service.kyma-system.svc.cluster.local:5556/keys
   client: "kyma-env-broker"
   groups:
     admin: runtimeAdmin

@@ -57,7 +57,10 @@ logs:
   level: "info"
 
 tests:
-  enabled: false
+  e2e:
+    enabled: false
+  hibernation:
+    enabled: false
   gardener:
     providers: "Azure"
     azureSecret: "" # Name of Gardener secret for Azure
@@ -69,3 +72,7 @@ tests:
     version: "1.18.12"
     upgradeVersion: "1.18.12"
   queryLogging: false
+  timeouts:
+    provisioning: "5h"
+    deprovisioning: "4h"
+    hibernation: "1h"

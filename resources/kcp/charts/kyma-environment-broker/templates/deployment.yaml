@@ -47,7 +47,7 @@ spec:
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           env:
             - name: APP_DISABLE_PROCESS_OPERATIONS_IN_PROGRESS
-              value: "false"
+              value: "{{ .Values.disableProcessOperationsInProgress }}"
             - name: APP_BROKER_ENABLE_PLANS
               value: "{{ .Values.enablePlans }}"
             - name: APP_OPERATION_TIMEOUT
@@ -331,6 +331,8 @@ spec:
               value: "{{ .Values.gardener.trialNodesNumber }}"
             - name: APP_DEFAULT_REQUEST_REGION
               value: "{{ .Values.broker.defaultRequestRegion }}"
+            - name: APP_UPDATE_PROCESSING_ENABLED
+              value: "{{ .Values.osbUpdateProcessingEnabled }}"
             - name: APP_AUDITLOG_ENABLE_SEQ_HTTP
               value: "{{ .Values.global.auditlog.enableSeqHttp }}"
             - name: APP_AUDITLOG_URL

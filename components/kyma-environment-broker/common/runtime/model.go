@@ -17,6 +17,7 @@ type RuntimeDTO struct {
 	ServicePlanID    string        `json:"servicePlanID"`
 	ServicePlanName  string        `json:"servicePlanName"`
 	Status           RuntimeStatus `json:"status"`
+	UserID           string        `json:"userID"`
 }
 
 type RuntimeStatus struct {
@@ -25,6 +26,9 @@ type RuntimeStatus struct {
 	Provisioning   *Operation     `json:"provisioning"`
 	Deprovisioning *Operation     `json:"deprovisioning,omitempty"`
 	UpgradingKyma  OperationsData `json:"upgradingKyma,omitempty"`
+
+	Suspension   OperationsData `json:"suspension,omitempty"`
+	Unsuspension OperationsData `json:"unsuspension,omitempty"`
 }
 
 type OperationsData struct {
@@ -38,7 +42,7 @@ type Operation struct {
 	Description     string    `json:"description"`
 	CreatedAt       time.Time `json:"createdAt"`
 	OperationID     string    `json:"operationID"`
-	OrchestrationID *string   `json:"orchestrationID,omitempty"`
+	OrchestrationID string    `json:"orchestrationID,omitempty"`
 }
 
 type RuntimesPage struct {

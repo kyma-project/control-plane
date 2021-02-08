@@ -8,19 +8,18 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit"
 	"github.com/kyma-project/control-plane/tests/provisioner-tests/test/testkit/assertions"
 )
 
-func TestRuntimeUpgrade(t *testing.T) {
+func TestHibernation(t *testing.T) {
 	t.Parallel()
 
 	globalLog := logrus.WithField("TestID", testSuite.TestID)
 
-	globalLog.Infof("Starting Kyma Control Plane Runtime Provisioner tests of Runtime Upgrade on Gardener")
+	globalLog.Infof("Starting Kyma Control Plane Runtime Provisioner tests of Shoot Upgrade on Gardener")
 	wg := &sync.WaitGroup{}
 
 	for _, provider := range testSuite.gardenerProviders {
@@ -32,14 +31,15 @@ func TestRuntimeUpgrade(t *testing.T) {
 			t.Run(provider, func(t *testing.T) {
 				log := testkit.NewLogger(t, logrus.Fields{
 					"Provider": provider,
-					"TestType": "upgrade-runtime",
+					"TestType": "hibernation",
 				})
 
+				// Provisioning runtime
 				// Create provisioning input
-				provisioningInput, err := testkit.CreateGardenerProvisioningInput(&testSuite.config, testSuite.config.Kyma.PreUpgradeVersion, provider)
+				provisioningInput, err := testkit.CreateGardenerProvisioningInput(&testSuite.config, testSuite.config.Kyma.Version, provider)
 				assertions.RequireNoError(t, err)
 
-				runtimeName := fmt.Sprintf("provisioner-upgrade-test-%s-%s", strings.ToLower(provider), uuid.New().String()[:4])
+				runtimeName := fmt.Sprintf("provisioner-test-%s-%s", strings.ToLower(provider), uuid.New().String()[:4])
 				provisioningInput.RuntimeInput.Name = runtimeName
 
 				// Provision runtime
@@ -70,29 +70,14 @@ func TestRuntimeUpgrade(t *testing.T) {
 				_, err = k8sClient.ServerVersion()
 				assertions.RequireNoError(t, err)
 
-				// TODO: To properly test upgrade of specific components we should setup some resources on cluster here
-
-				upgradedKymaConfig, err := testkit.CreateKymaConfigInput(testSuite.config.Kyma.Version)
-				upgradeRuntimeInput := gqlschema.UpgradeRuntimeInput{KymaConfig: upgradedKymaConfig}
-
-				log.Log("Starting upgrade...")
-				upgradeOperationStatus, err := testSuite.ProvisionerClient.UpgradeRuntime(runtimeID, upgradeRuntimeInput)
-				assertions.RequireNoError(t, err, "Error while starting Runtime upgrade")
-				require.NotNil(t, upgradeOperationStatus.ID)
-
-				log.WithField("UpgradeOperationID", *upgradeOperationStatus.ID)
-
-				log.Log("Waiting for upgrade to finish...")
-				upgradeOperationStatus, err = testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.Upgrade, *upgradeOperationStatus.ID, log)
-				assertions.RequireNoError(t, err)
-				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeUpgrade, runtimeID, upgradeOperationStatus)
-				log.Log("Upgrade finished.")
-
-				log.Log("Accessing API Server after upgrade...")
-				_, err = k8sClient.ServerVersion()
+				// Hibernate runtime
+				hibernationOperationID, err := testSuite.ProvisionerClient.HibernateRuntime(runtimeID)
 				assertions.RequireNoError(t, err)
 
-				// TODO: To properly test is components are upgraded some tests should be run on cluster
+				log.Log("Waiting for hibernation to finish...")
+				hibernationOperationStatus, err := testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.Hibernation, hibernationOperationID, log)
+				assertions.RequireNoError(t, err)
+				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeHibernate, runtimeID, hibernationOperationStatus)
 
 				// Deprovisioning runtime
 				log.Log("Starting Runtime deprovisioning...")
@@ -101,7 +86,7 @@ func TestRuntimeUpgrade(t *testing.T) {
 
 				log.WithField("DeprovisioningOperationID", deprovisioningOperationID)
 
-				// Get provisioning Operation Status
+				// Get deprovisioning Operation Status
 				deprovisioningOperationStatus, err := testSuite.ProvisionerClient.RuntimeOperationStatus(deprovisioningOperationID)
 				assertions.RequireNoError(t, err)
 				assertions.AssertOperationInProgress(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
@@ -109,11 +94,10 @@ func TestRuntimeUpgrade(t *testing.T) {
 				log.Log("Waiting for deprovisioning to finish...")
 				deprovisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.Deprovisioning, deprovisioningOperationID, log)
 				assertions.RequireNoError(t, err)
-				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
+				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeHibernate, runtimeID, deprovisioningOperationStatus)
 				log.Log("Deprovisioning finished.")
 			})
 		}(provider)
 	}
 	wg.Wait()
-
 }

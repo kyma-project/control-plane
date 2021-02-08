@@ -76,7 +76,7 @@ func (s *operations) GetProvisioningOperationByID(operationID string) (*internal
 	return ret, nil
 }
 
-// GetProvisioningOperationByInstanceID fetches the ProvisioningOperation by given instanceID, returns error if not found
+// GetProvisioningOperationByInstanceID fetches the latest ProvisioningOperation by given instanceID, returns error if not found
 func (s *operations) GetProvisioningOperationByInstanceID(instanceID string) (*internal.ProvisioningOperation, error) {
 	session := s.NewReadSession()
 	operation := dbmodel.OperationDTO{}
@@ -134,6 +134,29 @@ func (s *operations) UpdateProvisioningOperation(op internal.ProvisioningOperati
 	return &op, lastErr
 }
 
+func (s *operations) ListProvisioningOperationsByInstanceID(instanceID string) ([]internal.ProvisioningOperation, error) {
+	session := s.NewReadSession()
+	operations := []dbmodel.OperationDTO{}
+	var lastErr dberr.Error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		operations, lastErr = session.GetOperationsByTypeAndInstanceID(instanceID, dbmodel.OperationTypeProvision)
+		if lastErr != nil {
+			log.Errorf("while reading operation from the storage: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, lastErr
+	}
+	ret, err := s.toProvisioningOperationList(operations)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting DTO to Operation")
+	}
+
+	return ret, nil
+}
+
 // InsertDeprovisioningOperation insert new DeprovisioningOperation to storage
 func (s *operations) InsertDeprovisioningOperation(operation internal.DeprovisioningOperation) error {
 	session := s.NewWriteSession()
@@ -183,7 +206,7 @@ func (s *operations) GetDeprovisioningOperationByID(operationID string) (*intern
 	return ret, nil
 }
 
-// GetDeprovisioningOperationByInstanceID fetches the DeprovisioningOperation by given instanceID, returns error if not found
+// GetDeprovisioningOperationByInstanceID fetches the latest DeprovisioningOperation by given instanceID, returns error if not found
 func (s *operations) GetDeprovisioningOperationByInstanceID(instanceID string) (*internal.DeprovisioningOperation, error) {
 	session := s.NewReadSession()
 	operation := dbmodel.OperationDTO{}
@@ -240,6 +263,30 @@ func (s *operations) UpdateDeprovisioningOperation(operation internal.Deprovisio
 	})
 	operation.Version = operation.Version + 1
 	return &operation, lastErr
+}
+
+// ListDeprovisioningoOperationsByInstanceID
+func (s *operations) ListDeprovisioningOperationsByInstanceID(instanceID string) ([]internal.DeprovisioningOperation, error) {
+	session := s.NewReadSession()
+	operations := []dbmodel.OperationDTO{}
+	var lastErr dberr.Error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		operations, lastErr = session.GetOperationsByTypeAndInstanceID(instanceID, dbmodel.OperationTypeDeprovision)
+		if lastErr != nil {
+			log.Errorf("while reading operation from the storage: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, lastErr
+	}
+	ret, err := s.toDeprovisioningOperationList(operations)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting DTO to Operation")
+	}
+
+	return ret, nil
 }
 
 // InsertUpgradeKymaOperation insert new UpgradeKymaOperation to storage
@@ -459,11 +506,11 @@ func (s *operations) GetOperationByID(operationID string) (*internal.Operation, 
 	return &op, nil
 }
 
-func (s *operations) GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]internal.Operation, error) {
+func (s *operations) GetNotFinishedOperationsByType(operationType dbmodel.OperationType) ([]internal.Operation, error) {
 	session := s.NewReadSession()
 	operations := make([]dbmodel.OperationDTO, 0)
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		dto, err := session.GetOperationsInProgressByType(operationType)
+		dto, err := session.GetNotFinishedOperationsByType(operationType)
 		if err != nil {
 			log.Errorf("while getting operations from the storage: %v", err)
 			return false, nil
@@ -726,6 +773,34 @@ func (s *operations) toProvisioningOperation(op *dbmodel.OperationDTO) (*interna
 		return nil, err
 	}
 	return &operation, nil
+}
+
+func (s *operations) toProvisioningOperationList(ops []dbmodel.OperationDTO) ([]internal.ProvisioningOperation, error) {
+	result := make([]internal.ProvisioningOperation, 0)
+
+	for _, op := range ops {
+		o, err := s.toProvisioningOperation(&op)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting to upgrade kyma operation")
+		}
+		result = append(result, *o)
+	}
+
+	return result, nil
+}
+
+func (s *operations) toDeprovisioningOperationList(ops []dbmodel.OperationDTO) ([]internal.DeprovisioningOperation, error) {
+	result := make([]internal.DeprovisioningOperation, 0)
+
+	for _, op := range ops {
+		o, err := s.toDeprovisioningOperation(&op)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting to upgrade kyma operation")
+		}
+		result = append(result, *o)
+	}
+
+	return result, nil
 }
 
 func (s *operations) provisioningOperationToDTO(op *internal.ProvisioningOperation) (dbmodel.OperationDTO, error) {

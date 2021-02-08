@@ -56,6 +56,14 @@ func (qp queryProvider) runtimeOperationStatus(operationID string) string {
 }`, operationID, operationStatusData())
 }
 
+func (qp queryProvider) hibernateCluster(runtimeID string) string {
+	return fmt.Sprintf(`mutation {
+	result: hibernateRuntime(id: "%s") {
+		%s 
+	}
+}`, runtimeID, operationStatusData())
+}
+
 func runtimeStatusData() string {
 	return fmt.Sprintf(`lastOperationStatus { operation state message }
 			runtimeConnectionStatus { status }

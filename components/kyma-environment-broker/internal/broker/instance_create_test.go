@@ -88,10 +88,7 @@ func TestProvision_Provision(t *testing.T) {
 		instance, err := memoryStorage.Instances().GetByID(instanceID)
 		require.NoError(t, err)
 
-		var instanceParameters internal.ProvisioningParameters
-		assert.NoError(t, json.Unmarshal([]byte(instance.ProvisioningParameters), &instanceParameters))
-
-		assert.Equal(t, instanceParameters, operation.ProvisioningParameters)
+		assert.Equal(t, instance.Parameters, operation.ProvisioningParameters)
 		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.test\.example\.com`, instance.DashboardURL)
 		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
 	})
@@ -225,10 +222,7 @@ func TestProvision_Provision(t *testing.T) {
 		instance, err := memoryStorage.Instances().GetByID(instanceID)
 		require.NoError(t, err)
 
-		var instanceParameters internal.ProvisioningParameters
-		assert.NoError(t, json.Unmarshal([]byte(instance.ProvisioningParameters), &instanceParameters))
-
-		assert.Equal(t, instanceParameters, operation.ProvisioningParameters)
+		assert.Equal(t, instance.Parameters, operation.ProvisioningParameters)
 		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
 	})
 

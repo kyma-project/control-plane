@@ -1,8 +1,8 @@
-{{ if .Values.tests.e2e.enabled }}
+{{ if .Values.tests.hibernation.enabled }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: {{ template "fullname" . }}-tests
+  name: provisioner-hibernation-tests
   labels:
     app: {{ .Chart.Name }}-tests
     release: {{ .Release.Name }}
@@ -32,24 +32,20 @@ spec:
           value: {{ .Values.tests.gardener.gcpSecret }}
         - name: APP_KYMA_VERSION
           value: {{ .Values.tests.kyma.version }}
-        - name: APP_KYMA_PRE_UPGRADE_VERSION
-          value: {{ .Values.tests.kyma.preUpgradeVersion }}
         - name: APP_KUBERNETES_VERSION
           value: {{ .Values.tests.kubernetes.version }}
-        - name: APP_UPGRADE_KUBERNETES_VERSION
-          value: {{ .Values.tests.kubernetes.upgradeVersion }}
         - name: APP_QUERY_LOGGING
           value: {{ .Values.tests.queryLogging | quote }}
-        - name: APP_DIRECTOR_CLIENT_URL
-          value: "https://{{ .Values.global.compass.tls.secure.oauth.host }}.{{ .Values.global.compass.domain | default .Values.global.ingress.domainName }}/director/graphql"
-        - name: APP_DIRECTOR_CLIENT_NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: APP_DIRECTOR_CLIENT_OAUTH_CREDENTIALS_SECRET_NAME
-          value: {{ .Values.global.provisioner.secrets.integrationSystemCredentials.name | quote }}
+        - name: APP_TIMEOUTS_PROVISIONING
+          value: {{ .Values.tests.timeouts.provisioning }}
+        - name: APP_TIMEOUTS_DEPROVISIONING
+          value: {{ .Values.tests.timeouts.deprovisioning }}
+        - name: APP_TIMEOUTS_HIBERNATION
+          value: {{ .Values.tests.timeouts.hibernation }}
         command:
         - "/bin/sh"
         args:
         - "-c"
-        - "echo 'TESTING start'; sleep 10; ./entrypoint.sh 'Test_E2E_Gardener|TestShootUpgrade'; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"
+        - "echo 'TESTING start'; sleep 10; ./entrypoint.sh 'TestHibernation'; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"
       restartPolicy: Never
 {{ end }}

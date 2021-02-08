@@ -37,15 +37,24 @@ function copyKymaInstaller() {
     release=$(<"${RESOURCES_DIR}"/KYMA_VERSION)
     if [[ $release == *PR-* ]] || [[ $release == *master* ]]; then
         curl -L https://storage.googleapis.com/kyma-development-artifacts/${release}/kyma-installer-cluster.yaml -o kyma-installer.yaml
+        curl -L https://storage.googleapis.com/kyma-development-artifacts/${release}/kyma-installer-cluster.yaml -o kyma-kcp-installer.yaml
+
         curl -L https://storage.googleapis.com/kyma-development-artifacts/${release}/is-installed.sh -o ${ARTIFACTS_DIR}/is-kyma-installed.sh
     else
         curl -L https://storage.googleapis.com/kyma-prow-artifacts/${release}/kyma-installer-cluster.yaml -o kyma-installer.yaml
+        curl -L https://storage.googleapis.com/kyma-prow-artifacts/${release}/kyma-installer-cluster.yaml -o kyma-kcp-installer.yaml
+
         cp ${SCRIPTS_DIR}/is-kyma-installed.sh ${ARTIFACTS_DIR}/is-kyma-installed.sh
     fi
 
     sed -i '/action: install/d' kyma-installer.yaml
     cat ${RESOURCES_DIR}/installer-cr-kyma-dependencies.yaml >> kyma-installer.yaml
+
+    sed -i '/action: install/d' kyma-kcp-installer.yaml
+    cat ${RESOURCES_DIR}/installer-cr-kyma-kcp-dependencies.yaml >> kyma-kcp-installer.yaml
+
     mv kyma-installer.yaml ${ARTIFACTS_DIR}/kyma-installer.yaml
+    mv kyma-kcp-installer.yaml ${ARTIFACTS_DIR}/kyma-kcp-installer.yaml
 }
 
 function copyCompassInstaller() {

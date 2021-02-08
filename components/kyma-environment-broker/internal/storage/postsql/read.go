@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/pkg/errors"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
@@ -32,8 +31,8 @@ func (r readSession) getInstancesJoinedWithOperationStatement() *dbr.SelectStmt 
 	return stmt
 }
 
-func (r readSession) FindAllInstancesJoinedWithOperation(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, dberr.Error) {
-	var instances []internal.InstanceWithOperation
+func (r readSession) FindAllInstancesJoinedWithOperation(prct ...predicate.Predicate) ([]dbmodel.InstanceWithOperationDTO, dberr.Error) {
+	var instances []dbmodel.InstanceWithOperationDTO
 
 	stmt := r.getInstancesJoinedWithOperationStatement()
 	for _, p := range prct {
@@ -47,8 +46,8 @@ func (r readSession) FindAllInstancesJoinedWithOperation(prct ...predicate.Predi
 	return instances, nil
 }
 
-func (r readSession) GetInstanceByID(instanceID string) (internal.Instance, dberr.Error) {
-	var instance internal.Instance
+func (r readSession) GetInstanceByID(instanceID string) (dbmodel.InstanceDTO, dberr.Error) {
+	var instance dbmodel.InstanceDTO
 
 	err := r.session.
 		Select("*").
@@ -58,16 +57,16 @@ func (r readSession) GetInstanceByID(instanceID string) (internal.Instance, dber
 
 	if err != nil {
 		if err == dbr.ErrNotFound {
-			return internal.Instance{}, dberr.NotFound("Cannot find Instance for instanceID:'%s'", instanceID)
+			return dbmodel.InstanceDTO{}, dberr.NotFound("Cannot find Instance for instanceID:'%s'", instanceID)
 		}
-		return internal.Instance{}, dberr.Internal("Failed to get Instance: %s", err)
+		return dbmodel.InstanceDTO{}, dberr.Internal("Failed to get Instance: %s", err)
 	}
 
 	return instance, nil
 }
 
-func (r readSession) FindAllInstancesForRuntimes(runtimeIdList []string) ([]internal.Instance, dberr.Error) {
-	var instances []internal.Instance
+func (r readSession) FindAllInstancesForRuntimes(runtimeIdList []string) ([]dbmodel.InstanceDTO, dberr.Error) {
+	var instances []dbmodel.InstanceDTO
 
 	err := r.session.
 		Select("*").
@@ -77,15 +76,15 @@ func (r readSession) FindAllInstancesForRuntimes(runtimeIdList []string) ([]inte
 
 	if err != nil {
 		if err == dbr.ErrNotFound {
-			return []internal.Instance{}, dberr.NotFound("Cannot find Instances for runtime ID list: '%v'", runtimeIdList)
+			return []dbmodel.InstanceDTO{}, dberr.NotFound("Cannot find Instances for runtime ID list: '%v'", runtimeIdList)
 		}
-		return []internal.Instance{}, dberr.Internal("Failed to get Instances: %s", err)
+		return []dbmodel.InstanceDTO{}, dberr.Internal("Failed to get Instances: %s", err)
 	}
 	return instances, nil
 }
 
-func (r readSession) FindAllInstancesForSubAccounts(subAccountslist []string) ([]internal.Instance, dberr.Error) {
-	var instances []internal.Instance
+func (r readSession) FindAllInstancesForSubAccounts(subAccountslist []string) ([]dbmodel.InstanceDTO, dberr.Error) {
+	var instances []dbmodel.InstanceDTO
 
 	err := r.session.
 		Select("*").
@@ -95,9 +94,9 @@ func (r readSession) FindAllInstancesForSubAccounts(subAccountslist []string) ([
 
 	if err != nil {
 		if err == dbr.ErrNotFound {
-			return []internal.Instance{}, nil
+			return []dbmodel.InstanceDTO{}, nil
 		}
-		return []internal.Instance{}, dberr.Internal("Failed to get Instances: %s", err)
+		return []dbmodel.InstanceDTO{}, dberr.Internal("Failed to get Instances: %s", err)
 	}
 	return instances, nil
 }
@@ -202,8 +201,10 @@ func (r readSession) ListOrchestrations(filter dbmodel.OrchestrationFilter) ([]d
 		nil
 }
 
-func (r readSession) GetOperationsInProgressByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
-	stateCondition := dbr.Eq("state", domain.InProgress)
+func (r readSession) GetNotFinishedOperationsByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
+	stateInProgress := dbr.Eq("state", domain.InProgress)
+	statePending := dbr.Eq("state", orchestration.Pending)
+	stateCondition := dbr.Or(statePending, stateInProgress)
 	typeCondition := dbr.Eq("type", operationType)
 	var operations []dbmodel.OperationDTO
 
@@ -466,8 +467,8 @@ func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID stri
 	return res.Total, err
 }
 
-func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
-	var instances []internal.Instance
+func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]dbmodel.InstanceDTO, int, int, error) {
+	var instances []dbmodel.InstanceDTO
 
 	// Base select and order by created at
 	stmt := r.session.
