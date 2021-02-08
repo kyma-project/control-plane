@@ -111,7 +111,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 				return s.rescheduleAtNextMaintenanceWindow(operation, log)
 			}
 			log.Info("provisioner operation ID is empty, initialize upgrade runtime input request")
-			return s.initializeUpgradeRuntimeRequest(operation, log)
+			return s.initializeUpgradeRuntimeRequest(operation, orchestration, log)
 		}
 		log.Infof("runtime being upgraded, check operation status")
 		operation.InstanceDetails.RuntimeID = instance.RuntimeID
@@ -139,8 +139,8 @@ func (s *InitialisationStep) rescheduleAtNextMaintenanceWindow(operation interna
 	return operation, until, nil
 }
 
-func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if err := s.configureKymaVersion(&operation); err != nil {
+func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.UpgradeKymaOperation, orchestration *internal.Orchestration, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	if err := s.configureKymaVersion(&operation, orchestration); err != nil {
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	}
 
@@ -166,14 +166,28 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 	}
 }
 
-func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKymaOperation) error {
+func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKymaOperation, orchestration *internal.Orchestration) error {
 	if !operation.RuntimeVersion.IsEmpty() {
 		return nil
 	}
-	version, err := s.runtimeVerConfigurator.ForUpgrade(*operation)
-	if err != nil {
-		return errors.Wrap(err, "while getting runtime version for upgrade")
+
+	// initialize
+	var (
+		version *internal.RuntimeVersionData
+		err     error
+	)
+
+	// check Kyma version from orchestration or runtime parameters
+	if orchestration.HasVersion() {
+		version = internal.NewRuntimeVersionFromOrchestrationMapping(orchestration.Parameters.Version)
+	} else {
+		version, err = s.runtimeVerConfigurator.ForUpgrade(*operation)
+		if err != nil {
+			return errors.Wrap(err, "while getting runtime version for upgrade")
+		}
 	}
+
+	// update version
 	operation.RuntimeVersion = *version
 
 	var repeat time.Duration
