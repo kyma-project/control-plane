@@ -18,8 +18,6 @@ spec:
       namespace: "kyma-system"
     - name: "istio"
       namespace: "istio-system"
-    - name: "istio-kyma-patch"
-      namespace: "istio-system"
     - name: "dex"
       namespace: "kyma-system"
     - name: "ory"
