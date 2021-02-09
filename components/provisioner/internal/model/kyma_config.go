@@ -55,6 +55,7 @@ type KymaComponentConfig struct {
 
 type Configuration struct {
 	ConfigEntries []ConfigEntry `json:"configEntries"`
+	OnConflict    *string       `json:"onConflict"`
 }
 
 type ConfigEntry struct {

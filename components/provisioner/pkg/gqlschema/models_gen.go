@@ -56,6 +56,7 @@ type ComponentConfigurationInput struct {
 	Namespace     string              `json:"namespace"`
 	Configuration []*ConfigEntryInput `json:"configuration"`
 	SourceURL     *string             `json:"sourceURL"`
+	OnConflict    *string             `json:"onConflict"`
 }
 
 type ConfigEntry struct {
@@ -168,6 +169,7 @@ type KymaConfigInput struct {
 	Profile       *KymaProfile                   `json:"profile"`
 	Components    []*ComponentConfigurationInput `json:"components"`
 	Configuration []*ConfigEntryInput            `json:"configuration"`
+	OnConflict    *string                        `json:"onConflict"`
 }
 
 type OperationStatus struct {

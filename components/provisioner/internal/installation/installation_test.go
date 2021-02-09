@@ -6,6 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/hydroform/install/merger"
+
+	alpha1 "github.com/kyma-project/kyma/components/kyma-operator/pkg/client/clientset/versioned/typed/installer/v1alpha1"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
@@ -87,6 +91,28 @@ func TestInstallationService_TriggerInstallation(t *testing.T) {
 		require.NoError(t, err)
 	})
 
+}
+
+func TestInstallationService_ParseConfigs(t *testing.T) {
+	globalConfig := fixGlobalConfig()
+	componentsConfig := fixComponentsConfig()
+
+	t.Run("should parse OnConflict value", func(t *testing.T) {
+		// given
+		replaceValue := util.StringPtr(merger.ReplaceOnConflict)
+
+		globalConfig.OnConflict = replaceValue
+
+		for _, config := range componentsConfig {
+			config.Configuration.OnConflict = replaceValue
+		}
+
+		// when
+		configuration := NewInstallationConfiguration(globalConfig, componentsConfig)
+
+		// then
+		assert.Equal(t, merger.ReplaceOnConflict, configuration.OnConflict)
+	})
 }
 
 func Test_getInstallationCRModificationFunc(t *testing.T) {
@@ -209,14 +235,28 @@ func TestInstallationService_TriggerUpgrade(t *testing.T) {
 }
 
 type installerMock struct {
-	t                    *testing.T
-	expectedInstallation installation.Installation
-	stateChannel         chan installation.InstallationState
-	errorChannel         chan error
+	t                     *testing.T
+	expectedInstallation  installation.Installation
+	stateChannel          chan installation.InstallationState
+	errorChannel          chan error
+	installationAssertion func(installation installation.Installation) bool
+}
+
+func (i installerMock) CheckInstallationState(installationClient alpha1.InstallationInterface) (installation.InstallationState, error) {
+	state := <-i.stateChannel
+	return state, nil
+}
+
+func (i installerMock) TriggerUninstall(installationClient alpha1.InstallationInterface) error {
+	error := <-i.errorChannel
+	return error
 }
 
 func (i installerMock) PrepareInstallation(installation installation.Installation) error {
 	assert.Equal(i.t, i.expectedInstallation, installation)
+	if i.installationAssertion != nil {
+		i.installationAssertion(installation)
+	}
 	return nil
 }
 
@@ -257,6 +297,14 @@ func newErrorInstallerHandler(t *testing.T, prepareErr, startErr error) Installa
 	}
 }
 
+func (i errorInstallerMock) CheckInstallationState(installationClient alpha1.InstallationInterface) (installation.InstallationState, error) {
+	panic("implement me")
+}
+
+func (i errorInstallerMock) TriggerUninstall(installationClient alpha1.InstallationInterface) error {
+	panic("implement me")
+}
+
 func (i errorInstallerMock) PrepareInstallation(_ installation.Installation) error {
 	return i.prepareError
 }
@@ -277,6 +325,7 @@ func assertComponent(t *testing.T, expectedName, expectedNamespace string, expec
 
 func fixInstallationConfig() installation.Configuration {
 	return installation.Configuration{
+		OnConflict: merger.ReplaceOnConflict,
 		Configuration: []installation.ConfigEntry{
 			fixInstallationConfigEntry("global.config.key", "globalValue", false),
 			fixInstallationConfigEntry("global.config.key2", "globalValue2", false),
@@ -286,6 +335,7 @@ func fixInstallationConfig() installation.Configuration {
 			{
 				Component:     "cluster-essentials",
 				Configuration: make([]installation.ConfigEntry, 0),
+				OnConflict:    merger.ReplaceOnConflict,
 			},
 			{
 				Component: "core",
@@ -312,11 +362,13 @@ func fixInstallationConfig() installation.Configuration {
 func fixComponentsConfig() []model.KymaComponentConfig {
 	return []model.KymaComponentConfig{
 		{
-			ID:            "id",
-			KymaConfigID:  "id",
-			Component:     "cluster-essentials",
-			Namespace:     kymaSystemNamespace,
-			Configuration: model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
+			ID:           "id",
+			KymaConfigID: "id",
+			Component:    "cluster-essentials",
+			Namespace:    kymaSystemNamespace,
+			Configuration: model.Configuration{
+				OnConflict:    util.StringPtr(merger.ReplaceOnConflict),
+				ConfigEntries: make([]model.ConfigEntry, 0, 0)},
 		},
 		{
 			ID:           "id",
@@ -354,11 +406,13 @@ func fixComponentsConfig() []model.KymaComponentConfig {
 }
 
 func fixGlobalConfig() model.Configuration {
-	return model.Configuration{ConfigEntries: []model.ConfigEntry{
-		model.NewConfigEntry("global.config.key", "globalValue", false),
-		model.NewConfigEntry("global.config.key2", "globalValue2", false),
-		model.NewConfigEntry("global.secret.key", "globalSecretValue", true),
-	}}
+	return model.Configuration{
+		OnConflict: util.StringPtr(merger.ReplaceOnConflict),
+		ConfigEntries: []model.ConfigEntry{
+			model.NewConfigEntry("global.config.key", "globalValue", false),
+			model.NewConfigEntry("global.config.key2", "globalValue2", false),
+			model.NewConfigEntry("global.secret.key", "globalSecretValue", true),
+		}}
 }
 
 func fixInstallationConfigEntry(key, val string, secret bool) installation.ConfigEntry {
