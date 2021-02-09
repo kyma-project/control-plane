@@ -8,7 +8,5 @@ spec:
     matchLabels:
       app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
-  peers:
-  - mtls:
-      allowTls: true
-      mode: PERMISSIVE
+  mtls:
+    mode: PERMISSIVE
