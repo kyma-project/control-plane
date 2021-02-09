@@ -953,6 +953,7 @@ input KymaConfigInput {
     profile: KymaProfile                        # Optional resources profile
     components: [ComponentConfigurationInput]!  # List of Kyma Components with specific configuration
     configuration: [ConfigEntryInput]           # Global Kyma configuration
+    onConflict: String                          # Defines merging strategy if conflicts occur for global overrides
 }
 
 input ConfigEntryInput {
@@ -966,6 +967,7 @@ input ComponentConfigurationInput {
     namespace: String!                    # Namespace to which component should be installed
     configuration: [ConfigEntryInput]     # Component specific configuration
     sourceURL: String                     # Custom URL for the source files of the given component
+    onConflict: String                            # Defines merging strategy if conflicts occur for component overrides
 }
 
 input UpgradeRuntimeInput {
@@ -4888,6 +4890,12 @@ func (ec *executionContext) unmarshalInputComponentConfigurationInput(ctx contex
 			if err != nil {
 				return it, err
 			}
+		case "onConflict":
+			var err error
+			it.OnConflict, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -5209,6 +5217,12 @@ func (ec *executionContext) unmarshalInputKymaConfigInput(ctx context.Context, o
 		case "configuration":
 			var err error
 			it.Configuration, err = ec.unmarshalOConfigEntryInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "onConflict":
+			var err error
+			it.OnConflict, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
