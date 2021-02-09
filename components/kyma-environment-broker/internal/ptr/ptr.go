@@ -1,9 +1,19 @@
 package ptr
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 func Bool(in bool) *bool {
 	return &in
+}
+
+func BoolAsString(in *bool) string {
+	if in == nil {
+		return "nil"
+	}
+	return fmt.Sprintf("%v", *in)
 }
 
 func String(str string) *string {
