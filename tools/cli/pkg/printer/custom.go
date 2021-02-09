@@ -7,7 +7,7 @@ import (
 )
 
 var jsonRegexp = regexp.MustCompile(`^\{\.?([^{}]+)\}$|^\.?([^{}]+)$`)
-var templateFormat = []string{"custom-columns="}
+var templateFormat = []string{"custom="}
 
 // RelaxedJSONPathExpression attempts to be flexible with JSONPath expressions, it accepts:
 //   * metadata.name (no leading '.' or curly braces '{...}'
@@ -37,8 +37,8 @@ func RelaxedJSONPathExpression(pathExpression string) (string, error) {
 }
 
 //ParseOutputToTemplateTypeAndElement parses the output into templateType and templateElement
-//e.g. kcp runtimes  -o custom-columns="INSTANCE ID:instanceID,SHOOTNAME:shootName"
-//After parsing, the templateType = "custom-columns" and  templateElement = "INSTANCE ID:instanceID,SHOOTNAME:shootName"
+//e.g. kcp runtimes  -o custom="INSTANCE ID:instanceID,SHOOTNAME:shootName"
+//After parsing, the templateType = "custom" and  templateElement = "INSTANCE ID:instanceID,SHOOTNAME:shootName"
 func ParseOutputToTemplateTypeAndElement(output string) (string, string) {
 	var templateType, templateElement string
 	for _, format := range templateFormat {
@@ -56,14 +56,14 @@ func ParseOutputToTemplateTypeAndElement(output string) (string, string) {
 // columnsOut[1].Header = "SHOOTNAME"   and  columnsOut[1].FieldSpec = "{.shootName}"
 func ParseColumnToHeaderAndFieldSpec(spec string) ([]Column, error) {
 	if len(spec) == 0 {
-		return nil, fmt.Errorf("custom-columns format specified but no custom columns given")
+		return nil, fmt.Errorf("custom format specified but no custom columns given")
 	}
 	parts := strings.Split(spec, ",")
 	columnsOut := make([]Column, len(parts))
 	for ix := range parts {
 		colSpec := strings.SplitN(parts[ix], ":", 2)
 		if len(colSpec) != 2 {
-			return nil, fmt.Errorf("unexpected custom-columns spec: %s, expected <header>:<json-path-expr>", parts[ix])
+			return nil, fmt.Errorf("unexpected custom spec: %s, expected <header>:<json-path-expr>", parts[ix])
 		}
 		spec, err := RelaxedJSONPathExpression(colSpec[1])
 		if err != nil {

@@ -20,6 +20,8 @@ kcp orchestrations [id] [ops|operations] [cancel] [flags]
 
 ```
   kcp orchestrations --state inprogress                                   Display all orchestrations which are in progress.
+  kcp orchestration -o custom="Orchestration ID:{.OrchestrationID},STATE:{.State},CREATED AT:{.createdAt}"
+                                                                          Display all orchestations with specific custom fields.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                  Display details about a specific orchestration.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified Runtime operation within the orchestration.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 operations       Display the operations of the given orchestration.
@@ -30,7 +32,7 @@ kcp orchestrations [id] [ops|operations] [cancel] [flags]
 
 ```
       --operation string   Option that displays details of the specified Runtime operation when a given orchestration is selected.
-  -o, --output string      Output type of displayed Runtime(s). The possible values are: table, json, custom-columns. (default "table")
+  -o, --output string      Output type of displayed Runtime(s). The possible values are: table, json, custom(e.g. custom=<header>:<jsonpath-field-spec>. (default "table")
   -s, --state strings      Filter output by state. You can provide multiple values, either separated by a comma (e.g. failed,inprogress), or by specifying the option multiple times. The possible values are: canceled, canceling, failed, inprogress, pending, succeeded.
 ```
 
