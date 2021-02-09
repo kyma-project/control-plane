@@ -10,7 +10,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/migrations"
@@ -125,9 +124,6 @@ type Config struct {
 	Ems struct {
 		Disabled bool `envconfig:"default=true"`
 	}
-	Cls struct {
-		Disabled bool `envconfig:"default=true"`
-	}
 
 	AuditLog auditlog.Config
 
@@ -147,9 +143,6 @@ func main() {
 	// create and fill config
 	var cfg Config
 	err := envconfig.InitWithPrefix(&cfg, "APP")
-	fatalOnError(err)
-
-	clsConfig, err := cls.Load("/todo/provide/cls/config/path")
 	fatalOnError(err)
 
 	// create logger
@@ -200,9 +193,6 @@ func main() {
 	fatalOnError(cfg.LMS.Validate())
 	lmsClient := lms.NewClient(cfg.LMS, logs.WithField("service", "lmsClient"))
 	lmsTenantManager := lms.NewTenantManager(db.LMSTenants(), lmsClient, logs.WithField("service", "lmsTenantManager"))
-
-	clsClient := cls.NewClient(logs.WithField("service", "clsClient"))
-	clsInstanceManager := cls.NewInstanceManager(db.CLSInstances(), clsClient, logs.WithField("service", "clsInstanceManager"))
 
 	// Register disabler. Convention:
 	// {component-name} : {component-disabler-service}
@@ -299,11 +289,6 @@ func main() {
 			disabled: cfg.Ems.Disabled,
 		},
 		{
-			weight:   1,
-			step:     provisioning.NewClsOfferingStep(clsConfig, db.Operations()),
-			disabled: cfg.Cls.Disabled,
-		},
-		{
 			weight: 2,
 			step:   provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
 		},
@@ -317,11 +302,6 @@ func main() {
 				NamespaceAdminRole:  "nar",
 			}),
 			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			weight:   2,
-			step:     provisioning.NewClsActivationStep(cfg.Cls.Disabled, provisioning.NewClsProvisioningStep(clsInstanceManager, db.Operations())),
-			disabled: cfg.Cls.Disabled,
 		},
 		{
 			weight:   2,
@@ -379,11 +359,6 @@ func main() {
 		{
 			weight:   7,
 			step:     provisioning.NewEmsBindStep(db.Operations(), cfg.Database.SecretKey),
-			disabled: cfg.Ems.Disabled,
-		},
-		{
-			weight:   7,
-			step:     provisioning.NewClsBindStep(db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Ems.Disabled,
 		},
 		{
