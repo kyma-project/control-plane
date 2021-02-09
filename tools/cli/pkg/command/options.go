@@ -18,8 +18,8 @@ const (
 )
 
 const (
-	tableOutput        string = "table"
-	jsonOutput         string = "json"
+	tableOutput  string = "table"
+	jsonOutput   string = "json"
 	customOutput string = "custom"
 )
 
