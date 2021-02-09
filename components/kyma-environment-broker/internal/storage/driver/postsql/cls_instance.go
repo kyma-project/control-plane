@@ -17,16 +17,16 @@ func NewCLSInstances(sess postsql.Factory) *clsInstances {
 	}
 }
 
-func (s *clsInstances) FindInstance(name string) (internal.CLSInstance, bool, error) {
+func (s *clsInstances) FindInstance(globalAccountID string) (internal.CLSInstance, bool, error) {
 	sess := s.NewReadSession()
-	dto, err := sess.GetCLSInstance(name)
+	dto, err := sess.GetCLSInstance(globalAccountID)
 
 	switch {
 	case err == nil:
 		return internal.CLSInstance{
-			CreatedAt: dto.CreatedAt,
-			Name:      dto.Name,
-			ID:        dto.ID,
+			ID:              dto.ID,
+			GlobalAccountID: dto.GlobalAccountID,
+			CreatedAt:       dto.CreatedAt,
 		}, true, nil
 	case err.Code() == dberr.CodeNotFound:
 		return internal.CLSInstance{}, false, nil
@@ -38,8 +38,8 @@ func (s *clsInstances) FindInstance(name string) (internal.CLSInstance, bool, er
 func (s *clsInstances) InsertInstance(instance internal.CLSInstance) error {
 	sess := s.NewWriteSession()
 	return sess.InsertCLSInstance(dbmodel.CLSInstanceDTO{
-		Name:      instance.Name,
-		CreatedAt: instance.CreatedAt,
-		ID:        instance.ID,
+		ID:              instance.ID,
+		GlobalAccountID: instance.GlobalAccountID,
+		CreatedAt:       instance.CreatedAt,
 	})
 }

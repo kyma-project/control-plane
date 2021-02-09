@@ -1,7 +1,6 @@
 package cls
 
 import (
-	"regexp"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -37,9 +36,7 @@ func NewInstanceManager(storage InstanceStorage, creator InstanceCreator, log lo
 }
 
 func (c *manager) CreateInstanceIfNoneExists(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, globalAccountID string) (internal.ProvisioningOperation, error) {
-	normalizedGlobalAccountID := normalize(globalAccountID)
-
-	instance, exists, err := c.storage.FindInstance(normalizedGlobalAccountID)
+	instance, exists, err := c.storage.FindInstance(globalAccountID)
 	if err != nil {
 		return op, errors.Wrapf(err, "while checking if instance is already created")
 	}
@@ -55,7 +52,7 @@ func (c *manager) CreateInstanceIfNoneExists(om *process.ProvisionOperationManag
 		BrokerID:  op.Cls.Instance.BrokerID,
 	})
 	if err != nil {
-		return op, errors.Wrapf(err, "while creating instance name=%s", normalizedGlobalAccountID)
+		return op, errors.Wrapf(err, "while creating instance name=%s", globalAccountID)
 	}
 
 	op.Cls.Instance.InstanceID = instanceID
@@ -64,12 +61,12 @@ func (c *manager) CreateInstanceIfNoneExists(om *process.ProvisionOperationManag
 	// it is important to save the instance ID because instance creation means creation of a cluster.
 	err = wait.PollImmediate(3*time.Second, 30*time.Second, func() (bool, error) {
 		err := c.storage.InsertInstance(internal.CLSInstance{
-			ID:        instanceID,
-			Name:      normalizedGlobalAccountID,
-			CreatedAt: time.Now(),
+			ID:              instanceID,
+			GlobalAccountID: globalAccountID,
+			CreatedAt:       time.Now(),
 		})
 		if err != nil {
-			c.log.Warn(errors.Wrapf(err, "while saving cls instance %s with ID %s", normalizedGlobalAccountID, instanceID).Error())
+			c.log.Warn(errors.Wrapf(err, "while saving cls instance %s with ID %s", globalAccountID, instanceID).Error())
 			return false, nil
 		}
 		return true, nil
@@ -78,14 +75,4 @@ func (c *manager) CreateInstanceIfNoneExists(om *process.ProvisionOperationManag
 		return op, errors.Wrapf(err, "while saving instance to storage")
 	}
 	return op, nil
-}
-
-func normalize(s string) string {
-	instanceNameNormalizationRegexp := regexp.MustCompile("[^a-zA-Z0-9]+")
-	normalized := instanceNameNormalizationRegexp.ReplaceAllString(s, "")
-	if len(normalized) > 50 {
-		normalized = normalized[:50]
-	}
-
-	return normalized
 }

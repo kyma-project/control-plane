@@ -40,7 +40,7 @@ type ReadSession interface {
 	ListInstances(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error)
 	ListOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error)
 	GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error)
-	GetCLSInstance(name string) (dbmodel.CLSInstanceDTO, dberr.Error)
+	GetCLSInstance(globalAccountID string) (dbmodel.CLSInstanceDTO, dberr.Error)
 }
 
 //go:generate mockery -name=WriteSession

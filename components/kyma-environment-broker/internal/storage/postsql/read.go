@@ -435,19 +435,19 @@ func (r readSession) GetLMSTenant(name, region string) (dbmodel.LMSTenantDTO, db
 	return dto, nil
 }
 
-func (r readSession) GetCLSInstance(name string) (dbmodel.CLSInstanceDTO, dberr.Error) {
+func (r readSession) GetCLSInstance(globalAccountID string) (dbmodel.CLSInstanceDTO, dberr.Error) {
 	var dto dbmodel.CLSInstanceDTO
 	err := r.session.
 		Select("*").
 		From(CLSInstanceTableName).
-		Where(dbr.Eq("name", name)).
+		Where(dbr.Eq("global_account_id", globalAccountID)).
 		LoadOne(&dto)
 
 	if err != nil {
 		if err == dbr.ErrNotFound {
-			return dbmodel.CLSInstanceDTO{}, dberr.NotFound("Cannot find lms tenant for name: '%s'", name)
+			return dbmodel.CLSInstanceDTO{}, dberr.NotFound("unable to find cls instance for global account: '%s'", globalAccountID)
 		}
-		return dbmodel.CLSInstanceDTO{}, dberr.Internal("Failed to get operation: %s", err)
+		return dbmodel.CLSInstanceDTO{}, dberr.Internal("unable to get cls instance: %s", err)
 	}
 	return dto, nil
 }

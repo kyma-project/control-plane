@@ -14,7 +14,7 @@ type clsInstances struct {
 }
 
 type clsKey struct {
-	Name string
+	GlobalAccountID string
 }
 
 func NewCLSInstances() *clsInstances {
@@ -23,11 +23,11 @@ func NewCLSInstances() *clsInstances {
 	}
 }
 
-func (s *clsInstances) FindInstance(name string) (internal.CLSInstance, bool, error) {
+func (s *clsInstances) FindInstance(globalAccountID string) (internal.CLSInstance, bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	k := clsKey{Name: name}
+	k := clsKey{GlobalAccountID: globalAccountID}
 	instance, exists := s.data[k]
 	if !exists {
 		return internal.CLSInstance{}, false, nil
@@ -40,7 +40,7 @@ func (s *clsInstances) InsertInstance(instance internal.CLSInstance) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	k := clsKey{Name: instance.Name}
+	k := clsKey{GlobalAccountID: instance.GlobalAccountID}
 	if _, exists := s.data[k]; exists {
 		return dberr.AlreadyExists("instance already exists")
 	}

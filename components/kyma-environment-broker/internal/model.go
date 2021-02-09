@@ -28,10 +28,9 @@ type ProvisionerInputCreator interface {
 }
 
 type CLSInstance struct {
-	ID        string
-	Name      string
-	Region    string
-	CreatedAt time.Time
+	ID              string
+	GlobalAccountID string
+	CreatedAt       time.Time
 }
 type LMSTenant struct {
 	ID        string
