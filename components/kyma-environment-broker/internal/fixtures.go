@@ -44,12 +44,12 @@ func fixProvisioningParametersDTO() ProvisioningParametersDTO {
 	}
 }
 
-func fixInstance() Instance {
+func FixInstance() Instance {
 	var (
 		globalAccountID = uuid.New().String()
 		subAccountID    = uuid.New().String()
 		serviceID       = uuid.New().String()
-		planID = uuid.New().String()
+		planID          = uuid.New().String()
 	)
 
 	ersContext := ERSContext{
