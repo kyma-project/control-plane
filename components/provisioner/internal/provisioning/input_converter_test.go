@@ -3,6 +3,8 @@ package provisioning
 import (
 	"testing"
 
+	"github.com/kyma-incubator/hydroform/install/merger"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	realeaseMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/release/mocks"
@@ -373,6 +375,43 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, expectedGardenerAzureRuntimeConfig, runtimeConfig)
 		uuidGeneratorMock.AssertExpectations(t)
+	})
+}
+
+func TestConverter_ParseInput(t *testing.T) {
+	t.Run("should parse KymaConfig input", func(t *testing.T) {
+
+		//given
+		uuidGeneratorMock := &mocks.UUIDGenerator{}
+		uuidGeneratorMock.On("New").Return("id").Times(6)
+		uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hyphens")
+
+		releaseProvider := &realeaseMocks.Provider{}
+		releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
+		releaseProvider.On("GetReleaseByVersion", kymaVersionWithoutTiller).Return(fixKymaReleaseWithoutTiller(), nil)
+
+		input := gqlschema.KymaConfigInput{
+			Version:    kymaVersion,
+			OnConflict: util.StringPtr(merger.ReplaceOnConflict),
+		}
+
+		inputConverter := NewInputConverter(
+			uuidGeneratorMock,
+			releaseProvider,
+			gardenerProject,
+			defaultEnableKubernetesVersionAutoUpdate,
+			defaultEnableMachineImageVersionAutoUpdate,
+			forceAllowPrivilegedContainers)
+
+		// when
+		output, err := inputConverter.KymaConfigFromInput("runtimeID", input)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, merger.ReplaceOnConflict, *output.GlobalConfiguration.OnConflict)
+		for _, entry := range output.Components {
+			assert.Equal(t, merger.ReplaceOnConflict, *entry.Configuration.OnConflict)
+		}
 	})
 }
 
