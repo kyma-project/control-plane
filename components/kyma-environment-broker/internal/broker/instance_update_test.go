@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -43,7 +44,10 @@ func TestUpdateEndpoint_Update(t *testing.T) {
 	}
 	st := storage.NewMemoryStorage()
 	st.Instances().Insert(instance)
-	st.Operations().InsertProvisioningOperation(fixProvisioningOperation())
+	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("01"))
+	st.Operations().InsertDeprovisioningOperation(fixSuspensionOperation())
+	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("02"))
+
 	handler := &handler{}
 	svc := NewUpdate(st.Instances(), st.Operations(), handler, true, logrus.New())
 
@@ -74,7 +78,8 @@ func TestUpdateEndpoint_Update(t *testing.T) {
 		Active: ptr.Bool(false),
 	}, handler.ersContext)
 	// check if handler was called with Instance.active=true
-	require.NotNil(t, *handler.Instance.Parameters.ErsContext.Active)
+	require.NotNil(t, handler.Instance.Parameters.ErsContext.Active)
+	assert.True(t, *handler.Instance.Parameters.ErsContext.Active)
 }
 
 func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
@@ -94,7 +99,7 @@ func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 	}
 	st := storage.NewMemoryStorage()
 	st.Instances().Insert(instance)
-	st.Operations().InsertProvisioningOperation(fixProvisioningOperation())
+	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("01"))
 	handler := &handler{}
 	svc := NewUpdate(st.Instances(), st.Operations(), handler, true, logrus.New())
 
@@ -127,9 +132,11 @@ func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 	assert.True(t, *handler.Instance.Parameters.ErsContext.Active)
 }
 
-func fixProvisioningOperation() internal.ProvisioningOperation {
+func fixProvisioningOperation(id string) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
+			ID:         id,
+			CreatedAt:  time.Now(),
 			InstanceID: instanceID,
 			ProvisioningParameters: internal.ProvisioningParameters{
 				ErsContext: internal.ERSContext{
@@ -144,5 +151,27 @@ func fixProvisioningOperation() internal.ProvisioningOperation {
 				},
 			},
 		},
+	}
+}
+
+func fixSuspensionOperation() internal.DeprovisioningOperation {
+	return internal.DeprovisioningOperation{
+		Operation: internal.Operation{
+			CreatedAt:  time.Now(),
+			InstanceID: instanceID,
+			ProvisioningParameters: internal.ProvisioningParameters{
+				ErsContext: internal.ERSContext{
+					ServiceManager: &internal.ServiceManagerEntryDTO{
+						Credentials: internal.ServiceManagerCredentials{
+							BasicAuth: internal.ServiceManagerBasicAuth{
+								Username: "u",
+								Password: "p",
+							},
+						},
+					},
+				},
+			},
+		},
+		Temporary: true,
 	}
 }
