@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/kyma-incubator/hydroform/install/merger"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
@@ -110,12 +111,43 @@ func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) ap
 		return apperrors.BadRequest("error: Kyma config not provided")
 	}
 
-	if len(kymaConfig.Components) == 0 {
-		return apperrors.BadRequest("error: Kyma components list is empty")
+	if appError, done := v.validateComponents(kymaConfig); done {
+		return appError
 	}
 
 	if !configContainsRuntimeAgentComponent(kymaConfig.Components) {
 		return apperrors.BadRequest("error: Kyma components list does not contain Compass Runtime Agent")
+	}
+
+	if kymaConfig.OnConflict != nil {
+		return v.validateOnConflict(*kymaConfig.OnConflict)
+	}
+
+	return nil
+}
+
+func (v *validator) validateComponents(kymaConfig *gqlschema.KymaConfigInput) (apperrors.AppError, bool) {
+	components := kymaConfig.Components
+	if len(components) == 0 {
+		return apperrors.BadRequest("error: Kyma components list is empty"), true
+	}
+
+	for _, component := range components {
+		if component == nil || component.OnConflict == nil {
+			continue
+		}
+
+		if err := v.validateOnConflict(*component.OnConflict); err != nil {
+			return err, true
+		}
+	}
+
+	return nil, false
+}
+
+func (v *validator) validateOnConflict(value string) apperrors.AppError {
+	if value != "" && value != merger.ReplaceOnConflict {
+		return apperrors.BadRequest("error: Invalid value of conflict resolution onConflict")
 	}
 
 	return nil

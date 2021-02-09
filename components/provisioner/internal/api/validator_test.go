@@ -3,6 +3,8 @@ package api
 import (
 	"testing"
 
+	"github.com/kyma-incubator/hydroform/install/merger"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 	dbMocks "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
@@ -13,43 +15,42 @@ import (
 
 func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
-	clusterConfig := &gqlschema.ClusterConfigInput{
-		GardenerConfig: &gqlschema.GardenerConfigInput{
-			KubernetesVersion:      "1.15.4",
-			VolumeSizeGb:           30,
-			MachineType:            "n1-standard-4",
-			Region:                 "europe",
-			Provider:               "gcp",
-			Seed:                   util.StringPtr("2"),
-			TargetSecret:           "test-secret",
-			DiskType:               "ssd",
-			WorkerCidr:             "10.10.10.10/255",
-			AutoScalerMin:          1,
-			AutoScalerMax:          3,
-			MaxSurge:               40,
-			MaxUnavailable:         1,
-			ProviderSpecificConfig: nil,
-		},
-	}
+	t.Run("should validate correct on conflict values", func(t *testing.T) {
+		// given
+		validator, testConfig, config := onConflictValidatorInput()
+		// when
+		err := validator.ValidateProvisioningInput(config)
+		// then
+		require.NoError(t, err)
 
-	runtimeInput := &gqlschema.RuntimeInput{
-		Name:        "test runtime",
-		Description: new(string),
-	}
+		// given
+		for _, component := range testConfig.Components {
+			component.OnConflict = util.StringPtr(merger.ReplaceOnConflict)
+		}
+		// when
+		err = validator.ValidateProvisioningInput(config)
+		// then
+		require.NoError(t, err)
 
-	kymaConfig := &gqlschema.KymaConfigInput{
-		Version: "1.5",
-		Components: []*gqlschema.ComponentConfigurationInput{
-			{
-				Component:     "core",
-				Configuration: nil,
-			},
-			{
-				Component:     "compass-runtime-agent",
-				Configuration: nil,
-			},
-		},
-	}
+		// given
+		dummyValue := "dummy"
+		testConfig.OnConflict = util.StringPtr(dummyValue)
+		// when
+		err = validator.ValidateProvisioningInput(config)
+		// then
+		require.Error(t, err)
+
+		// given
+		for _, component := range testConfig.Components {
+			component.OnConflict = util.StringPtr(dummyValue)
+		}
+		// when
+		err = validator.ValidateProvisioningInput(config)
+		// then
+		require.Error(t, err)
+	})
+
+	clusterConfig, runtimeInput, kymaConfig := initializeConfigs()
 
 	t.Run("Should return nil when config is correct", func(t *testing.T) {
 		//given
@@ -445,4 +446,62 @@ func TestValidator_ValidateTenantForOperation(t *testing.T) {
 		//then
 		require.Error(t, err)
 	})
+
+}
+
+func onConflictValidatorInput() (Validator, *gqlschema.KymaConfigInput, gqlschema.ProvisionRuntimeInput) {
+	clusterConfig, runtimeInput, kymaConfig := initializeConfigs()
+	readSession := &dbMocks.ReadSession{}
+	validator := NewValidator(readSession)
+
+	testConfig := kymaConfig
+	testConfig.OnConflict = util.StringPtr(merger.ReplaceOnConflict)
+
+	config := gqlschema.ProvisionRuntimeInput{
+		RuntimeInput:  runtimeInput,
+		ClusterConfig: clusterConfig,
+		KymaConfig:    testConfig,
+	}
+	return validator, testConfig, config
+}
+
+func initializeConfigs() (*gqlschema.ClusterConfigInput, *gqlschema.RuntimeInput, *gqlschema.KymaConfigInput) {
+	clusterConfig := &gqlschema.ClusterConfigInput{
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			KubernetesVersion:      "1.15.4",
+			VolumeSizeGb:           30,
+			MachineType:            "n1-standard-4",
+			Region:                 "europe",
+			Provider:               "gcp",
+			Seed:                   util.StringPtr("2"),
+			TargetSecret:           "test-secret",
+			DiskType:               "ssd",
+			WorkerCidr:             "10.10.10.10/255",
+			AutoScalerMin:          1,
+			AutoScalerMax:          3,
+			MaxSurge:               40,
+			MaxUnavailable:         1,
+			ProviderSpecificConfig: nil,
+		},
+	}
+
+	runtimeInput := &gqlschema.RuntimeInput{
+		Name:        "test runtime",
+		Description: new(string),
+	}
+
+	kymaConfig := &gqlschema.KymaConfigInput{
+		Version: "1.5",
+		Components: []*gqlschema.ComponentConfigurationInput{
+			{
+				Component:     "core",
+				Configuration: nil,
+			},
+			{
+				Component:     "compass-runtime-agent",
+				Configuration: nil,
+			},
+		},
+	}
+	return clusterConfig, runtimeInput, kymaConfig
 }
