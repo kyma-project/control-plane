@@ -8,6 +8,7 @@ import (
 
 // Parameters hold the attributes of orchestration create (upgrade) requests.
 type Parameters struct {
+	Version  string       `json:"version"`
 	Targets  TargetSpec   `json:"targets"`
 	Strategy StrategySpec `json:"strategy,omitempty"`
 	DryRun   bool         `json:"dryRun,omitempty"`

@@ -27,6 +27,13 @@ type ProvisionerInputCreator interface {
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 }
 
+// GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for
+// external evaluation.
+const (
+	GitKymaProject = "kyma-project"
+	GitKymaRepo    = "kyma"
+)
+
 type LMSTenant struct {
 	ID        string
 	Name      string
@@ -60,12 +67,13 @@ type AvsLifecycleData struct {
 type RuntimeVersionOrigin string
 
 const (
-	Parameters     RuntimeVersionOrigin = "parameters"
-	Defaults       RuntimeVersionOrigin = "defaults"
-	AccountMapping RuntimeVersionOrigin = "account-mapping"
+	Parameters           RuntimeVersionOrigin = "parameters"
+	Defaults             RuntimeVersionOrigin = "defaults"
+	AccountMapping       RuntimeVersionOrigin = "account-mapping"
+	OrchestrationMapping RuntimeVersionOrigin = "orchestration-mapping"
 )
 
-// RuntimeVersionData describes the Kyma Version used for the cluser
+// RuntimeVersionData describes the Kyma Version used for the cluster
 // provisioning or upgrade
 type RuntimeVersionData struct {
 	Version string               `json:"version"`
@@ -86,6 +94,10 @@ func NewRuntimeVersionFromDefaults(version string) *RuntimeVersionData {
 
 func NewRuntimeVersionFromAccountMapping(version string) *RuntimeVersionData {
 	return &RuntimeVersionData{Version: version, Origin: AccountMapping}
+}
+
+func NewRuntimeVersionFromOrchestrationMapping(version string) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: OrchestrationMapping}
 }
 
 type EventHub struct {
@@ -157,6 +169,10 @@ func (o *Orchestration) IsFinished() bool {
 // IsCanceled returns true if orchestration's cancellation endpoint was ever triggered
 func (o *Orchestration) IsCanceled() bool {
 	return o.State == orchestration.Canceling || o.State == orchestration.Canceled
+}
+
+func (o *Orchestration) HasVersion() bool {
+	return o.Parameters.Version != ""
 }
 
 type InstanceWithOperation struct {
