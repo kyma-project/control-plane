@@ -77,7 +77,11 @@ func NewRuntimeCmd() *cobra.Command {
 The command supports filtering Runtimes based on various attributes. See the list of options for more details.`,
 		Example: `  kcp runtimes                                           Display table overview about all Runtimes.
   kcp rt -c c-178e034 -o json                            Display all details about one Runtime identified by a Shoot name in the JSON format.
-  kcp runtimes --account CA4836781TID000000000123456789  Display all Runtimes of a given global account.`,
+  kcp runtimes --account CA4836781TID000000000123456789  Display all Runtimes of a given global account.
+  kcp runtimes -c bbc3ee7 -o custom="INSTANCE ID:instanceID,SHOOTNAME:shootName"
+                                                         Display the custom fields about one Runtime identified by a Shoot name.
+  kcp runtimes -o custom="INSTANCE ID:instanceID,SHOOTNAME:shootName,runtimeID:runtimeID,STATUS:{status.provisioning}"
+                                                         Display all Runtimes with specific custom fields.`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}
@@ -131,7 +135,7 @@ func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
 	case cmd.output == jsonOutput:
 		jp := printer.NewJSONPrinter("  ")
 		jp.PrintObj(runtimes)
-	case strings.HasPrefix(cmd.output, customcolumnOutput):
+	case strings.HasPrefix(cmd.output, customOutput):
 		_, templateFile := printer.ParseOutputToTemplateTypeAndElement(cmd.output)
 		column, err := printer.ParseColumnToHeaderAndFieldSpec(templateFile)
 		if err != nil {
