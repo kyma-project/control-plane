@@ -27,10 +27,11 @@ func (h *handler) Handle(inst *internal.Instance, ers internal.ERSContext) error
 	return nil
 }
 
-func TestUpdateEndpoint_Update(t *testing.T) {
+func TestUpdateEndpoint_UpdateSuspension(t *testing.T) {
 	// given
 	instance := internal.Instance{
-		InstanceID: instanceID,
+		InstanceID:    instanceID,
+		ServicePlanID: TrialPlanID,
 		Parameters: internal.ProvisioningParameters{
 			PlanID: TrialPlanID,
 			ErsContext: internal.ERSContext{
@@ -67,25 +68,81 @@ func TestUpdateEndpoint_Update(t *testing.T) {
 	// check if original ERS context is set again in the Instance entity
 	assert.NotEmpty(t, inst.Parameters.ErsContext.ServiceManager.Credentials.BasicAuth.Password)
 	// check if the handler was called
+	assertServiceManagerCreds(t, handler.Instance.Parameters.ErsContext.ServiceManager)
+
+	assert.Equal(t, internal.ERSContext{
+		Active: ptr.Bool(false),
+	}, handler.ersContext)
+
+	require.NotNil(t, handler.Instance.Parameters.ErsContext.Active)
+	assert.True(t, *handler.Instance.Parameters.ErsContext.Active)
+}
+
+func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {
+	// given
+	instance := internal.Instance{
+		InstanceID:    instanceID,
+		ServicePlanID: TrialPlanID,
+		Parameters: internal.ProvisioningParameters{
+			PlanID: TrialPlanID,
+			ErsContext: internal.ERSContext{
+				TenantID:        "",
+				SubAccountID:    "",
+				GlobalAccountID: "",
+				ServiceManager:  nil,
+				Active:          nil,
+			},
+		},
+	}
+	st := storage.NewMemoryStorage()
+	st.Instances().Insert(instance)
+	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("01"))
+	st.Operations().InsertDeprovisioningOperation(fixSuspensionOperation())
+
+	handler := &handler{}
+	svc := NewUpdate(st.Instances(), st.Operations(), handler, true, logrus.New())
+
+	// when
+	svc.Update(context.Background(), instanceID, domain.UpdateDetails{
+		ServiceID:       "",
+		PlanID:          TrialPlanID,
+		RawParameters:   nil,
+		PreviousValues:  domain.PreviousValues{},
+		RawContext:      json.RawMessage("{\"active\":true}"),
+		MaintenanceInfo: nil,
+	}, true)
+
+	// then
+	inst, err := st.Instances().GetByID(instanceID)
+	require.NoError(t, err)
+	// check if original ERS context is set again in the Instance entity
+	assert.NotEmpty(t, inst.Parameters.ErsContext.ServiceManager.Credentials.BasicAuth.Password)
+	// check if the handler was called
+	assertServiceManagerCreds(t, handler.Instance.Parameters.ErsContext.ServiceManager)
+
+	assert.Equal(t, internal.ERSContext{
+		Active: ptr.Bool(true),
+	}, handler.ersContext)
+
+	require.NotNil(t, handler.Instance.Parameters.ErsContext.Active)
+	assert.False(t, *handler.Instance.Parameters.ErsContext.Active)
+}
+
+func assertServiceManagerCreds(t *testing.T, dto *internal.ServiceManagerEntryDTO) {
 	assert.Equal(t, &internal.ServiceManagerEntryDTO{
 		Credentials: internal.ServiceManagerCredentials{
 			BasicAuth: internal.ServiceManagerBasicAuth{
 				Username: "u",
 				Password: "p",
 			},
-		}}, handler.Instance.Parameters.ErsContext.ServiceManager)
-	assert.Equal(t, internal.ERSContext{
-		Active: ptr.Bool(false),
-	}, handler.ersContext)
-	// check if handler was called with Instance.active=true
-	require.NotNil(t, handler.Instance.Parameters.ErsContext.Active)
-	assert.True(t, *handler.Instance.Parameters.ErsContext.Active)
+		}}, dto)
 }
 
 func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 	// given
 	instance := internal.Instance{
-		InstanceID: instanceID,
+		InstanceID:    instanceID,
+		ServicePlanID: TrialPlanID,
 		Parameters: internal.ProvisioningParameters{
 			PlanID: TrialPlanID,
 			ErsContext: internal.ERSContext{
@@ -118,17 +175,11 @@ func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 	// check if original ERS context is set again in the Instance entity
 	assert.NotEmpty(t, inst.Parameters.ErsContext.ServiceManager.Credentials.BasicAuth.Password)
 	// check if the handler was called
-	assert.Equal(t, &internal.ServiceManagerEntryDTO{
-		Credentials: internal.ServiceManagerCredentials{
-			BasicAuth: internal.ServiceManagerBasicAuth{
-				Username: "u",
-				Password: "p",
-			},
-		}}, handler.Instance.Parameters.ErsContext.ServiceManager)
+	assertServiceManagerCreds(t, handler.Instance.Parameters.ErsContext.ServiceManager)
 	assert.Equal(t, internal.ERSContext{
 		Active: ptr.Bool(false),
 	}, handler.ersContext)
-	// check if handler was called with Instance.active=true
+
 	assert.True(t, *handler.Instance.Parameters.ErsContext.Active)
 }
 

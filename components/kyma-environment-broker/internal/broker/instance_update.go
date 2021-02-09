@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -58,7 +57,7 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 		logger.Errorf("unable to decode context: %s", err.Error())
 		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal context")
 	}
-	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, asString(ersContext.Active))
+	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
 
 	var contextData map[string]interface{}
 	err = json.Unmarshal(details.RawContext, &contextData)
@@ -138,11 +137,4 @@ func (b *UpdateEndpoint) exctractActiveValue(id string, provisioning internal.Pr
 	}
 
 	return ptr.Bool(deprovisioning.CreatedAt.Before(provisioning.CreatedAt)), nil
-}
-
-func asString(b *bool) string {
-	if b == nil {
-		return "nil"
-	}
-	return fmt.Sprintf("%v", *b)
 }
