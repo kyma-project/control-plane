@@ -296,8 +296,8 @@ components:
           description: Specifies if the orchestration is used for testing purposes
         version:
           type: string
-          example: 1.18.0|master-00e83e99
-          description: Specifies Kyma version for the upgrade operation
+          example: 1.18.0|PR-123|master-00e83e99
+          description: Specifies Kyma version for the upgrade operation. Supports semantic, PR, and branch-commit as Kyma version.
         targets:
           type: object
           properties:
