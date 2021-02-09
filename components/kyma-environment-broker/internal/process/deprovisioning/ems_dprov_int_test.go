@@ -53,20 +53,19 @@ func TestEmsDeprovisioningSteps(t *testing.T) {
 	operation := internal.DeprovisioningOperation{
 		Operation:       internal.Operation{ProvisioningParameters: pp},
 		SMClientFactory: cliFactory,
-	}
-	operation.Ems = internal.EmsData{
-		Instance: internal.ServiceManagerInstanceInfo{
-			BrokerID:              os.Getenv("BROKER_ID"), // saved in InstanceKey, see the provisioning step
-			ServiceID:             os.Getenv("SERVICE_ID"),
-			PlanID:                os.Getenv("PLAN_ID"),
-			InstanceID:            os.Getenv("INSTANCE_ID"),
-			Provisioned:           true,
-			ProvisioningTriggered: false,
+		Ems: internal.EmsData{
+			Instance: internal.ServiceManagerInstanceInfo{
+				BrokerID:              os.Getenv("BROKER_ID"), // saved in InstanceKey, see the provisioning step
+				ServiceID:             os.Getenv("SERVICE_ID"),
+				PlanID:                os.Getenv("PLAN_ID"),
+				InstanceID:            os.Getenv("INSTANCE_ID"),
+				Provisioned:           true,
+				ProvisioningTriggered: false,
+			},
+			BindingID: os.Getenv("BINDING_ID"),
+			Overrides: "encryptedEventingOverrides",
 		},
-		BindingID: os.Getenv("BINDING_ID"),
-		Overrides: "encryptedEventingOverrides",
 	}
-
 	repo.InsertDeprovisioningOperation(operation)
 
 	log := logrus.New()

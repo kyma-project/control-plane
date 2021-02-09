@@ -160,9 +160,6 @@ lms:
   # if false - failing LMS step does not break provisioning
   mandatory: true
 
-cls:
-  secretName: "cls-creds"
-
 ias:
   secretName: "ias-creds"
   url: "TBD"
