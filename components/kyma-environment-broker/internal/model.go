@@ -27,6 +27,13 @@ type ProvisionerInputCreator interface {
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 }
 
+// GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for
+// external evaluation.
+const (
+	GitKymaProject = "kyma-project"
+	GitKymaRepo    = "kyma"
+)
+
 type LMSTenant struct {
 	ID        string
 	Name      string

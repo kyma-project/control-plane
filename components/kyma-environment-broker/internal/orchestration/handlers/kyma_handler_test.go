@@ -61,6 +61,45 @@ func TestHandler_AttachRoutes(t *testing.T) {
 	})
 }
 
+// Testing Kyma Version is disabled due to GitHub API RATE limits
+func TestHandler_KymaVersion(t *testing.T) {
+	t.Run("kyma version validation", func(t *testing.T) {
+		// // given
+		// db := storage.NewMemoryStorage()
+		// logs := logrus.New()
+		// q := process.NewQueue(&testExecutor{}, logs)
+		// kymaHandler := handlers.NewKymaHandler(db.Orchestrations(), q, logs)
+
+		//  // test semantic version
+		//  // Exists: https://github.com/kyma-project/kyma/releases/tag/1.18.0
+		//	require.NoError(t, kymaHandler.ValidateKymaVersion("1.18.0"))
+		//
+		//	err := kymaHandler.ValidateKymaVersion("0.12.34")
+		//	require.NotNil(t, err)
+		//	require.Contains(t, err.Error(), "not found")
+		//
+		//	// test PR- version
+		//	// Exists: https://github.com/kyma-project/kyma/pull/10542
+		//	require.NoError(t, kymaHandler.ValidateKymaVersion("PR-10542"))
+		//
+		//	err = kymaHandler.ValidateKymaVersion("PR-0")
+		//	require.NotNil(t, err)
+		//	require.Contains(t, err.Error(), "not found")
+		//
+		//	// test <branch name>-<commit hash> version
+		//	// Exists: https://github.com/kyma-project/kyma/commit/f5e6d75
+		//	require.NoError(t, kymaHandler.ValidateKymaVersion("master-f5e6d75"))
+		//
+		//	err = kymaHandler.ValidateKymaVersion("master-123456")
+		//	require.NotNil(t, err)
+		//	require.Contains(t, err.Error(), "not present on branch")
+		//
+		//	err = kymaHandler.ValidateKymaVersion("release-0.4-f5e6d75")
+		//	require.NotNil(t, err)
+		//	require.Contains(t, err.Error(), "not present on branch")
+	})
+}
+
 type testExecutor struct{}
 
 func (t *testExecutor) Execute(opID string) (time.Duration, error) {
