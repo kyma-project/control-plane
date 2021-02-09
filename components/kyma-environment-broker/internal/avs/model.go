@@ -93,7 +93,7 @@ type BasicEvaluationCreateResponse struct {
 func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, evalTypeSpecificConfig ModelConfigurator, url string) (*BasicEvaluationCreateRequest, error) {
 
 	beName, beDescription := generateNameAndDescription(operation.ProvisioningParameters.ErsContext.GlobalAccountID,
-		operation.ProvisioningParameters.ErsContext.SubAccountID, operation.ProvisioningParameters.Parameters.Name, evalTypeSpecificConfig.ProvideSuffix())
+		operation.ProvisioningParameters.ErsContext.SubAccountID, operation.ProvisioningParameters.Parameters.Name, operation.InstanceID, evalTypeSpecificConfig.ProvideSuffix())
 
 	return &BasicEvaluationCreateRequest{
 		DefinitionType:   DefinitionType,
@@ -116,18 +116,17 @@ func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, e
 	}, nil
 }
 
-func generateNameAndDescription(globalAccountId string, subAccountId string, name string, beType string) (string, string) {
-	beName := fmt.Sprintf("K8S-AZR-Kyma-%s-%s-%s", beType, subAccountId, name)
-	beDescription := fmt.Sprintf("SKR instance Name: %s, Global Account: %s, Subaccount: %s",
-		name, globalAccountId, subAccountId)
+func generateNameAndDescription(globalAccountId string, subAccountId string, name string, instanceId string, beType string) (string, string) {
+	beName := fmt.Sprintf("K8S-AZR-Kyma-%s-%s-%s", beType, instanceId, name)
+	beDescription := fmt.Sprintf("SKR instance Name: %s, Global Account: %s, Subaccount: %s, Instance ID: %s",
+		name, globalAccountId, subAccountId, instanceId)
 
 	return truncateString(beName, 80), truncateString(beDescription, 255)
 }
 
 func truncateString(input string, num int) string {
-	output := input
 	if len(input) > num {
-		output = input[0:num]
+		return input[0:num]
 	}
-	return output
+	return input
 }
