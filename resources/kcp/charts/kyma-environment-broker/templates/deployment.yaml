@@ -50,6 +50,8 @@ spec:
               value: "{{ .Values.disableProcessOperationsInProgress }}"
             - name: APP_BROKER_ENABLE_PLANS
               value: "{{ .Values.enablePlans }}"
+            - name: APP_BROKER_ONLY_SINGLE_TRIAL_PER_GA
+              value: "{{ .Values.onlySingleTrialPerGA }}"
             - name: APP_OPERATION_TIMEOUT
               value: "{{ .Values.broker.operationTimeout }}"
             - name: APP_BROKER_SERVICE_DISPLAY_NAME
