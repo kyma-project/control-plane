@@ -76,6 +76,7 @@ kymaVersionOnDemand: "false"
 
 disableProcessOperationsInProgress: "false"
 enablePlans: "azure,gcp,azure_lite,trial"
+onlySingleTrialPerGA: "true"
 
 osbUpdateProcessingEnabled: "false"
 

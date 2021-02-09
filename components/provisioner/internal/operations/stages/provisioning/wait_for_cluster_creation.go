@@ -74,6 +74,17 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, operation model.
 
 func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster, shoot *gardener_types.Shoot, operationId string) (operations.StageResult, error) {
 
+	if cluster.ClusterConfig.Seed == "" && shoot.Spec.SeedName != nil && *shoot.Spec.SeedName != "" {
+
+		cluster.ClusterConfig.Seed = *shoot.Spec.SeedName
+
+		dberr := s.dbSession.UpdateGardenerClusterConfig(cluster.ClusterConfig)
+
+		if dberr != nil {
+			return operations.StageResult{}, dberr
+		}
+	}
+
 	kubeconfig, err := s.kubeconfigProvider.FetchRaw(shoot.Name)
 	if err != nil {
 		return operations.StageResult{}, err
