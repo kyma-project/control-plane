@@ -67,7 +67,7 @@ func (s *EmsProvisionStep) provision(smCli servicemanager.Client, operation inte
 	if err != nil {
 		return s.handleError(operation, err, log, fmt.Sprintf("Provision() call failed for brokerID: %s; input: %#v", operation.Ems.Instance.BrokerID, input))
 	}
-	log.Infof("response from EMS provisioning call: %#v", resp)
+	log.Debugf("response from EMS provisioning call: %#v", resp)
 
 	operation.Ems.Instance.InstanceID = input.ID
 

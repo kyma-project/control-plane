@@ -46,7 +46,7 @@ func (s DeprovisionAzureEventHubStep) Run(operation internal.UpgradeKymaOperatio
 		return operation, 0, nil
 	}
 	hypType := hyperscaler.Azure
-	log.Infof("HAP lookup for credentials to deprovision cluster for global account ID %s on Hyperscaler %s",
+	log.Debugf("HAP lookup for credentials to deprovision cluster for global account ID %s on Hyperscaler %s",
 		operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
 
 	//get hyperscaler credentials from HAP

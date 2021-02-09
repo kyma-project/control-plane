@@ -75,7 +75,7 @@ func (s *ServiceManagerOfferingStep) Run(operation internal.UpgradeKymaOperation
 			fmt.Sprintf("expected one %s Service Manager plan, but found %d", s.offeringName, len(offerings.ServiceOfferings)))
 	}
 	info.PlanID = plans.ServicePlans[0].CatalogID
-	log.Infof("Found plan: catalogID=%s", info.PlanID)
+	log.Debugf("Found plan: planID=%s", info.PlanID)
 
 	op, retry := s.operationManager.UpdateOperation(operation)
 	if retry > 0 {
