@@ -3,7 +3,6 @@ package cls
 import (
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -35,44 +34,61 @@ func NewProvisioner(storage InstanceStorage, creator InstanceCreator, log logrus
 	}
 }
 
-func (c *provisioner) ProvisionIfNoneExists(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, globalAccountID string) (internal.ProvisioningOperation, error) {
-	instance, exists, err := c.storage.FindInstance(globalAccountID)
+type ProvisionRequest struct {
+	GlobalAccountID string
+	ServiceID       string
+	PlanID          string
+	BrokerID        string
+}
+
+type ProvisionResult struct {
+	InstanceID            string
+	ProvisioningTriggered bool
+}
+
+func (c *provisioner) ProvisionIfNoneExists(smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
+	instance, exists, err := c.storage.FindInstance(request.GlobalAccountID)
 	if err != nil {
-		return op, errors.Wrapf(err, "while checking if instance is already created")
+		return nil, errors.Wrapf(err, "while checking if instance is already created")
 	}
 
 	if exists {
-		op.Cls.Instance.InstanceID = instance.ID
-		return op, nil
+		return &ProvisionResult{
+			InstanceID:            instance.ID,
+			ProvisioningTriggered: false,
+		}, nil
 	}
 
-	instanceID, err := c.creator.CreateInstance(smCli, &CreateInstanceRequest{
-		ServiceID: op.Cls.Instance.ServiceID,
-		PlanID:    op.Cls.Instance.PlanID,
-		BrokerID:  op.Cls.Instance.BrokerID,
+	instanceID, err := c.creator.CreateInstance(smClient, &CreateInstanceRequest{
+		ServiceID: request.ServiceID,
+		PlanID:    request.PlanID,
+		BrokerID:  request.BrokerID,
 	})
 	if err != nil {
-		return op, errors.Wrapf(err, "while creating instance name=%s", globalAccountID)
+		return nil, errors.Wrapf(err, "while creating instance name=%s", request.GlobalAccountID)
 	}
 
-	op.Cls.Instance.InstanceID = instanceID
-	op.Cls.Instance.ProvisioningTriggered = true
+	instance = internal.CLSInstance{
+		ID:              instanceID,
+		GlobalAccountID: request.GlobalAccountID,
+		CreatedAt:       time.Now(),
+	}
 
 	// it is important to save the instance ID because instance creation means creation of a cluster.
 	err = wait.PollImmediate(3*time.Second, 30*time.Second, func() (bool, error) {
-		err := c.storage.InsertInstance(internal.CLSInstance{
-			ID:              instanceID,
-			GlobalAccountID: globalAccountID,
-			CreatedAt:       time.Now(),
-		})
+		err := c.storage.InsertInstance(instance)
 		if err != nil {
-			c.log.Warn(errors.Wrapf(err, "while saving cls instance %s with ID %s", globalAccountID, instanceID).Error())
+			c.log.Warn(errors.Wrapf(err, "while saving cls instance %s with ID %s", request.GlobalAccountID, instance.ID).Error())
 			return false, nil
 		}
 		return true, nil
 	})
 	if err != nil {
-		return op, errors.Wrapf(err, "while saving instance to storage")
+		return nil, errors.Wrapf(err, "while saving instance to storage")
 	}
-	return op, nil
+
+	return &ProvisionResult{
+		InstanceID:            instance.ID,
+		ProvisioningTriggered: true,
+	}, nil
 }
