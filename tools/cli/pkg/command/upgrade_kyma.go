@@ -24,13 +24,11 @@ func NewUpgradeKymaCmd() *cobra.Command {
 		Long: `Upgrades or reconfigures Kyma on targets of Runtimes.
 The upgrade is performed by Kyma Control Plane (KCP) within a new orchestration asynchronously. The ID of the orchestration is returned by the command upon success.
 The targets of Runtimes are specified via the --target and --target-exclude options. At least one --target must be specified.
-The version is specified via the --version and -v options. By default, if empty, the version will be taken from Kyma Control Plane.
-Additional Kyma configurations to use for the upgrade are taken from Kyma Control Plane during the processing of the orchestration.`,
+The Kyma version and configurations to use for the upgrade are taken from Kyma Control Plane during the processing of the orchestration.`,
 		Example: `  kcp upgrade kyma --target all --schedule maintenancewindow     Upgrade Kyma on all Runtimes in their next respective maintenance window hours.
   kcp upgrade kyma --target "account=CA.*"                       Upgrade Kyma on Runtimes of all global accounts starting with CA.
   kcp upgrade kyma --target all --target-exclude "account=CA.*"  Upgrade Kyma on Runtimes of all global accounts not starting with CA.
-  kcp upgrade kyma --target "region=europe|eu|uk"                Upgrade Kyma on Runtimes whose region belongs to Europe.
-  kcp upgrade kyma --target all --version "master-00e83e99"      Upgrade Kyma on Runtimes of all global accounts to custom Kyma version master-00e83e99.`,
+  kcp upgrade kyma --target "region=europe|eu|uk"                Upgrade Kyma on Runtimes whose region belongs to Europe.`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}
