@@ -63,23 +63,7 @@ func (c *Client) CreateInstance(smClient servicemanager.Client, request *CreateI
 	input.Context = map[string]interface{}{
 		"platform": "kubernetes",
 	}
-
-	params := parameters{
-		RetentionPeriod:    c.config.RetentionPeriod,
-		MaxDataInstances:   c.config.MaxDataInstances,
-		MaxIngestInstances: c.config.MaxIngestInstances,
-		EsAPIEnabled:       false,
-	}
-	params.SAML.Enabled = true
-	params.SAML.AdminGroup = c.config.SAML.AdminGroup
-	params.SAML.Initiated = true
-	params.SAML.ExchangeKey = c.config.SAML.ExchangeKey
-	params.SAML.RolesKey = c.config.SAML.RolesKey
-	params.SAML.Idp.EntityID = c.config.SAML.Idp.EntityID
-	params.SAML.Idp.MetadataURL = c.config.SAML.Idp.MetadataURL
-	params.SAML.Sp.EntityID = c.config.SAML.Sp.EntityID
-	params.SAML.Sp.SignaturePrivateKey = c.config.SAML.Sp.SignaturePrivateKey
-	input.Parameters = params
+	input.Parameters = createParameters(c.config)
 
 	resp, err := smClient.Provision(request.BrokerID, input, true)
 	if err != nil {
@@ -88,4 +72,23 @@ func (c *Client) CreateInstance(smClient servicemanager.Client, request *CreateI
 	c.log.Infof("response from CLS provisioning call: %#v", resp)
 
 	return input.ID, nil
+}
+
+func createParameters(config *Config) parameters {
+	params := parameters{
+		RetentionPeriod:    config.RetentionPeriod,
+		MaxDataInstances:   config.MaxDataInstances,
+		MaxIngestInstances: config.MaxIngestInstances,
+		EsAPIEnabled:       false,
+	}
+	params.SAML.Enabled = true
+	params.SAML.AdminGroup = config.SAML.AdminGroup
+	params.SAML.Initiated = true
+	params.SAML.ExchangeKey = config.SAML.ExchangeKey
+	params.SAML.RolesKey = config.SAML.RolesKey
+	params.SAML.Idp.EntityID = config.SAML.Idp.EntityID
+	params.SAML.Idp.MetadataURL = config.SAML.Idp.MetadataURL
+	params.SAML.Sp.EntityID = config.SAML.Sp.EntityID
+	params.SAML.Sp.SignaturePrivateKey = config.SAML.Sp.SignaturePrivateKey
+	return params
 }
