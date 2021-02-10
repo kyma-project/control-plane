@@ -67,10 +67,9 @@ type AvsLifecycleData struct {
 type RuntimeVersionOrigin string
 
 const (
-	Parameters           RuntimeVersionOrigin = "parameters"
-	Defaults             RuntimeVersionOrigin = "defaults"
-	AccountMapping       RuntimeVersionOrigin = "account-mapping"
-	OrchestrationMapping RuntimeVersionOrigin = "orchestration-mapping"
+	Parameters     RuntimeVersionOrigin = "parameters"
+	Defaults       RuntimeVersionOrigin = "defaults"
+	AccountMapping RuntimeVersionOrigin = "account-mapping"
 )
 
 // RuntimeVersionData describes the Kyma Version used for the cluster
@@ -94,10 +93,6 @@ func NewRuntimeVersionFromDefaults(version string) *RuntimeVersionData {
 
 func NewRuntimeVersionFromAccountMapping(version string) *RuntimeVersionData {
 	return &RuntimeVersionData{Version: version, Origin: AccountMapping}
-}
-
-func NewRuntimeVersionFromOrchestrationMapping(version string) *RuntimeVersionData {
-	return &RuntimeVersionData{Version: version, Origin: OrchestrationMapping}
 }
 
 type EventHub struct {

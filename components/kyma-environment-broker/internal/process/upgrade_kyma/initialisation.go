@@ -140,7 +140,7 @@ func (s *InitialisationStep) rescheduleAtNextMaintenanceWindow(operation interna
 }
 
 func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.UpgradeKymaOperation, orchestration *internal.Orchestration, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if err := s.configureKymaVersion(&operation, orchestration); err != nil {
+	if err := s.configureKymaVersion(&operation, orchestration.Parameters.Version); err != nil {
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	}
 
@@ -166,27 +166,28 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 	}
 }
 
-func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKymaOperation, orchestration *internal.Orchestration) error {
+func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKymaOperation, requestedVersion string) error {
 	if !operation.RuntimeVersion.IsEmpty() {
 		return nil
 	}
 
+	// set Kyma version from request or runtime parameters
 	var (
 		err     error
 		version *internal.RuntimeVersionData
 	)
 
-	// get Kyma version from orchestration or runtime parameters
-	if orchestration.HasVersion() {
-		version = internal.NewRuntimeVersionFromOrchestrationMapping(orchestration.Parameters.Version)
-	} else {
+	switch {
+	case requestedVersion != "":
+		version = internal.NewRuntimeVersionFromParameters(requestedVersion)
+	default:
 		version, err = s.runtimeVerConfigurator.ForUpgrade(*operation)
 		if err != nil {
 			return errors.Wrap(err, "while getting runtime version for upgrade")
 		}
 	}
 
-	// update version
+	// update operation version
 	operation.RuntimeVersion = *version
 
 	var repeat time.Duration

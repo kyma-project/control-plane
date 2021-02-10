@@ -125,13 +125,16 @@ func (h *kymaHandler) validateTarget(spec orchestration.TargetSpec) error {
 // (e.g. due to API RATE limit), returns version as valid.
 func (h *kymaHandler) ValidateKymaVersion(version string) error {
 	var (
-		err  error
-		resp *github.Response
+		err          error
+		resp         *github.Response
+		shouldHandle = func(resp *github.Response) bool {
+			return resp != nil && resp.StatusCode >= 400 && resp.StatusCode < 500
+		}
 	)
 
 	switch {
 	// handle semantic version
-	case semver.IsValid(version):
+	case semver.IsValid(fmt.Sprintf("v%s", version)):
 		_, resp, err = h.gitClient.Repositories.GetReleaseByTag(context.Background(), internal.GitKymaProject, internal.GitKymaRepo, version)
 	// handle PR-<number>
 	case strings.HasPrefix(version, "PR-"):
@@ -140,20 +143,20 @@ func (h *kymaHandler) ValidateKymaVersion(version string) error {
 	// handle <branch name>-<commit hash>
 	case strings.Contains(version, "-"):
 		chunks := strings.Split(version, "-")
-		branch, commit := strings.Join(chunks[:len(chunks)-1], ""), chunks[len(chunks)-1]
+		branch, commit := strings.Join(chunks[:len(chunks)-1], "-"), chunks[len(chunks)-1]
 
 		// get diff from the branch head to commit
 		var diff *github.CommitsComparison
 		diff, resp, err = h.gitClient.Repositories.CompareCommits(context.Background(), internal.GitKymaProject, internal.GitKymaRepo, branch, commit)
 
 		// if diff contains commits, the searched commit is not on the given branch
-		if diff != nil && len(diff.Commits) > 0 {
+		if diff != nil && len(diff.Commits) > 0 || shouldHandle(resp) {
 			return fmt.Errorf("invalid Kyma version, commit %s not present on branch %s", commit, branch)
 		}
 	}
 
 	// handle iff GitHub API responded
-	if resp != nil && resp.StatusCode >= 400 && resp.StatusCode < 500 {
+	if shouldHandle(resp) {
 		return errors.Wrapf(err, "invalid Kyma version, version %s not found", version)
 	}
 

@@ -1,16 +1,19 @@
-package handlers_test
+package handlers
 
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strconv"
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
-
+	"github.com/google/go-github/github"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/stretchr/testify/assert"
@@ -23,10 +26,7 @@ import (
 func TestHandler_AttachRoutes(t *testing.T) {
 	t.Run("upgrade", func(t *testing.T) {
 		// given
-		db := storage.NewMemoryStorage()
-		logs := logrus.New()
-		q := process.NewQueue(&testExecutor{}, logs)
-		kymaHandler := handlers.NewKymaHandler(db.Orchestrations(), q, logs)
+		kHandler := fixKymaHanler(t)
 
 		params := orchestration.Parameters{
 			Targets: orchestration.TargetSpec{
@@ -45,7 +45,7 @@ func TestHandler_AttachRoutes(t *testing.T) {
 
 		rr := httptest.NewRecorder()
 		router := mux.NewRouter()
-		kymaHandler.AttachRoutes(router)
+		kHandler.AttachRoutes(router)
 
 		// when
 		router.ServeHTTP(rr, req)
@@ -64,40 +64,151 @@ func TestHandler_AttachRoutes(t *testing.T) {
 // Testing Kyma Version is disabled due to GitHub API RATE limits
 func TestHandler_KymaVersion(t *testing.T) {
 	t.Run("kyma version validation", func(t *testing.T) {
-		// // given
-		// db := storage.NewMemoryStorage()
-		// logs := logrus.New()
-		// q := process.NewQueue(&testExecutor{}, logs)
-		// kymaHandler := handlers.NewKymaHandler(db.Orchestrations(), q, logs)
+		// given
+		kHandler := fixKymaHanler(t)
 
-		//  // test semantic version
-		//  // Exists: https://github.com/kyma-project/kyma/releases/tag/1.18.0
-		//	require.NoError(t, kymaHandler.ValidateKymaVersion("1.18.0"))
-		//
-		//	err := kymaHandler.ValidateKymaVersion("0.12.34")
-		//	require.NotNil(t, err)
-		//	require.Contains(t, err.Error(), "not found")
-		//
-		//	// test PR- version
-		//	// Exists: https://github.com/kyma-project/kyma/pull/10542
-		//	require.NoError(t, kymaHandler.ValidateKymaVersion("PR-10542"))
-		//
-		//	err = kymaHandler.ValidateKymaVersion("PR-0")
-		//	require.NotNil(t, err)
-		//	require.Contains(t, err.Error(), "not found")
-		//
-		//	// test <branch name>-<commit hash> version
-		//	// Exists: https://github.com/kyma-project/kyma/commit/f5e6d75
-		//	require.NoError(t, kymaHandler.ValidateKymaVersion("master-f5e6d75"))
-		//
-		//	err = kymaHandler.ValidateKymaVersion("master-123456")
-		//	require.NotNil(t, err)
-		//	require.Contains(t, err.Error(), "not present on branch")
-		//
-		//	err = kymaHandler.ValidateKymaVersion("release-0.4-f5e6d75")
-		//	require.NotNil(t, err)
-		//	require.Contains(t, err.Error(), "not present on branch")
+		// test semantic version
+		// Exists: 1.18.0
+		require.NoError(t, kHandler.ValidateKymaVersion("1.18.0"))
+
+		err := kHandler.ValidateKymaVersion("0.12.34")
+		require.NotNil(t, err)
+		require.Contains(t, err.Error(), "not found")
+
+		// test PR- version
+		// Exists: 10542
+		require.NoError(t, kHandler.ValidateKymaVersion("PR-10542"))
+
+		err = kHandler.ValidateKymaVersion("PR-0")
+		require.NotNil(t, err)
+		require.Contains(t, err.Error(), "not found")
+
+		// test <branch name>-<commit hash> version
+		// Exists: master-f5e6d75
+		require.NoError(t, kHandler.ValidateKymaVersion("master-f5e6d75"))
+
+		err = kHandler.ValidateKymaVersion("master-123456")
+		require.NotNil(t, err)
+		require.Contains(t, err.Error(), "not present on branch")
+
+		err = kHandler.ValidateKymaVersion("release-0.4-f5e6d75")
+		require.NotNil(t, err)
+		require.Contains(t, err.Error(), "not present on branch")
 	})
+}
+
+func fixKymaHanler(t *testing.T) *kymaHandler {
+	db := storage.NewMemoryStorage()
+	logs := logrus.New()
+	q := process.NewQueue(&testExecutor{}, logs)
+	kHandler := NewKymaHandler(db.Orchestrations(), q, logs)
+
+	// fix github client
+	mockServer := fixGithubServer(t)
+	baseUrl, _ := url.Parse(fmt.Sprintf("%s/", mockServer.URL))
+	kHandler.gitClient.BaseURL = baseUrl
+
+	return kHandler
+}
+
+func fixGithubServer(t *testing.T) *httptest.Server {
+	r := mux.NewRouter()
+
+	// initialize Git data
+	mock := mockServer{
+		T: t,
+		tags: map[string]bool{
+			"1.18.0": true,
+		},
+		pulls: map[int64]bool{
+			10542: true,
+		},
+		branchCommit: map[string]map[string]bool{
+			"master": map[string]bool{
+				"f5e6d75": true,
+			},
+		},
+	}
+
+	// set routes
+	r.HandleFunc(fmt.Sprintf("/repos/%s/%s/releases/tags/{tag}",
+		internal.GitKymaProject, internal.GitKymaRepo), mock.getTags).Methods(http.MethodGet)
+	r.HandleFunc(fmt.Sprintf("/repos/%s/%s/pulls/{pullId}",
+		internal.GitKymaProject, internal.GitKymaRepo), mock.getPulls).Methods(http.MethodGet)
+	r.HandleFunc(fmt.Sprintf("/repos/%v/%v/compare/{base}...{commit}",
+		internal.GitKymaProject, internal.GitKymaRepo), mock.getDiff).Methods(http.MethodGet)
+
+	return httptest.NewServer(r)
+}
+
+type mockServer struct {
+	T            *testing.T
+	tags         map[string]bool
+	pulls        map[int64]bool
+	branchCommit map[string]map[string]bool
+}
+
+func (s *mockServer) getTags(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	tag := vars["tag"]
+	response := github.RepositoryRelease{}
+
+	// check if tag exists
+	_, exists := s.tags[tag]
+	if !exists {
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		response = github.RepositoryRelease{TagName: &tag}
+	}
+
+	responseObjAsBytes, _ := json.Marshal(response)
+	_, err := w.Write(responseObjAsBytes)
+	assert.NoError(s.T, err)
+}
+
+func (s *mockServer) getPulls(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	pullId, _ := strconv.ParseInt(vars["pullId"], 10, 64)
+	response := github.PullRequest{}
+
+	// check if pull exists
+	_, exists := s.pulls[pullId]
+	if !exists {
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		response = github.PullRequest{ID: &pullId}
+	}
+
+	responseObjAsBytes, _ := json.Marshal(response)
+	_, err := w.Write(responseObjAsBytes)
+	assert.NoError(s.T, err)
+}
+
+func (s *mockServer) getDiff(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	response := github.CommitsComparison{}
+
+	// check if branch exists
+	branch, commit := vars["base"], vars["commit"]
+	branchCommits, exists := s.branchCommit[branch]
+	if !exists {
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	// check if commit exists
+	_, exists = branchCommits[commit]
+	if !exists {
+		response.Commits = []*github.RepositoryCommit{
+			&github.RepositoryCommit{SHA: &commit},
+		}
+	}
+
+	responseObjAsBytes, _ := json.Marshal(response)
+	_, err := w.Write(responseObjAsBytes)
+	assert.NoError(s.T, err)
 }
 
 type testExecutor struct{}
