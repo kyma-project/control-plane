@@ -8,22 +8,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type CreateInstanceInput struct {
-	Name            string
-	Region          string
-	GlobalAccountID string
-}
-
-type CreateInstanceOutput struct {
-	ID string `json:"id"`
-}
-
 var (
 	defaultConfig = Config{
-		RetentionPeriod:         7,
-		MaxDataInstances:        2,
-		MaxIngestInstances:      2,
-		ElasticsearchAPIEnabled: false,
+		RetentionPeriod:    7,
+		MaxDataInstances:   2,
+		MaxIngestInstances: 2,
 	}
 )
 
@@ -38,10 +27,9 @@ type Config struct {
 	//Number of FluentD instances to be provisioned
 	MaxIngestInstances int `yaml:"maxIngestInstances"`
 
-	//Set to true to expose the Elasticsearch API
-	ElasticsearchAPIEnabled bool                  `yaml:"esApiEnabled"`
-	ServiceManager          *ServiceManagerConfig `yaml:"serviceManager"`
-	SAML                    *SAMLConfig           `yaml:"saml"`
+	SAML *SAMLConfig `yaml:"saml"`
+
+	ServiceManager *ServiceManagerConfig `yaml:"serviceManager"`
 }
 
 //ServiceManagerConfig contains service manager credentials per region
@@ -68,9 +56,6 @@ const (
 
 // SAMLConfig to be used by Kibana
 type SAMLConfig struct {
-	//Set to true to enabled SAML authentication
-	Enabled bool `yaml:"enabled"`
-
 	//New admin backend role that maps to any of your SAML group. It will have the right to modify the security module
 	AdminGroup string `yaml:"admin_group"`
 
@@ -88,6 +73,7 @@ type SAMLConfig struct {
 	Sp *SAMLSpConfig `yaml:"sp"`
 }
 
+//SAMLIdpConfig contains SAML identity provider configuration
 type SAMLIdpConfig struct {
 	//URL to get the SAML metadata
 	MetadataURL string `yaml:"metadata_url"`
@@ -96,6 +82,7 @@ type SAMLIdpConfig struct {
 	EntityID string `yaml:"entity_id"`
 }
 
+//SAMLSpConfig contains SAML service provider configuration
 type SAMLSpConfig struct {
 	//Entity ID of the service provider
 	EntityID string `yaml:"entity_id"`

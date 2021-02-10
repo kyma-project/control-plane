@@ -13,7 +13,7 @@ import (
 )
 
 type ClsInstanceProvider interface {
-	CreateInstanceIfNoneExists(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, globalAccountID string) (internal.ProvisioningOperation, error)
+	ProvisionIfNoneExists(smClient servicemanager.Client, request *cls.ProvisionRequest) (*cls.ProvisionResult, error)
 }
 
 type clsProvisioningStep struct {
@@ -40,21 +40,29 @@ func (s *clsProvisioningStep) Run(operation internal.ProvisioningOperation, log 
 	}
 
 	skrRegion := operation.ProvisioningParameters.Parameters.Region
-	smCli, err := cls.ServiceManagerClient(operation.SMClientFactory, s.config.ServiceManager, skrRegion)
+	smClient, err := cls.ServiceManagerClient(operation.SMClientFactory, s.config.ServiceManager, skrRegion)
 
 	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
-	op, err := s.instanceProvider.CreateInstanceIfNoneExists(s.operationManager, smCli, operation, globalAccountID)
+	result, err := s.instanceProvider.ProvisionIfNoneExists(smClient, &cls.ProvisionRequest{
+		GlobalAccountID: globalAccountID,
+		BrokerID:        operation.Cls.Instance.BrokerID,
+		ServiceID:       operation.Cls.Instance.ServiceID,
+		PlanID:          operation.Cls.Instance.PlanID,
+	})
+	operation.Cls.Instance.InstanceID = result.InstanceID
+	operation.Cls.Instance.ProvisioningTriggered = result.ProvisioningTriggered
+
 	if err != nil {
 		failureReason := fmt.Sprintf("Unable to create instance for GlobalAccountID: %s", globalAccountID)
 		log.Errorf("%s: %s", failureReason, err)
 		return s.operationManager.OperationFailed(operation, failureReason)
 	}
 
-	_, repeat := s.operationManager.UpdateOperation(op)
+	_, repeat := s.operationManager.UpdateOperation(operation)
 	if repeat != 0 {
 		log.Errorf("Unable to update operation: %s", err)
 		return operation, time.Second, nil
 	}
 
-	return op, 0, nil
+	return operation, 0, nil
 }

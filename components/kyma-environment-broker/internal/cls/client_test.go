@@ -12,17 +12,20 @@ import (
 )
 
 const (
-	fakeBrokerID = "fake-broker-id"
+	fakeBrokerID  = "fake-broker-id"
+	fakeServiceID = "fake-service-id"
+	fakePlanID    = "fake-plan-id"
 )
 
 var (
 	config = &Config{
-		RetentionPeriod:    7,
-		MaxDataInstances:   2,
-		MaxIngestInstances: 2,
+		RetentionPeriod:    30,
+		MaxDataInstances:   4,
+		MaxIngestInstances: 4,
 		SAML: &SAMLConfig{
 			AdminGroup:  "runtimeAdmin",
 			ExchangeKey: "base64-jibber-jabber",
+			Initiated:   true,
 			RolesKey:    "groups",
 			Idp: &SAMLIdpConfig{
 				EntityID:    "https://sso.example.org/idp",
@@ -44,6 +47,18 @@ func TestCreateInstance(t *testing.T) {
 		matcher provisioningInputMatcher
 	}{
 		{
+			"service id is set",
+			func(input servicemanager.ProvisioningInput) bool {
+				return input.ServiceID == fakeServiceID
+			},
+		},
+		{
+			"plan id is set",
+			func(input servicemanager.ProvisioningInput) bool {
+				return input.PlanID == fakePlanID
+			},
+		},
+		{
 			"instance id is valid uuid",
 			func(input servicemanager.ProvisioningInput) bool {
 				return isValidUUID(input.ID)
@@ -61,6 +76,40 @@ func TestCreateInstance(t *testing.T) {
 				return isValidUUID(input.SpaceGUID)
 			},
 		},
+		{
+			"platform is kubernetes",
+			func(input servicemanager.ProvisioningInput) bool {
+				if platform, ok := input.Context["platform"]; ok {
+					return platform == "kubernetes"
+				}
+				return false
+			},
+		},
+		{
+			"elk parameters are set",
+			func(input servicemanager.ProvisioningInput) bool {
+				params := input.Parameters.(parameters)
+				return params.RetentionPeriod == config.RetentionPeriod &&
+					params.MaxDataInstances == config.MaxDataInstances &&
+					params.MaxIngestInstances == config.MaxIngestInstances &&
+					params.EsAPIEnabled == false
+			},
+		},
+		{
+			"saml parameters are set",
+			func(input servicemanager.ProvisioningInput) bool {
+				params := input.Parameters.(parameters)
+				return params.SAML.Enabled == true &&
+					params.SAML.Initiated == config.SAML.Initiated &&
+					params.SAML.AdminGroup == config.SAML.AdminGroup &&
+					params.SAML.ExchangeKey == config.SAML.ExchangeKey &&
+					params.SAML.RolesKey == config.SAML.RolesKey &&
+					params.SAML.Idp.EntityID == config.SAML.Idp.EntityID &&
+					params.SAML.Idp.MetadataURL == config.SAML.Idp.MetadataURL &&
+					params.SAML.Sp.EntityID == config.SAML.Sp.EntityID &&
+					params.SAML.Sp.SignaturePrivateKey == config.SAML.Sp.SignaturePrivateKey
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -70,7 +119,9 @@ func TestCreateInstance(t *testing.T) {
 			sut := NewClient(config, logrus.New())
 
 			instanceID, err := sut.CreateInstance(smClientMock, &CreateInstanceRequest{
-				BrokerID: fakeBrokerID,
+				BrokerID:  fakeBrokerID,
+				ServiceID: fakeServiceID,
+				PlanID:    fakePlanID,
 			})
 			require.NotNil(t, instanceID)
 			require.NoError(t, err)
