@@ -13,7 +13,7 @@ import (
 )
 
 type ClsInstanceProvider interface {
-	CreateInstanceIfNoneExists(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, globalAccountID string) (internal.ProvisioningOperation, error)
+	ProvisionIfNoneExists(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, globalAccountID string) (internal.ProvisioningOperation, error)
 }
 
 type clsProvisioningStep struct {
@@ -43,7 +43,7 @@ func (s *clsProvisioningStep) Run(operation internal.ProvisioningOperation, log 
 	smCli, err := cls.ServiceManagerClient(operation.SMClientFactory, s.config.ServiceManager, skrRegion)
 
 	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
-	op, err := s.instanceProvider.CreateInstanceIfNoneExists(s.operationManager, smCli, operation, globalAccountID)
+	op, err := s.instanceProvider.ProvisionIfNoneExists(s.operationManager, smCli, operation, globalAccountID)
 	if err != nil {
 		failureReason := fmt.Sprintf("Unable to create instance for GlobalAccountID: %s", globalAccountID)
 		log.Errorf("%s: %s", failureReason, err)

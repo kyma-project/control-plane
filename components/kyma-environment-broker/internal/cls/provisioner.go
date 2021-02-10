@@ -21,21 +21,21 @@ type InstanceCreator interface {
 	CreateInstance(smClient servicemanager.Client, request *CreateInstanceRequest) (string, error)
 }
 
-type manager struct {
+type provisioner struct {
 	storage InstanceStorage
 	creator InstanceCreator
 	log     logrus.FieldLogger
 }
 
-func NewInstanceManager(storage InstanceStorage, creator InstanceCreator, log logrus.FieldLogger) *manager {
-	return &manager{
+func NewProvisioner(storage InstanceStorage, creator InstanceCreator, log logrus.FieldLogger) *provisioner {
+	return &provisioner{
 		storage: storage,
 		creator: creator,
 		log:     log,
 	}
 }
 
-func (c *manager) CreateInstanceIfNoneExists(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, globalAccountID string) (internal.ProvisioningOperation, error) {
+func (c *provisioner) ProvisionIfNoneExists(om *process.ProvisionOperationManager, smCli servicemanager.Client, op internal.ProvisioningOperation, globalAccountID string) (internal.ProvisioningOperation, error) {
 	instance, exists, err := c.storage.FindInstance(globalAccountID)
 	if err != nil {
 		return op, errors.Wrapf(err, "while checking if instance is already created")
