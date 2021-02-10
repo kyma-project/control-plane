@@ -48,4 +48,5 @@ replace (
 
 	k8s.io/apiserver => k8s.io/apiserver v0.18.10
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible => k8s.io/client-go v0.18.10
+	github.com/kyma-incubator/hydroform/install => github.com/ralikio/hydroform/install v0.0.0-20210209113143-459cb5389b89
 )
