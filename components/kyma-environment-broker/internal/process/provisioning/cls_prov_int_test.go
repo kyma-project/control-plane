@@ -73,6 +73,7 @@ func TestClsSteps(t *testing.T) {
 
 	offeringStep := NewClsOfferingStep(clsConfig, repo)
 
+	smCli, err := operation.ServiceManagerClient(log)
 	creator := cls.NewClient(clsConfig, logger)
 	instanceManager := cls.NewInstanceManager(db.CLSInstances(), creator, logger)
 	provisioningStep := NewClsProvisioningStep(clsConfig, instanceManager, repo)
@@ -82,8 +83,29 @@ func TestClsSteps(t *testing.T) {
 	require.NoError(t, err)
 	require.Zero(t, retry)
 
-	operation, retry, err = provisioningStep.Run(operation, logger)
-	fmt.Printf(">>> %#v\n", operation.Cls)
+	//operation, retry, err = provisioningStep.Run(operation, logger)
+	//fmt.Printf(">>> Op1%#v\n", operation.Cls)
+	//require.NoError(t, err)
+	//require.Zero(t, retry)
+	//
+	//operation, retry, err = provisioningStep.Run(operation, logger)
+	//fmt.Printf(">>>Op2 %#v\n", operation.Cls)
+
+
+	resp, err := creator.LastInstanceOperation(operation.Cls.Instance.InstanceKey(), "")
+	if err != nil {
+		return s.handleError(operation, err, log, fmt.Sprintf("LastInstanceOperation() call failed"))
+	}
+	log.Infof("Provisioning cls (instanceID=%s) state: %s", operation.Cls.Instance.InstanceID, resp.State)
+	switch resp.State {
+	case servicemanager.InProgress:
+		fmt.Printf(">>> in Progress %#v\n", operation.Cls)
+	case servicemanager.Failed:
+		fmt.Printf(">>> Failed %#v\n", operation.Cls)
+	}
+
 	require.NoError(t, err)
 	require.Zero(t, retry)
+
+
 }
