@@ -3,7 +3,6 @@ package cls
 import (
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/stretchr/testify/require"
 )
@@ -41,23 +40,14 @@ func TestServiceManagerClient(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.summary, func(t *testing.T) {
+			factory := servicemanager.NewFakeServiceManagerClientFactory(nil, nil)
+
 			config := &ServiceManagerConfig{}
 			for _, r := range tc.givenServiceManagerRegions {
 				config.Credentials = append(config.Credentials, &ServiceManagerCredentials{Region: Region(r)})
 			}
 
-			operation := &internal.ProvisioningOperation{
-				Operation: internal.Operation{
-					ProvisioningParameters: internal.ProvisioningParameters{
-						Parameters: internal.ProvisioningParametersDTO{
-							Region: tc.givenSKRRegion,
-						},
-					},
-				},
-				SMClientFactory: servicemanager.NewFakeServiceManagerClientFactory(nil, nil),
-			}
-
-			client, err := ServiceManagerClient(config, operation)
+			client, err := ServiceManagerClient(factory, config, tc.givenSKRRegion)
 
 			if len(tc.expectedError) > 0 {
 				require.EqualError(t, err, tc.expectedError)
