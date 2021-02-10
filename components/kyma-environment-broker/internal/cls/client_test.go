@@ -25,6 +25,7 @@ var (
 		SAML: &SAMLConfig{
 			AdminGroup:  "runtimeAdmin",
 			ExchangeKey: "base64-jibber-jabber",
+			Initiated:   true,
 			RolesKey:    "groups",
 			Idp: &SAMLIdpConfig{
 				EntityID:    "https://sso.example.org/idp",
@@ -99,7 +100,7 @@ func TestCreateInstance(t *testing.T) {
 			func(input servicemanager.ProvisioningInput) bool {
 				params := input.Parameters.(parameters)
 				return params.SAML.Enabled == true &&
-					params.SAML.Initiated == true &&
+					params.SAML.Initiated == config.SAML.Initiated &&
 					params.SAML.AdminGroup == config.SAML.AdminGroup &&
 					params.SAML.ExchangeKey == config.SAML.ExchangeKey &&
 					params.SAML.RolesKey == config.SAML.RolesKey &&

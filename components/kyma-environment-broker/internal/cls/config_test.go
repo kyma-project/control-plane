@@ -28,7 +28,7 @@ serviceManager:
       username: sm
       password: 
 saml:
-  enabled: false
+  initiated: true
 `, expected: "invalid config: service manager credentials: no password"},
 		{in: `
 serviceManager:
@@ -38,7 +38,7 @@ serviceManager:
       username: 
       password: qwerty
 saml:
-  enabled: false
+  initiated: true
 `, expected: "invalid config: service manager credentials: no username"},
 		{in: `
 serviceManager:
@@ -48,7 +48,7 @@ serviceManager:
       username: sm
       password: qwerty
 saml:
-  enabled: false
+  initiated: true
 `, expected: "invalid config: service manager credentials: no url"},
 		{in: `
 serviceManager:
@@ -58,7 +58,7 @@ serviceManager:
       username: sm
       password: qwerty
 saml:
-  enabled: false
+  initiated: true
 `, expected: "invalid config: service manager credentials: no region"},
 		{in: `
 serviceManager:
@@ -68,7 +68,7 @@ serviceManager:
       username: sm
       password: qwerty
 saml:
-  enabled: false  
+  initiated: true  
 `, expected: "invalid config: service manager credentials: unsupported region: aus (eu,us supported only)"},
 		{in: `
 serviceManager:
@@ -106,5 +106,4 @@ saml:
 	require.Equal(t, 7, config.RetentionPeriod)
 	require.Equal(t, 2, config.MaxDataInstances)
 	require.Equal(t, 2, config.MaxIngestInstances)
-	require.Equal(t, false, config.ElasticsearchAPIEnabled)
 }
