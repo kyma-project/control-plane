@@ -166,10 +166,6 @@ func (o *Orchestration) IsCanceled() bool {
 	return o.State == orchestration.Canceling || o.State == orchestration.Canceled
 }
 
-func (o *Orchestration) HasVersion() bool {
-	return o.Parameters.Version != ""
-}
-
 type InstanceWithOperation struct {
 	Instance
 
