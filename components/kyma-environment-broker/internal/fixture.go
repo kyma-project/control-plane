@@ -2,7 +2,7 @@ package internal
 
 import (
 	"fmt"
-	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"k8s.io/utils/pointer"
 	"time"
@@ -12,7 +12,7 @@ const (
 	kymaVersion = "1.19.0"
 )
 
-func fixServiceManagerEntryDTO() *ServiceManagerEntryDTO {
+func FixServiceManagerEntryDTO() *ServiceManagerEntryDTO {
 	return &ServiceManagerEntryDTO{
 		Credentials: ServiceManagerCredentials{
 			BasicAuth: ServiceManagerBasicAuth{
@@ -24,7 +24,25 @@ func fixServiceManagerEntryDTO() *ServiceManagerEntryDTO {
 	}
 }
 
-func fixProvisioningParametersDTO() ProvisioningParametersDTO {
+func FixERSContext(id string) ERSContext {
+	var (
+		tenantId        = fmt.Sprintf("Tenant-%s", id)
+		subAccountId    = fmt.Sprintf("SubAccount-%s", id)
+		globalAccountId = fmt.Sprintf("GlobalAccount-%s", id)
+		userId          = fmt.Sprintf("User-%s", id)
+	)
+
+	return ERSContext{
+		TenantID:        tenantId,
+		SubAccountID:    subAccountId,
+		GlobalAccountID: globalAccountId,
+		ServiceManager:  FixServiceManagerEntryDTO(),
+		Active:          pointer.BoolPtr(true),
+		UserID:          userId,
+	}
+}
+
+func FixProvisioningParametersDTO() ProvisioningParametersDTO {
 	trialCloudProvider := TrialCloudProvider("provider")
 	return ProvisioningParametersDTO{
 		Name:                        "cluster-name",
@@ -45,35 +63,33 @@ func fixProvisioningParametersDTO() ProvisioningParametersDTO {
 	}
 }
 
-func FixInstance(id string) Instance {
+func FixProvisioningParameters(id string) ProvisioningParameters {
 	var (
-		instanceId      = fmt.Sprintf("Instance%s", id)
-		runtimeId       = fmt.Sprintf("Runtime%s", id)
-		globalAccountId = fmt.Sprintf("GlobalAccount%s", id)
-		subAccountId    = fmt.Sprintf("SubAccount%s", id)
-		serviceId       = fmt.Sprintf("Service%s", id)
-		planId          = fmt.Sprintf("Plan%s", id)
-		tenantId        = fmt.Sprintf("Tenant%s", id)
-		bindingId       = fmt.Sprintf("Binding%s", id)
-		brokerId        = fmt.Sprintf("Broker%s", id)
+		planId    = fmt.Sprintf("Plan-%s", id)
+		serviceId = fmt.Sprintf("Service-%s", id)
 	)
 
-	ersContext := ERSContext{
-		TenantID:        tenantId,
-		SubAccountID:    subAccountId,
-		GlobalAccountID: globalAccountId,
-		ServiceManager:  fixServiceManagerEntryDTO(),
-		Active:          pointer.BoolPtr(true),
-		UserID:          uuid.New().String(),
-	}
-
-	provisioningParameters := ProvisioningParameters{
+	return ProvisioningParameters{
 		PlanID:         planId,
 		ServiceID:      serviceId,
-		ErsContext:     ersContext,
-		Parameters:     fixProvisioningParametersDTO(),
-		PlatformRegion: "region",
+		ErsContext:     FixERSContext(id),
+		Parameters:     FixProvisioningParametersDTO(),
+		PlatformRegion: "platformRegion",
 	}
+}
+
+func FixInstance(id string) Instance {
+	var (
+		instanceId      = fmt.Sprintf("Instance-%s", id)
+		runtimeId       = fmt.Sprintf("Runtime-%s", id)
+		globalAccountId = fmt.Sprintf("GlobalAccount-%s", id)
+		subAccountId    = fmt.Sprintf("SubAccount-%s", id)
+		serviceId       = fmt.Sprintf("Service-%s", id)
+		planId          = fmt.Sprintf("Plan-%s", id)
+		tenantId        = fmt.Sprintf("Tenant-%s", id)
+		bindingId       = fmt.Sprintf("Binding-%s", id)
+		brokerId        = fmt.Sprintf("Broker-%s", id)
+	)
 
 	lms := LMS{
 		TenantID:    tenantId,
@@ -96,21 +112,23 @@ func FixInstance(id string) Instance {
 		AVSExternalEvaluationDeleted: false,
 	}
 
+	serviceManagerInstanceInfo := ServiceManagerInstanceInfo{
+		BrokerID:              brokerId,
+		ServiceID:             serviceId,
+		PlanID:                planId,
+		InstanceID:            instanceId,
+		Provisioned:           false,
+		ProvisioningTriggered: false,
+	}
+
 	xsuaaData := XSUAAData{
-		Instance:  ServiceManagerInstanceInfo{},
+		Instance:  serviceManagerInstanceInfo,
 		XSAppname: "xsappName",
 		BindingID: bindingId,
 	}
 
 	emsData := EmsData{
-		Instance: ServiceManagerInstanceInfo{
-			BrokerID:              brokerId,
-			ServiceID:             serviceId,
-			PlanID:                planId,
-			InstanceID:            instanceId,
-			Provisioned:           false,
-			ProvisioningTriggered: false,
-		},
+		Instance: serviceManagerInstanceInfo,
 		BindingID: bindingId,
 		Overrides: "overrides",
 	}
@@ -137,12 +155,56 @@ func FixInstance(id string) Instance {
 		ServicePlanID:   planId,
 		ServicePlanName: "ServicePlanName",
 		DashboardURL:    "https://dashboard.local",
-		Parameters:      provisioningParameters,
+		Parameters:      FixProvisioningParameters(id),
 		ProviderRegion:  "provider-region",
 		InstanceDetails: instanceDetails,
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now().Add(time.Minute * 5),
 		DeletedAt:       time.Now().Add(time.Hour * 1),
 		Version:         1,
+	}
+}
+
+func FixProvisioningOperation() ProvisioningOperation {
+	return ProvisioningOperation{
+		Operation:       Operation{},
+		RuntimeVersion:  RuntimeVersionData{},
+		InputCreator:    nil,
+		SMClientFactory: nil,
+	}
+}
+
+func FixDeprovisioningOperation() DeprovisioningOperation {
+	return DeprovisioningOperation{
+		Operation:       Operation{},
+		SMClientFactory: nil,
+		Temporary:       false,
+	}
+}
+
+func FixOperation() Operation {
+	return Operation{
+		InstanceDetails:        InstanceDetails{},
+		ID:                     "",
+		Version:                0,
+		CreatedAt:              time.Time{},
+		UpdatedAt:              time.Time{},
+		InstanceID:             "",
+		ProvisionerOperationID: "",
+		State:                  "",
+		Description:            "",
+		ProvisioningParameters: ProvisioningParameters{},
+		OrchestrationID:        "",
+	}
+}
+
+func FixOrchestration() Orchestration {
+	return Orchestration{
+		OrchestrationID: "",
+		State:           "",
+		Description:     "",
+		CreatedAt:       time.Time{},
+		UpdatedAt:       time.Time{},
+		Parameters:      orchestration.Parameters{},
 	}
 }
