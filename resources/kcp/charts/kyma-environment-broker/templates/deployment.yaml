@@ -158,6 +158,8 @@ spec:
                 secretKeyRef:
                   name: "{{ .Values.edp.secretName }}"
                   key: secret
+            - name: APP_EMS_DISABLED
+              value: "{{ .Values.ems.disabled }}"
             - name: APP_DATABASE_SECRET_KEY
               valueFrom:
                 secretKeyRef:

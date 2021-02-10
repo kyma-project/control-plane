@@ -183,6 +183,9 @@ edp:
   secret: "TBD"
   secretName: "edp-creds"
 
+ems:
+  disabled: true
+
 cis:
   v1:
     authURL: "TBD"

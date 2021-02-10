@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
+
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/google/uuid"
@@ -26,11 +28,12 @@ type upgradeKymaManager struct {
 	kymaUpgradeExecutor  process.Executor
 	log                  logrus.FieldLogger
 	pollingInterval      time.Duration
+	smcf                 *servicemanager.ClientFactory
 }
 
 func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
 	kymaUpgradeExecutor process.Executor, resolver orchestration.RuntimeResolver,
-	pollingInterval time.Duration, log logrus.FieldLogger) process.Executor {
+	pollingInterval time.Duration, smcf *servicemanager.ClientFactory, log logrus.FieldLogger) process.Executor {
 	return &upgradeKymaManager{
 		orchestrationStorage: orchestrationStorage,
 		operationStorage:     operationStorage,
@@ -39,6 +42,7 @@ func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operatio
 		kymaUpgradeExecutor:  kymaUpgradeExecutor,
 		pollingInterval:      pollingInterval,
 		log:                  log,
+		smcf:                 smcf,
 	}
 }
 
@@ -143,6 +147,7 @@ func (u *upgradeKymaManager) resolveOperations(o *internal.Orchestration, params
 					},
 					DryRun: params.DryRun,
 				},
+				SMClientFactory: u.smcf,
 			}
 			result = append(result, op)
 			err = u.operationStorage.InsertUpgradeKymaOperation(op)
