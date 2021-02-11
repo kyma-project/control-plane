@@ -23,17 +23,17 @@ func NewCLSInstances() *clsInstances {
 	}
 }
 
-func (s *clsInstances) FindInstance(globalAccountID string) (internal.CLSInstance, bool, error) {
+func (s *clsInstances) FindInstance(globalAccountID string) (*internal.CLSInstance, bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	k := clsKey{GlobalAccountID: globalAccountID}
 	instance, exists := s.data[k]
 	if !exists {
-		return internal.CLSInstance{}, false, nil
+		return nil, false, nil
 	}
 
-	return instance, true, nil
+	return &instance, true, nil
 }
 
 func (s *clsInstances) InsertInstance(instance internal.CLSInstance) error {

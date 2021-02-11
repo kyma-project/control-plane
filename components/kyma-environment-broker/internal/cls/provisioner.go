@@ -13,13 +13,13 @@ import (
 
 //go:generate mockery --name=InstanceStorage --output=automock --outpkg=automock --case=underscore
 type InstanceStorage interface {
-	FindInstance(globalAccountID string) (internal.CLSInstance, bool, error)
+	FindInstance(globalAccountID string) (*internal.CLSInstance, bool, error)
 	InsertInstance(instance internal.CLSInstance) error
 }
 
 //go:generate mockery --name=InstanceCreator --output=automock --outpkg=automock --case=underscore
 type InstanceCreator interface {
-	CreateInstance(smClient servicemanager.Client, request *CreateInstanceRequest) (string, error)
+	CreateInstance(smClient servicemanager.Client, brokerID, serviceID, planID string) (string, error)
 }
 
 type provisioner struct {
@@ -61,16 +61,12 @@ func (c *provisioner) ProvisionIfNoneExists(smClient servicemanager.Client, requ
 		}, nil
 	}
 
-	instanceID, err := c.creator.CreateInstance(smClient, &CreateInstanceRequest{
-		ServiceID: request.ServiceID,
-		PlanID:    request.PlanID,
-		BrokerID:  request.BrokerID,
-	})
+	instanceID, err := c.creator.CreateInstance(smClient, request.BrokerID, request.ServiceID, request.PlanID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating instance name=%s", request.GlobalAccountID)
 	}
 
-	instance = internal.CLSInstance{
+	instance = &internal.CLSInstance{
 		ID:              instanceID,
 		GlobalAccountID: request.GlobalAccountID,
 		CreatedAt:       time.Now(),
@@ -78,7 +74,7 @@ func (c *provisioner) ProvisionIfNoneExists(smClient servicemanager.Client, requ
 
 	// it is important to save the instance ID because instance creation means creation of a cluster.
 	err = wait.PollImmediate(3*time.Second, 30*time.Second, func() (bool, error) {
-		err := c.storage.InsertInstance(instance)
+		err := c.storage.InsertInstance(*instance)
 		if err != nil {
 			c.log.Warn(errors.Wrapf(err, "while saving cls instance %s with ID %s", request.GlobalAccountID, instance.ID).Error())
 			return false, nil

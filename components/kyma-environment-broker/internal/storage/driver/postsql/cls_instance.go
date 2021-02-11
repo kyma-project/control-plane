@@ -17,21 +17,21 @@ func NewCLSInstances(sess postsql.Factory) *clsInstances {
 	}
 }
 
-func (s *clsInstances) FindInstance(globalAccountID string) (internal.CLSInstance, bool, error) {
+func (s *clsInstances) FindInstance(globalAccountID string) (*internal.CLSInstance, bool, error) {
 	sess := s.NewReadSession()
 	dto, err := sess.GetCLSInstance(globalAccountID)
 
 	switch {
 	case err == nil:
-		return internal.CLSInstance{
+		return &internal.CLSInstance{
 			ID:              dto.ID,
 			GlobalAccountID: dto.GlobalAccountID,
 			CreatedAt:       dto.CreatedAt,
 		}, true, nil
 	case err.Code() == dberr.CodeNotFound:
-		return internal.CLSInstance{}, false, nil
+		return nil, false, nil
 	default:
-		return internal.CLSInstance{}, false, err
+		return nil, false, err
 	}
 }
 

@@ -11,37 +11,37 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	fakeBrokerID  = "fake-broker-id"
-	fakeServiceID = "fake-service-id"
-	fakePlanID    = "fake-plan-id"
-)
-
-var (
-	config = &Config{
-		RetentionPeriod:    30,
-		MaxDataInstances:   4,
-		MaxIngestInstances: 4,
-		SAML: &SAMLConfig{
-			AdminGroup:  "runtimeAdmin",
-			ExchangeKey: "base64-jibber-jabber",
-			Initiated:   true,
-			RolesKey:    "groups",
-			Idp: &SAMLIdpConfig{
-				EntityID:    "https://sso.example.org/idp",
-				MetadataURL: "https://sso.example.org/idp/saml2/metadata",
-			},
-			Sp: &SAMLSpConfig{
-				EntityID:            "cls-dev",
-				SignaturePrivateKey: "base64-jibber-jabber",
-			},
-		},
-	}
-)
-
 type provisioningInputMatcher func(input servicemanager.ProvisioningInput) bool
 
 func TestCreateInstance(t *testing.T) {
+	const (
+		fakeBrokerID  = "fake-broker-id"
+		fakeServiceID = "fake-service-id"
+		fakePlanID    = "fake-plan-id"
+	)
+
+	var (
+		config = &Config{
+			RetentionPeriod:    30,
+			MaxDataInstances:   4,
+			MaxIngestInstances: 4,
+			SAML: &SAMLConfig{
+				AdminGroup:  "runtimeAdmin",
+				ExchangeKey: "base64-jibber-jabber",
+				Initiated:   true,
+				RolesKey:    "groups",
+				Idp: &SAMLIdpConfig{
+					EntityID:    "https://sso.example.org/idp",
+					MetadataURL: "https://sso.example.org/idp/saml2/metadata",
+				},
+				Sp: &SAMLSpConfig{
+					EntityID:            "cls-dev",
+					SignaturePrivateKey: "base64-jibber-jabber",
+				},
+			},
+		}
+	)
+
 	tests := []struct {
 		summary string
 		matcher provisioningInputMatcher
@@ -118,11 +118,7 @@ func TestCreateInstance(t *testing.T) {
 			smClientMock.On("Provision", fakeBrokerID, mock.MatchedBy(tc.matcher), true).Return(&servicemanager.ProvisionResponse{}, nil)
 			sut := NewClient(config, logrus.New())
 
-			instanceID, err := sut.CreateInstance(smClientMock, &CreateInstanceRequest{
-				BrokerID:  fakeBrokerID,
-				ServiceID: fakeServiceID,
-				PlanID:    fakePlanID,
-			})
+			instanceID, err := sut.CreateInstance(smClientMock, fakeBrokerID, fakeServiceID, fakePlanID)
 			require.NotNil(t, instanceID)
 			require.NoError(t, err)
 		})

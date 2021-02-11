@@ -45,19 +45,13 @@ func NewClient(config *Config, log logrus.FieldLogger) *Client {
 	}
 }
 
-type CreateInstanceRequest struct {
-	ServiceID string
-	PlanID    string
-	BrokerID  string
-}
-
-// CreateInstance create the CLS Instance
+// CreateInstance creates a CLS Instance
 // Instance creation means creation of a cluster, which must be reusable for the same instance/region/project
-func (c *Client) CreateInstance(smClient servicemanager.Client, request *CreateInstanceRequest) (string, error) {
+func (c *Client) CreateInstance(smClient servicemanager.Client, brokerID, serviceID, planID string) (string, error) {
 	var input servicemanager.ProvisioningInput
 	input.ID = uuid.New().String()
-	input.ServiceID = request.ServiceID
-	input.PlanID = request.PlanID
+	input.ServiceID = serviceID
+	input.PlanID = planID
 	input.SpaceGUID = uuid.New().String()
 	input.OrganizationGUID = uuid.New().String()
 	input.Context = map[string]interface{}{
@@ -65,9 +59,9 @@ func (c *Client) CreateInstance(smClient servicemanager.Client, request *CreateI
 	}
 	input.Parameters = createParameters(c.config)
 
-	resp, err := smClient.Provision(request.BrokerID, input, true)
+	resp, err := smClient.Provision(brokerID, input, true)
 	if err != nil {
-		return "", errors.Wrapf(err, "Provision() call failed for brokerID: %s; service manager : %#v", request.BrokerID, input)
+		return "", errors.Wrapf(err, "Provision() call failed for brokerID: %s; service manager : %#v", brokerID, input)
 	}
 	c.log.Infof("response from CLS provisioning call: %#v", resp)
 

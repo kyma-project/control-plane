@@ -13,14 +13,16 @@ type InstanceStorage struct {
 }
 
 // FindInstance provides a mock function with given fields: globalAccountID
-func (_m *InstanceStorage) FindInstance(globalAccountID string) (internal.CLSInstance, bool, error) {
+func (_m *InstanceStorage) FindInstance(globalAccountID string) (*internal.CLSInstance, bool, error) {
 	ret := _m.Called(globalAccountID)
 
-	var r0 internal.CLSInstance
-	if rf, ok := ret.Get(0).(func(string) internal.CLSInstance); ok {
+	var r0 *internal.CLSInstance
+	if rf, ok := ret.Get(0).(func(string) *internal.CLSInstance); ok {
 		r0 = rf(globalAccountID)
 	} else {
-		r0 = ret.Get(0).(internal.CLSInstance)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*internal.CLSInstance)
+		}
 	}
 
 	var r1 bool
