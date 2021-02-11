@@ -31,6 +31,7 @@ type CLSInstance struct {
 	ID              string
 	GlobalAccountID string
 	CreatedAt       time.Time
+	SubAccountRefs  []string
 }
 type LMSTenant struct {
 	ID        string

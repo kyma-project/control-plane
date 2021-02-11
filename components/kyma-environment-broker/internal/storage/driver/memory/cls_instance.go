@@ -48,3 +48,18 @@ func (s *clsInstances) InsertInstance(instance internal.CLSInstance) error {
 
 	return nil
 }
+
+func (s *clsInstances) AddReference(globalAccountID, subAccountID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	k := clsKey{GlobalAccountID: globalAccountID}
+	instance, exists := s.data[k]
+	if !exists {
+		return dberr.NotFound("instance not found")
+	}
+
+	instance.SubAccountRefs = append(instance.SubAccountRefs, subAccountID)
+
+	return nil
+}

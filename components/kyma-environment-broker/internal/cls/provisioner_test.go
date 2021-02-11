@@ -4,9 +4,11 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	smautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/automock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -14,6 +16,7 @@ import (
 func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 	const (
 		fakeGlobalAccountID = "fake-global-account-id"
+		fakeSubAccountID    = "fake-sub-account-id"
 		fakeBrokerID        = "fake-broker-id"
 		fakeServiceID       = "fake-service-id"
 		fakePlanID          = "fake-plan-id"
@@ -31,6 +34,7 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
 	result, err := sut.ProvisionIfNoneExists(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
+		SubAccountID:    fakeSubAccountID,
 		BrokerID:        fakeBrokerID,
 		ServiceID:       fakeServiceID,
 		PlanID:          fakePlanID,
@@ -44,6 +48,7 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 func TestProvisionDoesNotCreateNewInstanceIfDBQueryFails(t *testing.T) {
 	const (
 		fakeGlobalAccountID = "fake-global-account-id"
+		fakeSubAccountID    = "fake-sub-account-id"
 		fakeBrokerID        = "fake-broker-id"
 		fakeServiceID       = "fake-service-id"
 		fakePlanID          = "fake-plan-id"
@@ -59,6 +64,7 @@ func TestProvisionDoesNotCreateNewInstanceIfDBQueryFails(t *testing.T) {
 	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
 	result, err := sut.ProvisionIfNoneExists(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
+		SubAccountID:    fakeSubAccountID,
 		BrokerID:        fakeBrokerID,
 		ServiceID:       fakeServiceID,
 		PlanID:          fakePlanID,
@@ -72,6 +78,7 @@ func TestProvisionDoesNotCreateNewInstanceIfDBQueryFails(t *testing.T) {
 func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 	const (
 		fakeGlobalAccountID = "fake-global-account-id"
+		fakeSubAccountID    = "fake-sub-account-id"
 		fakeBrokerID        = "fake-broker-id"
 		fakeServiceID       = "fake-service-id"
 		fakePlanID          = "fake-plan-id"
@@ -80,7 +87,12 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 
 	storageMock := &automock.InstanceStorage{}
 	storageMock.On("FindInstance", fakeGlobalAccountID).Return(nil, false, nil)
-	storageMock.On("InsertInstance", mock.Anything).Return(nil).Once()
+	storageMock.On("InsertInstance", mock.MatchedBy(func(instance internal.CLSInstance) bool {
+		return assert.Equal(t, fakeGlobalAccountID, instance.GlobalAccountID) &&
+			assert.Equal(t, fakeInstanceID, instance.ID) &&
+			assert.Len(t, instance.SubAccountRefs, 1) &&
+			assert.Equal(t, fakeSubAccountID, instance.SubAccountRefs[0])
+	})).Return(nil).Once()
 
 	smClientMock := &smautomock.Client{}
 	creatorMock := &automock.InstanceCreator{}
@@ -89,6 +101,7 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
 	sut.ProvisionIfNoneExists(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
+		SubAccountID:    fakeSubAccountID,
 		BrokerID:        fakeBrokerID,
 		ServiceID:       fakeServiceID,
 		PlanID:          fakePlanID,
@@ -100,6 +113,7 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 func TestProvisionKeepsSavingNewInstanceToDBIfItFails(t *testing.T) {
 	const (
 		fakeGlobalAccountID = "fake-global-account-id"
+		fakeSubAccountID    = "fake-sub-account-id"
 		fakeBrokerID        = "fake-broker-id"
 		fakeServiceID       = "fake-service-id"
 		fakePlanID          = "fake-plan-id"
@@ -119,6 +133,7 @@ func TestProvisionKeepsSavingNewInstanceToDBIfItFails(t *testing.T) {
 	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
 	sut.ProvisionIfNoneExists(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
+		SubAccountID:    fakeSubAccountID,
 		BrokerID:        fakeBrokerID,
 		ServiceID:       fakeServiceID,
 		PlanID:          fakePlanID,
