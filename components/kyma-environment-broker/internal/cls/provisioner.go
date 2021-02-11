@@ -11,11 +11,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
+//go:generate mockery --name=InstanceStorage --output=automock --outpkg=automock --case=underscore
 type InstanceStorage interface {
 	FindInstance(globalAccountID string) (internal.CLSInstance, bool, error)
 	InsertInstance(instance internal.CLSInstance) error
 }
 
+//go:generate mockery --name=InstanceCreator --output=automock --outpkg=automock --case=underscore
 type InstanceCreator interface {
 	CreateInstance(smClient servicemanager.Client, request *CreateInstanceRequest) (string, error)
 }
