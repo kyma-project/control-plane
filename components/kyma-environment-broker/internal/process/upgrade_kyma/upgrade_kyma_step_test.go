@@ -37,11 +37,12 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	provisioningOperation := fixProvisioningOperation()
 	err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 	assert.NoError(t, err)
-
+	profile := gqlschema.KymaProfileProduction
 	provisionerClient := &provisionerAutomock.Client{}
 	provisionerClient.On("UpgradeRuntime", fixGlobalAccountID, fixRuntimeID, gqlschema.UpgradeRuntimeInput{
 		KymaConfig: &gqlschema.KymaConfigInput{
 			Version: kymaVersion,
+			Profile: &profile,
 			Components: []*gqlschema.ComponentConfigurationInput{
 				{
 					Component:     "keb",
