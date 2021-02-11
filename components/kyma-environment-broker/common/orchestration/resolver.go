@@ -141,21 +141,15 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 			resolver.logger.Errorf("Failed to get runtimeID from %s annotation for Shoot %s", runtimeIDAnnotation, shoot.Name)
 			continue
 		}
-		runtime, ok := resolver.getRuntime(runtimeID)
+		r, ok := resolver.getRuntime(runtimeID)
 		if !ok {
 			resolver.logger.Errorf("Couldn't find runtime for runtimeID %s", runtimeID)
 			continue
 		}
-		provState := ""
-		deprovState := ""
-		if runtime.Status.Provisioning != nil {
-			provState = runtime.Status.Provisioning.State
-		}
-		if runtime.Status.Deprovisioning != nil {
-			deprovState = runtime.Status.Deprovisioning.State
-		}
-		if provState != string(brokerapi.Succeeded) || deprovState != "" {
-			resolver.logger.Infof("Skipping Shoot %s (runtimeID: %s, instanceID %s) due to provisioning/deprovisioning state: %s/%s", shoot.Name, runtimeID, runtime.InstanceID, provState, deprovState)
+
+		lastOp, lastOpType := runtime.FindLastOperation(r)
+		if lastOpType == runtime.Deprovision || lastOpType == runtime.Suspension || lastOpType == runtime.Provision && lastOp.State != string(brokerapi.Succeeded) {
+			resolver.logger.Infof("Skipping Shoot %s (runtimeID: %s, instanceID %s) due to %s state: %s", shoot.Name, runtimeID, r.InstanceID, lastOpType, lastOp.State)
 			continue
 		}
 		maintenanceWindowBegin, err := time.Parse(maintenanceWindowFormat, shoot.Spec.Maintenance.TimeWindow.Begin)
@@ -172,7 +166,7 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 		// Match exact shoot by runtimeID
 		if rt.RuntimeID != "" {
 			if rt.RuntimeID == runtimeID {
-				runtimes = append(runtimes, resolver.runtimeFromDTO(runtime, shoot.Name, maintenanceWindowBegin, maintenanceWindowEnd))
+				runtimes = append(runtimes, resolver.runtimeFromDTO(r, shoot.Name, maintenanceWindowBegin, maintenanceWindowEnd))
 			}
 			continue
 		}
@@ -184,7 +178,7 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 
 		// Perform match against a specific PlanName
 		if rt.PlanName != "" {
-			if rt.PlanName != runtime.ServicePlanName {
+			if rt.PlanName != r.ServicePlanName {
 				continue
 			}
 		}
@@ -218,7 +212,7 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 			continue
 		}
 
-		runtimes = append(runtimes, resolver.runtimeFromDTO(runtime, shoot.Name, maintenanceWindowBegin, maintenanceWindowEnd))
+		runtimes = append(runtimes, resolver.runtimeFromDTO(r, shoot.Name, maintenanceWindowBegin, maintenanceWindowEnd))
 	}
 
 	return runtimes, nil

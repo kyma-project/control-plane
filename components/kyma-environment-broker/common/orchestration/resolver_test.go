@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -55,6 +56,10 @@ func TestResolver_Resolve(t *testing.T) {
 		shoot:   &shoot3,
 		runtime: &runtime3,
 	}
+	expectedRuntime10 := expectedRuntime{
+		shoot:   &shoot10,
+		runtime: &runtime10,
+	}
 
 	for tn, tc := range map[string]struct {
 		Target           TargetSpec
@@ -69,7 +74,7 @@ func TestResolver_Resolve(t *testing.T) {
 				},
 				Exclude: nil,
 			},
-			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime2, expectedRuntime3},
+			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime2, expectedRuntime3, expectedRuntime10},
 		},
 		"IncludeAllExcludeOne": {
 			Target: TargetSpec{
@@ -85,7 +90,7 @@ func TestResolver_Resolve(t *testing.T) {
 					},
 				},
 			},
-			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime3},
+			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime3, expectedRuntime10},
 		},
 		"ExcludeAll": {
 			Target: TargetSpec{
@@ -134,7 +139,7 @@ func TestResolver_Resolve(t *testing.T) {
 				},
 				Exclude: nil,
 			},
-			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime2},
+			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime2, expectedRuntime10},
 		},
 		"IncludeRegion": {
 			Target: TargetSpec{
@@ -145,7 +150,7 @@ func TestResolver_Resolve(t *testing.T) {
 				},
 				Exclude: nil,
 			},
-			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime3},
+			ExpectedRuntimes: []expectedRuntime{expectedRuntime1, expectedRuntime3, expectedRuntime10},
 		},
 		"IncludePlanName": {
 			Target: TargetSpec{
@@ -156,7 +161,7 @@ func TestResolver_Resolve(t *testing.T) {
 				},
 				Exclude: nil,
 			},
-			ExpectedRuntimes: []expectedRuntime{expectedRuntime2, expectedRuntime3},
+			ExpectedRuntimes: []expectedRuntime{expectedRuntime2, expectedRuntime3, expectedRuntime10},
 		},
 		"IncludeShoot": {
 			Target: TargetSpec{
@@ -243,17 +248,27 @@ func TestResolver_Resolve_StorageFailure(t *testing.T) {
 }
 
 var (
-	shoot1               = fixShoot(1, globalAccountID1, region1)
-	shoot2               = fixShoot(2, globalAccountID1, region2)
-	shoot3               = fixShoot(3, globalAccountID2, region3)
-	shoot4               = fixShoot(4, globalAccountID3, region1)
-	runtime1             = fixRuntimeDTO(1, globalAccountID1, string(brokerapi.Succeeded), "", plan2)
-	runtime2             = fixRuntimeDTO(2, globalAccountID1, string(brokerapi.Succeeded), "", plan1)
-	runtime3             = fixRuntimeDTO(3, globalAccountID2, string(brokerapi.Succeeded), "", plan1)
-	runtime4             = fixRuntimeDTO(4, globalAccountID3, string(brokerapi.Succeeded), string(brokerapi.InProgress), plan1)
-	runtime5Failed       = fixRuntimeDTO(5, globalAccountID3, string(brokerapi.Failed), "", plan1)
-	runtime6Provisioning = fixRuntimeDTO(6, globalAccountID3, string(brokerapi.InProgress), "", plan2)
-	runtime7             = fixRuntimeDTO(7, globalAccountID1, string(brokerapi.Succeeded), "", plan1)
+	shoot1 = fixShoot(1, globalAccountID1, region1)
+	shoot2 = fixShoot(2, globalAccountID1, region2)
+	shoot3 = fixShoot(3, globalAccountID2, region3)
+	shoot4 = fixShoot(4, globalAccountID3, region1)
+	shoot5 = fixShoot(5, globalAccountID1, region1)
+	shoot6 = fixShoot(6, globalAccountID1, region1)
+	// shoot7 is purposefully missing to test missing cluster scenario
+	shoot8  = fixShoot(8, globalAccountID1, region1)
+	shoot9  = fixShoot(9, globalAccountID1, region1)
+	shoot10 = fixShoot(10, globalAccountID1, region1)
+
+	runtime1  = fixRuntimeDTO(1, globalAccountID1, plan2, runtimeOpState{provision: string(brokerapi.Succeeded)})
+	runtime2  = fixRuntimeDTO(2, globalAccountID1, plan1, runtimeOpState{provision: string(brokerapi.Succeeded)})
+	runtime3  = fixRuntimeDTO(3, globalAccountID2, plan1, runtimeOpState{provision: string(brokerapi.Succeeded)})
+	runtime4  = fixRuntimeDTO(4, globalAccountID3, plan1, runtimeOpState{provision: string(brokerapi.Succeeded), deprovision: string(brokerapi.InProgress)})
+	runtime5  = fixRuntimeDTO(5, globalAccountID3, plan1, runtimeOpState{provision: string(brokerapi.Failed)})
+	runtime6  = fixRuntimeDTO(6, globalAccountID3, plan2, runtimeOpState{provision: string(brokerapi.InProgress)})
+	runtime7  = fixRuntimeDTO(7, globalAccountID1, plan1, runtimeOpState{provision: string(brokerapi.Succeeded)})
+	runtime8  = fixRuntimeDTO(8, globalAccountID1, plan1, runtimeOpState{provision: string(brokerapi.Succeeded), suspension: string(brokerapi.Succeeded)})
+	runtime9  = fixRuntimeDTO(9, globalAccountID1, plan1, runtimeOpState{provision: string(brokerapi.Succeeded), suspension: string(brokerapi.InProgress)})
+	runtime10 = fixRuntimeDTO(10, globalAccountID1, plan1, runtimeOpState{provision: string(brokerapi.Succeeded), suspension: string(brokerapi.Succeeded), unsuspension: string(brokerapi.Succeeded)})
 )
 
 func fixShoot(id int, globalAccountID, region string) gardenerapi.Shoot {
@@ -281,7 +296,14 @@ func fixShoot(id int, globalAccountID, region string) gardenerapi.Shoot {
 	}
 }
 
-func fixRuntimeDTO(id int, globalAccountID, provState, deprovState, planName string) runtime.RuntimeDTO {
+type runtimeOpState struct {
+	provision    string
+	deprovision  string
+	suspension   string
+	unsuspension string
+}
+
+func fixRuntimeDTO(id int, globalAccountID, planName string, state runtimeOpState) runtime.RuntimeDTO {
 	rt := runtime.RuntimeDTO{
 		InstanceID:      fmt.Sprintf("instance-id-%d", id),
 		RuntimeID:       fmt.Sprintf("runtime-id-%d", id),
@@ -290,12 +312,41 @@ func fixRuntimeDTO(id int, globalAccountID, provState, deprovState, planName str
 		ServicePlanName: planName,
 		Status: runtime.RuntimeStatus{
 			Provisioning: &runtime.Operation{
-				State: provState,
+				State:     state.provision,
+				CreatedAt: time.Now(),
 			},
 		},
 	}
-	if deprovState != "" {
-		rt.Status.Deprovisioning = &runtime.Operation{State: deprovState}
+
+	deprovTime := time.Now().Add(time.Minute)
+	if state.suspension != "" {
+		rt.Status.Suspension.Count = 1
+		rt.Status.Suspension.TotalCount = 1
+		rt.Status.Suspension.Data = []runtime.Operation{
+			{
+				State:     state.suspension,
+				CreatedAt: deprovTime,
+			},
+		}
+		state.deprovision = state.suspension
+	}
+
+	if state.deprovision != "" {
+		rt.Status.Deprovisioning = &runtime.Operation{
+			State:     state.deprovision,
+			CreatedAt: deprovTime,
+		}
+	}
+
+	if state.unsuspension != "" {
+		rt.Status.Unsuspension.Count = 1
+		rt.Status.Unsuspension.TotalCount = 1
+		rt.Status.Unsuspension.Data = []runtime.Operation{
+			{
+				State:     state.unsuspension,
+				CreatedAt: deprovTime.Add(time.Minute),
+			},
+		}
 	}
 
 	return rt
@@ -318,6 +369,11 @@ func newFakeGardenerClient() *gardenerclient_fake.FakeCoreV1beta1 {
 				shoot2,
 				shoot3,
 				shoot4,
+				shoot5,
+				shoot6,
+				shoot8,
+				shoot9,
+				shoot10,
 			},
 		}
 		return true, sl, nil
@@ -334,9 +390,12 @@ func newRuntimeListerMock() *RuntimeListerMock {
 			runtime2,
 			runtime3,
 			runtime4,
-			runtime5Failed,
-			runtime6Provisioning,
+			runtime5,
+			runtime6,
 			runtime7,
+			runtime8,
+			runtime9,
+			runtime10,
 		},
 		nil,
 	)

@@ -72,3 +72,42 @@ type ListParameters struct {
 	Shoots           []string
 	Plans            []string
 }
+
+type OperationType string
+
+const (
+	Provision    OperationType = "provision"
+	Deprovision  OperationType = "deprovision"
+	IpgradeKyma  OperationType = "kyma upgrade"
+	Suspension   OperationType = "suspension"
+	Unsuspension OperationType = "unsuspension"
+)
+
+func FindLastOperation(rt RuntimeDTO) (Operation, OperationType) {
+	op := *rt.Status.Provisioning
+	opType := Provision
+	// Take the first upgrade operation, assuming that Data is sorted by CreatedAt DESC.
+	if rt.Status.UpgradingKyma.Count > 0 {
+		op = rt.Status.UpgradingKyma.Data[0]
+		opType = IpgradeKyma
+	}
+
+	// Take the first unsuspension operation, assuming that Data is sorted by CreatedAt DESC.
+	if rt.Status.Unsuspension.Count > 0 && rt.Status.Unsuspension.Data[0].CreatedAt.After(op.CreatedAt) {
+		op = rt.Status.Unsuspension.Data[0]
+		opType = Unsuspension
+	}
+
+	// Take the first suspension operation, assuming that Data is sorted by CreatedAt DESC.
+	if rt.Status.Suspension.Count > 0 && rt.Status.Suspension.Data[0].CreatedAt.After(op.CreatedAt) {
+		op = rt.Status.Suspension.Data[0]
+		opType = Suspension
+	}
+
+	if rt.Status.Deprovisioning != nil && rt.Status.Deprovisioning.CreatedAt.After(op.CreatedAt) {
+		op = *rt.Status.Deprovisioning
+		opType = Deprovision
+	}
+
+	return op, opType
+}
