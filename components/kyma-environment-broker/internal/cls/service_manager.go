@@ -45,15 +45,14 @@ func ServiceManagerClient(factory internal.SMClientFactory, config *ServiceManag
 func determineServiceManagerRegion(skrRegion *string) (string, error) {
 	if skrRegion == nil {
 		return defaultServiceManagerRegion, nil
-	} else {
-		skrRegion := *skrRegion
-		serviceManagerRegion, exists := regionMap[skrRegion]
-		if !exists {
-			return "", fmt.Errorf("unsupported region: %s", skrRegion)
-		}
-
-		return serviceManagerRegion, nil
 	}
+
+	serviceManagerRegion, exists := regionMap[*skrRegion]
+	if !exists {
+		return "", fmt.Errorf("unsupported region: %s", *skrRegion)
+	}
+
+	return serviceManagerRegion, nil
 }
 
 func findCredentials(config *ServiceManagerConfig, region string) *servicemanager.Credentials {
