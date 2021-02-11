@@ -2,8 +2,9 @@ package provisioning
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
@@ -48,8 +49,10 @@ func (s *clsProvisioningStep) Run(operation internal.ProvisioningOperation, log 
 	}
 
 	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
+	skrInstanceID := operation.InstanceID
 	result, err := s.instanceProvider.ProvisionIfNoneExists(smClient, &cls.ProvisionRequest{
 		GlobalAccountID: globalAccountID,
+		SKRInstanceID:   skrInstanceID,
 		BrokerID:        operation.Cls.Instance.BrokerID,
 		ServiceID:       operation.Cls.Instance.ServiceID,
 		PlanID:          operation.Cls.Instance.PlanID,

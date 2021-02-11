@@ -15,9 +15,10 @@ type provisioningInputMatcher func(input servicemanager.ProvisioningInput) bool
 
 func TestCreateInstance(t *testing.T) {
 	const (
-		fakeBrokerID  = "fake-broker-id"
-		fakeServiceID = "fake-service-id"
-		fakePlanID    = "fake-plan-id"
+		fakeBrokerID   = "fake-broker-id"
+		fakeServiceID  = "fake-service-id"
+		fakePlanID     = "fake-plan-id"
+		fakeInstanceID = "fake-instance-id"
 	)
 
 	var (
@@ -59,9 +60,9 @@ func TestCreateInstance(t *testing.T) {
 			},
 		},
 		{
-			"instance id is valid uuid",
+			"instance id is set",
 			func(input servicemanager.ProvisioningInput) bool {
-				return isValidUUID(input.ID)
+				return input.ID == fakeInstanceID
 			},
 		},
 		{
@@ -118,8 +119,7 @@ func TestCreateInstance(t *testing.T) {
 			smClientMock.On("Provision", fakeBrokerID, mock.MatchedBy(tc.matcher), true).Return(&servicemanager.ProvisionResponse{}, nil)
 			sut := NewClient(config, logrus.New())
 
-			instanceID, err := sut.CreateInstance(smClientMock, fakeBrokerID, fakeServiceID, fakePlanID)
-			require.NotNil(t, instanceID)
+			err := sut.CreateInstance(smClientMock, fakeBrokerID, fakeServiceID, fakePlanID, fakeInstanceID)
 			require.NoError(t, err)
 		})
 	}

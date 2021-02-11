@@ -49,7 +49,7 @@ func (s *clsInstances) InsertInstance(instance internal.CLSInstance) error {
 	return nil
 }
 
-func (s *clsInstances) AddReference(globalAccountID, subAccountID string) error {
+func (s *clsInstances) AddReference(globalAccountID, skrInstanceID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -59,7 +59,7 @@ func (s *clsInstances) AddReference(globalAccountID, subAccountID string) error 
 		return dberr.NotFound("instance not found")
 	}
 
-	instance.SubAccountRefs = append(instance.SubAccountRefs, subAccountID)
+	instance.SKRReferences = append(instance.SKRReferences, skrInstanceID)
 
 	return nil
 }

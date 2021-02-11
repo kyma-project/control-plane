@@ -54,8 +54,8 @@ func TestClsSteps(t *testing.T) {
 		},
 	}
 
-	logger := logrus.New()
-	logger.SetFormatter(&logrus.JSONFormatter{})
+	log := logrus.New()
+	log.SetFormatter(&logrus.JSONFormatter{})
 
 	operation := internal.ProvisioningOperation{
 		Operation: internal.Operation{ProvisioningParameters: internal.ProvisioningParameters{
@@ -73,39 +73,22 @@ func TestClsSteps(t *testing.T) {
 
 	offeringStep := NewClsOfferingStep(clsConfig, repo)
 
-	smCli, err := operation.ServiceManagerClient(log)
-	creator := cls.NewClient(clsConfig, logger)
-	instanceManager := cls.NewInstanceManager(db.CLSInstances(), creator, logger)
-	provisioningStep := NewClsProvisioningStep(clsConfig, instanceManager, repo)
+	clsClient := cls.NewClient(clsConfig, log)
+	clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient, log)
+	provisioningStep := NewClsProvisioningStep(clsConfig, clsProvisioner, repo)
 
-	operation, retry, err := offeringStep.Run(operation, logger)
+	operation, retry, err := offeringStep.Run(operation, log)
 	fmt.Printf(">>> %#v\n", operation.Cls)
 	require.NoError(t, err)
 	require.Zero(t, retry)
 
-	//operation, retry, err = provisioningStep.Run(operation, logger)
-	//fmt.Printf(">>> Op1%#v\n", operation.Cls)
-	//require.NoError(t, err)
-	//require.Zero(t, retry)
-	//
-	//operation, retry, err = provisioningStep.Run(operation, logger)
-	//fmt.Printf(">>>Op2 %#v\n", operation.Cls)
-
-
-	resp, err := creator.LastInstanceOperation(operation.Cls.Instance.InstanceKey(), "")
-	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("LastInstanceOperation() call failed"))
-	}
-	log.Infof("Provisioning cls (instanceID=%s) state: %s", operation.Cls.Instance.InstanceID, resp.State)
-	switch resp.State {
-	case servicemanager.InProgress:
-		fmt.Printf(">>> in Progress %#v\n", operation.Cls)
-	case servicemanager.Failed:
-		fmt.Printf(">>> Failed %#v\n", operation.Cls)
-	}
-
+	operation, retry, err = provisioningStep.Run(operation, log)
+	fmt.Printf(">>> first provisioning: %#v\n", operation.Cls)
 	require.NoError(t, err)
 	require.Zero(t, retry)
 
-
+	operation, retry, err = provisioningStep.Run(operation, log)
+	fmt.Printf(">>> second provisioning %#v\n", operation.Cls)
+	require.NoError(t, err)
+	require.Zero(t, retry)
 }

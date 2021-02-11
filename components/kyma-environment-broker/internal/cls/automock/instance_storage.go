@@ -12,13 +12,13 @@ type InstanceStorage struct {
 	mock.Mock
 }
 
-// AddReference provides a mock function with given fields: globalAccountID, subAccountID
-func (_m *InstanceStorage) AddReference(globalAccountID string, subAccountID string) error {
-	ret := _m.Called(globalAccountID, subAccountID)
+// AddReference provides a mock function with given fields: globalAccountID, skrInstanceID
+func (_m *InstanceStorage) AddReference(globalAccountID string, skrInstanceID string) error {
+	ret := _m.Called(globalAccountID, skrInstanceID)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, string) error); ok {
-		r0 = rf(globalAccountID, subAccountID)
+		r0 = rf(globalAccountID, skrInstanceID)
 	} else {
 		r0 = ret.Error(0)
 	}

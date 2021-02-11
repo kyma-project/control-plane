@@ -79,4 +79,5 @@ type LMSTenants interface {
 type CLSInstances interface {
 	FindInstance(name string) (*internal.CLSInstance, bool, error)
 	InsertInstance(instance internal.CLSInstance) error
+	AddReference(globalAccountID, skrInstanceID string) error
 }
