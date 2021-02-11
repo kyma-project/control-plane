@@ -212,25 +212,6 @@ func (ws writeSession) InsertLMSTenant(dto dbmodel.LMSTenantDTO) dberr.Error {
 	return nil
 }
 
-func (ws writeSession) InsertCLSInstance(dto dbmodel.CLSInstanceDTO) dberr.Error {
-	_, err := ws.insertInto(CLSInstanceTableName).
-		Pair("id", dto.ID).
-		Pair("global_account_id", dto.GlobalAccountID).
-		Pair("created_at", dto.CreatedAt).
-		Exec()
-
-	if err != nil {
-		if err, ok := err.(*pq.Error); ok {
-			if err.Code == UniqueViolationErrorCode {
-				return dberr.AlreadyExists("cls instance already exists")
-			}
-		}
-		return dberr.Internal("unable to insert cls instance: %s", err)
-	}
-
-	return nil
-}
-
 func (ws writeSession) UpdateOperation(op dbmodel.OperationDTO) dberr.Error {
 	res, err := ws.update(OperationTableName).
 		Where(dbr.Eq("id", op.ID)).
