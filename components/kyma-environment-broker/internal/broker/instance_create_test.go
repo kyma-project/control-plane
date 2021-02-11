@@ -560,12 +560,11 @@ func fixAlwaysPassJSONValidator() broker.PlansSchemaValidator {
 }
 
 func fixInstance() internal.Instance {
-	return internal.Instance{
-		InstanceID:      instanceID,
-		GlobalAccountID: globalAccountID,
-		ServiceID:       serviceID,
-		ServicePlanID:   planID,
-	}
+	instance := internal.FixInstance(instanceID)
+	instance.GlobalAccountID = globalAccountID
+	instance.ServiceID = serviceID
+	instance.ServicePlanID = planID
+	return instance
 }
 
 func fixReqCtxWithRegion(t *testing.T, region string) context.Context {

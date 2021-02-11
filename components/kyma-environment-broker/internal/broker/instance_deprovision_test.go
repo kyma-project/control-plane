@@ -121,8 +121,7 @@ func fixDeprovisioningOperation(state domain.LastOperationState) internal.Deprov
 }
 
 func fixInstance() internal.Instance {
-	return internal.Instance{
-		InstanceID:    instanceID,
-		ServicePlanID: planID,
-	}
+	instance := internal.FixInstance(instanceID)
+	instance.ServicePlanID = planID
+	return instance
 }
