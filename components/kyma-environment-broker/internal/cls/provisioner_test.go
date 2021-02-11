@@ -141,3 +141,39 @@ func TestProvisionKeepsSavingNewInstanceToDBIfItFails(t *testing.T) {
 
 	storageMock.AssertNumberOfCalls(t, "InsertInstance", 2)
 }
+
+func TestProvisionAddsReferenceIfFoundInDB(t *testing.T) {
+	const (
+		fakeGlobalAccountID = "fake-global-account-id"
+		fakeSubAccountID    = "fake-sub-account-id"
+		fakeBrokerID        = "fake-broker-id"
+		fakeServiceID       = "fake-service-id"
+		fakePlanID          = "fake-plan-id"
+		fakeInstanceID      = "fake-instance-id"
+	)
+
+	storageMock := &automock.InstanceStorage{}
+	storageMock.On("FindInstance", fakeGlobalAccountID).Return(&internal.CLSInstance{
+		GlobalAccountID: fakeGlobalAccountID,
+		ID:              fakeInstanceID,
+	}, true, nil)
+	storageMock.On("AddReference", fakeGlobalAccountID, fakeSubAccountID).Return(nil)
+
+	smClientMock := &smautomock.Client{}
+	creatorMock := &automock.InstanceCreator{}
+
+	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
+	result, err := sut.ProvisionIfNoneExists(smClientMock, &ProvisionRequest{
+		GlobalAccountID: fakeGlobalAccountID,
+		SubAccountID:    fakeSubAccountID,
+		BrokerID:        fakeBrokerID,
+		ServiceID:       fakeServiceID,
+		PlanID:          fakePlanID,
+	})
+	require.NotNil(t, result)
+	require.NoError(t, err)
+
+	storageMock.AssertNumberOfCalls(t, "AddReference", 1)
+	storageMock.AssertNumberOfCalls(t, "InsertInstance", 0)
+	creatorMock.AssertNumberOfCalls(t, "CreateInstance", 0)
+}

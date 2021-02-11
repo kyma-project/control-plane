@@ -56,14 +56,26 @@ func (c *provisioner) ProvisionIfNoneExists(smClient servicemanager.Client, requ
 		return nil, errors.Wrapf(err, "while checking if instance is already created")
 	}
 
-	if exists {
-		return &ProvisionResult{
-			InstanceID:            instance.ID,
-			ProvisioningTriggered: false,
-		}, nil
+	if !exists {
+		return c.createNewInstance(smClient, request)
 	}
 
-	return c.createNewInstance(smClient, request)
+	err = c.retryUntilSucceeds(func() (bool, error) {
+		err := c.storage.AddReference(instance.GlobalAccountID, request.SubAccountID)
+		if err != nil {
+			c.log.Warn(errors.Wrapf(err, "while adding a reference to a cls instance with ID %s", instance.ID).Error())
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "while adding a reference to a cls instance")
+	}
+
+	return &ProvisionResult{
+		InstanceID:            instance.ID,
+		ProvisioningTriggered: false,
+	}, nil
 }
 
 func (c *provisioner) createNewInstance(smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
@@ -79,21 +91,24 @@ func (c *provisioner) createNewInstance(smClient servicemanager.Client, request 
 		SubAccountRefs:  []string{request.SubAccountID},
 	}
 
-	// it is important to save the instance ID because instance creation means creation of a cluster.
-	err = wait.PollImmediate(3*time.Second, 30*time.Second, func() (bool, error) {
+	err = c.retryUntilSucceeds(func() (bool, error) {
 		err := c.storage.InsertInstance(instance)
 		if err != nil {
-			c.log.Warn(errors.Wrapf(err, "while saving cls instance %s with ID %s", request.GlobalAccountID, instance.ID).Error())
+			c.log.Warn(errors.Wrapf(err, "while inserting a cls instance with ID %s", instance.ID).Error())
 			return false, nil
 		}
 		return true, nil
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "while saving instance to storage")
+		return nil, errors.Wrapf(err, "while inserting a cls instance")
 	}
 
 	return &ProvisionResult{
 		InstanceID:            instance.ID,
 		ProvisioningTriggered: true,
 	}, nil
+}
+
+func (c *provisioner) retryUntilSucceeds(condition wait.ConditionFunc) error {
+	return wait.PollImmediate(3*time.Second, 30*time.Second, condition)
 }
