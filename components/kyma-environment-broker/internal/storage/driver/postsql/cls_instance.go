@@ -2,9 +2,8 @@ package postsql
 
 import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
+	"github.com/pkg/errors"
 )
 
 type clsInstances struct {
@@ -17,29 +16,13 @@ func NewCLSInstances(sess postsql.Factory) *clsInstances {
 	}
 }
 
-func (s *clsInstances) FindInstance(globalAccountID string) (*internal.CLSInstance, bool, error) {
+func (s *clsInstances) FindInstance(globalAccountID string) (internal.CLSInstance, bool, error) {
 	sess := s.NewReadSession()
-	dto, err := sess.GetCLSInstance(globalAccountID)
+	_, err := sess.GetCLSInstance(globalAccountID)
 
-	switch {
-	case err == nil:
-		return &internal.CLSInstance{
-			ID:              dto.ID,
-			GlobalAccountID: dto.GlobalAccountID,
-			CreatedAt:       dto.CreatedAt,
-		}, true, nil
-	case err.Code() == dberr.CodeNotFound:
-		return nil, false, nil
-	default:
-		return nil, false, err
-	}
+	return internal.CLSInstance{}, false, errors.Wrapf(err, "needs to be implemented")
 }
 
 func (s *clsInstances) InsertInstance(instance internal.CLSInstance) error {
-	sess := s.NewWriteSession()
-	return sess.InsertCLSInstance(dbmodel.CLSInstanceDTO{
-		ID:              instance.ID,
-		GlobalAccountID: instance.GlobalAccountID,
-		CreatedAt:       instance.CreatedAt,
-	})
+	return errors.New("needs to be implemented")
 }
