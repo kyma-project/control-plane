@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -1149,35 +1147,19 @@ func fixInstance(testData instanceData) *internal.Instance {
 		suid = testData.val
 	}
 
-	return &internal.Instance{
-		InstanceID:      testData.val,
-		RuntimeID:       testData.val,
-		GlobalAccountID: gaid,
-		SubAccountID:    suid,
-		ServiceID:       testData.val,
-		ServiceName:     testData.val,
-		ServicePlanID:   testData.val,
-		ServicePlanName: testData.val,
-		DashboardURL:    fmt.Sprintf("https://console.%s.kyma.local", testData.val),
-		ProviderRegion:  testData.val,
-		Parameters: internal.ProvisioningParameters{
-			ErsContext: internal.ERSContext{
-				SubAccountID:    suid,
-				GlobalAccountID: gaid,
-				Active:          ptr.Bool(true),
-				ServiceManager: &internal.ServiceManagerEntryDTO{
-					Credentials: internal.ServiceManagerCredentials{
-						BasicAuth: internal.ServiceManagerBasicAuth{
-							Username: "u",
-							Password: "p",
-						},
-					},
-					URL: "http://url",
-				},
-			},
-			PlatformRegion: "eu",
-		},
-	}
+	instance := internal.FixInstance(testData.val)
+	instance.GlobalAccountID = gaid
+	instance.SubAccountID = suid
+	instance.ServiceID = testData.val
+	instance.ServiceName = testData.val
+	instance.ServicePlanID = testData.val
+	instance.ServicePlanName = testData.val
+	instance.DashboardURL = fmt.Sprintf("https://console.%s.kyma.local", testData.val)
+	instance.ProviderRegion = testData.val
+	instance.Parameters.ErsContext.SubAccountID = suid
+	instance.Parameters.ErsContext.GlobalAccountID = gaid
+
+	return &instance
 }
 
 func fixProvisionOperation(testData string) internal.ProvisioningOperation {

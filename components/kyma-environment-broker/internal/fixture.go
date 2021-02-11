@@ -2,10 +2,11 @@ package internal
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"k8s.io/utils/pointer"
-	"time"
 )
 
 const (
@@ -99,7 +100,7 @@ func FixInstance(id string) Instance {
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now().Add(time.Minute * 5),
 		DeletedAt:       time.Now().Add(time.Hour * 1),
-		Version:         1,
+		Version:         0,
 	}
 }
 
