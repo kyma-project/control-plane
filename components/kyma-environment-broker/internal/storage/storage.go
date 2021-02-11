@@ -46,7 +46,6 @@ func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, *dbr.Conn
 		lmsTenants:     postgres.NewLMSTenants(fact),
 		orchestrations: postgres.NewOrchestrations(fact),
 		runtimeStates:  postgres.NewRuntimeStates(fact, enc),
-		clsInstances:   postgres.NewCLSInstances(fact),
 	}, connection, nil
 }
 
