@@ -2,6 +2,7 @@ package provisioning
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -12,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+//go:generate mockery --name=ClsInstanceProvider --output=automock --outpkg=automock --case=underscore
 type ClsInstanceProvider interface {
 	ProvisionIfNoneExists(smClient servicemanager.Client, request *cls.ProvisionRequest) (*cls.ProvisionResult, error)
 }
@@ -41,6 +43,9 @@ func (s *clsProvisioningStep) Run(operation internal.ProvisioningOperation, log 
 
 	skrRegion := operation.ProvisioningParameters.Parameters.Region
 	smClient, err := cls.ServiceManagerClient(operation.SMClientFactory, s.config.ServiceManager, skrRegion)
+	if smClient == nil {
+		return operation, time.Second, errors.Wrapf(err, "service manager client could not be instantiated")
+	}
 
 	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
 	result, err := s.instanceProvider.ProvisionIfNoneExists(smClient, &cls.ProvisionRequest{
