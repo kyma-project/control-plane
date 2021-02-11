@@ -40,7 +40,6 @@ type ReadSession interface {
 	ListInstances(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error)
 	ListOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error)
 	GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error)
-	GetCLSInstance(globalAccountID string) (dbmodel.CLSInstanceDTO, dberr.Error)
 }
 
 //go:generate mockery -name=WriteSession
@@ -54,7 +53,6 @@ type WriteSession interface {
 	UpdateOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
 	InsertRuntimeState(state dbmodel.RuntimeStateDTO) dberr.Error
 	InsertLMSTenant(dto dbmodel.LMSTenantDTO) dberr.Error
-	InsertCLSInstance(dto dbmodel.CLSInstanceDTO) dberr.Error
 }
 
 type Transaction interface {
