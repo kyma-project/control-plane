@@ -578,6 +578,7 @@ func fixInstance() internal.Instance {
 	instance.GlobalAccountID = globalAccountID
 	instance.ServiceID = serviceID
 	instance.ServicePlanID = planID
+
 	return instance
 }
 

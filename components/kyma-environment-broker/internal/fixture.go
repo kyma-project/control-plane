@@ -9,7 +9,12 @@ import (
 )
 
 const (
-	kymaVersion = "1.19.0"
+	serviceId       = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
+	serviceName     = "kymaruntime"
+	planId          = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	planName        = "azure"
+	globalAccountId = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
+	kymaVersion     = "1.19.0"
 )
 
 func FixServiceManagerEntryDTO() *ServiceManagerEntryDTO {
@@ -26,19 +31,18 @@ func FixServiceManagerEntryDTO() *ServiceManagerEntryDTO {
 
 func FixERSContext(id string) ERSContext {
 	var (
-		tenantId        = fmt.Sprintf("Tenant-%s", id)
-		subAccountId    = fmt.Sprintf("SubAccount-%s", id)
-		globalAccountId = fmt.Sprintf("GlobalAccount-%s", id)
-		userId          = fmt.Sprintf("User-%s", id)
+		tenantID     = fmt.Sprintf("Tenant-%s", id)
+		subAccountId = fmt.Sprintf("SA-%s", id)
+		userID       = fmt.Sprintf("User-%s", id)
 	)
 
 	return ERSContext{
-		TenantID:        tenantId,
+		TenantID:        tenantID,
 		SubAccountID:    subAccountId,
 		GlobalAccountID: globalAccountId,
 		ServiceManager:  FixServiceManagerEntryDTO(),
 		Active:          pointer.BoolPtr(true),
-		UserID:          userId,
+		UserID:          userID,
 	}
 }
 
@@ -46,12 +50,12 @@ func FixProvisioningParametersDTO() ProvisioningParametersDTO {
 	trialCloudProvider := TrialCloudProvider("provider")
 	return ProvisioningParametersDTO{
 		Name:                        "cluster-name",
-		TargetSecret:                pointer.StringPtr("targetSecret"),
+		TargetSecret:                pointer.StringPtr("TargetSecret"),
 		VolumeSizeGb:                ptr.Integer(50),
-		MachineType:                 pointer.StringPtr("machineType"),
-		Region:                      pointer.StringPtr("region"),
-		Purpose:                     pointer.StringPtr("purpose"),
-		LicenceType:                 pointer.StringPtr("licenceType"),
+		MachineType:                 pointer.StringPtr("MachineType"),
+		Region:                      pointer.StringPtr("Region"),
+		Purpose:                     pointer.StringPtr("Purpose"),
+		LicenceType:                 pointer.StringPtr("LicenceType"),
 		Zones:                       []string{"1", "2"},
 		AutoScalerMin:               ptr.Integer(3),
 		AutoScalerMax:               ptr.Integer(10),
@@ -64,100 +68,34 @@ func FixProvisioningParametersDTO() ProvisioningParametersDTO {
 }
 
 func FixProvisioningParameters(id string) ProvisioningParameters {
-	var (
-		planId    = fmt.Sprintf("Plan-%s", id)
-		serviceId = fmt.Sprintf("Service-%s", id)
-	)
-
 	return ProvisioningParameters{
 		PlanID:         planId,
 		ServiceID:      serviceId,
 		ErsContext:     FixERSContext(id),
 		Parameters:     FixProvisioningParametersDTO(),
-		PlatformRegion: "platformRegion",
+		PlatformRegion: "region",
 	}
 }
 
 func FixInstance(id string) Instance {
 	var (
-		instanceId      = fmt.Sprintf("Instance-%s", id)
-		runtimeId       = fmt.Sprintf("Runtime-%s", id)
-		globalAccountId = fmt.Sprintf("GlobalAccount-%s", id)
-		subAccountId    = fmt.Sprintf("SubAccount-%s", id)
-		serviceId       = fmt.Sprintf("Service-%s", id)
-		planId          = fmt.Sprintf("Plan-%s", id)
-		tenantId        = fmt.Sprintf("Tenant-%s", id)
-		bindingId       = fmt.Sprintf("Binding-%s", id)
-		brokerId        = fmt.Sprintf("Broker-%s", id)
+		runtimeId    = fmt.Sprintf("Runtime-%s", id)
+		subAccountId = fmt.Sprintf("SA-%s", id)
 	)
 
-	lms := LMS{
-		TenantID:    tenantId,
-		Failed:      false,
-		RequestedAt: time.Now(),
-	}
-
-	avsLifecycleData := AvsLifecycleData{
-		AvsEvaluationInternalId: 1,
-		AVSEvaluationExternalId: 2,
-		AvsInternalEvaluationStatus: AvsEvaluationStatus{
-			Current:  "currentStatus",
-			Original: "originalStatus",
-		},
-		AvsExternalEvaluationStatus: AvsEvaluationStatus{
-			Current:  "currentStatus",
-			Original: "originalStatus",
-		},
-		AVSInternalEvaluationDeleted: false,
-		AVSExternalEvaluationDeleted: false,
-	}
-
-	serviceManagerInstanceInfo := ServiceManagerInstanceInfo{
-		BrokerID:              brokerId,
-		ServiceID:             serviceId,
-		PlanID:                planId,
-		InstanceID:            instanceId,
-		Provisioned:           false,
-		ProvisioningTriggered: false,
-	}
-
-	xsuaaData := XSUAAData{
-		Instance:  serviceManagerInstanceInfo,
-		XSAppname: "xsappName",
-		BindingID: bindingId,
-	}
-
-	emsData := EmsData{
-		Instance: serviceManagerInstanceInfo,
-		BindingID: bindingId,
-		Overrides: "overrides",
-	}
-
-	instanceDetails := InstanceDetails{
-		Lms:          lms,
-		Avs:          avsLifecycleData,
-		EventHub:     EventHub{Deleted: false},
-		SubAccountID: subAccountId,
-		RuntimeID:    runtimeId,
-		ShootName:    "shootName",
-		ShootDomain:  "shootDomain",
-		XSUAA:        xsuaaData,
-		Ems:          emsData,
-	}
-
 	return Instance{
-		InstanceID:      instanceId,
+		InstanceID:      id,
 		RuntimeID:       runtimeId,
 		GlobalAccountID: globalAccountId,
 		SubAccountID:    subAccountId,
 		ServiceID:       serviceId,
-		ServiceName:     "ServiceName",
+		ServiceName:     serviceName,
 		ServicePlanID:   planId,
-		ServicePlanName: "ServicePlanName",
+		ServicePlanName: planName,
 		DashboardURL:    "https://dashboard.local",
 		Parameters:      FixProvisioningParameters(id),
-		ProviderRegion:  "provider-region",
-		InstanceDetails: instanceDetails,
+		ProviderRegion:  "region",
+		InstanceDetails: InstanceDetails{},
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now().Add(time.Minute * 5),
 		DeletedAt:       time.Now().Add(time.Hour * 1),

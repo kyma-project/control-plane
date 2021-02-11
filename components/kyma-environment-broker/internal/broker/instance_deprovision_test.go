@@ -125,5 +125,6 @@ func fixDeprovisioningOperation(state domain.LastOperationState) internal.Deprov
 func fixInstance() internal.Instance {
 	instance := fixture.FixInstance(instanceID)
 	instance.ServicePlanID = planID
+
 	return instance
 }
