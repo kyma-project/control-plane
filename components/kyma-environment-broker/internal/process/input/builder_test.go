@@ -169,6 +169,52 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 
 	})
 
+	t.Run("should build UpgradeRuntimeInput with proper profile", func(t *testing.T) {
+		// given
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", "1.10").Return([]v1alpha1.KymaComponent{}, nil).Once()
+		defer componentsProvider.AssertExpectations(t)
+
+		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.10", fixTrialRegionMapping())
+		assert.NoError(t, err)
+		pp := fixProvisioningParameters(broker.GCPPlanID, "")
+
+		// when
+		input, err := ibf.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.1.0", Origin: internal.Defaults})
+
+		// Then
+		assert.NoError(t, err)
+		require.IsType(t, &RuntimeInput{}, input)
+
+		result := input.(*RuntimeInput)
+		assert.NotNil(t, result.upgradeRuntimeInput)
+		assert.Nil(t, result.provisionRuntimeInput.KymaConfig)
+		assert.Nil(t, result.provisionRuntimeInput.RuntimeInput)
+		assert.Nil(t, result.provisionRuntimeInput.ClusterConfig)
+		assert.NotNil(t, result.upgradeRuntimeInput.KymaConfig.Profile)
+		assert.Equal(t, gqlschema.KymaProfileProduction, *result.upgradeRuntimeInput.KymaConfig.Profile)
+
+		// given
+		pp = fixProvisioningParameters(broker.TrialPlanID, "")
+		provider := internal.Gcp
+		pp.Parameters.Provider = &provider
+		// when
+		input, err = ibf.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.1.0", Origin: internal.Defaults})
+
+		// Then
+		assert.NoError(t, err)
+		require.IsType(t, &RuntimeInput{}, input)
+
+		result = input.(*RuntimeInput)
+		assert.NotNil(t, result.upgradeRuntimeInput)
+		assert.Nil(t, result.provisionRuntimeInput.KymaConfig)
+		assert.Nil(t, result.provisionRuntimeInput.RuntimeInput)
+		assert.Nil(t, result.provisionRuntimeInput.ClusterConfig)
+		assert.NotNil(t, result.upgradeRuntimeInput.KymaConfig.Profile)
+		assert.Equal(t, gqlschema.KymaProfileEvaluation, *result.upgradeRuntimeInput.KymaConfig.Profile)
+	})
+
 }
 
 func fixProvisioningParameters(planID, kymaVersion string) internal.ProvisioningParameters {
