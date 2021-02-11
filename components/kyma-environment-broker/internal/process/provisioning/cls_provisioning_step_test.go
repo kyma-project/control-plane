@@ -7,13 +7,14 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+
 	//"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/Peripli/service-manager-cli/pkg/types"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/automock"
-
+	clsMock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
 	"testing"
 )
 
@@ -23,7 +24,7 @@ const (
 
 
 func TestClsProvisioningStep_Run(t *testing.T) {
-	fakeRegion := "fooRegion"
+	fakeRegion := "westeurope"
 
 	//given
 	db := storage.NewMemoryStorage()
@@ -35,11 +36,11 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{
 				Parameters: internal.ProvisioningParametersDTO{Region: &fakeRegion},
-				ErsContext: internal.ERSContext{SubAccountID: "1234567890"}},
+				ErsContext: internal.ERSContext{SubAccountID: "1234567890", GlobalAccountID:"123-456-789"}},
 
 			InstanceDetails: internal.InstanceDetails{
 				Cls: internal.ClsData{Instance: internal.ServiceManagerInstanceInfo{
-					BrokerID:  "broker-id",
+					BrokerID:  fakeBrokerID,
 					ServiceID: "svc-id",
 					PlanID:    "plan-id",
 				}},
@@ -73,7 +74,7 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 		ServiceManager: &cls.ServiceManagerConfig{
 			Credentials: []*cls.ServiceManagerCredentials{
 				{
-					Region:   "foo",
+					Region:   "eu",
 					URL:      "https://foo.bar",
 					Username: "fooUser",
 					Password: "barPassword",
@@ -81,18 +82,22 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 			},
 		},
 	}
-	clsClient := cls.NewClient(config, logs.WithField("service", "clsClient"))
-	clsInstanceManager := cls.NewInstanceManager(db.CLSInstances(), clsClient, logs.WithField("service", "clsInstanceManager"))
+	clsInstanceProvider := &clsMock.ClsInstanceProvider{}
 
-	skrRegion := operation.ProvisioningParameters.Parameters.Region
-	smClientMock := &automock.Client{}
-	clsInstanceManagerMock := &authorizationRuleN
-	smClientMock.On("ServiceManagerClient", operation.SMClientFactory, config.ServiceManager, skrRegion).Return(nil, nil)
-	smClientMock.On("CreateInstance", smClientMock, &cls.CreateInstanceRequest{BrokerID: fakeBrokerID}).Return(fakeBrokerID, nil)
+	fakeGlobalAccountID:= operation.ProvisioningParameters.ErsContext.GlobalAccountID
+	clsInstanceProvider.On("ProvisionIfNoneExists", mock.Anything, &cls.ProvisionRequest{
+		GlobalAccountID: fakeGlobalAccountID,
+		ServiceID:       "svc-id",
+		PlanID:          "plan-id",
+		BrokerID:        fakeBrokerID,
+	}).Return(&cls.ProvisionResult{
+		InstanceID:            "instance_id",
+		ProvisioningTriggered: true,
+	}, nil)
 
 	offeringStep := NewClsOfferingStep(config,repo)
 
-	provisionStep := NewClsProvisioningStep(config, clsInstanceManager, repo)
+	provisionStep := NewClsProvisioningStep(config, clsInstanceProvider, repo)
 	repo.InsertProvisioningOperation(operation)
 
 	log := logger.NewLogDummy()
@@ -109,10 +114,4 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 	assert.NotEmpty(t, operation.Cls.Instance.InstanceID)
 	assert.False(t, operation.Cls.Instance.Provisioned)
 	assert.True(t, operation.Cls.Instance.ProvisioningTriggered)
-	clientFactory.AssertProvisionCalled(t, servicemanager.InstanceKey{
-		BrokerID:   "broker-id",
-		InstanceID: operation.Cls.Instance.InstanceID,
-		ServiceID:  "svc-id",
-		PlanID:     "plan-id",
-	})
 }
