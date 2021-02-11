@@ -12,16 +12,16 @@ import (
 	//"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"testing"
+
 	"github.com/Peripli/service-manager-cli/pkg/types"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	clsMock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
-	"testing"
 )
 
 const (
 	fakeBrokerID = "fake-broker-id"
 )
-
 
 func TestClsProvisioningStep_Run(t *testing.T) {
 	fakeRegion := "westeurope"
@@ -36,7 +36,7 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{
 				Parameters: internal.ProvisioningParametersDTO{Region: &fakeRegion},
-				ErsContext: internal.ERSContext{SubAccountID: "1234567890", GlobalAccountID:"123-456-789"}},
+				ErsContext: internal.ERSContext{SubAccountID: "1234567890", GlobalAccountID: "123-456-789"}},
 
 			InstanceDetails: internal.InstanceDetails{
 				Cls: internal.ClsData{Instance: internal.ServiceManagerInstanceInfo{
@@ -48,7 +48,6 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 			},
 		},
 		SMClientFactory: clientFactory,
-
 	}
 
 	logs := logrus.New()
@@ -84,7 +83,7 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 	}
 	clsInstanceProvider := &clsMock.ClsInstanceProvider{}
 
-	fakeGlobalAccountID:= operation.ProvisioningParameters.ErsContext.GlobalAccountID
+	fakeGlobalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
 	clsInstanceProvider.On("ProvisionIfNoneExists", mock.Anything, &cls.ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		ServiceID:       "svc-id",
@@ -95,7 +94,7 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 		ProvisioningTriggered: true,
 	}, nil)
 
-	offeringStep := NewClsOfferingStep(config,repo)
+	offeringStep := NewClsOfferingStep(config, repo)
 
 	provisionStep := NewClsProvisioningStep(config, clsInstanceProvider, repo)
 	repo.InsertProvisioningOperation(operation)
