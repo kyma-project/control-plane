@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -1353,7 +1352,7 @@ func fixInstance(testData instanceData) *internal.Instance {
 	} else {
 		suid = testData.val
 	}
-
+	
 	instance := fixture.FixInstance(testData.val)
 	instance.GlobalAccountID = gaid
 	instance.SubAccountID = suid
