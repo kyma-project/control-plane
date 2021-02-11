@@ -3,8 +3,7 @@ package api
 import (
 	"testing"
 
-	"github.com/kyma-incubator/hydroform/install/merger"
-
+	"github.com/kyma-incubator/hydroform/install/k8s"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 	dbMocks "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
@@ -25,7 +24,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
 		// given
 		for _, component := range testConfig.Components {
-			component.OnConflict = util.StringPtr(merger.ReplaceOnConflict)
+			component.OnConflict = util.StringPtr(k8s.ReplaceOnConflict)
 		}
 		// when
 		err = validator.ValidateProvisioningInput(config)
@@ -455,7 +454,7 @@ func onConflictValidatorInput() (Validator, *gqlschema.KymaConfigInput, gqlschem
 	validator := NewValidator(readSession)
 
 	testConfig := kymaConfig
-	testConfig.OnConflict = util.StringPtr(merger.ReplaceOnConflict)
+	testConfig.OnConflict = util.StringPtr(k8s.ReplaceOnConflict)
 
 	config := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput:  runtimeInput,

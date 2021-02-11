@@ -3,8 +3,7 @@ package provisioning
 import (
 	"testing"
 
-	"github.com/kyma-incubator/hydroform/install/merger"
-
+	"github.com/kyma-incubator/hydroform/install/k8s"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	realeaseMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/release/mocks"
@@ -392,7 +391,7 @@ func TestConverter_ParseInput(t *testing.T) {
 
 		input := gqlschema.KymaConfigInput{
 			Version:    kymaVersion,
-			OnConflict: util.StringPtr(merger.ReplaceOnConflict),
+			OnConflict: util.StringPtr(k8s.ReplaceOnConflict),
 		}
 
 		inputConverter := NewInputConverter(
@@ -408,9 +407,9 @@ func TestConverter_ParseInput(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		assert.Equal(t, merger.ReplaceOnConflict, *output.GlobalConfiguration.OnConflict)
+		assert.Equal(t, k8s.ReplaceOnConflict, *output.GlobalConfiguration.OnConflict)
 		for _, entry := range output.Components {
-			assert.Equal(t, merger.ReplaceOnConflict, *entry.Configuration.OnConflict)
+			assert.Equal(t, k8s.ReplaceOnConflict, *entry.Configuration.OnConflict)
 		}
 	})
 }

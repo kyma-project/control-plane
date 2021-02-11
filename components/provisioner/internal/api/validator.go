@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/kyma-incubator/hydroform/install/merger"
+	"github.com/kyma-incubator/hydroform/install/k8s"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
@@ -146,7 +146,7 @@ func (v *validator) validateComponents(kymaConfig *gqlschema.KymaConfigInput) (a
 }
 
 func (v *validator) validateOnConflict(value string) apperrors.AppError {
-	if value != "" && value != merger.ReplaceOnConflict {
+	if value != "" && value != k8s.ReplaceOnConflict {
 		return apperrors.BadRequest("error: Invalid value of conflict resolution onConflict")
 	}
 

@@ -6,12 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/hydroform/install/merger"
-
 	alpha1 "github.com/kyma-project/kyma/components/kyma-operator/pkg/client/clientset/versioned/typed/installer/v1alpha1"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
+	hydroform "github.com/kyma-incubator/hydroform/install/k8s"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
@@ -99,7 +98,7 @@ func TestInstallationService_ParseConfigs(t *testing.T) {
 
 	t.Run("should parse OnConflict value", func(t *testing.T) {
 		// given
-		replaceValue := util.StringPtr(merger.ReplaceOnConflict)
+		replaceValue := util.StringPtr(hydroform.ReplaceOnConflict)
 
 		globalConfig.OnConflict = replaceValue
 
@@ -111,7 +110,7 @@ func TestInstallationService_ParseConfigs(t *testing.T) {
 		configuration := NewInstallationConfiguration(globalConfig, componentsConfig)
 
 		// then
-		assert.Equal(t, merger.ReplaceOnConflict, configuration.OnConflict)
+		assert.Equal(t, hydroform.ReplaceOnConflict, configuration.OnConflict)
 	})
 }
 
@@ -325,7 +324,7 @@ func assertComponent(t *testing.T, expectedName, expectedNamespace string, expec
 
 func fixInstallationConfig() installation.Configuration {
 	return installation.Configuration{
-		OnConflict: merger.ReplaceOnConflict,
+		OnConflict: hydroform.ReplaceOnConflict,
 		Configuration: []installation.ConfigEntry{
 			fixInstallationConfigEntry("global.config.key", "globalValue", false),
 			fixInstallationConfigEntry("global.config.key2", "globalValue2", false),
@@ -335,7 +334,7 @@ func fixInstallationConfig() installation.Configuration {
 			{
 				Component:     "cluster-essentials",
 				Configuration: make([]installation.ConfigEntry, 0),
-				OnConflict:    merger.ReplaceOnConflict,
+				OnConflict:    hydroform.ReplaceOnConflict,
 			},
 			{
 				Component: "core",
@@ -367,7 +366,7 @@ func fixComponentsConfig() []model.KymaComponentConfig {
 			Component:    "cluster-essentials",
 			Namespace:    kymaSystemNamespace,
 			Configuration: model.Configuration{
-				OnConflict:    util.StringPtr(merger.ReplaceOnConflict),
+				OnConflict:    util.StringPtr(hydroform.ReplaceOnConflict),
 				ConfigEntries: make([]model.ConfigEntry, 0, 0)},
 		},
 		{
@@ -407,7 +406,7 @@ func fixComponentsConfig() []model.KymaComponentConfig {
 
 func fixGlobalConfig() model.Configuration {
 	return model.Configuration{
-		OnConflict: util.StringPtr(merger.ReplaceOnConflict),
+		OnConflict: util.StringPtr(hydroform.ReplaceOnConflict),
 		ConfigEntries: []model.ConfigEntry{
 			model.NewConfigEntry("global.config.key", "globalValue", false),
 			model.NewConfigEntry("global.config.key2", "globalValue2", false),
