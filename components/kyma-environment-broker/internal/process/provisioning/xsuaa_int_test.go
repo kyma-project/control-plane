@@ -57,9 +57,13 @@ func TestProvisioningSteps(t *testing.T) {
 		},
 	}
 	operation := internal.ProvisioningOperation{
-		Operation:       internal.Operation{ProvisioningParameters: pp},
+		Operation: internal.Operation{
+			InstanceDetails: internal.InstanceDetails{
+				ShootDomain: "uaa-test.kyma-dev.shoot.canary.k8s-hana.ondemand.com",
+			},
+			ProvisioningParameters: pp,
+		},
 		SMClientFactory: cliFactory,
-		ShootDomain:     "uaa-test.kyma-dev.shoot.canary.k8s-hana.ondemand.com",
 	}
 	repo.InsertProvisioningOperation(operation)
 	log := logrus.New()
