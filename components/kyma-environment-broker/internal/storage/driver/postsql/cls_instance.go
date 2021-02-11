@@ -26,3 +26,7 @@ func (s *clsInstances) FindInstance(globalAccountID string) (internal.CLSInstanc
 func (s *clsInstances) InsertInstance(instance internal.CLSInstance) error {
 	return errors.New("needs to be implemented")
 }
+
+func (s *clsInstances) AddReference(instance internal.CLSInstance, subAccountID string) error {
+	return errors.New("needs to be implemented")
+}
