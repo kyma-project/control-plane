@@ -11,6 +11,7 @@ metadata:
 spec:
   version: "0.0.1"
   url: ""
+  profile: "production"
   components:
     - name: "cluster-essentials"
       namespace: "kyma-system"
