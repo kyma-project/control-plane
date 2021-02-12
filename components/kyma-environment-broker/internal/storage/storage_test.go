@@ -1173,18 +1173,19 @@ func fixDeprovisionOperation(testData string) internal.DeprovisioningOperation {
 }
 
 func fixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
-	return orchestration.RuntimeOperation{
-		ID: operationId,
-		Runtime: orchestration.Runtime{
-			ShootName:              "shoot-stage",
-			MaintenanceWindowBegin: time.Now().Truncate(time.Millisecond).Add(time.Hour),
-			MaintenanceWindowEnd:   time.Now().Truncate(time.Millisecond).Add(time.Minute).Add(time.Hour),
-			RuntimeID:              "runtime-id",
-			GlobalAccountID:        "global-account-if",
-			SubAccountID:           "subaccount-id",
-		},
-		DryRun: false,
+	runtime := orchestration.Runtime{
+		ShootName:              "shoot-stage",
+		MaintenanceWindowBegin: time.Now().Truncate(time.Millisecond).Add(time.Hour),
+		MaintenanceWindowEnd:   time.Now().Truncate(time.Millisecond).Add(time.Minute).Add(time.Hour),
+		RuntimeID:              "runtime-id",
+		GlobalAccountID:        "global-account-if",
+		SubAccountID:           "subaccount-id",
 	}
+
+	runtimeOperation := internal.FixRuntimeOperation(operationId)
+	runtimeOperation.Runtime = runtime
+
+	return runtimeOperation
 }
 
 func fixProvisioningParameters() internal.ProvisioningParameters {
