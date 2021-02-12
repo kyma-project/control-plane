@@ -78,7 +78,7 @@ func createParameters(config *Config) parameters {
 	}
 	params.SAML.Enabled = true
 	params.SAML.AdminGroup = config.SAML.AdminGroup
-	params.SAML.Initiated = true
+	params.SAML.Initiated = config.SAML.Initiated
 	params.SAML.ExchangeKey = config.SAML.ExchangeKey
 	params.SAML.RolesKey = config.SAML.RolesKey
 	params.SAML.Idp.EntityID = config.SAML.Idp.EntityID
