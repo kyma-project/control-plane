@@ -1189,7 +1189,10 @@ func fixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
 }
 
 func fixProvisioningParameters() internal.ProvisioningParameters {
-	return internal.FixProvisioningParameters("test")
+	pp := internal.FixProvisioningParameters("test")
+	pp.PlanID = broker.TrialPlanID
+	pp.ServiceID = broker.KymaServiceID
+	return pp
 }
 
 func fixInstanceDetails() internal.InstanceDetails {
