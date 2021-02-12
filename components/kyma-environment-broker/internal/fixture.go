@@ -4,18 +4,21 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"k8s.io/utils/pointer"
 )
 
 const (
-	serviceId       = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
-	serviceName     = "kymaruntime"
-	planId          = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
-	planName        = "azure"
-	globalAccountId = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
-	kymaVersion     = "1.19.0"
+	serviceId              = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
+	serviceName            = "kymaruntime"
+	planId                 = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	planName               = "azure"
+	globalAccountId        = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
+	provisionerOperationId = "e04de524-53b3-4890-b05a-296be393e4ba"
+	kymaVersion            = "1.19.0"
 )
 
 func FixServiceManagerEntryDTO() *ServiceManagerEntryDTO {
@@ -104,36 +107,44 @@ func FixInstance(id string) Instance {
 	}
 }
 
-func FixProvisioningOperation() ProvisioningOperation {
+func FixOperation(id, instanceId string) Operation {
+	var (
+		description     = fmt.Sprintf("Description for operation %s", id)
+		orchestrationId = fmt.Sprintf("Orchestration-%s", id)
+	)
+
+	return Operation{
+		InstanceDetails:        InstanceDetails{},
+		ID:                     id,
+		Version:                0,
+		CreatedAt:              time.Now(),
+		UpdatedAt:              time.Now().Add(time.Hour * 48),
+		InstanceID:             instanceId,
+		ProvisionerOperationID: provisionerOperationId,
+		State:                  domain.Succeeded,
+		Description:            description,
+		ProvisioningParameters: FixProvisioningParameters(id),
+		OrchestrationID:        orchestrationId,
+	}
+}
+
+func FixProvisioningOperation(operationId, instanceId string) ProvisioningOperation {
 	return ProvisioningOperation{
-		Operation:       Operation{},
-		RuntimeVersion:  RuntimeVersionData{},
+		Operation: FixOperation(operationId, instanceId),
+		RuntimeVersion: RuntimeVersionData{
+			Version: kymaVersion,
+			Origin:  Defaults,
+		},
 		InputCreator:    nil,
 		SMClientFactory: nil,
 	}
 }
 
-func FixDeprovisioningOperation() DeprovisioningOperation {
+func FixDeprovisioningOperation(operationId, instanceId string) DeprovisioningOperation {
 	return DeprovisioningOperation{
-		Operation:       Operation{},
+		Operation:       FixOperation(operationId, instanceId),
 		SMClientFactory: nil,
 		Temporary:       false,
-	}
-}
-
-func FixOperation() Operation {
-	return Operation{
-		InstanceDetails:        InstanceDetails{},
-		ID:                     "",
-		Version:                0,
-		CreatedAt:              time.Time{},
-		UpdatedAt:              time.Time{},
-		InstanceID:             "",
-		ProvisionerOperationID: "",
-		State:                  "",
-		Description:            "",
-		ProvisioningParameters: ProvisioningParameters{},
-		OrchestrationID:        "",
 	}
 }
 
