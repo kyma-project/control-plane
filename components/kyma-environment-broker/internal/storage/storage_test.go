@@ -1163,31 +1163,13 @@ func fixInstance(testData instanceData) *internal.Instance {
 }
 
 func fixProvisionOperation(testData string) internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: fixSucceededOperation(testData),
-	}
+	operationId := fmt.Sprintf("%s-%d", testData, rand.Int())
+	return internal.FixProvisioningOperation(operationId, testData)
+
 }
 func fixDeprovisionOperation(testData string) internal.DeprovisioningOperation {
-	return internal.DeprovisioningOperation{
-		Operation: fixSucceededOperation(testData),
-	}
-}
-
-func fixSucceededOperation(testData string) internal.Operation {
-	return internal.Operation{
-		ID:                     fmt.Sprintf("%s-%d", testData, rand.Int()),
-		CreatedAt:              fixTime().Add(24 * time.Hour),
-		UpdatedAt:              fixTime().Add(48 * time.Hour),
-		InstanceID:             testData,
-		ProvisionerOperationID: testData,
-		State:                  domain.Succeeded,
-		Description:            testData,
-		ProvisioningParameters: internal.ProvisioningParameters{},
-	}
-}
-
-func fixTime() time.Time {
-	return time.Date(2020, 04, 21, 0, 0, 23, 42, time.UTC)
+	operationId := fmt.Sprintf("%s-%d", testData, rand.Int())
+	return internal.FixDeprovisioningOperation(operationId, testData)
 }
 
 func fixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
