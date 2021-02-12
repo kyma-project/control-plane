@@ -29,6 +29,7 @@ func (s *EmsUnbindStep) Name() string {
 
 func (s *EmsUnbindStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	if operation.Ems.BindingID == "" {
+		log.Infof("Ems Unbind step skipped, instance not bound")
 		return operation, 0, nil
 	}
 

@@ -1,12 +1,11 @@
 apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication
 metadata:
-  name: {{ template "fullname" . }}-metrics
+  name: {{ template "fullname" . }}
   namespace: {{ .Release.Namespace }}
 spec:
   selector:
     matchLabels:
       app: {{ .Chart.Name }}
-  portLevelMtls:
-    {{ .Values.metrics.port }}:
-      mode: "PERMISSIVE"
+  mtls:
+    mode: PERMISSIVE

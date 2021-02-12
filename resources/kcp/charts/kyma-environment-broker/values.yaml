@@ -41,7 +41,6 @@ resources: {}
   #   memory: 128Mi
 
 provisioner:
-  Host: "kcp-provisioner.kcp-system.svc.cluster.local"
   URL: "http://kcp-provisioner.kcp-system.svc.cluster.local:3000/graphql"
 
   # Defines how long should the Kyma Environment Broker checks the status of the provisioning in the Provisioner.
@@ -182,6 +181,9 @@ edp:
   disabled: true
   secret: "TBD"
   secretName: "edp-creds"
+
+ems:
+  disabled: true
 
 cis:
   v1:

@@ -69,9 +69,31 @@ func (om *UpgradeKymaOperationManager) RetryOperation(operation internal.Upgrade
 func (om *UpgradeKymaOperationManager) UpdateOperation(operation internal.UpgradeKymaOperation) (internal.UpgradeKymaOperation, time.Duration) {
 	updatedOperation, err := om.storage.UpdateUpgradeKymaOperation(operation)
 	if err != nil {
+		logrus.WithField("orchestrationID", operation.OrchestrationID).
+			WithField("instanceID", operation.InstanceID).
+			Errorf("Update provisioning operation failed: %s", err.Error())
 		return operation, 1 * time.Minute
 	}
 	return *updatedOperation, 0
+}
+
+// RetryOperationWithoutFail retries an operation for at maxTime in retryInterval steps and omits the operation if retrying failed
+func (om *UpgradeKymaOperationManager) RetryOperationWithoutFail(operation internal.UpgradeKymaOperation, description string, retryInterval, maxTime time.Duration, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	since := time.Since(operation.UpdatedAt)
+
+	log.Infof("Retry Operation was triggered with message: %s", description)
+	log.Infof("Retrying for %s in %s steps", maxTime.String(), retryInterval.String())
+	if since < maxTime {
+		return operation, retryInterval, nil
+	}
+	// update description to track failed steps
+	updatedOperation, repeat := om.update(operation, domain.InProgress, description)
+	if repeat != 0 {
+		return updatedOperation, repeat, nil
+	}
+
+	log.Errorf("Omitting after %s of failing retries", maxTime.String())
+	return updatedOperation, 0, nil
 }
 
 func (om *UpgradeKymaOperationManager) update(operation internal.UpgradeKymaOperation, state domain.LastOperationState, description string) (internal.UpgradeKymaOperation, time.Duration) {
