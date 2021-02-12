@@ -148,6 +148,27 @@ func FixDeprovisioningOperation(operationId, instanceId string) DeprovisioningOp
 	}
 }
 
+func FixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
+	return orchestration.RuntimeOperation{
+		Runtime: orchestration.Runtime{},
+		ID:      operationId,
+		DryRun:  false,
+	}
+}
+
+func FixUpgradeKymaOperation(operationId, instanceId string) UpgradeKymaOperation {
+	return UpgradeKymaOperation{
+		Operation:        FixOperation(operationId, instanceId),
+		RuntimeOperation: FixRuntimeOperation(operationId),
+		InputCreator:     nil,
+		RuntimeVersion:   RuntimeVersionData{
+			Version: kymaVersion,
+			Origin:  Defaults,
+		},
+		SMClientFactory:  nil,
+	}
+}
+
 func FixOrchestration() Orchestration {
 	return Orchestration{
 		OrchestrationID: "",
