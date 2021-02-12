@@ -258,6 +258,7 @@ var (
 	shoot8  = fixShoot(8, globalAccountID1, region1)
 	shoot9  = fixShoot(9, globalAccountID1, region1)
 	shoot10 = fixShoot(10, globalAccountID1, region1)
+	shoot11 = fixShoot(11, globalAccountID1, region1)
 
 	runtime1  = fixRuntimeDTO(1, globalAccountID1, plan2, runtimeOpState{provision: string(brokerapi.Succeeded)})
 	runtime2  = fixRuntimeDTO(2, globalAccountID1, plan1, runtimeOpState{provision: string(brokerapi.Succeeded)})
@@ -269,6 +270,7 @@ var (
 	runtime8  = fixRuntimeDTO(8, globalAccountID1, plan1, runtimeOpState{provision: string(brokerapi.Succeeded), suspension: string(brokerapi.Succeeded)})
 	runtime9  = fixRuntimeDTO(9, globalAccountID1, plan1, runtimeOpState{provision: string(brokerapi.Succeeded), suspension: string(brokerapi.InProgress)})
 	runtime10 = fixRuntimeDTO(10, globalAccountID1, plan1, runtimeOpState{provision: string(brokerapi.Succeeded), suspension: string(brokerapi.Succeeded), unsuspension: string(brokerapi.Succeeded)})
+	runtime11 = fixRuntimeDTO(11, globalAccountID1, plan1, runtimeOpState{provision: string(brokerapi.Succeeded), suspension: string(brokerapi.Succeeded), unsuspension: string(brokerapi.Failed)})
 )
 
 func fixShoot(id int, globalAccountID, region string) gardenerapi.Shoot {

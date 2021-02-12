@@ -78,7 +78,7 @@ type OperationType string
 const (
 	Provision    OperationType = "provision"
 	Deprovision  OperationType = "deprovision"
-	IpgradeKyma  OperationType = "kyma upgrade"
+	UpgradeKyma  OperationType = "kyma upgrade"
 	Suspension   OperationType = "suspension"
 	Unsuspension OperationType = "unsuspension"
 )
@@ -89,7 +89,7 @@ func FindLastOperation(rt RuntimeDTO) (Operation, OperationType) {
 	// Take the first upgrade operation, assuming that Data is sorted by CreatedAt DESC.
 	if rt.Status.UpgradingKyma.Count > 0 {
 		op = rt.Status.UpgradingKyma.Data[0]
-		opType = IpgradeKyma
+		opType = UpgradeKyma
 	}
 
 	// Take the first unsuspension operation, assuming that Data is sorted by CreatedAt DESC.

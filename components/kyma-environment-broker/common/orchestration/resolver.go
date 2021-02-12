@@ -133,9 +133,6 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 
 	// Iterate over all shoots. Evaluate target specs. If multiple are specified, all must match for a given shoot.
 	for _, shoot := range shoots {
-		// Skip runtimes for which
-		//  - there is no succeeded instance provision operation in DB
-		//  - deprovision operation exists in DB
 		runtimeID := shoot.Annotations[runtimeIDAnnotation]
 		if runtimeID == "" {
 			resolver.logger.Errorf("Failed to get runtimeID from %s annotation for Shoot %s", runtimeIDAnnotation, shoot.Name)
@@ -148,7 +145,11 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 		}
 
 		lastOp, lastOpType := runtime.FindLastOperation(r)
-		if lastOpType == runtime.Deprovision || lastOpType == runtime.Suspension || lastOpType == runtime.Provision && lastOp.State != string(brokerapi.Succeeded) {
+		// Skip runtimes for which the last operation is
+		//  - not succeeded provision or unsuspension
+		//  - suspension
+		//  - deprovision
+		if lastOpType == runtime.Deprovision || lastOpType == runtime.Suspension || (lastOpType == runtime.Provision || lastOpType == runtime.Unsuspension) && lastOp.State != string(brokerapi.Succeeded) {
 			resolver.logger.Infof("Skipping Shoot %s (runtimeID: %s, instanceID %s) due to %s state: %s", shoot.Name, runtimeID, r.InstanceID, lastOpType, lastOp.State)
 			continue
 		}
