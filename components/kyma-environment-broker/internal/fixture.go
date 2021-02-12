@@ -161,11 +161,11 @@ func FixUpgradeKymaOperation(operationId, instanceId string) UpgradeKymaOperatio
 		Operation:        FixOperation(operationId, instanceId),
 		RuntimeOperation: FixRuntimeOperation(operationId),
 		InputCreator:     nil,
-		RuntimeVersion:   RuntimeVersionData{
+		RuntimeVersion: RuntimeVersionData{
 			Version: kymaVersion,
 			Origin:  Defaults,
 		},
-		SMClientFactory:  nil,
+		SMClientFactory: nil,
 	}
 }
 

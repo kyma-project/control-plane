@@ -1390,6 +1390,7 @@ func fixProvisioningParameters() internal.ProvisioningParameters {
 	pp := fixture.FixProvisioningParameters("test")
 	pp.PlanID = broker.TrialPlanID
 	pp.ServiceID = broker.KymaServiceID
+	
 	return pp
 }
 
