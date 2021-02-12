@@ -60,7 +60,7 @@ The upgrade process contains the following steps:
 
 | Name                         | Domain         | Status      | Description                                                                            | Owner     |
 |------------------------------|----------------|-------------|----------------------------------------------------------------------------------------|-----------|
-| Provision EMS                | EMS            | Done        | Provisions and binds an Enterprise Messaging instance for a Kyma Runtime using Service Manager.                                | @k15r (Team SkyDivingTunas)     |
+| Provision EMS                | EMS            | Done        | Provisions and binds an Enterprise Messaging instance for a Kyma Runtime using the Service Manager.                                | @k15r (Team SkyDivingTunas)     |
 | Deprovision Azure Event Hubs | Event Hub      | Done        | Deletes the Azure Event Hub Namespace.                                                  | @k15r (Team SkyDivingTunas)   |
 | Upgrade_Kyma_Initialisation  | Upgrade | Done        | Initializes the `UpgradeOperation` instance with data fetched from the `ProvisioningOperation`. | @ksputo (Team Gopher) |
 | Overrides_From_Secrets_And_Config_Step  | Upgrade | Done        | Builds an input configuration that is passed as overrides to Runtime Provisioner. | @ksputo (Team Gopher) |
