@@ -1189,29 +1189,7 @@ func fixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
 }
 
 func fixProvisioningParameters() internal.ProvisioningParameters {
-	active := true
-	return internal.ProvisioningParameters{
-		PlanID:    broker.TrialPlanID,
-		ServiceID: broker.KymaServiceID,
-		ErsContext: internal.ERSContext{
-			TenantID:        "test",
-			SubAccountID:    "test",
-			GlobalAccountID: "test",
-			ServiceManager: &internal.ServiceManagerEntryDTO{
-				Credentials: internal.ServiceManagerCredentials{
-					BasicAuth: internal.ServiceManagerBasicAuth{
-						Username: "username",
-						Password: "password",
-					}},
-			},
-			Active: &active,
-		},
-		Parameters: internal.ProvisioningParametersDTO{
-			Name:        "test",
-			KymaVersion: "0.0.0",
-		},
-		PlatformRegion: "region",
-	}
+	return internal.FixProvisioningParameters("test")
 }
 
 func fixInstanceDetails() internal.InstanceDetails {
