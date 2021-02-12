@@ -44,7 +44,7 @@ The deprovisioning process contains the following steps:
 |------------------------------|----------------|-------------|----------------------------------------------------------------------------------------|-----------|
 | Deprovision_Initialization   | Deprovisioning | Done        | Initializes the `DeprovisioningOperation` instance with data fetched from the `ProvisioningOperation`. | @polskikiel (Team Gopher) |
 | Deprovision Azure Event Hubs | Event Hub      | Done        | Deletes the Azure Event Hub Namespace.                                                  | @k15r (Team SkyDivingTunas)   |
-| Deprovision EMS              | EMS            | Done        | Unbinds and deprovisions the Enterprise Messaging instance using the Service Manager         | @k15r (Team SkyDivingTunas)     |
+| Deprovision EMS              | EMS            | Done        | Unbinds and deprovisions the Enterprise Messaging instance using the Service Manager.         | @k15r (Team SkyDivingTunas)     |
 | De-provision_AVS_Evaluations | AvS            | Done        | Removes external and internal monitoring of Kyma Runtime.                                                  | @jasiu001 (Team Gopher)  |
 | IAS_Deregistration           | Identity Authentication Service | Done | Removes the ServiceProvider from IAS. | @jasiu001 (Team Gopher) |
 | EDP_Deregistration           | Event Data Platform | Done | Removes all entries about SKR from Event Data Platform. | @jasiu001 (Team Gopher) |
