@@ -3,6 +3,7 @@ package provisioning_test
 import (
 	"github.com/Peripli/service-manager-cli/pkg/types"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
@@ -16,13 +17,22 @@ import (
 
 func TestClsOfferingStep_Run(t *testing.T) {
 	// given
-	repo := storage.NewMemoryStorage().Operations()
-	step := provisioning.NewClsOfferingStep(nil, repo)
-	operation := internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ProvisioningParameters: internal.ProvisioningParameters{},
+	clsConfig := &cls.Config{
+		ServiceManager: &cls.ServiceManagerConfig{
+			Credentials: []*cls.ServiceManagerCredentials{
+				{
+					Region:   "eu",
+					URL:      "http://service-manager",
+					Username: "qwerty",
+					Password: "qwerty",
+				},
+			},
 		},
-		// TODO: Change here when we move to different instantiation
+	}
+
+	repo := storage.NewMemoryStorage().Operations()
+	step := provisioning.NewClsOfferingStep(clsConfig, repo)
+	operation := internal.ProvisioningOperation{
 		SMClientFactory: servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{{
 			ID:        "id-001",
 			Name:      "cloud-logging",

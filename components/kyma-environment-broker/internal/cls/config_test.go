@@ -97,7 +97,7 @@ serviceManager:
       username: sm
       password: qwerty
 saml:
-  enabled: false  
+  initiated: true  
 `
 
 	config, err := Load(in)
