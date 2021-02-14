@@ -47,6 +47,6 @@ replace (
 	golang.org/x/text => golang.org/x/text v0.3.3
 	k8s.io/apiserver => k8s.io/apiserver v0.18.10
 	k8s.io/client-go => k8s.io/client-go v0.18.15
-	github.com/kyma-incubator/hydroform/install => github.com/ralikio/hydroform/install v0.0.0-20210209113143-459cb5389b89
+	github.com/kyma-incubator/hydroform/install => github.com/ralikio/hydroform/install v0.0.0-20210212223228-b7e27e01acf1
 
 )
