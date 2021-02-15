@@ -71,8 +71,9 @@ import (
 
 // Config holds configuration for the whole application
 type Config struct {
-	DbInMemory                     bool `envconfig:"default=false"`
-	EnableInstanceDetailsMigration bool `envconfig:"default=false"`
+	DbInMemory                      bool `envconfig:"default=false"`
+	EnableInstanceDetailsMigration  bool `envconfig:"default=false"`
+	EnableOperationsUserIDMigration bool `envconfig:"default=false"`
 
 	// DisableProcessOperationsInProgress allows to disable processing operations
 	// which are in progress on starting application. Set to true if you are
@@ -186,6 +187,11 @@ func main() {
 	// instance details migration to upgradeKyma operations
 	if cfg.EnableInstanceDetailsMigration {
 		err = migrations.NewInstanceDetailsMigration(db.Operations(), logs.WithField("service", "instanceDetailsMigration")).Migrate()
+		fatalOnError(err)
+	}
+	// migration to remove the userID parameter from succeeded deprovisioning operations
+	if cfg.EnableOperationsUserIDMigration {
+		err = migrations.NewOperationsUserIDMigration(db.Operations(), logs.WithField("service", "userIDMigration")).Migrate()
 		fatalOnError(err)
 	}
 
