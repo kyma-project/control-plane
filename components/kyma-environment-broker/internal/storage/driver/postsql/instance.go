@@ -16,12 +16,14 @@ import (
 type Instance struct {
 	postsql.Factory
 	operations *operations
+	cipher     Cipher
 }
 
-func NewInstance(sess postsql.Factory, operations *operations) *Instance {
+func NewInstance(sess postsql.Factory, operations *operations, cipher Cipher) *Instance {
 	return &Instance{
 		Factory:    sess,
 		operations: operations,
+		cipher:     cipher,
 	}
 }
 
@@ -45,7 +47,7 @@ func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]i
 
 	var result []internal.InstanceWithOperation
 	for _, dto := range instances {
-		inst, err := toInstance(dto.InstanceDTO)
+		inst, err := s.toInstance(dto.InstanceDTO)
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +83,7 @@ func (s *Instance) FindAllInstancesForRuntimes(runtimeIdList []string) ([]intern
 
 	var result []internal.Instance
 	for _, dto := range instances {
-		inst, err := toInstance(dto)
+		inst, err := s.toInstance(dto)
 		if err != nil {
 			return []internal.Instance{}, err
 		}
@@ -111,7 +113,7 @@ func (s *Instance) FindAllInstancesForSubAccounts(subAccountslist []string) ([]i
 
 	var result []internal.Instance
 	for _, dto := range instances {
-		inst, err := toInstance(dto)
+		inst, err := s.toInstance(dto)
 		if err != nil {
 			return []internal.Instance{}, err
 		}
@@ -151,7 +153,7 @@ func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	if err != nil {
 		return nil, lastErr
 	}
-	instance, err := toInstance(instanceDTO)
+	instance, err := s.toInstance(instanceDTO)
 	if err != nil {
 		return nil, err
 	}
@@ -168,11 +170,15 @@ func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	return &instance, nil
 }
 
-func toInstance(dto dbmodel.InstanceDTO) (internal.Instance, error) {
+func (s *Instance) toInstance(dto dbmodel.InstanceDTO) (internal.Instance, error) {
 	var params internal.ProvisioningParameters
 	err := json.Unmarshal([]byte(dto.ProvisioningParameters), &params)
 	if err != nil {
-		return internal.Instance{}, err
+		return internal.Instance{}, errors.Wrap(err, "while unmarshal parameters")
+	}
+	err = s.cipher.DecryptBasicAuth(&params)
+	if err != nil {
+		return internal.Instance{}, errors.Wrap(err, "while decrypting parameters")
 	}
 	return internal.Instance{
 		InstanceID:      dto.InstanceID,
@@ -199,7 +205,7 @@ func (s *Instance) Insert(instance internal.Instance) error {
 		return dberr.AlreadyExists("instance with id %s already exist", instance.InstanceID)
 	}
 
-	dto, err := toInstanceDTO(instance)
+	dto, err := s.toInstanceDTO(instance)
 	if err != nil {
 		return err
 	}
@@ -217,7 +223,7 @@ func (s *Instance) Insert(instance internal.Instance) error {
 
 func (s *Instance) Update(instance internal.Instance) (*internal.Instance, error) {
 	sess := s.NewWriteSession()
-	dto, err := toInstanceDTO(instance)
+	dto, err := s.toInstanceDTO(instance)
 	if err != nil {
 		return nil, err
 	}
@@ -252,10 +258,14 @@ func (s *Instance) Update(instance internal.Instance) (*internal.Instance, error
 	return &instance, nil
 }
 
-func toInstanceDTO(instance internal.Instance) (dbmodel.InstanceDTO, error) {
+func (s *Instance) toInstanceDTO(instance internal.Instance) (dbmodel.InstanceDTO, error) {
+	err := s.cipher.EncryptBasicAuth(&instance.Parameters)
+	if err != nil {
+		return dbmodel.InstanceDTO{}, errors.Wrap(err, "while encrypting parameters")
+	}
 	params, err := json.Marshal(instance.Parameters)
 	if err != nil {
-		return dbmodel.InstanceDTO{}, err
+		return dbmodel.InstanceDTO{}, errors.Wrap(err, "while marshaling parameters")
 	}
 	return dbmodel.InstanceDTO{
 		InstanceID:             instance.InstanceID,
@@ -304,7 +314,7 @@ func (s *Instance) List(filter dbmodel.InstanceFilter) ([]internal.Instance, int
 	}
 	var instances []internal.Instance
 	for _, dto := range dtos {
-		instance, err := toInstance(dto)
+		instance, err := s.toInstance(dto)
 		if err != nil {
 			return []internal.Instance{}, 0, 0, err
 		}

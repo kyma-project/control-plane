@@ -44,7 +44,8 @@ func main() {
 	}
 
 	// create storage connection
-	db, _, err := storage.NewFromConfig(cfg.Database, logs.WithField("service", "storage"))
+	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
+	db, _, err := storage.NewFromConfig(cfg.Database, cipher, logs.WithField("service", "storage"))
 	fatalOnError(err)
 
 	// create broker client
