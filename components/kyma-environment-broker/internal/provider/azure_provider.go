@@ -39,10 +39,10 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
 			WorkerCidr:     "10.250.0.0/19",
-			AutoScalerMin:  3,
+			AutoScalerMin:  2,
 			AutoScalerMax:  10,
 			MaxSurge:       4,
-			MaxUnavailable: 1,
+			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "10.250.0.0/19",
