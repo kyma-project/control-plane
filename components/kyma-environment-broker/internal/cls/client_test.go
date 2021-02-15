@@ -4,9 +4,10 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/automock"
-	"github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -117,7 +118,7 @@ func TestCreateInstance(t *testing.T) {
 		t.Run(tc.summary, func(t *testing.T) {
 			smClientMock := &automock.Client{}
 			smClientMock.On("Provision", fakeBrokerID, mock.MatchedBy(tc.matcher), true).Return(&servicemanager.ProvisionResponse{}, nil)
-			sut := NewClient(config, logrus.New())
+			sut := NewClient(config, logger.NewLogDummy())
 
 			err := sut.CreateInstance(smClientMock, servicemanager.InstanceKey{
 				BrokerID:   fakeBrokerID,
@@ -128,6 +129,67 @@ func TestCreateInstance(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+func TestRemoveInstance(t *testing.T) {
+	var (
+		fakeInstance = servicemanager.InstanceKey{
+			BrokerID:   "fake-broker-id",
+			ServiceID:  "fake-service-id",
+			PlanID:     "fake-plan-id",
+			InstanceID: "fake-instance-id",
+		}
+	)
+
+	tests := []struct {
+		summary             string
+		deprovisionErr      error
+		lastInstanceOpErr   error
+		lastInstanceOpState servicemanager.LastOperationState
+		expectedErr         bool
+	}{
+		{
+			summary:        "deprovision fails",
+			deprovisionErr: errors.New("unable to connect"),
+			expectedErr:    true,
+		},
+		{
+			summary:           "last operation fails",
+			lastInstanceOpErr: errors.New("unable to connect"),
+			expectedErr:       true,
+		},
+		{
+			summary:             "last operation status failed",
+			lastInstanceOpState: servicemanager.Failed,
+			expectedErr:         true,
+		},
+		{
+			summary:             "last operation status in progress",
+			lastInstanceOpState: servicemanager.InProgress,
+			expectedErr:         true,
+		},
+		{
+			summary:             "last operation status succeeded",
+			lastInstanceOpState: servicemanager.Succeeded,
+			expectedErr:         false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.summary, func(t *testing.T) {
+			smClientMock := &automock.Client{}
+			smClientMock.On("Deprovision", fakeInstance, true).Return(&servicemanager.DeprovisionResponse{}, tc.deprovisionErr)
+			smClientMock.On("LastInstanceOperation", fakeInstance, "").Return(servicemanager.LastOperationResponse{
+				State: tc.lastInstanceOpState,
+			}, tc.lastInstanceOpErr)
+			sut := NewClient(new(Config), logger.NewLogDummy())
+			err := sut.RemoveInstance(smClientMock, fakeInstance)
+			if tc.expectedErr {
+				require.Error(t, err)
+			}
+		})
+	}
+
 }
 
 func isValidUUID(s string) bool {

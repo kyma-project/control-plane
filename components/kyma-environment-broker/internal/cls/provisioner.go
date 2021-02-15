@@ -79,11 +79,10 @@ func (p *provisioner) Provision(smClient servicemanager.Client, request *Provisi
 
 func (p *provisioner) createNewInstance(smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
 	instance := internal.CLSInstance{
-		ID:              uuid.New().String(),
-		GlobalAccountID: request.GlobalAccountID,
-		Region:          request.Region,
-		CreatedAt:       time.Now(),
-		SKRReferences:   []string{request.SKRInstanceID},
+		ID:                       uuid.New().String(),
+		GlobalAccountID:          request.GlobalAccountID,
+		CreatedAt:                time.Now(),
+		ReferencedSKRInstanceIDs: []string{request.SKRInstanceID},
 	}
 
 	err := p.storage.InsertInstance(instance)

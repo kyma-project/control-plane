@@ -45,8 +45,7 @@ func NewClient(config *Config, log logrus.FieldLogger) *Client {
 	}
 }
 
-// CreateInstance creates a CLS Instance
-// Instance creation means creation of a cluster, which must be reusable for the same instance/region/project
+// CreateInstance sends a request to Service Manager to create a CLS Instance
 func (c *Client) CreateInstance(smClient servicemanager.Client, instance servicemanager.InstanceKey) error {
 	var input servicemanager.ProvisioningInput
 	input.ID = instance.InstanceID
@@ -86,4 +85,27 @@ func createParameters(config *Config) parameters {
 	params.SAML.Sp.EntityID = config.SAML.Sp.EntityID
 	params.SAML.Sp.SignaturePrivateKey = config.SAML.Sp.SignaturePrivateKey
 	return params
+}
+
+// RemoveInstance sends a request to Service Manager to remove a CLS Instance
+func (c *Client) RemoveInstance(smClient servicemanager.Client, instance servicemanager.InstanceKey) error {
+	deprovisionResp, err := smClient.Deprovision(instance, true)
+	if err != nil {
+		return errors.Wrapf(err, "while deprovisioning a cls instance %s", instance.InstanceID)
+	}
+
+	c.log.Infof("Response from service manager while deprovisioning an instance %s: %#v", instance.InstanceID, deprovisionResp)
+
+	lastInstanceOpResp, err := smClient.LastInstanceOperation(instance, "")
+	if err != nil {
+		return errors.Wrapf(err, "while polling the status of a cls instance %s", instance.InstanceID)
+	}
+
+	c.log.Infof("Response from service manager while polling the status of a cls instance %s: %#v", instance.InstanceID, lastInstanceOpResp)
+
+	if lastInstanceOpResp.State != servicemanager.Succeeded {
+		return errors.New("deprovisioning not finished")
+	}
+
+	return nil
 }
