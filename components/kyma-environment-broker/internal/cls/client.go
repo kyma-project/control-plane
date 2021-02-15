@@ -45,8 +45,7 @@ func NewClient(config *Config, log logrus.FieldLogger) *Client {
 	}
 }
 
-// CreateInstance creates a CLS Instance
-// Instance creation means creation of a cluster, which must be reusable for the same instance/region/project
+// CreateInstance sends a request to Service Manager to create a CLS Instance
 func (c *Client) CreateInstance(smClient servicemanager.Client, instance servicemanager.InstanceKey) error {
 	var input servicemanager.ProvisioningInput
 	input.ID = instance.InstanceID
