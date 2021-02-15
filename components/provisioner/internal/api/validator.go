@@ -146,7 +146,9 @@ func (v *validator) validateComponents(kymaConfig *gqlschema.KymaConfigInput) (a
 }
 
 func (v *validator) validateOnConflict(value string) apperrors.AppError {
-	if value != "" && value != k8s.ReplaceOnConflict {
+	if value != "" &&
+		value != k8s.MergeOnConflict &&
+		value != k8s.ReplaceOnConflict {
 		return apperrors.BadRequest("error: Invalid value of conflict resolution onConflict")
 	}
 

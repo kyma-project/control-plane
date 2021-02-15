@@ -40,6 +40,14 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 		require.Error(t, err)
 
 		// given
+		mergeValue := k8s.MergeOnConflict
+		testConfig.OnConflict = util.StringPtr(mergeValue)
+		// when
+		err = validator.ValidateProvisioningInput(config)
+		// then
+		require.NoError(t, err)
+
+		// given
 		for _, component := range testConfig.Components {
 			component.OnConflict = util.StringPtr(dummyValue)
 		}
