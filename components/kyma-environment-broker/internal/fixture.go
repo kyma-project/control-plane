@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -20,6 +22,13 @@ const (
 	provisionerOperationId = "e04de524-53b3-4890-b05a-296be393e4ba"
 	kymaVersion            = "1.19.0"
 )
+
+type SimpleInputCreator struct {
+	Overrides         map[string][]*gqlschema.ConfigEntryInput
+	Labels            map[string]string
+	EnabledComponents []string
+	ShootName         *string
+}
 
 func FixServiceManagerEntryDTO() *ServiceManagerEntryDTO {
 	return &ServiceManagerEntryDTO{
@@ -128,6 +137,15 @@ func FixOperation(id, instanceId string) Operation {
 	}
 }
 
+func FixInputCreator() *SimpleInputCreator {
+	return &SimpleInputCreator{
+		Overrides:         make(map[string][]*gqlschema.ConfigEntryInput, 0),
+		Labels:            make(map[string]string),
+		EnabledComponents: []string{},
+		ShootName:         pointer.StringPtr("ShootName"),
+	}
+}
+
 func FixProvisioningOperation(operationId, instanceId string) ProvisioningOperation {
 	return ProvisioningOperation{
 		Operation: FixOperation(operationId, instanceId),
@@ -135,7 +153,7 @@ func FixProvisioningOperation(operationId, instanceId string) ProvisioningOperat
 			Version: kymaVersion,
 			Origin:  Defaults,
 		},
-		InputCreator:    nil,
+		InputCreator:    FixInputCreator(),
 		SMClientFactory: nil,
 	}
 }
@@ -145,6 +163,23 @@ func FixDeprovisioningOperation(operationId, instanceId string) DeprovisioningOp
 		Operation:       FixOperation(operationId, instanceId),
 		SMClientFactory: nil,
 		Temporary:       false,
+	}
+}
+
+func FixRuntime(id string) orchestration.Runtime {
+	var (
+		instanceId   = fmt.Sprintf("Instance-%s", id)
+		subAccountId = fmt.Sprintf("SA-%s", id)
+	)
+
+	return orchestration.Runtime{
+		InstanceID:             instanceId,
+		RuntimeID:              id,
+		GlobalAccountID:        globalAccountId,
+		SubAccountID:           subAccountId,
+		ShootName:              "ShootName",
+		MaintenanceWindowBegin: time.Now().Truncate(time.Millisecond).Add(time.Hour),
+		MaintenanceWindowEnd:   time.Now().Truncate(time.Millisecond).Add(time.Minute).Add(time.Hour),
 	}
 }
 
@@ -160,7 +195,7 @@ func FixUpgradeKymaOperation(operationId, instanceId string) UpgradeKymaOperatio
 	return UpgradeKymaOperation{
 		Operation:        FixOperation(operationId, instanceId),
 		RuntimeOperation: FixRuntimeOperation(operationId),
-		InputCreator:     nil,
+		InputCreator:     FixInputCreator(),
 		RuntimeVersion: RuntimeVersionData{
 			Version: kymaVersion,
 			Origin:  Defaults,
@@ -178,4 +213,45 @@ func FixOrchestration() Orchestration {
 		UpdatedAt:       time.Time{},
 		Parameters:      orchestration.Parameters{},
 	}
+}
+
+// SimpleInputCreator implements ProvisionerInputCreator interface
+func (c *SimpleInputCreator) SetProvisioningParameters(params ProvisioningParameters) ProvisionerInputCreator {
+	return c
+}
+
+func (c *SimpleInputCreator) SetShootName(name string) ProvisionerInputCreator {
+	c.ShootName = &name
+	return c
+}
+
+func (c *SimpleInputCreator) SetLabel(key, val string) ProvisionerInputCreator {
+	c.Labels[key] = val
+	return c
+}
+
+func (c *SimpleInputCreator) SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator {
+	return c
+}
+
+func (c *SimpleInputCreator) AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator {
+	c.Overrides[component] = append(c.Overrides[component], overrides...)
+	return c
+}
+
+func (c *SimpleInputCreator) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator {
+	return c
+}
+
+func (c *SimpleInputCreator) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntimeInput, error) {
+	return gqlschema.ProvisionRuntimeInput{}, nil
+}
+
+func (c *SimpleInputCreator) CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInput, error) {
+	return gqlschema.UpgradeRuntimeInput{}, nil
+}
+
+func (c *SimpleInputCreator) EnableOptionalComponent(name string) ProvisionerInputCreator {
+	c.EnabledComponents = append(c.EnabledComponents, name)
+	return c
 }
