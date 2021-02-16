@@ -73,8 +73,6 @@ func (s *MockAvsServer) token(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(response)
 	assert.NoError(s.T, err)
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func (s *MockAvsServer) hasAccess(token string) bool {

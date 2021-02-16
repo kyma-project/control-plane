@@ -123,24 +123,20 @@ func (del *Delegator) ResetStatus(logger logrus.FieldLogger, operation internal.
 }
 
 // RefreshStatus ensures that operation AVS lifecycle data is fetched from Avs API
-// in case it hasn't been (properly) loaded from db.
 func (del *Delegator) RefreshStatus(logger logrus.FieldLogger, lifecycleData *internal.AvsLifecycleData, evalAssistant EvalAssistant) string {
 	evalId := evalAssistant.GetEvaluationId(*lifecycleData)
 	currentStatus := evalAssistant.GetEvalStatus(*lifecycleData)
 
-	// obtain status from avs if invalid or not loaded, fallback to active on error
-	if !ValidStatus(currentStatus) {
-		logger.Infof("making avs calls to get evaluation data")
-		eval, err := del.client.GetEvaluation(evalId)
-		if err != nil || eval == nil {
-			logger.Errorf("cannot obtain evaluation data: %s", err)
-			currentStatus = StatusActive
-		} else {
-			currentStatus = eval.Status
-		}
-
-		evalAssistant.SetEvalStatus(lifecycleData, currentStatus)
+	// obtain status from avs
+	logger.Infof("making avs calls to get evaluation data")
+	eval, err := del.client.GetEvaluation(evalId)
+	if err != nil || eval == nil {
+		logger.Errorf("cannot obtain evaluation data: %s", err)
+	} else {
+		currentStatus = eval.Status
 	}
+
+	evalAssistant.SetEvalStatus(lifecycleData, currentStatus)
 
 	return currentStatus
 }
