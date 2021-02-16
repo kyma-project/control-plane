@@ -20,6 +20,7 @@ require (
 
 replace (
 	github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
+	golang.org/x/text => golang.org/x/text v0.3.3
 
 	k8s.io/apimachinery => k8s.io/apimachinery v0.18.10
 )
