@@ -86,3 +86,7 @@ func createParameters(config *Config) parameters {
 	params.SAML.Sp.SignaturePrivateKey = config.SAML.Sp.SignaturePrivateKey
 	return params
 }
+
+func (c *Client) DeleteInstance(smClient servicemanager.Client, instance servicemanager.InstanceKey) error {
+	smClient.Deprovision()
+}

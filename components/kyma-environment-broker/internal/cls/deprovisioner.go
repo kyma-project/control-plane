@@ -16,8 +16,10 @@ type DeprovisionerStorage interface {
 }
 
 type deprovisioner struct {
-	storage DeprovisionerStorage
-	log     logrus.FieldLogger
+	config          *Config
+	storage         DeprovisionerStorage
+	log             logrus.FieldLogger
+	smClientFactory internal.SMClientFactory
 }
 
 type DeprovisionRequest struct {
