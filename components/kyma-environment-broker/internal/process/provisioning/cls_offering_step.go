@@ -45,13 +45,20 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 	}
 
 	skrRegion := operation.ProvisioningParameters.Parameters.Region
-	smCli, _, err := cls.ServiceManagerClient(operation.SMClientFactory, s.config.ServiceManager, skrRegion)
+	smRegion, err := cls.DetermineServiceManagerRegion(skrRegion)
 	if err != nil {
-		return s.handleError(operation, err, "unable to create Service Manager client", log)
+		return s.handleError(operation, err, err.Error(), log)
 	}
 
+	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, smRegion)
+	if err != nil {
+		return s.handleError(operation, err, err.Error(), log)
+	}
+
+	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
+
 	// try to find the offering
-	offerings, err := smCli.ListOfferingsByName(ClsOfferingName)
+	offerings, err := smClient.ListOfferingsByName(ClsOfferingName)
 	if err != nil {
 		return s.handleError(operation, err, "unable to get Service Manager offerings", log)
 	}
@@ -64,7 +71,7 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 	log.Infof("Found offering: catalogID=%s brokerID=%s", info.ServiceID, info.BrokerID)
 
 	// try to find the plan
-	plans, err := smCli.ListPlansByName(ClsPlanName, offerings.ServiceOfferings[0].ID)
+	plans, err := smClient.ListPlansByName(ClsPlanName, offerings.ServiceOfferings[0].ID)
 	if err != nil {
 		return s.handleError(operation, err, "unable to get Service Manager plan", log)
 	}
