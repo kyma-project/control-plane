@@ -131,7 +131,7 @@ func (del *Delegator) RefreshStatus(logger logrus.FieldLogger, lifecycleData *in
 	logger.Infof("making avs calls to get evaluation data")
 	eval, err := del.client.GetEvaluation(evalId)
 	if err != nil || eval == nil {
-		logger.Errorf("cannot obtain evaluation data in RefreshStatus: %s", err)
+		logger.Errorf("cannot obtain evaluation data on RefreshStatus: %s", err)
 	} else {
 		currentStatus = eval.Status
 	}
