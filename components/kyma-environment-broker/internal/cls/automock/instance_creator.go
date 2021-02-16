@@ -12,13 +12,13 @@ type InstanceCreator struct {
 	mock.Mock
 }
 
-// CreateInstance provides a mock function with given fields: smClient, brokerID, serviceID, planID, instanceID
-func (_m *InstanceCreator) CreateInstance(smClient servicemanager.Client, brokerID string, serviceID string, planID string, instanceID string) error {
-	ret := _m.Called(smClient, brokerID, serviceID, planID, instanceID)
+// CreateInstance provides a mock function with given fields: smClient, instance
+func (_m *InstanceCreator) CreateInstance(smClient servicemanager.Client, instance servicemanager.InstanceKey) error {
+	ret := _m.Called(smClient, instance)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(servicemanager.Client, string, string, string, string) error); ok {
-		r0 = rf(smClient, brokerID, serviceID, planID, instanceID)
+	if rf, ok := ret.Get(0).(func(servicemanager.Client, servicemanager.InstanceKey) error); ok {
+		r0 = rf(smClient, instance)
 	} else {
 		r0 = ret.Error(0)
 	}

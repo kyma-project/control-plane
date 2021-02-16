@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	smautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/automock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -28,8 +29,11 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 
 	smClientMock := &smautomock.Client{}
 	creatorMock := &automock.InstanceCreator{}
-	creatorMock.On("CreateInstance", smClientMock, fakeBrokerID, fakeServiceID, fakePlanID, mock.MatchedBy(func(instanceID string) bool {
-		return isValidUUID(instanceID)
+	creatorMock.On("CreateInstance", smClientMock, mock.MatchedBy(func(instance servicemanager.InstanceKey) bool {
+		return assert.Equal(t, fakeBrokerID, instance.BrokerID) &&
+			assert.Equal(t, fakeServiceID, instance.ServiceID) &&
+			assert.Equal(t, fakePlanID, instance.PlanID) &&
+			isValidUUID(instance.InstanceID)
 	})).Return(nil)
 
 	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
@@ -127,7 +131,7 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 
 	smClientMock := &smautomock.Client{}
 	creatorMock := &automock.InstanceCreator{}
-	creatorMock.On("CreateInstance", smClientMock, fakeBrokerID, fakeServiceID, fakePlanID, mock.Anything).Return(nil)
+	creatorMock.On("CreateInstance", smClientMock, mock.Anything).Return(nil)
 
 	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
 	sut.ProvisionIfNoneExists(smClientMock, &ProvisionRequest{

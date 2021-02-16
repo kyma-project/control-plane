@@ -119,7 +119,12 @@ func TestCreateInstance(t *testing.T) {
 			smClientMock.On("Provision", fakeBrokerID, mock.MatchedBy(tc.matcher), true).Return(&servicemanager.ProvisionResponse{}, nil)
 			sut := NewClient(config, logrus.New())
 
-			err := sut.CreateInstance(smClientMock, fakeBrokerID, fakeServiceID, fakePlanID, fakeInstanceID)
+			err := sut.CreateInstance(smClientMock, servicemanager.InstanceKey{
+				BrokerID:   fakeBrokerID,
+				ServiceID:  fakeServiceID,
+				PlanID:     fakePlanID,
+				InstanceID: fakeInstanceID,
+			})
 			require.NoError(t, err)
 		})
 	}

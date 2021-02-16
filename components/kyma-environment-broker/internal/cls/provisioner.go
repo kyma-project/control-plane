@@ -20,7 +20,7 @@ type InstanceStorage interface {
 
 //go:generate mockery --name=InstanceCreator --output=automock --outpkg=automock --case=underscore
 type InstanceCreator interface {
-	CreateInstance(smClient servicemanager.Client, brokerID, serviceID, planID, instanceID string) error
+	CreateInstance(smClient servicemanager.Client, instance servicemanager.InstanceKey) error
 }
 
 type provisioner struct {
@@ -86,7 +86,12 @@ func (c *provisioner) createNewInstance(smClient servicemanager.Client, request 
 		return nil, errors.Wrapf(err, "while inserting a cls instance with ID %s for global account: %s", instance.ID, instance.GlobalAccountID)
 	}
 
-	err = c.creator.CreateInstance(smClient, request.BrokerID, request.ServiceID, request.PlanID, instance.ID)
+	err = c.creator.CreateInstance(smClient, servicemanager.InstanceKey{
+		BrokerID:   request.BrokerID,
+		ServiceID:  request.ServiceID,
+		PlanID:     request.PlanID,
+		InstanceID: instance.ID,
+	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating instance name=%s", request.GlobalAccountID)
 	}
