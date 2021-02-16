@@ -43,7 +43,7 @@ func (s *clsProvisioningStep) Run(operation internal.ProvisioningOperation, log 
 	}
 
 	skrRegion := operation.ProvisioningParameters.Parameters.Region
-	smClient, err := cls.ServiceManagerClient(operation.SMClientFactory, s.config.ServiceManager, skrRegion)
+	smClient, clsRegion, err := cls.ServiceManagerClient(operation.SMClientFactory, s.config.ServiceManager, skrRegion)
 	if smClient == nil {
 		return operation, time.Second, errors.Wrapf(err, "service manager client could not be instantiated")
 	}
@@ -52,6 +52,7 @@ func (s *clsProvisioningStep) Run(operation internal.ProvisioningOperation, log 
 	skrInstanceID := operation.InstanceID
 	result, err := s.instanceProvider.ProvisionIfNoneExists(smClient, &cls.ProvisionRequest{
 		GlobalAccountID: globalAccountID,
+		Region:          clsRegion,
 		SKRInstanceID:   skrInstanceID,
 		BrokerID:        operation.Cls.Instance.BrokerID,
 		ServiceID:       operation.Cls.Instance.ServiceID,

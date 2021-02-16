@@ -45,7 +45,7 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 	}
 
 	skrRegion := operation.ProvisioningParameters.Parameters.Region
-	smCli, err := cls.ServiceManagerClient(operation.SMClientFactory, s.config.ServiceManager, skrRegion)
+	smCli, _, err := cls.ServiceManagerClient(operation.SMClientFactory, s.config.ServiceManager, skrRegion)
 	if err != nil {
 		return s.handleError(operation, err, "unable to create Service Manager client", log)
 	}

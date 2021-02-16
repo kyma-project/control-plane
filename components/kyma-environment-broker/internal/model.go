@@ -30,8 +30,10 @@ type ProvisionerInputCreator interface {
 type CLSInstance struct {
 	ID              string
 	GlobalAccountID string
-	CreatedAt       time.Time
-	SKRReferences   []string
+	// Currently, a CLS instance is identified by GlobalAccountID only. Region is stored for future use.
+	Region        string
+	CreatedAt     time.Time
+	SKRReferences []string
 }
 type LMSTenant struct {
 	ID        string

@@ -39,6 +39,7 @@ func NewProvisioner(storage InstanceStorage, creator InstanceCreator, log logrus
 
 type ProvisionRequest struct {
 	GlobalAccountID string
+	Region          string
 	SKRInstanceID   string
 	ServiceID       string
 	PlanID          string
@@ -75,6 +76,7 @@ func (c *provisioner) createNewInstance(smClient servicemanager.Client, request 
 	instance := internal.CLSInstance{
 		ID:              uuid.New().String(),
 		GlobalAccountID: request.GlobalAccountID,
+		Region:          request.Region,
 		CreatedAt:       time.Now(),
 		SKRReferences:   []string{request.SKRInstanceID},
 	}

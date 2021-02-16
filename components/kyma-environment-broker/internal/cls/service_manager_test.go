@@ -12,6 +12,7 @@ func TestServiceManagerClient(t *testing.T) {
 		summary                    string
 		givenServiceManagerRegions []string
 		givenSKRRegion             *string
+		expectedClsRegion          string
 		expectedError              string
 	}{
 		{
@@ -30,11 +31,13 @@ func TestServiceManagerClient(t *testing.T) {
 			summary:                    "happy path",
 			givenServiceManagerRegions: []string{"eu", "us"},
 			givenSKRRegion:             stringPtr("westeurope"),
+			expectedClsRegion:          "eu",
 		},
 		{
 			summary:                    "happy path (default service manager region)",
 			givenServiceManagerRegions: []string{"eu", "us"},
 			givenSKRRegion:             nil,
+			expectedClsRegion:          "eu",
 		},
 	}
 
@@ -47,7 +50,7 @@ func TestServiceManagerClient(t *testing.T) {
 				config.Credentials = append(config.Credentials, &ServiceManagerCredentials{Region: Region(r)})
 			}
 
-			client, err := ServiceManagerClient(factory, config, tc.givenSKRRegion)
+			client, clsRegion, err := ServiceManagerClient(factory, config, tc.givenSKRRegion)
 
 			if len(tc.expectedError) > 0 {
 				require.EqualError(t, err, tc.expectedError)
@@ -55,6 +58,7 @@ func TestServiceManagerClient(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, client)
+				require.Equal(t, tc.expectedClsRegion, clsRegion)
 			}
 		})
 	}
