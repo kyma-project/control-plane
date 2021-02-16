@@ -4,7 +4,7 @@ metadata:
   name: {{ template "fullname" . }}
 spec:
   gateways:
-  - {{ .Values.global.istio.gateway.name }}.{{ .Values.global.istio.gateway.namespace }}.svc.cluster.local
+  - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}
   hosts:
   - {{ .Values.host }}.{{ .Values.global.ingress.domainName }}
   http:
@@ -14,7 +14,8 @@ spec:
       - Content-Type
       - X-Broker-API-Version
       allowMethods: ["GET", "PUT", "DELETE"]
-      allowOrigin: ["*"]
+      allowOrigins:
+      - regex: ".*"
     match:
     - uri:
         regex: /oauth/([^/]+/)?v2/.*
@@ -28,7 +29,8 @@ spec:
       - Authorization
       - Content-Type
       allowMethods: ["GET"]
-      allowOrigin: ["*"]
+      allowOrigins:
+      - regex: ".*"
     match:
     - uri:
         regex: /info/runtimes
@@ -42,43 +44,46 @@ spec:
       - Authorization
       - Content-Type
       allowMethods: ["POST"]
-      allowOrigin: ["*"]
+      allowOrigins:
+      - regex: ".*"
     match:
     - uri:
         regex: /upgrade/.*
     route:
     - destination:
-        host: {{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        host: {{ .Values.global.oathkeeper.host }}
         port:
-          number: {{ .Values.service.port }}
+          number: {{ .Values.global.oathkeeper.port }}
   - corsPolicy:
       allowHeaders:
       - Authorization
       - Content-Type
       allowMethods: ["GET", "PUT"]
-      allowOrigin: ["*"]
+      allowOrigins:
+      - regex: ".*"
     match:
     - uri:
         regex: /orchestrations.*
     route:
     - destination:
-        host: {{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        host: {{ .Values.global.oathkeeper.host }}
         port:
-          number: {{ .Values.service.port }}
+          number: {{ .Values.global.oathkeeper.port }}
   - corsPolicy:
       allowHeaders:
         - Authorization
         - Content-Type
       allowMethods: ["GET"]
-      allowOrigin: ["*"]
+      allowOrigins:
+      - regex: ".*"
     match:
       - uri:
           regex: /runtimes
     route:
       - destination:
-          host: {{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+          host: {{ .Values.global.oathkeeper.host }}
           port:
-            number: {{ .Values.service.port }}
+            number: {{ .Values.global.oathkeeper.port }}
   {{- if .Values.swagger.virtualService.enabled }}
   # swagger exposed without authorization on root endpoint also needs access to static resources placed under /swagger folder
   - corsPolicy:
@@ -86,7 +91,8 @@ spec:
         - Authorization
         - Content-Type
       allowMethods: ["GET"]
-      allowOrigin: ["*"]
+      allowOrigins:
+      - regex: ".*"
     match:
       - uri:
           exact: /
@@ -100,7 +106,8 @@ spec:
         - Authorization
         - Content-Type
       allowMethods: ["GET"]
-      allowOrigin: ["*"]
+      allowOrigins:
+      - regex: ".*"
     match:
       - uri:
           regex: /swagger.*
@@ -114,7 +121,8 @@ spec:
         - Authorization
         - Content-Type
       allowMethods: ["GET"]
-      allowOrigin: ["*"]
+      allowOrigins:
+      - regex: ".*"
     match:
       - uri:
           regex: /schema.*

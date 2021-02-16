@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -350,8 +352,8 @@ func TestPostgres(t *testing.T) {
 			require.Equal(t, 2, count)
 			require.Equal(t, 3, totalCount)
 
-			assert.Equal(t, fixInstances[0].InstanceID, out[0].InstanceID)
-			assert.Equal(t, fixInstances[1].InstanceID, out[1].InstanceID)
+			assertInstanceByIgnoreTime(t, fixInstances[0], out[0])
+			assertInstanceByIgnoreTime(t, fixInstances[1], out[1])
 
 			// when
 			out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{PageSize: 2, Page: 2})
@@ -572,6 +574,12 @@ func TestPostgres(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, 2, opStats[orchestration.InProgress])
+
+			// when
+			opList, err := svc.ListProvisioningOperationsByInstanceID(fixInstanceId)
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, 3, len(opList))
 		})
 		t.Run("Deprovisioning", func(t *testing.T) {
 			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
@@ -629,6 +637,22 @@ func TestPostgres(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, "new modified description", gotOperation2.Description)
+
+			// given
+			err = svc.InsertDeprovisioningOperation(internal.DeprovisioningOperation{
+				Operation: internal.Operation{
+					ID:         "other-op-id",
+					InstanceID: fixInstanceId,
+					CreatedAt:  time.Now().Add(1 * time.Hour),
+					UpdatedAt:  time.Now().Add(1 * time.Hour),
+				},
+			})
+			require.NoError(t, err)
+			// when
+			opList, err := svc.ListDeprovisioningOperationsByInstanceID(fixInstanceId)
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, 2, len(opList))
 
 		})
 		t.Run("Upgrade", func(t *testing.T) {
@@ -1121,7 +1145,23 @@ func fixInstance(testData instanceData) *internal.Instance {
 		ServicePlanName: testData.val,
 		DashboardURL:    fmt.Sprintf("https://console.%s.kyma.local", testData.val),
 		ProviderRegion:  testData.val,
-		Parameters:      internal.ProvisioningParameters{},
+		Parameters: internal.ProvisioningParameters{
+			ErsContext: internal.ERSContext{
+				SubAccountID:    suid,
+				GlobalAccountID: gaid,
+				Active:          ptr.Bool(true),
+				ServiceManager: &internal.ServiceManagerEntryDTO{
+					Credentials: internal.ServiceManagerCredentials{
+						BasicAuth: internal.ServiceManagerBasicAuth{
+							Username: "u",
+							Password: "p",
+						},
+					},
+					URL: "http://url",
+				},
+			},
+			PlatformRegion: "eu",
+		},
 	}
 }
 

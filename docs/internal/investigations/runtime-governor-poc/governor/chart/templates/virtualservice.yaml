@@ -26,8 +26,8 @@ spec:
               port:
                 number: {{ .Values.service.port }}
         corsPolicy:
-          allowOrigin:
-            - "*"
+          allowOrigins:
+            - regex: ".*"
           allowHeaders:
             - "authorization"
             - "content-type"

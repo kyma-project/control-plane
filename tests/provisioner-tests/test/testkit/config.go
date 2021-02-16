@@ -3,6 +3,7 @@ package testkit
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
@@ -20,6 +21,16 @@ type TestConfig struct {
 	UpgradeKubernetesVersion string `envconfig:"default=1.18.5"`
 
 	QueryLogging bool `envconfig:"default=false"`
+
+	Timeouts Timeouts
+}
+
+type Timeouts struct {
+	Provisioning   time.Duration `envconfig:"default=4h"`
+	Upgrade        time.Duration `envconfig:"default=4h"`
+	UpgradeShoot   time.Duration `envconfig:"default=4h"`
+	Deprovisioning time.Duration `envconfig:"default=4h"`
+	Hibernation    time.Duration `envconfig:"default=30m"`
 }
 
 type KymaConfig struct {

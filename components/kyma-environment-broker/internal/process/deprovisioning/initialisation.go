@@ -97,8 +97,6 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 		return operation, time.Minute, nil
 	}
 	operation.SMClientFactory = s.serviceManagerClientFactory
-	operation.XSUAA = op.XSUAA
-	operation.Ems = op.Ems
 
 	setAvsIds(&operation, op, log)
 

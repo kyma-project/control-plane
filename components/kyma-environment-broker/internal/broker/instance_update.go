@@ -6,7 +6,9 @@ import (
 	"errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 )
@@ -21,12 +23,15 @@ type UpdateEndpoint struct {
 	instanceStorage      storage.Instances
 	contextUpdateHandler ContextUpdateHandler
 	processingEnabled    bool
+
+	operationStorage storage.Operations
 }
 
-func NewUpdate(instanceStorage storage.Instances, ctxUpdateHandler ContextUpdateHandler, processingEnabled bool, log logrus.FieldLogger) *UpdateEndpoint {
+func NewUpdate(instanceStorage storage.Instances, operationStorage storage.Operations, ctxUpdateHandler ContextUpdateHandler, processingEnabled bool, log logrus.FieldLogger) *UpdateEndpoint {
 	return &UpdateEndpoint{
 		log:                  log.WithField("service", "UpdateEndpoint"),
 		instanceStorage:      instanceStorage,
+		operationStorage:     operationStorage,
 		contextUpdateHandler: ctxUpdateHandler,
 		processingEnabled:    processingEnabled,
 	}
@@ -44,7 +49,7 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 		logger.Errorf("unable to get instance: %s", err.Error())
 		return domain.UpdateServiceSpec{}, errors.New("unable to get instance")
 	}
-	logger.Infof("Plan ID/Name: %s/%s", instance.ServicePlanID, PlanIDsMapping[instance.ServicePlanID])
+	logger.Infof("Plan ID/Name: %s/%s", instance.ServicePlanID, PlanNamesMapping[instance.ServicePlanID])
 
 	var ersContext internal.ERSContext
 	err = json.Unmarshal(details.RawContext, &ersContext)
@@ -52,7 +57,7 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 		logger.Errorf("unable to decode context: %s", err.Error())
 		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal context")
 	}
-	logger.Infof("Global account ID: %s active: %v", instance.GlobalAccountID, ersContext.Active)
+	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
 
 	var contextData map[string]interface{}
 	err = json.Unmarshal(details.RawContext, &contextData)
@@ -66,6 +71,27 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 	}
 
 	if b.processingEnabled {
+		// todo: remove the code below when we are sure the ERSContext contains required values.
+		// This code is done because the PATCH request contains only some of fields and that requests made the ERS context empty in the past.
+		provOperation, err := b.operationStorage.GetProvisioningOperationByInstanceID(instanceID)
+		if err != nil {
+			logger.Errorf("processing context updated failed: %s", err.Error())
+			return domain.UpdateServiceSpec{
+				IsAsync:       false,
+				DashboardURL:  instance.DashboardURL,
+				OperationData: "",
+			}, errors.New("unable to process the update")
+		}
+		instance.Parameters.ErsContext = provOperation.ProvisioningParameters.ErsContext
+		instance.Parameters.ErsContext.Active, err = b.exctractActiveValue(instance.InstanceID, *provOperation)
+		if err != nil {
+			return domain.UpdateServiceSpec{
+				IsAsync:       false,
+				DashboardURL:  instance.DashboardURL,
+				OperationData: "",
+			}, errors.New("unable to process the update")
+		}
+
 		err = b.contextUpdateHandler.Handle(instance, ersContext)
 		if err != nil {
 			logger.Errorf("processing context updated failed: %s", err.Error())
@@ -76,8 +102,11 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 			}, errors.New("unable to process the update")
 		}
 
-		// save the instance
-		instance.Parameters.ErsContext = ersContext
+		//  copy the Active flag if set
+		if ersContext.Active != nil {
+			instance.Parameters.ErsContext.Active = ersContext.Active
+		}
+
 		_, err = b.instanceStorage.Update(*instance)
 		if err != nil {
 			logger.Errorf("processing context updated failed: %s", err.Error())
@@ -94,4 +123,18 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 		DashboardURL:  instance.DashboardURL,
 		OperationData: "",
 	}, nil
+}
+
+func (b *UpdateEndpoint) exctractActiveValue(id string, provisioning internal.ProvisioningOperation) (*bool, error) {
+	deprovisioning, dErr := b.operationStorage.GetDeprovisioningOperationByInstanceID(id)
+	if dErr != nil && !dberr.IsNotFound(dErr) {
+		b.log.Errorf("Unable to get deprovisioning operation for the instance %s to check the active flag: %s", id, dErr.Error())
+		return nil, dErr
+	}
+	// there was no any deprovisioning in the past (any suspension)
+	if deprovisioning == nil {
+		return ptr.Bool(true), nil
+	}
+
+	return ptr.Bool(deprovisioning.CreatedAt.Before(provisioning.CreatedAt)), nil
 }

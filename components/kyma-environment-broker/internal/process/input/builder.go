@@ -86,13 +86,9 @@ func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	}
 }
 
-func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error) {
-	if !f.IsPlanSupport(pp.PlanID) {
-		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
-	}
-
+func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, parametersProvider *internal.TrialCloudProvider) (HyperscalerInputProvider, error) {
 	var provider HyperscalerInputProvider
-	switch pp.PlanID {
+	switch planID {
 	case broker.GCPPlanID:
 		provider = &cloudProvider.GcpInput{}
 	case broker.AzurePlanID:
@@ -100,10 +96,22 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 	case broker.AzureLitePlanID:
 		provider = &cloudProvider.AzureLiteInput{}
 	case broker.TrialPlanID:
-		provider = f.forTrialPlan(pp.Parameters.Provider)
+		provider = f.forTrialPlan(parametersProvider)
 		// insert cases for other providers like AWS or GCP
 	default:
-		return nil, errors.Errorf("case with plan %s is not supported", pp.PlanID)
+		return nil, errors.Errorf("case with plan %s is not supported", planID)
+	}
+	return provider, nil
+}
+
+func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error) {
+	if !f.IsPlanSupport(pp.PlanID) {
+		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
+	}
+
+	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.Parameters.Provider)
+	if err != nil {
+		return nil, errors.Wrap(err, "during createing provision input")
 	}
 
 	initInput, err := f.initProvisionRuntimeInput(provider, version)
@@ -204,7 +212,12 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}
 
-	upgradeKymaInput, err := f.initUpgradeRuntimeInput(version)
+	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.Parameters.Provider)
+	if err != nil {
+		return nil, errors.Wrap(err, "during createing provision input")
+	}
+
+	upgradeKymaInput, err := f.initUpgradeRuntimeInput(version, provider)
 	if err != nil {
 		return nil, errors.Wrap(err, "while initializing UpgradeRuntimeInput")
 	}
@@ -227,11 +240,12 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 	}, nil
 }
 
-func (f *InputBuilderFactory) initUpgradeRuntimeInput(version internal.RuntimeVersionData) (gqlschema.UpgradeRuntimeInput, error) {
+func (f *InputBuilderFactory) initUpgradeRuntimeInput(version internal.RuntimeVersionData, provider HyperscalerInputProvider) (gqlschema.UpgradeRuntimeInput, error) {
 	if version.Version == "" {
 		return gqlschema.UpgradeRuntimeInput{}, errors.New("desired runtime version cannot be empty")
 	}
 
+	kymaProfile := provider.Profile()
 	components, err := f.provideComponentList(version)
 	if err != nil {
 		return gqlschema.UpgradeRuntimeInput{}, err
@@ -239,6 +253,7 @@ func (f *InputBuilderFactory) initUpgradeRuntimeInput(version internal.RuntimeVe
 
 	return gqlschema.UpgradeRuntimeInput{
 		KymaConfig: &gqlschema.KymaConfigInput{
+			Profile:    &kymaProfile,
 			Version:    version.Version,
 			Components: components.DeepCopy(),
 		},

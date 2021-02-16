@@ -53,11 +53,18 @@ func (s *operations) GetProvisioningOperationByID(operationID string) (*internal
 }
 
 func (s *operations) GetProvisioningOperationByInstanceID(instanceID string) (*internal.ProvisioningOperation, error) {
+	var result []internal.ProvisioningOperation
+
 	for _, op := range s.provisioningOperations {
 		if op.InstanceID == instanceID {
-			return &op, nil
+			result = append(result, op)
 		}
 	}
+	if len(result) != 0 {
+		s.sortProvisioningByCreatedAtDesc(result)
+		return &result[0], nil
+	}
+
 	return nil, dberr.NotFound("instance provisioning operation with instanceID %s not found", instanceID)
 }
 
@@ -76,6 +83,22 @@ func (s *operations) UpdateProvisioningOperation(op internal.ProvisioningOperati
 	s.provisioningOperations[op.ID] = op
 
 	return &op, nil
+}
+
+func (s *operations) ListProvisioningOperationsByInstanceID(instanceID string) ([]internal.ProvisioningOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	operations := make([]internal.ProvisioningOperation, 0)
+	for _, op := range s.provisioningOperations {
+		if op.InstanceID == instanceID {
+			operations = append(operations, op)
+		}
+	}
+
+	s.sortProvisioningByCreatedAtDesc(operations)
+
+	return operations, nil
 }
 
 func (s *operations) InsertDeprovisioningOperation(operation internal.DeprovisioningOperation) error {
@@ -100,10 +123,16 @@ func (s *operations) GetDeprovisioningOperationByID(operationID string) (*intern
 }
 
 func (s *operations) GetDeprovisioningOperationByInstanceID(instanceID string) (*internal.DeprovisioningOperation, error) {
+	var result []internal.DeprovisioningOperation
+
 	for _, op := range s.deprovisioningOperations {
 		if op.InstanceID == instanceID {
-			return &op, nil
+			result = append(result, op)
 		}
+	}
+	if len(result) != 0 {
+		s.sortDeprovisioningByCreatedAtDesc(result)
+		return &result[0], nil
 	}
 
 	return nil, dberr.NotFound("instance deprovisioning operation with instanceID %s not found", instanceID)
@@ -124,6 +153,22 @@ func (s *operations) UpdateDeprovisioningOperation(op internal.DeprovisioningOpe
 	s.deprovisioningOperations[op.ID] = op
 
 	return &op, nil
+}
+
+func (s *operations) ListDeprovisioningOperationsByInstanceID(instanceID string) ([]internal.DeprovisioningOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	operations := make([]internal.DeprovisioningOperation, 0)
+	for _, op := range s.deprovisioningOperations {
+		if op.InstanceID == instanceID {
+			operations = append(operations, op)
+		}
+	}
+
+	s.sortDeprovisioningByCreatedAtDesc(operations)
+
+	return operations, nil
 }
 
 func (s *operations) InsertUpgradeKymaOperation(operation internal.UpgradeKymaOperation) error {
@@ -406,6 +451,18 @@ func (s *operations) ListUpgradeKymaOperationsByInstanceID(instanceID string) ([
 func (s *operations) sortUpgradeByCreatedAt(operations []internal.UpgradeKymaOperation) {
 	sort.Slice(operations, func(i, j int) bool {
 		return operations[i].CreatedAt.Before(operations[j].CreatedAt)
+	})
+}
+
+func (s *operations) sortProvisioningByCreatedAtDesc(operations []internal.ProvisioningOperation) {
+	sort.Slice(operations, func(i, j int) bool {
+		return operations[i].CreatedAt.After(operations[j].CreatedAt)
+	})
+}
+
+func (s *operations) sortDeprovisioningByCreatedAtDesc(operations []internal.DeprovisioningOperation) {
+	sort.Slice(operations, func(i, j int) bool {
+		return operations[i].CreatedAt.After(operations[j].CreatedAt)
 	})
 }
 

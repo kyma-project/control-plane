@@ -40,6 +40,7 @@ type ProvisionEndpoint struct {
 	queue                Queue
 	builderFactory       PlanValidator
 	enabledPlanIDs       map[string]struct{}
+	onlySingleTrialPerGA bool
 	plansSchemaValidator PlansSchemaValidator
 	kymaVerOnDemand      bool
 
@@ -72,6 +73,7 @@ func NewProvision(cfg Config,
 		builderFactory:       builderFactory,
 		log:                  log.WithField("service", "ProvisionEndpoint"),
 		enabledPlanIDs:       enabledPlanIDs,
+		onlySingleTrialPerGA: cfg.OnlySingleTrialPerGA,
 		kymaVerOnDemand:      kvod,
 		shootDomain:          gardenerConfig.ShootDomain,
 		shootProject:         gardenerConfig.Project,
@@ -208,7 +210,7 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 		return ersContext, parameters, errors.Errorf("the plan ID not known, planID: %s", details.PlanID)
 	}
 
-	if IsTrialPlan(details.PlanID) {
+	if IsTrialPlan(details.PlanID) && b.onlySingleTrialPerGA {
 		count, err := b.instanceStorage.GetNumberOfInstancesForGlobalAccountID(ersContext.GlobalAccountID)
 		if err != nil {
 			return ersContext, parameters, errors.Wrap(err, "while checking if a trial Kyma instance exists for given global account")

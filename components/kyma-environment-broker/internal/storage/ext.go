@@ -38,6 +38,7 @@ type Provisioning interface {
 	GetProvisioningOperationByID(operationID string) (*internal.ProvisioningOperation, error)
 	GetProvisioningOperationByInstanceID(instanceID string) (*internal.ProvisioningOperation, error)
 	UpdateProvisioningOperation(operation internal.ProvisioningOperation) (*internal.ProvisioningOperation, error)
+	ListProvisioningOperationsByInstanceID(instanceID string) ([]internal.ProvisioningOperation, error)
 }
 
 type Deprovisioning interface {
@@ -45,6 +46,7 @@ type Deprovisioning interface {
 	GetDeprovisioningOperationByID(operationID string) (*internal.DeprovisioningOperation, error)
 	GetDeprovisioningOperationByInstanceID(instanceID string) (*internal.DeprovisioningOperation, error)
 	UpdateDeprovisioningOperation(operation internal.DeprovisioningOperation) (*internal.DeprovisioningOperation, error)
+	ListDeprovisioningOperationsByInstanceID(instanceID string) ([]internal.DeprovisioningOperation, error)
 }
 
 type Orchestrations interface {

@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
+
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/stretchr/testify/assert"
@@ -60,6 +62,10 @@ type OrchestrationSuite struct {
 func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 	logs := logrus.New()
 	logs.Formatter.(*logrus.TextFormatter).TimestampFormat = "15:04:05.000"
+
+	var cfg Config
+	cfg.Ems.Disabled = true
+
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
 
@@ -105,7 +111,8 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 			Retry:              10 * time.Millisecond,
 			StatusCheck:        100 * time.Millisecond,
 			UpgradeKymaTimeout: 4 * time.Second,
-		}, 250*time.Millisecond, runtimeVerConfigurator, defaultRegion, upgradeEvaluationManager, logs)
+		}, 250*time.Millisecond, runtimeVerConfigurator, defaultRegion, upgradeEvaluationManager,
+		&cfg, hyperscaler.NewAccountProvider(nil, nil), nil, logs)
 
 	return &OrchestrationSuite{
 		gardenerNamespace:  gardenerNamespace,

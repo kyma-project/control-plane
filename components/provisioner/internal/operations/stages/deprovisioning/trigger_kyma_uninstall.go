@@ -1,6 +1,7 @@
 package deprovisioning
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -10,18 +11,21 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type TriggerKymaUninstallStep struct {
 	installationClient installation.Service
+	gardenerClient     GardenerClient
 	nextStep           model.OperationStage
 	timeLimit          time.Duration
 	delay              time.Duration
 }
 
-func NewTriggerKymaUninstallStep(installationClient installation.Service, nextStep model.OperationStage, timeLimit time.Duration, delay time.Duration) *TriggerKymaUninstallStep {
+func NewTriggerKymaUninstallStep(gardenerClient GardenerClient, installationClient installation.Service, nextStep model.OperationStage, timeLimit time.Duration, delay time.Duration) *TriggerKymaUninstallStep {
 	return &TriggerKymaUninstallStep{
 		installationClient: installationClient,
+		gardenerClient:     gardenerClient,
 		nextStep:           nextStep,
 		timeLimit:          timeLimit,
 		delay:              delay,
@@ -43,6 +47,16 @@ func (s *TriggerKymaUninstallStep) Run(cluster model.Cluster, _ model.Operation,
 		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 	}
 
+	shoot, err := s.gardenerClient.Get(context.Background(), cluster.ClusterConfig.Name, metav1.GetOptions{})
+	if err != nil {
+		return operations.StageResult{}, err
+	}
+
+	if shoot.Status.IsHibernated {
+		// The cluster is hibernated we must go to the next step
+		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
+	}
+
 	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
 		err := fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
@@ -54,5 +68,5 @@ func (s *TriggerKymaUninstallStep) Run(cluster model.Cluster, _ model.Operation,
 		return operations.StageResult{}, err
 	}
 
-	return operations.StageResult{Stage: s.nextStep, Delay: s.delay}, nil
+	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 }

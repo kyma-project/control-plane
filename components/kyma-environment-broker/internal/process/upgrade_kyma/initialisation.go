@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
 	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -32,19 +34,20 @@ const (
 )
 
 type InitialisationStep struct {
-	operationManager       *process.UpgradeKymaOperationManager
-	operationStorage       storage.Operations
-	orchestrationStorage   storage.Orchestrations
-	instanceStorage        storage.Instances
-	provisionerClient      provisioner.Client
-	inputBuilder           input.CreatorForPlan
-	evaluationManager      *EvaluationManager
-	timeSchedule           TimeSchedule
-	runtimeVerConfigurator RuntimeVersionConfiguratorForUpgrade
+	operationManager            *process.UpgradeKymaOperationManager
+	operationStorage            storage.Operations
+	orchestrationStorage        storage.Orchestrations
+	instanceStorage             storage.Instances
+	provisionerClient           provisioner.Client
+	inputBuilder                input.CreatorForPlan
+	evaluationManager           *EvaluationManager
+	timeSchedule                TimeSchedule
+	runtimeVerConfigurator      RuntimeVersionConfiguratorForUpgrade
+	serviceManagerClientFactory *servicemanager.ClientFactory
 }
 
 func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, em *EvaluationManager,
-	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade) *InitialisationStep {
+	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade, smcf *servicemanager.ClientFactory) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
 		ts = &TimeSchedule{
@@ -54,15 +57,16 @@ func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is
 		}
 	}
 	return &InitialisationStep{
-		operationManager:       process.NewUpgradeKymaOperationManager(os),
-		operationStorage:       os,
-		orchestrationStorage:   ors,
-		instanceStorage:        is,
-		provisionerClient:      pc,
-		inputBuilder:           b,
-		evaluationManager:      em,
-		timeSchedule:           *ts,
-		runtimeVerConfigurator: rvc,
+		operationManager:            process.NewUpgradeKymaOperationManager(os),
+		operationStorage:            os,
+		orchestrationStorage:        ors,
+		instanceStorage:             is,
+		provisionerClient:           pc,
+		inputBuilder:                b,
+		evaluationManager:           em,
+		timeSchedule:                *ts,
+		runtimeVerConfigurator:      rvc,
+		serviceManagerClientFactory: smcf,
 	}
 }
 
@@ -79,6 +83,9 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		log.Infof("Skipping processing because orchestration %s was canceled", operation.OrchestrationID)
 		return s.operationManager.OperationCanceled(operation, fmt.Sprintf("orchestration %s was canceled", operation.OrchestrationID))
 	}
+
+	operation.SMClientFactory = s.serviceManagerClientFactory
+
 	if operation.State == orchestrationExt.Pending {
 		operation.State = orchestrationExt.InProgress
 

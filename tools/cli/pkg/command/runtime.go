@@ -1,6 +1,8 @@
 package command
 
 import (
+	"fmt"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
@@ -20,6 +22,16 @@ const (
 	inProgress = "in progress"
 	succeeded  = "succeeded"
 	failed     = "failed"
+)
+
+type operationType string
+
+const (
+	provision    operationType = "provision"
+	deprovision  operationType = "deprovision"
+	upgradeKyma  operationType = "kyma upgrade"
+	suspension   operationType = "suspension"
+	unsuspension operationType = "unsuspension"
 )
 
 var tableColumns = []printer.Column{
@@ -125,35 +137,34 @@ func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
 
 func runtimeStatus(obj interface{}) string {
 	rt := obj.(runtime.RuntimeDTO)
-	if rt.Status.Deprovisioning != nil {
-		switch rt.Status.Deprovisioning.State {
-		case inProgress:
-			return "deprovisioning"
-		case failed:
-			return "failed (deprovision)"
-		case succeeded:
+	return operationStatusToString(runtime.FindLastOperation(rt))
+}
+
+func operationStatusToString(op runtime.Operation, t runtime.OperationType) string {
+	switch op.State {
+	case succeeded:
+		switch t {
+		case runtime.Deprovision:
 			return "deprovisioned"
+		case runtime.Suspension:
+			return "suspended"
 		}
-	}
-
-	upgradeCount := rt.Status.UpgradingKyma.Count
-	if upgradeCount > 0 {
-		// Take the first upgrade operation, assuming that Data is sorted by CreatedBy DESC.
-		switch rt.Status.UpgradingKyma.Data[0].State {
-		case inProgress:
-			return "upgrading"
-		case failed:
-			return "failed (upgrade)"
-		case succeeded:
-			return "succeeded"
-		}
-	}
-
-	switch rt.Status.Provisioning.State {
-	case inProgress:
-		return "provisioning"
+		return "succeeded"
 	case failed:
-		return "failed (provision)"
+		return fmt.Sprintf("%s (%s)", "failed", t)
+	case inProgress:
+		switch t {
+		case runtime.Provision:
+			return "provisioning"
+		case runtime.Unsuspension:
+			return "provisioning (unsuspending)"
+		case runtime.Deprovision:
+			return "deprovisioning"
+		case runtime.Suspension:
+			return "deprovisioning (suspending)"
+		case runtime.UpgradeKyma:
+			return "upgrading"
+		}
 	}
 
 	return "succeeded"

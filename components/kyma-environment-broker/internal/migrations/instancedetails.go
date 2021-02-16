@@ -1,6 +1,8 @@
 package migrations
 
 import (
+	"reflect"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
 	"github.com/pkg/errors"
@@ -30,13 +32,13 @@ func (m *InstanceDetailsMigration) Migrate() error {
 		logger := m.log.WithField("UpgradeKymaOperation", op.Operation.ID)
 		logger.Infof("Found existing upgradeKyma operation %s", op.Operation.ID)
 
-		if op.InstanceDetails.RuntimeID != "" {
-			m.log.Infof("InstanceDetails were found in operation %s, skipping", op.Operation.ID)
-			continue
-		}
 		lastProvOp, err := m.operations.GetProvisioningOperationByInstanceID(op.InstanceID)
 		if err != nil {
 			return errors.Wrap(err, "while getting operations")
+		}
+		if reflect.DeepEqual(op.InstanceDetails, lastProvOp.InstanceDetails) {
+			m.log.Infof("InstanceDetails were found in operation %s, skipping", op.Operation.ID)
+			continue
 		}
 		logger.Infof("Last provisioningOperation %s", lastProvOp.Operation.ID)
 		if lastProvOp.InstanceDetails.RuntimeID == "" {
