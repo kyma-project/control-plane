@@ -87,6 +87,9 @@ func createParameters(config *Config) parameters {
 	return params
 }
 
-func (c *Client) DeleteInstance(smClient servicemanager.Client, instance servicemanager.InstanceKey) error {
-	smClient.Deprovision()
+// RemoveInstance sends a request to Service Manager to remove a CLS Instance
+func (c *Client) RemoveInstance(smClient servicemanager.Client, instance servicemanager.InstanceKey) error {
+	//TODO: NotFound, error, pollilng last operation state
+	_, err := smClient.Deprovision(instance, true)
+	return err
 }
