@@ -881,6 +881,11 @@ enum KymaProfile {
     Production
 }
 
+enum ConflictsStrategy {
+    Merge
+    Replace
+}
+
 # Inputs
 
 scalar Labels
@@ -953,7 +958,7 @@ input KymaConfigInput {
     profile: KymaProfile                        # Optional resources profile
     components: [ComponentConfigurationInput]!  # List of Kyma Components with specific configuration
     configuration: [ConfigEntryInput]           # Global Kyma configuration
-    onConflict: String                          # Defines merging strategy if conflicts occur for global overrides
+    conflictsStrategy: ConflictsStrategy        # Defines merging strategy if conflicts occur for global overrides
 }
 
 input ConfigEntryInput {
@@ -967,7 +972,7 @@ input ComponentConfigurationInput {
     namespace: String!                    # Namespace to which component should be installed
     configuration: [ConfigEntryInput]     # Component specific configuration
     sourceURL: String                     # Custom URL for the source files of the given component
-    onConflict: String                            # Defines merging strategy if conflicts occur for component overrides
+    conflictsStrategy: ConflictsStrategy  # Defines merging strategy if conflicts occur for component overrides
 }
 
 input UpgradeRuntimeInput {
@@ -4890,9 +4895,9 @@ func (ec *executionContext) unmarshalInputComponentConfigurationInput(ctx contex
 			if err != nil {
 				return it, err
 			}
-		case "onConflict":
+		case "conflictsStrategy":
 			var err error
-			it.OnConflict, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.ConflictsStrategy, err = ec.unmarshalOConflictsStrategy2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConflictsStrategy(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5220,9 +5225,9 @@ func (ec *executionContext) unmarshalInputKymaConfigInput(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-		case "onConflict":
+		case "conflictsStrategy":
 			var err error
-			it.OnConflict, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.ConflictsStrategy, err = ec.unmarshalOConflictsStrategy2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConflictsStrategy(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6787,6 +6792,30 @@ func (ec *executionContext) unmarshalOConfigEntryInput2ᚖgithubᚗcomᚋkymaᚑ
 	}
 	res, err := ec.unmarshalOConfigEntryInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) unmarshalOConflictsStrategy2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConflictsStrategy(ctx context.Context, v interface{}) (ConflictsStrategy, error) {
+	var res ConflictsStrategy
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOConflictsStrategy2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConflictsStrategy(ctx context.Context, sel ast.SelectionSet, v ConflictsStrategy) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOConflictsStrategy2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConflictsStrategy(ctx context.Context, v interface{}) (*ConflictsStrategy, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOConflictsStrategy2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConflictsStrategy(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOConflictsStrategy2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConflictsStrategy(ctx context.Context, sel ast.SelectionSet, v *ConflictsStrategy) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx context.Context, sel ast.SelectionSet, v []*Error) graphql.Marshaler {

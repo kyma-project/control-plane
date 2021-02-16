@@ -199,8 +199,8 @@ func NewInstallationConfiguration(globalConfg model.Configuration, componentsCon
 	}
 
 	installationConfig.Configuration = toInstallationConfigEntries(globalConfg.ConfigEntries)
-	if globalConfg.OnConflict != nil {
-		installationConfig.OnConflict = *globalConfg.OnConflict
+	if globalConfg.ConflictStrategy != "" {
+		installationConfig.ConflictStrategy = globalConfg.ConflictStrategy
 	}
 
 	for _, componentCfg := range componentsConfig {
@@ -209,8 +209,8 @@ func NewInstallationConfiguration(globalConfg model.Configuration, componentsCon
 			Configuration: toInstallationConfigEntries(componentCfg.Configuration.ConfigEntries),
 		}
 
-		if componentCfg.Configuration.OnConflict != nil {
-			installationComponentConfig.OnConflict = *componentCfg.Configuration.OnConflict
+		if componentCfg.Configuration.ConflictStrategy != "" {
+			installationComponentConfig.ConflictStrategy = componentCfg.Configuration.ConflictStrategy
 		}
 
 		installationConfig.ComponentConfiguration = append(installationConfig.ComponentConfiguration, installationComponentConfig)

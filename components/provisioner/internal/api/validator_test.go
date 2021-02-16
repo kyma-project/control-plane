@@ -3,7 +3,6 @@ package api
 import (
 	"testing"
 
-	"github.com/kyma-incubator/hydroform/install/k8s"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 	dbMocks "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
@@ -13,49 +12,6 @@ import (
 )
 
 func TestValidator_ValidateProvisioningInput(t *testing.T) {
-
-	t.Run("should validate correct on conflict values", func(t *testing.T) {
-		// given
-		validator, testConfig, config := onConflictValidatorInput()
-		// when
-		err := validator.ValidateProvisioningInput(config)
-		// then
-		require.NoError(t, err)
-
-		// given
-		for _, component := range testConfig.Components {
-			component.OnConflict = util.StringPtr(k8s.ReplaceOnConflict)
-		}
-		// when
-		err = validator.ValidateProvisioningInput(config)
-		// then
-		require.NoError(t, err)
-
-		// given
-		dummyValue := "dummy"
-		testConfig.OnConflict = util.StringPtr(dummyValue)
-		// when
-		err = validator.ValidateProvisioningInput(config)
-		// then
-		require.Error(t, err)
-
-		// given
-		mergeValue := k8s.MergeOnConflict
-		testConfig.OnConflict = util.StringPtr(mergeValue)
-		// when
-		err = validator.ValidateProvisioningInput(config)
-		// then
-		require.NoError(t, err)
-
-		// given
-		for _, component := range testConfig.Components {
-			component.OnConflict = util.StringPtr(dummyValue)
-		}
-		// when
-		err = validator.ValidateProvisioningInput(config)
-		// then
-		require.Error(t, err)
-	})
 
 	clusterConfig, runtimeInput, kymaConfig := initializeConfigs()
 
@@ -454,22 +410,6 @@ func TestValidator_ValidateTenantForOperation(t *testing.T) {
 		require.Error(t, err)
 	})
 
-}
-
-func onConflictValidatorInput() (Validator, *gqlschema.KymaConfigInput, gqlschema.ProvisionRuntimeInput) {
-	clusterConfig, runtimeInput, kymaConfig := initializeConfigs()
-	readSession := &dbMocks.ReadSession{}
-	validator := NewValidator(readSession)
-
-	testConfig := kymaConfig
-	testConfig.OnConflict = util.StringPtr(k8s.ReplaceOnConflict)
-
-	config := gqlschema.ProvisionRuntimeInput{
-		RuntimeInput:  runtimeInput,
-		ClusterConfig: clusterConfig,
-		KymaConfig:    testConfig,
-	}
-	return validator, testConfig, config
 }
 
 func initializeConfigs() (*gqlschema.ClusterConfigInput, *gqlschema.RuntimeInput, *gqlschema.KymaConfigInput) {

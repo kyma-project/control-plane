@@ -1,7 +1,6 @@
 package api
 
 import (
-	"github.com/kyma-incubator/hydroform/install/k8s"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
@@ -119,10 +118,6 @@ func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) ap
 		return apperrors.BadRequest("error: Kyma components list does not contain Compass Runtime Agent")
 	}
 
-	if kymaConfig.OnConflict != nil {
-		return v.validateOnConflict(*kymaConfig.OnConflict)
-	}
-
 	return nil
 }
 
@@ -132,27 +127,7 @@ func (v *validator) validateComponents(kymaConfig *gqlschema.KymaConfigInput) (a
 		return apperrors.BadRequest("error: Kyma components list is empty"), true
 	}
 
-	for _, component := range components {
-		if component == nil || component.OnConflict == nil {
-			continue
-		}
-
-		if err := v.validateOnConflict(*component.OnConflict); err != nil {
-			return err, true
-		}
-	}
-
 	return nil, false
-}
-
-func (v *validator) validateOnConflict(value string) apperrors.AppError {
-	if value != "" &&
-		value != k8s.MergeOnConflict &&
-		value != k8s.ReplaceOnConflict {
-		return apperrors.BadRequest("error: Invalid value of conflict resolution onConflict")
-	}
-
-	return nil
 }
 
 func (v *validator) validateClusterConfig(clusterConfig *gqlschema.ClusterConfigInput) apperrors.AppError {

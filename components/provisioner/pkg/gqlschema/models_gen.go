@@ -52,11 +52,11 @@ type ComponentConfiguration struct {
 }
 
 type ComponentConfigurationInput struct {
-	Component     string              `json:"component"`
-	Namespace     string              `json:"namespace"`
-	Configuration []*ConfigEntryInput `json:"configuration"`
-	SourceURL     *string             `json:"sourceURL"`
-	OnConflict    *string             `json:"onConflict"`
+	Component         string              `json:"component"`
+	Namespace         string              `json:"namespace"`
+	Configuration     []*ConfigEntryInput `json:"configuration"`
+	SourceURL         *string             `json:"sourceURL"`
+	ConflictsStrategy *ConflictsStrategy  `json:"conflictsStrategy"`
 }
 
 type ConfigEntry struct {
@@ -165,11 +165,11 @@ type KymaConfig struct {
 }
 
 type KymaConfigInput struct {
-	Version       string                         `json:"version"`
-	Profile       *KymaProfile                   `json:"profile"`
-	Components    []*ComponentConfigurationInput `json:"components"`
-	Configuration []*ConfigEntryInput            `json:"configuration"`
-	OnConflict    *string                        `json:"onConflict"`
+	Version           string                         `json:"version"`
+	Profile           *KymaProfile                   `json:"profile"`
+	Components        []*ComponentConfigurationInput `json:"components"`
+	Configuration     []*ConfigEntryInput            `json:"configuration"`
+	ConflictsStrategy *ConflictsStrategy             `json:"conflictsStrategy"`
 }
 
 type OperationStatus struct {
@@ -222,6 +222,47 @@ type UpgradeRuntimeInput struct {
 
 type UpgradeShootInput struct {
 	GardenerConfig *GardenerUpgradeInput `json:"gardenerConfig"`
+}
+
+type ConflictsStrategy string
+
+const (
+	ConflictsStrategyMerge   ConflictsStrategy = "Merge"
+	ConflictsStrategyReplace ConflictsStrategy = "Replace"
+)
+
+var AllConflictsStrategy = []ConflictsStrategy{
+	ConflictsStrategyMerge,
+	ConflictsStrategyReplace,
+}
+
+func (e ConflictsStrategy) IsValid() bool {
+	switch e {
+	case ConflictsStrategyMerge, ConflictsStrategyReplace:
+		return true
+	}
+	return false
+}
+
+func (e ConflictsStrategy) String() string {
+	return string(e)
+}
+
+func (e *ConflictsStrategy) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ConflictsStrategy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ConflictsStrategy", str)
+	}
+	return nil
+}
+
+func (e ConflictsStrategy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type KymaProfile string
