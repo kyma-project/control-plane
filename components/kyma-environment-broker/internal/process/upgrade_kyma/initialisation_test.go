@@ -603,7 +603,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		// then
 		assert.NoError(t, err)
-		assert.Equal(t, 1*time.Minute, repeat)
+		assert.Equal(t, 30*time.Second, repeat)
 		assert.Equal(t, domain.InProgress, upgradeOperation.State)
 		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: internalStatus, Original: ""})
 		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: externalStatus, Original: ""})
@@ -669,7 +669,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		// then
 		assert.NoError(t, err)
-		assert.Equal(t, 1*time.Minute, repeat)
+		assert.Equal(t, 30*time.Second, repeat)
 		assert.Equal(t, domain.InProgress, upgradeOperation.State)
 		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: internalStatus, Original: ""})
 		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: externalStatus, Original: ""})
