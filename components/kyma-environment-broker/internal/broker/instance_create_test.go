@@ -542,22 +542,17 @@ func TestProvision_Provision(t *testing.T) {
 }
 
 func fixExistOperation() internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:         existOperationID,
-			InstanceID: instanceID,
-			ProvisioningParameters: internal.ProvisioningParameters{
-				PlanID:    planID,
-				ServiceID: serviceID,
-				ErsContext: internal.ERSContext{
-					SubAccountID:    subAccountID,
-					GlobalAccountID: globalAccountID,
-				},
-				Parameters:     internal.ProvisioningParametersDTO{Name: clusterName},
-				PlatformRegion: region,
-			},
-		},
-	}
+	provisioningOperation := internal.FixProvisioningOperation(existOperationID, instanceID)
+	pp := internal.ProvisioningParameters{}
+	pp.PlanID = planID
+	pp.ServiceID = serviceID
+	pp.ErsContext.SubAccountID = subAccountID
+	pp.ErsContext.GlobalAccountID = globalAccountID
+	pp.Parameters.Name = clusterName
+	pp.PlatformRegion = region
+	provisioningOperation.ProvisioningParameters = pp
+
+	return provisioningOperation
 }
 
 func fixAlwaysPassJSONValidator() broker.PlansSchemaValidator {
