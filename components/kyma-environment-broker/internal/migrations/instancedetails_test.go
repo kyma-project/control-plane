@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/migrations"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
@@ -44,35 +43,28 @@ func TestInstanceDetailsMigration_Migrate(t *testing.T) {
 }
 
 func fixProvisioningOperation() internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			InstanceDetails: internal.InstanceDetails{
-				Lms: internal.LMS{
-					TenantID: "lms-tenant",
-				},
-				SubAccountID: "subacc-id",
-				RuntimeID:    "runtime-id",
-				ShootName:    "shoot-name",
-				ShootDomain:  "shoot-domain",
-				XSUAA: internal.XSUAAData{
-					Instance: internal.ServiceManagerInstanceInfo{
-						BrokerID:              "broker-id",
-						ServiceID:             "service-id",
-						PlanID:                "plan-id",
-						InstanceID:            "instance-id",
-						Provisioned:           true,
-						ProvisioningTriggered: true,
-					},
-					XSAppname: "xsapp-name",
-					BindingID: "binding-id",
-				},
+	provisioningOperation := internal.FixProvisioningOperation("prov-op-id", "instance-id")
+	provisioningOperation.Operation.InstanceDetails = internal.InstanceDetails{
+		Lms: internal.LMS{
+			TenantID: "lms-tenant",
+		},
+		SubAccountID: "subacc-id",
+		RuntimeID:    "runtime-id",
+		ShootName:    "shoot-name",
+		ShootDomain:  "shoot-domain",
+		XSUAA: internal.XSUAAData{
+			Instance: internal.ServiceManagerInstanceInfo{
+				BrokerID:              "broker-id",
+				ServiceID:             "service-id",
+				PlanID:                "plan-id",
+				InstanceID:            "instance-id",
+				Provisioned:           true,
+				ProvisioningTriggered: true,
 			},
-			ID:         "prov-op-id",
-			Version:    0,
-			CreatedAt:  time.Now(),
-			UpdatedAt:  time.Now().Add(1 * time.Minute),
-			InstanceID: "instance-id",
-			State:      domain.Succeeded,
+			XSAppname: "xsapp-name",
+			BindingID: "binding-id",
 		},
 	}
+
+	return provisioningOperation
 }
