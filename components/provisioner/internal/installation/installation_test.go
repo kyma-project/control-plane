@@ -100,7 +100,7 @@ func TestInstallationService_ParseConfigs(t *testing.T) {
 
 	t.Run("should parse OnConflict value", func(t *testing.T) {
 		// given
-		replaceValue := gqlschema.ConflictsStrategyReplace.String()
+		replaceValue := gqlschema.ConflictStrategyReplace.String()
 
 		globalConfig.ConflictStrategy = replaceValue
 
@@ -368,7 +368,7 @@ func fixComponentsConfig() []model.KymaComponentConfig {
 			Component:    "cluster-essentials",
 			Namespace:    kymaSystemNamespace,
 			Configuration: model.Configuration{
-				ConflictStrategy: gqlschema.ConflictsStrategyReplace.String(),
+				ConflictStrategy: gqlschema.ConflictStrategyReplace.String(),
 				ConfigEntries:    make([]model.ConfigEntry, 0, 0)},
 		},
 		{
@@ -408,7 +408,7 @@ func fixComponentsConfig() []model.KymaComponentConfig {
 
 func fixGlobalConfig() model.Configuration {
 	return model.Configuration{
-		ConflictStrategy: gqlschema.ConflictsStrategyReplace.String(),
+		ConflictStrategy: gqlschema.ConflictStrategyReplace.String(),
 		ConfigEntries: []model.ConfigEntry{
 			model.NewConfigEntry("global.config.key", "globalValue", false),
 			model.NewConfigEntry("global.config.key2", "globalValue2", false),

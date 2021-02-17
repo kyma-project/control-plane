@@ -388,10 +388,10 @@ func TestConverter_ParseInput(t *testing.T) {
 		releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
 		releaseProvider.On("GetReleaseByVersion", kymaVersionWithoutTiller).Return(fixKymaReleaseWithoutTiller(), nil)
 
-		replace := gqlschema.ConflictsStrategyReplace
+		replace := gqlschema.ConflictStrategyReplace
 		input := gqlschema.KymaConfigInput{
-			Version:           kymaVersion,
-			ConflictsStrategy: &replace,
+			Version:          kymaVersion,
+			ConflictStrategy: &replace,
 		}
 
 		inputConverter := NewInputConverter(
@@ -407,9 +407,9 @@ func TestConverter_ParseInput(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		assert.Equal(t, gqlschema.ConflictsStrategyReplace.String(), output.GlobalConfiguration.ConflictStrategy)
+		assert.Equal(t, gqlschema.ConflictStrategyReplace.String(), output.GlobalConfiguration.ConflictStrategy)
 		for _, entry := range output.Components {
-			assert.Equal(t, gqlschema.ConflictsStrategyReplace.String(), entry.Configuration.ConflictStrategy)
+			assert.Equal(t, gqlschema.ConflictStrategyReplace.String(), entry.Configuration.ConflictStrategy)
 		}
 	})
 }
