@@ -6,7 +6,6 @@ import (
 
 	hyperscalerMocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -119,45 +118,19 @@ func TestInitialisationStep_Run(t *testing.T) {
 }
 
 func fixDeprovisioningOperation() internal.DeprovisioningOperation {
-	return internal.DeprovisioningOperation{
-		Operation: internal.Operation{
-			ID:                     fixOperationID,
-			InstanceID:             fixInstanceID,
-			ProvisionerOperationID: fixProvisionerOperationID,
-			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{UserID: "test"}},
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Now(),
-		},
-	}
+	deprovisioniningOperation := internal.FixDeprovisioningOperation(fixOperationID, fixInstanceID)
+	return deprovisioniningOperation
 }
 
 func fixProvisioningOperation() internal.ProvisioningOperation {
-	planID := broker.AzurePlanID
-
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     fixOperationID,
-			InstanceID:             fixInstanceID,
-			ProvisionerOperationID: fixProvisionerOperationID,
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Now(),
-			ProvisioningParameters: internal.ProvisioningParameters{
-				ErsContext: internal.ERSContext{GlobalAccountID: "1"},
-				PlanID:     planID,
-			},
-		},
-	}
+	provisioningOperation := internal.FixProvisioningOperation(fixOperationID, fixInstanceID)
+	return provisioningOperation
 }
 
 func fixInstanceRuntimeStatus() internal.Instance {
-	return internal.Instance{
-		InstanceID:      fixInstanceID,
-		RuntimeID:       fixRuntimeID,
-		DashboardURL:    "",
-		GlobalAccountID: fixGlobalAccountID,
-		CreatedAt:       time.Time{},
-		UpdatedAt:       time.Time{},
-		DeletedAt:       time.Time{},
-		ServicePlanID:   broker.AzurePlanID,
-	}
+	instance := internal.FixInstance(fixInstanceID)
+	instance.RuntimeID = fixRuntimeID
+	instance.GlobalAccountID = fixGlobalAccountID
+
+	return instance
 }
