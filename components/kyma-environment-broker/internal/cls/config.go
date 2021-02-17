@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"text/template"
 
 	"gopkg.in/yaml.v2"
 )
@@ -30,6 +31,10 @@ type Config struct {
 	SAML *SAMLConfig `yaml:"saml"`
 
 	ServiceManager *ServiceManagerConfig `yaml:"serviceManager"`
+}
+
+type OverrideFiles struct {
+	clsFBOverrideConfig *template.Template
 }
 
 //ServiceManagerConfig contains service manager credentials per region
@@ -157,4 +162,13 @@ func (r Region) validate() error {
 	}
 
 	return fmt.Errorf("unsupported region: %s (%s supported only)", r, strings.Join(supportedRegions, ","))
+}
+
+func ParseTemplate() (*template.Template, error){
+	tpl, err := template.ParseFiles("clsHttpForwarder.yaml")
+	if err != nil {
+		return nil, err
+	}
+	return tpl, nil
+
 }
