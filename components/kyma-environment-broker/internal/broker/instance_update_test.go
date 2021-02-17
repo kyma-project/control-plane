@@ -3,10 +3,8 @@ package broker
 import (
 	"context"
 	"encoding/json"
-	"testing"
-	"time"
-
 	"github.com/stretchr/testify/require"
+	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -184,45 +182,20 @@ func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 }
 
 func fixProvisioningOperation(id string) internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:         id,
-			CreatedAt:  time.Now(),
-			InstanceID: instanceID,
-			ProvisioningParameters: internal.ProvisioningParameters{
-				ErsContext: internal.ERSContext{
-					ServiceManager: &internal.ServiceManagerEntryDTO{
-						Credentials: internal.ServiceManagerCredentials{
-							BasicAuth: internal.ServiceManagerBasicAuth{
-								Username: "u",
-								Password: "p",
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	provisioningOperation := internal.FixProvisioningOperation(id, instanceID)
+	provisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.Credentials.BasicAuth.Username = "u"
+	provisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.Credentials.BasicAuth.Password = "p"
+	provisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.URL = ""
+
+	return provisioningOperation
 }
 
 func fixSuspensionOperation() internal.DeprovisioningOperation {
-	return internal.DeprovisioningOperation{
-		Operation: internal.Operation{
-			CreatedAt:  time.Now(),
-			InstanceID: instanceID,
-			ProvisioningParameters: internal.ProvisioningParameters{
-				ErsContext: internal.ERSContext{
-					ServiceManager: &internal.ServiceManagerEntryDTO{
-						Credentials: internal.ServiceManagerCredentials{
-							BasicAuth: internal.ServiceManagerBasicAuth{
-								Username: "u",
-								Password: "p",
-							},
-						},
-					},
-				},
-			},
-		},
-		Temporary: true,
-	}
+	deprovisioningOperation := internal.FixDeprovisioningOperation("id", instanceID)
+	deprovisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.Credentials.BasicAuth.Username = "u"
+	deprovisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.Credentials.BasicAuth.Password = "p"
+	deprovisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.URL = ""
+	deprovisioningOperation.Temporary = true
+
+	return deprovisioningOperation
 }
