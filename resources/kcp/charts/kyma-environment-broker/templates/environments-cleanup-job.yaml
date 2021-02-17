@@ -1,15 +1,4 @@
 {{if eq .Values.global.kyma_environment_broker.environmentsCleanup.enabled true}}
-apiVersion: networking.istio.io/v1alpha3
-kind: DestinationRule
-metadata:
-  name: "kcp-kyma-environments-cleanup"
-  namespace: {{ .Release.Namespace }}
-spec:
-  host: "{{ .Values.provisioner.Host }}"
-  trafficPolicy:
-    tls:
-      mode: DISABLE
----
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:

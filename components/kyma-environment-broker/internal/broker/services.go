@@ -8,20 +8,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// OptionalComponentNamesProvider provides optional components names
-type OptionalComponentNamesProvider interface {
-	GetAllOptionalComponentsNames() []string
-}
-
 type ServicesEndpoint struct {
 	log logrus.FieldLogger
 	cfg Service
 
-	optionalComponents OptionalComponentNamesProvider
-	enabledPlanIDs     map[string]struct{}
+	enabledPlanIDs map[string]struct{}
 }
 
-func NewServices(cfg Config, optComponentsSvc OptionalComponentNamesProvider, log logrus.FieldLogger) *ServicesEndpoint {
+func NewServices(cfg Config, log logrus.FieldLogger) *ServicesEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
 		id := PlanIDsMapping[planName]
@@ -29,10 +23,9 @@ func NewServices(cfg Config, optComponentsSvc OptionalComponentNamesProvider, lo
 	}
 
 	return &ServicesEndpoint{
-		log:                log.WithField("service", "ServicesEndpoint"),
-		cfg:                cfg.Service,
-		optionalComponents: optComponentsSvc,
-		enabledPlanIDs:     enabledPlanIDs,
+		log:            log.WithField("service", "ServicesEndpoint"),
+		cfg:            cfg.Service,
+		enabledPlanIDs: enabledPlanIDs,
 	}
 }
 
@@ -48,12 +41,9 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 		}
 		p := plan.PlanDefinition
 		err := json.Unmarshal(plan.provisioningRawSchema, &p.Schemas.Instance.Create.Parameters)
-		if !IsTrialPlan(p.ID) {
-			b.addComponentsToSchema(&p.Schemas.Instance.Create.Parameters)
-			if err != nil {
-				b.log.Errorf("Could not decode provisioning schema: %s", err)
-				return nil, err
-			}
+		if err != nil {
+			b.log.Errorf("while unmarshal schema: %s", err)
+			return nil, err
 		}
 		availableServicePlans = append(availableServicePlans, p)
 	}
@@ -81,15 +71,4 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 			AllowContextUpdates: true,
 		},
 	}, nil
-}
-
-func (b *ServicesEndpoint) addComponentsToSchema(schema *map[string]interface{}) {
-	props := (*schema)["properties"].(map[string]interface{})
-	props["components"] = map[string]interface{}{
-		"type": "array",
-		"items": map[string]interface{}{
-			"type": "string",
-			"enum": b.optionalComponents.GetAllOptionalComponentsNames(),
-		},
-	}
 }

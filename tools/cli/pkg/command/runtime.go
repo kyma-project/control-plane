@@ -137,45 +137,16 @@ func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
 
 func runtimeStatus(obj interface{}) string {
 	rt := obj.(runtime.RuntimeDTO)
-	return operationStatusToString(findLastOperation(rt))
+	return operationStatusToString(runtime.FindLastOperation(rt))
 }
 
-func findLastOperation(rt runtime.RuntimeDTO) (runtime.Operation, operationType) {
-	op := *rt.Status.Provisioning
-	opType := provision
-	// Take the first upgrade operation, assuming that Data is sorted by CreatedAt DESC.
-	if rt.Status.UpgradingKyma.Count > 0 {
-		op = rt.Status.UpgradingKyma.Data[0]
-		opType = upgradeKyma
-	}
-
-	// Take the first unsuspension operation, assuming that Data is sorted by CreatedAt DESC.
-	if rt.Status.Unsuspension.Count > 0 && rt.Status.Unsuspension.Data[0].CreatedAt.After(op.CreatedAt) {
-		op = rt.Status.Unsuspension.Data[0]
-		opType = unsuspension
-	}
-
-	// Take the first suspension operation, assuming that Data is sorted by CreatedAt DESC.
-	if rt.Status.Suspension.Count > 0 && rt.Status.Suspension.Data[0].CreatedAt.After(op.CreatedAt) {
-		op = rt.Status.Suspension.Data[0]
-		opType = suspension
-	}
-
-	if rt.Status.Deprovisioning != nil && rt.Status.Deprovisioning.CreatedAt.After(op.CreatedAt) {
-		op = *rt.Status.Deprovisioning
-		opType = deprovision
-	}
-
-	return op, opType
-}
-
-func operationStatusToString(op runtime.Operation, t operationType) string {
+func operationStatusToString(op runtime.Operation, t runtime.OperationType) string {
 	switch op.State {
 	case succeeded:
 		switch t {
-		case deprovision:
+		case runtime.Deprovision:
 			return "deprovisioned"
-		case suspension:
+		case runtime.Suspension:
 			return "suspended"
 		}
 		return "succeeded"
@@ -183,15 +154,15 @@ func operationStatusToString(op runtime.Operation, t operationType) string {
 		return fmt.Sprintf("%s (%s)", "failed", t)
 	case inProgress:
 		switch t {
-		case provision:
+		case runtime.Provision:
 			return "provisioning"
-		case unsuspension:
+		case runtime.Unsuspension:
 			return "provisioning (unsuspending)"
-		case deprovision:
+		case runtime.Deprovision:
 			return "deprovisioning"
-		case suspension:
+		case runtime.Suspension:
 			return "deprovisioning (suspending)"
-		case upgradeKyma:
+		case runtime.UpgradeKyma:
 			return "upgrading"
 		}
 	}

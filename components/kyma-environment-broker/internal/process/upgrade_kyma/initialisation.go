@@ -33,6 +33,8 @@ const (
 	CheckStatusTimeout = 3 * time.Hour
 )
 
+const postUpgradeDescription = "Performing post-upgrade tasks"
+
 type InitialisationStep struct {
 	operationManager            *process.UpgradeKymaOperationManager
 	operationStorage            storage.Operations
@@ -258,6 +260,15 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 	switch status.State {
 	case gqlschema.OperationStateInProgress, gqlschema.OperationStatePending:
 		return operation, s.timeSchedule.StatusCheck, nil
+	case gqlschema.OperationStateSucceeded, gqlschema.OperationStateFailed:
+		// Set post-upgrade description which also reset UpdatedAt for operation retries to work properly
+		if operation.Description != postUpgradeDescription {
+			operation.Description = postUpgradeDescription
+			operation, delay = s.operationManager.UpdateOperation(operation)
+			if delay != 0 {
+				return operation, delay, nil
+			}
+		}
 	}
 
 	// do required steps on finish

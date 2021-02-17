@@ -24,7 +24,7 @@ type InternalEvalAssistant struct {
 func NewInternalEvalAssistant(avsConfig Config) *InternalEvalAssistant {
 	return &InternalEvalAssistant{
 		avsConfig:   avsConfig,
-		retryConfig: &RetryConfig{maxTime: 10 * time.Minute, retryInterval: 1 * time.Minute},
+		retryConfig: &RetryConfig{maxTime: 10 * time.Minute, retryInterval: 30 * time.Second},
 	}
 }
 

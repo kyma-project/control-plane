@@ -23,7 +23,8 @@ The provisioning process contains the following steps:
 | Create_LMS_Tenant                      | LMS                      | Requests a tenant in the LMS system or provides a tenant ID if it was created before.                                                              | @piotrmiskiewicz (Team Gopher) |
 | IAS_Registration                       | Identity Authentication Service | Registers a new ServiceProvider on IAS, generates client ID and Secret, and inserts them to Grafana overrides. This step is not required and can be disabled. | @jasiu001 (Team Gopher) |
 | EDP_Registration                       | Event Data Platform      | Registers an SKR on Event Data Platform with the necessary parameters. This step is not required and can be disabled. | @jasiu001 (Team Gopher) |
-| Provision Azure Event Hubs             | Event Hub                | Creates the Azure Event Hub Namespace which is a managed Kafka cluster for a Kyma Runtime.                                                       | @anishj0shi (Team SkyDivingTunas)     |
+| Provision Azure Event Hubs             | Event Hub                | Creates the Azure Event Hub Namespace which is a managed Kafka cluster for a Kyma Runtime.                                                       | @k15r (Team SkyDivingTunas)     |
+| Provision EMS                          | EMS                      | Provisions and binds an Enterprise Messaging instance for a Kyma Runtime using the Service Manager.                                | @k15r (Team SkyDivingTunas)     |
 | Overrides_From_Secrets_And_Config_Step | Kyma overrides           | Configures default overrides for Kyma.                                                                                                          | @jasiu001 (Team Gopher)        |
 | ServiceManagerOverrides                | Service Manager          | Configures overrides with Service Manager credentials.                                                                                          | Team Gopher        |
 | Request_LMS_Certificates               | LMS                      | Checks if the LMS tenant is ready and requests certificates. The step configures Fluent Bit in a Kyma Runtime. It requires the Create_LMS_Tenant step to be completed beforehand. The step does not fail the provisioning operation. | @piotrmiskiewicz (Team Gopher) |
@@ -42,7 +43,8 @@ The deprovisioning process contains the following steps:
 | Name                         | Domain         | Status      | Description                                                                            | Owner     |
 |------------------------------|----------------|-------------|----------------------------------------------------------------------------------------|-----------|
 | Deprovision_Initialization   | Deprovisioning | Done        | Initializes the `DeprovisioningOperation` instance with data fetched from the `ProvisioningOperation`. | @polskikiel (Team Gopher) |
-| Deprovision Azure Event Hubs | Event Hub      | In progress | Deletes the Azure Event Hub Namespace.                                                  | @montaro (Team SkyDivingTunas)   |
+| Deprovision Azure Event Hubs | Event Hub      | Done        | Deletes the Azure Event Hub Namespace.                                                  | @k15r (Team SkyDivingTunas)   |
+| Deprovision EMS              | EMS            | Done        | Unbinds and deprovisions the Enterprise Messaging instance using the Service Manager.         | @k15r (Team SkyDivingTunas)     |
 | De-provision_AVS_Evaluations | AvS            | Done        | Removes external and internal monitoring of Kyma Runtime.                                                  | @jasiu001 (Team Gopher)  |
 | IAS_Deregistration           | Identity Authentication Service | Done | Removes the ServiceProvider from IAS. | @jasiu001 (Team Gopher) |
 | EDP_Deregistration           | Event Data Platform | Done | Removes all entries about SKR from Event Data Platform. | @jasiu001 (Team Gopher) |
@@ -58,6 +60,8 @@ The upgrade process contains the following steps:
 
 | Name                         | Domain         | Status      | Description                                                                            | Owner     |
 |------------------------------|----------------|-------------|----------------------------------------------------------------------------------------|-----------|
+| Provision EMS                | EMS            | Done        | Provisions and binds an Enterprise Messaging instance for a Kyma Runtime using the Service Manager.                                | @k15r (Team SkyDivingTunas)     |
+| Deprovision Azure Event Hubs | Event Hub      | Done        | Deletes the Azure Event Hub Namespace.                                                  | @k15r (Team SkyDivingTunas)   |
 | Upgrade_Kyma_Initialisation  | Upgrade | Done        | Initializes the `UpgradeOperation` instance with data fetched from the `ProvisioningOperation`. | @ksputo (Team Gopher) |
 | Overrides_From_Secrets_And_Config_Step  | Upgrade | Done        | Builds an input configuration that is passed as overrides to Runtime Provisioner. | @ksputo (Team Gopher) |
 | Upgrade_Runtime              | Upgrade | Done        | Triggers the upgrade of a Runtime in Runtime Provisioner. | @ksputo (Team Gopher) |
