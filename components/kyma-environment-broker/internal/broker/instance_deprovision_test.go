@@ -113,13 +113,11 @@ func TestDeprovisionEndpoint_DeprovisionExistingOperationFailed(t *testing.T) {
 }
 
 func fixDeprovisioningOperation(state domain.LastOperationState) internal.DeprovisioningOperation {
-	return internal.DeprovisioningOperation{
-		Operation: internal.Operation{
-			ID:         operationID,
-			InstanceID: instanceID,
-			State:      state,
-		},
-	}
+	deprovisioningOperation := internal.FixDeprovisioningOperation(operationID, instanceID)
+	deprovisioningOperation.Operation.ProvisionerOperationID = ""
+	deprovisioningOperation.State = state
+
+	return deprovisioningOperation
 }
 
 func fixInstance() internal.Instance {
