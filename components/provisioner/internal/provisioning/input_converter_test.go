@@ -407,9 +407,9 @@ func TestConverter_ParseInput(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		assert.Equal(t, gqlschema.ConflictsStrategyReplace, output.GlobalConfiguration.ConflictStrategy)
+		assert.Equal(t, gqlschema.ConflictsStrategyReplace.String(), output.GlobalConfiguration.ConflictStrategy)
 		for _, entry := range output.Components {
-			assert.Equal(t, gqlschema.ConflictsStrategyReplace, entry.Configuration.ConflictStrategy)
+			assert.Equal(t, gqlschema.ConflictsStrategyReplace.String(), entry.Configuration.ConflictStrategy)
 		}
 	})
 }
