@@ -15,6 +15,12 @@ echo "----------------------------"
 
 kc="kubectl $(context_arg)"
 
+# due to change between version
+# 1.17: https://github.com/kyma-project/kyma/blob/release-1.17/tests/integration/logging/pkg/logstream/logstream.go#L75
+# and 1.18: https://github.com/kyma-project/kyma/blob/release-1.18/tests/integration/logging/pkg/logstream/logstream.go#L75,
+# logging test will never succeed. Pod with URL to local domain (kyma.local) will not achieve destination endpoint.
+${kc} delete testdefinitions.testing.kyma-project.io -n kyma-system logging
+
 ${kc} get clustertestsuites.testing.kyma-project.io > /dev/null 2>&1
 if [[ $? -eq 1 ]]
 then
