@@ -118,8 +118,8 @@ type GardenerConfigInput struct {
 	MachineType                         string                 `json:"machineType"`
 	MachineImage                        *string                `json:"machineImage"`
 	MachineImageVersion                 *string                `json:"machineImageVersion"`
-	DiskType                            string                 `json:"diskType"`
-	VolumeSizeGb                        int                    `json:"volumeSizeGB"`
+	DiskType                            *string                `json:"diskType"`
+	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
 	WorkerCidr                          string                 `json:"workerCidr"`
 	AutoScalerMin                       int                    `json:"autoScalerMin"`
 	AutoScalerMax                       int                    `json:"autoScalerMax"`
@@ -170,6 +170,22 @@ type KymaConfigInput struct {
 	Configuration []*ConfigEntryInput            `json:"configuration"`
 }
 
+type OpenStackProviderConfig struct {
+	Zone                 *string `json:"zone"`
+	FloatingPoolName     *string `json:"floatingPoolName"`
+	CloudProfileName     *string `json:"cloudProfileName"`
+	LoadBalancerProvider *string `json:"loadBalancerProvider"`
+}
+
+func (OpenStackProviderConfig) IsProviderSpecificConfig() {}
+
+type OpenStackProviderConfigInput struct {
+	Zone                 string `json:"zone"`
+	FloatingPoolName     string `json:"floatingPoolName"`
+	CloudProfileName     string `json:"cloudProfileName"`
+	LoadBalancerProvider string `json:"loadBalancerProvider"`
+}
+
 type OperationStatus struct {
 	ID        *string        `json:"id"`
 	Operation OperationType  `json:"operation"`
@@ -179,9 +195,10 @@ type OperationStatus struct {
 }
 
 type ProviderSpecificInput struct {
-	GcpConfig   *GCPProviderConfigInput   `json:"gcpConfig"`
-	AzureConfig *AzureProviderConfigInput `json:"azureConfig"`
-	AwsConfig   *AWSProviderConfigInput   `json:"awsConfig"`
+	GcpConfig       *GCPProviderConfigInput       `json:"gcpConfig"`
+	AzureConfig     *AzureProviderConfigInput     `json:"azureConfig"`
+	AwsConfig       *AWSProviderConfigInput       `json:"awsConfig"`
+	OpenStackConfig *OpenStackProviderConfigInput `json:"openStackConfig"`
 }
 
 type ProvisionRuntimeInput struct {

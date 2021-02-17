@@ -156,8 +156,8 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		Purpose:                             purpose,
 		KubernetesVersion:                   util.UnwrapStrOrDefault(input.KubernetesVersion, config.KubernetesVersion),
 		MachineType:                         util.UnwrapStrOrDefault(input.MachineType, config.MachineType),
-		DiskType:                            util.UnwrapStrOrDefault(input.DiskType, config.DiskType),
-		VolumeSizeGB:                        util.UnwrapIntOrDefault(input.VolumeSizeGb, config.VolumeSizeGB),
+		DiskType:                            input.DiskType,
+		VolumeSizeGB:                        input.VolumeSizeGb,
 		MachineImage:                        input.MachineImage,
 		MachineImageVersion:                 input.MachineImageVersion,
 		AutoScalerMin:                       util.UnwrapIntOrDefault(input.AutoScalerMin, config.AutoScalerMin),
@@ -183,6 +183,9 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 	}
 	if input.AwsConfig != nil {
 		return model.NewAWSGardenerConfig(input.AwsConfig)
+	}
+	if input.OpenStackConfig != nil {
+		return model.NewOpenStackGardenerConfig(input.OpenStackConfig)
 	}
 
 	return nil, apperrors.BadRequest("provider config not specified")

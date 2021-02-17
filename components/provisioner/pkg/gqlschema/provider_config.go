@@ -32,6 +32,8 @@ func (g *GardenerConfig) UnmarshalJSON(data []byte) error {
 		g.ProviderSpecificConfig = &GCPProviderConfig{}
 	case "aws": // TODO to enum which will be validated
 		g.ProviderSpecificConfig = &AWSProviderConfig{}
+	case "openstack": // TODO to enum which will be validated
+		g.ProviderSpecificConfig = &OpenStackProviderConfig{}
 	default:
 		return fmt.Errorf("got unknown provider type %q", *temp.Provider)
 	}

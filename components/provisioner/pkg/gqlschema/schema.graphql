@@ -31,7 +31,7 @@ type GardenerConfig {
     providerSpecificConfig: ProviderSpecificConfig
 }
 
-union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig
+union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
 
 type GCPProviderConfig {
     zones: [String!]!
@@ -47,6 +47,13 @@ type AWSProviderConfig {
     vpcCidr: String
     publicCidr: String
     internalCidr: String
+}
+
+type OpenStackProviderConfig {
+    zone: String
+    floatingPoolName: String
+    cloudProfileName: String
+    loadBalancerProvider: String
 }
 
 type ConfigEntry {
@@ -156,8 +163,8 @@ input GardenerConfigInput {
     machineType: String!                            # Type of node machines, varies depending on the target provider
     machineImage: String                            # Machine OS image name
     machineImageVersion: String                     # Machine OS image version
-    diskType: String!                               # Disk type, varies depending on the target provider
-    volumeSizeGB: Int!                              # Size of the available disk, provided in GB
+    diskType: String                                # Disk type, varies depending on the target provider
+    volumeSizeGB: Int                               # Size of the available disk, provided in GB
     workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes
     autoScalerMin: Int!                             # Minimum number of VMs to create
     autoScalerMax: Int!                             # Maximum number of VMs to create
@@ -173,9 +180,10 @@ input GardenerConfigInput {
 }
 
 input ProviderSpecificInput {
-    gcpConfig: GCPProviderConfigInput        # GCP-specific configuration for the cluster to be provisioned
-    azureConfig: AzureProviderConfigInput    # Azure-specific configuration for the cluster to be provisioned
-    awsConfig: AWSProviderConfigInput        # AWS-specific configuration for the cluster to be provisioned
+    gcpConfig: GCPProviderConfigInput             # GCP-specific configuration for the cluster to be provisioned
+    azureConfig: AzureProviderConfigInput         # Azure-specific configuration for the cluster to be provisioned
+    awsConfig: AWSProviderConfigInput             # AWS-specific configuration for the cluster to be provisioned
+    openStackConfig: OpenStackProviderConfigInput # OpenStack-specific configuration for the cluster to be provisioned
 }
 
 input GCPProviderConfigInput {
@@ -192,6 +200,13 @@ input AWSProviderConfigInput {
     vpcCidr: String!        # Classless Inter-Domain Routing for the virtual public cloud
     publicCidr: String!     # Classless Inter-Domain Routing for the public subnet
     internalCidr: String!   # Classless Inter-Domain Routing for the private subnet
+}
+
+input OpenStackProviderConfigInput {
+    zone:             String! # Zone in which to create the cluster
+    floatingPoolName: String! # FloatingPoolName name in which LoadBalancer FIPs should be created.
+    cloudProfileName: String! # Name of the target Cloud Profile
+    loadBalancerProvider: String! # Name of load balancer provider, e.g. f5
 }
 
 input KymaConfigInput {
