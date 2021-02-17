@@ -11,11 +11,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate mockery --name=InstanceStorage --output=automock --outpkg=automock --case=underscore
-type InstanceStorage interface {
+//go:generate mockery --name=ProvisionerStorage --output=automock --outpkg=automock --case=underscore
+type ProvisionerStorage interface {
 	FindInstance(globalAccountID string) (*internal.CLSInstance, bool, error)
 	InsertInstance(instance internal.CLSInstance) error
-	AddReference(globalAccountID, skrInstanceID string) error
+	Reference(version int, globalAccountID, skrInstanceID string) error
 }
 
 //go:generate mockery --name=InstanceCreator --output=automock --outpkg=automock --case=underscore
@@ -24,12 +24,12 @@ type InstanceCreator interface {
 }
 
 type provisioner struct {
-	storage InstanceStorage
+	storage ProvisionerStorage
 	creator InstanceCreator
 	log     logrus.FieldLogger
 }
 
-func NewProvisioner(storage InstanceStorage, creator InstanceCreator, log logrus.FieldLogger) *provisioner {
+func NewProvisioner(storage ProvisionerStorage, creator InstanceCreator, log logrus.FieldLogger) *provisioner {
 	return &provisioner{
 		storage: storage,
 		creator: creator,
@@ -61,7 +61,7 @@ func (c *provisioner) ProvisionIfNoneExists(smClient servicemanager.Client, requ
 		return c.createNewInstance(smClient, request)
 	}
 
-	err = c.storage.AddReference(instance.GlobalAccountID, request.SKRInstanceID)
+	err = c.storage.Reference(instance.Version, instance.GlobalAccountID, request.SKRInstanceID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while adding a reference to a cls instance with ID %s for global account: %s", instance.ID, request.GlobalAccountID)
 	}

@@ -23,7 +23,7 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 		fakePlanID          = "fake-plan-id"
 	)
 
-	storageMock := &automock.InstanceStorage{}
+	storageMock := &automock.ProvisionerStorage{}
 	storageMock.On("FindInstance", fakeGlobalAccountID).Return(nil, false, nil)
 	storageMock.On("InsertInstance", mock.Anything).Return(nil)
 
@@ -60,7 +60,7 @@ func TestProvisionDoesNotCreateNewInstanceIfFindQueryFails(t *testing.T) {
 		fakeInstanceID      = "fake-instance-id"
 	)
 
-	storageMock := &automock.InstanceStorage{}
+	storageMock := &automock.ProvisionerStorage{}
 	storageMock.On("FindInstance", fakeGlobalAccountID).Return(nil, false, errors.New("unable to connect"))
 
 	smClientMock := &smautomock.Client{}
@@ -90,7 +90,7 @@ func TestProvisionDoesNotCreateNewInstanceIfInsertQueryFails(t *testing.T) {
 		fakeInstanceID      = "fake-instance-id"
 	)
 
-	storageMock := &automock.InstanceStorage{}
+	storageMock := &automock.ProvisionerStorage{}
 	storageMock.On("FindInstance", fakeGlobalAccountID).Return(nil, false, nil)
 	storageMock.On("InsertInstance", mock.Anything).Return(errors.New("unable to connect"))
 
@@ -120,7 +120,7 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 		fakePlanID          = "fake-plan-id"
 	)
 
-	storageMock := &automock.InstanceStorage{}
+	storageMock := &automock.ProvisionerStorage{}
 	storageMock.On("FindInstance", fakeGlobalAccountID).Return(nil, false, nil)
 	storageMock.On("InsertInstance", mock.MatchedBy(func(instance internal.CLSInstance) bool {
 		return assert.Equal(t, fakeGlobalAccountID, instance.GlobalAccountID) &&
@@ -134,13 +134,15 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 	creatorMock.On("CreateInstance", smClientMock, mock.Anything).Return(nil)
 
 	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
-	sut.ProvisionIfNoneExists(smClientMock, &ProvisionRequest{
+	result, err := sut.ProvisionIfNoneExists(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
 		BrokerID:        fakeBrokerID,
 		ServiceID:       fakeServiceID,
 		PlanID:          fakePlanID,
 	})
+	require.NotNil(t, result)
+	require.NoError(t, err)
 
 	storageMock.AssertNumberOfCalls(t, "InsertInstance", 1)
 }
@@ -155,12 +157,12 @@ func TestProvisionAddsReferenceIfFoundInDB(t *testing.T) {
 		fakeInstanceID      = "fake-instance-id"
 	)
 
-	storageMock := &automock.InstanceStorage{}
+	storageMock := &automock.ProvisionerStorage{}
 	storageMock.On("FindInstance", fakeGlobalAccountID).Return(&internal.CLSInstance{
 		GlobalAccountID: fakeGlobalAccountID,
 		ID:              fakeInstanceID,
 	}, true, nil)
-	storageMock.On("AddReference", fakeGlobalAccountID, fakeSKRInstanceID).Return(nil)
+	storageMock.On("Reference", mock.Anything, fakeGlobalAccountID, fakeSKRInstanceID).Return(nil)
 
 	smClientMock := &smautomock.Client{}
 	creatorMock := &automock.InstanceCreator{}
@@ -176,7 +178,7 @@ func TestProvisionAddsReferenceIfFoundInDB(t *testing.T) {
 	require.NotNil(t, result)
 	require.NoError(t, err)
 
-	storageMock.AssertNumberOfCalls(t, "AddReference", 1)
+	storageMock.AssertNumberOfCalls(t, "Reference", 1)
 	storageMock.AssertNumberOfCalls(t, "InsertInstance", 0)
 	creatorMock.AssertNumberOfCalls(t, "CreateInstance", 0)
 }

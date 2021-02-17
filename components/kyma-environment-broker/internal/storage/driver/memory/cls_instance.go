@@ -49,7 +49,7 @@ func (s *clsInstances) InsertInstance(instance internal.CLSInstance) error {
 	return nil
 }
 
-func (s *clsInstances) AddReference(globalAccountID, skrInstanceID string) error {
+func (s *clsInstances) Reference(version int, globalAccountID, skrInstanceID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
