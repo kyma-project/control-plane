@@ -74,21 +74,32 @@ func TestClsProvisionSteps(t *testing.T) {
 	offeringStep := NewClsOfferingStep(clsConfig, repo)
 
 	clsClient := cls.NewClient(clsConfig, log)
-	clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient, log)
-	provisionStep := NewClsProvisionStep(clsConfig, clsProvisioner, repo)
+	//clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient, log)
+	//provisioningStep := NewClsProvisioningStep(clsConfig, clsProvisioner, repo)
+
+	bindingStep := NewClsBindStep(clsConfig, clsClient, repo, "1234567890123456")
 
 	operation, retry, err := offeringStep.Run(operation, log)
 	fmt.Printf(">>> %#v\n", operation.Cls)
 	require.NoError(t, err)
 	require.Zero(t, retry)
 
-	operation, retry, err = provisionStep.Run(operation, log)
-	fmt.Printf(">>> first provisioning: %#v\n", operation.Cls)
+	//operation, retry, err = provisioningStep.Run(operation, log)
+	//fmt.Printf(">>> first provisioning: %#v\n", operation.Cls)
+	//require.NoError(t, err)
+	//require.Zero(t, retry)
+	//
+	//operation, retry, err = provisioningStep.Run(operation, log)
+	//fmt.Printf(">>> second provisioning %#v\n", operation.Cls)
+	//require.NoError(t, err)
+	//require.Zero(t, retry)
+	operation.Cls.Instance.InstanceID = "1bb94327-5909-409e-8d6a-6e9e7cbe2cac"
+	operation.Cls.Instance.ProvisioningTriggered = true
+
+	operation, retry, err = bindingStep.Run(operation, log)
+	fmt.Printf("After Binding step>>> %#v\n", operation.Cls)
+	fmt.Printf("After Binding step 2>>> %#v\n", operation)
 	require.NoError(t, err)
 	require.Zero(t, retry)
 
-	operation, retry, err = provisionStep.Run(operation, log)
-	fmt.Printf(">>> second provisioning %#v\n", operation.Cls)
-	require.NoError(t, err)
-	require.Zero(t, retry)
 }
