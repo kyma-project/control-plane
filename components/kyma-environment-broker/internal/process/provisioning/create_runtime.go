@@ -23,6 +23,9 @@ const (
 
 	brokerKeyPrefix = "broker_"
 	globalKeyPrefix = "global_"
+
+	adminAccessComponent = "cluster-users"
+	adminAccessKey       = "users.adminName"
 )
 
 type CreateRuntimeStep struct {
@@ -131,6 +134,14 @@ func (s *CreateRuntimeStep) updateInstance(id, runtimeID, region string) error {
 }
 
 func (s *CreateRuntimeStep) createProvisionInput(operation internal.ProvisioningOperation) (gqlschema.ProvisionRuntimeInput, error) {
+	var request gqlschema.ProvisionRuntimeInput
+
+	operation.InputCreator.AppendOverrides(adminAccessComponent, []*gqlschema.ConfigEntryInput{
+		{
+			Key:   adminAccessKey,
+			Value: operation.ProvisioningParameters.ErsContext.UserID,
+		},
+	})
 	operation.InputCreator.SetProvisioningParameters(operation.ProvisioningParameters)
 	operation.InputCreator.SetShootName(operation.ShootName)
 	operation.InputCreator.SetLabel(brokerKeyPrefix+"instance_id", operation.InstanceID)

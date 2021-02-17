@@ -36,6 +36,8 @@ const (
 	serviceManagerURL      = "http://sm.com"
 	serviceManagerUser     = "admin"
 	serviceManagerPassword = "admin123"
+
+	adminUserName = "admin@example.com"
 )
 
 var (
@@ -99,6 +101,16 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 					Component:     "keb",
 					Namespace:     "kyma-system",
 					Configuration: nil,
+				},
+				{
+					Component: "cluster-users",
+					Namespace: "kyma-system",
+					Configuration: []*gqlschema.ConfigEntryInput{
+						{
+							Key:   "users.adminName",
+							Value: adminUserName,
+						},
+					},
 				},
 			},
 			Configuration:    []*gqlschema.ConfigEntryInput{},
@@ -202,6 +214,7 @@ func fixProvisioningParametersWithPlanID(planID, region string) internal.Provisi
 				},
 				URL: serviceManagerURL,
 			},
+			UserID: adminUserName,
 		},
 		Parameters: internal.ProvisioningParametersDTO{
 			Region: ptr.String(region),
@@ -226,9 +239,19 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 			Namespace:     "kyma-system",
 			Configuration: nil,
 		},
+		{
+			Component:     "cluster-users",
+			Namespace:     "kyma-system",
+			Configuration: nil,
+		},
 	}).Return(internal.ComponentConfigurationInputList{
 		{
 			Component:     "keb",
+			Namespace:     "kyma-system",
+			Configuration: nil,
+		},
+		{
+			Component:     "cluster-users",
 			Namespace:     "kyma-system",
 			Configuration: nil,
 		},
@@ -241,6 +264,10 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 		},
 		{
 			Name:      "keb",
+			Namespace: "kyma-system",
+		},
+		{
+			Name:      "cluster-users",
 			Namespace: "kyma-system",
 		},
 	}
