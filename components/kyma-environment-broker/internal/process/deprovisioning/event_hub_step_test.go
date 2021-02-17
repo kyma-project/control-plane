@@ -309,20 +309,13 @@ func Test_StepsUnhappyPath(t *testing.T) {
 
 func fixInstance() internal.Instance {
 	region := "westeurope"
-	return internal.Instance{
-		InstanceID: fixInstanceID,
-		Parameters: internal.ProvisioningParameters{
-			PlanID: "4deee563-e5ec-4731-b9b1-53b42d855f0c",
-			ErsContext: internal.ERSContext{
-				SubAccountID: subAccountID,
-			},
-			Parameters: internal.ProvisioningParametersDTO{
-				Name:                        "nachtmaar-15",
-				OptionalComponentsToInstall: []string{},
-				Region:                      &region,
-			},
-		},
-	}
+	instance := internal.FixInstance(fixInstanceID)
+	instance.Parameters.ErsContext.SubAccountID = subAccountID
+	instance.Parameters.Parameters.Name = "nachtmaar-15"
+	instance.Parameters.Parameters.OptionalComponentsToInstall = []string{}
+	instance.Parameters.Parameters.Region = &region
+
+	return instance
 }
 
 func fixAccountProvider() *hyperscalerautomock.AccountProvider {
@@ -349,32 +342,27 @@ func fixLogger() logrus.FieldLogger {
 }
 
 func fixDeprovisioningOperationWithParameters() internal.DeprovisioningOperation {
-	return internal.DeprovisioningOperation{
-		Operation: internal.Operation{
-			ID:                     fixOperationID,
-			InstanceID:             fixInstanceID,
-			ProvisionerOperationID: fixProvisionerOperationID,
-			Description:            "",
-			UpdatedAt:              time.Now(),
-			ProvisioningParameters: internal.ProvisioningParameters{
-				PlanID:         "",
-				ServiceID:      "",
-				ErsContext:     internal.ERSContext{},
-				Parameters:     internal.ProvisioningParametersDTO{},
-				PlatformRegion: "",
-			},
-		},
+	deprovisioningOperation := internal.FixDeprovisioningOperation(fixOperationID, fixInstanceID)
+	deprovisioningOperation.ProvisionerOperationID = fixProvisionerOperationID
+	deprovisioningOperation.Operation.UpdatedAt = time.Now()
+	deprovisioningOperation.State = ""
+	deprovisioningOperation.ProvisioningParameters = internal.ProvisioningParameters{
+		PlanID:         "",
+		ServiceID:      "",
+		ErsContext:     internal.ERSContext{},
+		Parameters:     internal.ProvisioningParametersDTO{},
+		PlatformRegion: "",
 	}
+
+	return deprovisioningOperation
 }
 
 func fixDeprovisioningOperationWithDeletedEventHub() internal.DeprovisioningOperation {
-	return internal.DeprovisioningOperation{
-		Operation: internal.Operation{InstanceDetails: internal.InstanceDetails{
-			EventHub: internal.EventHub{
-				Deleted: true,
-			},
-		}},
-	}
+	deprovisioningOperation := internal.FixDeprovisioningOperation("", "")
+	deprovisioningOperation.Operation.InstanceDetails.EventHub.Deleted = true
+	deprovisioningOperation.Operation.State = ""
+
+	return deprovisioningOperation
 }
 
 // operationManager.OperationFailed(...)
