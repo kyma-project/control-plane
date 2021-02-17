@@ -24,6 +24,7 @@ type EventingOverrides struct {
 	OauthTokenEndpoint string `json:"oauthTokenEndpoint"`
 	PublishUrl         string `json:"publishUrl"`
 	BebNamespace       string `json:"bebNamespace"`
+	IsBEBEnabled       string `json:"isBEBEnabled"`
 }
 
 type EmsBindStep struct {
@@ -76,11 +77,11 @@ func (s *EmsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 			return s.handleError(operation, err, log, fmt.Sprintf("Bind() call failed"))
 		}
 		// get overrides
-		eventingOverrides, err = getCredentials(respBinding.Binding)
+		eventingOverrides, err = GetEventingCredentials(respBinding.Binding)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("getCredentials() call failed"))
 		}
-		encryptedOverrides, err := encryptOverrides(s.secretKey, eventingOverrides)
+		encryptedOverrides, err := EncryptEventingOverrides(s.secretKey, eventingOverrides)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("encryptOverrides() call failed"))
 		}
@@ -88,21 +89,22 @@ func (s *EmsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		operation.Ems.Instance.Provisioned = true
 		operation.Ems.Instance.ProvisioningTriggered = false
 		// save the status
-		operation, retry := s.operationManager.UpdateOperation(operation)
+		op, retry := s.operationManager.UpdateOperation(operation)
 		if retry > 0 {
 			log.Errorf("unable to update operation")
 			return operation, time.Second, nil
 		}
+		operation = op
 	} else {
 		// get the credentials from encrypted string in operation.Ems.Instance.
-		eventingOverrides, err = decryptOverrides(s.secretKey, operation.Ems.Overrides)
+		eventingOverrides, err = DecryptEventingOverrides(s.secretKey, operation.Ems.Overrides)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("decryptOverrides() call failed"))
 		}
 	}
 
 	// append overrides
-	operation.InputCreator.AppendOverrides(components.Eventing, getEventingOverrides(eventingOverrides))
+	operation.InputCreator.AppendOverrides(components.Eventing, GetEventingOverrides(eventingOverrides))
 
 	return operation, 0, nil
 }
@@ -112,10 +114,11 @@ func (s *EmsBindStep) handleError(operation internal.ProvisioningOperation, err 
 	return s.operationManager.OperationFailed(operation, msg)
 }
 
-func getCredentials(binding servicemanager.Binding) (*EventingOverrides, error) {
+func GetEventingCredentials(binding servicemanager.Binding) (*EventingOverrides, error) {
 	evOverrides := EventingOverrides{}
 	credentials := binding.Credentials
 	evOverrides.BebNamespace = credentials["namespace"].(string)
+	evOverrides.IsBEBEnabled = "true"
 	messaging, ok := credentials["messaging"].([]interface{})
 	if !ok {
 		return nil, fmt.Errorf("false type for %s", "messaging")
@@ -144,7 +147,7 @@ func getCredentials(binding servicemanager.Binding) (*EventingOverrides, error) 
 	return &evOverrides, nil
 }
 
-func getEventingOverrides(evOverrides *EventingOverrides) []*gqlschema.ConfigEntryInput {
+func GetEventingOverrides(evOverrides *EventingOverrides) []*gqlschema.ConfigEntryInput {
 	return []*gqlschema.ConfigEntryInput{
 		{
 			Key:    "authentication.oauthClientId",
@@ -171,10 +174,20 @@ func getEventingOverrides(evOverrides *EventingOverrides) []*gqlschema.ConfigEnt
 			Value:  evOverrides.BebNamespace,
 			Secret: ptr.Bool(true),
 		},
+		{
+			Key:    "global.isBEBEnabled",
+			Value:  evOverrides.IsBEBEnabled,
+			Secret: ptr.Bool(false),
+		},
+		{
+			Key:    "global.eventing.backend",
+			Value:  "beb",
+			Secret: ptr.Bool(false),
+		},
 	}
 }
 
-func encryptOverrides(secretKey string, overrides *EventingOverrides) (string, error) {
+func EncryptEventingOverrides(secretKey string, overrides *EventingOverrides) (string, error) {
 	ovrs, err := json.Marshal(*overrides)
 	if err != nil {
 		return "", errors.Wrap(err, "while encoding eventing overrides")
@@ -187,7 +200,7 @@ func encryptOverrides(secretKey string, overrides *EventingOverrides) (string, e
 	return string(encryptedOverrides), nil
 }
 
-func decryptOverrides(secretKey string, encryptedOverrides string) (*EventingOverrides, error) {
+func DecryptEventingOverrides(secretKey string, encryptedOverrides string) (*EventingOverrides, error) {
 	encrypter := storage.NewEncrypter(secretKey)
 	decryptedOverrides, err := encrypter.Decrypt([]byte(encryptedOverrides))
 	if err != nil {

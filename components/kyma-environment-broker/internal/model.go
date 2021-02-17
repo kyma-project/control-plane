@@ -255,6 +255,8 @@ type UpgradeKymaOperation struct {
 	InputCreator                   ProvisionerInputCreator `json:"-"`
 
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
+
+	SMClientFactory SMClientFactory `json:"-"`
 }
 
 func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaConfigInput, clusterConfig *gqlschema.GardenerConfigInput) RuntimeState {
@@ -370,6 +372,10 @@ func (po *ProvisioningOperation) ProvideServiceManagerCredentials(log logrus.Fie
 
 func (do *DeprovisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {
 	return do.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(do.ProvisioningParameters), log)
+}
+
+func (uko *UpgradeKymaOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {
+	return uko.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(uko.ProvisioningParameters), log)
 }
 
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput
