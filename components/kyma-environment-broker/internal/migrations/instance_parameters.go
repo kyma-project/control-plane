@@ -25,7 +25,7 @@ func NewInstanceParametersMigration(instances storage.Instances, cipher postsql.
 }
 
 func (m *InstanceParametersMigration) Migrate() error {
-	instances, _, _, err := m.instances.List(dbmodel.InstanceFilter{})
+	instances, _, _, err := m.instances.ListWithoutDecryption(dbmodel.InstanceFilter{})
 	if err != nil {
 		return errors.Wrap(err, "while listing instances")
 	}

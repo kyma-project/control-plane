@@ -17,6 +17,10 @@ type Instances interface {
 	GetInstanceStats() (internal.InstanceStats, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
 	List(dbmodel.InstanceFilter) ([]internal.Instance, int, int, error)
+
+	// todo: remove after instances parameters migration is done
+	InsertWithoutEncryption(instance internal.Instance) error
+	ListWithoutDecryption(dbmodel.InstanceFilter) ([]internal.Instance, int, int, error)
 }
 
 type Operations interface {

@@ -2,6 +2,7 @@ package memory
 
 import (
 	"database/sql"
+	"errors"
 	"regexp"
 	"sort"
 	"sync"
@@ -27,6 +28,14 @@ func NewInstance(operations *operations) *instances {
 		operationsStorage: operations,
 	}
 }
+
+func (s *instances) InsertWithoutEncryption(instance internal.Instance) error {
+	return errors.New("not implemented")
+}
+func (s *instances) ListWithoutDecryption(dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
+	return nil, 0, 0, errors.New("not implemented")
+}
+
 func (s *instances) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, error) {
 	var instances []internal.InstanceWithOperation
 

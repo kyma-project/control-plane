@@ -27,6 +27,78 @@ func NewInstance(sess postsql.Factory, operations *operations, cipher Cipher) *I
 	}
 }
 
+func (s *Instance) InsertWithoutEncryption(instance internal.Instance) error {
+	_, err := s.GetByID(instance.InstanceID)
+	if err == nil {
+		return dberr.AlreadyExists("instance with id %s already exist", instance.InstanceID)
+	}
+	params, err := json.Marshal(instance.Parameters)
+	if err != nil {
+		return errors.Wrap(err, "while marshaling parameters")
+	}
+	dto := dbmodel.InstanceDTO{
+		InstanceID:             instance.InstanceID,
+		RuntimeID:              instance.RuntimeID,
+		GlobalAccountID:        instance.GlobalAccountID,
+		SubAccountID:           instance.SubAccountID,
+		ServiceID:              instance.ServiceID,
+		ServiceName:            instance.ServiceName,
+		ServicePlanID:          instance.ServicePlanID,
+		ServicePlanName:        instance.ServicePlanName,
+		DashboardURL:           instance.DashboardURL,
+		ProvisioningParameters: string(params),
+		ProviderRegion:         instance.ProviderRegion,
+		CreatedAt:              instance.CreatedAt,
+		UpdatedAt:              instance.UpdatedAt,
+		DeletedAt:              instance.DeletedAt,
+		Version:                instance.Version,
+	}
+
+	sess := s.NewWriteSession()
+	return wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		err := sess.InsertInstance(dto)
+		if err != nil {
+			log.Errorf("while saving instance ID %s: %v", instance.InstanceID, err)
+			return false, nil
+		}
+		return true, nil
+	})
+}
+
+func (s *Instance) ListWithoutDecryption(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
+	dtos, count, totalCount, err := s.NewReadSession().ListInstances(filter)
+	if err != nil {
+		return []internal.Instance{}, 0, 0, err
+	}
+	var instances []internal.Instance
+	for _, dto := range dtos {
+		var params internal.ProvisioningParameters
+		err := json.Unmarshal([]byte(dto.ProvisioningParameters), &params)
+		if err != nil {
+			return nil, 0, 0, errors.Wrap(err, "while unmarshal parameters")
+		}
+		instance := internal.Instance{
+			InstanceID:      dto.InstanceID,
+			RuntimeID:       dto.RuntimeID,
+			GlobalAccountID: dto.GlobalAccountID,
+			SubAccountID:    dto.SubAccountID,
+			ServiceID:       dto.ServiceID,
+			ServiceName:     dto.ServiceName,
+			ServicePlanID:   dto.ServicePlanID,
+			ServicePlanName: dto.ServicePlanName,
+			DashboardURL:    dto.DashboardURL,
+			Parameters:      params,
+			ProviderRegion:  dto.ProviderRegion,
+			CreatedAt:       dto.CreatedAt,
+			UpdatedAt:       dto.UpdatedAt,
+			DeletedAt:       dto.DeletedAt,
+			Version:         dto.Version,
+		}
+		instances = append(instances, instance)
+	}
+	return instances, count, totalCount, err
+}
+
 func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, error) {
 	sess := s.NewReadSession()
 	var (
