@@ -26,7 +26,7 @@ import (
 func TestHandler_AttachRoutes(t *testing.T) {
 	t.Run("upgrade", func(t *testing.T) {
 		// given
-		kHandler := fixKymaHanler(t)
+		kHandler := fixKymaHandler(t)
 
 		params := orchestration.Parameters{
 			Targets: orchestration.TargetSpec{
@@ -65,7 +65,7 @@ func TestHandler_AttachRoutes(t *testing.T) {
 func TestHandler_KymaVersion(t *testing.T) {
 	t.Run("kyma version validation", func(t *testing.T) {
 		// given
-		kHandler := fixKymaHanler(t)
+		kHandler := fixKymaHandler(t)
 
 		// test semantic version
 		// Exists: 1.18.0
@@ -97,7 +97,7 @@ func TestHandler_KymaVersion(t *testing.T) {
 	})
 }
 
-func fixKymaHanler(t *testing.T) *kymaHandler {
+func fixKymaHandler(t *testing.T) *kymaHandler {
 	db := storage.NewMemoryStorage()
 	logs := logrus.New()
 	q := process.NewQueue(&testExecutor{}, logs)

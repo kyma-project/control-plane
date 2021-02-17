@@ -128,7 +128,9 @@ func (h *kymaHandler) ValidateKymaVersion(version string) error {
 		err          error
 		resp         *github.Response
 		shouldHandle = func(resp *github.Response) bool {
-			return resp != nil && resp.StatusCode >= 400 && resp.StatusCode < 500
+			return resp != nil &&
+				resp.StatusCode >= 400 && resp.StatusCode < 500 &&
+				resp.StatusCode != http.StatusForbidden
 		}
 	)
 
