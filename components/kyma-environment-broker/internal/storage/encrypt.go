@@ -8,8 +8,6 @@ import (
 	"io"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
-
 	"github.com/pkg/errors"
 )
 
@@ -48,7 +46,7 @@ func (e *Encrypter) Decrypt(obj []byte) ([]byte, error) {
 		return nil, err
 	}
 	if len(obj) < aes.BlockSize {
-		return nil, kebError.NewNotValidFormatError("cipher text is too short")
+		return nil, errors.New("cipher text is too short")
 	}
 	iv := obj[:aes.BlockSize]
 	obj = obj[aes.BlockSize:]

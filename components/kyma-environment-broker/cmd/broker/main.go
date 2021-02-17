@@ -75,7 +75,7 @@ type Config struct {
 	EnableInstanceDetailsMigration    bool `envconfig:"default=false"`
 	EnableInstanceParametersMigration bool `envconfig:"default=false"`
 	EnableInstanceParametersRollback  bool `envconfig:"default=false"`
-	EnableOperationsUserIDMigration bool `envconfig:"default=false"`
+	EnableOperationsUserIDMigration   bool `envconfig:"default=false"`
 
 	// DisableProcessOperationsInProgress allows to disable processing operations
 	// which are in progress on starting application. Set to true if you are
