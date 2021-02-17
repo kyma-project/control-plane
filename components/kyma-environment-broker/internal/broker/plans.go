@@ -20,6 +20,8 @@ const (
 	AzureLitePlanName = "azure_lite"
 	TrialPlanID       = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
 	TrialPlanName     = "trial"
+	OpenStackPlanID   = "03b812ac-c991-4528-b5bd-08b303523a63"
+	OpenStackPlanName = "openstack"
 )
 
 var PlanNamesMapping = map[string]string{
@@ -28,6 +30,7 @@ var PlanNamesMapping = map[string]string{
 	AzurePlanID:     AzurePlanName,
 	AzureLitePlanID: AzureLitePlanName,
 	TrialPlanID:     TrialPlanName,
+	OpenStackPlanID: OpenStackPlanName,
 }
 
 var PlanIDsMapping = map[string]string{
@@ -36,6 +39,7 @@ var PlanIDsMapping = map[string]string{
 	AzureLitePlanName: AzureLitePlanID,
 	GCPPlanName:       GCPPlanID,
 	TrialPlanName:     TrialPlanID,
+	OpenStackPlanName: OpenStackPlanID,
 }
 
 type TrialCloudRegion string
@@ -77,6 +81,21 @@ func AWSRegions() []string {
 	// be aware of zones defined in internal/provider/aws_provider.go
 	return []string{"eu-central-1", "eu-west-2", "ca-central-1", "sa-east-1", "us-east-1", "us-west-1",
 		"ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2"}
+}
+
+func OpenStackRegions() []string {
+	return []string{"eu-de-1", "ap-sa-1"}
+}
+
+func OpenStackSchema(machineTypes []string) []byte {
+	properties := NewProvisioningProperties(machineTypes, OpenStackRegions())
+	schema := NewSchema(properties, DefaultControlsOrder())
+
+	bytes, err := json.Marshal(schema)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
 }
 
 func GCPSchema(machineTypes []string) []byte {
@@ -164,6 +183,22 @@ func Plans(plans PlansConfig) map[string]Plan {
 				},
 			},
 			provisioningRawSchema: GCPSchema([]string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"}),
+		},
+		OpenStackPlanID: {
+			PlanDefinition: domain.ServicePlan{
+				ID:          OpenStackPlanID,
+				Name:        OpenStackPlanName,
+				Description: defaultDescription(OpenStackPlanName, plans),
+				Metadata:    defaultMetadata(OpenStackPlanName, plans),
+				Schemas: &domain.ServiceSchemas{
+					Instance: domain.ServiceInstanceSchema{
+						Create: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
+					},
+				},
+			},
+			provisioningRawSchema: OpenStackSchema([]string{"m2.xlarge", "m1.2xlarge"}),
 		},
 		AzurePlanID: {
 			PlanDefinition: domain.ServicePlan{

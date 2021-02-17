@@ -29,6 +29,8 @@ func getHyperscalerType(pp internal.ProvisioningParameters) (hyperscaler.Type, e
 		return hyperscaler.AWS, nil
 	case broker.AzurePlanID, broker.AzureLitePlanID:
 		return hyperscaler.Azure, nil
+	case broker.OpenStackPlanID:
+		return hyperscaler.Openstack, nil
 	case broker.TrialPlanID:
 		return forTrialProvider(pp.Parameters.Provider)
 	default:

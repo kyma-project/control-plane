@@ -23,6 +23,10 @@ func NewDisabledComponentsProvider() DisabledComponentsProvider {
 			components.Backup:     {},
 			components.BackupInit: {},
 		},
+		broker.OpenStackPlanID: {
+			components.NatsStreaming:           {},
+			components.KnativeProvisionerNatss: {},
+		},
 		broker.GCPPlanID: {
 			components.NatsStreaming:           {},
 			components.KnativeProvisionerNatss: {},
