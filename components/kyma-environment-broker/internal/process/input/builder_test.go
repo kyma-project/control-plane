@@ -218,12 +218,11 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 }
 
 func fixProvisioningParameters(planID, kymaVersion string) internal.ProvisioningParameters {
-	return internal.ProvisioningParameters{
-		PlanID: planID,
-		Parameters: internal.ProvisioningParametersDTO{
-			KymaVersion: kymaVersion,
-		},
-	}
+	pp := internal.FixProvisioningParameters("")
+	pp.PlanID = planID
+	pp.Parameters.KymaVersion = kymaVersion
+
+	return pp
 }
 
 func fixTrialRegionMapping() map[string]string {
