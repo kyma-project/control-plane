@@ -251,7 +251,7 @@ func TestDeprovisionFailsIfMarkingQueryFails(t *testing.T) {
 	removerMock.AssertNumberOfCalls(t, "DeleteInstance", 0)
 }
 
-func TestDeprovisionDeletesIfLastReference(t *testing.T) {
+func TestDeprovisionRemovesIfLastReference(t *testing.T) {
 	const (
 		fakeGlobalAccountID = "fake-global-account-id"
 		fakeSKRInstanceID   = "fake-skr-instance-id"

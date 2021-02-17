@@ -1,3 +1,5 @@
+// +build sm_integration
+
 package deprovisioning
 
 import (
@@ -6,7 +8,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
@@ -23,7 +24,7 @@ import (
 // export PLAN_ID=
 // export INSTANCE_ID=
 // go test -v -tags=sm_integration ./internal/process/deprovisioning/... -run TestDeprovisioningSteps -count=1
-func TestClsDeprovision(t *testing.T) {
+func TestClsDeprovisionSteps(t *testing.T) {
 	var (
 		globalAccountID = "fake-global-account-id"
 		skrInstanceID   = "fake-skr-instance-id"
@@ -44,7 +45,8 @@ func TestClsDeprovision(t *testing.T) {
 
 	db := storage.NewMemoryStorage()
 	db.CLSInstances().InsertInstance(internal.CLSInstance{
-		GlobalAccountID: globalAccountID,
+		GlobalAccountID:          globalAccountID,
+		ReferencedSKRInstanceIDs: []string{skrInstanceID},
 	})
 
 	repo := db.Operations()
@@ -68,7 +70,7 @@ func TestClsDeprovision(t *testing.T) {
 				},
 			},
 		},
-		SMClientFactory: servicemanager.NewFakeServiceManagerClientFactory(nil, nil),
+		SMClientFactory: servicemanager.NewClientFactory(servicemanager.Config{}),
 	}
 
 	log := logrus.New()
@@ -79,7 +81,7 @@ func TestClsDeprovision(t *testing.T) {
 
 	step := NewClsDeprovisionStep(clsConfig, repo, clsDeprovisioner)
 
-	op, offset, err := step.Run(operation, logger.NewLogDummy())
+	op, offset, err := step.Run(operation, log)
 	require.False(t, op.Cls.Instance.Provisioned)
 	require.Empty(t, op.Cls.Instance.InstanceID)
 	require.NotZero(t, offset)

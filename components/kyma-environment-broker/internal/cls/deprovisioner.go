@@ -53,24 +53,29 @@ func (d *Deprovisioner) Deprovision(smClient servicemanager.Client, request *Dep
 		}
 	}
 	if !isReferenced {
-		d.log.Warnf("Provided CLS instance for global account %s is not referenced by the SKR %s", request.GlobalAccountID, request.SKRInstanceID)
+		d.log.Warnf("Provided cls instance for global account %s is not referenced by the skr %s", request.GlobalAccountID, request.SKRInstanceID)
 		return nil
 	}
 
 	if len(instance.ReferencedSKRInstanceIDs) > 1 {
 		if err := d.storage.Unreference(instance.Version, request.GlobalAccountID, request.SKRInstanceID); err != nil {
-			return errors.Wrapf(err, "while unreferencing a cls instance for global account: %s", request.GlobalAccountID)
+			return errors.Wrapf(err, "while unreferencing a cls instance for global account %s", request.GlobalAccountID)
 		}
 
+		d.log.Infof("Unreferenced the skr %s from the cls instance for global account %s", request.SKRInstanceID, request.GlobalAccountID)
 		return nil
 	}
 
+	d.log.Infof("Marking the cls instance for global account %s as being removed by skr %s", request.GlobalAccountID, request.SKRInstanceID)
+
 	if err := d.storage.MarkAsBeingRemoved(instance.Version, request.GlobalAccountID, request.SKRInstanceID); err != nil {
-		return errors.Wrapf(err, "while marking a cls instance as being removed for global account: %s", request.GlobalAccountID)
+		return errors.Wrapf(err, "while marking a cls instance as being removed for global account %s", request.GlobalAccountID)
 	}
 
+	d.log.Infof("Deleting the cls instance for global account %s", request.GlobalAccountID)
+
 	if err := d.remover.RemoveInstance(smClient, request.Instance); err != nil {
-		return errors.Wrapf(err, "while deleting a cls instance for global account: %s", request.GlobalAccountID)
+		return errors.Wrapf(err, "while deleting a cls instance for global account %s", request.GlobalAccountID)
 	}
 
 	return nil
