@@ -102,25 +102,15 @@ func TestManager_Execute(t *testing.T) {
 }
 
 func fixDeprovisionOperation(ID string) internal.DeprovisioningOperation {
-	return internal.DeprovisioningOperation{
-		Operation: internal.Operation{
-			ID:                     ID,
-			State:                  domain.InProgress,
-			InstanceID:             fakeInstanceID,
-			ProvisioningParameters: internal.ProvisioningParameters{PlanID: "321"},
-		},
-	}
+	deprovisioningOperation := internal.FixDeprovisioningOperation(ID, fakeInstanceID)
+	deprovisioningOperation.State = domain.InProgress
+	deprovisioningOperation.Description = ""
+
+	return deprovisioningOperation
 }
 
 func fixProvisionOperation() internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     "6bc401aa-2ec4-4303-bf3f-2e04990f6d8f",
-			InstanceID:             fakeInstanceID,
-			State:                  domain.Succeeded,
-			ProvisioningParameters: internal.ProvisioningParameters{PlanID: "321"},
-		},
-	}
+	return internal.FixProvisioningOperation("6bc401aa-2ec4-4303-bf3f-2e04990f6d8f", fakeInstanceID)
 }
 
 type testStep struct {
