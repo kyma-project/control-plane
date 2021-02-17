@@ -64,12 +64,9 @@ func TestLastOperation_LastOperation(t *testing.T) {
 }
 
 func fixOperation() internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:          operationID,
-			InstanceID:  instID,
-			State:       domain.Succeeded,
-			Description: operationDescription,
-		},
-	}
+	provisioningOperation := internal.FixProvisioningOperation(operationID, instID)
+	provisioningOperation.State = domain.Succeeded
+	provisioningOperation.Description = operationDescription
+
+	return provisioningOperation
 }
