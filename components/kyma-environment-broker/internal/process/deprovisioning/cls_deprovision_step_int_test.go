@@ -5,6 +5,7 @@ package deprovisioning
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
@@ -81,9 +82,15 @@ func TestClsDeprovisionSteps(t *testing.T) {
 
 	step := NewClsDeprovisionStep(clsConfig, repo, clsDeprovisioner)
 
-	op, offset, err := step.Run(operation, log)
-	require.False(t, op.Cls.Instance.Provisioned)
-	require.Empty(t, op.Cls.Instance.InstanceID)
-	require.NotZero(t, offset)
-	require.NoError(t, err)
+	for i := 0; i < 10; i++ {
+		op, offset, err := step.Run(operation, log)
+		require.NoError(t, err)
+
+		if !op.Cls.Instance.Provisioned {
+			require.Empty(t, op.Cls.Instance.InstanceID)
+			break
+		}
+
+		time.Sleep(offset)
+	}
 }

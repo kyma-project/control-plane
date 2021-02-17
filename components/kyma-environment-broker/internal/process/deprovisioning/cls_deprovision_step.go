@@ -46,11 +46,11 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 		return operation, 0, nil
 	}
 
-	log.Infof("Starting deprovisioning a cls instance for global account: %s", globalAccountID)
+	log.Infof("Starting deprovisioning a cls instance for global account %s", globalAccountID)
 
 	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, operation.Cls.Region)
 	if err != nil {
-		failureReason := fmt.Sprintf("Unable to find credentials for cls service manager: %s: %s", operation.Cls.Region, err)
+		failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
 		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason)
 	}
@@ -64,12 +64,12 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 	}
 
 	if err := s.deprovisioner.Deprovision(smClient, request); err != nil {
-		failureReason := fmt.Sprintf("Unable to deprovision a cls instance for global account: %s: %s", globalAccountID, err)
+		failureReason := fmt.Sprintf("Unable to deprovision a cls instance for global account %s: %s", globalAccountID, err)
 		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason)
 	}
 
-	log.Infof("Finished deprovisioning a cls instance for global account: %s", globalAccountID)
+	log.Infof("Finished deprovisioning a cls instance for global account %s", globalAccountID)
 
 	operation.Cls.Instance.InstanceID = ""
 	operation.Cls.Instance.Provisioned = false
