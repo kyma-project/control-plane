@@ -175,8 +175,8 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 	storageMock.On("InsertInstance", mock.MatchedBy(func(instance internal.CLSInstance) bool {
 		return assert.Equal(t, fakeGlobalAccountID, instance.GlobalAccountID) &&
 			assert.NotEmpty(t, instance.ID) &&
-			assert.Len(t, instance.SKRReferences, 1) &&
-			assert.Equal(t, fakeSKRInstanceID, instance.SKRReferences[0])
+			assert.Len(t, instance.ReferencedSKRInstanceIDs, 1) &&
+			assert.Equal(t, fakeSKRInstanceID, instance.ReferencedSKRInstanceIDs[0])
 	})).Return(nil).Once()
 
 	smClientMock := &smautomock.Client{}

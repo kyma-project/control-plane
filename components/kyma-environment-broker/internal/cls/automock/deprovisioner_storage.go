@@ -42,13 +42,13 @@ func (_m *DeprovisionerStorage) FindInstance(globalAccountID string) (*internal.
 	return r0, r1, r2
 }
 
-// MarkAsBeingRemoved provides a mock function with given fields: version, globalAccountID
-func (_m *DeprovisionerStorage) MarkAsBeingRemoved(version int, globalAccountID string) error {
-	ret := _m.Called(version, globalAccountID)
+// MarkAsBeingRemoved provides a mock function with given fields: version, globalAccountID, skrInstanceID
+func (_m *DeprovisionerStorage) MarkAsBeingRemoved(version int, globalAccountID string, skrInstanceID string) error {
+	ret := _m.Called(version, globalAccountID, skrInstanceID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, string) error); ok {
-		r0 = rf(version, globalAccountID)
+	if rf, ok := ret.Get(0).(func(int, string, string) error); ok {
+		r0 = rf(version, globalAccountID, skrInstanceID)
 	} else {
 		r0 = ret.Error(0)
 	}

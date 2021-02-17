@@ -81,5 +81,8 @@ type LMSTenants interface {
 type CLSInstances interface {
 	FindInstance(name string) (*internal.CLSInstance, bool, error)
 	InsertInstance(instance internal.CLSInstance) error
-	Reference(version int, globalAccountID, skrInstanceID string) error
+	Reference(globalAccountID, skrInstanceID string) error
+	Unreference(version int, globalAccountID, skrInstanceID string) error
+	MarkAsBeingRemoved(version int, globalAccountID, skrInstanceID string) error
+	RemoveInstance(version int, globalAccountID string) error
 }

@@ -11,7 +11,7 @@ import (
 type DeprovisionerStorage interface {
 	FindInstance(globalAccountID string) (*internal.CLSInstance, bool, error)
 	Unreference(version int, globalAccountID, skrInstanceID string) error
-	MarkAsBeingRemoved(version int, globalAccountID string) error
+	MarkAsBeingRemoved(version int, globalAccountID, skrInstanceID string) error
 	RemoveInstance(version int, globalAccountID string) error
 }
 
@@ -21,10 +21,17 @@ type InstanceRemover interface {
 }
 
 type Deprovisioner struct {
-	config  *Config
 	storage DeprovisionerStorage
 	remover InstanceRemover
 	log     logrus.FieldLogger
+}
+
+func NewDeprovisioner(storage DeprovisionerStorage, remover InstanceRemover, log logrus.FieldLogger) *Deprovisioner {
+	return &Deprovisioner{
+		storage: storage,
+		remover: remover,
+		log:     log,
+	}
 }
 
 type DeprovisionRequest struct {
@@ -40,7 +47,7 @@ func (d *Deprovisioner) Deprovision(smClient servicemanager.Client, request *Dep
 	}
 
 	isReferenced := false
-	for _, ref := range instance.SKRReferences {
+	for _, ref := range instance.ReferencedSKRInstanceIDs {
 		if ref == request.SKRInstanceID {
 			isReferenced = true
 		}
@@ -50,7 +57,7 @@ func (d *Deprovisioner) Deprovision(smClient servicemanager.Client, request *Dep
 		return nil
 	}
 
-	if len(instance.SKRReferences) > 1 {
+	if len(instance.ReferencedSKRInstanceIDs) > 1 {
 		if err := d.storage.Unreference(instance.Version, request.GlobalAccountID, request.SKRInstanceID); err != nil {
 			return errors.Wrapf(err, "while unreferencing a cls instance for global account: %s", request.GlobalAccountID)
 		}
@@ -58,7 +65,7 @@ func (d *Deprovisioner) Deprovision(smClient servicemanager.Client, request *Dep
 		return nil
 	}
 
-	if err := d.storage.MarkAsBeingRemoved(instance.Version, request.GlobalAccountID); err != nil {
+	if err := d.storage.MarkAsBeingRemoved(instance.Version, request.GlobalAccountID, request.SKRInstanceID); err != nil {
 		return errors.Wrapf(err, "while marking a cls instance as being removed for global account: %s", request.GlobalAccountID)
 	}
 
