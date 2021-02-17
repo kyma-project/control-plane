@@ -367,6 +367,8 @@ spec:
               value: "{{ .Values.enableInstanceDetailsMigration }}"
             - name: APP_ENABLE_INSTANCE_PARAMETERS_MIGRATION
               value: "{{ .Values.enableInstanceParametersMigration }}"
+            - name: APP_ENABLE_INSTANCE_PARAMETERS_ROLLBACK
+              value: "{{ .Values.enableInstanceParametersRollback }}"
             - name: APP_ENABLE_OPERATIONS_USER_ID_MIGRATION
               value: "{{ .Values.enableOperationsUserIDMigration }}"
           ports:

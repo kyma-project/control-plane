@@ -89,6 +89,7 @@ brokerService:
 
 enableInstanceDetailsMigration: "true"
 enableInstanceParametersMigration: "true"
+enableInstanceParametersRollback: "false"
 enableOperationsUserIDMigration: "true"
 
 gardener:

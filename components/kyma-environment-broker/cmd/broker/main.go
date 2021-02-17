@@ -74,6 +74,7 @@ type Config struct {
 	DbInMemory                        bool `envconfig:"default=false"`
 	EnableInstanceDetailsMigration    bool `envconfig:"default=false"`
 	EnableInstanceParametersMigration bool `envconfig:"default=false"`
+	EnableInstanceParametersRollback  bool `envconfig:"default=false"`
 	EnableOperationsUserIDMigration bool `envconfig:"default=false"`
 
 	// DisableProcessOperationsInProgress allows to disable processing operations
@@ -194,6 +195,10 @@ func main() {
 	// encrypting instances SM credentials
 	if cfg.EnableInstanceParametersMigration {
 		err = migrations.NewInstanceParametersMigration(db.Instances(), cipher, logs).Migrate()
+		fatalOnError(err)
+	}
+	if cfg.EnableInstanceParametersRollback {
+		err = migrations.NewInstanceParametersMigrationRollback(db.Instances(), logs).Migrate()
 		fatalOnError(err)
 	}
 	// migration to remove the userID parameter from succeeded deprovisioning operations
