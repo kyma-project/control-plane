@@ -31,7 +31,7 @@ func TestDeprovisionFailsIfFindQueryFails(t *testing.T) {
 	storageMock := &automock.DeprovisionerStorage{}
 	storageMock.On("FindInstance", fakeGlobalAccountID).Return(nil, false, errors.New("unable to connect"))
 
-	deprovisioner := &deprovisioner{
+	deprovisioner := &Deprovisioner{
 		log:     logger.NewLogDummy(),
 		storage: storageMock,
 	}
@@ -68,7 +68,7 @@ func TestDeprovisionReturnsEarlyIfCLSNotReferenced(t *testing.T) {
 	}
 	storageMock.On("FindInstance", mock.Anything).Return(found, true, nil)
 
-	deprovisioner := &deprovisioner{
+	deprovisioner := &Deprovisioner{
 		log:     logger.NewLogDummy(),
 		storage: storageMock,
 	}
@@ -106,7 +106,7 @@ func TestDeprovisionUnreferencesIfNotLastReference(t *testing.T) {
 	storageMock.On("FindInstance", mock.Anything).Return(found, true, nil)
 	storageMock.On("Unreference", found.Version, fakeGlobalAccountID, fakeSKRInstanceID).Return(nil)
 
-	deprovisioner := &deprovisioner{
+	deprovisioner := &Deprovisioner{
 		log:     logger.NewLogDummy(),
 		storage: storageMock,
 	}
@@ -149,7 +149,7 @@ func TestDeprovisionFailsIfUnreferenceQueryFails(t *testing.T) {
 	removerMock := &automock.InstanceRemover{}
 	removerMock.On("RemoveInstance", smClientMock, fakeInstance).Return(nil)
 
-	deprovisioner := &deprovisioner{
+	deprovisioner := &Deprovisioner{
 		log:     logger.NewLogDummy(),
 		storage: storageMock,
 		remover: removerMock,
@@ -192,7 +192,7 @@ func TestDeprovisionMarksAsBeingRemovedIfLastReference(t *testing.T) {
 	removerMock := &automock.InstanceRemover{}
 	removerMock.On("RemoveInstance", smClientMock, fakeInstance).Return(nil)
 
-	deprovisioner := &deprovisioner{
+	deprovisioner := &Deprovisioner{
 		log:     logger.NewLogDummy(),
 		storage: storageMock,
 		remover: removerMock,
@@ -235,7 +235,7 @@ func TestDeprovisionFailsIfMarkingQueryFails(t *testing.T) {
 	removerMock := &automock.InstanceRemover{}
 	removerMock.On("RemoveInstance", smClientMock, fakeInstance).Return(nil)
 
-	deprovisioner := &deprovisioner{
+	deprovisioner := &Deprovisioner{
 		log:     logger.NewLogDummy(),
 		storage: storageMock,
 		remover: removerMock,
@@ -278,7 +278,7 @@ func TestDeprovisionDeletesIfLastReference(t *testing.T) {
 	removerMock := &automock.InstanceRemover{}
 	removerMock.On("RemoveInstance", smClientMock, fakeInstance).Return(nil)
 
-	deprovisioner := &deprovisioner{
+	deprovisioner := &Deprovisioner{
 		log:     logger.NewLogDummy(),
 		storage: storageMock,
 		remover: removerMock,

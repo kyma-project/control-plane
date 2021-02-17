@@ -20,7 +20,7 @@ type InstanceRemover interface {
 	RemoveInstance(smClient servicemanager.Client, instance servicemanager.InstanceKey) error
 }
 
-type deprovisioner struct {
+type Deprovisioner struct {
 	config  *Config
 	storage DeprovisionerStorage
 	remover InstanceRemover
@@ -33,7 +33,7 @@ type DeprovisionRequest struct {
 	Instance        servicemanager.InstanceKey
 }
 
-func (d *deprovisioner) Deprovision(smClient servicemanager.Client, request *DeprovisionRequest) error {
+func (d *Deprovisioner) Deprovision(smClient servicemanager.Client, request *DeprovisionRequest) error {
 	instance, _, err := d.storage.FindInstance(request.GlobalAccountID)
 	if err != nil {
 		return errors.Wrapf(err, "while trying to lookup an instance for global account: %s", request.GlobalAccountID)
