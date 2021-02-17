@@ -37,7 +37,7 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 	})).Return(nil)
 
 	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
-	result, err := sut.ProvisionIfNoneExists(smClientMock, &ProvisionRequest{
+	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
 		BrokerID:        fakeBrokerID,
@@ -67,7 +67,7 @@ func TestProvisionDoesNotCreateNewInstanceIfFindQueryFails(t *testing.T) {
 	creatorMock := &automock.InstanceCreator{}
 
 	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
-	result, err := sut.ProvisionIfNoneExists(smClientMock, &ProvisionRequest{
+	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
 		BrokerID:        fakeBrokerID,
@@ -98,7 +98,7 @@ func TestProvisionDoesNotCreateNewInstanceIfInsertQueryFails(t *testing.T) {
 	creatorMock := &automock.InstanceCreator{}
 
 	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
-	result, err := sut.ProvisionIfNoneExists(smClientMock, &ProvisionRequest{
+	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
 		BrokerID:        fakeBrokerID,
@@ -134,7 +134,7 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 	creatorMock.On("CreateInstance", smClientMock, mock.Anything).Return(nil)
 
 	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
-	result, err := sut.ProvisionIfNoneExists(smClientMock, &ProvisionRequest{
+	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
 		BrokerID:        fakeBrokerID,
@@ -168,7 +168,7 @@ func TestProvisionAddsReferenceIfFoundInDB(t *testing.T) {
 	creatorMock := &automock.InstanceCreator{}
 
 	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
-	result, err := sut.ProvisionIfNoneExists(smClientMock, &ProvisionRequest{
+	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
 		BrokerID:        fakeBrokerID,

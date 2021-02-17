@@ -51,7 +51,7 @@ type ProvisionResult struct {
 	ProvisioningTriggered bool
 }
 
-func (c *provisioner) ProvisionIfNoneExists(smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
+func (c *provisioner) Provision(smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
 	instance, exists, err := c.storage.FindInstance(request.GlobalAccountID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while checking if instance is already created for global account: %s", request.GlobalAccountID)

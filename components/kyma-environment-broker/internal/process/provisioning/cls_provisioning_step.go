@@ -14,7 +14,7 @@ import (
 
 //go:generate mockery --name=ClsInstanceProvider --output=automock --outpkg=automock --case=underscore
 type ClsInstanceProvider interface {
-	ProvisionIfNoneExists(smClient servicemanager.Client, request *cls.ProvisionRequest) (*cls.ProvisionResult, error)
+	Provision(smClient servicemanager.Client, request *cls.ProvisionRequest) (*cls.ProvisionResult, error)
 }
 
 type clsProvisioningStep struct {
@@ -60,7 +60,7 @@ func (s *clsProvisioningStep) Run(operation internal.ProvisioningOperation, log 
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 
 	skrInstanceID := operation.InstanceID
-	result, err := s.instanceProvider.ProvisionIfNoneExists(smClient, &cls.ProvisionRequest{
+	result, err := s.instanceProvider.Provision(smClient, &cls.ProvisionRequest{
 		GlobalAccountID: globalAccountID,
 		Region:          smRegion,
 		SKRInstanceID:   skrInstanceID,

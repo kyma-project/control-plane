@@ -14,8 +14,8 @@ type ClsInstanceProvider struct {
 	mock.Mock
 }
 
-// ProvisionIfNoneExists provides a mock function with given fields: smClient, request
-func (_m *ClsInstanceProvider) ProvisionIfNoneExists(smClient servicemanager.Client, request *cls.ProvisionRequest) (*cls.ProvisionResult, error) {
+// Provision provides a mock function with given fields: smClient, request
+func (_m *ClsInstanceProvider) Provision(smClient servicemanager.Client, request *cls.ProvisionRequest) (*cls.ProvisionResult, error) {
 	ret := _m.Called(smClient, request)
 
 	var r0 *cls.ProvisionResult

@@ -84,7 +84,7 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 	clsInstanceProvider := &clsMock.ClsInstanceProvider{}
 
 	fakeGlobalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
-	clsInstanceProvider.On("ProvisionIfNoneExists", mock.Anything, &cls.ProvisionRequest{
+	clsInstanceProvider.On("Provision", mock.Anything, &cls.ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		Region:          "eu",
 		ServiceID:       "svc-id",
