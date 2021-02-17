@@ -66,7 +66,7 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 	if err := s.deprovisioner.Deprovision(smClient, request); err != nil {
 		failureReason := fmt.Sprintf("Unable to deprovision a cls instance for global account %s: %s", globalAccountID, err)
 		log.Error(failureReason)
-		return s.operationManager.OperationFailed(operation, failureReason)
+		return s.operationManager.RetryOperation(operation, failureReason, 1*time.Minute, 5*time.Minute, log)
 	}
 
 	log.Infof("Finished deprovisioning a cls instance for global account %s", globalAccountID)
