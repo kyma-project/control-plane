@@ -245,8 +245,11 @@ func (c converter) graphQLProfileToProfile(profile *gqlschema.KymaProfile) *mode
 
 func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput, conflict *gqlschema.ConflictsStrategy) model.Configuration {
 	configuration := model.Configuration{
-		ConfigEntries:    make([]model.ConfigEntry, 0, len(input)),
-		ConflictStrategy: conflict.String(),
+		ConfigEntries: make([]model.ConfigEntry, 0, len(input)),
+	}
+
+	if conflict != nil {
+		configuration.ConflictStrategy = conflict.String()
 	}
 
 	for _, ce := range input {
