@@ -78,13 +78,8 @@ func TestRemoveRuntimeStep_Run(t *testing.T) {
 }
 
 func fixOperationRemoveRuntime() internal.DeprovisioningOperation {
-	return internal.DeprovisioningOperation{
-		Operation: internal.Operation{
-			ID:          fixOperationID,
-			InstanceID:  fixInstanceID,
-			Description: "",
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
-		},
-	}
+	deprovisioningOperation := internal.FixDeprovisioningOperation(fixOperationID, fixInstanceID)
+	deprovisioningOperation.ProvisionerOperationID = ""
+
+	return deprovisioningOperation
 }
