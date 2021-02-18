@@ -2,7 +2,6 @@ package provisioning
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
@@ -11,8 +10,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
@@ -104,7 +101,7 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 			return s.operationManager.OperationFailed(operation, failureReason)
 		}
 
-		encryptedOverrides, err := encryptClsOverrides(s.secretKey, overrides)
+		encryptedOverrides, err := cls.EncryptOverrides(s.secretKey, overrides)
 		if err != nil {
 			failureReason := fmt.Sprintf("encryptClsOverrides() call failed")
 			log.Errorf("%s: %s", failureReason, err)
@@ -122,7 +119,7 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		}
 	} else {
 		// fetch existing overrides
-		overrides, err = decryptClsOverrides(s.secretKey, operation.Cls.Overrides)
+		overrides, err = cls.DecryptOverrides(s.secretKey, operation.Cls.Overrides)
 		if err != nil {
 			failureReason := fmt.Sprintf("decryptClsOverrides() call failed")
 			log.Errorf("%s: %s", failureReason, err)
@@ -137,36 +134,13 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		return  operation, time.Second, nil
 	}
 
+	// TODO: 1.20 logic
 	operation.InputCreator.AppendOverrides(components.CLS, getClsOverrides(flOverride))
 
 	return operation, 0, nil
 }
 
-func encryptClsOverrides(secretKey string, overrides *cls.ClsOverrides) (string, error) {
-	ovrs, err := json.Marshal(*overrides)
-	if err != nil {
-		return "", errors.Wrap(err, "while encoding cls overrides")
-	}
-	encrypter := storage.NewEncrypter(secretKey)
-	encryptedOverrides, err := encrypter.Encrypt(ovrs)
-	if err != nil {
-		return "", errors.Wrap(err, "while encrypting cls overrides")
-	}
-	return string(encryptedOverrides), nil
-}
 
-func decryptClsOverrides(secretKey string, encryptedOverrides string) (*cls.ClsOverrides, error) {
-	encrypter := storage.NewEncrypter(secretKey)
-	decryptedOverrides, err := encrypter.Decrypt([]byte(encryptedOverrides))
-	if err != nil {
-		return nil, errors.Wrap(err, "while decrypting eventing overrides")
-	}
-	clsOverrides := cls.ClsOverrides{}
-	if err := json.Unmarshal(decryptedOverrides, &clsOverrides); err != nil {
-		return nil, errors.Wrap(err, "while unmarshall eventing overrides")
-	}
-	return &clsOverrides, nil
-}
 
 func (s *ClsBindStep) injectOverrides(overrides *cls.ClsOverrides, log logrus.FieldLogger) (string,error){
 	// TODO: Load the template

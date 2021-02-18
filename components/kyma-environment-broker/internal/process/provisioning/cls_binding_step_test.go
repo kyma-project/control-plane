@@ -15,29 +15,8 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
-func TestClsEncryptDecrypt(t *testing.T) {
-	// given
-	secretKey := "1234567890123456"
-	overridesIn := cls.ClsOverrides{
-		FluentdEndPoint: "foo.bar",
-		FluentdPassword: "fooPass",
-		FluentdUsername: "fooUser",
-		KibanaUrl:       "Kiib.url",
-	}
-
-	// when
-	encrypted, err := encryptClsOverrides(secretKey, &overridesIn)
-	assert.NoError(t, err)
-	overridesOut, err := decryptClsOverrides(secretKey, encrypted)
-	assert.NoError(t, err)
-
-	// then
-	assert.Equal(t, overridesIn, *overridesOut)
-}
 func TestClsBindingStep_Run(t *testing.T) {
 	//given
 	fakeRegion:= "westeurope"
