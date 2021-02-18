@@ -19,7 +19,6 @@ func Test_E2E_Suspension(t *testing.T) {
 		ts.Cleanup()
 		return
 	}
-	//ts.brokerClient.SetInstanceID("ed7170bb-0fd2-4266-98f4-48620b9c72eb")
 
 	configMap := ts.testConfigMap()
 

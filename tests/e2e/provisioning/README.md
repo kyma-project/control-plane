@@ -50,6 +50,21 @@ The provisioning end-to-end test contains a broker client implementation which m
 
 Between the end-to-end test phases, you can execute your own test directly on the provisioned Runtime. To do so, use a kubeconfig stored in a Secret created in the provisioning phase. 
 
+## End-to-end suspension test
+
+The suspension end-to-end test uses **Trial** Service Plan ID to provision Kyma Runtime, then suspend and unsuspend it and make sure it is still accessible after the process. It works similarly to provisioning test, but it has two additional steps in `Provisioning` phase:
+
+1. Suspension
+
+    After successfully provisioning a runtime as described above, the test sends an update call to KEB to suspend a Runtime. Then test waits until the operation is successful.
+
+
+1. Unsuspension
+
+   After runtime suspension succeeded, the test sends an update call to KEB to unsuspend a Runtime. Then the test waits until the operation is successful. After that, the test ensures that the DashboardURL redirects to the UUA login page once again, which means that the Kyma Runtime is accessible.
+
+After successful suspension and unsuspension of the Kyma Runtime the test proceeds to `Cleanup` phase described above.
+
 ## Configuration
 
 You can configure the test execution by using the following environment variables:
