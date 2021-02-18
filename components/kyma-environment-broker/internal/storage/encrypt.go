@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"io"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pkg/errors"
 )
 
@@ -56,4 +57,56 @@ func (e *Encrypter) Decrypt(obj []byte) ([]byte, error) {
 		return nil, errors.Wrap(err, "while decoding decrypted object")
 	}
 	return data, nil
+}
+
+func (e *Encrypter) EncryptBasicAuth(pp *internal.ProvisioningParameters) error {
+	if pp.ErsContext.ServiceManager == nil {
+		return nil
+	}
+	creds := pp.ErsContext.ServiceManager.Credentials.BasicAuth
+	if creds.Username == "" || creds.Password == "" {
+		return nil
+	}
+	username, err := e.Encrypt([]byte(pp.ErsContext.ServiceManager.Credentials.BasicAuth.Username))
+	if err != nil {
+		return errors.Wrap(err, "while encrypting username")
+	}
+	password, err := e.Encrypt([]byte(pp.ErsContext.ServiceManager.Credentials.BasicAuth.Password))
+	if err != nil {
+		return errors.Wrap(err, "while encrypting password")
+	}
+
+	pp.ErsContext.ServiceManager = &internal.ServiceManagerEntryDTO{
+		Credentials: internal.ServiceManagerCredentials{
+			BasicAuth: internal.ServiceManagerBasicAuth{
+				Username: string(username),
+				Password: string(password),
+			}},
+		URL: pp.ErsContext.ServiceManager.URL,
+	}
+
+	return nil
+}
+
+func (e *Encrypter) DecryptBasicAuth(pp *internal.ProvisioningParameters) error {
+	if pp.ErsContext.ServiceManager == nil {
+		return nil
+	}
+	creds := pp.ErsContext.ServiceManager.Credentials.BasicAuth
+	if creds.Username == "" || creds.Password == "" {
+		return nil
+	}
+	username, err := e.Decrypt([]byte(creds.Username))
+	if err != nil {
+		return errors.Wrap(err, "while decrypting username")
+	}
+	password, err := e.Decrypt([]byte(creds.Password))
+	if err != nil {
+		return errors.Wrap(err, "while decrypting password")
+	}
+
+	pp.ErsContext.ServiceManager.Credentials.BasicAuth.Username = string(username)
+	pp.ErsContext.ServiceManager.Credentials.BasicAuth.Password = string(password)
+
+	return nil
 }

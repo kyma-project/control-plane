@@ -16,7 +16,7 @@ type ExternalEvalAssistant struct {
 func NewExternalEvalAssistant(avsConfig Config) *ExternalEvalAssistant {
 	return &ExternalEvalAssistant{
 		avsConfig:   avsConfig,
-		retryConfig: &RetryConfig{maxTime: 120 * time.Minute, retryInterval: 20 * time.Second},
+		retryConfig: &RetryConfig{maxTime: 20 * time.Minute, retryInterval: 30 * time.Second},
 	}
 }
 

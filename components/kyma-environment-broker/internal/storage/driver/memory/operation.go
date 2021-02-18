@@ -171,6 +171,19 @@ func (s *operations) ListDeprovisioningOperationsByInstanceID(instanceID string)
 	return operations, nil
 }
 
+func (s *operations) ListDeprovisioningOperations() ([]internal.DeprovisioningOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	operations := make([]internal.DeprovisioningOperation, 0)
+	for _, op := range s.deprovisioningOperations {
+		operations = append(operations, op)
+	}
+
+	s.sortDeprovisioningByCreatedAtDesc(operations)
+	return operations, nil
+}
+
 func (s *operations) InsertUpgradeKymaOperation(operation internal.UpgradeKymaOperation) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
