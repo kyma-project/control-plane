@@ -170,24 +170,21 @@ func TestCreateRuntimeStep_RunWithBadRequestError(t *testing.T) {
 }
 
 func fixOperationCreateRuntime(t *testing.T, planID, region string) internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     operationID,
-			InstanceID:             instanceID,
-			UpdatedAt:              time.Now(),
-			State:                  domain.InProgress,
-			ProvisioningParameters: fixProvisioningParameters(planID, region),
-			InstanceDetails:        internal.InstanceDetails{ShootName: shootName},
-		},
-		InputCreator: fixInputCreator(t),
-	}
+	provisioningOperation := internal.FixProvisioningOperation(operationID, instanceID)
+	provisioningOperation.State = domain.InProgress
+	provisioningOperation.InputCreator = fixInputCreator(t)
+	provisioningOperation.ProvisionerOperationID = ""
+	provisioningOperation.InstanceDetails.ShootName = shootName
+	provisioningOperation.ProvisioningParameters = fixProvisioningParameters(planID, region)
+
+	return provisioningOperation
 }
 
 func fixInstance() internal.Instance {
-	return internal.Instance{
-		InstanceID:      instanceID,
-		GlobalAccountID: globalAccountID,
-	}
+	instance := internal.FixInstance(instanceID)
+	instance.GlobalAccountID = globalAccountID
+
+	return instance
 }
 
 func fixProvisioningParameters(planID, region string) internal.ProvisioningParameters {
