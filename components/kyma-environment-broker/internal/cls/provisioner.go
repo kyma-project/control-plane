@@ -41,9 +41,7 @@ type ProvisionRequest struct {
 	GlobalAccountID string
 	Region          string
 	SKRInstanceID   string
-	ServiceID       string
-	PlanID          string
-	BrokerID        string
+	Instance        servicemanager.InstanceKey
 }
 
 type ProvisionResult struct {
@@ -95,12 +93,8 @@ func (p *provisioner) createNewInstance(smClient servicemanager.Client, request 
 
 	p.log.Infof("Creating a new cls instance for global account %s", request.GlobalAccountID)
 
-	err = p.creator.CreateInstance(smClient, servicemanager.InstanceKey{
-		BrokerID:   request.BrokerID,
-		ServiceID:  request.ServiceID,
-		PlanID:     request.PlanID,
-		InstanceID: instance.ID,
-	})
+	request.Instance.InstanceID = instance.ID
+	err = p.creator.CreateInstance(smClient, request.Instance)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while deleting a cls instance for global account %s", request.GlobalAccountID)
 	}

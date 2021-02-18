@@ -65,9 +65,7 @@ func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 		GlobalAccountID: globalAccountID,
 		Region:          smRegion,
 		SKRInstanceID:   skrInstanceID,
-		BrokerID:        operation.Cls.Instance.BrokerID,
-		ServiceID:       operation.Cls.Instance.ServiceID,
-		PlanID:          operation.Cls.Instance.PlanID,
+		Instance:        operation.Cls.Instance.InstanceKey(),
 	})
 	if err != nil {
 		failureReason := fmt.Sprintf("Unable to provision a cls instance for global account %s: %s", globalAccountID, err)

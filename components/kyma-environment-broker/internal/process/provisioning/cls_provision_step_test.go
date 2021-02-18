@@ -87,9 +87,11 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 	provisionerMock.On("Provision", mock.Anything, &cls.ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		Region:          "eu",
-		ServiceID:       "svc-id",
-		PlanID:          "plan-id",
-		BrokerID:        fakeBrokerID,
+		Instance: servicemanager.InstanceKey{
+			BrokerID:  fakeBrokerID,
+			ServiceID: "svc-id",
+			PlanID:    "plan-id",
+		},
 	}).Return(&cls.ProvisionResult{
 		InstanceID:            "instance_id",
 		ProvisioningTriggered: true,

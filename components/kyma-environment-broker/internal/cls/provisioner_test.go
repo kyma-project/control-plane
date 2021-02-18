@@ -40,9 +40,11 @@ func TestProvisionReturnsExistingInstanceIfFoundInDB(t *testing.T) {
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
-		BrokerID:        fakeBrokerID,
-		ServiceID:       fakeServiceID,
-		PlanID:          fakePlanID,
+		Instance: servicemanager.InstanceKey{
+			BrokerID:  fakeBrokerID,
+			ServiceID: fakeServiceID,
+			PlanID:    fakePlanID,
+		},
 	})
 	require.NotNil(t, result)
 	require.NoError(t, err)
@@ -79,9 +81,11 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
 		Region:          fakeRegion,
-		BrokerID:        fakeBrokerID,
-		ServiceID:       fakeServiceID,
-		PlanID:          fakePlanID,
+		Instance: servicemanager.InstanceKey{
+			BrokerID:  fakeBrokerID,
+			ServiceID: fakeServiceID,
+			PlanID:    fakePlanID,
+		},
 	})
 	require.NotNil(t, result)
 	require.NoError(t, err)
@@ -112,9 +116,11 @@ func TestProvisionDoesNotCreateNewInstanceIfFindQueryFails(t *testing.T) {
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
-		BrokerID:        fakeBrokerID,
-		ServiceID:       fakeServiceID,
-		PlanID:          fakePlanID,
+		Instance: servicemanager.InstanceKey{
+			BrokerID:  fakeBrokerID,
+			ServiceID: fakeServiceID,
+			PlanID:    fakePlanID,
+		},
 	})
 	require.Nil(t, result)
 	require.Error(t, err)
@@ -143,9 +149,11 @@ func TestProvisionDoesNotCreateNewInstanceIfInsertQueryFails(t *testing.T) {
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
-		BrokerID:        fakeBrokerID,
-		ServiceID:       fakeServiceID,
-		PlanID:          fakePlanID,
+		Instance: servicemanager.InstanceKey{
+			BrokerID:  fakeBrokerID,
+			ServiceID: fakeServiceID,
+			PlanID:    fakePlanID,
+		},
 	})
 	require.Nil(t, result)
 	require.Error(t, err)
@@ -179,9 +187,11 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
-		BrokerID:        fakeBrokerID,
-		ServiceID:       fakeServiceID,
-		PlanID:          fakePlanID,
+		Instance: servicemanager.InstanceKey{
+			BrokerID:  fakeBrokerID,
+			ServiceID: fakeServiceID,
+			PlanID:    fakePlanID,
+		},
 	})
 	require.NotNil(t, result)
 	require.NoError(t, err)
@@ -213,9 +223,11 @@ func TestProvisionAddsReferenceIfFoundInDB(t *testing.T) {
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
-		BrokerID:        fakeBrokerID,
-		ServiceID:       fakeServiceID,
-		PlanID:          fakePlanID,
+		Instance: servicemanager.InstanceKey{
+			BrokerID:  fakeBrokerID,
+			ServiceID: fakeServiceID,
+			PlanID:    fakePlanID,
+		},
 	})
 	require.NotNil(t, result)
 	require.NoError(t, err)
