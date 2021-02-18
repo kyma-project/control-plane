@@ -100,14 +100,12 @@ func TestManager_Execute(t *testing.T) {
 }
 
 func fixProvisionOperation(ID string) internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     ID,
-			State:                  domain.InProgress,
-			InstanceID:             "fea2c1a1-139d-43f6-910a-a618828a79d5",
-			ProvisioningParameters: fixProvisioningParameters(broker.AzurePlanID, "westeurope"),
-		},
-	}
+	provisioningOperation := internal.FixProvisioningOperation(ID, "fea2c1a1-139d-43f6-910a-a618828a79d5")
+	provisioningOperation.State = domain.InProgress
+	provisioningOperation.Description = ""
+	provisioningOperation.ProvisioningParameters = fixProvisioningParameters(broker.AzurePlanID, "westeurope")
+
+	return provisioningOperation
 }
 
 type testStep struct {
