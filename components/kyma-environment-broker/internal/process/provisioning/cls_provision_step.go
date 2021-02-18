@@ -45,20 +45,21 @@ func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 	skrRegion := operation.ProvisioningParameters.Parameters.Region
 	smRegion, err := cls.DetermineServiceManagerRegion(skrRegion)
 	if err != nil {
-		failureReason := fmt.Sprintf("Unable to provision instance for global account: %s", globalAccountID)
-		log.Error("Unable to provision a cls instance: %s", err)
+		failureReason := fmt.Sprintf("Unable to determine cls service manager region %v: %s", skrRegion, err)
+		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason)
 	}
 
 	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, smRegion)
 	if err != nil {
-		failureReason := fmt.Sprintf("Unable to provision instance for global account: %s", globalAccountID)
-		log.Error("Unable to provision a cls instance: %s", err)
+		failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
+		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason)
 	}
 
-	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
+	log.Infof("Starting provisioning a cls instance for global account %s", globalAccountID)
 
+	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 	skrInstanceID := operation.InstanceID
 	result, err := s.instanceProvider.Provision(smClient, &cls.ProvisionRequest{
 		GlobalAccountID: globalAccountID,
@@ -69,8 +70,8 @@ func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 		PlanID:          operation.Cls.Instance.PlanID,
 	})
 	if err != nil {
-		failureReason := fmt.Sprintf("Unable to provision instance for global account: %s", globalAccountID)
-		log.Errorf("%s: %s", failureReason, err)
+		failureReason := fmt.Sprintf("Unable to provision a cls instance for global account %s: %s", globalAccountID, err)
+		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason)
 	}
 
@@ -78,11 +79,7 @@ func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 	operation.Cls.Instance.InstanceID = result.InstanceID
 	operation.Cls.Instance.ProvisioningTriggered = result.ProvisioningTriggered
 
-	if err != nil {
-		failureReason := fmt.Sprintf("Unable to provision instance for global account: %s", globalAccountID)
-		log.Errorf("%s: %s", failureReason, err)
-		return s.operationManager.OperationFailed(operation, failureReason)
-	}
+	log.Infof("Finished provisioning a cls instance for global account %s", globalAccountID)
 
 	_, repeat := s.operationManager.UpdateOperation(operation)
 	if repeat != 0 {
