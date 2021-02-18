@@ -3,6 +3,7 @@ package provisioning
 import (
 	"bytes"
 	"fmt"
+	"github.com/Masterminds/semver"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -134,8 +135,17 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		return  operation, time.Second, nil
 	}
 
-	// TODO: 1.20 logic
-	operation.InputCreator.AppendOverrides(components.CLS, getClsOverrides(flOverride))
+	// Insert cls overrides if kyma version is >=1.20. Also make sure for PR images overrides are inserted here
+	c, err := semver.NewConstraint("<= 1.19.x")
+	if err != nil {
+		log.Errorf("unable to parse constraint for kyma version to set correct fluent bit plugin: %v", err)
+		return  operation, time.Second, nil
+	}
+	v, err := semver.NewVersion(operation.RuntimeVersion.Version)
+	check := c.Check(v)
+	if !check {
+		operation.InputCreator.AppendOverrides(components.CLS, getClsOverrides(flOverride))
+	}
 
 	return operation, 0, nil
 }
