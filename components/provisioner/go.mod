@@ -11,7 +11,7 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/kubernetes-sigs/service-catalog v0.3.0
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b
-	github.com/kyma-incubator/hydroform/install v0.0.0-20200817114824-fd8c8876066c
+	github.com/kyma-incubator/hydroform/install v0.0.0-20210218125820-f7a76ec2075a
 	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200902131640-31c29c8feb0c
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5
 	github.com/lib/pq v1.7.0
@@ -47,6 +47,4 @@ replace (
 	golang.org/x/text => golang.org/x/text v0.3.3
 	k8s.io/apiserver => k8s.io/apiserver v0.18.10
 	k8s.io/client-go => k8s.io/client-go v0.18.15
-	github.com/kyma-incubator/hydroform/install => github.com/ralikio/hydroform/install v0.0.0-20210216152700-66ef048b2923
-
 )
