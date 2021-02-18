@@ -12,5 +12,5 @@ const (
 	BackupInit              = "backup-init"
 	AvSBridge               = "avs-bridge"
 	Eventing                = "eventing"
-	CLS						= "cloud-logging-service"
+	CLS						= "logging"
 )

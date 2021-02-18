@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"text/template"
@@ -52,18 +51,27 @@ func (s *ClsBindStep) Name() string {
 
 func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if !operation.Cls.Instance.ProvisioningTriggered {
-		return s.handleError(operation, fmt.Errorf("cls Provisioning step was not triggered"), log, "")
+		failureReason := fmt.Sprintf("cls provisioning step was not triggered")
+		log.Errorf("%s: %s", failureReason, "")
+		return s.operationManager.OperationFailed(operation, failureReason)
 	}
 
 	skrRegion := operation.ProvisioningParameters.Parameters.Region
-	smCli, err := cls.ServiceManagerClient(operation.SMClientFactory, s.config.ServiceManager, skrRegion)
+	smRegion, err := cls.DetermineServiceManagerRegion(skrRegion)
+	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, smRegion)
+	smCli := operation.SMClientFactory.ForCredentials(smCredentials)
+
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manage client"))
+		failureReason := fmt.Sprintf("Unable to create Service Manager client")
+		log.Errorf("%s: %s", failureReason, err)
+		return s.operationManager.OperationFailed(operation, failureReason)
 	}
 	// test if the provisioning is finished, if not, retry after 10s
 	resp, err := smCli.LastInstanceOperation(operation.Cls.Instance.InstanceKey(), "")
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("LastInstanceOperation() call failed"))
+		failureReason := fmt.Sprintf("LastInstanceOperation() call failed")
+		log.Errorf("%s: %s", failureReason, err)
+		return s.operationManager.OperationFailed(operation, failureReason)
 	}
 	log.Infof("Provisioning Cls (instanceID=%s) state: %s", operation.Cls.Instance.InstanceID, resp.State)
 	switch resp.State {
@@ -91,12 +99,16 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		})
 
 		if err != nil {
-			return s.operationManager.OperationFailed(operation, fmt.Sprintf("Cls Binding failed: %s", err))
+			failureReason := fmt.Sprintf("Cls Binding failed")
+			log.Errorf("%s: %s", failureReason, err)
+			return s.operationManager.OperationFailed(operation, failureReason)
 		}
 
 		encryptedOverrides, err := encryptClsOverrides(s.secretKey, overrides)
 		if err != nil {
-			return s.handleError(operation, err, log, fmt.Sprintf("encryptOverrides() call failed"))
+			failureReason := fmt.Sprintf("encryptClsOverrides() call failed")
+			log.Errorf("%s: %s", failureReason, err)
+			return s.operationManager.OperationFailed(operation, failureReason)
 		}
 
 		operation.Cls.Overrides = encryptedOverrides
@@ -112,11 +124,11 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		// fetch existing overrides
 		overrides, err = decryptClsOverrides(s.secretKey, operation.Cls.Overrides)
 		if err != nil {
-			return s.handleError(operation, err, log, fmt.Sprintf("encryptOverrides() call failed"))
+			failureReason := fmt.Sprintf("decryptClsOverrides() call failed")
+			log.Errorf("%s: %s", failureReason, err)
+			return s.operationManager.OperationFailed(operation, failureReason)
 		}
 	}
-
-	log.Infof("overrides: %v", overrides)
 
 	operation.InputCreator.SetLabel(kibanaURLLabelKey, overrides.KibanaUrl)
 	flOverride, err := s.injectOverrides(overrides, log)
@@ -124,7 +136,6 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		log.Errorf("Unable to generate forward plugin to push logs: %v", err)
 		return  operation, time.Second, nil
 	}
-	log.Infof("flOverrides: %v", flOverride)
 
 	operation.InputCreator.AppendOverrides(components.CLS, getClsOverrides(flOverride))
 
@@ -134,12 +145,12 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 func encryptClsOverrides(secretKey string, overrides *cls.ClsOverrides) (string, error) {
 	ovrs, err := json.Marshal(*overrides)
 	if err != nil {
-		return "", errors.Wrap(err, "while encoding eventing overrides")
+		return "", errors.Wrap(err, "while encoding cls overrides")
 	}
 	encrypter := storage.NewEncrypter(secretKey)
 	encryptedOverrides, err := encrypter.Encrypt(ovrs)
 	if err != nil {
-		return "", errors.Wrap(err, "while encrypting eventing overrides")
+		return "", errors.Wrap(err, "while encrypting cls overrides")
 	}
 	return string(encryptedOverrides), nil
 }
@@ -173,20 +184,12 @@ func (s *ClsBindStep) injectOverrides(overrides *cls.ClsOverrides, log logrus.Fi
 }
 
 func getClsOverrides(flInputsAdditional string) []*gqlschema.ConfigEntryInput {
-
 	return []*gqlschema.ConfigEntryInput{
 		{
-			Key:    "fluent-bit.config.outputs.additional:",
+			Key:    "fluent-bit.config.outputs.additional",
 			Value:  flInputsAdditional,
-			Secret: ptr.Bool(true),
 		},
 	}
 }
-
-func (s *ClsBindStep) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
-	log.Errorf("%s: %s", msg, err)
-	return s.operationManager.OperationFailed(operation, msg)
-}
-
 
 
