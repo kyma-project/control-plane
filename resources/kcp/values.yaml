@@ -21,7 +21,7 @@ global:
       version: "PR-407"
     subscription_cleanup_job:
       dir:
-      version: "PR-516"
+      version: "PR-529"
     metris:
       dir:
       version: "PR-376"
