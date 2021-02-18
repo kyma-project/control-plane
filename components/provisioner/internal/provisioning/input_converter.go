@@ -1,13 +1,9 @@
 package provisioning
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -18,30 +14,34 @@ import (
 type InputConverter interface {
 	ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, apperrors.AppError)
 	KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, apperrors.AppError)
+	UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, existing model.GardenerConfig) (model.GardenerConfig, apperrors.AppError)
 }
 
 func NewInputConverter(
 	uuidGenerator uuid.UUIDGenerator,
-	releaseRepo release.Provider,
+	releaseProvider release.Provider,
 	gardenerProject string,
 	defaultEnableKubernetesVersionAutoUpdate,
-	defaultEnableMachineImageVersionAutoUpdate bool) InputConverter {
+	defaultEnableMachineImageVersionAutoUpdate,
+	forceAllowPrivilegedContainers bool) InputConverter {
 
 	return &converter{
 		uuidGenerator:                              uuidGenerator,
-		releaseRepo:                                releaseRepo,
+		releaseProvider:                            releaseProvider,
 		gardenerProject:                            gardenerProject,
 		defaultEnableKubernetesVersionAutoUpdate:   defaultEnableKubernetesVersionAutoUpdate,
 		defaultEnableMachineImageVersionAutoUpdate: defaultEnableMachineImageVersionAutoUpdate,
+		forceAllowPrivilegedContainers:             forceAllowPrivilegedContainers,
 	}
 }
 
 type converter struct {
 	uuidGenerator                              uuid.UUIDGenerator
-	releaseRepo                                release.Provider
+	releaseProvider                            release.Provider
 	gardenerProject                            string
 	defaultEnableKubernetesVersionAutoUpdate   bool
 	defaultEnableMachineImageVersionAutoUpdate bool
+	forceAllowPrivilegedContainers             bool
 }
 
 func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, apperrors.AppError) {
@@ -55,11 +55,18 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 		}
 	}
 
-	if input.ClusterConfig == nil {
-		return model.Cluster{}, apperrors.BadRequest("error: ClusterConfig not provided")
+	if input.ClusterConfig == nil || input.ClusterConfig.GardenerConfig == nil {
+		return model.Cluster{}, apperrors.BadRequest("error: ClusterConfig not provided or GardenerConfig not provided")
 	}
 
-	gardenerConfig, err := c.gardenerConfigFromInput(runtimeID, input.ClusterConfig.GardenerConfig)
+	gardenerConfigAllowPrivilegedContainers := c.shouldAllowPrivilegedContainers(
+		input.ClusterConfig.GardenerConfig.AllowPrivilegedContainers,
+		kymaConfig.Release.TillerYAML)
+
+	gardenerConfig, err := c.gardenerConfigFromInput(
+		runtimeID,
+		input.ClusterConfig.GardenerConfig,
+		gardenerConfigAllowPrivilegedContainers)
 	if err != nil {
 		return model.Cluster{}, err
 	}
@@ -73,11 +80,7 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 	}, nil
 }
 
-func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.GardenerConfigInput) (model.GardenerConfig, apperrors.AppError) {
-	if input == nil {
-		return model.GardenerConfig{}, apperrors.BadRequest("error: GardenerConfig not provided")
-	}
-
+func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.GardenerConfigInput, allowPrivilegedContainers bool) (model.GardenerConfig, apperrors.AppError) {
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
 	if err != nil {
 		return model.GardenerConfig{}, err
@@ -85,40 +88,86 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 
 	return model.GardenerConfig{
 		ID:                                  c.uuidGenerator.New(),
-		Name:                                c.createGardenerClusterName(),
+		Name:                                setClusterName(input.Name),
 		ProjectName:                         c.gardenerProject,
 		KubernetesVersion:                   input.KubernetesVersion,
-		VolumeSizeGB:                        input.VolumeSizeGb,
-		DiskType:                            input.DiskType,
+		Provider:                            input.Provider,
+		Region:                              input.Region,
+		Seed:                                util.UnwrapStr(input.Seed),
+		TargetSecret:                        input.TargetSecret,
 		MachineType:                         input.MachineType,
 		MachineImage:                        input.MachineImage,
 		MachineImageVersion:                 input.MachineImageVersion,
-		Provider:                            input.Provider,
-		Purpose:                             input.Purpose,
-		LicenceType:                         input.LicenceType,
-		Seed:                                util.UnwrapStr(input.Seed),
-		TargetSecret:                        input.TargetSecret,
+		DiskType:                            input.DiskType,
+		VolumeSizeGB:                        input.VolumeSizeGb,
 		WorkerCidr:                          input.WorkerCidr,
-		Region:                              input.Region,
 		AutoScalerMin:                       input.AutoScalerMin,
 		AutoScalerMax:                       input.AutoScalerMax,
 		MaxSurge:                            input.MaxSurge,
 		MaxUnavailable:                      input.MaxUnavailable,
-		EnableKubernetesVersionAutoUpdate:   util.BoolFromPtrOrDefault(input.EnableKubernetesVersionAutoUpdate, c.defaultEnableKubernetesVersionAutoUpdate),
-		EnableMachineImageVersionAutoUpdate: util.BoolFromPtrOrDefault(input.EnableMachineImageVersionAutoUpdate, c.defaultEnableMachineImageVersionAutoUpdate),
+		Purpose:                             input.Purpose,
+		LicenceType:                         input.LicenceType,
+		EnableKubernetesVersionAutoUpdate:   util.UnwrapBoolOrDefault(input.EnableKubernetesVersionAutoUpdate, c.defaultEnableKubernetesVersionAutoUpdate),
+		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, c.defaultEnableMachineImageVersionAutoUpdate),
+		AllowPrivilegedContainers:           allowPrivilegedContainers,
 		ClusterID:                           runtimeID,
 		GardenerProviderConfig:              providerSpecificConfig,
 	}, nil
 }
 
-func (c converter) createGardenerClusterName() string {
-	id := c.uuidGenerator.New()
+func (c converter) shouldAllowPrivilegedContainers(inputAllowPrivilegedContainers *bool, tillerYaml string) bool {
+	if c.forceAllowPrivilegedContainers {
+		return true
+	}
+	isTillerPresent := tillerYaml != ""
+	return util.UnwrapBoolOrDefault(inputAllowPrivilegedContainers, isTillerPresent)
+}
 
-	name := strings.ReplaceAll(id, "-", "")
-	name = fmt.Sprintf("%.7s", name)
-	name = util.StartWithLetter(name)
-	name = strings.ToLower(name)
-	return name
+func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, config model.GardenerConfig) (model.GardenerConfig, apperrors.AppError) {
+	var providerSpecificConfig model.GardenerProviderConfig
+	var err apperrors.AppError
+
+	if input.ProviderSpecificConfig != nil {
+		providerSpecificConfig, err = c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
+		if providerSpecificConfig == nil {
+			return model.GardenerConfig{}, err.Append("error converting provider specific config from input: %s", err)
+		}
+	} else {
+		providerSpecificConfig = config.GardenerProviderConfig
+	}
+
+	purpose := config.Purpose
+	if input.Purpose != nil {
+		purpose = input.Purpose
+	}
+
+	return model.GardenerConfig{
+		ID:                        config.ID,
+		ClusterID:                 config.ClusterID,
+		Name:                      config.Name,
+		ProjectName:               config.ProjectName,
+		Provider:                  config.Provider,
+		Seed:                      config.Seed,
+		TargetSecret:              config.TargetSecret,
+		Region:                    config.Region,
+		LicenceType:               config.LicenceType,
+		AllowPrivilegedContainers: config.AllowPrivilegedContainers,
+
+		Purpose:                             purpose,
+		KubernetesVersion:                   util.UnwrapStrOrDefault(input.KubernetesVersion, config.KubernetesVersion),
+		MachineType:                         util.UnwrapStrOrDefault(input.MachineType, config.MachineType),
+		DiskType:                            util.UnwrapStrOrDefault(input.DiskType, config.DiskType),
+		VolumeSizeGB:                        util.UnwrapIntOrDefault(input.VolumeSizeGb, config.VolumeSizeGB),
+		MachineImage:                        input.MachineImage,
+		MachineImageVersion:                 input.MachineImageVersion,
+		AutoScalerMin:                       util.UnwrapIntOrDefault(input.AutoScalerMin, config.AutoScalerMin),
+		AutoScalerMax:                       util.UnwrapIntOrDefault(input.AutoScalerMax, config.AutoScalerMax),
+		MaxSurge:                            util.UnwrapIntOrDefault(input.MaxSurge, config.MaxSurge),
+		MaxUnavailable:                      util.UnwrapIntOrDefault(input.MaxUnavailable, config.MaxUnavailable),
+		EnableKubernetesVersionAutoUpdate:   util.UnwrapBoolOrDefault(input.EnableKubernetesVersionAutoUpdate, config.EnableKubernetesVersionAutoUpdate),
+		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
+		GardenerProviderConfig:              providerSpecificConfig,
+	}, nil
 }
 
 func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpecificInput) (model.GardenerProviderConfig, apperrors.AppError) {
@@ -140,13 +189,9 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 }
 
 func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, apperrors.AppError) {
-	kymaRelease, err := c.releaseRepo.GetReleaseByVersion(input.Version)
+	kymaRelease, err := c.releaseProvider.GetReleaseByVersion(input.Version)
 	if err != nil {
-		if err.Code() == dberrors.CodeNotFound {
-			return model.KymaConfig{}, apperrors.BadRequest("Kyma Release %s not found", input.Version)
-		}
-
-		return model.KymaConfig{}, apperrors.Internal("Failed to get Kyma Release with version %s: %s", input.Version, err.Error())
+		return model.KymaConfig{}, apperrors.Internal("failed to get Kyma Release with version %s: %s", input.Version, err.Error())
 	}
 
 	var components []model.KymaComponentConfig
@@ -171,10 +216,31 @@ func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 	return model.KymaConfig{
 		ID:                  kymaConfigID,
 		Release:             kymaRelease,
+		Profile:             c.graphQLProfileToProfile(input.Profile),
 		Components:          components,
 		ClusterID:           runtimeID,
 		GlobalConfiguration: c.configurationFromInput(input.Configuration),
 	}, nil
+}
+
+func (c converter) graphQLProfileToProfile(profile *gqlschema.KymaProfile) *model.KymaProfile {
+	if profile == nil {
+		return nil
+	}
+
+	var result model.KymaProfile
+
+	switch *profile {
+	case gqlschema.KymaProfileEvaluation:
+		result = model.EvaluationProfile
+	case gqlschema.KymaProfileProduction:
+		result = model.ProductionProfile
+	default:
+		result = model.KymaProfile("")
+	}
+
+	return &result
+
 }
 
 func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput) model.Configuration {
@@ -190,5 +256,13 @@ func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput) m
 }
 
 func configEntryFromInput(entry *gqlschema.ConfigEntryInput) model.ConfigEntry {
-	return model.NewConfigEntry(entry.Key, entry.Value, util.BoolFromPtr(entry.Secret))
+	return model.NewConfigEntry(entry.Key, entry.Value, util.UnwrapBoolOrDefault(entry.Secret, false))
+}
+
+//TODO Remove when name is changed to obligatory field
+func setClusterName(name *string) string {
+	if name != nil {
+		return util.UnwrapStr(name)
+	}
+	return util.CreateGardenerClusterName()
 }

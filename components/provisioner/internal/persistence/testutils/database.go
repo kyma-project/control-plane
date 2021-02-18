@@ -92,7 +92,7 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 	})
 
 	if err != nil {
-		t.Logf("Failed to create contianer: %s", err.Error())
+		t.Logf("Failed to create container: %s", err.Error())
 		return nil, "", err
 	}
 

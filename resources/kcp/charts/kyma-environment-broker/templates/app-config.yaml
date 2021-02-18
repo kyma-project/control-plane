@@ -10,3 +10,7 @@ data:
 {{- with .Values.additionalRuntimeComponents }}
 {{ tpl . $ | indent 6 }}
 {{- end }}
+  trialRegionMapping.yaml: |-
+{{- with .Values.trialRegionsMapping }}
+{{ tpl . $ | indent 4 }}
+{{- end }}

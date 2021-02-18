@@ -2,25 +2,29 @@ package internal
 
 import (
 	"database/sql"
-	"encoding/json"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-	"github.com/pkg/errors"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
+	"github.com/sirupsen/logrus"
 
+	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
-type ProvisionInputCreator interface {
-	SetProvisioningParameters(params ProvisioningParametersDTO) ProvisionInputCreator
-	SetLabel(key, value string) ProvisionInputCreator
+type ProvisionerInputCreator interface {
+	SetProvisioningParameters(params ProvisioningParameters) ProvisionerInputCreator
+	SetShootName(string) ProvisionerInputCreator
+	SetLabel(key, value string) ProvisionerInputCreator
 	// Deprecated, use: AppendOverrides
-	SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
-	AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
-	AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) ProvisionInputCreator
-	Create() (gqlschema.ProvisionRuntimeInput, error)
+	SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator
+	AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator
+	AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator
+	CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntimeInput, error)
+	CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInput, error)
+	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 }
 
 type LMSTenant struct {
@@ -36,12 +40,52 @@ type LMS struct {
 	RequestedAt time.Time `json:"requested_at"`
 }
 
+type AvsEvaluationStatus struct {
+	Current  string `json:"current_value"`
+	Original string `json:"original_value"`
+}
+
 type AvsLifecycleData struct {
 	AvsEvaluationInternalId int64 `json:"avs_evaluation_internal_id"`
 	AVSEvaluationExternalId int64 `json:"avs_evaluation_external_id"`
 
+	AvsInternalEvaluationStatus AvsEvaluationStatus `json:"avs_internal_evaluation_status"`
+	AvsExternalEvaluationStatus AvsEvaluationStatus `json:"avs_external_evaluation_status"`
+
 	AVSInternalEvaluationDeleted bool `json:"avs_internal_evaluation_deleted"`
 	AVSExternalEvaluationDeleted bool `json:"avs_external_evaluation_deleted"`
+}
+
+// RuntimeVersionOrigin defines the possible sources of the Kyma Version parameter
+type RuntimeVersionOrigin string
+
+const (
+	Parameters     RuntimeVersionOrigin = "parameters"
+	Defaults       RuntimeVersionOrigin = "defaults"
+	AccountMapping RuntimeVersionOrigin = "account-mapping"
+)
+
+// RuntimeVersionData describes the Kyma Version used for the cluser
+// provisioning or upgrade
+type RuntimeVersionData struct {
+	Version string               `json:"version"`
+	Origin  RuntimeVersionOrigin `json:"origin"`
+}
+
+func (rv RuntimeVersionData) IsEmpty() bool {
+	return rv.Version == ""
+}
+
+func NewRuntimeVersionFromParameters(version string) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: Parameters}
+}
+
+func NewRuntimeVersionFromDefaults(version string) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: Defaults}
+}
+
+func NewRuntimeVersionFromAccountMapping(version string) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: AccountMapping}
 }
 
 type EventHub struct {
@@ -58,35 +102,61 @@ type Instance struct {
 	ServicePlanID   string
 	ServicePlanName string
 
-	DashboardURL           string
-	ProvisioningParameters string
+	DashboardURL   string
+	Parameters     ProvisioningParameters
+	ProviderRegion string
+
+	InstanceDetails InstanceDetails
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt time.Time
-}
 
-func (instance Instance) GetProvisioningParameters() (ProvisioningParameters, error) {
-	var pp ProvisioningParameters
-
-	err := json.Unmarshal([]byte(instance.ProvisioningParameters), &pp)
-	if err != nil {
-		return pp, errors.Wrap(err, "while unmarshalling provisioning parameters")
-	}
-
-	return pp, nil
+	Version int
 }
 
 type Operation struct {
-	ID        string
-	Version   int
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	// following fields are serialized to JSON and stored in the storage
+	InstanceDetails
 
-	InstanceID             string
-	ProvisionerOperationID string
-	State                  domain.LastOperationState
-	Description            string
+	ID        string    `json:"-"`
+	Version   int       `json:"-"`
+	CreatedAt time.Time `json:"-"`
+	UpdatedAt time.Time `json:"-"`
+
+	InstanceID             string                    `json:"-"`
+	ProvisionerOperationID string                    `json:"-"`
+	State                  domain.LastOperationState `json:"-"`
+	Description            string                    `json:"-"`
+	ProvisioningParameters ProvisioningParameters    `json:"-"`
+
+	// OrchestrationID specifies the origin orchestration which triggers the operation, empty for OSB operations (provisioning/deprovisioning)
+	OrchestrationID string `json:"-"`
+}
+
+func (o *Operation) IsFinished() bool {
+	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceled
+}
+
+// Orchestration holds all information about an orchestration.
+// Orchestration performs operations of a specific type (UpgradeKymaOperation, UpgradeClusterOperation)
+// on specific targets of SKRs.
+type Orchestration struct {
+	OrchestrationID string
+	State           string
+	Description     string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	Parameters      orchestration.Parameters
+}
+
+func (o *Orchestration) IsFinished() bool {
+	return o.State == orchestration.Succeeded || o.State == orchestration.Failed || o.State == orchestration.Canceled
+}
+
+// IsCanceled returns true if orchestration's cancellation endpoint was ever triggered
+func (o *Orchestration) IsCanceled() bool {
+	return o.State == orchestration.Canceling || o.State == orchestration.Canceled
 }
 
 type InstanceWithOperation struct {
@@ -97,31 +167,123 @@ type InstanceWithOperation struct {
 	Description sql.NullString
 }
 
+type SMClientFactory interface {
+	ForCustomerCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (servicemanager.Client, error)
+	ProvideCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (*servicemanager.Credentials, error)
+}
+
+type InstanceDetails struct {
+	Lms LMS `json:"lms"`
+
+	Avs      AvsLifecycleData `json:"avs"`
+	EventHub EventHub         `json:"eh"`
+
+	SubAccountID string    `json:"sub_account_id"`
+	RuntimeID    string    `json:"runtime_id"`
+	ShootName    string    `json:"shoot_name"`
+	ShootDomain  string    `json:"shoot_domain"`
+	XSUAA        XSUAAData `json:"xsuaa"`
+	Ems          EmsData   `json:"ems"`
+}
+
 // ProvisioningOperation holds all information about provisioning operation
 type ProvisioningOperation struct {
-	Operation `json:"-"`
+	Operation
 
-	// following fields are serialized to JSON and stored in the storage
-	Lms                    LMS    `json:"lms"`
-	ProvisioningParameters string `json:"provisioning_parameters"`
+	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 
 	// following fields are not stored in the storage
-	InputCreator ProvisionInputCreator `json:"-"`
+	InputCreator ProvisionerInputCreator `json:"-"`
 
-	Avs AvsLifecycleData `json:"avs"`
+	SMClientFactory SMClientFactory `json:"-"`
+}
 
-	RuntimeID string `json:"runtime_id"`
+type ServiceManagerInstanceInfo struct {
+	BrokerID              string `json:"brokerId"`
+	ServiceID             string `json:"serviceId"`
+	PlanID                string `json:"planId"` // it is a plan.CatalogID from the Service Manager perspective
+	InstanceID            string `json:"instanceId"`
+	Provisioned           bool   `json:"provisioned"`
+	ProvisioningTriggered bool   `json:"provisioningTriggered"`
+}
+
+type XSUAAData struct {
+	Instance ServiceManagerInstanceInfo `json:"instance"`
+
+	XSAppname string `json:"xsappname"`
+	BindingID string `json:"bindingId"`
+}
+
+type EmsData struct {
+	Instance ServiceManagerInstanceInfo `json:"instance"`
+
+	BindingID string `json:"bindingId"`
+	Overrides string `json:"overrides"`
+}
+
+func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {
+	return servicemanager.InstanceKey{
+		BrokerID:   s.BrokerID,
+		InstanceID: s.InstanceID,
+		ServiceID:  s.ServiceID,
+		PlanID:     s.PlanID,
+	}
 }
 
 // DeprovisioningOperation holds all information about de-provisioning operation
 type DeprovisioningOperation struct {
-	Operation `json:"-"`
+	Operation
 
-	ProvisioningParameters string           `json:"provisioning_parameters"`
-	Avs                    AvsLifecycleData `json:"avs"`
-	EventHub               EventHub         `json:"eh"`
-	SubAccountID           string           `json:"-"`
-	RuntimeID              string           `json:"runtime_id"`
+	SMClientFactory SMClientFactory `json:"-"`
+
+	// Temporary indicates that this deprovisioning operation must not remove the instance
+	Temporary bool `json:"temporary"`
+}
+
+// UpgradeKymaOperation holds all information about upgrade Kyma operation
+type UpgradeKymaOperation struct {
+	Operation
+
+	orchestration.RuntimeOperation `json:"runtime_operation"`
+	InputCreator                   ProvisionerInputCreator `json:"-"`
+
+	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
+
+	SMClientFactory SMClientFactory `json:"-"`
+}
+
+func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaConfigInput, clusterConfig *gqlschema.GardenerConfigInput) RuntimeState {
+	var (
+		kymaConfigInput    gqlschema.KymaConfigInput
+		clusterConfigInput gqlschema.GardenerConfigInput
+	)
+	if kymaConfig != nil {
+		kymaConfigInput = *kymaConfig
+	}
+	if clusterConfig != nil {
+		clusterConfigInput = *clusterConfig
+	}
+
+	return RuntimeState{
+		ID:            uuid.New().String(),
+		CreatedAt:     time.Now(),
+		RuntimeID:     runtimeID,
+		OperationID:   operationID,
+		KymaConfig:    kymaConfigInput,
+		ClusterConfig: clusterConfigInput,
+	}
+}
+
+type RuntimeState struct {
+	ID string `json:"id"`
+
+	CreatedAt time.Time `json:"created_at"`
+
+	RuntimeID   string `json:"runtimeId"`
+	OperationID string `json:"operationId"`
+
+	KymaConfig    gqlschema.KymaConfigInput     `json:"kymaConfig"`
+	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
 }
 
 // OperationStats provide number of operations per type and state
@@ -143,80 +305,70 @@ func NewProvisioningOperation(instanceID string, parameters ProvisioningParamete
 
 // NewProvisioningOperationWithID creates a fresh (just starting) instance of the ProvisioningOperation with provided ID
 func NewProvisioningOperationWithID(operationID, instanceID string, parameters ProvisioningParameters) (ProvisioningOperation, error) {
-	params, err := json.Marshal(parameters)
-	if err != nil {
-		return ProvisioningOperation{}, errors.Wrap(err, "while marshaling provisioning parameters")
-	}
-
 	return ProvisioningOperation{
 		Operation: Operation{
-			ID:          operationID,
-			Version:     0,
-			Description: "Operation created",
-			InstanceID:  instanceID,
-			State:       domain.InProgress,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+			ID:                     operationID,
+			Version:                0,
+			Description:            "Operation created",
+			InstanceID:             instanceID,
+			State:                  domain.InProgress,
+			CreatedAt:              time.Now(),
+			UpdatedAt:              time.Now(),
+			ProvisioningParameters: parameters,
+			InstanceDetails: InstanceDetails{
+				SubAccountID: parameters.ErsContext.SubAccountID,
+			},
 		},
-		ProvisioningParameters: string(params),
 	}, nil
 }
 
-// NewProvisioningOperationWithID creates a fresh (just starting) instance of the ProvisioningOperation with provided ID
-func NewDeprovisioningOperationWithID(operationID, instanceID string) (DeprovisioningOperation, error) {
+// NewDeprovisioningOperationWithID creates a fresh (just starting) instance of the DeprovisioningOperation with provided ID
+func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (DeprovisioningOperation, error) {
 	return DeprovisioningOperation{
 		Operation: Operation{
-			ID:          operationID,
-			Version:     0,
-			Description: "Operation created",
-			InstanceID:  instanceID,
-			State:       domain.InProgress,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+			ID:              operationID,
+			Version:         0,
+			Description:     "Operation created",
+			InstanceID:      instance.InstanceID,
+			State:           domain.InProgress,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
+			InstanceDetails: instance.InstanceDetails,
 		},
 	}, nil
 }
 
-func (po *ProvisioningOperation) GetProvisioningParameters() (ProvisioningParameters, error) {
-	var pp ProvisioningParameters
-
-	err := json.Unmarshal([]byte(po.ProvisioningParameters), &pp)
-	if err != nil {
-		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
+// NewSuspensionOperationWithID creates a fresh (just starting) instance of the DeprovisioningOperation which does not remove the instance.
+func NewSuspensionOperationWithID(operationID string, instance *Instance) DeprovisioningOperation {
+	return DeprovisioningOperation{
+		Operation: Operation{
+			ID:              operationID,
+			Version:         0,
+			Description:     "Operation created",
+			InstanceID:      instance.InstanceID,
+			State:           orchestration.Pending,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
+			InstanceDetails: instance.InstanceDetails,
+		},
+		Temporary: true,
 	}
-
-	return pp, nil
 }
 
-func (po *ProvisioningOperation) SetProvisioningParameters(parameters ProvisioningParameters) error {
-	params, err := json.Marshal(parameters)
-	if err != nil {
-		return errors.Wrap(err, "while marshaling provisioning parameters")
-	}
-
-	po.ProvisioningParameters = string(params)
-	return nil
+func (po *ProvisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {
+	return po.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(po.ProvisioningParameters), log)
 }
 
-func (do *DeprovisioningOperation) GetProvisioningParameters() (ProvisioningParameters, error) {
-	var pp ProvisioningParameters
-
-	err := json.Unmarshal([]byte(do.ProvisioningParameters), &pp)
-	if err != nil {
-		return pp, errors.Wrap(err, "while unmarshaling provisioning parameters")
-	}
-
-	return pp, nil
+func (po *ProvisioningOperation) ProvideServiceManagerCredentials(log logrus.FieldLogger) (*servicemanager.Credentials, error) {
+	return po.SMClientFactory.ProvideCredentials(serviceManagerRequestCreds(po.ProvisioningParameters), log)
 }
 
-func (do *DeprovisioningOperation) SetProvisioningParameters(parameters ProvisioningParameters) error {
-	params, err := json.Marshal(parameters)
-	if err != nil {
-		return errors.Wrap(err, "while marshaling provisioning parameters")
-	}
+func (do *DeprovisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {
+	return do.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(do.ProvisioningParameters), log)
+}
 
-	do.ProvisioningParameters = string(params)
-	return nil
+func (uko *UpgradeKymaOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {
+	return uko.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(uko.ProvisioningParameters), log)
 }
 
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput
@@ -244,4 +396,17 @@ func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfig
 		})
 	}
 	return copiedList
+}
+
+func serviceManagerRequestCreds(parameters ProvisioningParameters) *servicemanager.Credentials {
+	var creds *servicemanager.Credentials
+	sm := parameters.ErsContext.ServiceManager
+	if sm != nil {
+		creds = &servicemanager.Credentials{
+			Username: sm.Credentials.BasicAuth.Username,
+			Password: sm.Credentials.BasicAuth.Password,
+			URL:      sm.URL,
+		}
+	}
+	return creds
 }

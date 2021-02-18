@@ -38,20 +38,6 @@ func (_m *Service) CheckInstallationState(kubeconfig *rest.Config) (installation
 	return r0, r1
 }
 
-// InstallKyma provides a mock function with given fields: runtimeId, kubeconfigRaw, release, globalConfig, componentsConfig
-func (_m *Service) InstallKyma(runtimeId string, kubeconfigRaw string, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
-	ret := _m.Called(runtimeId, kubeconfigRaw, release, globalConfig, componentsConfig)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, model.Release, model.Configuration, []model.KymaComponentConfig) error); ok {
-		r0 = rf(runtimeId, kubeconfigRaw, release, globalConfig, componentsConfig)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // PerformCleanup provides a mock function with given fields: kubeconfig
 func (_m *Service) PerformCleanup(kubeconfig *rest.Config) error {
 	ret := _m.Called(kubeconfig)
@@ -66,13 +52,13 @@ func (_m *Service) PerformCleanup(kubeconfig *rest.Config) error {
 	return r0
 }
 
-// TriggerInstallation provides a mock function with given fields: kubeconfigRaw, release, globalConfig, componentsConfig
-func (_m *Service) TriggerInstallation(kubeconfigRaw *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
-	ret := _m.Called(kubeconfigRaw, release, globalConfig, componentsConfig)
+// TriggerInstallation provides a mock function with given fields: kubeconfigRaw, kymaProfile, release, globalConfig, componentsConfig
+func (_m *Service) TriggerInstallation(kubeconfigRaw *rest.Config, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
+	ret := _m.Called(kubeconfigRaw, kymaProfile, release, globalConfig, componentsConfig)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*rest.Config, model.Release, model.Configuration, []model.KymaComponentConfig) error); ok {
-		r0 = rf(kubeconfigRaw, release, globalConfig, componentsConfig)
+	if rf, ok := ret.Get(0).(func(*rest.Config, *model.KymaProfile, model.Release, model.Configuration, []model.KymaComponentConfig) error); ok {
+		r0 = rf(kubeconfigRaw, kymaProfile, release, globalConfig, componentsConfig)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -94,13 +80,13 @@ func (_m *Service) TriggerUninstall(kubeconfig *rest.Config) error {
 	return r0
 }
 
-// TriggerUpgrade provides a mock function with given fields: kubeconfigRaw, release, globalConfig, componentsConfig
-func (_m *Service) TriggerUpgrade(kubeconfigRaw *rest.Config, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
-	ret := _m.Called(kubeconfigRaw, release, globalConfig, componentsConfig)
+// TriggerUpgrade provides a mock function with given fields: kubeconfigRaw, kymaProfile, release, globalConfig, componentsConfig
+func (_m *Service) TriggerUpgrade(kubeconfigRaw *rest.Config, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
+	ret := _m.Called(kubeconfigRaw, kymaProfile, release, globalConfig, componentsConfig)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*rest.Config, model.Release, model.Configuration, []model.KymaComponentConfig) error); ok {
-		r0 = rf(kubeconfigRaw, release, globalConfig, componentsConfig)
+	if rf, ok := ret.Get(0).(func(*rest.Config, *model.KymaProfile, model.Release, model.Configuration, []model.KymaComponentConfig) error); ok {
+		r0 = rf(kubeconfigRaw, kymaProfile, release, globalConfig, componentsConfig)
 	} else {
 		r0 = ret.Error(0)
 	}

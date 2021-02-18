@@ -60,9 +60,16 @@ func (g *Graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (s
 
 func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
+		name: "{{.Name}}",
 		kubernetesVersion: "{{.KubernetesVersion}}",
 		volumeSizeGB: {{.VolumeSizeGb }},
 		machineType: "{{.MachineType}}",
+		{{- if .MachineImage }}
+		machineImage: "{{.MachineImage}}",
+		{{- end}}
+		{{- if .MachineImageVersion }}
+		machineImageVersion: "{{.MachineImageVersion}}",
+		{{- end }}
 		region: "{{.Region}}",
 		provider: "{{ .Provider }}",
 		{{- if .Purpose }}
@@ -116,7 +123,10 @@ func (g *Graphqlizer) AWSProviderConfigInputToGraphQL(in gqlschema.AWSProviderCo
 func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		version: "{{ .Version }}",
-      	{{- with .Components }}
+		{{- if .Profile }}
+		profile: {{ .Profile }},
+		{{- end }}
+		{{- with .Components }}
         components: [
 		  {{- range . }}
           {
@@ -188,6 +198,12 @@ func (g *Graphqlizer) marshal(obj interface{}) string {
 	}
 
 	return out
+}
+
+func (g *Graphqlizer) UpgradeRuntimeInputToGraphQL(in gqlschema.UpgradeRuntimeInput) (string, error) {
+	return g.genericToGraphQL(in, `{
+		kymaConfig: {{ KymaConfigToGraphQL .KymaConfig }}
+	}`)
 }
 
 func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, error) {

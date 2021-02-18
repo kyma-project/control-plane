@@ -117,7 +117,7 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 		//given
 		installationClient := &installationMocks.Service{}
 		installationClient.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
-		installationClient.On("TriggerUpgrade", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New("bad error"))
+		installationClient.On("TriggerUpgrade", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New("bad error"))
 
 		upgradeStep := NewUpgradeKymaStep(installationClient, nextStageName, 0)
 
@@ -134,7 +134,7 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 		//given
 		installationClient := &installationMocks.Service{}
 		installationClient.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
-		installationClient.On("TriggerUpgrade", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		installationClient.On("TriggerUpgrade", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		upgradeStep := NewUpgradeKymaStep(installationClient, nextStageName, 0)
 

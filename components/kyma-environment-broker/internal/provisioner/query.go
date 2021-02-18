@@ -14,8 +14,10 @@ func (qp queryProvider) provisionRuntime(config string) string {
 
 func (qp queryProvider) upgradeRuntime(runtimeID string, config string) string {
 	return fmt.Sprintf(`mutation {
-	result: upgradeRuntime(id: "%s", config: %s)
-}`, runtimeID, config)
+	result: upgradeRuntime(id: "%s", config: %s) {
+		%s
+}
+}`, runtimeID, config, operationStatusData())
 }
 
 func (qp queryProvider) deprovisionRuntime(runtimeID string) string {
@@ -30,12 +32,12 @@ func (qp queryProvider) reconnectRuntimeAgent(runtimeID string) string {
 }`, runtimeID)
 }
 
-func (qp queryProvider) runtimeStatus(operationID string) string {
+func (qp queryProvider) runtimeStatus(runtimeID string) string {
 	return fmt.Sprintf(`query {
 	result: runtimeStatus(id: "%s") {
 	%s
 	}
-}`, operationID, runtimeStatusData())
+}`, runtimeID, runtimeStatusData())
 }
 
 func (qp queryProvider) runtimeOperationStatus(operationID string) string {
@@ -84,7 +86,7 @@ func clusterConfig() string {
 func providerSpecificConfig() string {
 	return fmt.Sprint(`
 		... on GCPProviderConfig { 
-			zone 
+			zones 
 		} 
 		... on AzureProviderConfig {
 			vnetCidr

@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "metris.fullname" . }}
-  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Chart.Name }}
 {{ include "metris.labels" . | indent 4 }}
@@ -29,17 +28,23 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           args:
-            - "--log-level={{ .Values.loglevel }}"
-            - "--listen-addr=0.0.0.0:{{ .Values.port }}"
-            - "--kubeconfig=/gardener/kubeconfig"
-            - "--provider-poll-interval={{ .Values.provider.pollinterval }}"
-            - "--provider-workers={{ .Values.provider.workers }}"
             - "--edp-url={{ .Values.edp.url }}"
             - "--edp-namespace={{ .Values.edp.datastream.namespace }}"
             - "--edp-data-stream={{ .Values.edp.datastream.name }}"
             - "--edp-data-stream-version={{ .Values.edp.datastream.version }}"
             - "--edp-data-stream-env={{ .Values.edp.datastream.env }}"
+            - "--edp-timeout={{ .Values.edp.timeout }}"
+            - "--edp-buffer={{ .Values.edp.buffer }}"
             - "--edp-workers={{ .Values.edp.workers }}"
+            - "--edp-event-retry={{ .Values.edp.retry }}"
+            - "--provider-poll-interval={{ .Values.provider.pollinterval }}"
+            - "--provider-poll-max-interval={{ .Values.provider.pollmaxinterval }}"
+            - "--provider-max-retries={{ .Values.provider.maxretries }}"
+            - "--provider-workers={{ .Values.provider.workers }}"
+            - "--provider-buffer={{ .Values.provider.buffer }}"
+            - "--listen-addr=0.0.0.0:{{ .Values.port }}"
+            - "--kubeconfig=/gardener/kubeconfig"
+            - "--log-level={{ .Values.loglevel }}"
             {{- if .Values.extraArgs }}
 {{ toYaml .Values.extraArgs | trim | indent 12 }}
             {{- end }}

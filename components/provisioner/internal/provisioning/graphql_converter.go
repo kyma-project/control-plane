@@ -21,6 +21,10 @@ func (c graphQLConverter) RuntimeStatusToGraphQLStatus(status model.RuntimeStatu
 		LastOperationStatus:     c.OperationStatusToGQLOperationStatus(status.LastOperationStatus),
 		RuntimeConnectionStatus: c.runtimeConnectionStatusToGraphQLStatus(status.RuntimeConnectionStatus),
 		RuntimeConfiguration:    c.clusterToToGraphQLRuntimeConfiguration(status.RuntimeConfiguration),
+		HibernationStatus: &gqlschema.HibernationStatus{
+			HibernationPossible: &status.HibernationStatus.HibernationPossible,
+			Hibernated:          &status.HibernationStatus.Hibernated,
+		},
 	}
 }
 
@@ -87,6 +91,7 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 		MaxUnavailable:                      &config.MaxUnavailable,
 		EnableKubernetesVersionAutoUpdate:   &config.EnableKubernetesVersionAutoUpdate,
 		EnableMachineImageVersionAutoUpdate: &config.EnableMachineImageVersionAutoUpdate,
+		AllowPrivilegedContainers:           &config.AllowPrivilegedContainers,
 		ProviderSpecificConfig:              providerSpecificConfig,
 	}
 }
@@ -107,6 +112,7 @@ func (c graphQLConverter) kymaConfigToGraphQLConfig(config model.KymaConfig) *gq
 
 	return &gqlschema.KymaConfig{
 		Version:       &config.Release.Version,
+		Profile:       c.profileToGraphQLProfile(config.Profile),
 		Components:    components,
 		Configuration: c.configurationToGraphQLConfig(config.GlobalConfiguration),
 	}
@@ -136,8 +142,12 @@ func (c graphQLConverter) operationTypeToGraphQLType(operationType model.Operati
 		return gqlschema.OperationTypeDeprovision
 	case model.Upgrade:
 		return gqlschema.OperationTypeUpgrade
+	case model.UpgradeShoot:
+		return gqlschema.OperationTypeUpgradeShoot
 	case model.ReconnectRuntime:
 		return gqlschema.OperationTypeReconnectRuntime
+	case model.Hibernate:
+		return gqlschema.OperationTypeHibernate
 	default:
 		return ""
 	}
@@ -154,4 +164,24 @@ func (c graphQLConverter) operationStateToGraphQLState(state model.OperationStat
 	default:
 		return ""
 	}
+}
+
+func (c graphQLConverter) profileToGraphQLProfile(profile *model.KymaProfile) *gqlschema.KymaProfile {
+
+	if profile == nil {
+		return nil
+	}
+
+	var result gqlschema.KymaProfile
+
+	switch *profile {
+	case model.EvaluationProfile:
+		result = gqlschema.KymaProfileEvaluation
+	case model.ProductionProfile:
+		result = gqlschema.KymaProfileProduction
+	default:
+		result = gqlschema.KymaProfile("")
+	}
+
+	return &result
 }

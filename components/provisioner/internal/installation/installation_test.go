@@ -81,153 +81,10 @@ func TestInstallationService_TriggerInstallation(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, resourceCleanupSelector)
 
 		// when
-		err := installationSvc.TriggerInstallation(k8sConfig, kymaRelease, globalConfig, componentsConfig)
+		err := installationSvc.TriggerInstallation(k8sConfig, nil, kymaRelease, globalConfig, componentsConfig)
 
 		// then
 		require.NoError(t, err)
-	})
-
-}
-
-func TestInstallationService_InstallKyma(t *testing.T) {
-
-	kymaVersion := "1.7.0"
-	kymaRelease := model.Release{Version: kymaVersion, TillerYAML: tillerYAML, InstallerYAML: installerYAML}
-
-	globalConfig := fixGlobalConfig()
-	componentsConfig := fixComponentsConfig()
-
-	defaultExpectedInstallation := installation.Installation{
-		TillerYaml:    tillerYAML,
-		InstallerYaml: installerYAML,
-		Configuration: installation.Configuration{
-			Configuration:          make([]installation.ConfigEntry, 0),
-			ComponentConfiguration: make([]installation.ComponentConfiguration, 0),
-		},
-	}
-
-	for _, testCase := range []struct {
-		description          string
-		installationMock     func(chan installation.InstallationState, chan error)
-		globalConfig         model.Configuration
-		componentsConfig     []model.KymaComponentConfig
-		shouldFail           bool
-		expectedInstallation installation.Installation
-	}{
-		{
-			description: "should install Kyma successfully",
-			installationMock: func(stateChan chan installation.InstallationState, errChannel chan error) {
-				stateChan <- installation.InstallationState{State: "Installed"}
-				close(errChannel)
-				close(stateChan)
-			},
-			globalConfig:     fixGlobalConfig(),
-			componentsConfig: fixComponentsConfig(),
-			shouldFail:       false,
-			expectedInstallation: installation.Installation{
-				TillerYaml:    tillerYAML,
-				InstallerYaml: installerYAML,
-				Configuration: fixInstallationConfig(),
-			},
-		},
-		{
-			description: "should install Kyma with empty configs",
-			installationMock: func(stateChan chan installation.InstallationState, errChannel chan error) {
-				stateChan <- installation.InstallationState{State: "Installed"}
-				close(errChannel)
-				close(stateChan)
-			},
-			globalConfig:         model.Configuration{},
-			componentsConfig:     []model.KymaComponentConfig{},
-			shouldFail:           false,
-			expectedInstallation: defaultExpectedInstallation,
-		},
-		{
-			description: "should continue installation if error occured",
-			installationMock: func(stateChan chan installation.InstallationState, errChannel chan error) {
-				stateChan <- installation.InstallationState{State: "Installing"}
-				errChannel <- installation.InstallationError{
-					ErrorEntries: make([]installation.ErrorEntry, 2),
-				}
-				time.Sleep(1 * time.Second)
-				close(stateChan)
-				close(errChannel)
-			},
-			globalConfig:         model.Configuration{},
-			componentsConfig:     []model.KymaComponentConfig{},
-			shouldFail:           false,
-			expectedInstallation: defaultExpectedInstallation,
-		},
-		{
-			description: "should fail if error different than installation error occurred",
-			installationMock: func(stateChan chan installation.InstallationState, errChannel chan error) {
-				stateChan <- installation.InstallationState{State: "Installing"}
-				errChannel <- errors.New("error")
-				time.Sleep(1 * time.Second)
-				close(stateChan)
-				close(errChannel)
-			},
-			globalConfig:         model.Configuration{},
-			componentsConfig:     []model.KymaComponentConfig{},
-			shouldFail:           true,
-			expectedInstallation: defaultExpectedInstallation,
-		},
-	} {
-		t.Run(testCase.description, func(t *testing.T) {
-			// given
-			stateChannel := make(chan installation.InstallationState)
-			errChannel := make(chan error)
-
-			installationHandlerConstructor := newMockInstallerHandler(t, testCase.expectedInstallation, stateChannel, errChannel)
-			installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, resourceCleanupSelector)
-
-			go testCase.installationMock(stateChannel, errChannel)
-
-			// when
-			err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease, testCase.globalConfig, testCase.componentsConfig)
-
-			// then
-			if testCase.shouldFail {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-
-	t.Run("should return error when failed to trigger installation", func(t *testing.T) {
-		// given
-		installationHandlerConstructor := newErrorInstallerHandler(t, nil, errors.New("error"))
-		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, resourceCleanupSelector)
-
-		// when
-		err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease, globalConfig, componentsConfig)
-
-		// then
-		require.Error(t, err)
-	})
-
-	t.Run("should return error when failed to prepare installation", func(t *testing.T) {
-		// given
-		installationHandlerConstructor := newErrorInstallerHandler(t, errors.New("error"), nil)
-		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, resourceCleanupSelector)
-
-		// when
-		err := installationSvc.InstallKyma(runtimeId, kubeconfig, kymaRelease, globalConfig, componentsConfig)
-
-		// then
-		require.Error(t, err)
-	})
-
-	t.Run("should return error when failed to parse kubeconfig", func(t *testing.T) {
-		// given
-		installationSvc := NewInstallationService(10*time.Minute, nil, resourceCleanupSelector)
-
-		// when
-		err := installationSvc.InstallKyma(runtimeId, "", kymaRelease, globalConfig, componentsConfig)
-
-		// then
-		require.Error(t, err)
 	})
 
 }
@@ -244,30 +101,52 @@ func Test_getInstallationCRModificationFunc(t *testing.T) {
 		}
 	}
 
-	t.Run("should create modification func", func(t *testing.T) {
-		// given
-		componentsConfig := fixComponentsConfig()
-		installationCR := newInstallationCR()
+	kymaProductionProfile := model.ProductionProfile
+	kymaEvaluationProfile := model.EvaluationProfile
 
-		// when
-		modificationFunc := GetInstallationCRModificationFunc(componentsConfig)
+	testcases := []struct {
+		description string
+		profile     *model.KymaProfile
+	}{
+		{
+			description: "should create modification func with empty KymaProfile",
+		},
+		{
+			description: "should create modification func with Kyma production profile",
+			profile:     &kymaProductionProfile,
+		},
+		{
+			description: "should create modification func with Kyma evaluation profile",
+			profile:     &kymaEvaluationProfile,
+		},
+	}
 
-		modificationFunc(installationCR)
+	for _, testcase := range testcases {
+		t.Run(testcase.description, func(t *testing.T) {
+			// given
+			componentsConfig := fixComponentsConfig()
+			installationCR := newInstallationCR()
 
-		// then
-		require.Equal(t, 4, len(installationCR.Spec.Components))
-		assertComponent(t, "cluster-essentials", kymaSystemNamespace, nil, installationCR.Spec.Components[0])
-		assertComponent(t, "core", kymaSystemNamespace, nil, installationCR.Spec.Components[1])
-		assertComponent(t, "rafter", kymaSystemNamespace, &v1alpha1.ComponentSource{URL: rafterSourceURL}, installationCR.Spec.Components[2])
-		assertComponent(t, "application-connector", kymaIntegrationNamespace, nil, installationCR.Spec.Components[3])
-	})
+			// when
+			modificationFunc := GetInstallationCRModificationFunc(testcase.profile, componentsConfig)
+
+			modificationFunc(installationCR)
+
+			// then
+			require.Equal(t, 4, len(installationCR.Spec.Components))
+			assertComponent(t, "cluster-essentials", kymaSystemNamespace, nil, installationCR.Spec.Components[0])
+			assertComponent(t, "core", kymaSystemNamespace, nil, installationCR.Spec.Components[1])
+			assertComponent(t, "rafter", kymaSystemNamespace, &v1alpha1.ComponentSource{URL: rafterSourceURL}, installationCR.Spec.Components[2])
+			assertComponent(t, "application-connector", kymaIntegrationNamespace, nil, installationCR.Spec.Components[3])
+		})
+	}
 
 	t.Run("should have no components if configuration is empty", func(t *testing.T) {
 		// given
 		installationCR := newInstallationCR()
 
 		// when
-		modificationFunc := GetInstallationCRModificationFunc(nil)
+		modificationFunc := GetInstallationCRModificationFunc(nil, nil)
 
 		modificationFunc(installationCR)
 
@@ -298,7 +177,7 @@ func TestInstallationService_TriggerUpgrade(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, resourceCleanupSelector)
 
 		// when
-		err := installationSvc.TriggerUpgrade(k8sConfig, kymaRelease, globalConfig, componentsConfig)
+		err := installationSvc.TriggerUpgrade(k8sConfig, nil, kymaRelease, globalConfig, componentsConfig)
 
 		// then
 		require.NoError(t, err)
@@ -310,7 +189,7 @@ func TestInstallationService_TriggerUpgrade(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, resourceCleanupSelector)
 
 		// when
-		err := installationSvc.TriggerUpgrade(k8sConfig, kymaRelease, globalConfig, componentsConfig)
+		err := installationSvc.TriggerUpgrade(k8sConfig, nil, kymaRelease, globalConfig, componentsConfig)
 
 		// then
 		require.Error(t, err)
@@ -322,7 +201,7 @@ func TestInstallationService_TriggerUpgrade(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, resourceCleanupSelector)
 
 		// when
-		err := installationSvc.TriggerUpgrade(k8sConfig, kymaRelease, globalConfig, componentsConfig)
+		err := installationSvc.TriggerUpgrade(k8sConfig, nil, kymaRelease, globalConfig, componentsConfig)
 
 		// then
 		require.Error(t, err)

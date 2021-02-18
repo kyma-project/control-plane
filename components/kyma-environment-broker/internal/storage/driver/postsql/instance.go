@@ -1,9 +1,12 @@
 package postsql
 
 import (
+	"encoding/json"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -11,25 +14,27 @@ import (
 )
 
 type Instance struct {
-	dbsession.Factory
+	postsql.Factory
+	operations *operations
 }
 
-func NewInstance(sess dbsession.Factory) *Instance {
+func NewInstance(sess postsql.Factory, operations *operations) *Instance {
 	return &Instance{
-		Factory: sess,
+		Factory:    sess,
+		operations: operations,
 	}
 }
 
 func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, error) {
 	sess := s.NewReadSession()
 	var (
-		instances []internal.InstanceWithOperation
+		instances []dbmodel.InstanceWithOperationDTO
 		lastErr   dberr.Error
 	)
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		instances, lastErr = sess.FindAllInstancesJoinedWithOperation(prct...)
 		if lastErr != nil {
-			log.Warn(errors.Wrapf(lastErr, "while fetching all instances").Error())
+			log.Errorf("while fetching all instances: %v", lastErr)
 			return false, nil
 		}
 		return true, nil
@@ -38,12 +43,26 @@ func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]i
 		return nil, lastErr
 	}
 
-	return instances, nil
+	var result []internal.InstanceWithOperation
+	for _, dto := range instances {
+		inst, err := toInstance(dto.InstanceDTO)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, internal.InstanceWithOperation{
+			Instance:    inst,
+			Type:        dto.Type,
+			State:       dto.State,
+			Description: dto.Description,
+		})
+	}
+
+	return result, nil
 }
 
 func (s *Instance) FindAllInstancesForRuntimes(runtimeIdList []string) ([]internal.Instance, error) {
 	sess := s.NewReadSession()
-	var instances []internal.Instance
+	var instances []dbmodel.InstanceDTO
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		instances, lastErr = sess.FindAllInstancesForRuntimes(runtimeIdList)
@@ -51,7 +70,7 @@ func (s *Instance) FindAllInstancesForRuntimes(runtimeIdList []string) ([]intern
 			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("Instances with runtime IDs from list '%+q' not exist", runtimeIdList)
 			}
-			log.Warn(errors.Wrapf(lastErr, "while getting instances from runtime ID list '%+q'", runtimeIdList).Error())
+			log.Errorf("while getting instances from runtime ID list '%+q': %v", runtimeIdList, lastErr)
 			return false, nil
 		}
 		return true, nil
@@ -59,21 +78,72 @@ func (s *Instance) FindAllInstancesForRuntimes(runtimeIdList []string) ([]intern
 	if err != nil {
 		return nil, lastErr
 	}
-	return instances, nil
+
+	var result []internal.Instance
+	for _, dto := range instances {
+		inst, err := toInstance(dto)
+		if err != nil {
+			return []internal.Instance{}, err
+		}
+		result = append(result, inst)
+	}
+
+	return result, nil
+}
+
+func (s *Instance) FindAllInstancesForSubAccounts(subAccountslist []string) ([]internal.Instance, error) {
+	sess := s.NewReadSession()
+	var (
+		instances []dbmodel.InstanceDTO
+		lastErr   dberr.Error
+	)
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		instances, lastErr = sess.FindAllInstancesForSubAccounts(subAccountslist)
+		if lastErr != nil {
+			log.Errorf("while fetching instances by subaccount list: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, lastErr
+	}
+
+	var result []internal.Instance
+	for _, dto := range instances {
+		inst, err := toInstance(dto)
+		if err != nil {
+			return []internal.Instance{}, err
+		}
+		result = append(result, inst)
+	}
+
+	return result, nil
+}
+
+func (s *Instance) GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error) {
+	sess := s.NewReadSession()
+	var result int
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		count, err := sess.GetNumberOfInstancesForGlobalAccountID(globalAccountID)
+		result = count
+		return err == nil, nil
+	})
+	return result, err
 }
 
 // TODO: Wrap retries in single method WithRetries
 func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	sess := s.NewReadSession()
-	instance := internal.Instance{}
+	instanceDTO := dbmodel.InstanceDTO{}
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		instance, lastErr = sess.GetInstanceByID(instanceID)
+		instanceDTO, lastErr = sess.GetInstanceByID(instanceID)
 		if lastErr != nil {
 			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("Instance with id %s not exist", instanceID)
 			}
-			log.Warn(errors.Wrapf(lastErr, "while getting instance by ID %s", instanceID).Error())
+			log.Errorf("while getting instanceDTO by ID %s: %v", instanceID, lastErr)
 			return false, nil
 		}
 		return true, nil
@@ -81,7 +151,46 @@ func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 	if err != nil {
 		return nil, lastErr
 	}
+	instance, err := toInstance(instanceDTO)
+	if err != nil {
+		return nil, err
+	}
+
+	lastOp, err := s.operations.GetLastOperation(instanceID)
+	if err != nil {
+		if dberr.IsNotFound(err) {
+			return &instance, nil
+		}
+		return nil, err
+	}
+	instance.InstanceDetails = lastOp.InstanceDetails
+
 	return &instance, nil
+}
+
+func toInstance(dto dbmodel.InstanceDTO) (internal.Instance, error) {
+	var params internal.ProvisioningParameters
+	err := json.Unmarshal([]byte(dto.ProvisioningParameters), &params)
+	if err != nil {
+		return internal.Instance{}, err
+	}
+	return internal.Instance{
+		InstanceID:      dto.InstanceID,
+		RuntimeID:       dto.RuntimeID,
+		GlobalAccountID: dto.GlobalAccountID,
+		SubAccountID:    dto.SubAccountID,
+		ServiceID:       dto.ServiceID,
+		ServiceName:     dto.ServiceName,
+		ServicePlanID:   dto.ServicePlanID,
+		ServicePlanName: dto.ServicePlanName,
+		DashboardURL:    dto.DashboardURL,
+		Parameters:      params,
+		ProviderRegion:  dto.ProviderRegion,
+		CreatedAt:       dto.CreatedAt,
+		UpdatedAt:       dto.UpdatedAt,
+		DeletedAt:       dto.DeletedAt,
+		Version:         dto.Version,
+	}, nil
 }
 
 func (s *Instance) Insert(instance internal.Instance) error {
@@ -90,35 +199,81 @@ func (s *Instance) Insert(instance internal.Instance) error {
 		return dberr.AlreadyExists("instance with id %s already exist", instance.InstanceID)
 	}
 
+	dto, err := toInstanceDTO(instance)
+	if err != nil {
+		return err
+	}
+
 	sess := s.NewWriteSession()
 	return wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		err := sess.InsertInstance(instance)
+		err := sess.InsertInstance(dto)
 		if err != nil {
-			log.Warn(errors.Wrapf(err, "while saving instance ID %s", instance.InstanceID).Error())
+			log.Errorf("while saving instance ID %s: %v", instance.InstanceID, err)
 			return false, nil
 		}
 		return true, nil
 	})
 }
 
-func (s *Instance) Update(instance internal.Instance) error {
+func (s *Instance) Update(instance internal.Instance) (*internal.Instance, error) {
 	sess := s.NewWriteSession()
+	dto, err := toInstanceDTO(instance)
+	if err != nil {
+		return nil, err
+	}
 	var lastErr dberr.Error
-	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		lastErr = sess.UpdateInstance(instance)
-		if lastErr != nil {
+	err = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		lastErr = sess.UpdateInstance(dto)
+
+		switch {
+		case dberr.IsNotFound(lastErr):
+			_, lastErr = s.NewReadSession().GetInstanceByID(instance.InstanceID)
 			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("Instance with id %s not exist", instance.InstanceID)
 			}
-			log.Warn(errors.Wrapf(lastErr, "while updating instance ID %s", instance.InstanceID).Error())
+			if lastErr != nil {
+				log.Warn(errors.Wrapf(lastErr, "while getting Operation").Error())
+				return false, nil
+			}
+
+			// the operation exists but the version is different
+			lastErr = dberr.Conflict("operation update conflict, operation ID: %s", instance.InstanceID)
+			return false, lastErr
+		case lastErr != nil:
+			log.Errorf("while updating instance ID %s: %v", instance.InstanceID, lastErr)
 			return false, nil
 		}
 		return true, nil
 	})
 	if err != nil {
-		return lastErr
+		return nil, lastErr
 	}
-	return nil
+	instance.Version = instance.Version + 1
+	return &instance, nil
+}
+
+func toInstanceDTO(instance internal.Instance) (dbmodel.InstanceDTO, error) {
+	params, err := json.Marshal(instance.Parameters)
+	if err != nil {
+		return dbmodel.InstanceDTO{}, err
+	}
+	return dbmodel.InstanceDTO{
+		InstanceID:             instance.InstanceID,
+		RuntimeID:              instance.RuntimeID,
+		GlobalAccountID:        instance.GlobalAccountID,
+		SubAccountID:           instance.SubAccountID,
+		ServiceID:              instance.ServiceID,
+		ServiceName:            instance.ServiceName,
+		ServicePlanID:          instance.ServicePlanID,
+		ServicePlanName:        instance.ServicePlanName,
+		DashboardURL:           instance.DashboardURL,
+		ProvisioningParameters: string(params),
+		ProviderRegion:         instance.ProviderRegion,
+		CreatedAt:              instance.CreatedAt,
+		UpdatedAt:              instance.UpdatedAt,
+		DeletedAt:              instance.DeletedAt,
+		Version:                instance.Version,
+	}, nil
 }
 
 func (s *Instance) Delete(instanceID string) error {
@@ -140,4 +295,20 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 		result.TotalNumberOfInstances = result.TotalNumberOfInstances + e.Total
 	}
 	return result, nil
+}
+
+func (s *Instance) List(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
+	dtos, count, totalCount, err := s.NewReadSession().ListInstances(filter)
+	if err != nil {
+		return []internal.Instance{}, 0, 0, err
+	}
+	var instances []internal.Instance
+	for _, dto := range dtos {
+		instance, err := toInstance(dto)
+		if err != nil {
+			return []internal.Instance{}, 0, 0, err
+		}
+		instances = append(instances, instance)
+	}
+	return instances, count, totalCount, err
 }

@@ -1,6 +1,7 @@
 package installation
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -9,6 +10,8 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	apiServBeta "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -16,29 +19,59 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+const SystemBrokerCRDName = "clusterservicebrokers.servicecatalog.k8s.io"
+const SystemCatalogCRDName = "clusterserviceclasses.servicecatalog.k8s.io"
+const SystemInstanceCRD = "serviceinstances.servicecatalog.k8s.io"
+
 const (
 	ClusterServiceBrokerNameLabel   = "servicecatalog.k8s.io/spec.clusterServiceBrokerName"
 	ClusterServiceClassRefNameLabel = "servicecatalog.k8s.io/spec.clusterServiceClassRef.name"
 )
 
-type ServiceCatalogClient interface {
+type CleanupClient interface {
 	PerformCleanup(resourceSelector string) error
 }
 
-func NewServiceCatalogClient(kubeconfig *rest.Config) (ServiceCatalogClient, error) {
+type CrdsManager interface {
+	List(ctx context.Context, opts metav1.ListOptions) (*apiServBeta.CustomResourceDefinitionList, error)
+}
+
+func NewServiceCatalogCleanupClient(kubeconfig *rest.Config) (CleanupClient, error) {
 	scCli, err := sc.NewForConfig(kubeconfig)
 	if err != nil {
 		return &serviceCatalogClient{}, err
 	}
 
-	return &serviceCatalogClient{client: scCli}, nil
+	apiExtensionsClientSet, err := apiextensionsclient.NewForConfig(kubeconfig)
+
+	if err != nil {
+		return &serviceCatalogClient{}, err
+	}
+
+	crdsInterface := apiExtensionsClientSet.ApiextensionsV1beta1().CustomResourceDefinitions()
+
+	return &serviceCatalogClient{
+		client:      scCli,
+		crdsManager: crdsInterface,
+	}, nil
 }
 
 type serviceCatalogClient struct {
-	client sc.Interface
+	client      sc.Interface
+	crdsManager CrdsManager
 }
 
 func (s *serviceCatalogClient) PerformCleanup(resourceSelector string) error {
+	exist, err := s.ensureCRDsExist()
+	if err != nil {
+		return errors.Wrapf(err, "while checking CustomResourceDefinitions")
+	}
+
+	if !exist {
+		logrus.Info("Service Catalog not installed properly. Cleanup skipped")
+		return nil
+	}
+
 	clusterServiceBrokers, err := s.listClusterServiceBroker(metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "while listing ClusterServiceBrokers")
@@ -62,10 +95,34 @@ func (s *serviceCatalogClient) PerformCleanup(resourceSelector string) error {
 	return nil
 }
 
+func (s *serviceCatalogClient) ensureCRDsExist() (bool, error) {
+	list, err := s.crdsManager.List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return false, err
+	}
+	for _, crd := range []string{SystemBrokerCRDName, SystemCatalogCRDName, SystemInstanceCRD} {
+		exists := s.ensureCRDExists(crd, list)
+		if !exists {
+			logrus.Debugf("Custom Resource Definition: %s not found", crd)
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func (s *serviceCatalogClient) ensureCRDExists(crdName string, list *apiServBeta.CustomResourceDefinitionList) bool {
+	for _, item := range list.Items {
+		if item.Name == crdName {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *serviceCatalogClient) listClusterServiceBroker(options metav1.ListOptions) (*v1beta1.ClusterServiceBrokerList, error) {
 	result := &v1beta1.ClusterServiceBrokerList{}
 	err := wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
-		csbList, err := s.client.ServicecatalogV1beta1().ClusterServiceBrokers().List(options)
+		csbList, err := s.client.ServicecatalogV1beta1().ClusterServiceBrokers().List(context.Background(), options)
 		if err != nil {
 			logrus.Errorf("while listing ClusterServiceBrokers: %s", err.Error())
 			return false, nil
@@ -79,7 +136,7 @@ func (s *serviceCatalogClient) listClusterServiceBroker(options metav1.ListOptio
 func (s *serviceCatalogClient) listClusterServiceClass(options metav1.ListOptions) (*v1beta1.ClusterServiceClassList, error) {
 	result := &v1beta1.ClusterServiceClassList{}
 	err := wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
-		cscList, err := s.client.ServicecatalogV1beta1().ClusterServiceClasses().List(options)
+		cscList, err := s.client.ServicecatalogV1beta1().ClusterServiceClasses().List(context.Background(), options)
 		if err != nil {
 			logrus.Errorf("while listing ClusterServiceClasses: %s", err.Error())
 			return false, nil
@@ -93,7 +150,7 @@ func (s *serviceCatalogClient) listClusterServiceClass(options metav1.ListOption
 func (s *serviceCatalogClient) listServiceInstance(options metav1.ListOptions) (*v1beta1.ServiceInstanceList, error) {
 	result := &v1beta1.ServiceInstanceList{}
 	err := wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
-		siList, err := s.client.ServicecatalogV1beta1().ServiceInstances(metav1.NamespaceAll).List(options)
+		siList, err := s.client.ServicecatalogV1beta1().ServiceInstances(metav1.NamespaceAll).List(context.Background(), options)
 		if err != nil {
 			logrus.Errorf("while listing ServiceInstances: %s", err.Error())
 			return false, nil
@@ -162,7 +219,7 @@ func (s *serviceCatalogClient) deleteServiceInstances(serviceInstances []v1beta1
 		logrus.Debugf("trying to delete ServiceInstance %q", serviceInstance.Name)
 
 		_ = wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
-			if err := s.client.ServicecatalogV1beta1().ServiceInstances(serviceInstance.Namespace).Delete(serviceInstance.Name, &metav1.DeleteOptions{}); err != nil {
+			if err := s.client.ServicecatalogV1beta1().ServiceInstances(serviceInstance.Namespace).Delete(context.Background(), serviceInstance.Name, metav1.DeleteOptions{}); err != nil {
 				logrus.Errorf("while removing ServiceInstance %s: %s", serviceInstance.Name, err.Error())
 				if apiErrors.IsNotFound(err) {
 					return true, nil

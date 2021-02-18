@@ -17,19 +17,22 @@ type OperationType string
 const (
 	Provision        OperationType = "PROVISION"
 	Upgrade          OperationType = "UPGRADE"
+	UpgradeShoot     OperationType = "UPGRADE_SHOOT"
 	Deprovision      OperationType = "DEPROVISION"
 	ReconnectRuntime OperationType = "RECONNECT_RUNTIME"
+	Hibernate        OperationType = "HIBERNATE"
 )
 
 type OperationStage string
 
 const (
-	WaitingForClusterDomain   OperationStage = "WaitingForClusterDomain"
-	WaitingForClusterCreation OperationStage = "WaitingForClusterCreation"
-	StartingInstallation      OperationStage = "StartingInstallation"
-	WaitingForInstallation    OperationStage = "WaitingForInstallation"
-	ConnectRuntimeAgent       OperationStage = "ConnectRuntimeAgent"
-	WaitForAgentToConnect     OperationStage = "WaitForAgentToConnect"
+	WaitingForClusterDomain      OperationStage = "WaitingForClusterDomain"
+	WaitingForClusterCreation    OperationStage = "WaitingForClusterCreation"
+	CreatingBindingsForOperators OperationStage = "CreatingBindingsForOperators"
+	StartingInstallation         OperationStage = "StartingInstallation"
+	WaitingForInstallation       OperationStage = "WaitingForInstallation"
+	ConnectRuntimeAgent          OperationStage = "ConnectRuntimeAgent"
+	WaitForAgentToConnect        OperationStage = "WaitForAgentToConnect"
 
 	TriggerKymaUninstall   OperationStage = "TriggerKymaUninstall"
 	WaitForClusterDeletion OperationStage = "WaitForClusterDeletion"
@@ -38,6 +41,11 @@ const (
 
 	StartingUpgrade      OperationStage = "StartingUpgrade"
 	UpdatingUpgradeState OperationStage = "UpdatingUpgradeState"
+
+	WaitingForShootUpgrade    OperationStage = "WaitingForShootUpgrade"
+	WaitingForShootNewVersion OperationStage = "WaitingForShootNewVersion"
+
+	WaitForHibernation OperationStage = "WaitForHibernation"
 
 	FinishedStage OperationStage = "Finished"
 )
@@ -79,8 +87,14 @@ type RuntimeStatus struct {
 	LastOperationStatus     Operation
 	RuntimeConnectionStatus RuntimeAgentConnectionStatus
 	RuntimeConfiguration    Cluster
+	HibernationStatus       HibernationStatus
 }
 
 type OperationsCount struct {
 	Count map[OperationType]int
+}
+
+type HibernationStatus struct {
+	Hibernated          bool
+	HibernationPossible bool
 }

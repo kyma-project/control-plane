@@ -2,7 +2,6 @@ package storage
 
 import (
 	"github.com/gocraft/dbr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbsession"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/memory"
 	postgres "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
@@ -15,13 +14,19 @@ type BrokerStorage interface {
 	Provisioning() Provisioning
 	Deprovisioning() Deprovisioning
 	LMSTenants() LMSTenants
+	Orchestrations() Orchestrations
+	RuntimeStates() RuntimeStates
 }
+
+const (
+	connectionRetries = 10
+)
 
 func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, *dbr.Connection, error) {
 	log.Infof("Setting DB connection pool params: connectionMaxLifetime=%s "+
 		"maxIdleConnections=%d maxOpenConnections=%d", cfg.ConnMaxLifetime, cfg.MaxIdleConns, cfg.MaxOpenConns)
 
-	connection, err := postsql.InitializeDatabase(cfg.ConnectionURL(), log)
+	connection, err := postsql.InitializeDatabase(cfg.ConnectionURL(), connectionRetries, log)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -30,28 +35,36 @@ func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, *dbr.Conn
 	connection.SetMaxIdleConns(cfg.MaxIdleConns)
 	connection.SetMaxOpenConns(cfg.MaxOpenConns)
 
-	fact := dbsession.NewFactory(connection)
+	fact := postsql.NewFactory(connection)
 
+	enc := NewEncrypter(cfg.SecretKey)
+	operation := postgres.NewOperation(fact, enc)
 	return storage{
-		instance:   postgres.NewInstance(fact),
-		operation:  postgres.NewOperation(fact),
-		lmsTenants: postgres.NewLMSTenants(fact),
+		instance:       postgres.NewInstance(fact, operation),
+		operation:      operation,
+		lmsTenants:     postgres.NewLMSTenants(fact),
+		orchestrations: postgres.NewOrchestrations(fact),
+		runtimeStates:  postgres.NewRuntimeStates(fact, enc),
 	}, connection, nil
 }
 
 func NewMemoryStorage() BrokerStorage {
 	op := memory.NewOperation()
 	return storage{
-		instance:   memory.NewInstance(op),
-		operation:  op,
-		lmsTenants: memory.NewLMSTenants(),
+		operation:      op,
+		instance:       memory.NewInstance(op),
+		lmsTenants:     memory.NewLMSTenants(),
+		orchestrations: memory.NewOrchestrations(),
+		runtimeStates:  memory.NewRuntimeStates(),
 	}
 }
 
 type storage struct {
-	instance   Instances
-	operation  Operations
-	lmsTenants LMSTenants
+	instance       Instances
+	operation      Operations
+	lmsTenants     LMSTenants
+	orchestrations Orchestrations
+	runtimeStates  RuntimeStates
 }
 
 func (s storage) Instances() Instances {
@@ -72,4 +85,12 @@ func (s storage) Deprovisioning() Deprovisioning {
 
 func (s storage) LMSTenants() LMSTenants {
 	return s.lmsTenants
+}
+
+func (s storage) Orchestrations() Orchestrations {
+	return s.orchestrations
+}
+
+func (s storage) RuntimeStates() RuntimeStates {
+	return s.runtimeStates
 }

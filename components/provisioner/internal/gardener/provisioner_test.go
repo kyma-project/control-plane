@@ -1,19 +1,27 @@
 package gardener
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"testing"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	"github.com/stretchr/testify/mock"
+
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
-	sessionMocks "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	sessionMocks "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+
+	gardenerMocks "github.com/kyma-project/control-plane/components/provisioner/internal/gardener/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -52,10 +60,12 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		require.NoError(t, apperr)
 
 		// then
-		shoot, err := shootClient.Get(clusterName, v1.GetOptions{})
+		shoot, err := shootClient.Get(context.Background(), clusterName, v1.GetOptions{})
 		require.NoError(t, err)
-		assertAnnotation(t, shoot, operationIdAnnotation, operationId)
-		assertAnnotation(t, shoot, runtimeIdAnnotation, runtimeId)
+		assertAnnotation(t, shoot, operationIDAnnotation, operationId)
+		assertAnnotation(t, shoot, runtimeIDAnnotation, runtimeId)
+		assertAnnotation(t, shoot, legacyOperationIDAnnotation, operationId)
+		assertAnnotation(t, shoot, legacyRuntimeIDAnnotation, runtimeId)
 		assert.Equal(t, "", shoot.Labels[model.SubAccountLabel])
 
 		require.NotNil(t, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig)
@@ -64,33 +74,6 @@ func TestGardenerProvisioner_ProvisionCluster(t *testing.T) {
 		require.NotNil(t, shoot.Spec.Maintenance.TimeWindow)
 		assert.Equal(t, auditLogsPolicyCMName, shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig.AuditPolicy.ConfigMapRef.Name)
 	})
-}
-
-func newClusterConfig(name string, subAccountId *string, providerConfig model.GardenerProviderConfig, region string) model.Cluster {
-	return model.Cluster{
-		ID:           runtimeId,
-		Tenant:       tenant,
-		SubAccountId: subAccountId,
-		ClusterConfig: model.GardenerConfig{
-			ID:                     "id",
-			ClusterID:              runtimeId,
-			Name:                   name,
-			ProjectName:            "project-name",
-			KubernetesVersion:      "1.16",
-			VolumeSizeGB:           50,
-			DiskType:               "standard",
-			MachineType:            "n1-standard-4",
-			Provider:               "gcp",
-			TargetSecret:           "secret",
-			Region:                 region,
-			WorkerCidr:             "10.10.10.10",
-			AutoScalerMin:          1,
-			AutoScalerMax:          5,
-			MaxSurge:               25,
-			MaxUnavailable:         1,
-			GardenerProviderConfig: providerConfig,
-		},
-	}
 }
 
 func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
@@ -135,7 +118,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		assert.Equal(t, runtimeId, operation.ClusterID)
 		assert.Equal(t, model.Deprovision, operation.Type)
 
-		_, err := shootClient.Get(clusterName, v1.GetOptions{})
+		_, err := shootClient.Get(context.Background(), clusterName, v1.GetOptions{})
 		assert.NoError(t, err)
 	})
 
@@ -164,10 +147,241 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		assert.Equal(t, runtimeId, operation.ClusterID)
 		assert.Equal(t, model.Deprovision, operation.Type)
 
-		_, err := shootClient.Get(clusterName, v1.GetOptions{})
+		_, err := shootClient.Get(context.Background(), clusterName, v1.GetOptions{})
 		assert.Error(t, err)
-		assert.True(t, errors.IsNotFound(err))
+		assert.True(t, k8serrors.IsNotFound(err))
 	})
+}
+
+func TestGardenerProvisioner_UpgradeCluster(t *testing.T) {
+	initialShoot := testkit.NewTestShoot(clusterName).
+		InNamespace(gardenerNamespace).
+		WithAutoUpdate(false, false).
+		WithWorkers(testkit.NewTestWorker("peon").ToWorker()).
+		ToShoot()
+
+	expectedShoot := testkit.NewTestShoot(clusterName).
+		InNamespace(gardenerNamespace).
+		WithKubernetesVersion("1.16").
+		WithAutoUpdate(false, false).
+		WithWorkers(
+			testkit.NewTestWorker("peon").
+				WithMachineType("n1-standard-4").
+				WithVolume("standard", 50).
+				WithMinMax(1, 5).
+				WithMaxSurge(25).
+				WithMaxUnavailable(1).
+				WithZones("zone-1").
+				ToWorker()).
+		ToShoot()
+
+	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{Zones: []string{"zone-1"}})
+	require.NoError(t, err)
+	cluster := newClusterConfig(clusterName, nil, gcpGardenerConfig, region)
+
+	t.Run("should upgrade shoot", func(t *testing.T) {
+		// given
+		clientset := fake.NewSimpleClientset(initialShoot)
+		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
+
+		sessionFactory := &sessionMocks.Factory{}
+		provisioner := NewProvisioner(gardenerNamespace, shootClient, sessionFactory, auditLogsPolicyCMName, "")
+
+		// when
+		apperr := provisioner.UpgradeCluster(cluster.ID, cluster.ClusterConfig)
+		require.NoError(t, apperr)
+
+		// then
+		shoot, err := shootClient.Get(context.Background(), clusterName, v1.GetOptions{})
+		require.NoError(t, err)
+
+		assert.Equal(t, expectedShoot, shoot)
+	})
+	t.Run("should return error when failed to get shoot from Gardener", func(t *testing.T) {
+		clientset := fake.NewSimpleClientset()
+		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
+
+		sessionFactory := &sessionMocks.Factory{}
+		provisioner := NewProvisioner(gardenerNamespace, shootClient, sessionFactory, auditLogsPolicyCMName, "")
+
+		// when
+		apperr := provisioner.UpgradeCluster(cluster.ID, cluster.ClusterConfig)
+
+		// then
+		require.Error(t, apperr)
+		assert.Equal(t, apperrors.CodeInternal, apperr.Code())
+	})
+}
+
+func newClusterConfig(name string, subAccountID *string, providerConfig model.GardenerProviderConfig, region string) model.Cluster {
+	return model.Cluster{
+		ID:           runtimeId,
+		Tenant:       tenant,
+		SubAccountId: subAccountID,
+		ClusterConfig: model.GardenerConfig{
+			ID:                     "id",
+			ClusterID:              runtimeId,
+			Name:                   name,
+			ProjectName:            "project-name",
+			KubernetesVersion:      "1.16",
+			VolumeSizeGB:           50,
+			DiskType:               "standard",
+			MachineType:            "n1-standard-4",
+			Provider:               "gcp",
+			TargetSecret:           "secret",
+			Region:                 region,
+			WorkerCidr:             "10.10.10.10",
+			AutoScalerMin:          1,
+			AutoScalerMax:          5,
+			MaxSurge:               25,
+			MaxUnavailable:         1,
+			GardenerProviderConfig: providerConfig,
+		},
+	}
+}
+
+func TestGardenerProvisioner_HibernateCluster(t *testing.T) {
+
+	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{Zones: []string{"zone-1"}})
+	require.NoError(t, err)
+	cluster := newClusterConfig(clusterName, nil, gcpGardenerConfig, region)
+
+	t.Run("should return error if failed to get shoot", func(t *testing.T) {
+		clientset := fake.NewSimpleClientset()
+		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
+
+		sessionFactory := &sessionMocks.Factory{}
+		provisioner := NewProvisioner(gardenerNamespace, shootClient, sessionFactory, auditLogsPolicyCMName, "")
+
+		// when
+		apperr := provisioner.HibernateCluster(cluster.ID, cluster.ClusterConfig)
+
+		// then
+		require.Error(t, apperr)
+		assert.Equal(t, apperrors.CodeInternal, apperr.Code())
+	})
+
+	t.Run("should return error if cluster cannot be hibernated", func(t *testing.T) {
+		shoot := testkit.NewTestShoot(clusterName).
+			InNamespace(gardenerNamespace).
+			WithHibernationState(false, false).
+			ToShoot()
+
+		clientset := fake.NewSimpleClientset(shoot)
+		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
+
+		sessionFactory := &sessionMocks.Factory{}
+		provisioner := NewProvisioner(gardenerNamespace, shootClient, sessionFactory, auditLogsPolicyCMName, "")
+
+		// when
+		apperr := provisioner.HibernateCluster(cluster.ID, cluster.ClusterConfig)
+
+		// then
+		require.Error(t, apperr)
+		assert.Equal(t, apperrors.CodeBadRequest, apperr.Code())
+
+	})
+
+	t.Run("should hibernate cluster", func(t *testing.T) {
+		shoot := testkit.NewTestShoot(clusterName).
+			InNamespace(gardenerNamespace).
+			WithHibernationState(true, false).
+			ToShoot()
+
+		clientset := fake.NewSimpleClientset(shoot)
+		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
+
+		sessionFactory := &sessionMocks.Factory{}
+		provisioner := NewProvisioner(gardenerNamespace, shootClient, sessionFactory, auditLogsPolicyCMName, "")
+
+		// when
+		apperr := provisioner.HibernateCluster(cluster.ID, cluster.ClusterConfig)
+
+		// then
+		require.NoError(t, apperr)
+	})
+
+	t.Run("should return error if failed to hibernate cluster", func(t *testing.T) {
+		shoot := testkit.NewTestShoot(clusterName).
+			InNamespace(gardenerNamespace).
+			WithHibernationState(true, false).
+			ToShoot()
+
+		shootClient := &gardenerMocks.Client{}
+
+		shootClient.On("Get", mock.Anything, clusterName, mock.Anything).Return(shoot, nil)
+		shootClient.On("Update", mock.Anything, shoot, mock.Anything).Return(nil, errors.New("some error"))
+
+		sessionFactory := &sessionMocks.Factory{}
+		provisioner := NewProvisioner(gardenerNamespace, shootClient, sessionFactory, auditLogsPolicyCMName, "")
+
+		// when
+		apperr := provisioner.HibernateCluster(cluster.ID, cluster.ClusterConfig)
+
+		// then
+		require.Error(t, apperr)
+	})
+}
+
+func TestGardenerProvisioner_GetHibernationStatus(t *testing.T) {
+	gcpGardenerConfig, err := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{Zones: []string{"zone-1"}})
+	require.NoError(t, err)
+	cluster := newClusterConfig(clusterName, nil, gcpGardenerConfig, region)
+
+	t.Run("should  fail when failed to get cluster", func(t *testing.T) {
+		clientset := fake.NewSimpleClientset()
+		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
+
+		sessionFactory := &sessionMocks.Factory{}
+		provisioner := NewProvisioner(gardenerNamespace, shootClient, sessionFactory, auditLogsPolicyCMName, "")
+
+		// when
+		_, apperr := provisioner.GetHibernationStatus(cluster.ID, cluster.ClusterConfig)
+
+		// then
+		require.Error(t, apperr)
+		assert.Equal(t, apperrors.CodeInternal, apperr.Code())
+	})
+
+	for _, testcase := range []struct {
+		description         string
+		shoot               *gardener_types.Shoot
+		hibernationPossible bool
+		hibernated          bool
+	}{
+		{
+			description:         "should get status when hibernation impossible",
+			hibernationPossible: false,
+			hibernated:          false,
+		},
+		{
+			description:         "should get status when hibernation possible",
+			hibernationPossible: true,
+			hibernated:          true,
+		},
+	} {
+		t.Run(testcase.description, func(t *testing.T) {
+			// given
+			shoot := testkit.NewTestShoot(clusterName).
+				InNamespace(gardenerNamespace).
+				WithHibernationState(testcase.hibernationPossible, testcase.hibernated).
+				ToShoot()
+
+			clientset := fake.NewSimpleClientset(shoot)
+			shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
+
+			sessionFactory := &sessionMocks.Factory{}
+			provisioner := NewProvisioner(gardenerNamespace, shootClient, sessionFactory, auditLogsPolicyCMName, "")
+
+			// when
+			status, apperr := provisioner.GetHibernationStatus(cluster.ID, cluster.ClusterConfig)
+
+			// then
+			require.NoError(t, apperr)
+			require.Equal(t, testcase.hibernationPossible, status.HibernationPossible)
+			require.Equal(t, testcase.hibernated, status.Hibernated)
+		})
+	}
 }
 
 func assertAnnotation(t *testing.T, shoot *gardener_types.Shoot, name, value string) {

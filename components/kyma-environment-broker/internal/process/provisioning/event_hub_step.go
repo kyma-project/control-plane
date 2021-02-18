@@ -6,12 +6,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
+
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/sirupsen/logrus"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/azure"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	processazure "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/azure"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -24,10 +26,8 @@ const (
 
 	kafkaPort = "9093"
 
-	k8sSecretNamespace                = "knative-eventing"
-	componentNameKnativeEventing      = "knative-eventing"
-	componentNameKnativeEventingKafka = "knative-eventing-kafka"
-	kafkaProvider                     = "azure"
+	k8sSecretNamespace = "knative-eventing"
+	kafkaProvider      = "azure"
 
 	// prefix is added before the created Azure resources
 	// to satisfy Azure naming validation: https://docs.microsoft.com/en-us/rest/api/servicebus/create-namespace
@@ -57,29 +57,18 @@ func (p *ProvisionAzureEventHubStep) Name() string {
 	return "Provision Azure Event Hubs"
 }
 
-func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperation,
-	log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-
+func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	hypType := hyperscaler.Azure
-
-	// parse provisioning parameters
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		// if the parameters are incorrect, there is no reason to retry the operation
-		// a new request has to be issued by the user
-		log.Errorf("Aborting after failing to get valid operation provisioning parameters: %v", err)
-		return p.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", pp.ErsContext.GlobalAccountID, hypType)
+	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
 
 	// get hyperscaler credentials from HAP
-	credentials, err := p.EventHub.AccountProvider.GardenerCredentials(hypType, pp.ErsContext.GlobalAccountID)
+	credentials, err := p.EventHub.AccountProvider.GardenerCredentials(hypType, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
 	if err != nil {
 		// retrying might solve the issue, the HAP could be temporarily unavailable
 		errorMessage := fmt.Sprintf("Unable to retrieve Gardener Credentials from HAP lookup: %v", err)
 		return p.operationManager.RetryOperation(operation, errorMessage, time.Minute, time.Minute*30, log)
 	}
-	azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, pp)
+	azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, operation.ProvisioningParameters)
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure config: %v", err)
@@ -96,7 +85,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 
 	// prepare azure tags
 	tags := azure.Tags{
-		azure.TagSubAccountID: &pp.ErsContext.SubAccountID,
+		azure.TagSubAccountID: &operation.ProvisioningParameters.ErsContext.SubAccountID,
 		azure.TagInstanceID:   &operation.InstanceID,
 		azure.TagOperationID:  &operation.ID,
 	}
@@ -141,8 +130,8 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	kafkaPassword := *accessKeys.PrimaryConnectionString
 
 	// append installation overrides
-	operation.InputCreator.AppendOverrides(componentNameKnativeEventing, getKnativeEventingOverrides())
-	operation.InputCreator.AppendOverrides(componentNameKnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, kafkaPort, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
+	operation.InputCreator.AppendOverrides(components.KnativeEventing, getKnativeEventingOverrides())
+	operation.InputCreator.AppendOverrides(components.KnativeEventingKafka, getKafkaChannelOverrides(kafkaEndpoint, kafkaPort, k8sSecretNamespace, "$ConnectionString", kafkaPassword, kafkaProvider))
 
 	return operation, 0, nil
 }

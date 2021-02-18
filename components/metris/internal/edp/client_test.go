@@ -1,8 +1,9 @@
-package edp_test
+package edp
 
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -10,14 +11,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/metris/internal/edp"
+	"github.com/kyma-project/control-plane/components/metris/internal/log"
+
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 )
 
 var (
-	defaultLogger = zap.NewNop().Sugar()
-	defaultconfig = &edp.Config{
+	defaultLogger = log.NewNoopLogger()
+
+	defaultconfig = &Config{
 		URL:               "http://127.0.0.1:9999",
 		Token:             "E6B99A13-783F-4A3B-8605-C5EA32CA44B5",
 		Timeout:           30 * time.Second,
@@ -37,7 +39,9 @@ func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
 }
 
-func fakeTestClient(status int, err error) *http.Client {
+func fakeTestClient(t *testing.T, status int, err error) *http.Client {
+	t.Helper()
+
 	var fn roundTripFunc = func(req *http.Request) (*http.Response, error) {
 		if err != nil {
 			return nil, err
@@ -51,93 +55,149 @@ func fakeTestClient(status int, err error) *http.Client {
 	}
 }
 
+func TestClient_NewClientNil(t *testing.T) {
+	client := NewClient(defaultconfig, nil, nil, defaultLogger)
+
+	assert.NotEmpty(t, client, "client object should not be empty")
+}
+
+func TestClient_Run(t *testing.T) {
+	fakehttpclient := fakeTestClient(t, http.StatusCreated, nil)
+	client := NewClient(defaultconfig, fakehttpclient, nil, defaultLogger)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	client.Start(ctx)
+
+	assert.EqualErrorf(t, ctx.Err(), context.DeadlineExceeded.Error(), "should got error %s but got %s", context.DeadlineExceeded.Error(), ctx.Err().Error())
+}
+
 func TestClient_CreateEventSucess(t *testing.T) {
-	fakehttpclient := fakeTestClient(http.StatusCreated, nil)
-	client := edp.NewClient(defaultconfig, fakehttpclient, nil, defaultLogger)
+	fakehttpclient := fakeTestClient(t, http.StatusCreated, nil)
+	client := NewClient(defaultconfig, fakehttpclient, nil, defaultLogger)
 
-	data := []byte(`{"event":[{"data":"test"}]}`)
+	data := json.RawMessage(`{"event":[{"data":"test"}]}`)
+	event := &Event{Datatenant: "bob", Data: &data}
 
-	err := client.Write(context.TODO(), &data, defaultLogger)
+	err := client.Write(context.TODO(), event, defaultLogger)
 	assert.NoError(t, err)
 }
 
 func TestClient_CreateEventInvalid(t *testing.T) {
-	fakehttpclient := fakeTestClient(http.StatusBadRequest, nil)
-	client := edp.NewClient(defaultconfig, fakehttpclient, nil, defaultLogger)
+	fakehttpclient := fakeTestClient(t, http.StatusBadRequest, nil)
+	client := NewClient(defaultconfig, fakehttpclient, nil, defaultLogger)
 
-	data := []byte(`{"event":[{"data":"test2"}]}`)
+	data := json.RawMessage(`{"event":[{"data":"test2"}]}`)
+	event := &Event{Datatenant: "bob", Data: &data}
 
-	err := client.Write(context.TODO(), &data, defaultLogger)
+	err := client.Write(context.TODO(), event, defaultLogger)
 	assert.Conditionf(t, func() bool {
-		return errors.Is(err, edp.ErrEventInvalidRequest)
-	}, "invalid error, got %s, should be: %s", err, edp.ErrEventInvalidRequest)
+		return errors.Is(err, ErrEventInvalidRequest)
+	}, "invalid error, got %s, should be: %s", err, ErrEventInvalidRequest)
 }
 
 func TestClient_CreateEventMissingParam(t *testing.T) {
-	fakehttpclient := fakeTestClient(http.StatusNotFound, nil)
-	client := edp.NewClient(defaultconfig, fakehttpclient, nil, defaultLogger)
+	fakehttpclient := fakeTestClient(t, http.StatusNotFound, nil)
+	client := NewClient(defaultconfig, fakehttpclient, nil, defaultLogger)
 
-	data := []byte(`{"test3":[{"error":""}]}`)
+	data := json.RawMessage(`{"test3":[{"error":""}]}`)
+	event := &Event{Datatenant: "bob", Data: &data}
 
-	err := client.Write(context.TODO(), &data, defaultLogger)
+	err := client.Write(context.TODO(), event, defaultLogger)
 	assert.Conditionf(t, func() bool {
-		return errors.Is(err, edp.ErrEventMissingParameters)
-	}, "invalid error, got %s, should be: %s", err, edp.ErrEventMissingParameters)
+		return errors.Is(err, ErrEventMissingParameters)
+	}, "invalid error, got %s, should be: %s", err, ErrEventMissingParameters)
 }
 
 func TestClient_CreateEventUnknownError(t *testing.T) {
-	fakehttpclient := fakeTestClient(http.StatusUnauthorized, nil)
-	client := edp.NewClient(defaultconfig, fakehttpclient, nil, defaultLogger)
+	fakehttpclient := fakeTestClient(t, http.StatusUnauthorized, nil)
+	client := NewClient(defaultconfig, fakehttpclient, nil, defaultLogger)
 
-	data := []byte(`{"test4":[{"error":""},{"error":""}]}`)
+	data := json.RawMessage(`{"test4":[{"error":""},{"error":""}]}`)
+	event := &Event{Datatenant: "bob", Data: &data}
 
-	err := client.Write(context.TODO(), &data, defaultLogger)
+	err := client.Write(context.TODO(), event, defaultLogger)
 	assert.Conditionf(t, func() bool {
-		return errors.Is(err, edp.ErrEventUnknown)
-	}, "invalid error, got %s, should be: %s", err, edp.ErrEventUnknown)
+		return errors.Is(err, ErrEventUnknown)
+	}, "invalid error, got %s, should be: %s", err, ErrEventUnknown)
 }
 
 func TestClient_CreateEventJSONError(t *testing.T) {
-	fakehttpclient := fakeTestClient(http.StatusCreated, nil)
-	client := edp.NewClient(defaultconfig, fakehttpclient, nil, defaultLogger)
+	fakehttpclient := fakeTestClient(t, http.StatusCreated, nil)
+	client := NewClient(defaultconfig, fakehttpclient, nil, defaultLogger)
 
-	data := []byte(`{"test5":[{"error":""}]`)
+	data := json.RawMessage(`{"test5":[{"error":""}]`)
+	event := &Event{Datatenant: "bob", Data: &data}
 
-	err := client.Write(context.TODO(), &data, defaultLogger)
+	err := client.Write(context.TODO(), event, defaultLogger)
 	assert.Conditionf(t, func() bool {
-		return errors.Is(err, edp.ErrEventUnmarshal)
-	}, "invalid error, got %s, should be: %s", err, edp.ErrEventUnmarshal)
+		return errors.Is(err, ErrEventMarshal)
+	}, "invalid error, got %s, should be: %s", err, ErrEventMarshal)
 }
 
 func TestClient_CreateEventHTTPError(t *testing.T) {
-	fakehttpclient := fakeTestClient(0, fmt.Errorf("network error"))
-	client := edp.NewClient(defaultconfig, fakehttpclient, nil, defaultLogger)
+	fakehttpclient := fakeTestClient(t, 0, fmt.Errorf("network error"))
+	client := NewClient(defaultconfig, fakehttpclient, nil, defaultLogger)
 
-	data := []byte(`{"test6":[{"error":""}]}`)
+	data := json.RawMessage(`{"test6":[{"error":""}]}`)
+	event := &Event{Datatenant: "bob", Data: &data}
 
-	err := client.Write(context.TODO(), &data, defaultLogger)
+	err := client.Write(context.TODO(), event, defaultLogger)
 	assert.Conditionf(t, func() bool {
-		return errors.Is(err, edp.ErrEventHTTPRequest)
-	}, "invalid error, got %s, should be: %s", err, edp.ErrEventHTTPRequest)
+		return errors.Is(err, ErrEventHTTPRequest)
+	}, "invalid error, got %s, should be: %s", err, ErrEventHTTPRequest)
 }
 
-// func TestListen(t *testing.T) {
-// 	fakehttpclient := fakeTestClient(http.StatusCreated, nil)
+func TestClient_handleErr(t *testing.T) {
+	fakehttpclient := fakeTestClient(t, http.StatusBadRequest, nil)
+	client := NewClient(defaultconfig, fakehttpclient, nil, defaultLogger)
 
-// 	eventsChannel := make(chan *[]byte, 1)
-// 	defer close(eventsChannel)
-// 	client := edp.NewClient(defaultconfig, fakehttpclient, eventsChannel, zap.NewNop().Sugar())
+	tests := []struct {
+		name     string
+		err      error
+		requeues []int
+		len      []int
+	}{
+		{
+			name:     "success",
+			err:      nil,
+			requeues: []int{0},
+			len:      []int{0},
+		},
+		{
+			name:     "marshal",
+			err:      ErrEventMarshal,
+			requeues: []int{0},
+			len:      []int{0},
+		},
+		{
+			name:     "requeue",
+			err:      statusError(0),
+			requeues: []int{1, 0},
+			len:      []int{0, 0},
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // pin!
 
-// 	ctx, cancel := context.WithCancel(context.TODO())
-// 	wg := sync.WaitGroup{}
+		t.Run(tt.name, func(t *testing.T) {
+			asserts := assert.New(t)
 
-// 	go client.Run(ctx, &wg)
+			data := json.RawMessage(fmt.Sprintf(`{"test":[{"error":"%s"}]}`, tt.name))
+			fakeevent := &Event{Datatenant: "bob", Data: &data}
+			client.queue.Add(fakeevent)
 
-// 	data := []byte(`{"test":["status":"ok"]}`)
-// 	eventsChannel <- &data
+			for i, requeues := range tt.requeues {
+				obj, _ := client.queue.Get()
+				event, ok := obj.(*Event)
+				asserts.Truef(ok, "object from queue should be of type *[]byte but got %T", obj)
 
-// 	time.Sleep(1 * time.Second)
-
-// 	cancel()
-// 	wg.Wait()
-// }
+				client.handleErr(tt.err, event, defaultLogger)
+				client.queue.Done(event)
+				asserts.Equalf(requeues, client.queue.NumRequeues(event), "number of requeue should be %d but got %d", requeues, client.queue.NumRequeues(event))
+				asserts.Equalf(tt.len[i], client.queue.Len(), "queue len should be %d but got %d", tt.len[i], client.queue.Len())
+			}
+		})
+	}
+}

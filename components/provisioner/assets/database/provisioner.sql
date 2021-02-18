@@ -18,7 +18,7 @@ CREATE TABLE gardener_config
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     cluster_id uuid NOT NULL,
-    name varchar(256) NOT NULL UNIQUE,
+    name varchar(256) NOT NULL,
     project_name varchar(256) NOT NULL,
     kubernetes_version varchar(256) NOT NULL,
     volume_size_gb varchar(256) NOT NULL,
@@ -39,6 +39,7 @@ CREATE TABLE gardener_config
     max_unavailable integer NOT NULL,
     enable_kubernetes_version_auto_update boolean NOT NULL,
     enable_machine_image_version_auto_update boolean NOT NULL,
+    allow_privileged_containers boolean NOT NULL,
     provider_specific_config jsonb,
     UNIQUE(cluster_id),
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE
@@ -57,7 +58,9 @@ CREATE TYPE operation_type AS ENUM (
     'PROVISION',
     'UPGRADE',
     'DEPROVISION',
-    'RECONNECT_RUNTIME'
+    'RECONNECT_RUNTIME',
+    'UPGRADE_SHOOT',
+    'HIBERNATE'
     );
 
 CREATE TABLE operation
@@ -87,11 +90,17 @@ CREATE TABLE kyma_release
 
 -- Kyma Config
 
+CREATE TYPE kyma_profile AS ENUM (
+    'EVALUATION',
+    'PRODUCTION'
+);
+
 CREATE TABLE kyma_config
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     release_id uuid NOT NULL,
     cluster_id uuid NOT NULL,
+    profile kyma_profile,
     global_configuration jsonb,
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE,
     foreign key (release_id) REFERENCES kyma_release (id) ON DELETE RESTRICT

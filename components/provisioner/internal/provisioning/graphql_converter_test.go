@@ -80,6 +80,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		unavailable := 1
 		enableKubernetesVersionAutoUpdate := true
 		enableMachineImageVersionAutoUpdate := false
+		allowPrivilegedContainers := true
 
 		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"zones":["fix-gcp-zone-1","fix-gcp-zone-2"]}`)
 		require.NoError(t, err)
@@ -116,16 +117,24 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      unavailable,
 					EnableKubernetesVersionAutoUpdate:   enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: enableMachineImageVersionAutoUpdate,
+					AllowPrivilegedContainers:           allowPrivilegedContainers,
 					GardenerProviderConfig:              gardenerProviderConfig,
 				},
 				Kubeconfig: &kubeconfig,
-				KymaConfig: fixKymaConfig(),
+				KymaConfig: fixKymaConfig(nil),
+			},
+			HibernationStatus: model.HibernationStatus{
+				HibernationPossible: true,
+				Hibernated:          true,
 			},
 		}
 
 		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
 		message := "Some message"
 		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
+
+		hibernationPossible := true
+		hibernated := true
 
 		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
 			LastOperationStatus: &gqlschema.OperationStatus{
@@ -160,12 +169,17 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      &unavailable,
 					EnableKubernetesVersionAutoUpdate:   &enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: &enableMachineImageVersionAutoUpdate,
+					AllowPrivilegedContainers:           &allowPrivilegedContainers,
 					ProviderSpecificConfig: gqlschema.GCPProviderConfig{
 						Zones: zones,
 					},
 				},
-				KymaConfig: fixKymaGraphQLConfig(),
+				KymaConfig: fixKymaGraphQLConfig(nil),
 				Kubeconfig: &kubeconfig,
+			},
+			HibernationStatus: &gqlschema.HibernationStatus{
+				HibernationPossible: &hibernationPossible,
+				Hibernated:          &hibernated,
 			},
 		}
 
@@ -200,6 +214,10 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		unavailable := 1
 		enableKubernetesVersionAutoUpdate := true
 		enableMachineImageVersionAutoUpdate := false
+		allowPrivilegedContainers := true
+
+		modelProductionProfile := model.ProductionProfile
+		gqlProductionProfile := gqlschema.KymaProfileProduction
 
 		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"vnetCidr":"10.10.11.11/255"}`)
 		require.NoError(t, err)
@@ -236,16 +254,23 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      unavailable,
 					EnableKubernetesVersionAutoUpdate:   enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: enableMachineImageVersionAutoUpdate,
+					AllowPrivilegedContainers:           allowPrivilegedContainers,
 					GardenerProviderConfig:              gardenerProviderConfig,
 				},
 				Kubeconfig: &kubeconfig,
-				KymaConfig: fixKymaConfig(),
+				KymaConfig: fixKymaConfig(&modelProductionProfile),
+			},
+			HibernationStatus: model.HibernationStatus{
+				HibernationPossible: true,
+				Hibernated:          true,
 			},
 		}
 
 		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
 		message := "Some message"
 		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
+		hibernationPossible := true
+		hibernated := true
 
 		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
 			LastOperationStatus: &gqlschema.OperationStatus{
@@ -280,13 +305,18 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      &unavailable,
 					EnableKubernetesVersionAutoUpdate:   &enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: &enableMachineImageVersionAutoUpdate,
+					AllowPrivilegedContainers:           &allowPrivilegedContainers,
 					ProviderSpecificConfig: gqlschema.AzureProviderConfig{
 						VnetCidr: util.StringPtr("10.10.11.11/255"),
 						Zones:    nil, // Expected empty when no zones specified in input.
 					},
 				},
-				KymaConfig: fixKymaGraphQLConfig(),
+				KymaConfig: fixKymaGraphQLConfig(&gqlProductionProfile),
 				Kubeconfig: &kubeconfig,
+			},
+			HibernationStatus: &gqlschema.HibernationStatus{
+				HibernationPossible: &hibernationPossible,
+				Hibernated:          &hibernated,
 			},
 		}
 
@@ -298,9 +328,10 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 	})
 }
 
-func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
+func fixKymaGraphQLConfig(profile *gqlschema.KymaProfile) *gqlschema.KymaConfig {
 	return &gqlschema.KymaConfig{
 		Version: util.StringPtr(kymaVersion),
+		Profile: profile,
 		Components: []*gqlschema.ComponentConfiguration{
 			{
 				Component:     clusterEssentialsComponent,
@@ -346,10 +377,11 @@ func fixGQLConfigEntry(key, val string, secret *bool) *gqlschema.ConfigEntry {
 	}
 }
 
-func fixKymaConfig() model.KymaConfig {
+func fixKymaConfig(profile *model.KymaProfile) model.KymaConfig {
 	return model.KymaConfig{
 		ID:                  "id",
 		Release:             fixKymaRelease(),
+		Profile:             profile,
 		Components:          fixKymaComponents(),
 		GlobalConfiguration: fixGlobalConfig(),
 		ClusterID:           "runtimeID",

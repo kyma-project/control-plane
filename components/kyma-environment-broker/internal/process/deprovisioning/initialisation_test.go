@@ -4,15 +4,18 @@ import (
 	"testing"
 	"time"
 
+	hyperscalerMocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 const (
@@ -24,40 +27,95 @@ const (
 )
 
 func TestInitialisationStep_Run(t *testing.T) {
-	// given
-	log := logrus.New()
-	memoryStorage := storage.NewMemoryStorage()
+	accountProviderMock := &hyperscalerMocks.AccountProvider{}
+	accountProviderMock.On("MarkUnusedGardenerSecretAsDirty", mock.Anything, mock.AnythingOfType("string")).Return(nil)
 
-	operation := fixDeprovisioningOperation()
-	err := memoryStorage.Operations().InsertDeprovisioningOperation(operation)
-	assert.NoError(t, err)
+	t.Run("Should mark operation as Succeeded when operation has succeeded", func(t *testing.T) {
+		// given
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
 
-	provisioningOperation := fixProvisioningOperation()
-	err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
-	assert.NoError(t, err)
+		operation := fixDeprovisioningOperation()
+		err := memoryStorage.Operations().InsertDeprovisioningOperation(operation)
+		assert.NoError(t, err)
 
-	instance := fixInstanceRuntimeStatus()
-	err = memoryStorage.Instances().Insert(instance)
-	assert.NoError(t, err)
+		provisioningOperation := fixProvisioningOperation()
+		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		assert.NoError(t, err)
 
-	provisionerClient := &provisionerAutomock.Client{}
-	provisionerClient.On("RuntimeOperationStatus", fixGlobalAccountID, fixProvisionerOperationID).Return(gqlschema.OperationStatus{
-		ID:        ptr.String(fixProvisionerOperationID),
-		Operation: "",
-		State:     gqlschema.OperationStateSucceeded,
-		Message:   nil,
-		RuntimeID: nil,
-	}, nil)
+		instance := fixInstanceRuntimeStatus()
+		err = memoryStorage.Instances().Insert(instance)
+		assert.NoError(t, err)
 
-	step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
+		provisionerClient := &provisionerAutomock.Client{}
+		provisionerClient.On("RuntimeOperationStatus", fixGlobalAccountID, fixProvisionerOperationID).Return(gqlschema.OperationStatus{
+			ID:        ptr.String(fixProvisionerOperationID),
+			Operation: "",
+			State:     gqlschema.OperationStateSucceeded,
+			Message:   nil,
+			RuntimeID: nil,
+		}, nil)
 
-	// when
-	operation, repeat, err := step.Run(operation, log)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock, nil, time.Hour)
 
-	// then
-	assert.NoError(t, err)
-	assert.Equal(t, time.Duration(0), repeat)
-	assert.Equal(t, domain.Succeeded, operation.State)
+		// when
+		operation, repeat, err := step.Run(operation, log)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, time.Duration(0), repeat)
+		assert.Equal(t, domain.Succeeded, operation.State)
+
+		storedOp, err := memoryStorage.Operations().GetDeprovisioningOperationByID(operation.ID)
+		assert.Equal(t, operation, *storedOp)
+		assert.NoError(t, err)
+
+		_, err = memoryStorage.Instances().GetByID(instance.InstanceID)
+		assert.True(t, dberr.IsNotFound(err))
+	})
+
+	t.Run("Should delete instance and userID when operation has succeeded", func(t *testing.T) {
+		// given
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
+
+		operation := fixDeprovisioningOperation()
+		operation.ProvisionerOperationID = ""
+		operation.State = domain.Succeeded
+		err := memoryStorage.Operations().InsertDeprovisioningOperation(operation)
+		assert.NoError(t, err)
+
+		provisioningOperation := fixProvisioningOperation()
+		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		assert.NoError(t, err)
+
+		instance := fixInstanceRuntimeStatus()
+		instance.RuntimeID = ""
+		err = memoryStorage.Instances().Insert(instance)
+		assert.NoError(t, err)
+
+		provisionerClient := &provisionerAutomock.Client{}
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock, nil, time.Hour)
+
+		// when
+		operation, repeat, err := step.Run(operation, log)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, time.Duration(0), repeat)
+		assert.Equal(t, domain.Succeeded, operation.State)
+		assert.Equal(t, "", operation.ProvisioningParameters.ErsContext.UserID)
+
+		inst, err := memoryStorage.Instances().GetByID(operation.InstanceID)
+		assert.Error(t, err)
+		assert.Nil(t, inst)
+
+		storedOp, err := memoryStorage.Operations().GetDeprovisioningOperationByID(operation.ID)
+		assert.NoError(t, err)
+		assert.Equal(t, operation, *storedOp)
+	})
+
 }
 
 func fixDeprovisioningOperation() internal.DeprovisioningOperation {
@@ -66,22 +124,28 @@ func fixDeprovisioningOperation() internal.DeprovisioningOperation {
 			ID:                     fixOperationID,
 			InstanceID:             fixInstanceID,
 			ProvisionerOperationID: fixProvisionerOperationID,
-			Description:            "",
+			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{UserID: "test"}},
+			CreatedAt:              time.Now(),
 			UpdatedAt:              time.Now(),
 		},
 	}
 }
 
 func fixProvisioningOperation() internal.ProvisioningOperation {
+	planID := broker.AzurePlanID
+
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ID:                     fixOperationID,
 			InstanceID:             fixInstanceID,
 			ProvisionerOperationID: fixProvisionerOperationID,
-			Description:            "",
+			CreatedAt:              time.Now(),
 			UpdatedAt:              time.Now(),
+			ProvisioningParameters: internal.ProvisioningParameters{
+				ErsContext: internal.ERSContext{GlobalAccountID: "1"},
+				PlanID:     planID,
+			},
 		},
-		ProvisioningParameters: `{"ers_context":{"globalaccount_id":"1"}}`,
 	}
 }
 
@@ -94,5 +158,6 @@ func fixInstanceRuntimeStatus() internal.Instance {
 		CreatedAt:       time.Time{},
 		UpdatedAt:       time.Time{},
 		DeletedAt:       time.Time{},
+		ServicePlanID:   broker.AzurePlanID,
 	}
 }

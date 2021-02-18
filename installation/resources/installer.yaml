@@ -17,7 +17,7 @@ metadata:
 spec:
   limits:
   - max:
-      memory: 1024Mi # Maximum memory that a container can request
+      memory: 2048Mi # Maximum memory that a container can request
     default:
       # If a container does not specify memory limit, this default value will be applied.
       # If a container tries to allocate more memory, container will be OOM killed.
@@ -29,7 +29,7 @@ spec:
       memory: 32Mi
     type: Container
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: installations.installer.kyma-project.io
@@ -37,7 +37,10 @@ metadata:
     kyma-project.io/installation: ""
 spec:
   group: installer.kyma-project.io
-  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
   scope: Namespaced
   names:
     kind: Installation
@@ -45,7 +48,7 @@ spec:
     plural: installations
     shortNames: ['installation']
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: releases.release.kyma-project.io
@@ -53,7 +56,10 @@ metadata:
     kyma-project.io/installation: ""
 spec:
   group: release.kyma-project.io
-  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
   scope: Namespaced
   names:
     kind: Release
@@ -113,91 +119,6 @@ spec:
         name: kcp-installer
     spec:
       serviceAccountName: kcp-installer
-      initContainers:
-      - name: certhelper
-        image: eu.gcr.io/kyma-project/test-infra/alpine-kubectl:v20200617-32c1f3ff
-        terminationMessagePolicy: "FallbackToLogsOnError"
-        command:
-          - bash
-          - -c
-          - |
-            set -e
-            if [ -f "/etc/certs/tls.crt" ]; then
-              echo "Helm Certificate already exists, do nothing."
-              exit 0
-            fi
-
-            WORKING_DIR="/tmp/certs"
-            mkdir -p "${WORKING_DIR}"
-
-            cat <<EOF > "${WORKING_DIR}/openssl.cnf"
-            [ req ]
-            #default_bits   = 2048
-            #default_md   = sha256
-            #default_keyfile  = privkey.pem
-            distinguished_name  = req_distinguished_name
-            attributes    = req_attributes
-
-            [ req_distinguished_name ]
-            countryName     = Country Name (2 letter code)
-            countryName_min     = 2
-            countryName_max     = 2
-            stateOrProvinceName   = State or Province Name (full name)
-            localityName      = Locality Name (eg, city)
-            0.organizationName    = Organization Name (eg, company)
-            organizationalUnitName    = Organizational Unit Name (eg, section)
-            commonName      = Common Name (eg, fully qualified host name)
-            commonName_max      = 64
-            emailAddress      = Email Address
-            emailAddress_max    = 64
-
-            [ req_attributes ]
-            challengePassword   = A challenge password
-            challengePassword_min   = 4
-            challengePassword_max   = 20
-            [ v3_ca ]
-            basicConstraints = critical,CA:TRUE
-            subjectKeyIdentifier = hash
-            authorityKeyIdentifier = keyid:always,issuer:always
-            EOF
-
-            echo "---> Get Tiller CA"
-            if [[ $(kubectl get -n kube-system secret tiller-secret) ]] ; then
-              kubectl get -n kube-system secret tiller-secret -o jsonpath="{.data['ca\.crt']}" | base64 --decode > "${WORKING_DIR}/ca.crt"
-              kubectl get -n kube-system secret tiller-secret -o jsonpath="{.data['ca\.key']}" | base64 --decode > "${WORKING_DIR}/ca.key"
-            else
-              echo "Secret: tiller-secret does not exists!"
-              exit 1
-            fi
-
-            echo "---> Generate Helm key"
-            openssl genrsa -out "${WORKING_DIR}/helm.key.pem" 4096
-            openssl req -key "${WORKING_DIR}/helm.key.pem" -new -sha256 -out "${WORKING_DIR}/helm.csr.pem" -subj "/C=PL/ST=Gliwice/L=Gliwice/O=Helm Client/CN=helm-client"
-            openssl x509 -req -CA "${WORKING_DIR}/ca.crt" -CAkey "${WORKING_DIR}/ca.key" -CAcreateserial -in "${WORKING_DIR}/helm.csr.pem" -out "${WORKING_DIR}/helm.cert.pem" -days 365
-
-            echo "---> Create secrets in k8s"
-            cat << EOF > /tmp/secret.yaml
-            ---
-            apiVersion: v1
-            data:
-              global.helm.ca.crt: "$(base64 "${WORKING_DIR}/ca.crt" | tr -d '\n')"
-              global.helm.tls.crt: "$(base64 ${WORKING_DIR}/helm.cert.pem | tr -d '\n')"
-              global.helm.tls.key: "$(base64 ${WORKING_DIR}/helm.key.pem | tr -d '\n')"
-            kind: Secret
-            metadata:
-              creationTimestamp: null
-              labels:
-                installer: overrides
-                kyma-project.io/installation: ""
-              name: helm-secret
-              namespace: kcp-installer
-            type: Opaque
-            EOF
-            timeout 60s bash -c 'until kubectl create -f /tmp/secret.yaml ; do sleep 2; done'
-        volumeMounts:
-          - mountPath: /etc/certs
-            name: helm-certs
-            readOnly: true
       containers:
       - name: kcp-installer-container
         image: eu.gcr.io/kyma-project/develop/installer:408cb6a6
@@ -207,34 +128,19 @@ spec:
             value: "kcp-installation"
           - name: OVERRIDES_NAMESPACE
             value: "kcp-installer"
-
         args:
           - -overrideLogFile=/app/overrides.txt
           - -helmDebugMode=true
-        volumeMounts:
-          - mountPath: /etc/certs
-            name: helm-certs
-            readOnly: true
         resources:
           requests:
             memory: 32Mi
             cpu: 40m
           limits:
-            memory: 1Gi
+            memory: 2Gi
             cpu: 400m
-      volumes:
-      - name: helm-certs
-        secret:
-          secretName: helm-secret
-          optional: true
-          items:
-            - key: global.helm.tls.crt
-              path: tls.crt
-            - key: global.helm.tls.key
-              path: tls.key
 ---
 kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: kcp-installer-reader
   labels:
@@ -245,7 +151,7 @@ rules:
   verbs: ["*"]
 ---
 kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: kcp-installer
   labels:

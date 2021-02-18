@@ -3,6 +3,7 @@ APP_PATH = components/metris
 ENTRYPOINT = cmd/metris/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20200423-1d9d6590
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
+COMMITHASH = $(shell git rev-list -1 HEAD)
 
 export GO111MODULE=on
 export CGO_ENABLED=0
@@ -19,6 +20,6 @@ ensure-local:
 dep-status-local:
 	@echo ${SKIP_STEP_MESSAGE}
 
-# overide build-image to add `VERSION=$(TAG)`
+# overide build-image to add `build-args`
 build-image: 
-	@docker build --build-arg VERSION=$(TAG) -t $(IMG_NAME) .
+	@docker build --build-arg VERSION=$(TAG) --build-arg COMMITHASH=$(COMMITHASH) -t $(IMG_NAME) .

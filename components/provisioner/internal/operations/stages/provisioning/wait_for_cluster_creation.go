@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -47,8 +48,7 @@ func (s *WaitForClusterCreationStep) TimeLimit() time.Duration {
 }
 
 func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, operation model.Operation, logger log.FieldLogger) (operations.StageResult, error) {
-
-	shoot, err := s.gardenerClient.Get(cluster.ClusterConfig.Name, v1.GetOptions{})
+	shoot, err := s.gardenerClient.Get(context.Background(), cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err
 	}
@@ -73,6 +73,17 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, operation model.
 }
 
 func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster, shoot *gardener_types.Shoot, operationId string) (operations.StageResult, error) {
+
+	if cluster.ClusterConfig.Seed == "" && shoot.Spec.SeedName != nil && *shoot.Spec.SeedName != "" {
+
+		cluster.ClusterConfig.Seed = *shoot.Spec.SeedName
+
+		dberr := s.dbSession.UpdateGardenerClusterConfig(cluster.ClusterConfig)
+
+		if dberr != nil {
+			return operations.StageResult{}, dberr
+		}
+	}
 
 	kubeconfig, err := s.kubeconfigProvider.FetchRaw(shoot.Name)
 	if err != nil {

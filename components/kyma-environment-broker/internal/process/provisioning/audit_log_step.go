@@ -39,20 +39,13 @@ func NewAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config) *Audit
 }
 
 func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-
-	// Fetch the region
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		logger.Errorf("Unable to get provisioning parameters", err.Error())
-		return operation, 0, errors.New("unable to get provisioning parameters")
-	}
 	luaScript, err := alo.readFile("/auditlog-script/script")
 	if err != nil {
 		logger.Errorf("Unable to read audit config script: %v", err)
 		return operation, 0, err
 	}
 
-	replaceSubAccountID := strings.Replace(string(luaScript), "sub_account_id", pp.ErsContext.SubAccountID, -1)
+	replaceSubAccountID := strings.Replace(string(luaScript), "sub_account_id", operation.ProvisioningParameters.ErsContext.SubAccountID, -1)
 	replaceTenantID := strings.Replace(replaceSubAccountID, "tenant_id", alo.auditLogConfig.Tenant, -1)
 
 	u, err := url.Parse(alo.auditLogConfig.URL)
@@ -73,6 +66,10 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		auditLogPort = "443"
 		logger.Infof("There is no Port passed in the URL. Setting default to 443")
 	}
+	fluentbitPlugin := "http"
+	if alo.auditLogConfig.EnableSeqHttp {
+		fluentbitPlugin = "sequentialhttp"
+	}
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
 		{Key: "fluent-bit.conf.script", Value: replaceTenantID},
@@ -91,8 +88,16 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
         Match   dex.*
         script  script.lua
         call    reformat
+[FILTER]
+        Name    grep
+        Match   dex.*
+        Regex   time .*
+[FILTER]
+        Name    grep
+        Match   dex.*
+        Regex   data .*\"xsuaa
 [OUTPUT]
-        Name             http
+        Name             %s
         Match            dex.*
         Retry_Limit      False
         Host             %s
@@ -103,7 +108,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
         HTTP_Passwd      %s
         Format           json_stream
         tls              on
-`, auditLogHost, auditLogPort, u.Path, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
+`, fluentbitPlugin, auditLogHost, auditLogPort, u.Path, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},
 		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf(`- %s`, auditLogHost)},
 		{Key: "fluent-bit.externalServiceEntry.ports", Value: fmt.Sprintf(`- number: %s

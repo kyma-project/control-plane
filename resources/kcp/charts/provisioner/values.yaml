@@ -1,7 +1,7 @@
 deployment:
   replicaCount: 1
   image:
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   resources: {}
   securityContext: # Set on container level
     runAsUser: 2000
@@ -30,6 +30,12 @@ gardener:
   clusterCleanupResourceSelector: "https://service-manager."
   defaultEnableKubernetesVersionAutoUpdate: false
   defaultEnableMachineImageVersionAutoUpdate: false
+  forceAllowPrivilegedContainers: false
+
+support:
+  l2OperatorRoleBindingSubject: "runtimeOperator"
+  l3OperatorRoleBindingSubject: "runtimeAdmin"
+  bindingsCreationTimeout: 5m
 
 kymaRelease:
   preReleases:
@@ -51,11 +57,22 @@ logs:
   level: "info"
 
 tests:
-  enabled: false
+  e2e:
+    enabled: false
+  hibernation:
+    enabled: false
   gardener:
     providers: "Azure"
     azureSecret: "" # Name of Gardener secret for Azure
     gcpSecret: "" # Name of Gardener secret for GCP
   kyma:
-    version: "1.12.0"
+    version: "1.14.0"
+    preUpgradeVersion: "1.13.0"
+  kubernetes:
+    version: "1.18.12"
+    upgradeVersion: "1.18.12"
   queryLogging: false
+  timeouts:
+    provisioning: "5h"
+    deprovisioning: "4h"
+    hibernation: "1h"

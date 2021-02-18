@@ -417,6 +417,76 @@ func TestResolver_RollBackUpgradeOperation(t *testing.T) {
 	})
 }
 
+func TestResolver_UpgradeShoot(t *testing.T) {
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
+
+	upgradeShootInput := NewUpgradeShootInput()
+
+	t.Run("Should start shoot upgrade and return operation id", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+
+		operation := &gqlschema.OperationStatus{
+			ID:        util.StringPtr(operationID),
+			Operation: gqlschema.OperationTypeUpgradeShoot,
+			State:     gqlschema.OperationStateInProgress,
+			Message:   util.StringPtr("Message"),
+			RuntimeID: util.StringPtr(runtimeID),
+		}
+
+		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+		validator.On("ValidateUpgradeShootInput", upgradeShootInput).Return(nil)
+		provisioningService.On("UpgradeGardenerShoot", runtimeID, upgradeShootInput).Return(operation, nil)
+
+		resolver := api.NewResolver(provisioningService, validator)
+
+		//when
+		status, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
+
+		//then
+		require.NoError(t, err)
+		require.NotNil(t, status)
+		require.NotNil(t, status.ID)
+		require.NotNil(t, status.RuntimeID)
+		assert.Equal(t, operation, status)
+	})
+	t.Run("Should return error when tenant validation fails", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+
+		validator.On("ValidateTenant", runtimeID, tenant).Return(apperrors.BadRequest("error"))
+		validator.On("ValidateUpgradeShootInput", upgradeShootInput).Return(nil)
+
+		resolver := api.NewResolver(provisioningService, validator)
+
+		//when
+		_, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
+
+		//then
+		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
+	})
+	t.Run("Should return error when validation fails", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+
+		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+		validator.On("ValidateUpgradeShootInput", upgradeShootInput).Return(apperrors.BadRequest("error"))
+
+		resolver := api.NewResolver(provisioningService, validator)
+
+		//when
+		_, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
+
+		//then
+		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
+	})
+}
+
 func TestResolver_RuntimeStatus(t *testing.T) {
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
@@ -565,6 +635,87 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		//then
 		require.Error(t, err)
 		util.CheckErrorType(t, err, apperrors.CodeInternal)
+		require.Empty(t, status)
+	})
+}
+
+func TestResolver_HibernateCluster(t *testing.T) {
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
+	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
+
+	t.Run("Should hibernate cluster", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+		provisioner := api.NewResolver(provisioningService, validator)
+
+		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
+		message := "some message"
+
+		operationStatus := &gqlschema.OperationStatus{
+			ID:        &operationID,
+			Operation: gqlschema.OperationTypeHibernate,
+			State:     gqlschema.OperationStateInProgress,
+			RuntimeID: &runtimeID,
+			Message:   &message,
+		}
+
+		provisioningService.On("HibernateCluster", operationID).Return(operationStatus, nil)
+		validator.On("ValidateTenant", operationID, tenant).Return(nil)
+
+		//when
+		status, err := provisioner.HibernateRuntime(ctx, operationID)
+
+		//then
+		require.NoError(t, err)
+		assert.Equal(t, operationStatus, status)
+	})
+
+	t.Run("Should return error when hibernation fails", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+		provisioner := api.NewResolver(provisioningService, validator)
+
+		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
+
+		provisioningService.On("HibernateCluster", operationID).Return(nil, apperrors.Internal("Some error"))
+		validator.On("ValidateTenant", operationID, tenant).Return(nil)
+
+		//when
+		status, err := provisioner.HibernateRuntime(ctx, operationID)
+
+		//then
+		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeInternal)
+		require.Empty(t, status)
+	})
+
+	t.Run("Should return error when tenant validation fails", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+		provisioner := api.NewResolver(provisioningService, validator)
+
+		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
+		message := "some message"
+
+		operationStatus := &gqlschema.OperationStatus{
+			ID:        &operationID,
+			Operation: gqlschema.OperationTypeHibernate,
+			State:     gqlschema.OperationStateInProgress,
+			RuntimeID: &runtimeID,
+			Message:   &message,
+		}
+
+		provisioningService.On("HibernateCluster", operationID).Return(operationStatus, nil)
+		validator.On("ValidateTenant", operationID, tenant).Return(apperrors.BadRequest("oh no"))
+		//when
+		status, err := provisioner.HibernateRuntime(ctx, operationID)
+
+		//then
+		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 		require.Empty(t, status)
 	})
 }

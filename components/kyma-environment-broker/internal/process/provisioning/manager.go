@@ -71,7 +71,8 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 
 	var when time.Duration
 	processedOperation := *operation
-	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID})
+
+	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID, "planID": operation.ProvisioningParameters.PlanID})
 
 	logOperation.Info("Start process operation steps")
 	for _, weightStep := range m.sortWeight() {
@@ -86,7 +87,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 				return 0, err
 			}
 			if processedOperation.State != domain.InProgress {
-				logrus.Infof("Operation %q got status %s. Process finished.", operation.ID, processedOperation.State)
+				logStep.Infof("Operation %q got status %s. Process finished.", operation.ID, processedOperation.State)
 				return 0, nil
 			}
 			if when == 0 {
@@ -99,7 +100,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 		}
 	}
 
-	logrus.Infof("Operation %q got status %s. Process finished.", operation.ID, processedOperation.State)
+	logOperation.Infof("Operation %q got status %s. All steps finished.", operation.ID, processedOperation.State)
 	return 0, nil
 }
 

@@ -51,7 +51,7 @@ func (s *UpgradeKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {
 			logger.Warnf("Upgrade already in progress, proceeding to next step...")
-			return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
+			return operations.StageResult{Stage: s.nextStep, Delay: 30 * time.Second}, nil
 		}
 
 		return operations.StageResult{}, fmt.Errorf("error: failed to check installation CR state: %s", err.Error())
@@ -64,6 +64,7 @@ func (s *UpgradeKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 	if installationState.State == "Installed" {
 		err = s.installationClient.TriggerUpgrade(
 			k8sConfig,
+			cluster.KymaConfig.Profile,
 			cluster.KymaConfig.Release,
 			cluster.KymaConfig.GlobalConfiguration,
 			cluster.KymaConfig.Components)
@@ -74,8 +75,8 @@ func (s *UpgradeKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 
 	if installationState.State == "InProgress" {
 		logger.Warnf("Upgrade already in progress, proceeding to next step...")
-		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
+		return operations.StageResult{Stage: s.nextStep, Delay: 30 * time.Second}, nil
 	}
 
-	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
+	return operations.StageResult{Stage: s.nextStep, Delay: 30 * time.Second}, nil
 }

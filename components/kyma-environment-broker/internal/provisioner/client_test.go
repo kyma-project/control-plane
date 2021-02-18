@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
@@ -21,6 +22,7 @@ const (
 
 	provisionRuntimeID            = "4e268c0f-d053-4ab7-b167-6dbc0a0e09a6"
 	provisionRuntimeOperationID   = "c89f7862-0ef9-4d4e-bc82-afbc5ac98b8d"
+	upgradeRuntimeOperationID     = "74f47e0a-9a76-4336-9974-70705500a981"
 	deprovisionRuntimeOperationID = "f9f7b734-7538-419c-8ac1-37060c60531a"
 )
 
@@ -108,6 +110,51 @@ func TestClient_DeprovisionRuntime(t *testing.T) {
 	})
 }
 
+func TestClient_UpgradeRuntime(t *testing.T) {
+	t.Run("should trigger upgrade", func(t *testing.T) {
+		// given
+		tr := &testResolver{t: t, runtime: &testRuntime{}}
+		testServer := fixHTTPServer(tr)
+		defer testServer.Close()
+
+		client := NewProvisionerClient(testServer.URL, false)
+		operation, err := client.ProvisionRuntime(testAccountID, testSubAccountID, fixProvisionRuntimeInput())
+		assert.NoError(t, err)
+
+		// when
+		status, err := client.UpgradeRuntime(testAccountID, *operation.RuntimeID, fixUpgradeRuntimeInput("1.14.0"))
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, ptr.String(upgradeRuntimeOperationID), status.ID)
+		assert.Equal(t, schema.OperationStateInProgress, status.State)
+		assert.Equal(t, schema.OperationTypeUpgrade, status.Operation)
+		assert.Equal(t, ptr.String(provisionRuntimeID), status.RuntimeID)
+	})
+
+	t.Run("provisioner should return error", func(t *testing.T) {
+		// given
+		tr := &testResolver{t: t, runtime: &testRuntime{}}
+		testServer := fixHTTPServer(tr)
+		defer testServer.Close()
+
+		client := NewProvisionerClient(testServer.URL, false)
+		operation, err := client.ProvisionRuntime(testAccountID, testSubAccountID, fixProvisionRuntimeInput())
+		assert.NoError(t, err)
+
+		tr.failed = true
+
+		// when
+		status, err := client.UpgradeRuntime(testAccountID, *operation.RuntimeID, fixUpgradeRuntimeInput("1.14.0"))
+
+		// Then
+		assert.Error(t, err)
+		assert.Empty(t, status)
+
+		assert.Equal(t, "", tr.getRuntime().upgradeOperationID)
+	})
+}
+
 func TestClient_ReconnectRuntimeAgent(t *testing.T) {
 	t.Run("should reconnect runtime agent", func(t *testing.T) {
 		// Given
@@ -145,6 +192,75 @@ func TestClient_ReconnectRuntimeAgent(t *testing.T) {
 		// Then
 		assert.Error(t, err)
 		assert.Equal(t, "", operationId)
+	})
+
+	t.Run("provisioner returns bad request code error", func(t *testing.T) {
+		server := fixHTTPMockServer(`{
+			  "errors": [
+				{
+				  "message": "tenant header is empty",
+				  "path": [
+					"runtimeStatus"
+				  ],
+				  "extensions": {
+					"error_code": 400
+				  }
+				}
+			  ],
+			  "data": {
+				"runtimeStatus": null
+			  }
+			}`)
+		defer server.Close()
+
+		client := NewProvisionerClient(server.URL, false)
+
+		// when
+		_, err := client.ProvisionRuntime(testAccountID, testSubAccountID, fixProvisionRuntimeInput())
+
+		// Then
+		assert.Error(t, err)
+		assert.False(t, kebError.IsTemporaryError(err))
+	})
+
+	t.Run("provisioner returns temporary code error", func(t *testing.T) {
+		server := fixHTTPMockServer(`{
+			  "errors": [
+				{
+				  "message": "tenant header is empty",
+				  "path": [
+					"runtimeStatus"
+				  ],
+				  "extensions": {
+					"error_code": 500
+				  }
+				}
+			  ],
+			  "data": {
+				"runtimeStatus": null
+			  }
+			}`)
+		defer server.Close()
+
+		client := NewProvisionerClient(server.URL, false)
+
+		// when
+		_, err := client.ProvisionRuntime(testAccountID, testSubAccountID, fixProvisionRuntimeInput())
+
+		// Then
+		assert.Error(t, err)
+		assert.True(t, kebError.IsTemporaryError(err))
+	})
+
+	t.Run("network error", func(t *testing.T) {
+		client := NewProvisionerClient("http://not-existing", false)
+
+		// when
+		_, err := client.ProvisionRuntime(testAccountID, testSubAccountID, fixProvisionRuntimeInput())
+
+		// Then
+		assert.Error(t, err)
+		assert.True(t, kebError.IsTemporaryError(err))
 	})
 }
 
@@ -197,6 +313,7 @@ type testRuntime struct {
 	name                   string
 	runtimeID              string
 	provisionOperationID   string
+	upgradeOperationID     string
 	deprovisionOperationID string
 }
 
@@ -204,6 +321,24 @@ type testResolver struct {
 	t       *testing.T
 	runtime *testRuntime
 	failed  bool
+}
+
+type httpHandler struct {
+	r string
+}
+
+func (h httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+	rw.Write([]byte(h.r))
+}
+
+func fixHandler(resp string) http.Handler {
+	return httpHandler{
+		r: resp,
+	}
+}
+
+func fixHTTPMockServer(resp string) *httptest.Server {
+	return httptest.NewServer(fixHandler(resp))
 }
 
 func fixHTTPServer(tr *testResolver) *httptest.Server {
@@ -267,7 +402,22 @@ func (tmr *testMutationResolver) ProvisionRuntime(_ context.Context, config sche
 }
 
 func (tmr testMutationResolver) UpgradeRuntime(_ context.Context, id string, config schema.UpgradeRuntimeInput) (*schema.OperationStatus, error) {
-	return nil, nil
+	tmr.t.Log("UpgradeTuntime testMutationResolver")
+
+	if tmr.failed {
+		return nil, fmt.Errorf("upgrade runtime failed for version %s", id)
+	}
+
+	if tmr.runtime.runtimeID == id {
+		tmr.runtime.upgradeOperationID = upgradeRuntimeOperationID
+	}
+
+	return &schema.OperationStatus{
+		ID:        ptr.String(tmr.runtime.upgradeOperationID),
+		State:     schema.OperationStateInProgress,
+		Operation: schema.OperationTypeUpgrade,
+		RuntimeID: ptr.String(tmr.runtime.runtimeID),
+	}, nil
 }
 
 func (tmr testMutationResolver) DeprovisionRuntime(_ context.Context, id string) (string, error) {
@@ -302,6 +452,10 @@ func (tmr testMutationResolver) ReconnectRuntimeAgent(_ context.Context, id stri
 	}
 
 	return "", nil
+}
+
+func (tqr testMutationResolver) UpgradeShoot(ctx context.Context, id string, config schema.UpgradeShootInput) (*schema.OperationStatus, error) {
+	return nil, nil
 }
 
 type testQueryResolver struct {
@@ -354,4 +508,22 @@ func fixProvisionRuntimeInput() schema.ProvisionRuntimeInput {
 			},
 		},
 	}
+}
+
+func fixUpgradeRuntimeInput(kymaVersion string) schema.UpgradeRuntimeInput {
+	return schema.UpgradeRuntimeInput{KymaConfig: &schema.KymaConfigInput{
+		Version: kymaVersion,
+		Configuration: []*schema.ConfigEntryInput{
+			{
+				Key:   "a.config.key",
+				Value: "a.config.value",
+			},
+		},
+		Components: []*schema.ComponentConfigurationInput{
+			{
+				Component: "test-component",
+				Namespace: "test-namespace",
+			},
+		},
+	}}
 }

@@ -40,14 +40,10 @@ func (s *EDPRegistrationStep) Name() string {
 }
 
 func (s *EDPRegistrationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	parameters, err := operation.GetProvisioningParameters()
-	if err != nil {
-		return s.handleError(operation, err, log, "invalid operation provisioning parameters")
-	}
-	subAccountID := parameters.ErsContext.SubAccountID
+	subAccountID := operation.ProvisioningParameters.ErsContext.SubAccountID
 
 	log.Infof("Create DataTenant for %s subaccount", subAccountID)
-	err = s.client.CreateDataTenant(edp.DataTenantPayload{
+	err := s.client.CreateDataTenant(edp.DataTenantPayload{
 		Name:        subAccountID,
 		Environment: s.config.Environment,
 		Secret:      s.generateSecret(subAccountID, s.config.Environment),
@@ -58,8 +54,8 @@ func (s *EDPRegistrationStep) Run(operation internal.ProvisioningOperation, log 
 
 	log.Infof("Create DataTenant metadata for %s subaccount", subAccountID)
 	for key, value := range map[string]string{
-		edp.MaasConsumerEnvironmentKey: s.selectEnvironmentKey(parameters.PlatformRegion, log),
-		edp.MaasConsumerRegionKey:      parameters.PlatformRegion,
+		edp.MaasConsumerEnvironmentKey: s.selectEnvironmentKey(operation.ProvisioningParameters.PlatformRegion, log),
+		edp.MaasConsumerRegionKey:      operation.ProvisioningParameters.PlatformRegion,
 		edp.MaasConsumerSubAccountKey:  subAccountID,
 	} {
 		err = s.client.CreateMetadataTenant(subAccountID, s.config.Environment, edp.MetadataTenantPayload{

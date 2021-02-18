@@ -11,12 +11,6 @@ const (
 	KymaServiceName = "kymaruntime"
 )
 
-var planIDsMapping = map[string]string{
-	AzurePlanName:     AzurePlanID,
-	AzureLitePlanName: AzureLitePlanID,
-	GCPPlanName:       GCPPlanID,
-}
-
 type KymaEnvironmentBroker struct {
 	*ServicesEndpoint
 	*ProvisionEndpoint
@@ -32,7 +26,18 @@ type KymaEnvironmentBroker struct {
 
 // Config represents configuration for broker
 type Config struct {
-	EnablePlans EnablePlans `envconfig:"default=azure"`
+	Service
+	EnablePlans          EnablePlans `envconfig:"default=azure"`
+	OnlySingleTrialPerGA bool        `envconfig:"default=true"`
+}
+
+type Service struct {
+	DisplayName         string
+	ImageUrl            string
+	LongDescription     string
+	ProviderDisplayName string
+	DocumentationUrl    string
+	SupportUrl          string
 }
 
 // EnablePlans defines the plans that should be available for provisioning
@@ -43,7 +48,7 @@ type EnablePlans []string
 func (m *EnablePlans) Unmarshal(in string) error {
 	plans := strings.Split(in, ",")
 	for _, name := range plans {
-		if _, exists := planIDsMapping[name]; !exists {
+		if _, exists := PlanIDsMapping[name]; !exists {
 			return errors.Errorf("unrecognized %v plan name ", name)
 		}
 	}

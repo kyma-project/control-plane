@@ -11,8 +11,10 @@ import (
 
 func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 	// given
+	profile := gqlschema.KymaProfileProduction
 	fixInput := gqlschema.KymaConfigInput{
 		Version: "966",
+		Profile: &profile,
 		Components: []*gqlschema.ComponentConfigurationInput{
 			{
 				Component: "pico",
@@ -53,6 +55,7 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 	}
 	expRender := `{
 		version: "966",
+		profile: Production,
         components: [
           {
             component: "pico",
@@ -103,13 +106,16 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 	assert.Equal(t, expRender, gotRender)
 }
 
-func TestKymaConfigToGraphQLOnlyKymaVersion(t *testing.T) {
+func TestKymaConfigToGraphQLOnlyKymaVersionAndProfile(t *testing.T) {
 	// given
+	profile := gqlschema.KymaProfileEvaluation
 	fixInput := gqlschema.KymaConfigInput{
 		Version: "966",
+		Profile: &profile,
 	}
 	expRender := `{
 		version: "966",
+		profile: Evaluation,
 	}`
 
 	sut := Graphqlizer{}
@@ -121,6 +127,86 @@ func TestKymaConfigToGraphQLOnlyKymaVersion(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, expRender, gotRender)
+}
+
+func Test_GardenerConfigInputToGraphQL(t *testing.T) {
+	// given
+	sut := Graphqlizer{}
+	exp := `{
+		name: "c-90a3016",
+		kubernetesVersion: "1.18",
+		volumeSizeGB: 50,
+		machineType: "Standard_D4_v3",
+		region: "europe",
+		provider: "Azure",
+		diskType: "Standard_LRS",
+		targetSecret: "scr",
+		workerCidr: "10.250.0.0/19",
+        autoScalerMin: 0,
+        autoScalerMax: 0,
+        maxSurge: 0,
+		maxUnavailable: 0,
+	}`
+
+	// when
+	name := "c-90a3016"
+	got, err := sut.GardenerConfigInputToGraphQL(gqlschema.GardenerConfigInput{
+		Name:              &name,
+		Region:            "europe",
+		VolumeSizeGb:      50,
+		WorkerCidr:        "10.250.0.0/19",
+		Provider:          "Azure",
+		DiskType:          "Standard_LRS",
+		TargetSecret:      "scr",
+		MachineType:       "Standard_D4_v3",
+		KubernetesVersion: "1.18",
+	})
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, exp, got)
+}
+
+func Test_GardenerConfigInputToGraphQLWithMachineImage(t *testing.T) {
+	// given
+	sut := Graphqlizer{}
+	exp := `{
+		name: "c-90a3016",
+		kubernetesVersion: "1.18",
+		volumeSizeGB: 50,
+		machineType: "Standard_D4_v3",
+		machineImage: "coreos",
+		machineImageVersion: "255.0",
+		region: "europe",
+		provider: "Azure",
+		diskType: "Standard_LRS",
+		targetSecret: "scr",
+		workerCidr: "10.250.0.0/19",
+        autoScalerMin: 0,
+        autoScalerMax: 0,
+        maxSurge: 0,
+		maxUnavailable: 0,
+	}`
+
+	// when
+	name := "c-90a3016"
+	got, err := sut.GardenerConfigInputToGraphQL(gqlschema.GardenerConfigInput{
+		Name:                &name,
+		Region:              "europe",
+		VolumeSizeGb:        50,
+		WorkerCidr:          "10.250.0.0/19",
+		Provider:            "Azure",
+		DiskType:            "Standard_LRS",
+		TargetSecret:        "scr",
+		MachineType:         "Standard_D4_v3",
+		KubernetesVersion:   "1.18",
+		MachineImage:        strPrt("coreos"),
+		MachineImageVersion: strPrt("255.0"),
+	})
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, exp, got)
 }
 
 func Test_LabelsToGQL(t *testing.T) {
@@ -220,4 +306,8 @@ func TestGCPProviderConfigInputToGraphQL(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, expected, got)
+}
+
+func strPrt(s string) *string {
+	return &s
 }

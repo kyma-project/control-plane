@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -38,16 +40,28 @@ type ProvisionEndpoint struct {
 	queue                Queue
 	builderFactory       PlanValidator
 	enabledPlanIDs       map[string]struct{}
+	onlySingleTrialPerGA bool
 	plansSchemaValidator PlansSchemaValidator
 	kymaVerOnDemand      bool
+
+	shootDomain  string
+	shootProject string
 
 	log logrus.FieldLogger
 }
 
-func NewProvision(cfg Config, operationsStorage storage.Operations, instanceStorage storage.Instances, q Queue, builderFactory PlanValidator, validator PlansSchemaValidator, kvod bool, log logrus.FieldLogger) *ProvisionEndpoint {
+func NewProvision(cfg Config,
+	gardenerConfig gardener.Config,
+	operationsStorage storage.Operations,
+	instanceStorage storage.Instances,
+	queue Queue,
+	builderFactory PlanValidator,
+	validator PlansSchemaValidator,
+	kvod bool,
+	log logrus.FieldLogger) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
-		id := planIDsMapping[planName]
+		id := PlanIDsMapping[planName]
 		enabledPlanIDs[id] = struct{}{}
 	}
 
@@ -55,11 +69,14 @@ func NewProvision(cfg Config, operationsStorage storage.Operations, instanceStor
 		plansSchemaValidator: validator,
 		operationsStorage:    operationsStorage,
 		instanceStorage:      instanceStorage,
-		queue:                q,
+		queue:                queue,
 		builderFactory:       builderFactory,
 		log:                  log.WithField("service", "ProvisionEndpoint"),
 		enabledPlanIDs:       enabledPlanIDs,
+		onlySingleTrialPerGA: cfg.OnlySingleTrialPerGA,
 		kymaVerOnDemand:      kvod,
+		shootDomain:          gardenerConfig.ShootDomain,
+		shootProject:         gardenerConfig.Project,
 	}
 }
 
@@ -103,27 +120,35 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return b.handleExistingOperation(existingOperation, provisioningParameters, logger)
 	}
 
+	// create SKR shoot name
+	shootName := gardener.CreateShootName()
+	dashboardURL := fmt.Sprintf("https://console.%s.%s.%s", shootName, b.shootProject, strings.Trim(b.shootDomain, "."))
+
 	// create and save new operation
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
 	if err != nil {
 		logger.Errorf("cannot create new operation: %s", err)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot create new operation")
 	}
+	operation.ShootName = shootName
+	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, b.shootProject, strings.Trim(b.shootDomain, "."))
 
 	err = b.operationsStorage.InsertProvisioningOperation(operation)
 	if err != nil {
 		logger.Errorf("cannot save operation: %s", err)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot save operation")
 	}
+
 	err = b.instanceStorage.Insert(internal.Instance{
-		InstanceID:             instanceID,
-		GlobalAccountID:        ersContext.GlobalAccountID,
-		SubAccountID:           ersContext.SubAccountID,
-		ServiceID:              provisioningParameters.ServiceID,
-		ServiceName:            KymaServiceName,
-		ServicePlanID:          provisioningParameters.PlanID,
-		ServicePlanName:        Plans[provisioningParameters.PlanID].PlanDefinition.Name,
-		ProvisioningParameters: operation.ProvisioningParameters,
+		InstanceID:      instanceID,
+		GlobalAccountID: ersContext.GlobalAccountID,
+		SubAccountID:    ersContext.SubAccountID,
+		ServiceID:       provisioningParameters.ServiceID,
+		ServiceName:     KymaServiceName,
+		ServicePlanID:   provisioningParameters.PlanID,
+		ServicePlanName: Plans[provisioningParameters.PlanID].PlanDefinition.Name,
+		DashboardURL:    dashboardURL,
+		Parameters:      operation.ProvisioningParameters,
 	})
 	if err != nil {
 		logger.Errorf("cannot save instance in storage: %s", err)
@@ -136,10 +161,14 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	return domain.ProvisionedServiceSpec{
 		IsAsync:       true,
 		OperationData: operation.ID,
+		DashboardURL:  dashboardURL,
+		Metadata: domain.InstanceMetadata{
+			Labels: b.responseLabels(provisioningParameters, dashboardURL),
+		},
 	}, nil
 }
 
-func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, logger logrus.FieldLogger) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
+func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, l logrus.FieldLogger) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
 	var ersContext internal.ERSContext
 	var parameters internal.ProvisioningParametersDTO
 
@@ -160,6 +189,7 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	}
 
 	ersContext, err = b.extractERSContext(details)
+	logger := l.WithField("globalAccountID", ersContext.GlobalAccountID)
 	if err != nil {
 		return ersContext, parameters, errors.Wrap(err, "while extracting ers context")
 	}
@@ -178,6 +208,18 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	found := b.builderFactory.IsPlanSupport(details.PlanID)
 	if !found {
 		return ersContext, parameters, errors.Errorf("the plan ID not known, planID: %s", details.PlanID)
+	}
+
+	if IsTrialPlan(details.PlanID) && b.onlySingleTrialPerGA {
+		count, err := b.instanceStorage.GetNumberOfInstancesForGlobalAccountID(ersContext.GlobalAccountID)
+		if err != nil {
+			return ersContext, parameters, errors.Wrap(err, "while checking if a trial Kyma instance exists for given global account")
+		}
+
+		if count > 0 {
+			logger.Info("Provisioning Trial SKR rejected, such instance was already created for this Global Account")
+			return ersContext, parameters, errors.Errorf("The Trial Kyma was created for the global account, but there is only one allowed")
+		}
 	}
 
 	return ersContext, parameters, nil
@@ -211,12 +253,7 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 }
 
 func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.ProvisioningOperation, input internal.ProvisioningParameters, log logrus.FieldLogger) (domain.ProvisionedServiceSpec, error) {
-	pp, err := operation.GetProvisioningParameters()
-	if err != nil {
-		log.Errorf("cannot get provisioning parameters from exist operation", err)
-		return domain.ProvisionedServiceSpec{}, errors.New("cannot get provisioning parameters from exist operation")
-	}
-	if pp.IsEqual(input) {
+	if operation.ProvisioningParameters.IsEqual(input) {
 		return domain.ProvisionedServiceSpec{
 			IsAsync:       true,
 			AlreadyExists: true,
@@ -224,15 +261,23 @@ func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.Provisio
 		}, nil
 	}
 
-	err = errors.New("provisioning operation already exist")
+	err := errors.New("provisioning operation already exist")
 	msg := fmt.Sprintf("provisioning operation with InstanceID %s already exist", operation.InstanceID)
 	return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusConflict, msg)
 }
 
-func (b *ProvisionEndpoint) determineLicenceType(id string) *string {
-	if id == AzureLitePlanID {
+func (b *ProvisionEndpoint) determineLicenceType(planId string) *string {
+	if planId == AzureLitePlanID || IsTrialPlan(planId) {
 		return ptr.String(internal.LicenceTypeLite)
 	}
 
 	return nil
+}
+
+func (b *ProvisionEndpoint) responseLabels(parameters internal.ProvisioningParameters, dashboardURL string) map[string]string {
+	responseLabels := make(map[string]string, 0)
+	responseLabels["Name"] = parameters.Parameters.Name
+	responseLabels["GrafanaURL"] = strings.Replace(dashboardURL, "console.", "grafana.", 1)
+
+	return responseLabels
 }

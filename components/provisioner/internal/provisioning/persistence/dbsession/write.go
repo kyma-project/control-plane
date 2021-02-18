@@ -57,6 +57,7 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		Pair("max_unavailable", config.MaxUnavailable).
 		Pair("enable_kubernetes_version_auto_update", config.EnableKubernetesVersionAutoUpdate).
 		Pair("enable_machine_image_version_auto_update", config.EnableMachineImageVersionAutoUpdate).
+		Pair("allow_privileged_containers", config.AllowPrivilegedContainers).
 		Pair("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Exec()
 
@@ -65,6 +66,34 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 	}
 
 	return nil
+}
+
+func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) dberrors.Error {
+	res, err := ws.update("gardener_config").
+		Where(dbr.Eq("cluster_id", config.ClusterID)).
+		Set("kubernetes_version", config.KubernetesVersion).
+		Set("purpose", config.Purpose).
+		Set("seed", config.Seed).
+		Set("region", config.Region).
+		Set("provider", config.Provider).
+		Set("machine_type", config.MachineType).
+		Set("disk_type", config.DiskType).
+		Set("volume_size_gb", config.VolumeSizeGB).
+		Set("worker_cidr", config.WorkerCidr).
+		Set("auto_scaler_min", config.AutoScalerMin).
+		Set("auto_scaler_max", config.AutoScalerMax).
+		Set("max_surge", config.MaxSurge).
+		Set("max_unavailable", config.MaxUnavailable).
+		Set("enable_kubernetes_version_auto_update", config.EnableKubernetesVersionAutoUpdate).
+		Set("enable_machine_image_version_auto_update", config.EnableMachineImageVersionAutoUpdate).
+		Set("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update record of configuration for gardener shoot cluster '%s': %s", config.Name, err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update record of configuration for gardener shoot cluster '%s' state: %s", config.Name, err))
 }
 
 func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error {
@@ -76,6 +105,7 @@ func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Er
 	_, err = ws.insertInto("kyma_config").
 		Pair("id", kymaConfig.ID).
 		Pair("release_id", kymaConfig.Release.Id).
+		Pair("profile", kymaConfig.Profile).
 		Pair("cluster_id", kymaConfig.ClusterID).
 		Pair("global_configuration", jsonConfig).
 		Exec()

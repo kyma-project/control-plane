@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
+
 	"github.com/dlmiddlecote/sqlstats"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/environmentscleanup"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/environmentscleanup/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -21,7 +23,13 @@ type config struct {
 	LabelSelector string        `envconfig:"default=owner.do-not-delete!=true"`
 	Gardener      gardener.Config
 	Database      storage.Config
-	Broker        broker.Config
+	Broker        broker.ClientConfig
+	Provisioner   provisionerConfig
+}
+
+type provisionerConfig struct {
+	URL          string `envconfig:"default=kcp-provisioner:3000"`
+	QueryDumping bool   `envconfig:"default=false"`
 }
 
 func main() {
@@ -38,6 +46,7 @@ func main() {
 
 	ctx := context.Background()
 	brokerClient := broker.NewClient(ctx, cfg.Broker)
+	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioner.URL, cfg.Provisioner.QueryDumping)
 
 	// create storage
 
@@ -46,7 +55,9 @@ func main() {
 	dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 	prometheus.MustRegister(dbStatsCollector)
 
-	svc := environmentscleanup.NewService(shootClient, brokerClient, db.Instances(), cfg.MaxAgeHours, cfg.LabelSelector)
+	logger := log.New()
+
+	svc := environmentscleanup.NewService(shootClient, brokerClient, provisionerClient, db.Instances(), logger, cfg.MaxAgeHours, cfg.LabelSelector)
 	err = svc.PerformCleanup()
 	if err != nil {
 		fatalOnError(err)

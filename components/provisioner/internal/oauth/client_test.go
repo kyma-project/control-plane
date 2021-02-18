@@ -2,6 +2,7 @@ package oauth
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -17,8 +18,8 @@ import (
 )
 
 const (
-	namespace  = "compass-system"
-	secretName = "compass-provisioner-registration"
+	namespace  = "kcp-system"
+	secretName = "kcp-provisioner-registration"
 )
 
 func TestOauthClient_GetAuthorizationToken(t *testing.T) {
@@ -101,7 +102,7 @@ func createFakeCredentialsSecret(t *testing.T, secrets core.SecretInterface, cre
 		},
 	}
 
-	_, err := secrets.Create(secret)
+	_, err := secrets.Create(context.Background(), secret, meta.CreateOptions{})
 
 	require.NoError(t, err)
 }

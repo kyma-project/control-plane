@@ -32,7 +32,7 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 				kymaVersion:                      "1.9.0",
 				managedRuntimeComponentsYAMLPath: path.Join("testdata", "managed-runtime-components.yaml"),
 			},
-			expectedRequestURL: "https://github.com/kyma-project/kyma/releases/download/1.9.0/kyma-installer-cluster.yaml",
+			expectedRequestURL: "https://storage.googleapis.com/kyma-prow-artifacts/1.9.0/kyma-installer-cluster.yaml",
 		},
 		{
 			name: "Provide on-demand Kyma version",
@@ -88,7 +88,7 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 			},
 			returnStatusCode: http.StatusNotFound,
 			tempError:        false,
-			expErrMessage:    "while getting open source kyma components: while checking response status code for Kyma components list: got unexpected status code, want 200, got 404, url: https://github.com/kyma-project/kyma/releases/download/111.000.111/kyma-installer-cluster.yaml, body: Not Found",
+			expErrMessage:    "while getting open source kyma components: while checking response status code for Kyma components list: got unexpected status code, want 200, got 404, url: https://storage.googleapis.com/kyma-prow-artifacts/111.000.111/kyma-installer-cluster.yaml, body: Not Found",
 		},
 		{
 			name: "Provide on-demand version not found",

@@ -12,8 +12,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/hashicorp/go-multierror"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/iosafety"
+
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -61,7 +62,7 @@ type Config struct {
 	Region     string `envconfig:"optional"`
 	Mandatory  bool   `envconfig:"default=true"`
 
-	Disabled bool
+	EnabledForGlobalAccounts string // "all", "none", or "{global-account-ID-1}, <global-account-ID-2>, .."
 }
 
 func (c Config) Validate() error {
@@ -147,15 +148,15 @@ func (c *client) CreateTenant(input CreateTenantInput) (o CreateTenantOutput, er
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return CreateTenantOutput{}, errors.Wrapf(err, "while calling Create Tenant endpoint")
+		return CreateTenantOutput{}, kebError.AsTemporaryError(err, "while calling Create Tenant endpoint")
 	}
 	defer func() {
 		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
-			err = multierror.Append(err, errors.Wrap(drainErr, "while trying to drain body reader"))
+			err = kebError.AsTemporaryError(drainErr, "while trying to drain body reader")
 		}
 
 		if closeErr := resp.Body.Close(); closeErr != nil {
-			err = multierror.Append(err, errors.Wrap(closeErr, "while trying to close body reader"))
+			err = kebError.AsTemporaryError(closeErr, "while trying to close body reader")
 		}
 	}()
 
@@ -183,21 +184,21 @@ func (c *client) CreateTenant(input CreateTenantInput) (o CreateTenantOutput, er
 func (c *client) GetTenantStatus(tenantID string) (status TenantStatus, err error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/tenants/%s/status", c.url, tenantID), nil)
 	if err != nil {
-		return TenantStatus{}, errors.Wrapf(err, "while creating Get Tenant Status request")
+		return TenantStatus{}, errors.Wrap(err, "while creating Get Tenant Status request")
 	}
 	req.Header.Add("X-LMS-Token", c.token)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return TenantStatus{}, errors.Wrapf(err, "while calling Get Tenant Status endpoint")
+		return TenantStatus{}, kebError.AsTemporaryError(err, "while calling Get Tenant Status endpoint")
 	}
 	defer func() {
 		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
-			err = multierror.Append(err, errors.Wrap(drainErr, "while trying to drain body reader"))
+			err = kebError.AsTemporaryError(drainErr, "while trying to drain body reader")
 		}
 
 		if closeErr := resp.Body.Close(); closeErr != nil {
-			err = multierror.Append(err, errors.Wrap(closeErr, "while trying to close body reader"))
+			err = kebError.AsTemporaryError(closeErr, "while trying to close body reader")
 		}
 	}()
 
@@ -227,15 +228,15 @@ func (c *client) GetTenantInfo(tenantID string) (status TenantInfo, err error) {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return TenantInfo{}, errors.Wrapf(err, "while calling Get Tenant endpoint")
+		return TenantInfo{}, kebError.AsTemporaryError(err, "while calling Get Tenant endpoint")
 	}
 	defer func() {
 		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
-			err = multierror.Append(err, errors.Wrap(drainErr, "while trying to drain body reader"))
+			err = kebError.AsTemporaryError(drainErr, "while trying to drain body reader")
 		}
 
 		if closeErr := resp.Body.Close(); closeErr != nil {
-			err = multierror.Append(err, errors.Wrap(closeErr, "while trying to close body reader"))
+			err = kebError.AsTemporaryError(closeErr, "while trying to close body reader")
 		}
 	}()
 
@@ -265,15 +266,15 @@ func (c *client) GetCertificateByURL(url string) (cert string, found bool, err e
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", false, errors.Wrapf(err, "while calling Get Certificate endpoint (%s)", url)
+		return "", false, kebError.AsTemporaryError(err, "while calling Get Certificate endpoint (%s)", url)
 	}
 	defer func() {
 		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
-			err = multierror.Append(err, errors.Wrap(drainErr, "while trying to drain body reader"))
+			err = kebError.AsTemporaryError(drainErr, "while trying to drain body reader")
 		}
 
 		if closeErr := resp.Body.Close(); closeErr != nil {
-			err = multierror.Append(err, errors.Wrap(closeErr, "while trying to close body reader"))
+			err = kebError.AsTemporaryError(closeErr, "while trying to close body reader")
 		}
 	}()
 
@@ -311,7 +312,7 @@ func (c *client) GetCACertificate(tenantID string) (cert string, found bool, err
 func (c *client) RequestCertificate(tenantID string, subject pkix.Name) (string, []byte, error) {
 	csr, privateKey, err := c.generateCSR(subject)
 	if err != nil {
-		return "", privateKey, errors.Wrapf(err, "while generating CSR")
+		return "", privateKey, errors.Wrap(err, "while generating CSR")
 	}
 	var payload struct {
 		CertId int    `json:"certId"`
@@ -321,27 +322,27 @@ func (c *client) RequestCertificate(tenantID string, subject pkix.Name) (string,
 
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
-		return "", privateKey, errors.Wrapf(err, "while encoding Create Request payload")
+		return "", privateKey, errors.Wrap(err, "while encoding Create Request payload")
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/tenants/%s/certs", c.url, tenantID), bytes.NewBuffer(jsonPayload))
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/tenants/%s/certs", c.url, tenantID), bytes.NewBuffer(jsonPayload))
 	if err != nil {
-		return "", privateKey, err
+		return "", privateKey, errors.Wrap(err, "while creating request certificate")
 	}
 	req.Header.Add("X-LMS-Token", c.token)
 	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", privateKey, err
+		return "", privateKey, kebError.AsTemporaryError(err, "while calling Request Certificate endpoint")
 	}
 	defer func() {
 		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
-			err = multierror.Append(err, errors.Wrap(drainErr, "while trying to drain body reader"))
+			err = kebError.AsTemporaryError(drainErr, "while trying to drain body reader")
 		}
 
 		if closeErr := resp.Body.Close(); closeErr != nil {
-			err = multierror.Append(err, errors.Wrap(closeErr, "while trying to close body reader"))
+			err = kebError.AsTemporaryError(closeErr, "while trying to close body reader")
 		}
 	}()
 
@@ -360,6 +361,7 @@ func (c *client) RequestCertificate(tenantID string, subject pkix.Name) (string,
 	if err != nil {
 		return "", []byte{}, errors.Wrapf(err, "while unmarshalling response: %s", string(body))
 	}
+
 	return response.CallbackURL, privateKey, nil
 }
 

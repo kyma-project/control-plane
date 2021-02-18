@@ -13,8 +13,14 @@ require (
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/stretchr/testify v1.5.1
 	github.com/vrischmann/envconfig v1.2.0
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	gopkg.in/yaml.v2 v2.3.0
-	k8s.io/apiserver v0.17.2
+	k8s.io/apiserver v0.18.10
 )
 
-replace github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
+replace (
+	github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
+	golang.org/x/text => golang.org/x/text v0.3.3
+
+	k8s.io/apimachinery => k8s.io/apimachinery v0.18.10
+)

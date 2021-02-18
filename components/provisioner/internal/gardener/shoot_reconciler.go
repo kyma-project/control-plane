@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/types"
 
@@ -118,10 +119,11 @@ func (r *Reconciler) updateShoot(namespacedName types.NamespacedName, modifyShoo
 
 func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, namespacedName types.NamespacedName, shoot *gardener_types.Shoot, seed string) error {
 	logger.Info("Enabling audit logs")
-	tenant, err := r.getAuditLogTenant(seed)
+	data, err := r.getTenantDataFromFile()
 	if err != nil {
 		return err
 	}
+	tenant := getAuditLogTenant(seed, data)
 
 	if tenant == "" {
 		logger.Warnf("Cannot enable audit logs. Tenant for seed %s is empty", seed)
@@ -138,20 +140,45 @@ func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, namespacedName t
 	})
 }
 
-func (r *Reconciler) getAuditLogTenant(seed string) (string, error) {
+/*
+if can't find exact match for seed (eg. az-us10 key),
+tries to find generic config for seeds group (eg. az-us key)
+*/
+func getAuditLogTenant(seed string, data map[string]string) string {
+	tenant := findTenantStrictly(seed, data)
+	if tenant != "" {
+		return tenant
+	}
+	return findTenantLoosely(seed, data)
+}
+
+func findTenantStrictly(seed string, data map[string]string) string {
+	return data[seed]
+}
+
+func findTenantLoosely(seed string, data map[string]string) string {
+	for key, tenant := range data {
+		if strings.Contains(seed, key) {
+			return tenant
+		}
+	}
+	return ""
+}
+
+func (r *Reconciler) getTenantDataFromFile() (map[string]string, error) {
 	file, err := os.Open(r.auditLogTenantConfigPath)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	defer file.Close()
 
 	var data map[string]string
 	if err := json.NewDecoder(file).Decode(&data); err != nil {
-		return "", err
+		return nil, err
 	}
-	return data[seed], nil
+	return data, nil
 }
 
 func getSeed(shoot gardener_types.Shoot) string {

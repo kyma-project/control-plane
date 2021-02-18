@@ -15,18 +15,20 @@ spec:
             labels:
                 app: {{ .Chart.Name }}
                 release: {{ .Release.Name }}
+            {{if eq .Values.global.database.embedded.enabled false}}
+            annotations:
+                sidecar.istio.io/inject: "false"
+            {{end}}
         spec:
             restartPolicy: Never
             shareProcessNamespace: true
             containers:
                 {{if eq .Values.global.database.embedded.enabled false}}
                 - name: cloudsql-proxy
-                  image: gcr.io/cloudsql-docker/gce-proxy:1.14
-                  command:
-                  - /bin/sh
-                  args:
-                  - -c
-                  - "trap 'exit 0' SIGINT; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json"
+                  image: {{ .Values.global.images.cloudsql_proxy_image }}
+                  command: [ "/cloud_sql_proxy",
+                             "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                             "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json" ]
                   volumeMounts:
                       - name: cloudsql-instance-credentials
                         mountPath: /secrets/cloudsql-instance-credentials
@@ -75,7 +77,13 @@ spec:
                     - "/bin/bash"
                   args:
                     - "-c"
-                    - "sleep 20; ./run.sh; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+                    {{if eq .Values.global.database.embedded.enabled false}}
+                    # There is no Istio sidecar injected so there is no need to quit it
+                    - "sleep 20; ./run.sh; exit_code=$?; echo '# KILLING CLOUD SQL PROXY #'; pkill -INT cloud_sql_proxy; sleep 5; exit $exit_code;"
+                    {{else}}
+                    # There is no Cloud SQL Proxy so there is no need to kill it
+                    - "sleep 20; ./run.sh; exit_code=$?; echo '# QUITTING ISTIO SIDECAR #'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+                    {{end}}
             {{if eq .Values.global.database.embedded.enabled false}}
             volumes:
               - name: cloudsql-instance-credentials
@@ -100,18 +108,20 @@ spec:
             labels:
                 app: {{ .Chart.Name }}
                 release: {{ .Release.Name }}
+            {{if eq .Values.global.database.embedded.enabled false}}
+            annotations:
+                sidecar.istio.io/inject: "false"
+            {{end}}
         spec:
             restartPolicy: Never
             shareProcessNamespace: true
             containers:
                 {{if eq .Values.global.database.embedded.enabled false}}
                 - name: cloudsql-proxy
-                  image: gcr.io/cloudsql-docker/gce-proxy:1.14
-                  command:
-                  - /bin/sh
-                  args:
-                  - -c
-                  - "trap 'exit 0' SIGINT; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -credential_file=/secrets/cloudsql-instance-credentials/credentials.json"
+                  image: {{ .Values.global.images.cloudsql_proxy_image }}
+                  command: [ "/cloud_sql_proxy",
+                             "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                             "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json" ]
                   volumeMounts:
                       - name: cloudsql-instance-credentials
                         mountPath: /secrets/cloudsql-instance-credentials
@@ -160,7 +170,13 @@ spec:
                     - "/bin/bash"
                   args:
                     - "-c"
-                    - "sleep 20; ./run.sh; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+                    {{if eq .Values.global.database.embedded.enabled false}}
+                    # There is no Istio sidecar injected so there is no need to quit it
+                    - "sleep 20; ./run.sh; exit_code=$?; echo '# KILLING CLOUD SQL PROXY #'; pkill -INT cloud_sql_proxy; sleep 5; exit $exit_code;"
+                    {{else}}
+                    # There is no Cloud SQL Proxy so there is no need to kill it
+                    - "sleep 20; ./run.sh; exit_code=$?; echo '# QUITTING ISTIO SIDECAR #'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+                    {{end}}
             {{if eq .Values.global.database.embedded.enabled false}}
             volumes:
               - name: cloudsql-instance-credentials

@@ -8,8 +8,8 @@ global:
     domainName: "override.me.io"
   istio:
     gateway:
-      name: "compass-istio-gateway"
-      namespace: "compass-system"
+      name: "kyma-gateway"
+      namespace: "kyma-system"
 
 replicaCount: 1
 
@@ -28,6 +28,7 @@ config:
       client: 1234-5678-qwer
       secret: foobar
     client: compass-ui
+    issuer: https://dex.{{ .Values.global.ingress.domainName }}
     # caFile: /etc/dex-tls-cert/tls.crt
 
 

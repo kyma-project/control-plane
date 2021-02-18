@@ -14,8 +14,10 @@ func Test_annotate(t *testing.T) {
 	}
 
 	// when
-	annotate(shoot, runtimeIdAnnotation, "abcd-efgh")
+	annotate(shoot, runtimeIDAnnotation, "abcd-efgh")
+	annotate(shoot, legacyRuntimeIDAnnotation, "abcd-efgh")
 
 	// then
-	assertAnnotation(t, shoot, runtimeIdAnnotation, "abcd-efgh")
+	assertAnnotation(t, shoot, runtimeIDAnnotation, "abcd-efgh")
+	assertAnnotation(t, shoot, legacyRuntimeIDAnnotation, "abcd-efgh")
 }

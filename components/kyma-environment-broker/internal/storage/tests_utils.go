@@ -36,12 +36,13 @@ func makeConnectionString(hostname string, port string) Config {
 	}
 
 	cfg := Config{
-		Host:     host,
-		User:     DbUser,
-		Password: DbPass,
-		Port:     port,
-		Name:     DbName,
-		SSLMode:  "disable",
+		Host:      host,
+		User:      DbUser,
+		Password:  DbPass,
+		Port:      port,
+		Name:      DbName,
+		SSLMode:   "disable",
+		SecretKey: "$C&F)H@McQfTjWnZr4u7x!A%D*G-KaNd",
 
 		MaxOpenConns:    2,
 		MaxIdleConns:    1,
@@ -117,7 +118,7 @@ func InitTestDBTables(t *testing.T, connectionURL string) error {
 		return err
 	}
 
-	for name, v := range fixTables() {
+	for name, v := range FixTables() {
 		if _, err := connection.Exec(v); err != nil {
 			t.Logf("Cannot create table %s", name)
 			return err
@@ -195,7 +196,7 @@ func EnsureTestNetworkForDB(t *testing.T, ctx context.Context) (func(), error) {
 	return cleanupFunc, nil
 }
 
-func fixTables() map[string]string {
+func FixTables() map[string]string {
 	return map[string]string{
 		postsql.InstancesTableName: fmt.Sprintf(
 			`CREATE TABLE IF NOT EXISTS %s (
@@ -209,6 +210,8 @@ func fixTables() map[string]string {
 			service_plan_name varchar(255) NOT NULL,
 			dashboard_url varchar(255) NOT NULL,
 			provisioning_parameters text NOT NULL,
+			provider_region varchar(32) NOT NULL,
+            version integer NOT NULL DEFAULT 0,
 			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			deleted_at TIMESTAMPTZ NOT NULL DEFAULT '0001-01-01 00:00:00+00'
@@ -223,9 +226,21 @@ func fixTables() map[string]string {
 			description text NOT NULL,
 			type varchar(32) NOT NULL,
 			data json NOT NULL,
+			provisioning_parameters json NOT NULL,
+			orchestration_id varchar(64),
 			created_at TIMESTAMPTZ NOT NULL,
 			updated_at TIMESTAMPTZ NOT NULL
 			)`, postsql.OperationTableName),
+		postsql.OrchestrationTableName: fmt.Sprintf(
+			`CREATE TABLE IF NOT EXISTS %s (
+			orchestration_id varchar(255) PRIMARY KEY,
+			state varchar(32) NOT NULL,
+			description text,
+			parameters text NOT NULL,
+			runtime_operations text,
+			created_at TIMESTAMPTZ NOT NULL,
+			updated_at TIMESTAMPTZ NOT NULL
+			)`, postsql.OrchestrationTableName),
 		postsql.LMSTenantTableName: fmt.Sprintf(
 			`CREATE TABLE IF NOT EXISTS %s (
 			id varchar(255) PRIMARY KEY,
@@ -233,6 +248,17 @@ func fixTables() map[string]string {
 			region varchar(12) NOT NULL,
 			created_at TIMESTAMPTZ NOT NULL,
             unique (name, region)
-			)`, postsql.LMSTenantTableName)}
-
+			)`, postsql.LMSTenantTableName),
+		postsql.RuntimeStateTableName: fmt.Sprintf(
+			`CREATE TABLE IF NOT EXISTS %s (
+			id varchar(255) PRIMARY KEY,
+    		runtime_id varchar(255),
+    		operation_id varchar(255),
+    		created_at TIMESTAMPTZ NOT NULL,
+			kyma_config text,
+			cluster_config text,
+			kyma_version text,
+			k8s_version text
+			)`, postsql.RuntimeStateTableName),
+	}
 }

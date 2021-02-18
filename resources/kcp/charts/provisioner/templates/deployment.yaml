@@ -31,10 +31,10 @@ spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:
         - ip: {{ .Values.global.minikubeIP }}
-          hostnames: #TODO: Prepare values for external Compass
-            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}"
+          hostnames:
+            - "{{ .Values.global.compass.tls.host }}.{{ .Values.global.compass.domain | default .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.compass.mtls.host }}.{{ .Values.global.compass.domain | default .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.compass.tls.secure.oauth.host }}.{{ .Values.global.compass.domain | default .Values.global.ingress.domainName }}"
             - "{{ .Values.global.oauth2.host }}.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       serviceAccountName: {{ template "fullname" . }}
@@ -58,7 +58,7 @@ spec:
               value: "0.0.0.0:{{ .Values.global.provisioner.graphql.port }}"
             - name: APP_API_ENDPOINT
               value: "/graphql"
-            - name: APP_CREDENTIALS_NAMESPACE
+            - name: APP_OAUTH_CREDENTIALS_NAMESPACE
               value: {{ .Release.Namespace }}
             - name: APP_DATABASE_USER
               valueFrom:
@@ -91,7 +91,7 @@ spec:
                   name: kcp-postgresql
                   key: postgresql-sslMode
             - name: APP_DIRECTOR_URL
-              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+              value: "https://{{ .Values.global.compass.tls.secure.oauth.host }}.{{ .Values.global.compass.domain | default .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_OAUTH_CREDENTIALS_SECRET_NAME
               value: {{ .Values.global.provisioner.secrets.integrationSystemCredentials.name | quote }}
             - name: APP_SKIP_DIRECTOR_CERT_VERIFICATION
@@ -112,6 +112,12 @@ spec:
               value: {{ .Values.gardener.waitingForClusterDeletionTimeout | quote }}
             - name: APP_DEPROVISIONING_TIMEOUT_CLUSTER_CLEANUP
               value: {{ .Values.gardener.clusterCleanupTimeout | quote }}
+            - name: APP_PROVISIONING_TIMEOUT_BINDINGS_CREATION
+              value: {{ .Values.support.bindingsCreationTimeout | quote }}
+            - name: APP_OPERATOR_ROLE_BINDING_L2SUBJECT_NAME
+              value: {{ .Values.support.l2OperatorRoleBindingSubject | quote }}
+            - name: APP_OPERATOR_ROLE_BINDING_L3SUBJECT_NAME
+              value: {{ .Values.support.l3OperatorRoleBindingSubject | quote }}
             - name: APP_GARDENER_PROJECT
               value: {{ .Values.gardener.project }}
             - name: APP_GARDENER_KUBECONFIG_PATH
@@ -128,10 +134,10 @@ spec:
               value: {{ .Values.gardener.defaultEnableKubernetesVersionAutoUpdate | quote }}
             - name: APP_GARDENER_DEFAULT_ENABLE_MACHINE_IMAGE_VERSION_AUTO_UPDATE
               value: {{ .Values.gardener.defaultEnableMachineImageVersionAutoUpdate | quote }}
+            - name: APP_GARDENER_FORCE_ALLOW_PRIVILEGED_CONTAINERS
+              value: {{ .Values.gardener.forceAllowPrivilegedContainers | quote }}
             - name: APP_LATEST_DOWNLOADED_RELEASES
-              value: "5"
-            - name: APP_SUPPORT_ON_DEMAND_RELEASES
-              value: {{ .Values.kymaRelease.onDemand.enabled | quote }}
+              value: "10"
             - name: APP_DOWNLOAD_PRE_RELEASES
               value: {{ .Values.kymaRelease.preReleases.enabled | quote }}
             - name: APP_LOG_LEVEL
@@ -173,7 +179,7 @@ spec:
 
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
-          image: gcr.io/cloudsql-docker/gce-proxy:1.16
+          image: {{ .Values.global.images.cloudsql_proxy_image }}
           command: ["/cloud_sql_proxy",
                     "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
                     "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]

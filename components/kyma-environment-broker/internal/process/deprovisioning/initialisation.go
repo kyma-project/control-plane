@@ -4,6 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -17,22 +24,33 @@ import (
 
 const (
 	// the time after which the operation is marked as expired
-	CheckStatusTimeout = 3 * time.Hour
+	CheckStatusTimeout = 5 * time.Hour
 )
 
-type InitialisationStep struct {
-	operationManager  *process.DeprovisionOperationManager
-	operationStorage  storage.Provisioning
-	instanceStorage   storage.Instances
-	provisionerClient provisioner.Client
+type SMClientFactory interface {
+	ForCustomerCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (servicemanager.Client, error)
+	ProvideCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (*servicemanager.Credentials, error)
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client) *InitialisationStep {
+type InitialisationStep struct {
+	operationManager            *process.DeprovisionOperationManager
+	operationStorage            storage.Operations
+	instanceStorage             storage.Instances
+	provisionerClient           provisioner.Client
+	accountProvider             hyperscaler.AccountProvider
+	serviceManagerClientFactory SMClientFactory
+	operationTimeout            time.Duration
+}
+
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, accountProvider hyperscaler.AccountProvider, smcf SMClientFactory, operationTimeout time.Duration) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:  process.NewDeprovisionOperationManager(os),
-		operationStorage:  os,
-		instanceStorage:   is,
-		provisionerClient: pc,
+		operationManager:            process.NewDeprovisionOperationManager(os),
+		operationStorage:            os,
+		instanceStorage:             is,
+		provisionerClient:           pc,
+		accountProvider:             accountProvider,
+		serviceManagerClientFactory: smcf,
+		operationTimeout:            operationTimeout,
 	}
 }
 
@@ -44,15 +62,34 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 	op, when, err := s.run(operation, log)
 
 	if op.State == domain.Succeeded {
-		repeat, err := s.removeInstance(operation.InstanceID)
-		if err != nil || repeat != 0 {
-			return operation, repeat, err
+		if op.Temporary {
+			log.Info("Removing RuntimeID from the instance")
+			err := s.removeRuntimeID(operation.InstanceID)
+			if err != nil {
+				return operation, time.Second, err
+			}
+		} else {
+			log.Info("Removing the instance")
+			repeat, err := s.removeInstance(operation.InstanceID)
+			if err != nil || repeat != 0 {
+				return operation, repeat, err
+			}
+			log.Info("Removing the userID field from operation")
+			op, repeat, err = s.removeUserID(op)
+			if err != nil || repeat != 0 {
+				return operation, repeat, err
+			}
 		}
 	}
 	return op, when, err
 }
 
 func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+	if time.Since(operation.CreatedAt) > s.operationTimeout {
+		log.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout))
+	}
+
 	// rewrite necessary data from ProvisioningOperation to operation internal.DeprovisioningOperation
 	op, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
 	if err != nil {
@@ -63,28 +100,48 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 		log.Info("waiting for provisioning operation to finish")
 		return operation, time.Minute, nil
 	}
+	operation.SMClientFactory = s.serviceManagerClientFactory
 
 	setAvsIds(&operation, op, log)
 
-	parameters, err := op.GetProvisioningParameters()
-	if err != nil {
-		return s.operationManager.OperationFailed(operation, "cannot get provisioning parameters from operation")
-	}
-	operation.SubAccountID = parameters.ErsContext.SubAccountID
-
-	err = operation.SetProvisioningParameters(parameters)
-	if err != nil {
-		log.Error("Aborting after failing to save provisioning parameters for operation")
-		return s.operationManager.OperationFailed(operation, err.Error())
+	operation.SubAccountID = operation.ProvisioningParameters.ErsContext.SubAccountID
+	operation.ProvisioningParameters = op.ProvisioningParameters
+	operation, repeat, _ := s.operationManager.UpdateOperation(operation)
+	if repeat != 0 {
+		log.Errorf("cannot save the operation")
+		return operation, time.Second, nil
 	}
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:
+		if operation.State == orchestration.Pending {
+			upgrades, err := s.operationStorage.ListUpgradeKymaOperationsByInstanceID(operation.InstanceID)
+			if err != nil {
+				log.Errorf("unable to get upgrade operations for the instance")
+				return operation, time.Second, nil
+			}
+
+			for _, op := range upgrades {
+				// check if there is not finished operation
+				if op.State != domain.Failed && op.State != domain.Succeeded {
+					log.Debugf("waiting for the operation %s to be finished", op.Operation.ID)
+					return operation, time.Minute, nil
+				}
+			}
+			log.Info("Setting state 'in progress' and refreshing instance details")
+			operation.State = domain.InProgress
+			operation.InstanceDetails = instance.InstanceDetails
+			operation, retry, _ := s.operationManager.UpdateOperation(operation)
+			if retry > 0 {
+				return operation, retry, nil
+			}
+		}
+
 		if operation.ProvisionerOperationID == "" {
 			return operation, 0, nil
 		}
-		log.Info("instance being removed, check operation status")
+		log.Info("runtime being removed, check operation status")
 		operation.RuntimeID = instance.RuntimeID
 		return s.checkRuntimeStatus(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
 	case dberr.IsNotFound(err):
@@ -122,9 +179,27 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 		msg = *status.Message
 	}
 
+	planID := instance.ServicePlanID
+
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
-		return s.operationManager.OperationSucceeded(operation, msg)
+		{
+			if !broker.IsTrialPlan(planID) {
+				hypType, err := hyperscaler.HyperscalerTypeForPlanID(planID)
+				if err != nil {
+					log.Errorf("after successful deprovisioning failing to hyperscaler release subscription - determine the type of Hyperscaler to use for planID: %s", planID)
+					return operation, 0, nil
+				}
+
+				err = s.accountProvider.MarkUnusedGardenerSecretAsDirty(hypType, instance.GlobalAccountID)
+				if err != nil {
+					log.Errorf("after successful deprovisioning failed to release hyperscaler subscription: %s", err)
+					return operation, 10 * time.Second, nil
+				}
+			}
+			return s.operationManager.OperationSucceeded(operation, msg)
+		}
+
 	case gqlschema.OperationStateInProgress:
 		return operation, 1 * time.Minute, nil
 	case gqlschema.OperationStatePending:
@@ -143,4 +218,22 @@ func (s *InitialisationStep) removeInstance(instanceID string) (time.Duration, e
 	}
 
 	return 0, nil
+}
+
+func (s *InitialisationStep) removeUserID(operation internal.DeprovisioningOperation) (internal.DeprovisioningOperation, time.Duration, error) {
+	operation.ProvisioningParameters.ErsContext.UserID = ""
+	return s.operationManager.UpdateOperation(operation)
+}
+
+func (s *InitialisationStep) removeRuntimeID(instanceID string) error {
+	inst, err := s.instanceStorage.GetByID(instanceID)
+	if err != nil {
+		return err
+	}
+
+	// empty RuntimeID means there is no runtime in the Provisioner Domain
+	inst.RuntimeID = ""
+
+	_, err = s.instanceStorage.Update(*inst)
+	return err
 }

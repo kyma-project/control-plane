@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Cluster Name",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "_show_form_view": true,
+  "_controlsOrder": [
+    "name"
+  ]
+}

@@ -16,15 +16,15 @@ type ExternalEvalAssistant struct {
 func NewExternalEvalAssistant(avsConfig Config) *ExternalEvalAssistant {
 	return &ExternalEvalAssistant{
 		avsConfig:   avsConfig,
-		retryConfig: &RetryConfig{maxTime: 90 * time.Minute, retryInterval: 1 * time.Minute},
+		retryConfig: &RetryConfig{maxTime: 20 * time.Minute, retryInterval: 30 * time.Second},
 	}
 }
 
-func (eea *ExternalEvalAssistant) CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, configForModel *configForModel, url string) (*BasicEvaluationCreateRequest, error) {
-	return newBasicEvaluationCreateRequest(operations, eea, configForModel, url)
+func (eea *ExternalEvalAssistant) CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, url string) (*BasicEvaluationCreateRequest, error) {
+	return newBasicEvaluationCreateRequest(operations, eea, url)
 }
 
-func (eea *ExternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionInputCreator, evaluationId int64) {
+func (eea *ExternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionerInputCreator, evaluationId int64, _ internal.ProvisioningParameters) {
 	//do nothing
 }
 
@@ -32,12 +32,24 @@ func (eea *ExternalEvalAssistant) IsAlreadyCreated(lifecycleData internal.AvsLif
 	return lifecycleData.AVSEvaluationExternalId != 0
 }
 
+func (eea *ExternalEvalAssistant) IsValid(lifecycleData internal.AvsLifecycleData) bool {
+	return eea.IsAlreadyCreated(lifecycleData) && !eea.IsAlreadyDeleted(lifecycleData)
+}
+
 func (eea *ExternalEvalAssistant) ProvideSuffix() string {
 	return "ext"
 }
 
-func (eea *ExternalEvalAssistant) ProvideTesterAccessId() int64 {
+func (eea *ExternalEvalAssistant) ProvideTesterAccessId(_ internal.ProvisioningParameters) int64 {
 	return eea.avsConfig.ExternalTesterAccessId
+}
+
+func (eea *ExternalEvalAssistant) ProvideGroupId(_ internal.ProvisioningParameters) int64 {
+	return eea.avsConfig.GroupId
+}
+
+func (eea *ExternalEvalAssistant) ProvideParentId(_ internal.ProvisioningParameters) int64 {
+	return eea.avsConfig.ParentId
 }
 
 func (eea *ExternalEvalAssistant) ProvideTags() []*Tag {
@@ -55,6 +67,28 @@ func (eea *ExternalEvalAssistant) SetEvalId(lifecycleData *internal.AvsLifecycle
 	lifecycleData.AVSEvaluationExternalId = evalId
 }
 
+func (eea *ExternalEvalAssistant) SetEvalStatus(lifecycleData *internal.AvsLifecycleData, status string) {
+	current := lifecycleData.AvsExternalEvaluationStatus.Current
+	if current != status {
+		if ValidStatus(current) {
+			lifecycleData.AvsExternalEvaluationStatus.Original = current
+		}
+		lifecycleData.AvsExternalEvaluationStatus.Current = status
+	}
+}
+
+func (eea *ExternalEvalAssistant) GetEvalStatus(lifecycleData internal.AvsLifecycleData) string {
+	return lifecycleData.AvsExternalEvaluationStatus.Current
+}
+
+func (eea *ExternalEvalAssistant) GetOriginalEvalStatus(lifecycleData internal.AvsLifecycleData) string {
+	return lifecycleData.AvsExternalEvaluationStatus.Original
+}
+
+func (eea *ExternalEvalAssistant) IsInMaintenance(lifecycleData internal.AvsLifecycleData) bool {
+	return lifecycleData.AvsExternalEvaluationStatus.Current == StatusMaintenance
+}
+
 func (eea *ExternalEvalAssistant) ProvideCheckType() string {
 	return externalEvalCheckType
 }
@@ -62,6 +96,7 @@ func (eea *ExternalEvalAssistant) ProvideCheckType() string {
 func (eea *ExternalEvalAssistant) IsAlreadyDeleted(lifecycleData internal.AvsLifecycleData) bool {
 	return lifecycleData.AVSExternalEvaluationDeleted
 }
+
 func (eea *ExternalEvalAssistant) GetEvaluationId(lifecycleData internal.AvsLifecycleData) int64 {
 	return lifecycleData.AVSEvaluationExternalId
 }

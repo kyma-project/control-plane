@@ -76,6 +76,7 @@ type ComplexityRoot struct {
 	}
 
 	GardenerConfig struct {
+		AllowPrivilegedContainers           func(childComplexity int) int
 		AutoScalerMax                       func(childComplexity int) int
 		AutoScalerMin                       func(childComplexity int) int
 		DiskType                            func(childComplexity int) int
@@ -99,18 +100,26 @@ type ComplexityRoot struct {
 		WorkerCidr                          func(childComplexity int) int
 	}
 
+	HibernationStatus struct {
+		Hibernated          func(childComplexity int) int
+		HibernationPossible func(childComplexity int) int
+	}
+
 	KymaConfig struct {
 		Components    func(childComplexity int) int
 		Configuration func(childComplexity int) int
+		Profile       func(childComplexity int) int
 		Version       func(childComplexity int) int
 	}
 
 	Mutation struct {
 		DeprovisionRuntime       func(childComplexity int, id string) int
+		HibernateRuntime         func(childComplexity int, id string) int
 		ProvisionRuntime         func(childComplexity int, config ProvisionRuntimeInput) int
 		ReconnectRuntimeAgent    func(childComplexity int, id string) int
 		RollBackUpgradeOperation func(childComplexity int, id string) int
 		UpgradeRuntime           func(childComplexity int, id string, config UpgradeRuntimeInput) int
+		UpgradeShoot             func(childComplexity int, id string, config UpgradeShootInput) int
 	}
 
 	OperationStatus struct {
@@ -138,6 +147,7 @@ type ComplexityRoot struct {
 	}
 
 	RuntimeStatus struct {
+		HibernationStatus       func(childComplexity int) int
 		LastOperationStatus     func(childComplexity int) int
 		RuntimeConfiguration    func(childComplexity int) int
 		RuntimeConnectionStatus func(childComplexity int) int
@@ -148,6 +158,8 @@ type MutationResolver interface {
 	ProvisionRuntime(ctx context.Context, config ProvisionRuntimeInput) (*OperationStatus, error)
 	UpgradeRuntime(ctx context.Context, id string, config UpgradeRuntimeInput) (*OperationStatus, error)
 	DeprovisionRuntime(ctx context.Context, id string) (string, error)
+	UpgradeShoot(ctx context.Context, id string, config UpgradeShootInput) (*OperationStatus, error)
+	HibernateRuntime(ctx context.Context, id string) (*OperationStatus, error)
 	RollBackUpgradeOperation(ctx context.Context, id string) (*RuntimeStatus, error)
 	ReconnectRuntimeAgent(ctx context.Context, id string) (string, error)
 }
@@ -275,6 +287,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GCPProviderConfig.Zones(childComplexity), true
+
+	case "GardenerConfig.allowPrivilegedContainers":
+		if e.complexity.GardenerConfig.AllowPrivilegedContainers == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.AllowPrivilegedContainers(childComplexity), true
 
 	case "GardenerConfig.autoScalerMax":
 		if e.complexity.GardenerConfig.AutoScalerMax == nil {
@@ -423,6 +442,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GardenerConfig.WorkerCidr(childComplexity), true
 
+	case "HibernationStatus.hibernated":
+		if e.complexity.HibernationStatus.Hibernated == nil {
+			break
+		}
+
+		return e.complexity.HibernationStatus.Hibernated(childComplexity), true
+
+	case "HibernationStatus.hibernationPossible":
+		if e.complexity.HibernationStatus.HibernationPossible == nil {
+			break
+		}
+
+		return e.complexity.HibernationStatus.HibernationPossible(childComplexity), true
+
 	case "KymaConfig.components":
 		if e.complexity.KymaConfig.Components == nil {
 			break
@@ -436,6 +469,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.KymaConfig.Configuration(childComplexity), true
+
+	case "KymaConfig.profile":
+		if e.complexity.KymaConfig.Profile == nil {
+			break
+		}
+
+		return e.complexity.KymaConfig.Profile(childComplexity), true
 
 	case "KymaConfig.version":
 		if e.complexity.KymaConfig.Version == nil {
@@ -455,6 +495,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeprovisionRuntime(childComplexity, args["id"].(string)), true
+
+	case "Mutation.hibernateRuntime":
+		if e.complexity.Mutation.HibernateRuntime == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_hibernateRuntime_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.HibernateRuntime(childComplexity, args["id"].(string)), true
 
 	case "Mutation.provisionRuntime":
 		if e.complexity.Mutation.ProvisionRuntime == nil {
@@ -503,6 +555,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpgradeRuntime(childComplexity, args["id"].(string), args["config"].(UpgradeRuntimeInput)), true
+
+	case "Mutation.upgradeShoot":
+		if e.complexity.Mutation.UpgradeShoot == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_upgradeShoot_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpgradeShoot(childComplexity, args["id"].(string), args["config"].(UpgradeShootInput)), true
 
 	case "OperationStatus.id":
 		if e.complexity.OperationStatus.ID == nil {
@@ -598,6 +662,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RuntimeConnectionStatus.Status(childComplexity), true
 
+	case "RuntimeStatus.hibernationStatus":
+		if e.complexity.RuntimeStatus.HibernationStatus == nil {
+			break
+		}
+
+		return e.complexity.RuntimeStatus.HibernationStatus(childComplexity), true
+
 	case "RuntimeStatus.lastOperationStatus":
 		if e.complexity.RuntimeStatus.LastOperationStatus == nil {
 			break
@@ -692,24 +763,25 @@ type RuntimeConfig {
 type GardenerConfig {
     name: String
     kubernetesVersion: String
-    volumeSizeGB: Int
+    targetSecret: String
+    provider: String
+    region: String
+    seed: String
     machineType: String
     machineImage: String
     machineImageVersion: String
-    region: String
-    provider: String
-    purpose: String
-    licenceType: String
-    seed: String
-    targetSecret: String
     diskType: String
+    volumeSizeGB: Int
     workerCidr: String
     autoScalerMin: Int
     autoScalerMax: Int
     maxSurge: Int
     maxUnavailable: Int
+    purpose: String
+    licenceType: String
     enableKubernetesVersionAutoUpdate: Boolean
     enableMachineImageVersionAutoUpdate: Boolean
+    allowPrivilegedContainers: Boolean
     providerSpecificConfig: ProviderSpecificConfig
 }
 
@@ -746,6 +818,7 @@ type ComponentConfiguration {
 
 type KymaConfig {
     version: String
+    profile: KymaProfile
     components: [ComponentConfiguration]
     configuration: [ConfigEntry]
 }
@@ -761,8 +834,10 @@ type OperationStatus {
 enum OperationType {
     Provision
     Upgrade
+    UpgradeShoot
     Deprovision
     ReconnectRuntime
+    Hibernate
 }
 
 type Error {
@@ -774,11 +849,18 @@ type RuntimeConnectionStatus {
     errors: [Error!]
 }
 
+
+type HibernationStatus {
+    hibernated: Boolean
+    hibernationPossible: Boolean
+}
+
 # We should consider renamig this type, as it contains more than just status.
 type RuntimeStatus {
     lastOperationStatus: OperationStatus
     runtimeConnectionStatus: RuntimeConnectionStatus
     runtimeConfiguration: RuntimeConfig
+    hibernationStatus: HibernationStatus
 }
 
 enum OperationState {
@@ -792,6 +874,11 @@ enum RuntimeAgentConnectionStatus {
     Pending
     Connected
     Disconnected
+}
+
+enum KymaProfile {
+    Evaluation
+    Production
 }
 
 # Inputs
@@ -814,25 +901,27 @@ input ClusterConfigInput {
     gardenerConfig: GardenerConfigInput!     # Gardener-specific configuration for the cluster to be provisioned
 }
 
-input GardenerConfigInput {                   # Gardener project in which the cluster is created
+input GardenerConfigInput {
+    name: String                                    # Name of the cluster
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
-    volumeSizeGB: Int!                              # Size of the available disk, provided in GB
+    provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
+    targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
+    region: String!                                 # Region in which the cluster is created
     machineType: String!                            # Type of node machines, varies depending on the target provider
     machineImage: String                            # Machine OS image name
     machineImageVersion: String                     # Machine OS image version
-    region: String!                                 # Region in which the cluster is created
-    provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
-    purpose: String                                 # Purpose is the purpose class for this cluster
-    licenceType: String                             # LicenceType informs about the licence type of the cluster (TestDevelopmentAndDemo)
-    targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
     diskType: String!                               # Disk type, varies depending on the target provider
+    volumeSizeGB: Int!                              # Size of the available disk, provided in GB
     workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes
     autoScalerMin: Int!                             # Minimum number of VMs to create
     autoScalerMax: Int!                             # Maximum number of VMs to create
     maxSurge: Int!                                  # Maximum number of VMs created during an update
     maxUnavailable: Int!                            # Maximum number of VMs that can be unavailable during an update
+    purpose: String                                 # Purpose is the purpose class for this cluster
+    licenceType: String                             # LicenceType informs about the licence type of the cluster (TestDevelopmentAndDemo)
     enableKubernetesVersionAutoUpdate: Boolean      # Enable KubernetesVersion AutoUpdate indicates whether the patch Kubernetes version may be automatically updated
     enableMachineImageVersionAutoUpdate: Boolean    # Enable MachineImageVersion AutoUpdate indicates whether the machine image version may be automatically updated
+    allowPrivilegedContainers: Boolean              # Allow Privileged Containers indicates whether privileged containers are allowed in the Shoot
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
 }
@@ -861,6 +950,7 @@ input AWSProviderConfigInput {
 
 input KymaConfigInput {
     version: String!                            # Kyma version to install on the cluster
+    profile: KymaProfile                        # Optional resources profile
     components: [ComponentConfigurationInput]!  # List of Kyma Components with specific configuration
     configuration: [ConfigEntryInput]           # Global Kyma configuration
 }
@@ -882,11 +972,36 @@ input UpgradeRuntimeInput {
     kymaConfig: KymaConfigInput! # Kyma config to upgrade to
 }
 
+# Shoot Upgrade Input
+
+input UpgradeShootInput {
+    gardenerConfig: GardenerUpgradeInput! # Gardener-specific configuration for the cluster to be upgraded
+}
+
+input GardenerUpgradeInput {
+    kubernetesVersion: String                     # Kubernetes version to be installed on the cluster
+    machineType: String                           # Type of node machines, varies depending on the target provider
+    diskType: String                              # Disk type, varies depending on the target provider
+    volumeSizeGB: Int                             # Size of the available disk, provided in GB
+    autoScalerMin: Int                            # Minimum number of VMs to create
+    autoScalerMax: Int                            # Maximum number of VMs to create
+    machineImage: String                          # Machine OS image name
+    machineImageVersion: String                   # Machine OS image version
+    maxSurge: Int                                 # Maximum number of VMs created during an update
+    maxUnavailable: Int                           # Maximum number of VMs that can be unavailable during an update
+    purpose: String                               # The purpose given to the cluster (development, evaluation, testing, production)
+    enableKubernetesVersionAutoUpdate: Boolean    # Enable KubernetesVersion AutoUpdate indicates whether the patch Kubernetes version may be automatically updated
+    enableMachineImageVersionAutoUpdate: Boolean  # Enable MachineImageVersion AutoUpdate indicates whether the machine image version may be automatically updated
+    providerSpecificConfig: ProviderSpecificInput # Additional parameters, vary depending on the target provider
+}
+
 type Mutation {
     # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
     provisionRuntime(config: ProvisionRuntimeInput!): OperationStatus
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): OperationStatus
     deprovisionRuntime(id: String!): String!
+    upgradeShoot(id: String!, config: UpgradeShootInput!): OperationStatus
+    hibernateRuntime(id: String!): OperationStatus
 
     # rollbackUpgradeOperation rolls back last upgrade operation for the Runtime but does not affect cluster in any way
     # can be used in case upgrade failed and the cluster was restored from the backup to align data stored in Provisioner database
@@ -911,6 +1026,20 @@ type Query {
 // region    ***************************** args.gotpl *****************************
 
 func (ec *executionContext) field_Mutation_deprovisionRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_hibernateRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -980,6 +1109,28 @@ func (ec *executionContext) field_Mutation_upgradeRuntime_args(ctx context.Conte
 	var arg1 UpgradeRuntimeInput
 	if tmp, ok := rawArgs["config"]; ok {
 		arg1, err = ec.unmarshalNUpgradeRuntimeInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeRuntimeInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["config"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_upgradeShoot_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 UpgradeShootInput
+	if tmp, ok := rawArgs["config"]; ok {
+		arg1, err = ec.unmarshalNUpgradeShootInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeShootInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1659,7 +1810,7 @@ func (ec *executionContext) _GardenerConfig_kubernetesVersion(ctx context.Contex
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GardenerConfig_volumeSizeGB(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _GardenerConfig_targetSecret(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1678,7 +1829,7 @@ func (ec *executionContext) _GardenerConfig_volumeSizeGB(ctx context.Context, fi
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.VolumeSizeGb, nil
+		return obj.TargetSecret, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1687,10 +1838,112 @@ func (ec *executionContext) _GardenerConfig_volumeSizeGB(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_provider(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Provider, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_region(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Region, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_seed(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Seed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _GardenerConfig_machineType(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
@@ -1795,210 +2048,6 @@ func (ec *executionContext) _GardenerConfig_machineImageVersion(ctx context.Cont
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GardenerConfig_region(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GardenerConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Region, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GardenerConfig_provider(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GardenerConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Provider, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GardenerConfig_purpose(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GardenerConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Purpose, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GardenerConfig_licenceType(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GardenerConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LicenceType, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GardenerConfig_seed(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GardenerConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Seed, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GardenerConfig_targetSecret(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "GardenerConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TargetSecret, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _GardenerConfig_diskType(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -2031,6 +2080,40 @@ func (ec *executionContext) _GardenerConfig_diskType(ctx context.Context, field 
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_volumeSizeGB(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VolumeSizeGb, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _GardenerConfig_workerCidr(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
@@ -2203,6 +2286,74 @@ func (ec *executionContext) _GardenerConfig_maxUnavailable(ctx context.Context, 
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _GardenerConfig_purpose(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Purpose, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_licenceType(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LicenceType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _GardenerConfig_enableKubernetesVersionAutoUpdate(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -2271,6 +2422,40 @@ func (ec *executionContext) _GardenerConfig_enableMachineImageVersionAutoUpdate(
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _GardenerConfig_allowPrivilegedContainers(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AllowPrivilegedContainers, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _GardenerConfig_providerSpecificConfig(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -2305,6 +2490,74 @@ func (ec *executionContext) _GardenerConfig_providerSpecificConfig(ctx context.C
 	return ec.marshalOProviderSpecificConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificConfig(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _HibernationStatus_hibernated(ctx context.Context, field graphql.CollectedField, obj *HibernationStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "HibernationStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Hibernated, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HibernationStatus_hibernationPossible(ctx context.Context, field graphql.CollectedField, obj *HibernationStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "HibernationStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HibernationPossible, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _KymaConfig_version(ctx context.Context, field graphql.CollectedField, obj *KymaConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -2337,6 +2590,40 @@ func (ec *executionContext) _KymaConfig_version(ctx context.Context, field graph
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _KymaConfig_profile(ctx context.Context, field graphql.CollectedField, obj *KymaConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "KymaConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Profile, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*KymaProfile)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOKymaProfile2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaProfile(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KymaConfig_components(ctx context.Context, field graphql.CollectedField, obj *KymaConfig) (ret graphql.Marshaler) {
@@ -2531,6 +2818,88 @@ func (ec *executionContext) _Mutation_deprovisionRuntime(ctx context.Context, fi
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_upgradeShoot(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_upgradeShoot_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpgradeShoot(rctx, args["id"].(string), args["config"].(UpgradeShootInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*OperationStatus)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_hibernateRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_hibernateRuntime_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().HibernateRuntime(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*OperationStatus)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_rollBackUpgradeOperation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3224,6 +3593,40 @@ func (ec *executionContext) _RuntimeStatus_runtimeConfiguration(ctx context.Cont
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalORuntimeConfig2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RuntimeStatus_hibernationStatus(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatus) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "RuntimeStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HibernationStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*HibernationStatus)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOHibernationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐHibernationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -4545,15 +4948,33 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 
 	for k, v := range asMap {
 		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "kubernetesVersion":
 			var err error
 			it.KubernetesVersion, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "volumeSizeGB":
+		case "provider":
 			var err error
-			it.VolumeSizeGb, err = ec.unmarshalNInt2int(ctx, v)
+			it.Provider, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "targetSecret":
+			var err error
+			it.TargetSecret, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "region":
+			var err error
+			it.Region, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4575,39 +4996,15 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-		case "region":
-			var err error
-			it.Region, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "provider":
-			var err error
-			it.Provider, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "purpose":
-			var err error
-			it.Purpose, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "licenceType":
-			var err error
-			it.LicenceType, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "targetSecret":
-			var err error
-			it.TargetSecret, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "diskType":
 			var err error
 			it.DiskType, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "volumeSizeGB":
+			var err error
+			it.VolumeSizeGb, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4641,6 +5038,18 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "purpose":
+			var err error
+			it.Purpose, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "licenceType":
+			var err error
+			it.LicenceType, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "enableKubernetesVersionAutoUpdate":
 			var err error
 			it.EnableKubernetesVersionAutoUpdate, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -4650,6 +5059,12 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 		case "enableMachineImageVersionAutoUpdate":
 			var err error
 			it.EnableMachineImageVersionAutoUpdate, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "allowPrivilegedContainers":
+			var err error
+			it.AllowPrivilegedContainers, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4671,6 +5086,102 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputGardenerUpgradeInput(ctx context.Context, obj interface{}) (GardenerUpgradeInput, error) {
+	var it GardenerUpgradeInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "kubernetesVersion":
+			var err error
+			it.KubernetesVersion, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "machineType":
+			var err error
+			it.MachineType, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "diskType":
+			var err error
+			it.DiskType, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "volumeSizeGB":
+			var err error
+			it.VolumeSizeGb, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "autoScalerMin":
+			var err error
+			it.AutoScalerMin, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "autoScalerMax":
+			var err error
+			it.AutoScalerMax, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "machineImage":
+			var err error
+			it.MachineImage, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "machineImageVersion":
+			var err error
+			it.MachineImageVersion, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "maxSurge":
+			var err error
+			it.MaxSurge, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "maxUnavailable":
+			var err error
+			it.MaxUnavailable, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "purpose":
+			var err error
+			it.Purpose, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "enableKubernetesVersionAutoUpdate":
+			var err error
+			it.EnableKubernetesVersionAutoUpdate, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "enableMachineImageVersionAutoUpdate":
+			var err error
+			it.EnableMachineImageVersionAutoUpdate, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "providerSpecificConfig":
+			var err error
+			it.ProviderSpecificConfig, err = ec.unmarshalOProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputKymaConfigInput(ctx context.Context, obj interface{}) (KymaConfigInput, error) {
 	var it KymaConfigInput
 	var asMap = obj.(map[string]interface{})
@@ -4680,6 +5191,12 @@ func (ec *executionContext) unmarshalInputKymaConfigInput(ctx context.Context, o
 		case "version":
 			var err error
 			it.Version, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "profile":
+			var err error
+			it.Profile, err = ec.unmarshalOKymaProfile2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaProfile(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4800,6 +5317,24 @@ func (ec *executionContext) unmarshalInputUpgradeRuntimeInput(ctx context.Contex
 		case "kymaConfig":
 			var err error
 			it.KymaConfig, err = ec.unmarshalNKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpgradeShootInput(ctx context.Context, obj interface{}) (UpgradeShootInput, error) {
+	var it UpgradeShootInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "gardenerConfig":
+			var err error
+			it.GardenerConfig, err = ec.unmarshalNGardenerUpgradeInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerUpgradeInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5030,28 +5565,24 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_name(ctx, field, obj)
 		case "kubernetesVersion":
 			out.Values[i] = ec._GardenerConfig_kubernetesVersion(ctx, field, obj)
-		case "volumeSizeGB":
-			out.Values[i] = ec._GardenerConfig_volumeSizeGB(ctx, field, obj)
+		case "targetSecret":
+			out.Values[i] = ec._GardenerConfig_targetSecret(ctx, field, obj)
+		case "provider":
+			out.Values[i] = ec._GardenerConfig_provider(ctx, field, obj)
+		case "region":
+			out.Values[i] = ec._GardenerConfig_region(ctx, field, obj)
+		case "seed":
+			out.Values[i] = ec._GardenerConfig_seed(ctx, field, obj)
 		case "machineType":
 			out.Values[i] = ec._GardenerConfig_machineType(ctx, field, obj)
 		case "machineImage":
 			out.Values[i] = ec._GardenerConfig_machineImage(ctx, field, obj)
 		case "machineImageVersion":
 			out.Values[i] = ec._GardenerConfig_machineImageVersion(ctx, field, obj)
-		case "region":
-			out.Values[i] = ec._GardenerConfig_region(ctx, field, obj)
-		case "provider":
-			out.Values[i] = ec._GardenerConfig_provider(ctx, field, obj)
-		case "purpose":
-			out.Values[i] = ec._GardenerConfig_purpose(ctx, field, obj)
-		case "licenceType":
-			out.Values[i] = ec._GardenerConfig_licenceType(ctx, field, obj)
-		case "seed":
-			out.Values[i] = ec._GardenerConfig_seed(ctx, field, obj)
-		case "targetSecret":
-			out.Values[i] = ec._GardenerConfig_targetSecret(ctx, field, obj)
 		case "diskType":
 			out.Values[i] = ec._GardenerConfig_diskType(ctx, field, obj)
+		case "volumeSizeGB":
+			out.Values[i] = ec._GardenerConfig_volumeSizeGB(ctx, field, obj)
 		case "workerCidr":
 			out.Values[i] = ec._GardenerConfig_workerCidr(ctx, field, obj)
 		case "autoScalerMin":
@@ -5062,12 +5593,44 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_maxSurge(ctx, field, obj)
 		case "maxUnavailable":
 			out.Values[i] = ec._GardenerConfig_maxUnavailable(ctx, field, obj)
+		case "purpose":
+			out.Values[i] = ec._GardenerConfig_purpose(ctx, field, obj)
+		case "licenceType":
+			out.Values[i] = ec._GardenerConfig_licenceType(ctx, field, obj)
 		case "enableKubernetesVersionAutoUpdate":
 			out.Values[i] = ec._GardenerConfig_enableKubernetesVersionAutoUpdate(ctx, field, obj)
 		case "enableMachineImageVersionAutoUpdate":
 			out.Values[i] = ec._GardenerConfig_enableMachineImageVersionAutoUpdate(ctx, field, obj)
+		case "allowPrivilegedContainers":
+			out.Values[i] = ec._GardenerConfig_allowPrivilegedContainers(ctx, field, obj)
 		case "providerSpecificConfig":
 			out.Values[i] = ec._GardenerConfig_providerSpecificConfig(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var hibernationStatusImplementors = []string{"HibernationStatus"}
+
+func (ec *executionContext) _HibernationStatus(ctx context.Context, sel ast.SelectionSet, obj *HibernationStatus) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, hibernationStatusImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("HibernationStatus")
+		case "hibernated":
+			out.Values[i] = ec._HibernationStatus_hibernated(ctx, field, obj)
+		case "hibernationPossible":
+			out.Values[i] = ec._HibernationStatus_hibernationPossible(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5092,6 +5655,8 @@ func (ec *executionContext) _KymaConfig(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = graphql.MarshalString("KymaConfig")
 		case "version":
 			out.Values[i] = ec._KymaConfig_version(ctx, field, obj)
+		case "profile":
+			out.Values[i] = ec._KymaConfig_profile(ctx, field, obj)
 		case "components":
 			out.Values[i] = ec._KymaConfig_components(ctx, field, obj)
 		case "configuration":
@@ -5131,6 +5696,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "upgradeShoot":
+			out.Values[i] = ec._Mutation_upgradeShoot(ctx, field)
+		case "hibernateRuntime":
+			out.Values[i] = ec._Mutation_hibernateRuntime(ctx, field)
 		case "rollBackUpgradeOperation":
 			out.Values[i] = ec._Mutation_rollBackUpgradeOperation(ctx, field)
 		case "reconnectRuntimeAgent":
@@ -5313,6 +5882,8 @@ func (ec *executionContext) _RuntimeStatus(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._RuntimeStatus_runtimeConnectionStatus(ctx, field, obj)
 		case "runtimeConfiguration":
 			out.Values[i] = ec._RuntimeStatus_runtimeConfiguration(ctx, field, obj)
+		case "hibernationStatus":
+			out.Values[i] = ec._RuntimeStatus_hibernationStatus(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5641,6 +6212,18 @@ func (ec *executionContext) unmarshalNGardenerConfigInput2ᚖgithubᚗcomᚋkyma
 	return &res, err
 }
 
+func (ec *executionContext) unmarshalNGardenerUpgradeInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerUpgradeInput(ctx context.Context, v interface{}) (GardenerUpgradeInput, error) {
+	return ec.unmarshalInputGardenerUpgradeInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNGardenerUpgradeInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerUpgradeInput(ctx context.Context, v interface{}) (*GardenerUpgradeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNGardenerUpgradeInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerUpgradeInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
 	return graphql.UnmarshalInt(v)
 }
@@ -5767,6 +6350,10 @@ func (ec *executionContext) marshalNString2ᚕstring(ctx context.Context, sel as
 
 func (ec *executionContext) unmarshalNUpgradeRuntimeInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeRuntimeInput(ctx context.Context, v interface{}) (UpgradeRuntimeInput, error) {
 	return ec.unmarshalInputUpgradeRuntimeInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNUpgradeShootInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐUpgradeShootInput(ctx context.Context, v interface{}) (UpgradeShootInput, error) {
+	return ec.unmarshalInputUpgradeShootInput(ctx, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -6251,6 +6838,17 @@ func (ec *executionContext) marshalOGardenerConfig2ᚖgithubᚗcomᚋkymaᚑproj
 	return ec._GardenerConfig(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOHibernationStatus2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐHibernationStatus(ctx context.Context, sel ast.SelectionSet, v HibernationStatus) graphql.Marshaler {
+	return ec._HibernationStatus(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOHibernationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐHibernationStatus(ctx context.Context, sel ast.SelectionSet, v *HibernationStatus) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._HibernationStatus(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}) (int, error) {
 	return graphql.UnmarshalInt(v)
 }
@@ -6283,6 +6881,30 @@ func (ec *executionContext) marshalOKymaConfig2ᚖgithubᚗcomᚋkymaᚑproject�
 		return graphql.Null
 	}
 	return ec._KymaConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOKymaProfile2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaProfile(ctx context.Context, v interface{}) (KymaProfile, error) {
+	var res KymaProfile
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOKymaProfile2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaProfile(ctx context.Context, sel ast.SelectionSet, v KymaProfile) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOKymaProfile2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaProfile(ctx context.Context, v interface{}) (*KymaProfile, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOKymaProfile2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaProfile(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOKymaProfile2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaProfile(ctx context.Context, sel ast.SelectionSet, v *KymaProfile) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOLabels2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx context.Context, v interface{}) (Labels, error) {
@@ -6322,6 +6944,18 @@ func (ec *executionContext) marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑpro
 
 func (ec *executionContext) marshalOProviderSpecificConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificConfig(ctx context.Context, sel ast.SelectionSet, v ProviderSpecificConfig) graphql.Marshaler {
 	return ec._ProviderSpecificConfig(ctx, sel, &v)
+}
+
+func (ec *executionContext) unmarshalOProviderSpecificInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (ProviderSpecificInput, error) {
+	return ec.unmarshalInputProviderSpecificInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx context.Context, v interface{}) (*ProviderSpecificInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOProviderSpecificInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalORuntimeConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐRuntimeConfig(ctx context.Context, sel ast.SelectionSet, v RuntimeConfig) graphql.Marshaler {

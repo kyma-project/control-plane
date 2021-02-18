@@ -70,6 +70,8 @@ func (e *Executor) Execute(operationID string) ProcessingResult {
 		return ProcessingResult{Requeue: true, Delay: defaultDelay}
 	}
 
+	log = log.WithField("ShootName", cluster.ClusterConfig.Name)
+
 	if operation.Type == e.operation {
 		requeue, delay, err := e.process(operation, cluster, log)
 		if err != nil {
@@ -169,7 +171,7 @@ func (e *Executor) updateOperationStatus(log logrus.FieldLogger, id, message str
 		return e.dbSession.UpdateOperationState(id, message, state, t)
 	}, retry.Attempts(5))
 	if err != nil {
-		log.Errorf("Failed to set operation status to %s: %s", state, err.Error())
+		log.Infof("Cannot set operation status to %s: %s", state, err.Error())
 	}
 }
 
@@ -178,7 +180,7 @@ func (e *Executor) setRuntimeStatusCondition(log logrus.FieldLogger, id, tenant 
 		return e.directorClient.SetRuntimeStatusCondition(id, graphql.RuntimeStatusConditionFailed, tenant)
 	}, retry.Attempts(5), retry.Delay(backOffDirectorDelay), retry.DelayType(retry.BackOffDelay))
 	if err != nil {
-		log.Errorf("failed to set runtime %s status condition: %s", graphql.RuntimeStatusConditionFailed.String(), err.Error())
+		log.Infof("Cannot set runtime %s status condition: %s", graphql.RuntimeStatusConditionFailed.String(), err.Error())
 	}
 }
 
@@ -187,6 +189,6 @@ func (e *Executor) updateOperationStage(log logrus.FieldLogger, id, message stri
 		return e.dbSession.TransitionOperation(id, message, stage, t)
 	}, retry.Attempts(5))
 	if err != nil {
-		log.Errorf("Failed to modify operation stage to %s: %s", stage, err.Error())
+		log.Infof("Cannot modify operation stage to %s: %s", stage, err.Error())
 	}
 }

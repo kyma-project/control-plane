@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/machinebox/graphql"
+	"github.com/kyma-project/control-plane/components/provisioner/third_party/machinebox/graphql"
 	"github.com/sirupsen/logrus"
 )
 

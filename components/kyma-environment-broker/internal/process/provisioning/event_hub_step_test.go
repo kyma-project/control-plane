@@ -6,6 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
+
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
@@ -16,22 +20,16 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
+	hyperscalerautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
+	azuretesting "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure/testing"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler"
-	hyperscalerautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/automock"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/azure"
-	azuretesting "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/azure/testing"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input"
-	inputAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
+	inputAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-)
-
-const (
-	fixSubAccountID = "test-sub-account-id"
-	fixInstanceID   = "test-instance-id"
-	fixOperationID  = "test-operation-id"
 )
 
 func fixLogger() logrus.FieldLogger {
@@ -45,7 +43,7 @@ func Test_HappyPath(t *testing.T) {
 	accountProvider := fixAccountProvider()
 	namespaceClient := azuretesting.NewFakeNamespaceClientHappyPath()
 	step := fixEventHubStep(memoryStorage.Operations(), azuretesting.NewFakeHyperscalerProvider(namespaceClient), accountProvider)
-	op := fixProvisioningOperation(t)
+	op := fixProvisioningOperation(t, broker.AzurePlanID, "westeurope")
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
 	err := memoryStorage.Operations().InsertProvisioningOperation(op)
 	require.NoError(t, err)
@@ -54,33 +52,24 @@ func Test_HappyPath(t *testing.T) {
 	op.UpdatedAt = time.Now()
 	op, when, err := step.Run(op, fixLogger())
 	require.NoError(t, err)
-	provisionRuntimeInput, err := op.InputCreator.Create()
+	provisionRuntimeInput, err := op.InputCreator.CreateProvisionRuntimeInput()
 	require.NoError(t, err)
 
 	// then
 	ensureOperationSuccessful(t, op, when, err)
 	allOverridesFound := ensureOverrides(t, provisionRuntimeInput)
-	assert.True(t, allOverridesFound[componentNameKnativeEventing], "overrides for %s were not found", componentNameKnativeEventing)
-	assert.True(t, allOverridesFound[componentNameKnativeEventingKafka], "overrides for %s were not found", componentNameKnativeEventingKafka)
+	assert.True(t, allOverridesFound[components.KnativeEventing], "overrides for %s were not found", components.KnativeEventing)
+	assert.True(t, allOverridesFound[components.KnativeEventingKafka], "overrides for %s were not found", components.KnativeEventingKafka)
 	assert.Equal(t, namespaceClient.Tags, tags)
 }
 
 func Test_StepsUnhappyPath(t *testing.T) {
 	tests := []struct {
 		name                string
-		giveOperation       func(t *testing.T) internal.ProvisioningOperation
+		giveOperation       func(t *testing.T, planID, region string) internal.ProvisioningOperation
 		giveStep            func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep
 		wantRepeatOperation bool
 	}{
-		{
-			name:          "Provision parameter errors",
-			giveOperation: fixInvalidProvisioningOperation,
-			giveStep: func(t *testing.T, storage storage.BrokerStorage) ProvisionAzureEventHubStep {
-				accountProvider := fixAccountProvider()
-				return *fixEventHubStep(storage.Operations(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
-			},
-			wantRepeatOperation: false,
-		},
 		{
 			name:          "AccountProvider cannot get gardener credentials",
 			giveOperation: fixProvisioningOperation,
@@ -166,7 +155,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 
 			// given
 			memoryStorage := storage.NewMemoryStorage()
-			op := tt.giveOperation(t)
+			op := tt.giveOperation(t, broker.AzurePlanID, "westeurope")
 			step := tt.giveStep(t, memoryStorage)
 			// this is required to avoid storage retries (without this statement there will be an error => retry)
 			err := memoryStorage.Operations().InsertProvisioningOperation(op)
@@ -236,14 +225,14 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 	t.Helper()
 
 	allOverridesFound := map[string]bool{
-		componentNameKnativeEventing:      false,
-		componentNameKnativeEventingKafka: false,
+		components.KnativeEventing:      false,
+		components.KnativeEventingKafka: false,
 	}
 
 	kymaConfig := provisionRuntimeInput.KymaConfig
 	for _, component := range kymaConfig.Components {
 		switch component.Component {
-		case componentNameKnativeEventing:
+		case components.KnativeEventing:
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "knative-eventing.channel.default.apiVersion",
 				Value:  "knativekafka.kyma-project.io/v1alpha1",
@@ -254,8 +243,8 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 				Value:  "KafkaChannel",
 				Secret: nil,
 			})
-			allOverridesFound[componentNameKnativeEventing] = true
-		case componentNameKnativeEventingKafka:
+			allOverridesFound[components.KnativeEventing] = true
+		case components.KnativeEventingKafka:
 			assert.Contains(t, component.Configuration, &gqlschema.ConfigEntryInput{
 				Key:    "kafka.brokers.hostname",
 				Value:  "name",
@@ -291,14 +280,14 @@ func ensureOverrides(t *testing.T, provisionRuntimeInput gqlschema.ProvisionRunt
 				Value:  kafkaProvider,
 				Secret: ptr.Bool(true),
 			})
-			allOverridesFound[componentNameKnativeEventingKafka] = true
+			allOverridesFound[components.KnativeEventingKafka] = true
 		}
 	}
 
 	return allOverridesFound
 }
 
-func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
+func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 	optComponentsSvc := &inputAutomock.OptionalComponentService{}
 	componentConfigurationInputList := internal.ComponentConfigurationInputList{
 		{
@@ -307,16 +296,16 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 			Configuration: nil,
 		},
 		{
-			Component: componentNameKnativeEventing,
+			Component: components.KnativeEventing,
 			Namespace: "knative-eventing",
 		},
 		{
-			Component: componentNameKnativeEventingKafka,
+			Component: components.KnativeEventingKafka,
 			Namespace: "knative-eventing",
 		},
 	}
-
-	optComponentsSvc.On("ComputeComponentsToDisable", []string(nil)).Return([]string{})
+	// "KnativeEventingKafka"
+	optComponentsSvc.On("ComputeComponentsToDisable", []string{}).Return([]string{})
 	optComponentsSvc.On("ExecuteDisablers", mock.Anything).Return(componentConfigurationInputList, nil)
 
 	kymaComponentList := []v1alpha1.KymaComponent{
@@ -325,11 +314,11 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 			Namespace: "kyma-system",
 		},
 		{
-			Name:      componentNameKnativeEventing,
+			Name:      components.KnativeEventing,
 			Namespace: "knative-eventing",
 		},
 		{
-			Name:      componentNameKnativeEventingKafka,
+			Name:      components.KnativeEventingKafka,
 			Namespace: "knative-eventing",
 		},
 	}
@@ -337,10 +326,16 @@ func fixKnativeKafkaInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	componentsProvider.On("AllComponents", kymaVersion).Return(kymaComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
-	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, componentsProvider, input.Config{}, kymaVersion)
+	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{}, kymaVersion, fixTrialRegionMapping())
 	assert.NoError(t, err)
+	pp := internal.ProvisioningParameters{
+		PlanID: broker.GCPPlanID,
+		Parameters: internal.ProvisioningParametersDTO{
+			KymaVersion: "",
+		},
+	}
 
-	creator, err := ibf.ForPlan(broker.GCPPlanID, "")
+	creator, err := ibf.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: kymaVersion, Origin: internal.Defaults})
 	if err != nil {
 		t.Errorf("cannot create input creator for %q plan", broker.GCPPlanID)
 	}
@@ -376,45 +371,27 @@ func fixEventHubStep(memoryStorageOp storage.Operations, hyperscalerProvider azu
 	return NewProvisionAzureEventHubStep(memoryStorageOp, hyperscalerProvider, accountProvider, context.Background())
 }
 
-func fixProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
+func fixProvisioningOperation(t *testing.T, planID, region string) internal.ProvisioningOperation {
 	op := internal.ProvisioningOperation{
 		Operation: internal.Operation{
-			ID:         fixOperationID,
-			InstanceID: fixInstanceID,
+			ID:                     operationID,
+			InstanceID:             instanceID,
+			ProvisioningParameters: fixProvisioningParameters(planID, region),
 		},
-		ProvisioningParameters: `{
-			"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
-			"ers_context": {
-				"subaccount_id": "` + fixSubAccountID + `"
-			},
-			"parameters": {
-				"name": "nachtmaar-15",
-				"components": [],
-				"region": "westeurope"
-			}
-		}`,
 		InputCreator: fixKnativeKafkaInputCreator(t),
-	}
-	return op
-}
-
-func fixInvalidProvisioningOperation(t *testing.T) internal.ProvisioningOperation {
-	op := internal.ProvisioningOperation{
-		Operation: internal.Operation{},
-		// ups .. invalid json
-		ProvisioningParameters: `{
-			"parameters": a{}a
-		}`,
-		InputCreator: fixKnativeKafkaInputCreator(t),
+		RuntimeVersion: internal.RuntimeVersionData{
+			Version: "1.8.0",
+			Origin:  internal.Defaults,
+		},
 	}
 	return op
 }
 
 func fixTags() azure.Tags {
 	return azure.Tags{
-		azure.TagSubAccountID: ptr.String(fixSubAccountID),
-		azure.TagOperationID:  ptr.String(fixOperationID),
-		azure.TagInstanceID:   ptr.String(fixInstanceID),
+		azure.TagSubAccountID: ptr.String(subAccountID),
+		azure.TagOperationID:  ptr.String(operationID),
+		azure.TagInstanceID:   ptr.String(instanceID),
 	}
 }
 

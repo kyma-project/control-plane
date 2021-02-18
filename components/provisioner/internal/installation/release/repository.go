@@ -5,18 +5,18 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
+	"github.com/lib/pq"
+)
+
+const (
+	UniqueConstraintViolationError = "23505"
 )
 
 //go:generate mockery -name=Repository
 type Repository interface {
-	Provider
+	GetReleaseByVersion(version string) (model.Release, dberrors.Error)
 	ReleaseExists(version string) (bool, dberrors.Error)
 	SaveRelease(artifacts model.Release) (model.Release, dberrors.Error)
-}
-
-//go:generate mockery -name=Provider
-type Provider interface {
-	GetReleaseByVersion(version string) (model.Release, dberrors.Error)
 }
 
 func NewReleaseRepository(connection *dbr.Connection, generator uuid.UUIDGenerator) *releaseRepository {
@@ -74,6 +74,11 @@ func (r releaseRepository) SaveRelease(artifacts model.Release) (model.Release, 
 		Exec()
 
 	if err != nil {
+		// The artifacts could be saved by different thread before
+		psqlErr, converted := err.(*pq.Error)
+		if converted && psqlErr.Code == UniqueConstraintViolationError {
+			return model.Release{}, dberrors.AlreadyExists("Artifacts for version %s already exist: %s", artifacts.Version, err.Error())
+		}
 		return model.Release{}, dberrors.Internal("Failed to save Kyma release artifacts for version %s: %s", artifacts.Version, err.Error())
 	}
 

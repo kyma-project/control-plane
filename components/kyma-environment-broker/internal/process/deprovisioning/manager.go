@@ -5,6 +5,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -65,14 +67,20 @@ func (m *Manager) runStep(step Step, operation internal.DeprovisioningOperation,
 func (m *Manager) Execute(operationID string) (time.Duration, error) {
 	op, err := m.operationStorage.GetDeprovisioningOperationByID(operationID)
 	if err != nil {
-		m.log.Errorf("Cannot fetch operation from storage: %s", err)
+		m.log.Errorf("Cannot fetch DeprovisioningOperation from storage: %s", err)
 		return 3 * time.Second, nil
 	}
 	operation := *op
 
-	var when time.Duration
-	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID})
+	provisioningOp, err := m.operationStorage.GetProvisioningOperationByInstanceID(op.InstanceID)
+	if err != nil {
+		m.log.Errorf("Cannot fetch ProvisioningOperation for instanceID %s from storage: %s", op.InstanceID, err)
+		return 0, err
+	}
 
+	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID, "planID": provisioningOp.ProvisioningParameters.PlanID})
+
+	var when time.Duration
 	logOperation.Info("Start process operation steps")
 	for _, weightStep := range m.sortWeight() {
 		steps := m.steps[weightStep]
@@ -85,7 +93,11 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 				logStep.Errorf("Process operation failed: %s", err)
 				return 0, err
 			}
-			if operation.State != domain.InProgress {
+			if operation.State != domain.InProgress && operation.State != orchestration.Pending {
+				if operation.RuntimeID == "" && operation.State == domain.Succeeded {
+					logStep.Infof("Operation %q has no runtime ID. Process finished.", operation.ID)
+					return when, nil
+				}
 				logStep.Infof("Operation %q got status %s. Process finished.", operation.ID, operation.State)
 				return 0, nil
 			}
@@ -99,7 +111,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 		}
 	}
 
-	logrus.Infof("Operation %q got status %s. Process finished.", operation.ID, operation.State)
+	logOperation.Infof("Operation %q got status %s. All steps finished.", operation.ID, operation.State)
 	return 0, nil
 }
 

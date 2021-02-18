@@ -7,7 +7,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
-	dbr "github.com/gocraft/dbr/v2"
+	"github.com/gocraft/dbr/v2"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 )
@@ -102,7 +102,7 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 			"volume_size_gb", "disk_type", "machine_type", "machine_image", "machine_image_version",
 			"provider", "purpose", "seed", "target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
 			"max_surge", "max_unavailable", "enable_kubernetes_version_auto_update",
-			"enable_machine_image_version_auto_update", "provider_specific_config").
+			"enable_machine_image_version_auto_update", "allow_privileged_containers", "provider_specific_config").
 		From("gardener_config").
 		Join("cluster", "gardener_config.cluster_id=cluster.id").
 		Where(dbr.Eq("name", name)).
@@ -137,6 +137,7 @@ type kymaComponentConfigDTO struct {
 	KymaConfigID        string
 	GlobalConfiguration []byte
 	ReleaseID           string
+	Profile             *string
 	Version             string
 	TillerYAML          string
 	InstallerYAML       string
@@ -191,6 +192,12 @@ func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, db
 		return model.KymaConfig{}, dberrors.Internal("Failed to unmarshal global configuration: %s", err.Error())
 	}
 
+	var kymaProfile *model.KymaProfile
+	if c[0].Profile != nil {
+		profile := model.KymaProfile(*c[0].Profile)
+		kymaProfile = &profile
+	}
+
 	return model.KymaConfig{
 		ID: c[0].KymaConfigID,
 		Release: model.Release{
@@ -199,6 +206,7 @@ func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, db
 			TillerYAML:    c[0].TillerYAML,
 			InstallerYAML: c[0].InstallerYAML,
 		},
+		Profile:             kymaProfile,
 		Components:          orderedComponents,
 		GlobalConfiguration: globalConfiguration,
 		ClusterID:           runtimeID,
@@ -209,7 +217,7 @@ func (r readSession) getKymaConfig(runtimeID, kymaConfigId string) (model.KymaCo
 	var kymaConfig kymaConfigDTO
 
 	rowsCount, err := r.session.
-		Select("kyma_config_id", "kyma_config.release_id", "kyma_config.global_configuration",
+		Select("kyma_config_id", "kyma_config.release_id", "kyma_config.profile", "kyma_config.global_configuration",
 			"kyma_component_config.id", "kyma_component_config.component", "kyma_component_config.namespace",
 			"kyma_component_config.source_url", "kyma_component_config.configuration",
 			"kyma_component_config.component_order",
@@ -256,7 +264,7 @@ func (r readSession) getGardenerConfig(runtimeID string) (model.GardenerConfig, 
 			"volume_size_gb", "disk_type", "machine_type", "machine_image", "machine_image_version", "provider", "purpose", "seed",
 			"target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
 			"max_surge", "max_unavailable", "enable_kubernetes_version_auto_update",
-			"enable_machine_image_version_auto_update", "provider_specific_config").
+			"enable_machine_image_version_auto_update", "allow_privileged_containers", "provider_specific_config").
 		From("cluster").
 		Join("gardener_config", "cluster.id=gardener_config.cluster_id").
 		Where(dbr.Eq("cluster.id", runtimeID)).

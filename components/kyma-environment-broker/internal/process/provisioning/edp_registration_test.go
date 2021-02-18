@@ -1,15 +1,12 @@
 package provisioning
 
 import (
-	"encoding/base64"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
 	"github.com/stretchr/testify/assert"
@@ -24,26 +21,7 @@ const (
 func TestEDPRegistration_Run(t *testing.T) {
 	// given
 	memoryStorage := storage.NewMemoryStorage()
-	client := &automock.EDPClient{}
-	client.On("CreateDataTenant", edp.DataTenantPayload{
-		Name:        edpName,
-		Environment: edpEnvironment,
-		// it is copy of body `generateSecret` method in `EDPRegistrationStep` step
-		Secret: base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s%s", edpName, edpEnvironment))),
-	}).Return(nil).Once()
-	client.On("CreateMetadataTenant", edpName, edpEnvironment, edp.MetadataTenantPayload{
-		Key:   edp.MaasConsumerEnvironmentKey,
-		Value: "CF",
-	}).Return(nil).Once()
-	client.On("CreateMetadataTenant", edpName, edpEnvironment, edp.MetadataTenantPayload{
-		Key:   edp.MaasConsumerRegionKey,
-		Value: edpRegion,
-	}).Return(nil).Once()
-	client.On("CreateMetadataTenant", edpName, edpEnvironment, edp.MetadataTenantPayload{
-		Key:   edp.MaasConsumerSubAccountKey,
-		Value: edpName,
-	}).Return(nil).Once()
-	defer client.AssertExpectations(t)
+	client := edp.NewFakeClient()
 
 	step := NewEDPRegistrationStep(memoryStorage.Operations(), client, edp.Config{
 		Environment: edpEnvironment,
@@ -52,12 +30,44 @@ func TestEDPRegistration_Run(t *testing.T) {
 
 	// when
 	_, repeat, err := step.Run(internal.ProvisioningOperation{
-		ProvisioningParameters: `{"platform_region":"` + edpRegion + `", "ers_context":{"subaccount_id":"` + edpName + `"}}`,
+		Operation: internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{
+				PlatformRegion: edpRegion,
+				ErsContext: internal.ERSContext{
+					SubAccountID: edpName,
+				},
+			},
+		},
 	}, logger.NewLogDummy())
 
 	// then
 	assert.Equal(t, 0*time.Second, repeat)
 	assert.NoError(t, err)
+
+	dataTenant, dataTenantExists := client.GetDataTenantItem(edpName, edpEnvironment)
+	assert.True(t, dataTenantExists)
+	assert.Equal(t, edp.DataTenantItem{
+		Name:        edpName,
+		Environment: edpEnvironment,
+	}, dataTenant)
+
+	for key, value := range map[string]string{
+		edp.MaasConsumerEnvironmentKey: step.selectEnvironmentKey(edpRegion, logger.NewLogDummy()),
+		edp.MaasConsumerRegionKey:      edpRegion,
+		edp.MaasConsumerSubAccountKey:  edpName,
+	} {
+		metadataTenant, metadataTenantExists := client.GetMetadataItem(edpName, edpEnvironment, key)
+		assert.True(t, metadataTenantExists)
+		assert.Equal(t, edp.MetadataItem{
+			DataTenant: edp.DataTenantItem{
+				Name:        edpName,
+				Environment: edpEnvironment,
+			},
+			Key:   key,
+			Value: value,
+		}, metadataTenant)
+	}
+
 }
 
 func TestEDPRegistrationStep_selectEnvironmentKey(t *testing.T) {

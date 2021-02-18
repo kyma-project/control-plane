@@ -8,29 +8,24 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// OptionalComponentNamesProvider provides optional components names
-type OptionalComponentNamesProvider interface {
-	GetAllOptionalComponentsNames() []string
-}
-
 type ServicesEndpoint struct {
 	log logrus.FieldLogger
+	cfg Service
 
-	optionalComponents OptionalComponentNamesProvider
-	enabledPlanIDs     map[string]struct{}
+	enabledPlanIDs map[string]struct{}
 }
 
-func NewServices(cfg Config, optComponentsSvc OptionalComponentNamesProvider, log logrus.FieldLogger) *ServicesEndpoint {
+func NewServices(cfg Config, log logrus.FieldLogger) *ServicesEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
-		id := planIDsMapping[planName]
+		id := PlanIDsMapping[planName]
 		enabledPlanIDs[id] = struct{}{}
 	}
 
 	return &ServicesEndpoint{
-		log:                log.WithField("service", "ServicesEndpoint"),
-		optionalComponents: optComponentsSvc,
-		enabledPlanIDs:     enabledPlanIDs,
+		log:            log.WithField("service", "ServicesEndpoint"),
+		cfg:            cfg.Service,
+		enabledPlanIDs: enabledPlanIDs,
 	}
 }
 
@@ -46,9 +41,8 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 		}
 		p := plan.PlanDefinition
 		err := json.Unmarshal(plan.provisioningRawSchema, &p.Schemas.Instance.Create.Parameters)
-		b.addComponentsToSchema(&p.Schemas.Instance.Create.Parameters)
 		if err != nil {
-			b.log.Errorf("Could not decode provisioning schema: %s", err)
+			b.log.Errorf("while unmarshal schema: %s", err)
 			return nil, err
 		}
 		availableServicePlans = append(availableServicePlans, p)
@@ -56,33 +50,25 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 
 	return []domain.Service{
 		{
-			ID:          KymaServiceID,
-			Name:        KymaServiceName,
-			Description: "[EXPERIMENTAL] Service Class for Kyma Runtime",
-			Bindable:    true,
-			Plans:       availableServicePlans,
-			Metadata: &domain.ServiceMetadata{
-				DisplayName:         "Kyma Runtime",
-				LongDescription:     "Kyma Runtime experimental service class",
-				DocumentationUrl:    "kyma-project.io",
-				ProviderDisplayName: "SAP",
-			},
+			ID:                   KymaServiceID,
+			Name:                 KymaServiceName,
+			Description:          "[EXPERIMENTAL] Service Class for Kyma Runtime",
+			Bindable:             true,
+			InstancesRetrievable: true,
 			Tags: []string{
 				"SAP",
 				"Kyma",
 			},
-			InstancesRetrievable: true,
+			Plans: availableServicePlans,
+			Metadata: &domain.ServiceMetadata{
+				DisplayName:         b.cfg.DisplayName,
+				ImageUrl:            b.cfg.ImageUrl,
+				LongDescription:     b.cfg.LongDescription,
+				ProviderDisplayName: b.cfg.ProviderDisplayName,
+				DocumentationUrl:    b.cfg.DocumentationUrl,
+				SupportUrl:          b.cfg.SupportUrl,
+			},
+			AllowContextUpdates: true,
 		},
 	}, nil
-}
-
-func (b *ServicesEndpoint) addComponentsToSchema(schema *map[string]interface{}) {
-	props := (*schema)["properties"].(map[string]interface{})
-	props["components"] = map[string]interface{}{
-		"type": "array",
-		"items": map[string]interface{}{
-			"type": "string",
-			"enum": b.optionalComponents.GetAllOptionalComponentsNames(),
-		},
-	}
 }

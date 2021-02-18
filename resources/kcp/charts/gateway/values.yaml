@@ -1,3 +1,4 @@
 gateway:
   enabled: false
   manageCerts: true
+  additionalDomainNames: ""

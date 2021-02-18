@@ -5,12 +5,13 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
+	directorApperrors "github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	gql "github.com/kyma-project/control-plane/components/provisioner/internal/graphql"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/oauth"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	gcli "github.com/machinebox/graphql"
+	gcli "github.com/kyma-project/control-plane/components/provisioner/third_party/machinebox/graphql"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -170,6 +171,9 @@ func (cc *directorClient) RuntimeExists(id, tenant string) (bool, apperrors.AppE
 	var response GetRuntimeResponse
 	err := cc.executeDirectorGraphQLCall(runtimeQuery, tenant, &response)
 	if err != nil {
+		if err.Code() == apperrors.CodeBadRequest && err.Cause() == apperrors.TenantNotFound {
+			return false, nil
+		}
 		return false, err.Append("Failed to get runtime %s from Director", id)
 	}
 
@@ -183,7 +187,7 @@ func (cc *directorClient) RuntimeExists(id, tenant string) (bool, apperrors.AppE
 func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition graphql.RuntimeStatusCondition, tenant string) apperrors.AppError {
 	// TODO: Set StatusCondition without getting the Runtime
 	//       It'll be possible after this issue implementation:
-	//       - https://github.com/kyma-project/control-plane/issues/1186
+	//       - https://github.com/kyma-incubator/compass/issues/1186
 	runtime, err := cc.GetRuntime(id, tenant)
 	if err != nil {
 		log.Errorf("Failed to get Runtime by ID: %s", err.Error())
@@ -247,10 +251,36 @@ func (cc *directorClient) executeDirectorGraphQLCall(directorQuery string, tenan
 	req.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", cc.token.AccessToken))
 	req.Header.Set(TenantHeader, tenant)
 
-	err := cc.gqlClient.Do(req, response)
-	if err != nil {
-		return apperrors.Internal("Failed to execute GraphQL query with Director: %s", err.Error())
+	if err := cc.gqlClient.Do(req, response); err != nil {
+		if egErr, ok := err.(gcli.ExtendedError); ok {
+			return mapDirectorErrorToProvisionerError(egErr).Append("Failed to execute GraphQL request to Director")
+		}
+		return apperrors.Internal("Failed to execute GraphQL request to Director: %v", err)
 	}
 
 	return nil
+}
+
+func mapDirectorErrorToProvisionerError(egErr gcli.ExtendedError) apperrors.AppError {
+	errorCodeValue, present := egErr.Extensions()["error_code"]
+	if !present {
+		return apperrors.Internal("Failed to read the error code from the error response. Original error: %v", egErr)
+	}
+	errorCode, ok := errorCodeValue.(float64)
+	if !ok {
+		return apperrors.Internal("Failed to cast the error code from the error response. Original error: %v", egErr)
+	}
+	switch directorApperrors.ErrorType(errorCode) {
+	case directorApperrors.InternalError, directorApperrors.UnknownError:
+		return apperrors.Internal(egErr.Error())
+	case directorApperrors.InsufficientScopes, directorApperrors.Unauthorized:
+		return apperrors.BadGateway(egErr.Error())
+	case directorApperrors.NotFound, directorApperrors.NotUnique, directorApperrors.InvalidData,
+		directorApperrors.InvalidOperation:
+		return apperrors.BadRequest(egErr.Error())
+	case directorApperrors.TenantRequired, directorApperrors.TenantNotFound:
+		return apperrors.InvalidTenant(egErr.Error())
+	default:
+		return apperrors.Internal("Did not recognize the error code from the error response. Original error: %v", egErr)
+	}
 }

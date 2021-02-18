@@ -2,6 +2,7 @@ package oauth
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -16,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -88,11 +89,11 @@ func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 
 func createFakeCredentialsSecret(t *testing.T, secrets corev1.SecretInterface, credentials credentials) {
 	secret := &v1.Secret{
-		ObjectMeta: meta.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
 			Namespace: namespace,
 		},
-		TypeMeta: meta.TypeMeta{
+		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
 			APIVersion: "v1",
 		},
@@ -103,6 +104,6 @@ func createFakeCredentialsSecret(t *testing.T, secrets corev1.SecretInterface, c
 		},
 	}
 
-	_, err := secrets.Create(secret)
+	_, err := secrets.Create(context.Background(), secret, metav1.CreateOptions{})
 	require.NoError(t, err)
 }

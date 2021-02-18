@@ -1,27 +1,32 @@
 package provisioning
 
 import (
-	"encoding/json"
+	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input"
-	inputAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
+	inputAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 const (
 	kymaVersion            = "1.10"
 	k8sVersion             = "1.16.9"
+	shootName              = "c-1234567"
 	instanceID             = "58f8c703-1756-48ab-9299-a847974d1fee"
 	operationID            = "fd5cee4d-0eeb-40d0-a7a7-0708e5eba470"
 	globalAccountID        = "80ac17bd-33e8-4ffa-8d56-1d5367755723"
@@ -43,15 +48,15 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationCreateRuntime(t)
+	operation := fixOperationCreateRuntime(t, broker.GCPPlanID, "europe-west4-a")
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
 	err = memoryStorage.Instances().Insert(fixInstance())
 	assert.NoError(t, err)
 
-	provisionerClient := &provisionerAutomock.Client{}
-	provisionerClient.On("ProvisionRuntime", globalAccountID, subAccountID, gqlschema.ProvisionRuntimeInput{
+	profile := gqlschema.KymaProfileProduction
+	provisionerInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "dummy",
 			Description: nil,
@@ -62,6 +67,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
+				Name:              ptr.String(shootName),
 				KubernetesVersion: k8sVersion,
 				DiskType:          "pd-standard",
 				VolumeSizeGb:      30,
@@ -94,8 +100,18 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				},
 			},
 			Configuration: []*gqlschema.ConfigEntryInput{},
+			Profile:       &profile,
 		},
-	}).Return(gqlschema.OperationStatus{
+	}
+
+	provisionerClient := &provisionerAutomock.Client{}
+	provisionerClient.On("ProvisionRuntime", globalAccountID, subAccountID, mock.MatchedBy(
+		func(input gqlschema.ProvisionRuntimeInput) bool {
+			return reflect.DeepEqual(input.RuntimeInput.Labels, provisionerInput.RuntimeInput.Labels) &&
+				reflect.DeepEqual(input.KymaConfig, provisionerInput.KymaConfig) &&
+				reflect.DeepEqual(input.ClusterConfig, provisionerInput.ClusterConfig)
+		},
+	)).Return(gqlschema.OperationStatus{
 		ID:        ptr.String(provisionerOperationID),
 		Operation: "",
 		State:     "",
@@ -111,7 +127,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 		RuntimeID: ptr.String(runtimeID),
 	}, nil)
 
-	step := NewCreateRuntimeStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
+	step := NewCreateRuntimeStep(memoryStorage.Operations(), memoryStorage.RuntimeStates(), memoryStorage.Instances(), provisionerClient)
 
 	// when
 	entry := log.WithFields(logrus.Fields{"step": "TEST"})
@@ -127,16 +143,43 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	assert.Equal(t, instance.RuntimeID, runtimeID)
 }
 
-func fixOperationCreateRuntime(t *testing.T) internal.ProvisioningOperation {
+func TestCreateRuntimeStep_RunWithBadRequestError(t *testing.T) {
+	// given
+	log := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+
+	operation := fixOperationCreateRuntime(t, broker.AzurePlanID, "westeurope")
+	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
+	assert.NoError(t, err)
+
+	err = memoryStorage.Instances().Insert(fixInstance())
+	assert.NoError(t, err)
+
+	provisionerClient := &provisionerAutomock.Client{}
+	provisionerClient.On("ProvisionRuntime", globalAccountID, subAccountID, mock.Anything).Return(gqlschema.OperationStatus{}, fmt.Errorf("some permanent error"))
+
+	step := NewCreateRuntimeStep(memoryStorage.Operations(), memoryStorage.RuntimeStates(), memoryStorage.Instances(), provisionerClient)
+
+	// when
+	entry := log.WithFields(logrus.Fields{"step": "TEST"})
+	operation, _, err = step.Run(operation, entry)
+
+	// then
+	assert.Equal(t, domain.Failed, operation.State)
+
+}
+
+func fixOperationCreateRuntime(t *testing.T, planID, region string) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
-			ID:          operationID,
-			InstanceID:  instanceID,
-			Description: "",
-			UpdatedAt:   time.Now(),
+			ID:                     operationID,
+			InstanceID:             instanceID,
+			UpdatedAt:              time.Now(),
+			State:                  domain.InProgress,
+			ProvisioningParameters: fixProvisioningParameters(planID, region),
+			InstanceDetails:        internal.InstanceDetails{ShootName: shootName},
 		},
-		ProvisioningParameters: fixProvisioningParameters(t),
-		InputCreator:           fixInputCreator(t),
+		InputCreator: fixInputCreator(t),
 	}
 }
 
@@ -147,9 +190,13 @@ func fixInstance() internal.Instance {
 	}
 }
 
-func fixProvisioningParameters(t *testing.T) string {
-	parameters := internal.ProvisioningParameters{
-		PlanID:    broker.GCPPlanID,
+func fixProvisioningParameters(planID, region string) internal.ProvisioningParameters {
+	return fixProvisioningParametersWithPlanID(planID, region)
+}
+
+func fixProvisioningParametersWithPlanID(planID, region string) internal.ProvisioningParameters {
+	return internal.ProvisioningParameters{
+		PlanID:    planID,
 		ServiceID: "",
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,
@@ -165,24 +212,17 @@ func fixProvisioningParameters(t *testing.T) string {
 			},
 		},
 		Parameters: internal.ProvisioningParametersDTO{
-			Region: ptr.String("europe-west4-a"),
+			Region: ptr.String(region),
 			Name:   "dummy",
 			Zones:  []string{"europe-west4-b", "europe-west4-c"},
 		},
 	}
-
-	rawParameters, err := json.Marshal(parameters)
-	if err != nil {
-		t.Errorf("cannot marshal provisioning parameters: %s", err)
-	}
-
-	return string(rawParameters)
 }
 
-func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
+func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 	optComponentsSvc := &inputAutomock.OptionalComponentService{}
 
-	optComponentsSvc.On("ComputeComponentsToDisable", []string(nil)).Return([]string{})
+	optComponentsSvc.On("ComputeComponentsToDisable", []string{}).Return([]string{})
 	optComponentsSvc.On("ExecuteDisablers", internal.ComponentConfigurationInputList{
 		{
 			Component:     "to-remove-component",
@@ -216,16 +256,27 @@ func fixInputCreator(t *testing.T) internal.ProvisionInputCreator {
 	componentsProvider.On("AllComponents", kymaVersion).Return(kymaComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
-	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, componentsProvider, input.Config{
+	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{
 		KubernetesVersion:           k8sVersion,
 		DefaultGardenerShootPurpose: shootPurpose,
-	}, kymaVersion)
+	}, kymaVersion, fixTrialRegionMapping())
 	assert.NoError(t, err)
 
-	creator, err := ibf.ForPlan(broker.GCPPlanID, "")
+	pp := internal.ProvisioningParameters{
+		PlanID: broker.GCPPlanID,
+		Parameters: internal.ProvisioningParametersDTO{
+			KymaVersion: "",
+		},
+	}
+	version := internal.RuntimeVersionData{Version: kymaVersion, Origin: internal.Parameters}
+	creator, err := ibf.CreateProvisionInput(pp, version)
 	if err != nil {
 		t.Errorf("cannot create input creator for %q plan", broker.GCPPlanID)
 	}
 
 	return creator
+}
+
+func fixTrialRegionMapping() map[string]string {
+	return map[string]string{}
 }

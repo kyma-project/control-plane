@@ -1,14 +1,13 @@
 package provisioning
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-
-	"fmt"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,6 +29,7 @@ func NewProvideLmsTenantStep(tp LmsTenantProvider, repo storage.Operations, regi
 		LmsStep: LmsStep{
 			operationManager: process.NewProvisionOperationManager(repo),
 			isMandatory:      isMandatory,
+			expirationTime:   3 * time.Minute,
 		},
 		operationManager: process.NewProvisionOperationManager(repo),
 		tenantProvider:   tp,
@@ -46,22 +46,15 @@ func (s *provideLmsTenantStep) Run(operation internal.ProvisioningOperation, log
 		return operation, 0, nil
 	}
 
-	pp, err := operation.GetProvisioningParameters()
+	region := s.provideRegion(operation.ProvisioningParameters.Parameters.Region)
+	lmsTenantID, err := s.tenantProvider.ProvideLMSTenantID(operation.ProvisioningParameters.ErsContext.GlobalAccountID, region)
 	if err != nil {
-		msg := fmt.Sprintf("Unable to get provisioning parameters: %s", err.Error())
-		logger.Errorf(msg)
-		return s.operationManager.OperationFailed(operation, msg)
-	}
-	region := s.provideRegion(pp.Parameters.Region)
-
-	lmsTenantID, err := s.tenantProvider.ProvideLMSTenantID(pp.ErsContext.GlobalAccountID, region)
-	if err != nil {
-		logger.Warnf("Unable to get tenant for GlobalaccountID/region %s/%s: %s", pp.ErsContext.GlobalAccountID, region, err.Error())
-		since := time.Since(operation.UpdatedAt)
-		if since < 3*time.Minute {
-			return operation, 30 * time.Second, nil
-		}
-		return s.failLmsAndUpdate(operation, "getting LMS tenant failed")
+		return s.handleError(
+			operation,
+			logger,
+			time.Since(operation.UpdatedAt),
+			fmt.Sprintf("Unable to get tenant for GlobalaccountID/region %s/%s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, region),
+			err)
 	}
 
 	operation.Lms.TenantID = lmsTenantID

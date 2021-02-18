@@ -1,7 +1,10 @@
 package installation
 
 import (
+	"context"
 	"testing"
+
+	apiServBeta "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfake "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
@@ -31,7 +34,7 @@ func TestNewServiceCatalogClient(t *testing.T) {
 
 	t.Run("should create client with valid kubeconfig", func(t *testing.T) {
 		// when
-		cli, err := NewServiceCatalogClient(k8sConfig)
+		cli, err := NewServiceCatalogCleanupClient(k8sConfig)
 
 		//then
 		require.NoError(t, err)
@@ -42,7 +45,7 @@ func TestNewServiceCatalogClient(t *testing.T) {
 func TestServiceCatalogClient_PerformCleanup(t *testing.T) {
 	// given
 	fakeClient := scfake.NewSimpleClientset(newTestCR()...)
-	cli := &serviceCatalogClient{client: fakeClient}
+	cli := &serviceCatalogClient{client: fakeClient, crdsManager: newFullCRDListManager()}
 
 	t.Run("should perform resource cleanup succesfully with happy path", func(t *testing.T) {
 		// when
@@ -60,7 +63,7 @@ func TestServiceCatalogClient_PerformCleanup(t *testing.T) {
 	t.Run("should fail cleanup when unable to list ClusterServiceBrokers", func(t *testing.T) {
 		// given
 		fakeClient := scfake.NewSimpleClientset(newTestCR()...)
-		cli := &serviceCatalogClient{client: fakeClient}
+		cli := &serviceCatalogClient{client: fakeClient, crdsManager: newFullCRDListManager()}
 		fakeClient.PrependReactor("list", "clusterservicebrokers", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 			return true, nil, errors.New("error listing clusterservicebrokers")
 		})
@@ -75,7 +78,7 @@ func TestServiceCatalogClient_PerformCleanup(t *testing.T) {
 	t.Run("should fail cleanup when unable to list ClusterServiceClasses", func(t *testing.T) {
 		// given
 		fakeClient := scfake.NewSimpleClientset(newTestCR()...)
-		cli := &serviceCatalogClient{client: fakeClient}
+		cli := &serviceCatalogClient{client: fakeClient, crdsManager: newFullCRDListManager()}
 		fakeClient.PrependReactor("list", "clusterserviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 			return true, nil, errors.New("error listing clusterserviceclasses")
 		})
@@ -90,10 +93,32 @@ func TestServiceCatalogClient_PerformCleanup(t *testing.T) {
 	t.Run("should fail cleanup when unable to list ServiceInstances", func(t *testing.T) {
 		// given
 		fakeClient := scfake.NewSimpleClientset(newTestCR()...)
-		cli := &serviceCatalogClient{client: fakeClient}
+		cli := &serviceCatalogClient{client: fakeClient, crdsManager: newFullCRDListManager()}
 		fakeClient.PrependReactor("list", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 			return true, nil, errors.New("error listing serviceinstances")
 		})
+
+		// when
+		err := cli.PerformCleanup(TestResourceSelector)
+
+		// then
+		require.Error(t, err)
+	})
+
+	t.Run("should skip cleanup when some CRDs are missing", func(t *testing.T) {
+		//given
+		cli := &serviceCatalogClient{crdsManager: newIncompleteCRDListManager()}
+
+		// when
+		err := cli.PerformCleanup(TestResourceSelector)
+
+		// then
+		require.NoError(t, err)
+	})
+
+	t.Run("should fail cleanup when unable to list CRDs", func(t *testing.T) {
+		//given
+		cli := &serviceCatalogClient{crdsManager: newErrorCRDListManager()}
 
 		// when
 		err := cli.PerformCleanup(TestResourceSelector)
@@ -106,7 +131,7 @@ func TestServiceCatalogClient_PerformCleanup(t *testing.T) {
 func TestServiceCatalogClient_ListClusterServiceBroker(t *testing.T) {
 	// given
 	fakeClient := scfake.NewSimpleClientset(newTestCR()...)
-	cli := &serviceCatalogClient{client: fakeClient}
+	cli := &serviceCatalogClient{client: fakeClient, crdsManager: newFullCRDListManager()}
 
 	t.Run("should list ClusterServiceBrokers successfully", func(t *testing.T) {
 		// when
@@ -133,7 +158,7 @@ func TestServiceCatalogClient_ListClusterServiceBroker(t *testing.T) {
 func TestServiceCatalogClient_ListClusterServiceClass(t *testing.T) {
 	//given
 	fakeClient := scfake.NewSimpleClientset(newTestCR()...)
-	cli := &serviceCatalogClient{client: fakeClient}
+	cli := &serviceCatalogClient{client: fakeClient, crdsManager: newFullCRDListManager()}
 
 	t.Run("should list cluster service classes successfully", func(t *testing.T) {
 		// when
@@ -146,7 +171,7 @@ func TestServiceCatalogClient_ListClusterServiceClass(t *testing.T) {
 
 	//given
 	fakeClient = scfake.NewSimpleClientset()
-	cli = &serviceCatalogClient{client: fakeClient}
+	cli = &serviceCatalogClient{client: fakeClient, crdsManager: newFullCRDListManager()}
 
 	t.Run("should return nil if no ClusterServiceClasses found", func(t *testing.T) {
 		// when
@@ -159,7 +184,7 @@ func TestServiceCatalogClient_ListClusterServiceClass(t *testing.T) {
 func TestServiceCatalogClient_ListServiceInstance(t *testing.T) {
 	//given
 	fakeClient := scfake.NewSimpleClientset(newTestCR()...)
-	cli := &serviceCatalogClient{client: fakeClient}
+	cli := &serviceCatalogClient{client: fakeClient, crdsManager: newFullCRDListManager()}
 
 	t.Run("should list service instances successfully", func(t *testing.T) {
 		// when
@@ -172,7 +197,7 @@ func TestServiceCatalogClient_ListServiceInstance(t *testing.T) {
 
 	//given
 	fakeClient = scfake.NewSimpleClientset()
-	cli = &serviceCatalogClient{client: fakeClient}
+	cli = &serviceCatalogClient{client: fakeClient, crdsManager: newFullCRDListManager()}
 
 	t.Run("should return nil if no ServiceInstances found", func(t *testing.T) {
 		// when
@@ -185,7 +210,7 @@ func TestServiceCatalogClient_ListServiceInstance(t *testing.T) {
 func TestServiceCatalogClient_FilterCsbWithUrlPrefix(t *testing.T) {
 	// given
 	fakeClient := scfake.NewSimpleClientset(newTestCR()...)
-	cli := &serviceCatalogClient{client: fakeClient}
+	cli := &serviceCatalogClient{client: fakeClient, crdsManager: newFullCRDListManager()}
 
 	brokerList := fixClusterServiceBrokerList()
 	brokerUrlPrefix := "https://service-manager."
@@ -207,7 +232,7 @@ func TestServiceCatalogClient_FilterCsbWithUrlPrefix(t *testing.T) {
 func TestServiceCatalogClient_GetClusterServiceClassesForBrokers(t *testing.T) {
 	// given
 	fakeClient := scfake.NewSimpleClientset(newTestCR()...)
-	cli := &serviceCatalogClient{client: fakeClient}
+	cli := &serviceCatalogClient{client: fakeClient, crdsManager: newFullCRDListManager()}
 	expectedBrokenNameSHA := "f17be81c5d87f618a16cfa4e7196494de37016490cd869d740181e2f"
 
 	filteredBrokers := cli.filterCsbWithUrlPrefix(fixClusterServiceBrokerList(), "https://service-manager.")
@@ -224,7 +249,7 @@ func TestServiceCatalogClient_GetClusterServiceClassesForBrokers(t *testing.T) {
 
 	// given
 	fakeClient = scfake.NewSimpleClientset()
-	cli = &serviceCatalogClient{client: fakeClient}
+	cli = &serviceCatalogClient{client: fakeClient, crdsManager: newFullCRDListManager()}
 
 	t.Run("should return nil if given ClusterServiceBroker do not provide ClusterServiceClass", func(t *testing.T) {
 		// when
@@ -246,7 +271,7 @@ func TestServiceCatalogClient_GetClusterServiceClassesForBrokers(t *testing.T) {
 func TestServiceCatalogClient_GetServiceInstancesForClusterServiceClasses(t *testing.T) {
 	// given
 	fakeClient := scfake.NewSimpleClientset(newTestCR()...)
-	cli := &serviceCatalogClient{client: fakeClient}
+	cli := &serviceCatalogClient{client: fakeClient, crdsManager: newFullCRDListManager()}
 
 	clusterServiceClassList := fixClusterServiceClassList().Items
 	expectedLabelValue := "0a3439490f8ad9b70c36c184b1110c044920a99f1b51ce9c3984ae7c"
@@ -265,7 +290,7 @@ func TestServiceCatalogClient_GetServiceInstancesForClusterServiceClasses(t *tes
 
 	// given
 	fakeClient = scfake.NewSimpleClientset()
-	cli = &serviceCatalogClient{client: fakeClient}
+	cli = &serviceCatalogClient{client: fakeClient, crdsManager: newFullCRDListManager()}
 
 	t.Run("should return nil if no ServiceInstances found", func(t *testing.T) {
 		// when
@@ -291,7 +316,7 @@ func fixClusterServiceBrokerList() *v1beta1.ClusterServiceBrokerList {
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      ClusterBrokerNameProvidingClusterServiceClasses,
-					Namespace: "compass-system",
+					Namespace: "kcp-system",
 				},
 				Spec: v1beta1.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
@@ -302,7 +327,7 @@ func fixClusterServiceBrokerList() *v1beta1.ClusterServiceBrokerList {
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      ClusterBrokerNameNotProvidingClusterServiceClasses,
-					Namespace: "compass-system",
+					Namespace: "kcp-system",
 				},
 				Spec: v1beta1.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
@@ -372,7 +397,7 @@ func newTestCR() []runtime.Object {
 		&v1beta1.ClusterServiceBroker{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      ClusterBrokerNameProvidingClusterServiceClasses,
-				Namespace: "compass-system",
+				Namespace: "kcp-system",
 			},
 			Spec: v1beta1.ClusterServiceBrokerSpec{
 				CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
@@ -429,4 +454,41 @@ func newTestCR() []runtime.Object {
 			},
 		},
 	}
+}
+
+type fakeCRDsMngr struct {
+	err     error
+	crdList *apiServBeta.CustomResourceDefinitionList
+}
+
+func (f *fakeCRDsMngr) List(_ context.Context, _ metav1.ListOptions) (*apiServBeta.CustomResourceDefinitionList, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.crdList, nil
+}
+
+func newFullCRDListManager() CrdsManager {
+	return &fakeCRDsMngr{crdList: &apiServBeta.CustomResourceDefinitionList{
+		Items: []apiServBeta.CustomResourceDefinition{
+			{ObjectMeta: metav1.ObjectMeta{Name: SystemBrokerCRDName}},
+			{ObjectMeta: metav1.ObjectMeta{Name: SystemCatalogCRDName}},
+			{ObjectMeta: metav1.ObjectMeta{Name: SystemInstanceCRD}},
+		},
+	},
+	}
+}
+
+func newIncompleteCRDListManager() CrdsManager {
+	return &fakeCRDsMngr{crdList: &apiServBeta.CustomResourceDefinitionList{
+		Items: []apiServBeta.CustomResourceDefinition{
+			{ObjectMeta: metav1.ObjectMeta{Name: SystemBrokerCRDName}},
+			{ObjectMeta: metav1.ObjectMeta{Name: SystemCatalogCRDName}},
+		},
+	},
+	}
+}
+
+func newErrorCRDListManager() CrdsManager {
+	return &fakeCRDsMngr{err: errors.New("holup")}
 }

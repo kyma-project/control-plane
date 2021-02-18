@@ -37,6 +37,45 @@ func (_m *Provisioner) DeprovisionCluster(cluster model.Cluster, operationId str
 	return r0, r1
 }
 
+// GetHibernationStatus provides a mock function with given fields: clusterID, gardenerConfig
+func (_m *Provisioner) GetHibernationStatus(clusterID string, gardenerConfig model.GardenerConfig) (model.HibernationStatus, apperrors.AppError) {
+	ret := _m.Called(clusterID, gardenerConfig)
+
+	var r0 model.HibernationStatus
+	if rf, ok := ret.Get(0).(func(string, model.GardenerConfig) model.HibernationStatus); ok {
+		r0 = rf(clusterID, gardenerConfig)
+	} else {
+		r0 = ret.Get(0).(model.HibernationStatus)
+	}
+
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string, model.GardenerConfig) apperrors.AppError); ok {
+		r1 = rf(clusterID, gardenerConfig)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(apperrors.AppError)
+		}
+	}
+
+	return r0, r1
+}
+
+// HibernateCluster provides a mock function with given fields: clusterID, upgradeConfig
+func (_m *Provisioner) HibernateCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError {
+	ret := _m.Called(clusterID, upgradeConfig)
+
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string, model.GardenerConfig) apperrors.AppError); ok {
+		r0 = rf(clusterID, upgradeConfig)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(apperrors.AppError)
+		}
+	}
+
+	return r0
+}
+
 // ProvisionCluster provides a mock function with given fields: cluster, operationId
 func (_m *Provisioner) ProvisionCluster(cluster model.Cluster, operationId string) apperrors.AppError {
 	ret := _m.Called(cluster, operationId)
@@ -44,6 +83,22 @@ func (_m *Provisioner) ProvisionCluster(cluster model.Cluster, operationId strin
 	var r0 apperrors.AppError
 	if rf, ok := ret.Get(0).(func(model.Cluster, string) apperrors.AppError); ok {
 		r0 = rf(cluster, operationId)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(apperrors.AppError)
+		}
+	}
+
+	return r0
+}
+
+// UpgradeCluster provides a mock function with given fields: clusterID, upgradeConfig
+func (_m *Provisioner) UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError {
+	ret := _m.Called(clusterID, upgradeConfig)
+
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string, model.GardenerConfig) apperrors.AppError); ok {
+		r0 = rf(clusterID, upgradeConfig)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(apperrors.AppError)

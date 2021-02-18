@@ -24,7 +24,7 @@
 
 [[constraint]]
   name = "github.com/kyma-project/control-plane"
-  revision = "d5c043eb0dbe34e64759b23bcbd1e49505eee7c0"
+  revision = "21c4a144cb9378dd6519b127d80171c5977bd7c1"
 
 [[constraint]]
   name = "github.com/kyma-project/kyma"
@@ -40,15 +40,15 @@
 
 [[constraint]]
   name = "github.com/pivotal-cf/brokerapi"
-  version = "7.1.0"
+  revision = "e10bf387f6d5a91e9e7b02b76ee8d2748d7d6f60"
 
 [[constraint]]
   name = "github.com/pkg/errors"
   version = "0.8.1"
 
-[[constraint]]
+[[override]]
   name = "github.com/sirupsen/logrus"
-  version = "1.4.2"
+  version = "1.6.0"
 
 [[constraint]]
   name = "github.com/stretchr/testify"
@@ -62,14 +62,18 @@
   name = "github.com/vrischmann/envconfig"
   version = "1.2.0"
 
+[[constraint]]
+  name = "github.com/Peripli/service-manager-cli"
+  version = "v1.11.2"
+
 # Azure
 [[constraint]]
   name = "github.com/Azure/azure-sdk-for-go"
-  version = "39.3.0"
+  version = "v47.1.0"
 
-[[constraint]]
+[[override]]
   name = "github.com/Azure/go-autorest"
-  version = "13.4.0"
+  version = "autorest/v0.11.10"
 
 [[constraint]]
   name = "gopkg.in/yaml.v2"
@@ -78,3 +82,4 @@
 [prune]
   go-tests = true
   unused-packages = true
+  non-go = true

@@ -6,7 +6,7 @@ image:
   repository: ""
   tag: ""
   pullSecrets: []
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 resources: {}
   # requests:
@@ -37,6 +37,9 @@ gardener:
 provider:
   pollinterval: "1m"
   workers: 5
+  buffer: 100
+  pollmaxinterval: "15m"
+  maxretries: 20
 
 edp:
   datastream:
@@ -47,20 +50,52 @@ edp:
   token: "TBD"
   url: "TBD"
   workers: 5
+  buffer: 100
+  timeout: "30s"
+  retry: 5
 
 metrics:
   enabled: false
-  port: 8080
   service:
     type: ClusterIP
     annotations: {}
     loadBalancerIP:
   serviceMonitor:
     enabled: false
+     # labels configured in prometheus-operator for the prometheus serviceMonitorSelector
     additionalLabels: {}
-    # namespace: monitoring
+    # namespace configured in prometheus-operator for the prometheus serviceMonitorSelector
+    # namespace: kyma-system
     # interval: 30s
     # scrapeTimeout: 10s
+  prometheusRule:
+    enabled: false
+     # labels configured in prometheus-operator for the prometheus ruleSelector
+    additionalLabels:
+      app: monitoring
+      release: monitoring
+    # namespace configured in prometheus-operator for the prometheus ruleSelector
+    # namespace: kyma-system
+    rules: |-
+    ## This is just an example, please adapt it to your needs.
+    # metris-group-rules-1:
+    #   - alert: MetrisDown
+    #     expr: |-
+    #       up{job="kcp-metris",namespace="kcp-system"} == 0
+    #     for: 5m
+    #     labels:
+    #       severity: critical
+    #     annotations:
+    #       message: |-
+    #         Metris has disappeared from Prometheus target discovery.
+
+  grafanaDashboard:
+    enabled: false
+    # labels configured in prometheus-operator for the grafana dashboards sidecar
+    additionalLabels:
+      grafana_dashboard: "1"
+    # namespace configured in prometheus-operator for the grafana dashboards sidecar
+    # namespace: kyma-system
 
 # Define custom environment variables to pass to metris
   # — name: ENV_VAR1

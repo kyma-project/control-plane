@@ -1,0 +1,26 @@
+deployment:
+  image:
+    pullPolicy: IfNotPresent
+    path: pkosiec/kcp-runtime-governor:v1
+  resources: {}
+  args:
+    containerPort: &port 3000
+  securityContext: # Set on container level
+    runAsUser: 2000
+    allowPrivilegeEscalation: false
+  strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+  nodeSelector: {}
+
+service:
+  port: *port
+
+redis1:
+  host: 127.0.0.1:6379
+  password: "P@ssw0rd"
+
+redis2:
+  host: 127.0.0.1:6379
+  password: "P@ssw0rd"
+
+runtime1Revision: 1
+runtime2Revision: 1

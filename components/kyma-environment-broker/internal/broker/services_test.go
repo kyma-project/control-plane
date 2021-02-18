@@ -2,14 +2,9 @@ package broker_test
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input/automock"
-
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,17 +12,15 @@ import (
 
 func TestServices_Services(t *testing.T) {
 	// given
-	optComponentsProviderMock := &automock.OptionalComponentNamesProvider{}
-	defer optComponentsProviderMock.AssertExpectations(t)
-
-	optComponentsNames := []string{"kiali", "tracing"}
-	optComponentsProviderMock.On("GetAllOptionalComponentsNames").Return(optComponentsNames)
-
-	servicesEndpoint := broker.NewServices(
-		broker.Config{EnablePlans: []string{"gcp", "azure"}},
-		optComponentsProviderMock,
-		logrus.StandardLogger(),
+	var (
+		name       = "testServiceName"
+		supportURL = "example.com/support"
 	)
+
+	cfg := broker.Config{EnablePlans: []string{"gcp", "azure"}}
+	cfg.DisplayName = name
+	cfg.SupportUrl = supportURL
+	servicesEndpoint := broker.NewServices(cfg, logrus.StandardLogger())
 
 	// when
 	services, err := servicesEndpoint.Services(context.TODO())
@@ -37,20 +30,6 @@ func TestServices_Services(t *testing.T) {
 	assert.Len(t, services, 1)
 	assert.Len(t, services[0].Plans, 2)
 
-	// assert provisioning schema
-	componentItem := services[0].Plans[0].Schemas.Instance.Create.Parameters["properties"].(map[string]interface{})["components"]
-	componentJSON, err := json.Marshal(componentItem)
-	require.NoError(t, err)
-	assert.JSONEq(t, fmt.Sprintf(`
-		{
-		  "type": "array",
-		  "items": {
-			  "type": "string",
-			  "enum": %s
-		  }
-		}`, toJSONList(optComponentsNames)), string(componentJSON))
-}
-
-func toJSONList(in []string) string {
-	return fmt.Sprintf(`["%s"]`, strings.Join(in, `", "`))
+	assert.Equal(t, name, services[0].Metadata.DisplayName)
+	assert.Equal(t, supportURL, services[0].Metadata.SupportUrl)
 }

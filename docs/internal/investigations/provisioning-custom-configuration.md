@@ -5,7 +5,6 @@
 There is a need for configuring Kyma Runtimes provisioned by the Runtime Provisioner.
 For now only option is to configure Runtime manually after provisioning is finished and Kubeconfig is fetched.
 
-
 ## Solution
 
 The proposed solution is to provide ability to provide the configuration for components, which then will be used as Installer overrides.
@@ -16,7 +15,7 @@ type Configuration {
     key: String!
     value: String!
     secret: Boolean
-} 
+}
 
 input ConfigurationInput {
     key: String!
@@ -43,7 +42,7 @@ type KymaConfig {
 input KymaConfigInput {
     version: String!
     components: [ComponentConfigurationInput]!
-    configuration: [ConfigurationInput] 
+    configuration: [ConfigurationInput]
 }
 
 ```
@@ -63,9 +62,8 @@ The configuration can be provided for every Kyma component as a list of key-valu
 The additional `secret` flag specifies if the value is confidential.
 The `configuration` in `KymaConfigInput` is a configuration not specific for any component.
 
-All configurations for component not marked as a `secret` are then saved to the ConfigMap on a created Cluster and marked as Installation overrides. They are also stored in the database.
-The confidential configuration is stored in Secret on a created cluster and encrypted before storing in database. The examples of such sensitive data could be: certificate's private keys, Minio Gateway credentials or Dex configuration containing some secrets. 
-
+All configurations for components not marked as `secret` are then saved to a ConfigMap on the created cluster and marked as Installation overrides. They are also stored in the database.
+The confidential configuration is stored in a Secret on the created cluster and encrypted before storing in the database. The examples of such sensitive data could be: certificate's private keys, MinIO Gateway credentials, or Dex configuration containing some secrets.
 
 ### Pros
 - The solution is simple from API and Installation standpoint
@@ -77,7 +75,6 @@ The confidential configuration is stored in Secret on a created cluster and encr
 ### Cons
 - No ability to extend with custom components outside of Kyma
 - One ConfigMap and Secret per component
-
 
 ### Example
 
@@ -145,4 +142,4 @@ mutation {
       }
     })
 }
-``` 
+```

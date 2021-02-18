@@ -1,0 +1,25 @@
+runtimes:
+  - id: "1"
+    data:
+      TypeMeta:
+        Kind: "Component"
+        APIVersion: "dapr.io/v1alpha1"
+      ObjectMeta:
+        Name: "api2"
+        Namespace: "default"
+      Spec:
+        Type: "bindings.http"
+        Metadata:
+        - Name: "url"
+          Value: "http://httpbin.org/basic-auth/user/passwd"
+        - Name: "method"
+          Value: "GET"
+        - Name: "user"
+          Value: "user"
+        - Name: "password"
+          Value: "passwd"
+        - Name: "selector"
+          Value: "daprTest=test"
+  - id: "2"
+    data:
+      bar: baz

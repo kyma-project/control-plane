@@ -1,9 +1,10 @@
 package provisioning
 
 import (
-	"fmt"
 	"io/ioutil"
 	"testing"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
@@ -17,19 +18,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//go:generate mockery -name=ProvisionInputCreator -dir=../../ -output=automock -outpkg=automock -case=underscore
+//go:generate mockery -name=ProvisionerInputCreator -dir=../../ -output=automock -outpkg=automock -case=underscore
 
 func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 	ts := SMOverrideTestSuite{}
 
 	tests := map[string]struct {
-		requestParams        string
-		overrideParams       ServiceManagerOverrideConfig
+		requestParams        internal.ProvisioningParameters
+		overrideParams       servicemanager.Config
 		expCredentialsValues []*gqlschema.ConfigEntryInput
 	}{
 		"always apply override for Service Manager credentials": {
 			requestParams:  ts.SMRequestParameters("req-url", "req-user", "req-pass"),
-			overrideParams: ts.SMOverrideConfig(SMOverrideModeAlways, "over-url", "over-user", "over-pass"),
+			overrideParams: ts.SMOverrideConfig(servicemanager.SMOverrideModeAlways, "over-url", "over-user", "over-pass"),
 
 			expCredentialsValues: []*gqlschema.ConfigEntryInput{
 				{Key: "config.sm.url", Value: "over-url"},
@@ -39,7 +40,7 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 		},
 		"never apply override for Service Manager credentials": {
 			requestParams:  ts.SMRequestParameters("req-url", "req-user", "req-pass"),
-			overrideParams: ts.SMOverrideConfig(SMOverrideModeNever, "over-url", "over-user", "over-pass"),
+			overrideParams: ts.SMOverrideConfig(servicemanager.SMOverrideModeNever, "over-url", "over-user", "over-pass"),
 
 			expCredentialsValues: []*gqlschema.ConfigEntryInput{
 				{Key: "config.sm.url", Value: "req-url"},
@@ -48,8 +49,8 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 			},
 		},
 		"apply override for Service Manager credentials because they are not present in request": {
-			requestParams:  "{}",
-			overrideParams: ts.SMOverrideConfig(SMOverrideModeWhenNotSentInRequest, "over-url", "over-user", "over-pass"),
+			requestParams:  internal.ProvisioningParameters{},
+			overrideParams: ts.SMOverrideConfig(servicemanager.SMOverrideModeWhenNotSentInRequest, "over-url", "over-user", "over-pass"),
 
 			expCredentialsValues: []*gqlschema.ConfigEntryInput{
 				{Key: "config.sm.url", Value: "over-url"},
@@ -59,7 +60,7 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 		},
 		"do not apply override for Service Manager credentials because they are present in request": {
 			requestParams:  ts.SMRequestParameters("req-url", "req-user", "req-pass"),
-			overrideParams: ts.SMOverrideConfig(SMOverrideModeWhenNotSentInRequest, "over-url", "over-user", "over-pass"),
+			overrideParams: ts.SMOverrideConfig(servicemanager.SMOverrideModeWhenNotSentInRequest, "over-url", "over-user", "over-pass"),
 
 			expCredentialsValues: []*gqlschema.ConfigEntryInput{
 				{Key: "config.sm.url", Value: "req-url"},
@@ -71,17 +72,21 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 	for tN, tC := range tests {
 		t.Run(tN, func(t *testing.T) {
 			// given
-			inputCreatorMock := &automock.ProvisionInputCreator{}
+			inputCreatorMock := &automock.ProvisionerInputCreator{}
 			inputCreatorMock.On("AppendOverrides", "service-manager-proxy", tC.expCredentialsValues).
 				Return(nil).Once()
 
+			factory := servicemanager.NewClientFactory(tC.overrideParams)
 			operation := internal.ProvisioningOperation{
-				ProvisioningParameters: tC.requestParams,
-				InputCreator:           inputCreatorMock,
+				Operation: internal.Operation{
+					ProvisioningParameters: tC.requestParams,
+				},
+				InputCreator:    inputCreatorMock,
+				SMClientFactory: factory,
 			}
 
 			memoryStorage := storage.NewMemoryStorage()
-			smStep := NewServiceManagerOverridesStep(memoryStorage.Operations(), tC.overrideParams)
+			smStep := NewServiceManagerOverridesStep(memoryStorage.Operations())
 
 			// when
 			gotOperation, retryTime, err := smStep.Run(operation, NewLogDummy())
@@ -98,30 +103,34 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 
 func TestServiceManagerOverridesStepError(t *testing.T) {
 	tests := map[string]struct {
-		givenReqParams string
+		givenReqParams internal.ProvisioningParameters
 		expErr         string
 	}{
 		"return error when creds in request are not provided and overrides should not be applied": {
-			givenReqParams: "{}",
+			givenReqParams: internal.ProvisioningParameters{},
 			expErr:         "Service Manager Credentials are required to be send in provisioning request.",
-		},
-		"return retry type instead of error when not able to get provisioning parameters": {
-			givenReqParams: "{malformed params..",
-
-			expErr: "invalid operation provisioning parameters",
 		},
 	}
 	for tN, tC := range tests {
 		t.Run(tN, func(t *testing.T) {
 			// given
+			factory := servicemanager.NewClientFactory(servicemanager.Config{
+				OverrideMode: servicemanager.SMOverrideModeNever,
+				URL:          "",
+				Password:     "",
+				Username:     "",
+			})
 			operation := internal.ProvisioningOperation{
-				Operation:              internal.Operation{ID: "123"},
-				ProvisioningParameters: tC.givenReqParams,
+				Operation: internal.Operation{
+					ID:                     "123",
+					ProvisioningParameters: tC.givenReqParams,
+				},
+				SMClientFactory: factory,
 			}
 
 			memoryStorage := storage.NewMemoryStorage()
 			require.NoError(t, memoryStorage.Operations().InsertProvisioningOperation(operation))
-			smStep := NewServiceManagerOverridesStep(memoryStorage.Operations(), ServiceManagerOverrideConfig{})
+			smStep := NewServiceManagerOverridesStep(memoryStorage.Operations())
 
 			// when
 			gotOperation, retryTime, err := smStep.Run(operation, NewLogDummy())
@@ -136,23 +145,21 @@ func TestServiceManagerOverridesStepError(t *testing.T) {
 
 type SMOverrideTestSuite struct{}
 
-func (SMOverrideTestSuite) SMRequestParameters(smURL, smUser, smPass string) string {
-	return fmt.Sprintf(`{
-		"ers_context": {
-		  "sm_platform_credentials": {
-		    "url": "%s",
-			"credentials": {
-			  "basic": {
-				"username": "%s",
-				"password": "%s"
-			  }
-			}
-		  }
-		}}`, smURL, smUser, smPass)
+func (SMOverrideTestSuite) SMRequestParameters(smURL, smUser, smPass string) internal.ProvisioningParameters {
+	return internal.ProvisioningParameters{
+		ErsContext: internal.ERSContext{
+			ServiceManager: &internal.ServiceManagerEntryDTO{URL: smURL,
+				Credentials: internal.ServiceManagerCredentials{
+					BasicAuth: internal.ServiceManagerBasicAuth{
+						Username: smUser,
+						Password: smPass,
+					}}},
+		},
+	}
 }
 
-func (s SMOverrideTestSuite) SMOverrideConfig(mode ServiceManagerOverrideMode, url string, user string, pass string) ServiceManagerOverrideConfig {
-	return ServiceManagerOverrideConfig{
+func (s SMOverrideTestSuite) SMOverrideConfig(mode servicemanager.ServiceManagerOverrideMode, url string, user string, pass string) servicemanager.Config {
+	return servicemanager.Config{
 		OverrideMode: mode,
 		URL:          url,
 		Username:     user,

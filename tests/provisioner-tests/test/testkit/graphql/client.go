@@ -9,7 +9,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/avast/retry-go"
+	retry "github.com/avast/retry-go"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )

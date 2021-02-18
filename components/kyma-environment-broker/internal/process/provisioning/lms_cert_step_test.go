@@ -1,10 +1,9 @@
 package provisioning
 
 import (
+	"fmt"
 	"testing"
 	"time"
-
-	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
@@ -20,7 +19,9 @@ func TestCertStep_RunFreshOperation(t *testing.T) {
 	svc := NewLmsCertificatesStep(nil, repo, false)
 	// a fresh operation
 	operation := internal.ProvisioningOperation{
-		Lms: internal.LMS{},
+		Operation: internal.Operation{
+			InstanceDetails: internal.InstanceDetails{Lms: internal.LMS{}},
+		},
 	}
 
 	// when
@@ -36,11 +37,13 @@ func TestCertStep_Run(t *testing.T) {
 	repo := storage.NewMemoryStorage().Operations()
 	svc := NewLmsCertificatesStep(cli, repo, false)
 	operation := internal.ProvisioningOperation{
-		Lms: internal.LMS{
-			TenantID: tID,
+		Operation: internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{},
+			InstanceDetails: internal.InstanceDetails{Lms: internal.LMS{
+				TenantID: tID,
+			}},
 		},
-		ProvisioningParameters: `{"name": "awesome"}`,
-		InputCreator:           newInputCreator(),
+		InputCreator: newInputCreator(),
 	}
 	repo.InsertProvisioningOperation(operation)
 
@@ -62,11 +65,13 @@ func TestCertStep_TenantNotReady(t *testing.T) {
 		repo := storage.NewMemoryStorage().Operations()
 		svc := NewLmsCertificatesStep(cli, repo, isMandatory)
 		operation := internal.ProvisioningOperation{
-			Lms: internal.LMS{
-				TenantID:    tID,
-				RequestedAt: time.Now(),
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{},
+				InstanceDetails: internal.InstanceDetails{Lms: internal.LMS{
+					TenantID:    tID,
+					RequestedAt: time.Now(),
+				}},
 			},
-			ProvisioningParameters: "{}",
 		}
 		repo.InsertProvisioningOperation(operation)
 
@@ -90,11 +95,13 @@ func TestCertStep_TenantNotReadyTimeout(t *testing.T) {
 		repo := storage.NewMemoryStorage().Operations()
 		svc := NewLmsCertificatesStep(cli, repo, isMandatory)
 		operation := internal.ProvisioningOperation{
-			Lms: internal.LMS{
-				TenantID:    tID,
-				RequestedAt: time.Now().Add(-10 * time.Hour), // very old
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{},
+				InstanceDetails: internal.InstanceDetails{Lms: internal.LMS{
+					TenantID:    tID,
+					RequestedAt: time.Now().Add(-10 * time.Hour), // very old
+				}},
 			},
-			ProvisioningParameters: `{"name": "awesome"}`,
 		}
 		repo.InsertProvisioningOperation(operation)
 
@@ -122,9 +129,11 @@ func TestLmsStepsHappyPath(t *testing.T) {
 
 	inputCreator := newInputCreator()
 	operation := internal.ProvisioningOperation{
-		Lms:                    internal.LMS{},
-		ProvisioningParameters: `{"Parameters": {"name":"Awesome Lms"}}`,
-		InputCreator:           inputCreator,
+		Operation: internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{},
+			InstanceDetails:        internal.InstanceDetails{Lms: internal.LMS{}},
+		},
+		InputCreator: inputCreator,
 	}
 	opRepo.InsertProvisioningOperation(operation)
 
@@ -171,39 +180,56 @@ func newFakeClientWithTenant(timeToReady time.Duration) (*lms.FakeClient, string
 
 func newInputCreator() *simpleInputCreator {
 	return &simpleInputCreator{
-		overrides: make(map[string][]*gqlschema.ConfigEntryInput, 0),
-		labels:    make(map[string]string),
+		overrides:         make(map[string][]*gqlschema.ConfigEntryInput, 0),
+		labels:            make(map[string]string),
+		enabledComponents: []string{},
 	}
 }
 
 type simpleInputCreator struct {
-	overrides map[string][]*gqlschema.ConfigEntryInput
-	labels    map[string]string
+	overrides         map[string][]*gqlschema.ConfigEntryInput
+	labels            map[string]string
+	enabledComponents []string
+	shootName         *string
 }
 
-func (c *simpleInputCreator) SetLabel(key, val string) internal.ProvisionInputCreator {
+func (c *simpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionerInputCreator {
+	c.enabledComponents = append(c.enabledComponents, name)
+	return c
+}
+
+func (c *simpleInputCreator) SetLabel(key, val string) internal.ProvisionerInputCreator {
 	c.labels[key] = val
 	return c
 }
 
-func (c *simpleInputCreator) SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionInputCreator {
+func (c *simpleInputCreator) SetShootName(name string) internal.ProvisionerInputCreator {
+	c.shootName = &name
 	return c
 }
 
-func (c *simpleInputCreator) Create() (gqlschema.ProvisionRuntimeInput, error) {
+func (c *simpleInputCreator) SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
+	return c
+}
+
+func (c *simpleInputCreator) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntimeInput, error) {
 	return gqlschema.ProvisionRuntimeInput{}, nil
 }
 
-func (c *simpleInputCreator) SetProvisioningParameters(params internal.ProvisioningParametersDTO) internal.ProvisionInputCreator {
+func (c *simpleInputCreator) CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInput, error) {
+	return gqlschema.UpgradeRuntimeInput{}, nil
+}
+
+func (c *simpleInputCreator) SetProvisioningParameters(params internal.ProvisioningParameters) internal.ProvisionerInputCreator {
 	return c
 }
 
-func (c *simpleInputCreator) AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionInputCreator {
+func (c *simpleInputCreator) AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	c.overrides[component] = append(c.overrides[component], overrides...)
 	return c
 }
 
-func (c *simpleInputCreator) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) internal.ProvisionInputCreator {
+func (c *simpleInputCreator) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	return c
 }
 
@@ -220,10 +246,18 @@ func (c *simpleInputCreator) AssertOverride(t *testing.T, component string, cei 
 	assert.Failf(t, "Overrides assert failed", "Expected component override not found: %+v", cei)
 }
 
+func (c *simpleInputCreator) AssertNoOverrides(t *testing.T) {
+	assert.Empty(t, c.overrides)
+}
+
 func (c *simpleInputCreator) AssertLabel(t *testing.T, key, expectedValue string) {
 	value, found := c.labels[key]
 	require.True(t, found)
 	assert.Equal(t, expectedValue, value)
+}
+
+func (c *simpleInputCreator) AssertEnabledComponent(t *testing.T, componentName string) {
+	assert.Contains(t, c.enabledComponents, componentName)
 }
 
 type asserter interface {

@@ -21,7 +21,7 @@ func NewPresenter(logger *log.Logger) *presenter {
 
 func (p *presenter) Do(ctx context.Context, err error) *gqlerror.Error {
 	customErr := appError{}
-	if found := errors.As(err, &customErr); !found {
+	if ok := errors.As(err, &customErr); !ok {
 		p.Logger.Errorf("Unknown error: %s\n", err.Error())
 		return newGraphqlErrorResponse(ctx, CodeInternal, err.Error())
 	}

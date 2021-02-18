@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      release: {{ .Release.Name }}
+  strategy:
+    {{- toYaml .Values.deployment.strategy | nindent 4 }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ template "fullname" . }}-sa
+      nodeSelector:
+        {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.deployment.image.path }}
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          env:
+          - name: APP_URL
+            value: "{{ .Values.agent.governorURL }}"
+          - name: APP_RUNTIME_ID
+            value: "{{ .Values.agent.runtimeID }}"
+          - name: APP_INTERVAL
+            value: "{{ .Values.agent.interval }}"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+          {{- end }}

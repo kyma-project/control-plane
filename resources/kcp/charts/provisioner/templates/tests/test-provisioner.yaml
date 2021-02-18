@@ -1,4 +1,4 @@
-{{ if .Values.tests.enabled }}
+{{ if .Values.tests.e2e.enabled }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
@@ -32,10 +32,16 @@ spec:
           value: {{ .Values.tests.gardener.gcpSecret }}
         - name: APP_KYMA_VERSION
           value: {{ .Values.tests.kyma.version }}
+        - name: APP_KYMA_PRE_UPGRADE_VERSION
+          value: {{ .Values.tests.kyma.preUpgradeVersion }}
+        - name: APP_KUBERNETES_VERSION
+          value: {{ .Values.tests.kubernetes.version }}
+        - name: APP_UPGRADE_KUBERNETES_VERSION
+          value: {{ .Values.tests.kubernetes.upgradeVersion }}
         - name: APP_QUERY_LOGGING
           value: {{ .Values.tests.queryLogging | quote }}
         - name: APP_DIRECTOR_CLIENT_URL
-          value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+          value: "https://{{ .Values.global.compass.tls.secure.oauth.host }}.{{ .Values.global.compass.domain | default .Values.global.ingress.domainName }}/director/graphql"
         - name: APP_DIRECTOR_CLIENT_NAMESPACE
           value: {{ .Release.Namespace }}
         - name: APP_DIRECTOR_CLIENT_OAUTH_CREDENTIALS_SECRET_NAME
@@ -44,6 +50,6 @@ spec:
         - "/bin/sh"
         args:
         - "-c"
-        - "echo 'TESTING start'; sleep 10; ./entrypoint.sh; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"
+        - "echo 'TESTING start'; sleep 10; ./entrypoint.sh 'Test_E2E_Gardener|TestShootUpgrade'; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"
       restartPolicy: Never
 {{ end }}

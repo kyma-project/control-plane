@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
@@ -12,20 +13,22 @@ type runtime struct {
 	runtimeInput schema.ProvisionRuntimeInput
 }
 
-type fakeClient struct {
+type FakeClient struct {
 	mu         sync.Mutex
 	runtimes   []runtime
+	upgrades   map[string]schema.UpgradeRuntimeInput
 	operations map[string]schema.OperationStatus
 }
 
-func NewFakeClient() *fakeClient {
-	return &fakeClient{
+func NewFakeClient() *FakeClient {
+	return &FakeClient{
 		runtimes:   []runtime{},
-		operations: make(map[string]schema.OperationStatus, 1),
+		operations: make(map[string]schema.OperationStatus),
+		upgrades:   make(map[string]schema.UpgradeRuntimeInput),
 	}
 }
 
-func (c *fakeClient) GetProvisionRuntimeInput(index int) schema.ProvisionRuntimeInput {
+func (c *FakeClient) GetProvisionRuntimeInput(index int) schema.ProvisionRuntimeInput {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -33,16 +36,28 @@ func (c *fakeClient) GetProvisionRuntimeInput(index int) schema.ProvisionRuntime
 	return r.runtimeInput
 }
 
-func (c *fakeClient) FinishProvisionerOperation(id string, state schema.OperationState) {
+func (c *FakeClient) FinishProvisionerOperation(id string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	op := c.operations[id]
-	op.State = state
+	op.State = schema.OperationStateSucceeded
 	c.operations[id] = op
 }
 
-func (c *fakeClient) SetOperation(id string, operation schema.OperationStatus) {
+func (c *FakeClient) FindOperationByRuntimeIDAndType(runtimeID string, operationType schema.OperationType) schema.OperationStatus {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for _, status := range c.operations {
+		if *status.RuntimeID == runtimeID && status.Operation == operationType {
+			return status
+		}
+	}
+	return schema.OperationStatus{}
+}
+
+func (c *FakeClient) SetOperation(id string, operation schema.OperationStatus) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -51,7 +66,7 @@ func (c *fakeClient) SetOperation(id string, operation schema.OperationStatus) {
 
 // Provisioner Client methods
 
-func (c *fakeClient) ProvisionRuntime(accountID, subAccountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
+func (c *FakeClient) ProvisionRuntime(accountID, subAccountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -60,13 +75,11 @@ func (c *fakeClient) ProvisionRuntime(accountID, subAccountID string, config sch
 	c.runtimes = append(c.runtimes, runtime{
 		runtimeInput: config,
 	})
-	c.operations = map[string]schema.OperationStatus{
-		opId: {
-			ID:        &opId,
-			RuntimeID: &rid,
-			Operation: schema.OperationTypeProvision,
-			State:     schema.OperationStateInProgress,
-		},
+	c.operations[opId] = schema.OperationStatus{
+		ID:        &opId,
+		RuntimeID: &rid,
+		Operation: schema.OperationTypeProvision,
+		State:     schema.OperationStateInProgress,
 	}
 	return schema.OperationStatus{
 		RuntimeID: &rid,
@@ -74,15 +87,15 @@ func (c *fakeClient) ProvisionRuntime(accountID, subAccountID string, config sch
 	}, nil
 }
 
-func (c *fakeClient) DeprovisionRuntime(accountID, runtimeID string) (string, error) {
+func (c *FakeClient) DeprovisionRuntime(accountID, runtimeID string) (string, error) {
 	return uuid.New().String(), nil
 }
 
-func (c *fakeClient) ReconnectRuntimeAgent(accountID, runtimeID string) (string, error) {
+func (c *FakeClient) ReconnectRuntimeAgent(accountID, runtimeID string) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 
-func (c *fakeClient) RuntimeOperationStatus(accountID, operationID string) (schema.OperationStatus, error) {
+func (c *FakeClient) RuntimeOperationStatus(accountID, operationID string) (schema.OperationStatus, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -91,4 +104,42 @@ func (c *fakeClient) RuntimeOperationStatus(accountID, operationID string) (sche
 		return schema.OperationStatus{}, fmt.Errorf("operation not found")
 	}
 	return o, nil
+}
+
+func (c *FakeClient) RuntimeStatus(accountID, runtimeID string) (schema.RuntimeStatus, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return schema.RuntimeStatus{
+		RuntimeConfiguration: &schema.RuntimeConfig{
+			ClusterConfig: &schema.GardenerConfig{
+				Name:   ptr.String("fake-name"),
+				Region: ptr.String("fake-region"),
+				Seed:   ptr.String("fake-seed"),
+			},
+		},
+	}, nil
+}
+
+func (c *FakeClient) UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (schema.OperationStatus, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	opId := uuid.New().String()
+	c.operations[opId] = schema.OperationStatus{
+		ID:        &opId,
+		RuntimeID: &runtimeID,
+		Operation: schema.OperationTypeUpgrade,
+		State:     schema.OperationStateInProgress,
+	}
+	c.upgrades[runtimeID] = config
+	return schema.OperationStatus{
+		RuntimeID: &runtimeID,
+		ID:        &opId,
+	}, nil
+}
+
+func (c *FakeClient) IsRuntimeUpgraded(runtimeID string) bool {
+	_, found := c.upgrades[runtimeID]
+	return found
 }

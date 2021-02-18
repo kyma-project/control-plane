@@ -1,8 +1,12 @@
 package provisioning
 
 import (
+	"context"
 	"fmt"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
@@ -77,7 +81,7 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 		return operations.StageResult{}, fmt.Errorf("error: failed to create Compass Connection client: %s", err.Error())
 	}
 
-	compassConnCR, err := compassConnClient.Get(defaultCompassConnectionName, v1meta.GetOptions{})
+	compassConnCR, err := compassConnClient.Get(context.Background(), defaultCompassConnectionName, v1meta.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			logger.Infof("Compass Connection not yet found on cluster")
@@ -109,7 +113,11 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 }
 
 func (s *WaitForAgentToConnectStep) setConnectedRuntimeStatusCondition(cluster model.Cluster, logger logrus.FieldLogger) operations.StageResult {
-	if err := s.directorClient.SetRuntimeStatusCondition(cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant); err != nil {
+	err := util.RetryOnError(5*time.Second, 3, "Error while setting runtime status condition in Director: %s", func() (err apperrors.AppError) {
+		err = s.directorClient.SetRuntimeStatusCondition(cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant)
+		return
+	})
+	if err != nil {
 		logger.Errorf("Failed to set runtime %s status condition: %s", graphql.RuntimeStatusConditionConnected.String(), err.Error())
 		return operations.StageResult{Stage: s.Name(), Delay: 2 * time.Second}
 	}

@@ -18,13 +18,25 @@
   "links": [],
   "panels": [
     {
-      "collapsed": false,
       "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 0
+      },
+      "id": 93,
+      "title": "Row title",
+      "type": "row"
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 1
       },
       "id": 50,
       "panels": [],
@@ -33,72 +45,70 @@
     },
     {
       "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": true,
-      "colors": [
-        "#73BF69",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
-      ],
       "datasource": null,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "mappings": [
+            {
+              "id": 0,
+              "op": "=",
+              "text": "N/A",
+              "type": 1,
+              "value": "null"
+            }
+          ],
+          "nullValueMode": "connected",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 200
+              }
+            ]
+          },
+          "unit": "short"
         },
         "overrides": []
-      },
-      "format": "short",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
       },
       "gridPos": {
         "h": 3,
         "w": 6,
         "x": 0,
-        "y": 1
+        "y": 2
       },
       "id": 63,
       "interval": null,
       "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "pluginVersion": "6.7.3",
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
+      "options": {
+        "colorMode": "value",
+        "fieldOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": false,
-        "ymax": null,
-        "ymin": null
       },
-      "tableColumn": "",
+      "pluginVersion": "7.0.6",
       "targets": [
         {
           "expr": "SUM(compass_keb_instances_total{service=\"kcp-kyma-environment-broker\"})",
@@ -107,20 +117,10 @@
           "refId": "A"
         }
       ],
-      "thresholds": "",
       "timeFrom": null,
       "timeShift": null,
       "title": "Total number of instances",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
+      "type": "stat"
     },
     {
       "datasource": null,
@@ -156,7 +156,7 @@
         "h": 12,
         "w": 18,
         "x": 6,
-        "y": 1
+        "y": 2
       },
       "id": 65,
       "options": {
@@ -166,11 +166,12 @@
           "calcs": [
             "lastNotNull"
           ],
+          "fields": "",
           "values": false
         },
         "showUnfilled": true
       },
-      "pluginVersion": "7.0.1",
+      "pluginVersion": "7.0.6",
       "targets": [
         {
           "expr": "topk(16, compass_keb_global_account_id_instances_total{service=\"kcp-kyma-environment-broker\"})",
@@ -188,71 +189,70 @@
     },
     {
       "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": true,
-      "colors": [
-        "#299c46",
-        "rgba(237, 129, 40, 0.89)",
-        "#d44a3a"
-      ],
       "datasource": null,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "mappings": [
+            {
+              "id": 0,
+              "op": "=",
+              "text": "N/A",
+              "type": 1,
+              "value": "null"
+            }
+          ],
+          "nullValueMode": "connected",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 200
+              }
+            ]
+          },
+          "unit": "none"
         },
         "overrides": []
-      },
-      "format": "none",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
       },
       "gridPos": {
         "h": 3,
         "w": 6,
         "x": 0,
-        "y": 4
+        "y": 5
       },
       "id": 71,
       "interval": null,
       "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
+      "options": {
+        "colorMode": "value",
+        "fieldOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": false,
-        "ymax": null,
-        "ymin": null
       },
-      "tableColumn": "",
+      "pluginVersion": "7.0.6",
       "targets": [
         {
           "expr": "count(compass_keb_global_account_id_instances_total{service=\"kcp-kyma-environment-broker\"})",
@@ -261,20 +261,10 @@
           "refId": "A"
         }
       ],
-      "thresholds": "",
       "timeFrom": null,
       "timeShift": null,
       "title": "Total number of Global Acocunts",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
+      "type": "stat"
     },
     {
       "cacheTimeout": null,
@@ -289,7 +279,21 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -305,7 +309,7 @@
         "h": 3,
         "w": 6,
         "x": 0,
-        "y": 7
+        "y": 8
       },
       "id": 67,
       "interval": null,
@@ -324,7 +328,20 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "pluginVersion": "6.7.3",
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "pluginVersion": "7.0.6",
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -347,7 +364,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "SUM(compass_keb_operations_provisioning_in_progress_total{service=\"kcp-kyma-environment-broker\"})",
+          "expr": "SUM(compass_keb_operations_azure_provisioning_in_progress_total{service=\"kcp-kyma-environment-broker\"})",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -357,7 +374,7 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "In progress provisioning operations",
-      "type": "singlestat",
+      "type": "stat",
       "valueFontSize": "80%",
       "valueMaps": [
         {
@@ -380,7 +397,21 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -396,7 +427,7 @@
         "h": 3,
         "w": 6,
         "x": 0,
-        "y": 10
+        "y": 11
       },
       "id": 69,
       "interval": null,
@@ -415,6 +446,20 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "pluginVersion": "7.0.6",
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -437,7 +482,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "SUM(compass_keb_operations_deprovisioning_in_progress_total{service=\"kcp-kyma-environment-broker\"})",
+          "expr": "SUM(compass_keb_operations_azure_deprovisioning_in_progress_total{service=\"kcp-kyma-environment-broker\"})",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -447,7 +492,7 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "In progress deprovisioning operations",
-      "type": "singlestat",
+      "type": "stat",
       "valueFontSize": "80%",
       "valueMaps": [
         {
@@ -494,7 +539,7 @@
         "h": 7,
         "w": 6,
         "x": 0,
-        "y": 13
+        "y": 14
       },
       "hiddenSeries": false,
       "id": 73,
@@ -528,14 +573,14 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "(SUM(compass_keb_operations_provisioning_succeeded_total) / (SUM(compass_keb_operations_provisioning_failed_total) + SUM(compass_keb_operations_provisioning_succeeded_total))) * 100",
+          "expr": "(SUM(compass_keb_operations_azure_provisioning_succeeded_total) / (SUM(compass_keb_operations_azure_provisioning_failed_total) + SUM(compass_keb_operations_azure_provisioning_succeeded_total))) * 100",
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "Provisioning",
           "refId": "A"
         },
         {
-          "expr": "(SUM(compass_keb_operations_deprovisioning_succeeded_total) / (SUM(compass_keb_operations_deprovisioning_failed_total) + SUM(compass_keb_operations_deprovisioning_succeeded_total))) * 100",
+          "expr": "(SUM(compass_keb_operations_azure_deprovisioning_succeeded_total) / (SUM(compass_keb_operations_azure_deprovisioning_failed_total) + SUM(compass_keb_operations_azure_deprovisioning_succeeded_total))) * 100",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -563,7 +608,6 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:114",
           "format": "percent",
           "label": null,
           "logBase": 1,
@@ -572,7 +616,6 @@
           "show": true
         },
         {
-          "$$hashKey": "object:115",
           "format": "percent",
           "label": null,
           "logBase": 1,
@@ -608,7 +651,7 @@
         "h": 7,
         "w": 18,
         "x": 6,
-        "y": 13
+        "y": 14
       },
       "hiddenSeries": false,
       "id": 54,
@@ -638,7 +681,6 @@
       "renderer": "flot",
       "seriesOverrides": [
         {
-          "$$hashKey": "object:355",
           "alias": "Provisioning",
           "yaxis": 1
         }
@@ -686,7 +728,6 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:321",
           "format": "m",
           "label": null,
           "logBase": 1,
@@ -695,7 +736,6 @@
           "show": true
         },
         {
-          "$$hashKey": "object:322",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -710,13 +750,1629 @@
       }
     },
     {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 21
+      },
+      "hiddenSeries": false,
+      "id": 83,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "avg_over_time((sum(compass_keb_provisioning_duration_minutes_sum{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"})/ sum(compass_keb_provisioning_duration_minutes_count{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"}))[1h:5m])",
+          "interval": "",
+          "legendFormat": "azure",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "[azure] avg provisioning time over time",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:262",
+          "format": "m",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:263",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 4,
+        "w": 9,
+        "x": 6,
+        "y": 21
+      },
+      "hiddenSeries": false,
+      "id": 85,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "delta(compass_keb_operations_azure_provisioning_failed_total[1h])",
+          "interval": "",
+          "legendFormat": "azure",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "[azure] provisioning failure count",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:116",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:117",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 4,
+        "w": 9,
+        "x": 15,
+        "y": 21
+      },
+      "hiddenSeries": false,
+      "id": 87,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "delta(compass_keb_operations_azure_deprovisioning_failed_total[40m])",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "[azure] deprovisioning failure count",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:2459",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:2460",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 25
+      },
+      "id": 81,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.0.6",
+      "targets": [
+        {
+          "expr": "sum(increase(compass_keb_operations_azure_provisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_azure_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_azure_provisioning_failed_total[1h]))) > 0) *100",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(increase(compass_keb_operations_azure_deprovisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_azure_deprovisioning_succeeded_total[1h]) + increase(compass_keb_operations_azure_deprovisioning_failed_total[1h]))) >0) *100",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[azure] provisioning/deprovisioning failure rate",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "dark-red",
+                "value": 60
+              }
+            ]
+          },
+          "unit": "m"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 25
+      },
+      "id": 75,
+      "options": {
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "min"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.0.6",
+      "targets": [
+        {
+          "expr": "min(compass_keb_provisioning_duration_minutes_sum{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"})",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "min(compass_keb_deprovisioning_duration_minutes_sum{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"})",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[azure] min provisioning / deprovisioning time",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "dark-green",
+                "value": 15
+              },
+              {
+                "color": "dark-red",
+                "value": 35
+              }
+            ]
+          },
+          "unit": "m"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 25
+      },
+      "id": 77,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.0.6",
+      "targets": [
+        {
+          "expr": "avg(compass_keb_provisioning_duration_minutes_sum{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"})",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "avg(compass_keb_deprovisioning_duration_minutes_sum{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"})",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[azure] avg provisioning / deprovisioning time",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "dark-red",
+                "value": 60
+              }
+            ]
+          },
+          "unit": "m"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 25
+      },
+      "id": 79,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "max"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.0.6",
+      "targets": [
+        {
+          "expr": "max(compass_keb_provisioning_duration_minutes_sum{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"})",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "max(compass_keb_deprovisioning_duration_minutes_sum{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"})",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[azure] max provisioning / deprovisioning time",
+      "type": "gauge"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 29
+      },
+      "hiddenSeries": false,
+      "id": 91,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "avg_over_time((sum(compass_keb_provisioning_duration_minutes_sum{plan_id=\"7d55d31d-35ae-4438-bf13-6ffdfa107d9f\"})/ sum(compass_keb_provisioning_duration_minutes_count{plan_id=\"7d55d31d-35ae-4438-bf13-6ffdfa107d9f\"}))[1h:5m])",
+          "interval": "",
+          "legendFormat": "azure_trial",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "[azure-trial] avg provisioning time over time",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:1066",
+          "format": "m",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:1067",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 4,
+        "w": 9,
+        "x": 6,
+        "y": 29
+      },
+      "hiddenSeries": false,
+      "id": 94,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "delta(compass_keb_operations_trial_provisioning_failed_total[1h])",
+          "interval": "",
+          "legendFormat": "azure_trial",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "[azure-trial] provisioning failure count",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:116",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:117",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 4,
+        "w": 9,
+        "x": 15,
+        "y": 29
+      },
+      "hiddenSeries": false,
+      "id": 95,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "delta(compass_keb_operations_trial_deprovisioning_failed_total[40m])",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "[azure-trial] deprovisioning failure count",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:1796",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:1797",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 33
+      },
+      "id": 96,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.0.6",
+      "targets": [
+        {
+          "expr": "sum(increase(compass_keb_operations_trial_provisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_trial_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_trial_provisioning_failed_total[1h]))) > 0) *100",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(increase(compass_keb_operations_trial_deprovisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_trial_deprovisioning_succeeded_total[1h]) + increase(compass_keb_operations_trial_deprovisioning_failed_total[1h]))) > 0) *100",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[azure-trial] provisioning/deprovisioning failure rate",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "dark-red",
+                "value": 60
+              }
+            ]
+          },
+          "unit": "m"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 33
+      },
+      "id": 97,
+      "options": {
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "min"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.0.6",
+      "targets": [
+        {
+          "expr": "min(compass_keb_provisioning_duration_minutes_sum{plan_id=\"7d55d31d-35ae-4438-bf13-6ffdfa107d9f\"})",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "min(compass_keb_deprovisioning_duration_minutes_sum{plan_id=\"7d55d31d-35ae-4438-bf13-6ffdfa107d9f\"})",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[azure-trial] min provisioning / deprovisioning time",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "dark-green",
+                "value": 15
+              },
+              {
+                "color": "dark-red",
+                "value": 25
+              }
+            ]
+          },
+          "unit": "m"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 33
+      },
+      "id": 98,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.0.6",
+      "targets": [
+        {
+          "expr": "avg(compass_keb_provisioning_duration_minutes_sum{plan_id=\"7d55d31d-35ae-4438-bf13-6ffdfa107d9f\"})",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "avg(compass_keb_deprovisioning_duration_minutes_sum{plan_id=\"7d55d31d-35ae-4438-bf13-6ffdfa107d9f\"})",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[azure-trial] avg provisioning / deprovisioning time",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "dark-red",
+                "value": 45
+              }
+            ]
+          },
+          "unit": "m"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 33
+      },
+      "id": 99,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "max"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.0.6",
+      "targets": [
+        {
+          "expr": "max(compass_keb_provisioning_duration_minutes_sum{plan_id=\"7d55d31d-35ae-4438-bf13-6ffdfa107d9f\"})",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "max(compass_keb_deprovisioning_duration_minutes_sum{plan_id=\"7d55d31d-35ae-4438-bf13-6ffdfa107d9f\"})",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[azure-trial] max provisioning / deprovisioning time",
+      "type": "gauge"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 37
+      },
+      "hiddenSeries": false,
+      "id": 100,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "avg_over_time((sum(compass_keb_provisioning_duration_minutes_sum{plan_id=\"8cb22518-aa26-44c5-91a0-e669ec9bf443\"})/ sum(compass_keb_provisioning_duration_minutes_count{plan_id=\"8cb22518-aa26-44c5-91a0-e669ec9bf443\"}))[1h:5m])",
+          "interval": "",
+          "legendFormat": "azure-lite",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "[azure-lite] avg provisioning time over time",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:1066",
+          "format": "m",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:1067",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 4,
+        "w": 9,
+        "x": 6,
+        "y": 37
+      },
+      "hiddenSeries": false,
+      "id": 101,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "delta(compass_keb_operations_azure_lite_provisioning_failed_total[1h])",
+          "interval": "",
+          "legendFormat": "azure_lite",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "[azure-lite] provisioning failure count",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:116",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:117",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 4,
+        "w": 9,
+        "x": 15,
+        "y": 37
+      },
+      "hiddenSeries": false,
+      "id": 102,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "delta(compass_keb_operations_azure_lite_deprovisioning_failed_total[40m])",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "[azure-lite] deprovisioning failure count",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:1796",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:1797",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 41
+      },
+      "id": 103,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.0.6",
+      "targets": [
+        {
+          "expr": " sum(increase(compass_keb_operations_azure_lite_provisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_azure_lite_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_azure_lite_provisioning_failed_total[1h]))+0.0000001) > 0) *100",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(increase(compass_keb_operations_azure_lite_deprovisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_azure_lite_deprovisioning_succeeded_total[1h]) + increase(compass_keb_operations_azure_lite_deprovisioning_failed_total[1h]))+0.0000001) > 0) *100",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[azure-lite] provisioning/deprovisioning failure rate",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "dark-red",
+                "value": 60
+              }
+            ]
+          },
+          "unit": "m"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 41
+      },
+      "id": 104,
+      "options": {
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "min"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.0.6",
+      "targets": [
+        {
+          "expr": "min(compass_keb_provisioning_duration_minutes_sum{plan_id=\"8cb22518-aa26-44c5-91a0-e669ec9bf443\"})",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "min(compass_keb_deprovisioning_duration_minutes_sum{plan_id=\"8cb22518-aa26-44c5-91a0-e669ec9bf443\"})",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[azure-lite] min provisioning / deprovisioning time",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "m"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 41
+      },
+      "id": 105,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.0.6",
+      "targets": [
+        {
+          "expr": "avg(compass_keb_provisioning_duration_minutes_sum{plan_id=\"8cb22518-aa26-44c5-91a0-e669ec9bf443\"})",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "avg(compass_keb_deprovisioning_duration_minutes_sum{plan_id=\"8cb22518-aa26-44c5-91a0-e669ec9bf443\"})",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[azure-lite] avg provisioning / deprovisioning time",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "m"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 41
+      },
+      "id": 106,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "max"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.0.6",
+      "targets": [
+        {
+          "expr": "max(compass_keb_provisioning_duration_minutes_sum{plan_id=\"8cb22518-aa26-44c5-91a0-e669ec9bf443\"})",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "max(compass_keb_deprovisioning_duration_minutes_sum{plan_id=\"8cb22518-aa26-44c5-91a0-e669ec9bf443\"})",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[azure-lite] max provisioning / deprovisioning time",
+      "type": "gauge"
+    },
+    {
       "collapsed": false,
       "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 45
       },
       "id": 42,
       "panels": [],
@@ -741,7 +2397,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 21
+        "y": 46
       },
       "hiddenSeries": false,
       "id": 16,
@@ -840,7 +2496,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 21
+        "y": 46
       },
       "hiddenSeries": false,
       "id": 17,
@@ -938,7 +2594,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 21
+        "y": 46
       },
       "hiddenSeries": false,
       "id": 18,
@@ -1039,7 +2695,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 28
+        "y": 53
       },
       "hiddenSeries": false,
       "id": 22,
@@ -1067,7 +2723,6 @@
       "renderer": "flot",
       "seriesOverrides": [
         {
-          "$$hashKey": "object:98",
           "alias": "alloc rate",
           "yaxis": 2
         }
@@ -1185,7 +2840,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 28
+        "y": 53
       },
       "hiddenSeries": false,
       "id": 24,
@@ -1287,7 +2942,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 28
+        "y": 53
       },
       "hiddenSeries": false,
       "id": 52,
@@ -1385,7 +3040,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 35
+        "y": 60
       },
       "id": 38,
       "panels": [],
@@ -1416,7 +3071,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 36
+        "y": 61
       },
       "hiddenSeries": false,
       "id": 10,
@@ -1547,7 +3202,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 36
+        "y": 61
       },
       "hiddenSeries": false,
       "id": 8,
@@ -1641,13 +3296,11 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:876",
           "format": "short",
           "logBase": 1,
           "show": true
         },
         {
-          "$$hashKey": "object:877",
           "format": "short",
           "logBase": 1,
           "show": true
@@ -1683,7 +3336,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 43
+        "y": 68
       },
       "hiddenSeries": false,
       "id": 12,
@@ -1763,7 +3416,7 @@
       }
     }
   ],
-  "refresh": false,
+  "refresh": "10s",
   "schemaVersion": 25,
   "style": "dark",
   "tags": [
@@ -1774,13 +3427,11 @@
     "list": []
   },
   "time": {
-    "from": "now-30d",
+    "from": "now-7d",
     "to": "now"
   },
   "timepicker": {
     "refresh_intervals": [
-      "5s",
-      "10s",
       "30s",
       "1m",
       "5m",
@@ -1805,5 +3456,5 @@
   "timezone": "",
   "title": "KCP / Kyma Environment Broker",
   "uid": "_MIdIJiZh",
-  "version": 2
+  "version": 5
 }

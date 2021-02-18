@@ -1,6 +1,11 @@
 package runtime
 
 import (
+	"context"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
@@ -49,7 +54,12 @@ func (c *configurator) ConfigureRuntime(cluster model.Cluster, kubeconfigRaw str
 
 func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconfigRaw string) apperrors.AppError {
 	var err apperrors.AppError
-	token, err := c.directorClient.GetConnectionToken(cluster.ID, cluster.Tenant)
+	var token graphql.OneTimeTokenForRuntimeExt
+	err = util.RetryOnError(10*time.Second, 3, "Error while getting one time token from Director: %s", func() (err apperrors.AppError) {
+		token, err = c.directorClient.GetConnectionToken(cluster.ID, cluster.Tenant)
+		return
+	})
+
 	if err != nil {
 		return err.Append("error getting one time token from Director")
 	}
@@ -74,7 +84,7 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 		StringData: configurationData,
 	}
 
-	_, k8serr := k8sClient.CoreV1().Secrets(namespace).Create(secret)
+	_, k8serr := k8sClient.CoreV1().Secrets(namespace).Create(context.Background(), secret, meta.CreateOptions{})
 	if k8serr != nil {
 		return util.K8SErrorToAppError(k8serr).Append("error creating Secret on Runtime")
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -23,16 +24,18 @@ const (
 )
 
 type CreateRuntimeStep struct {
-	operationManager  *process.ProvisionOperationManager
-	instanceStorage   storage.Instances
-	provisionerClient provisioner.Client
+	operationManager    *process.ProvisionOperationManager
+	instanceStorage     storage.Instances
+	runtimeStateStorage storage.RuntimeStates
+	provisionerClient   provisioner.Client
 }
 
-func NewCreateRuntimeStep(os storage.Operations, is storage.Instances, cli provisioner.Client) *CreateRuntimeStep {
+func NewCreateRuntimeStep(os storage.Operations, runtimeStorage storage.RuntimeStates, is storage.Instances, cli provisioner.Client) *CreateRuntimeStep {
 	return &CreateRuntimeStep{
-		operationManager:  process.NewProvisionOperationManager(os),
-		instanceStorage:   is,
-		provisionerClient: cli,
+		operationManager:    process.NewProvisionOperationManager(os),
+		instanceStorage:     is,
+		provisionerClient:   cli,
+		runtimeStateStorage: runtimeStorage,
 	}
 }
 
@@ -45,24 +48,30 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout))
 	}
-
-	pp, err := operation.GetProvisioningParameters()
+	requestInput, err := s.createProvisionInput(operation)
 	if err != nil {
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
-	}
-
-	requestInput, err := s.createProvisionInput(operation, pp)
-	if err != nil {
+		log.Errorf("Unable to create provisioning input: %s", err.Error())
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create provisioning input")
 	}
 
 	var provisionerResponse gqlschema.OperationStatus
 	if operation.ProvisionerOperationID == "" {
-		provisionerResponse, err := s.provisionerClient.ProvisionRuntime(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID, requestInput)
-		if err != nil {
-			log.Errorf("call to provisioner failed: %s", err)
+		log.Infof("call ProvisionRuntime: kymaVersion=%s, kubernetesVersion=%s, region=%s, kymaProfile=%s",
+			requestInput.KymaConfig.Version,
+			requestInput.ClusterConfig.GardenerConfig.KubernetesVersion,
+			requestInput.ClusterConfig.GardenerConfig.Region,
+			requestInput.KymaConfig.Profile)
+
+		provisionerResponse, err := s.provisionerClient.ProvisionRuntime(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisioningParameters.ErsContext.SubAccountID, requestInput)
+		switch {
+		case kebError.IsTemporaryError(err):
+			log.Errorf("call to provisioner failed (temporary error): %s", err)
 			return operation, 5 * time.Second, nil
+		case err != nil:
+			log.Errorf("call to Provisioner failed: %s", err)
+			return s.operationManager.OperationFailed(operation, "call to the provisioner service failed")
 		}
+
 		operation.ProvisionerOperationID = *provisionerResponse.ID
 		if provisionerResponse.RuntimeID != nil {
 			operation.RuntimeID = *provisionerResponse.RuntimeID
@@ -75,7 +84,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 	}
 
 	if provisionerResponse.RuntimeID == nil {
-		provisionerResponse, err = s.provisionerClient.RuntimeOperationStatus(pp.ErsContext.GlobalAccountID, operation.ProvisionerOperationID)
+		provisionerResponse, err = s.provisionerClient.RuntimeOperationStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisionerOperationID)
 		if err != nil {
 			log.Errorf("call to provisioner about operation status failed: %s", err)
 			return operation, 1 * time.Minute, nil
@@ -85,7 +94,15 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		return operation, 1 * time.Minute, nil
 	}
 	log = log.WithField("runtimeID", *provisionerResponse.RuntimeID)
-	log.Infof("call to provisioner succeeded", *provisionerResponse.RuntimeID)
+	log.Infof("call to provisioner succeeded, got operation ID %q", *provisionerResponse.ID)
+
+	err = s.runtimeStateStorage.Insert(
+		internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.ID, requestInput.KymaConfig, requestInput.ClusterConfig.GardenerConfig),
+	)
+	if err != nil {
+		log.Errorf("cannot insert runtimeState: %s", err)
+		return operation, 10 * time.Second, nil
+	}
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	if err != nil {
@@ -93,8 +110,9 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		return operation, 1 * time.Minute, nil
 	}
 	instance.RuntimeID = *provisionerResponse.RuntimeID
+	instance.ProviderRegion = requestInput.ClusterConfig.GardenerConfig.Region
 
-	err = s.instanceStorage.Update(*instance)
+	_, err = s.instanceStorage.Update(*instance)
 	if err != nil {
 		log.Errorf("cannot update instance in storage: %s", err)
 		return operation, 10 * time.Second, nil
@@ -105,13 +123,14 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 	return operation, 1 * time.Second, nil
 }
 
-func (s *CreateRuntimeStep) createProvisionInput(operation internal.ProvisioningOperation, parameters internal.ProvisioningParameters) (gqlschema.ProvisionRuntimeInput, error) {
+func (s *CreateRuntimeStep) createProvisionInput(operation internal.ProvisioningOperation) (gqlschema.ProvisionRuntimeInput, error) {
 	var request gqlschema.ProvisionRuntimeInput
 
-	operation.InputCreator.SetProvisioningParameters(parameters.Parameters)
+	operation.InputCreator.SetProvisioningParameters(operation.ProvisioningParameters)
+	operation.InputCreator.SetShootName(operation.ShootName)
 	operation.InputCreator.SetLabel(brokerKeyPrefix+"instance_id", operation.InstanceID)
-	operation.InputCreator.SetLabel(globalKeyPrefix+"subaccount_id", parameters.ErsContext.SubAccountID)
-	request, err := operation.InputCreator.Create()
+	operation.InputCreator.SetLabel(globalKeyPrefix+"subaccount_id", operation.ProvisioningParameters.ErsContext.SubAccountID)
+	request, err := operation.InputCreator.CreateProvisionRuntimeInput()
 	if err != nil {
 		return request, errors.Wrap(err, "while building input for provisioner")
 	}

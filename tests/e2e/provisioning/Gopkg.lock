@@ -42,28 +42,12 @@
   version = "v14.0.1"
 
 [[projects]]
-  digest = "1:3b10c6fd33854dc41de2cf78b7bae105da94c2789b6fa5b9ac9e593ea43484ac"
-  name = "github.com/Masterminds/goutils"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "41ac8693c5c10a92ea1ff5ac3a7f95646f6123b0"
-  version = "v1.1.0"
-
-[[projects]]
   digest = "1:3eb77aef9ca7828bd0f81166688176a411d0ef87b89a66c43d49b06b9eb48101"
   name = "github.com/Masterminds/semver"
   packages = ["."]
   pruneopts = "UT"
   revision = "60c7ae8a99210a90a9457d5de5f6dcbc4dab8e64"
   version = "v3.1.0"
-
-[[projects]]
-  digest = "1:b565deb585c50ab8e94fe5d6c9903f1495970b97814803e4ab0e70c0a9c87a30"
-  name = "github.com/Masterminds/sprig"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "e4c0945838d570720d876a6ad9b4568ed32317b4"
-  version = "v2.22.0"
 
 [[projects]]
   digest = "1:35a3c0cb74b67330a1593e1ca2bca87d914c372eb60ebccc0902743d8466e3d6"
@@ -80,14 +64,6 @@
   pruneopts = "UT"
   revision = "475eaeb164960a651e97470412a7d3b0c5036105"
   version = "v10"
-
-[[projects]]
-  digest = "1:49bb655587fa61c5b986d03c0b5b2a7c163683bc5d1379f32927bbb86f461115"
-  name = "github.com/avast/retry-go"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "a8f6dc7e8f46a5d11c01d9da1e887bb5a51fd107"
-  version = "v2.6.0"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -112,6 +88,23 @@
   pruneopts = "UT"
   revision = "bf22ed9311622d93e213ba31e4ae7a5771e5d379"
   version = "v4.6.0"
+
+[[projects]]
+  digest = "1:d25b986adfaedea6e02bafbde67cb81ff02411f21d9c7daeb81d236a068f6992"
+  name = "github.com/gardener/gardener"
+  packages = [
+    "pkg/apis/core",
+    "pkg/apis/core/v1alpha1",
+    "pkg/apis/core/v1beta1",
+    "pkg/apis/core/v1beta1/constants",
+    "pkg/client/core/clientset/versioned/scheme",
+    "pkg/client/core/clientset/versioned/typed/core/v1beta1",
+    "pkg/utils",
+    "pkg/utils/version",
+  ]
+  pruneopts = "UT"
+  revision = "9df1045873ec76f902cfeb9e7e84c356a5c0af68"
+  version = "v1.10.1"
 
 [[projects]]
   digest = "1:edd2fa4578eb086265db78a9201d15e76b298dfd0d5c379da83e9c61712cf6df"
@@ -202,14 +195,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:b933e00500e18d7e4c9ae09f7ff119b0a16353b776c6538a01bdff284ea6a5a6"
-  name = "github.com/huandu/xstrings"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "2d07d6354d7a6d8f940a16a9a98ca38f6b17254c"
-  version = "v1.3.1"
-
-[[projects]]
   digest = "1:78d28d5b84a26159c67ea51996a230da4bc07cac648adaae1dfb5fc0ec8e40d3"
   name = "github.com/imdario/mergo"
   packages = ["."]
@@ -250,19 +235,16 @@
   revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
 
 [[projects]]
-  digest = "1:967420ccfcff8928e5a937449bbfbc8655d22ead8c10d500cc42f73e80b193cd"
+  digest = "1:67c319de6100353ad5a319c4444b5d43cb27217be3e9c9bbf27303bcf08a70b1"
   name = "github.com/kyma-project/control-plane"
-  packages = ["components/provisioner/pkg/gqlschema"]
+  packages = [
+    "components/kyma-environment-broker/common/director",
+    "components/kyma-environment-broker/common/gardener",
+    "components/kyma-environment-broker/internal/error",
+    "components/provisioner/pkg/gqlschema",
+  ]
   pruneopts = "UT"
-  revision = "d5c043eb0dbe34e64759b23bcbd1e49505eee7c0"
-
-[[projects]]
-  digest = "1:49f1c5f12d36c5529f52e6b1aa3ae3673039f186be3115b8254020fafd6aa8eb"
-  name = "github.com/kyma-project/kyma"
-  packages = ["components/kyma-operator/pkg/apis/installer/v1alpha1"]
-  pruneopts = "UT"
-  revision = "6e80a312e0a244470f87c82e397ed6f3c88244b0"
-  version = "1.13.0"
+  revision = "e0437b7ac8d66565e1253b46f42f10b20f3dda48"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -271,22 +253,6 @@
   pruneopts = "UT"
   revision = "05b17f3157491bbfa5d6fc2006443a272d960d15"
   version = "v0.2.2"
-
-[[projects]]
-  digest = "1:09ca328575f38b80969ccf857f6d7302f2ce09d53778ea7aaba526cfd2cec739"
-  name = "github.com/mitchellh/copystructure"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "9a1b6f44e8da0e0e374624fb0a825a231b00c537"
-  version = "v1.0.0"
-
-[[projects]]
-  digest = "1:2a7e6f8bebdca6bd8bc359c37f01ae1c4ea4f8481eaabf93b1ae4863f15b72c7"
-  name = "github.com/mitchellh/reflectwalk"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "3e2c75dfad4fbf904b58782a80fd595c760ad185"
-  version = "v1.0.1"
 
 [[projects]]
   digest = "1:33422d238f147d247752996a26574ac48dcf472976eda7f5134015f06bf16563"
@@ -424,13 +390,9 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:06ea4b9041b945d21befb747ce386482e7686e88ae901110fad90328c3d2ceaf"
+  digest = "1:c8b0363634b7f813bd07d829fa98af420d99c68d9e88077a7c86fad8e6e31e27"
   name = "golang.org/x/crypto"
-  packages = [
-    "pbkdf2",
-    "scrypt",
-    "ssh/terminal",
-  ]
+  packages = ["ssh/terminal"]
   pruneopts = "UT"
   revision = "69ecbb4d6d5dab05e49161c6e77ea40a030884e1"
 
@@ -591,10 +553,10 @@
   ]
   pruneopts = "UT"
   revision = "7ea599edc7fd1198238be103353ca78eef24ae63"
-  version = "v0.17.2"
+  version = "v0.17.13"
 
 [[projects]]
-  digest = "1:cdcbb89b4547028b1dfd8d1afca6a2a33a6a1730ce07a3265728b39b8ae476bc"
+  digest = "1:3d95b12b8d7f030aa7e8fc5507ff9347464f1ccb882586cd45b1660f67685eb7"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
@@ -624,27 +586,25 @@
     "pkg/util/framer",
     "pkg/util/intstr",
     "pkg/util/json",
-    "pkg/util/mergepatch",
     "pkg/util/naming",
     "pkg/util/net",
+    "pkg/util/rand",
     "pkg/util/runtime",
     "pkg/util/sets",
-    "pkg/util/strategicpatch",
     "pkg/util/validation",
     "pkg/util/validation/field",
     "pkg/util/wait",
     "pkg/util/yaml",
     "pkg/version",
     "pkg/watch",
-    "third_party/forked/golang/json",
     "third_party/forked/golang/reflect",
   ]
   pruneopts = "UT"
   revision = "79c2a76c473a20cdc4ce59cae4b72529b5d9d16b"
-  version = "v0.17.2"
+  version = "v0.17.13"
 
 [[projects]]
-  digest = "1:7e23c4b98d0dc3af59171763723586408a06bdcd7b6b6c4c09190474d5a9a669"
+  digest = "1:2cc2cf71fc9e28f8ef9f746e52295d5391837454217e5682929078dfc425fb5d"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -695,7 +655,6 @@
     "rest",
     "rest/watch",
     "restmapper",
-    "testing",
     "tools/auth",
     "tools/clientcmd",
     "tools/clientcmd/api",
@@ -709,6 +668,7 @@
     "util/flowcontrol",
     "util/homedir",
     "util/keyutil",
+    "util/retry",
   ]
   pruneopts = "UT"
   revision = "78d2af792babf2dd937ba2e2a8d99c753a5eda89"
@@ -724,14 +684,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:22abb5d4204ab1a0dcc9cda64906a31c43965ff5159e8b9f766c9d2a162dbed5"
-  name = "k8s.io/kube-openapi"
-  packages = ["pkg/util/proto"]
-  pruneopts = "UT"
-  revision = "addea2498afe5a6d58f8bdcd9ae51363d12f12ef"
-
-[[projects]]
-  branch = "master"
   digest = "1:01dbe4c86aa758aaa7502784c7e81642f3f0995c0fd6a094a8daaf5cb962ac73"
   name = "k8s.io/utils"
   packages = [
@@ -742,15 +694,14 @@
   revision = "861946025e3491219eaccb1bf693e23df70c2fa8"
 
 [[projects]]
-  digest = "1:5f7e1be275043b29057387979ae05ff28fb4c1ab128c3d4042ef0d190bbabfe5"
+  digest = "1:9c2332b6e155120e9b686bb7dd0902aaa6e6906a4eb6216de8e2b89b6542f200"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     "pkg/client",
     "pkg/client/apiutil",
     "pkg/client/config",
-    "pkg/client/fake",
+    "pkg/controller/controllerutil",
     "pkg/internal/log",
-    "pkg/internal/objectutil",
     "pkg/log",
     "pkg/scheme",
   ]
@@ -775,12 +726,10 @@
     "github.com/Azure/go-autorest/autorest",
     "github.com/Azure/go-autorest/autorest/adal",
     "github.com/Azure/go-autorest/autorest/azure",
-    "github.com/Masterminds/sprig",
-    "github.com/avast/retry-go",
     "github.com/google/uuid",
-    "github.com/kyma-incubator/compass/components/director/pkg/graphql",
+    "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director",
+    "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener",
     "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema",
-    "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1",
     "github.com/machinebox/graphql",
     "github.com/ory/hydra-maester/api/v1alpha1",
     "github.com/pivotal-cf/brokerapi/v7/domain",
@@ -791,20 +740,14 @@
     "github.com/thanhpk/randstr",
     "github.com/vrischmann/envconfig",
     "golang.org/x/oauth2/clientcredentials",
-    "gopkg.in/yaml.v2",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
-    "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/util/wait",
-    "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/scheme",
     "k8s.io/client-go/kubernetes/typed/core/v1",
-    "k8s.io/client-go/rest",
-    "k8s.io/client-go/tools/clientcmd",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/config",
-    "sigs.k8s.io/controller-runtime/pkg/client/fake",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

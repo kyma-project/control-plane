@@ -2,14 +2,19 @@ package provisioning
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/input"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -31,15 +36,23 @@ type DirectorClient interface {
 	SetLabel(accountID, runtimeID, key, value string) error
 }
 
+type KymaVersionConfigurator interface {
+	ForGlobalAccount(string) (string, bool, error)
+}
+
 type InitialisationStep struct {
-	operationManager    *process.ProvisionOperationManager
-	instanceStorage     storage.Instances
-	provisionerClient   provisioner.Client
-	directorClient      DirectorClient
-	inputBuilder        input.CreatorForPlan
-	externalEvalCreator *ExternalEvalCreator
-	iasType             *IASType
-	provisioningTimeout time.Duration
+	operationManager            *process.ProvisionOperationManager
+	instanceStorage             storage.Instances
+	provisionerClient           provisioner.Client
+	directorClient              DirectorClient
+	inputBuilder                input.CreatorForPlan
+	externalEvalCreator         *ExternalEvalCreator
+	internalEvalUpdater         *InternalEvalUpdater
+	iasType                     *IASType
+	operationTimeout            time.Duration
+	provisioningTimeout         time.Duration
+	runtimeVerConfigurator      RuntimeVersionConfiguratorForProvisioning
+	serviceManagerClientFactory *servicemanager.ClientFactory
 }
 
 func NewInitialisationStep(os storage.Operations,
@@ -48,17 +61,25 @@ func NewInitialisationStep(os storage.Operations,
 	dc DirectorClient,
 	b input.CreatorForPlan,
 	avsExternalEvalCreator *ExternalEvalCreator,
+	avsInternalEvalUpdater *InternalEvalUpdater,
 	iasType *IASType,
-	timeout time.Duration) *InitialisationStep {
+	provisioningTimeout time.Duration,
+	operationTimeout time.Duration,
+	rvc RuntimeVersionConfiguratorForProvisioning,
+	smcf *servicemanager.ClientFactory) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:    process.NewProvisionOperationManager(os),
-		instanceStorage:     is,
-		provisionerClient:   pc,
-		directorClient:      dc,
-		inputBuilder:        b,
-		externalEvalCreator: avsExternalEvalCreator,
-		iasType:             iasType,
-		provisioningTimeout: timeout,
+		operationManager:            process.NewProvisionOperationManager(os),
+		instanceStorage:             is,
+		provisionerClient:           pc,
+		directorClient:              dc,
+		inputBuilder:                b,
+		externalEvalCreator:         avsExternalEvalCreator,
+		internalEvalUpdater:         avsInternalEvalUpdater,
+		iasType:                     iasType,
+		operationTimeout:            operationTimeout,
+		provisioningTimeout:         provisioningTimeout,
+		runtimeVerConfigurator:      rvc,
+		serviceManagerClientFactory: smcf,
 	}
 }
 
@@ -67,6 +88,12 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	if time.Since(operation.CreatedAt) > s.operationTimeout {
+		log.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout))
+	}
+	operation.SMClientFactory = s.serviceManagerClientFactory
+
 	inst, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:
@@ -86,33 +113,42 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 }
 
 func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	pp, err := operation.GetProvisioningParameters()
+	err := s.configureKymaVersion(&operation)
 	if err != nil {
-		log.Errorf("cannot fetch provisioning parameters from operation: %s", err)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
+		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	}
 
-	var kymaVersion string
-	if pp.Parameters.KymaVersion == "" {
-		log.Info("input builder setting up to work with default Kyma version")
-	} else {
-		kymaVersion = pp.Parameters.KymaVersion
-		log.Infof("setting up input builder to work with %s Kyma version", kymaVersion)
-	}
-
-	log.Infof("create input creator for %q plan ID", pp.PlanID)
-	creator, err := s.inputBuilder.ForPlan(pp.PlanID, kymaVersion)
+	log.Infof("create provisioner input creator for %q plan ID", operation.ProvisioningParameters.PlanID)
+	creator, err := s.inputBuilder.CreateProvisionInput(operation.ProvisioningParameters, operation.RuntimeVersion)
 	switch {
 	case err == nil:
 		operation.InputCreator = creator
 		return operation, 0, nil
 	case kebError.IsTemporaryError(err):
-		log.Errorf("cannot create input creator at the moment for plan %s and version %s: %s", pp.PlanID, kymaVersion, err)
+		log.Errorf("cannot create input creator at the moment for plan %s and version %s: %s", operation.ProvisioningParameters.PlanID, operation.ProvisioningParameters.Parameters.KymaVersion, err)
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	default:
-		log.Errorf("cannot create input creator for plan %s: %s", pp.PlanID, err)
+		log.Errorf("cannot create input creator for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
 		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
 	}
+}
+
+func (s *InitialisationStep) configureKymaVersion(operation *internal.ProvisioningOperation) error {
+	if !operation.RuntimeVersion.IsEmpty() {
+		return nil
+	}
+	version, err := s.runtimeVerConfigurator.ForProvisioning(*operation)
+	if err != nil {
+		return errors.Wrap(err, "while getting the runtime version")
+	}
+
+	operation.RuntimeVersion = *version
+
+	var repeat time.Duration
+	if *operation, repeat = s.operationManager.UpdateOperation(*operation); repeat != 0 {
+		return errors.New("unable to update operation with RuntimeVersion property")
+	}
+	return nil
 }
 
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
@@ -124,11 +160,6 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	if err != nil {
 		return operation, 10 * time.Second, nil
-	}
-
-	_, err = url.ParseRequestURI(instance.DashboardURL)
-	if err == nil {
-		return s.launchPostActions(operation, instance, log, "Operation succeeded")
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
@@ -145,8 +176,12 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
 		repeat, err := s.handleDashboardURL(instance, log)
-		if err != nil || repeat != 0 {
-			return operation, repeat, err
+		if repeat != 0 {
+			return operation, repeat, nil
+		}
+		if err != nil {
+			log.Errorf("cannot handle dashboard URL: %s", err)
+			return s.operationManager.OperationFailed(operation, "cannot handle dashboard URL")
 		}
 		return s.launchPostActions(operation, instance, log, msg)
 	case gqlschema.OperationStateInProgress:
@@ -167,14 +202,11 @@ func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance, log
 		return 3 * time.Minute, nil
 	}
 	if err != nil {
-		return 0, errors.Wrapf(err, "while geting URL from director")
+		return 0, errors.Wrapf(err, "while getting URL from director")
 	}
 
-	instance.DashboardURL = dashboardURL
-	err = s.instanceStorage.Update(*instance)
-	if err != nil {
-		log.Errorf("cannot update instance: %s", err)
-		return 10 * time.Second, nil
+	if instance.DashboardURL != dashboardURL {
+		return 0, errors.Errorf("dashboard URL from instance %s is not equal to dashboard URL from director %s", instance.DashboardURL, dashboardURL)
 	}
 
 	return 0, nil
@@ -182,12 +214,28 @@ func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance, log
 
 func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOperation, instance *internal.Instance, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
 	// action #1
-	operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL, log)
+	operation, repeat, err := s.createExternalEval(operation, instance, log)
 	if err != nil || repeat != 0 {
+		if err != nil {
+			log.Errorf("while creating external Evaluation: %s", err)
+			return operation, repeat, err
+		}
 		return operation, repeat, nil
 	}
 
 	// action #2
+	tags, operation, repeat, err := s.createTagsForRuntime(operation, instance)
+	if err != nil || repeat != 0 {
+		log.Errorf("while creating Tags for Evaluation: %s", err)
+		return operation, repeat, nil
+	}
+	operation, repeat, err = s.internalEvalUpdater.AddTagsToEval(tags, operation, "", log)
+	if err != nil || repeat != 0 {
+		log.Errorf("while adding Tags to Evaluation: %s", err)
+		return operation, repeat, nil
+	}
+
+	// action #3
 	repeat, err = s.iasType.ConfigureType(operation, instance.DashboardURL, log)
 	if err != nil || repeat != 0 {
 		return operation, repeat, nil
@@ -203,4 +251,42 @@ func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOp
 	}
 
 	return s.operationManager.OperationSucceeded(operation, msg)
+}
+
+func (s *InitialisationStep) createExternalEval(operation internal.ProvisioningOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	if operation.ProvisioningParameters.PlanID == broker.TrialPlanID {
+		log.Info("skipping AVS external evaluation creation for trial plan")
+		return operation, 0, nil
+	}
+	log.Infof("creating external evaluation for instance %", instance.InstanceID)
+	operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL, log)
+	if err != nil || repeat != 0 {
+		return operation, repeat, err
+	}
+	return operation, 0, nil
+}
+
+func (s *InitialisationStep) createTagsForRuntime(operation internal.ProvisioningOperation, instance *internal.Instance) ([]*avs.Tag, internal.ProvisioningOperation, time.Duration, error) {
+
+	status, err := s.provisionerClient.RuntimeStatus(instance.GlobalAccountID, operation.RuntimeID)
+	if err != nil {
+		return []*avs.Tag{}, operation, 1 * time.Minute, err
+	}
+
+	result := []*avs.Tag{
+		{
+			Content:    ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Name),
+			TagClassId: s.internalEvalUpdater.avsConfig.GardenerShootNameTagClassId,
+		},
+		{
+			Content:    ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Seed),
+			TagClassId: s.internalEvalUpdater.avsConfig.GardenerSeedNameTagClassId,
+		},
+		{
+			Content:    ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Region),
+			TagClassId: s.internalEvalUpdater.avsConfig.RegionTagClassId,
+		},
+	}
+
+	return result, operation, 0 * time.Second, nil
 }

@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -56,7 +58,7 @@ func TestManager_Execute(t *testing.T) {
 			// given
 			log := logrus.New()
 			memoryStorage := storage.NewMemoryStorage()
-			err := memoryStorage.Operations().InsertProvisioningOperation(fixOperation(tc.operationID))
+			err := memoryStorage.Operations().InsertProvisioningOperation(fixProvisionOperation(tc.operationID))
 			assert.NoError(t, err)
 
 			sInit := testStep{name: "init", storage: memoryStorage.Operations()}
@@ -64,7 +66,7 @@ func TestManager_Execute(t *testing.T) {
 			s2 := testStep{name: "two", storage: memoryStorage.Operations()}
 			sFinal := testStep{name: "final", storage: memoryStorage.Operations()}
 
-			eventBroker := event.NewPubSub()
+			eventBroker := event.NewPubSub(logrus.New())
 			eventCollector := &collectingEventHandler{}
 			eventBroker.Subscribe(process.ProvisioningStepProcessed{}, eventCollector.OnEvent)
 
@@ -97,13 +99,13 @@ func TestManager_Execute(t *testing.T) {
 	}
 }
 
-func fixOperation(ID string) internal.ProvisioningOperation {
+func fixProvisionOperation(ID string) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: internal.Operation{
-			ID:          ID,
-			State:       domain.InProgress,
-			InstanceID:  "fea2c1a1-139d-43f6-910a-a618828a79d5",
-			Description: "",
+			ID:                     ID,
+			State:                  domain.InProgress,
+			InstanceID:             "fea2c1a1-139d-43f6-910a-a618828a79d5",
+			ProvisioningParameters: fixProvisioningParameters(broker.AzurePlanID, "westeurope"),
 		},
 	}
 }

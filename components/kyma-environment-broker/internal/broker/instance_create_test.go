@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker/automock"
@@ -30,6 +31,7 @@ const (
 	subAccountID    = "3cb65e5b-e455-4799-bf35-be46e8f5a533"
 
 	instanceID       = "d3d5dca4-5dc8-44ee-a825-755c2a3fb839"
+	otherInstanceID  = "87bfaeaa-48eb-40d6-84f3-3d5368eed3eb\n"
 	existOperationID = "920cbfd9-24e9-4aa2-aa77-879e9aabe140"
 	clusterName      = "cluster-testing"
 	region           = "eu"
@@ -49,7 +51,8 @@ func TestProvision_Provision(t *testing.T) {
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure"}},
+			broker.Config{EnablePlans: []string{"gcp", "azure"}, OnlySingleTrialPerGA: true},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -71,22 +74,23 @@ func TestProvision_Provision(t *testing.T) {
 		require.NoError(t, err)
 		assert.Regexp(t, "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$", response.OperationData)
 		assert.NotEqual(t, instanceID, response.OperationData)
+		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.test\.example\.com`, response.DashboardURL)
+		assert.Equal(t, clusterName, response.Metadata.Labels["Name"])
+		assert.Regexp(t, `^https:\/\/grafana\.[a-z0-9\-]{7,9}\.test\.example\.com`, response.Metadata.Labels["GrafanaURL"])
 
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)
 		assert.Equal(t, operation.InstanceID, instanceID)
 
-		var instanceParameters internal.ProvisioningParameters
-		assert.NoError(t, json.Unmarshal([]byte(operation.ProvisioningParameters), &instanceParameters))
-
-		assert.Equal(t, globalAccountID, instanceParameters.ErsContext.GlobalAccountID)
-		assert.Equal(t, clusterName, instanceParameters.Parameters.Name)
-		assert.Equal(t, "req-region", instanceParameters.PlatformRegion)
+		assert.Equal(t, globalAccountID, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
+		assert.Equal(t, clusterName, operation.ProvisioningParameters.Parameters.Name)
+		assert.Equal(t, "req-region", operation.ProvisioningParameters.PlatformRegion)
 
 		instance, err := memoryStorage.Instances().GetByID(instanceID)
 		require.NoError(t, err)
 
-		assert.Equal(t, instance.ProvisioningParameters, operation.ProvisioningParameters)
+		assert.Equal(t, instance.Parameters, operation.ProvisioningParameters)
+		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.test\.example\.com`, instance.DashboardURL)
 		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
 	})
 
@@ -102,7 +106,8 @@ func TestProvision_Provision(t *testing.T) {
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}, OnlySingleTrialPerGA: true},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			nil,
@@ -126,6 +131,161 @@ func TestProvision_Provision(t *testing.T) {
 		assert.True(t, response.AlreadyExists)
 	})
 
+	t.Run("more than one trial is not allowed", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
+		assert.NoError(t, err)
+		err = memoryStorage.Instances().Insert(internal.Instance{
+			InstanceID:      instanceID,
+			GlobalAccountID: globalAccountID,
+			ServiceID:       serviceID,
+			ServicePlanID:   broker.TrialPlanID,
+		})
+		assert.NoError(t, err)
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", broker.TrialPlanID).Return(true)
+
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite", broker.TrialPlanName}, OnlySingleTrialPerGA: true},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
+			memoryStorage.Operations(),
+			memoryStorage.Instances(),
+			nil,
+			factoryBuilder,
+			fixAlwaysPassJSONValidator(),
+			false,
+			logrus.StandardLogger(),
+		)
+
+		// when
+		_, err = provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), "new-instance-id", domain.ProvisionDetails{
+			ServiceID:     serviceID,
+			PlanID:        broker.TrialPlanID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, globalAccountID, subAccountID)),
+		}, true)
+
+		// then
+		assert.EqualError(t, err, "The Trial Kyma was created for the global account, but there is only one allowed")
+	})
+
+	t.Run("more than one trial is allowed", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
+		assert.NoError(t, err)
+		err = memoryStorage.Instances().Insert(internal.Instance{
+			InstanceID:      instanceID,
+			GlobalAccountID: globalAccountID,
+			ServiceID:       serviceID,
+			ServicePlanID:   broker.TrialPlanID,
+		})
+		assert.NoError(t, err)
+
+		queue := &automock.Queue{}
+		queue.On("Add", mock.AnythingOfType("string"))
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", broker.TrialPlanID).Return(true)
+
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite", broker.TrialPlanName}, OnlySingleTrialPerGA: false},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
+			memoryStorage.Operations(),
+			memoryStorage.Instances(),
+			queue,
+			factoryBuilder,
+			fixAlwaysPassJSONValidator(),
+			false,
+			logrus.StandardLogger(),
+		)
+
+		// when
+		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "req-region"), otherInstanceID, domain.ProvisionDetails{
+			ServiceID:     serviceID,
+			PlanID:        broker.TrialPlanID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, globalAccountID, subAccountID)),
+		}, true)
+
+		// then
+		require.NoError(t, err)
+		assert.Regexp(t, "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$", response.OperationData)
+		assert.NotEqual(t, instanceID, response.OperationData)
+
+		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
+		require.NoError(t, err)
+		assert.Equal(t, operation.InstanceID, otherInstanceID)
+
+		assert.Equal(t, globalAccountID, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
+		assert.Equal(t, clusterName, operation.ProvisioningParameters.Parameters.Name)
+		assert.Equal(t, "req-region", operation.ProvisioningParameters.PlatformRegion)
+
+		instance, err := memoryStorage.Instances().GetByID(otherInstanceID)
+		require.NoError(t, err)
+
+		assert.Equal(t, instance.Parameters, operation.ProvisioningParameters)
+		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
+	})
+
+	t.Run("provision trial", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+		memoryStorage.Instances().Insert(internal.Instance{
+			InstanceID:      instanceID,
+			GlobalAccountID: "other-global-account",
+			ServiceID:       serviceID,
+			ServicePlanID:   broker.TrialPlanID,
+		})
+
+		queue := &automock.Queue{}
+		queue.On("Add", mock.AnythingOfType("string"))
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", broker.TrialPlanID).Return(true)
+
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{EnablePlans: []string{"gcp", "azure", "trial"}, OnlySingleTrialPerGA: true},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
+			memoryStorage.Operations(),
+			memoryStorage.Instances(),
+			queue,
+			factoryBuilder,
+			fixAlwaysPassJSONValidator(),
+			false,
+			logrus.StandardLogger(),
+		)
+
+		// when
+		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "req-region"), instanceID, domain.ProvisionDetails{
+			ServiceID:     serviceID,
+			PlanID:        broker.TrialPlanID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, globalAccountID, subAccountID)),
+		}, true)
+
+		// then
+		require.NoError(t, err)
+		assert.Regexp(t, "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$", response.OperationData)
+		assert.NotEqual(t, instanceID, response.OperationData)
+
+		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
+		require.NoError(t, err)
+		assert.Equal(t, operation.InstanceID, instanceID)
+
+		assert.Equal(t, globalAccountID, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
+		assert.Equal(t, clusterName, operation.ProvisioningParameters.Parameters.Name)
+		assert.Equal(t, "req-region", operation.ProvisioningParameters.PlatformRegion)
+
+		instance, err := memoryStorage.Instances().GetByID(instanceID)
+		require.NoError(t, err)
+
+		assert.Equal(t, instance.Parameters, operation.ProvisioningParameters)
+		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
+	})
+
 	t.Run("conflict should be handled", func(t *testing.T) {
 		// given
 		// #setup memory storage
@@ -140,7 +300,8 @@ func TestProvision_Provision(t *testing.T) {
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}, OnlySingleTrialPerGA: true},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			nil,
@@ -163,90 +324,6 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Empty(t, response.OperationData)
 	})
 
-	t.Run("return error on wrong input parameters", func(t *testing.T) {
-		// given
-		// #setup memory storage
-		memoryStorage := storage.NewMemoryStorage()
-		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
-		require.NoError(t, err)
-
-		factoryBuilder := &automock.PlanValidator{}
-		factoryBuilder.On("IsPlanSupport", planID).Return(true)
-
-		fixValidator, err := broker.NewPlansSchemaValidator()
-		require.NoError(t, err)
-
-		// #create provisioner endpoint
-		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
-			memoryStorage.Operations(),
-			memoryStorage.Instances(),
-			nil,
-			factoryBuilder,
-			fixValidator,
-			false,
-			logrus.StandardLogger(),
-		)
-
-		// when
-		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
-			ServiceID: serviceID,
-			PlanID:    planID,
-			RawParameters: json.RawMessage(fmt.Sprintf(`{
-							"name": "%s", 
-							"components": ["wrong component name"] 
-							}`, clusterName)),
-			RawContext: json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
-		}, true)
-
-		// then
-		assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "Kiali", "Tracing"`)
-		assert.False(t, response.IsAsync)
-		assert.Empty(t, response.OperationData)
-	})
-
-	t.Run("return error on adding KnativeProvisionerNatss and NatssStreaming to list of components", func(t *testing.T) {
-		// given
-		// #setup memory storage
-		memoryStorage := storage.NewMemoryStorage()
-		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
-		require.NoError(t, err)
-
-		factoryBuilder := &automock.PlanValidator{}
-		factoryBuilder.On("IsPlanSupport", planID).Return(true)
-
-		fixValidator, err := broker.NewPlansSchemaValidator()
-		require.NoError(t, err)
-
-		// #create provisioner endpoint
-		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
-			memoryStorage.Operations(),
-			memoryStorage.Instances(),
-			nil,
-			factoryBuilder,
-			fixValidator,
-			false,
-			logrus.StandardLogger(),
-		)
-
-		// when
-		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
-			ServiceID: serviceID,
-			PlanID:    planID,
-			RawParameters: json.RawMessage(fmt.Sprintf(`{
-								"name": "%s",
-								"components": ["KnativeProvisionerNatss", "NatssStreaming"]
-								}`, clusterName)),
-			RawContext: json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
-		}, true)
-
-		// then
-		assert.EqualError(t, err, `while validating input parameters: components.0: components.0 must be one of the following: "Kiali", "Tracing", components: No additional items allowed on array`)
-		assert.False(t, response.IsAsync)
-		assert.Empty(t, response.OperationData)
-	})
-
 	t.Run("kyma version parameters should be saved", func(t *testing.T) {
 		// given
 		memoryStorage := storage.NewMemoryStorage()
@@ -261,7 +338,8 @@ func TestProvision_Provision(t *testing.T) {
 		queue.On("Add", mock.AnythingOfType("string"))
 
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}, OnlySingleTrialPerGA: true},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -287,9 +365,7 @@ func TestProvision_Provision(t *testing.T) {
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)
 
-		parameters, err := operation.GetProvisioningParameters()
-		assert.NoError(t, err)
-		assert.Equal(t, "master-00e83e99", parameters.Parameters.KymaVersion)
+		assert.Equal(t, "master-00e83e99", operation.ProvisioningParameters.Parameters.KymaVersion)
 	})
 
 	t.Run("should return error when region is not specified", func(t *testing.T) {
@@ -301,7 +377,8 @@ func TestProvision_Provision(t *testing.T) {
 		require.NoError(t, err)
 
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}, OnlySingleTrialPerGA: true},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			nil,
 			nil,
 			nil,
@@ -337,7 +414,8 @@ func TestProvision_Provision(t *testing.T) {
 		queue.On("Add", mock.AnythingOfType("string"))
 
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}, OnlySingleTrialPerGA: true},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -363,9 +441,7 @@ func TestProvision_Provision(t *testing.T) {
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)
 
-		parameters, err := operation.GetProvisioningParameters()
-		assert.NoError(t, err)
-		assert.Equal(t, "", parameters.Parameters.KymaVersion)
+		assert.Equal(t, "", operation.ProvisioningParameters.Parameters.KymaVersion)
 	})
 
 	t.Run("licence type lite should be saved in parameters", func(t *testing.T) {
@@ -382,7 +458,8 @@ func TestProvision_Provision(t *testing.T) {
 		queue.On("Add", mock.AnythingOfType("string"))
 
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}, OnlySingleTrialPerGA: true},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -405,9 +482,48 @@ func TestProvision_Provision(t *testing.T) {
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)
 
-		parameters, err := operation.GetProvisioningParameters()
+		assert.Equal(t, ptr.String(internal.LicenceTypeLite), operation.ProvisioningParameters.Parameters.LicenceType)
+	})
+
+	t.Run("licence type lite should be saved in parameters for Trial Plan", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", broker.TrialPlanID).Return(true)
+
+		fixValidator, err := broker.NewPlansSchemaValidator()
+		require.NoError(t, err)
+
+		queue := &automock.Queue{}
+		queue.On("Add", mock.AnythingOfType("string"))
+
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite", "trial"}, OnlySingleTrialPerGA: true},
+			gardener.Config{Project: "test", ShootDomain: "example.com"},
+			memoryStorage.Operations(),
+			memoryStorage.Instances(),
+			queue,
+			factoryBuilder,
+			fixValidator,
+			false,
+			logrus.StandardLogger(),
+		)
+
+		// when
+		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
+			ServiceID:     serviceID,
+			PlanID:        broker.TrialPlanID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
+		}, true)
 		assert.NoError(t, err)
-		assert.Equal(t, ptr.String(internal.LicenceTypeLite), parameters.Parameters.LicenceType)
+
+		// then
+		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
+		require.NoError(t, err)
+
+		assert.Equal(t, ptr.String(internal.LicenceTypeLite), operation.ProvisioningParameters.Parameters.LicenceType)
 	})
 }
 
@@ -416,10 +532,17 @@ func fixExistOperation() internal.ProvisioningOperation {
 		Operation: internal.Operation{
 			ID:         existOperationID,
 			InstanceID: instanceID,
+			ProvisioningParameters: internal.ProvisioningParameters{
+				PlanID:    planID,
+				ServiceID: serviceID,
+				ErsContext: internal.ERSContext{
+					SubAccountID:    subAccountID,
+					GlobalAccountID: globalAccountID,
+				},
+				Parameters:     internal.ProvisioningParametersDTO{Name: clusterName},
+				PlatformRegion: region,
+			},
 		},
-		ProvisioningParameters: fmt.Sprintf(
-			`{"plan_id":"%s", "service_id": "%s", "ers_context":{"globalaccount_id": "%s", "subaccount_id": "%s"}, "parameters":{"name": "%s"}, "platform_region": "%s"}`,
-			planID, serviceID, globalAccountID, subAccountID, clusterName, region),
 	}
 }
 
@@ -430,6 +553,7 @@ func fixAlwaysPassJSONValidator() broker.PlansSchemaValidator {
 	fixValidator := broker.PlansSchemaValidator{
 		broker.GCPPlanID:   validatorMock,
 		broker.AzurePlanID: validatorMock,
+		broker.TrialPlanID: validatorMock,
 	}
 
 	return fixValidator

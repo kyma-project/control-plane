@@ -198,6 +198,22 @@ func (_m *WriteSessionWithinTransaction) TransitionOperation(operationID string,
 	return r0
 }
 
+// UpdateGardenerClusterConfig provides a mock function with given fields: config
+func (_m *WriteSessionWithinTransaction) UpdateGardenerClusterConfig(config model.GardenerConfig) dberrors.Error {
+	ret := _m.Called(config)
+
+	var r0 dberrors.Error
+	if rf, ok := ret.Get(0).(func(model.GardenerConfig) dberrors.Error); ok {
+		r0 = rf(config)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(dberrors.Error)
+		}
+	}
+
+	return r0
+}
+
 // UpdateKubeconfig provides a mock function with given fields: runtimeID, kubeconfig
 func (_m *WriteSessionWithinTransaction) UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error {
 	ret := _m.Called(runtimeID, kubeconfig)

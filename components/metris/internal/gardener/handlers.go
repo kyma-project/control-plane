@@ -1,27 +1,36 @@
 package gardener
 
 import (
+	"bytes"
+	"context"
 	"fmt"
-	"strings"
+	"regexp"
+	"strconv"
 
 	gcorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-project/control-plane/components/metris/internal/metrics"
+	commonpkg "github.com/gardener/gardener/pkg/operation/common"
+	shootpkg "github.com/gardener/gardener/pkg/operation/shoot"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
 )
 
-func (c *Controller) secretUpdateFunc(oldObj, newObj interface{}) {
+const (
+	trialRegex = "^sap-skr-[^-]*-trial-[0-9]*$"
+)
+
+// secretUpdateHandlerFunc is notification function which handle secret updates.
+func (c *Controller) secretUpdateHandlerFunc(oldObj, newObj interface{}) {
 	newSecret, ok := newObj.(*corev1.Secret)
 	if !ok {
-		c.logger.Error("error decoding secret, invalid type")
+		c.logger.Error("error decoding new secret, invalid type")
 		return
 	}
 
 	oldSecret, ok := oldObj.(*corev1.Secret)
 	if !ok {
-		c.logger.Error("error decoding secret, invalid type")
+		c.logger.Error("error decoding old secret, invalid type")
 		return
 	}
 
@@ -32,54 +41,74 @@ func (c *Controller) secretUpdateFunc(oldObj, newObj interface{}) {
 	}
 
 	// check all shoots with that secret and update
-	fselector := fields.SelectorFromSet(fields.Set{fieldSecretBindingName: newSecret.Name}).String()
+	fselector := fields.SelectorFromSet(
+		fields.Set{
+			fieldSecretBindingName: newSecret.Name,
+			fieldCloudProfileName:  c.providertype,
+		}).String()
 
-	shootlist, err := c.gclientset.CoreV1beta1().Shoots(newSecret.Namespace).List(metav1.ListOptions{FieldSelector: fselector})
+	shootlist, err := c.client.GClientset.CoreV1beta1().Shoots(newSecret.Namespace).List(context.TODO(), metav1.ListOptions{FieldSelector: fselector})
 	if err != nil {
-		c.logger.Errorf("error retrieving shoot: %s", err)
+		c.logger.With("error", err).Error("error retrieving shoot")
 		return
 	}
 
 	if len(shootlist.Items) == 0 {
-		c.logger.Debugf("could not find shoots using secret '%s': skipping", newSecret.Name)
+		c.logger.With("secret", newSecret.Name).Debugf("no shoots found with this secret binding")
 		return
 	}
 
 	for i := range shootlist.Items {
 		shoot := shootlist.Items[i]
-		c.logger.Debugf("secret '%s' has been modified, updating provider client config for shoot '%s'", newSecret.Name, shoot.Name)
+		c.logger.With("shoot", shoot.Name).With("secret", newSecret.Name).Debug("received a shoot secret update event")
 		c.shootAddHandlerFunc(&shoot)
 	}
 }
 
+// shootDeleteHandlerFunc is notification function which handle deleted shoots.
 func (c *Controller) shootDeleteHandlerFunc(obj interface{}) {
-	var (
-		shoot *gcorev1beta1.Shoot
-		ok    bool
-	)
+	var technicalid string
 
-	if shoot, ok = obj.(*gcorev1beta1.Shoot); !ok {
+	shoot, ok := obj.(*gcorev1beta1.Shoot)
+	if !ok {
 		// try to recover deleted obj
 		delobj, ok := obj.(cache.DeletedFinalStateUnknown)
 		if !ok {
-			c.logger.Error("error decoding object, invalid type")
+			c.logger.Error("error trying to recover deleted object, invalid type")
 			return
 		}
 
 		shoot, ok = delobj.Obj.(*gcorev1beta1.Shoot)
 		if !ok {
-			c.logger.Error("error decoding deleted object, invalid type")
+			c.logger.Error("error trying to recover deleted shoot")
 			return
 		}
+
+		technicalid = delobj.Key
 	}
 
-	shootname := fmt.Sprintf("%s--%s", shoot.Namespace, shoot.Name)
+	cluster, err := c.newCluster(shoot)
 
-	c.logger.Warnf("shoot '%s' is being remove from the provider accounts", shootname)
+	logger := c.logger.With("account", cluster.AccountID).With("subaccount", cluster.SubAccountID).With("shoot", shoot.Name)
 
-	c.accountsChan <- &Account{Name: shootname, TechnicalID: shoot.Status.TechnicalID}
+	if cluster.TechnicalID == "" {
+		// check if we can recover the key from the deleted cache object
+		if technicalid == "" {
+			logger.With("error", err).Error("received a shoot delete event, but could not found shoot in cache")
+			return
+		}
+
+		cluster.TechnicalID = technicalid
+	}
+
+	cluster.Deleted = true
+
+	logger.With("technicalid", cluster.TechnicalID).Debug("received a shoot delete event, removing it from the cache")
+
+	c.clusterChannel <- cluster
 }
 
+// shootAddHandlerFunc is notification function which handle new shoots.
 func (c *Controller) shootAddHandlerFunc(obj interface{}) {
 	shoot, ok := obj.(*gcorev1beta1.Shoot)
 	if !ok {
@@ -87,86 +116,166 @@ func (c *Controller) shootAddHandlerFunc(obj interface{}) {
 		return
 	}
 
-	pname := shoot.Spec.CloudProfileName
-	if pname == "az" {
-		pname = "azure"
+	cluster, err := c.newCluster(shoot)
+
+	logger := c.logger.
+		With("account", cluster.AccountID).
+		With("subaccount", cluster.SubAccountID).
+		With("shoot", shoot.Name).
+		With("technicalid", cluster.TechnicalID).
+		With("trial", strconv.FormatBool(cluster.Trial))
+
+	if err != nil {
+		logger.With("error", err).Error("received a shoot add event, but there was missing informations")
+		return
 	}
 
-	if strings.EqualFold(c.providertype, pname) {
-		if shoot.Status.TechnicalID == "" {
-			c.logger.Warnf("could not find technical id in shoot '%s', retrying later", shoot.Name)
-			c.shootQueue[shoot.Name] = true
-
-			metrics.ClusterSyncFailureVec.WithLabelValues("no_technicalid").Inc()
-
-			return
-		}
-
-		accountid, ok := shoot.GetLabels()[labelAccountID]
-		if !ok || accountid == "" {
-			c.logger.Warnf("could not find label '%s' in Shoot '%s', skipping", labelAccountID, shoot.Name)
-			metrics.ClusterSyncFailureVec.WithLabelValues("no_accountid").Inc()
-
-			return
-		}
-
-		subaccountid, ok := shoot.GetLabels()[labelSubAccountID]
-		if !ok || subaccountid == "" {
-			c.logger.Warnf("could not find label '%s' in Shoot '%s', skipping", labelSubAccountID, shoot.Name)
-			metrics.ClusterSyncFailureVec.WithLabelValues("no_subaccountid").Inc()
-
-			return
-		}
-
-		secret, err := c.kclientset.CoreV1().Secrets(shoot.Namespace).Get(shoot.Spec.SecretBindingName, metav1.GetOptions{})
-		if err != nil {
-			c.logger.Errorf("error getting shoot secret: %s", err)
-			metrics.ClusterSyncFailureVec.WithLabelValues("no_secret").Inc()
-
-			return
-		}
-
-		tenantName, ok := secret.GetLabels()[labelTenantName]
-		if !ok {
-			c.logger.Warnf("could not find label '%s' in secret '%s'", labelTenantName, secret.Name)
-		}
-
-		shootName := fmt.Sprintf("%s--%s", shoot.Namespace, shoot.Name)
-		shootTechnicalID := shoot.Status.TechnicalID
-
-		c.logger.With("account", accountid).
-			With("subaccount", subaccountid).
-			With("shoot", shootTechnicalID).Info("New cluster found")
-
-		c.accountsChan <- &Account{
-			Name:           shootName,
-			ProviderType:   c.providertype,
-			AccountID:      accountid,
-			SubAccountID:   subaccountid,
-			TechnicalID:    shootTechnicalID,
-			TenantName:     tenantName,
-			CredentialName: secret.Name,
-			CredentialData: secret.Data,
-		}
-	}
+	logger.Debug("received a shoot add event")
+	c.clusterChannel <- cluster
 }
 
-func (c *Controller) shootUpdateFunc(oldObj, newObj interface{}) {
+// shootUpdateHandlerFunc is notification function which handle shoot changes.
+func (c *Controller) shootUpdateHandlerFunc(oldObj, newObj interface{}) {
+	oldShoot, ok := oldObj.(*gcorev1beta1.Shoot)
+	if !ok {
+		c.logger.Error("error decoding old shoot, invalid type")
+		return
+	}
+
 	newShoot, ok := newObj.(*gcorev1beta1.Shoot)
 	if !ok {
-		c.logger.Error("error decoding shoot, invalid type")
+		c.logger.Error("error decoding new shoot, invalid type")
 		return
 	}
 
-	if _, ok := c.shootQueue[newShoot.Name]; !ok {
-		// shoot was not queued, ignoring update
+	if newShoot.ResourceVersion == oldShoot.ResourceVersion {
+		// Periodic resync will send update events for all known Shoot, so if the
+		// resource version did not change we skip
 		return
 	}
 
-	// removing shoot from queue
-	delete(c.shootQueue, newShoot.Name)
+	c1, err := c.newCluster(oldShoot)
+	if err != nil {
+		c.logger.With("account", c1.AccountID).With("subaccount", c1.SubAccountID).With("shoot", oldShoot.Name).With("technicalid", c1.TechnicalID).Error(err)
+		return
+	}
 
-	c.logger.Warnf("shoot '%s' was queued, retrying it", newShoot.Name)
+	c2, err := c.newCluster(newShoot)
+	if err != nil {
+		c.logger.With("account", c2.AccountID).With("subaccount", c2.SubAccountID).With("shoot", newShoot.Name).With("technicalid", c2.TechnicalID).Error(err)
+		return
+	}
+
+	if clustersEqual(c1, c2) {
+		return
+	}
+
+	logger := c.logger.With("account", c2.AccountID).With("subaccount", c2.SubAccountID).With("shoot", newShoot.Name).With("technicalid", c2.TechnicalID)
+	logger.Debug("received a shoot update event")
 
 	c.shootAddHandlerFunc(newShoot)
+}
+
+// getTechnicalID determines the technical id of a Shoot which is used for tagging resources created in the infrastructure.
+func (c *Controller) getTechnicalID(shoot *gcorev1beta1.Shoot) (string, error) {
+	ns, err := c.client.KClientset.CoreV1().Namespaces().Get(context.TODO(), shoot.Namespace, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	projectname := commonpkg.ProjectNameForNamespace(ns)
+
+	return shootpkg.ComputeTechnicalID(projectname, shoot), nil
+}
+
+// newCluster creates a Cluster definition based on the shoot information.
+func (c *Controller) newCluster(shoot *gcorev1beta1.Shoot) (*Cluster, error) {
+	var (
+		cluster = &Cluster{ProviderType: c.providertype}
+		err     error
+		ok      bool
+	)
+
+	cluster.Region = shoot.Spec.Region
+
+	cluster.TechnicalID, err = c.getTechnicalID(shoot)
+	if err != nil {
+		err = fmt.Errorf("could not find technical id")
+
+		clusterSyncErrorVec.WithLabelValues("technicalid").Inc()
+
+		return cluster, err
+	}
+
+	cluster.AccountID, ok = shoot.GetLabels()[labelAccountID]
+	if !ok || cluster.AccountID == "" {
+		err = fmt.Errorf("could not find label '%s'", labelAccountID)
+
+		clusterSyncErrorVec.WithLabelValues("accountid").Inc()
+
+		return cluster, err
+	}
+
+	cluster.SubAccountID, ok = shoot.GetLabels()[labelSubAccountID]
+	if !ok || cluster.SubAccountID == "" {
+		err = fmt.Errorf("could not find label '%s'", labelSubAccountID)
+
+		clusterSyncErrorVec.WithLabelValues("subaccountid").Inc()
+
+		return cluster, err
+	}
+
+	secret, err := c.client.KClientset.CoreV1().Secrets(shoot.Namespace).Get(context.TODO(), shoot.Spec.SecretBindingName, metav1.GetOptions{})
+	if err != nil {
+		err = fmt.Errorf("error getting shoot secret: %s", err)
+
+		clusterSyncErrorVec.WithLabelValues("secret").Inc()
+
+		return cluster, err
+	}
+
+	// check if the account is a trial one
+	if trial, err := regexp.MatchString(trialRegex, shoot.Spec.SecretBindingName); err == nil {
+		cluster.Trial = trial
+	}
+
+	cluster.CredentialData = secret.Data
+
+	return cluster, nil
+}
+
+// clustersEqual return true if two Cluster are equal.
+func clustersEqual(c1, c2 *Cluster) bool {
+	if c1 == nil || c2 == nil {
+		return c1 == c2
+	}
+
+	if c1.TechnicalID != c2.TechnicalID {
+		return false
+	}
+
+	if c1.ProviderType != c2.ProviderType {
+		return false
+	}
+
+	if c1.AccountID != c2.AccountID {
+		return false
+	}
+
+	if c1.SubAccountID != c2.SubAccountID {
+		return false
+	}
+
+	for k1, v1 := range c1.CredentialData {
+		v2, ok := c2.CredentialData[k1]
+		if !ok {
+			return false
+		}
+
+		if !bytes.Equal(v1, v2) {
+			return false
+		}
+	}
+
+	return true
 }

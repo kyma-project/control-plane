@@ -12,16 +12,12 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
+	hyperscalerautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
+	azuretesting "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure/testing"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler"
-	hyperscalerautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/automock"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/azure"
-	azuretesting "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/hyperscaler/azure/testing"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-)
-
-const (
-	fixSubAccountID = "test-sub-account-id"
 )
 
 type wantStateFunction = func(t *testing.T, operation internal.DeprovisioningOperation, when time.Duration, err error,
@@ -185,26 +181,6 @@ func Test_StepsUnhappyPath(t *testing.T) {
 		wantRepeatOperation bool
 	}{
 		{
-			name:          "Operation already deprovisioned eventhub",
-			giveOperation: fixDeprovisioningOperationWithDeletedEventHub,
-			giveInstance:  fixInvalidInstance,
-			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
-				accountProvider := fixAccountProvider()
-				return fixEventHubStep(storage.Operations(), storage.Instances(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
-			},
-			wantRepeatOperation: false,
-		},
-		{
-			name:          "Operation provision parameter errors",
-			giveOperation: fixDeprovisioningOperation,
-			giveInstance:  fixInvalidInstance,
-			giveStep: func(t *testing.T, storage storage.BrokerStorage) DeprovisionAzureEventHubStep {
-				accountProvider := fixAccountProvider()
-				return fixEventHubStep(storage.Operations(), storage.Instances(), azuretesting.NewFakeHyperscalerProvider(azuretesting.NewFakeNamespaceClientHappyPath()), accountProvider)
-			},
-			wantRepeatOperation: false,
-		},
-		{
 			name:          "AccountProvider cannot get gardener credentials",
 			giveOperation: fixDeprovisioningOperationWithParameters,
 			giveInstance:  fixInstance,
@@ -332,25 +308,21 @@ func Test_StepsUnhappyPath(t *testing.T) {
 }
 
 func fixInstance() internal.Instance {
+	region := "westeurope"
 	return internal.Instance{
 		InstanceID: fixInstanceID,
-		ProvisioningParameters: `{
-			"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
-			"ers_context": {
-				"subaccount_id": "` + fixSubAccountID + `"
+		Parameters: internal.ProvisioningParameters{
+			PlanID: "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+			ErsContext: internal.ERSContext{
+				SubAccountID: subAccountID,
 			},
-			"parameters": {
-				"name": "nachtmaar-15",
-				"components": [],
-				"region": "westeurope"
-			}
-		}`}
-}
-
-func fixInvalidInstance() internal.Instance {
-	return internal.Instance{
-		InstanceID:             fixInstanceID,
-		ProvisioningParameters: `}{INVALID JSON}{`}
+			Parameters: internal.ProvisioningParametersDTO{
+				Name:                        "nachtmaar-15",
+				OptionalComponentsToInstall: []string{},
+				Region:                      &region,
+			},
+		},
+	}
 }
 
 func fixAccountProvider() *hyperscalerautomock.AccountProvider {
@@ -377,30 +349,31 @@ func fixLogger() logrus.FieldLogger {
 }
 
 func fixDeprovisioningOperationWithParameters() internal.DeprovisioningOperation {
-	pp := internal.DeprovisioningOperation{
+	return internal.DeprovisioningOperation{
 		Operation: internal.Operation{
 			ID:                     fixOperationID,
 			InstanceID:             fixInstanceID,
 			ProvisionerOperationID: fixProvisionerOperationID,
 			Description:            "",
 			UpdatedAt:              time.Now(),
+			ProvisioningParameters: internal.ProvisioningParameters{
+				PlanID:         "",
+				ServiceID:      "",
+				ErsContext:     internal.ERSContext{},
+				Parameters:     internal.ProvisioningParametersDTO{},
+				PlatformRegion: "",
+			},
 		},
 	}
-	_ = pp.SetProvisioningParameters(internal.ProvisioningParameters{
-		PlanID:         "",
-		ServiceID:      "",
-		ErsContext:     internal.ERSContext{},
-		Parameters:     internal.ProvisioningParametersDTO{},
-		PlatformRegion: "",
-	})
-	return pp
 }
 
 func fixDeprovisioningOperationWithDeletedEventHub() internal.DeprovisioningOperation {
 	return internal.DeprovisioningOperation{
-		EventHub: internal.EventHub{
-			Deleted: true,
-		},
+		Operation: internal.Operation{InstanceDetails: internal.InstanceDetails{
+			EventHub: internal.EventHub{
+				Deleted: true,
+			},
+		}},
 	}
 }
 
