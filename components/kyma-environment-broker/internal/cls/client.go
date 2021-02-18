@@ -61,10 +61,10 @@ func (c *Client) CreateInstance(smClient servicemanager.Client, instance service
 
 	resp, err := smClient.Provision(instance.BrokerID, input, true)
 	if err != nil {
-		return errors.Wrapf(err, "Provision() call failed for brokerID: %s; service manager : %#v", instance.BrokerID, input)
+		return errors.Wrapf(err, "while provisioning a cls instance %s", instance.InstanceID)
 	}
 
-	c.log.Infof("Response from CLS provisioning call: %#v", resp)
+	c.log.Infof("Response from service manager while deprovisioning an instance %s: %#v", instance.InstanceID, resp)
 
 	return nil
 }
