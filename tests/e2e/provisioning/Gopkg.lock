@@ -236,13 +236,11 @@
   revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
 
 [[projects]]
-  digest = "1:37545a79230c4d78e9167b19dc8a0c61c19a3694370892b4ec2e1e20c03be806"
+  digest = "1:144d8ccde7ad0a3957a3f3ae6415f6a13e1f725f319558f38166181962365c79"
   name = "github.com/kyma-project/control-plane"
   packages = [
     "components/kyma-environment-broker/common/director",
     "components/kyma-environment-broker/common/gardener",
-    "components/kyma-environment-broker/common/pagination",
-    "components/kyma-environment-broker/common/runtime",
     "components/kyma-environment-broker/internal/error",
     "components/provisioner/pkg/gqlschema",
   ]
@@ -733,7 +731,6 @@
     "github.com/kyma-incubator/compass/tests/director/pkg/ptr",
     "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director",
     "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener",
-    "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime",
     "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema",
     "github.com/machinebox/graphql",
     "github.com/ory/hydra-maester/api/v1alpha1",
