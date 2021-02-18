@@ -67,7 +67,7 @@ func (p *provisioner) Provision(smClient servicemanager.Client, request *Provisi
 
 	err = p.storage.Reference(instance.Version, instance.GlobalAccountID, request.SKRInstanceID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while deleting a cls instance for global account %s", request.GlobalAccountID)
+		return nil, errors.Wrapf(err, "while creating a cls instance for global account %s", request.GlobalAccountID)
 	}
 
 	p.log.Infof("Referencing the cls instance for global account %s by the skr %s", request.SKRInstanceID, request.GlobalAccountID)
