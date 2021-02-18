@@ -289,6 +289,30 @@ func (s *operations) ListDeprovisioningOperationsByInstanceID(instanceID string)
 	return ret, nil
 }
 
+// ListDeprovisioningOperations lists deprovisioning operations
+func (s *operations) ListDeprovisioningOperations() ([]internal.DeprovisioningOperation, error) {
+	session := s.NewReadSession()
+	var operations []dbmodel.OperationDTO
+	var lastErr dberr.Error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		operations, lastErr = session.ListOperationsByType(dbmodel.OperationTypeDeprovision)
+		if lastErr != nil {
+			log.Errorf("while reading operation from the storage: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, lastErr
+	}
+	ret, err := s.toDeprovisioningOperationList(operations)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting DTO to Operation")
+	}
+
+	return ret, nil
+}
+
 // InsertUpgradeKymaOperation insert new UpgradeKymaOperation to storage
 func (s *operations) InsertUpgradeKymaOperation(operation internal.UpgradeKymaOperation) error {
 	session := s.NewWriteSession()

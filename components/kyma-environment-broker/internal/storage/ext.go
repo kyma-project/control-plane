@@ -47,6 +47,7 @@ type Deprovisioning interface {
 	GetDeprovisioningOperationByInstanceID(instanceID string) (*internal.DeprovisioningOperation, error)
 	UpdateDeprovisioningOperation(operation internal.DeprovisioningOperation) (*internal.DeprovisioningOperation, error)
 	ListDeprovisioningOperationsByInstanceID(instanceID string) ([]internal.DeprovisioningOperation, error)
+	ListDeprovisioningOperations() ([]internal.DeprovisioningOperation, error)
 }
 
 type Orchestrations interface {
