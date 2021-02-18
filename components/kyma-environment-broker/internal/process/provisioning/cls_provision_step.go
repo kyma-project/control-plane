@@ -12,30 +12,30 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate mockery --name=ClsInstanceProvider --output=automock --outpkg=automock --case=underscore
-type ClsInstanceProvider interface {
+//go:generate mockery --name=ClsProvisioner --output=automock --outpkg=automock --case=underscore
+type ClsProvisioner interface {
 	Provision(smClient servicemanager.Client, request *cls.ProvisionRequest) (*cls.ProvisionResult, error)
 }
 
-type clsProvisioningStep struct {
+type clsProvisionStep struct {
 	config           *cls.Config
-	instanceProvider ClsInstanceProvider
+	instanceProvider ClsProvisioner
 	operationManager *process.ProvisionOperationManager
 }
 
-func NewClsProvisioningStep(config *cls.Config, ip ClsInstanceProvider, repo storage.Operations) *clsProvisioningStep {
-	return &clsProvisioningStep{
+func NewClsProvisionStep(config *cls.Config, ip ClsProvisioner, repo storage.Operations) *clsProvisionStep {
+	return &clsProvisionStep{
 		config:           config,
 		operationManager: process.NewProvisionOperationManager(repo),
 		instanceProvider: ip,
 	}
 }
 
-func (s *clsProvisioningStep) Name() string {
+func (s *clsProvisionStep) Name() string {
 	return "CLS_Provision"
 }
 
-func (s *clsProvisioningStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if operation.Cls.Instance.ProvisioningTriggered {
 		return operation, 0, nil
 	}

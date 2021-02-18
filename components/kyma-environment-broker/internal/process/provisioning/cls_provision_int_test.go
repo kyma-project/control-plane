@@ -24,7 +24,7 @@ import (
 // export SAML_EXCHANGE_KEY=
 // export SAML_SIGNATURE_PRIVATE_KEY
 // go test -v -tags=sm_integration ./internal/process/provisioning/... -run TestClsSteps -count=1
-func TestClsSteps(t *testing.T) {
+func TestClsProvisionSteps(t *testing.T) {
 	clsConfig := &cls.Config{
 		RetentionPeriod:    7,
 		MaxDataInstances:   2,
@@ -75,19 +75,19 @@ func TestClsSteps(t *testing.T) {
 
 	clsClient := cls.NewClient(clsConfig, log)
 	clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient, log)
-	provisioningStep := NewClsProvisioningStep(clsConfig, clsProvisioner, repo)
+	provisionStep := NewClsProvisionStep(clsConfig, clsProvisioner, repo)
 
 	operation, retry, err := offeringStep.Run(operation, log)
 	fmt.Printf(">>> %#v\n", operation.Cls)
 	require.NoError(t, err)
 	require.Zero(t, retry)
 
-	operation, retry, err = provisioningStep.Run(operation, log)
+	operation, retry, err = provisionStep.Run(operation, log)
 	fmt.Printf(">>> first provisioning: %#v\n", operation.Cls)
 	require.NoError(t, err)
 	require.Zero(t, retry)
 
-	operation, retry, err = provisioningStep.Run(operation, log)
+	operation, retry, err = provisionStep.Run(operation, log)
 	fmt.Printf(">>> second provisioning %#v\n", operation.Cls)
 	require.NoError(t, err)
 	require.Zero(t, retry)

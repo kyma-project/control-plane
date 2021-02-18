@@ -81,10 +81,10 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 			},
 		},
 	}
-	clsInstanceProvider := &clsMock.ClsInstanceProvider{}
+	provisionerMock := &clsMock.ClsProvisioner{}
 
 	fakeGlobalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
-	clsInstanceProvider.On("Provision", mock.Anything, &cls.ProvisionRequest{
+	provisionerMock.On("Provision", mock.Anything, &cls.ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		Region:          "eu",
 		ServiceID:       "svc-id",
@@ -97,7 +97,7 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 
 	offeringStep := NewClsOfferingStep(config, repo)
 
-	provisionStep := NewClsProvisioningStep(config, clsInstanceProvider, repo)
+	provisionStep := NewClsProvisionStep(config, provisionerMock, repo)
 	repo.InsertProvisioningOperation(operation)
 
 	log := logger.NewLogDummy()
