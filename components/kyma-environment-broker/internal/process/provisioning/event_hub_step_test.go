@@ -372,19 +372,12 @@ func fixEventHubStep(memoryStorageOp storage.Operations, hyperscalerProvider azu
 }
 
 func fixProvisioningOperation(t *testing.T, planID, region string) internal.ProvisioningOperation {
-	op := internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     operationID,
-			InstanceID:             instanceID,
-			ProvisioningParameters: fixProvisioningParameters(planID, region),
-		},
-		InputCreator: fixKnativeKafkaInputCreator(t),
-		RuntimeVersion: internal.RuntimeVersionData{
-			Version: "1.8.0",
-			Origin:  internal.Defaults,
-		},
-	}
-	return op
+	provisioningOperation := internal.FixProvisioningOperation(operationID, instanceID)
+	provisioningOperation.ProvisioningParameters = fixProvisioningParameters(planID, region)
+	provisioningOperation.InputCreator = fixKnativeKafkaInputCreator(t)
+	provisioningOperation.State = ""
+
+	return provisioningOperation
 }
 
 func fixTags() azure.Tags {
