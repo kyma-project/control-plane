@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"testing"
 	"time"
 
@@ -334,22 +335,13 @@ func Test_StepsUnhappyPath(t *testing.T) {
 }
 
 func fixInstance() internal.Instance {
-	var pp2 internal.ProvisioningParameters
-	json.Unmarshal([]byte(
-		`{
-			"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
-			"ers_context": {
-				"subaccount_id": "`+subAccountID+`"
-			},
-			"parameters": {
-				"name": "nachtmaar-15",
-				"components": [],
-				"region": "westeurope"
-			}
-		}`), &pp2)
-	return internal.Instance{
-		InstanceID: fixInstanceID,
-		Parameters: pp2}
+	instance := internal.FixInstance(fixInstanceID)
+	instance.Parameters.ErsContext.SubAccountID = subAccountID
+	instance.Parameters.Parameters.Name = "nachtmaar-15"
+	instance.Parameters.Parameters.OptionalComponentsToInstall = []string{}
+	instance.Parameters.Parameters.Region = ptr.String("westeurope")
+
+	return instance
 }
 
 func fixInvalidInstance() internal.Instance {
@@ -384,44 +376,34 @@ func fixLogger() logrus.FieldLogger {
 }
 
 func fixDeprovisioningOperationWithParameters() internal.UpgradeKymaOperation {
-	return internal.UpgradeKymaOperation{
-		Operation: internal.Operation{
-			ID:                     fixOperationID,
-			InstanceID:             fixInstanceID,
-			ProvisionerOperationID: fixProvisionerOperationID,
-			Description:            "",
-			UpdatedAt:              time.Now(),
-			ProvisioningParameters: internal.ProvisioningParameters{
-				PlanID:         "",
-				ServiceID:      "",
-				ErsContext:     internal.ERSContext{},
-				Parameters:     internal.ProvisioningParametersDTO{},
-				PlatformRegion: "",
-			},
-		},
+	upgradeOperation := internal.FixUpgradeKymaOperation(fixOperationID, fixInstanceID)
+	upgradeOperation.ProvisionerOperationID = fixProvisionerOperationID
+	upgradeOperation.Description = ""
+	upgradeOperation.State = ""
+	upgradeOperation.ProvisioningParameters = internal.ProvisioningParameters{
+		PlanID:         "",
+		ServiceID:      "",
+		ErsContext:     internal.ERSContext{},
+		Parameters:     internal.ProvisioningParametersDTO{},
+		PlatformRegion: "",
 	}
+
+	return upgradeOperation
 }
 
 func fixDeprovisioningOperation() internal.UpgradeKymaOperation {
-	return internal.UpgradeKymaOperation{
-		Operation: internal.Operation{
-			ID:                     fixOperationID,
-			InstanceID:             fixInstanceID,
-			ProvisionerOperationID: fixProvisionerOperationID,
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Now(),
-		},
-	}
+	upgradeOperation := internal.FixUpgradeKymaOperation(fixOperationID, fixInstanceID)
+	upgradeOperation.ProvisionerOperationID = fixProvisionerOperationID
+
+	return upgradeOperation
 }
 
 func fixDeprovisioningOperationWithDeletedEventHub() internal.UpgradeKymaOperation {
-	return internal.UpgradeKymaOperation{
-		Operation: internal.Operation{InstanceDetails: internal.InstanceDetails{
-			EventHub: internal.EventHub{
-				Deleted: true,
-			},
-		}},
-	}
+	upgradeOperation := internal.FixUpgradeKymaOperation(fixOperationID, fixInstanceID)
+	upgradeOperation.State = ""
+	upgradeOperation.InstanceDetails.EventHub.Deleted = true
+
+	return upgradeOperation
 }
 
 // operationManager.OperationFailed(...)
