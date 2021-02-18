@@ -1,8 +1,11 @@
-package internal
+package fixture
 
 import (
 	"fmt"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"k8s.io/utils/pointer"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
@@ -10,7 +13,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
-	"k8s.io/utils/pointer"
 )
 
 const (
@@ -30,10 +32,10 @@ type SimpleInputCreator struct {
 	ShootName         *string
 }
 
-func FixServiceManagerEntryDTO() *ServiceManagerEntryDTO {
-	return &ServiceManagerEntryDTO{
-		Credentials: ServiceManagerCredentials{
-			BasicAuth: ServiceManagerBasicAuth{
+func FixServiceManagerEntryDTO() *internal.ServiceManagerEntryDTO {
+	return &internal.ServiceManagerEntryDTO{
+		Credentials: internal.ServiceManagerCredentials{
+			BasicAuth: internal.ServiceManagerBasicAuth{
 				Username: "username",
 				Password: "password",
 			},
@@ -42,14 +44,14 @@ func FixServiceManagerEntryDTO() *ServiceManagerEntryDTO {
 	}
 }
 
-func FixERSContext(id string) ERSContext {
+func FixERSContext(id string) internal.ERSContext {
 	var (
 		tenantID     = fmt.Sprintf("Tenant-%s", id)
 		subAccountId = fmt.Sprintf("SA-%s", id)
 		userID       = fmt.Sprintf("User-%s", id)
 	)
 
-	return ERSContext{
+	return internal.ERSContext{
 		TenantID:        tenantID,
 		SubAccountID:    subAccountId,
 		GlobalAccountID: globalAccountId,
@@ -59,16 +61,16 @@ func FixERSContext(id string) ERSContext {
 	}
 }
 
-func FixProvisioningParametersDTO() ProvisioningParametersDTO {
-	trialCloudProvider := TrialCloudProvider("provider")
-	return ProvisioningParametersDTO{
+func FixProvisioningParametersDTO() internal.ProvisioningParametersDTO {
+	trialCloudProvider := internal.TrialCloudProvider("provider")
+	return internal.ProvisioningParametersDTO{
 		Name:                        "cluster-name",
-		TargetSecret:                pointer.StringPtr("TargetSecret"),
+		TargetSecret:                ptr.String("TargetSecret"),
 		VolumeSizeGb:                ptr.Integer(50),
-		MachineType:                 pointer.StringPtr("MachineType"),
-		Region:                      pointer.StringPtr("Region"),
-		Purpose:                     pointer.StringPtr("Purpose"),
-		LicenceType:                 pointer.StringPtr("LicenceType"),
+		MachineType:                 ptr.String("MachineType"),
+		Region:                      ptr.String("Region"),
+		Purpose:                     ptr.String("Purpose"),
+		LicenceType:                 ptr.String("LicenceType"),
 		Zones:                       []string{"1", "2"},
 		AutoScalerMin:               ptr.Integer(3),
 		AutoScalerMax:               ptr.Integer(10),
@@ -80,8 +82,8 @@ func FixProvisioningParametersDTO() ProvisioningParametersDTO {
 	}
 }
 
-func FixProvisioningParameters(id string) ProvisioningParameters {
-	return ProvisioningParameters{
+func FixProvisioningParameters(id string) internal.ProvisioningParameters {
+	return internal.ProvisioningParameters{
 		PlanID:         planId,
 		ServiceID:      serviceId,
 		ErsContext:     FixERSContext(id),
@@ -90,13 +92,77 @@ func FixProvisioningParameters(id string) ProvisioningParameters {
 	}
 }
 
-func FixInstance(id string) Instance {
+func FixInstanceDetails(id string) internal.InstanceDetails {
+	var (
+		runtimeId    = fmt.Sprintf("Runtime-%s", id)
+		subAccountId = fmt.Sprintf("SA-%s", id)
+		tenantId     = fmt.Sprintf("Tenant-%s", id)
+		bindingId    = fmt.Sprintf("Binding-%s", id)
+		brokerId     = fmt.Sprintf("Broker-%s", id)
+	)
+
+	lms := internal.LMS{
+		TenantID:    tenantId,
+		Failed:      false,
+		RequestedAt: time.Time{},
+	}
+
+	avsLifecycleData := internal.AvsLifecycleData{
+		AvsEvaluationInternalId: 1,
+		AVSEvaluationExternalId: 2,
+		AvsInternalEvaluationStatus: internal.AvsEvaluationStatus{
+			Current:  "currentStatus",
+			Original: "originalStatus",
+		},
+		AvsExternalEvaluationStatus: internal.AvsEvaluationStatus{
+			Current:  "currentStatus",
+			Original: "originalStatus",
+		},
+		AVSInternalEvaluationDeleted: false,
+		AVSExternalEvaluationDeleted: false,
+	}
+
+	serviceManagerInstanceInfo := internal.ServiceManagerInstanceInfo{
+		BrokerID:              brokerId,
+		ServiceID:             serviceId,
+		PlanID:                planId,
+		InstanceID:            id,
+		Provisioned:           false,
+		ProvisioningTriggered: false,
+	}
+
+	xsuaaData := internal.XSUAAData{
+		Instance:  serviceManagerInstanceInfo,
+		XSAppname: "xsappName",
+		BindingID: bindingId,
+	}
+
+	emsData := internal.EmsData{
+		Instance:  serviceManagerInstanceInfo,
+		BindingID: bindingId,
+		Overrides: "overrides",
+	}
+
+	return internal.InstanceDetails{
+		Lms:          lms,
+		Avs:          avsLifecycleData,
+		EventHub:     internal.EventHub{Deleted: false},
+		SubAccountID: subAccountId,
+		RuntimeID:    runtimeId,
+		ShootName:    "ShootName",
+		ShootDomain:  "ShootDomain",
+		XSUAA:        xsuaaData,
+		Ems:          emsData,
+	}
+}
+
+func FixInstance(id string) internal.Instance {
 	var (
 		runtimeId    = fmt.Sprintf("Runtime-%s", id)
 		subAccountId = fmt.Sprintf("SA-%s", id)
 	)
 
-	return Instance{
+	return internal.Instance{
 		InstanceID:      id,
 		RuntimeID:       runtimeId,
 		GlobalAccountID: globalAccountId,
@@ -108,7 +174,7 @@ func FixInstance(id string) Instance {
 		DashboardURL:    "https://dashboard.local",
 		Parameters:      FixProvisioningParameters(id),
 		ProviderRegion:  "region",
-		InstanceDetails: InstanceDetails{},
+		InstanceDetails: internal.InstanceDetails{},
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now().Add(time.Minute * 5),
 		DeletedAt:       time.Now().Add(time.Hour * 1),
@@ -116,14 +182,14 @@ func FixInstance(id string) Instance {
 	}
 }
 
-func FixOperation(id, instanceId string) Operation {
+func FixOperation(id, instanceId string) internal.Operation {
 	var (
 		description     = fmt.Sprintf("Description for operation %s", id)
 		orchestrationId = fmt.Sprintf("Orchestration-%s", id)
 	)
 
-	return Operation{
-		InstanceDetails:        InstanceDetails{},
+	return internal.Operation{
+		InstanceDetails:        internal.InstanceDetails{},
 		ID:                     id,
 		Version:                0,
 		CreatedAt:              time.Now(),
@@ -142,24 +208,24 @@ func FixInputCreator() *SimpleInputCreator {
 		Overrides:         make(map[string][]*gqlschema.ConfigEntryInput, 0),
 		Labels:            make(map[string]string),
 		EnabledComponents: []string{},
-		ShootName:         pointer.StringPtr("ShootName"),
+		ShootName:         ptr.String("ShootName"),
 	}
 }
 
-func FixProvisioningOperation(operationId, instanceId string) ProvisioningOperation {
-	return ProvisioningOperation{
+func FixProvisioningOperation(operationId, instanceId string) internal.ProvisioningOperation {
+	return internal.ProvisioningOperation{
 		Operation: FixOperation(operationId, instanceId),
-		RuntimeVersion: RuntimeVersionData{
+		RuntimeVersion: internal.RuntimeVersionData{
 			Version: kymaVersion,
-			Origin:  Defaults,
+			Origin:  internal.Defaults,
 		},
 		InputCreator:    FixInputCreator(),
 		SMClientFactory: nil,
 	}
 }
 
-func FixDeprovisioningOperation(operationId, instanceId string) DeprovisioningOperation {
-	return DeprovisioningOperation{
+func FixDeprovisioningOperation(operationId, instanceId string) internal.DeprovisioningOperation {
+	return internal.DeprovisioningOperation{
 		Operation:       FixOperation(operationId, instanceId),
 		SMClientFactory: nil,
 		Temporary:       false,
@@ -191,21 +257,21 @@ func FixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
 	}
 }
 
-func FixUpgradeKymaOperation(operationId, instanceId string) UpgradeKymaOperation {
-	return UpgradeKymaOperation{
+func FixUpgradeKymaOperation(operationId, instanceId string) internal.UpgradeKymaOperation {
+	return internal.UpgradeKymaOperation{
 		Operation:        FixOperation(operationId, instanceId),
 		RuntimeOperation: FixRuntimeOperation(operationId),
 		InputCreator:     FixInputCreator(),
-		RuntimeVersion: RuntimeVersionData{
+		RuntimeVersion: internal.RuntimeVersionData{
 			Version: kymaVersion,
-			Origin:  Defaults,
+			Origin:  internal.Defaults,
 		},
 		SMClientFactory: nil,
 	}
 }
 
-func FixOrchestration() Orchestration {
-	return Orchestration{
+func FixOrchestration() internal.Orchestration {
+	return internal.Orchestration{
 		OrchestrationID: "",
 		State:           "",
 		Description:     "",
@@ -216,30 +282,30 @@ func FixOrchestration() Orchestration {
 }
 
 // SimpleInputCreator implements ProvisionerInputCreator interface
-func (c *SimpleInputCreator) SetProvisioningParameters(params ProvisioningParameters) ProvisionerInputCreator {
+func (c *SimpleInputCreator) SetProvisioningParameters(params internal.ProvisioningParameters) internal.ProvisionerInputCreator {
 	return c
 }
 
-func (c *SimpleInputCreator) SetShootName(name string) ProvisionerInputCreator {
+func (c *SimpleInputCreator) SetShootName(name string) internal.ProvisionerInputCreator {
 	c.ShootName = &name
 	return c
 }
 
-func (c *SimpleInputCreator) SetLabel(key, val string) ProvisionerInputCreator {
+func (c *SimpleInputCreator) SetLabel(key, val string) internal.ProvisionerInputCreator {
 	c.Labels[key] = val
 	return c
 }
 
-func (c *SimpleInputCreator) SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator {
+func (c *SimpleInputCreator) SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	return c
 }
 
-func (c *SimpleInputCreator) AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator {
+func (c *SimpleInputCreator) AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	c.Overrides[component] = append(c.Overrides[component], overrides...)
 	return c
 }
 
-func (c *SimpleInputCreator) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator {
+func (c *SimpleInputCreator) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	return c
 }
 
@@ -251,7 +317,7 @@ func (c *SimpleInputCreator) CreateUpgradeRuntimeInput() (gqlschema.UpgradeRunti
 	return gqlschema.UpgradeRuntimeInput{}, nil
 }
 
-func (c *SimpleInputCreator) EnableOptionalComponent(name string) ProvisionerInputCreator {
+func (c *SimpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionerInputCreator {
 	c.EnabledComponents = append(c.EnabledComponents, name)
 	return c
 }

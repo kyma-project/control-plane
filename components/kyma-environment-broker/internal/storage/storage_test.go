@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -1147,7 +1149,7 @@ func fixInstance(testData instanceData) *internal.Instance {
 		suid = testData.val
 	}
 
-	instance := internal.FixInstance(testData.val)
+	instance := fixture.FixInstance(testData.val)
 	instance.GlobalAccountID = gaid
 	instance.SubAccountID = suid
 	instance.ServiceID = testData.val
@@ -1164,37 +1166,29 @@ func fixInstance(testData instanceData) *internal.Instance {
 
 func fixProvisionOperation(testData string) internal.ProvisioningOperation {
 	operationId := fmt.Sprintf("%s-%d", testData, rand.Int())
-	return internal.FixProvisioningOperation(operationId, testData)
+	return fixture.FixProvisioningOperation(operationId, testData)
 
 }
 func fixDeprovisionOperation(testData string) internal.DeprovisioningOperation {
 	operationId := fmt.Sprintf("%s-%d", testData, rand.Int())
-	return internal.FixDeprovisioningOperation(operationId, testData)
+	return fixture.FixDeprovisioningOperation(operationId, testData)
 }
 
 func fixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
-	runtime := internal.FixRuntime("runtime-id")
-	runtimeOperation := internal.FixRuntimeOperation(operationId)
+	runtime := fixture.FixRuntime("runtime-id")
+	runtimeOperation := fixture.FixRuntimeOperation(operationId)
 	runtimeOperation.Runtime = runtime
 
 	return runtimeOperation
 }
 
 func fixProvisioningParameters() internal.ProvisioningParameters {
-	pp := internal.FixProvisioningParameters("test")
+	pp := fixture.FixProvisioningParameters("test")
 	pp.PlanID = broker.TrialPlanID
 	pp.ServiceID = broker.KymaServiceID
 	return pp
 }
 
 func fixInstanceDetails() internal.InstanceDetails {
-	return internal.InstanceDetails{
-		Lms: internal.LMS{
-			TenantID: "tenant-id",
-		},
-		SubAccountID: "test",
-		RuntimeID:    "test",
-		ShootName:    "test",
-		ShootDomain:  "test",
-	}
+	return fixture.FixInstanceDetails(fixInstanceId)
 }
