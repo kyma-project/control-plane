@@ -62,12 +62,8 @@ func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 }
 
 func fixOperationWithPlanID(planID string) internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     operationID,
-			InstanceID:             instanceID,
-			UpdatedAt:              time.Now(),
-			ProvisioningParameters: fixProvisioningParametersWithPlanID(planID, "region"),
-		},
-	}
+	provisioningOperation := internal.FixProvisioningOperation(operationID, instanceID)
+	provisioningOperation.ProvisioningParameters = fixProvisioningParametersWithPlanID(planID, "region")
+
+	return provisioningOperation
 }
