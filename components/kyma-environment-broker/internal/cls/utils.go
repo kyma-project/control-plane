@@ -2,6 +2,7 @@ package cls
 
 import (
 	"encoding/json"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pkg/errors"
 )

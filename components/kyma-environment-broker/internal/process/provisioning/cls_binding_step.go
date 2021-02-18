@@ -3,12 +3,13 @@ package provisioning
 import (
 	"bytes"
 	"fmt"
+	"text/template"
+	"time"
+
 	"github.com/Masterminds/semver"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"text/template"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -17,7 +18,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 )
-
 
 //go:generate mockery --name=ClsBindingProvider --output=automock --outpkg=automock --case=underscore
 type ClsBindingProvider interface {
@@ -28,16 +28,15 @@ type ClsBindStep struct {
 	config           *cls.Config
 	operationManager *process.ProvisionOperationManager
 	secretKey        string
-	bindingProvider ClsBindingProvider
-
+	bindingProvider  ClsBindingProvider
 }
 
 func NewClsBindStep(config *cls.Config, bp ClsBindingProvider, os storage.Operations, secretKey string) *ClsBindStep {
 	return &ClsBindStep{
-		config:config,
+		config:           config,
 		operationManager: process.NewProvisionOperationManager(os),
 		secretKey:        secretKey,
-		bindingProvider: bp,
+		bindingProvider:  bp,
 	}
 }
 
@@ -90,10 +89,10 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 			operation.Cls.Binding.BindingID = uuid.New().String()
 		}
 
-	  // Create a binding
+		// Create a binding
 		overrides, err = s.bindingProvider.CreateBinding(smCli, &cls.BindingRequest{
-			InstanceKey:   operation.Cls.Instance.InstanceKey(),
-			BindingID:     operation.Cls.Binding.BindingID,
+			InstanceKey: operation.Cls.Instance.InstanceKey(),
+			BindingID:   operation.Cls.Binding.BindingID,
 		})
 
 		if err != nil {
@@ -132,14 +131,14 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 	flOverride, err := s.injectOverrides(overrides, log)
 	if err != nil {
 		log.Errorf("Unable to generate forward plugin to push logs: %v", err)
-		return  operation, time.Second, nil
+		return operation, time.Second, nil
 	}
 
 	// Insert cls overrides if kyma version is >=1.20. Also make sure for PR images overrides are inserted here
 	c, err := semver.NewConstraint("<= 1.19.x")
 	if err != nil {
 		log.Errorf("unable to parse constraint for kyma version to set correct fluent bit plugin: %v", err)
-		return  operation, time.Second, nil
+		return operation, time.Second, nil
 	}
 	v, err := semver.NewVersion(operation.RuntimeVersion.Version)
 	check := c.Check(v)
@@ -150,9 +149,7 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 	return operation, 0, nil
 }
 
-
-
-func (s *ClsBindStep) injectOverrides(overrides *cls.ClsOverrides, log logrus.FieldLogger) (string,error){
+func (s *ClsBindStep) injectOverrides(overrides *cls.ClsOverrides, log logrus.FieldLogger) (string, error) {
 	// TODO: Load the template
 	tmpl, err := template.New("test").Parse("    [OUTPUT]\n        Name              http\n        Match             *\n        Host              {{.FluentdEndPoint}}\n        Port              443\n        HTTP_User         {{.FluentdUsername}}\n        HTTP_Passwd       {{.FluentdPassword}}\n        tls               true\n        tls.verify        true\n        tls.debug         1\n        URI               /\n        Format            json")
 	if err != nil {
@@ -171,10 +168,8 @@ func (s *ClsBindStep) injectOverrides(overrides *cls.ClsOverrides, log logrus.Fi
 func getClsOverrides(flInputsAdditional string) []*gqlschema.ConfigEntryInput {
 	return []*gqlschema.ConfigEntryInput{
 		{
-			Key:    "fluent-bit.config.outputs.additional",
-			Value:  flInputsAdditional,
+			Key:   "fluent-bit.config.outputs.additional",
+			Value: flInputsAdditional,
 		},
 	}
 }
-
-

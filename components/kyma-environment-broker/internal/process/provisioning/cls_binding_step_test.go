@@ -13,13 +13,14 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"testing"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
 func TestClsBindingStep_Run(t *testing.T) {
 	//given
-	fakeRegion:= "westeurope"
+	fakeRegion := "westeurope"
 	db := storage.NewMemoryStorage()
 	repo := db.Operations()
 	clientFactory := servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{}, []types.ServicePlan{})
@@ -39,7 +40,7 @@ func TestClsBindingStep_Run(t *testing.T) {
         tls.debug         1
         URI               /
         Format            json`
-	expectedKibanaUrl:= "kibUrl"
+	expectedKibanaUrl := "kibUrl"
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
 		{
 			Key:   "fluent-bit.config.outputs.additional",
@@ -65,7 +66,7 @@ func TestClsBindingStep_Run(t *testing.T) {
 			},
 		},
 		SMClientFactory: clientFactory,
-		InputCreator: inputCreatorMock,
+		InputCreator:    inputCreatorMock,
 	}
 	operation.Cls.Instance.ProvisioningTriggered = true
 	logs := logrus.New()
@@ -108,8 +109,6 @@ func TestClsBindingStep_Run(t *testing.T) {
 	}, nil)
 
 	bindingStep := NewClsBindStep(config, clsBindingProvider, repo, "1234567890123456")
-
-
 
 	repo.InsertProvisioningOperation(operation)
 	log := logger.NewLogDummy()

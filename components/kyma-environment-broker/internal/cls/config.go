@@ -164,7 +164,7 @@ func (r Region) validate() error {
 	return fmt.Errorf("unsupported region: %s (%s supported only)", r, strings.Join(supportedRegions, ","))
 }
 
-func ParseTemplate() (*template.Template, error){
+func ParseTemplate() (*template.Template, error) {
 	tpl, err := template.ParseFiles("clsHttpForwarder.yaml")
 	if err != nil {
 		return nil, err

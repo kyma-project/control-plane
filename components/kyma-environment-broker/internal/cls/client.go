@@ -32,10 +32,10 @@ type parameters struct {
 }
 
 type ClsOverrides struct {
-	FluentdEndPoint      string `json:"Fluentd-endpoint"`
-	FluentdPassword  string `json:"Fluentd-password"`
+	FluentdEndPoint string `json:"Fluentd-endpoint"`
+	FluentdPassword string `json:"Fluentd-password"`
 	FluentdUsername string `json:"Fluentd-username"`
-	KibanaUrl	string `json:"Kibana-endpoint"`
+	KibanaUrl       string `json:"Kibana-endpoint"`
 }
 
 type BindingRequest struct {
@@ -103,8 +103,7 @@ func createParameters(config *Config) parameters {
 	return params
 }
 
-type bindParam struct {}
-
+type bindParam struct{}
 
 func (c *Client) CreateBinding(smClient servicemanager.Client, request *BindingRequest) (*ClsOverrides, error) {
 	var bp bindParam
@@ -118,10 +117,9 @@ func (c *Client) CreateBinding(smClient servicemanager.Client, request *BindingR
 	if err != nil {
 		return nil, errors.Wrapf(err, "getCredentials() call failed")
 	}
-	return  clsOverrides, nil
+	return clsOverrides, nil
 
 }
-
 
 func getCredentials(binding servicemanager.Binding) (*ClsOverrides, error) {
 	clsOverrides := ClsOverrides{}

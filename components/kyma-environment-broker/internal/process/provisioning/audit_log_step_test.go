@@ -1,9 +1,10 @@
 package provisioning
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"testing"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 
@@ -27,7 +28,7 @@ func TestAuditLog_ScriptFileDoesNotExist(t *testing.T) {
 		Password: "aaaa",
 		Tenant:   "tenant",
 	}
-	svc := NewAuditLogOverridesStep(repo, cfg,"1234567890123456")
+	svc := NewAuditLogOverridesStep(repo, cfg, "1234567890123456")
 	svc.fs = mm
 
 	operation := internal.ProvisioningOperation{

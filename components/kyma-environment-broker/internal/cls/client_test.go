@@ -20,7 +20,7 @@ func TestCreateInstance(t *testing.T) {
 		fakePlanID     = "fake-plan-id"
 		fakeInstanceID = "fake-instance-id"
 	)
-	
+
 	config := getConfig()
 
 	tests := []struct {
@@ -117,7 +117,7 @@ func TestCreateBinding(t *testing.T) {
 	creds["Fluentd-username"] = "fbUser"
 	creds["Fluentd-password"] = "fbPass"
 	creds["Fluentd-endpoint"] = "fbEndpoint"
-	resB:= servicemanager.BindingResponse{
+	resB := servicemanager.BindingResponse{
 		Binding:      servicemanager.Binding{Credentials: creds},
 		HTTPResponse: servicemanager.HTTPResponse{StatusCode: 200},
 	}
@@ -140,8 +140,8 @@ func TestCreateBinding(t *testing.T) {
 	require.Equal(t, expectedClsOverrides, res)
 }
 
-func getConfig() *Config{
-	return  &Config{
+func getConfig() *Config {
+	return &Config{
 		RetentionPeriod:    30,
 		MaxDataInstances:   4,
 		MaxIngestInstances: 4,

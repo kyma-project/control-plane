@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"net"
 	"net/url"
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 
@@ -32,7 +33,7 @@ func (alo *AuditLogOverrides) Name() string {
 	return "Audit_Log_Overrides"
 }
 
-func NewAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config,  secretKey string) *AuditLogOverrides {
+func NewAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config, secretKey string) *AuditLogOverrides {
 	fileSystem := afero.NewOsFs()
 
 	return &AuditLogOverrides{
@@ -40,7 +41,6 @@ func NewAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config,  secre
 		fileSystem,
 		cfg,
 		secretKey,
-
 	}
 }
 
@@ -99,9 +99,8 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 	extraConfOverride, err := alo.injectOverrides(aloOv, extraConf, logger)
 	if err != nil {
 		logger.Errorf("Unable to generate forward plugin to push logs: %v", err)
-		return  operation, time.Second, nil
+		return operation, time.Second, nil
 	}
-
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
 		{Key: "fluent-bit.conf.script", Value: replaceTenantID},
@@ -115,7 +114,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 	return operation, 0, nil
 }
 
-func (alo *AuditLogOverrides) injectOverrides(aloOv auditlog.Overrides, tmp *template.Template, log logrus.FieldLogger) (string,error){
+func (alo *AuditLogOverrides) injectOverrides(aloOv auditlog.Overrides, tmp *template.Template, log logrus.FieldLogger) (string, error) {
 	var flOutputs bytes.Buffer
 	err := tmp.Execute(&flOutputs, aloOv)
 	if err != nil {
