@@ -83,3 +83,9 @@ type LMSTenants interface {
 	FindTenantByName(name, region string) (internal.LMSTenant, bool, error)
 	InsertTenant(tenant internal.LMSTenant) error
 }
+
+type CLSInstances interface {
+	FindInstance(name string) (*internal.CLSInstance, bool, error)
+	InsertInstance(instance internal.CLSInstance) error
+	Reference(version int, globalAccountID, skrInstanceID string) error
+}

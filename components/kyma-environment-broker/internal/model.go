@@ -27,6 +27,15 @@ type ProvisionerInputCreator interface {
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 }
 
+type CLSInstance struct {
+	Version         int
+	ID              string
+	GlobalAccountID string
+	// Currently, a CLS instance is identified by GlobalAccountID only. Region is stored for future use.
+	Region        string
+	CreatedAt     time.Time
+	SKRReferences []string
+}
 type LMSTenant struct {
 	ID        string
 	Name      string
@@ -168,6 +177,7 @@ type InstanceWithOperation struct {
 }
 
 type SMClientFactory interface {
+	ForCredentials(credentials *servicemanager.Credentials) servicemanager.Client
 	ForCustomerCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (servicemanager.Client, error)
 	ProvideCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (*servicemanager.Credentials, error)
 }
@@ -184,6 +194,7 @@ type InstanceDetails struct {
 	ShootDomain  string    `json:"shoot_domain"`
 	XSUAA        XSUAAData `json:"xsuaa"`
 	Ems          EmsData   `json:"ems"`
+	Cls          ClsData   `json:"cls"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -219,6 +230,13 @@ type EmsData struct {
 
 	BindingID string `json:"bindingId"`
 	Overrides string `json:"overrides"`
+}
+
+type ClsData struct {
+	Instance  ServiceManagerInstanceInfo `json:"instance"`
+	Region    string                     `json:"region"`
+	BindingID string                     `json:"bindingId"`
+	Overrides string                     `json:"overrides"`
 }
 
 func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {
