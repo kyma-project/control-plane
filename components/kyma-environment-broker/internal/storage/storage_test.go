@@ -1352,7 +1352,7 @@ func fixInstance(testData instanceData) *internal.Instance {
 	} else {
 		suid = testData.val
 	}
-	
+
 	instance := fixture.FixInstance(testData.val)
 	instance.GlobalAccountID = gaid
 	instance.SubAccountID = suid
