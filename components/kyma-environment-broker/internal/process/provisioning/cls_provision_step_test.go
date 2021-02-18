@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	//"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"testing"
@@ -29,7 +28,6 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 	//given
 	db := storage.NewMemoryStorage()
 	repo := db.Operations()
-	// TODO: Change this to new servicemanager instatiation
 	clientFactory := servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{}, []types.ServicePlan{})
 	clientFactory.SynchronousProvisioning()
 	operation := internal.ProvisioningOperation{
@@ -113,7 +111,7 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 	// then
 	assert.NoError(t, err)
 	assert.Zero(t, retry)
-	assert.NotEmpty(t, operation.Cls.Instance.InstanceID)
-	assert.False(t, operation.Cls.Instance.Provisioned)
-	assert.True(t, operation.Cls.Instance.ProvisioningTriggered)
+	assert.NotNil(t, operation.Cls.Binding.BindingID)
+	assert.True(t, operation.Cls.Instance.Provisioned)
+	assert.False(t, operation.Cls.Instance.ProvisioningTriggered)
 }

@@ -20,28 +20,8 @@ func TestCreateInstance(t *testing.T) {
 		fakePlanID     = "fake-plan-id"
 		fakeInstanceID = "fake-instance-id"
 	)
-
-	var (
-		config = &Config{
-			RetentionPeriod:    30,
-			MaxDataInstances:   4,
-			MaxIngestInstances: 4,
-			SAML: &SAMLConfig{
-				AdminGroup:  "runtimeAdmin",
-				ExchangeKey: "base64-jibber-jabber",
-				Initiated:   true,
-				RolesKey:    "groups",
-				Idp: &SAMLIdpConfig{
-					EntityID:    "https://sso.example.org/idp",
-					MetadataURL: "https://sso.example.org/idp/saml2/metadata",
-				},
-				Sp: &SAMLSpConfig{
-					EntityID:            "cls-dev",
-					SignaturePrivateKey: "base64-jibber-jabber",
-				},
-			},
-		}
-	)
+	
+	config := getConfig()
 
 	tests := []struct {
 		summary string
@@ -127,6 +107,58 @@ func TestCreateInstance(t *testing.T) {
 			})
 			require.NoError(t, err)
 		})
+	}
+}
+
+func TestCreateBinding(t *testing.T) {
+	smClientMock := &automock.Client{}
+	creds := make(map[string]interface{})
+	creds["Kibana-endpoint"] = "kibUrl"
+	creds["Fluentd-username"] = "fbUser"
+	creds["Fluentd-password"] = "fbPass"
+	creds["Fluentd-endpoint"] = "fbEndpoint"
+	resB:= servicemanager.BindingResponse{
+		Binding:      servicemanager.Binding{Credentials: creds},
+		HTTPResponse: servicemanager.HTTPResponse{StatusCode: 200},
+	}
+	config := getConfig()
+	smClientMock.On("Bind", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&resB, nil)
+	sut := NewClient(config, logrus.New())
+
+	br := BindingRequest{
+		InstanceKey: servicemanager.InstanceKey{},
+		BindingID:   "",
+	}
+	expectedClsOverrides := &ClsOverrides{
+		FluentdEndPoint: "fbEndpoint",
+		FluentdPassword: "fbPass",
+		FluentdUsername: "fbUser",
+		KibanaUrl:       "kibUrl",
+	}
+	res, err := sut.CreateBinding(smClientMock, &br)
+	require.NoError(t, err)
+	require.Equal(t, expectedClsOverrides, res)
+}
+
+func getConfig() *Config{
+	return  &Config{
+		RetentionPeriod:    30,
+		MaxDataInstances:   4,
+		MaxIngestInstances: 4,
+		SAML: &SAMLConfig{
+			AdminGroup:  "runtimeAdmin",
+			ExchangeKey: "base64-jibber-jabber",
+			Initiated:   true,
+			RolesKey:    "groups",
+			Idp: &SAMLIdpConfig{
+				EntityID:    "https://sso.example.org/idp",
+				MetadataURL: "https://sso.example.org/idp/saml2/metadata",
+			},
+			Sp: &SAMLSpConfig{
+				EntityID:            "cls-dev",
+				SignaturePrivateKey: "base64-jibber-jabber",
+			},
+		},
 	}
 }
 
