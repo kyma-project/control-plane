@@ -661,60 +661,8 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 	return ret, count, totalCount, nil
 }
 
-func (s *operations) encryptBasicAuth(pp *internal.ProvisioningParameters) error {
-	if pp.ErsContext.ServiceManager == nil {
-		return nil
-	}
-	creds := pp.ErsContext.ServiceManager.Credentials.BasicAuth
-	if creds.Username == "" || creds.Password == "" {
-		return nil
-	}
-	username, err := s.cipher.Encrypt([]byte(pp.ErsContext.ServiceManager.Credentials.BasicAuth.Username))
-	if err != nil {
-		return errors.Wrap(err, "while encrypting username")
-	}
-	password, err := s.cipher.Encrypt([]byte(pp.ErsContext.ServiceManager.Credentials.BasicAuth.Password))
-	if err != nil {
-		return errors.Wrap(err, "while encrypting password")
-	}
-
-	pp.ErsContext.ServiceManager = &internal.ServiceManagerEntryDTO{
-		Credentials: internal.ServiceManagerCredentials{
-			BasicAuth: internal.ServiceManagerBasicAuth{
-				Username: string(username),
-				Password: string(password),
-			}},
-		URL: pp.ErsContext.ServiceManager.URL,
-	}
-
-	return nil
-}
-
-func (s *operations) decryptBasicAuth(pp *internal.ProvisioningParameters) error {
-	if pp.ErsContext.ServiceManager == nil {
-		return nil
-	}
-	creds := pp.ErsContext.ServiceManager.Credentials.BasicAuth
-	if creds.Username == "" || creds.Password == "" {
-		return nil
-	}
-	username, err := s.cipher.Decrypt([]byte(creds.Username))
-	if err != nil {
-		return errors.Wrap(err, "while decrypting username")
-	}
-	password, err := s.cipher.Decrypt([]byte(creds.Password))
-	if err != nil {
-		return errors.Wrap(err, "while decrypting password")
-	}
-
-	pp.ErsContext.ServiceManager.Credentials.BasicAuth.Username = string(username)
-	pp.ErsContext.ServiceManager.Credentials.BasicAuth.Password = string(password)
-
-	return nil
-}
-
 func (s *operations) operationToDB(op internal.Operation) (dbmodel.OperationDTO, error) {
-	err := s.encryptBasicAuth(&op.ProvisioningParameters)
+	err := s.cipher.EncryptBasicAuth(&op.ProvisioningParameters)
 	if err != nil {
 		return dbmodel.OperationDTO{}, errors.Wrap(err, "while encrypting basic auth")
 	}
@@ -745,7 +693,7 @@ func (s *operations) toOperation(op *dbmodel.OperationDTO, instanceDetails inter
 			return internal.Operation{}, errors.Wrap(err, "while unmarshal provisioning parameters")
 		}
 	}
-	err := s.decryptBasicAuth(&pp)
+	err := s.cipher.DecryptBasicAuth(&pp)
 	if err != nil {
 		return internal.Operation{}, errors.Wrap(err, "while decrypting basic auth")
 	}

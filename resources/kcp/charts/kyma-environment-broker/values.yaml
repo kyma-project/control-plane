@@ -88,6 +88,8 @@ brokerService:
   supportUrl: "https://launchpad.support.sap.com/"
 
 enableInstanceDetailsMigration: "true"
+enableInstanceParametersMigration: "true"
+enableInstanceParametersRollback: "false"
 enableOperationsUserIDMigration: "true"
 
 gardener:
