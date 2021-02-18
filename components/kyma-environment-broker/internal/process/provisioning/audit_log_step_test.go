@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"testing"
 	"time"
 
@@ -26,7 +27,7 @@ func TestAuditLog_ScriptFileDoesNotExist(t *testing.T) {
 		Password: "aaaa",
 		Tenant:   "tenant",
 	}
-	svc := NewAuditLogOverridesStep(repo, cfg)
+	svc := NewAuditLogOverridesStep(repo, cfg,"1234567890123456")
 	svc.fs = mm
 
 	operation := internal.ProvisioningOperation{
@@ -56,8 +57,17 @@ bar: tenant_id
 return "fooBar"
 }
 `
+	overridesIn := cls.ClsOverrides{
+		FluentdEndPoint: "foo.bar",
+		FluentdPassword: "fooPass",
+		FluentdUsername: "fooUser",
+		KibanaUrl:       "Kiib.url",
+	}
+	secretKey := "1234567890123456"
+	encrypted, err := cls.EncryptOverrides(secretKey, &overridesIn)
+	assert.NoError(t, err)
 
-	err := afero.WriteFile(mm, "/auditlog-script/script", []byte(fileScript), 0755)
+	err = afero.WriteFile(mm, "/auditlog-script/script", []byte(fileScript), 0755)
 	if err != nil {
 		t.Fatalf("Unable to write contents to file: audit-log-script!!: %v", err)
 	}
@@ -69,13 +79,12 @@ return "fooBar"
 		Password: "aaaa",
 		Tenant:   "tenant",
 	}
-	svc := NewAuditLogOverridesStep(repo, cfg)
+	svc := NewAuditLogOverridesStep(repo, cfg, secretKey)
 	svc.fs = mm
 
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
-	expectedOverride := `
-[INPUT]
+	expectedOverride := `[INPUT]
         Name              tail
         Tag               dex.*
         Path              /var/log/containers/*_dex-*.log
@@ -109,7 +118,18 @@ return "fooBar"
         HTTP_Passwd      aaaa
         Format           json_stream
         tls              on
-`
+[OUTPUT]
+		Name              http
+		Match             *
+		Host              foo.bar
+		Port              443
+		HTTP_User         fooUser
+		HTTP_Passwd       fooPass
+		tls               true
+		tls.verify        true
+		tls.debug         1
+		URI               /
+		Format            json`
 	expectedFileScript := `
 func myScript() {
 foo: 1234567890
@@ -148,6 +168,15 @@ return "fooBar"
 		InputCreator: inputCreatorMock,
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{SubAccountID: "1234567890"}},
+			InstanceDetails: internal.InstanceDetails{
+				Cls: internal.ClsData{
+					Overrides: encrypted,
+				},
+			},
+		},
+		RuntimeVersion: internal.RuntimeVersionData{
+			Version: "1.19",
+			Origin:  "foo",
 		},
 	}
 	repo.InsertProvisioningOperation(operation)
@@ -169,8 +198,19 @@ bar: tenant_id
 return "fooBar"
 }
 `
+	overridesIn := cls.ClsOverrides{
+		FluentdEndPoint: "foo.bar",
+		FluentdPassword: "fooPass",
+		FluentdUsername: "fooUser",
+		KibanaUrl:       "Kiib.url",
+	}
+	secretKey := "1234567890123456"
 
-	err := afero.WriteFile(mm, "/auditlog-script/script", []byte(fileScript), 0755)
+	// when
+	encrypted, err := cls.EncryptOverrides(secretKey, &overridesIn)
+	assert.NoError(t, err)
+
+	err = afero.WriteFile(mm, "/auditlog-script/script", []byte(fileScript), 0755)
 	if err != nil {
 		t.Fatalf("Unable to write contents to file: audit-log-script!!: %v", err)
 	}
@@ -183,13 +223,12 @@ return "fooBar"
 		Tenant:        "tenant",
 		EnableSeqHttp: true,
 	}
-	svc := NewAuditLogOverridesStep(repo, cfg)
+	svc := NewAuditLogOverridesStep(repo, cfg, "1234567890123456")
 	svc.fs = mm
 
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
-	expectedOverride := `
-[INPUT]
+	expectedOverride := `[INPUT]
         Name              tail
         Tag               dex.*
         Path              /var/log/containers/*_dex-*.log
@@ -222,8 +261,7 @@ return "fooBar"
         HTTP_User        aaaa
         HTTP_Passwd      aaaa
         Format           json_stream
-        tls              on
-`
+        tls              on`
 	expectedFileScript := `
 func myScript() {
 foo: 1234567890
@@ -262,6 +300,15 @@ return "fooBar"
 		InputCreator: inputCreatorMock,
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{SubAccountID: "1234567890"}},
+			InstanceDetails: internal.InstanceDetails{
+				Cls: internal.ClsData{
+					Overrides: encrypted,
+				},
+			},
+		},
+		RuntimeVersion: internal.RuntimeVersionData{
+			Version: "1.20",
+			Origin:  "foo",
 		},
 	}
 	repo.InsertProvisioningOperation(operation)
