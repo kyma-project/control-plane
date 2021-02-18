@@ -190,61 +190,32 @@ func TestInitialisationStep(t *testing.T) {
 }
 
 func fixOperationRuntimeStatus(planId string) internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     statusOperationID,
-			InstanceID:             statusInstanceID,
-			ProvisionerOperationID: statusProvisionerOperationID,
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Now(),
-			ProvisioningParameters: fixProvisioningParametersRuntimeStatus(planId),
-			InstanceDetails: internal.InstanceDetails{
-				RuntimeID: runtimeID,
-			},
-		},
-	}
+	provisioningOperation := internal.FixProvisioningOperation(statusOperationID, statusInstanceID)
+	provisioningOperation.ProvisionerOperationID = statusProvisionerOperationID
+	provisioningOperation.InstanceDetails.RuntimeID = runtimeID
+	provisioningOperation.ProvisioningParameters.PlanID = planId
+	provisioningOperation.ProvisioningParameters.ErsContext.GlobalAccountID = statusGlobalAccountID
+
+	return provisioningOperation
 }
 
 func fixOperationRuntimeStatusWithProvider(planId string, provider internal.TrialCloudProvider) internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     statusOperationID,
-			InstanceID:             statusInstanceID,
-			ProvisionerOperationID: statusProvisionerOperationID,
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Now(),
-			ProvisioningParameters: fixProvisioningParametersRuntimeStatusWithProvider(planId, &provider),
-		},
-	}
-}
+	provisioningOperation := internal.FixProvisioningOperation(statusOperationID, statusInstanceID)
+	provisioningOperation.ProvisionerOperationID = statusProvisionerOperationID
+	provisioningOperation.ProvisioningParameters.PlanID = planId
+	provisioningOperation.ProvisioningParameters.ErsContext.GlobalAccountID = statusGlobalAccountID
+	provisioningOperation.ProvisioningParameters.Parameters.Provider = &provider
 
-func fixProvisioningParametersRuntimeStatus(planId string) internal.ProvisioningParameters {
-	return fixProvisioningParametersRuntimeStatusWithProvider(planId, nil)
-}
-
-func fixProvisioningParametersRuntimeStatusWithProvider(planId string, provider *internal.TrialCloudProvider) internal.ProvisioningParameters {
-	return internal.ProvisioningParameters{
-		PlanID:    planId,
-		ServiceID: "",
-		ErsContext: internal.ERSContext{
-			GlobalAccountID: statusGlobalAccountID,
-		},
-		Parameters: internal.ProvisioningParametersDTO{
-			Provider: provider,
-		},
-	}
+	return provisioningOperation
 }
 
 func fixInstanceRuntimeStatus() internal.Instance {
-	return internal.Instance{
-		InstanceID:      statusInstanceID,
-		RuntimeID:       statusRuntimeID,
-		DashboardURL:    dashboardURL,
-		GlobalAccountID: statusGlobalAccountID,
-		CreatedAt:       time.Time{},
-		UpdatedAt:       time.Time{},
-		DeletedAt:       time.Time{},
-	}
+	instance := internal.FixInstance(statusInstanceID)
+	instance.RuntimeID = statusRuntimeID
+	instance.DashboardURL = dashboardURL
+	instance.GlobalAccountID = statusGlobalAccountID
+
+	return instance
 }
 
 func fixAvsEvaluation() *avs.BasicEvaluationCreateResponse {
