@@ -14,6 +14,43 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestProvisionReturnsExistingInstanceIfFoundInDB(t *testing.T) {
+	const (
+		fakeGlobalAccountID = "fake-global-account-id"
+		fakeSKRInstanceID   = "fake-skr-instance-id"
+		fakeRegion          = "westmongolia"
+		fakeInstanceID      = "fake-instance-id"
+		fakeBrokerID        = "fake-broker-id"
+		fakeServiceID       = "fake-service-id"
+		fakePlanID          = "fake-plan-id"
+	)
+
+	storageMock := &automock.ProvisionerStorage{}
+	storageMock.On("FindInstance", fakeGlobalAccountID).Return(&internal.CLSInstance{
+		ID:              fakeInstanceID,
+		GlobalAccountID: fakeGlobalAccountID,
+		Region:          fakeRegion,
+	}, true, nil)
+	storageMock.On("Reference", mock.Anything, fakeGlobalAccountID, fakeSKRInstanceID).Return(nil)
+
+	smClientMock := &smautomock.Client{}
+	creatorMock := &automock.InstanceCreator{}
+
+	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
+	result, err := sut.Provision(smClientMock, &ProvisionRequest{
+		GlobalAccountID: fakeGlobalAccountID,
+		SKRInstanceID:   fakeSKRInstanceID,
+		BrokerID:        fakeBrokerID,
+		ServiceID:       fakeServiceID,
+		PlanID:          fakePlanID,
+	})
+	require.NotNil(t, result)
+	require.NoError(t, err)
+	require.Equal(t, fakeInstanceID, result.InstanceID)
+	require.False(t, result.ProvisioningTriggered)
+	require.Equal(t, fakeRegion, result.Region)
+}
+
 func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 	const (
 		fakeGlobalAccountID = "fake-global-account-id"
@@ -21,6 +58,7 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 		fakeBrokerID        = "fake-broker-id"
 		fakeServiceID       = "fake-service-id"
 		fakePlanID          = "fake-plan-id"
+		fakeRegion          = "westmongolia"
 	)
 
 	storageMock := &automock.ProvisionerStorage{}
@@ -40,12 +78,16 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
+		Region:          fakeRegion,
 		BrokerID:        fakeBrokerID,
 		ServiceID:       fakeServiceID,
 		PlanID:          fakePlanID,
 	})
 	require.NotNil(t, result)
 	require.NoError(t, err)
+	require.NotEmpty(t, result.InstanceID)
+	require.True(t, result.ProvisioningTriggered)
+	require.Equal(t, fakeRegion, result.Region)
 
 	creatorMock.AssertNumberOfCalls(t, "CreateInstance", 1)
 }

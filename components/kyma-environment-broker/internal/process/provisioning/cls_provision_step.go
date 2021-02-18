@@ -68,6 +68,13 @@ func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 		ServiceID:       operation.Cls.Instance.ServiceID,
 		PlanID:          operation.Cls.Instance.PlanID,
 	})
+	if err != nil {
+		failureReason := fmt.Sprintf("Unable to provision instance for global account: %s", globalAccountID)
+		log.Errorf("%s: %s", failureReason, err)
+		return s.operationManager.OperationFailed(operation, failureReason)
+	}
+
+	operation.Cls.Region = result.Region
 	operation.Cls.Instance.InstanceID = result.InstanceID
 	operation.Cls.Instance.ProvisioningTriggered = result.ProvisioningTriggered
 

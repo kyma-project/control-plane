@@ -49,6 +49,7 @@ type ProvisionRequest struct {
 type ProvisionResult struct {
 	InstanceID            string
 	ProvisioningTriggered bool
+	Region                string
 }
 
 func (c *provisioner) Provision(smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
@@ -69,6 +70,7 @@ func (c *provisioner) Provision(smClient servicemanager.Client, request *Provisi
 	return &ProvisionResult{
 		InstanceID:            instance.ID,
 		ProvisioningTriggered: false,
+		Region:                instance.Region,
 	}, nil
 }
 
@@ -99,5 +101,6 @@ func (c *provisioner) createNewInstance(smClient servicemanager.Client, request 
 	return &ProvisionResult{
 		InstanceID:            instance.ID,
 		ProvisioningTriggered: true,
+		Region:                request.Region,
 	}, nil
 }
