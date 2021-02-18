@@ -205,7 +205,7 @@ func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 			Component:      model.KymaComponent(component.Component),
 			Namespace:      component.Namespace,
 			SourceURL:      component.SourceURL,
-			Configuration:  c.configurationFromInput(component.Configuration),
+			Configuration:  c.configurationFromInput(component.Configuration, component.ConflictStrategy),
 			ComponentOrder: i + 1,
 			KymaConfigID:   kymaConfigID,
 		}
@@ -219,7 +219,7 @@ func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 		Profile:             c.graphQLProfileToProfile(input.Profile),
 		Components:          components,
 		ClusterID:           runtimeID,
-		GlobalConfiguration: c.configurationFromInput(input.Configuration),
+		GlobalConfiguration: c.configurationFromInput(input.Configuration, input.ConflictStrategy),
 	}, nil
 }
 
@@ -243,9 +243,13 @@ func (c converter) graphQLProfileToProfile(profile *gqlschema.KymaProfile) *mode
 
 }
 
-func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput) model.Configuration {
+func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput, conflict *gqlschema.ConflictStrategy) model.Configuration {
 	configuration := model.Configuration{
 		ConfigEntries: make([]model.ConfigEntry, 0, len(input)),
+	}
+
+	if conflict != nil {
+		configuration.ConflictStrategy = conflict.String()
 	}
 
 	for _, ce := range input {

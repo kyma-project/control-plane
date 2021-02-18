@@ -110,8 +110,8 @@ func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) ap
 		return apperrors.BadRequest("error: Kyma config not provided")
 	}
 
-	if len(kymaConfig.Components) == 0 {
-		return apperrors.BadRequest("error: Kyma components list is empty")
+	if appError, done := v.validateComponents(kymaConfig); done {
+		return appError
 	}
 
 	if !configContainsRuntimeAgentComponent(kymaConfig.Components) {
@@ -119,6 +119,15 @@ func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) ap
 	}
 
 	return nil
+}
+
+func (v *validator) validateComponents(kymaConfig *gqlschema.KymaConfigInput) (apperrors.AppError, bool) {
+	components := kymaConfig.Components
+	if len(components) == 0 {
+		return apperrors.BadRequest("error: Kyma components list is empty"), true
+	}
+
+	return nil, false
 }
 
 func (v *validator) validateClusterConfig(clusterConfig *gqlschema.ClusterConfigInput) apperrors.AppError {
