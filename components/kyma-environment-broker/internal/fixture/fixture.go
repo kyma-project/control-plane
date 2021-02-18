@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"k8s.io/utils/pointer"
-
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
@@ -56,7 +54,7 @@ func FixERSContext(id string) internal.ERSContext {
 		SubAccountID:    subAccountId,
 		GlobalAccountID: globalAccountId,
 		ServiceManager:  FixServiceManagerEntryDTO(),
-		Active:          pointer.BoolPtr(true),
+		Active:          ptr.Bool(true),
 		UserID:          userID,
 	}
 }
