@@ -56,7 +56,7 @@ func TestFindCredentials(t *testing.T) {
 		{
 			summary: "no matching service manager credentials",
 			givenCredentials: []*ServiceManagerCredentials{
-				&ServiceManagerCredentials{
+				{
 					Region:   "us",
 					URL:      "us.service-manager.com",
 					Username: "john.doe",
@@ -69,13 +69,13 @@ func TestFindCredentials(t *testing.T) {
 		{
 			summary: "happy path",
 			givenCredentials: []*ServiceManagerCredentials{
-				&ServiceManagerCredentials{
+				{
 					Region:   "eu",
 					URL:      "eu.service-manager.com",
 					Username: "john.doe",
 					Password: "qwerty",
 				},
-				&ServiceManagerCredentials{
+				{
 					Region:   "us",
 					URL:      "us.service-manager.com",
 					Username: "john.doe",
