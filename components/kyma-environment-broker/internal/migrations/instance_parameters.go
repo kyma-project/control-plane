@@ -30,14 +30,16 @@ func (m *InstanceParametersMigration) Migrate() error {
 	}
 	m.log.Infof("Performing instance parameters migration of %d instances", len(instances))
 	for _, i := range instances {
-		_, err = m.cipher.Decrypt([]byte(i.Parameters.ErsContext.ServiceManager.Credentials.BasicAuth.Username))
-		if err == nil {
-			m.log.Infof("instance %s was already migrated", i.InstanceID)
-		} else {
-			m.log.Infof("updating instance %s", i.InstanceID)
-			_, err = m.instances.Update(i)
-			if err != nil {
-				return errors.Wrap(err, "while updating instance")
+		if i.Parameters.ErsContext.ServiceManager != nil {
+			_, err = m.cipher.Decrypt([]byte(i.Parameters.ErsContext.ServiceManager.Credentials.BasicAuth.Username))
+			if err == nil {
+				m.log.Infof("instance %s was already migrated", i.InstanceID)
+			} else {
+				m.log.Infof("updating instance %s", i.InstanceID)
+				_, err = m.instances.Update(i)
+				if err != nil {
+					return errors.Wrap(err, "while updating instance")
+				}
 			}
 		}
 	}
