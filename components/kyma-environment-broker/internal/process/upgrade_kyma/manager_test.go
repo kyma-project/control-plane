@@ -2,11 +2,11 @@ package upgrade_kyma
 
 import (
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
@@ -101,15 +101,11 @@ func TestManager_Execute(t *testing.T) {
 }
 
 func fixOperation(ID string) internal.UpgradeKymaOperation {
-	return internal.UpgradeKymaOperation{
-		Operation: internal.Operation{
-			ID:          ID,
-			State:       domain.InProgress,
-			InstanceID:  "fea2c1a1-139d-43f6-910a-a618828a79d5",
-			Description: "",
-		},
-		RuntimeOperation: orchestration.RuntimeOperation{},
-	}
+	upgradeOperation := fixture.FixUpgradeKymaOperation(ID, "fea2c1a1-139d-43f6-910a-a618828a79d5")
+	upgradeOperation.State = domain.InProgress
+	upgradeOperation.Description = ""
+
+	return upgradeOperation
 }
 
 type testStep struct {
