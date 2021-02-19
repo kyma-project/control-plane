@@ -36,10 +36,8 @@ func (s *ClsDeprovisionStep) Name() string {
 }
 
 func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
-	var (
-		globalAccountID = operation.ProvisioningParameters.ErsContext.GlobalAccountID
-		skrInstanceID   = operation.InstanceID
-	)
+	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
+	skrInstanceID := operation.InstanceID
 
 	if !operation.Cls.Instance.Provisioned {
 		log.Infof("Unable to deprovision a cls instance since it is not provisioned")

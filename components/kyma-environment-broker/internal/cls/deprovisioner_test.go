@@ -187,6 +187,7 @@ func TestDeprovisionMarksAsBeingRemovedIfLastReference(t *testing.T) {
 	}
 	storageMock.On("FindInstance", mock.Anything).Return(found, true, nil)
 	storageMock.On("MarkAsBeingRemoved", found.Version, fakeGlobalAccountID, fakeSKRInstanceID).Return(nil)
+	storageMock.On("RemoveInstance", found.Version, fakeGlobalAccountID).Return(nil)
 
 	smClientMock := &smautomock.Client{}
 	removerMock := &automock.InstanceRemover{}
@@ -206,6 +207,7 @@ func TestDeprovisionMarksAsBeingRemovedIfLastReference(t *testing.T) {
 
 	require.NoError(t, err)
 	storageMock.AssertNumberOfCalls(t, "MarkAsBeingRemoved", 1)
+	storageMock.AssertNumberOfCalls(t, "RemoveInstance", 1)
 }
 
 func TestDeprovisionFailsIfMarkingQueryFails(t *testing.T) {
@@ -230,6 +232,7 @@ func TestDeprovisionFailsIfMarkingQueryFails(t *testing.T) {
 	}
 	storageMock.On("FindInstance", mock.Anything).Return(found, true, nil)
 	storageMock.On("MarkAsBeingRemoved", found.Version, fakeGlobalAccountID, fakeSKRInstanceID).Return(errors.New("unable to connect"))
+	storageMock.On("RemoveInstance", found.Version, fakeGlobalAccountID).Return(nil)
 
 	smClientMock := &smautomock.Client{}
 	removerMock := &automock.InstanceRemover{}
@@ -248,7 +251,7 @@ func TestDeprovisionFailsIfMarkingQueryFails(t *testing.T) {
 	})
 
 	require.Error(t, err)
-	removerMock.AssertNumberOfCalls(t, "DeleteInstance", 0)
+	removerMock.AssertNumberOfCalls(t, "RemoveInstance", 0)
 }
 
 func TestDeprovisionRemovesIfLastReference(t *testing.T) {
@@ -273,6 +276,7 @@ func TestDeprovisionRemovesIfLastReference(t *testing.T) {
 	}
 	storageMock.On("FindInstance", mock.Anything).Return(found, true, nil)
 	storageMock.On("MarkAsBeingRemoved", found.Version, fakeGlobalAccountID, fakeSKRInstanceID).Return(nil)
+	storageMock.On("RemoveInstance", found.Version, fakeGlobalAccountID).Return(nil)
 
 	smClientMock := &smautomock.Client{}
 	removerMock := &automock.InstanceRemover{}

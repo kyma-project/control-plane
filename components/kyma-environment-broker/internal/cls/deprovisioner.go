@@ -72,10 +72,14 @@ func (d *Deprovisioner) Deprovision(smClient servicemanager.Client, request *Dep
 		return errors.Wrapf(err, "while marking a cls instance as being removed for global account %s", request.GlobalAccountID)
 	}
 
-	d.log.Infof("Deleting the cls instance for global account %s", request.GlobalAccountID)
+	d.log.Infof("Removing the cls instance for global account %s", request.GlobalAccountID)
 
 	if err := d.remover.RemoveInstance(smClient, request.Instance); err != nil {
-		return errors.Wrapf(err, "while deleting a cls instance for global account %s", request.GlobalAccountID)
+		return errors.Wrapf(err, "while removing a cls instance for global account %s", request.GlobalAccountID)
+	}
+
+	if err := d.storage.RemoveInstance(instance.Version, request.GlobalAccountID); err != nil {
+		return errors.Wrapf(err, "while removing a cls instance record for global account %s", request.GlobalAccountID)
 	}
 
 	return nil

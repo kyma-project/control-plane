@@ -107,5 +107,17 @@ func (s *clsInstances) MarkAsBeingRemoved(version int, globalAccountID, skrInsta
 }
 
 func (s *clsInstances) RemoveInstance(version int, globalAccountID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	k := clsKey{GlobalAccountID: globalAccountID}
+
+	_, exists := s.data[k]
+	if !exists {
+		return dberr.NotFound("instance not found")
+	}
+
+	delete(s.data, k)
+
 	return nil
 }
