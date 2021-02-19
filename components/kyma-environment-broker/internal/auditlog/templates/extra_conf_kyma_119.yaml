@@ -12,7 +12,7 @@
   Match   dex.*
   script  script.lua
   call    reformat
-  [FILTER]
+[FILTER]
   Name    grep
   Match   dex.*
   Regex   time .*
