@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -560,7 +562,7 @@ func fixAlwaysPassJSONValidator() broker.PlansSchemaValidator {
 }
 
 func fixInstance() internal.Instance {
-	instance := internal.FixInstance(instanceID)
+	instance := fixture.FixInstance(instanceID)
 	instance.GlobalAccountID = globalAccountID
 	instance.ServiceID = serviceID
 	instance.ServicePlanID = planID
