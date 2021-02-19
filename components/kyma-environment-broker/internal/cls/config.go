@@ -6,8 +6,12 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/gobuffalo/packr"
 	"gopkg.in/yaml.v2"
 )
+
+//go:generate packr -v
+
 
 var (
 	defaultConfig = Config{
@@ -165,7 +169,9 @@ func (r Region) validate() error {
 }
 
 func ParseTemplate() (*template.Template, error) {
-	tpl, err := template.ParseFiles("clsHttpForwarder.yaml")
+	box := packr.NewBox("./templates")
+	yamlFile, err := box.FindString("cls_override.yaml")
+	tpl, err := template.New("cls_override").Parse(yamlFile)
 	if err != nil {
 		return nil, err
 	}

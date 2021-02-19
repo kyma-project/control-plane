@@ -111,7 +111,7 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 	// then
 	assert.NoError(t, err)
 	assert.Zero(t, retry)
-	assert.NotNil(t, operation.Cls.Binding.BindingID)
-	assert.True(t, operation.Cls.Instance.Provisioned)
-	assert.False(t, operation.Cls.Instance.ProvisioningTriggered)
+	assert.NotEmpty(t, operation.Cls.Instance.InstanceID)
+	assert.False(t, operation.Cls.Instance.Provisioned)
+	assert.True(t, operation.Cls.Instance.ProvisioningTriggered)
 }

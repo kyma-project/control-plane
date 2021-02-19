@@ -3,7 +3,6 @@ package provisioning
 import (
 	"bytes"
 	"fmt"
-	"text/template"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -151,7 +150,7 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 
 func (s *ClsBindStep) injectOverrides(overrides *cls.ClsOverrides, log logrus.FieldLogger) (string, error) {
 	// TODO: Load the template
-	tmpl, err := template.New("test").Parse("    [OUTPUT]\n        Name              http\n        Match             *\n        Host              {{.FluentdEndPoint}}\n        Port              443\n        HTTP_User         {{.FluentdUsername}}\n        HTTP_Passwd       {{.FluentdPassword}}\n        tls               true\n        tls.verify        true\n        tls.debug         1\n        URI               /\n        Format            json")
+	tmpl, err := cls.ParseTemplate()
 	if err != nil {
 		log.Errorf("Template error: %v", err)
 		return "", err
