@@ -183,6 +183,13 @@
   version = "v4.0.0"
 
 [[projects]]
+  digest = "1:771809465d2d81b1e2631f0e062b7458647135b2eca9e1cc577e58d1db0d987f"
+  name = "github.com/containerd/containerd"
+  packages = ["errdefs"]
+  pruneopts = "NUT"
+  revision = "acdcf13d5eaf0dfe0eaeabe7194a82535549bc2b"
+
+[[projects]]
   branch = "master"
   digest = "1:d169f2e1057ae511116a72c91eec07689d675bf836af625019f33fd102961154"
   name = "github.com/containerd/continuity"

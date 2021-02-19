@@ -94,10 +94,10 @@
 [[override]]
   name = "golang.org/x/text"
   version = "v0.3.3"
-
-[[override]]
-  name = "github.com/containerd/containerd"
-  version="v1.3.9"
+#
+#[[override]]
+#  name = "github.com/containerd/containerd"
+#  version="v1.3.9"
 
 [prune]
   go-tests = true
