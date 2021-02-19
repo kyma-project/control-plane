@@ -9,27 +9,20 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	smautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/automock"
 	"github.com/pkg/errors"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDeprovisionFailsIfFindQueryFails(t *testing.T) {
-	const (
-		fakeGlobalAccountID = "fake-global-account-id"
-		fakeSKRInstanceID   = "fake-skr-instance-id"
-	)
-
-	var (
-		fakeInstance = servicemanager.InstanceKey{
-			BrokerID:   "fake-broker-id",
-			ServiceID:  "fake-service-id",
-			PlanID:     "fake-plan-id",
-			InstanceID: "fake-instance-id",
-		}
-	)
+	fakeSKRInstanceID := "fake-skr-instance-id"
+	fakeInstance := servicemanager.InstanceKey{
+		BrokerID:   "fake-broker-id",
+		ServiceID:  "fake-service-id",
+		PlanID:     "fake-plan-id",
+		InstanceID: "fake-instance-id",
+	}
 
 	storageMock := &automock.DeprovisionerStorage{}
-	storageMock.On("FindInstance", fakeGlobalAccountID).Return(nil, false, errors.New("unable to connect"))
+	storageMock.On("FindByID", fakeInstance.InstanceID).Return(nil, false, errors.New("unable to connect"))
 
 	deprovisioner := &Deprovisioner{
 		log:     logger.NewLogDummy(),
@@ -38,35 +31,29 @@ func TestDeprovisionFailsIfFindQueryFails(t *testing.T) {
 
 	smClientMock := &smautomock.Client{}
 	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
-		GlobalAccountID: fakeGlobalAccountID,
-		SKRInstanceID:   fakeSKRInstanceID,
-		Instance:        fakeInstance,
+		SKRInstanceID: fakeSKRInstanceID,
+		Instance:      fakeInstance,
 	})
 
 	require.Error(t, err)
 }
 
 func TestDeprovisionReturnsEarlyIfCLSNotReferenced(t *testing.T) {
-	const (
-		fakeGlobalAccountID = "fake-global-account-id"
-		fakeSKRInstanceID   = "fake-skr-instance-id"
-	)
-
-	var (
-		fakeInstance = servicemanager.InstanceKey{
-			BrokerID:   "fake-broker-id",
-			ServiceID:  "fake-service-id",
-			PlanID:     "fake-plan-id",
-			InstanceID: "fake-instance-id",
-		}
-	)
+	fakeSKRInstanceID := "fake-skr-instance-id"
+	fakeInstance := servicemanager.InstanceKey{
+		BrokerID:   "fake-broker-id",
+		ServiceID:  "fake-service-id",
+		PlanID:     "fake-plan-id",
+		InstanceID: "fake-instance-id",
+	}
 
 	storageMock := &automock.DeprovisionerStorage{}
 	found := &internal.CLSInstance{
+		ID:                       fakeInstance.InstanceID,
 		Version:                  42,
 		ReferencedSKRInstanceIDs: []string{"other-fake-skr-instance-id-1", "other-fake-skr-instance-id-2"},
 	}
-	storageMock.On("FindInstance", mock.Anything).Return(found, true, nil)
+	storageMock.On("FindByID", fakeInstance.InstanceID).Return(found, true, nil)
 
 	deprovisioner := &Deprovisioner{
 		log:     logger.NewLogDummy(),
@@ -75,36 +62,30 @@ func TestDeprovisionReturnsEarlyIfCLSNotReferenced(t *testing.T) {
 
 	smClientMock := &smautomock.Client{}
 	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
-		GlobalAccountID: fakeGlobalAccountID,
-		SKRInstanceID:   fakeSKRInstanceID,
-		Instance:        fakeInstance,
+		SKRInstanceID: fakeSKRInstanceID,
+		Instance:      fakeInstance,
 	})
 
 	require.NoError(t, err)
 }
 
 func TestDeprovisionUnreferencesIfNotLastReference(t *testing.T) {
-	const (
-		fakeGlobalAccountID = "fake-global-account-id"
-		fakeSKRInstanceID   = "fake-skr-instance-id"
-	)
-
-	var (
-		fakeInstance = servicemanager.InstanceKey{
-			BrokerID:   "fake-broker-id",
-			ServiceID:  "fake-service-id",
-			PlanID:     "fake-plan-id",
-			InstanceID: "fake-instance-id",
-		}
-	)
+	fakeSKRInstanceID := "fake-skr-instance-id"
+	fakeInstance := servicemanager.InstanceKey{
+		BrokerID:   "fake-broker-id",
+		ServiceID:  "fake-service-id",
+		PlanID:     "fake-plan-id",
+		InstanceID: "fake-instance-id",
+	}
 
 	storageMock := &automock.DeprovisionerStorage{}
 	found := &internal.CLSInstance{
+		ID:                       fakeInstance.InstanceID,
 		Version:                  42,
 		ReferencedSKRInstanceIDs: []string{fakeSKRInstanceID, "other-fake-skr-instance-id"},
 	}
-	storageMock.On("FindInstance", mock.Anything).Return(found, true, nil)
-	storageMock.On("Unreference", found.Version, fakeGlobalAccountID, fakeSKRInstanceID).Return(nil)
+	storageMock.On("FindByID", fakeInstance.InstanceID).Return(found, true, nil)
+	storageMock.On("Unreference", found.Version, fakeInstance.InstanceID, fakeSKRInstanceID).Return(nil)
 
 	deprovisioner := &Deprovisioner{
 		log:     logger.NewLogDummy(),
@@ -113,9 +94,8 @@ func TestDeprovisionUnreferencesIfNotLastReference(t *testing.T) {
 
 	smClientMock := &smautomock.Client{}
 	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
-		GlobalAccountID: fakeGlobalAccountID,
-		SKRInstanceID:   fakeSKRInstanceID,
-		Instance:        fakeInstance,
+		SKRInstanceID: fakeSKRInstanceID,
+		Instance:      fakeInstance,
 	})
 
 	require.NoError(t, err)
@@ -123,27 +103,22 @@ func TestDeprovisionUnreferencesIfNotLastReference(t *testing.T) {
 }
 
 func TestDeprovisionFailsIfUnreferenceQueryFails(t *testing.T) {
-	const (
-		fakeGlobalAccountID = "fake-global-account-id"
-		fakeSKRInstanceID   = "fake-skr-instance-id"
-	)
-
-	var (
-		fakeInstance = servicemanager.InstanceKey{
-			BrokerID:   "fake-broker-id",
-			ServiceID:  "fake-service-id",
-			PlanID:     "fake-plan-id",
-			InstanceID: "fake-instance-id",
-		}
-	)
+	fakeSKRInstanceID := "fake-skr-instance-id"
+	fakeInstance := servicemanager.InstanceKey{
+		BrokerID:   "fake-broker-id",
+		ServiceID:  "fake-service-id",
+		PlanID:     "fake-plan-id",
+		InstanceID: "fake-instance-id",
+	}
 
 	storageMock := &automock.DeprovisionerStorage{}
 	found := &internal.CLSInstance{
+		ID:                       fakeInstance.InstanceID,
 		Version:                  42,
 		ReferencedSKRInstanceIDs: []string{fakeSKRInstanceID, "other-fake-skr-instance-id"},
 	}
-	storageMock.On("FindInstance", mock.Anything).Return(found, true, nil)
-	storageMock.On("Unreference", found.Version, fakeGlobalAccountID, fakeSKRInstanceID).Return(errors.New("unable to connect"))
+	storageMock.On("FindByID", fakeInstance.InstanceID).Return(found, true, nil)
+	storageMock.On("Unreference", found.Version, fakeInstance.InstanceID, fakeSKRInstanceID).Return(errors.New("unable to connect"))
 
 	smClientMock := &smautomock.Client{}
 	removerMock := &automock.InstanceRemover{}
@@ -156,38 +131,32 @@ func TestDeprovisionFailsIfUnreferenceQueryFails(t *testing.T) {
 	}
 
 	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
-		GlobalAccountID: fakeGlobalAccountID,
-		SKRInstanceID:   fakeSKRInstanceID,
-		Instance:        fakeInstance,
+		SKRInstanceID: fakeSKRInstanceID,
+		Instance:      fakeInstance,
 	})
 
 	require.Error(t, err)
-	removerMock.AssertNumberOfCalls(t, "DeleteInstance", 0)
+	removerMock.AssertNumberOfCalls(t, "RemoveInstance", 0)
 }
 
 func TestDeprovisionMarksAsBeingRemovedIfLastReference(t *testing.T) {
-	const (
-		fakeGlobalAccountID = "fake-global-account-id"
-		fakeSKRInstanceID   = "fake-skr-instance-id"
-	)
-
-	var (
-		fakeInstance = servicemanager.InstanceKey{
-			BrokerID:   "fake-broker-id",
-			ServiceID:  "fake-service-id",
-			PlanID:     "fake-plan-id",
-			InstanceID: "fake-instance-id",
-		}
-	)
+	fakeSKRInstanceID := "fake-skr-instance-id"
+	fakeInstance := servicemanager.InstanceKey{
+		BrokerID:   "fake-broker-id",
+		ServiceID:  "fake-service-id",
+		PlanID:     "fake-plan-id",
+		InstanceID: "fake-instance-id",
+	}
 
 	storageMock := &automock.DeprovisionerStorage{}
 	found := &internal.CLSInstance{
+		ID:                       fakeInstance.InstanceID,
 		Version:                  42,
 		ReferencedSKRInstanceIDs: []string{fakeSKRInstanceID},
 	}
-	storageMock.On("FindInstance", mock.Anything).Return(found, true, nil)
-	storageMock.On("MarkAsBeingRemoved", found.Version, fakeGlobalAccountID, fakeSKRInstanceID).Return(nil)
-	storageMock.On("RemoveInstance", found.Version, fakeGlobalAccountID).Return(nil)
+	storageMock.On("FindByID", fakeInstance.InstanceID).Return(found, true, nil)
+	storageMock.On("MarkAsBeingRemoved", found.Version, fakeInstance.InstanceID, fakeSKRInstanceID).Return(nil)
+	storageMock.On("Remove", fakeInstance.InstanceID).Return(nil)
 
 	smClientMock := &smautomock.Client{}
 	removerMock := &automock.InstanceRemover{}
@@ -200,39 +169,32 @@ func TestDeprovisionMarksAsBeingRemovedIfLastReference(t *testing.T) {
 	}
 
 	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
-		GlobalAccountID: fakeGlobalAccountID,
-		SKRInstanceID:   fakeSKRInstanceID,
-		Instance:        fakeInstance,
+		SKRInstanceID: fakeSKRInstanceID,
+		Instance:      fakeInstance,
 	})
 
 	require.NoError(t, err)
 	storageMock.AssertNumberOfCalls(t, "MarkAsBeingRemoved", 1)
-	storageMock.AssertNumberOfCalls(t, "RemoveInstance", 1)
+	storageMock.AssertNumberOfCalls(t, "Remove", 1)
 }
 
 func TestDeprovisionFailsIfMarkingQueryFails(t *testing.T) {
-	const (
-		fakeGlobalAccountID = "fake-global-account-id"
-		fakeSKRInstanceID   = "fake-skr-instance-id"
-	)
-
-	var (
-		fakeInstance = servicemanager.InstanceKey{
-			BrokerID:   "fake-broker-id",
-			ServiceID:  "fake-service-id",
-			PlanID:     "fake-plan-id",
-			InstanceID: "fake-instance-id",
-		}
-	)
+	fakeSKRInstanceID := "fake-skr-instance-id"
+	fakeInstance := servicemanager.InstanceKey{
+		BrokerID:   "fake-broker-id",
+		ServiceID:  "fake-service-id",
+		PlanID:     "fake-plan-id",
+		InstanceID: "fake-instance-id",
+	}
 
 	storageMock := &automock.DeprovisionerStorage{}
 	found := &internal.CLSInstance{
+		ID:                       fakeInstance.InstanceID,
 		Version:                  42,
 		ReferencedSKRInstanceIDs: []string{fakeSKRInstanceID},
 	}
-	storageMock.On("FindInstance", mock.Anything).Return(found, true, nil)
-	storageMock.On("MarkAsBeingRemoved", found.Version, fakeGlobalAccountID, fakeSKRInstanceID).Return(errors.New("unable to connect"))
-	storageMock.On("RemoveInstance", found.Version, fakeGlobalAccountID).Return(nil)
+	storageMock.On("FindByID", fakeInstance.InstanceID).Return(found, true, nil)
+	storageMock.On("MarkAsBeingRemoved", found.Version, fakeInstance.InstanceID, fakeSKRInstanceID).Return(errors.New("unable to connect"))
 
 	smClientMock := &smautomock.Client{}
 	removerMock := &automock.InstanceRemover{}
@@ -245,9 +207,8 @@ func TestDeprovisionFailsIfMarkingQueryFails(t *testing.T) {
 	}
 
 	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
-		GlobalAccountID: fakeGlobalAccountID,
-		SKRInstanceID:   fakeSKRInstanceID,
-		Instance:        fakeInstance,
+		SKRInstanceID: fakeSKRInstanceID,
+		Instance:      fakeInstance,
 	})
 
 	require.Error(t, err)
@@ -255,28 +216,23 @@ func TestDeprovisionFailsIfMarkingQueryFails(t *testing.T) {
 }
 
 func TestDeprovisionRemovesIfLastReference(t *testing.T) {
-	const (
-		fakeGlobalAccountID = "fake-global-account-id"
-		fakeSKRInstanceID   = "fake-skr-instance-id"
-	)
-
-	var (
-		fakeInstance = servicemanager.InstanceKey{
-			BrokerID:   "fake-broker-id",
-			ServiceID:  "fake-service-id",
-			PlanID:     "fake-plan-id",
-			InstanceID: "fake-instance-id",
-		}
-	)
+	fakeSKRInstanceID := "fake-skr-instance-id"
+	fakeInstance := servicemanager.InstanceKey{
+		BrokerID:   "fake-broker-id",
+		ServiceID:  "fake-service-id",
+		PlanID:     "fake-plan-id",
+		InstanceID: "fake-instance-id",
+	}
 
 	storageMock := &automock.DeprovisionerStorage{}
 	found := &internal.CLSInstance{
+		ID:                       fakeInstance.InstanceID,
 		Version:                  42,
 		ReferencedSKRInstanceIDs: []string{fakeSKRInstanceID},
 	}
-	storageMock.On("FindInstance", mock.Anything).Return(found, true, nil)
-	storageMock.On("MarkAsBeingRemoved", found.Version, fakeGlobalAccountID, fakeSKRInstanceID).Return(nil)
-	storageMock.On("RemoveInstance", found.Version, fakeGlobalAccountID).Return(nil)
+	storageMock.On("FindByID", fakeInstance.InstanceID).Return(found, true, nil)
+	storageMock.On("MarkAsBeingRemoved", found.Version, fakeInstance.InstanceID, fakeSKRInstanceID).Return(nil)
+	storageMock.On("Remove", fakeInstance.InstanceID).Return(nil)
 
 	smClientMock := &smautomock.Client{}
 	removerMock := &automock.InstanceRemover{}
@@ -289,9 +245,8 @@ func TestDeprovisionRemovesIfLastReference(t *testing.T) {
 	}
 
 	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
-		GlobalAccountID: fakeGlobalAccountID,
-		SKRInstanceID:   fakeSKRInstanceID,
-		Instance:        fakeInstance,
+		SKRInstanceID: fakeSKRInstanceID,
+		Instance:      fakeInstance,
 	})
 
 	require.NoError(t, err)

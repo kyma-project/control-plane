@@ -12,8 +12,8 @@ type ProvisionerStorage struct {
 	mock.Mock
 }
 
-// FindInstance provides a mock function with given fields: globalAccountID
-func (_m *ProvisionerStorage) FindInstance(globalAccountID string) (*internal.CLSInstance, bool, error) {
+// FindActiveByGlobalAccountID provides a mock function with given fields: globalAccountID
+func (_m *ProvisionerStorage) FindActiveByGlobalAccountID(globalAccountID string) (*internal.CLSInstance, bool, error) {
 	ret := _m.Called(globalAccountID)
 
 	var r0 *internal.CLSInstance
@@ -42,8 +42,8 @@ func (_m *ProvisionerStorage) FindInstance(globalAccountID string) (*internal.CL
 	return r0, r1, r2
 }
 
-// InsertInstance provides a mock function with given fields: instance
-func (_m *ProvisionerStorage) InsertInstance(instance internal.CLSInstance) error {
+// Insert provides a mock function with given fields: instance
+func (_m *ProvisionerStorage) Insert(instance internal.CLSInstance) error {
 	ret := _m.Called(instance)
 
 	var r0 error
@@ -56,13 +56,13 @@ func (_m *ProvisionerStorage) InsertInstance(instance internal.CLSInstance) erro
 	return r0
 }
 
-// Reference provides a mock function with given fields: version, globalAccountID, skrInstanceID
-func (_m *ProvisionerStorage) Reference(version int, globalAccountID string, skrInstanceID string) error {
-	ret := _m.Called(version, globalAccountID, skrInstanceID)
+// Reference provides a mock function with given fields: version, clsInstanceID, skrInstanceID
+func (_m *ProvisionerStorage) Reference(version int, clsInstanceID string, skrInstanceID string) error {
+	ret := _m.Called(version, clsInstanceID, skrInstanceID)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(int, string, string) error); ok {
-		r0 = rf(version, globalAccountID, skrInstanceID)
+		r0 = rf(version, clsInstanceID, skrInstanceID)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -13,9 +13,9 @@ import (
 
 //go:generate mockery --name=ProvisionerStorage --output=automock --outpkg=automock --case=underscore
 type ProvisionerStorage interface {
-	FindInstance(globalAccountID string) (*internal.CLSInstance, bool, error)
-	InsertInstance(instance internal.CLSInstance) error
-	Reference(version int, globalAccountID, skrInstanceID string) error
+	FindActiveByGlobalAccountID(globalAccountID string) (*internal.CLSInstance, bool, error)
+	Insert(instance internal.CLSInstance) error
+	Reference(version int, clsInstanceID, skrInstanceID string) error
 }
 
 //go:generate mockery --name=InstanceCreator --output=automock --outpkg=automock --case=underscore
@@ -51,7 +51,7 @@ type ProvisionResult struct {
 }
 
 func (p *provisioner) Provision(smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
-	instance, exists, err := p.storage.FindInstance(request.GlobalAccountID)
+	instance, exists, err := p.storage.FindActiveByGlobalAccountID(request.GlobalAccountID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while checking if instance is already created for global account %s", request.GlobalAccountID)
 	}
@@ -63,7 +63,7 @@ func (p *provisioner) Provision(smClient servicemanager.Client, request *Provisi
 		return p.createNewInstance(smClient, request)
 	}
 
-	err = p.storage.Reference(instance.Version, instance.GlobalAccountID, request.SKRInstanceID)
+	err = p.storage.Reference(instance.Version, instance.ID, request.SKRInstanceID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating a cls instance for global account %s", request.GlobalAccountID)
 	}
@@ -85,7 +85,7 @@ func (p *provisioner) createNewInstance(smClient servicemanager.Client, request 
 		ReferencedSKRInstanceIDs: []string{request.SKRInstanceID},
 	}
 
-	err := p.storage.InsertInstance(instance)
+	err := p.storage.Insert(instance)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while inserting a cls instance for global account %s", instance.GlobalAccountID)
 	}
