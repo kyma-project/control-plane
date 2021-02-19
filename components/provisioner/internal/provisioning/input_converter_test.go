@@ -56,14 +56,14 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				Name:                              util.StringPtr("verylon"),
 				KubernetesVersion:                 "version",
-				VolumeSizeGb:                      1024,
+				VolumeSizeGb:                      util.IntPtr(1024),
 				MachineType:                       "n1-standard-1",
 				Region:                            "region",
 				Provider:                          "GCP",
 				Purpose:                           util.StringPtr("testing"),
 				Seed:                              util.StringPtr("gcp-eu1"),
 				TargetSecret:                      "secret",
-				DiskType:                          "ssd",
+				DiskType:                          util.StringPtr("ssd"),
 				WorkerCidr:                        "cidr",
 				AutoScalerMin:                     1,
 				AutoScalerMax:                     5,
@@ -90,8 +90,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			MachineType:                         "n1-standard-1",
 			Region:                              "region",
 			KubernetesVersion:                   "version",
-			VolumeSizeGB:                        1024,
-			DiskType:                            "ssd",
+			VolumeSizeGB:                        util.IntPtr(1024),
+			DiskType:                            util.StringPtr("ssd"),
 			Provider:                            "GCP",
 			Purpose:                             util.StringPtr("testing"),
 			Seed:                                "gcp-eu1",
@@ -124,7 +124,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				GardenerConfig: &gqlschema.GardenerConfigInput{
 					Name:                              util.StringPtr("verylon"),
 					KubernetesVersion:                 "version",
-					VolumeSizeGb:                      1024,
+					VolumeSizeGb:                      util.IntPtr(1024),
 					MachineType:                       "n1-standard-1",
 					MachineImage:                      util.StringPtr("gardenlinux"),
 					MachineImageVersion:               util.StringPtr("25.0.0"),
@@ -132,7 +132,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 					Provider:                          "Azure",
 					Purpose:                           util.StringPtr("testing"),
 					TargetSecret:                      "secret",
-					DiskType:                          "ssd",
+					DiskType:                          util.StringPtr("ssd"),
 					WorkerCidr:                        "cidr",
 					AutoScalerMin:                     1,
 					AutoScalerMax:                     5,
@@ -167,8 +167,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				MachineImageVersion:                 util.StringPtr("25.0.0"),
 				Region:                              "region",
 				KubernetesVersion:                   "version",
-				VolumeSizeGB:                        1024,
-				DiskType:                            "ssd",
+				VolumeSizeGB:                        util.IntPtr(1024),
+				DiskType:                            util.StringPtr("ssd"),
 				Provider:                            "Azure",
 				Purpose:                             util.StringPtr("testing"),
 				Seed:                                "",
@@ -221,14 +221,14 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				Name:                              util.StringPtr("verylon"),
 				KubernetesVersion:                 "version",
-				VolumeSizeGb:                      1024,
+				VolumeSizeGb:                      util.IntPtr(1024),
 				MachineType:                       "n1-standard-1",
 				Region:                            "region",
 				Provider:                          "AWS",
 				Purpose:                           util.StringPtr("testing"),
 				Seed:                              util.StringPtr("aws-eu1"),
 				TargetSecret:                      "secret",
-				DiskType:                          "ssd",
+				DiskType:                          util.StringPtr("ssd"),
 				WorkerCidr:                        "cidr",
 				AutoScalerMin:                     1,
 				AutoScalerMax:                     5,
@@ -255,8 +255,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			MachineType:                         "n1-standard-1",
 			Region:                              "region",
 			KubernetesVersion:                   "version",
-			VolumeSizeGB:                        1024,
-			DiskType:                            "ssd",
+			VolumeSizeGB:                        util.IntPtr(1024),
+			DiskType:                            util.StringPtr("ssd"),
 			Provider:                            "AWS",
 			Purpose:                             util.StringPtr("testing"),
 			Seed:                                "aws-eu1",
@@ -271,6 +271,76 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			EnableMachineImageVersionAutoUpdate: false,
 			AllowPrivilegedContainers:           true,
 			GardenerProviderConfig:              expectedAWSProviderCfg,
+		},
+		Kubeconfig:   nil,
+		KymaConfig:   fixKymaConfig(&modelEvaluationProfile),
+		Tenant:       tenant,
+		SubAccountId: util.StringPtr(subAccountId),
+	}
+
+	openstackGardenerProvider := &gqlschema.OpenStackProviderConfigInput{
+		Zones:                []string{"eu-de-1a"},
+		FloatingPoolName:     "FloatingIP-external-cp",
+		CloudProfileName:     "converged-cloud-cp",
+		LoadBalancerProvider: "f5",
+	}
+
+	gardenerOpenstackGQLInput := gqlschema.ProvisionRuntimeInput{
+		RuntimeInput: &gqlschema.RuntimeInput{
+			Name:        "runtimeName",
+			Description: nil,
+			Labels:      &gqlschema.Labels{},
+		},
+		ClusterConfig: &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				Name:                              util.StringPtr("verylon"),
+				KubernetesVersion:                 "version",
+				MachineType:                       "large.1n",
+				Region:                            "region",
+				Provider:                          "Openstack",
+				Purpose:                           util.StringPtr("testing"),
+				Seed:                              util.StringPtr("ops-1"),
+				TargetSecret:                      "secret",
+				WorkerCidr:                        "cidr",
+				AutoScalerMin:                     1,
+				AutoScalerMax:                     5,
+				MaxSurge:                          1,
+				MaxUnavailable:                    2,
+				EnableKubernetesVersionAutoUpdate: util.BoolPtr(true),
+				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+					OpenStackConfig: openstackGardenerProvider,
+				},
+			},
+		},
+		KymaConfig: fixKymaGraphQLConfigInput(&gqlEvaluationProfile),
+	}
+
+	expectedOpenStackProviderCfg, err := model.NewOpenStackGardenerConfig(openstackGardenerProvider)
+	require.NoError(t, err)
+
+	expectedGardenerOpenStackRuntimeConfig := model.Cluster{
+		ID: "runtimeID",
+		ClusterConfig: model.GardenerConfig{
+			ID:                                  "id",
+			Name:                                "verylon",
+			ProjectName:                         gardenerProject,
+			MachineType:                         "large.1n",
+			Region:                              "region",
+			KubernetesVersion:                   "version",
+			Provider:                            "Openstack",
+			Purpose:                             util.StringPtr("testing"),
+			Seed:                                "ops-1",
+			TargetSecret:                        "secret",
+			WorkerCidr:                          "cidr",
+			AutoScalerMin:                       1,
+			AutoScalerMax:                       5,
+			MaxSurge:                            1,
+			MaxUnavailable:                      2,
+			ClusterID:                           "runtimeID",
+			EnableKubernetesVersionAutoUpdate:   true,
+			EnableMachineImageVersionAutoUpdate: false,
+			AllowPrivilegedContainers:           true,
+			GardenerProviderConfig:              expectedOpenStackProviderCfg,
 		},
 		Kubeconfig:   nil,
 		KymaConfig:   fixKymaConfig(&modelEvaluationProfile),
@@ -314,6 +384,11 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			input:       gardenerAWSGQLInput,
 			expected:    expectedGardenerAWSRuntimeConfig,
 			description: "Should create proper runtime config struct with Gardener input for AWS provider",
+		},
+		{
+			input:       gardenerOpenstackGQLInput,
+			expected:    expectedGardenerOpenStackRuntimeConfig,
+			description: "Should create proper runtime config struct with Gardener input for OpenStack provider",
 		},
 	}
 
@@ -505,8 +580,8 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			upgradeInput: newGCPUpgradeShootInput(testingPurpose),
 			initialConfig: model.GardenerConfig{
 				KubernetesVersion:      "version",
-				VolumeSizeGB:           1,
-				DiskType:               "ssd",
+				VolumeSizeGB:           util.IntPtr(1),
+				DiskType:               util.StringPtr("ssd"),
 				MachineType:            "1",
 				Purpose:                &evaluationPurpose,
 				AutoScalerMin:          1,
@@ -517,8 +592,8 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			},
 			upgradedConfig: model.GardenerConfig{
 				KubernetesVersion:      "version2",
-				VolumeSizeGB:           50,
-				DiskType:               "papyrus",
+				VolumeSizeGB:           util.IntPtr(50),
+				DiskType:               util.StringPtr("papyrus"),
 				MachineType:            "new-machine",
 				Purpose:                &testingPurpose,
 				AutoScalerMin:          2,
@@ -532,8 +607,8 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			upgradeInput: newAzureUpgradeShootInput(testingPurpose),
 			initialConfig: model.GardenerConfig{
 				KubernetesVersion:      "version",
-				VolumeSizeGB:           1,
-				DiskType:               "ssd",
+				VolumeSizeGB:           util.IntPtr(1),
+				DiskType:               util.StringPtr("ssd"),
 				MachineType:            "1",
 				Purpose:                &evaluationPurpose,
 				AutoScalerMin:          1,
@@ -544,8 +619,8 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			},
 			upgradedConfig: model.GardenerConfig{
 				KubernetesVersion:      "version2",
-				VolumeSizeGB:           50,
-				DiskType:               "papyrus",
+				VolumeSizeGB:           util.IntPtr(50),
+				DiskType:               util.StringPtr("papyrus"),
 				MachineType:            "new-machine",
 				Purpose:                &testingPurpose,
 				AutoScalerMin:          2,
@@ -556,11 +631,11 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			},
 		},
 		{description: "regular AWS shoot upgrade",
-			upgradeInput: newUpgradeShootInput(testingPurpose),
+			upgradeInput: newUpgradeShootInputAwsAzureGCP(testingPurpose),
 			initialConfig: model.GardenerConfig{
 				KubernetesVersion: "version",
-				VolumeSizeGB:      1,
-				DiskType:          "ssd",
+				VolumeSizeGB:      util.IntPtr(1),
+				DiskType:          util.StringPtr("ssd"),
 				MachineType:       "1",
 				Purpose:           &evaluationPurpose,
 				AutoScalerMin:     1,
@@ -570,8 +645,29 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			},
 			upgradedConfig: model.GardenerConfig{
 				KubernetesVersion: "version2",
-				VolumeSizeGB:      50,
-				DiskType:          "papyrus",
+				VolumeSizeGB:      util.IntPtr(50),
+				DiskType:          util.StringPtr("papyrus"),
+				MachineType:       "new-machine",
+				Purpose:           &testingPurpose,
+				AutoScalerMin:     2,
+				AutoScalerMax:     6,
+				MaxSurge:          2,
+				MaxUnavailable:    1,
+			},
+		},
+		{description: "regular OpenStack shoot upgrade",
+			upgradeInput: newUpgradeOpenStackShootInput(testingPurpose),
+			initialConfig: model.GardenerConfig{
+				KubernetesVersion: "version",
+				MachineType:       "1",
+				Purpose:           &evaluationPurpose,
+				AutoScalerMin:     1,
+				AutoScalerMax:     2,
+				MaxSurge:          1,
+				MaxUnavailable:    1,
+			},
+			upgradedConfig: model.GardenerConfig{
+				KubernetesVersion: "version2",
 				MachineType:       "new-machine",
 				Purpose:           &testingPurpose,
 				AutoScalerMin:     2,
@@ -584,8 +680,8 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			upgradeInput: newUpgradeShootInputWithNilValues(),
 			initialConfig: model.GardenerConfig{
 				KubernetesVersion: "version",
-				VolumeSizeGB:      1,
-				DiskType:          "ssd",
+				VolumeSizeGB:      util.IntPtr(1),
+				DiskType:          util.StringPtr("ssd"),
 				MachineType:       "1",
 				Purpose:           &evaluationPurpose,
 				AutoScalerMin:     1,
@@ -595,8 +691,8 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			},
 			upgradedConfig: model.GardenerConfig{
 				KubernetesVersion: "version",
-				VolumeSizeGB:      1,
-				DiskType:          "ssd",
+				VolumeSizeGB:      util.IntPtr(1),
+				DiskType:          util.StringPtr("ssd"),
 				MachineType:       "1",
 				Purpose:           &evaluationPurpose,
 				AutoScalerMin:     1,
@@ -616,8 +712,8 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			upgradeInput: newUpgradeShootInputWithoutProviderConfig(testingPurpose),
 			initialConfig: model.GardenerConfig{
 				KubernetesVersion:      "version",
-				VolumeSizeGB:           1,
-				DiskType:               "ssd",
+				VolumeSizeGB:           util.IntPtr(1),
+				DiskType:               util.StringPtr("ssd"),
 				MachineType:            "1",
 				Purpose:                &evaluationPurpose,
 				AutoScalerMin:          1,
@@ -675,7 +771,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 	}
 }
 
-func newUpgradeShootInput(newPurpose string) gqlschema.UpgradeShootInput {
+func newUpgradeShootInputAwsAzureGCP(newPurpose string) gqlschema.UpgradeShootInput {
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion:      util.StringPtr("version2"),
@@ -683,6 +779,21 @@ func newUpgradeShootInput(newPurpose string) gqlschema.UpgradeShootInput {
 			MachineType:            util.StringPtr("new-machine"),
 			DiskType:               util.StringPtr("papyrus"),
 			VolumeSizeGb:           util.IntPtr(50),
+			AutoScalerMin:          util.IntPtr(2),
+			AutoScalerMax:          util.IntPtr(6),
+			MaxSurge:               util.IntPtr(2),
+			MaxUnavailable:         util.IntPtr(1),
+			ProviderSpecificConfig: nil,
+		},
+	}
+}
+
+func newUpgradeOpenStackShootInput(newPurpose string) gqlschema.UpgradeShootInput {
+	return gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			KubernetesVersion:      util.StringPtr("version2"),
+			Purpose:                &newPurpose,
+			MachineType:            util.StringPtr("new-machine"),
 			AutoScalerMin:          util.IntPtr(2),
 			AutoScalerMax:          util.IntPtr(6),
 			MaxSurge:               util.IntPtr(2),
@@ -710,7 +821,7 @@ func newUpgradeShootInputWithNilValues() gqlschema.UpgradeShootInput {
 }
 
 func newGCPUpgradeShootInput(newPurpose string) gqlschema.UpgradeShootInput {
-	input := newUpgradeShootInput(newPurpose)
+	input := newUpgradeShootInputAwsAzureGCP(newPurpose)
 	input.GardenerConfig.ProviderSpecificConfig = &gqlschema.ProviderSpecificInput{
 		GcpConfig: &gqlschema.GCPProviderConfigInput{
 			Zones: []string{"europe-west1-a", "europe-west1-b"},
@@ -720,7 +831,7 @@ func newGCPUpgradeShootInput(newPurpose string) gqlschema.UpgradeShootInput {
 }
 
 func newAzureUpgradeShootInput(newPurpose string) gqlschema.UpgradeShootInput {
-	input := newUpgradeShootInput(newPurpose)
+	input := newUpgradeShootInputAwsAzureGCP(newPurpose)
 	input.GardenerConfig.ProviderSpecificConfig = &gqlschema.ProviderSpecificInput{
 		AzureConfig: &gqlschema.AzureProviderConfigInput{
 			Zones: []string{"1", "2"},
@@ -730,7 +841,7 @@ func newAzureUpgradeShootInput(newPurpose string) gqlschema.UpgradeShootInput {
 }
 
 func newUpgradeShootInputWithoutProviderConfig(newPurpose string) gqlschema.UpgradeShootInput {
-	input := newUpgradeShootInput(newPurpose)
+	input := newUpgradeShootInputAwsAzureGCP(newPurpose)
 	input.GardenerConfig.ProviderSpecificConfig = &gqlschema.ProviderSpecificInput{
 		AwsConfig:   nil,
 		AzureConfig: nil,

@@ -333,21 +333,21 @@ func NewOpenStackGardenerConfig(input *gqlschema.OpenStackProviderConfigInput) (
 
 func (c OpenStackGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
 	return gqlschema.OpenStackProviderConfig{
-		Zone:                 &c.input.Zone,
-		FloatingPoolName:     &c.input.FloatingPoolName,
-		CloudProfileName:     &c.input.CloudProfileName,
-		LoadBalancerProvider: &c.input.LoadBalancerProvider,
+		Zones:                c.input.Zones,
+		FloatingPoolName:     c.input.FloatingPoolName,
+		CloudProfileName:     c.input.CloudProfileName,
+		LoadBalancerProvider: c.input.LoadBalancerProvider,
 	}
 }
 
 func (c OpenStackGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-	return updateShootConfig(gardenerConfig, shoot, []string{c.input.Zone})
+	return updateShootConfig(gardenerConfig, shoot, c.input.Zones)
 }
 
 func (c OpenStackGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 	shoot.Spec.CloudProfileName = c.input.CloudProfileName
 
-	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, []string{c.input.Zone})}
+	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, c.input.Zones)}
 
 	openStackInfra := NewOpenStackInfrastructure(c.input.FloatingPoolName, gardenerConfig.WorkerCidr)
 	jsonData, err := json.Marshal(openStackInfra)
@@ -382,10 +382,10 @@ func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_typ
 		Zones:          zones,
 	}
 
-	if gardenerConfig.DiskType != nil {
+	if gardenerConfig.DiskType != nil && gardenerConfig.VolumeSizeGB != nil {
 		worker.Volume = &gardener_types.Volume{
 			Type:       gardenerConfig.DiskType,
-			VolumeSize: fmt.Sprintf("%dGi", gardenerConfig.VolumeSizeGB),
+			VolumeSize: fmt.Sprintf("%dGi", *gardenerConfig.VolumeSizeGB),
 		}
 	}
 
@@ -415,7 +415,7 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	}
 
 	if upgradeConfig.VolumeSizeGB != nil {
-		shoot.Spec.Provider.Workers[0].Volume.VolumeSize = fmt.Sprintf("%dGi", upgradeConfig.VolumeSizeGB)
+		shoot.Spec.Provider.Workers[0].Volume.VolumeSize = fmt.Sprintf("%dGi", *upgradeConfig.VolumeSizeGB)
 	}
 
 	// We support only single working group during provisioning

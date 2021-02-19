@@ -1,8 +1,6 @@
 package util
 
 import (
-	"time"
-
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -24,11 +22,6 @@ func StringPtr(str string) *string {
 // IntOrStringPtr returns pointer to given int or string
 func IntOrStringPtr(intOrStr intstr.IntOrString) *intstr.IntOrString {
 	return &intOrStr
-}
-
-// TimePtr returns pointer to given time.Time
-func TimePtr(time time.Time) *time.Time {
-	return &time
 }
 
 // UnwrapInt returns int value from pointer
@@ -69,4 +62,20 @@ func UnwrapStrOrDefault(ptr *string, def string) string {
 		return def
 	}
 	return *ptr
+}
+
+// DefaultStrIfNil returns default string pointer if passed pointer is nil
+func DefaultStrIfNil(ptr *string, def *string) *string {
+	if ptr == nil {
+		return def
+	}
+	return ptr
+}
+
+// DefaultIntIfNil returns default int pointer if passed pointer is nil
+func DefaultIntIfNil(ptr *int, def *int) *int {
+	if ptr == nil {
+		return def
+	}
+	return ptr
 }

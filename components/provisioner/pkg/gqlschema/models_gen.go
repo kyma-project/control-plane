@@ -171,19 +171,19 @@ type KymaConfigInput struct {
 }
 
 type OpenStackProviderConfig struct {
-	Zone                 *string `json:"zone"`
-	FloatingPoolName     *string `json:"floatingPoolName"`
-	CloudProfileName     *string `json:"cloudProfileName"`
-	LoadBalancerProvider *string `json:"loadBalancerProvider"`
+	Zones                []string `json:"zones"`
+	FloatingPoolName     string   `json:"floatingPoolName"`
+	CloudProfileName     string   `json:"cloudProfileName"`
+	LoadBalancerProvider string   `json:"loadBalancerProvider"`
 }
 
 func (OpenStackProviderConfig) IsProviderSpecificConfig() {}
 
 type OpenStackProviderConfigInput struct {
-	Zone                 string `json:"zone"`
-	FloatingPoolName     string `json:"floatingPoolName"`
-	CloudProfileName     string `json:"cloudProfileName"`
-	LoadBalancerProvider string `json:"loadBalancerProvider"`
+	Zones                []string `json:"zones"`
+	FloatingPoolName     string   `json:"floatingPoolName"`
+	CloudProfileName     string   `json:"cloudProfileName"`
+	LoadBalancerProvider string   `json:"loadBalancerProvider"`
 }
 
 type OperationStatus struct {

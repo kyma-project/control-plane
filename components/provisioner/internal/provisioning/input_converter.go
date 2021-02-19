@@ -136,11 +136,6 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		providerSpecificConfig = config.GardenerProviderConfig
 	}
 
-	purpose := config.Purpose
-	if input.Purpose != nil {
-		purpose = input.Purpose
-	}
-
 	return model.GardenerConfig{
 		ID:                        config.ID,
 		ClusterID:                 config.ClusterID,
@@ -153,13 +148,13 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		LicenceType:               config.LicenceType,
 		AllowPrivilegedContainers: config.AllowPrivilegedContainers,
 
-		Purpose:                             purpose,
+		Purpose:                             util.DefaultStrIfNil(input.Purpose, config.Purpose),
 		KubernetesVersion:                   util.UnwrapStrOrDefault(input.KubernetesVersion, config.KubernetesVersion),
 		MachineType:                         util.UnwrapStrOrDefault(input.MachineType, config.MachineType),
-		DiskType:                            input.DiskType,
-		VolumeSizeGB:                        input.VolumeSizeGb,
-		MachineImage:                        input.MachineImage,
-		MachineImageVersion:                 input.MachineImageVersion,
+		DiskType:                            util.DefaultStrIfNil(input.DiskType, config.DiskType),
+		VolumeSizeGB:                        util.DefaultIntIfNil(input.VolumeSizeGb, config.VolumeSizeGB),
+		MachineImage:                        util.DefaultStrIfNil(input.MachineImage, config.MachineImage),
+		MachineImageVersion:                 util.DefaultStrIfNil(input.MachineImageVersion, config.MachineImageVersion),
 		AutoScalerMin:                       util.UnwrapIntOrDefault(input.AutoScalerMin, config.AutoScalerMin),
 		AutoScalerMax:                       util.UnwrapIntOrDefault(input.AutoScalerMax, config.AutoScalerMax),
 		MaxSurge:                            util.UnwrapIntOrDefault(input.MaxSurge, config.MaxSurge),

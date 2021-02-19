@@ -16,13 +16,13 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			KubernetesVersion:      "1.15.4",
-			VolumeSizeGb:           30,
+			VolumeSizeGb:           util.IntPtr(30),
 			MachineType:            "n1-standard-4",
 			Region:                 "europe",
 			Provider:               "gcp",
 			Seed:                   util.StringPtr("2"),
 			TargetSecret:           "test-secret",
-			DiskType:               "ssd",
+			DiskType:               util.StringPtr("ssd"),
 			WorkerCidr:             "10.10.10.10/255",
 			AutoScalerMin:          1,
 			AutoScalerMax:          3,

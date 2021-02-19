@@ -131,6 +131,18 @@ func newTestProvisioningConfigs() []testCase {
 				}},
 			upgradeShootInput: NewUpgradeShootInput(),
 		},
+		{name: "OpenStack on Gardener",
+			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct OpenStack configuration for Gardener",
+			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb2",
+			auditLogTenant: "e7382275-e835-4549-94e1-3b1101e3a1fa",
+			provisioningInput: provisioningInput{
+				config: openStackGardenerClusterConfigInput(),
+				runtimeInput: gqlschema.RuntimeInput{
+					Name:        "test runtime 5",
+					Description: new(string),
+				}},
+			upgradeShootInput: NewUpgradeOpenStackShootInput(),
+		},
 	}
 }
 
@@ -145,8 +157,8 @@ func gcpGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 			Seed:              util.StringPtr("gcp-eu1"),
 			Region:            "europe-west1",
 			MachineType:       "n1-standard-1",
-			DiskType:          "pd-ssd",
-			VolumeSizeGb:      40,
+			DiskType:          util.StringPtr("pd-ssd"),
+			VolumeSizeGb:      util.IntPtr(40),
 			WorkerCidr:        "cidr",
 			AutoScalerMin:     1,
 			AutoScalerMax:     5,
@@ -172,8 +184,8 @@ func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInp
 			Seed:              util.StringPtr("az-eu2"),
 			Region:            "westeurope",
 			MachineType:       "Standard_D8_v3",
-			DiskType:          "Standard_LRS",
-			VolumeSizeGb:      40,
+			DiskType:          util.StringPtr("Standard_LRS"),
+			VolumeSizeGb:      util.IntPtr(40),
 			WorkerCidr:        "cidr",
 			AutoScalerMin:     1,
 			AutoScalerMax:     5,
@@ -199,8 +211,8 @@ func azureGardenerClusterConfigInputNoSeed(zones ...string) gqlschema.ClusterCon
 			TargetSecret:      "secret",
 			Region:            "westeurope",
 			MachineType:       "Standard_D8_v3",
-			DiskType:          "Standard_LRS",
-			VolumeSizeGb:      40,
+			DiskType:          util.StringPtr("Standard_LRS"),
+			VolumeSizeGb:      util.IntPtr(40),
 			WorkerCidr:        "cidr",
 			AutoScalerMin:     1,
 			AutoScalerMax:     5,
@@ -227,8 +239,8 @@ func awsGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 			Seed:              util.StringPtr("aws-eu1"),
 			Region:            "eu-central-1",
 			MachineType:       "t3-xlarge",
-			DiskType:          "gp2",
-			VolumeSizeGb:      40,
+			DiskType:          util.StringPtr("gp2"),
+			VolumeSizeGb:      util.IntPtr(40),
 			WorkerCidr:        "cidr",
 			AutoScalerMin:     1,
 			AutoScalerMax:     5,
@@ -246,6 +258,34 @@ func awsGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 	}
 }
 
+func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
+	return gqlschema.ClusterConfigInput{
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:              util.StringPtr(util.CreateGardenerClusterName()),
+			KubernetesVersion: "version",
+			Purpose:           util.StringPtr("evaluation"),
+			Provider:          "Openstack",
+			TargetSecret:      "secret",
+			Seed:              util.StringPtr("os-eu1"),
+			Region:            "eu-central-1",
+			MachineType:       "t3-xlarge",
+			WorkerCidr:        "cidr",
+			AutoScalerMin:     1,
+			AutoScalerMax:     5,
+			MaxSurge:          1,
+			MaxUnavailable:    2,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				OpenStackConfig: &gqlschema.OpenStackProviderConfigInput{
+					Zones:                []string{"eu-de-1a"},
+					FloatingPoolName:     "FloatingIP-external-cp",
+					CloudProfileName:     "converged-cloud-cp",
+					LoadBalancerProvider: "f5",
+				},
+			},
+		},
+	}
+}
+
 func NewUpgradeShootInput() gqlschema.UpgradeShootInput {
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
@@ -254,6 +294,20 @@ func NewUpgradeShootInput() gqlschema.UpgradeShootInput {
 			MachineType:       util.StringPtr("new-machine"),
 			DiskType:          util.StringPtr("papyrus"),
 			VolumeSizeGb:      util.IntPtr(50),
+			AutoScalerMin:     util.IntPtr(2),
+			AutoScalerMax:     util.IntPtr(6),
+			MaxSurge:          util.IntPtr(2),
+			MaxUnavailable:    util.IntPtr(1),
+		},
+	}
+}
+
+func NewUpgradeOpenStackShootInput() gqlschema.UpgradeShootInput {
+	return gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			KubernetesVersion: util.StringPtr("version2"),
+			Purpose:           util.StringPtr("testing"),
+			MachineType:       util.StringPtr("new-machine"),
 			AutoScalerMin:     util.IntPtr(2),
 			AutoScalerMax:     util.IntPtr(6),
 			MaxSurge:          util.IntPtr(2),

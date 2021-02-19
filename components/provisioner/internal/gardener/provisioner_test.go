@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"path/filepath"
 	"testing"
 
@@ -224,8 +225,8 @@ func newClusterConfig(name string, subAccountID *string, providerConfig model.Ga
 			Name:                   name,
 			ProjectName:            "project-name",
 			KubernetesVersion:      "1.16",
-			VolumeSizeGB:           50,
-			DiskType:               "standard",
+			VolumeSizeGB:           util.IntPtr(50),
+			DiskType:               util.StringPtr("standard"),
 			MachineType:            "n1-standard-4",
 			Provider:               "gcp",
 			TargetSecret:           "secret",

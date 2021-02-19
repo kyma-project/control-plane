@@ -50,10 +50,10 @@ type AWSProviderConfig {
 }
 
 type OpenStackProviderConfig {
-    zone: String
-    floatingPoolName: String
-    cloudProfileName: String
-    loadBalancerProvider: String
+    zones: [String!]!
+    floatingPoolName: String!
+    cloudProfileName: String!
+    loadBalancerProvider: String!
 }
 
 type ConfigEntry {
@@ -203,9 +203,9 @@ input AWSProviderConfigInput {
 }
 
 input OpenStackProviderConfigInput {
-    zone:             String! # Zone in which to create the cluster
-    floatingPoolName: String! # FloatingPoolName name in which LoadBalancer FIPs should be created.
-    cloudProfileName: String! # Name of the target Cloud Profile
+    zones:           [String!]! # Zones in which to create the cluster
+    floatingPoolName: String!  # FloatingPoolName name in which LoadBalancer FIPs should be created.
+    cloudProfileName: String!  # Name of the target Cloud Profile
     loadBalancerProvider: String! # Name of load balancer provider, e.g. f5
 }
 
