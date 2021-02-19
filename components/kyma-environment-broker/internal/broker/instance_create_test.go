@@ -542,7 +542,7 @@ func TestProvision_Provision(t *testing.T) {
 }
 
 func fixExistOperation() internal.ProvisioningOperation {
-	provisioningOperation := internal.FixProvisioningOperation(existOperationID, instanceID)
+	provisioningOperation := fixture.FixProvisioningOperation(existOperationID, instanceID)
 	pp := internal.ProvisioningParameters{}
 	pp.PlanID = planID
 	pp.ServiceID = serviceID

@@ -102,7 +102,7 @@ func TestConverter_UpgradeKymaOperationToDetailDTO(t *testing.T) {
 }
 
 func fixOperation(id string) internal.UpgradeKymaOperation {
-	upgradeOperation := internal.FixUpgradeKymaOperation("", "")
+	upgradeOperation := fixture.FixUpgradeKymaOperation("", "")
 	upgradeOperation.OrchestrationID = id
 
 	return upgradeOperation

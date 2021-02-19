@@ -372,7 +372,7 @@ func fixEventHubStep(memoryStorageOp storage.Operations, hyperscalerProvider azu
 }
 
 func fixProvisioningOperation(t *testing.T, planID, region string) internal.ProvisioningOperation {
-	provisioningOperation := internal.FixProvisioningOperation(operationID, instanceID)
+	provisioningOperation := fixture.FixProvisioningOperation(operationID, instanceID)
 	provisioningOperation.ProvisioningParameters = fixProvisioningParameters(planID, region)
 	provisioningOperation.InputCreator = fixKnativeKafkaInputCreator(t)
 	provisioningOperation.State = ""

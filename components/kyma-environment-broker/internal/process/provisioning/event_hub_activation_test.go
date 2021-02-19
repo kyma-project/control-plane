@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"testing"
 	"time"
 
@@ -62,7 +63,7 @@ func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 }
 
 func fixOperationWithPlanID(planID string) internal.ProvisioningOperation {
-	provisioningOperation := internal.FixProvisioningOperation(operationID, instanceID)
+	provisioningOperation := fixture.FixProvisioningOperation(operationID, instanceID)
 	provisioningOperation.ProvisioningParameters = fixProvisioningParametersWithPlanID(planID, "region")
 
 	return provisioningOperation

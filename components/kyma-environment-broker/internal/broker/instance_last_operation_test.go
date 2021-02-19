@@ -2,6 +2,7 @@ package broker_test
 
 import (
 	"context"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -64,7 +65,7 @@ func TestLastOperation_LastOperation(t *testing.T) {
 }
 
 func fixOperation() internal.ProvisioningOperation {
-	provisioningOperation := internal.FixProvisioningOperation(operationID, instID)
+	provisioningOperation := fixture.FixProvisioningOperation(operationID, instID)
 	provisioningOperation.State = domain.Succeeded
 	provisioningOperation.Description = operationDescription
 

@@ -1,6 +1,7 @@
 package deprovisioning
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"testing"
 	"time"
 
@@ -118,17 +119,17 @@ func TestInitialisationStep_Run(t *testing.T) {
 }
 
 func fixDeprovisioningOperation() internal.DeprovisioningOperation {
-	deprovisioniningOperation := internal.FixDeprovisioningOperation(fixOperationID, fixInstanceID)
+	deprovisioniningOperation := fixture.FixDeprovisioningOperation(fixOperationID, fixInstanceID)
 	return deprovisioniningOperation
 }
 
 func fixProvisioningOperation() internal.ProvisioningOperation {
-	provisioningOperation := internal.FixProvisioningOperation(fixOperationID, fixInstanceID)
+	provisioningOperation := fixture.FixProvisioningOperation(fixOperationID, fixInstanceID)
 	return provisioningOperation
 }
 
 func fixInstanceRuntimeStatus() internal.Instance {
-	instance := internal.FixInstance(fixInstanceID)
+	instance := fixture.FixInstance(fixInstanceID)
 	instance.RuntimeID = fixRuntimeID
 	instance.GlobalAccountID = fixGlobalAccountID
 

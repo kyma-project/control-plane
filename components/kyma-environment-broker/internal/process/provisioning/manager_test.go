@@ -3,6 +3,7 @@ package provisioning
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"strings"
 	"sync"
 	"testing"
@@ -100,7 +101,7 @@ func TestManager_Execute(t *testing.T) {
 }
 
 func fixProvisionOperation(ID string) internal.ProvisioningOperation {
-	provisioningOperation := internal.FixProvisioningOperation(ID, "fea2c1a1-139d-43f6-910a-a618828a79d5")
+	provisioningOperation := fixture.FixProvisioningOperation(ID, "fea2c1a1-139d-43f6-910a-a618828a79d5")
 	provisioningOperation.State = domain.InProgress
 	provisioningOperation.Description = ""
 	provisioningOperation.ProvisioningParameters = fixProvisioningParameters(broker.AzurePlanID, "westeurope")

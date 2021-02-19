@@ -182,7 +182,7 @@ func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 }
 
 func fixProvisioningOperation(id string) internal.ProvisioningOperation {
-	provisioningOperation := internal.FixProvisioningOperation(id, instanceID)
+	provisioningOperation := fixture.FixProvisioningOperation(id, instanceID)
 	provisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.Credentials.BasicAuth.Username = "u"
 	provisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.Credentials.BasicAuth.Password = "p"
 	provisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.URL = ""
@@ -191,7 +191,7 @@ func fixProvisioningOperation(id string) internal.ProvisioningOperation {
 }
 
 func fixSuspensionOperation() internal.DeprovisioningOperation {
-	deprovisioningOperation := internal.FixDeprovisioningOperation("id", instanceID)
+	deprovisioningOperation := fixture.FixDeprovisioningOperation("id", instanceID)
 	deprovisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.Credentials.BasicAuth.Username = "u"
 	deprovisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.Credentials.BasicAuth.Password = "p"
 	deprovisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.URL = ""

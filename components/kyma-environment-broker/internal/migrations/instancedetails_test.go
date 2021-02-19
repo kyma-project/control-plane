@@ -43,7 +43,7 @@ func TestInstanceDetailsMigration_Migrate(t *testing.T) {
 }
 
 func fixProvisioningOperation() internal.ProvisioningOperation {
-	provisioningOperation := internal.FixProvisioningOperation("prov-op-id", "instance-id")
+	provisioningOperation := fixture.FixProvisioningOperation("prov-op-id", "instance-id")
 	provisioningOperation.Operation.InstanceDetails = internal.InstanceDetails{
 		Lms: internal.LMS{
 			TenantID: "lms-tenant",

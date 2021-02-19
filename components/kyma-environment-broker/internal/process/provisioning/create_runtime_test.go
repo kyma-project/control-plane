@@ -2,6 +2,7 @@ package provisioning
 
 import (
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"reflect"
 	"testing"
 	"time"
@@ -170,7 +171,7 @@ func TestCreateRuntimeStep_RunWithBadRequestError(t *testing.T) {
 }
 
 func fixOperationCreateRuntime(t *testing.T, planID, region string) internal.ProvisioningOperation {
-	provisioningOperation := internal.FixProvisioningOperation(operationID, instanceID)
+	provisioningOperation := fixture.FixProvisioningOperation(operationID, instanceID)
 	provisioningOperation.State = domain.InProgress
 	provisioningOperation.InputCreator = fixInputCreator(t)
 	provisioningOperation.ProvisionerOperationID = ""
@@ -181,7 +182,7 @@ func fixOperationCreateRuntime(t *testing.T, planID, region string) internal.Pro
 }
 
 func fixInstance() internal.Instance {
-	instance := internal.FixInstance(instanceID)
+	instance := fixture.FixInstance(instanceID)
 	instance.GlobalAccountID = globalAccountID
 
 	return instance

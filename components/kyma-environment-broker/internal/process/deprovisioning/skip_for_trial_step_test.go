@@ -1,6 +1,7 @@
 package deprovisioning
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"testing"
 	"time"
 
@@ -65,7 +66,7 @@ func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 }
 
 func fixOperationWithPlanID(planID string) internal.DeprovisioningOperation {
-	deprovisioningOperation := internal.FixDeprovisioningOperation(operationID, instanceID)
+	deprovisioningOperation := fixture.FixDeprovisioningOperation(operationID, instanceID)
 	deprovisioningOperation.Operation.ProvisioningParameters.PlanID = planID
 	deprovisioningOperation.Operation.ProvisioningParameters.ErsContext.GlobalAccountID = globalAccountID
 	deprovisioningOperation.Operation.ProvisioningParameters.ErsContext.SubAccountID = subAccountID

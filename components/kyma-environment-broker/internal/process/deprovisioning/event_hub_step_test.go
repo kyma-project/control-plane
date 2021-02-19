@@ -309,7 +309,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 
 func fixInstance() internal.Instance {
 	region := "westeurope"
-	instance := internal.FixInstance(fixInstanceID)
+	instance := fixture.FixInstance(fixInstanceID)
 	instance.Parameters.ErsContext.SubAccountID = subAccountID
 	instance.Parameters.Parameters.Name = "nachtmaar-15"
 	instance.Parameters.Parameters.OptionalComponentsToInstall = []string{}
@@ -342,7 +342,7 @@ func fixLogger() logrus.FieldLogger {
 }
 
 func fixDeprovisioningOperationWithParameters() internal.DeprovisioningOperation {
-	deprovisioningOperation := internal.FixDeprovisioningOperation(fixOperationID, fixInstanceID)
+	deprovisioningOperation := fixture.FixDeprovisioningOperation(fixOperationID, fixInstanceID)
 	deprovisioningOperation.ProvisionerOperationID = fixProvisionerOperationID
 	deprovisioningOperation.Operation.UpdatedAt = time.Now()
 	deprovisioningOperation.State = ""
@@ -358,7 +358,7 @@ func fixDeprovisioningOperationWithParameters() internal.DeprovisioningOperation
 }
 
 func fixDeprovisioningOperationWithDeletedEventHub() internal.DeprovisioningOperation {
-	deprovisioningOperation := internal.FixDeprovisioningOperation("", "")
+	deprovisioningOperation := fixture.FixDeprovisioningOperation("", "")
 	deprovisioningOperation.Operation.InstanceDetails.EventHub.Deleted = true
 	deprovisioningOperation.Operation.State = ""
 

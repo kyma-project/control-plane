@@ -218,7 +218,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 }
 
 func fixProvisioningParameters(planID, kymaVersion string) internal.ProvisioningParameters {
-	pp := internal.FixProvisioningParameters("")
+	pp := fixture.FixProvisioningParameters("")
 	pp.PlanID = planID
 	pp.Parameters.KymaVersion = kymaVersion
 

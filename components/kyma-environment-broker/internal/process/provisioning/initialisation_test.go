@@ -2,6 +2,7 @@ package provisioning
 
 import (
 	"context"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"testing"
 	"time"
 
@@ -190,7 +191,7 @@ func TestInitialisationStep(t *testing.T) {
 }
 
 func fixOperationRuntimeStatus(planId string) internal.ProvisioningOperation {
-	provisioningOperation := internal.FixProvisioningOperation(statusOperationID, statusInstanceID)
+	provisioningOperation := fixture.FixProvisioningOperation(statusOperationID, statusInstanceID)
 	provisioningOperation.ProvisionerOperationID = statusProvisionerOperationID
 	provisioningOperation.InstanceDetails.RuntimeID = runtimeID
 	provisioningOperation.ProvisioningParameters.PlanID = planId
@@ -200,7 +201,7 @@ func fixOperationRuntimeStatus(planId string) internal.ProvisioningOperation {
 }
 
 func fixOperationRuntimeStatusWithProvider(planId string, provider internal.TrialCloudProvider) internal.ProvisioningOperation {
-	provisioningOperation := internal.FixProvisioningOperation(statusOperationID, statusInstanceID)
+	provisioningOperation := fixture.FixProvisioningOperation(statusOperationID, statusInstanceID)
 	provisioningOperation.ProvisionerOperationID = statusProvisionerOperationID
 	provisioningOperation.ProvisioningParameters.PlanID = planId
 	provisioningOperation.ProvisioningParameters.ErsContext.GlobalAccountID = statusGlobalAccountID
@@ -210,7 +211,7 @@ func fixOperationRuntimeStatusWithProvider(planId string, provider internal.Tria
 }
 
 func fixInstanceRuntimeStatus() internal.Instance {
-	instance := internal.FixInstance(statusInstanceID)
+	instance := fixture.FixInstance(statusInstanceID)
 	instance.RuntimeID = statusRuntimeID
 	instance.DashboardURL = dashboardURL
 	instance.GlobalAccountID = statusGlobalAccountID

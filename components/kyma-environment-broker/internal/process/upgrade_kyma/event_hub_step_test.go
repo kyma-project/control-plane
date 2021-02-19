@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"testing"
 	"time"
@@ -335,7 +336,7 @@ func Test_StepsUnhappyPath(t *testing.T) {
 }
 
 func fixInstance() internal.Instance {
-	instance := internal.FixInstance(fixInstanceID)
+	instance := fixture.FixInstance(fixInstanceID)
 	instance.Parameters.ErsContext.SubAccountID = subAccountID
 	instance.Parameters.Parameters.Name = "nachtmaar-15"
 	instance.Parameters.Parameters.OptionalComponentsToInstall = []string{}
@@ -376,7 +377,7 @@ func fixLogger() logrus.FieldLogger {
 }
 
 func fixDeprovisioningOperationWithParameters() internal.UpgradeKymaOperation {
-	upgradeOperation := internal.FixUpgradeKymaOperation(fixOperationID, fixInstanceID)
+	upgradeOperation := fixture.FixUpgradeKymaOperation(fixOperationID, fixInstanceID)
 	upgradeOperation.ProvisionerOperationID = fixProvisionerOperationID
 	upgradeOperation.Description = ""
 	upgradeOperation.State = ""
@@ -392,14 +393,14 @@ func fixDeprovisioningOperationWithParameters() internal.UpgradeKymaOperation {
 }
 
 func fixDeprovisioningOperation() internal.UpgradeKymaOperation {
-	upgradeOperation := internal.FixUpgradeKymaOperation(fixOperationID, fixInstanceID)
+	upgradeOperation := fixture.FixUpgradeKymaOperation(fixOperationID, fixInstanceID)
 	upgradeOperation.ProvisionerOperationID = fixProvisionerOperationID
 
 	return upgradeOperation
 }
 
 func fixDeprovisioningOperationWithDeletedEventHub() internal.UpgradeKymaOperation {
-	upgradeOperation := internal.FixUpgradeKymaOperation(fixOperationID, fixInstanceID)
+	upgradeOperation := fixture.FixUpgradeKymaOperation(fixOperationID, fixInstanceID)
 	upgradeOperation.State = ""
 	upgradeOperation.InstanceDetails.EventHub.Deleted = true
 
