@@ -1,6 +1,7 @@
 package suspension
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"testing"
 	"time"
 
@@ -143,29 +144,11 @@ func TestUnsuspension(t *testing.T) {
 }
 
 func fixInstance(ersContext internal.ERSContext) *internal.Instance {
-	return &internal.Instance{
-		InstanceID:      "instance-id",
-		RuntimeID:       "",
-		GlobalAccountID: "",
-		SubAccountID:    "",
-		ServiceID:       "",
-		ServiceName:     "",
-		ServicePlanID:   broker.TrialPlanID,
-		ServicePlanName: "",
-		DashboardURL:    "",
-		Parameters: internal.ProvisioningParameters{
-			PlanID:     "plan-id",
-			ServiceID:  "svc-id",
-			ErsContext: ersContext,
-			Parameters: internal.ProvisioningParametersDTO{
-				Name: "my-kyma-cluster",
-			},
-			PlatformRegion: "eu",
-		},
-		ProviderRegion: "",
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
-	}
+	instance := fixture.FixInstance("instance-id")
+	instance.ServicePlanID = broker.TrialPlanID
+	instance.Parameters.ErsContext = ersContext
+
+	return &instance
 }
 
 func fixActiveErsContext() internal.ERSContext {
