@@ -21,6 +21,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
+
 type AuditLogOverrides struct {
 	operationManager *process.ProvisionOperationManager
 	fs               afero.Fs

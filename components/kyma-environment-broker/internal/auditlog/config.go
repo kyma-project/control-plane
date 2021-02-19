@@ -2,13 +2,15 @@ package auditlog
 
 import (
 	"errors"
-	"github.com/gobuffalo/packr"
 	"text/template"
+
+	"github.com/gobuffalo/packr"
 
 	"github.com/Masterminds/semver"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/sirupsen/logrus"
 )
+
 //go:generate packr -v
 
 type Config struct {

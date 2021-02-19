@@ -12,7 +12,6 @@ import (
 
 //go:generate packr -v
 
-
 var (
 	defaultConfig = Config{
 		RetentionPeriod:    7,
