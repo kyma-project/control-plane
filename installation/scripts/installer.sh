@@ -4,7 +4,7 @@ set -o errexit
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 RESOURCES_DIR="${CURRENT_DIR}/../resources"
-INSTALLER="${RESOURCES_DIR}/installer-local.yaml"
+INSTALLER="${RESOURCES_DIR}/installer.yaml"
 INSTALLER_CONFIG="${RESOURCES_DIR}/installer-config-local.yaml.tpl"
 AZURE_BROKER_CONFIG=""
 HELM_VERSION=$(helm version --short -c | cut -d '.' -f 1)

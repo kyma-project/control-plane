@@ -71,8 +71,11 @@ import (
 
 // Config holds configuration for the whole application
 type Config struct {
-	DbInMemory                     bool `envconfig:"default=false"`
-	EnableInstanceDetailsMigration bool `envconfig:"default=false"`
+	DbInMemory                        bool `envconfig:"default=false"`
+	EnableInstanceDetailsMigration    bool `envconfig:"default=false"`
+	EnableInstanceParametersMigration bool `envconfig:"default=false"`
+	EnableInstanceParametersRollback  bool `envconfig:"default=false"`
+	EnableOperationsUserIDMigration   bool `envconfig:"default=false"`
 
 	// DisableProcessOperationsInProgress allows to disable processing operations
 	// which are in progress on starting application. Set to true if you are
@@ -171,11 +174,12 @@ func main() {
 	directorClient := director.NewDirectorClient(ctx, cfg.Director, logs.WithField("service", "directorClient"))
 
 	// create storage
+	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
 	var db storage.BrokerStorage
 	if cfg.DbInMemory {
 		db = storage.NewMemoryStorage()
 	} else {
-		store, conn, err := storage.NewFromConfig(cfg.Database, logs.WithField("service", "storage"))
+		store, conn, err := storage.NewFromConfig(cfg.Database, cipher, logs.WithField("service", "storage"))
 		fatalOnError(err)
 		db = store
 		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
@@ -186,6 +190,20 @@ func main() {
 	// instance details migration to upgradeKyma operations
 	if cfg.EnableInstanceDetailsMigration {
 		err = migrations.NewInstanceDetailsMigration(db.Operations(), logs.WithField("service", "instanceDetailsMigration")).Migrate()
+		fatalOnError(err)
+	}
+	// encrypting instances SM credentials
+	if cfg.EnableInstanceParametersMigration {
+		err = migrations.NewInstanceParametersMigration(db.Instances(), cipher, logs).Migrate()
+		fatalOnError(err)
+	}
+	if cfg.EnableInstanceParametersRollback {
+		err = migrations.NewInstanceParametersMigrationRollback(db.Instances(), logs).Migrate()
+		fatalOnError(err)
+	}
+	// migration to remove the userID parameter from succeeded deprovisioning operations
+	if cfg.EnableOperationsUserIDMigration {
+		err = migrations.NewOperationsUserIDMigration(db.Operations(), logs.WithField("service", "userIDMigration")).Migrate()
 		fatalOnError(err)
 	}
 

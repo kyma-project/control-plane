@@ -39,6 +39,10 @@ func NewFakeServiceManagerClientFactory(offerings []types.ServiceOffering, plans
 	}
 }
 
+func (f *fakeServiceManagerClientFactory) ForCredentials(credentials *Credentials) Client {
+	return f.cli
+}
+
 func (f *fakeServiceManagerClientFactory) ForCustomerCredentials(reqCredentials *Credentials, log logrus.FieldLogger) (Client, error) {
 	return f.cli, nil
 }

@@ -65,6 +65,7 @@ func TestProvisioningSteps(t *testing.T) {
 		},
 		SMClientFactory: cliFactory,
 	}
+	operation.ShootDomain = "uaa-test.kyma-dev.shoot.canary.k8s-hana.ondemand.com"
 	repo.InsertProvisioningOperation(operation)
 	log := logrus.New()
 

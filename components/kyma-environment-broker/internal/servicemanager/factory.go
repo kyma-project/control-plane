@@ -56,8 +56,11 @@ func (f *ClientFactory) ForCustomerCredentials(reqCredentials *Credentials, log 
 
 // put here methods which creates SM client for different Credentials
 // ...
-func (f *ClientFactory) ForCredentials(creds Credentials) Client {
-	return NewWithHttpClient(creds, f.httpClient)
+func (f *ClientFactory) ForCredentials(credentials *Credentials) Client {
+	return &client{
+		creds:      *credentials,
+		httpClient: f.httpClient,
+	}
 }
 
 func (f *ClientFactory) ProvideCredentials(reqCredentials *Credentials, log logrus.FieldLogger) (*Credentials, error) {
