@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"path/filepath"
 	"testing"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	"github.com/stretchr/testify/mock"
 

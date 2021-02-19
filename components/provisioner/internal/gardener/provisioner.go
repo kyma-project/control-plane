@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/avast/retry-go"
+	retry "github.com/avast/retry-go"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/sirupsen/logrus"
 
