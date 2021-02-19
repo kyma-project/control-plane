@@ -80,20 +80,20 @@
   version = "v2.2.8"
 
 [[override]]
-name = "github.com/tidwall/gjson"
-version = "v1.6.3"
+  name = "github.com/tidwall/gjson"
+  version = "v1.6.3"
 
 [[override]]
-name = "github.com/satori/go.uuid"
-revision = "75cca531ea763666bc46e531da3b4c3b95f64557"
+  name = "github.com/satori/go.uuid"
+  revision = "75cca531ea763666bc46e531da3b4c3b95f64557"
 
 [[override]]
-name = "github.com/tidwall/match"
-version = "v1.0.3"
+  name = "github.com/tidwall/match"
+  version = "v1.0.3"
 
-#[[override]]
-#name = "golang.org/x/text"
-#version = "v0.3.3"
+[[override]]
+  name = "golang.org/x/text"
+  version = "v0.3.3"
 
 [prune]
   go-tests = true

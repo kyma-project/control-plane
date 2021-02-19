@@ -993,7 +993,7 @@
   revision = "548cf772de5052aa878ccb47cdeb7d262b75c8ec"
 
 [[projects]]
-  digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
+  digest = "1:33168e887aff0e3eae823593f38433f28928104925e54a6252937e6e3939f904"
   name = "golang.org/x/text"
   packages = [
     "collate",
@@ -1014,8 +1014,8 @@
     "unicode/rangetable",
   ]
   pruneopts = "NUT"
-  revision = "342b2e1fbaa52c93f31447ad2c6abc048c63e475"
-  version = "v0.3.2"
+  revision = "75a595aef632b07c6eeaaa805adb6f0f66e4130e"
+  version = "v0.3.5"
 
 [[projects]]
   branch = "master"
