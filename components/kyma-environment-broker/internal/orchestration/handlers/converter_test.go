@@ -1,6 +1,7 @@
 package handlers_test
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"

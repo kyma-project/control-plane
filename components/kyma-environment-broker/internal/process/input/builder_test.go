@@ -1,6 +1,8 @@
 package input
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -221,6 +223,9 @@ func fixProvisioningParameters(planID, kymaVersion string) internal.Provisioning
 	pp := fixture.FixProvisioningParameters("")
 	pp.PlanID = planID
 	pp.Parameters.KymaVersion = kymaVersion
+	pp.Parameters.OptionalComponentsToInstall = []string{}
+	pp.Parameters.AutoScalerMin = ptr.Integer(1)
+	pp.Parameters.AutoScalerMax = ptr.Integer(1)
 
 	return pp
 }

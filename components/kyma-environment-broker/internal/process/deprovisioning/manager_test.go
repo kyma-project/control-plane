@@ -2,6 +2,7 @@ package deprovisioning
 
 import (
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"strings"
 	"testing"
 	"time"

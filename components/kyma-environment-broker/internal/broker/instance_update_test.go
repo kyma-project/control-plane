@@ -3,6 +3,7 @@ package broker
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/stretchr/testify/require"
 	"testing"
 

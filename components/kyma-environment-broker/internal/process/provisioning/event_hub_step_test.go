@@ -3,6 +3,7 @@ package provisioning
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"testing"
 	"time"
 
