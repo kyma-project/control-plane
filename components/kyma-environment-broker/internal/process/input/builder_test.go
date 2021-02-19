@@ -1,9 +1,10 @@
 package input
 
 import (
+	"testing"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
-	"testing"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 

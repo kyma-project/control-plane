@@ -2,8 +2,9 @@ package broker_test
 
 import (
 	"context"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"testing"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
