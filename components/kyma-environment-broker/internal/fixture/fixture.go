@@ -268,13 +268,13 @@ func FixUpgradeKymaOperation(operationId, instanceId string) internal.UpgradeKym
 	}
 }
 
-func FixOrchestration() internal.Orchestration {
+func FixOrchestration(id string) internal.Orchestration {
 	return internal.Orchestration{
-		OrchestrationID: "",
-		State:           "",
+		OrchestrationID: id,
+		State:           orchestration.Succeeded,
 		Description:     "",
-		CreatedAt:       time.Time{},
-		UpdatedAt:       time.Time{},
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now().Add(time.Hour * 1),
 		Parameters:      orchestration.Parameters{},
 	}
 }
