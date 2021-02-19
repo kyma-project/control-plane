@@ -1,10 +1,10 @@
 package upgrade_kyma
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
@@ -80,24 +80,14 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 }
 
 func fixUpgradeKymaOperationWithInputCreator(t *testing.T) internal.UpgradeKymaOperation {
-	return internal.UpgradeKymaOperation{
-		Operation: internal.Operation{
-			ID:                     fixUpgradeOperationID,
-			InstanceID:             fixInstanceID,
-			Description:            "",
-			UpdatedAt:              time.Now(),
-			ProvisioningParameters: fixProvisioningParameters(),
-			InstanceDetails: internal.InstanceDetails{
-				RuntimeID: fixRuntimeID,
-			},
-		},
-		RuntimeOperation: orchestration.RuntimeOperation{
-			Runtime: orchestration.Runtime{
-				RuntimeID: fixRuntimeID,
-			},
-		},
-		InputCreator: fixInputCreator(t),
-	}
+	upgradeOperation := fixture.FixUpgradeKymaOperation(fixUpgradeOperationID, fixInstanceID)
+	upgradeOperation.Description = ""
+	upgradeOperation.ProvisioningParameters = fixProvisioningParameters()
+	upgradeOperation.InstanceDetails.RuntimeID = fixRuntimeID
+	upgradeOperation.RuntimeOperation.RuntimeID = fixRuntimeID
+	upgradeOperation.InputCreator = fixInputCreator(t)
+
+	return upgradeOperation
 }
 
 func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
