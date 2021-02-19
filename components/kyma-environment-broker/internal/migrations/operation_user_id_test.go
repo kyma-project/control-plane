@@ -1,16 +1,14 @@
 package migrations_test
 
 import (
-	"testing"
-	"time"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/migrations"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func TestOperationsUserIDMigration_Migrate(t *testing.T) {
@@ -35,15 +33,5 @@ func TestOperationsUserIDMigration_Migrate(t *testing.T) {
 }
 
 func fixDeprovisioningOperation() internal.DeprovisioningOperation {
-	return internal.DeprovisioningOperation{
-		Operation: internal.Operation{
-			ID:                     "test",
-			Version:                0,
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Now().Add(1 * time.Minute),
-			InstanceID:             "instance-id",
-			State:                  domain.Succeeded,
-			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{UserID: "test"}},
-		},
-	}
+	return fixture.FixDeprovisioningOperation("test", "instance-id")
 }
