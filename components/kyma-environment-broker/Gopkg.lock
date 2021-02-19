@@ -859,12 +859,12 @@
   version = "v1.6.3"
 
 [[projects]]
-  digest = "1:2e6d7797f48ba5f98a3611be7cf1fe87e7cf25cb118c8e2aae3ff846c9d4a2c5"
+  digest = "1:937bf6144cbf110d2ec0bec66d734a5e2d70c10b1d0560a1fa7f754a9efa3658"
   name = "github.com/tidwall/match"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "9e52e9e068387201730ec4876bac3a1902d0eef8"
-  version = "v1.0.2"
+  revision = "c2f534168b739a7ec1821a33839fb2f029f26bbc"
+  version = "v1.0.3"
 
 [[projects]]
   digest = "1:93e8c1535b3e4629b708db04d04e2d64ebd6f050712c05b49856b89ead0ce473"
