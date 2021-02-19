@@ -45,27 +45,9 @@ func TestInstanceDetailsMigration_Migrate(t *testing.T) {
 
 func fixProvisioningOperation() internal.ProvisioningOperation {
 	provisioningOperation := fixture.FixProvisioningOperation("prov-op-id", "instance-id")
-	provisioningOperation.Operation.InstanceDetails = internal.InstanceDetails{
-		Lms: internal.LMS{
-			TenantID: "lms-tenant",
-		},
-		SubAccountID: "subacc-id",
-		RuntimeID:    "runtime-id",
-		ShootName:    "shoot-name",
-		ShootDomain:  "shoot-domain",
-		XSUAA: internal.XSUAAData{
-			Instance: internal.ServiceManagerInstanceInfo{
-				BrokerID:              "broker-id",
-				ServiceID:             "service-id",
-				PlanID:                "plan-id",
-				InstanceID:            "instance-id",
-				Provisioned:           true,
-				ProvisioningTriggered: true,
-			},
-			XSAppname: "xsapp-name",
-			BindingID: "binding-id",
-		},
-	}
+	provisioningOperation.Operation.InstanceDetails = fixture.FixInstanceDetails("id")
+	provisioningOperation.Operation.InstanceDetails.XSUAA.Instance.Provisioned = true
+	provisioningOperation.Operation.InstanceDetails.XSUAA.Instance.ProvisioningTriggered = true
 
 	return provisioningOperation
 }
