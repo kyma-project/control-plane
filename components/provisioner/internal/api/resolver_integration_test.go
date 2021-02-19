@@ -133,7 +133,7 @@ func newTestProvisioningConfigs() []testCase {
 		},
 		{name: "OpenStack on Gardener",
 			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct OpenStack configuration for Gardener",
-			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb2",
+			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb8",
 			auditLogTenant: "e7382275-e835-4549-94e1-3b1101e3a1fa",
 			provisioningInput: provisioningInput{
 				config: openStackGardenerClusterConfigInput(),
