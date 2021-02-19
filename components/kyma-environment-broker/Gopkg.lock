@@ -183,11 +183,12 @@
   version = "v4.0.0"
 
 [[projects]]
-  digest = "1:771809465d2d81b1e2631f0e062b7458647135b2eca9e1cc577e58d1db0d987f"
+  digest = "1:0d85482cde79eed8573a1e547f68f73e7e7bb4ce8e8d166c60d934bbfe1b0d3d"
   name = "github.com/containerd/containerd"
   packages = ["errdefs"]
   pruneopts = "NUT"
-  revision = "acdcf13d5eaf0dfe0eaeabe7194a82535549bc2b"
+  revision = "269548fa27e0089a8b8278fc4fc781d7f65a939b"
+  version = "v1.4.3"
 
 [[projects]]
   branch = "master"
@@ -1000,7 +1001,7 @@
   revision = "548cf772de5052aa878ccb47cdeb7d262b75c8ec"
 
 [[projects]]
-  digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
+  digest = "1:33168e887aff0e3eae823593f38433f28928104925e54a6252937e6e3939f904"
   name = "golang.org/x/text"
   packages = [
     "collate",
@@ -1021,8 +1022,8 @@
     "unicode/rangetable",
   ]
   pruneopts = "NUT"
-  revision = "342b2e1fbaa52c93f31447ad2c6abc048c63e475"
-  version = "v0.3.2"
+  revision = "75a595aef632b07c6eeaaa805adb6f0f66e4130e"
+  version = "v0.3.5"
 
 [[projects]]
   branch = "master"
