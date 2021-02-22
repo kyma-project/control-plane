@@ -27,6 +27,13 @@ type ProvisionerInputCreator interface {
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 }
 
+// GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for
+// external evaluation.
+const (
+	GitKymaProject = "kyma-project"
+	GitKymaRepo    = "kyma"
+)
+
 type CLSInstance struct {
 	Version         int
 	ID              string
@@ -36,6 +43,7 @@ type CLSInstance struct {
 	CreatedAt     time.Time
 	SKRReferences []string
 }
+
 type LMSTenant struct {
 	ID        string
 	Name      string
@@ -74,7 +82,7 @@ const (
 	AccountMapping RuntimeVersionOrigin = "account-mapping"
 )
 
-// RuntimeVersionData describes the Kyma Version used for the cluser
+// RuntimeVersionData describes the Kyma Version used for the cluster
 // provisioning or upgrade
 type RuntimeVersionData struct {
 	Version string               `json:"version"`
