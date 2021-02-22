@@ -66,6 +66,11 @@
   name = "github.com/Peripli/service-manager-cli"
   version = "v1.11.2"
 
+[[constraint]]
+  name = "github.com/gobuffalo/packr"
+  version = "v2.8.1"
+
+
 # Azure
 [[constraint]]
   name = "github.com/Azure/azure-sdk-for-go"
