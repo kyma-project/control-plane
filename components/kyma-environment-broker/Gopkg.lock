@@ -774,14 +774,6 @@
   version = "v0.0.11"
 
 [[projects]]
-  digest = "1:6bc0652ea6e39e22ccd522458b8bdd8665bf23bdc5a20eec90056e4dc7e273ca"
-  name = "github.com/satori/go.uuid"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
-
-[[projects]]
   digest = "1:78d58fb2be93b1955977fdf765fa06da1fbbfb833a4fc60246f4cbdfca186455"
   name = "github.com/sebdah/goldie"
   packages = ["."]
@@ -848,15 +840,15 @@
   version = "v1.4.0"
 
 [[projects]]
-  digest = "1:d08ebc29e2d83da1302c0dcfe7ee51724f71b935bf40026df07ef0c07d4de903"
+  digest = "1:80e99756a8f1ca02637830624b1a404e053be9897dc31da9d7d0f397eba0461c"
   name = "github.com/testcontainers/testcontainers-go"
   packages = [
     ".",
     "wait",
   ]
   pruneopts = "NUT"
-  revision = "0c6fcb48ff1cfa4d82a45b587e76b3588a4dc192"
-  version = "v0.0.10"
+  revision = "f11cabde6e00db5aae6d645de2cdd5ce3c582670"
+  version = "v0.9.0"
 
 [[projects]]
   digest = "1:7ac56eee8a1fee0c12f23ba86e35433ca152d8b85db45de6764b15c352511fe6"
@@ -867,12 +859,12 @@
   version = "v1.6.3"
 
 [[projects]]
-  digest = "1:2e6d7797f48ba5f98a3611be7cf1fe87e7cf25cb118c8e2aae3ff846c9d4a2c5"
+  digest = "1:937bf6144cbf110d2ec0bec66d734a5e2d70c10b1d0560a1fa7f754a9efa3658"
   name = "github.com/tidwall/match"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "9e52e9e068387201730ec4876bac3a1902d0eef8"
-  version = "v1.0.2"
+  revision = "c2f534168b739a7ec1821a33839fb2f029f26bbc"
+  version = "v1.0.3"
 
 [[projects]]
   digest = "1:93e8c1535b3e4629b708db04d04e2d64ebd6f050712c05b49856b89ead0ce473"
@@ -1001,7 +993,7 @@
   revision = "548cf772de5052aa878ccb47cdeb7d262b75c8ec"
 
 [[projects]]
-  digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
+  digest = "1:33168e887aff0e3eae823593f38433f28928104925e54a6252937e6e3939f904"
   name = "golang.org/x/text"
   packages = [
     "collate",
@@ -1022,8 +1014,8 @@
     "unicode/rangetable",
   ]
   pruneopts = "NUT"
-  revision = "342b2e1fbaa52c93f31447ad2c6abc048c63e475"
-  version = "v0.3.2"
+  revision = "75a595aef632b07c6eeaaa805adb6f0f66e4130e"
+  version = "v0.3.5"
 
 [[projects]]
   branch = "master"
