@@ -37,7 +37,8 @@ func TestSubAccountCleanup(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Log("create storage manager")
-		storageManager, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
+		cipher := storage.NewEncrypter(cfg.SecretKey)
+		storageManager, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 
 		t.Log("fill instances table")
@@ -88,7 +89,8 @@ func TestSubAccountCleanup(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Log("create storage manager")
-		storageManager, _, err := storage.NewFromConfig(cfg, logrus.StandardLogger())
+		cipher := storage.NewEncrypter(cfg.SecretKey)
+		storageManager, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 
 		t.Log("fill instances table")

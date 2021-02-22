@@ -17,6 +17,11 @@ type Instances interface {
 	GetInstanceStats() (internal.InstanceStats, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
 	List(dbmodel.InstanceFilter) ([]internal.Instance, int, int, error)
+
+	// todo: remove after instances parameters migration is done
+	InsertWithoutEncryption(instance internal.Instance) error
+	UpdateWithoutEncryption(instance internal.Instance) (*internal.Instance, error)
+	ListWithoutDecryption(dbmodel.InstanceFilter) ([]internal.Instance, int, int, error)
 }
 
 type Operations interface {
@@ -47,6 +52,7 @@ type Deprovisioning interface {
 	GetDeprovisioningOperationByInstanceID(instanceID string) (*internal.DeprovisioningOperation, error)
 	UpdateDeprovisioningOperation(operation internal.DeprovisioningOperation) (*internal.DeprovisioningOperation, error)
 	ListDeprovisioningOperationsByInstanceID(instanceID string) ([]internal.DeprovisioningOperation, error)
+	ListDeprovisioningOperations() ([]internal.DeprovisioningOperation, error)
 }
 
 type Orchestrations interface {
@@ -76,4 +82,10 @@ type UpgradeKyma interface {
 type LMSTenants interface {
 	FindTenantByName(name, region string) (internal.LMSTenant, bool, error)
 	InsertTenant(tenant internal.LMSTenant) error
+}
+
+type CLSInstances interface {
+	FindInstance(name string) (*internal.CLSInstance, bool, error)
+	InsertInstance(instance internal.CLSInstance) error
+	Reference(version int, globalAccountID, skrInstanceID string) error
 }

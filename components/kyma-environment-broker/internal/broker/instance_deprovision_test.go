@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker/automock"
 	"github.com/stretchr/testify/mock"
 
@@ -121,8 +123,7 @@ func fixDeprovisioningOperation(state domain.LastOperationState) internal.Deprov
 }
 
 func fixInstance() internal.Instance {
-	return internal.Instance{
-		InstanceID:    instanceID,
-		ServicePlanID: planID,
-	}
+	instance := fixture.FixInstance(instanceID)
+	instance.ServicePlanID = planID
+	return instance
 }

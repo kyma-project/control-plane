@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWrapf(t *testing.T) {
+func TestTemporaryError(t *testing.T) {
 	// given
 	err1 := fmt.Errorf("some error: %s", "argErr")
 	err2 := fmt.Errorf("some error: %s", "argErr")

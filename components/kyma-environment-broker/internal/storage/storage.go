@@ -16,13 +16,14 @@ type BrokerStorage interface {
 	LMSTenants() LMSTenants
 	Orchestrations() Orchestrations
 	RuntimeStates() RuntimeStates
+	CLSInstances() CLSInstances
 }
 
 const (
 	connectionRetries = 10
 )
 
-func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, *dbr.Connection, error) {
+func NewFromConfig(cfg Config, cipher postgres.Cipher, log logrus.FieldLogger) (BrokerStorage, *dbr.Connection, error) {
 	log.Infof("Setting DB connection pool params: connectionMaxLifetime=%s "+
 		"maxIdleConnections=%d maxOpenConnections=%d", cfg.ConnMaxLifetime, cfg.MaxIdleConns, cfg.MaxOpenConns)
 
@@ -37,14 +38,13 @@ func NewFromConfig(cfg Config, log logrus.FieldLogger) (BrokerStorage, *dbr.Conn
 
 	fact := postsql.NewFactory(connection)
 
-	enc := NewEncrypter(cfg.SecretKey)
-	operation := postgres.NewOperation(fact, enc)
+	operation := postgres.NewOperation(fact, cipher)
 	return storage{
-		instance:       postgres.NewInstance(fact, operation),
+		instance:       postgres.NewInstance(fact, operation, cipher),
 		operation:      operation,
 		lmsTenants:     postgres.NewLMSTenants(fact),
 		orchestrations: postgres.NewOrchestrations(fact),
-		runtimeStates:  postgres.NewRuntimeStates(fact, enc),
+		runtimeStates:  postgres.NewRuntimeStates(fact, cipher),
 	}, connection, nil
 }
 
@@ -56,6 +56,7 @@ func NewMemoryStorage() BrokerStorage {
 		lmsTenants:     memory.NewLMSTenants(),
 		orchestrations: memory.NewOrchestrations(),
 		runtimeStates:  memory.NewRuntimeStates(),
+		clsInstances:   memory.NewCLSInstances(),
 	}
 }
 
@@ -65,6 +66,7 @@ type storage struct {
 	lmsTenants     LMSTenants
 	orchestrations Orchestrations
 	runtimeStates  RuntimeStates
+	clsInstances   CLSInstances
 }
 
 func (s storage) Instances() Instances {
@@ -85,6 +87,10 @@ func (s storage) Deprovisioning() Deprovisioning {
 
 func (s storage) LMSTenants() LMSTenants {
 	return s.lmsTenants
+}
+
+func (s storage) CLSInstances() CLSInstances {
+	return s.clsInstances
 }
 
 func (s storage) Orchestrations() Orchestrations {

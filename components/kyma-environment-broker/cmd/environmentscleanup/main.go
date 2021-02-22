@@ -49,8 +49,8 @@ func main() {
 	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioner.URL, cfg.Provisioner.QueryDumping)
 
 	// create storage
-
-	db, conn, err := storage.NewFromConfig(cfg.Database, log.WithField("service", "storage"))
+	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
+	db, conn, err := storage.NewFromConfig(cfg.Database, cipher, log.WithField("service", "storage"))
 	fatalOnError(err)
 	dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 	prometheus.MustRegister(dbStatsCollector)

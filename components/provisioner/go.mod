@@ -11,7 +11,7 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/kubernetes-sigs/service-catalog v0.3.0
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b
-	github.com/kyma-incubator/hydroform/install v0.0.0-20200817114824-fd8c8876066c
+	github.com/kyma-incubator/hydroform/install v0.0.0-20210218125820-f7a76ec2075a
 	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200902131640-31c29c8feb0c
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5
 	github.com/lib/pq v1.7.0
@@ -28,7 +28,7 @@ require (
 	github.com/vrischmann/envconfig v1.3.0
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.18.15
-	k8s.io/apiextensions-apiserver v0.18.8
+	k8s.io/apiextensions-apiserver v0.18.15
 	k8s.io/apimachinery v0.18.15
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	sigs.k8s.io/controller-runtime v0.6.2
@@ -45,6 +45,6 @@ replace (
 	go.etcd.io/etcd => go.etcd.io/etcd v3.3.25+incompatible
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/text => golang.org/x/text v0.3.3
-	k8s.io/apiserver => k8s.io/apiserver v0.18.10
+	k8s.io/apiserver => k8s.io/apiserver v0.18.15
 	k8s.io/client-go => k8s.io/client-go v0.18.15
 )

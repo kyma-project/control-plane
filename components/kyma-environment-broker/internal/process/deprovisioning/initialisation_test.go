@@ -30,7 +30,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 	accountProviderMock := &hyperscalerMocks.AccountProvider{}
 	accountProviderMock.On("MarkUnusedGardenerSecretAsDirty", mock.Anything, mock.AnythingOfType("string")).Return(nil)
 
-	t.Run("Should mark operation as Succeeded when runtime deprovisioning was successful", func(t *testing.T) {
+	t.Run("Should mark operation as Succeeded when operation has succeeded", func(t *testing.T) {
 		// given
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
@@ -74,7 +74,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.True(t, dberr.IsNotFound(err))
 	})
 
-	t.Run("Should delete instance when operation has succeeded due to runtime not existing", func(t *testing.T) {
+	t.Run("Should delete instance and userID when operation has succeeded", func(t *testing.T) {
 		// given
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
@@ -105,14 +105,15 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, time.Duration(0), repeat)
 		assert.Equal(t, domain.Succeeded, operation.State)
+		assert.Equal(t, "", operation.ProvisioningParameters.ErsContext.UserID)
 
 		inst, err := memoryStorage.Instances().GetByID(operation.InstanceID)
 		assert.Error(t, err)
 		assert.Nil(t, inst)
 
 		storedOp, err := memoryStorage.Operations().GetDeprovisioningOperationByID(operation.ID)
-		assert.Equal(t, operation, *storedOp)
 		assert.NoError(t, err)
+		assert.Equal(t, operation, *storedOp)
 	})
 
 }
@@ -123,6 +124,7 @@ func fixDeprovisioningOperation() internal.DeprovisioningOperation {
 			ID:                     fixOperationID,
 			InstanceID:             fixInstanceID,
 			ProvisionerOperationID: fixProvisionerOperationID,
+			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{UserID: "test"}},
 			CreatedAt:              time.Now(),
 			UpdatedAt:              time.Now(),
 		},
