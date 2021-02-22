@@ -340,7 +340,6 @@ func fixInstance() internal.Instance {
 	instance := fixture.FixInstance(fixInstanceID)
 	instance.Parameters.ErsContext.SubAccountID = subAccountID
 	instance.Parameters.Parameters.Name = "nachtmaar-15"
-	instance.Parameters.Parameters.OptionalComponentsToInstall = []string{}
 	instance.Parameters.Parameters.Region = ptr.String("westeurope")
 
 	return instance

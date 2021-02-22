@@ -224,7 +224,6 @@ func fixProvisioningParameters(planID, kymaVersion string) internal.Provisioning
 	pp := fixture.FixProvisioningParameters("")
 	pp.PlanID = planID
 	pp.Parameters.KymaVersion = kymaVersion
-	pp.Parameters.OptionalComponentsToInstall = []string{}
 	pp.Parameters.AutoScalerMin = ptr.Integer(1)
 	pp.Parameters.AutoScalerMax = ptr.Integer(1)
 

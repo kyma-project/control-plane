@@ -193,6 +193,7 @@ func TestInitialisationStep(t *testing.T) {
 
 func fixOperationRuntimeStatus(planId string) internal.ProvisioningOperation {
 	provisioningOperation := fixture.FixProvisioningOperation(statusOperationID, statusInstanceID)
+	provisioningOperation.State = ""
 	provisioningOperation.ProvisionerOperationID = statusProvisionerOperationID
 	provisioningOperation.InstanceDetails.RuntimeID = runtimeID
 	provisioningOperation.ProvisioningParameters.PlanID = planId
@@ -203,6 +204,7 @@ func fixOperationRuntimeStatus(planId string) internal.ProvisioningOperation {
 
 func fixOperationRuntimeStatusWithProvider(planId string, provider internal.TrialCloudProvider) internal.ProvisioningOperation {
 	provisioningOperation := fixture.FixProvisioningOperation(statusOperationID, statusInstanceID)
+	provisioningOperation.State = ""
 	provisioningOperation.ProvisionerOperationID = statusProvisionerOperationID
 	provisioningOperation.ProvisioningParameters.PlanID = planId
 	provisioningOperation.ProvisioningParameters.ErsContext.GlobalAccountID = statusGlobalAccountID

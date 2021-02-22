@@ -60,23 +60,20 @@ func FixERSContext(id string) internal.ERSContext {
 }
 
 func FixProvisioningParametersDTO() internal.ProvisioningParametersDTO {
-	trialCloudProvider := internal.TrialCloudProvider("provider")
+	trialCloudProvider := internal.Azure
 	return internal.ProvisioningParametersDTO{
-		Name:                        "cluster-name",
-		TargetSecret:                ptr.String("TargetSecret"),
-		VolumeSizeGb:                ptr.Integer(50),
-		MachineType:                 ptr.String("MachineType"),
-		Region:                      ptr.String("Region"),
-		Purpose:                     ptr.String("Purpose"),
-		LicenceType:                 ptr.String("LicenceType"),
-		Zones:                       []string{"1", "2"},
-		AutoScalerMin:               ptr.Integer(3),
-		AutoScalerMax:               ptr.Integer(10),
-		MaxSurge:                    ptr.Integer(4),
-		MaxUnavailable:              ptr.Integer(1),
-		OptionalComponentsToInstall: []string{"component1", "component2"},
-		KymaVersion:                 kymaVersion,
-		Provider:                    &trialCloudProvider,
+		Name:           "cluster-name",
+		VolumeSizeGb:   ptr.Integer(50),
+		MachineType:    ptr.String("MachineType"),
+		Region:         ptr.String("Region"),
+		Purpose:        ptr.String("Purpose"),
+		LicenceType:    ptr.String("LicenceType"),
+		AutoScalerMin:  ptr.Integer(3),
+		AutoScalerMax:  ptr.Integer(10),
+		MaxSurge:       ptr.Integer(4),
+		MaxUnavailable: ptr.Integer(1),
+		KymaVersion:    kymaVersion,
+		Provider:       &trialCloudProvider,
 	}
 }
 
