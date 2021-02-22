@@ -31,7 +31,7 @@ func (s *ClsUnbindStep) Name() string {
 }
 
 func (s *ClsUnbindStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
-	if operation.Cls.BindingID == "" {
+	if !operation.Cls.Binding.Bound {
 		log.Infof("Cls Unbind step skipped, instance not bound")
 		return operation, 0, nil
 	}
@@ -46,14 +46,14 @@ func (s *ClsUnbindStep) Run(operation internal.DeprovisioningOperation, log logr
 	}
 
 	// Unbind
-	log.Infof("unbinding for CLS instance: %s started; binding: %s", operation.Cls.Instance.InstanceID, operation.Cls.BindingID)
-	_, err = smCli.Unbind(operation.Cls.Instance.InstanceKey(), operation.Cls.BindingID, true)
+	log.Infof("unbinding for CLS instance: %s started; binding: %s", operation.Cls.Instance.InstanceID, operation.Cls.Binding.BindingID)
+	_, err = smCli.Unbind(operation.Cls.Instance.InstanceKey(), operation.Cls.Binding.BindingID, true)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("unable to unbind, bindingId=%s", operation.Cls.BindingID))
+		return s.handleError(operation, err, log, fmt.Sprintf("unable to unbind, bindingId=%s", operation.Cls.Binding.BindingID))
 	}
 	log.Infof("unbinding for CLS instance: %s finished", operation.Cls.Instance.InstanceID)
-	operation.Cls.BindingID = ""
-	//operation.Cls.Binding.BindingID
+	operation.Cls.Binding.BindingID = ""
+	operation.Cls.Binding.Bound = false
 	operation.Cls.Overrides = ""
 
 	return s.operationManager.UpdateOperation(operation)
