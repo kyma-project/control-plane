@@ -52,7 +52,7 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 		{
 			ID:                   KymaServiceID,
 			Name:                 KymaServiceName,
-			Description:          "[EXPERIMENTAL] Service Class for Kyma Runtime",
+			Description:          b.cfg.LongDescription,
 			Bindable:             true,
 			InstancesRetrievable: true,
 			Tags: []string{
