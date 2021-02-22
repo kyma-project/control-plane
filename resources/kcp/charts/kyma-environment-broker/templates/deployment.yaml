@@ -55,17 +55,17 @@ spec:
             - name: APP_OPERATION_TIMEOUT
               value: "{{ .Values.broker.operationTimeout }}"
             - name: APP_BROKER_SERVICE_DISPLAY_NAME
-              value: "{{ .Values.brokerService.displayName }}"
+              value: "{{ .Values.services.kymaEnvironment.metadata.displayName }}"
             - name: APP_BROKER_SERVICE_IMAGE_URL
-              value: "{{ .Values.brokerService.imageUrl }}"
+              value: "{{ .Values.services.kymaEnvironment.metadata.imageUrl }}"
             - name: APP_BROKER_SERVICE_LONG_DESCRIPTION
-              value: "{{ .Values.brokerService.longDescription }}"
+              value: "{{ .Values.services.kymaEnvironment.metadata.longDescription }}"
             - name: APP_BROKER_SERVICE_PROVIDER_DISPLAY_NAME
-              value: "{{ .Values.brokerService.providerDisplayName }}"
+              value: "{{ .Values.services.kymaEnvironment.metadata.providerDisplayName }}"
             - name: APP_BROKER_SERVICE_DOCUMENTATION_URL
-              value: "{{ .Values.brokerService.documentationUrl }}"
+              value: "{{ .Values.services.kymaEnvironment.metadata.documentationUrl }}"
             - name: APP_BROKER_SERVICE_SUPPORT_URL
-              value: "{{ .Values.brokerService.supportUrl }}"
+              value: "{{ .Values.services.kymaEnvironment.metadata.supportUrl }}"
             - name: APP_PROVISIONING_URL
               value: "{{ .Values.provisioner.URL }}"
             - name: APP_PROVISIONING_TIMEOUT
@@ -319,6 +319,8 @@ spec:
               value: /config/additionalRuntimeComponents.yaml
             - name: APP_TRIAL_REGION_MAPPING_FILE_PATH
               value: /config/trialRegionMapping.yaml
+            - name: APP_CATALOG_FILE_PATH
+              value: /config/catalog.yaml
             - name: APP_GARDENER_PROJECT
               value: {{ .Values.gardener.project }}
             - name: APP_GARDENER_SHOOT_DOMAIN

@@ -26,12 +26,23 @@ type KymaEnvironmentBroker struct {
 
 // Config represents configuration for broker
 type Config struct {
-	Service
 	EnablePlans          EnablePlans `envconfig:"default=azure"`
 	OnlySingleTrialPerGA bool        `envconfig:"default=true"`
 }
 
+type ServicesConfig map[string]Service
+
+func (s ServicesConfig) DefaultPlansConfig() PlansConfig {
+	return s[KymaServiceName].Plans
+}
+
 type Service struct {
+	Description string
+	Metadata    ServiceMetadata
+	Plans       PlansConfig
+}
+
+type ServiceMetadata struct {
 	DisplayName         string
 	ImageUrl            string
 	LongDescription     string

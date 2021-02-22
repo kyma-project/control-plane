@@ -2,6 +2,7 @@ package broker
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
@@ -31,6 +32,16 @@ var PlanIDsMapping = map[string]string{
 	AzureLitePlanName: AzureLitePlanID,
 	GCPPlanName:       GCPPlanID,
 	TrialPlanName:     TrialPlanID,
+}
+
+type PlansConfig map[string]PlanData
+
+type PlanData struct {
+	Description string
+	Metadata    PlanMetadata
+}
+type PlanMetadata struct {
+	DisplayName string
 }
 
 type TrialCloudRegion string
@@ -68,96 +79,6 @@ func GCPRegions() []string {
 		"northamerica-northeast1", "southamerica-east1"}
 }
 
-type Type struct {
-	Type            string        `json:"type"`
-	Title           string        `json:"title,omitempty"`
-	Description     string        `json:"description,omitempty"`
-	Minimum         int           `json:"minimum,omitempty"`
-	Maximum         int           `json:"maximum,omitempty"`
-	MinLength       int           `json:"minLength,omitempty"`
-	MaxLength       int           `json:"maxLength,omitempty"`
-	Default         interface{}   `json:"default,omitempty"`
-	Example         interface{}   `json:"example,omitempty"`
-	Enum            []interface{} `json:"enum,omitempty"`
-	Items           []Type        `json:"items,omitempty"`
-	AdditionalItems *bool         `json:"additionalItems,omitempty"`
-	UniqueItems     *bool         `json:"uniqueItems,omitempty"`
-}
-
-type RootSchema struct {
-	Schema string `json:"$schema"`
-	Type
-	Properties interface{} `json:"properties"`
-	Required   []string    `json:"required"`
-
-	// Specified to true enables form view on website
-	ShowFormView bool `json:"_show_form_view"`
-	// Specifies in what order properties will be displayed on the form
-	ControlsOrder []string `json:"_controlsOrder"`
-}
-
-type ProvisioningProperties struct {
-	Name          Type  `json:"name"`
-	Region        *Type `json:"region,omitempty"`
-	MachineType   *Type `json:"machineType,omitempty"`
-	AutoScalerMin *Type `json:"autoScalerMin,omitempty"`
-	AutoScalerMax *Type `json:"autoScalerMax,omitempty"`
-}
-
-func NameProperty() Type {
-	return Type{
-		Type:      "string",
-		Title:     "Cluster Name",
-		MinLength: 1,
-	}
-}
-
-// NewProvisioningProperties creates a new properties for different plans
-// Note that the order of properties will be the same in the form on the website
-func NewProvisioningProperties(machineTypes []string, regions []string) ProvisioningProperties {
-	return ProvisioningProperties{
-		Name: NameProperty(),
-		Region: &Type{
-			Type: "string",
-			Enum: ToInterfaceSlice(regions),
-		},
-		MachineType: &Type{
-			Type: "string",
-			Enum: ToInterfaceSlice(machineTypes),
-		},
-		AutoScalerMin: &Type{
-			Type:        "integer",
-			Minimum:     2,
-			Default:     2,
-			Description: "Specifies the minimum number of virtual machines to create",
-		},
-		AutoScalerMax: &Type{
-			Type:        "integer",
-			Minimum:     2,
-			Maximum:     40,
-			Default:     10,
-			Description: "Specifies the maximum number of virtual machines to create",
-		},
-	}
-}
-
-func DefaultControlsOrder() []string {
-	return []string{"name", "region", "machineType", "autoScalerMin", "autoScalerMax"}
-}
-
-func NewSchema(properties ProvisioningProperties, controlsOrder []string) RootSchema {
-	return RootSchema{
-		Schema: "http://json-schema.org/draft-04/schema#",
-		Type: Type{
-			Type: "object",
-		},
-		Properties:    properties,
-		ShowFormView:  true,
-		Required:      []string{"name"},
-		ControlsOrder: controlsOrder,
-	}
-}
-
 func GCPSchema(machineTypes []string) []byte {
 	properties := NewProvisioningProperties(machineTypes, GCPRegions())
 	schema := NewSchema(properties, DefaultControlsOrder())
@@ -193,92 +114,104 @@ func TrialSchema() []byte {
 	return bytes
 }
 
-func ToInterfaceSlice(input []string) []interface{} {
-	interfaces := make([]interface{}, len(input))
-	for i, item := range input {
-		interfaces[i] = item
-	}
-	return interfaces
+type Plan struct {
+	PlanDefinition        domain.ServicePlan
+	provisioningRawSchema []byte
 }
 
 // plans is designed to hold plan defaulting logic
 // keep internal/hyperscaler/azure/config.go in sync with any changes to available zones
-var Plans = map[string]struct {
-	PlanDefinition        domain.ServicePlan
-	provisioningRawSchema []byte
-}{
-	GCPPlanID: {
-		PlanDefinition: domain.ServicePlan{
-			ID:          GCPPlanID,
-			Name:        GCPPlanName,
-			Description: "GCP",
-			Metadata: &domain.ServicePlanMetadata{
-				DisplayName: "GCP",
-			},
-			Schemas: &domain.ServiceSchemas{
-				Instance: domain.ServiceInstanceSchema{
-					Create: domain.Schema{
-						Parameters: make(map[string]interface{}),
+func Plans(plans PlansConfig) map[string]Plan {
+	return map[string]Plan{
+		GCPPlanID: {
+			PlanDefinition: domain.ServicePlan{
+				ID:          GCPPlanID,
+				Name:        GCPPlanName,
+				Description: defaultDescription(GCPPlanName, plans),
+				Metadata:    defaultMetadata(GCPPlanName, plans),
+				Schemas: &domain.ServiceSchemas{
+					Instance: domain.ServiceInstanceSchema{
+						Create: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
 					},
 				},
 			},
+			provisioningRawSchema: GCPSchema([]string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"}),
 		},
-		provisioningRawSchema: GCPSchema([]string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"}),
-	},
-	AzurePlanID: {
-		PlanDefinition: domain.ServicePlan{
-			ID:          AzurePlanID,
-			Name:        AzurePlanName,
-			Description: "Azure",
-			Metadata: &domain.ServicePlanMetadata{
-				DisplayName: "Azure",
-			},
-			Schemas: &domain.ServiceSchemas{
-				Instance: domain.ServiceInstanceSchema{
-					Create: domain.Schema{
-						Parameters: make(map[string]interface{}),
+		AzurePlanID: {
+			PlanDefinition: domain.ServicePlan{
+				ID:          AzurePlanID,
+				Name:        AzurePlanName,
+				Description: defaultDescription(AzurePlanName, plans),
+				Metadata:    defaultMetadata(AzurePlanName, plans),
+				Schemas: &domain.ServiceSchemas{
+					Instance: domain.ServiceInstanceSchema{
+						Create: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
 					},
 				},
 			},
+			provisioningRawSchema: AzureSchema([]string{"Standard_D8_v3"}),
 		},
-		provisioningRawSchema: AzureSchema([]string{"Standard_D8_v3"}),
-	},
-	AzureLitePlanID: {
-		PlanDefinition: domain.ServicePlan{
-			ID:          AzureLitePlanID,
-			Name:        AzureLitePlanName,
-			Description: "Azure Lite",
-			Metadata: &domain.ServicePlanMetadata{
-				DisplayName: "Azure Lite",
-			},
-			Schemas: &domain.ServiceSchemas{
-				Instance: domain.ServiceInstanceSchema{
-					Create: domain.Schema{
-						Parameters: make(map[string]interface{}),
+		AzureLitePlanID: {
+			PlanDefinition: domain.ServicePlan{
+				ID:          AzureLitePlanID,
+				Name:        AzureLitePlanName,
+				Description: defaultDescription(AzureLitePlanName, plans),
+				Metadata:    defaultMetadata(AzureLitePlanName, plans),
+				Schemas: &domain.ServiceSchemas{
+					Instance: domain.ServiceInstanceSchema{
+						Create: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
 					},
 				},
 			},
+			provisioningRawSchema: AzureSchema([]string{"Standard_D4_v3"}),
 		},
-		provisioningRawSchema: AzureSchema([]string{"Standard_D4_v3"}),
-	},
-	TrialPlanID: {
-		PlanDefinition: domain.ServicePlan{
-			ID:          TrialPlanID,
-			Name:        TrialPlanName,
-			Description: "Trial",
-			Metadata: &domain.ServicePlanMetadata{
-				DisplayName: "Trial",
-			},
-			Schemas: &domain.ServiceSchemas{
-				Instance: domain.ServiceInstanceSchema{
-					Create: domain.Schema{
-						Parameters: make(map[string]interface{}),
+		TrialPlanID: {
+			PlanDefinition: domain.ServicePlan{
+				ID:          TrialPlanID,
+				Name:        TrialPlanName,
+				Description: defaultDescription(TrialPlanName, plans),
+				Metadata:    defaultMetadata(TrialPlanName, plans),
+				Schemas: &domain.ServiceSchemas{
+					Instance: domain.ServiceInstanceSchema{
+						Create: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
 					},
 				},
 			},
+			provisioningRawSchema: TrialSchema(),
 		},
-		provisioningRawSchema: TrialSchema(),
-	},
+	}
+}
+
+func DefaultPlans(cfg ServicesConfig) map[string]Plan {
+	return Plans(cfg.DefaultPlansConfig())
+}
+
+func defaultDescription(planName string, plans PlansConfig) string {
+	plan, ok := plans[planName]
+	if !ok || len(plan.Description) == 0 {
+		return strings.ToTitle(planName)
+	}
+
+	return plan.Description
+}
+func defaultMetadata(planName string, plans PlansConfig) *domain.ServicePlanMetadata {
+	plan, ok := plans[planName]
+	if !ok || len(plan.Description) == 0 {
+		return &domain.ServicePlanMetadata{
+			DisplayName: strings.ToTitle(planName),
+		}
+	}
+	return &domain.ServicePlanMetadata{
+		DisplayName: plan.Metadata.DisplayName,
+	}
 }
 
 func IsTrialPlan(planID string) bool {

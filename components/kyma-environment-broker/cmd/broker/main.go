@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"sort"
 	"time"
+
+	"gopkg.in/yaml.v2"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
 
@@ -113,7 +116,8 @@ type Config struct {
 	DefaultRequestRegion                 string `envconfig:"default=cf-eu10"`
 	UpdateProcessingEnabled              bool   `envconfig:"default=false"`
 
-	Broker broker.Config
+	Broker          broker.Config
+	CatalogFilePath string
 
 	Avs avs.Config
 	LMS lms.Config
@@ -147,6 +151,13 @@ func main() {
 	var cfg Config
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	fatalOnError(err)
+
+	servicesConfig, err := getCatalogConfig(cfg.CatalogFilePath)
+	fatalOnError(err)
+	//fmt.Println(cfg.Broker.Services)
+	//kymaRuntimePlans := broker.Plans(cfg.Broker.Services.DefaultPlansConfig())
+	//fmt.Println(kymaRuntimePlans)
+	//fatalOnError(errors.New(""))
 
 	// create logger
 	logger := lager.NewLogger("kyma-env-broker")
@@ -454,15 +465,16 @@ func main() {
 	deprovisionQueue := process.NewQueue(deprovisionManager, logs)
 	deprovisionQueue.Run(ctx.Done(), workersAmount)
 
-	plansValidator, err := broker.NewPlansSchemaValidator()
-	fatalOnError(err)
-
 	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
+
+	defaultPlansConfig := cfg.Broker.Services.DefaultPlansConfig()
+	plansValidator, err := broker.NewPlansSchemaValidator(defaultPlansConfig)
+	fatalOnError(err)
 
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
-		broker.NewServices(cfg.Broker, logs),
-		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, plansValidator, cfg.EnableOnDemandVersion, logs),
+		broker.NewServices(cfg.Broker, servicesConfig, logs),
+		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, plansValidator, defaultPlansConfig, cfg.EnableOnDemandVersion, logs),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
 		broker.NewUpdate(db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, logs),
 		broker.NewGetInstance(db.Instances(), logs),
@@ -478,7 +490,7 @@ func main() {
 
 	// create info endpoints
 	respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)
-	runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), cfg.DefaultRequestRegion, respWriter)
+	runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), defaultPlansConfig, cfg.DefaultRequestRegion, respWriter)
 	router.Handle("/info/runtimes", runtimesInfoHandler)
 
 	// create metrics endpoint
@@ -491,7 +503,8 @@ func main() {
 	fatalOnError(err)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
-	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, cfg.MaxPaginationPage, logs)
+	orchestrationConverter := orchestrate.NewConverter(defaultPlansConfig)
+	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, cfg.MaxPaginationPage, orchestrationConverter, logs)
 
 	if !cfg.DisableProcessOperationsInProgress {
 		err = processOperationsInProgressByType(dbmodel.OperationTypeProvision, db.Operations(), provisionQueue, logs)
@@ -691,4 +704,19 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 	queue.Run(ctx.Done(), 1)
 
 	return queue, nil
+}
+
+func getCatalogConfig(path string) (broker.ServicesConfig, error) {
+	yamlFile, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, errors.Wrap(err, "while reading YAML file with managed components list")
+	}
+	var servicesConfig struct {
+		Services broker.ServicesConfig `json:"services"`
+	}
+	err = yaml.Unmarshal(yamlFile, &servicesConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "while unmarshaling YAML file with managed components list")
+	}
+	return servicesConfig.Services, nil
 }

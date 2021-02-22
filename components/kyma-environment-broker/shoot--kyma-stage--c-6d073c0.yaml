@@ -1,0 +1,27 @@
+
+---
+apiVersion: v1
+kind: Config
+current-context: shoot--kyma-stage--c-6d073c0
+clusters:
+- name: shoot--kyma-stage--c-6d073c0
+  cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUMyRENDQWNDZ0F3SUJBZ0lSQUljdWFYKzFMeFQ1bXVHeTV4a3hFd0F3RFFZSktvWklodmNOQVFFTEJRQXcKRlRFVE1CRUdBMVVFQXhNS2EzVmlaWEp1WlhSbGN6QWVGdzB5TURBMk1qUXdPVEkwTURSYUZ3MHpNREEyTWpRdwpPVEkwTURSYU1CVXhFekFSQmdOVkJBTVRDbXQxWW1WeWJtVjBaWE13Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBCkE0SUJEd0F3Z2dFS0FvSUJBUUN2MVptYXpkbmpDUTR3aWg3UWRQQXdYN1RFSHJFcUd6d1IyYjZSYVM3TXRlQVEKOEVNcWI2cEx2dUV4QnlhNEhWaC91NjFPY0pQQUQxb2tSNEJFUkZscUlkWFQxT256RWFDNWZIQ3hpclU5NFNVZwpHcmxrMWlVb3kzQW5OSkdhV1ZMTG0wQk95U1lvK3o5Nkd6elZ3WDZ6VGRnUjFUK3JXeTFtWVk1WW94UlNBc3V4CjRmTHJhUy9WenA3OUl2bWkvUXJtejNHVTg2WGVISGJtdDdEdHNaY09ZK09OeStJTG90SXR6RlcvQlYvRFBGZloKd01UdGNGQXRPWU5DRkR6S1RpaDFrUE5WR2Yyb0pla3NOeDBBRTE2WEFISGpLTXJWZDBmQThtNmFETFhkQ3JrNApQZWVUNmtJdzNpc1VhOEI4dUhVQXl5TWNBSE5SVVFOcURUNVNoYUJ4QWdNQkFBR2pJekFoTUE0R0ExVWREd0VCCi93UUVBd0lCcGpBUEJnTlZIUk1CQWY4RUJUQURBUUgvTUEwR0NTcUdTSWIzRFFFQkN3VUFBNElCQVFDVy8rcmUKSlVWOG9QM0ltdkpuWkJ2eTB5MjlTWFBEQVpDczAwZ3Y1TzltdkJ0ZGpqV2xwWXZMQmVxUEo5ZFlJVUt1Z0xscwozZDNzUTNZc2Q2VzMzVXZ2SzlaUC9icXMwam1vUWQzZGM4aFI0eTdqLzNIMTU1a254Vyt2aWJtZDBOZ2gyeThvCmFVWWlibmxrd3c2VkNJM2kwa0l6Z3d1M3FQQm5jendwejBUaXMxRE9DcGQ4UXBjR3lPV1BDM3B6NnNRQVZadCsKN3VaUVdrbkxTRStCeDBVaVAySmZxdVJLeVo3YUtoWjhYQTZ5UTZMdzBldFhUc25jQnZFTDlKN0lGaVpXWlltLwp2b1JXQmZIbFpPMjM2V3Q4VTdyVWRtaHRBczJHTnhWWUFCdlVTeXljdDZxVjdmRGdFMUxVYVlvcVdQcG82dXFJCjZubVBKdk00SFB2cllYelkKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+    server: https://api.c-6d073c0.kyma-stage.shoot.live.k8s-hana.ondemand.com
+contexts:
+- name: shoot--kyma-stage--c-6d073c0
+  context:
+    cluster: shoot--kyma-stage--c-6d073c0
+    user: shoot--kyma-stage--c-6d073c0
+users:
+- name: shoot--kyma-stage--c-6d073c0
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      args:
+      - oidc-login
+      - get-token
+      - "--oidc-issuer-url=https://kymatest.accounts400.ondemand.com"
+      - "--oidc-client-id=e69c0ad6-c283-4baf-9ad7-3714decef49d"
+      - "--oidc-client-secret=ep#gXsp_V^UBK(vR7<X3nW'oV3Cm8#!7F,"
+      command: kubectl

@@ -32,7 +32,7 @@ func TestNewPlansSchemaValidatorErrors(t *testing.T) {
 	for tN, tC := range tests {
 		t.Run(tN, func(t *testing.T) {
 			// given
-			validator, err := NewPlansSchemaValidator()
+			validator, err := NewPlansSchemaValidator(PlansConfig{})
 			require.NoError(t, err)
 
 			for _, id := range tC.againstPlans {
@@ -52,7 +52,7 @@ func TestNewPlansSchemaValidatorSuccess(t *testing.T) {
 	// given
 	validJSON := `{"name": "only-name-is-required"}`
 
-	validator, err := NewPlansSchemaValidator()
+	validator, err := NewPlansSchemaValidator(PlansConfig{})
 	require.NoError(t, err)
 
 	for _, id := range []string{GCPPlanID, AzurePlanID, TrialPlanID} {

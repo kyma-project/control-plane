@@ -33,14 +33,14 @@ type orchestrationHandler struct {
 }
 
 // NewOrchestrationStatusHandler exposes data about orchestrations and allows to manage them
-func NewOrchestrationStatusHandler(operations storage.Operations, orchestrations storage.Orchestrations, runtimeStates storage.RuntimeStates, defaultMaxPage int, log logrus.FieldLogger) *orchestrationHandler {
+func NewOrchestrationStatusHandler(operations storage.Operations, orchestrations storage.Orchestrations, runtimeStates storage.RuntimeStates, defaultMaxPage int, converter Converter, log logrus.FieldLogger) *orchestrationHandler {
 	return &orchestrationHandler{
 		operations:     operations,
 		orchestrations: orchestrations,
 		runtimeStates:  runtimeStates,
 		log:            log,
 		defaultMaxPage: defaultMaxPage,
-		converter:      Converter{},
+		converter:      converter,
 		canceler:       NewCanceler(orchestrations, log),
 	}
 }

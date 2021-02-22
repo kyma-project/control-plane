@@ -17,9 +17,17 @@ func TestServices_Services(t *testing.T) {
 		supportURL = "example.com/support"
 	)
 
-	cfg := broker.Config{EnablePlans: []string{"gcp", "azure"}}
-	cfg.DisplayName = name
-	cfg.SupportUrl = supportURL
+	cfg := broker.Config{
+		EnablePlans: []string{"gcp", "azure"},
+		Services: map[string]broker.Service{
+			broker.KymaServiceName: {
+				Metadata: broker.ServiceMetadata{
+					DisplayName: name,
+					SupportUrl:  supportURL,
+				},
+			},
+		},
+	}
 	servicesEndpoint := broker.NewServices(cfg, logrus.StandardLogger())
 
 	// when

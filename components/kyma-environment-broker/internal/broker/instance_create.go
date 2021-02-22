@@ -41,6 +41,7 @@ type ProvisionEndpoint struct {
 	builderFactory       PlanValidator
 	enabledPlanIDs       map[string]struct{}
 	onlySingleTrialPerGA bool
+	plansConfig          PlansConfig
 	plansSchemaValidator PlansSchemaValidator
 	kymaVerOnDemand      bool
 
@@ -57,6 +58,7 @@ func NewProvision(cfg Config,
 	queue Queue,
 	builderFactory PlanValidator,
 	validator PlansSchemaValidator,
+	plansConfig PlansConfig,
 	kvod bool,
 	log logrus.FieldLogger) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
@@ -74,6 +76,7 @@ func NewProvision(cfg Config,
 		log:                  log.WithField("service", "ProvisionEndpoint"),
 		enabledPlanIDs:       enabledPlanIDs,
 		onlySingleTrialPerGA: cfg.OnlySingleTrialPerGA,
+		plansConfig:          plansConfig,
 		kymaVerOnDemand:      kvod,
 		shootDomain:          gardenerConfig.ShootDomain,
 		shootProject:         gardenerConfig.Project,
@@ -146,7 +149,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		ServiceID:       provisioningParameters.ServiceID,
 		ServiceName:     KymaServiceName,
 		ServicePlanID:   provisioningParameters.PlanID,
-		ServicePlanName: Plans[provisioningParameters.PlanID].PlanDefinition.Name,
+		ServicePlanName: Plans(b.plansConfig)[provisioningParameters.PlanID].PlanDefinition.Name,
 		DashboardURL:    dashboardURL,
 		Parameters:      operation.ProvisioningParameters,
 	})

@@ -8,7 +8,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Converter struct{}
+type Converter struct {
+	PlansConfig broker.PlansConfig
+}
+
+func NewConverter(plansConfig broker.PlansConfig) Converter {
+	return Converter{PlansConfig: plansConfig}
+}
 
 func (*Converter) OrchestrationToDTO(o *internal.Orchestration, stats map[string]int) (*orchestration.StatusResponse, error) {
 	return &orchestration.StatusResponse{
@@ -41,7 +47,7 @@ func (c *Converter) OrchestrationListToDTO(orchestrations []internal.Orchestrati
 }
 
 func (c *Converter) UpgradeKymaOperationToDTO(op internal.UpgradeKymaOperation) (orchestration.OperationResponse, error) {
-	plan, ok := broker.Plans[op.ProvisioningParameters.PlanID]
+	plan, ok := broker.Plans(c.PlansConfig)[op.ProvisioningParameters.PlanID]
 	if !ok {
 		return orchestration.OperationResponse{}, errors.Errorf("plan with ID %s not exist in the broker's plans definitions", op.ProvisioningParameters.PlanID)
 	}
