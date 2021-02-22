@@ -109,7 +109,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 machineType: "n1-standard-4"
                 region: "europe-west4"
                 provider: "gcp"
-                purpose: "testing" # possible values: "development", "evaluation", "production", "testing"; default value: "evaluation"
+                purpose: "testing" # Possible values: "development", "evaluation", "production", "testing"; default value: "evaluation"
                 targetSecret: "{GARDENER_GCP_SECRET_NAME}"
                 workerCidr: "10.250.0.0/19"
                 autoScalerMin: 2
@@ -121,6 +121,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
             }
             kymaConfig: {
               version: "1.12.0"
+              profile: "Evaluation" # Optional resources profile; possible values: "Evaluation", "Production"
               components: [
                 { component: "compass-runtime-agent", namespace: "compass-system" }
                 {
@@ -133,6 +134,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                     }
                   ]
                   sourceURL: "{CUSTOM_COMPONENT_SOURCE_URL}"
+                  conflictStrategy: "Merge" # Defines merging strategy if conflicts occur for component overrides; possible values: "Merge", "Replace"; default value: "Merge"
                 }
               ]
               configuration: [
@@ -142,6 +144,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                   secret: true|false # Specifies if the property is confidential
                 }
               ]
+              conflictStrategy: "Merge" # Defines merging strategy if conflicts occur for global overrides; possible values: "Merge", "Replace"; default value: "Merge"
             }
           }
         ) {
@@ -213,6 +216,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
             }
             kymaConfig: {
               version: "1.12.0"
+              profile: "Evaluation" # Optional resources profile; possible values: "Evaluation", "Production"
               components: [
                 { component: "compass-runtime-agent", namespace: "compass-system" }
                 {
@@ -225,6 +229,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                     }
                   ]
                   sourceURL: "{CUSTOM_COMPONENT_SOURCE_URL}"
+                  conflictStrategy: "Merge" # Defines merging strategy if conflicts occur for component overrides; possible values: "Merge", "Replace"; default value: "Merge"
                 }
               ]
               configuration: [
@@ -234,6 +239,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                   secret: true|false # Specifies if the property is confidential
                 }
               ]
+              conflictStrategy: "Merge" # Defines merging strategy if conflicts occur for global overrides; possible values: "Merge", "Replace"; default value: "Merge"
             }
           }
         ) {
@@ -312,6 +318,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
             }
             kymaConfig: {
               version: "1.12.0"
+              profile: "Evaluation" # Optional resources profile; possible values: "Evaluation", "Production"
               components: [
                 { component: "compass-runtime-agent", namespace: "compass-system" }
                 {
@@ -324,6 +331,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                     }
                   ]
                   sourceURL: "{CUSTOM_COMPONENT_SOURCE_URL}"
+                  conflictStrategy: "Merge" # Defines merging strategy if conflicts occur for component overrides; possible values: "Merge", "Replace"; default value: "Merge"
                 }
               ]
               configuration: [
@@ -333,6 +341,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                   secret: true|false # Specifies if the property is confidential
                 }
               ]
+              conflictStrategy: "Merge" # Defines merging strategy if conflicts occur for global overrides; possible values: "Merge", "Replace"; default value: "Merge"
             }
           }
         ) {
