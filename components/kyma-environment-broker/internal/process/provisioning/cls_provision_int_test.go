@@ -93,7 +93,7 @@ func TestClsProvisionSteps(t *testing.T) {
 	//fmt.Printf(">>> second provisioning %#v\n", operation.Cls)
 	//require.NoError(t, err)
 	//require.Zero(t, retry)
-	operation.Cls.Instance.InstanceID = "1bb94327-5909-409e-8d6a-6e9e7cbe2cac"
+
 	operation.Cls.Instance.ProvisioningTriggered = true
 
 	operation, retry, err = bindingStep.Run(operation, log)
