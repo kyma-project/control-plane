@@ -54,7 +54,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				Name:                              util.StringPtr("verylon"),
+				Name:                              "verylon",
 				KubernetesVersion:                 "version",
 				VolumeSizeGb:                      util.IntPtr(1024),
 				MachineType:                       "n1-standard-1",
@@ -122,7 +122,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			},
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: &gqlschema.GardenerConfigInput{
-					Name:                              util.StringPtr("verylon"),
+					Name:                              "verylon",
 					KubernetesVersion:                 "version",
 					VolumeSizeGb:                      util.IntPtr(1024),
 					MachineType:                       "n1-standard-1",
@@ -219,7 +219,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				Name:                              util.StringPtr("verylon"),
+				Name:                              "verylon",
 				KubernetesVersion:                 "version",
 				VolumeSizeGb:                      util.IntPtr(1024),
 				MachineType:                       "n1-standard-1",
@@ -293,7 +293,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				Name:                              util.StringPtr("verylon"),
+				Name:                              "verylon",
 				KubernetesVersion:                 "version",
 				MachineType:                       "large.1n",
 				Region:                            "region",
