@@ -107,18 +107,6 @@ func newTestProvisioningConfigs() []testCase {
 				}},
 			upgradeShootInput: NewUpgradeShootInput(),
 		},
-		{name: "OpenStack on Gardener",
-			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct OpenStack configuration for Gardener",
-			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb8",
-			auditLogTenant: "e7382275-e835-4549-94e1-3b1101e3a1fa",
-			provisioningInput: provisioningInput{
-				config: openStackGardenerClusterConfigInput(),
-				runtimeInput: gqlschema.RuntimeInput{
-					Name:        "test runtime 6",
-					Description: new(string),
-				}},
-			upgradeShootInput: NewUpgradeOpenStackShootInput(),
-		},
 		{name: "AWS on Gardener",
 			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct AWS configuration for Gardener",
 			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb5",
@@ -142,6 +130,18 @@ func newTestProvisioningConfigs() []testCase {
 					Description: new(string),
 				}},
 			upgradeShootInput: NewUpgradeShootInput(),
+		},
+		{name: "OpenStack on Gardener",
+			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct OpenStack configuration for Gardener",
+			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb8",
+			auditLogTenant: "e7382275-e835-4549-94e1-3b1101e3a1fa",
+			provisioningInput: provisioningInput{
+				config: openStackGardenerClusterConfigInput(),
+				runtimeInput: gqlschema.RuntimeInput{
+					Name:        "test runtime 6",
+					Description: new(string),
+				}},
+			upgradeShootInput: NewUpgradeOpenStackShootInput(),
 		},
 	}
 }
