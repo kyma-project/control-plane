@@ -12,16 +12,19 @@ require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.4.0
 	github.com/vrischmann/envconfig v1.2.0
+	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
-	k8s.io/api v0.18.6
-	k8s.io/apimachinery v0.18.6
-	k8s.io/client-go v0.18.6
+	k8s.io/api v0.18.15
+	k8s.io/apimachinery v0.18.15
+	k8s.io/client-go v0.18.15
 	k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89 // indirect
 )
 
 replace (
-	k8s.io/apimachinery => k8s.io/apimachinery v0.18.6
-	k8s.io/client-go => k8s.io/client-go v0.18.6
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	golang.org/x/text => golang.org/x/text v0.3.3
+
+	k8s.io/apimachinery => k8s.io/apimachinery v0.18.15
+	k8s.io/client-go => k8s.io/client-go v0.18.15
 )

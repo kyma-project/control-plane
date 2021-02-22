@@ -148,6 +148,8 @@ The command has the following modes:
   - When specifying an orchestration ID and ` + "`operations` or `ops`" + ` as arguments. In this mode, the command displays the Runtime operations for the given orchestration.
   - When specifying an orchestration ID and ` + "`cancel`" + ` as arguments. In this mode, the command cancels the orchestration and all pending Runtime operations.`,
 		Example: `  kcp orchestrations --state inprogress                                   Display all orchestrations which are in progress.
+  kcp orchestration -o custom="Orchestration ID:{.OrchestrationID},STATE:{.State},CREATED AT:{.createdAt}"
+                                                                          Display all orchestations with specific custom fields.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                  Display details about a specific orchestration.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified Runtime operation within the orchestration.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 operations       Display the operations of the given orchestration.
@@ -261,18 +263,29 @@ func (cmd *OrchestrationCommand) showOrchestrations() error {
 		return errors.Wrap(err, "while listing orchestrations")
 	}
 
-	switch cmd.output {
-	case tableOutput:
+	switch {
+	case cmd.output == tableOutput:
 		tp, err := printer.NewTablePrinter(orchestrationColumns, false)
 		if err != nil {
 			return err
 		}
 		return tp.PrintObj(srl.Data)
-	case jsonOutput:
+	case cmd.output == jsonOutput:
 		jp := printer.NewJSONPrinter("  ")
 		jp.PrintObj(srl)
-	}
+	case strings.HasPrefix(cmd.output, customOutput):
+		_, templateFile := printer.ParseOutputToTemplateTypeAndElement(cmd.output)
+		column, err := printer.ParseColumnToHeaderAndFieldSpec(templateFile)
+		if err != nil {
+			return err
+		}
 
+		ccp, err := printer.NewTablePrinter(column, false)
+		if err != nil {
+			return err
+		}
+		return ccp.PrintObj(srl.Data)
+	}
 	return nil
 }
 

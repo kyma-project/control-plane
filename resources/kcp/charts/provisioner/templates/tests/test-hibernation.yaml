@@ -2,7 +2,7 @@
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: provisioner-hibernation-tests
+  name: {{ template "fullname" . }}-hibernation-tests
   labels:
     app: {{ .Chart.Name }}-tests
     release: {{ .Release.Name }}

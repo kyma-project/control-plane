@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -1149,114 +1149,46 @@ func fixInstance(testData instanceData) *internal.Instance {
 		suid = testData.val
 	}
 
-	return &internal.Instance{
-		InstanceID:      testData.val,
-		RuntimeID:       testData.val,
-		GlobalAccountID: gaid,
-		SubAccountID:    suid,
-		ServiceID:       testData.val,
-		ServiceName:     testData.val,
-		ServicePlanID:   testData.val,
-		ServicePlanName: testData.val,
-		DashboardURL:    fmt.Sprintf("https://console.%s.kyma.local", testData.val),
-		ProviderRegion:  testData.val,
-		Parameters: internal.ProvisioningParameters{
-			ErsContext: internal.ERSContext{
-				SubAccountID:    suid,
-				GlobalAccountID: gaid,
-				Active:          ptr.Bool(true),
-				ServiceManager: &internal.ServiceManagerEntryDTO{
-					Credentials: internal.ServiceManagerCredentials{
-						BasicAuth: internal.ServiceManagerBasicAuth{
-							Username: "u",
-							Password: "p",
-						},
-					},
-					URL: "http://url",
-				},
-			},
-			PlatformRegion: "eu",
-		},
-	}
+	instance := fixture.FixInstance(testData.val)
+	instance.GlobalAccountID = gaid
+	instance.SubAccountID = suid
+	instance.ServiceID = testData.val
+	instance.ServiceName = testData.val
+	instance.ServicePlanID = testData.val
+	instance.ServicePlanName = testData.val
+	instance.DashboardURL = fmt.Sprintf("https://console.%s.kyma.local", testData.val)
+	instance.ProviderRegion = testData.val
+	instance.Parameters.ErsContext.SubAccountID = suid
+	instance.Parameters.ErsContext.GlobalAccountID = gaid
+
+	return &instance
 }
 
 func fixProvisionOperation(testData string) internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: fixSucceededOperation(testData),
-	}
+	operationId := fmt.Sprintf("%s-%d", testData, rand.Int())
+	return fixture.FixProvisioningOperation(operationId, testData)
+
 }
 func fixDeprovisionOperation(testData string) internal.DeprovisioningOperation {
-	return internal.DeprovisioningOperation{
-		Operation: fixSucceededOperation(testData),
-	}
-}
-
-func fixSucceededOperation(testData string) internal.Operation {
-	return internal.Operation{
-		ID:                     fmt.Sprintf("%s-%d", testData, rand.Int()),
-		CreatedAt:              fixTime().Add(24 * time.Hour),
-		UpdatedAt:              fixTime().Add(48 * time.Hour),
-		InstanceID:             testData,
-		ProvisionerOperationID: testData,
-		State:                  domain.Succeeded,
-		Description:            testData,
-		ProvisioningParameters: internal.ProvisioningParameters{},
-	}
-}
-
-func fixTime() time.Time {
-	return time.Date(2020, 04, 21, 0, 0, 23, 42, time.UTC)
+	operationId := fmt.Sprintf("%s-%d", testData, rand.Int())
+	return fixture.FixDeprovisioningOperation(operationId, testData)
 }
 
 func fixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
-	return orchestration.RuntimeOperation{
-		ID: operationId,
-		Runtime: orchestration.Runtime{
-			ShootName:              "shoot-stage",
-			MaintenanceWindowBegin: time.Now().Truncate(time.Millisecond).Add(time.Hour),
-			MaintenanceWindowEnd:   time.Now().Truncate(time.Millisecond).Add(time.Minute).Add(time.Hour),
-			RuntimeID:              "runtime-id",
-			GlobalAccountID:        "global-account-if",
-			SubAccountID:           "subaccount-id",
-		},
-		DryRun: false,
-	}
+	runtime := fixture.FixRuntime("runtime-id")
+	runtimeOperation := fixture.FixRuntimeOperation(operationId)
+	runtimeOperation.Runtime = runtime
+
+	return runtimeOperation
 }
 
 func fixProvisioningParameters() internal.ProvisioningParameters {
-	active := true
-	return internal.ProvisioningParameters{
-		PlanID:    broker.TrialPlanID,
-		ServiceID: broker.KymaServiceID,
-		ErsContext: internal.ERSContext{
-			TenantID:        "test",
-			SubAccountID:    "test",
-			GlobalAccountID: "test",
-			ServiceManager: &internal.ServiceManagerEntryDTO{
-				Credentials: internal.ServiceManagerCredentials{
-					BasicAuth: internal.ServiceManagerBasicAuth{
-						Username: "username",
-						Password: "password",
-					}},
-			},
-			Active: &active,
-		},
-		Parameters: internal.ProvisioningParametersDTO{
-			Name:        "test",
-			KymaVersion: "0.0.0",
-		},
-		PlatformRegion: "region",
-	}
+	pp := fixture.FixProvisioningParameters("test")
+	pp.PlanID = broker.TrialPlanID
+	pp.ServiceID = broker.KymaServiceID
+	return pp
 }
 
 func fixInstanceDetails() internal.InstanceDetails {
-	return internal.InstanceDetails{
-		Lms: internal.LMS{
-			TenantID: "tenant-id",
-		},
-		SubAccountID: "test",
-		RuntimeID:    "test",
-		ShootName:    "test",
-		ShootDomain:  "test",
-	}
+	return fixture.FixInstanceDetails(fixInstanceId)
 }
