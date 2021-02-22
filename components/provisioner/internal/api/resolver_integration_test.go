@@ -114,7 +114,7 @@ func newTestProvisioningConfigs() []testCase {
 			provisioningInput: provisioningInput{
 				config: openStackGardenerClusterConfigInput(),
 				runtimeInput: gqlschema.RuntimeInput{
-					Name:        "test runtime 5",
+					Name:        "test runtime 6",
 					Description: new(string),
 				}},
 			upgradeShootInput: NewUpgradeOpenStackShootInput(),
