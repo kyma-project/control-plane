@@ -1,8 +1,9 @@
 package deprovisioning
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"testing"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 
 	"github.com/stretchr/testify/require"
 

@@ -2,8 +2,9 @@ package deprovisioning
 
 import (
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -20,7 +21,7 @@ type ClsUnbindStep struct {
 func NewClsUnbindStep(config *cls.Config, os storage.Operations) *ClsUnbindStep {
 	return &ClsUnbindStep{
 		operationManager: process.NewDeprovisionOperationManager(os),
-		config: config,
+		config:           config,
 	}
 }
 
