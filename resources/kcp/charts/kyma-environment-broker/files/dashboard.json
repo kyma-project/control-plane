@@ -106,9 +106,10 @@
           ],
           "fields": "",
           "values": false
-        }
+        },
+        "textMode": "auto"
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "targets": [
         {
           "expr": "SUM(compass_keb_instances_total{service=\"kcp-kyma-environment-broker\"})",
@@ -171,7 +172,7 @@
         },
         "showUnfilled": true
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "targets": [
         {
           "expr": "topk(16, compass_keb_global_account_id_instances_total{service=\"kcp-kyma-environment-broker\"})",
@@ -250,9 +251,10 @@
           ],
           "fields": "",
           "values": false
-        }
+        },
+        "textMode": "auto"
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "targets": [
         {
           "expr": "count(compass_keb_global_account_id_instances_total{service=\"kcp-kyma-environment-broker\"})",
@@ -339,9 +341,10 @@
           ],
           "fields": "",
           "values": false
-        }
+        },
+        "textMode": "auto"
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -457,9 +460,10 @@
           ],
           "fields": "",
           "values": false
-        }
+        },
+        "textMode": "auto"
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -516,6 +520,7 @@
       "fieldConfig": {
         "defaults": {
           "custom": {},
+          "links": [],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -560,10 +565,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.0.1",
+      "pluginVersion": "7.3.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -641,7 +646,8 @@
       "decimals": 2,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -672,10 +678,10 @@
       "linewidth": 2,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "6.7.3",
+      "pluginVersion": "7.3.3",
       "pointradius": 1,
       "points": true,
       "renderer": "flot",
@@ -757,7 +763,8 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -784,9 +791,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -853,7 +861,8 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -880,9 +889,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -949,7 +959,8 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -976,9 +987,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1042,6 +1054,7 @@
       "fieldConfig": {
         "defaults": {
           "custom": {},
+          "decimals": 2,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1079,7 +1092,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "targets": [
         {
           "expr": "sum(increase(compass_keb_operations_azure_provisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_azure_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_azure_provisioning_failed_total[1h]))) > 0) *100",
@@ -1104,6 +1117,68 @@
       "fieldConfig": {
         "defaults": {
           "custom": {},
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 18,
+        "x": 6,
+        "y": 25
+      },
+      "id": 108,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.3.3",
+      "targets": [
+        {
+          "expr": "sum(increase(compass_keb_operations_azure_provisioning_succeeded_total[1h])) / (sum((increase(compass_keb_operations_azure_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_azure_provisioning_failed_total[1h]))) > 0) *100",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(increase(compass_keb_operations_azure_deprovisioning_succeeded_total[1h])) / (sum((increase(compass_keb_operations_azure_deprovisioning_succeeded_total[1h]) + increase(compass_keb_operations_azure_deprovisioning_failed_total[1h]))) >0) *100",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[azure] provisioning/deprovisioning success rate",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1113,8 +1188,8 @@
                 "value": null
               },
               {
-                "color": "dark-red",
-                "value": 60
+                "color": "red",
+                "value": 80
               }
             ]
           },
@@ -1125,8 +1200,8 @@
       "gridPos": {
         "h": 4,
         "w": 6,
-        "x": 6,
-        "y": 25
+        "x": 0,
+        "y": 29
       },
       "id": 75,
       "options": {
@@ -1141,7 +1216,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "targets": [
         {
           "expr": "min(compass_keb_provisioning_duration_minutes_sum{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"})",
@@ -1175,12 +1250,8 @@
                 "value": null
               },
               {
-                "color": "dark-green",
-                "value": 15
-              },
-              {
-                "color": "dark-red",
-                "value": 35
+                "color": "red",
+                "value": 80
               }
             ]
           },
@@ -1190,9 +1261,9 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 12,
-        "y": 25
+        "w": 9,
+        "x": 6,
+        "y": 29
       },
       "id": 77,
       "options": {
@@ -1207,7 +1278,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "targets": [
         {
           "expr": "avg(compass_keb_provisioning_duration_minutes_sum{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"})",
@@ -1241,8 +1312,8 @@
                 "value": null
               },
               {
-                "color": "dark-red",
-                "value": 60
+                "color": "red",
+                "value": 80
               }
             ]
           },
@@ -1252,9 +1323,9 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 25
+        "w": 9,
+        "x": 15,
+        "y": 29
       },
       "id": 79,
       "options": {
@@ -1269,7 +1340,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "targets": [
         {
           "expr": "max(compass_keb_provisioning_duration_minutes_sum{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"})",
@@ -1297,7 +1368,8 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -1307,7 +1379,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 29
+        "y": 33
       },
       "hiddenSeries": false,
       "id": 91,
@@ -1324,9 +1396,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1393,7 +1466,8 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -1403,7 +1477,7 @@
         "h": 4,
         "w": 9,
         "x": 6,
-        "y": 29
+        "y": 33
       },
       "hiddenSeries": false,
       "id": 94,
@@ -1420,9 +1494,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1489,7 +1564,8 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -1499,7 +1575,7 @@
         "h": 4,
         "w": 9,
         "x": 15,
-        "y": 29
+        "y": 33
       },
       "hiddenSeries": false,
       "id": 95,
@@ -1516,9 +1592,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1582,6 +1659,7 @@
       "fieldConfig": {
         "defaults": {
           "custom": {},
+          "decimals": 2,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1604,7 +1682,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 33
+        "y": 37
       },
       "id": 96,
       "options": {
@@ -1619,7 +1697,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "targets": [
         {
           "expr": "sum(increase(compass_keb_operations_trial_provisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_trial_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_trial_provisioning_failed_total[1h]))) > 0) *100",
@@ -1644,6 +1722,68 @@
       "fieldConfig": {
         "defaults": {
           "custom": {},
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 18,
+        "x": 6,
+        "y": 37
+      },
+      "id": 109,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.3.3",
+      "targets": [
+        {
+          "expr": "sum(increase(compass_keb_operations_trial_provisioning_succeeded_total[1h])) / (sum((increase(compass_keb_operations_trial_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_trial_provisioning_failed_total[1h]))) > 0) *100",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(increase(compass_keb_operations_trial_deprovisioning_succeeded_total[1h])) / (sum((increase(compass_keb_operations_trial_deprovisioning_succeeded_total[1h]) + increase(compass_keb_operations_trial_deprovisioning_failed_total[1h]))) > 0) *100",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[azure-trial] provisioning/deprovisioning success rate",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1653,8 +1793,8 @@
                 "value": null
               },
               {
-                "color": "dark-red",
-                "value": 60
+                "color": "red",
+                "value": 80
               }
             ]
           },
@@ -1665,8 +1805,8 @@
       "gridPos": {
         "h": 4,
         "w": 6,
-        "x": 6,
-        "y": 33
+        "x": 0,
+        "y": 41
       },
       "id": 97,
       "options": {
@@ -1681,7 +1821,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "targets": [
         {
           "expr": "min(compass_keb_provisioning_duration_minutes_sum{plan_id=\"7d55d31d-35ae-4438-bf13-6ffdfa107d9f\"})",
@@ -1715,12 +1855,8 @@
                 "value": null
               },
               {
-                "color": "dark-green",
-                "value": 15
-              },
-              {
-                "color": "dark-red",
-                "value": 25
+                "color": "red",
+                "value": 80
               }
             ]
           },
@@ -1730,9 +1866,9 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 12,
-        "y": 33
+        "w": 9,
+        "x": 6,
+        "y": 41
       },
       "id": 98,
       "options": {
@@ -1747,7 +1883,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "targets": [
         {
           "expr": "avg(compass_keb_provisioning_duration_minutes_sum{plan_id=\"7d55d31d-35ae-4438-bf13-6ffdfa107d9f\"})",
@@ -1781,8 +1917,8 @@
                 "value": null
               },
               {
-                "color": "dark-red",
-                "value": 45
+                "color": "red",
+                "value": 80
               }
             ]
           },
@@ -1792,9 +1928,9 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 33
+        "w": 9,
+        "x": 15,
+        "y": 41
       },
       "id": 99,
       "options": {
@@ -1809,7 +1945,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "targets": [
         {
           "expr": "max(compass_keb_provisioning_duration_minutes_sum{plan_id=\"7d55d31d-35ae-4438-bf13-6ffdfa107d9f\"})",
@@ -1837,7 +1973,8 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -1847,7 +1984,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 37
+        "y": 45
       },
       "hiddenSeries": false,
       "id": 100,
@@ -1864,9 +2001,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1933,7 +2071,8 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -1943,7 +2082,7 @@
         "h": 4,
         "w": 9,
         "x": 6,
-        "y": 37
+        "y": 45
       },
       "hiddenSeries": false,
       "id": 101,
@@ -1960,9 +2099,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2029,7 +2169,8 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -2039,7 +2180,7 @@
         "h": 4,
         "w": 9,
         "x": 15,
-        "y": 37
+        "y": 45
       },
       "hiddenSeries": false,
       "id": 102,
@@ -2056,9 +2197,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2122,6 +2264,7 @@
       "fieldConfig": {
         "defaults": {
           "custom": {},
+          "decimals": 2,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -2144,7 +2287,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 41
+        "y": 49
       },
       "id": 103,
       "options": {
@@ -2159,7 +2302,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "targets": [
         {
           "expr": " sum(increase(compass_keb_operations_azure_lite_provisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_azure_lite_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_azure_lite_provisioning_failed_total[1h]))+0.0000001) > 0) *100",
@@ -2184,6 +2327,68 @@
       "fieldConfig": {
         "defaults": {
           "custom": {},
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 18,
+        "x": 6,
+        "y": 49
+      },
+      "id": 110,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "7.3.3",
+      "targets": [
+        {
+          "expr": " sum(increase(compass_keb_operations_azure_lite_provisioning_succeeded_total[15d])) / (sum((increase(compass_keb_operations_azure_lite_provisioning_succeeded_total[15d]) + increase(compass_keb_operations_azure_lite_provisioning_failed_total[15d]))+0.0000001) > 0) *100",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(increase(compass_keb_operations_azure_lite_deprovisioning_succeeded_total[15d])) / (sum((increase(compass_keb_operations_azure_lite_deprovisioning_succeeded_total[15d]) + increase(compass_keb_operations_azure_lite_deprovisioning_failed_total[15d]))+0.0000001) > 0) *100",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[azure-lite] provisioning/deprovisioning success rate",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -2193,8 +2398,8 @@
                 "value": null
               },
               {
-                "color": "dark-red",
-                "value": 60
+                "color": "red",
+                "value": 80
               }
             ]
           },
@@ -2205,8 +2410,8 @@
       "gridPos": {
         "h": 4,
         "w": 6,
-        "x": 6,
-        "y": 41
+        "x": 0,
+        "y": 53
       },
       "id": 104,
       "options": {
@@ -2221,7 +2426,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "targets": [
         {
           "expr": "min(compass_keb_provisioning_duration_minutes_sum{plan_id=\"8cb22518-aa26-44c5-91a0-e669ec9bf443\"})",
@@ -2266,9 +2471,9 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 12,
-        "y": 41
+        "w": 9,
+        "x": 6,
+        "y": 53
       },
       "id": 105,
       "options": {
@@ -2283,7 +2488,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "targets": [
         {
           "expr": "avg(compass_keb_provisioning_duration_minutes_sum{plan_id=\"8cb22518-aa26-44c5-91a0-e669ec9bf443\"})",
@@ -2328,9 +2533,9 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 41
+        "w": 9,
+        "x": 15,
+        "y": 53
       },
       "id": 106,
       "options": {
@@ -2345,7 +2550,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "7.0.6",
+      "pluginVersion": "7.3.3",
       "targets": [
         {
           "expr": "max(compass_keb_provisioning_duration_minutes_sum{plan_id=\"8cb22518-aa26-44c5-91a0-e669ec9bf443\"})",
@@ -2372,7 +2577,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 45
+        "y": 57
       },
       "id": 42,
       "panels": [],
@@ -2387,7 +2592,8 @@
       "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -2397,7 +2603,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 46
+        "y": 58
       },
       "hiddenSeries": false,
       "id": 16,
@@ -2415,10 +2621,11 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2486,7 +2693,8 @@
       "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -2496,7 +2704,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 46
+        "y": 58
       },
       "hiddenSeries": false,
       "id": 17,
@@ -2514,10 +2722,11 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2584,7 +2793,8 @@
       "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -2594,7 +2804,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 46
+        "y": 58
       },
       "hiddenSeries": false,
       "id": 18,
@@ -2612,10 +2822,11 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2684,7 +2895,8 @@
       "error": false,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -2695,7 +2907,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 53
+        "y": 65
       },
       "hiddenSeries": false,
       "id": 22,
@@ -2714,10 +2926,11 @@
       "links": [],
       "nullPointMode": "connected",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2829,7 +3042,8 @@
       "error": false,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -2840,7 +3054,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 53
+        "y": 65
       },
       "hiddenSeries": false,
       "id": 24,
@@ -2859,10 +3073,11 @@
       "links": [],
       "nullPointMode": "connected",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2932,7 +3147,8 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -2942,7 +3158,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 53
+        "y": 65
       },
       "hiddenSeries": false,
       "id": 52,
@@ -2959,9 +3175,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -3040,7 +3257,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 60
+        "y": 72
       },
       "id": 38,
       "panels": [],
@@ -3057,7 +3274,8 @@
       "error": false,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -3071,7 +3289,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 61
+        "y": 73
       },
       "hiddenSeries": false,
       "id": 10,
@@ -3094,10 +3312,11 @@
       "links": [],
       "nullPointMode": "connected",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -3188,7 +3407,8 @@
       "error": false,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -3202,7 +3422,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 61
+        "y": 73
       },
       "hiddenSeries": false,
       "id": 8,
@@ -3227,10 +3447,11 @@
       "links": [],
       "nullPointMode": "connected",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -3322,7 +3543,8 @@
       "error": false,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "links": []
         },
         "overrides": []
       },
@@ -3336,7 +3558,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 68
+        "y": 80
       },
       "hiddenSeries": false,
       "id": 12,
@@ -3359,10 +3581,11 @@
       "links": [],
       "nullPointMode": "connected",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.3",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -3417,7 +3640,7 @@
     }
   ],
   "refresh": "10s",
-  "schemaVersion": 25,
+  "schemaVersion": 26,
   "style": "dark",
   "tags": [
     "kyma-environment-broker",
@@ -3456,5 +3679,5 @@
   "timezone": "",
   "title": "KCP / Kyma Environment Broker",
   "uid": "_MIdIJiZh",
-  "version": 5
+  "version": 6
 }

@@ -10,7 +10,7 @@
   version = "v2.0.0"
 
 [[projects]]
-  digest = "1:6d8b58f26e8e82ca810e80a7edba6caf50d806a7c299b6bb91a7c3c588e6d866"
+  digest = "1:17551b2e578c6b1dfb3757bbb3b4b948a8adecd55e5f53ed7ae12a7525da61d8"
   name = "github.com/99designs/gqlgen"
   packages = [
     "complexity",
@@ -231,7 +231,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9e3eba1f5b92adfcea263393025998b8ce5d715a375ea56deb70654337ac0da0"
+  digest = "1:b384160a40d346cdbdac0f0f674574078f2dae21bb36ce2f36d96f3157b72593"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -309,7 +309,7 @@
   version = "v1.4.9"
 
 [[projects]]
-  digest = "1:e02805fa1257a13418c3b92eed1f77100171ab98febb79a9b6515d88ee594f09"
+  digest = "1:9609f9d9d8829be52867a2f3fb8b1785880db234a7fcfdad39c7efdbbf58af1a"
   name = "github.com/gardener/gardener"
   packages = [
     "pkg/apis/core",
@@ -437,6 +437,22 @@
   pruneopts = "NUT"
   revision = "6c65a5562fc06764971b7c5d05c76c75e84bdbf7"
   version = "v1.3.2"
+
+[[projects]]
+  digest = "1:f650389c41e2f69bcc65a4ba9c59b493bbad057dd6aa37cfabd5aadd7fb75a76"
+  name = "github.com/google/go-github"
+  packages = ["github"]
+  pruneopts = "NUT"
+  revision = "6c3a8a15c7c49134d4d2f4b42a8c2edf530ced14"
+  version = "v33.0.0"
+
+[[projects]]
+  digest = "1:a63cff6b5d8b95638bfe300385d93b2a6d9d687734b863da8e09dc834510a690"
+  name = "github.com/google/go-querystring"
+  packages = ["query"]
+  pruneopts = "NUT"
+  revision = "44c6ddd0a2342c386950e880b658017258da92fc"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:52c5834e2bebac9030c97cc0798ac11c3aa8a39f098aeb419f142533da6cd3cc"
@@ -573,7 +589,7 @@
   revision = "21c4a144cb9378dd6519b127d80171c5977bd7c1"
 
 [[projects]]
-  digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
+  digest = "1:4994822d216a073caf6c79c143f727c68a2086312cafe6c7315b65c2ad09e8e6"
   name = "github.com/kyma-project/kyma"
   packages = ["components/kyma-operator/pkg/apis/installer/v1alpha1"]
   pruneopts = "NUT"
@@ -967,9 +983,16 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:22910d6c3f8521a9c71d518d0aa0ff98ba0457852e03d63930466f2dbb6119e5"
+  digest = "1:d69dfbbeb2406158ec995a5b83bc426a2ebf5bd4c6808f62395a6bc11c9dc346"
   name = "golang.org/x/crypto"
   packages = [
+    "cast5",
+    "openpgp",
+    "openpgp/armor",
+    "openpgp/elgamal",
+    "openpgp/errors",
+    "openpgp/packet",
+    "openpgp/s2k",
     "pbkdf2",
     "pkcs12",
     "pkcs12/internal/rc2",
@@ -978,6 +1001,14 @@
   ]
   pruneopts = "NUT"
   revision = "61a87790db17894570dfb32dbaa0a4af9ce60cb4"
+
+[[projects]]
+  digest = "1:fa3553fabe9a46fb5e86c76be8eb62e1a713b2918ab83aa1a4c3f976fd1fc39e"
+  name = "golang.org/x/mod"
+  packages = ["semver"]
+  pruneopts = "NUT"
+  revision = "6ce8bb3f08e0e47592fe93e007071d86dcf214bb"
+  version = "v0.4.1"
 
 [[projects]]
   branch = "master"
@@ -1410,6 +1441,7 @@
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1/fake",
     "github.com/gobuffalo/packr",
     "github.com/gocraft/dbr",
+    "github.com/google/go-github/github",
     "github.com/google/uuid",
     "github.com/gorilla/handlers",
     "github.com/gorilla/mux",
@@ -1440,6 +1472,7 @@
     "github.com/testcontainers/testcontainers-go/wait",
     "github.com/vburenin/nsync",
     "github.com/vrischmann/envconfig",
+    "golang.org/x/mod/semver",
     "golang.org/x/oauth2",
     "golang.org/x/oauth2/clientcredentials",
     "gopkg.in/yaml.v2",

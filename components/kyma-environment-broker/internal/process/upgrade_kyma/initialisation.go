@@ -120,7 +120,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 				return s.rescheduleAtNextMaintenanceWindow(operation, log)
 			}
 			log.Info("provisioner operation ID is empty, initialize upgrade runtime input request")
-			return s.initializeUpgradeRuntimeRequest(operation, log)
+			return s.initializeUpgradeRuntimeRequest(operation, orchestration, log)
 		}
 		log.Infof("runtime being upgraded, check operation status")
 		operation.InstanceDetails.RuntimeID = instance.RuntimeID
@@ -148,8 +148,8 @@ func (s *InitialisationStep) rescheduleAtNextMaintenanceWindow(operation interna
 	return operation, until, nil
 }
 
-func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if err := s.configureKymaVersion(&operation); err != nil {
+func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.UpgradeKymaOperation, orchestration *internal.Orchestration, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	if err := s.configureKymaVersion(&operation, orchestration.Parameters.Version); err != nil {
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	}
 
@@ -175,14 +175,28 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 	}
 }
 
-func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKymaOperation) error {
+func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKymaOperation, requestedVersion string) error {
 	if !operation.RuntimeVersion.IsEmpty() {
 		return nil
 	}
-	version, err := s.runtimeVerConfigurator.ForUpgrade(*operation)
-	if err != nil {
-		return errors.Wrap(err, "while getting runtime version for upgrade")
+
+	// set Kyma version from request or runtime parameters
+	var (
+		err     error
+		version *internal.RuntimeVersionData
+	)
+
+	switch {
+	case requestedVersion != "":
+		version = internal.NewRuntimeVersionFromParameters(requestedVersion)
+	default:
+		version, err = s.runtimeVerConfigurator.ForUpgrade(*operation)
+		if err != nil {
+			return errors.Wrap(err, "while getting runtime version for upgrade")
+		}
 	}
+
+	// update operation version
 	operation.RuntimeVersion = *version
 
 	var repeat time.Duration

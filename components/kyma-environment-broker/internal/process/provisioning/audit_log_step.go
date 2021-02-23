@@ -77,7 +77,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		fluentbitPlugin = "sequentialhttp"
 	}
 
-	clsOverrides	, err := cls.DecryptOverrides(alo.secretKey, operation.Cls.Overrides)
+	clsOverrides, err := cls.DecryptOverrides(alo.secretKey, operation.Cls.Overrides)
 	if err != nil {
 		logger.Errorf("Unable to decrypt cls overrides")
 		return operation, 0, errors.New("unable to decrypt cls overrides")
@@ -105,6 +105,8 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
 		{Key: "fluent-bit.conf.script", Value: replaceTenantID},
 		{Key: "fluent-bit.conf.extra", Value: extraConfOverride},
+		{Key: "fluent-bit.config.script", Value: replaceTenantID},
+		{Key: "fluent-bit.config.extra", Value: extraConfOverride},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},
 		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf(`- %s`, auditLogHost)},
 		{Key: "fluent-bit.externalServiceEntry.ports", Value: fmt.Sprintf(`- number: %s
