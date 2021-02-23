@@ -79,12 +79,12 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 
 	clOv, err := cls.DecryptOverrides(alo.secretKey, operation.Cls.Overrides)
 	if err != nil {
-		logger.Errorf("Unable to decode cls overrides")
-		return operation, 0, errors.New("unable to decode cls overrides")
+		logger.Errorf("Unable to decrypt cls overrides")
+		return operation, 0, errors.New("unable to decrypt cls overrides")
 	}
 	extraConf, err := auditlog.GetExtraConf(operation.RuntimeVersion.Version, logger)
 	if err != nil {
-		//logger.Errorf("Unable to fetch audit log config")
+		logger.Errorf("Unable to fetch audit log config")
 		return operation, 0, errors.New("unable to fetch audit log config")
 	}
 	aloOv := auditlog.Overrides{

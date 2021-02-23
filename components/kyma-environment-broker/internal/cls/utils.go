@@ -10,7 +10,7 @@ import (
 func EncryptOverrides(secretKey string, overrides *ClsOverrides) (string, error) {
 	ovrs, err := json.Marshal(*overrides)
 	if err != nil {
-		return "", errors.Wrap(err, "while encoding cls overrides")
+		return "", errors.Wrap(err, "while marshalling cls overrides")
 	}
 	encrypter := storage.NewEncrypter(secretKey)
 	encryptedOverrides, err := encrypter.Encrypt(ovrs)
@@ -27,8 +27,8 @@ func DecryptOverrides(secretKey string, encryptedOverrides string) (*ClsOverride
 		return nil, errors.Wrap(err, "while decrypting eventing overrides")
 	}
 	clsOverrides := ClsOverrides{}
-	if err := json.Unmarshal(decryptedOverrides, &clsOverrides); err != nil {
-		return nil, errors.Wrap(err, "while unmarshall eventing overrides")
+	if err := json.Unmarshal(decryptedOverrides, &ClsOverrides{}); err != nil {
+		return nil, errors.Wrap(err, "while unmarshalling eventing overrides")
 	}
 	return &clsOverrides, nil
 }

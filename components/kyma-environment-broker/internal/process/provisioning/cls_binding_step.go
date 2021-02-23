@@ -48,7 +48,7 @@ func (s *ClsBindStep) Name() string {
 func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if !operation.Cls.Instance.ProvisioningTriggered {
 		failureReason := fmt.Sprintf("cls provisioning step was not triggered")
-		log.Errorf("%s: %s", failureReason, "")
+log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason)
 	}
 
