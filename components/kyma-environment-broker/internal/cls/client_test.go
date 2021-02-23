@@ -13,6 +13,26 @@ import (
 
 type provisioningInputMatcher func(input servicemanager.ProvisioningInput) bool
 
+var config = &Config{
+	RetentionPeriod:    30,
+	MaxDataInstances:   4,
+	MaxIngestInstances: 4,
+	SAML: &SAMLConfig{
+		AdminGroup:  "runtimeAdmin",
+		ExchangeKey: "base64-jibber-jabber",
+		Initiated:   true,
+		RolesKey:    "groups",
+		Idp: &SAMLIdpConfig{
+			EntityID:    "https://sso.example.org/idp",
+			MetadataURL: "https://sso.example.org/idp/saml2/metadata",
+		},
+		Sp: &SAMLSpConfig{
+			EntityID:            "cls-dev",
+			SignaturePrivateKey: "base64-jibber-jabber",
+		},
+	},
+}
+
 func TestCreateInstance(t *testing.T) {
 	const (
 		fakeBrokerID   = "fake-broker-id"
@@ -20,8 +40,6 @@ func TestCreateInstance(t *testing.T) {
 		fakePlanID     = "fake-plan-id"
 		fakeInstanceID = "fake-instance-id"
 	)
-
-	config := getConfig()
 
 	tests := []struct {
 		summary string
@@ -121,7 +139,6 @@ func TestCreateBinding(t *testing.T) {
 		Binding:      servicemanager.Binding{Credentials: creds},
 		HTTPResponse: servicemanager.HTTPResponse{StatusCode: 200},
 	}
-	config := getConfig()
 	smClientMock.On("Bind", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&resB, nil)
 	sut := NewClient(config, logrus.New())
 
@@ -129,7 +146,7 @@ func TestCreateBinding(t *testing.T) {
 		InstanceKey: servicemanager.InstanceKey{},
 		BindingID:   "",
 	}
-	expectedClsOverrides := &ClsOverrides{
+	expectedClsOverrides := &ClsOverrideParams{
 		FluentdEndPoint: "fbEndpoint",
 		FluentdPassword: "fbPass",
 		FluentdUsername: "fbUser",
@@ -138,28 +155,6 @@ func TestCreateBinding(t *testing.T) {
 	res, err := sut.CreateBinding(smClientMock, &br)
 	require.NoError(t, err)
 	require.Equal(t, expectedClsOverrides, res)
-}
-
-func getConfig() *Config {
-	return &Config{
-		RetentionPeriod:    30,
-		MaxDataInstances:   4,
-		MaxIngestInstances: 4,
-		SAML: &SAMLConfig{
-			AdminGroup:  "runtimeAdmin",
-			ExchangeKey: "base64-jibber-jabber",
-			Initiated:   true,
-			RolesKey:    "groups",
-			Idp: &SAMLIdpConfig{
-				EntityID:    "https://sso.example.org/idp",
-				MetadataURL: "https://sso.example.org/idp/saml2/metadata",
-			},
-			Sp: &SAMLSpConfig{
-				EntityID:            "cls-dev",
-				SignaturePrivateKey: "base64-jibber-jabber",
-			},
-		},
-	}
 }
 
 func isValidUUID(s string) bool {

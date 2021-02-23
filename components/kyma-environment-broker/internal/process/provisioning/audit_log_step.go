@@ -77,7 +77,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		fluentbitPlugin = "sequentialhttp"
 	}
 
-	clOv, err := cls.DecryptOverrides(alo.secretKey, operation.Cls.Overrides)
+	clsOverrides	, err := cls.DecryptOverrides(alo.secretKey, operation.Cls.Overrides)
 	if err != nil {
 		logger.Errorf("Unable to decrypt cls overrides")
 		return operation, 0, errors.New("unable to decrypt cls overrides")
@@ -87,16 +87,16 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		logger.Errorf("Unable to fetch audit log config")
 		return operation, 0, errors.New("unable to fetch audit log config")
 	}
-	aloOv := auditlog.Overrides{
+	auditlogOverrideParams := auditlog.Overrides{
 		Host:         auditLogHost,
 		Port:         auditLogPort,
 		Path:         u.Path,
 		HttpPlugin:   fluentbitPlugin,
-		ClsOverrides: clOv,
+		ClsOverrides: clsOverrides,
 		Config:       alo.auditLogConfig,
 	}
 
-	extraConfOverride, err := alo.injectOverrides(aloOv, extraConf, logger)
+	extraConfOverride, err := alo.renderOverrides(auditlogOverrideParams, extraConf, logger)
 	if err != nil {
 		logger.Errorf("Unable to generate forward plugin to push logs: %v", err)
 		return operation, time.Second, nil
@@ -114,7 +114,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 	return operation, 0, nil
 }
 
-func (alo *AuditLogOverrides) injectOverrides(aloOv auditlog.Overrides, tmp *template.Template, log logrus.FieldLogger) (string, error) {
+func (alo *AuditLogOverrides) renderOverrides(aloOv auditlog.Overrides, tmp *template.Template, log logrus.FieldLogger) (string, error) {
 	var flOutputs bytes.Buffer
 	err := tmp.Execute(&flOutputs, aloOv)
 	if err != nil {

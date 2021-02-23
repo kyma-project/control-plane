@@ -31,7 +31,7 @@ type parameters struct {
 	} `json:"saml"`
 }
 
-type ClsOverrides struct {
+type ClsOverrideParams struct {
 	FluentdEndPoint string `json:"Fluentd-endpoint"`
 	FluentdPassword string `json:"Fluentd-password"`
 	FluentdUsername string `json:"Fluentd-username"`
@@ -40,10 +40,7 @@ type ClsOverrides struct {
 
 type BindingRequest struct {
 	InstanceKey servicemanager.InstanceKey
-	//SKRInstanceID   string
-	//Bound bool
 	BindingID string
-	//ClsOverrides string
 }
 
 // Client wraps a generic servicemanager.Client an performs CLS specific calls
@@ -105,7 +102,7 @@ func createParameters(config *Config) parameters {
 
 type bindParam struct{}
 
-func (c *Client) CreateBinding(smClient servicemanager.Client, request *BindingRequest) (*ClsOverrides, error) {
+func (c *Client) CreateBinding(smClient servicemanager.Client, request *BindingRequest) (*ClsOverrideParams, error) {
 	var bp bindParam
 
 	respBinding, err := smClient.Bind(request.InstanceKey, request.BindingID, bp, false)
@@ -121,9 +118,11 @@ func (c *Client) CreateBinding(smClient servicemanager.Client, request *BindingR
 
 }
 
-func getCredentials(binding servicemanager.Binding) (*ClsOverrides, error) {
-	clsOverrides := ClsOverrides{}
-	credentials := binding.Credentials
+func getCredentials(binding servicemanager.Binding) (*ClsOverrideParams, error) {
+	clsOverrides := ClsOverrideParams{}
+	credentials := binding.Credentials{
+		kibana
+	}
 	clsOverrides.KibanaUrl = credentials["Kibana-endpoint"].(string)
 	clsOverrides.FluentdUsername = credentials["Fluentd-username"].(string)
 	clsOverrides.FluentdPassword = credentials["Fluentd-password"].(string)

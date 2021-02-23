@@ -105,7 +105,7 @@ func TestClsBindingStep_Run(t *testing.T) {
 		},
 	}
 	clsBindingProvider := &clsMock.ClsBindingProvider{}
-	clsBindingProvider.On("CreateBinding", mock.Anything, mock.Anything).Return(&cls.ClsOverrides{
+	clsBindingProvider.On("CreateBinding", mock.Anything, mock.Anything).Return(&cls.ClsOverrideParams{
 		FluentdEndPoint: "fooEndPoint",
 		FluentdPassword: "fooPass",
 		FluentdUsername: "fooUser",

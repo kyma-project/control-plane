@@ -58,7 +58,7 @@ bar: tenant_id
 return "fooBar"
 }
 `
-	overridesIn := cls.ClsOverrides{
+	overridesIn := cls.ClsOverrideParams{
 		FluentdEndPoint: "foo.bar",
 		FluentdPassword: "fooPass",
 		FluentdUsername: "fooUser",
@@ -199,7 +199,7 @@ bar: tenant_id
 return "fooBar"
 }
 `
-	overridesIn := cls.ClsOverrides{
+	overridesIn := cls.ClsOverrideParams{
 		FluentdEndPoint: "foo.bar",
 		FluentdPassword: "fooPass",
 		FluentdUsername: "fooUser",

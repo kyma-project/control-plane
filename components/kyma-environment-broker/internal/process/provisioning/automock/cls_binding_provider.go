@@ -15,15 +15,15 @@ type ClsBindingProvider struct {
 }
 
 // CreateBinding provides a mock function with given fields: smClient, request
-func (_m *ClsBindingProvider) CreateBinding(smClient servicemanager.Client, request *cls.BindingRequest) (*cls.ClsOverrides, error) {
+func (_m *ClsBindingProvider) CreateBinding(smClient servicemanager.Client, request *cls.BindingRequest) (*cls.ClsOverrideParams, error) {
 	ret := _m.Called(smClient, request)
 
-	var r0 *cls.ClsOverrides
-	if rf, ok := ret.Get(0).(func(servicemanager.Client, *cls.BindingRequest) *cls.ClsOverrides); ok {
+	var r0 *cls.ClsOverrideParams
+	if rf, ok := ret.Get(0).(func(servicemanager.Client, *cls.BindingRequest) *cls.ClsOverrideParams); ok {
 		r0 = rf(smClient, request)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*cls.ClsOverrides)
+			r0 = ret.Get(0).(*cls.ClsOverrideParams)
 		}
 	}
 

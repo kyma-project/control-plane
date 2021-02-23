@@ -6,7 +6,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/gobuffalo/packr"
 	"gopkg.in/yaml.v2"
 )
 
@@ -165,15 +164,4 @@ func (r Region) validate() error {
 	}
 
 	return fmt.Errorf("unsupported region: %s (%s supported only)", r, strings.Join(supportedRegions, ","))
-}
-
-func ParseTemplate() (*template.Template, error) {
-	box := packr.NewBox("./templates")
-	yamlFile, err := box.FindString("cls_override.yaml")
-	tpl, err := template.New("cls_override").Parse(yamlFile)
-	if err != nil {
-		return nil, err
-	}
-	return tpl, nil
-
 }

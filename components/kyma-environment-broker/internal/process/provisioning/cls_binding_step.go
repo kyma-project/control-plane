@@ -20,7 +20,7 @@ import (
 
 //go:generate mockery --name=ClsBindingProvider --output=automock --outpkg=automock --case=underscore
 type ClsBindingProvider interface {
-	CreateBinding(smClient servicemanager.Client, request *cls.BindingRequest) (*cls.ClsOverrides, error)
+	CreateBinding(smClient servicemanager.Client, request *cls.BindingRequest) (*cls.ClsOverrideParams, error)
 }
 
 type ClsBindStep struct {
@@ -52,9 +52,12 @@ log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason)
 	}
 
-	skrRegion := operation.ProvisioningParameters.Parameters.Region
-	smRegion, err := cls.DetermineServiceManagerRegion(skrRegion)
-	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, smRegion)
+	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, operation.Cls.Region)
+	if err != nil {
+		failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
+		log.Error(failureReason)
+		return s.operationManager.OperationFailed(operation, failureReason)
+	}
 	smCli := operation.SMClientFactory.ForCredentials(smCredentials)
 
 	if err != nil {
@@ -81,7 +84,7 @@ log.Error(failureReason)
 		log.Info("Cls instance is provisioned.")
 	}
 
-	var overrides *cls.ClsOverrides
+	var overrides *cls.ClsOverrideParams
 
 	if !operation.Cls.Binding.Bound {
 		if operation.Cls.Binding.BindingID == "" {
@@ -148,8 +151,7 @@ log.Error(failureReason)
 	return operation, 0, nil
 }
 
-func (s *ClsBindStep) injectOverrides(overrides *cls.ClsOverrides, log logrus.FieldLogger) (string, error) {
-	// TODO: Load the template
+func (s *ClsBindStep) injectOverrides(overrides *cls.ClsOverrideParams, log logrus.FieldLogger) (string, error) {
 	tmpl, err := cls.ParseTemplate()
 	if err != nil {
 		log.Errorf("Template error: %v", err)

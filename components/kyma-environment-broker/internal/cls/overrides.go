@@ -2,12 +2,14 @@ package cls
 
 import (
 	"encoding/json"
+	"github.com/gobuffalo/packr"
+	"text/template"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pkg/errors"
 )
 
-func EncryptOverrides(secretKey string, overrides *ClsOverrides) (string, error) {
+func EncryptOverrides(secretKey string, overrides *ClsOverrideParams) (string, error) {
 	ovrs, err := json.Marshal(*overrides)
 	if err != nil {
 		return "", errors.Wrap(err, "while marshalling cls overrides")
@@ -20,15 +22,25 @@ func EncryptOverrides(secretKey string, overrides *ClsOverrides) (string, error)
 	return string(encryptedOverrides), nil
 }
 
-func DecryptOverrides(secretKey string, encryptedOverrides string) (*ClsOverrides, error) {
+func DecryptOverrides(secretKey string, encryptedOverrides string) (*ClsOverrideParams, error) {
 	encrypter := storage.NewEncrypter(secretKey)
 	decryptedOverrides, err := encrypter.Decrypt([]byte(encryptedOverrides))
 	if err != nil {
 		return nil, errors.Wrap(err, "while decrypting eventing overrides")
 	}
-	clsOverrides := ClsOverrides{}
-	if err := json.Unmarshal(decryptedOverrides, &ClsOverrides{}); err != nil {
+	clsOverrides := ClsOverrideParams{}
+	if err := json.Unmarshal(decryptedOverrides, &ClsOverrideParams{}); err != nil {
 		return nil, errors.Wrap(err, "while unmarshalling eventing overrides")
 	}
 	return &clsOverrides, nil
+}
+
+func ParseTemplate() (*template.Template, error) {
+	box := packr.NewBox("./templates")
+	yamlFile, err := box.FindString("cls_override.yaml")
+	tpl, err := template.New("cls_override").Parse(yamlFile)
+	if err != nil {
+		return nil, err
+	}
+	return tpl, nil
 }

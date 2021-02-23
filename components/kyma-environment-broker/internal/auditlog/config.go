@@ -26,14 +26,14 @@ type Overrides struct {
 	Port         string
 	Path         string
 	HttpPlugin   string
-	ClsOverrides *cls.ClsOverrides
+	ClsOverrides *cls.ClsOverrideParams
 	Config       Config
 }
 
-func getExtraConf119(log logrus.FieldLogger) (*template.Template, error) {
+func getExtraConfForKyma1_19(log logrus.FieldLogger) (*template.Template, error) {
 	box := packr.NewBox("./templates")
-	yamlFile, err := box.FindString("extra_conf_kyma_119.yaml")
-	tmpl, err := template.New("extra_conf").Parse(yamlFile)
+	confFile, err := box.FindString("extra_conf_kyma_119.conf")
+	tmpl, err := template.New("extra_conf").Parse(confFile)
 	if err != nil {
 		log.Errorf("Template error: %v", err)
 		return nil, err
@@ -41,10 +41,10 @@ func getExtraConf119(log logrus.FieldLogger) (*template.Template, error) {
 	return tmpl, err
 }
 
-func getExtraConf120(log logrus.FieldLogger) (*template.Template, error) {
+func getExtraConfForKyma1_20(log logrus.FieldLogger) (*template.Template, error) {
 	box := packr.NewBox("./templates")
-	yamlFile, err := box.FindString("extra_conf_kyma.yaml")
-	tmpl, err := template.New("extra_conf").Parse(yamlFile)
+	confFile, err := box.FindString("extra_conf_kyma.conf")
+	tmpl, err := template.New("extra_conf").Parse(confFile)
 	if err != nil {
 		log.Errorf("Template error: %v", err)
 		return nil, err
@@ -60,9 +60,9 @@ func GetExtraConf(KymaVersion string, log logrus.FieldLogger) (*template.Templat
 	v, err := semver.NewVersion(KymaVersion)
 	check := c.Check(v)
 	if check {
-		return getExtraConf119(log)
+		return getExtraConfForKyma1_19(log)
 	} else {
-		return getExtraConf120(log)
+		return getExtraConfForKyma1_20(log)
 	}
 
 }
