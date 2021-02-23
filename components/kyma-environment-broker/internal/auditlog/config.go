@@ -8,7 +8,6 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog/templates"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
-	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -28,7 +27,7 @@ type Overrides struct {
 	Config       Config
 }
 
-func GetExtraConf(KymaVersion string, log logrus.FieldLogger) (*template.Template, error) {
+func GetExtraConfTemplate(KymaVersion string) (*template.Template, error) {
 	c, err := semver.NewConstraint("< 1.20.x")
 	if err != nil {
 		return nil, errors.New("unable to parse constraint for kyma version %s to set correct fluent bit plugin")

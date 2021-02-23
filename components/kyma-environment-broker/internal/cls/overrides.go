@@ -28,15 +28,15 @@ func DecryptOverrides(secretKey string, encryptedOverrides string) (*ClsOverride
 	if err != nil {
 		return nil, errors.Wrap(err, "while decrypting eventing overrides")
 	}
-	clsOverrides := ClsOverrideParams{}
-	if err := json.Unmarshal(decryptedOverrides, &ClsOverrideParams{}); err != nil {
+	var clsOverrides ClsOverrideParams
+	if err := json.Unmarshal(decryptedOverrides, &clsOverrides); err != nil {
 		return nil, errors.Wrap(err, "while unmarshalling eventing overrides")
 	}
 	return &clsOverrides, nil
 }
 
-func ParseTemplate() (*template.Template, error) {
-	tpl, err := template.New("cls_override").Parse(templates.FluentBitExtraConf)
+func GetExtraConfTemplate() (*template.Template, error) {
+	tpl, err := template.New("fluent-bit-cls-extra-conf").Parse(templates.FluentBitExtraConf)
 	if err != nil {
 		return nil, err
 	}
