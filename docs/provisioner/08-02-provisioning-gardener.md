@@ -3,7 +3,7 @@ title: Provision clusters through Gardener
 type: Tutorials
 ---
 
-This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud Platform (GCP), Microsoft Azure, and Amazon Web Services (AWS) using [Gardener](https://dashboard.garden.canary.k8s.ondemand.com).
+This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud Platform (GCP), Microsoft Azure, Amazon Web Services (AWS) and OpenStack using [Gardener](https://dashboard.garden.canary.k8s.ondemand.com).
 
 ## Prerequisites
 
@@ -67,6 +67,22 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
   > **NOTE:** To get the AWS IAM policy, access your project on Gardener, navigate to the **Secrets** tab, click on the help icon on the AWS card, and copy the JSON policy. 
     
   </details>
+  
+  <details>
+    <summary label="OpenStack">
+    OpenStack
+    </summary>
+    
+   - Existing project on Gardener
+   - OpenStack project with technical user available to create, modify and delete VMs
+   - Gardener service account configuration (`kubeconfig.yaml`) downloaded
+   - [Compass](https://github.com/kyma-incubator/compass)  
+   - [Kyma Control Plane](https://github.com/kyma-project/control-plane) with configured Runtime Provisioner and the following [overrides](#configuration-provisioner-chart) set up:
+        * Kubeconfig (`provisioner.gardener.kubeconfig`)
+        * Gardener project name (`provisioner.gardener.project`)
+  
+   </details>
+  
 </div>
 
 > **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL server is listening.   
@@ -364,6 +380,106 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
       }
       ```
   </details>
+  
+  <details>
+    <summary label="OpenStack">
+    OpenStack
+    </summary>
+  
+   To provision Kyma Runtime on OpenStack, follow these steps:
+  
+   1. Access your project on [Gardener](https://dashboard.garden.canary.k8s.ondemand.com).
+  
+   2. In the **Secrets** tab, add a new OpenStack Secret.
+  
+   3. In the **Members** tab, create a service account for Gardener. 
+      
+   4. Make a call to the Runtime Provisioner with a **tenant** header to create a cluster on OpenStack. 
+      
+       > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
+                                                                            
+       ```graphql
+        mutation {
+          provisionRuntime(
+            config: {
+              runtimeInput: {
+                name: "{RUNTIME_NAME}"
+                description: "{RUNTIME_DESCRIPTION}"
+                labels: {RUNTIME_LABELS}
+              }
+              clusterConfig: {
+                gardenerConfig: {
+                  name: "c-85b56ba",
+                  kubernetesVersion: "1.15.11"
+                  machineType: "m1.large"
+                  region: "eu-de-1"
+                  provider: "openstack"
+                  purpose: "testing" # Possible values: "development", "evaluation", "production", "testing"; default value: "evaluation"
+                  targetSecret: "{GARDENER_OPENSTACK_SECRET_NAME}"
+                  workerCidr: "10.250.0.0/19"
+                  autoScalerMin: 2
+                  autoScalerMax: 4
+                  maxSurge: 4
+                  maxUnavailable: 1
+                  providerSpecificConfig: { 
+                    openStackConfig: {
+                       zones: ["eu-de-1a"],
+                       floatingPoolName: "FloatingIP-external-cp"
+                       cloudProfileName: "converged-cloud-cp"
+                       loadBalancerProvider: "f5"
+                      }
+                   }
+                }
+              }
+              kymaConfig: {
+                version: "1.12.0"
+                profile: "Evaluation" # Optional resources profile; possible values: "Evaluation", "Production"
+                components: [
+                  { component: "compass-runtime-agent", namespace: "compass-system" }
+                  {
+                    component: "{KYMA_COMPONENT_NAME}"
+                    namespace: "{NAMESPACE_TO_INSTALL_COMPONENT_TO}"
+                    configuration: [
+                      { key: "{CONFIG_PROPERTY_KEY}"
+                        value: "{CONFIG_PROPERTY_VALUE}"
+                        secret: true|false # Specifies if the property is confidential
+                      }
+                    ]
+                    sourceURL: "{CUSTOM_COMPONENT_SOURCE_URL}"
+                    conflictStrategy: "Merge" # Defines merging strategy if conflicts occur for component overrides; possible values: "Merge", "Replace"; default value: "Merge"
+                  }
+                ]
+                configuration: [
+                  { 
+                    key: "{CONFIG_PROPERTY_KEY}"
+                    value: "{CONFIG_PROPERTY_VALUE}"
+                    secret: true|false # Specifies if the property is confidential
+                  }
+                ]
+                conflictStrategy: "Merge" # Defines merging strategy if conflicts occur for global overrides; possible values: "Merge", "Replace"; default value: "Merge"
+              }
+            }
+          ) {
+            runtimeID
+            id
+          }
+        }
+        ```
+      
+        A successful call returns the operation status:
+      
+        ```json
+          {
+            "data": {
+              "provisionRuntime": {
+                "runtimeID": "{RUNTIME_ID}",
+                "id": "{OPERATION_ID}"
+              }
+            }
+          }
+        ``` 
+      
+   </details>
     
 </div>
 
