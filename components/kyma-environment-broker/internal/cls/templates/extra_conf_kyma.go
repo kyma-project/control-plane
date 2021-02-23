@@ -1,4 +1,7 @@
-[OUTPUT]
+package templates
+
+const (
+	FluentBitExtraConf = `[OUTPUT]
   Name              http
   Match             *
   Host              {{.FluentdEndPoint}}
@@ -9,4 +12,5 @@
   tls.verify        true
   tls.debug         1
   URI               /
-  Format            json
+  Format            json`
+)

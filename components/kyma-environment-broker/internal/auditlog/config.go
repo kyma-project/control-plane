@@ -2,16 +2,14 @@ package auditlog
 
 import (
 	"errors"
+	"fmt"
 	"text/template"
 
-	"github.com/gobuffalo/packr"
-
 	"github.com/Masterminds/semver"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog/templates"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/sirupsen/logrus"
 )
-
-//go:generate packr -v
 
 type Config struct {
 	URL           string `envconfig:"APP_AUDITLOG_URL"`
@@ -30,39 +28,22 @@ type Overrides struct {
 	Config       Config
 }
 
-func getExtraConfForKyma1_19(log logrus.FieldLogger) (*template.Template, error) {
-	box := packr.NewBox("./templates")
-	confFile, err := box.FindString("extra_conf_kyma_119.conf")
-	tmpl, err := template.New("extra_conf").Parse(confFile)
-	if err != nil {
-		log.Errorf("Template error: %v", err)
-		return nil, err
-	}
-	return tmpl, err
-}
-
-func getExtraConfForKyma1_20(log logrus.FieldLogger) (*template.Template, error) {
-	box := packr.NewBox("./templates")
-	confFile, err := box.FindString("extra_conf_kyma.conf")
-	tmpl, err := template.New("extra_conf").Parse(confFile)
-	if err != nil {
-		log.Errorf("Template error: %v", err)
-		return nil, err
-	}
-	return tmpl, err
-}
-
 func GetExtraConf(KymaVersion string, log logrus.FieldLogger) (*template.Template, error) {
 	c, err := semver.NewConstraint("< 1.20.x")
 	if err != nil {
-		return nil, errors.New("unable to parse constraint for kyma version to set correct fluent bit plugin")
-	}
-	v, err := semver.NewVersion(KymaVersion)
-	check := c.Check(v)
-	if check {
-		return getExtraConfForKyma1_19(log)
-	} else {
-		return getExtraConfForKyma1_20(log)
+		return nil, errors.New("unable to parse constraint for kyma version %s to set correct fluent bit plugin")
 	}
 
+	var version *semver.Version
+	version, err = semver.NewVersion(KymaVersion)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse kyma version %s to set correct fluent bit plugin", KymaVersion)
+	}
+
+	check := c.Check(version)
+	if check {
+		return template.New("fluent-bit-extra-conf-for-kyma-1-19").Parse(templates.FluentBitExtraConfForKyma1_19)
+	} else {
+		return template.New("fluent-bit-extra-conf-for-kyma-above-1-19").Parse(templates.FluentBitExtraConf)
+	}
 }

@@ -61,7 +61,9 @@ func TestClsBindingStep_Run(t *testing.T) {
 					BrokerID:  fakeBrokerID,
 					ServiceID: "svc-id",
 					PlanID:    "plan-id",
-				}},
+				},
+					Region: "eu",
+				},
 				ShootDomain: "cls-test.sap.com",
 			},
 		},
@@ -120,5 +122,4 @@ func TestClsBindingStep_Run(t *testing.T) {
 	operation, retry, err := bindingStep.Run(operation, log)
 	require.NoError(t, err)
 	require.Zero(t, retry)
-
 }

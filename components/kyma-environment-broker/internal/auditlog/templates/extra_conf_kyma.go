@@ -1,4 +1,7 @@
-[INPUT]
+package templates
+
+const (
+	FluentBitExtraConf = `[INPUT]
   Name              tail
   Tag               dex.*
   Path              /var/log/containers/*_dex-*.log
@@ -31,16 +34,5 @@
   HTTP_User        {{.Config.User}}
   HTTP_Passwd      {{.Config.Password}}
   Format           json_stream
-  tls              on
-[OUTPUT]
-  Name              http
-  Match             *
-  Host              {{.ClsOverrides.FluentdEndPoint}}
-  Port              443
-  HTTP_User         {{.ClsOverrides.FluentdUsername}}
-  HTTP_Passwd       {{.ClsOverrides.FluentdPassword}}
-  tls               true
-  tls.verify        true
-  tls.debug         1
-  URI               /
-  Format            json
+  tls              on`
+)
