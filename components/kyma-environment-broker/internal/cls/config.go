@@ -9,8 +9,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-//go:generate packr -v
-
 var (
 	defaultConfig = Config{
 		RetentionPeriod:    7,

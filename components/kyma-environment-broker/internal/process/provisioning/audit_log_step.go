@@ -82,7 +82,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		logger.Errorf("Unable to decrypt cls overrides")
 		return operation, 0, errors.New("unable to decrypt cls overrides")
 	}
-	extraConf, err := auditlog.GetExtraConf(operation.RuntimeVersion.Version, logger)
+	extraConfTemplate, err := auditlog.GetExtraConfTemplate(operation.RuntimeVersion.Version)
 	if err != nil {
 		logger.Errorf("Unable to fetch audit log config")
 		return operation, 0, errors.New("unable to fetch audit log config")
@@ -96,7 +96,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		Config:       alo.auditLogConfig,
 	}
 
-	extraConfOverride, err := alo.renderOverrides(auditlogOverrideParams, extraConf, logger)
+	extraConfOverride, err := alo.renderOverrides(auditlogOverrideParams, extraConfTemplate, logger)
 	if err != nil {
 		logger.Errorf("Unable to generate forward plugin to push logs: %v", err)
 		return operation, time.Second, nil

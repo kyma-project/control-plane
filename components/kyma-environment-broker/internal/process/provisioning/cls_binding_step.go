@@ -48,7 +48,7 @@ func (s *ClsBindStep) Name() string {
 func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if !operation.Cls.Instance.ProvisioningTriggered {
 		failureReason := fmt.Sprintf("cls provisioning step was not triggered")
-log.Error(failureReason)
+		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason)
 	}
 
@@ -152,7 +152,7 @@ log.Error(failureReason)
 }
 
 func (s *ClsBindStep) injectOverrides(overrides *cls.ClsOverrideParams, log logrus.FieldLogger) (string, error) {
-	tmpl, err := cls.ParseTemplate()
+	tmpl, err := cls.GetExtraConfTemplate()
 	if err != nil {
 		log.Errorf("Template error: %v", err)
 		return "", err

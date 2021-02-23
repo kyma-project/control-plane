@@ -2,9 +2,9 @@ package cls
 
 import (
 	"encoding/json"
-	"github.com/gobuffalo/packr"
 	"text/template"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls/templates"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pkg/errors"
 )
@@ -28,17 +28,15 @@ func DecryptOverrides(secretKey string, encryptedOverrides string) (*ClsOverride
 	if err != nil {
 		return nil, errors.Wrap(err, "while decrypting eventing overrides")
 	}
-	clsOverrides := ClsOverrideParams{}
-	if err := json.Unmarshal(decryptedOverrides, &ClsOverrideParams{}); err != nil {
+	var clsOverrides ClsOverrideParams
+	if err := json.Unmarshal(decryptedOverrides, &clsOverrides); err != nil {
 		return nil, errors.Wrap(err, "while unmarshalling eventing overrides")
 	}
 	return &clsOverrides, nil
 }
 
-func ParseTemplate() (*template.Template, error) {
-	box := packr.NewBox("./templates")
-	yamlFile, err := box.FindString("cls_override.yaml")
-	tpl, err := template.New("cls_override").Parse(yamlFile)
+func GetExtraConfTemplate() (*template.Template, error) {
+	tpl, err := template.New("fluent-bit-cls-extra-conf").Parse(templates.FluentBitExtraConf)
 	if err != nil {
 		return nil, err
 	}

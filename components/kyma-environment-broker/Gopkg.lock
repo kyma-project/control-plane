@@ -351,33 +351,6 @@
   version = "v3.6.0"
 
 [[projects]]
-  digest = "1:416b666cb79f02526f115d16aba8b318b854f3c964107081311e9df6a08b39a9"
-  name = "github.com/gobuffalo/envy"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "3dbe4c98c1c77e4a8fac053251c262a85e048f21"
-  version = "v1.9.0"
-
-[[projects]]
-  digest = "1:aeb8d51f4224133eb54a81ee7963a39fb9154819fa912ef4b1f4f34bc3a1fd66"
-  name = "github.com/gobuffalo/packd"
-  packages = [
-    ".",
-    "internal/takeon/github.com/markbates/errx",
-  ]
-  pruneopts = "NUT"
-  revision = "128b5da43f114d0f9af8b4bba549b02e3496dfa8"
-  version = "v1.0.0"
-
-[[projects]]
-  digest = "1:a8f1488ab6d1e634374e4ae4fafed82f36088a7f0c9178cef64388f70fc4afcd"
-  name = "github.com/gobuffalo/packr"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "3debf342c4c7a0466f228a798f4dee1f96d4059e"
-  version = "v2.8.1"
-
-[[projects]]
   digest = "1:6a7159c5f8f8826207545407a458b43ab6599c1c8a2271465c2e979ecea1dcd4"
   name = "github.com/gobwas/glob"
   packages = [
@@ -548,14 +521,6 @@
   pruneopts = "NUT"
   revision = "1afb36080aec31e0d1528973ebe6721b191b0369"
   version = "v0.3.8"
-
-[[projects]]
-  digest = "1:da62aa6632d04e080b8a8b85a59ed9ed1550842a0099a55f3ae3a20d02a3745a"
-  name = "github.com/joho/godotenv"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "23d116af351c84513e1946b527c88823e476be13"
-  version = "v1.3.0"
 
 [[projects]]
   digest = "1:88116f979a2f3ff8e6748a942ec37efd668ba2db062fc9a5e47f4dd2de339a38"
@@ -1439,7 +1404,6 @@
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake",
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1",
     "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1/fake",
-    "github.com/gobuffalo/packr",
     "github.com/gocraft/dbr",
     "github.com/google/go-github/github",
     "github.com/google/uuid",
