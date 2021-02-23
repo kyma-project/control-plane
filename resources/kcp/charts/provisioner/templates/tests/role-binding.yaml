@@ -1,5 +1,4 @@
-{{ if .Values.tests.enabled }}
----
+{{ if or .Values.tests.e2e.enabled .Values.tests.hibernation.enabled }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:

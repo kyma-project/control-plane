@@ -376,6 +376,44 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	})
 }
 
+func TestConverter_ParseInput(t *testing.T) {
+	t.Run("should parse KymaConfig input", func(t *testing.T) {
+
+		//given
+		uuidGeneratorMock := &mocks.UUIDGenerator{}
+		uuidGeneratorMock.On("New").Return("id").Times(6)
+		uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hyphens")
+
+		releaseProvider := &realeaseMocks.Provider{}
+		releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
+		releaseProvider.On("GetReleaseByVersion", kymaVersionWithoutTiller).Return(fixKymaReleaseWithoutTiller(), nil)
+
+		replace := gqlschema.ConflictStrategyReplace
+		input := gqlschema.KymaConfigInput{
+			Version:          kymaVersion,
+			ConflictStrategy: &replace,
+		}
+
+		inputConverter := NewInputConverter(
+			uuidGeneratorMock,
+			releaseProvider,
+			gardenerProject,
+			defaultEnableKubernetesVersionAutoUpdate,
+			defaultEnableMachineImageVersionAutoUpdate,
+			forceAllowPrivilegedContainers)
+
+		// when
+		output, err := inputConverter.KymaConfigFromInput("runtimeID", input)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, gqlschema.ConflictStrategyReplace.String(), output.GlobalConfiguration.ConflictStrategy)
+		for _, entry := range output.Components {
+			assert.Equal(t, gqlschema.ConflictStrategyReplace.String(), entry.Configuration.ConflictStrategy)
+		}
+	})
+}
+
 func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 
 	t.Run("should return error when failed to get kyma release", func(t *testing.T) {

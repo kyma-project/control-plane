@@ -27,6 +27,23 @@ type ProvisionerInputCreator interface {
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 }
 
+// GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for
+// external evaluation.
+const (
+	GitKymaProject = "kyma-project"
+	GitKymaRepo    = "kyma"
+)
+
+type CLSInstance struct {
+	Version         int
+	ID              string
+	GlobalAccountID string
+	// Currently, a CLS instance is identified by GlobalAccountID only. Region is stored for future use.
+	Region        string
+	CreatedAt     time.Time
+	SKRReferences []string
+}
+
 type LMSTenant struct {
 	ID        string
 	Name      string
@@ -65,7 +82,7 @@ const (
 	AccountMapping RuntimeVersionOrigin = "account-mapping"
 )
 
-// RuntimeVersionData describes the Kyma Version used for the cluser
+// RuntimeVersionData describes the Kyma Version used for the cluster
 // provisioning or upgrade
 type RuntimeVersionData struct {
 	Version string               `json:"version"`
@@ -168,6 +185,7 @@ type InstanceWithOperation struct {
 }
 
 type SMClientFactory interface {
+	ForCredentials(credentials *servicemanager.Credentials) servicemanager.Client
 	ForCustomerCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (servicemanager.Client, error)
 	ProvideCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (*servicemanager.Credentials, error)
 }
@@ -184,6 +202,7 @@ type InstanceDetails struct {
 	ShootDomain  string    `json:"shoot_domain"`
 	XSUAA        XSUAAData `json:"xsuaa"`
 	Ems          EmsData   `json:"ems"`
+	Cls          ClsData   `json:"cls"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -221,6 +240,13 @@ type EmsData struct {
 	Overrides string `json:"overrides"`
 }
 
+type ClsData struct {
+	Instance  ServiceManagerInstanceInfo `json:"instance"`
+	Region    string                     `json:"region"`
+	BindingID string                     `json:"bindingId"`
+	Overrides string                     `json:"overrides"`
+}
+
 func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {
 	return servicemanager.InstanceKey{
 		BrokerID:   s.BrokerID,
@@ -248,6 +274,8 @@ type UpgradeKymaOperation struct {
 	InputCreator                   ProvisionerInputCreator `json:"-"`
 
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
+
+	SMClientFactory SMClientFactory `json:"-"`
 }
 
 func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaConfigInput, clusterConfig *gqlschema.GardenerConfigInput) RuntimeState {
@@ -363,6 +391,10 @@ func (po *ProvisioningOperation) ProvideServiceManagerCredentials(log logrus.Fie
 
 func (do *DeprovisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {
 	return do.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(do.ProvisioningParameters), log)
+}
+
+func (uko *UpgradeKymaOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {
+	return uko.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(uko.ProvisioningParameters), log)
 }
 
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput

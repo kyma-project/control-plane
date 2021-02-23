@@ -73,6 +73,7 @@ func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) 
 		Where(dbr.Eq("cluster_id", config.ClusterID)).
 		Set("kubernetes_version", config.KubernetesVersion).
 		Set("purpose", config.Purpose).
+		Set("seed", config.Seed).
 		Set("region", config.Region).
 		Set("provider", config.Provider).
 		Set("machine_type", config.MachineType).

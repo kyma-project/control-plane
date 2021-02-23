@@ -21,9 +21,9 @@ func TestEmsEncryptDecrypt(t *testing.T) {
 	}
 
 	// when
-	encrypted, err := encryptOverrides(secretKey, &overridesIn)
+	encrypted, err := EncryptEventingOverrides(secretKey, &overridesIn)
 	assert.NoError(t, err)
-	overridesOut, err := decryptOverrides(secretKey, encrypted)
+	overridesOut, err := DecryptEventingOverrides(secretKey, encrypted)
 	assert.NoError(t, err)
 
 	// then
@@ -40,7 +40,7 @@ func TestEmsGetCredentials(t *testing.T) {
 	assert.NotNil(t, binding.Credentials)
 
 	// then
-	eventingOverrides, err := getCredentials(binding)
+	eventingOverrides, err := GetEventingCredentials(binding)
 	assert.NoError(t, err)
 	assert.NotNil(t, eventingOverrides)
 	assert.Equal(t, "messaging-httprest-oa2-clientid", eventingOverrides.OauthClientId)

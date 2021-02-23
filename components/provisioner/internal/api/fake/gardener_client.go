@@ -35,9 +35,6 @@ func (f fakeShootsInterface) Create(ctx context.Context, shoot *gardener_types.S
 
 	shoot.SetFinalizers([]string{"finalizer"})
 
-	seedName := "az-us2"
-	shoot.Spec.SeedName = &seedName
-
 	unstructuredShoot, err := toUnstructured(shoot)
 	if err != nil {
 		return nil, err

@@ -127,6 +127,11 @@ enum KymaProfile {
     Production
 }
 
+enum ConflictStrategy {
+    Merge
+    Replace
+}
+
 # Inputs
 
 scalar Labels
@@ -199,6 +204,7 @@ input KymaConfigInput {
     profile: KymaProfile                        # Optional resources profile
     components: [ComponentConfigurationInput]!  # List of Kyma Components with specific configuration
     configuration: [ConfigEntryInput]           # Global Kyma configuration
+    conflictStrategy: ConflictStrategy        # Defines merging strategy if conflicts occur for global overrides
 }
 
 input ConfigEntryInput {
@@ -212,6 +218,7 @@ input ComponentConfigurationInput {
     namespace: String!                    # Namespace to which component should be installed
     configuration: [ConfigEntryInput]     # Component specific configuration
     sourceURL: String                     # Custom URL for the source files of the given component
+    conflictStrategy: ConflictStrategy  # Defines merging strategy if conflicts occur for component overrides
 }
 
 input UpgradeRuntimeInput {

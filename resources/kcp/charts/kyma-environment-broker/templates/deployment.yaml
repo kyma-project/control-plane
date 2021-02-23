@@ -50,6 +50,8 @@ spec:
               value: "{{ .Values.disableProcessOperationsInProgress }}"
             - name: APP_BROKER_ENABLE_PLANS
               value: "{{ .Values.enablePlans }}"
+            - name: APP_BROKER_ONLY_SINGLE_TRIAL_PER_GA
+              value: "{{ .Values.onlySingleTrialPerGA }}"
             - name: APP_OPERATION_TIMEOUT
               value: "{{ .Values.broker.operationTimeout }}"
             - name: APP_BROKER_SERVICE_DISPLAY_NAME
@@ -156,6 +158,8 @@ spec:
                 secretKeyRef:
                   name: "{{ .Values.edp.secretName }}"
                   key: secret
+            - name: APP_EMS_DISABLED
+              value: "{{ .Values.ems.disabled }}"
             - name: APP_DATABASE_SECRET_KEY
               valueFrom:
                 secretKeyRef:
@@ -361,6 +365,12 @@ spec:
               value: "kyma-versions"
             - name: APP_ENABLE_INSTANCE_DETAILS_MIGRATION
               value: "{{ .Values.enableInstanceDetailsMigration }}"
+            - name: APP_ENABLE_INSTANCE_PARAMETERS_MIGRATION
+              value: "{{ .Values.enableInstanceParametersMigration }}"
+            - name: APP_ENABLE_INSTANCE_PARAMETERS_ROLLBACK
+              value: "{{ .Values.enableInstanceParametersRollback }}"
+            - name: APP_ENABLE_OPERATIONS_USER_ID_MIGRATION
+              value: "{{ .Values.enableOperationsUserIDMigration }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

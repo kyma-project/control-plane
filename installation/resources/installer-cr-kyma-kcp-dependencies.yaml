@@ -11,14 +11,13 @@ metadata:
 spec:
   version: "0.0.1"
   url: ""
+  profile: "production"
   components:
     - name: "cluster-essentials"
       namespace: "kyma-system"
     - name: "testing"
       namespace: "kyma-system"
     - name: "istio"
-      namespace: "istio-system"
-    - name: "istio-kyma-patch"
       namespace: "istio-system"
     - name: "dex"
       namespace: "kyma-system"

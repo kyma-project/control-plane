@@ -41,7 +41,6 @@ resources: {}
   #   memory: 128Mi
 
 provisioner:
-  Host: "kcp-provisioner.kcp-system.svc.cluster.local"
   URL: "http://kcp-provisioner.kcp-system.svc.cluster.local:3000/graphql"
 
   # Defines how long should the Kyma Environment Broker checks the status of the provisioning in the Provisioner.
@@ -76,6 +75,7 @@ kymaVersionOnDemand: "false"
 
 disableProcessOperationsInProgress: "false"
 enablePlans: "azure,gcp,azure_lite,trial"
+onlySingleTrialPerGA: "true"
 
 osbUpdateProcessingEnabled: "false"
 
@@ -88,6 +88,9 @@ brokerService:
   supportUrl: "https://launchpad.support.sap.com/"
 
 enableInstanceDetailsMigration: "true"
+enableInstanceParametersMigration: "true"
+enableInstanceParametersRollback: "false"
+enableOperationsUserIDMigration: "true"
 
 gardener:
   project: "kyma-dev" # Gardener project connected to SA for HAP credentials lookup
@@ -181,6 +184,9 @@ edp:
   disabled: true
   secret: "TBD"
   secretName: "edp-creds"
+
+ems:
+  disabled: true
 
 cis:
   v1:

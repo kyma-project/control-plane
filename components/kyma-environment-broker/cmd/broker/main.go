@@ -71,8 +71,11 @@ import (
 
 // Config holds configuration for the whole application
 type Config struct {
-	DbInMemory                     bool `envconfig:"default=false"`
-	EnableInstanceDetailsMigration bool `envconfig:"default=false"`
+	DbInMemory                        bool `envconfig:"default=false"`
+	EnableInstanceDetailsMigration    bool `envconfig:"default=false"`
+	EnableInstanceParametersMigration bool `envconfig:"default=false"`
+	EnableInstanceParametersRollback  bool `envconfig:"default=false"`
+	EnableOperationsUserIDMigration   bool `envconfig:"default=false"`
 
 	// DisableProcessOperationsInProgress allows to disable processing operations
 	// which are in progress on starting application. Set to true if you are
@@ -171,11 +174,12 @@ func main() {
 	directorClient := director.NewDirectorClient(ctx, cfg.Director, logs.WithField("service", "directorClient"))
 
 	// create storage
+	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
 	var db storage.BrokerStorage
 	if cfg.DbInMemory {
 		db = storage.NewMemoryStorage()
 	} else {
-		store, conn, err := storage.NewFromConfig(cfg.Database, logs.WithField("service", "storage"))
+		store, conn, err := storage.NewFromConfig(cfg.Database, cipher, logs.WithField("service", "storage"))
 		fatalOnError(err)
 		db = store
 		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
@@ -186,6 +190,20 @@ func main() {
 	// instance details migration to upgradeKyma operations
 	if cfg.EnableInstanceDetailsMigration {
 		err = migrations.NewInstanceDetailsMigration(db.Operations(), logs.WithField("service", "instanceDetailsMigration")).Migrate()
+		fatalOnError(err)
+	}
+	// encrypting instances SM credentials
+	if cfg.EnableInstanceParametersMigration {
+		err = migrations.NewInstanceParametersMigration(db.Instances(), cipher, logs).Migrate()
+		fatalOnError(err)
+	}
+	if cfg.EnableInstanceParametersRollback {
+		err = migrations.NewInstanceParametersMigrationRollback(db.Instances(), logs).Migrate()
+		fatalOnError(err)
+	}
+	// migration to remove the userID parameter from succeeded deprovisioning operations
+	if cfg.EnableOperationsUserIDMigration {
+		err = migrations.NewOperationsUserIDMigration(db.Operations(), logs.WithField("service", "userIDMigration")).Migrate()
 		fatalOnError(err)
 	}
 
@@ -443,7 +461,7 @@ func main() {
 
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
-		broker.NewServices(cfg.Broker, optComponentsSvc, logs),
+		broker.NewServices(cfg.Broker, logs),
 		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, plansValidator, cfg.EnableOnDemandVersion, logs),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
 		broker.NewUpdate(db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, logs),
@@ -468,7 +486,8 @@ func main() {
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, gardenerClient,
-		gardenerNamespace, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, cfg.DefaultRequestRegion, upgradeEvalManager, logs)
+		gardenerNamespace, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, cfg.DefaultRequestRegion, upgradeEvalManager,
+		&cfg, accountProvider, serviceManagerClientFactory, logs)
 	fatalOnError(err)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
@@ -609,11 +628,12 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 	gardenerClient gardenerclient.CoreV1beta1Interface, gardenerNamespace string, pub event.Publisher,
 	inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
-	defaultRegion string, upgradeEvalManager *upgrade_kyma.EvaluationManager, logs logrus.FieldLogger) (*process.Queue, error) {
+	defaultRegion string, upgradeEvalManager *upgrade_kyma.EvaluationManager,
+	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory, logs logrus.FieldLogger) (*process.Queue, error) {
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Orchestrations(), db.Instances(),
-		provisionerClient, inputFactory, upgradeEvalManager, icfg, runtimeVerConfigurator)
+		provisionerClient, inputFactory, upgradeEvalManager, icfg, runtimeVerConfigurator, smcf)
 
 	upgradeKymaManager.InitStep(upgradeKymaInit)
 	upgradeKymaSteps := []struct {
@@ -622,9 +642,33 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 		step     upgrade_kyma.Step
 	}{
 		{
+			weight: 1,
+			step: upgrade_kyma.NewServiceManagerOfferingStep("EMS_Offering",
+				provisioning.EmsOfferingName, provisioning.EmsPlanName, func(op *internal.UpgradeKymaOperation) *internal.ServiceManagerInstanceInfo {
+					return &op.Ems.Instance
+				}, db.Operations()),
+			disabled: cfg.Ems.Disabled,
+		},
+		{
 			weight: 2,
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
+		{
+			weight:   3,
+			step:     upgrade_kyma.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
+			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   4,
+			step:     upgrade_kyma.NewEmsUpgradeProvisionStep(db.Operations()),
+			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   7,
+			step:     upgrade_kyma.NewEmsUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
+			disabled: cfg.Ems.Disabled,
+		},
+
 		{
 			weight: 10,
 			step:   upgrade_kyma.NewUpgradeKymaStep(db.Operations(), db.RuntimeStates(), provisionerClient, icfg),
@@ -640,7 +684,7 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
 
 	orchestrateKymaManager := kyma.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(), db.Instances(),
-		upgradeKymaManager, runtimeResolver, pollingInterval, logs)
+		upgradeKymaManager, runtimeResolver, pollingInterval, smcf, logs)
 	queue := process.NewQueue(orchestrateKymaManager, logs)
 
 	// only one orchestration can be processed at the same time

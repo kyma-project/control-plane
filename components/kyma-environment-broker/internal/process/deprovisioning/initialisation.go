@@ -28,6 +28,7 @@ const (
 )
 
 type SMClientFactory interface {
+	ForCredentials(credentials *servicemanager.Credentials) servicemanager.Client
 	ForCustomerCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (servicemanager.Client, error)
 	ProvideCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (*servicemanager.Credentials, error)
 }
@@ -74,6 +75,11 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 			if err != nil || repeat != 0 {
 				return operation, repeat, err
 			}
+			log.Info("Removing the userID field from operation")
+			op, repeat, err = s.removeUserID(op)
+			if err != nil || repeat != 0 {
+				return operation, repeat, err
+			}
 		}
 	}
 	return op, when, err
@@ -96,8 +102,6 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 		return operation, time.Minute, nil
 	}
 	operation.SMClientFactory = s.serviceManagerClientFactory
-	operation.XSUAA = op.XSUAA
-	operation.Ems = op.Ems
 
 	setAvsIds(&operation, op, log)
 
@@ -215,6 +219,11 @@ func (s *InitialisationStep) removeInstance(instanceID string) (time.Duration, e
 	}
 
 	return 0, nil
+}
+
+func (s *InitialisationStep) removeUserID(operation internal.DeprovisioningOperation) (internal.DeprovisioningOperation, time.Duration, error) {
+	operation.ProvisioningParameters.ErsContext.UserID = ""
+	return s.operationManager.UpdateOperation(operation)
 }
 
 func (s *InitialisationStep) removeRuntimeID(instanceID string) error {

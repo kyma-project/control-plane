@@ -13,43 +13,7 @@ import (
 
 func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
-	clusterConfig := &gqlschema.ClusterConfigInput{
-		GardenerConfig: &gqlschema.GardenerConfigInput{
-			KubernetesVersion:      "1.15.4",
-			VolumeSizeGb:           30,
-			MachineType:            "n1-standard-4",
-			Region:                 "europe",
-			Provider:               "gcp",
-			Seed:                   util.StringPtr("2"),
-			TargetSecret:           "test-secret",
-			DiskType:               "ssd",
-			WorkerCidr:             "10.10.10.10/255",
-			AutoScalerMin:          1,
-			AutoScalerMax:          3,
-			MaxSurge:               40,
-			MaxUnavailable:         1,
-			ProviderSpecificConfig: nil,
-		},
-	}
-
-	runtimeInput := &gqlschema.RuntimeInput{
-		Name:        "test runtime",
-		Description: new(string),
-	}
-
-	kymaConfig := &gqlschema.KymaConfigInput{
-		Version: "1.5",
-		Components: []*gqlschema.ComponentConfigurationInput{
-			{
-				Component:     "core",
-				Configuration: nil,
-			},
-			{
-				Component:     "compass-runtime-agent",
-				Configuration: nil,
-			},
-		},
-	}
+	clusterConfig, runtimeInput, kymaConfig := initializeConfigs()
 
 	t.Run("Should return nil when config is correct", func(t *testing.T) {
 		//given
@@ -445,4 +409,46 @@ func TestValidator_ValidateTenantForOperation(t *testing.T) {
 		//then
 		require.Error(t, err)
 	})
+
+}
+
+func initializeConfigs() (*gqlschema.ClusterConfigInput, *gqlschema.RuntimeInput, *gqlschema.KymaConfigInput) {
+	clusterConfig := &gqlschema.ClusterConfigInput{
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			KubernetesVersion:      "1.15.4",
+			VolumeSizeGb:           30,
+			MachineType:            "n1-standard-4",
+			Region:                 "europe",
+			Provider:               "gcp",
+			Seed:                   util.StringPtr("2"),
+			TargetSecret:           "test-secret",
+			DiskType:               "ssd",
+			WorkerCidr:             "10.10.10.10/255",
+			AutoScalerMin:          1,
+			AutoScalerMax:          3,
+			MaxSurge:               40,
+			MaxUnavailable:         1,
+			ProviderSpecificConfig: nil,
+		},
+	}
+
+	runtimeInput := &gqlschema.RuntimeInput{
+		Name:        "test runtime",
+		Description: new(string),
+	}
+
+	kymaConfig := &gqlschema.KymaConfigInput{
+		Version: "1.5",
+		Components: []*gqlschema.ComponentConfigurationInput{
+			{
+				Component:     "core",
+				Configuration: nil,
+			},
+			{
+				Component:     "compass-runtime-agent",
+				Configuration: nil,
+			},
+		},
+	}
+	return clusterConfig, runtimeInput, kymaConfig
 }

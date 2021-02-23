@@ -6,6 +6,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma/automock"
+	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 
 	"github.com/stretchr/testify/require"
@@ -13,15 +22,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma/automock"
-	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -140,7 +142,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, nil, evalManager, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
+			nil, evalManager, nil, nil, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -188,9 +191,11 @@ func TestInitialisationStep_Run(t *testing.T) {
 		expectedOperation := upgradeOperation
 		expectedOperation.Version++
 		expectedOperation.State = orchestration.InProgress
-		rvc.On("ForUpgrade", expectedOperation).Return(ver, nil).Once()
+		//rvc.On("ForUpgrade", expectedOperation).Return(ver, nil).Once()
+		rvc.On("ForUpgrade", mock.AnythingOfType("internal.UpgradeKymaOperation")).Return(ver, nil).Once()
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManager, nil, rvc)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
+			inputBuilder, evalManager, nil, rvc, nil)
 
 		// when
 		op, repeat, err := step.Run(upgradeOperation, log)
@@ -223,7 +228,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 		require.NoError(t, err)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), nil, nil, evalManager, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), nil,
+			nil, evalManager, nil, nil, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -271,7 +277,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManager, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
+			inputBuilder, evalManager, nil, nil, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -322,7 +329,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManager, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
+			inputBuilder, evalManager, nil, nil, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -373,7 +381,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManager, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
+			inputBuilder, evalManager, nil, nil, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -425,7 +434,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManager, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
+			inputBuilder, evalManager, nil, nil, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -477,7 +487,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManager, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
+			inputBuilder, evalManager, nil, nil, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -530,7 +541,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManager, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
+			inputBuilder, evalManager, nil, nil, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -583,14 +595,15 @@ func TestInitialisationStep_Run(t *testing.T) {
 				RuntimeID: StringPtr(fixRuntimeID),
 			}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManagerInvalid, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
+			inputBuilder, evalManagerInvalid, nil, nil, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
 
 		// then
 		assert.NoError(t, err)
-		assert.Equal(t, 1*time.Minute, repeat)
+		assert.Equal(t, 30*time.Second, repeat)
 		assert.Equal(t, domain.InProgress, upgradeOperation.State)
 		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: internalStatus, Original: ""})
 		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: externalStatus, Original: ""})
@@ -648,14 +661,15 @@ func TestInitialisationStep_Run(t *testing.T) {
 				}
 			}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient, inputBuilder, evalManagerInvalid, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
+			inputBuilder, evalManagerInvalid, nil, nil, nil)
 
 		// when invalid client request, this should be delayed
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
 
 		// then
 		assert.NoError(t, err)
-		assert.Equal(t, 1*time.Minute, repeat)
+		assert.Equal(t, 30*time.Second, repeat)
 		assert.Equal(t, domain.InProgress, upgradeOperation.State)
 		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: internalStatus, Original: ""})
 		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: externalStatus, Original: ""})

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
 	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -31,20 +33,23 @@ const (
 	CheckStatusTimeout = 3 * time.Hour
 )
 
+const postUpgradeDescription = "Performing post-upgrade tasks"
+
 type InitialisationStep struct {
-	operationManager       *process.UpgradeKymaOperationManager
-	operationStorage       storage.Operations
-	orchestrationStorage   storage.Orchestrations
-	instanceStorage        storage.Instances
-	provisionerClient      provisioner.Client
-	inputBuilder           input.CreatorForPlan
-	evaluationManager      *EvaluationManager
-	timeSchedule           TimeSchedule
-	runtimeVerConfigurator RuntimeVersionConfiguratorForUpgrade
+	operationManager            *process.UpgradeKymaOperationManager
+	operationStorage            storage.Operations
+	orchestrationStorage        storage.Orchestrations
+	instanceStorage             storage.Instances
+	provisionerClient           provisioner.Client
+	inputBuilder                input.CreatorForPlan
+	evaluationManager           *EvaluationManager
+	timeSchedule                TimeSchedule
+	runtimeVerConfigurator      RuntimeVersionConfiguratorForUpgrade
+	serviceManagerClientFactory *servicemanager.ClientFactory
 }
 
 func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, em *EvaluationManager,
-	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade) *InitialisationStep {
+	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade, smcf *servicemanager.ClientFactory) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
 		ts = &TimeSchedule{
@@ -54,15 +59,16 @@ func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is
 		}
 	}
 	return &InitialisationStep{
-		operationManager:       process.NewUpgradeKymaOperationManager(os),
-		operationStorage:       os,
-		orchestrationStorage:   ors,
-		instanceStorage:        is,
-		provisionerClient:      pc,
-		inputBuilder:           b,
-		evaluationManager:      em,
-		timeSchedule:           *ts,
-		runtimeVerConfigurator: rvc,
+		operationManager:            process.NewUpgradeKymaOperationManager(os),
+		operationStorage:            os,
+		orchestrationStorage:        ors,
+		instanceStorage:             is,
+		provisionerClient:           pc,
+		inputBuilder:                b,
+		evaluationManager:           em,
+		timeSchedule:                *ts,
+		runtimeVerConfigurator:      rvc,
+		serviceManagerClientFactory: smcf,
 	}
 }
 
@@ -79,6 +85,9 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		log.Infof("Skipping processing because orchestration %s was canceled", operation.OrchestrationID)
 		return s.operationManager.OperationCanceled(operation, fmt.Sprintf("orchestration %s was canceled", operation.OrchestrationID))
 	}
+
+	operation.SMClientFactory = s.serviceManagerClientFactory
+
 	if operation.State == orchestrationExt.Pending {
 		operation.State = orchestrationExt.InProgress
 
@@ -111,7 +120,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 				return s.rescheduleAtNextMaintenanceWindow(operation, log)
 			}
 			log.Info("provisioner operation ID is empty, initialize upgrade runtime input request")
-			return s.initializeUpgradeRuntimeRequest(operation, log)
+			return s.initializeUpgradeRuntimeRequest(operation, orchestration, log)
 		}
 		log.Infof("runtime being upgraded, check operation status")
 		operation.InstanceDetails.RuntimeID = instance.RuntimeID
@@ -139,8 +148,8 @@ func (s *InitialisationStep) rescheduleAtNextMaintenanceWindow(operation interna
 	return operation, until, nil
 }
 
-func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if err := s.configureKymaVersion(&operation); err != nil {
+func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.UpgradeKymaOperation, orchestration *internal.Orchestration, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	if err := s.configureKymaVersion(&operation, orchestration.Parameters.Version); err != nil {
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	}
 
@@ -166,14 +175,28 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 	}
 }
 
-func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKymaOperation) error {
+func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKymaOperation, requestedVersion string) error {
 	if !operation.RuntimeVersion.IsEmpty() {
 		return nil
 	}
-	version, err := s.runtimeVerConfigurator.ForUpgrade(*operation)
-	if err != nil {
-		return errors.Wrap(err, "while getting runtime version for upgrade")
+
+	// set Kyma version from request or runtime parameters
+	var (
+		err     error
+		version *internal.RuntimeVersionData
+	)
+
+	switch {
+	case requestedVersion != "":
+		version = internal.NewRuntimeVersionFromParameters(requestedVersion)
+	default:
+		version, err = s.runtimeVerConfigurator.ForUpgrade(*operation)
+		if err != nil {
+			return errors.Wrap(err, "while getting runtime version for upgrade")
+		}
 	}
+
+	// update operation version
 	operation.RuntimeVersion = *version
 
 	var repeat time.Duration
@@ -237,6 +260,15 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 	switch status.State {
 	case gqlschema.OperationStateInProgress, gqlschema.OperationStatePending:
 		return operation, s.timeSchedule.StatusCheck, nil
+	case gqlschema.OperationStateSucceeded, gqlschema.OperationStateFailed:
+		// Set post-upgrade description which also reset UpdatedAt for operation retries to work properly
+		if operation.Description != postUpgradeDescription {
+			operation.Description = postUpgradeDescription
+			operation, delay = s.operationManager.UpdateOperation(operation)
+			if delay != 0 {
+				return operation, delay, nil
+			}
+		}
 	}
 
 	// do required steps on finish
