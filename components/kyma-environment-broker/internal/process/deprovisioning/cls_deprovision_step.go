@@ -40,11 +40,11 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 	skrInstanceID := operation.InstanceID
 
 	if !operation.Cls.Instance.Provisioned {
-		log.Infof("Unable to deprovision a cls instance since it is not provisioned")
+		log.Warnf("Unable to deprovision a cls instance for global account %s since it is not provisioned", globalAccountID)
 		return operation, 0, nil
 	}
 
-	log.Infof("Starting deprovisioning a cls instance for global account %s", globalAccountID)
+	log.Debugf("Starting deprovisioning a cls instance for global account %s", globalAccountID)
 
 	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, operation.Cls.Region)
 	if err != nil {
@@ -67,7 +67,7 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 		return s.operationManager.RetryOperation(operation, failureReason, 1*time.Minute, 5*time.Minute, log)
 	}
 
-	log.Infof("Finished deprovisioning a cls instance for global account %s", globalAccountID)
+	log.Debugf("Finished deprovisioning a cls instance for global account %s", globalAccountID)
 
 	operation.Cls.Instance.InstanceID = ""
 	operation.Cls.Instance.Provisioned = false
