@@ -2,7 +2,6 @@ package provisioning
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -18,6 +17,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
@@ -96,7 +96,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		Config:       alo.auditLogConfig,
 	}
 
-	extraConfOverride, err := alo.renderOverrides(auditlogOverrideParams, extraConfTemplate, logger)
+	extraConfOverride, err := alo.renderOverrides(auditlogOverrideParams, extraConfTemplate)
 	if err != nil {
 		logger.Errorf("Unable to generate forward plugin to push logs: %v", err)
 		return operation, time.Second, nil
@@ -116,12 +116,11 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 	return operation, 0, nil
 }
 
-func (alo *AuditLogOverrides) renderOverrides(aloOv auditlog.Overrides, tmp *template.Template, log logrus.FieldLogger) (string, error) {
+func (alo *AuditLogOverrides) renderOverrides(aloOv auditlog.Overrides, tmp *template.Template) (string, error) {
 	var flOutputs bytes.Buffer
 	err := tmp.Execute(&flOutputs, aloOv)
 	if err != nil {
-		log.Errorf("Template error while injecting cls overrides: %v", err)
-		return "", err
+		return "", errors.Wrapf(err,"Template error while injecting cls overrides: %v", err )
 	}
 	return flOutputs.String(), nil
 }
