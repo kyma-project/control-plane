@@ -89,9 +89,8 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 	t.Run("triggering of deprovisioning fails", func(t *testing.T) {
 		deprovisionerMock := &automock.ClsDeprovisioner{}
 		deprovisionerMock.On("Deprovision", mock.Anything, &cls.DeprovisionRequest{
-			GlobalAccountID: globalAccountID,
-			SKRInstanceID:   skrInstanceID,
-			Instance:        clsInstance.InstanceKey(),
+			SKRInstanceID: skrInstanceID,
+			Instance:      clsInstance.InstanceKey(),
 		}).Return(errors.New("failure"))
 
 		step := NewClsDeprovisionStep(config, repo, deprovisionerMock)
@@ -106,9 +105,8 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 	t.Run("triggering of deprovisioning succeeds", func(t *testing.T) {
 		deprovisionerMock := &automock.ClsDeprovisioner{}
 		deprovisionerMock.On("Deprovision", mock.Anything, &cls.DeprovisionRequest{
-			GlobalAccountID: globalAccountID,
-			SKRInstanceID:   skrInstanceID,
-			Instance:        clsInstance.InstanceKey(),
+			SKRInstanceID: skrInstanceID,
+			Instance:      clsInstance.InstanceKey(),
 		}).Return(nil)
 
 		step := NewClsDeprovisionStep(config, repo, deprovisionerMock)

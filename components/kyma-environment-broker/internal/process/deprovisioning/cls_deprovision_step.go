@@ -44,7 +44,7 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 		return operation, 0, nil
 	}
 
-	log.Debugf("Starting deprovisioning a cls instance for global account %s", globalAccountID)
+	log.Debugf("Starting deprovisioning a cls instance %s", operation.Cls.Instance.InstanceID)
 
 	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, operation.Cls.Region)
 	if err != nil {
@@ -56,14 +56,13 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 
 	request := &cls.DeprovisionRequest{
-		GlobalAccountID: globalAccountID,
-		SKRInstanceID:   skrInstanceID,
-		Instance:        operation.Cls.Instance.InstanceKey(),
+		SKRInstanceID: skrInstanceID,
+		Instance:      operation.Cls.Instance.InstanceKey(),
 	}
 
 	if !operation.Cls.Instance.DeprovisioningTriggered {
 		if err := s.deprovisioner.Deprovision(smClient, request); err != nil {
-			failureReason := fmt.Sprintf("Unable to deprovision a cls instance for global account %s: %s", globalAccountID, err)
+			failureReason := fmt.Sprintf("Unable to deprovision a cls instance %s: %s", operation.Cls.Instance.InstanceID, err)
 			log.Error(failureReason)
 			return s.operationManager.RetryOperation(operation, failureReason, 1*time.Minute, 5*time.Minute, log)
 		}
@@ -76,28 +75,28 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 }
 
 func (s *ClsDeprovisionStep) checkDeprovisioningStatus(operation internal.DeprovisioningOperation, log logrus.FieldLogger, smClient servicemanager.Client) (internal.DeprovisioningOperation, time.Duration, error) {
-	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
+	instanceID := operation.Cls.Instance.InstanceID
 
 	resp, err := smClient.LastInstanceOperation(operation.Cls.Instance.InstanceKey(), "")
 	if err != nil {
-		failureReason := fmt.Sprintf("Unable to poll the status of a cls instance for global account %s: %s", globalAccountID, err)
+		failureReason := fmt.Sprintf("Unable to poll the status of a cls instance %s: %s", instanceID, err)
 		log.Error(failureReason)
 		return s.operationManager.RetryOperation(operation, failureReason, 1*time.Minute, 5*time.Minute, log)
 	}
 
-	log.Debugf("Response from service manager while polling the status of a cls instance %s: %#v", operation.Cls.Instance.InstanceID, resp)
+	log.Debugf("Response from service manager while polling the status of a cls instance %s: %#v", instanceID, resp)
 
 	switch resp.State {
 	case servicemanager.InProgress:
 		return operation, 30 * time.Second, nil
 	case servicemanager.Failed:
-		failureReason := fmt.Sprintf("Deprovisioning of a cls instance for global account %s failed", globalAccountID)
+		failureReason := fmt.Sprintf("Deprovisioning of a cls instance %s failed", instanceID)
 		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason)
 	case servicemanager.Succeeded:
 		operation.Cls.Instance.InstanceID = ""
 		operation.Cls.Instance.Provisioned = false
-		log.Debugf("Finished deprovisioning a cls instance for global account %s", globalAccountID)
+		log.Debugf("Finished deprovisioning a cls instance %s", instanceID)
 	}
 
 	return s.operationManager.UpdateOperation(operation)
