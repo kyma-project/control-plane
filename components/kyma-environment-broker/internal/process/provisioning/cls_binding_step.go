@@ -134,13 +134,15 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 	// Insert cls overrides if kyma version is >=1.20. Also make sure for PR images overrides are inserted here
 	c, err := semver.NewConstraint("<= 1.19.x")
 	if err != nil {
-		log.Errorf("unable to parse constraint for kyma version to set correct fluent bit plugin: %v", err)
-		return operation, time.Second, nil
+		failureReason := fmt.Sprintf("unable to parse constraint for kyma version to set correct fluent bit plugin: %v", err)
+		log.Error(failureReason)
+		return s.operationManager.OperationFailed(operation, failureReason)
 	}
 	v, err := semver.NewVersion(operation.RuntimeVersion.Version)
 	if err != nil {
-		log.Errorf("unable to parse runtime kyma version: %v", err)
-		return operation, time.Second, nil
+		failureReason := fmt.Sprintf("unable to parse runtime kyma version: %v", err)
+		log.Error(failureReason)
+		return s.operationManager.OperationFailed(operation, failureReason)
 	}
 	check := c.Check(v)
 	if !check {
