@@ -120,7 +120,7 @@ func (alo *AuditLogOverrides) renderOverrides(aloOv auditlog.Overrides, tmp *tem
 	var flOutputs bytes.Buffer
 	err := tmp.Execute(&flOutputs, aloOv)
 	if err != nil {
-		return "", errors.Wrapf(err,"Template error while injecting cls overrides: %v", err )
+		return "", errors.Wrapf(err, "Template error while injecting cls overrides: %v", err)
 	}
 	return flOutputs.String(), nil
 }

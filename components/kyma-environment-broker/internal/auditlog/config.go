@@ -33,8 +33,7 @@ func GetExtraConfTemplate(KymaVersion string) (*template.Template, error) {
 		return nil, errors.New("unable to parse constraint for kyma version %s to set correct fluent bit plugin")
 	}
 
-	var version *semver.Version
-	version, err = semver.NewVersion(KymaVersion)
+	version, err := semver.NewVersion(KymaVersion)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse kyma version %s to set correct fluent bit plugin", KymaVersion)
 	}

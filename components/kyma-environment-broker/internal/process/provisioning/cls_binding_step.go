@@ -60,11 +60,6 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 	}
 	smCli := operation.SMClientFactory.ForCredentials(smCredentials)
 
-	if err != nil {
-		failureReason := fmt.Sprintf("Unable to create Service Manager client")
-		log.Errorf("%s: %s", failureReason, err)
-		return s.operationManager.OperationFailed(operation, failureReason)
-	}
 	// test if the provisioning is finished, if not, retry after 10s
 	resp, err := smCli.LastInstanceOperation(operation.Cls.Instance.InstanceKey(), "")
 	if err != nil {
@@ -143,6 +138,10 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		return operation, time.Second, nil
 	}
 	v, err := semver.NewVersion(operation.RuntimeVersion.Version)
+	if err != nil {
+		log.Errorf("unable to parse runtime kyma version: %v", err)
+		return operation, time.Second, nil
+	}
 	check := c.Check(v)
 	if !check {
 		operation.InputCreator.AppendOverrides(components.CLS, getClsOverrides(flOverride))

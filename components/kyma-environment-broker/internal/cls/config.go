@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"text/template"
 
 	"gopkg.in/yaml.v2"
 )
@@ -31,10 +30,6 @@ type Config struct {
 	SAML *SAMLConfig `yaml:"saml"`
 
 	ServiceManager *ServiceManagerConfig `yaml:"serviceManager"`
-}
-
-type OverrideFiles struct {
-	clsFBOverrideConfig *template.Template
 }
 
 //ServiceManagerConfig contains service manager credentials per region
