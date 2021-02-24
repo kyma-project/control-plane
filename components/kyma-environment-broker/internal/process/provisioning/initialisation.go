@@ -144,10 +144,10 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.Provisioni
 		return errors.Wrap(err, "while getting the runtime version")
 	}
 
-	operation.RuntimeVersion = *version
-
 	var repeat time.Duration
-	if *operation, repeat = s.operationManager.UpdateOperation(*operation); repeat != 0 {
+	if *operation, repeat = s.operationManager.UpdateOperation(*operation, func(operation *internal.ProvisioningOperation) {
+		operation.RuntimeVersion = *version
+	}); repeat != 0 {
 		return errors.New("unable to update operation with RuntimeVersion property")
 	}
 	return nil

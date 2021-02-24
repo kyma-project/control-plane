@@ -64,10 +64,9 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 			logger.Errorf("%s: %s", errMsg, err)
 			return del.provisionManager.OperationFailed(operation, errMsg)
 		}
-
-		evalAssistant.SetEvalId(&operation.Avs, evalResp.Id)
-
-		updatedOperation, d = del.provisionManager.UpdateOperation(operation)
+		updatedOperation, d = del.provisionManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+			evalAssistant.SetEvalId(&operation.Avs, evalResp.Id)
+		})
 	}
 
 	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.Avs.AvsEvaluationInternalId, updatedOperation.ProvisioningParameters)
@@ -101,7 +100,7 @@ func (del *Delegator) AddTags(logger logrus.FieldLogger, operation internal.Prov
 		}
 	}
 
-	updatedOperation, d = del.provisionManager.UpdateOperation(operation)
+	updatedOperation, d = del.provisionManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation){})
 
 	return updatedOperation, d, nil
 }

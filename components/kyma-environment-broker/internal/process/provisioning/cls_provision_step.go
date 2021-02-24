@@ -72,18 +72,17 @@ func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason)
 	}
-
-	operation.Cls.Region = result.Region
-	operation.Cls.Instance.InstanceID = result.InstanceID
-	operation.Cls.Instance.ProvisioningTriggered = result.ProvisioningTriggered
-
 	log.Infof("Finished provisioning a cls instance for global account %s", globalAccountID)
 
-	_, repeat := s.operationManager.UpdateOperation(operation)
+	op, repeat := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+		operation.Cls.Region = result.Region
+		operation.Cls.Instance.InstanceID = result.InstanceID
+		operation.Cls.Instance.ProvisioningTriggered = result.ProvisioningTriggered
+	})
 	if repeat != 0 {
 		log.Errorf("Unable to update operation: %s", err)
 		return operation, time.Second, nil
 	}
 
-	return operation, 0, nil
+	return op, 0, nil
 }

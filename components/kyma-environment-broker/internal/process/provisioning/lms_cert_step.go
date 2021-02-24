@@ -226,6 +226,8 @@ func (s *LmsStep) failLmsAndUpdate(operation internal.ProvisioningOperation, msg
 	if s.isMandatory {
 		return s.operationManager.OperationFailed(operation, msg)
 	}
-	modifiedOp, retry := s.operationManager.UpdateOperation(operation)
+	modifiedOp, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+		operation.Lms.Failed = true
+	})
 	return modifiedOp, retry, nil
 }

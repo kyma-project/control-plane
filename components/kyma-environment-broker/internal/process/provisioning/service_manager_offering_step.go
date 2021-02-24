@@ -25,8 +25,8 @@ type ServiceManagerOfferingStep struct {
 }
 
 func NewServiceManagerOfferingStep(stepName, offeringName, planName string,
-	extractor func(po *internal.ProvisioningOperation,
-	) *internal.ServiceManagerInstanceInfo, repo storage.Operations) *ServiceManagerOfferingStep {
+	extractor func(po *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo,
+	repo storage.Operations) *ServiceManagerOfferingStep {
 	return &ServiceManagerOfferingStep{
 		operationManager: process.NewProvisionOperationManager(repo),
 		extractor:        extractor,
@@ -77,7 +77,7 @@ func (s *ServiceManagerOfferingStep) Run(operation internal.ProvisioningOperatio
 	info.PlanID = plans.ServicePlans[0].CatalogID
 	log.Infof("Found plan: catalogID=%s", info.PlanID)
 
-	op, retry := s.operationManager.UpdateOperation(operation)
+	op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {})
 	if retry > 0 {
 		log.Errorf("unable to update the operation")
 		return op, retry, nil

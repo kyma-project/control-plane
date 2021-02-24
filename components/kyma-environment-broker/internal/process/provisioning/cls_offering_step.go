@@ -82,7 +82,7 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 	info.PlanID = plans.ServicePlans[0].CatalogID
 	log.Infof("Found plan: catalogID=%s", info.PlanID)
 
-	op, retry := s.operationManager.UpdateOperation(operation)
+	op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {})
 	if retry > 0 {
 		log.Errorf("unable to update the operation")
 		return op, retry, nil

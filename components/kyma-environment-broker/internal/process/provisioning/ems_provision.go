@@ -50,8 +50,9 @@ func (s *EmsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 		return s.handleError(operation, err, log, fmt.Sprintf("provision()  call failed"))
 	}
 	// save the status
-	operation.Ems.Instance.ProvisioningTriggered = true
-	operation, retry := s.operationManager.UpdateOperation(operation)
+	operation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+		operation.Ems.Instance.ProvisioningTriggered = true
+	})
 	if retry > 0 {
 		log.Errorf("unable to update operation")
 		return operation, time.Second, nil

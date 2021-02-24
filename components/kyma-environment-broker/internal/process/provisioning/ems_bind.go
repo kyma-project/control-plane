@@ -85,11 +85,13 @@ func (s *EmsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("encryptOverrides() call failed"))
 		}
-		operation.Ems.Overrides = encryptedOverrides
-		operation.Ems.Instance.Provisioned = true
-		operation.Ems.Instance.ProvisioningTriggered = false
+
 		// save the status
-		op, retry := s.operationManager.UpdateOperation(operation)
+		op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+			operation.Ems.Overrides = encryptedOverrides
+			operation.Ems.Instance.Provisioned = true
+			operation.Ems.Instance.ProvisioningTriggered = false
+		})
 		if retry > 0 {
 			log.Errorf("unable to update operation")
 			return operation, time.Second, nil

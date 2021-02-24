@@ -2,6 +2,7 @@ package process
 
 import (
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -44,9 +45,21 @@ func (om *ProvisionOperationManager) OperationFailed(operation internal.Provisio
 }
 
 // UpdateOperation updates a given operation
-func (om *ProvisionOperationManager) UpdateOperation(operation internal.ProvisioningOperation) (internal.ProvisioningOperation, time.Duration) {
+func (om *ProvisionOperationManager) UpdateOperation(operation internal.ProvisioningOperation, overwrite func(operation *internal.ProvisioningOperation)) (internal.ProvisioningOperation, time.Duration) {
+	overwrite(&operation)
 	updatedOperation, err := om.storage.UpdateProvisioningOperation(operation)
 	if err != nil {
+		if dberr.IsConflict(err) {
+			op, err := om.storage.GetProvisioningOperationByID(operation.ID)
+			if err != nil {
+				return operation, 1 * time.Minute
+			}
+			overwrite(op)
+			updatedOperation, err = om.storage.UpdateProvisioningOperation(operation)
+			if err != nil {
+				return operation, 1 * time.Minute
+			}
+		}
 		logrus.WithField("operation", operation.ID).
 			WithField("instanceID", operation.InstanceID).
 			Errorf("Update provisioning operation failed: %s", err.Error())
@@ -74,8 +87,8 @@ func (om *ProvisionOperationManager) RetryOperation(operation internal.Provision
 }
 
 func (om *ProvisionOperationManager) update(operation internal.ProvisioningOperation, state domain.LastOperationState, description string) (internal.ProvisioningOperation, time.Duration) {
-	operation.State = state
-	operation.Description = fmt.Sprintf("%s : %s", operation.Description, description)
-
-	return om.UpdateOperation(operation)
+	return om.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+		operation.State = state
+		operation.Description = fmt.Sprintf("%s : %s", operation.Description, description)
+	})
 }
