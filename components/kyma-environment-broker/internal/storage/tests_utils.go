@@ -268,14 +268,13 @@ func FixTables() map[string]string {
 			region varchar(12) NOT NULL,
 			created_at TIMESTAMPTZ NOT NULL,
 			removed_by_skr_instance_id varchar(255),
-			unique (global_account_id, removed_by_skr_instance_id)
-				)`, postsql.CLSInstanceTableName),
-		postsql.CLSInstanceReferenceTableName: fmt.Sprintf(
-			`CREATE TABLE IF NOT EXISTS %s (
+			unique (global_account_id, removed_by_skr_instance_id));
+
+			CREATE TABLE IF NOT EXISTS %s (
 			id SERIAL,
 			cls_instance_id varchar(255) NOT NULL,
 			skr_instance_id varchar(255) NOT NULL,
-			FOREIGN KEY(cls_instance_id) REFERENCES %s(id) ON DELETE CASCADE
-			)`, postsql.CLSInstanceReferenceTableName, postsql.CLSInstanceTableName),
+			FOREIGN KEY(cls_instance_id) REFERENCES %s(id) ON DELETE CASCADE);
+			`, postsql.CLSInstanceTableName, postsql.CLSInstanceReferenceTableName, postsql.CLSInstanceTableName),
 	}
 }
