@@ -90,6 +90,51 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 		//then
 		require.Error(t, err)
 	})
+
+	t.Run("should return error when diskType or VolumeSizeGb is passed to openstack provisioning mutation", func(t *testing.T) {
+		openStackClusterConfig := &gqlschema.ClusterConfigInput{
+			GardenerConfig: &gqlschema.GardenerConfigInput{
+				Name:                   "tets-clst",
+				KubernetesVersion:      "1.15.4",
+				VolumeSizeGb:           nil,
+				MachineType:            "n1-standard-4",
+				Region:                 "europe",
+				Provider:               "openstack",
+				Seed:                   util.StringPtr("2"),
+				TargetSecret:           "test-secret",
+				DiskType:               util.StringPtr("ssd"),
+				WorkerCidr:             "10.10.10.10/255",
+				AutoScalerMin:          1,
+				AutoScalerMax:          3,
+				MaxSurge:               40,
+				MaxUnavailable:         1,
+				ProviderSpecificConfig: nil,
+			},
+		}
+
+		config := gqlschema.ProvisionRuntimeInput{
+			RuntimeInput:  runtimeInput,
+			ClusterConfig: openStackClusterConfig,
+			KymaConfig:    kymaConfig,
+		}
+
+		validator := NewValidator(nil)
+
+		//when
+		err := validator.ValidateProvisioningInput(config)
+
+		//then
+		require.Error(t, err)
+
+		openStackClusterConfig.GardenerConfig.VolumeSizeGb = util.IntPtr(30)
+		openStackClusterConfig.GardenerConfig.DiskType = nil
+
+		//when
+		err = validator.ValidateProvisioningInput(config)
+
+		//then
+		require.Error(t, err)
+	})
 }
 
 func TestValidator_ValidateUpgradeInput(t *testing.T) {
@@ -414,6 +459,7 @@ func TestValidator_ValidateTenantForOperation(t *testing.T) {
 func initializeConfigs() (*gqlschema.ClusterConfigInput, *gqlschema.RuntimeInput, *gqlschema.KymaConfigInput) {
 	clusterConfig := &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:                   "tets-clst",
 			KubernetesVersion:      "1.15.4",
 			VolumeSizeGb:           util.IntPtr(30),
 			MachineType:            "n1-standard-4",
