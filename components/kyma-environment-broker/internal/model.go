@@ -35,13 +35,13 @@ const (
 )
 
 type CLSInstance struct {
-	Version         int
-	ID              string
-	GlobalAccountID string
-	// Currently, a CLS instance is identified by GlobalAccountID only. Region is stored for future use.
-	Region        string
-	CreatedAt     time.Time
-	SKRReferences []string
+	Version                  int
+	ID                       string
+	GlobalAccountID          string
+	Region                   string
+	CreatedAt                time.Time
+	ReferencedSKRInstanceIDs []string
+	RemovedBySKRInstanceID   string
 }
 
 type LMSTenant struct {
@@ -218,12 +218,13 @@ type ProvisioningOperation struct {
 }
 
 type ServiceManagerInstanceInfo struct {
-	BrokerID              string `json:"brokerId"`
-	ServiceID             string `json:"serviceId"`
-	PlanID                string `json:"planId"` // it is a plan.CatalogID from the Service Manager perspective
-	InstanceID            string `json:"instanceId"`
-	Provisioned           bool   `json:"provisioned"`
-	ProvisioningTriggered bool   `json:"provisioningTriggered"`
+	BrokerID                string `json:"brokerId"`
+	ServiceID               string `json:"serviceId"`
+	PlanID                  string `json:"planId"` // it is a plan.CatalogID from the Service Manager perspective
+	InstanceID              string `json:"instanceId"`
+	Provisioned             bool   `json:"provisioned"`
+	ProvisioningTriggered   bool   `json:"provisioningTriggered"`
+	DeprovisioningTriggered bool   `json:"deprovisioningTriggered"`
 }
 
 type XSUAAData struct {
