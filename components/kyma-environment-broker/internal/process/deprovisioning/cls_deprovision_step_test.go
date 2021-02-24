@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
+	smautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -72,6 +73,7 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 	db := storage.NewMemoryStorage()
 	repo := db.Operations()
 
+	smClient := &smautomock.Client{}
 	operation := internal.DeprovisioningOperation{
 		Operation: internal.Operation{
 			InstanceID: skrInstanceID,
@@ -81,10 +83,10 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 				Cls: internal.ClsData{Region: "eu", Instance: clsInstance},
 			},
 		},
-		SMClientFactory: servicemanager.NewFakeServiceManagerClientFactory(nil, nil),
+		SMClientFactory: servicemanager.NewPassthroughServiceManagerClientFactory(smClient),
 	}
 
-	t.Run("deprovisioning fails", func(t *testing.T) {
+	t.Run("triggering of deprovisioning fails", func(t *testing.T) {
 		deprovisionerMock := &automock.ClsDeprovisioner{}
 		deprovisionerMock.On("Deprovision", mock.Anything, &cls.DeprovisionRequest{
 			GlobalAccountID: globalAccountID,
@@ -101,7 +103,7 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("deprovisioning succeeds", func(t *testing.T) {
+	t.Run("triggering of deprovisioning succeeds", func(t *testing.T) {
 		deprovisionerMock := &automock.ClsDeprovisioner{}
 		deprovisionerMock.On("Deprovision", mock.Anything, &cls.DeprovisionRequest{
 			GlobalAccountID: globalAccountID,
@@ -112,8 +114,56 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 		step := NewClsDeprovisionStep(config, repo, deprovisionerMock)
 
 		op, offset, err := step.Run(operation, logger.NewLogDummy())
-		require.False(t, op.Cls.Instance.Provisioned)
-		require.Empty(t, op.Cls.Instance.InstanceID)
+		require.True(t, op.Cls.Instance.Provisioned)
+		require.NotEmpty(t, op.Cls.Instance.InstanceID)
+		require.NotZero(t, offset)
+		require.NoError(t, err)
+	})
+
+	t.Run("deprovisioning fails", func(t *testing.T) {
+		operation.Cls.Instance.DeprovisioningTriggered = true
+
+		smClient.On("LastInstanceOperation", operation.Cls.Instance.InstanceKey(), "").Return(servicemanager.LastOperationResponse{
+			State: servicemanager.Failed,
+		}, nil)
+
+		step := NewClsDeprovisionStep(config, repo, &automock.ClsDeprovisioner{})
+
+		op, offset, err := step.Run(operation, logger.NewLogDummy())
+		require.True(t, op.Cls.Instance.Provisioned)
+		require.NotEmpty(t, op.Cls.Instance.InstanceID)
+		require.NotZero(t, offset)
+		require.NoError(t, err)
+	})
+
+	t.Run("deprovisioning in progress", func(t *testing.T) {
+		operation.Cls.Instance.DeprovisioningTriggered = true
+
+		smClient.On("LastInstanceOperation", operation.Cls.Instance.InstanceKey(), "").Return(servicemanager.LastOperationResponse{
+			State: servicemanager.InProgress,
+		}, nil)
+
+		step := NewClsDeprovisionStep(config, repo, &automock.ClsDeprovisioner{})
+
+		op, offset, err := step.Run(operation, logger.NewLogDummy())
+		require.True(t, op.Cls.Instance.Provisioned)
+		require.NotEmpty(t, op.Cls.Instance.InstanceID)
+		require.NotZero(t, offset)
+		require.NoError(t, err)
+	})
+
+	t.Run("deprovisioning succeeds", func(t *testing.T) {
+		operation.Cls.Instance.DeprovisioningTriggered = true
+
+		smClient.On("LastInstanceOperation", operation.Cls.Instance.InstanceKey(), "").Return(servicemanager.LastOperationResponse{
+			State: servicemanager.InProgress,
+		}, nil)
+
+		step := NewClsDeprovisionStep(config, repo, &automock.ClsDeprovisioner{})
+
+		op, offset, err := step.Run(operation, logger.NewLogDummy())
+		require.True(t, op.Cls.Instance.Provisioned)
+		require.NotEmpty(t, op.Cls.Instance.InstanceID)
 		require.NotZero(t, offset)
 		require.NoError(t, err)
 	})

@@ -89,23 +89,12 @@ func createParameters(config *Config) parameters {
 
 // RemoveInstance sends a request to Service Manager to remove a CLS Instance
 func (c *Client) RemoveInstance(smClient servicemanager.Client, instance servicemanager.InstanceKey) error {
-	deprovisionResp, err := smClient.Deprovision(instance, true)
+	resp, err := smClient.Deprovision(instance, true)
 	if err != nil {
 		return errors.Wrapf(err, "while deprovisioning a cls instance %s", instance.InstanceID)
 	}
 
-	c.log.Infof("Response from service manager while deprovisioning an instance %s: %#v", instance.InstanceID, deprovisionResp)
-
-	lastInstanceOpResp, err := smClient.LastInstanceOperation(instance, "")
-	if err != nil {
-		return errors.Wrapf(err, "while polling the status of a cls instance %s", instance.InstanceID)
-	}
-
-	c.log.Infof("Response from service manager while polling the status of a cls instance %s: %#v", instance.InstanceID, lastInstanceOpResp)
-
-	if lastInstanceOpResp.State != servicemanager.Succeeded {
-		return errors.New("deprovisioning not finished")
-	}
+	c.log.Infof("Response from service manager while deprovisioning an instance %s: %#v", instance.InstanceID, resp)
 
 	return nil
 }

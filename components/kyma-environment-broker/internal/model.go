@@ -210,12 +210,13 @@ type ProvisioningOperation struct {
 }
 
 type ServiceManagerInstanceInfo struct {
-	BrokerID              string `json:"brokerId"`
-	ServiceID             string `json:"serviceId"`
-	PlanID                string `json:"planId"` // it is a plan.CatalogID from the Service Manager perspective
-	InstanceID            string `json:"instanceId"`
-	Provisioned           bool   `json:"provisioned"`
-	ProvisioningTriggered bool   `json:"provisioningTriggered"`
+	BrokerID                string `json:"brokerId"`
+	ServiceID               string `json:"serviceId"`
+	PlanID                  string `json:"planId"` // it is a plan.CatalogID from the Service Manager perspective
+	InstanceID              string `json:"instanceId"`
+	Provisioned             bool   `json:"provisioned"`
+	ProvisioningTriggered   bool   `json:"provisioningTriggered"`
+	DeprovisioningTriggered bool   `json:"deprovisioningTriggered"`
 }
 
 type XSUAAData struct {

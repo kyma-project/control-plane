@@ -142,11 +142,9 @@ func TestRemoveInstance(t *testing.T) {
 	)
 
 	tests := []struct {
-		summary             string
-		deprovisionErr      error
-		lastInstanceOpErr   error
-		lastInstanceOpState servicemanager.LastOperationState
-		expectedErr         bool
+		summary        string
+		deprovisionErr error
+		expectedErr    bool
 	}{
 		{
 			summary:        "deprovision fails",
@@ -154,24 +152,8 @@ func TestRemoveInstance(t *testing.T) {
 			expectedErr:    true,
 		},
 		{
-			summary:           "last operation fails",
-			lastInstanceOpErr: errors.New("unable to connect"),
-			expectedErr:       true,
-		},
-		{
-			summary:             "last operation status failed",
-			lastInstanceOpState: servicemanager.Failed,
-			expectedErr:         true,
-		},
-		{
-			summary:             "last operation status in progress",
-			lastInstanceOpState: servicemanager.InProgress,
-			expectedErr:         true,
-		},
-		{
-			summary:             "last operation status succeeded",
-			lastInstanceOpState: servicemanager.Succeeded,
-			expectedErr:         false,
+			summary:     "deprovision succeeds",
+			expectedErr: false,
 		},
 	}
 
@@ -179,9 +161,6 @@ func TestRemoveInstance(t *testing.T) {
 		t.Run(tc.summary, func(t *testing.T) {
 			smClientMock := &automock.Client{}
 			smClientMock.On("Deprovision", fakeInstance, true).Return(&servicemanager.DeprovisionResponse{}, tc.deprovisionErr)
-			smClientMock.On("LastInstanceOperation", fakeInstance, "").Return(servicemanager.LastOperationResponse{
-				State: tc.lastInstanceOpState,
-			}, tc.lastInstanceOpErr)
 			sut := NewClient(new(Config), logger.NewLogDummy())
 			err := sut.RemoveInstance(smClientMock, fakeInstance)
 			if tc.expectedErr {

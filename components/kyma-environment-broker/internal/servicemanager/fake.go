@@ -9,6 +9,28 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type passthroughServiceManagerClientFactory struct {
+	cli Client
+}
+
+func NewPassthroughServiceManagerClientFactory(cli Client) *passthroughServiceManagerClientFactory {
+	return &passthroughServiceManagerClientFactory{
+		cli: cli,
+	}
+}
+
+func (f *passthroughServiceManagerClientFactory) ForCredentials(credentials *Credentials) Client {
+	return f.cli
+}
+
+func (f *passthroughServiceManagerClientFactory) ForCustomerCredentials(reqCredentials *Credentials, log logrus.FieldLogger) (Client, error) {
+	return f.cli, nil
+}
+
+func (f *passthroughServiceManagerClientFactory) ProvideCredentials(reqCredentials *Credentials, log logrus.FieldLogger) (*Credentials, error) {
+	return reqCredentials, nil
+}
+
 type fakeServiceManagerClient struct {
 	offerings            []types.ServiceOffering
 	plans                []types.ServicePlan
