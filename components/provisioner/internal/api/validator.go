@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"strings"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -157,7 +158,7 @@ func (v *validator) validateMachineImage(gardenerConfig gqlschema.GardenerConfig
 
 // OpenStack does not accept diskType or volumeSize
 func (v *validator) validateOpenStackVolume(diskType *string, volumeSizeGb *int, provider string) apperrors.AppError {
-	if provider == "openstack" {
+	if strings.ToLower(provider) == "openstack" {
 		if diskType != nil || volumeSizeGb != nil {
 			return apperrors.BadRequest("error: OpenStack mutation does not accept diskType or volumeSizeGb parameters")
 		}
