@@ -20,12 +20,13 @@ const (
 
 type Config struct {
 	URL                         string
-	Timeout                     time.Duration `envconfig:"default=12h"`
-	KubernetesVersion           string        `envconfig:"default=1.16.9"`
-	DefaultGardenerShootPurpose string        `envconfig:"default=development"`
-	MachineImage                string        `envconfig:"optional"`
-	MachineImageVersion         string        `envconfig:"optional"`
-	TrialNodesNumber            int           `envconfig:"optional"`
+	Timeout                     time.Duration               `envconfig:"default=12h"`
+	KubernetesVersion           string                      `envconfig:"default=1.16.9"`
+	DefaultGardenerShootPurpose string                      `envconfig:"default=development"`
+	MachineImage                string                      `envconfig:"optional"`
+	MachineImageVersion         string                      `envconfig:"optional"`
+	TrialNodesNumber            int                         `envconfig:"optional"`
+	DefaultTrialProvider        internal.TrialCloudProvider `envconfig:"default=Azure"` // could be: Azure, AWS, GCP
 }
 
 type RuntimeInput struct {
