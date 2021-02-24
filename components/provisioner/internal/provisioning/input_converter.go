@@ -88,7 +88,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 
 	return model.GardenerConfig{
 		ID:                                  c.uuidGenerator.New(),
-		Name:                                setClusterName(input.Name),
+		Name:                                input.Name,
 		ProjectName:                         c.gardenerProject,
 		KubernetesVersion:                   input.KubernetesVersion,
 		Provider:                            input.Provider,
@@ -136,11 +136,6 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		providerSpecificConfig = config.GardenerProviderConfig
 	}
 
-	purpose := config.Purpose
-	if input.Purpose != nil {
-		purpose = input.Purpose
-	}
-
 	return model.GardenerConfig{
 		ID:                        config.ID,
 		ClusterID:                 config.ClusterID,
@@ -153,13 +148,13 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		LicenceType:               config.LicenceType,
 		AllowPrivilegedContainers: config.AllowPrivilegedContainers,
 
-		Purpose:                             purpose,
+		Purpose:                             util.DefaultStrIfNil(input.Purpose, config.Purpose),
 		KubernetesVersion:                   util.UnwrapStrOrDefault(input.KubernetesVersion, config.KubernetesVersion),
 		MachineType:                         util.UnwrapStrOrDefault(input.MachineType, config.MachineType),
-		DiskType:                            util.UnwrapStrOrDefault(input.DiskType, config.DiskType),
-		VolumeSizeGB:                        util.UnwrapIntOrDefault(input.VolumeSizeGb, config.VolumeSizeGB),
-		MachineImage:                        input.MachineImage,
-		MachineImageVersion:                 input.MachineImageVersion,
+		DiskType:                            util.DefaultStrIfNil(input.DiskType, config.DiskType),
+		VolumeSizeGB:                        util.DefaultIntIfNil(input.VolumeSizeGb, config.VolumeSizeGB),
+		MachineImage:                        util.DefaultStrIfNil(input.MachineImage, config.MachineImage),
+		MachineImageVersion:                 util.DefaultStrIfNil(input.MachineImageVersion, config.MachineImageVersion),
 		AutoScalerMin:                       util.UnwrapIntOrDefault(input.AutoScalerMin, config.AutoScalerMin),
 		AutoScalerMax:                       util.UnwrapIntOrDefault(input.AutoScalerMax, config.AutoScalerMax),
 		MaxSurge:                            util.UnwrapIntOrDefault(input.MaxSurge, config.MaxSurge),
@@ -183,6 +178,9 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 	}
 	if input.AwsConfig != nil {
 		return model.NewAWSGardenerConfig(input.AwsConfig)
+	}
+	if input.OpenStackConfig != nil {
+		return model.NewOpenStackGardenerConfig(input.OpenStackConfig)
 	}
 
 	return nil, apperrors.BadRequest("provider config not specified")
@@ -261,12 +259,4 @@ func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput, c
 
 func configEntryFromInput(entry *gqlschema.ConfigEntryInput) model.ConfigEntry {
 	return model.NewConfigEntry(entry.Key, entry.Value, util.UnwrapBoolOrDefault(entry.Secret, false))
-}
-
-//TODO Remove when name is changed to obligatory field
-func setClusterName(name *string) string {
-	if name != nil {
-		return util.UnwrapStr(name)
-	}
-	return util.CreateGardenerClusterName()
 }

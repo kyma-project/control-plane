@@ -122,6 +122,13 @@ type ComplexityRoot struct {
 		UpgradeShoot             func(childComplexity int, id string, config UpgradeShootInput) int
 	}
 
+	OpenStackProviderConfig struct {
+		CloudProfileName     func(childComplexity int) int
+		FloatingPoolName     func(childComplexity int) int
+		LoadBalancerProvider func(childComplexity int) int
+		Zones                func(childComplexity int) int
+	}
+
 	OperationStatus struct {
 		ID        func(childComplexity int) int
 		Message   func(childComplexity int) int
@@ -568,6 +575,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpgradeShoot(childComplexity, args["id"].(string), args["config"].(UpgradeShootInput)), true
 
+	case "OpenStackProviderConfig.cloudProfileName":
+		if e.complexity.OpenStackProviderConfig.CloudProfileName == nil {
+			break
+		}
+
+		return e.complexity.OpenStackProviderConfig.CloudProfileName(childComplexity), true
+
+	case "OpenStackProviderConfig.floatingPoolName":
+		if e.complexity.OpenStackProviderConfig.FloatingPoolName == nil {
+			break
+		}
+
+		return e.complexity.OpenStackProviderConfig.FloatingPoolName(childComplexity), true
+
+	case "OpenStackProviderConfig.loadBalancerProvider":
+		if e.complexity.OpenStackProviderConfig.LoadBalancerProvider == nil {
+			break
+		}
+
+		return e.complexity.OpenStackProviderConfig.LoadBalancerProvider(childComplexity), true
+
+	case "OpenStackProviderConfig.zones":
+		if e.complexity.OpenStackProviderConfig.Zones == nil {
+			break
+		}
+
+		return e.complexity.OpenStackProviderConfig.Zones(childComplexity), true
+
 	case "OperationStatus.id":
 		if e.complexity.OperationStatus.ID == nil {
 			break
@@ -785,7 +820,7 @@ type GardenerConfig {
     providerSpecificConfig: ProviderSpecificConfig
 }
 
-union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig
+union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
 
 type GCPProviderConfig {
     zones: [String!]!
@@ -801,6 +836,13 @@ type AWSProviderConfig {
     vpcCidr: String
     publicCidr: String
     internalCidr: String
+}
+
+type OpenStackProviderConfig {
+    zones: [String!]!
+    floatingPoolName: String!
+    cloudProfileName: String!
+    loadBalancerProvider: String!
 }
 
 type ConfigEntry {
@@ -907,7 +949,7 @@ input ClusterConfigInput {
 }
 
 input GardenerConfigInput {
-    name: String                                    # Name of the cluster
+    name: String!                                   # Name of the cluster
     kubernetesVersion: String!                      # Kubernetes version to be installed on the cluster
     provider: String!                               # Target provider on which to provision the cluster (Azure, AWS, GCP)
     targetSecret: String!                           # Secret in Gardener containing credentials to the target provider
@@ -915,8 +957,8 @@ input GardenerConfigInput {
     machineType: String!                            # Type of node machines, varies depending on the target provider
     machineImage: String                            # Machine OS image name
     machineImageVersion: String                     # Machine OS image version
-    diskType: String!                               # Disk type, varies depending on the target provider
-    volumeSizeGB: Int!                              # Size of the available disk, provided in GB
+    diskType: String                                # Disk type, varies depending on the target provider
+    volumeSizeGB: Int                               # Size of the available disk, provided in GB
     workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes
     autoScalerMin: Int!                             # Minimum number of VMs to create
     autoScalerMax: Int!                             # Maximum number of VMs to create
@@ -932,9 +974,10 @@ input GardenerConfigInput {
 }
 
 input ProviderSpecificInput {
-    gcpConfig: GCPProviderConfigInput        # GCP-specific configuration for the cluster to be provisioned
-    azureConfig: AzureProviderConfigInput    # Azure-specific configuration for the cluster to be provisioned
-    awsConfig: AWSProviderConfigInput        # AWS-specific configuration for the cluster to be provisioned
+    gcpConfig: GCPProviderConfigInput             # GCP-specific configuration for the cluster to be provisioned
+    azureConfig: AzureProviderConfigInput         # Azure-specific configuration for the cluster to be provisioned
+    awsConfig: AWSProviderConfigInput             # AWS-specific configuration for the cluster to be provisioned
+    openStackConfig: OpenStackProviderConfigInput # OpenStack-specific configuration for the cluster to be provisioned
 }
 
 input GCPProviderConfigInput {
@@ -951,6 +994,13 @@ input AWSProviderConfigInput {
     vpcCidr: String!        # Classless Inter-Domain Routing for the virtual public cloud
     publicCidr: String!     # Classless Inter-Domain Routing for the public subnet
     internalCidr: String!   # Classless Inter-Domain Routing for the private subnet
+}
+
+input OpenStackProviderConfigInput {
+    zones:           [String!]! # Zones in which to create the cluster
+    floatingPoolName: String!  # FloatingPoolName name in which LoadBalancer FIPs should be created.
+    cloudProfileName: String!  # Name of the target Cloud Profile
+    loadBalancerProvider: String! # Name of load balancer provider, e.g. f5
 }
 
 input KymaConfigInput {
@@ -2994,6 +3044,154 @@ func (ec *executionContext) _Mutation_reconnectRuntimeAgent(ctx context.Context,
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _OpenStackProviderConfig_zones(ctx context.Context, field graphql.CollectedField, obj *OpenStackProviderConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenStackProviderConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Zones, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2ᚕstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenStackProviderConfig_floatingPoolName(ctx context.Context, field graphql.CollectedField, obj *OpenStackProviderConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenStackProviderConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FloatingPoolName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenStackProviderConfig_cloudProfileName(ctx context.Context, field graphql.CollectedField, obj *OpenStackProviderConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenStackProviderConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CloudProfileName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenStackProviderConfig_loadBalancerProvider(ctx context.Context, field graphql.CollectedField, obj *OpenStackProviderConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenStackProviderConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LoadBalancerProvider, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _OperationStatus_id(ctx context.Context, field graphql.CollectedField, obj *OperationStatus) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -4963,7 +5161,7 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 		switch k {
 		case "name":
 			var err error
-			it.Name, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5011,13 +5209,13 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			}
 		case "diskType":
 			var err error
-			it.DiskType, err = ec.unmarshalNString2string(ctx, v)
+			it.DiskType, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "volumeSizeGB":
 			var err error
-			it.VolumeSizeGb, err = ec.unmarshalNInt2int(ctx, v)
+			it.VolumeSizeGb, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5237,6 +5435,42 @@ func (ec *executionContext) unmarshalInputKymaConfigInput(ctx context.Context, o
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputOpenStackProviderConfigInput(ctx context.Context, obj interface{}) (OpenStackProviderConfigInput, error) {
+	var it OpenStackProviderConfigInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "zones":
+			var err error
+			it.Zones, err = ec.unmarshalNString2ᚕstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "floatingPoolName":
+			var err error
+			it.FloatingPoolName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "cloudProfileName":
+			var err error
+			it.CloudProfileName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "loadBalancerProvider":
+			var err error
+			it.LoadBalancerProvider, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputProviderSpecificInput(ctx context.Context, obj interface{}) (ProviderSpecificInput, error) {
 	var it ProviderSpecificInput
 	var asMap = obj.(map[string]interface{})
@@ -5258,6 +5492,12 @@ func (ec *executionContext) unmarshalInputProviderSpecificInput(ctx context.Cont
 		case "awsConfig":
 			var err error
 			it.AwsConfig, err = ec.unmarshalOAWSProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAWSProviderConfigInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "openStackConfig":
+			var err error
+			it.OpenStackConfig, err = ec.unmarshalOOpenStackProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOpenStackProviderConfigInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5383,6 +5623,10 @@ func (ec *executionContext) _ProviderSpecificConfig(ctx context.Context, sel ast
 		return ec._AWSProviderConfig(ctx, sel, &obj)
 	case *AWSProviderConfig:
 		return ec._AWSProviderConfig(ctx, sel, obj)
+	case OpenStackProviderConfig:
+		return ec._OpenStackProviderConfig(ctx, sel, &obj)
+	case *OpenStackProviderConfig:
+		return ec._OpenStackProviderConfig(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -5723,6 +5967,48 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_rollBackUpgradeOperation(ctx, field)
 		case "reconnectRuntimeAgent":
 			out.Values[i] = ec._Mutation_reconnectRuntimeAgent(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var openStackProviderConfigImplementors = []string{"OpenStackProviderConfig", "ProviderSpecificConfig"}
+
+func (ec *executionContext) _OpenStackProviderConfig(ctx context.Context, sel ast.SelectionSet, obj *OpenStackProviderConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, openStackProviderConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OpenStackProviderConfig")
+		case "zones":
+			out.Values[i] = ec._OpenStackProviderConfig_zones(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "floatingPoolName":
+			out.Values[i] = ec._OpenStackProviderConfig_floatingPoolName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cloudProfileName":
+			out.Values[i] = ec._OpenStackProviderConfig_cloudProfileName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "loadBalancerProvider":
+			out.Values[i] = ec._OpenStackProviderConfig_loadBalancerProvider(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -6972,6 +7258,18 @@ func (ec *executionContext) marshalOLabels2ᚖgithubᚗcomᚋkymaᚑprojectᚋco
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) unmarshalOOpenStackProviderConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOpenStackProviderConfigInput(ctx context.Context, v interface{}) (OpenStackProviderConfigInput, error) {
+	return ec.unmarshalInputOpenStackProviderConfigInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOOpenStackProviderConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOpenStackProviderConfigInput(ctx context.Context, v interface{}) (*OpenStackProviderConfigInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOOpenStackProviderConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOpenStackProviderConfigInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalOOperationStatus2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx context.Context, sel ast.SelectionSet, v OperationStatus) graphql.Marshaler {

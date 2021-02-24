@@ -712,7 +712,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 		},
 	}
 
-	upgradeShootInput := newUpgradeShootInput("testing")
+	upgradeShootInput := newUpgradeShootInputAwsAzureGCP("testing")
 	upgradedConfig, err := inputConverter.UpgradeShootInputToGardenerConfig(*upgradeShootInput.GardenerConfig, cluster.ClusterConfig)
 	require.NoError(t, err)
 

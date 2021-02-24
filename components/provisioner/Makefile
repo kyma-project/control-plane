@@ -61,7 +61,7 @@ testing-with-database-network:
 		--network=$(TESTING_DB_NETWORK) \
 		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
 		--env PIPELINE_BUILD=1 --env GO111MODULE=on \
-		$(DOCKER_CREATE_OPTS) go test ./... -timeout 12m
+		$(DOCKER_CREATE_OPTS) go test ./... -timeout 15m
 	@docker network rm $(TESTING_DB_NETWORK)
 
 clean-up:

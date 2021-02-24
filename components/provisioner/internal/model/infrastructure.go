@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/aws"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/azure"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/gcp"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/openstack"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -12,9 +13,10 @@ const (
 	infrastructureConfigKind = "InfrastructureConfig"
 	controlPlaneConfigKind   = "ControlPlaneConfig"
 
-	gcpAPIVersion   = "gcp.provider.extensions.gardener.cloud/v1alpha1"
-	azureAPIVersion = "azure.provider.extensions.gardener.cloud/v1alpha1"
-	awsAPIVersion   = "aws.provider.extensions.gardener.cloud/v1alpha1"
+	gcpAPIVersion       = "gcp.provider.extensions.gardener.cloud/v1alpha1"
+	azureAPIVersion     = "azure.provider.extensions.gardener.cloud/v1alpha1"
+	awsAPIVersion       = "aws.provider.extensions.gardener.cloud/v1alpha1"
+	openStackApiVersion = "openstack.provider.extensions.gardener.cloud/v1alpha1"
 )
 
 func NewGCPInfrastructure(workerCIDR string) *gcp.InfrastructureConfig {
@@ -94,5 +96,28 @@ func NewAWSControlPlane() *aws.ControlPlaneConfig {
 			Kind:       controlPlaneConfigKind,
 			APIVersion: awsAPIVersion,
 		},
+	}
+}
+
+func NewOpenStackInfrastructure(floatingPoolName, workerCIDR string) *openstack.InfrastructureConfig {
+	return &openstack.InfrastructureConfig{
+		TypeMeta: v1.TypeMeta{
+			Kind:       infrastructureConfigKind,
+			APIVersion: openStackApiVersion,
+		},
+		FloatingPoolName: floatingPoolName,
+		Networks: openstack.Networks{
+			Workers: workerCIDR,
+		},
+	}
+}
+
+func NewOpenStackControlPlane(loadBalancerProvider string) *openstack.ControlPlaneConfig {
+	return &openstack.ControlPlaneConfig{
+		TypeMeta: v1.TypeMeta{
+			Kind:       controlPlaneConfigKind,
+			APIVersion: openStackApiVersion,
+		},
+		LoadBalancerProvider: loadBalancerProvider,
 	}
 }

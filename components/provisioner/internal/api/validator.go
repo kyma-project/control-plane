@@ -1,6 +1,8 @@
 package api
 
 import (
+	"strings"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
@@ -135,7 +137,13 @@ func (v *validator) validateClusterConfig(clusterConfig *gqlschema.ClusterConfig
 		return apperrors.BadRequest("error: Cluster config with Gardener config not provided")
 	}
 
-	if err := v.validateMachineImage(*clusterConfig.GardenerConfig); err != nil {
+	gardenerConfig := *clusterConfig.GardenerConfig
+
+	if err := v.validateMachineImage(gardenerConfig); err != nil {
+		return err
+	}
+
+	if err := v.validateOpenStackVolume(gardenerConfig.DiskType, gardenerConfig.VolumeSizeGb, gardenerConfig.Provider); err != nil {
 		return err
 	}
 
@@ -145,6 +153,16 @@ func (v *validator) validateClusterConfig(clusterConfig *gqlschema.ClusterConfig
 func (v *validator) validateMachineImage(gardenerConfig gqlschema.GardenerConfigInput) apperrors.AppError {
 	if util.NotNilOrEmpty(gardenerConfig.MachineImageVersion) && util.IsNilOrEmpty(gardenerConfig.MachineImage) {
 		return apperrors.BadRequest("error: Machine Image Version passed while Machine Image is empty")
+	}
+	return nil
+}
+
+// OpenStack does not accept diskType or volumeSize
+func (v *validator) validateOpenStackVolume(diskType *string, volumeSizeGb *int, provider string) apperrors.AppError {
+	if strings.ToLower(provider) == "openstack" {
+		if diskType != nil || volumeSizeGb != nil {
+			return apperrors.BadRequest("error: OpenStack mutation does not accept diskType or volumeSizeGb parameters")
+		}
 	}
 	return nil
 }

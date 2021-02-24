@@ -28,8 +28,8 @@ type GardenerConfig struct {
 	Name                                string
 	ProjectName                         string
 	KubernetesVersion                   string
-	VolumeSizeGB                        int
-	DiskType                            string
+	VolumeSizeGB                        *int
+	DiskType                            *string
 	MachineType                         string
 	MachineImage                        *string
 	MachineImageVersion                 *string
@@ -118,7 +118,6 @@ func (c ProviderSpecificConfig) RawJSON() string {
 }
 
 type GardenerProviderConfig interface {
-	AsMap() (map[string]interface{}, apperrors.AppError)
 	RawJSON() string
 	AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig
 	ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError
@@ -144,6 +143,12 @@ func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig,
 		return &AWSGardenerConfig{input: &awsProviderConfig, ProviderSpecificConfig: ProviderSpecificConfig(jsonData)}, nil
 	}
 
+	var openStackProviderConfig gqlschema.OpenStackProviderConfigInput
+	err = util.DecodeJson(jsonData, &openStackProviderConfig)
+	if err == nil {
+		return &OpenStackGardenerConfig{input: &openStackProviderConfig, ProviderSpecificConfig: ProviderSpecificConfig(jsonData)}, nil
+	}
+
 	return nil, apperrors.BadRequest("json data does not match any of Gardener providers")
 }
 
@@ -161,19 +166,6 @@ func NewGCPGardenerConfig(input *gqlschema.GCPProviderConfigInput) (*GCPGardener
 	return &GCPGardenerConfig{
 		ProviderSpecificConfig: ProviderSpecificConfig(config),
 		input:                  input,
-	}, nil
-}
-
-func (c *GCPGardenerConfig) AsMap() (map[string]interface{}, apperrors.AppError) {
-	if c.input == nil {
-		err := json.Unmarshal([]byte(c.ProviderSpecificConfig), &c.input)
-		if err != nil {
-			return nil, apperrors.Internal("failed to decode Gardener GCP config: %s", err.Error())
-		}
-	}
-
-	return map[string]interface{}{
-		"zones": c.input.Zones,
 	}, nil
 }
 
@@ -221,31 +213,13 @@ type AzureGardenerConfig struct {
 func NewAzureGardenerConfig(input *gqlschema.AzureProviderConfigInput) (*AzureGardenerConfig, apperrors.AppError) {
 	config, err := json.Marshal(input)
 	if err != nil {
-		return &AzureGardenerConfig{}, apperrors.Internal("failed to marshal GCP Gardener config")
+		return &AzureGardenerConfig{}, apperrors.Internal("failed to marshal Azure Gardener config")
 	}
 
 	return &AzureGardenerConfig{
 		ProviderSpecificConfig: ProviderSpecificConfig(config),
 		input:                  input,
 	}, nil
-}
-
-func (c *AzureGardenerConfig) AsMap() (map[string]interface{}, apperrors.AppError) {
-	if c.input == nil {
-		err := json.Unmarshal([]byte(c.ProviderSpecificConfig), &c.input)
-		if err != nil {
-			return nil, apperrors.Internal("failed to decode Gardener Azure config: %s", err.Error())
-		}
-	}
-
-	cfg := map[string]interface{}{
-		"vnetcidr": c.input.VnetCidr,
-	}
-	if c.input.Zones != nil {
-		cfg["zones"] = c.input.Zones
-	}
-
-	return cfg, nil
 }
 
 func (c AzureGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
@@ -291,28 +265,12 @@ func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, sh
 func NewAWSGardenerConfig(input *gqlschema.AWSProviderConfigInput) (*AWSGardenerConfig, apperrors.AppError) {
 	config, err := json.Marshal(input)
 	if err != nil {
-		return &AWSGardenerConfig{}, apperrors.Internal("failed to marshal GCP Gardener config")
+		return &AWSGardenerConfig{}, apperrors.Internal("failed to marshal AWS Gardener config")
 	}
 
 	return &AWSGardenerConfig{
 		ProviderSpecificConfig: ProviderSpecificConfig(config),
 		input:                  input,
-	}, nil
-}
-
-func (c *AWSGardenerConfig) AsMap() (map[string]interface{}, apperrors.AppError) {
-	if c.input == nil {
-		err := json.Unmarshal([]byte(c.ProviderSpecificConfig), &c.input)
-		if err != nil {
-			return nil, apperrors.Internal("failed to decode Gardener AWS config: %s", err.Error())
-		}
-	}
-
-	return map[string]interface{}{
-		"zone":          c.input.Zone,
-		"internalscidr": c.input.InternalCidr,
-		"vpccidr":       c.input.VpcCidr,
-		"publicscidr":   c.input.PublicCidr,
 	}, nil
 }
 
@@ -356,20 +314,82 @@ func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoo
 	return nil
 }
 
+type OpenStackGardenerConfig struct {
+	ProviderSpecificConfig
+	input *gqlschema.OpenStackProviderConfigInput `db:"-"`
+}
+
+func NewOpenStackGardenerConfig(input *gqlschema.OpenStackProviderConfigInput) (*OpenStackGardenerConfig, apperrors.AppError) {
+	config, err := json.Marshal(input)
+	if err != nil {
+		return &OpenStackGardenerConfig{}, apperrors.Internal("failed to marshal OpenStack Gardener config")
+	}
+
+	return &OpenStackGardenerConfig{
+		ProviderSpecificConfig: ProviderSpecificConfig(config),
+		input:                  input,
+	}, nil
+}
+
+func (c OpenStackGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
+	return gqlschema.OpenStackProviderConfig{
+		Zones:                c.input.Zones,
+		FloatingPoolName:     c.input.FloatingPoolName,
+		CloudProfileName:     c.input.CloudProfileName,
+		LoadBalancerProvider: c.input.LoadBalancerProvider,
+	}
+}
+
+func (c OpenStackGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
+	return updateShootConfig(gardenerConfig, shoot, c.input.Zones)
+}
+
+func (c OpenStackGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
+	shoot.Spec.CloudProfileName = c.input.CloudProfileName
+
+	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, c.input.Zones)}
+
+	openStackInfra := NewOpenStackInfrastructure(c.input.FloatingPoolName, gardenerConfig.WorkerCidr)
+	jsonData, err := json.Marshal(openStackInfra)
+	if err != nil {
+		return apperrors.Internal("error encoding infrastructure config: %s", err.Error())
+	}
+
+	openstackControlPlane := NewOpenStackControlPlane(c.input.LoadBalancerProvider)
+	jsonCPData, err := json.Marshal(openstackControlPlane)
+	if err != nil {
+		return apperrors.Internal("error encoding control plane config: %s", err.Error())
+	}
+
+	shoot.Spec.Provider = gardener_types.Provider{
+		Type:                 "openstack",
+		ControlPlaneConfig:   &apimachineryRuntime.RawExtension{Raw: jsonCPData},
+		InfrastructureConfig: &apimachineryRuntime.RawExtension{Raw: jsonData},
+		Workers:              workers,
+	}
+
+	return nil
+}
+
 func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_types.Worker {
-	return gardener_types.Worker{
+	worker := gardener_types.Worker{
 		Name:           "cpu-worker-0",
 		MaxSurge:       util.IntOrStringPtr(intstr.FromInt(gardenerConfig.MaxSurge)),
 		MaxUnavailable: util.IntOrStringPtr(intstr.FromInt(gardenerConfig.MaxUnavailable)),
 		Machine:        getMachineConfig(gardenerConfig),
-		Volume: &gardener_types.Volume{
-			Type:       &gardenerConfig.DiskType,
-			VolumeSize: fmt.Sprintf("%dGi", gardenerConfig.VolumeSizeGB),
-		},
-		Maximum: int32(gardenerConfig.AutoScalerMax),
-		Minimum: int32(gardenerConfig.AutoScalerMin),
-		Zones:   zones,
+		Maximum:        int32(gardenerConfig.AutoScalerMax),
+		Minimum:        int32(gardenerConfig.AutoScalerMin),
+		Zones:          zones,
 	}
+
+	if gardenerConfig.DiskType != nil && gardenerConfig.VolumeSizeGB != nil {
+		worker.Volume = &gardener_types.Volume{
+			Type:       gardenerConfig.DiskType,
+			VolumeSize: fmt.Sprintf("%dGi", *gardenerConfig.VolumeSizeGB),
+		}
+	}
+
+	return worker
 }
 
 func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot, zones []string) apperrors.AppError {
@@ -378,7 +398,7 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 		shoot.Spec.Kubernetes.Version = upgradeConfig.KubernetesVersion
 	}
 
-	if upgradeConfig.Purpose != nil && *upgradeConfig.Purpose != "" {
+	if util.NotNilOrEmpty(upgradeConfig.Purpose) {
 		purpose := gardener_types.ShootPurpose(*upgradeConfig.Purpose)
 		shoot.Spec.Purpose = &purpose
 	}
@@ -390,12 +410,18 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 		return apperrors.Internal("no worker groups assigned to Gardener shoot '%s'", shoot.Name)
 	}
 
+	if util.NotNilOrEmpty(upgradeConfig.DiskType) {
+		shoot.Spec.Provider.Workers[0].Volume.Type = upgradeConfig.DiskType
+	}
+
+	if upgradeConfig.VolumeSizeGB != nil {
+		shoot.Spec.Provider.Workers[0].Volume.VolumeSize = fmt.Sprintf("%dGi", *upgradeConfig.VolumeSizeGB)
+	}
+
 	// We support only single working group during provisioning
 	shoot.Spec.Provider.Workers[0].MaxSurge = util.IntOrStringPtr(intstr.FromInt(upgradeConfig.MaxSurge))
 	shoot.Spec.Provider.Workers[0].MaxUnavailable = util.IntOrStringPtr(intstr.FromInt(upgradeConfig.MaxUnavailable))
 	shoot.Spec.Provider.Workers[0].Machine.Type = upgradeConfig.MachineType
-	shoot.Spec.Provider.Workers[0].Volume.Type = &upgradeConfig.DiskType
-	shoot.Spec.Provider.Workers[0].Volume.VolumeSize = fmt.Sprintf("%dGi", upgradeConfig.VolumeSizeGB)
 	shoot.Spec.Provider.Workers[0].Maximum = int32(upgradeConfig.AutoScalerMax)
 	shoot.Spec.Provider.Workers[0].Minimum = int32(upgradeConfig.AutoScalerMin)
 	shoot.Spec.Provider.Workers[0].Zones = zones

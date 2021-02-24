@@ -97,35 +97,6 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 	}
 }
 
-func Test_AsMap_Error(t *testing.T) {
-
-	for _, testCase := range []struct {
-		description            string
-		gardenerProviderConfig GardenerProviderConfig
-	}{
-		{
-			description:            "gcp gardener config",
-			gardenerProviderConfig: &GCPGardenerConfig{ProviderSpecificConfig: ProviderSpecificConfig("invalid json")},
-		},
-		{
-			description:            "azure gardener config",
-			gardenerProviderConfig: &AzureGardenerConfig{ProviderSpecificConfig: ProviderSpecificConfig("invalid json")},
-		},
-		{
-			description:            "aws gardener config",
-			gardenerProviderConfig: &AWSGardenerConfig{ProviderSpecificConfig: ProviderSpecificConfig("invalid json")},
-		},
-	} {
-		t.Run("should faild when invalid json for "+testCase.description, func(t *testing.T) {
-			// when
-			_, err := testCase.gardenerProviderConfig.AsMap()
-
-			// then
-			require.Error(t, err)
-		})
-	}
-}
-
 func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 
 	zones := []string{"fix-zone-1", "fix-zone-2"}
@@ -473,8 +444,8 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		Name:                                "cluster",
 		ProjectName:                         "project",
 		KubernetesVersion:                   "1.15",
-		VolumeSizeGB:                        30,
-		DiskType:                            "SSD",
+		VolumeSizeGB:                        util.IntPtr(30),
+		DiskType:                            util.StringPtr("SSD"),
 		MachineType:                         "machine",
 		MachineImage:                        util.StringPtr("gardenlinux"),
 		MachineImageVersion:                 util.StringPtr("25.0.0"),

@@ -21,6 +21,12 @@ func TestGardenerConfig_UnmarshalJSON(t *testing.T) {
 		PublicCidr:   util.StringPtr("10.10.10.12/25"),
 		InternalCidr: util.StringPtr("10.10.10.13/25"),
 	}
+	openstackProviderCfg := &OpenStackProviderConfig{
+		Zones:                []string{"eu-de-1a"},
+		FloatingPoolName:     "FloatingIP-external-cp",
+		CloudProfileName:     "converged-cloud-cp",
+		LoadBalancerProvider: "f5",
+	}
 
 	for _, testCase := range []struct {
 		description    string
@@ -41,6 +47,10 @@ func TestGardenerConfig_UnmarshalJSON(t *testing.T) {
 		{
 			description:    "gardener cluster with AWS",
 			gardenerConfig: newGardenerClusterCfg(fixGardenerConfig("aws"), awsProviderCfg),
+		},
+		{
+			description:    "gardener cluster with Openstack",
+			gardenerConfig: newGardenerClusterCfg(fixGardenerConfig("openstack"), openstackProviderCfg),
 		},
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
