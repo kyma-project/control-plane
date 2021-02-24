@@ -132,7 +132,3 @@ global:
 
 pairing-adapter:
   enabled: false
-
-gateway:
-  gateway:
-    enabled: false
