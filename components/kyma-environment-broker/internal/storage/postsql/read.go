@@ -446,9 +446,9 @@ func (r readSession) GetCLSInstanceByGlobalAccountID(globalAccountID string) ([]
 
 	if err != nil {
 		if err == dbr.ErrNotFound {
-			return nil, dberr.NotFound("cannot find a cls instance for global account id %s", globalAccountID)
+			return nil, dberr.NotFound("unable to find a cls instance for global account id %s", globalAccountID)
 		}
-		return nil, dberr.Internal("failed to find a cls instance: %s", err)
+		return nil, dberr.Internal("unable to find a record in table %s: %s", CLSInstanceTableName, err)
 	}
 	return dtos, nil
 }
@@ -464,9 +464,9 @@ func (r readSession) GetCLSInstanceByID(clsInstanceID string) ([]dbmodel.CLSInst
 
 	if err != nil {
 		if err == dbr.ErrNotFound {
-			return nil, dberr.NotFound("cannot find a cls instance with id %s", clsInstanceID)
+			return nil, dberr.NotFound("unable find a cls instance with id %s", clsInstanceID)
 		}
-		return nil, dberr.Internal("failed to find a cls instance: %s", err)
+		return nil, dberr.Internal("unable to find a record in table %s: %s", CLSInstanceTableName, err)
 	}
 	return dtos, nil
 }

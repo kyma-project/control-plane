@@ -224,10 +224,10 @@ func (ws writeSession) InsertCLSInstance(dto dbmodel.CLSInstanceDTO) dberr.Error
 	if err != nil {
 		if err, ok := err.(*pq.Error); ok {
 			if err.Code == UniqueViolationErrorCode {
-				return dberr.AlreadyExists("unable to insert record into table %s: already exists", CLSInstanceTableName)
+				return dberr.AlreadyExists("unable to insert a cls instance for global account %s: already exists", dto.GlobalAccountID)
 			}
 		}
-		return dberr.Internal("unable to insert record into table %s: %s", CLSInstanceTableName, err)
+		return dberr.Internal("failed to insert a record into table %s: %s", CLSInstanceTableName, err)
 	}
 
 	return nil
@@ -243,10 +243,10 @@ func (ws writeSession) IncrementCLSInstanceVersion(version int, clsInstanceID st
 	if err != nil {
 		if err, ok := err.(*pq.Error); ok {
 			if err == dbr.ErrNotFound {
-				return dberr.NotFound("unable to update record in table %s: not found", CLSInstanceTableName)
+				return dberr.NotFound("unable to increment the version of a cls instance with id %s: not found", clsInstanceID)
 			}
 		}
-		return dberr.Internal("unable to update record in table %s: %s", CLSInstanceTableName, err)
+		return dberr.Internal("unable to update a record in table %s: %s", CLSInstanceTableName, err)
 	}
 
 	rAffected, err := res.RowsAffected()
@@ -255,7 +255,7 @@ func (ws writeSession) IncrementCLSInstanceVersion(version int, clsInstanceID st
 		return dberr.Internal("unable to check number of updated rows in table %s: %s", CLSInstanceTableName, err)
 	}
 	if rAffected == int64(0) {
-		return dberr.Internal("unable to update record in table %s: not found or stale version", CLSInstanceTableName)
+		return dberr.Internal("unable to update a record in table %s: not found or stale version", CLSInstanceTableName)
 	}
 
 	return nil
@@ -272,10 +272,10 @@ func (ws writeSession) MarkCLSInstanceAsBeingRemoved(version int, clsInstanceID,
 	if err != nil {
 		if err, ok := err.(*pq.Error); ok {
 			if err == dbr.ErrNotFound {
-				return dberr.NotFound("unable to update record in table %s: not found", CLSInstanceTableName)
+				return dberr.NotFound("unable to mark a cls instance with id %s as being removed: not found", clsInstanceID)
 			}
 		}
-		return dberr.Internal("unable to update record in table %s: %s", CLSInstanceTableName, err)
+		return dberr.Internal("unable to update a record in table %s: %s", CLSInstanceTableName, err)
 	}
 
 	rAffected, err := res.RowsAffected()
@@ -284,7 +284,7 @@ func (ws writeSession) MarkCLSInstanceAsBeingRemoved(version int, clsInstanceID,
 		return dberr.Internal("unable to check number of updated rows in table %s: %s", CLSInstanceTableName, err)
 	}
 	if rAffected == int64(0) {
-		return dberr.Internal("unable to update record in table %s: not found or stale version", CLSInstanceTableName)
+		return dberr.Internal("unable to update a record in table %s: not found or stale version", CLSInstanceTableName)
 	}
 
 	return nil
@@ -296,7 +296,7 @@ func (ws writeSession) DeleteCLSInstance(clsInstanceID string) dberr.Error {
 		Exec()
 
 	if err != nil {
-		return dberr.Internal("unable to delete record from table %s: %s", CLSInstanceTableName, err)
+		return dberr.Internal("unable to delete a record from table %s: %s", CLSInstanceTableName, err)
 	}
 
 	return nil
@@ -311,10 +311,10 @@ func (ws writeSession) InsertCLSInstanceReference(dto dbmodel.CLSInstanceReferen
 	if err != nil {
 		if err, ok := err.(*pq.Error); ok {
 			if err.Code == UniqueViolationErrorCode {
-				return dberr.AlreadyExists("unable to insert record in table %s: already exists", CLSInstanceReferenceTableName)
+				return dberr.AlreadyExists("unable to insert a cls reference (%s, %s): already exists", dto.CLSInstanceID, dto.SKRInstanceID)
 			}
 		}
-		return dberr.Internal("unable to insert record in table %s: %s", CLSInstanceReferenceTableName, err)
+		return dberr.Internal("unable to insert a record into table %s: %s", CLSInstanceReferenceTableName, err)
 	}
 
 	return nil
@@ -327,11 +327,6 @@ func (ws writeSession) DeleteCLSInstanceReference(dto dbmodel.CLSInstanceReferen
 		Exec()
 
 	if err != nil {
-		if err, ok := err.(*pq.Error); ok {
-			if err.Code == UniqueViolationErrorCode {
-				return dberr.AlreadyExists("cls instance reference already exist")
-			}
-		}
 		return dberr.Internal("unable to delete record from table %s: %s", CLSInstanceReferenceTableName, err)
 	}
 
