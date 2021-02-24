@@ -27,6 +27,8 @@ import (
 const (
 	// label key used to send to director
 	grafanaURLLabel = "operator_grafanaUrl"
+
+	postActionsDescription = "Performing post-actions"
 )
 
 //go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
@@ -213,6 +215,17 @@ func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance, log
 }
 
 func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOperation, instance *internal.Instance, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
+	repeat := time.Duration(0)
+
+	// Mark post-actions in description, reset UpdatedAt as provisioning status check is completed
+	if !strings.Contains(operation.Description, postActionsDescription) {
+		operation.Description = fmt.Sprintf("%s : %s", operation.Description, postActionsDescription)
+		operation, repeat = s.operationManager.UpdateOperation(operation)
+		if repeat != 0 {
+			return operation, repeat, nil
+		}
+	}
+
 	// action #1
 	operation, repeat, err := s.createExternalEval(operation, instance, log)
 	if err != nil || repeat != 0 {
