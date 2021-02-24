@@ -37,14 +37,13 @@ func (s *ClsUnbindStep) Run(operation internal.DeprovisioningOperation, log logr
 		return operation, 0, nil
 	}
 
-	skrRegion := operation.ProvisioningParameters.Parameters.Region
-	smRegion, err := cls.DetermineServiceManagerRegion(skrRegion)
-	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, smRegion)
-	smCli := operation.SMClientFactory.ForCredentials(smCredentials)
-
+	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, operation.Cls.Region)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manage client"))
+		failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
+		log.Error(failureReason)
+		return s.operationManager.OperationFailed(operation, failureReason)
 	}
+	smCli := operation.SMClientFactory.ForCredentials(smCredentials)
 
 	// Unbind
 	log.Infof("unbinding for CLS instance: %s started; binding: %s", operation.Cls.Instance.InstanceID, operation.Cls.Binding.BindingID)

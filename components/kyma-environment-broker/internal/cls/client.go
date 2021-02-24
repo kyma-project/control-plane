@@ -128,6 +128,7 @@ func getCredentials(binding servicemanager.Binding) (*ClsOverrideParams, error) 
 	}
 
 	return &clsOverrides, nil
+}
 // RemoveInstance sends a request to Service Manager to remove a CLS Instance
 func (c *Client) RemoveInstance(smClient servicemanager.Client, instance servicemanager.InstanceKey) error {
 	resp, err := smClient.Deprovision(instance, true)
