@@ -3,7 +3,7 @@ title: Provision clusters through Gardener
 type: Tutorials
 ---
 
-This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud Platform (GCP), Microsoft Azure, Amazon Web Services (AWS) and OpenStack using [Gardener](https://dashboard.garden.canary.k8s.ondemand.com).
+This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud Platform (GCP), Microsoft Azure, Amazon Web Services (AWS), and OpenStack using [Gardener](https://dashboard.garden.canary.k8s.ondemand.com).
 
 ## Prerequisites
 
@@ -74,7 +74,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     </summary>
     
    - Existing project on Gardener
-   - OpenStack project with technical user available to create, modify and delete VMs
+   - OpenStack project with technical user available to create, modify, and delete Virtual Machines (VMs)
    - Gardener service account configuration (`kubeconfig.yaml`) downloaded
    - [Compass](https://github.com/kyma-incubator/compass)  
    - [Kyma Control Plane](https://github.com/kyma-project/control-plane) with configured Runtime Provisioner and the following [overrides](#configuration-provisioner-chart) set up:
