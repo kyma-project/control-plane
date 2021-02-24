@@ -1,9 +1,10 @@
 package api
 
 import (
+	"strings"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-	"strings"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
