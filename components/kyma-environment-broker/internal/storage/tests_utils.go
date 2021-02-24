@@ -112,7 +112,7 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 }
 
 func InitTestDBTables(t *testing.T, connectionURL string) error {
-	connection, err := postsql.WaitForDatabaseAccess(connectionURL, 10, logrus.New())
+	connection, err := postsql.WaitForDatabaseAccess(connectionURL, 10, 100*time.Millisecond, logrus.New())
 	if err != nil {
 		t.Logf("Cannot connect to database with URL %s", connectionURL)
 		return err
