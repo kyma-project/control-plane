@@ -208,9 +208,9 @@ input AWSProviderConfigInput {
 }
 
 input OpenStackProviderConfigInput {
-    zones:           [String!]! # Zones in which to create the cluster
-    floatingPoolName: String!  # FloatingPoolName name in which LoadBalancer FIPs should be created.
-    cloudProfileName: String!  # Name of the target Cloud Profile
+    zones:           [String!]!   # Zones in which to create the cluster
+    floatingPoolName: String!     # FloatingPoolName name in which LoadBalancer FIPs should be created.
+    cloudProfileName: String!     # Name of the target Cloud Profile
     loadBalancerProvider: String! # Name of load balancer provider, e.g. f5
 }
 
