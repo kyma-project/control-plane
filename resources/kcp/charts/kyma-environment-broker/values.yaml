@@ -232,10 +232,16 @@ e2e:
     id: "d9994f8f-7e46-42a8-b2c1-1bfff8d2fe05"
   azure:
     configName: "e2e-runtime-config-azure"
+    planID: "4deee563-e5ec-4731-b9b1-53b42d855f0c"
   gcp:
     configName: "e2e-runtime-config-gcp"
+    planID: "ca6e5357-707f-4565-bbbd-b3ab732597c6"
+  trial:
+    configName: "e2e-runtime-config-suspension"
+    planID: "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
   skr:
     configName: "e2e-runtime-config-skr"
+    planID: "4deee563-e5ec-4731-b9b1-53b42d855f0c"
   upgrade:
     configName: "e2e-upgrade-runtime-config-azure"
     timeout: "100m"

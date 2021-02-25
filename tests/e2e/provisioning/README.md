@@ -16,6 +16,7 @@ You must also have the Kyma Environment Broker [configured](https://github.com/k
 
 ## Details
 
+### End-to-end provisioning test
 The provisioning end-to-end test contains a broker client implementation which mocks Registry. It is an external dependency that calls the broker in the regular scenario. The test is divided into two phases:
 
 1. Provisioning
@@ -49,6 +50,21 @@ The provisioning end-to-end test contains a broker client implementation which m
     e. Waits until the deprovisioning is successful. It takes about 20 minutes to complete. You can configure the timeout using the environment variable.
 
 Between the end-to-end test phases, you can execute your own test directly on the provisioned Runtime. To do so, use a kubeconfig stored in a Secret created in the provisioning phase. 
+
+### End-to-end suspension test
+
+The end-to-end suspension test uses the **Trial** Service Plan ID to provision Kyma Runtime. Then, the test suspends and unsuspends the Kyma Runtime and ensures that it is still accessible after the process. The suspension test works similarly to the provisioning test, but it has two additional steps in the `Provisioning` phase:
+
+1. Suspension
+
+    After successfully provisioning a Kyma Runtime, the test sends an update call to KEB to suspend the Runtime. Then, the test waits until the operation is successful.
+
+
+1. Unsuspension
+
+   After Runtime suspension succeeded, the test sends an update call to KEB to unsuspend the Runtime. Then, the test waits until the operation is successful. After that, the test ensures that the DashboardURL redirects to the UUA login page once again, which means that the Kyma Runtime is accessible.
+
+After successful suspension and unsuspension of the Kyma Runtime, the test proceeds to the `Cleanup` phase.
 
 ## Configuration
 

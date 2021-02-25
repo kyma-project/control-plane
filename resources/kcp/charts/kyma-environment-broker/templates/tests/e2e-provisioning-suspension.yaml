@@ -2,7 +2,7 @@
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: e2e-azure
+  name: e2e-provisioning-suspension
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
@@ -33,17 +33,13 @@ spec:
             - name: APP_TENANT_ID
               value: "{{ .Values.e2e.tenant.id }}"
             - name: APP_DUMMY_TEST
-              # For now it is set to `true`, because if anyone set global.provisioning.enabled to `true`
-              # then this test will be executed on the pre-master-compass-integration job with the rest of the acceptance tests.
-              # With the Dummy test, we won't block the pipelines.
-              # In future we can make that test useful for pre-master jobs.
               value: "false"
             - name: APP_CLEANUP_PHASE
               value: "false"
             - name: APP_BROKER_URL
               value: 'https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}'
             - name: APP_BROKER_PLAN_ID
-              value: "{{ .Values.e2e.azure.planID }}"
+              value: "{{ .Values.e2e.trial.planID }}"
             - name: APP_BROKER_CLIENT_NAME
               value: {{ include "kyma-env-broker.fullname" . | quote }}
             - name: APP_BROKER_TOKEN_URL
@@ -51,7 +47,7 @@ spec:
             - name: APP_PROVISIONER_URL
               value: "{{ .Values.provisioner.URL }}"
             - name: APP_CONFIG_NAME
-              value: "{{ .Values.e2e.azure.configName }}"
+              value: "{{ .Values.e2e.trial.configName }}"
             - name: APP_DEPLOY_NAMESPACE
               value: "kcp-system"
             - name: APP_DIRECTOR_URL
@@ -85,13 +81,13 @@ spec:
             - name: APP_UPGRADE_TEST
               value: "false"
           command: ["/bin/sh"]
-          args: ["-c", "echo 'Starting e2e-provisioning test on Azure. Waiting 20s for api server...'; sleep 20; ./test.test -test.run Test_E2E_Provisioning; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          args: ["-c", "echo 'Starting e2e-suspension test on Azure. Waiting 20s for api server...'; sleep 20; ./test.test -test.run Test_E2E_Suspension; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
 
 ---
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: e2e-azure-cleanup
+  name: e2e-provisioning-suspension-cleanup
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
@@ -128,7 +124,7 @@ spec:
             - name: APP_BROKER_URL
               value: 'https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}'
             - name: APP_BROKER_PLAN_ID
-              value: "{{ .Values.e2e.azure.planID }}"
+              value: "{{ .Values.e2e.trial.planID }}"
             - name: APP_BROKER_CLIENT_NAME
               value: {{ include "kyma-env-broker.fullname" . | quote }}
             - name: APP_BROKER_TOKEN_URL
@@ -136,7 +132,7 @@ spec:
             - name: APP_PROVISIONER_URL
               value: "{{ .Values.provisioner.URL }}"
             - name: APP_CONFIG_NAME
-              value: "{{ .Values.e2e.azure.configName }}"
+              value: "{{ .Values.e2e.trial.configName }}"
             - name: APP_DEPLOY_NAMESPACE
               value: "kcp-system"
             - name: APP_DIRECTOR_URL
@@ -170,5 +166,5 @@ spec:
             - name: APP_UPGRADE_TEST
               value: "false"
           command: ["/bin/sh"]
-          args: ["-c", "echo 'Starting e2e-provisioning cleanup test on Azure. Waiting 20s for api server...'; sleep 20; ./test.test -test.run Test_E2E_Provisioning; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          args: ["-c", "echo 'Starting e2e-suspension cleanup test on Azure. Waiting 20s for api server...'; sleep 20; ./test.test -test.run Test_E2E_Suspension; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
 {{- end -}}
