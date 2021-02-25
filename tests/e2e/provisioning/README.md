@@ -16,6 +16,7 @@ You must also have the Kyma Environment Broker [configured](https://github.com/k
 
 ## Details
 
+### End-to-end provisioning test
 The provisioning end-to-end test contains a broker client implementation which mocks Registry. It is an external dependency that calls the broker in the regular scenario. The test is divided into two phases:
 
 1. Provisioning
@@ -50,7 +51,7 @@ The provisioning end-to-end test contains a broker client implementation which m
 
 Between the end-to-end test phases, you can execute your own test directly on the provisioned Runtime. To do so, use a kubeconfig stored in a Secret created in the provisioning phase. 
 
-## End-to-end suspension test
+### End-to-end suspension test
 
 The end-to-end suspension test uses the **Trial** Service Plan ID to provision Kyma Runtime. Then, the test suspends and unsuspends the Kyma Runtime and ensures that it is still accessible after the process. The suspension test works similarly to the provisioning test, but it has two additional steps in the `Provisioning` phase:
 
