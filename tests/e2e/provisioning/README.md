@@ -52,18 +52,18 @@ Between the end-to-end test phases, you can execute your own test directly on th
 
 ## End-to-end suspension test
 
-The suspension end-to-end test uses **Trial** Service Plan ID to provision Kyma Runtime, then suspend and unsuspend it and make sure it is still accessible after the process. It works similarly to provisioning test, but it has two additional steps in `Provisioning` phase:
+The end-to-end suspension test uses the **Trial** Service Plan ID to provision Kyma Runtime. Then, the test suspends and unsuspends the Kyma Runtime and ensures that it is still accessible after the process. The suspension test works similarly to the provisioning test, but it has two additional steps in the `Provisioning` phase:
 
 1. Suspension
 
-    After successfully provisioning a runtime as described above, the test sends an update call to KEB to suspend a Runtime. Then test waits until the operation is successful.
+    After successfully provisioning a Kyma Runtime, the test sends an update call to KEB to suspend the Runtime. Then, the test waits until the operation is successful.
 
 
 1. Unsuspension
 
-   After runtime suspension succeeded, the test sends an update call to KEB to unsuspend a Runtime. Then the test waits until the operation is successful. After that, the test ensures that the DashboardURL redirects to the UUA login page once again, which means that the Kyma Runtime is accessible.
+   After Runtime suspension succeeded, the test sends an update call to KEB to unsuspend the Runtime. Then, the test waits until the operation is successful. After that, the test ensures that the DashboardURL redirects to the UUA login page once again, which means that the Kyma Runtime is accessible.
 
-After successful suspension and unsuspension of the Kyma Runtime the test proceeds to `Cleanup` phase described above.
+After successful suspension and unsuspension of the Kyma Runtime, the test proceeds to the `Cleanup` phase.
 
 ## Configuration
 
