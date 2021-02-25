@@ -190,10 +190,6 @@ func Plans(plans PlansConfig) map[string]Plan {
 	}
 }
 
-func DefaultPlans(cfg ServicesConfig) map[string]Plan {
-	return Plans(cfg.DefaultPlansConfig())
-}
-
 func defaultDescription(planName string, plans PlansConfig) string {
 	plan, ok := plans[planName]
 	if !ok || len(plan.Description) == 0 {

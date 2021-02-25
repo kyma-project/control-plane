@@ -26,6 +26,7 @@ func NewServices(cfg Config, servicesConfig ServicesConfig, log logrus.FieldLogg
 	return &ServicesEndpoint{
 		log:            log.WithField("service", "ServicesEndpoint"),
 		cfg:            cfg,
+		servicesConfig: servicesConfig,
 		enabledPlanIDs: enabledPlanIDs,
 	}
 }
@@ -34,6 +35,7 @@ func NewServices(cfg Config, servicesConfig ServicesConfig, log logrus.FieldLogg
 //   GET /v2/catalog
 func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, error) {
 	var availableServicePlans []domain.ServicePlan
+	// we scope to the kymaruntime service only
 	class := b.servicesConfig[KymaServiceName]
 
 	for _, plan := range Plans(class.Plans) {

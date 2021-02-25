@@ -79,50 +79,6 @@ onlySingleTrialPerGA: "true"
 
 osbUpdateProcessingEnabled: "false"
 
-services:
-  kymaEnvironment:
-    description: "Kyma environment is a runtime you can use to build cloud-native Kubernetes-based applications by using microservices and serverless functions."
-    metadata:
-      displayName: "Kyma Environment"
-      # at the end of every line we add `\` to escape spaces which would be included otherwise
-      imageUrl: "data:image/svg+xml;base64,PHN2ZyBpZD0ia3ltYSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIw\
-        IDAgNTYgNTYiPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDojMDUzYjcwO30uY2xzLTJ7ZmlsbDojMGE2ZWQxO308L3N0eWxlPjwvZGVmcz48cGF0aCBjb\
-        GFzcz0iY2xzLTEiIGQ9Ik01MS41ODksMjYuNDc4LDQxLjExMyw4LjQ5MmEzLjAyNCwzLjAyNCwwLDAsMC0yLjYxNC0xLjVIMjguMDEydjNIMzguNWwuMD\
-        IuMDExTDQ5LDI4LjAxMmwtMTAuNSwxOEwyOC4wMTIsNDZ2My4wMDdIMzguNWEzLjAyNCwzLjAyNCwwLDAsMCwyLjYxNC0xLjVMNTEuNTg5LDI5LjUyMkE\
-        zLjAyNCwzLjAyNCwwLDAsMCw1MS41ODksMjYuNDc4WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTE1Ljk4LDMxLjY2M2E0LjMzLDQuMzMsMCwwLDEs\
-        MS45NjItLjQ2N0gxOS44OGExMS4yNTUsMTEuMjU1LDAsMCwwLDcuMTY4LTIuMzVjLS41MjMtLjQ2NS0xLjAzMi0uOTM5LTEuNTIyLTEuNDA5LTIuNDc1L\
-        TIuMzUzLTUuMDU0LTQuNTc1LTkuNTQ2LTQuNzcxWiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTE5Ljg2LDMyLjY1MUgxNy45NDJhMS45NzEsMS45Nz\
-        EsMCwwLDAtMS45MzcsMS45Mzh2Mi40NjNIMzkuOTkyTDM5Ljk4MSwyMi43NGMtNC40MjguMjE5LTYuNzQyLDIuNDIyLTkuMTk0LDQuNzQ3QzI4LjExMSw\
-        zMC4wMjUsMjUuMzQzLDMyLjY1MSwxOS44NiwzMi42NTFaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMTkuMzI2LDE3LjkzdjMuODc1YTEyLjk3LDEy\
-        Ljk3LDAsMCwxLDQuNzM2LDIuNTMyLDEyLjIwNiwxMi4yMDYsMCwwLDAsMy40NDgtMi40OTNDMjUuNDY1LDE5Ljg4NywyMy40MTQsMTcuOTMsMTkuMzI2L\
-        DE3LjkzWiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTI2LjQxNywyNi40OTNjLjUzMS41MTIsMS4wODUsMS4wMywxLjY2LDEuNTIyLjU4NC0uNSwxLj\
-        E0OS0xLjAzNSwxLjcxOS0xLjU3N2ExOC4xNDksMTguMTQ5LDAsMCwxLDYuMjE2LTQuMzU2TDM2LDE4LjYwNWMtMy4zOS4yLTUuMiwxLjkxMy03LjA5MSw\
-        zLjczNEExNi43MjksMTYuNzI5LDAsMCwxLDI1LjEzNSwyNS4zQzI1LjU3LDI1LjY5MSwyNiwyNi4wOTIsMjYuNDE3LDI2LjQ5M1oiLz48cGF0aCBjbGFz\
-        cz0iY2xzLTIiIGQ9Ik03LjAwNSwyNy45ODhsMTAuNS0xOEgyOC4wMTJ2LTNIMTcuNWEzLjAyNCwzLjAyNCwwLDAsMC0yLjYxNCwxLjVMNC40MTEsMjYuN\
-        Dc4YTMuMDI0LDMuMDI0LDAsMCwwLDAsMy4wNDRMMTQuODg3LDQ3LjUwOGEzLjAyNCwzLjAyNCwwLDAsMCwyLjYxNCwxLjVIMjguMDEyVjQ2TDE3LjQ4MS\
-        w0NloiLz48L3N2Zz4="
-      longDescription: "Kyma environment is a runtime you can use to build cloud-native Kubernetes-based applications by using microservices and serverless functions."
-      providerDisplayName: "SAP"
-      documentationUrl: "https://help.sap.com/viewer/65de2977205c403bbc107264b8eccf4b/Cloud/en-US/468c2f3c3ca24c2c8497ef9f83154c44.html"
-      supportUrl: "https://launchpad.support.sap.com/"
-    plans:
-      azure:
-        description: "Azure"
-        metadata:
-          displayName: "Azure"
-      azure_lite:
-        description: "Azure Lite"
-        metadata:
-          displayName: "Azure Lite"
-      trial:
-        description: "Trial"
-        metadata:
-          displayName: "Trial"
-      gcp:
-        description: "GCP"
-        metadata:
-          displayName: "GCP"
-
 enableInstanceDetailsMigration: "false"
 enableInstanceParametersMigration: "false"
 enableInstanceParametersRollback: "false"

@@ -19,9 +19,10 @@ type PlansSchemaValidator map[string]JSONSchemaValidator
 func NewPlansSchemaValidator(plansConfig PlansConfig) (PlansSchemaValidator, error) {
 	planIDs := []string{GCPPlanID, AzurePlanID, AzureLitePlanID, TrialPlanID}
 	validators := PlansSchemaValidator{}
+	plans := Plans(plansConfig)
 
 	for _, id := range planIDs {
-		schema := string(Plans(plansConfig)[id].provisioningRawSchema)
+		schema := string(plans[id].provisioningRawSchema)
 		validator, err := jsonschema.NewValidatorFromStringSchema(schema)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while creating schema validator for Plan ID %s", id)

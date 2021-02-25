@@ -14,8 +14,6 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -105,7 +103,7 @@ func fixKymaHandler(t *testing.T) *kymaHandler {
 	db := storage.NewMemoryStorage()
 	logs := logrus.New()
 	q := process.NewQueue(&testExecutor{}, logs)
-	kHandler := NewKymaHandler(db.Orchestrations(), q, handlers.Converter{PlansConfig: broker.PlansConfig{}}, logs)
+	kHandler := NewKymaHandler(db.Orchestrations(), q, Converter{PlansConfig: broker.PlansConfig{}}, logs)
 
 	// fix github client
 	mockServer := fixGithubServer(t)

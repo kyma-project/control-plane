@@ -5,7 +5,8 @@
     "name": {
       "type": "string",
       "title": "Cluster Name",
-      "minLength": 1
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9-]*$"
     },
     "region": {
       "type": "string",

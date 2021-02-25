@@ -21,13 +21,17 @@ type ProvisioningProperties struct {
 }
 
 type Type struct {
-	Type            string        `json:"type"`
-	Title           string        `json:"title,omitempty"`
-	Description     string        `json:"description,omitempty"`
-	Minimum         int           `json:"minimum,omitempty"`
-	Maximum         int           `json:"maximum,omitempty"`
-	MinLength       int           `json:"minLength,omitempty"`
-	MaxLength       int           `json:"maxLength,omitempty"`
+	Type        string `json:"type"`
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
+	Minimum     int    `json:"minimum,omitempty"`
+	Maximum     int    `json:"maximum,omitempty"`
+	MinLength   int    `json:"minLength,omitempty"`
+	MaxLength   int    `json:"maxLength,omitempty"`
+
+	// Regex pattern to match against string type of fields.
+	// If not specified for strings user can pass empty string with whitespaces only.
+	Pattern         string        `json:"pattern,omitempty"`
 	Default         interface{}   `json:"default,omitempty"`
 	Example         interface{}   `json:"example,omitempty"`
 	Enum            []interface{} `json:"enum,omitempty"`
@@ -38,8 +42,10 @@ type Type struct {
 
 func NameProperty() Type {
 	return Type{
-		Type:      "string",
-		Title:     "Cluster Name",
+		Type:  "string",
+		Title: "Cluster Name",
+		// Allows for all alphanumeric characters, '_', and '-'
+		Pattern:   "^[a-zA-Z0-9-]*$",
 		MinLength: 1,
 	}
 }

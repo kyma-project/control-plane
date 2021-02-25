@@ -18,7 +18,12 @@ func TestNewPlansSchemaValidatorErrors(t *testing.T) {
 			inputJSON:    `{"region": "munich"}`,
 			expErr:       `(root): name is required`,
 		},
-		"missing name, not valid machine type": {
+		"not valid name": {
+			againstPlans: []string{AzurePlanID},
+			inputJSON:    `{"name": "wrong name"}`,
+			expErr:       `name: Does not match pattern '^[a-zA-Z0-9-]*$'`,
+		},
+		"not valid machine type": {
 			againstPlans: []string{AzurePlanID},
 			inputJSON:    `{"name": "wrong-machType", "machineType": "WrongName"}`,
 			expErr:       `machineType: machineType must be one of the following: "Standard_D8_v3"`,

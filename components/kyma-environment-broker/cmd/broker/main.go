@@ -4,14 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"sort"
 	"time"
-
-	"gopkg.in/yaml.v2"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
 
@@ -152,12 +149,8 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	fatalOnError(err)
 
-	servicesConfig, err := getCatalogConfig(cfg.CatalogFilePath)
+	servicesConfig, err := broker.NewServicesConfigFromFile(cfg.CatalogFilePath)
 	fatalOnError(err)
-	//fmt.Println(cfg.Broker.Services)
-	//kymaRuntimePlans := broker.Plans(cfg.Broker.Services.DefaultPlansConfig())
-	//fmt.Println(kymaRuntimePlans)
-	//fatalOnError(errors.New(""))
 
 	// create logger
 	logger := lager.NewLogger("kyma-env-broker")
@@ -467,7 +460,7 @@ func main() {
 
 	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
 
-	defaultPlansConfig := cfg.Broker.Services.DefaultPlansConfig()
+	defaultPlansConfig := servicesConfig.DefaultPlansConfig()
 	plansValidator, err := broker.NewPlansSchemaValidator(defaultPlansConfig)
 	fatalOnError(err)
 
@@ -704,19 +697,4 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 	queue.Run(ctx.Done(), 1)
 
 	return queue, nil
-}
-
-func getCatalogConfig(path string) (broker.ServicesConfig, error) {
-	yamlFile, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, errors.Wrap(err, "while reading YAML file with managed components list")
-	}
-	var servicesConfig struct {
-		Services broker.ServicesConfig `json:"services"`
-	}
-	err = yaml.Unmarshal(yamlFile, &servicesConfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "while unmarshaling YAML file with managed components list")
-	}
-	return servicesConfig.Services, nil
 }

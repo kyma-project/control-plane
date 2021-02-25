@@ -1,7 +1,10 @@
 package broker
 
 import (
+	"io/ioutil"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 
 	"github.com/pkg/errors"
 )
@@ -31,6 +34,21 @@ type Config struct {
 }
 
 type ServicesConfig map[string]Service
+
+func NewServicesConfigFromFile(path string) (ServicesConfig, error) {
+	yamlFile, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, errors.Wrap(err, "while reading YAML file with managed components list")
+	}
+	var servicesConfig struct {
+		Services ServicesConfig `json:"services"`
+	}
+	err = yaml.Unmarshal(yamlFile, &servicesConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "while unmarshaling YAML file with managed components list")
+	}
+	return servicesConfig.Services, nil
+}
 
 func (s ServicesConfig) DefaultPlansConfig() PlansConfig {
 	return s[KymaServiceName].Plans

@@ -54,18 +54,6 @@ spec:
               value: "{{ .Values.onlySingleTrialPerGA }}"
             - name: APP_OPERATION_TIMEOUT
               value: "{{ .Values.broker.operationTimeout }}"
-            - name: APP_BROKER_SERVICE_DISPLAY_NAME
-              value: "{{ .Values.services.kymaEnvironment.metadata.displayName }}"
-            - name: APP_BROKER_SERVICE_IMAGE_URL
-              value: "{{ .Values.services.kymaEnvironment.metadata.imageUrl }}"
-            - name: APP_BROKER_SERVICE_LONG_DESCRIPTION
-              value: "{{ .Values.services.kymaEnvironment.metadata.longDescription }}"
-            - name: APP_BROKER_SERVICE_PROVIDER_DISPLAY_NAME
-              value: "{{ .Values.services.kymaEnvironment.metadata.providerDisplayName }}"
-            - name: APP_BROKER_SERVICE_DOCUMENTATION_URL
-              value: "{{ .Values.services.kymaEnvironment.metadata.documentationUrl }}"
-            - name: APP_BROKER_SERVICE_SUPPORT_URL
-              value: "{{ .Values.services.kymaEnvironment.metadata.supportUrl }}"
             - name: APP_PROVISIONING_URL
               value: "{{ .Values.provisioner.URL }}"
             - name: APP_PROVISIONING_TIMEOUT
