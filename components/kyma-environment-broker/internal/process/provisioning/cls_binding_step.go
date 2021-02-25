@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Masterminds/semver"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -72,6 +71,8 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 	case servicemanager.InProgress:
 		return operation, 10 * time.Second, nil
 	case servicemanager.Failed:
+		failureReason := fmt.Sprintf("Cls instance is state failed")
+		log.Errorf("%s: %s", failureReason, resp.Description)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("Cls provisioning failed: %s", resp.Description))
 	case servicemanager.Succeeded:
 		operation.Cls.Instance.Provisioned = true
@@ -109,11 +110,12 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		operation.Cls.Binding.Bound = true
 
 		// save the status
-		operation, retry := s.operationManager.UpdateOperation(operation)
+		op, retry := s.operationManager.UpdateOperation(operation)
 		if retry > 0 {
 			log.Errorf("unable to update operation")
 			return operation, time.Second, nil
 		}
+		operation = op
 	} else {
 		// fetch existing overrides
 		overrides, err = cls.DecryptOverrides(s.secretKey, operation.Cls.Overrides)
@@ -131,21 +133,13 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		return operation, time.Second, nil
 	}
 
-	// Insert cls overrides if kyma version is >=1.20. Also make sure for PR images overrides are inserted here
-	c, err := semver.NewConstraint("<= 1.19.x")
+	checkKymaVersion, err := cls.IsKymaVersion_1_20(operation.RuntimeVersion.Version)
 	if err != nil {
-		failureReason := fmt.Sprintf("unable to parse constraint for kyma version to set correct fluent bit plugin: %v", err)
+		failureReason := fmt.Sprintf("unable to check kyma version: %v", err)
 		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason)
 	}
-	v, err := semver.NewVersion(operation.RuntimeVersion.Version)
-	if err != nil {
-		failureReason := fmt.Sprintf("unable to parse runtime kyma version: %v", err)
-		log.Error(failureReason)
-		return s.operationManager.OperationFailed(operation, failureReason)
-	}
-	check := c.Check(v)
-	if !check {
+	if checkKymaVersion {
 		operation.InputCreator.AppendOverrides(components.CLS, getClsOverrides(flOverride))
 	}
 

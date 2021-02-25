@@ -53,6 +53,7 @@ func TestClsUnbindStep_Run(t *testing.T) {
 		Operation: internal.Operation{
 			InstanceDetails: internal.InstanceDetails{
 				Cls: internal.ClsData{
+					Region: "eu",
 					Instance: internal.ServiceManagerInstanceInfo{
 						BrokerID:    "broker-id",
 						ServiceID:   "svc-id",

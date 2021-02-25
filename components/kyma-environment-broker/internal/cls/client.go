@@ -75,7 +75,7 @@ func (c *Client) CreateInstance(smClient servicemanager.Client, instance service
 		return errors.Wrapf(err, "while provisioning a cls instance %s", instance.InstanceID)
 	}
 
-	c.log.Infof("Response from service manager while deprovisioning an instance %s: %#v", instance.InstanceID, resp)
+	c.log.Infof("Response from service manager while provisioning an instance %s: %#v", instance.InstanceID, resp)
 
 	return nil
 }

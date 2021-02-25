@@ -3,11 +3,14 @@
 package provisioning
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning"
+
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -56,6 +59,7 @@ func TestClsProvisionSteps(t *testing.T) {
 
 	log := logrus.New()
 	log.SetFormatter(&logrus.JSONFormatter{})
+	fmt.Println("Start Testing")
 
 	operation := internal.ProvisioningOperation{
 		Operation: internal.Operation{ProvisioningParameters: internal.ProvisioningParameters{
@@ -72,34 +76,69 @@ func TestClsProvisionSteps(t *testing.T) {
 	repo.InsertProvisioningOperation(operation)
 
 	offeringStep := NewClsOfferingStep(clsConfig, repo)
+	operation, retry, err := offeringStep.Run(operation, log)
+	time.Sleep(10 * time.Second)
+	fmt.Printf(">>> Offering %#v\n", operation.Cls)
+
+	require.NoError(t, err)
+	require.Zero(t, retry)
 
 	clsClient := cls.NewClient(clsConfig, log)
-	//clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient, log)
-	//provisioningStep := NewClsProvisioningStep(clsConfig, clsProvisioner, repo)
+	clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient, log)
+	provisioningStep := NewClsProvisionStep(clsConfig, clsProvisioner, repo)
+	operation, retry, err = provisioningStep.Run(operation, log)
+	fmt.Printf(">>> Provisioning: %#v\n", operation.Cls)
+
+	require.NoError(t, err)
+	require.Zero(t, retry)
 
 	bindingStep := NewClsBindStep(clsConfig, clsClient, repo, "1234567890123456")
 
-	operation, retry, err := offeringStep.Run(operation, log)
-	fmt.Printf(">>> %#v\n", operation.Cls)
+	for i := 0; i < 200; i++ {
+		time.Sleep(retry)
+		operation, retry, err = bindingStep.Run(operation, log)
+		fmt.Printf(">>> Binding: %#v\n", operation.Cls)
+
+		require.NoError(t, err)
+		if operation.Cls.Binding.Bound {
+			break
+		}
+	}
+
+	// Unbind
+	deprovOperation := internal.DeprovisioningOperation{
+		Operation: internal.Operation{ProvisioningParameters: internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{
+				Region: func(s string) *string { return &s }("westeurope"),
+			},
+		}},
+		SMClientFactory: servicemanager.NewClientFactory(servicemanager.Config{}),
+	}
+
+	deprovOperation.Cls = operation.Cls
+	repo.InsertDeprovisioningOperation(deprovOperation)
+
+	unbindingStep := deprovisioning.NewClsUnbindStep(clsConfig, repo)
+	deprovOp, retry, err := unbindingStep.Run(deprovOperation, log)
+	fmt.Printf(">>> UnBinding: %#v\n", deprovOp.Cls)
+
+	clsDeprovisioner := cls.NewDeprovisioner(db.CLSInstances(), clsClient, log)
+	deprovisioningStep := deprovisioning.NewClsDeprovisionStep(clsConfig, repo, clsDeprovisioner)
+
+	for i := 0; i < 10; i++ {
+		op, offset, err := deprovisioningStep.Run(deprovOperation, log)
+		require.NoError(t, err)
+		deprovOperation = op
+
+		if !deprovOperation.Cls.Instance.Provisioned {
+			require.Empty(t, deprovOperation.Cls.Instance.InstanceID)
+			break
+		}
+
+		time.Sleep(offset)
+	}
+
+	fmt.Printf(">>> Deprovisioning: %#v\n", operation.Cls)
+
 	require.NoError(t, err)
-	require.Zero(t, retry)
-
-	//operation, retry, err = provisioningStep.Run(operation, log)
-	//fmt.Printf(">>> first provisioning: %#v\n", operation.Cls)
-	//require.NoError(t, err)
-	//require.Zero(t, retry)
-	//
-	//operation, retry, err = provisioningStep.Run(operation, log)
-	//fmt.Printf(">>> second provisioning %#v\n", operation.Cls)
-	//require.NoError(t, err)
-	//require.Zero(t, retry)
-
-	operation.Cls.Instance.ProvisioningTriggered = true
-
-	operation, retry, err = bindingStep.Run(operation, log)
-	fmt.Printf("After Binding step>>> %#v\n", operation.Cls)
-	fmt.Printf("After Binding step 2>>> %#v\n", operation)
-	require.NoError(t, err)
-	require.Zero(t, retry)
-
 }

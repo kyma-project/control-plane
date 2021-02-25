@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/Masterminds/semver"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog/templates"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 )
@@ -28,18 +27,12 @@ type Overrides struct {
 }
 
 func GetExtraConfTemplate(KymaVersion string) (*template.Template, error) {
-	c, err := semver.NewConstraint("< 1.20.x")
+	checkKymaVersion, err := cls.IsKymaVersion_1_20(KymaVersion)
 	if err != nil {
-		return nil, errors.New("unable to parse constraint for kyma version %s to set correct fluent bit plugin")
+		return nil, errors.New(fmt.Sprintf("unable to check kyma version: %v", err))
 	}
 
-	version, err := semver.NewVersion(KymaVersion)
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse kyma version %s to set correct fluent bit plugin", KymaVersion)
-	}
-
-	check := c.Check(version)
-	if check {
+	if !checkKymaVersion {
 		return template.New("fluent-bit-extra-conf-for-kyma-1-19").Parse(templates.FluentBitExtraConfForKyma1_19)
 	} else {
 		return template.New("fluent-bit-extra-conf-for-kyma-above-1-19").Parse(templates.FluentBitExtraConf)
