@@ -5,15 +5,14 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-	"github.com/stretchr/testify/require"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type handler struct {
@@ -185,8 +184,6 @@ func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 
 func fixProvisioningOperation(id string) internal.ProvisioningOperation {
 	provisioningOperation := fixture.FixProvisioningOperation(id, instanceID)
-	provisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.Credentials.BasicAuth.Username = "u"
-	provisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.Credentials.BasicAuth.Password = "p"
 	provisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.URL = ""
 
 	return provisioningOperation
@@ -194,8 +191,6 @@ func fixProvisioningOperation(id string) internal.ProvisioningOperation {
 
 func fixSuspensionOperation() internal.DeprovisioningOperation {
 	deprovisioningOperation := fixture.FixDeprovisioningOperation("id", instanceID)
-	deprovisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.Credentials.BasicAuth.Username = "u"
-	deprovisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.Credentials.BasicAuth.Password = "p"
 	deprovisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.URL = ""
 	deprovisioningOperation.Temporary = true
 

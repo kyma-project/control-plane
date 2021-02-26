@@ -6,10 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	inputAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
@@ -17,7 +16,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
@@ -175,7 +173,6 @@ func fixOperationCreateRuntime(t *testing.T, planID, region string) internal.Pro
 	provisioningOperation := fixture.FixProvisioningOperation(operationID, instanceID)
 	provisioningOperation.State = domain.InProgress
 	provisioningOperation.InputCreator = fixInputCreator(t)
-	provisioningOperation.ProvisionerOperationID = ""
 	provisioningOperation.InstanceDetails.ShootName = shootName
 	provisioningOperation.ProvisioningParameters = fixProvisioningParameters(planID, region)
 

@@ -4,10 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/migrations"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
@@ -46,7 +45,6 @@ func TestInstanceDetailsMigration_Migrate(t *testing.T) {
 
 func fixProvisioningOperation() internal.ProvisioningOperation {
 	provisioningOperation := fixture.FixProvisioningOperation("prov-op-id", "instance-id")
-	provisioningOperation.Operation.InstanceDetails = fixture.FixInstanceDetails("id")
 	provisioningOperation.Operation.InstanceDetails.XSUAA.Instance.Provisioned = true
 	provisioningOperation.Operation.InstanceDetails.XSUAA.Instance.ProvisioningTriggered = true
 

@@ -4,23 +4,26 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
 const (
-	serviceId              = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
-	serviceName            = "kymaruntime"
-	planId                 = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
-	planName               = "azure"
-	globalAccountId        = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
-	provisionerOperationId = "e04de524-53b3-4890-b05a-296be393e4ba"
-	kymaVersion            = "1.19.0"
+	ServiceId              = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
+	ServiceName            = "kymaruntime"
+	PlanId                 = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	PlanName               = "azure"
+	GlobalAccountId        = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
+	Region                 = "westeurope"
+	ServiceManagerUsername = "u"
+	ServiceManagerPassword = "p"
+	ServiceManagerURL      = "https://service-manager.local"
+	InstanceDashboardURL   = "https://dashboard.local"
+	XSUAADataXSAppName     = "XSApp"
+	KymaVersion            = "1.19.0"
 )
 
 type SimpleInputCreator struct {
@@ -34,11 +37,11 @@ func FixServiceManagerEntryDTO() *internal.ServiceManagerEntryDTO {
 	return &internal.ServiceManagerEntryDTO{
 		Credentials: internal.ServiceManagerCredentials{
 			BasicAuth: internal.ServiceManagerBasicAuth{
-				Username: "username",
-				Password: "password",
+				Username: ServiceManagerUsername,
+				Password: ServiceManagerPassword,
 			},
 		},
-		URL: "https://service-manager.local",
+		URL: ServiceManagerURL,
 	}
 }
 
@@ -52,7 +55,7 @@ func FixERSContext(id string) internal.ERSContext {
 	return internal.ERSContext{
 		TenantID:        tenantID,
 		SubAccountID:    subAccountId,
-		GlobalAccountID: globalAccountId,
+		GlobalAccountID: GlobalAccountId,
 		ServiceManager:  FixServiceManagerEntryDTO(),
 		Active:          ptr.Bool(true),
 		UserID:          userID,
@@ -62,28 +65,29 @@ func FixERSContext(id string) internal.ERSContext {
 func FixProvisioningParametersDTO() internal.ProvisioningParametersDTO {
 	trialCloudProvider := internal.Azure
 	return internal.ProvisioningParametersDTO{
-		Name:           "cluster-name",
+		Name:           "cluster-test",
 		VolumeSizeGb:   ptr.Integer(50),
-		MachineType:    ptr.String("MachineType"),
-		Region:         ptr.String("Region"),
+		MachineType:    ptr.String("Standard_D8_v3"),
+		Region:         ptr.String(Region),
 		Purpose:        ptr.String("Purpose"),
 		LicenceType:    ptr.String("LicenceType"),
+		Zones:          []string{"1"},
 		AutoScalerMin:  ptr.Integer(3),
 		AutoScalerMax:  ptr.Integer(10),
 		MaxSurge:       ptr.Integer(4),
 		MaxUnavailable: ptr.Integer(1),
-		KymaVersion:    kymaVersion,
+		KymaVersion:    KymaVersion,
 		Provider:       &trialCloudProvider,
 	}
 }
 
 func FixProvisioningParameters(id string) internal.ProvisioningParameters {
 	return internal.ProvisioningParameters{
-		PlanID:         planId,
-		ServiceID:      serviceId,
+		PlanID:         PlanId,
+		ServiceID:      ServiceId,
 		ErsContext:     FixERSContext(id),
 		Parameters:     FixProvisioningParametersDTO(),
-		PlatformRegion: "region",
+		PlatformRegion: Region,
 	}
 }
 
@@ -102,45 +106,38 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 		RequestedAt: time.Time{},
 	}
 
-	avsLifecycleData := internal.AvsLifecycleData{
-		AvsEvaluationInternalId: 1,
-		AVSEvaluationExternalId: 2,
-		AvsInternalEvaluationStatus: internal.AvsEvaluationStatus{
-			Current:  "currentStatus",
-			Original: "originalStatus",
-		},
-		AvsExternalEvaluationStatus: internal.AvsEvaluationStatus{
-			Current:  "currentStatus",
-			Original: "originalStatus",
-		},
-		AVSInternalEvaluationDeleted: false,
-		AVSExternalEvaluationDeleted: false,
-	}
-
 	serviceManagerInstanceInfo := internal.ServiceManagerInstanceInfo{
-		BrokerID:              brokerId,
-		ServiceID:             serviceId,
-		PlanID:                planId,
-		InstanceID:            id,
-		Provisioned:           false,
-		ProvisioningTriggered: false,
+		BrokerID:                brokerId,
+		ServiceID:               ServiceId,
+		PlanID:                  PlanId,
+		InstanceID:              id,
+		Provisioned:             false,
+		ProvisioningTriggered:   false,
+		DeprovisioningTriggered: false,
 	}
 
 	xsuaaData := internal.XSUAAData{
 		Instance:  serviceManagerInstanceInfo,
-		XSAppname: "xsappName",
+		XSAppname: XSUAADataXSAppName,
 		BindingID: bindingId,
 	}
 
 	emsData := internal.EmsData{
 		Instance:  serviceManagerInstanceInfo,
 		BindingID: bindingId,
-		Overrides: "overrides",
+		Overrides: "Overrides",
+	}
+
+	cls := internal.ClsData{
+		Instance:  serviceManagerInstanceInfo,
+		Region:    Region,
+		BindingID: bindingId,
+		Overrides: "Overrides",
 	}
 
 	return internal.InstanceDetails{
 		Lms:          lms,
-		Avs:          avsLifecycleData,
+		Avs:          internal.AvsLifecycleData{},
 		EventHub:     internal.EventHub{Deleted: false},
 		SubAccountID: subAccountId,
 		RuntimeID:    runtimeId,
@@ -148,6 +145,7 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 		ShootDomain:  "ShootDomain",
 		XSUAA:        xsuaaData,
 		Ems:          emsData,
+		Cls:          cls,
 	}
 }
 
@@ -160,16 +158,16 @@ func FixInstance(id string) internal.Instance {
 	return internal.Instance{
 		InstanceID:      id,
 		RuntimeID:       runtimeId,
-		GlobalAccountID: globalAccountId,
+		GlobalAccountID: GlobalAccountId,
 		SubAccountID:    subAccountId,
-		ServiceID:       serviceId,
-		ServiceName:     serviceName,
-		ServicePlanID:   planId,
-		ServicePlanName: planName,
-		DashboardURL:    "https://dashboard.local",
+		ServiceID:       ServiceId,
+		ServiceName:     ServiceName,
+		ServicePlanID:   PlanId,
+		ServicePlanName: PlanName,
+		DashboardURL:    InstanceDashboardURL,
 		Parameters:      FixProvisioningParameters(id),
-		ProviderRegion:  "region",
-		InstanceDetails: internal.InstanceDetails{},
+		ProviderRegion:  Region,
+		InstanceDetails: FixInstanceDetails(id),
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now().Add(time.Minute * 5),
 		DeletedAt:       time.Now().Add(time.Hour * 1),
@@ -184,13 +182,13 @@ func FixOperation(id, instanceId string) internal.Operation {
 	)
 
 	return internal.Operation{
-		InstanceDetails:        internal.InstanceDetails{},
+		InstanceDetails:        FixInstanceDetails(instanceId),
 		ID:                     id,
 		Version:                0,
 		CreatedAt:              time.Now(),
 		UpdatedAt:              time.Now().Add(time.Hour * 48),
 		InstanceID:             instanceId,
-		ProvisionerOperationID: provisionerOperationId,
+		ProvisionerOperationID: "",
 		State:                  domain.Succeeded,
 		Description:            description,
 		ProvisioningParameters: FixProvisioningParameters(id),
@@ -211,7 +209,7 @@ func FixProvisioningOperation(operationId, instanceId string) internal.Provision
 	return internal.ProvisioningOperation{
 		Operation: FixOperation(operationId, instanceId),
 		RuntimeVersion: internal.RuntimeVersionData{
-			Version: kymaVersion,
+			Version: KymaVersion,
 			Origin:  internal.Defaults,
 		},
 		InputCreator:    FixInputCreator(),
@@ -236,7 +234,7 @@ func FixRuntime(id string) orchestration.Runtime {
 	return orchestration.Runtime{
 		InstanceID:             instanceId,
 		RuntimeID:              id,
-		GlobalAccountID:        globalAccountId,
+		GlobalAccountID:        GlobalAccountId,
 		SubAccountID:           subAccountId,
 		ShootName:              "ShootName",
 		MaintenanceWindowBegin: time.Now().Truncate(time.Millisecond).Add(time.Hour),
@@ -258,7 +256,7 @@ func FixUpgradeKymaOperation(operationId, instanceId string) internal.UpgradeKym
 		RuntimeOperation: FixRuntimeOperation(operationId),
 		InputCreator:     FixInputCreator(),
 		RuntimeVersion: internal.RuntimeVersionData{
-			Version: kymaVersion,
+			Version: KymaVersion,
 			Origin:  internal.Defaults,
 		},
 		SMClientFactory: nil,

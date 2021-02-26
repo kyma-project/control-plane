@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
@@ -20,7 +18,7 @@ func TestRemoveRuntimeStep_Run(t *testing.T) {
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
 
-		operation := fixOperationRemoveRuntime()
+		operation := fixture.FixDeprovisioningOperation(fixOperationID, fixInstanceID)
 		err := memoryStorage.Operations().InsertDeprovisioningOperation(operation)
 		assert.NoError(t, err)
 
@@ -52,7 +50,10 @@ func TestRemoveRuntimeStep_Run(t *testing.T) {
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
 
-		operation := fixOperationRemoveRuntime()
+		operation := fixture.FixDeprovisioningOperation(fixOperationID, fixInstanceID)
+		operation.ProvisionerOperationID = ""
+		operation.RuntimeID = ""
+
 		err := memoryStorage.Operations().InsertDeprovisioningOperation(operation)
 		assert.NoError(t, err)
 
@@ -77,11 +78,4 @@ func TestRemoveRuntimeStep_Run(t *testing.T) {
 		assert.Equal(t, "", result.ProvisionerOperationID)
 		assert.Equal(t, "", result.RuntimeID)
 	})
-}
-
-func fixOperationRemoveRuntime() internal.DeprovisioningOperation {
-	deprovisioningOperation := fixture.FixDeprovisioningOperation(fixOperationID, fixInstanceID)
-	deprovisioningOperation.ProvisionerOperationID = ""
-
-	return deprovisioningOperation
 }

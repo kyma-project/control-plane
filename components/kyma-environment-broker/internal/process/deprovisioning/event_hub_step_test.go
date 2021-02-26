@@ -6,20 +6,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	hyperscalerautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
 	azuretesting "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure/testing"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 type wantStateFunction = func(t *testing.T, operation internal.DeprovisioningOperation, when time.Duration, err error,
@@ -310,11 +308,9 @@ func Test_StepsUnhappyPath(t *testing.T) {
 }
 
 func fixInstance() internal.Instance {
-	region := "westeurope"
 	instance := fixture.FixInstance(fixInstanceID)
 	instance.Parameters.ErsContext.SubAccountID = subAccountID
 	instance.Parameters.Parameters.Name = "nachtmaar-15"
-	instance.Parameters.Parameters.Region = &region
 
 	return instance
 }
