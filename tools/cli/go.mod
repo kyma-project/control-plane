@@ -14,6 +14,7 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.1
+	golang.org/x/mod v0.3.0
 	golang.org/x/oauth2 v0.0.0-20201109201403-9fd604954f58
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
