@@ -3,6 +3,7 @@ package runtimeoverrides
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -143,7 +144,7 @@ func secretListOptions() []client.ListOption {
 
 func configMapListOptions(plan string, version string) []client.ListOption {
 	planLabel := overridesPlanLabelPrefix + plan
-	versionLabel := overridesVersionLabelPrefix + version
+	versionLabel := overridesVersionLabelPrefix + strings.ToLower(version)
 
 	label := map[string]string{
 		planLabel:    "true",
