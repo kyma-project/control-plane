@@ -54,13 +54,11 @@ func TestInstance(t *testing.T) {
 		require.NoError(t, err)
 
 		fixProvisioningOperation1 := fixture.FixProvisioningOperation("op-id", fixInstance.InstanceID)
-		fixProvisioningOperation1.InstanceDetails = fixture.FixInstanceDetails(fixInstance.InstanceID)
 
 		err = brokerStorage.Operations().InsertProvisioningOperation(fixProvisioningOperation1)
 		require.NoError(t, err)
 
 		fixProvisioningOperation2 := fixture.FixProvisioningOperation("latest-op-id", fixInstance.InstanceID)
-		fixProvisioningOperation2.InstanceDetails = fixture.FixInstanceDetails(fixInstance.InstanceID)
 
 		err = brokerStorage.Operations().InsertProvisioningOperation(fixProvisioningOperation2)
 		require.NoError(t, err)
@@ -469,6 +467,7 @@ func fixInstance(testData instanceData) *internal.Instance {
 	instance.ProviderRegion = testData.val
 	instance.Parameters.ErsContext.SubAccountID = suid
 	instance.Parameters.ErsContext.GlobalAccountID = gaid
+	instance.InstanceDetails = internal.InstanceDetails{}
 
 	return &instance
 }
