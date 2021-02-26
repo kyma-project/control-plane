@@ -183,7 +183,7 @@ func main() {
 	// create storage
 	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
 	var db storage.BrokerStorage
-	inMem := storage.NewMemoryStorage()
+	cfg.DbInMemory = true
 	if cfg.DbInMemory {
 		db = storage.NewMemoryStorage()
 	} else {
@@ -225,7 +225,7 @@ func main() {
 		fatalOnError(err)
 	}
 	clsClient := cls.NewClient(clsConfig, logs.WithField("service", "clsClient"))
-	clsProvisioner := cls.NewProvisioner(inMem.CLSInstances(), clsClient, logs.WithField("service", "clsProvisioner"))
+	clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient, logs.WithField("service", "clsProvisioner"))
 
 	//// LMS
 	//fatalOnError(cfg.LMS.Validate())
@@ -328,7 +328,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewClsOfferingStep(clsConfig, inMem.Operations()),
+			step:     provisioning.NewClsOfferingStep(clsConfig, db.Operations()),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -358,7 +358,7 @@ func main() {
 		},
 		{
 			weight:   2,
-			step:     provisioning.NewClsProvisionStep(clsConfig, clsProvisioner, inMem.Operations()),
+			step:     provisioning.NewClsProvisionStep(clsConfig, clsProvisioner, db.Operations()),
 			disabled: cfg.Cls.Disabled,
 		},
 		//{
@@ -412,7 +412,7 @@ func main() {
 		},
 		{
 			weight:   7,
-			step:     provisioning.NewClsBindStep(clsConfig, clsClient, inMem.Operations(), cfg.Database.SecretKey),
+			step:     provisioning.NewClsBindStep(clsConfig, clsClient, db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Ems.Disabled,
 		},
 
@@ -427,7 +427,7 @@ func main() {
 		}
 	}
 
-	clsDeprovisioner := cls.NewDeprovisioner(inMem.CLSInstances(), clsClient, logs.WithField("service", "clsDeprovisioner"))
+	clsDeprovisioner := cls.NewDeprovisioner(db.CLSInstances(), clsClient, logs.WithField("service", "clsDeprovisioner"))
 
 	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, serviceManagerClientFactory, cfg.OperationTimeout)
 	deprovisionManager.InitStep(deprovisioningInit)
@@ -466,7 +466,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     deprovisioning.NewClsUnbindStep(clsConfig, inMem.Operations()),
+			step:     deprovisioning.NewClsUnbindStep(clsConfig, db.Operations()),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -481,7 +481,7 @@ func main() {
 		},
 		{
 			weight:   2,
-			step:     deprovisioning.NewClsDeprovisionStep(clsConfig, inMem.Operations(), clsDeprovisioner),
+			step:     deprovisioning.NewClsDeprovisionStep(clsConfig, db.Operations(), clsDeprovisioner),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
