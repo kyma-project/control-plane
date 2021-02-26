@@ -123,7 +123,6 @@ type Config struct {
 	//LMS lms.Config
 	IAS ias.Config
 	EDP edp.Config
-	CLS cls.Config
 
 	// Service Manager services
 	XSUAA struct {
