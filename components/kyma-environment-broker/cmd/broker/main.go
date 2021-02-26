@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"sort"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
 
@@ -47,7 +50,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/health"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
+
+	//"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/metrics"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
@@ -116,15 +120,19 @@ type Config struct {
 	Broker broker.Config
 
 	Avs avs.Config
-	LMS lms.Config
+	//LMS lms.Config
 	IAS ias.Config
 	EDP edp.Config
+	CLS cls.Config
 
 	// Service Manager services
 	XSUAA struct {
 		Disabled bool `envconfig:"default=true"`
 	}
 	Ems struct {
+		Disabled bool `envconfig:"default=true"`
+	}
+	Cls struct {
 		Disabled bool `envconfig:"default=true"`
 	}
 
@@ -176,6 +184,7 @@ func main() {
 	// create storage
 	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
 	var db storage.BrokerStorage
+	inMem := storage.NewMemoryStorage()
 	if cfg.DbInMemory {
 		db = storage.NewMemoryStorage()
 	} else {
@@ -206,11 +215,23 @@ func main() {
 		err = migrations.NewOperationsUserIDMigration(db.Operations(), logs.WithField("service", "userIDMigration")).Migrate()
 		fatalOnError(err)
 	}
+	//CLS
+	clsFile, err := ioutil.ReadFile("/secrets/cls-config")
+	if err != nil {
+		fatalOnError(err)
+	}
 
-	// LMS
-	fatalOnError(cfg.LMS.Validate())
-	lmsClient := lms.NewClient(cfg.LMS, logs.WithField("service", "lmsClient"))
-	lmsTenantManager := lms.NewTenantManager(db.LMSTenants(), lmsClient, logs.WithField("service", "lmsTenantManager"))
+	clsConfig, err := cls.Load(string(clsFile))
+	if err != nil {
+		fatalOnError(err)
+	}
+	clsClient := cls.NewClient(clsConfig, logs.WithField("service", "clsClient"))
+	clsProvisioner := cls.NewProvisioner(inMem.CLSInstances(), clsClient, logs.WithField("service", "clsProvisioner"))
+
+	//// LMS
+	//fatalOnError(cfg.LMS.Validate())
+	//lmsClient := lms.NewClient(cfg.LMS, logs.WithField("service", "lmsClient"))
+	//lmsTenantManager := lms.NewTenantManager(db.LMSTenants(), lmsClient, logs.WithField("service", "lmsTenantManager"))
 
 	// Register disabler. Convention:
 	// {component-name} : {component-disabler-service}
@@ -307,6 +328,11 @@ func main() {
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight:   1,
+			step:     provisioning.NewClsOfferingStep(clsConfig, inMem.Operations()),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
 			weight: 2,
 			step:   provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
 		},
@@ -332,9 +358,14 @@ func main() {
 			disabled: cfg.Avs.Disabled,
 		},
 		{
-			weight: 2,
-			step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
+			weight:   2,
+			step:     provisioning.NewClsProvisionStep(clsConfig, clsProvisioner, inMem.Operations()),
+			disabled: cfg.Cls.Disabled,
 		},
+		//{
+		//	weight: 2,
+		//	step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
+		//},
 		{
 			weight:   2,
 			step:     provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
@@ -361,10 +392,10 @@ func main() {
 			//TODO: Rethink the prio as CLS needs to be bound before
 			step: provisioning.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
 		},
-		{
-			weight: 5,
-			step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
-		},
+		//{
+		//	weight: 5,
+		//	step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
+		//},
 		{
 			weight:   6,
 			step:     provisioning.NewIASRegistrationStep(db.Operations(), bundleBuilder),
@@ -381,6 +412,12 @@ func main() {
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight:   7,
+			step:     provisioning.NewClsBindStep(clsConfig, clsClient, inMem.Operations(), cfg.Database.SecretKey),
+			disabled: cfg.Ems.Disabled,
+		},
+
+		{
 			weight: 10,
 			step:   provisioning.NewCreateRuntimeStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
 		},
@@ -390,6 +427,8 @@ func main() {
 			provisionManager.AddStep(step.weight, step.step)
 		}
 	}
+
+	clsDeprovisioner := cls.NewDeprovisioner(inMem.CLSInstances(), clsClient, logs.WithField("service", "clsDeprovisioner"))
 
 	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, serviceManagerClientFactory, cfg.OperationTimeout)
 	deprovisionManager.InitStep(deprovisioningInit)
@@ -427,6 +466,11 @@ func main() {
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight:   1,
+			step:     deprovisioning.NewClsUnbindStep(clsConfig, inMem.Operations()),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
 			weight:   2,
 			step:     deprovisioning.NewXSUAADeprovisionStep(db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
@@ -435,6 +479,11 @@ func main() {
 			weight:   2,
 			step:     deprovisioning.NewEmsDeprovisionStep(db.Operations()),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   2,
+			step:     deprovisioning.NewClsDeprovisionStep(clsConfig, inMem.Operations(), clsDeprovisioner),
+			disabled: cfg.Cls.Disabled,
 		},
 		{
 			weight: 10,
