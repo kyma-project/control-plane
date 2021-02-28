@@ -33,12 +33,12 @@ type kymaHandler struct {
 	log            logrus.FieldLogger
 }
 
-func NewKymaHandler(orchestrations storage.Orchestrations, q *process.Queue, converter Converter, log logrus.FieldLogger) *kymaHandler {
+func NewKymaHandler(orchestrations storage.Orchestrations, q *process.Queue, log logrus.FieldLogger) *kymaHandler {
 	return &kymaHandler{
 		orchestrations: orchestrations,
 		queue:          q,
 		log:            log,
-		converter:      converter,
+		converter:      Converter{},
 		gitClient:      github.NewClient(nil),
 	}
 }

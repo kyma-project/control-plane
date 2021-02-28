@@ -149,9 +149,6 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	fatalOnError(err)
 
-	servicesConfig, err := broker.NewServicesConfigFromFile(cfg.CatalogFilePath)
-	fatalOnError(err)
-
 	// create logger
 	logger := lager.NewLogger("kyma-env-broker")
 	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.DEBUG))
@@ -460,6 +457,11 @@ func main() {
 
 	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
 
+	servicesConfig, err := broker.NewServicesConfigFromFile(cfg.CatalogFilePath)
+	fatalOnError(err)
+
+	logs.Infof("%v", servicesConfig)
+
 	defaultPlansConfig := servicesConfig.DefaultPlansConfig()
 	plansValidator, err := broker.NewPlansSchemaValidator(defaultPlansConfig)
 	fatalOnError(err)
@@ -496,8 +498,7 @@ func main() {
 	fatalOnError(err)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
-	orchestrationConverter := orchestrate.NewConverter(defaultPlansConfig)
-	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, cfg.MaxPaginationPage, orchestrationConverter, logs)
+	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, cfg.MaxPaginationPage, logs)
 
 	if !cfg.DisableProcessOperationsInProgress {
 		err = processOperationsInProgressByType(dbmodel.OperationTypeProvision, db.Operations(), provisionQueue, logs)

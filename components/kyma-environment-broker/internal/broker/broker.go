@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -40,8 +41,10 @@ func NewServicesConfigFromFile(path string) (ServicesConfig, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "while reading YAML file with managed components list")
 	}
+	fmt.Println("XD")
+	fmt.Println(string(yamlFile))
 	var servicesConfig struct {
-		Services ServicesConfig `json:"services"`
+		Services ServicesConfig `yaml:"services"`
 	}
 	err = yaml.Unmarshal(yamlFile, &servicesConfig)
 	if err != nil {
@@ -55,18 +58,28 @@ func (s ServicesConfig) DefaultPlansConfig() PlansConfig {
 }
 
 type Service struct {
-	Description string
-	Metadata    ServiceMetadata
-	Plans       PlansConfig
+	Description string          `yaml:"description"`
+	Metadata    ServiceMetadata `yaml:"metadata"`
+	Plans       PlansConfig     `yaml:"plans"`
 }
 
 type ServiceMetadata struct {
-	DisplayName         string
-	ImageUrl            string
-	LongDescription     string
-	ProviderDisplayName string
-	DocumentationUrl    string
-	SupportUrl          string
+	DisplayName         string `yaml:"displayName"`
+	ImageUrl            string `yaml:"imageUrl"`
+	LongDescription     string `yaml:"longDescription"`
+	ProviderDisplayName string `yaml:"providerDisplayName"`
+	DocumentationUrl    string `yaml:"documentationUrl"`
+	SupportUrl          string `yaml:"supportUrl"`
+}
+
+type PlansConfig map[string]PlanData
+
+type PlanData struct {
+	Description string       `yaml:"description"`
+	Metadata    PlanMetadata `yaml:"metadata"`
+}
+type PlanMetadata struct {
+	DisplayName string `yaml:"displayName"`
 }
 
 // EnablePlans defines the plans that should be available for provisioning

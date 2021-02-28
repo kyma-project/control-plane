@@ -15,11 +15,11 @@ type handler struct {
 	handlers []Handler
 }
 
-func NewOrchestrationHandler(db storage.BrokerStorage, kymaQueue *process.Queue, defaultMaxPage int, converter Converter, log logrus.FieldLogger) Handler {
+func NewOrchestrationHandler(db storage.BrokerStorage, kymaQueue *process.Queue, defaultMaxPage int, log logrus.FieldLogger) Handler {
 	return &handler{
 		handlers: []Handler{
-			NewKymaHandler(db.Orchestrations(), kymaQueue, converter, log),
-			NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), defaultMaxPage, converter, log),
+			NewKymaHandler(db.Orchestrations(), kymaQueue, log),
+			NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), defaultMaxPage, log),
 		},
 	}
 }

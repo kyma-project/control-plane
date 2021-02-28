@@ -34,16 +34,6 @@ var PlanIDsMapping = map[string]string{
 	TrialPlanName:     TrialPlanID,
 }
 
-type PlansConfig map[string]PlanData
-
-type PlanData struct {
-	Description string
-	Metadata    PlanMetadata
-}
-type PlanMetadata struct {
-	DisplayName string
-}
-
 type TrialCloudRegion string
 
 const (
@@ -200,7 +190,7 @@ func defaultDescription(planName string, plans PlansConfig) string {
 }
 func defaultMetadata(planName string, plans PlansConfig) *domain.ServicePlanMetadata {
 	plan, ok := plans[planName]
-	if !ok || len(plan.Description) == 0 {
+	if !ok || len(plan.Metadata.DisplayName) == 0 {
 		return &domain.ServicePlanMetadata{
 			DisplayName: strings.ToTitle(planName),
 		}
