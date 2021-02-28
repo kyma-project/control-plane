@@ -44,7 +44,7 @@ func (om *ProvisionOperationManager) OperationFailed(operation internal.Provisio
 	return updatedOperation, 0, errors.New(description)
 }
 
-// UpdateOperation updates a given operation
+// UpdateOperation updates a given operation and handles conflict situation
 func (om *ProvisionOperationManager) UpdateOperation(operation internal.ProvisioningOperation, overwrite func(operation *internal.ProvisioningOperation)) (internal.ProvisioningOperation, time.Duration) {
 	overwrite(&operation)
 	updatedOperation, err := om.storage.UpdateProvisioningOperation(operation)
@@ -60,6 +60,18 @@ func (om *ProvisionOperationManager) UpdateOperation(operation internal.Provisio
 				return operation, 1 * time.Minute
 			}
 		}
+		logrus.WithField("operation", operation.ID).
+			WithField("instanceID", operation.InstanceID).
+			Errorf("Update provisioning operation failed: %s", err.Error())
+		return operation, 1 * time.Minute
+	}
+	return *updatedOperation, 0
+}
+
+// SimpleUpdateOperation updates a given operation without handling conflicts
+func (om *ProvisionOperationManager) SimpleUpdateOperation(operation internal.ProvisioningOperation, overwrite func(operation *internal.ProvisioningOperation)) (internal.ProvisioningOperation, time.Duration) {
+	updatedOperation, err := om.storage.UpdateProvisioningOperation(operation)
+	if err != nil {
 		logrus.WithField("operation", operation.ID).
 			WithField("instanceID", operation.InstanceID).
 			Errorf("Update provisioning operation failed: %s", err.Error())
