@@ -8,11 +8,32 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/automock"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 type provisioningInputMatcher func(input servicemanager.ProvisioningInput) bool
+
+var config = &Config{
+	RetentionPeriod:    30,
+	MaxDataInstances:   4,
+	MaxIngestInstances: 4,
+	SAML: &SAMLConfig{
+		AdminGroup:  "runtimeAdmin",
+		ExchangeKey: "base64-jibber-jabber",
+		Initiated:   true,
+		RolesKey:    "groups",
+		Idp: &SAMLIdpConfig{
+			EntityID:    "https://sso.example.org/idp",
+			MetadataURL: "https://sso.example.org/idp/saml2/metadata",
+		},
+		Sp: &SAMLSpConfig{
+			EntityID:            "cls-dev",
+			SignaturePrivateKey: "base64-jibber-jabber",
+		},
+	},
+}
 
 func TestCreateInstance(t *testing.T) {
 	const (
@@ -20,28 +41,6 @@ func TestCreateInstance(t *testing.T) {
 		fakeServiceID  = "fake-service-id"
 		fakePlanID     = "fake-plan-id"
 		fakeInstanceID = "fake-instance-id"
-	)
-
-	var (
-		config = &Config{
-			RetentionPeriod:    30,
-			MaxDataInstances:   4,
-			MaxIngestInstances: 4,
-			SAML: &SAMLConfig{
-				AdminGroup:  "runtimeAdmin",
-				ExchangeKey: "base64-jibber-jabber",
-				Initiated:   true,
-				RolesKey:    "groups",
-				Idp: &SAMLIdpConfig{
-					EntityID:    "https://sso.example.org/idp",
-					MetadataURL: "https://sso.example.org/idp/saml2/metadata",
-				},
-				Sp: &SAMLSpConfig{
-					EntityID:            "cls-dev",
-					SignaturePrivateKey: "base64-jibber-jabber",
-				},
-			},
-		}
 	)
 
 	tests := []struct {
@@ -131,6 +130,35 @@ func TestCreateInstance(t *testing.T) {
 	}
 }
 
+func TestCreateBinding(t *testing.T) {
+	smClientMock := &automock.Client{}
+	creds := make(map[string]interface{})
+	creds["Kibana-endpoint"] = "kibUrl"
+	creds["Fluentd-username"] = "fbUser"
+	creds["Fluentd-password"] = "fbPass"
+	creds["Fluentd-endpoint"] = "fbEndpoint"
+	resB := servicemanager.BindingResponse{
+		Binding:      servicemanager.Binding{Credentials: creds},
+		HTTPResponse: servicemanager.HTTPResponse{StatusCode: 200},
+	}
+	smClientMock.On("Bind", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&resB, nil)
+	sut := NewClient(config, logrus.New())
+
+	br := BindingRequest{
+		InstanceKey: servicemanager.InstanceKey{},
+		BindingID:   "",
+	}
+	expectedClsOverrides := &ClsOverrideParams{
+		FluentdEndPoint: "fbEndpoint",
+		FluentdPassword: "fbPass",
+		FluentdUsername: "fbUser",
+		KibanaUrl:       "kibUrl",
+	}
+	res, err := sut.CreateBinding(smClientMock, &br)
+	require.NoError(t, err)
+	require.Equal(t, expectedClsOverrides, res)
+}
+
 func TestRemoveInstance(t *testing.T) {
 	var (
 		fakeInstance = servicemanager.InstanceKey{
@@ -170,7 +198,6 @@ func TestRemoveInstance(t *testing.T) {
 	}
 
 }
-
 func isValidUUID(s string) bool {
 	_, err := uuid.Parse(s)
 	return err == nil

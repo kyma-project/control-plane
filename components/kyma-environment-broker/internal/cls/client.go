@@ -31,6 +31,18 @@ type parameters struct {
 	} `json:"saml"`
 }
 
+type ClsOverrideParams struct {
+	FluentdEndPoint string `json:"Fluentd-endpoint"`
+	FluentdPassword string `json:"Fluentd-password"`
+	FluentdUsername string `json:"Fluentd-username"`
+	KibanaUrl       string `json:"Kibana-endpoint"`
+}
+
+type BindingRequest struct {
+	InstanceKey servicemanager.InstanceKey
+	BindingID   string
+}
+
 // Client wraps a generic servicemanager.Client an performs CLS specific calls
 type Client struct {
 	config *Config
@@ -63,7 +75,7 @@ func (c *Client) CreateInstance(smClient servicemanager.Client, instance service
 		return errors.Wrapf(err, "while provisioning a cls instance %s", instance.InstanceID)
 	}
 
-	c.log.Infof("Response from service manager while deprovisioning an instance %s: %#v", instance.InstanceID, resp)
+	c.log.Infof("Response from service manager while provisioning an instance %s: %#v", instance.InstanceID, resp)
 
 	return nil
 }
@@ -85,6 +97,37 @@ func createParameters(config *Config) parameters {
 	params.SAML.Sp.EntityID = config.SAML.Sp.EntityID
 	params.SAML.Sp.SignaturePrivateKey = config.SAML.Sp.SignaturePrivateKey
 	return params
+}
+
+type bindParam struct{}
+
+func (c *Client) CreateBinding(smClient servicemanager.Client, request *BindingRequest) (*ClsOverrideParams, error) {
+	var bp bindParam
+
+	respBinding, err := smClient.Bind(request.InstanceKey, request.BindingID, bp, false)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Bind() call failed")
+	}
+	// get overrides
+	clsOverrides, err := getCredentials(respBinding.Binding)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getCredentials() call failed")
+	}
+	return clsOverrides, nil
+
+}
+
+func getCredentials(binding servicemanager.Binding) (*ClsOverrideParams, error) {
+	credentials := binding.Credentials
+
+	clsOverrides := ClsOverrideParams{
+		KibanaUrl:       credentials["Kibana-endpoint"].(string),
+		FluentdUsername: credentials["Fluentd-username"].(string),
+		FluentdPassword: credentials["Fluentd-password"].(string),
+		FluentdEndPoint: credentials["Fluentd-endpoint"].(string),
+	}
+
+	return &clsOverrides, nil
 }
 
 // RemoveInstance sends a request to Service Manager to remove a CLS Instance
