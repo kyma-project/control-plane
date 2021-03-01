@@ -131,7 +131,7 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		return operation, time.Second, nil
 	}
 
-	isVersion1_20, err := cls.IsKymaVersion_1_20(operation.RuntimeVersion.Version)
+	isVersion1_20, err := cls.IsKymaVersionAtLeast_1_20(operation.RuntimeVersion.Version)
 	if err != nil {
 		failureReason := fmt.Sprintf("unable to check kyma version: %v", err)
 		log.Error(failureReason)
