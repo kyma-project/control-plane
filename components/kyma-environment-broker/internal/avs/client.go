@@ -252,10 +252,6 @@ func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetTo
 		return response, fmt.Errorf("avs server returned %d status code twice for %s (response body: %s)", http.StatusUnauthorized, request.URL.String(), responseBody(response))
 	}
 
-	if response.StatusCode >= http.StatusInternalServerError {
-		return response, kebError.NewTemporaryError("avs server returned %d status code", response.StatusCode)
-	}
-
 	return response, fmt.Errorf("unsupported status code: %d for %s (response body: %s)", response.StatusCode, request.URL.String(), responseBody(response))
 }
 
