@@ -1,9 +1,6 @@
 package cls
 
 import (
-	"fmt"
-	"regexp"
-
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
 )
@@ -13,21 +10,11 @@ func IsKymaVersion_1_20(runTimeVersion string) (bool, error) {
 	if err != nil {
 		return false, errors.New("unable to parse constraint for kyma version %s to set correct fluent bit plugin")
 	}
-	pr, err := regexp.Compile("PR")
-	if err != nil {
-		return false, errors.New("unable to compile regex 'pr'")
-	}
-	master, err := regexp.Compile("master")
-	if err != nil {
-		return false, errors.New("unable to compile regex 'master'")
-	}
 
 	version, err := semver.NewVersion(runTimeVersion)
 	if err != nil {
-		if pr.MatchString(runTimeVersion) || master.MatchString(runTimeVersion) {
-			return true, nil
-		}
-		return false, fmt.Errorf("unable to parse kyma version %s to set correct fluent bit plugin", runTimeVersion)
+		// Return here if get some non semver image version.
+		return true, nil
 	}
 
 	check := c.Check(version)

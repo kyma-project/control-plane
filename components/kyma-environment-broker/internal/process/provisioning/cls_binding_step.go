@@ -58,31 +58,29 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		return s.operationManager.OperationFailed(operation, failureReason)
 	}
 	smCli := operation.SMClientFactory.ForCredentials(smCredentials)
-
-	// test if the provisioning is finished, if not, retry after 10s
-	resp, err := smCli.LastInstanceOperation(operation.Cls.Instance.InstanceKey(), "")
-	if err != nil {
-		failureReason := fmt.Sprintf("LastInstanceOperation() call failed")
-		log.Errorf("%s: %s", failureReason, err)
-		return s.operationManager.OperationFailed(operation, failureReason)
-	}
-	log.Infof("Provisioning Cls (instanceID=%s) state: %s", operation.Cls.Instance.InstanceID, resp.State)
-	switch resp.State {
-	case servicemanager.InProgress:
-		return operation, 10 * time.Second, nil
-	case servicemanager.Failed:
-		failureReason := fmt.Sprintf("Cls instance is state failed")
-		log.Errorf("%s: %s", failureReason, resp.Description)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("Cls provisioning failed: %s", resp.Description))
-	case servicemanager.Succeeded:
-		operation.Cls.Instance.Provisioned = true
-		operation.Cls.Instance.ProvisioningTriggered = false
-		log.Info("Cls instance is provisioned.")
-	}
-
 	var overrides *cls.ClsOverrideParams
 
 	if !operation.Cls.Binding.Bound {
+		// test if the provisioning is finished, if not, retry after 10s
+		resp, err := smCli.LastInstanceOperation(operation.Cls.Instance.InstanceKey(), "")
+		if err != nil {
+			log.Errorf("Unable to fetch LastInstanceOperation()")
+			return operation, 10 * time.Second, nil
+		}
+		log.Debug("Provisioning Cls (instanceID=%s) state: %s", operation.Cls.Instance.InstanceID, resp.State)
+		switch resp.State {
+		case servicemanager.InProgress:
+			return operation, 10 * time.Second, nil
+		case servicemanager.Failed:
+			failureReason := fmt.Sprintf("Cls instance is state failed")
+			log.Errorf("%s: %s", failureReason, resp.Description)
+			return s.operationManager.OperationFailed(operation, fmt.Sprintf("Cls provisioning failed: %s", resp.Description))
+		case servicemanager.Succeeded:
+			operation.Cls.Instance.Provisioned = true
+			operation.Cls.Instance.ProvisioningTriggered = false
+			log.Info("Cls instance is provisioned.")
+		}
+
 		if operation.Cls.Binding.BindingID == "" {
 			operation.Cls.Binding.BindingID = uuid.New().String()
 		}
@@ -133,13 +131,13 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		return operation, time.Second, nil
 	}
 
-	checkKymaVersion, err := cls.IsKymaVersion_1_20(operation.RuntimeVersion.Version)
+	isVersion1_20, err := cls.IsKymaVersion_1_20(operation.RuntimeVersion.Version)
 	if err != nil {
 		failureReason := fmt.Sprintf("unable to check kyma version: %v", err)
 		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason)
 	}
-	if checkKymaVersion {
+	if isVersion1_20 {
 		operation.InputCreator.AppendOverrides(components.CLS, getClsOverrides(flOverride))
 	}
 
