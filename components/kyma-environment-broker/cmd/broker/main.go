@@ -386,11 +386,11 @@ func main() {
 			weight: 3,
 			step:   provisioning.NewServiceManagerOverridesStep(db.Operations()),
 		},
-		{
-			weight: 3,
-			//TODO: Rethink the prio as CLS needs to be bound before
-			step: provisioning.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
-		},
+		//{
+		//	weight: 3,
+		//	//TODO: Rethink the prio as CLS needs to be bound before
+		//	step: provisioning.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
+		//},
 		//{
 		//	weight: 5,
 		//	step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
@@ -413,7 +413,7 @@ func main() {
 		{
 			weight:   7,
 			step:     provisioning.NewClsBindStep(clsConfig, clsClient, db.Operations(), cfg.Database.SecretKey),
-			disabled: cfg.Ems.Disabled,
+			disabled: cfg.Cls.Disabled,
 		},
 
 		{
