@@ -358,7 +358,7 @@ func main() {
 		},
 		{
 			weight: 3,
-			step: provisioning.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog),
+			step:   provisioning.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog),
 		},
 		{
 			weight: 5,
