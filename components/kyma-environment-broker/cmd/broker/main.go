@@ -417,6 +417,12 @@ func main() {
 		},
 
 		{
+			weight: 8,
+			//TODO: Rethink the prio as CLS needs to be bound before
+			step: provisioning.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
+		},
+
+		{
 			weight: 10,
 			step:   provisioning.NewCreateRuntimeStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
 		},
