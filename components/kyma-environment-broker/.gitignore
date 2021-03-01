@@ -101,3 +101,5 @@ fabric.properties
 hack/scripts/kyma-lite/letsencrypt
 /internal/avs/verify/verify.go
 licenses/
+
+/new-provisioning-proposal/vendor
