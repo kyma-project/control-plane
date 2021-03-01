@@ -27,7 +27,7 @@ type Overrides struct {
 }
 
 func GetExtraConfTemplate(KymaVersion string) (*template.Template, error) {
-	checkKymaVersion, err := cls.IsKymaVersion_1_20(KymaVersion)
+	checkKymaVersion, err := cls.IsKymaVersionAtLeast_1_20(KymaVersion)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("unable to check kyma version: %v", err))
 	}

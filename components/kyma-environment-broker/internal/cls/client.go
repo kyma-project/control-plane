@@ -99,35 +99,20 @@ func createParameters(config *Config) parameters {
 	return params
 }
 
-type bindParam struct{}
-
 func (c *Client) CreateBinding(smClient servicemanager.Client, request *BindingRequest) (*ClsOverrideParams, error) {
-	var bp bindParam
+	var emptyParams struct{}
 
-	respBinding, err := smClient.Bind(request.InstanceKey, request.BindingID, bp, false)
+	resp, err := smClient.Bind(request.InstanceKey, request.BindingID, emptyParams, false)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Bind() call failed")
 	}
-	// get overrides
-	clsOverrides, err := getCredentials(respBinding.Binding)
-	if err != nil {
-		return nil, errors.Wrapf(err, "getCredentials() call failed")
-	}
-	return clsOverrides, nil
 
-}
-
-func getCredentials(binding servicemanager.Binding) (*ClsOverrideParams, error) {
-	credentials := binding.Credentials
-
-	clsOverrides := ClsOverrideParams{
-		KibanaUrl:       credentials["Kibana-endpoint"].(string),
-		FluentdUsername: credentials["Fluentd-username"].(string),
-		FluentdPassword: credentials["Fluentd-password"].(string),
-		FluentdEndPoint: credentials["Fluentd-endpoint"].(string),
-	}
-
-	return &clsOverrides, nil
+	return &ClsOverrideParams{
+		KibanaUrl:       resp.Credentials["Kibana-endpoint"].(string),
+		FluentdUsername: resp.Credentials["Fluentd-username"].(string),
+		FluentdPassword: resp.Credentials["Fluentd-password"].(string),
+		FluentdEndPoint: resp.Credentials["Fluentd-endpoint"].(string),
+	}, nil
 }
 
 // RemoveInstance sends a request to Service Manager to remove a CLS Instance
