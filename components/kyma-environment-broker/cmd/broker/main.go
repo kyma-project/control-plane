@@ -359,7 +359,7 @@ func main() {
 		{
 			weight: 3,
 			//TODO: Rethink the prio as CLS needs to be bound before
-			step: provisioning.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
+			step: provisioning.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog),
 		},
 		{
 			weight: 5,

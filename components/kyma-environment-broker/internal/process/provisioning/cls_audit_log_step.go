@@ -1,12 +1,15 @@
 package provisioning
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 	"net"
 	"net/url"
 	"strings"
+	"text/template"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 
@@ -14,31 +17,34 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
 
-type AuditLogOverrides struct {
+type CLSAuditLogOverrides struct {
 	operationManager *process.ProvisionOperationManager
 	fs               afero.Fs
 	auditLogConfig   auditlog.Config
+	secretKey        string
 }
 
-func (alo *AuditLogOverrides) Name() string {
-	return "Audit_Log_Overrides"
+func (alo *CLSAuditLogOverrides) Name() string {
+	return "CLS_Audit_Log_Overrides"
 }
 
-func NewAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config) *AuditLogOverrides {
+func NewCLSAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config, secretKey string) *CLSAuditLogOverrides {
 	fileSystem := afero.NewOsFs()
 
-	return &AuditLogOverrides{
+	return &CLSAuditLogOverrides{
 		process.NewProvisionOperationManager(os),
 		fileSystem,
 		cfg,
+		secretKey,
 	}
 }
 
-func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (alo *CLSAuditLogOverrides) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	luaScript, err := alo.readFile("/auditlog-script/script")
 	if err != nil {
 		logger.Errorf("Unable to read audit config script: %v", err)
@@ -71,81 +77,36 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 		fluentbitPlugin = "sequentialhttp"
 	}
 
+	clsOverrides, err := cls.DecryptOverrides(alo.secretKey, operation.Cls.Overrides)
+	if err != nil {
+		logger.Errorf("Unable to decrypt cls overrides")
+		return operation, 0, errors.New("unable to decrypt cls overrides")
+	}
+	extraConfTemplate, err := auditlog.GetExtraConfTemplate(operation.RuntimeVersion.Version)
+	if err != nil {
+		logger.Errorf("Unable to fetch audit log config")
+		return operation, 0, errors.New("unable to fetch audit log config")
+	}
+	auditlogOverrideParams := auditlog.Overrides{
+		Host:         auditLogHost,
+		Port:         auditLogPort,
+		Path:         u.Path,
+		HttpPlugin:   fluentbitPlugin,
+		ClsOverrides: clsOverrides,
+		Config:       alo.auditLogConfig,
+	}
+
+	extraConfOverride, err := alo.renderOverrides(auditlogOverrideParams, extraConfTemplate)
+	if err != nil {
+		logger.Errorf("Unable to generate forward plugin to push logs: %v", err)
+		return operation, time.Second, nil
+	}
+
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
 		{Key: "fluent-bit.conf.script", Value: replaceTenantID},
+		{Key: "fluent-bit.conf.extra", Value: extraConfOverride},
 		{Key: "fluent-bit.config.script", Value: replaceTenantID},
-		{Key: "fluent-bit.conf.extra", Value: fmt.Sprintf(`
-[INPUT]
-		Name              tail
-		Tag               dex.*
-		Path              /var/log/containers/*_dex-*.log
-		DB                /var/log/flb_kube_dex.db
-		parser            docker
-		Mem_Buf_Limit     5MB
-		Skip_Long_Lines   On
-		Refresh_Interval  10
-[FILTER]
-		Name    lua
-		Match   dex.*
-		script  script.lua
-		call    reformat
-[FILTER]
-		Name    grep
-		Match   dex.*
-		Regex   time .*
-[FILTER]
-		Name    grep
-		Match   dex.*
-		Regex   data .*\"xsuaa
-[OUTPUT]
-		Name             %s
-		Match            dex.*
-		Retry_Limit      False
-		Host             %s
-		Port             %s
-		URI              %ssecurity-events
-		Header           Content-Type application/json
-		HTTP_User        %s
-		HTTP_Passwd      %s
-		Format           json_stream
-		tls              on
-`, fluentbitPlugin, auditLogHost, auditLogPort, u.Path, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
-		{Key: "fluent-bit.config.extra", Value: fmt.Sprintf(`
-[INPUT]
-    Name              tail
-    Tag               dex.*
-    Path              /var/log/containers/*_dex-*.log
-    DB                /var/log/flb_kube_dex.db
-    parser            docker
-    Mem_Buf_Limit     5MB
-    Skip_Long_Lines   On
-    Refresh_Interval  10
-[FILTER]
-    Name    lua
-    Match   dex.*
-    script  script.lua
-    call    reformat
-[FILTER]
-    Name    grep
-    Match   dex.*
-    Regex   time .*
-[FILTER]
-    Name    grep
-    Match   dex.*
-    Regex   data .*\"xsuaa
-[OUTPUT]
-    Name             %s
-    Match            dex.*
-    Retry_Limit      False
-    Host             %s
-    Port             %s
-    URI              %ssecurity-events
-    Header           Content-Type application/json
-    HTTP_User        %s
-    HTTP_Passwd      %s
-    Format           json_stream
-    tls              on
-`, fluentbitPlugin, auditLogHost, auditLogPort, u.Path, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
+		{Key: "fluent-bit.config.extra", Value: extraConfOverride},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},
 		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf(`- %s`, auditLogHost)},
 		{Key: "fluent-bit.externalServiceEntry.ports", Value: fmt.Sprintf(`- number: %s
@@ -155,6 +116,15 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 	return operation, 0, nil
 }
 
-func (alo *AuditLogOverrides) readFile(fileName string) ([]byte, error) {
+func (alo *CLSAuditLogOverrides) renderOverrides(aloOv auditlog.Overrides, tmp *template.Template) (string, error) {
+	var flOutputs bytes.Buffer
+	err := tmp.Execute(&flOutputs, aloOv)
+	if err != nil {
+		return "", errors.Wrapf(err, "Template error while injecting cls overrides: %v", err)
+	}
+	return flOutputs.String(), nil
+}
+
+func (alo *CLSAuditLogOverrides) readFile(fileName string) ([]byte, error) {
 	return afero.ReadFile(alo.fs, fileName)
 }
