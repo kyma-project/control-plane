@@ -14,3 +14,5 @@ data:
 {{- with .Values.trialRegionsMapping }}
 {{ tpl . $ | indent 4 }}
 {{- end }}
+  catalog.yaml: |-
+{{ .Files.Get "files/catalog.yaml" | indent 4 }}

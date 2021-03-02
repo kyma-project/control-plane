@@ -4,18 +4,21 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/pkg/errors"
+
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 )
 
 type ServicesEndpoint struct {
-	log logrus.FieldLogger
-	cfg Service
+	log            logrus.FieldLogger
+	cfg            Config
+	servicesConfig ServicesConfig
 
 	enabledPlanIDs map[string]struct{}
 }
 
-func NewServices(cfg Config, log logrus.FieldLogger) *ServicesEndpoint {
+func NewServices(cfg Config, servicesConfig ServicesConfig, log logrus.FieldLogger) *ServicesEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
 		id := PlanIDsMapping[planName]
@@ -24,7 +27,8 @@ func NewServices(cfg Config, log logrus.FieldLogger) *ServicesEndpoint {
 
 	return &ServicesEndpoint{
 		log:            log.WithField("service", "ServicesEndpoint"),
-		cfg:            cfg.Service,
+		cfg:            cfg,
+		servicesConfig: servicesConfig,
 		enabledPlanIDs: enabledPlanIDs,
 	}
 }
@@ -33,8 +37,13 @@ func NewServices(cfg Config, log logrus.FieldLogger) *ServicesEndpoint {
 //   GET /v2/catalog
 func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, error) {
 	var availableServicePlans []domain.ServicePlan
+	// we scope to the kymaruntime service only
+	class, ok := b.servicesConfig[KymaServiceName]
+	if !ok {
+		return nil, errors.Errorf("while getting %s class data", KymaServiceName)
+	}
 
-	for _, plan := range Plans {
+	for _, plan := range Plans(class.Plans) {
 		// filter out not enabled plans
 		if _, exists := b.enabledPlanIDs[plan.PlanDefinition.ID]; !exists {
 			continue
@@ -52,7 +61,7 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 		{
 			ID:                   KymaServiceID,
 			Name:                 KymaServiceName,
-			Description:          "[EXPERIMENTAL] Service Class for Kyma Runtime",
+			Description:          class.Description,
 			Bindable:             true,
 			InstancesRetrievable: true,
 			Tags: []string{
@@ -61,12 +70,12 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 			},
 			Plans: availableServicePlans,
 			Metadata: &domain.ServiceMetadata{
-				DisplayName:         b.cfg.DisplayName,
-				ImageUrl:            b.cfg.ImageUrl,
-				LongDescription:     b.cfg.LongDescription,
-				ProviderDisplayName: b.cfg.ProviderDisplayName,
-				DocumentationUrl:    b.cfg.DocumentationUrl,
-				SupportUrl:          b.cfg.SupportUrl,
+				DisplayName:         class.Metadata.DisplayName,
+				ImageUrl:            class.Metadata.ImageUrl,
+				LongDescription:     class.Metadata.LongDescription,
+				ProviderDisplayName: class.Metadata.ProviderDisplayName,
+				DocumentationUrl:    class.Metadata.DocumentationUrl,
+				SupportUrl:          class.Metadata.SupportUrl,
 			},
 			AllowContextUpdates: true,
 		},

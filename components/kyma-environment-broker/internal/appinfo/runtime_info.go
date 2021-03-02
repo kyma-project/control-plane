@@ -27,13 +27,15 @@ type (
 type RuntimeInfoHandler struct {
 	instanceFinder          InstanceFinder
 	respWriter              ResponseWriter
+	plansConfig             broker.PlansConfig
 	defaultSubaccountRegion string
 }
 
-func NewRuntimeInfoHandler(instanceFinder InstanceFinder, region string, respWriter ResponseWriter) *RuntimeInfoHandler {
+func NewRuntimeInfoHandler(instanceFinder InstanceFinder, plansConfig broker.PlansConfig, region string, respWriter ResponseWriter) *RuntimeInfoHandler {
 	return &RuntimeInfoHandler{
 		instanceFinder:          instanceFinder,
 		respWriter:              respWriter,
+		plansConfig:             plansConfig,
 		defaultSubaccountRegion: region,
 	}
 }
@@ -74,7 +76,7 @@ func (h *RuntimeInfoHandler) mapToDTO(instances []internal.InstanceWithOperation
 				ServiceClassID:    inst.ServiceID,
 				ServiceClassName:  svcNameOrDefault(inst),
 				ServicePlanID:     inst.ServicePlanID,
-				ServicePlanName:   planNameOrDefault(inst),
+				ServicePlanName:   h.planNameOrDefault(inst),
 				Status: StatusDTO{
 					CreatedAt: getIfNotZero(inst.CreatedAt),
 					UpdatedAt: getIfNotZero(inst.UpdatedAt),
@@ -115,11 +117,11 @@ func svcNameOrDefault(inst internal.InstanceWithOperation) string {
 	return broker.KymaServiceName
 }
 
-func planNameOrDefault(inst internal.InstanceWithOperation) string {
+func (h *RuntimeInfoHandler) planNameOrDefault(inst internal.InstanceWithOperation) string {
 	if inst.ServicePlanName != "" {
 		return inst.ServicePlanName
 	}
-	return broker.Plans[inst.ServicePlanID].PlanDefinition.Name
+	return broker.Plans(h.plansConfig)[inst.ServicePlanID].PlanDefinition.Name
 }
 
 func getIfNotZero(in time.Time) *time.Time {
