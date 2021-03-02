@@ -16,6 +16,7 @@ type InstanceFilter struct {
 	Regions          []string
 	Plans            []string
 	Domains          []string
+	States           []string
 }
 
 type InstanceDTO struct {
