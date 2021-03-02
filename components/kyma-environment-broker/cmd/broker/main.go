@@ -433,10 +433,10 @@ func main() {
 		}
 	}
 
-	clsDeprovisioner := cls.NewDeprovisioner(db.CLSInstances(), clsClient, logs.WithField("service", "clsDeprovisioner"))
-
 	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, serviceManagerClientFactory, cfg.OperationTimeout)
 	deprovisionManager.InitStep(deprovisioningInit)
+	clsDeprovisioner := cls.NewDeprovisioner(db.CLSInstances(), clsClient, logs.WithField("service", "clsDeprovisioner"))
+
 	deprovisioningSteps := []struct {
 		disabled bool
 		weight   int
