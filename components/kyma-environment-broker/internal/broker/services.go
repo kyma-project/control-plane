@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/pkg/errors"
+
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 )
@@ -36,7 +38,10 @@ func NewServices(cfg Config, servicesConfig ServicesConfig, log logrus.FieldLogg
 func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, error) {
 	var availableServicePlans []domain.ServicePlan
 	// we scope to the kymaruntime service only
-	class := b.servicesConfig[KymaServiceName]
+	class, ok := b.servicesConfig[KymaServiceName]
+	if !ok {
+		return nil, errors.Errorf("while getting %s class data", KymaServiceName)
+	}
 
 	for _, plan := range Plans(class.Plans) {
 		// filter out not enabled plans

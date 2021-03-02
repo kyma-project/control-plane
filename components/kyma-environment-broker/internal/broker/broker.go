@@ -1,7 +1,6 @@
 package broker
 
 import (
-	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -41,8 +40,6 @@ func NewServicesConfigFromFile(path string) (ServicesConfig, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "while reading YAML file with managed components list")
 	}
-	fmt.Println("XD")
-	fmt.Println(string(yamlFile))
 	var servicesConfig struct {
 		Services ServicesConfig `yaml:"services"`
 	}
@@ -53,8 +50,12 @@ func NewServicesConfigFromFile(path string) (ServicesConfig, error) {
 	return servicesConfig.Services, nil
 }
 
-func (s ServicesConfig) DefaultPlansConfig() PlansConfig {
-	return s[KymaServiceName].Plans
+func (s ServicesConfig) DefaultPlansConfig() (PlansConfig, error) {
+	cfg, ok := s[KymaServiceName]
+	if !ok {
+		return nil, errors.Errorf("while getting data about %s plans", KymaServiceName)
+	}
+	return cfg.Plans, nil
 }
 
 type Service struct {

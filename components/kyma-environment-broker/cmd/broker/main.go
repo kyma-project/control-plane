@@ -460,9 +460,9 @@ func main() {
 	servicesConfig, err := broker.NewServicesConfigFromFile(cfg.CatalogFilePath)
 	fatalOnError(err)
 
-	logs.Infof("%v", servicesConfig)
+	defaultPlansConfig, err := servicesConfig.DefaultPlansConfig()
+	fatalOnError(err)
 
-	defaultPlansConfig := servicesConfig.DefaultPlansConfig()
 	plansValidator, err := broker.NewPlansSchemaValidator(defaultPlansConfig)
 	fatalOnError(err)
 
