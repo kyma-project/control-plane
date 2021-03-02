@@ -59,6 +59,7 @@ const (
 	RegionParam          = "region"
 	ShootParam           = "shoot"
 	PlanParam            = "plan"
+	StateParam           = "state"
 )
 
 type ListParameters struct {
@@ -71,6 +72,7 @@ type ListParameters struct {
 	Regions          []string
 	Shoots           []string
 	Plans            []string
+	States           []string
 }
 
 type OperationType string

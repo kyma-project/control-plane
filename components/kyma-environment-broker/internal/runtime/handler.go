@@ -134,6 +134,7 @@ func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {
 	filter.Regions = query[pkg.RegionParam]
 	filter.Domains = query[pkg.ShootParam]
 	filter.Plans = query[pkg.PlanParam]
+	filter.States = query[pkg.StateParam]
 
 	return filter
 }
