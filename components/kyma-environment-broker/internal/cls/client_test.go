@@ -148,7 +148,7 @@ func TestCreateBinding(t *testing.T) {
 		InstanceKey: servicemanager.InstanceKey{},
 		BindingID:   "",
 	}
-	expectedClsOverrides := &ClsOverrideParams{
+	expectedClsOverrides := &OverrideParams{
 		FluentdEndPoint: "fbEndpoint",
 		FluentdPassword: "fbPass",
 		FluentdUsername: "fbUser",

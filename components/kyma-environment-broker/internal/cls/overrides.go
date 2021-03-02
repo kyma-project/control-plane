@@ -1,6 +1,7 @@
 package cls
 
 import (
+	"bytes"
 	"encoding/json"
 	"text/template"
 
@@ -9,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func EncryptOverrides(secretKey string, overrides *ClsOverrideParams) (string, error) {
+func EncryptOverrides(secretKey string, overrides *OverrideParams) (string, error) {
 	ovrs, err := json.Marshal(*overrides)
 	if err != nil {
 		return "", errors.Wrap(err, "while marshalling cls overrides")
@@ -22,17 +23,17 @@ func EncryptOverrides(secretKey string, overrides *ClsOverrideParams) (string, e
 	return string(encryptedOverrides), nil
 }
 
-func DecryptOverrides(secretKey string, encryptedOverrides string) (*ClsOverrideParams, error) {
+func DecryptOverrides(secretKey string, encryptedOverrides string) (*OverrideParams, error) {
 	encrypter := storage.NewEncrypter(secretKey)
 	decryptedOverrides, err := encrypter.Decrypt([]byte(encryptedOverrides))
 	if err != nil {
 		return nil, errors.Wrap(err, "while decrypting eventing overrides")
 	}
-	var clsOverrides ClsOverrideParams
-	if err := json.Unmarshal(decryptedOverrides, &clsOverrides); err != nil {
+	var overrideParams OverrideParams
+	if err := json.Unmarshal(decryptedOverrides, &overrideParams); err != nil {
 		return nil, errors.Wrap(err, "while unmarshalling eventing overrides")
 	}
-	return &clsOverrides, nil
+	return &overrideParams, nil
 }
 
 func GetExtraConfTemplate() (*template.Template, error) {
@@ -41,4 +42,13 @@ func GetExtraConfTemplate() (*template.Template, error) {
 		return nil, err
 	}
 	return tpl, nil
+}
+
+func RenderOverrides(data interface{}, tmp *template.Template) (string, error) {
+	var flOutputs bytes.Buffer
+	err := tmp.Execute(&flOutputs, data)
+	if err != nil {
+		return "", errors.Wrapf(err, "Template error while injecting cls overrides: %v", err)
+	}
+	return flOutputs.String(), nil
 }

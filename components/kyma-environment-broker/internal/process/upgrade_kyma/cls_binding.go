@@ -1,4 +1,4 @@
-package provisioning
+package upgrade_kyma
 
 import (
 	"fmt"
@@ -11,39 +11,39 @@ import (
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate mockery --name=ClsBindingProvider --output=automock --outpkg=automock --case=underscore
-type ClsBindingProvider interface {
-	CreateBinding(smClient servicemanager.Client, request *cls.BindingRequest) (*cls.OverrideParams, error)
-}
+const (
+	kibanaURLLabelKey = "operator_lmsUrl"
+)
 
-type ClsBindStep struct {
+type ClsUpgradeBindStep struct {
 	config           *cls.Config
-	operationManager *process.ProvisionOperationManager
+	operationManager *process.UpgradeKymaOperationManager
 	secretKey        string
-	bindingProvider  ClsBindingProvider
+	bindingProvider  provisioning.ClsBindingProvider
 }
 
-func NewClsBindStep(config *cls.Config, bp ClsBindingProvider, os storage.Operations, secretKey string) *ClsBindStep {
-	return &ClsBindStep{
+func NewClsUpgradeBindStep(config *cls.Config, bp provisioning.ClsBindingProvider, os storage.Operations, secretKey string) *ClsUpgradeBindStep {
+	return &ClsUpgradeBindStep{
 		config:           config,
-		operationManager: process.NewProvisionOperationManager(os),
+		operationManager: process.NewUpgradeKymaOperationManager(os),
 		secretKey:        secretKey,
 		bindingProvider:  bp,
 	}
 }
 
-var _ Step = (*ClsBindStep)(nil)
+var _ Step = (*ClsUpgradeBindStep)(nil)
 
-func (s *ClsBindStep) Name() string {
-	return "CLS_Bind"
+func (s *ClsUpgradeBindStep) Name() string {
+	return "CLS_UpgradeBind"
 }
 
-func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if !operation.Cls.Instance.ProvisioningTriggered {
 		failureReason := fmt.Sprintf("cls provisioning step was not triggered")
 		log.Error(failureReason)

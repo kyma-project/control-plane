@@ -1,4 +1,4 @@
-package provisioning
+package upgrade_kyma
 
 import (
 	"fmt"
@@ -17,29 +17,29 @@ import (
 	"github.com/spf13/afero"
 )
 
-type ClsAuditLogOverridesStep struct {
-	operationManager *process.ProvisionOperationManager
+type ClsUpgradeAuditLogOverridesStep struct {
+	operationManager *process.UpgradeKymaOperationManager
 	fs               afero.Fs
 	auditLogConfig   auditlog.Config
 	secretKey        string
 }
 
-func (alo *ClsAuditLogOverridesStep) Name() string {
+func (alo *ClsUpgradeAuditLogOverridesStep) Name() string {
 	return "CLS_Audit_Log_Overrides"
 }
 
-func NewClsAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config, secretKey string) *ClsAuditLogOverridesStep {
+func NewClsUpgradeAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config, secretKey string) *ClsUpgradeAuditLogOverridesStep {
 	fileSystem := afero.NewOsFs()
 
-	return &ClsAuditLogOverridesStep{
-		process.NewProvisionOperationManager(os),
+	return &ClsUpgradeAuditLogOverridesStep{
+		process.NewUpgradeKymaOperationManager(os),
 		fileSystem,
 		cfg,
 		secretKey,
 	}
 }
 
-func (alo *ClsAuditLogOverridesStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (alo *ClsUpgradeAuditLogOverridesStep) Run(operation internal.UpgradeKymaOperation, logger logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	luaScript, err := afero.ReadFile(alo.fs, "/auditlog-script/script")
 	if err != nil {
 		logger.Errorf("Unable to read audit config script: %v", err)
