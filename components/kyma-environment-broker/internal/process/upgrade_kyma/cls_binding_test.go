@@ -1,4 +1,4 @@
-package provisioning
+package upgrade_kyma
 
 import (
 	"github.com/Peripli/service-manager-cli/pkg/types"
@@ -50,7 +50,7 @@ func TestClsBindingStep_Run(t *testing.T) {
 
 	inputCreatorMock.On("SetLabel", kibanaURLLabelKey, expectedKibanaUrl).Return(nil).Once()
 
-	operation := internal.ProvisioningOperation{
+	operation := internal.UpgradeKymaOperation{
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{
 				Parameters: internal.ProvisioningParametersDTO{Region: &fakeRegion},
@@ -114,9 +114,9 @@ func TestClsBindingStep_Run(t *testing.T) {
 		KibanaUrl:       "kibUrl",
 	}, nil)
 
-	bindingStep := NewClsBindStep(config, clsBindingProvider, repo, "1234567890123456")
+	bindingStep := NewClsUpgradeBindStep(config, clsBindingProvider, repo, "1234567890123456")
 
-	repo.InsertProvisioningOperation(operation)
+	repo.InsertUpgradeKymaOperation(operation)
 	log := logger.NewLogDummy()
 	// when
 	operation, retry, err := bindingStep.Run(operation, log)

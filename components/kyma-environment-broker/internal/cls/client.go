@@ -31,7 +31,7 @@ type parameters struct {
 	} `json:"saml"`
 }
 
-type ClsOverrideParams struct {
+type OverrideParams struct {
 	FluentdEndPoint string `json:"Fluentd-endpoint"`
 	FluentdPassword string `json:"Fluentd-password"`
 	FluentdUsername string `json:"Fluentd-username"`
@@ -99,7 +99,7 @@ func createParameters(config *Config) parameters {
 	return params
 }
 
-func (c *Client) CreateBinding(smClient servicemanager.Client, request *BindingRequest) (*ClsOverrideParams, error) {
+func (c *Client) CreateBinding(smClient servicemanager.Client, request *BindingRequest) (*OverrideParams, error) {
 	var emptyParams struct{}
 
 	resp, err := smClient.Bind(request.InstanceKey, request.BindingID, emptyParams, false)
@@ -107,7 +107,7 @@ func (c *Client) CreateBinding(smClient servicemanager.Client, request *BindingR
 		return nil, errors.Wrapf(err, "Bind() call failed")
 	}
 
-	return &ClsOverrideParams{
+	return &OverrideParams{
 		KibanaUrl:       resp.Credentials["Kibana-endpoint"].(string),
 		FluentdUsername: resp.Credentials["Fluentd-username"].(string),
 		FluentdPassword: resp.Credentials["Fluentd-password"].(string),
