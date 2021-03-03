@@ -38,6 +38,11 @@ func NewGardenerSecretsInterface(gardenerClusterCfg *restclient.Config, gardener
 	return gardenerClusterClient.CoreV1().Secrets(gardenerNamespace), nil
 }
 
+func NewGardenerSecretBindingsInterface(gardenerClient *gardener_apis.CoreV1beta1Client, gardenerProjectName string) gardener_apis.SecretBindingInterface {
+	gardenerNamespace := gardenerNamespace(gardenerProjectName)
+	return gardenerClient.SecretBindings(gardenerNamespace)
+}
+
 func NewGardenerShootInterface(gardenerClusterCfg *restclient.Config, gardenerProjectName string) (gardener_apis.ShootInterface, error) {
 
 	gardenerNamespace := gardenerNamespace(gardenerProjectName)

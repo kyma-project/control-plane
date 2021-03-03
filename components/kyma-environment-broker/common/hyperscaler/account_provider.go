@@ -60,7 +60,7 @@ func (p *accountProvider) MarkUnusedGardenerSecretAsDirty(hyperscalerType Type, 
 		return errors.New("failed to release subscription for tenant. Gardener Account pool is not configured")
 	}
 
-	internal, err := p.gardenerPool.IsSecretInternal(hyperscalerType, tenantName)
+	internal, err := p.gardenerPool.IsSecretBindingInternal(hyperscalerType, tenantName)
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func (p *accountProvider) MarkUnusedGardenerSecretAsDirty(hyperscalerType Type, 
 		return nil
 	}
 
-	dirty, err := p.gardenerPool.IsSecretDirty(hyperscalerType, tenantName)
+	dirty, err := p.gardenerPool.IsSecretBindingDirty(hyperscalerType, tenantName)
 	if err != nil {
 		return err
 	}
@@ -78,14 +78,14 @@ func (p *accountProvider) MarkUnusedGardenerSecretAsDirty(hyperscalerType Type, 
 		return nil
 	}
 
-	secretUsed, err := p.gardenerPool.IsSecretUsed(hyperscalerType, tenantName)
+	secretUsed, err := p.gardenerPool.IsSecretBindingUsed(hyperscalerType, tenantName)
 
 	if err != nil {
 		return errors.Wrapf(err, "cannot determine whether %s secret is used for tenant: %s", hyperscalerType, tenantName)
 	}
 
 	if !secretUsed {
-		return p.gardenerPool.MarkSecretAsDirty(hyperscalerType, tenantName)
+		return p.gardenerPool.MarkSecretBindingAsDirty(hyperscalerType, tenantName)
 	}
 
 	return nil
