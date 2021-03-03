@@ -1,35 +1,55 @@
 package provisioning
 
 import (
+	"github.com/Peripli/service-manager-cli/pkg/types"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
+	clsMock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-
 	"github.com/stretchr/testify/require"
 
 	"testing"
 
-	"github.com/Peripli/service-manager-cli/pkg/types"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	clsMock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
-const (
-	fakeBrokerID = "fake-broker-id"
-)
-
-func TestClsProvisioningStep_Run(t *testing.T) {
-	fakeRegion := "westeurope"
-
+func TestClsBindingStep_Run(t *testing.T) {
 	//given
+	fakeRegion := "westeurope"
 	db := storage.NewMemoryStorage()
 	repo := db.Operations()
 	clientFactory := servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{}, []types.ServicePlan{})
 	clientFactory.SynchronousProvisioning()
+
+	inputCreatorMock := &automock.ProvisionerInputCreator{}
+	defer inputCreatorMock.AssertExpectations(t)
+	expectedOverride := `[OUTPUT]
+  Name              http
+  Match             *
+  Host              fooEndPoint
+  Port              443
+  HTTP_User         fooUser
+  HTTP_Passwd       fooPass
+  tls               true
+  tls.verify        true
+  tls.debug         1
+  URI               /
+  Format            json`
+	expectedKibanaUrl := "kibUrl"
+	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
+		{
+			Key:   "fluent-bit.config.outputs.additional",
+			Value: expectedOverride,
+		},
+	}).Return(nil).Once()
+
+	inputCreatorMock.On("SetLabel", kibanaURLLabelKey, expectedKibanaUrl).Return(nil).Once()
+
 	operation := internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{
@@ -41,13 +61,20 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 					BrokerID:  fakeBrokerID,
 					ServiceID: "svc-id",
 					PlanID:    "plan-id",
-				}},
+				},
+					Region: "eu",
+				},
 				ShootDomain: "cls-test.sap.com",
 			},
 		},
 		SMClientFactory: clientFactory,
+		InputCreator:    inputCreatorMock,
+		RuntimeVersion: internal.RuntimeVersionData{
+			Version: "1.20",
+			Origin:  "foo",
+		},
 	}
-
+	operation.Cls.Instance.ProvisioningTriggered = true
 	logs := logrus.New()
 	logs.SetFormatter(&logrus.JSONFormatter{})
 
@@ -79,39 +106,20 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 			},
 		},
 	}
-	provisionerMock := &clsMock.ClsProvisioner{}
-
-	fakeGlobalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
-	provisionerMock.On("Provision", mock.Anything, &cls.ProvisionRequest{
-		GlobalAccountID: fakeGlobalAccountID,
-		Region:          "eu",
-		Instance: servicemanager.InstanceKey{
-			BrokerID:  fakeBrokerID,
-			ServiceID: "svc-id",
-			PlanID:    "plan-id",
-		},
-	}).Return(&cls.ProvisionResult{
-		InstanceID:            "instance_id",
-		ProvisioningTriggered: true,
+	clsBindingProvider := &clsMock.ClsBindingProvider{}
+	clsBindingProvider.On("CreateBinding", mock.Anything, mock.Anything).Return(&cls.ClsOverrideParams{
+		FluentdEndPoint: "fooEndPoint",
+		FluentdPassword: "fooPass",
+		FluentdUsername: "fooUser",
+		KibanaUrl:       "kibUrl",
 	}, nil)
 
-	offeringStep := NewClsOfferingStep(config, repo)
+	bindingStep := NewClsBindStep(config, clsBindingProvider, repo, "1234567890123456")
 
-	provisionStep := NewClsProvisionStep(config, provisionerMock, repo)
 	repo.InsertProvisioningOperation(operation)
-
 	log := logger.NewLogDummy()
 	// when
-	operation, retry, err := offeringStep.Run(operation, log)
+	operation, retry, err := bindingStep.Run(operation, log)
 	require.NoError(t, err)
 	require.Zero(t, retry)
-
-	operation, retry, err = provisionStep.Run(operation, logger.NewLogDummy())
-
-	// then
-	assert.NoError(t, err)
-	assert.Zero(t, retry)
-	assert.NotEmpty(t, operation.Cls.Instance.InstanceID)
-	assert.False(t, operation.Cls.Instance.Provisioned)
-	assert.True(t, operation.Cls.Instance.ProvisioningTriggered)
 }

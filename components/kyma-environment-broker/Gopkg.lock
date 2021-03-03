@@ -10,7 +10,7 @@
   version = "v2.0.0"
 
 [[projects]]
-  digest = "1:17551b2e578c6b1dfb3757bbb3b4b948a8adecd55e5f53ed7ae12a7525da61d8"
+  digest = "1:6d8b58f26e8e82ca810e80a7edba6caf50d806a7c299b6bb91a7c3c588e6d866"
   name = "github.com/99designs/gqlgen"
   packages = [
     "complexity",
@@ -115,7 +115,7 @@
   version = "v0.8.7"
 
 [[projects]]
-  digest = "1:fef74c79bee74c4e4a98cdb275293ca2bacf9930cc2ebe6621740c2469bc22b6"
+  digest = "1:b39df10ac0e2d415e62d66b1859c902a49321c6b00df60a86c2c1c525f3f4a9d"
   name = "github.com/Peripli/service-manager"
   packages = [
     "pkg/health",
@@ -128,8 +128,8 @@
     "pkg/web",
   ]
   pruneopts = "NUT"
-  revision = "5f130a0cd920ff5235a772256a50359221781ac9"
-  version = "v0.16.11"
+  revision = "ff5a03d5b62fd32b74432214515b6d4da838548c"
+  version = "v0.18.9"
 
 [[projects]]
   digest = "1:5d2113efb606dba740d4d0f20bdc6e07c3174c462eafd0f9fca431ac1ae1337c"
@@ -139,8 +139,8 @@
     "pkg/types",
   ]
   pruneopts = "NUT"
-  revision = "9da2cc426c9d2fb8293018223b89b87010dd064b"
-  version = "v1.11.2"
+  revision = "0adf4cc2663d90e0d1655a2232d53dff8194be8b"
+  version = "v1.11.6"
 
 [[projects]]
   digest = "1:edfb3ba6ce10718550fba50b86eba1e9b62599015b02901e8a7776488ca91c0a"
@@ -231,7 +231,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b384160a40d346cdbdac0f0f674574078f2dae21bb36ce2f36d96f3157b72593"
+  digest = "1:9e3eba1f5b92adfcea263393025998b8ce5d715a375ea56deb70654337ac0da0"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -309,7 +309,7 @@
   version = "v1.4.9"
 
 [[projects]]
-  digest = "1:9609f9d9d8829be52867a2f3fb8b1785880db234a7fcfdad39c7efdbbf58af1a"
+  digest = "1:e02805fa1257a13418c3b92eed1f77100171ab98febb79a9b6515d88ee594f09"
   name = "github.com/gardener/gardener"
   packages = [
     "pkg/apis/core",
@@ -554,7 +554,7 @@
   revision = "21c4a144cb9378dd6519b127d80171c5977bd7c1"
 
 [[projects]]
-  digest = "1:4994822d216a073caf6c79c143f727c68a2086312cafe6c7315b65c2ad09e8e6"
+  digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
   name = "github.com/kyma-project/kyma"
   packages = ["components/kyma-operator/pkg/apis/installer/v1alpha1"]
   pruneopts = "NUT"
@@ -867,12 +867,12 @@
   version = "v0.9.0"
 
 [[projects]]
-  digest = "1:7ac56eee8a1fee0c12f23ba86e35433ca152d8b85db45de6764b15c352511fe6"
+  digest = "1:f948befea284fc4a82c1dfe1e3e9a778bac497a20eb0ce32084ee30110718c95"
   name = "github.com/tidwall/gjson"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "5100d6926a4bea3753fc72352fca70654f04cedc"
-  version = "v1.6.3"
+  revision = "65353b6d52a31e808c07f9d4651b9473525dcd88"
+  version = "v1.6.8"
 
 [[projects]]
   digest = "1:937bf6144cbf110d2ec0bec66d734a5e2d70c10b1d0560a1fa7f754a9efa3658"
@@ -1394,6 +1394,7 @@
     "github.com/Azure/go-autorest/autorest",
     "github.com/Azure/go-autorest/autorest/adal",
     "github.com/Azure/go-autorest/autorest/azure",
+    "github.com/Masterminds/semver",
     "github.com/Masterminds/sprig",
     "github.com/Peripli/service-manager-cli/pkg/query",
     "github.com/Peripli/service-manager-cli/pkg/types",

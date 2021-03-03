@@ -37,8 +37,8 @@ func NewKymaHandler(orchestrations storage.Orchestrations, q *process.Queue, log
 		orchestrations: orchestrations,
 		queue:          q,
 		log:            log,
-		gitClient:      github.NewClient(nil),
 		converter:      Converter{},
+		gitClient:      github.NewClient(nil),
 	}
 }
 

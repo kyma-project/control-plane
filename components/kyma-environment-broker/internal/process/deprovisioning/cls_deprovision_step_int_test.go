@@ -3,6 +3,7 @@
 package deprovisioning
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -24,7 +25,7 @@ import (
 // export SERVICE_ID=
 // export PLAN_ID=
 // export INSTANCE_ID=
-// go test -v -tags=sm_integration ./internal/process/deprovisioning/... -run TestDeprovisioningSteps -count=1
+// go test -v -tags=sm_integration ./internal/process/deprovisioning/... -run TestClsDeprovisionSteps -count=1
 func TestClsDeprovisionSteps(t *testing.T) {
 	var (
 		globalAccountID = "fake-global-account-id"
@@ -85,8 +86,10 @@ func TestClsDeprovisionSteps(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		op, offset, err := step.Run(operation, log)
 		require.NoError(t, err)
+		operation = op
 
-		if !op.Cls.Instance.Provisioned {
+		fmt.Printf("deprovisioned flag: %#v", op.Cls.Instance)
+		if !operation.Cls.Instance.Provisioned {
 			require.Empty(t, op.Cls.Instance.InstanceID)
 			break
 		}

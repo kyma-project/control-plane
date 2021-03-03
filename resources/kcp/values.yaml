@@ -12,7 +12,11 @@ global:
       version: "PR-524"
     kyma_environment_broker:
       dir:
+<<<<<<< HEAD
       version: "PR-569"
+=======
+      version: "PR-564"
+>>>>>>> master
     kyma_environments_cleanup_job:
       dir:
       version: "PR-473"

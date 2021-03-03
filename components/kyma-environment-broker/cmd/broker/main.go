@@ -113,7 +113,8 @@ type Config struct {
 	DefaultRequestRegion                 string `envconfig:"default=cf-eu10"`
 	UpdateProcessingEnabled              bool   `envconfig:"default=false"`
 
-	Broker broker.Config
+	Broker          broker.Config
+	CatalogFilePath string
 
 	Avs avs.Config
 	LMS lms.Config
@@ -454,15 +455,21 @@ func main() {
 	deprovisionQueue := process.NewQueue(deprovisionManager, logs)
 	deprovisionQueue.Run(ctx.Done(), workersAmount)
 
-	plansValidator, err := broker.NewPlansSchemaValidator()
+	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
+
+	servicesConfig, err := broker.NewServicesConfigFromFile(cfg.CatalogFilePath)
 	fatalOnError(err)
 
-	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
+	defaultPlansConfig, err := servicesConfig.DefaultPlansConfig()
+	fatalOnError(err)
+
+	plansValidator, err := broker.NewPlansSchemaValidator(defaultPlansConfig)
+	fatalOnError(err)
 
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
-		broker.NewServices(cfg.Broker, logs),
-		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, plansValidator, cfg.EnableOnDemandVersion, logs),
+		broker.NewServices(cfg.Broker, servicesConfig, logs),
+		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, plansValidator, defaultPlansConfig, cfg.EnableOnDemandVersion, logs),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
 		broker.NewUpdate(db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, logs),
 		broker.NewGetInstance(db.Instances(), logs),
@@ -478,7 +485,7 @@ func main() {
 
 	// create info endpoints
 	respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)
-	runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), cfg.DefaultRequestRegion, respWriter)
+	runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), defaultPlansConfig, cfg.DefaultRequestRegion, respWriter)
 	router.Handle("/info/runtimes", runtimesInfoHandler)
 
 	// create metrics endpoint

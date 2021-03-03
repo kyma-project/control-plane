@@ -95,7 +95,7 @@ func TestRuntimeInfoHandlerSuccess(t *testing.T) {
 				memStorage = newInMemoryStorage(t, tc.instances, tc.provisionOp, tc.deprovisionOp)
 			)
 
-			handler := appinfo.NewRuntimeInfoHandler(memStorage.Instances(), "default-region", writer)
+			handler := appinfo.NewRuntimeInfoHandler(memStorage.Instances(), broker.PlansConfig{}, "default-region", writer)
 
 			// when
 			handler.ServeHTTP(respSpy, fixReq)
@@ -126,7 +126,7 @@ func TestRuntimeInfoHandlerFailures(t *testing.T) {
 	storageMock := &automock.InstanceFinder{}
 	defer storageMock.AssertExpectations(t)
 	storageMock.On("FindAllJoinedWithOperations", mock.Anything).Return(nil, errors.New("ups.. internal info"))
-	handler := appinfo.NewRuntimeInfoHandler(storageMock, "", writer)
+	handler := appinfo.NewRuntimeInfoHandler(storageMock, broker.PlansConfig{}, "", writer)
 
 	// when
 	handler.ServeHTTP(respSpy, fixReq)
