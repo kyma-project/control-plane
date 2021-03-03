@@ -441,7 +441,7 @@ func (r readSession) GetCLSInstanceByGlobalAccountID(globalAccountID string) ([]
 		From(dbr.I(CLSInstanceTableName).As("a")).
 		Where(dbr.Eq("global_account_id", globalAccountID)).
 		Where(dbr.Eq("removed_by_skr_instance_id", nil)).
-		Join(dbr.I(CLSInstanceReferenceTableName).As("b"), "b.cls_instance_id = a.id").
+		LeftJoin(dbr.I(CLSInstanceReferenceTableName).As("b"), "b.cls_instance_id = a.id").
 		Load(&dtos)
 
 	if err != nil {
@@ -459,7 +459,7 @@ func (r readSession) GetCLSInstanceByID(clsInstanceID string) ([]dbmodel.CLSInst
 		Select("a.id, a.version, a.global_account_id, a.region, a.created_at, a.removed_by_skr_instance_id, b.skr_instance_id").
 		From(dbr.I(CLSInstanceTableName).As("a")).
 		Where(dbr.Eq("a.id", clsInstanceID)).
-		Join(dbr.I(CLSInstanceReferenceTableName).As("b"), "b.cls_instance_id = a.id").
+		LeftJoin(dbr.I(CLSInstanceReferenceTableName).As("b"), "b.cls_instance_id = a.id").
 		Load(&dtos)
 
 	if err != nil {

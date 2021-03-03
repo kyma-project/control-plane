@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
@@ -35,13 +36,109 @@ const (
 )
 
 type CLSInstance struct {
-	Version                  int
-	ID                       string
-	GlobalAccountID          string
-	Region                   string
-	CreatedAt                time.Time
-	ReferencedSKRInstanceIDs []string
-	RemovedBySKRInstanceID   string
+	version         int
+	id              string
+	globalAccountID string
+	region          string
+	createdAt       time.Time
+	references      []string
+	removedBy       string
+
+	events []interface{}
+}
+type CLSInstanceReferencedEvent struct {
+	SKRInstanceID string
+}
+
+type CLSInstanceUnreferencedEvent struct {
+	SKRInstanceID string
+}
+
+func NewCLSInstance(version int, id, globalAccountID, region string, createdAt time.Time, references []string, removedBy string) *CLSInstance {
+	return &CLSInstance{
+		version:         version,
+		id:              id,
+		globalAccountID: globalAccountID,
+		region:          region,
+		createdAt:       createdAt,
+		references:      references,
+		removedBy:       removedBy,
+	}
+}
+
+func (i *CLSInstance) Version() int {
+	return i.version
+}
+
+func (i *CLSInstance) ID() string {
+	return i.id
+}
+
+func (i *CLSInstance) GlobalAccountID() string {
+	return i.globalAccountID
+}
+
+func (i *CLSInstance) Region() string {
+	return i.region
+}
+
+func (i *CLSInstance) CreatedAt() time.Time {
+	return i.createdAt
+}
+
+func (i *CLSInstance) References() []string {
+	return i.references
+}
+
+func (i *CLSInstance) IsBeingRemoved() bool {
+	return len(i.removedBy) > 0
+}
+
+func (i *CLSInstance) BeingRemovedBy() string {
+	return i.removedBy
+}
+
+func (i *CLSInstance) Events() []interface{} {
+	return i.events
+}
+
+func (i *CLSInstance) AddReference(skrInstanceID string) {
+	i.references = append(i.references, skrInstanceID)
+	i.events = append(i.events, CLSInstanceReferencedEvent{SKRInstanceID: skrInstanceID})
+}
+
+func (i *CLSInstance) RemoveReference(skrInstanceID string) error {
+	found := false
+	idx := 0
+	for i, refID := range i.references {
+		if refID == skrInstanceID {
+			idx = i
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return errors.New("not found")
+	}
+
+	i.references = append(i.references[:idx], i.references[idx+1:]...)
+	i.events = append(i.events, CLSInstanceUnreferencedEvent{SKRInstanceID: skrInstanceID})
+
+	if len(i.references) == 0 {
+		i.removedBy = skrInstanceID
+	}
+
+	return nil
+}
+
+func (i *CLSInstance) IsReferencedBy(skrInstanceID string) bool {
+	for _, refID := range i.references {
+		if refID == skrInstanceID {
+			return true
+		}
+	}
+	return false
 }
 
 type LMSTenant struct {

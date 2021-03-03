@@ -12,6 +12,20 @@ type DeprovisionerStorage struct {
 	mock.Mock
 }
 
+// Delete provides a mock function with given fields: clsInstanceID
+func (_m *DeprovisionerStorage) Delete(clsInstanceID string) error {
+	ret := _m.Called(clsInstanceID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(clsInstanceID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // FindByID provides a mock function with given fields: clsInstanceID
 func (_m *DeprovisionerStorage) FindByID(clsInstanceID string) (*internal.CLSInstance, bool, error) {
 	ret := _m.Called(clsInstanceID)
@@ -42,41 +56,13 @@ func (_m *DeprovisionerStorage) FindByID(clsInstanceID string) (*internal.CLSIns
 	return r0, r1, r2
 }
 
-// MarkAsBeingRemoved provides a mock function with given fields: version, clsInstanceID, skrInstanceID
-func (_m *DeprovisionerStorage) MarkAsBeingRemoved(version int, clsInstanceID string, skrInstanceID string) error {
-	ret := _m.Called(version, clsInstanceID, skrInstanceID)
+// Update provides a mock function with given fields: instance
+func (_m *DeprovisionerStorage) Update(instance internal.CLSInstance) error {
+	ret := _m.Called(instance)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, string, string) error); ok {
-		r0 = rf(version, clsInstanceID, skrInstanceID)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Remove provides a mock function with given fields: clsInstanceID
-func (_m *DeprovisionerStorage) Remove(clsInstanceID string) error {
-	ret := _m.Called(clsInstanceID)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(clsInstanceID)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Unreference provides a mock function with given fields: version, clsInstanceID, skrInstanceID
-func (_m *DeprovisionerStorage) Unreference(version int, clsInstanceID string, skrInstanceID string) error {
-	ret := _m.Called(version, clsInstanceID, skrInstanceID)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(int, string, string) error); ok {
-		r0 = rf(version, clsInstanceID, skrInstanceID)
+	if rf, ok := ret.Get(0).(func(internal.CLSInstance) error); ok {
+		r0 = rf(instance)
 	} else {
 		r0 = ret.Error(0)
 	}

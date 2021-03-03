@@ -12,7 +12,7 @@ type CLSInstanceDTO struct {
 	Region                 string
 	RemovedBySKRInstanceID sql.NullString
 	CreatedAt              time.Time
-	SKRInstanceID          string
+	SKRInstanceID          sql.NullString
 }
 
 type CLSInstanceReferenceDTO struct {

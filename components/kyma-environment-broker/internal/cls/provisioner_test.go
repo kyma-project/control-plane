@@ -3,12 +3,14 @@ package cls
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	smautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -25,20 +27,22 @@ func TestProvisionReturnsExistingInstanceIfFoundInDB(t *testing.T) {
 		fakePlanID          = "fake-plan-id"
 	)
 
-	storageMock := &automock.ProvisionerStorage{}
-	instance := &internal.CLSInstance{
-		Version:         42,
-		ID:              fakeInstanceID,
-		GlobalAccountID: fakeGlobalAccountID,
-		Region:          fakeRegion,
-	}
-	storageMock.On("FindActiveByGlobalAccountID", fakeGlobalAccountID).Return(instance, true, nil)
-	storageMock.On("Reference", instance.Version, fakeInstanceID, fakeSKRInstanceID).Return(nil)
+	found := internal.NewCLSInstance(
+		42,
+		fakeInstanceID,
+		fakeGlobalAccountID,
+		fakeRegion,
+		time.Now(),
+		[]string{fakeSKRInstanceID},
+		"",
+	)
+	fakeStorage := storage.NewMemoryStorage().CLSInstances()
+	fakeStorage.Insert(*found)
 
 	smClientMock := &smautomock.Client{}
 	creatorMock := &automock.InstanceCreator{}
 
-	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
+	sut := NewProvisioner(fakeStorage, creatorMock, logger.NewLogDummy())
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
@@ -65,9 +69,7 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 		fakeRegion          = "westmongolia"
 	)
 
-	storageMock := &automock.ProvisionerStorage{}
-	storageMock.On("FindActiveByGlobalAccountID", fakeGlobalAccountID).Return(nil, false, nil)
-	storageMock.On("Insert", mock.Anything).Return(nil)
+	fakeStorage := storage.NewMemoryStorage().CLSInstances()
 
 	smClientMock := &smautomock.Client{}
 	creatorMock := &automock.InstanceCreator{}
@@ -78,7 +80,7 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 			isValidUUID(instance.InstanceID)
 	})).Return(nil)
 
-	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
+	sut := NewProvisioner(fakeStorage, creatorMock, logger.NewLogDummy())
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
@@ -172,20 +174,12 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 		fakePlanID          = "fake-plan-id"
 	)
 
-	storageMock := &automock.ProvisionerStorage{}
-	storageMock.On("FindActiveByGlobalAccountID", fakeGlobalAccountID).Return(nil, false, nil)
-	storageMock.On("Insert", mock.MatchedBy(func(instance internal.CLSInstance) bool {
-		return assert.Equal(t, fakeGlobalAccountID, instance.GlobalAccountID) &&
-			assert.NotEmpty(t, instance.ID) &&
-			assert.Len(t, instance.ReferencedSKRInstanceIDs, 1) &&
-			assert.Equal(t, fakeSKRInstanceID, instance.ReferencedSKRInstanceIDs[0])
-	})).Return(nil).Once()
-
+	fakeStorage := storage.NewMemoryStorage().CLSInstances()
 	smClientMock := &smautomock.Client{}
 	creatorMock := &automock.InstanceCreator{}
 	creatorMock.On("CreateInstance", smClientMock, mock.Anything).Return(nil)
 
-	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
+	sut := NewProvisioner(fakeStorage, creatorMock, logger.NewLogDummy())
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
@@ -198,35 +192,44 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 	require.NotNil(t, result)
 	require.NoError(t, err)
 
-	storageMock.AssertNumberOfCalls(t, "Insert", 1)
+	instance, exists, _ := fakeStorage.FindActiveByGlobalAccountID(fakeGlobalAccountID)
+	require.True(t, exists)
+	require.Equal(t, fakeGlobalAccountID, instance.GlobalAccountID())
+	require.NotEmpty(t, instance.ID)
+	require.Len(t, instance.References(), 1)
+	require.Equal(t, fakeSKRInstanceID, instance.References()[0])
 }
 
 func TestProvisionAddsReferenceIfFoundInDB(t *testing.T) {
 	const (
-		fakeGlobalAccountID = "fake-global-account-id"
-		fakeSKRInstanceID   = "fake-skr-instance-id"
-		fakeBrokerID        = "fake-broker-id"
-		fakeServiceID       = "fake-service-id"
-		fakePlanID          = "fake-plan-id"
-		fakeInstanceID      = "fake-instance-id"
+		fakeGlobalAccountID     = "fake-global-account-id"
+		firstFakeSKRInstanceID  = "fake-skr-instance-id-1"
+		secondFakeSKRInstanceID = "fake-skr-instance-id-2"
+		fakeBrokerID            = "fake-broker-id"
+		fakeServiceID           = "fake-service-id"
+		fakePlanID              = "fake-plan-id"
+		fakeInstanceID          = "fake-instance-id"
 	)
 
-	storageMock := &automock.ProvisionerStorage{}
-	instance := &internal.CLSInstance{
-		ID:              fakeInstanceID,
-		Version:         42,
-		GlobalAccountID: fakeGlobalAccountID,
-	}
-	storageMock.On("FindActiveByGlobalAccountID", fakeGlobalAccountID).Return(instance, true, nil)
-	storageMock.On("Reference", instance.Version, fakeInstanceID, fakeSKRInstanceID).Return(nil)
+	found := internal.NewCLSInstance(
+		42,
+		fakeInstanceID,
+		fakeGlobalAccountID,
+		"eu",
+		time.Now(),
+		[]string{firstFakeSKRInstanceID},
+		"",
+	)
 
+	fakeStorage := storage.NewMemoryStorage().CLSInstances()
+	fakeStorage.Insert(*found)
 	smClientMock := &smautomock.Client{}
 	creatorMock := &automock.InstanceCreator{}
 
-	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
+	sut := NewProvisioner(fakeStorage, creatorMock, logger.NewLogDummy())
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
-		SKRInstanceID:   fakeSKRInstanceID,
+		SKRInstanceID:   secondFakeSKRInstanceID,
 		Instance: servicemanager.InstanceKey{
 			BrokerID:  fakeBrokerID,
 			ServiceID: fakeServiceID,
@@ -236,7 +239,9 @@ func TestProvisionAddsReferenceIfFoundInDB(t *testing.T) {
 	require.NotNil(t, result)
 	require.NoError(t, err)
 
-	storageMock.AssertNumberOfCalls(t, "Reference", 1)
-	storageMock.AssertNumberOfCalls(t, "Insert", 0)
 	creatorMock.AssertNumberOfCalls(t, "CreateInstance", 0)
+
+	instance, exists, _ := fakeStorage.FindActiveByGlobalAccountID(fakeGlobalAccountID)
+	require.True(t, exists)
+	require.ElementsMatch(t, instance.References(), []string{firstFakeSKRInstanceID, secondFakeSKRInstanceID})
 }

@@ -10,9 +10,8 @@ import (
 //go:generate mockery --name=DeprovisionerStorage --output=automock --outpkg=automock --case=underscore
 type DeprovisionerStorage interface {
 	FindByID(clsInstanceID string) (*internal.CLSInstance, bool, error)
-	Unreference(version int, clsInstanceID, skrInstanceID string) error
-	MarkAsBeingRemoved(version int, clsInstanceID, skrInstanceID string) error
-	Remove(clsInstanceID string) error
+	Update(instance internal.CLSInstance) error
+	Delete(clsInstanceID string) error
 }
 
 //go:generate mockery --name=InstanceRemover --output=automock --outpkg=automock --case=underscore
@@ -40,45 +39,38 @@ type DeprovisionRequest struct {
 }
 
 func (d *Deprovisioner) Deprovision(smClient servicemanager.Client, request *DeprovisionRequest) error {
-	instance, _, err := d.storage.FindByID(request.Instance.InstanceID)
+	instance, exists, err := d.storage.FindByID(request.Instance.InstanceID)
 	if err != nil {
 		return errors.Wrapf(err, "while trying to find the cls instance %s", request.Instance.InstanceID)
 	}
 
-	isReferenced := false
-	for _, ref := range instance.ReferencedSKRInstanceIDs {
-		if ref == request.SKRInstanceID {
-			isReferenced = true
-		}
+	if !exists {
+		return nil
 	}
-	if !isReferenced {
+
+	if !instance.IsReferencedBy(request.SKRInstanceID) {
 		d.log.Warnf("Provided cls instance %s is not referenced by the skr %s", instance.ID, request.SKRInstanceID)
 		return nil
 	}
 
-	if len(instance.ReferencedSKRInstanceIDs) > 1 {
-		if err := d.storage.Unreference(instance.Version, instance.ID, request.SKRInstanceID); err != nil {
-			return errors.Wrapf(err, "while unreferencing the cls instance %s", instance.ID)
+	if err := instance.RemoveReference(request.SKRInstanceID); err != nil {
+		return errors.Wrapf(err, "while unreferencing the cls instance %s", instance.ID())
+	}
+
+	if err := d.storage.Update(*instance); err != nil {
+		return errors.Wrapf(err, "while updaing the cls instance %s", instance.ID())
+	}
+
+	if instance.IsBeingRemoved() {
+		d.log.Infof("Removing the cls instance %s", instance.ID)
+
+		if err := d.remover.RemoveInstance(smClient, request.Instance); err != nil {
+			return errors.Wrapf(err, "while removing the cls instance %s", instance.ID())
 		}
 
-		d.log.Infof("Unreferenced the skr %s from the cls instance %s", request.SKRInstanceID, instance.ID)
-		return nil
-	}
-
-	d.log.Infof("Marking the cls instance %s as being removed by the skr %s", instance.ID, request.SKRInstanceID)
-
-	if err := d.storage.MarkAsBeingRemoved(instance.Version, instance.ID, request.SKRInstanceID); err != nil {
-		return errors.Wrapf(err, "while marking a cls instance %s as being removed", instance.ID)
-	}
-
-	d.log.Infof("Removing the cls instance %s", instance.ID)
-
-	if err := d.remover.RemoveInstance(smClient, request.Instance); err != nil {
-		return errors.Wrapf(err, "while removing the cls instance %s", instance.ID)
-	}
-
-	if err := d.storage.Remove(instance.ID); err != nil {
-		return errors.Wrapf(err, "while removing the cls instance record %s", instance.ID)
+		if err := d.storage.Delete(instance.ID()); err != nil {
+			return errors.Wrapf(err, "while deleting the cls instance %s", instance.ID())
+		}
 	}
 
 	return nil

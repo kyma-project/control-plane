@@ -1061,56 +1061,58 @@ func TestPostgres(t *testing.T) {
 		globalAccountID := "fake-global-account-id"
 
 		instanceID := "fake-id"
-		newClsInstance := internal.CLSInstance{
-			ID:                       instanceID,
-			GlobalAccountID:          globalAccountID,
-			Region:                   "eu",
-			CreatedAt:                time.Now().UTC(),
-			ReferencedSKRInstanceIDs: []string{"fake-skr-instance-id-1"},
-		}
-		err = storage.Insert(newClsInstance)
+		newClsInstance := internal.NewCLSInstance(
+			0,
+			instanceID,
+			globalAccountID,
+			"eu",
+			time.Now().UTC(),
+			[]string{"fake-skr-instance-id-1"}, "",
+		)
+		err = storage.Insert(*newClsInstance)
 		require.NoError(t, err)
 		t.Logf("Inserted the instance: %#v", newClsInstance)
 
-		skrID := "fake-skr-instance-id-2"
-		err = storage.Reference(newClsInstance.Version, instanceID, skrID)
+		newClsInstance.AddReference("fake-skr-instance-id-2")
+		err = storage.Update(*newClsInstance)
 		require.NoError(t, err)
-		t.Logf("Referenced the instance %s by the skr %s", instanceID, skrID)
+		t.Logf("Referenced the instance %s by the skr %s", instanceID, "fake-skr-instance-id-2")
 
-		err = storage.Reference(newClsInstance.Version, instanceID, "fake-skr-instance-id-3")
-		require.Error(t, err)
-		t.Logf("Failed to reference the instance %s by the skr %s: %s", instanceID, skrID, err)
-
-		gotClsInstance, found, err := storage.FindActiveByGlobalAccountID("fake-global-account-id")
+		gotClsInstance, found, err := storage.FindActiveByGlobalAccountID(globalAccountID)
 		require.NoError(t, err)
 		require.NotNil(t, gotClsInstance)
 		require.True(t, found)
-		require.Equal(t, newClsInstance.ID, gotClsInstance.ID)
-		require.Equal(t, newClsInstance.GlobalAccountID, gotClsInstance.GlobalAccountID)
-		require.Equal(t, newClsInstance.Region, gotClsInstance.Region)
-		require.ElementsMatch(t, []string{"fake-skr-instance-id-1", "fake-skr-instance-id-2"}, gotClsInstance.ReferencedSKRInstanceIDs)
+		require.Equal(t, newClsInstance.ID(), gotClsInstance.ID())
+		require.Equal(t, newClsInstance.GlobalAccountID(), gotClsInstance.GlobalAccountID())
+		require.Equal(t, newClsInstance.Region(), gotClsInstance.Region())
+		require.ElementsMatch(t, []string{"fake-skr-instance-id-1", "fake-skr-instance-id-2"}, gotClsInstance.References())
 		require.NoError(t, err)
 		t.Logf("Found the instance by global id: %#v", gotClsInstance)
 
-		skrID = "fake-skr-instance-id-2"
-		err = storage.Unreference(gotClsInstance.Version, instanceID, skrID)
+		err = gotClsInstance.RemoveReference("fake-skr-instance-id-2")
 		require.NoError(t, err)
-		t.Logf("Uneferenced the instance %s by the skr %s", instanceID, skrID)
+		err = storage.Update(*gotClsInstance)
+		require.NoError(t, err)
+		t.Logf("Unreferenced the instance %s by the skr %s", instanceID, "fake-skr-instance-id-2")
 
-		gotClsInstance, _, err = storage.FindByID(newClsInstance.ID)
+		gotClsInstance, found, err = storage.FindByID(instanceID)
 		require.NoError(t, err)
-		require.Equal(t, newClsInstance.ID, gotClsInstance.ID)
-		require.Equal(t, newClsInstance.GlobalAccountID, gotClsInstance.GlobalAccountID)
-		require.Equal(t, newClsInstance.Region, gotClsInstance.Region)
-		require.ElementsMatch(t, []string{"fake-skr-instance-id-1"}, gotClsInstance.ReferencedSKRInstanceIDs)
+		require.NotNil(t, gotClsInstance)
+		require.True(t, found)
+		require.Equal(t, newClsInstance.ID(), gotClsInstance.ID())
+		require.Equal(t, newClsInstance.GlobalAccountID(), gotClsInstance.GlobalAccountID())
+		require.Equal(t, newClsInstance.Region(), gotClsInstance.Region())
+		require.ElementsMatch(t, []string{"fake-skr-instance-id-1"}, gotClsInstance.References())
 		require.NoError(t, err)
 		t.Logf("Found the instance by id: %#v", gotClsInstance)
 
-		err = storage.MarkAsBeingRemoved(gotClsInstance.Version, instanceID, "fake-skr-instance-id-1")
+		err = gotClsInstance.RemoveReference("fake-skr-instance-id-1")
 		require.NoError(t, err)
-		t.Logf("Marked the instance %s as being removed", instanceID)
+		err = storage.Update(*gotClsInstance)
+		require.NoError(t, err)
+		t.Logf("Unreferenced the instance %s by the skr %s", instanceID, "fake-skr-instance-id-1")
 
-		gotClsInstance, found, err = storage.FindActiveByGlobalAccountID("fake-global-account-id")
+		gotClsInstance, found, err = storage.FindActiveByGlobalAccountID(globalAccountID)
 		require.NoError(t, err)
 		require.False(t, found)
 		require.Nil(t, gotClsInstance)
@@ -1119,11 +1121,10 @@ func TestPostgres(t *testing.T) {
 		gotClsInstance, found, err = storage.FindByID(instanceID)
 		require.NoError(t, err)
 		require.True(t, found)
-		require.NotNil(t, gotClsInstance)
-		require.NotEmpty(t, gotClsInstance.ReferencedSKRInstanceIDs)
+		require.NotEmpty(t, gotClsInstance.BeingRemovedBy())
 		t.Logf("Found inactive active instance %s", instanceID)
 
-		err = storage.Remove(instanceID)
+		err = storage.Delete(instanceID)
 		require.NoError(t, err)
 		t.Logf("Removed inactive instance %s", instanceID)
 

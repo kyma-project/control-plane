@@ -1,7 +1,7 @@
 package postsql
 
 import (
-	"errors"
+	"database/sql"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -49,18 +49,23 @@ func (s *clsInstances) find(f findFunc) (*internal.CLSInstance, bool, error) {
 	}
 
 	first := dtos[0]
-	model := &internal.CLSInstance{
-		Version:         first.Version,
-		ID:              first.ID,
-		GlobalAccountID: first.GlobalAccountID,
-		Region:          first.Region,
-		CreatedAt:       first.CreatedAt,
-	}
+
+	var references []string
 	for _, dto := range dtos {
-		model.ReferencedSKRInstanceIDs = append(model.ReferencedSKRInstanceIDs, dto.SKRInstanceID)
+		if dto.SKRInstanceID.Valid {
+			references = append(references, dto.SKRInstanceID.String)
+		}
 	}
 
-	return model, true, nil
+	return internal.NewCLSInstance(
+		first.Version,
+		first.ID,
+		first.GlobalAccountID,
+		first.Region,
+		first.CreatedAt,
+		references,
+		first.RemovedBySKRInstanceID.String,
+	), true, nil
 }
 
 func (s *clsInstances) Insert(instance internal.CLSInstance) error {
@@ -72,21 +77,17 @@ func (s *clsInstances) Insert(instance internal.CLSInstance) error {
 
 	if err := session.InsertCLSInstance(dbmodel.CLSInstanceDTO{
 		Version:         0,
-		ID:              instance.ID,
-		GlobalAccountID: instance.GlobalAccountID,
-		Region:          instance.Region,
-		CreatedAt:       instance.CreatedAt,
+		ID:              instance.ID(),
+		GlobalAccountID: instance.GlobalAccountID(),
+		Region:          instance.Region(),
+		CreatedAt:       instance.CreatedAt(),
 	}); err != nil {
 		return err
 	}
 
-	if len(instance.ReferencedSKRInstanceIDs) != 1 {
-		return errors.New("must have a single skr reference")
-	}
-
 	if err := session.InsertCLSInstanceReference(dbmodel.CLSInstanceReferenceDTO{
-		CLSInstanceID: instance.ID,
-		SKRInstanceID: instance.ReferencedSKRInstanceIDs[0],
+		CLSInstanceID: instance.ID(),
+		SKRInstanceID: instance.References()[0],
 	}); err != nil {
 		return err
 	}
@@ -94,54 +95,50 @@ func (s *clsInstances) Insert(instance internal.CLSInstance) error {
 	return session.Commit()
 }
 
-func (s *clsInstances) Reference(version int, clsInstanceID, skrInstanceID string) error {
+func (s *clsInstances) Update(instance internal.CLSInstance) error {
 	session, err := s.NewSessionWithinTransaction()
 	if err != nil {
 		return err
 	}
 	defer session.RollbackUnlessCommitted()
 
-	if err := session.InsertCLSInstanceReference(dbmodel.CLSInstanceReferenceDTO{
-		CLSInstanceID: clsInstanceID,
-		SKRInstanceID: skrInstanceID,
-	}); err != nil {
-		return err
+	for _, ev := range instance.Events() {
+		if referencedEvent, ok := ev.(internal.CLSInstanceReferencedEvent); ok {
+			if err := session.InsertCLSInstanceReference(dbmodel.CLSInstanceReferenceDTO{
+				CLSInstanceID: instance.ID(),
+				SKRInstanceID: referencedEvent.SKRInstanceID,
+			}); err != nil {
+				return err
+			}
+		}
+
+		if unreferencedEvent, ok := ev.(internal.CLSInstanceUnreferencedEvent); ok {
+			if err := session.DeleteCLSInstanceReference(dbmodel.CLSInstanceReferenceDTO{
+				CLSInstanceID: instance.ID(),
+				SKRInstanceID: unreferencedEvent.SKRInstanceID,
+			}); err != nil {
+				return err
+			}
+		}
 	}
 
-	if err := session.IncrementCLSInstanceVersion(version, clsInstanceID); err != nil {
+	dto := dbmodel.CLSInstanceDTO{
+		Version: instance.Version(),
+		ID:      instance.ID(),
+	}
+
+	if instance.IsBeingRemoved() {
+		dto.RemovedBySKRInstanceID = sql.NullString{String: instance.BeingRemovedBy(), Valid: true}
+	}
+
+	if err = session.UpdateCLSInstance(dto); err != nil {
 		return err
 	}
 
 	return session.Commit()
 }
 
-func (s *clsInstances) Unreference(version int, clsInstanceID, skrInstanceID string) error {
-	session, err := s.NewSessionWithinTransaction()
-	if err != nil {
-		return err
-	}
-	defer session.RollbackUnlessCommitted()
-
-	if err := session.DeleteCLSInstanceReference(dbmodel.CLSInstanceReferenceDTO{
-		CLSInstanceID: clsInstanceID,
-		SKRInstanceID: skrInstanceID,
-	}); err != nil {
-		return err
-	}
-
-	if err := session.IncrementCLSInstanceVersion(version, clsInstanceID); err != nil {
-		return err
-	}
-
-	return session.Commit()
-}
-
-func (s *clsInstances) MarkAsBeingRemoved(version int, clsInstanceID, skrInstanceID string) error {
-	session := s.NewWriteSession()
-	return session.MarkCLSInstanceAsBeingRemoved(version, clsInstanceID, skrInstanceID)
-}
-
-func (s *clsInstances) Remove(clsInstanceID string) error {
+func (s *clsInstances) Delete(clsInstanceID string) error {
 	session := s.NewWriteSession()
 	return session.DeleteCLSInstance(clsInstanceID)
 }

@@ -15,7 +15,7 @@ import (
 type ProvisionerStorage interface {
 	FindActiveByGlobalAccountID(globalAccountID string) (*internal.CLSInstance, bool, error)
 	Insert(instance internal.CLSInstance) error
-	Reference(version int, clsInstanceID, skrInstanceID string) error
+	Update(instance internal.CLSInstance) error
 }
 
 //go:generate mockery --name=InstanceCreator --output=automock --outpkg=automock --case=underscore
@@ -63,43 +63,46 @@ func (p *provisioner) Provision(smClient servicemanager.Client, request *Provisi
 		return p.createNewInstance(smClient, request)
 	}
 
-	err = p.storage.Reference(instance.Version, instance.ID, request.SKRInstanceID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while creating a cls instance for global account %s", request.GlobalAccountID)
+	instance.AddReference(request.SKRInstanceID)
+	if err := p.storage.Update(*instance); err != nil {
+		return nil, errors.Wrapf(err, "while updating a cls instance for global account %s", request.GlobalAccountID)
 	}
 
 	p.log.Infof("Referencing the cls instance for global account %s by the skr %s", request.SKRInstanceID, request.GlobalAccountID)
 
 	return &ProvisionResult{
-		InstanceID:            instance.ID,
+		InstanceID:            instance.ID(),
 		ProvisioningTriggered: false,
-		Region:                instance.Region,
+		Region:                instance.Region(),
 	}, nil
 }
 
 func (p *provisioner) createNewInstance(smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
-	instance := internal.CLSInstance{
-		ID:                       uuid.New().String(),
-		GlobalAccountID:          request.GlobalAccountID,
-		CreatedAt:                time.Now(),
-		ReferencedSKRInstanceIDs: []string{request.SKRInstanceID},
-	}
+	instance := internal.NewCLSInstance(
+		0,
+		uuid.New().String(),
+		request.GlobalAccountID,
+		request.Region,
+		time.Now(),
+		[]string{request.SKRInstanceID},
+		"",
+	)
 
-	err := p.storage.Insert(instance)
+	err := p.storage.Insert(*instance)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while inserting a cls instance for global account %s", instance.GlobalAccountID)
+		return nil, errors.Wrapf(err, "while inserting a cls instance for global account %s", instance.GlobalAccountID())
 	}
 
 	p.log.Infof("Creating a new cls instance for global account %s", request.GlobalAccountID)
 
-	request.Instance.InstanceID = instance.ID
+	request.Instance.InstanceID = instance.ID()
 	err = p.creator.CreateInstance(smClient, request.Instance)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while deleting a cls instance for global account %s", request.GlobalAccountID)
+		return nil, errors.Wrapf(err, "while deleting a cls instance for global account %s", instance.GlobalAccountID())
 	}
 
 	return &ProvisionResult{
-		InstanceID:            instance.ID,
+		InstanceID:            instance.ID(),
 		ProvisioningTriggered: true,
 		Region:                request.Region,
 	}, nil

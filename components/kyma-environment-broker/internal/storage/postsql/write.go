@@ -233,46 +233,18 @@ func (ws writeSession) InsertCLSInstance(dto dbmodel.CLSInstanceDTO) dberr.Error
 	return nil
 }
 
-func (ws writeSession) IncrementCLSInstanceVersion(version int, clsInstanceID string) dberr.Error {
+func (ws writeSession) UpdateCLSInstance(dto dbmodel.CLSInstanceDTO) dberr.Error {
 	res, err := ws.update(CLSInstanceTableName).
-		Where(dbr.Eq("id", clsInstanceID)).
-		Where(dbr.Eq("version", version)).
-		Set("version", version+1).
+		Where(dbr.Eq("id", dto.ID)).
+		Where(dbr.Eq("version", dto.Version)).
+		Set("version", dto.Version+1).
+		Set("removed_by_skr_instance_id", dto.RemovedBySKRInstanceID).
 		Exec()
 
 	if err != nil {
 		if err, ok := err.(*pq.Error); ok {
 			if err == dbr.ErrNotFound {
-				return dberr.NotFound("unable to increment the version of a cls instance with id %s: not found", clsInstanceID)
-			}
-		}
-		return dberr.Internal("unable to update a record in table %s: %s", CLSInstanceTableName, err)
-	}
-
-	rAffected, err := res.RowsAffected()
-	if err != nil {
-		// the optimistic locking requires numbers of rows affected
-		return dberr.Internal("unable to check number of updated rows in table %s: %s", CLSInstanceTableName, err)
-	}
-	if rAffected == int64(0) {
-		return dberr.Internal("unable to update a record in table %s: not found or stale version", CLSInstanceTableName)
-	}
-
-	return nil
-}
-
-func (ws writeSession) MarkCLSInstanceAsBeingRemoved(version int, clsInstanceID, skrInstanceID string) dberr.Error {
-	res, err := ws.update(CLSInstanceTableName).
-		Where(dbr.Eq("id", clsInstanceID)).
-		Where(dbr.Eq("version", version)).
-		Set("version", version+1).
-		Set("removed_by_skr_instance_id", skrInstanceID).
-		Exec()
-
-	if err != nil {
-		if err, ok := err.(*pq.Error); ok {
-			if err == dbr.ErrNotFound {
-				return dberr.NotFound("unable to mark a cls instance with id %s as being removed: not found", clsInstanceID)
+				return dberr.NotFound("unable to increment the version of a cls instance with id %s: not found", dto.ID)
 			}
 		}
 		return dberr.Internal("unable to update a record in table %s: %s", CLSInstanceTableName, err)
