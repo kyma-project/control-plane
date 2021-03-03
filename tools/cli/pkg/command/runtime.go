@@ -17,6 +17,7 @@ type RuntimeCommand struct {
 	log      logger.Logger
 	output   string
 	params   runtime.ListParameters
+	state    string
 }
 
 const (
@@ -81,7 +82,8 @@ The command supports filtering Runtimes based on various attributes. See the lis
   kcp runtimes -c bbc3ee7 -o custom="INSTANCE ID:instanceID,SHOOTNAME:shootName"
                                                          Display the custom fields about one Runtime identified by a Shoot name.
   kcp runtimes -o custom="INSTANCE ID:instanceID,SHOOTNAME:shootName,runtimeID:runtimeID,STATUS:{status.provisioning}"
-                                                         Display all Runtimes with specific custom fields.`,
+                                                         Display all Runtimes with specific custom fields.
+  kcp runtimes -t "failed" -o custom="INSTANCE ID:instanceID,SHOOTNAME:shootName,STATUS:runtimeStatus"`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}
@@ -94,6 +96,7 @@ The command supports filtering Runtimes based on various attributes. See the lis
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.RuntimeIDs, "runtime-id", "i", nil, "Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.Regions, "region", "r", nil, "Filter by provider region. You can provide multiple values, either separated by a comma (e.g. westeurope,northeurope), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.Plans, "plan", "p", nil, "Filter by service plan name. You can provide multiple values, either separated by a comma (e.g. azure,trial), or by specifying the option multiple times.")
+	cobraCmd.Flags().StringVarP(&cmd.state, "state", "t", "", "Filter by state. You can provide multiple values, either separated by a comma (e.g. succeeded,failed,provision,deprovision), or by specifying the option multiple times.")
 
 	return cobraCmd
 }
@@ -131,13 +134,17 @@ func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
 		if err != nil {
 			return err
 		}
+		if cmd.state != "" {
+			return tp.PrintObjWithFieldFormatterFilter(runtimes.Data, cmd.state)
+		}
+
 		return tp.PrintObj(runtimes.Data)
 	case cmd.output == jsonOutput:
 		jp := printer.NewJSONPrinter("  ")
 		jp.PrintObj(runtimes)
 	case strings.HasPrefix(cmd.output, customOutput):
 		_, templateFile := printer.ParseOutputToTemplateTypeAndElement(cmd.output)
-		column, err := printer.ParseColumnToHeaderAndFieldSpec(templateFile)
+		column, err := parseColumnToHeaderAndFields(templateFile)
 		if err != nil {
 			return err
 		}
@@ -145,6 +152,9 @@ func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
 		ccp, err := printer.NewTablePrinter(column, false)
 		if err != nil {
 			return err
+		}
+		if cmd.state != "" {
+			return ccp.PrintObjWithFieldFormatterFilter(runtimes.Data, cmd.state)
 		}
 		return ccp.PrintObj(runtimes.Data)
 	}
@@ -189,4 +199,31 @@ func operationStatusToString(op runtime.Operation, t runtime.OperationType) stri
 func runtimeCreatedAt(obj interface{}) string {
 	rt := obj.(runtime.RuntimeDTO)
 	return rt.Status.CreatedAt.Format("2006/01/02 15:04:05")
+}
+
+func parseColumnToHeaderAndFields(spec string) ([]printer.Column, error) {
+	if len(spec) == 0 {
+		return nil, fmt.Errorf("custom format specified but no custom columns given")
+	}
+	parts := strings.Split(spec, ",")
+	columnsOut := make([]printer.Column, len(parts))
+	for ix := range parts {
+		colSpec := strings.SplitN(parts[ix], ":", 2)
+		if len(colSpec) != 2 {
+			return nil, fmt.Errorf("unexpected custom spec: %s, expected <header>:<json-path-expr>", parts[ix])
+		}
+		spec, err := printer.RelaxedJSONPathExpression(colSpec[1])
+		if err != nil {
+			return nil, err
+		}
+		if strings.Contains(spec, "runtimeStatus") {
+			columnsOut[ix] = printer.Column{Header: colSpec[0], FieldFormatter: runtimeStatus}
+		} else if strings.Contains(spec, "runtimeCreatedAt") {
+			columnsOut[ix] = printer.Column{Header: colSpec[0], FieldFormatter: runtimeCreatedAt}
+		} else {
+			columnsOut[ix] = printer.Column{Header: colSpec[0], FieldSpec: spec}
+		}
+	}
+
+	return columnsOut, nil
 }
