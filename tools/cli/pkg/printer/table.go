@@ -170,19 +170,9 @@ func (t *tablePrinter) printOneObjWithFieldFormatterFilter(obj interface{}, filt
 	}
 
 	if continueToPrintObject {
-		for idx := range t.columns {
-			if t.columns[idx].FieldFormatter != nil {
-				fmt.Fprintf(t.writer, "%s\t", t.columns[idx].FieldFormatter(obj))
-			} else {
-				err := t.columns[idx].parser.Execute(t.writer, obj)
-				fmt.Fprint(t.writer, "\t")
-				if err != nil {
-					return err
-				}
-			}
+		if err := t.printOneObj(obj); err != nil {
+			return err
 		}
-
-		fmt.Fprint(t.writer, "\n")
 	}
 	return nil
 }
