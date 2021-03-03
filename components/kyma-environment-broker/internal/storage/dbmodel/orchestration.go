@@ -13,11 +13,13 @@ import (
 type OrchestrationFilter struct {
 	Page     int
 	PageSize int
+	Types    []string
 	States   []string
 }
 
 type OrchestrationDTO struct {
 	OrchestrationID string
+	Type            string
 	State           string
 	Description     string
 	CreatedAt       time.Time
@@ -33,6 +35,7 @@ func NewOrchestrationDTO(o internal.Orchestration) (OrchestrationDTO, error) {
 
 	dto := OrchestrationDTO{
 		OrchestrationID: o.OrchestrationID,
+		Type:            string(o.Type),
 		State:           o.State,
 		CreatedAt:       o.CreatedAt,
 		UpdatedAt:       o.UpdatedAt,
@@ -50,6 +53,7 @@ func (o *OrchestrationDTO) ToOrchestration() (internal.Orchestration, error) {
 	}
 	return internal.Orchestration{
 		OrchestrationID: o.OrchestrationID,
+		Type:            orchestration.Type(o.Type),
 		State:           o.State,
 		Description:     o.Description,
 		CreatedAt:       o.CreatedAt,

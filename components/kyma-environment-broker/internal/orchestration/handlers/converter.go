@@ -13,6 +13,7 @@ type Converter struct{}
 func (*Converter) OrchestrationToDTO(o *internal.Orchestration, stats map[string]int) (*orchestration.StatusResponse, error) {
 	return &orchestration.StatusResponse{
 		OrchestrationID: o.OrchestrationID,
+		Type:            o.Type,
 		State:           o.State,
 		Description:     o.Description,
 		CreatedAt:       o.CreatedAt,

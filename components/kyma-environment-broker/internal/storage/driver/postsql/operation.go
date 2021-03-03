@@ -661,6 +661,139 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 	return ret, count, totalCount, nil
 }
 
+// InsertUpgradeClusterOperation insert new UpgradeClusterOperation to storage
+func (s *operations) InsertUpgradeClusterOperation(operation internal.UpgradeClusterOperation) error {
+	session := s.NewWriteSession()
+	dto, err := s.upgradeClusterOperationToDTO(&operation)
+	if err != nil {
+		return errors.Wrapf(err, "while converting upgrade cluser operation (id: %s)", operation.Operation.ID)
+	}
+	var lastErr error
+	_ = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		lastErr = session.InsertOperation(dto)
+		if lastErr != nil {
+			log.Errorf("while insert operation: %v", err)
+			return false, nil
+		}
+
+		return true, nil
+	})
+	return lastErr
+}
+
+// UpdateUpgradeClusterOperation updates UpgradeClusterOperation, fails if not exists or optimistic locking failure occurs.
+func (s *operations) UpdateUpgradeClusterOperation(operation internal.UpgradeClusterOperation) (*internal.UpgradeClusterOperation, error) {
+	session := s.NewWriteSession()
+	operation.UpdatedAt = time.Now()
+	dto, err := s.upgradeClusterOperationToDTO(&operation)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting Operation to DTO")
+	}
+
+	var lastErr error
+	_ = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		lastErr = session.UpdateOperation(dto)
+		if lastErr != nil && dberr.IsNotFound(lastErr) {
+			_, lastErr = s.NewReadSession().GetOperationByID(operation.Operation.ID)
+			if lastErr != nil {
+				log.Errorf("while getting operation: %v", lastErr)
+				return false, nil
+			}
+
+			// the operation exists but the version is different
+			lastErr = dberr.Conflict("operation update conflict, operation ID: %s", operation.Operation.ID)
+			log.Warn(lastErr.Error())
+			return false, lastErr
+		}
+		return true, nil
+	})
+	operation.Version = operation.Version + 1
+	return &operation, lastErr
+}
+
+// GetUpgradeClusterOperationByID fetches the UpgradeClusterOperation by given ID, returns error if not found
+func (s *operations) GetUpgradeClusterOperationByID(operationID string) (*internal.UpgradeClusterOperation, error) {
+	session := s.NewReadSession()
+	operation := dbmodel.OperationDTO{}
+	var lastErr error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		operation, lastErr = session.GetOperationByID(operationID)
+		if lastErr != nil {
+			if dberr.IsNotFound(lastErr) {
+				lastErr = dberr.NotFound("Operation with id %s not exist", operationID)
+				return false, lastErr
+			}
+			log.Errorf("while reading operation from the storage: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting operation by ID")
+	}
+	ret, err := s.toUpgradeClusterOperation(&operation)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting DTO to Operation")
+	}
+
+	return ret, nil
+}
+
+// ListUpgradeClusterOperationsByInstanceID Lists all upgrade cluster operations for the given instance
+func (s *operations) ListUpgradeClusterOperationsByInstanceID(instanceID string) ([]internal.UpgradeClusterOperation, error) {
+	session := s.NewReadSession()
+	operations := []dbmodel.OperationDTO{}
+	var lastErr dberr.Error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		operations, lastErr = session.GetOperationsByTypeAndInstanceID(instanceID, dbmodel.OperationTypeUpgradeCluster)
+		if lastErr != nil {
+			log.Errorf("while reading operation from the storage: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, lastErr
+	}
+	ret, err := s.toUpgradeClusterOperationList(operations)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting DTO to Operation")
+	}
+
+	return ret, nil
+}
+
+// ListUpgradeClusterOperationsByOrchestrationID Lists upgrade cluster operations for the given orchestration, according to filter(s) and/or pagination
+func (s *operations) ListUpgradeClusterOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeClusterOperation, int, int, error) {
+	session := s.NewReadSession()
+	var (
+		operations        = make([]dbmodel.OperationDTO, 0)
+		lastErr           error
+		count, totalCount int
+	)
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		operations, count, totalCount, lastErr = session.ListOperationsByOrchestrationID(orchestrationID, filter)
+		if lastErr != nil {
+			if dberr.IsNotFound(lastErr) {
+				lastErr = dberr.NotFound("Operations for orchestration ID %s not exist", orchestrationID)
+				return false, lastErr
+			}
+			log.Errorf("while reading operation from the storage: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", lastErr)
+	}
+	ret, err := s.toUpgradeClusterOperationList(operations)
+	if err != nil {
+		return nil, -1, -1, errors.Wrapf(err, "while converting DTO to Operation")
+	}
+
+	return ret, count, totalCount, nil
+}
+
 func (s *operations) operationToDB(op internal.Operation) (dbmodel.OperationDTO, error) {
 	err := s.cipher.EncryptBasicAuth(&op.ProvisioningParameters)
 	if err != nil {
@@ -871,6 +1004,58 @@ func (s *operations) upgradeKymaOperationToDTO(op *internal.UpgradeKymaOperation
 	}
 	ret.Data = string(serialized)
 	ret.Type = dbmodel.OperationTypeUpgradeKyma
+	ret.OrchestrationID = storage.StringToSQLNullString(op.OrchestrationID)
+	return ret, nil
+}
+
+func (s *operations) toUpgradeClusterOperation(op *dbmodel.OperationDTO) (*internal.UpgradeClusterOperation, error) {
+	if op.Type != dbmodel.OperationTypeUpgradeCluster {
+		return nil, errors.New(fmt.Sprintf("expected operation type upgradeCluster, but was %s", op.Type))
+	}
+	var operation internal.UpgradeClusterOperation
+	var err error
+	err = json.Unmarshal([]byte(op.Data), &operation)
+	if err != nil {
+		return nil, errors.New("unable to unmarshall provisioning data")
+	}
+	operation.Operation, err = s.toOperation(op, operation.InstanceDetails)
+	if err != nil {
+		return nil, err
+	}
+	operation.RuntimeOperation.ID = op.ID
+	if op.OrchestrationID.Valid {
+		operation.OrchestrationID = op.OrchestrationID.String
+	}
+
+	return &operation, nil
+}
+
+func (s *operations) toUpgradeClusterOperationList(ops []dbmodel.OperationDTO) ([]internal.UpgradeClusterOperation, error) {
+	result := make([]internal.UpgradeClusterOperation, 0)
+
+	for _, op := range ops {
+		o, err := s.toUpgradeClusterOperation(&op)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting to upgrade cluster operation")
+		}
+		result = append(result, *o)
+	}
+
+	return result, nil
+}
+
+func (s *operations) upgradeClusterOperationToDTO(op *internal.UpgradeClusterOperation) (dbmodel.OperationDTO, error) {
+	serialized, err := json.Marshal(op)
+	if err != nil {
+		return dbmodel.OperationDTO{}, errors.Wrapf(err, "while serializing upgradeCluster data %v", op)
+	}
+
+	ret, err := s.operationToDB(op.Operation)
+	if err != nil {
+		return dbmodel.OperationDTO{}, errors.Wrapf(err, "while converting to operationDB %v", op)
+	}
+	ret.Data = string(serialized)
+	ret.Type = dbmodel.OperationTypeUpgradeCluster
 	ret.OrchestrationID = storage.StringToSQLNullString(op.OrchestrationID)
 	return ret, nil
 }

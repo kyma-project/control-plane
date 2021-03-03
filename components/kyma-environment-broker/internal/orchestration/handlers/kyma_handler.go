@@ -18,7 +18,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -60,7 +59,7 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 	}
 
 	// validate target
-	err := h.validateTarget(params.Targets)
+	err := validateTarget(params.Targets)
 	if err != nil {
 		h.log.Errorf("while validating target: %v", err)
 		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while validating target"))
@@ -76,11 +75,12 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 	}
 
 	// defaults strategy if not specified to Parallel with Immediate schedule
-	h.defaultOrchestrationStrategy(&params.Strategy)
+	defaultOrchestrationStrategy(&params.Strategy)
 
 	now := time.Now()
 	o := internal.Orchestration{
 		OrchestrationID: uuid.New().String(),
+		Type:            orchestration.UpgradeKymaOrchestration,
 		State:           orchestration.Pending,
 		Description:     "started processing of Kyma upgrade",
 		Parameters:      params,
@@ -100,23 +100,6 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 	response := orchestration.UpgradeResponse{OrchestrationID: o.OrchestrationID}
 
 	httputil.WriteResponse(w, http.StatusAccepted, response)
-}
-
-func (h *kymaHandler) resolveErrorStatus(err error) int {
-	cause := errors.Cause(err)
-	switch {
-	case dberr.IsNotFound(cause):
-		return http.StatusNotFound
-	default:
-		return http.StatusInternalServerError
-	}
-}
-
-func (h *kymaHandler) validateTarget(spec orchestration.TargetSpec) error {
-	if spec.Include == nil || len(spec.Include) == 0 {
-		return errors.New("targets.include array must be not empty")
-	}
-	return nil
 }
 
 // ValidateKymaVersion validates provided version. Supports three types of versioning:
@@ -163,23 +146,4 @@ func (h *kymaHandler) ValidateKymaVersion(version string) error {
 	}
 
 	return nil
-}
-
-func (h *kymaHandler) defaultOrchestrationStrategy(spec *orchestration.StrategySpec) {
-	if spec.Parallel.Workers == 0 {
-		spec.Parallel.Workers = 1
-	}
-
-	switch spec.Type {
-	case orchestration.ParallelStrategy:
-	default:
-		spec.Type = orchestration.ParallelStrategy
-	}
-
-	switch spec.Schedule {
-	case orchestration.MaintenanceWindow:
-	case orchestration.Immediate:
-	default:
-		spec.Schedule = orchestration.Immediate
-	}
 }

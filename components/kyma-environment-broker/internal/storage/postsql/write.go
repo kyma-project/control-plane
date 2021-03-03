@@ -125,6 +125,7 @@ func (ws writeSession) InsertOrchestration(o dbmodel.OrchestrationDTO) dberr.Err
 		Pair("updated_at", o.UpdatedAt).
 		Pair("description", o.Description).
 		Pair("state", o.State).
+		Pair("type", o.Type).
 		Pair("parameters", o.Parameters).
 		Exec()
 
@@ -147,6 +148,7 @@ func (ws writeSession) UpdateOrchestration(o dbmodel.OrchestrationDTO) dberr.Err
 		Set("updated_at", o.UpdatedAt).
 		Set("description", o.Description).
 		Set("state", o.State).
+		Set("type", o.Type).
 		Set("parameters", o.Parameters).
 		Exec()
 

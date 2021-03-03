@@ -234,6 +234,7 @@ func FixTables() map[string]string {
 		postsql.OrchestrationTableName: fmt.Sprintf(
 			`CREATE TABLE IF NOT EXISTS %s (
 			orchestration_id varchar(255) PRIMARY KEY,
+			type varchar(32) NOT NULL,
 			state varchar(32) NOT NULL,
 			description text,
 			parameters text NOT NULL,

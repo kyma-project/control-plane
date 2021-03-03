@@ -28,6 +28,7 @@ type Operations interface {
 	Provisioning
 	Deprovisioning
 	UpgradeKyma
+	UpgradeCluster
 
 	GetLastOperation(instanceID string) (*internal.Operation, error)
 	GetOperationByID(operationID string) (*internal.Operation, error)
@@ -60,7 +61,6 @@ type Orchestrations interface {
 	Update(orchestration internal.Orchestration) error
 	GetByID(orchestrationID string) (*internal.Orchestration, error)
 	List(filter dbmodel.OrchestrationFilter) ([]internal.Orchestration, int, int, error)
-	ListByState(state string) ([]internal.Orchestration, error)
 }
 
 type RuntimeStates interface {
@@ -77,6 +77,14 @@ type UpgradeKyma interface {
 	ListUpgradeKymaOperations() ([]internal.UpgradeKymaOperation, error)
 	ListUpgradeKymaOperationsByInstanceID(instanceID string) ([]internal.UpgradeKymaOperation, error)
 	ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeKymaOperation, int, int, error)
+}
+
+type UpgradeCluster interface {
+	InsertUpgradeClusterOperation(operation internal.UpgradeClusterOperation) error
+	UpdateUpgradeClusterOperation(operation internal.UpgradeClusterOperation) (*internal.UpgradeClusterOperation, error)
+	GetUpgradeClusterOperationByID(operationID string) (*internal.UpgradeClusterOperation, error)
+	ListUpgradeClusterOperationsByInstanceID(instanceID string) ([]internal.UpgradeClusterOperation, error)
+	ListUpgradeClusterOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeClusterOperation, int, int, error)
 }
 
 type LMSTenants interface {

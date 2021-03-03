@@ -18,7 +18,6 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	"github.com/dlmiddlecote/sqlstats"
-	gardenerclient "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -52,11 +51,12 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	orchestrate "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/kyma"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/manager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_cluster"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -485,20 +485,25 @@ func main() {
 	router.Handle("/metrics", promhttp.Handler())
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
-	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, gardenerClient,
-		gardenerNamespace, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, cfg.DefaultRequestRegion, upgradeEvalManager,
+
+	runtimeLister := orchestration.NewRuntimeLister(db.Instances(), db.Operations(), runtime.NewConverter(cfg.DefaultRequestRegion), logs)
+	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
+
+	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
 		&cfg, accountProvider, serviceManagerClientFactory, logs)
-	fatalOnError(err)
+	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, time.Minute, runtimeResolver, logs)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
-	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, cfg.MaxPaginationPage, logs)
+	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, clusterQueue, cfg.MaxPaginationPage, logs)
 
 	if !cfg.DisableProcessOperationsInProgress {
 		err = processOperationsInProgressByType(dbmodel.OperationTypeProvision, db.Operations(), provisionQueue, logs)
 		fatalOnError(err)
 		err = processOperationsInProgressByType(dbmodel.OperationTypeDeprovision, db.Operations(), deprovisionQueue, logs)
 		fatalOnError(err)
-		err = reprocessOrchestrations(db.Orchestrations(), db.Operations(), kymaQueue, logs)
+		err = reprocessOrchestrations(orchestrationExt.UpgradeKymaOrchestration, db.Orchestrations(), db.Operations(), kymaQueue, logs)
+		fatalOnError(err)
+		err = reprocessOrchestrations(orchestrationExt.UpgradeClusterOrchestration, db.Orchestrations(), db.Operations(), clusterQueue, logs)
 		fatalOnError(err)
 	} else {
 		logger.Info("Skipping processing operation in progress on start")
@@ -542,23 +547,27 @@ func processOperationsInProgressByType(opType dbmodel.OperationType, op storage.
 	return nil
 }
 
-func reprocessOrchestrations(orchestrationsStorage storage.Orchestrations, operationsStorage storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
-	if err := processCancelingOrchestrations(orchestrationsStorage, operationsStorage, queue, log); err != nil {
-		return errors.Wrap(err, "while processing canceled orchestrations")
+func reprocessOrchestrations(orchestrationType orchestrationExt.Type, orchestrationsStorage storage.Orchestrations, operationsStorage storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
+	if err := processCancelingOrchestrations(orchestrationType, orchestrationsStorage, operationsStorage, queue, log); err != nil {
+		return errors.Wrapf(err, "while processing canceled %s orchestrations", orchestrationType)
 	}
-	if err := processOrchestration(orchestrationExt.InProgress, orchestrationsStorage, queue, log); err != nil {
-		return errors.Wrap(err, "while processing in progress orchestrations")
+	if err := processOrchestration(orchestrationType, orchestrationExt.InProgress, orchestrationsStorage, queue, log); err != nil {
+		return errors.Wrapf(err, "while processing in progress %s orchestrations", orchestrationType)
 	}
-	if err := processOrchestration(orchestrationExt.Pending, orchestrationsStorage, queue, log); err != nil {
-		return errors.Wrap(err, "while processing pending orchestrations")
+	if err := processOrchestration(orchestrationType, orchestrationExt.Pending, orchestrationsStorage, queue, log); err != nil {
+		return errors.Wrapf(err, "while processing pending %s orchestrations", orchestrationType)
 	}
 	return nil
 }
 
-func processOrchestration(state string, orchestrationsStorage storage.Orchestrations, queue *process.Queue, log logrus.FieldLogger) error {
-	orchestrations, err := orchestrationsStorage.ListByState(state)
+func processOrchestration(orchestrationType orchestrationExt.Type, state string, orchestrationsStorage storage.Orchestrations, queue *process.Queue, log logrus.FieldLogger) error {
+	filter := dbmodel.OrchestrationFilter{
+		Types:  []string{string(orchestrationType)},
+		States: []string{state},
+	}
+	orchestrations, _, _, err := orchestrationsStorage.List(filter)
 	if err != nil {
-		return errors.Wrapf(err, "while getting %s orchestrations from storage", state)
+		return errors.Wrapf(err, "while getting %s %s orchestrations from storage", state, orchestrationType)
 	}
 	sort.Slice(orchestrations, func(i, j int) bool {
 		return orchestrations[i].CreatedAt.Before(orchestrations[j].CreatedAt)
@@ -566,29 +575,40 @@ func processOrchestration(state string, orchestrationsStorage storage.Orchestrat
 
 	for _, o := range orchestrations {
 		queue.Add(o.OrchestrationID)
-		log.Infof("Resuming the processing of %s orchestration ID: %s", state, o.OrchestrationID)
+		log.Infof("Resuming the processing of %s %s orchestration ID: %s", state, orchestrationType, o.OrchestrationID)
 	}
 	return nil
 }
 
 // processCancelingOrchestrations reprocess orchestrations with canceling state only when some in progress operations exists
 // reprocess only one orchestration to not clog up the orchestration queue on start
-func processCancelingOrchestrations(orchestrationsStorage storage.Orchestrations, operationsStorage storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
-	orchestrations, err := orchestrationsStorage.ListByState(orchestrationExt.Canceling)
+func processCancelingOrchestrations(orchestrationType orchestrationExt.Type, orchestrationsStorage storage.Orchestrations, operationsStorage storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
+	filter := dbmodel.OrchestrationFilter{
+		Types:  []string{string(orchestrationType)},
+		States: []string{orchestrationExt.Canceling},
+	}
+	orchestrations, _, _, err := orchestrationsStorage.List(filter)
 	if err != nil {
-		return errors.Wrap(err, "while getting canceling orchestrations from storage")
+		return errors.Wrapf(err, "while getting canceling %s orchestrations from storage", orchestrationType)
 	}
 	sort.Slice(orchestrations, func(i, j int) bool {
 		return orchestrations[i].CreatedAt.Before(orchestrations[j].CreatedAt)
 	})
 
 	for _, o := range orchestrations {
-		ops, _, _, err := operationsStorage.ListUpgradeKymaOperationsByOrchestrationID(o.OrchestrationID, dbmodel.OperationFilter{States: []string{orchestrationExt.InProgress}})
-		if err != nil {
-			return errors.Wrapf(err, "while listing upgrade kyma operations for orchestration %s", o.OrchestrationID)
+		count := 0
+		err = nil
+		if orchestrationType == orchestrationExt.UpgradeKymaOrchestration {
+			_, count, _, err = operationsStorage.ListUpgradeKymaOperationsByOrchestrationID(o.OrchestrationID, dbmodel.OperationFilter{States: []string{orchestrationExt.InProgress}})
+		} else if orchestrationType == orchestrationExt.UpgradeClusterOrchestration {
+			_, count, _, err = operationsStorage.ListUpgradeClusterOperationsByOrchestrationID(o.OrchestrationID, dbmodel.OperationFilter{States: []string{orchestrationExt.InProgress}})
 		}
-		if len(ops) > 0 {
-			log.Infof("Resuming the processing of %s orchestration ID: %s", orchestrationExt.Canceling, o.OrchestrationID)
+		if err != nil {
+			return errors.Wrapf(err, "while listing %s operations for orchestration %s", orchestrationType, o.OrchestrationID)
+		}
+
+		if count > 0 {
+			log.Infof("Resuming the processing of %s %s orchestration ID: %s", orchestrationExt.Canceling, orchestrationType, o.OrchestrationID)
 			queue.Add(o.OrchestrationID)
 			return nil
 		}
@@ -623,13 +643,12 @@ func fatalOnError(err error) {
 	}
 }
 
-func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStorage,
+func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStorage,
 	runtimeOverrides upgrade_kyma.RuntimeOverridesAppender, provisionerClient provisioner.Client,
-	gardenerClient gardenerclient.CoreV1beta1Interface, gardenerNamespace string, pub event.Publisher,
-	inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
+	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
-	defaultRegion string, upgradeEvalManager *upgrade_kyma.EvaluationManager,
-	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory, logs logrus.FieldLogger) (*process.Queue, error) {
+	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *upgrade_kyma.EvaluationManager,
+	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory, logs logrus.FieldLogger) *process.Queue {
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Orchestrations(), db.Instances(),
@@ -680,15 +699,27 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 		}
 	}
 
-	runtimeLister := orchestration.NewRuntimeLister(db.Instances(), db.Operations(), runtime.NewConverter(defaultRegion), logs)
-	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
-
-	orchestrateKymaManager := kyma.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(), db.Instances(),
-		upgradeKymaManager, runtimeResolver, pollingInterval, smcf, logs)
+	orchestrateKymaManager := manager.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(), db.Instances(),
+		upgradeKymaManager, runtimeResolver, pollingInterval, smcf, logs.WithField("upgradeKyma", "orchestration"))
 	queue := process.NewQueue(orchestrateKymaManager, logs)
 
-	// only one orchestration can be processed at the same time
+	// TODO: allow multiple orchestration processing concurrently
 	queue.Run(ctx.Done(), 1)
 
-	return queue, nil
+	return queue
+}
+
+func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStorage, provisionerClient provisioner.Client,
+	pub event.Publisher, inputFactory input.CreatorForPlan, pollingInterval time.Duration, runtimeResolver orchestrationExt.RuntimeResolver,
+	logs logrus.FieldLogger) *process.Queue {
+
+	upgradeClusterManager := upgrade_cluster.NewManager(db.Operations(), pub, logs.WithField("upgradeCluster", "manager"))
+	orchestrateClusterManager := manager.NewUpgradeClusterManager(db.Orchestrations(), db.Operations(), db.Instances(),
+		upgradeClusterManager, runtimeResolver, pollingInterval, logs.WithField("upgradeCluster", "orchestration"))
+	queue := process.NewQueue(orchestrateClusterManager, logs)
+
+	// TODO: allow multiple orchestration processing concurrently
+	queue.Run(ctx.Done(), 1)
+
+	return queue
 }
