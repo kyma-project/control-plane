@@ -41,7 +41,7 @@ func (s *provideLmsTenantStep) Name() string {
 	return "Create_LMS_Tenant"
 }
 
-func (s *provideLmsTenantStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *provideLmsTenantStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if operation.Lms.TenantID != "" {
 		return operation, 0, nil
 	}
@@ -51,7 +51,7 @@ func (s *provideLmsTenantStep) Run(operation internal.ProvisioningOperation, log
 	if err != nil {
 		return s.handleError(
 			operation,
-			logger,
+			log,
 			time.Since(operation.UpdatedAt),
 			fmt.Sprintf("Unable to get tenant for GlobalaccountID/region %s/%s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, region),
 			err)
@@ -62,9 +62,8 @@ func (s *provideLmsTenantStep) Run(operation internal.ProvisioningOperation, log
 		if operation.Lms.RequestedAt.IsZero() {
 			operation.Lms.RequestedAt = time.Now()
 		}
-	})
+	}, log)
 	if repeat != 0 {
-		logger.Errorf("cannot save LMS tenant ID")
 		return operation, time.Second, nil
 	}
 

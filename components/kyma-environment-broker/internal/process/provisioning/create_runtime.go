@@ -2,8 +2,9 @@ package provisioning
 
 import (
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 
@@ -47,12 +48,12 @@ func (s *CreateRuntimeStep) Name() string {
 func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CreateRuntimeTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout), log)
 	}
 	requestInput, err := s.createProvisionInput(operation)
 	if err != nil {
 		log.Errorf("Unable to create provisioning input: %s", err.Error())
-		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create provisioning input")
+		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create provisioning input", log)
 	}
 
 	var provisionerResponse gqlschema.OperationStatus
@@ -71,7 +72,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 			return operation, 5 * time.Second, nil
 		case err != nil:
 			log.Errorf("call to Provisioner failed: %s", err)
-			return s.operationManager.OperationFailed(operation, "call to the provisioner service failed")
+			return s.operationManager.OperationFailed(operation, "call to the provisioner service failed", log)
 		}
 
 		repeat := time.Duration(0)
@@ -80,7 +81,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 			if provisionerResponse.RuntimeID != nil {
 				operation.RuntimeID = *provisionerResponse.RuntimeID
 			}
-		})
+		}, log)
 		if repeat != 0 {
 			log.Errorf("cannot save operation ID from provisioner")
 			return operation, 5 * time.Second, nil

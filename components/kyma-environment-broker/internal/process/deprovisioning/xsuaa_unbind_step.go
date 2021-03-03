@@ -42,8 +42,10 @@ func (s *XSUAAUnbindStep) Run(operation internal.DeprovisioningOperation, log lo
 	if err != nil {
 		return s.handleError(operation, err, fmt.Sprintf("unable to unbind, bindingId=%s", operation.XSUAA.BindingID), log)
 	}
-	operation.XSUAA.BindingID = ""
-	return s.operationManager.UpdateOperation(operation)
+	updatedOperation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
+		operation.XSUAA.BindingID = ""
+	}, log)
+	return updatedOperation, retry, nil
 }
 
 func (s *XSUAAUnbindStep) handleError(operation internal.DeprovisioningOperation, err error, msg string, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
@@ -52,6 +54,6 @@ func (s *XSUAAUnbindStep) handleError(operation internal.DeprovisioningOperation
 	case kebError.IsTemporaryError(err):
 		return s.operationManager.RetryOperation(operation, msg, 10*time.Second, time.Minute*30, log)
 	default:
-		return s.operationManager.OperationFailed(operation, msg)
+		return s.operationManager.OperationFailed(operation, msg, log)
 	}
 }

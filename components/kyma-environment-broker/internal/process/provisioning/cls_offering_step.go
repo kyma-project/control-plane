@@ -64,7 +64,7 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 	}
 	if len(offerings.ServiceOfferings) != 1 {
 		return s.operationManager.OperationFailed(operation,
-			fmt.Sprintf("expected one %s Service Manager offering, but found %d", ClsOfferingName, len(offerings.ServiceOfferings)))
+			fmt.Sprintf("expected one %s Service Manager offering, but found %d", ClsOfferingName, len(offerings.ServiceOfferings)), log)
 	}
 	info.ServiceID = offerings.ServiceOfferings[0].CatalogID
 	info.BrokerID = offerings.ServiceOfferings[0].BrokerID
@@ -77,12 +77,12 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 	}
 	if len(plans.ServicePlans) != 1 {
 		return s.operationManager.OperationFailed(operation,
-			fmt.Sprintf("expected one %s Service Manager plan, but found %d", ClsPlanName, len(offerings.ServiceOfferings)))
+			fmt.Sprintf("expected one %s Service Manager plan, but found %d", ClsPlanName, len(offerings.ServiceOfferings)), log)
 	}
 	info.PlanID = plans.ServicePlans[0].CatalogID
 	log.Infof("Found plan: catalogID=%s", info.PlanID)
 
-	op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {})
+	op, retry := s.operationManager.SimpleUpdateOperation(operation)
 	if retry > 0 {
 		log.Errorf("unable to update the operation")
 		return op, retry, nil
@@ -96,6 +96,6 @@ func (s *ClsOfferingStep) handleError(operation internal.ProvisioningOperation, 
 	case kebError.IsTemporaryError(err):
 		return s.operationManager.RetryOperation(operation, msg, 10*time.Second, time.Minute*30, log)
 	default:
-		return s.operationManager.OperationFailed(operation, msg)
+		return s.operationManager.OperationFailed(operation, msg, log)
 	}
 }

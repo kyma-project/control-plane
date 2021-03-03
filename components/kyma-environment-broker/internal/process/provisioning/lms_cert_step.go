@@ -89,7 +89,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 		logger.Infof("LMS tenant not ready: elasticDNS=%v, kibanaDNS=%v", status.ElasticsearchDNSResolves, status.KibanaDNSResolves)
 		if time.Since(operation.Lms.RequestedAt) > lmsTimeout {
 			logger.Error("Setting LMS operation failed - tenant provisioning timed out")
-			return s.failLmsAndUpdate(operation, "LMS Tenant provisioning timeout")
+			return s.failLmsAndUpdate(operation, "LMS Tenant provisioning timeout", l)
 		}
 		return operation, tenantReadyRetryInterval, nil
 	}
@@ -137,7 +137,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 	})
 	if err != nil {
 		logger.Errorf("Setting LMS operation failed: %s", err.Error())
-		return s.failLmsAndUpdate(operation, "Getting LMS Signed Certificate timeout")
+		return s.failLmsAndUpdate(operation, "Getting LMS Signed Certificate timeout", l)
 	}
 
 	// get CA cert
@@ -156,7 +156,7 @@ func (s *lmsCertStep) Run(operation internal.ProvisioningOperation, l logrus.Fie
 	})
 	if err != nil {
 		logger.Errorf("Setting LMS operation failed: %s", err.Error())
-		return s.failLmsAndUpdate(operation, "getting LMS CA certificate timeout")
+		return s.failLmsAndUpdate(operation, "getting LMS CA certificate timeout", l)
 	}
 
 	operation.InputCreator.SetLabel(kibanaURLLabelKey, fmt.Sprintf("https://kibana.%s", tenantInfo.DNS))
@@ -217,17 +217,17 @@ func (s *LmsStep) handleError(operation internal.ProvisioningOperation, log logr
 		if since < s.expirationTime {
 			return operation, tenantReadyRetryInterval, nil
 		}
-		return s.failLmsAndUpdate(operation, "getting LMS tenant failed")
+		return s.failLmsAndUpdate(operation, "getting LMS tenant failed", log)
 	}
 }
 
-func (s *LmsStep) failLmsAndUpdate(operation internal.ProvisioningOperation, msg string) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *LmsStep) failLmsAndUpdate(operation internal.ProvisioningOperation, msg string, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	operation.Lms.Failed = true
 	if s.isMandatory {
-		return s.operationManager.OperationFailed(operation, msg)
+		return s.operationManager.OperationFailed(operation, msg, log)
 	}
 	modifiedOp, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 		operation.Lms.Failed = true
-	})
+	}, log)
 	return modifiedOp, retry, nil
 }

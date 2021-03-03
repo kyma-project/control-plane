@@ -45,7 +45,7 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.UpgradeKymaOp
 	planName, exists := broker.PlanNamesMapping[operation.ProvisioningParameters.PlanID]
 	if !exists {
 		log.Errorf("cannot map planID '%s' to planName", operation.ProvisioningParameters.PlanID)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters")
+		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters", log)
 	}
 
 	version, err := s.getRuntimeVersion(operation)

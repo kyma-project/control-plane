@@ -2,8 +2,9 @@ package process
 
 import (
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
 	"github.com/sirupsen/logrus"
 
@@ -23,8 +24,8 @@ func NewProvisionOperationManager(storage storage.Operations) *ProvisionOperatio
 }
 
 // OperationSucceeded marks the operation as succeeded and only repeats it if there is a storage error
-func (om *ProvisionOperationManager) OperationSucceeded(operation internal.ProvisioningOperation, description string) (internal.ProvisioningOperation, time.Duration, error) {
-	updatedOperation, repeat := om.update(operation, domain.Succeeded, description)
+func (om *ProvisionOperationManager) OperationSucceeded(operation internal.ProvisioningOperation, description string, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	updatedOperation, repeat := om.update(operation, domain.Succeeded, description, log)
 	// repeat in case of storage error
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
@@ -34,8 +35,8 @@ func (om *ProvisionOperationManager) OperationSucceeded(operation internal.Provi
 }
 
 // OperationFailed marks the operation as failed and only repeats it if there is a storage error
-func (om *ProvisionOperationManager) OperationFailed(operation internal.ProvisioningOperation, description string) (internal.ProvisioningOperation, time.Duration, error) {
-	updatedOperation, repeat := om.update(operation, domain.Failed, description)
+func (om *ProvisionOperationManager) OperationFailed(operation internal.ProvisioningOperation, description string, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	updatedOperation, repeat := om.update(operation, domain.Failed, description, log)
 	// repeat in case of storage error
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
@@ -45,31 +46,33 @@ func (om *ProvisionOperationManager) OperationFailed(operation internal.Provisio
 }
 
 // UpdateOperation updates a given operation and handles conflict situation
-func (om *ProvisionOperationManager) UpdateOperation(operation internal.ProvisioningOperation, overwrite func(operation *internal.ProvisioningOperation)) (internal.ProvisioningOperation, time.Duration) {
-	overwrite(&operation)
+func (om *ProvisionOperationManager) UpdateOperation(operation internal.ProvisioningOperation, update func(operation *internal.ProvisioningOperation), log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration) {
+	update(&operation)
 	updatedOperation, err := om.storage.UpdateProvisioningOperation(operation)
-	if err != nil {
-		if dberr.IsConflict(err) {
+	switch {
+	case dberr.IsConflict(err):
+		{
 			op, err := om.storage.GetProvisioningOperationByID(operation.ID)
 			if err != nil {
+				log.Errorf("while getting operation: %v", err)
 				return operation, 1 * time.Minute
 			}
-			overwrite(op)
-			updatedOperation, err = om.storage.UpdateProvisioningOperation(operation)
+			update(op)
+			updatedOperation, err = om.storage.UpdateProvisioningOperation(*op)
 			if err != nil {
+				log.Errorf("while updating operation after conflict: %v", err)
 				return operation, 1 * time.Minute
 			}
 		}
-		logrus.WithField("operation", operation.ID).
-			WithField("instanceID", operation.InstanceID).
-			Errorf("Update provisioning operation failed: %s", err.Error())
+	case err != nil:
+		log.Errorf("while updating operation: %v", err)
 		return operation, 1 * time.Minute
 	}
 	return *updatedOperation, 0
 }
 
-// SimpleUpdateOperation updates a given operation without handling conflicts
-func (om *ProvisionOperationManager) SimpleUpdateOperation(operation internal.ProvisioningOperation, overwrite func(operation *internal.ProvisioningOperation)) (internal.ProvisioningOperation, time.Duration) {
+// Deprecated: SimpleUpdateOperation updates a given operation without handling conflicts. Should be used when operation's data mutations are not clear
+func (om *ProvisionOperationManager) SimpleUpdateOperation(operation internal.ProvisioningOperation) (internal.ProvisioningOperation, time.Duration) {
 	updatedOperation, err := om.storage.UpdateProvisioningOperation(operation)
 	if err != nil {
 		logrus.WithField("operation", operation.ID).
@@ -95,12 +98,12 @@ func (om *ProvisionOperationManager) RetryOperation(operation internal.Provision
 		return operation, retryInterval, nil
 	}
 	log.Errorf("Aborting after %s of failing retries", maxTime.String())
-	return om.OperationFailed(operation, errorMessage)
+	return om.OperationFailed(operation, errorMessage, log)
 }
 
-func (om *ProvisionOperationManager) update(operation internal.ProvisioningOperation, state domain.LastOperationState, description string) (internal.ProvisioningOperation, time.Duration) {
+func (om *ProvisionOperationManager) update(operation internal.ProvisioningOperation, state domain.LastOperationState, description string, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration) {
 	return om.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 		operation.State = state
 		operation.Description = fmt.Sprintf("%s : %s", operation.Description, description)
-	})
+	}, log)
 }

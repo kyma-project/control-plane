@@ -43,7 +43,7 @@ func (s *XSUAAProvisioningStep) Run(operation internal.ProvisioningOperation, lo
 		log.Errorf("ShootDomain is not set in the operation")
 		// this may happen, when a provisioning is started with a version which does not set the Domain
 		// then KEB is restarted to a newer version
-		return s.operationManager.OperationFailed(operation, "The `ShootDomain` must be set in the operation, but it is empty")
+		return s.operationManager.OperationFailed(operation, "The `ShootDomain` must be set in the operation, but it is empty", log)
 	}
 
 	// first try to save the instance ID then perform provisioning to be sure we do not loose provisioned Id
@@ -57,7 +57,7 @@ func (s *XSUAAProvisioningStep) Run(operation internal.ProvisioningOperation, lo
 		if operation.XSUAA.XSAppname == "" {
 			operation.XSUAA.XSAppname = uaa.XSAppname(operation.ShootDomain)
 		}
-	})
+	}, log)
 	if retry > 0 {
 		return operation, time.Second, nil
 	}
@@ -90,7 +90,7 @@ func (s *XSUAAProvisioningStep) Run(operation internal.ProvisioningOperation, lo
 		if resp.IsDone() {
 			operation.XSUAA.Instance.Provisioned = true
 		}
-	})
+	}, log)
 	if retry > 0 {
 		return operation, time.Second, nil
 	}
@@ -104,6 +104,6 @@ func (s *XSUAAProvisioningStep) handleError(operation internal.ProvisioningOpera
 	case kebError.IsTemporaryError(err):
 		return s.operationManager.RetryOperation(operation, msg, 10*time.Second, time.Minute*30, log)
 	default:
-		return s.operationManager.OperationFailed(operation, msg)
+		return s.operationManager.OperationFailed(operation, msg, log)
 	}
 }

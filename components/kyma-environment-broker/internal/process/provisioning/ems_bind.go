@@ -64,7 +64,7 @@ func (s *EmsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 	case servicemanager.InProgress:
 		return operation, 10 * time.Second, nil
 	case servicemanager.Failed:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("Ems provisioning failed: %s", resp.Description))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("Ems provisioning failed: %s", resp.Description), log)
 	}
 	// execute binding
 	var eventingOverrides *EventingOverrides
@@ -91,7 +91,7 @@ func (s *EmsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 			operation.Ems.Overrides = encryptedOverrides
 			operation.Ems.Instance.Provisioned = true
 			operation.Ems.Instance.ProvisioningTriggered = false
-		})
+		}, log)
 		if retry > 0 {
 			log.Errorf("unable to update operation")
 			return operation, time.Second, nil
@@ -113,7 +113,7 @@ func (s *EmsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 
 func (s *EmsBindStep) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
-	return s.operationManager.OperationFailed(operation, msg)
+	return s.operationManager.OperationFailed(operation, msg, log)
 }
 
 func GetEventingCredentials(binding servicemanager.Binding) (*EventingOverrides, error) {

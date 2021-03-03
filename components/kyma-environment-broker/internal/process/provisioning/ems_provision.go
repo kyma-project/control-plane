@@ -52,7 +52,7 @@ func (s *EmsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 	// save the status
 	operation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 		operation.Ems.Instance.ProvisioningTriggered = true
-	})
+	}, log)
 	if retry > 0 {
 		log.Errorf("unable to update operation")
 		return operation, time.Second, nil
@@ -77,7 +77,7 @@ func (s *EmsProvisionStep) provision(smCli servicemanager.Client, operation inte
 
 func (s *EmsProvisionStep) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
-	return s.operationManager.OperationFailed(operation, msg)
+	return s.operationManager.OperationFailed(operation, msg, log)
 }
 
 func GetEventingProvisioningData(emsInstanceDetails internal.EmsData) *servicemanager.ProvisioningInput {
