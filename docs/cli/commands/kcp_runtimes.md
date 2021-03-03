@@ -21,6 +21,7 @@ kcp runtimes [flags]
                                                          Display the custom fields about one Runtime identified by a Shoot name.
   kcp runtimes -o custom="INSTANCE ID:instanceID,SHOOTNAME:shootName,runtimeID:runtimeID,STATUS:{status.provisioning}"
                                                          Display all Runtimes with specific custom fields.
+  kcp runtimes -t "failed" -o custom="INSTANCE ID:instanceID,SHOOTNAME:shootName,STATUS:runtimeStatus"
 ```
 
 ## Options
@@ -32,13 +33,14 @@ kcp runtimes [flags]
   -r, --region strings       Filter by provider region. You can provide multiple values, either separated by a comma (e.g. westeurope,northeurope), or by specifying the option multiple times.
   -i, --runtime-id strings   Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.
   -c, --shoot strings        Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.
+  -t, --state string         Filter by state. You can provide multiple values, either separated by a comma (e.g. succeeded,failed,provision,deprovision), or by specifying the option multiple times.
   -s, --subaccount strings   Filter by subaccount ID. You can provide multiple values, either separated by a comma (e.g. SAID1,SAID2), or by specifying the option multiple times.
 ```
 
 ## Global Options
 
 ```
-      --config string                Path to the KCP CLI config file. Can also be set using the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml .
+      --config string                Path to the KCP CLI config file. Can also be set using the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml.
       --gardener-kubeconfig string   Path to the kubeconfig file of the corresponding Gardener project which has permissions to list/get Shoots. Can also be set using the KCP_GARDENER_KUBECONFIG environment variable.
       --gardener-namespace string    Gardener Namespace (project) to use. Can also be set using the KCP_GARDENER_NAMESPACE environment variable.
   -h, --help                         Option that displays help for the CLI.
