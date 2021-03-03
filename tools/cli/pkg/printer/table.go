@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"strings"
 
 	"github.com/liggitt/tabwriter"
 	"k8s.io/client-go/util/jsonpath"
@@ -40,6 +41,7 @@ type Column struct {
 // TablePrinter prints objects in table format, according to the given column definitions.
 type TablePrinter interface {
 	PrintObj(obj interface{}) error
+	PrintObjWithFieldFormatterFilter(obj interface{}, filter string) error
 }
 
 type tablePrinter struct {
@@ -96,6 +98,32 @@ func (t *tablePrinter) PrintObj(obj interface{}) error {
 	return nil
 }
 
+func (t *tablePrinter) PrintObjWithFieldFormatterFilter(obj interface{}, filter string) error {
+	defer t.writer.Flush()
+
+	if !t.noHeaders && !t.headersPrinted {
+		t.printHeader()
+		t.headersPrinted = true
+	}
+
+	// Print the object, identify whether it is a slice of objects or single object
+	s := reflect.ValueOf(obj)
+	if s.Kind() == reflect.Slice {
+		objs := toInterfaceSlice(obj)
+		for idx := range objs {
+			if err := t.printOneObjWithFieldFormatterFilter(objs[idx], filter); err != nil {
+				return err
+			}
+		}
+	} else {
+		if err := t.printOneObjWithFieldFormatterFilter(obj, filter); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func toInterfaceSlice(obj interface{}) []interface{} {
 	s := reflect.ValueOf(obj)
 	ret := make([]interface{}, s.Len())
@@ -128,5 +156,33 @@ func (t *tablePrinter) printOneObj(obj interface{}) error {
 	}
 
 	fmt.Fprint(t.writer, "\n")
+	return nil
+}
+
+func (t *tablePrinter) printOneObjWithFieldFormatterFilter(obj interface{}, filter string) error {
+	var continueToPrintObject = false
+	for idex := range t.columns {
+		if t.columns[idex].FieldFormatter != nil {
+			if strings.Contains(t.columns[idex].FieldFormatter(obj), filter) {
+				continueToPrintObject = true
+			}
+		}
+	}
+
+	if continueToPrintObject {
+		for idx := range t.columns {
+			if t.columns[idx].FieldFormatter != nil {
+				fmt.Fprintf(t.writer, "%s\t", t.columns[idx].FieldFormatter(obj))
+			} else {
+				err := t.columns[idx].parser.Execute(t.writer, obj)
+				fmt.Fprint(t.writer, "\t")
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		fmt.Fprint(t.writer, "\n")
+	}
 	return nil
 }
