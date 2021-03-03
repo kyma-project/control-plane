@@ -2,14 +2,13 @@ package hyperscaler
 
 import (
 	"fmt"
+	"k8s.io/client-go/kubernetes"
 	"sync"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	restclient "k8s.io/client-go/rest"
 )
 
 type Type string
@@ -34,19 +33,19 @@ type AccountPool interface {
 	IsSecretBindingInternal(hyperscalerType Type, tenantName string) (bool, error)
 }
 
-func NewAccountPool(gardenerClusterConfig *restclient.Config, secretBindingsClient gardener_apis.SecretBindingInterface, shootsClient gardener_apis.ShootInterface) AccountPool {
+func NewAccountPool(kubernetesInterface kubernetes.Interface, secretBindingsClient gardener_apis.SecretBindingInterface, shootsClient gardener_apis.ShootInterface) AccountPool {
 	return &secretsAccountPool{
-		gardenerClusterConfig: gardenerClusterConfig,
-		secretBindingsClient:  secretBindingsClient,
-		shootsClient:          shootsClient,
+		kubernetesInterface:  kubernetesInterface,
+		secretBindingsClient: secretBindingsClient,
+		shootsClient:         shootsClient,
 	}
 }
 
 type secretsAccountPool struct {
-	gardenerClusterConfig *restclient.Config
-	secretBindingsClient  gardener_apis.SecretBindingInterface
-	shootsClient          gardener_apis.ShootInterface
-	mux                   sync.Mutex
+	kubernetesInterface  kubernetes.Interface
+	secretBindingsClient gardener_apis.SecretBindingInterface
+	shootsClient         gardener_apis.ShootInterface
+	mux                  sync.Mutex
 }
 
 func (p *secretsAccountPool) IsSecretBindingInternal(hyperscalerType Type, tenantName string) (bool, error) {
@@ -122,7 +121,7 @@ func (p *secretsAccountPool) Credentials(hyperscalerType Type, tenantName string
 		return Credentials{}, err
 	}
 	if secretBinding != nil {
-		return credentialsFromBoundSecret(p.gardenerClusterConfig, secretBinding, hyperscalerType)
+		return credentialsFromBoundSecret(p.kubernetesInterface, secretBinding, hyperscalerType)
 	}
 
 	// lock so that only one thread can fetch an unassigned secret and assign it (update secret with tenantName)
@@ -145,7 +144,7 @@ func (p *secretsAccountPool) Credentials(hyperscalerType Type, tenantName string
 		return Credentials{}, errors.Wrapf(err, "error updating secret binding with tenantName: %s", tenantName)
 	}
 
-	return credentialsFromBoundSecret(p.gardenerClusterConfig, updatedSecretBinding, hyperscalerType)
+	return credentialsFromBoundSecret(p.kubernetesInterface, updatedSecretBinding, hyperscalerType)
 }
 
 func getSecretBinding(secretBindingsClient gardener_apis.SecretBindingInterface, labelSelector string) (*v1beta1.SecretBinding, error) {
@@ -162,11 +161,8 @@ func getSecretBinding(secretBindingsClient gardener_apis.SecretBindingInterface,
 	return nil, nil
 }
 
-func credentialsFromBoundSecret(gardenerClusterConfig *restclient.Config, secretBinding *v1beta1.SecretBinding, hyperscalerType Type) (Credentials, error) {
-	secretClient, err := gardener.NewGardenerSecretsInterface(gardenerClusterConfig, secretBinding.SecretRef.Namespace)
-	if err != nil {
-		return Credentials{}, errors.Wrapf(err, "creating gardener secrets interface for %s namespace", secretBinding.SecretRef.Namespace)
-	}
+func credentialsFromBoundSecret(kubernetesInterface kubernetes.Interface, secretBinding *v1beta1.SecretBinding, hyperscalerType Type) (Credentials, error) {
+	secretClient := kubernetesInterface.CoreV1().Secrets(secretBinding.SecretRef.Namespace)
 
 	secret, err := secretClient.Get(secretBinding.SecretRef.Name, metav1.GetOptions{})
 	if err != nil {

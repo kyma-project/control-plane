@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"k8s.io/client-go/kubernetes"
 	"log"
 	"net/http"
 	"os"
@@ -229,14 +230,14 @@ func main() {
 	fatalOnError(err)
 	gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
 	fatalOnError(err)
-	gardenerSecrets, err := gardener.NewGardenerSecretsInterface(gardenerClusterConfig, cfg.Gardener.Project)
+	kubernetesClient, err := kubernetes.NewForConfig(gardenerClusterConfig)
 	fatalOnError(err)
 	gardenerSecretBindings := gardener.NewGardenerSecretBindingsInterface(gardenerClient, cfg.Gardener.Project)
 	gardenerShoots, err := gardener.NewGardenerShootInterface(gardenerClusterConfig, cfg.Gardener.Project)
 	fatalOnError(err)
 
-	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerClusterConfig, gardenerSecretBindings, gardenerShoots)
-	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecrets, gardenerShoots)
+	gardenerAccountPool := hyperscaler.NewAccountPool(kubernetesClient, gardenerSecretBindings, gardenerShoots)
+	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(kubernetesClient, gardenerSecretBindings, gardenerShoots)
 	accountProvider := hyperscaler.NewAccountProvider(gardenerAccountPool, gardenerSharedPool)
 
 	regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)

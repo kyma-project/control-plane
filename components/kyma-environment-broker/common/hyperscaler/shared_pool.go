@@ -2,32 +2,30 @@ package hyperscaler
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/kubernetes"
 )
 
 type SharedPool interface {
 	SharedCredentials(hyperscalerType Type) (Credentials, error)
 }
 
-func NewSharedGardenerAccountPool(gardenerClusterConfig *restclient.Config, secretBindingsClient gardener_apis.SecretBindingInterface, shootsClient gardener_apis.ShootInterface) *SharedAccountPool {
+func NewSharedGardenerAccountPool(kubernetesInterface kubernetes.Interface, secretBindingsClient gardener_apis.SecretBindingInterface, shootsClient gardener_apis.ShootInterface) *SharedAccountPool {
 	return &SharedAccountPool{
-		gardenerClusterConfig: gardenerClusterConfig,
-		secretBindingsClient:  secretBindingsClient,
-		shootsClient:          shootsClient,
+		kubernetesInterface:  kubernetesInterface,
+		secretBindingsClient: secretBindingsClient,
+		shootsClient:         shootsClient,
 	}
 }
 
 type SharedAccountPool struct {
-	gardenerClusterConfig *restclient.Config
-	secretBindingsClient  gardener_apis.SecretBindingInterface
-	shootsClient          gardener_apis.ShootInterface
-	mux                   sync.Mutex
+	kubernetesInterface  kubernetes.Interface
+	secretBindingsClient gardener_apis.SecretBindingInterface
+	shootsClient         gardener_apis.ShootInterface
 }
 
 func (sp *SharedAccountPool) SharedCredentials(hyperscalerType Type) (Credentials, error) {
@@ -42,7 +40,7 @@ func (sp *SharedAccountPool) SharedCredentials(hyperscalerType Type) (Credential
 		return Credentials{}, err
 	}
 
-	return credentialsFromBoundSecret(sp.gardenerClusterConfig, &secretBinding, hyperscalerType)
+	return credentialsFromBoundSecret(sp.kubernetesInterface, &secretBinding, hyperscalerType)
 }
 
 func getSecretBindings(secretBindingsClient gardener_apis.SecretBindingInterface, labelSelector string) ([]v1beta1.SecretBinding, error) {
