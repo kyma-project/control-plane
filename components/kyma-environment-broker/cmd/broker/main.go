@@ -183,7 +183,6 @@ func main() {
 	// create storage
 	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
 	var db storage.BrokerStorage
-	cfg.DbInMemory = true
 	if cfg.DbInMemory {
 		db = storage.NewMemoryStorage()
 	} else {
@@ -225,7 +224,8 @@ func main() {
 		fatalOnError(err)
 	}
 	clsClient := cls.NewClient(clsConfig, logs.WithField("service", "clsClient"))
-	clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient, logs.WithField("service", "clsProvisioner"))
+	var clsDb = storage.NewMemoryStorage()
+	clsProvisioner := cls.NewProvisioner(clsDb.CLSInstances(), clsClient, logs.WithField("service", "clsProvisioner"))
 
 	//// LMS
 	//fatalOnError(cfg.LMS.Validate())
@@ -435,7 +435,7 @@ func main() {
 
 	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, serviceManagerClientFactory, cfg.OperationTimeout)
 	deprovisionManager.InitStep(deprovisioningInit)
-	clsDeprovisioner := cls.NewDeprovisioner(db.CLSInstances(), clsClient, logs.WithField("service", "clsDeprovisioner"))
+	clsDeprovisioner := cls.NewDeprovisioner(clsDb.CLSInstances(), clsClient, logs.WithField("service", "clsDeprovisioner"))
 
 	deprovisioningSteps := []struct {
 		disabled bool
