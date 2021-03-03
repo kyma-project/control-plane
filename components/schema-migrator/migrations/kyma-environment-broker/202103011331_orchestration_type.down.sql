@@ -1,2 +1,2 @@
 ALTER TABLE orchestrations
-    DROP COLUMN type;
+    DROP COLUMN [type];
