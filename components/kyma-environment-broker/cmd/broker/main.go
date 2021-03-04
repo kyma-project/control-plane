@@ -353,7 +353,7 @@ func main() {
 		//},
 		{
 			weight: 3,
-			step:   provisioning.NewSkipForAzurePlanStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+			step:   provisioning.NewSkipForAllStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
 		{
 			weight: 3,
@@ -416,10 +416,10 @@ func main() {
 			weight: 1,
 			step:   deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
-		{
-			weight: 1,
-			step:   deprovisioning.NewSkipForAzurePlanStep(deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
-		},
+		//{
+		//	weight: 1,
+		//	step:   deprovisioning.NewSkipForAllStep(deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+		//},
 		{
 			weight:   1,
 			step:     deprovisioning.NewEDPDeregistrationStep(edpClient, cfg.EDP),
