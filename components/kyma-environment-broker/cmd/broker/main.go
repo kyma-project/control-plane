@@ -347,10 +347,10 @@ func main() {
 			step:     provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
 			disabled: cfg.EDP.Disabled,
 		},
-		{
-			weight: 3,
-			step:   provisioning.NewSkipForTrialPlanStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
-		},
+		//{
+		//	weight: 3,
+		//	step:   provisioning.NewSkipForTrialPlanStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+		//},
 		{
 			weight: 3,
 			step:   provisioning.NewSkipForAzurePlanStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),

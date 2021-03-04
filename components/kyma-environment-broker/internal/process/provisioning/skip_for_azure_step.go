@@ -3,10 +3,11 @@ package provisioning
 import (
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 )
 
 type SkipForAzurePlanStep struct {
@@ -24,10 +25,13 @@ func (s *SkipForAzurePlanStep) Name() string {
 }
 
 func (s *SkipForAzurePlanStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	log.Infof("SkipForAzurePlanStep: %#v", operation)
 	if broker.IsAzurePlan(operation.ProvisioningParameters.PlanID) {
 		log.Infof("Skipping step %s", s.Name())
-		return operation, 0, nil
+		//return operation, 0, nil
+	} else {
+		log.Infof("Don't skip step %s", s.Name())
 	}
-
-	return s.step.Run(operation, log)
+	return operation, 0, nil
+	//return s.step.Run(operation, log)
 }
