@@ -373,6 +373,14 @@ components:
     StatusResponse:
       type: object
       properties:
+        type:
+          type: string
+          enum: [
+            "upgradeKyma",
+            "upgradeCluster"
+          ]
+          description: "Orchestration type, either kyma upgrade or cluster upgrade"
+          example: "upgradeKyma"
         state:
           type: string
           example: in progress
