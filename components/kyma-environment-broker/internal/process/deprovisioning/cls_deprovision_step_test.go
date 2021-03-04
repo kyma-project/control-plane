@@ -16,6 +16,7 @@ import (
 )
 
 func TestClsDeprovisionStepNoopRun(t *testing.T) {
+	// given
 	config := &cls.Config{}
 
 	db := storage.NewMemoryStorage()
@@ -39,12 +40,16 @@ func TestClsDeprovisionStepNoopRun(t *testing.T) {
 		SMClientFactory: servicemanager.NewFakeServiceManagerClientFactory(nil, nil),
 	}
 
+	// when
 	_, offset, err := step.Run(operation, logger.NewLogDummy())
+
+	// then
 	require.Zero(t, offset)
 	require.NoError(t, err)
 }
 
 func TestClsDeprovisionStepRun(t *testing.T) {
+	// given
 	var (
 		globalAccountID = "fake-global-account-id"
 		skrInstanceID   = "fake-skr-instance-id"
@@ -87,16 +92,19 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 	}
 
 	t.Run("triggering of deprovisioning fails", func(t *testing.T) {
+		// given
 		deprovisionerMock := &automock.ClsDeprovisioner{}
 		deprovisionerMock.On("Deprovision", mock.Anything, &cls.DeprovisionRequest{
-			GlobalAccountID: globalAccountID,
-			SKRInstanceID:   skrInstanceID,
-			Instance:        clsInstance.InstanceKey(),
+			SKRInstanceID: skrInstanceID,
+			Instance:      clsInstance.InstanceKey(),
 		}).Return(errors.New("failure"))
 
 		step := NewClsDeprovisionStep(config, repo, deprovisionerMock)
 
+		// when
 		op, offset, err := step.Run(operation, logger.NewLogDummy())
+
+		// then
 		require.True(t, op.Cls.Instance.Provisioned)
 		require.NotEmpty(t, op.Cls.Instance.InstanceID)
 		require.NotZero(t, offset)
@@ -104,16 +112,19 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 	})
 
 	t.Run("triggering of deprovisioning succeeds", func(t *testing.T) {
+		// given
 		deprovisionerMock := &automock.ClsDeprovisioner{}
 		deprovisionerMock.On("Deprovision", mock.Anything, &cls.DeprovisionRequest{
-			GlobalAccountID: globalAccountID,
-			SKRInstanceID:   skrInstanceID,
-			Instance:        clsInstance.InstanceKey(),
+			SKRInstanceID: skrInstanceID,
+			Instance:      clsInstance.InstanceKey(),
 		}).Return(nil)
 
 		step := NewClsDeprovisionStep(config, repo, deprovisionerMock)
 
+		// when
 		op, offset, err := step.Run(operation, logger.NewLogDummy())
+
+		// tehn
 		require.True(t, op.Cls.Instance.Provisioned)
 		require.NotEmpty(t, op.Cls.Instance.InstanceID)
 		require.NotZero(t, offset)
@@ -121,6 +132,7 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 	})
 
 	t.Run("deprovisioning fails", func(t *testing.T) {
+		// given
 		operation.Cls.Instance.DeprovisioningTriggered = true
 
 		smClient.On("LastInstanceOperation", operation.Cls.Instance.InstanceKey(), "").Return(servicemanager.LastOperationResponse{
@@ -129,7 +141,10 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 
 		step := NewClsDeprovisionStep(config, repo, &automock.ClsDeprovisioner{})
 
+		// when
 		op, offset, err := step.Run(operation, logger.NewLogDummy())
+
+		// then
 		require.True(t, op.Cls.Instance.Provisioned)
 		require.NotEmpty(t, op.Cls.Instance.InstanceID)
 		require.NotZero(t, offset)
@@ -137,6 +152,7 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 	})
 
 	t.Run("deprovisioning in progress", func(t *testing.T) {
+		// given
 		operation.Cls.Instance.DeprovisioningTriggered = true
 
 		smClient.On("LastInstanceOperation", operation.Cls.Instance.InstanceKey(), "").Return(servicemanager.LastOperationResponse{
@@ -145,7 +161,10 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 
 		step := NewClsDeprovisionStep(config, repo, &automock.ClsDeprovisioner{})
 
+		// when
 		op, offset, err := step.Run(operation, logger.NewLogDummy())
+
+		// then
 		require.True(t, op.Cls.Instance.Provisioned)
 		require.NotEmpty(t, op.Cls.Instance.InstanceID)
 		require.NotZero(t, offset)
@@ -153,6 +172,7 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 	})
 
 	t.Run("deprovisioning succeeds", func(t *testing.T) {
+		// given
 		operation.Cls.Instance.DeprovisioningTriggered = true
 
 		smClient.On("LastInstanceOperation", operation.Cls.Instance.InstanceKey(), "").Return(servicemanager.LastOperationResponse{
@@ -161,7 +181,10 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 
 		step := NewClsDeprovisionStep(config, repo, &automock.ClsDeprovisioner{})
 
+		// when
 		op, offset, err := step.Run(operation, logger.NewLogDummy())
+
+		// then
 		require.True(t, op.Cls.Instance.Provisioned)
 		require.NotEmpty(t, op.Cls.Instance.InstanceID)
 		require.NotZero(t, offset)

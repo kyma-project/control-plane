@@ -34,16 +34,6 @@ const (
 	GitKymaRepo    = "kyma"
 )
 
-type CLSInstance struct {
-	Version                  int
-	ID                       string
-	GlobalAccountID          string
-	Region                   string
-	CreatedAt                time.Time
-	ReferencedSKRInstanceIDs []string
-	RemovedBySKRInstanceID   string
-}
-
 type LMSTenant struct {
 	ID        string
 	Name      string

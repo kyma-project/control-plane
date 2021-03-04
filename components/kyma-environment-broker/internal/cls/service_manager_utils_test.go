@@ -33,8 +33,11 @@ func TestDetermineServiceManagerRegion(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.summary, func(t *testing.T) {
+			// given
+			// when
 			smRegion, err := DetermineServiceManagerRegion(tc.givenSKRRegion)
 
+			// then
 			if len(tc.expectedError) > 0 {
 				require.EqualError(t, err, tc.expectedError)
 			} else {
@@ -93,12 +96,15 @@ func TestFindCredentials(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.summary, func(t *testing.T) {
+			// given
 			config := &ServiceManagerConfig{
 				Credentials: tc.givenCredentials,
 			}
 
+			// when
 			credentials, err := FindCredentials(config, tc.givenSMRegion)
 
+			// then
 			if len(tc.expectedError) > 0 {
 				require.EqualError(t, err, tc.expectedError)
 			} else {
