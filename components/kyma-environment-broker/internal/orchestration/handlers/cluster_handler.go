@@ -64,7 +64,7 @@ func (h *clusterHandler) createOrchestration(w http.ResponseWriter, r *http.Requ
 		OrchestrationID: uuid.New().String(),
 		Type:            orchestration.UpgradeClusterOrchestration,
 		State:           orchestration.Pending,
-		Description:     "started processing of Kyma upgrade",
+		Description:     "queued for processing",
 		Parameters:      params,
 		CreatedAt:       now,
 		UpdatedAt:       now,

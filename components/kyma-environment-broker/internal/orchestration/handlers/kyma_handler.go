@@ -82,7 +82,7 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 		OrchestrationID: uuid.New().String(),
 		Type:            orchestration.UpgradeKymaOrchestration,
 		State:           orchestration.Pending,
-		Description:     "started processing of Kyma upgrade",
+		Description:     "queued for processing",
 		Parameters:      params,
 		CreatedAt:       now,
 		UpdatedAt:       now,
