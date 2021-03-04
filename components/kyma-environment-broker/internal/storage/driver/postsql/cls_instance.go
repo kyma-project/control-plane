@@ -58,13 +58,13 @@ func (s *clsInstances) find(f findFunc) (*internal.CLSInstance, bool, error) {
 	}
 
 	return internal.NewCLSInstance(
-		first.Version,
-		first.ID,
 		first.GlobalAccountID,
 		first.Region,
-		first.CreatedAt,
-		references,
-		first.RemovedBySKRInstanceID.String,
+		internal.WithID(first.ID),
+		internal.WithVersion(first.Version),
+		internal.WithCreatedAt(first.CreatedAt),
+		internal.WithReferences(references...),
+		internal.WithBeingRemovedBy(first.RemovedBySKRInstanceID.String),
 	), true, nil
 }
 

@@ -2,7 +2,6 @@ package cls
 
 import (
 	"testing"
-	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls/automock"
@@ -50,15 +49,9 @@ func TestDeprovisionReturnsEarlyIfCLSNotReferenced(t *testing.T) {
 		InstanceID: "fake-instance-id",
 	}
 
-	found := internal.NewCLSInstance(
-		0,
-		fakeInstance.InstanceID,
-		"fake-global-id",
-		"eu",
-		time.Now(),
-		[]string{"other-fake-skr-instance-id-1", "other-fake-skr-instance-id-2"},
-		"",
-	)
+	found := internal.NewCLSInstance("fake-global-id", "eu",
+		internal.WithID(fakeInstance.InstanceID),
+		internal.WithReferences("other-fake-skr-instance-id-1", "other-fake-skr-instance-id-2"))
 	fakeStorage := storage.NewMemoryStorage().CLSInstances()
 	fakeStorage.Insert(*found)
 
@@ -86,15 +79,9 @@ func TestDeprovisionUnreferencesIfNotLastReference(t *testing.T) {
 		InstanceID: "fake-instance-id",
 	}
 
-	found := internal.NewCLSInstance(
-		42,
-		fakeInstance.InstanceID,
-		"fake-global-id",
-		"eu",
-		time.Now(),
-		[]string{firstFakeSKRInstanceID, secondFakeSKRInstanceID},
-		"",
-	)
+	found := internal.NewCLSInstance("fake-global-id", "eu",
+		internal.WithID(fakeInstance.InstanceID),
+		internal.WithReferences(firstFakeSKRInstanceID, secondFakeSKRInstanceID))
 	fakeStorage := storage.NewMemoryStorage().CLSInstances()
 	fakeStorage.Insert(*found)
 
@@ -125,16 +112,10 @@ func TestDeprovisionFailsIfUpdateQueryFailsAfterUnreferencing(t *testing.T) {
 		InstanceID: "fake-instance-id",
 	}
 
+	found := internal.NewCLSInstance("fake-global-id", "eu",
+		internal.WithID(fakeInstance.InstanceID),
+		internal.WithReferences(fakeSKRInstanceID))
 	storageMock := &automock.DeprovisionerStorage{}
-	found := internal.NewCLSInstance(
-		42,
-		fakeInstance.InstanceID,
-		"fake-global-id",
-		"eu",
-		time.Now(),
-		[]string{fakeSKRInstanceID},
-		"",
-	)
 	storageMock.On("FindByID", fakeInstance.InstanceID).Return(found, true, nil)
 	storageMock.On("Update", mock.Anything).Return(errors.New("unable to connect"))
 
@@ -166,15 +147,9 @@ func TestDeprovisionRemovesIfLastReference(t *testing.T) {
 		InstanceID: "fake-instance-id",
 	}
 
-	found := internal.NewCLSInstance(
-		42,
-		fakeInstance.InstanceID,
-		"fake-global-id",
-		"eu",
-		time.Now(),
-		[]string{fakeSKRInstanceID},
-		"",
-	)
+	found := internal.NewCLSInstance("fake-global-id", "eu",
+		internal.WithID(fakeInstance.InstanceID),
+		internal.WithReferences(fakeSKRInstanceID))
 	fakeStorage := storage.NewMemoryStorage().CLSInstances()
 	fakeStorage.Insert(*found)
 
@@ -208,15 +183,9 @@ func TestDeprovisionFailsIfUpdateQueryFails(t *testing.T) {
 		InstanceID: "fake-instance-id",
 	}
 
-	found := internal.NewCLSInstance(
-		42,
-		fakeInstance.InstanceID,
-		"fake-global-id",
-		"eu",
-		time.Now(),
-		[]string{fakeSKRInstanceID},
-		"",
-	)
+	found := internal.NewCLSInstance("fake-global-id", "eu",
+		internal.WithID(fakeInstance.InstanceID),
+		internal.WithReferences(fakeSKRInstanceID))
 	storageMock := &automock.DeprovisionerStorage{}
 	storageMock.On("FindByID", fakeInstance.InstanceID).Return(found, true, nil)
 	storageMock.On("Update", mock.Anything).Return(errors.New("unable to connect"))
@@ -249,15 +218,9 @@ func TestDeprovisionRemovesInstanceIfLastReference(t *testing.T) {
 		InstanceID: "fake-instance-id",
 	}
 
-	found := internal.NewCLSInstance(
-		42,
-		fakeInstance.InstanceID,
-		"fake-global-id",
-		"eu",
-		time.Now(),
-		[]string{fakeSKRInstanceID},
-		"",
-	)
+	found := internal.NewCLSInstance("fake-global-id", "eu",
+		internal.WithID(fakeInstance.InstanceID),
+		internal.WithReferences(fakeSKRInstanceID))
 	fakeStorage := storage.NewMemoryStorage().CLSInstances()
 	fakeStorage.Insert(*found)
 

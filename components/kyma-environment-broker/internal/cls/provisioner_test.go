@@ -3,7 +3,6 @@ package cls
 import (
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls/automock"
@@ -27,15 +26,7 @@ func TestProvisionReturnsExistingInstanceIfFoundInDB(t *testing.T) {
 		fakePlanID          = "fake-plan-id"
 	)
 
-	found := internal.NewCLSInstance(
-		42,
-		fakeInstanceID,
-		fakeGlobalAccountID,
-		fakeRegion,
-		time.Now(),
-		[]string{fakeSKRInstanceID},
-		"",
-	)
+	found := internal.NewCLSInstance(fakeGlobalAccountID, fakeRegion, internal.WithID(fakeInstanceID), internal.WithReferences(fakeSKRInstanceID))
 	fakeStorage := storage.NewMemoryStorage().CLSInstances()
 	fakeStorage.Insert(*found)
 
@@ -211,16 +202,7 @@ func TestProvisionAddsReferenceIfFoundInDB(t *testing.T) {
 		fakeInstanceID          = "fake-instance-id"
 	)
 
-	found := internal.NewCLSInstance(
-		42,
-		fakeInstanceID,
-		fakeGlobalAccountID,
-		"eu",
-		time.Now(),
-		[]string{firstFakeSKRInstanceID},
-		"",
-	)
-
+	found := internal.NewCLSInstance(fakeGlobalAccountID, "eu", internal.WithID(fakeInstanceID), internal.WithReferences(firstFakeSKRInstanceID))
 	fakeStorage := storage.NewMemoryStorage().CLSInstances()
 	fakeStorage.Insert(*found)
 	smClientMock := &smautomock.Client{}

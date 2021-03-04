@@ -1060,15 +1060,8 @@ func TestPostgres(t *testing.T) {
 
 		globalAccountID := "fake-global-account-id"
 
-		instanceID := "fake-id"
-		newClsInstance := internal.NewCLSInstance(
-			0,
-			instanceID,
-			globalAccountID,
-			"eu",
-			time.Now().UTC(),
-			[]string{"fake-skr-instance-id-1"}, "",
-		)
+		newClsInstance := internal.NewCLSInstance(globalAccountID, "eu", internal.WithReferences("fake-skr-instance-id-1"))
+		instanceID := newClsInstance.ID()
 		err = storage.Insert(*newClsInstance)
 		require.NoError(t, err)
 		t.Logf("Inserted the instance: %#v", newClsInstance)

@@ -35,6 +35,47 @@ const (
 	GitKymaRepo    = "kyma"
 )
 
+type CLSInstanceOption func(*CLSInstance)
+
+func WithVersion(version int) CLSInstanceOption {
+	return func(i *CLSInstance) {
+		i.version = version
+	}
+}
+
+func WithID(id string) CLSInstanceOption {
+	return func(i *CLSInstance) {
+		i.id = id
+	}
+}
+
+func WithCreatedAt(createdAt time.Time) CLSInstanceOption {
+	return func(i *CLSInstance) {
+		i.createdAt = createdAt
+	}
+}
+
+func WithReferences(references ...string) CLSInstanceOption {
+	return func(i *CLSInstance) {
+		i.references = references
+	}
+}
+
+func WithBeingRemovedBy(beingRemovedBy string) CLSInstanceOption {
+	return func(i *CLSInstance) {
+		i.beingRemovedBy = beingRemovedBy
+	}
+}
+
+func defaultCLSInstanceOptions() []CLSInstanceOption {
+	return []CLSInstanceOption{
+		WithVersion(0),
+		WithID(uuid.New().String()),
+		WithCreatedAt(time.Now()),
+		WithBeingRemovedBy(""),
+	}
+}
+
 type CLSInstance struct {
 	version         int
 	id              string
@@ -42,7 +83,7 @@ type CLSInstance struct {
 	region          string
 	createdAt       time.Time
 	references      []string
-	removedBy       string
+	beingRemovedBy  string
 
 	events []interface{}
 }
@@ -54,16 +95,19 @@ type CLSInstanceUnreferencedEvent struct {
 	SKRInstanceID string
 }
 
-func NewCLSInstance(version int, id, globalAccountID, region string, createdAt time.Time, references []string, removedBy string) *CLSInstance {
-	return &CLSInstance{
-		version:         version,
-		id:              id,
+func NewCLSInstance(globalAccountID, region string, opts ...CLSInstanceOption) *CLSInstance {
+	result := &CLSInstance{
 		globalAccountID: globalAccountID,
 		region:          region,
-		createdAt:       createdAt,
-		references:      references,
-		removedBy:       removedBy,
 	}
+
+	opts = append(defaultCLSInstanceOptions(), opts...)
+
+	for _, opt := range opts {
+		opt(result)
+	}
+
+	return result
 }
 
 func (i *CLSInstance) Version() int {
@@ -91,11 +135,11 @@ func (i *CLSInstance) References() []string {
 }
 
 func (i *CLSInstance) IsBeingRemoved() bool {
-	return len(i.removedBy) > 0
+	return len(i.beingRemovedBy) > 0
 }
 
 func (i *CLSInstance) BeingRemovedBy() string {
-	return i.removedBy
+	return i.beingRemovedBy
 }
 
 func (i *CLSInstance) Events() []interface{} {
@@ -126,7 +170,7 @@ func (i *CLSInstance) RemoveReference(skrInstanceID string) error {
 	i.events = append(i.events, CLSInstanceUnreferencedEvent{SKRInstanceID: skrInstanceID})
 
 	if len(i.references) == 0 {
-		i.removedBy = skrInstanceID
+		i.beingRemovedBy = skrInstanceID
 	}
 
 	return nil

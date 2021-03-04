@@ -1,9 +1,6 @@
 package cls
 
 import (
-	"time"
-
-	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -78,15 +75,7 @@ func (p *provisioner) Provision(smClient servicemanager.Client, request *Provisi
 }
 
 func (p *provisioner) createNewInstance(smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
-	instance := internal.NewCLSInstance(
-		0,
-		uuid.New().String(),
-		request.GlobalAccountID,
-		request.Region,
-		time.Now(),
-		[]string{request.SKRInstanceID},
-		"",
-	)
+	instance := internal.NewCLSInstance(request.GlobalAccountID, request.Region, internal.WithReferences(request.SKRInstanceID))
 
 	err := p.storage.Insert(*instance)
 	if err != nil {
