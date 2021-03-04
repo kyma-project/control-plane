@@ -45,11 +45,9 @@ func TestClsDeprovisionSteps(t *testing.T) {
 		},
 	}
 
+	instance := internal.NewCLSInstance(globalAccountID, "eu", internal.WithReferences(skrInstanceID))
 	db := storage.NewMemoryStorage()
-	db.CLSInstances().InsertInstance(internal.CLSInstance{
-		GlobalAccountID:          globalAccountID,
-		ReferencedSKRInstanceIDs: []string{skrInstanceID},
-	})
+	db.CLSInstances().Insert(*instance)
 
 	repo := db.Operations()
 
