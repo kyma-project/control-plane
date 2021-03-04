@@ -58,6 +58,35 @@ func TestCLSInstance(t *testing.T) {
 		require.False(t, i.IsReferencedBy("skr-2"))
 	})
 
+	t.Run("should track changed references", func(t *testing.T) {
+		t.Parallel()
+
+		i := NewCLSInstance("fake-global-account", "eu", WithReferences("skr-1"))
+		require.Empty(t, i.Events())
+
+		i.AddReference("skr-2")
+		require.Len(t, i.Events(), 1)
+		require.Equal(t, i.Events()[0].(CLSInstanceReferencedEvent).SKRInstanceID, "skr-2")
+
+		err := i.RemoveReference("skr-2")
+		require.NoError(t, err)
+		require.Len(t, i.Events(), 2)
+		require.Equal(t, i.Events()[0].(CLSInstanceReferencedEvent).SKRInstanceID, "skr-2")
+		require.Equal(t, i.Events()[1].(CLSInstanceUnreferencedEvent).SKRInstanceID, "skr-2")
+
+		err = i.RemoveReference("skr-3")
+		require.Error(t, err)
+		require.Len(t, i.Events(), 2)
+		require.Equal(t, i.Events()[0].(CLSInstanceReferencedEvent).SKRInstanceID, "skr-2")
+		require.Equal(t, i.Events()[1].(CLSInstanceUnreferencedEvent).SKRInstanceID, "skr-2")
+
+		i.AddReference("skr-4")
+		require.Len(t, i.Events(), 3)
+		require.Equal(t, i.Events()[0].(CLSInstanceReferencedEvent).SKRInstanceID, "skr-2")
+		require.Equal(t, i.Events()[1].(CLSInstanceUnreferencedEvent).SKRInstanceID, "skr-2")
+		require.Equal(t, i.Events()[2].(CLSInstanceReferencedEvent).SKRInstanceID, "skr-4")
+	})
+
 	t.Run("should set bein removed by if last reference is removed", func(t *testing.T) {
 		t.Parallel()
 
