@@ -351,14 +351,10 @@ func main() {
 		//	weight: 3,
 		//	step:   provisioning.NewSkipForTrialPlanStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		//},
-		{
-			weight: 3,
-			step:   provisioning.NewSkipForAllStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
-		},
-		{
-			weight: 3,
-			step:   provisioning.NewEnableForTrialPlanStep(provisioning.NewNatsStreamingOverridesStep()),
-		},
+		//{
+		//	weight: 3,
+		//	step:   provisioning.NewEnableForTrialPlanStep(provisioning.NewNatsStreamingOverridesStep()),
+		//},
 		{
 			weight: 3,
 			step:   provisioning.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
@@ -416,10 +412,6 @@ func main() {
 			weight: 1,
 			step:   deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
-		//{
-		//	weight: 1,
-		//	step:   deprovisioning.NewSkipForAllStep(deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
-		//},
 		{
 			weight:   1,
 			step:     deprovisioning.NewEDPDeregistrationStep(edpClient, cfg.EDP),
