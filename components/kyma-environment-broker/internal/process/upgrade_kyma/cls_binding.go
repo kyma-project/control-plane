@@ -145,18 +145,18 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 		return operation, time.Second, nil
 	}
 
-	isVersion1_20, err := cls.IsKymaVersionAtLeast_1_20(operation.RuntimeVersion.Version)
+	isVersionAtLeast1_20, err := cls.IsKymaVersionAtLeast_1_20(operation.RuntimeVersion.Version)
 	if err != nil {
 		failureReason := fmt.Sprintf("unable to check kyma version: %v", err)
 		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
-	if isVersion1_20 {
+	if isVersionAtLeast1_20 {
+		// Disable LMS and enable CLS
 		operation.InputCreator.AppendOverrides(components.CLS, []*gqlschema.ConfigEntryInput{
-			{
-				Key:   "fluent-bit.config.outputs.additional",
-				Value: fluentBitClsOverrides,
-			}})
+			{Key: "fluent-bit.config.outputs.forward.enabled", Value: "false"},
+			{Key: "fluent-bit.config.outputs.additional", Value: fluentBitClsOverrides},
+		})
 	}
 
 	return operation, 0, nil
