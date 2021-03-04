@@ -42,10 +42,8 @@ func TestClsBindingStep_Run(t *testing.T) {
   Format            json`
 	expectedKibanaUrl := "kibUrl"
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
-		{
-			Key:   "fluent-bit.config.outputs.additional",
-			Value: expectedOverride,
-		},
+		{Key: "fluent-bit.config.outputs.forward.enabled", Value: "false"},
+		{Key: "fluent-bit.config.outputs.additional", Value: expectedOverride},
 	}).Return(nil).Once()
 
 	inputCreatorMock.On("SetLabel", kibanaURLLabelKey, expectedKibanaUrl).Return(nil).Once()
