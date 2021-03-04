@@ -38,11 +38,12 @@ type Manager interface {
 }
 
 type manager struct {
-	getter *credentialplugin.GetToken
-	input  credentialplugin.Input
-	token  string
-	expiry time.Time
-	mux    sync.Mutex
+	getter   *credentialplugin.GetToken
+	input    credentialplugin.Input
+	token    string
+	expiry   time.Time
+	mux      sync.Mutex
+	username string
 }
 
 type tokenWriter struct {
@@ -55,31 +56,32 @@ func (w *tokenWriter) Write(out credentialpluginwriter.Output) error {
 }
 
 // NewManager Constructs a new credential.Manager using the given OIDC provider and client credentials
-func NewManager(oidcIssuerURL, oidcClientID, oidcClientSecret string, logger logger.Logger) Manager {
+func NewManager(oidcIssuerURL, oidcClientID, oidcClientSecret, username string, log logger.Logger) Manager {
 	clock := &clock.Real{}
 	reader := &reader.Reader{}
 	auth := &authentication.Authentication{
 		Clock:  clock,
-		Logger: logger,
+		Logger: log,
 		OIDCClient: &oidcclient.Factory{
 			Clock:  clock,
-			Logger: logger,
+			Logger: log,
 		},
 		AuthCodeBrowser: &authcode.Browser{
-			Logger:  logger,
+			Logger:  log,
 			Browser: &browser.Browser{},
 		},
 		AuthCodeKeyboard: &authcode.Keyboard{
-			Logger: logger,
+			Logger: log,
 			Reader: reader,
 		},
 		ROPC: &ropc.ROPC{
-			Logger: logger,
+			Logger: log,
 			Reader: reader,
 		},
 	}
 
 	mgr := &manager{
+		username: username,
 		input: credentialplugin.Input{
 			IssuerURL:     oidcIssuerURL,
 			ClientID:      oidcClientID,
@@ -89,12 +91,12 @@ func NewManager(oidcIssuerURL, oidcClientID, oidcClientSecret string, logger log
 	}
 	writer := &tokenWriter{mgr: mgr}
 	getToken := &credentialplugin.GetToken{
-		Logger:               logger,
+		Logger:               log,
 		Authentication:       auth,
 		TokenCacheRepository: &tokencache.Repository{},
 		Writer:               writer,
 		Mutex: &mutex.Mutex{
-			Logger: logger,
+			Logger: log,
 		},
 	}
 	mgr.getter = getToken
@@ -139,12 +141,19 @@ func (mgr *manager) GetTokenByROPC(ctx context.Context, username, password strin
 // Token uses auth code grant flow to obtain an ID token in oauth2.Token format. This method implements the oauth2.TokenSource interface
 func (mgr *manager) Token() (*oauth2.Token, error) {
 	in := mgr.input
-	in.GrantOptionSet.AuthCodeBrowserOption = &authcode.BrowserOption{
-		BindAddress:           defaultListenAddress,
-		SkipOpenBrowser:       false,
-		AuthenticationTimeout: defaultAuthenticationTimeout,
-		RedirectURLHostname:   "localhost",
+	if mgr.username != "" {
+		in.GrantOptionSet.ROPCOption = &ropc.Option{
+			Username: mgr.username,
+		}
+	} else {
+		in.GrantOptionSet.AuthCodeBrowserOption = &authcode.BrowserOption{
+			BindAddress:           defaultListenAddress,
+			SkipOpenBrowser:       false,
+			AuthenticationTimeout: defaultAuthenticationTimeout,
+			RedirectURLHostname:   "localhost",
+		}
 	}
+
 	mgr.mux.Lock()
 	defer mgr.mux.Unlock()
 	err := mgr.getter.Do(context.TODO(), in)

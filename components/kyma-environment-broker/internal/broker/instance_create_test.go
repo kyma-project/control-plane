@@ -60,6 +60,8 @@ func TestProvision_Provision(t *testing.T) {
 			queue,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
+			broker.PlansConfig{},
+
 			false,
 			logrus.StandardLogger(),
 		)
@@ -115,6 +117,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
+			broker.PlansConfig{},
 			false,
 			logrus.StandardLogger(),
 		)
@@ -157,6 +160,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
+			broker.PlansConfig{},
 			false,
 			logrus.StandardLogger(),
 		)
@@ -200,6 +204,7 @@ func TestProvision_Provision(t *testing.T) {
 			queue,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
+			broker.PlansConfig{},
 			false,
 			logrus.StandardLogger(),
 		)
@@ -256,6 +261,7 @@ func TestProvision_Provision(t *testing.T) {
 			queue,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
+			broker.PlansConfig{},
 			false,
 			logrus.StandardLogger(),
 		)
@@ -309,6 +315,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixAlwaysPassJSONValidator(),
+			broker.PlansConfig{},
 			false,
 			logrus.StandardLogger(),
 		)
@@ -333,7 +340,7 @@ func TestProvision_Provision(t *testing.T) {
 		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", planID).Return(true)
 
-		fixValidator, err := broker.NewPlansSchemaValidator()
+		fixValidator, err := broker.NewPlansSchemaValidator(broker.PlansConfig{})
 		require.NoError(t, err)
 
 		queue := &automock.Queue{}
@@ -347,6 +354,7 @@ func TestProvision_Provision(t *testing.T) {
 			queue,
 			factoryBuilder,
 			fixValidator,
+			broker.PlansConfig{},
 			true,
 			logrus.StandardLogger(),
 		)
@@ -375,7 +383,7 @@ func TestProvision_Provision(t *testing.T) {
 		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", planID).Return(true)
 
-		fixValidator, err := broker.NewPlansSchemaValidator()
+		fixValidator, err := broker.NewPlansSchemaValidator(broker.PlansConfig{})
 		require.NoError(t, err)
 
 		provisionEndpoint := broker.NewProvision(
@@ -386,6 +394,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixValidator,
+			broker.PlansConfig{},
 			true,
 			logrus.StandardLogger(),
 		)
@@ -409,7 +418,7 @@ func TestProvision_Provision(t *testing.T) {
 		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", planID).Return(true)
 
-		fixValidator, err := broker.NewPlansSchemaValidator()
+		fixValidator, err := broker.NewPlansSchemaValidator(broker.PlansConfig{})
 		require.NoError(t, err)
 
 		queue := &automock.Queue{}
@@ -423,6 +432,7 @@ func TestProvision_Provision(t *testing.T) {
 			queue,
 			factoryBuilder,
 			fixValidator,
+			broker.PlansConfig{},
 			false,
 			logrus.StandardLogger(),
 		)
@@ -453,7 +463,7 @@ func TestProvision_Provision(t *testing.T) {
 		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", broker.AzureLitePlanID).Return(true)
 
-		fixValidator, err := broker.NewPlansSchemaValidator()
+		fixValidator, err := broker.NewPlansSchemaValidator(broker.PlansConfig{})
 		require.NoError(t, err)
 
 		queue := &automock.Queue{}
@@ -467,6 +477,7 @@ func TestProvision_Provision(t *testing.T) {
 			queue,
 			factoryBuilder,
 			fixValidator,
+			broker.PlansConfig{},
 			false,
 			logrus.StandardLogger(),
 		)
@@ -494,7 +505,7 @@ func TestProvision_Provision(t *testing.T) {
 		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", broker.TrialPlanID).Return(true)
 
-		fixValidator, err := broker.NewPlansSchemaValidator()
+		fixValidator, err := broker.NewPlansSchemaValidator(broker.PlansConfig{})
 		require.NoError(t, err)
 
 		queue := &automock.Queue{}
@@ -508,6 +519,7 @@ func TestProvision_Provision(t *testing.T) {
 			queue,
 			factoryBuilder,
 			fixValidator,
+			broker.PlansConfig{},
 			false,
 			logrus.StandardLogger(),
 		)

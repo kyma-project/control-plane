@@ -18,7 +18,12 @@ func TestNewPlansSchemaValidatorErrors(t *testing.T) {
 			inputJSON:    `{"region": "munich"}`,
 			expErr:       `(root): name is required`,
 		},
-		"missing name, not valid machine type": {
+		"not valid name": {
+			againstPlans: []string{AzurePlanID},
+			inputJSON:    `{"name": "wrong name"}`,
+			expErr:       `name: Does not match pattern '^[a-zA-Z0-9-]*$'`,
+		},
+		"not valid machine type": {
 			againstPlans: []string{AzurePlanID},
 			inputJSON:    `{"name": "wrong-machType", "machineType": "WrongName"}`,
 			expErr:       `machineType: machineType must be one of the following: "Standard_D8_v3"`,
@@ -32,7 +37,7 @@ func TestNewPlansSchemaValidatorErrors(t *testing.T) {
 	for tN, tC := range tests {
 		t.Run(tN, func(t *testing.T) {
 			// given
-			validator, err := NewPlansSchemaValidator()
+			validator, err := NewPlansSchemaValidator(PlansConfig{})
 			require.NoError(t, err)
 
 			for _, id := range tC.againstPlans {
@@ -52,7 +57,7 @@ func TestNewPlansSchemaValidatorSuccess(t *testing.T) {
 	// given
 	validJSON := `{"name": "only-name-is-required"}`
 
-	validator, err := NewPlansSchemaValidator()
+	validator, err := NewPlansSchemaValidator(PlansConfig{})
 	require.NoError(t, err)
 
 	for _, id := range []string{GCPPlanID, AzurePlanID, TrialPlanID} {
