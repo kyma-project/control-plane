@@ -139,7 +139,7 @@ func Plans(plans PlansConfig) map[string]Plan {
 				ID:          AWSPlanID,
 				Name:        AWSPlanName,
 				Description: defaultDescription(AWSPlanName, plans),
-				Metadata:    defaultMetadata(AWSPlanName, plans),				Schemas: &domain.ServiceSchemas{
+				Metadata:    defaultMetadata(AWSPlanName, plans), Schemas: &domain.ServiceSchemas{
 					Instance: domain.ServiceInstanceSchema{
 						Create: domain.Schema{
 							Parameters: make(map[string]interface{}),
