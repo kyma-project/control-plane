@@ -24,6 +24,8 @@ const (
 	OperationTypeUndefined OperationType = ""
 	// OperationTypeUpgradeKyma means upgrade Kyma OperationType
 	OperationTypeUpgradeKyma OperationType = "upgradeKyma"
+	// OperationTypeUpgradeCluster means upgrade cluster (shoot) OperationType
+	OperationTypeUpgradeCluster OperationType = "upgradeCluster"
 )
 
 type OperationDTO struct {
