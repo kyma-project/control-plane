@@ -50,16 +50,17 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		return s.operationManager.OperationFailed(operation, failureReason)
 	}
 
-	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, operation.Cls.Region)
-	if err != nil {
-		failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
-		log.Error(failureReason)
-		return s.operationManager.OperationFailed(operation, failureReason)
-	}
-	smCli := operation.SMClientFactory.ForCredentials(smCredentials)
-
 	var overrideParams *cls.OverrideParams
+	var err error
 	if !operation.Cls.Binding.Bound {
+		smCredentials, err := cls.FindCredentials(s.config.ServiceManager, operation.Cls.Region)
+		if err != nil {
+			failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
+			log.Error(failureReason)
+			return s.operationManager.OperationFailed(operation, failureReason)
+		}
+		smCli := operation.SMClientFactory.ForCredentials(smCredentials)
+
 		// test if the provisioning is finished, if not, retry after 10s
 		resp, err := smCli.LastInstanceOperation(operation.Cls.Instance.InstanceKey(), "")
 		if err != nil {
