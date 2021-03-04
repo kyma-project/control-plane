@@ -353,6 +353,10 @@ func main() {
 		},
 		{
 			weight: 3,
+			step:   provisioning.NewSkipForAzurePlanStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+		},
+		{
+			weight: 3,
 			step:   provisioning.NewEnableForTrialPlanStep(provisioning.NewNatsStreamingOverridesStep()),
 		},
 		{
@@ -411,6 +415,10 @@ func main() {
 		{
 			weight: 1,
 			step:   deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+		},
+		{
+			weight: 1,
+			step:   deprovisioning.NewSkipForAzurePlanStep(deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
 		{
 			weight:   1,
