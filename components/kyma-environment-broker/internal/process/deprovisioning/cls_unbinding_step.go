@@ -28,7 +28,7 @@ func NewClsUnbindStep(config *cls.Config, os storage.Operations) *ClsUnbindStep 
 var _ Step = (*ClsUnbindStep)(nil)
 
 func (s *ClsUnbindStep) Name() string {
-	return "Cls_Unbind"
+	return "CLS_Unbind"
 }
 
 func (s *ClsUnbindStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
