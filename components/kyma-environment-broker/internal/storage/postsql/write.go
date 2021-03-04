@@ -219,6 +219,7 @@ func (ws writeSession) InsertCLSInstance(dto dbmodel.CLSInstanceDTO) dberr.Error
 		Pair("global_account_id", dto.GlobalAccountID).
 		Pair("region", dto.Region).
 		Pair("created_at", dto.CreatedAt).
+		Pair("removed_by_skr_instance_id", dto.RemovedBySKRInstanceID).
 		Exec()
 
 	if err != nil {
@@ -238,6 +239,9 @@ func (ws writeSession) UpdateCLSInstance(dto dbmodel.CLSInstanceDTO) dberr.Error
 		Where(dbr.Eq("id", dto.ID)).
 		Where(dbr.Eq("version", dto.Version)).
 		Set("version", dto.Version+1).
+		Set("global_account_id", dto.GlobalAccountID).
+		Set("region", dto.Region).
+		Set("created_at", dto.CreatedAt).
 		Set("removed_by_skr_instance_id", dto.RemovedBySKRInstanceID).
 		Exec()
 

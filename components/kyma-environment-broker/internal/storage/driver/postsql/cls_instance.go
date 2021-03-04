@@ -123,8 +123,11 @@ func (s *clsInstances) Update(instance internal.CLSInstance) error {
 	}
 
 	dto := dbmodel.CLSInstanceDTO{
-		Version: instance.Version(),
-		ID:      instance.ID(),
+		Version:         instance.Version(),
+		ID:              instance.ID(),
+		GlobalAccountID: instance.GlobalAccountID(),
+		Region:          instance.Region(),
+		CreatedAt:       instance.CreatedAt(),
 	}
 
 	if instance.IsBeingRemoved() {
