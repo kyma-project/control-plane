@@ -15,6 +15,7 @@ import (
 )
 
 func TestDeprovisionFailsIfFindQueryFails(t *testing.T) {
+	// given
 	fakeSKRInstanceID := "fake-skr-instance-id"
 	fakeInstance := servicemanager.InstanceKey{
 		BrokerID:   "fake-broker-id",
@@ -32,15 +33,19 @@ func TestDeprovisionFailsIfFindQueryFails(t *testing.T) {
 	}
 
 	smClientMock := &smautomock.Client{}
+
+	// when
 	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	})
 
+	// then
 	require.Error(t, err)
 }
 
 func TestDeprovisionReturnsEarlyIfCLSNotReferenced(t *testing.T) {
+	// given
 	fakeSKRInstanceID := "fake-skr-instance-id"
 	fakeInstance := servicemanager.InstanceKey{
 		BrokerID:   "fake-broker-id",
@@ -61,15 +66,19 @@ func TestDeprovisionReturnsEarlyIfCLSNotReferenced(t *testing.T) {
 	}
 
 	smClientMock := &smautomock.Client{}
+
+	// when
 	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	})
 
+	// then
 	require.NoError(t, err)
 }
 
 func TestDeprovisionUnreferencesIfNotLastReference(t *testing.T) {
+	// given
 	firstFakeSKRInstanceID := "fake-skr-instance-id-1"
 	secondFakeSKRInstanceID := "fake-skr-instance-id-2"
 	fakeInstance := servicemanager.InstanceKey{
@@ -91,11 +100,14 @@ func TestDeprovisionUnreferencesIfNotLastReference(t *testing.T) {
 	}
 
 	smClientMock := &smautomock.Client{}
+
+	// when
 	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: secondFakeSKRInstanceID,
 		Instance:      fakeInstance,
 	})
 
+	// then
 	require.NoError(t, err)
 
 	instance, exists, _ := fakeStorage.FindByID(fakeInstance.InstanceID)
@@ -104,6 +116,7 @@ func TestDeprovisionUnreferencesIfNotLastReference(t *testing.T) {
 }
 
 func TestDeprovisionFailsIfUpdateQueryFailsAfterUnreferencing(t *testing.T) {
+	// given
 	fakeSKRInstanceID := "fake-skr-instance-id"
 	fakeInstance := servicemanager.InstanceKey{
 		BrokerID:   "fake-broker-id",
@@ -129,16 +142,19 @@ func TestDeprovisionFailsIfUpdateQueryFailsAfterUnreferencing(t *testing.T) {
 		remover: removerMock,
 	}
 
+	// when
 	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	})
 
+	// then
 	require.Error(t, err)
 	removerMock.AssertNumberOfCalls(t, "RemoveInstance", 0)
 }
 
 func TestDeprovisionRemovesIfLastReference(t *testing.T) {
+	// given
 	fakeSKRInstanceID := "fake-skr-instance-id"
 	fakeInstance := servicemanager.InstanceKey{
 		BrokerID:   "fake-broker-id",
@@ -163,11 +179,13 @@ func TestDeprovisionRemovesIfLastReference(t *testing.T) {
 		remover: removerMock,
 	}
 
+	// when
 	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	})
 
+	// then
 	require.NoError(t, err)
 
 	_, exists, _ := fakeStorage.FindByID(fakeInstance.InstanceID)
@@ -175,6 +193,7 @@ func TestDeprovisionRemovesIfLastReference(t *testing.T) {
 }
 
 func TestDeprovisionFailsIfUpdateQueryFails(t *testing.T) {
+	// given
 	fakeSKRInstanceID := "fake-skr-instance-id"
 	fakeInstance := servicemanager.InstanceKey{
 		BrokerID:   "fake-broker-id",
@@ -200,16 +219,19 @@ func TestDeprovisionFailsIfUpdateQueryFails(t *testing.T) {
 		remover: removerMock,
 	}
 
+	// when
 	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	})
 
+	// then
 	require.Error(t, err)
 	removerMock.AssertNumberOfCalls(t, "RemoveInstance", 0)
 }
 
 func TestDeprovisionRemovesInstanceIfLastReference(t *testing.T) {
+	// given
 	fakeSKRInstanceID := "fake-skr-instance-id"
 	fakeInstance := servicemanager.InstanceKey{
 		BrokerID:   "fake-broker-id",
@@ -234,11 +256,13 @@ func TestDeprovisionRemovesInstanceIfLastReference(t *testing.T) {
 		remover: removerMock,
 	}
 
+	// when
 	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	})
 
+	// then
 	require.NoError(t, err)
 	removerMock.AssertNumberOfCalls(t, "RemoveInstance", 1)
 }

@@ -81,8 +81,11 @@ serviceManager:
 	}
 
 	for _, tc := range tests {
+		// given
+		// when
 		_, err := Load(tc.in)
 
+		// then
 		require.Error(t, err)
 		require.EqualError(t, err, tc.expected)
 	}
@@ -99,9 +102,11 @@ serviceManager:
 saml:
   initiated: true  
 `
-
+	// given
+	// when
 	config, err := Load(in)
 
+	// then
 	require.NoError(t, err)
 	require.Equal(t, 7, config.RetentionPeriod)
 	require.Equal(t, 2, config.MaxDataInstances)

@@ -11,7 +11,11 @@ func TestCLSInstance(t *testing.T) {
 	t.Run("should set default values", func(t *testing.T) {
 		t.Parallel()
 
+		// given
+		// when
 		i := NewCLSInstance("fake-global-account", "eu")
+
+		// then
 		require.Equal(t, "fake-global-account", i.GlobalAccountID())
 		require.Equal(t, "eu", i.Region())
 		require.Zero(t, i.Version())
@@ -24,8 +28,13 @@ func TestCLSInstance(t *testing.T) {
 	t.Run("should override default values with opts", func(t *testing.T) {
 		t.Parallel()
 
+		// given
 		time := time.Now().Add(-1 * time.Hour)
+
+		// when
 		i := NewCLSInstance("fake-global-account", "eu", WithVersion(42), WithID("fake-id"), WithCreatedAt(time), WithBeingRemovedBy("skr-1"))
+
+		// then
 		require.Equal(t, "fake-global-account", i.GlobalAccountID())
 		require.Equal(t, "eu", i.Region())
 		require.Equal(t, 42, i.Version())
@@ -90,10 +99,14 @@ func TestCLSInstance(t *testing.T) {
 	t.Run("should set bein removed by if last reference is removed", func(t *testing.T) {
 		t.Parallel()
 
+		// given
 		i := NewCLSInstance("fake-global-account", "eu", WithReferences("skr-1"))
 		require.False(t, i.IsBeingRemoved())
 
+		// when
 		err := i.RemoveReference("skr-1")
+
+		// then
 		require.NoError(t, err)
 		require.True(t, i.IsBeingRemoved())
 		require.Equal(t, "skr-1", i.BeingRemovedBy())

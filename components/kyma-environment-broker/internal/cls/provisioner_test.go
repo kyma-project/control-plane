@@ -16,6 +16,7 @@ import (
 )
 
 func TestProvisionReturnsExistingInstanceIfFoundInDB(t *testing.T) {
+	// given
 	const (
 		fakeGlobalAccountID = "fake-global-account-id"
 		fakeSKRInstanceID   = "fake-skr-instance-id"
@@ -34,6 +35,8 @@ func TestProvisionReturnsExistingInstanceIfFoundInDB(t *testing.T) {
 	creatorMock := &automock.InstanceCreator{}
 
 	sut := NewProvisioner(fakeStorage, creatorMock, logger.NewLogDummy())
+
+	// when
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
@@ -43,6 +46,8 @@ func TestProvisionReturnsExistingInstanceIfFoundInDB(t *testing.T) {
 			PlanID:    fakePlanID,
 		},
 	})
+
+	// then
 	require.NotNil(t, result)
 	require.NoError(t, err)
 	require.Equal(t, fakeInstanceID, result.InstanceID)
@@ -51,6 +56,7 @@ func TestProvisionReturnsExistingInstanceIfFoundInDB(t *testing.T) {
 }
 
 func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
+	// given
 	const (
 		fakeGlobalAccountID = "fake-global-account-id"
 		fakeSKRInstanceID   = "fake-skr-instance-id"
@@ -72,6 +78,8 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 	})).Return(nil)
 
 	sut := NewProvisioner(fakeStorage, creatorMock, logger.NewLogDummy())
+
+	// when
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
@@ -82,6 +90,8 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 			PlanID:    fakePlanID,
 		},
 	})
+
+	// then
 	require.NotNil(t, result)
 	require.NoError(t, err)
 	require.NotEmpty(t, result.InstanceID)
@@ -92,6 +102,7 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 }
 
 func TestProvisionDoesNotCreateNewInstanceIfFindQueryFails(t *testing.T) {
+	// given
 	const (
 		fakeGlobalAccountID = "fake-global-account-id"
 		fakeSKRInstanceID   = "fake-skr-instance-id"
@@ -108,6 +119,8 @@ func TestProvisionDoesNotCreateNewInstanceIfFindQueryFails(t *testing.T) {
 	creatorMock := &automock.InstanceCreator{}
 
 	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
+
+	// when
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
@@ -120,10 +133,12 @@ func TestProvisionDoesNotCreateNewInstanceIfFindQueryFails(t *testing.T) {
 	require.Nil(t, result)
 	require.Error(t, err)
 
+	// then
 	creatorMock.AssertNumberOfCalls(t, "CreateInstance", 0)
 }
 
 func TestProvisionDoesNotCreateNewInstanceIfInsertQueryFails(t *testing.T) {
+	// given
 	const (
 		fakeGlobalAccountID = "fake-global-account-id"
 		fakeSKRInstanceID   = "fake-skr-instance-id"
@@ -141,6 +156,8 @@ func TestProvisionDoesNotCreateNewInstanceIfInsertQueryFails(t *testing.T) {
 	creatorMock := &automock.InstanceCreator{}
 
 	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
+
+	// when
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
@@ -150,6 +167,8 @@ func TestProvisionDoesNotCreateNewInstanceIfInsertQueryFails(t *testing.T) {
 			PlanID:    fakePlanID,
 		},
 	})
+
+	// then
 	require.Nil(t, result)
 	require.Error(t, err)
 
@@ -157,6 +176,7 @@ func TestProvisionDoesNotCreateNewInstanceIfInsertQueryFails(t *testing.T) {
 }
 
 func TestProvisionSavesNewInstanceToDB(t *testing.T) {
+	// given
 	const (
 		fakeGlobalAccountID = "fake-global-account-id"
 		fakeSKRInstanceID   = "fake-skr-instance-id"
@@ -171,6 +191,8 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 	creatorMock.On("CreateInstance", smClientMock, mock.Anything).Return(nil)
 
 	sut := NewProvisioner(fakeStorage, creatorMock, logger.NewLogDummy())
+
+	// when
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
@@ -180,6 +202,8 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 			PlanID:    fakePlanID,
 		},
 	})
+
+	// then
 	require.NotNil(t, result)
 	require.NoError(t, err)
 
@@ -192,6 +216,7 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 }
 
 func TestProvisionAddsReferenceIfFoundInDB(t *testing.T) {
+	// given
 	const (
 		fakeGlobalAccountID     = "fake-global-account-id"
 		firstFakeSKRInstanceID  = "fake-skr-instance-id-1"
@@ -209,6 +234,8 @@ func TestProvisionAddsReferenceIfFoundInDB(t *testing.T) {
 	creatorMock := &automock.InstanceCreator{}
 
 	sut := NewProvisioner(fakeStorage, creatorMock, logger.NewLogDummy())
+
+	// when
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   secondFakeSKRInstanceID,
@@ -218,6 +245,8 @@ func TestProvisionAddsReferenceIfFoundInDB(t *testing.T) {
 			PlanID:    fakePlanID,
 		},
 	})
+
+	// then
 	require.NotNil(t, result)
 	require.NoError(t, err)
 

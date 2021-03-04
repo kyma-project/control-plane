@@ -116,16 +116,20 @@ func TestCreateInstance(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.summary, func(t *testing.T) {
+			// given
 			smClientMock := &automock.Client{}
 			smClientMock.On("Provision", fakeBrokerID, mock.MatchedBy(tc.matcher), true).Return(&servicemanager.ProvisionResponse{}, nil)
 			sut := NewClient(config, logger.NewLogDummy())
 
+			// when
 			err := sut.CreateInstance(smClientMock, servicemanager.InstanceKey{
 				BrokerID:   fakeBrokerID,
 				ServiceID:  fakeServiceID,
 				PlanID:     fakePlanID,
 				InstanceID: fakeInstanceID,
 			})
+
+			// then
 			require.NoError(t, err)
 		})
 	}
@@ -159,10 +163,15 @@ func TestRemoveInstance(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.summary, func(t *testing.T) {
+			// given
 			smClientMock := &automock.Client{}
 			smClientMock.On("Deprovision", fakeInstance, true).Return(&servicemanager.DeprovisionResponse{}, tc.deprovisionErr)
 			sut := NewClient(new(Config), logger.NewLogDummy())
+
+			// when
 			err := sut.RemoveInstance(smClientMock, fakeInstance)
+
+			// then
 			if tc.expectedErr {
 				require.Error(t, err)
 			}
