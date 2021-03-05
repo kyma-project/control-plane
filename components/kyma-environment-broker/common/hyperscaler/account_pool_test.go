@@ -348,7 +348,7 @@ func newTestAccountPoolWithSingleShoot() AccountPool {
 			Namespace: testNamespace,
 		},
 		Spec: gardener_types.ShootSpec{
-			SecretBindingName: "secret1",
+			SecretBindingName: "secretBinding1",
 		},
 		Status: gardener_types.ShootStatus{
 			LastOperation: &gardener_types.LastOperation{
@@ -447,7 +447,7 @@ func newTestAccountPoolWithSecretDirty() AccountPool {
 			Namespace: testNamespace,
 		},
 		Spec: gardener_types.ShootSpec{
-			SecretBindingName: "secret1",
+			SecretBindingName: "secretBinding1",
 		},
 		Status: gardener_types.ShootStatus{
 			LastOperation: &gardener_types.LastOperation{
