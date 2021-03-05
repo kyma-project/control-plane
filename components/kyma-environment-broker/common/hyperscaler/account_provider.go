@@ -9,7 +9,7 @@ import (
 type AccountProvider interface {
 	GardenerCredentials(hyperscalerType Type, tenantName string) (Credentials, error)
 	GardenerSharedCredentials(hyperscalerType Type) (Credentials, error)
-	MarkUnusedGardenerSecretAsDirty(hyperscalerType Type, tenantName string) error
+	MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType Type, tenantName string) error
 }
 
 type accountProvider struct {
@@ -55,7 +55,7 @@ func (p *accountProvider) GardenerSharedCredentials(hyperscalerType Type) (Crede
 	return p.sharedGardenerPool.SharedCredentials(hyperscalerType)
 }
 
-func (p *accountProvider) MarkUnusedGardenerSecretAsDirty(hyperscalerType Type, tenantName string) error {
+func (p *accountProvider) MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType Type, tenantName string) error {
 	if p.gardenerPool == nil {
 		return errors.New("failed to release subscription for tenant. Gardener Account pool is not configured")
 	}

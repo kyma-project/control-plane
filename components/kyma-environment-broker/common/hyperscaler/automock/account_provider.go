@@ -52,8 +52,8 @@ func (_m *AccountProvider) GardenerSharedCredentials(hyperscalerType hyperscaler
 	return r0, r1
 }
 
-// MarkUnusedGardenerSecretAsDirty provides a mock function with given fields: hyperscalerType, tenantName
-func (_m *AccountProvider) MarkUnusedGardenerSecretAsDirty(hyperscalerType hyperscaler.Type, tenantName string) error {
+// MarkUnusedGardenerSecretBindingAsDirty provides a mock function with given fields: hyperscalerType, tenantName
+func (_m *AccountProvider) MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType hyperscaler.Type, tenantName string) error {
 	ret := _m.Called(hyperscalerType, tenantName)
 
 	var r0 error

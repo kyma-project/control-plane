@@ -73,7 +73,7 @@ func TestCredentials(t *testing.T) {
 func TestSecretsAccountPool_IsSecretInternal(t *testing.T) {
 	t.Run("should return true if internal secret binding found", func(t *testing.T) {
 		//given
-		accPool := newTestAccountPoolWithSecretInternal()
+		accPool, _ := newTestAccountPoolWithSecretInternal()
 
 		//when
 		internal, err := accPool.IsSecretBindingInternal("azure", "tenant1")
@@ -111,7 +111,7 @@ func TestSecretsAccountPool_IsSecretInternal(t *testing.T) {
 func TestSecretsAccountPool_IsSecretDirty(t *testing.T) {
 	t.Run("should return true if dirty secret binding found", func(t *testing.T) {
 		//given
-		accPool := newTestAccountPoolWithSecretDirty()
+		accPool, _ := newTestAccountPoolWithSecretDirty()
 
 		//when
 		isdirty, err := accPool.IsSecretBindingDirty("azure", "tenant1")
@@ -137,7 +137,7 @@ func TestSecretsAccountPool_IsSecretDirty(t *testing.T) {
 func TestSecretsAccountPool_IsSecretUsed(t *testing.T) {
 	t.Run("should return true when secret binding is in use", func(t *testing.T) {
 		//given
-		accPool := newTestAccountPoolWithSingleShoot()
+		accPool, _ := newTestAccountPoolWithSingleShoot()
 
 		//when
 		used, err := accPool.IsSecretBindingUsed("azure", "tenant1")
@@ -317,7 +317,7 @@ func newTestAccountPool() AccountPool {
 	return pool
 }
 
-func newTestAccountPoolWithSingleShoot() AccountPool {
+func newTestAccountPoolWithSingleShoot() (AccountPool, v1beta1.SecretBindingInterface) {
 	secret1 := &corev1.Secret{
 		ObjectMeta: machineryv1.ObjectMeta{
 			Name: "secret1", Namespace: testNamespace,
@@ -364,7 +364,7 @@ func newTestAccountPoolWithSingleShoot() AccountPool {
 	mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
 	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 
-	return NewAccountPool(mockClient, mockSecretBindings, mockShoots)
+	return NewAccountPool(mockClient, mockSecretBindings, mockShoots), mockSecretBindings
 }
 
 func newEmptyTestAccountPool() AccountPool {
@@ -380,7 +380,7 @@ func newEmptyTestAccountPool() AccountPool {
 	return NewAccountPool(mockClient, mockSecretBindings, mockShoots)
 }
 
-func newTestAccountPoolWithSecretInternal() AccountPool {
+func newTestAccountPoolWithSecretInternal() (AccountPool, v1beta1.SecretBindingInterface) {
 	secret1 := &corev1.Secret{
 		ObjectMeta: machineryv1.ObjectMeta{
 			Name: "secret1", Namespace: testNamespace,
@@ -412,10 +412,10 @@ func newTestAccountPoolWithSecretInternal() AccountPool {
 	mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
 	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 
-	return NewAccountPool(mockClient, mockSecretBindings, mockShoots)
+	return NewAccountPool(mockClient, mockSecretBindings, mockShoots), mockSecretBindings
 }
 
-func newTestAccountPoolWithSecretDirty() AccountPool {
+func newTestAccountPoolWithSecretDirty() (AccountPool, v1beta1.SecretBindingInterface) {
 	secret1 := &corev1.Secret{
 		ObjectMeta: machineryv1.ObjectMeta{
 			Name: "secret1", Namespace: testNamespace,
@@ -463,10 +463,10 @@ func newTestAccountPoolWithSecretDirty() AccountPool {
 	mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
 	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 
-	return NewAccountPool(mockClient, mockSecretBindings, mockShoots)
+	return NewAccountPool(mockClient, mockSecretBindings, mockShoots), mockSecretBindings
 }
 
-func newTestAccountPoolWithShootsUsingSecret() AccountPool {
+func newTestAccountPoolWithShootsUsingSecret() (AccountPool, v1beta1.SecretBindingInterface) {
 	secret1 := &corev1.Secret{
 		ObjectMeta: machineryv1.ObjectMeta{
 			Name: "secret1", Namespace: testNamespace,
@@ -529,7 +529,7 @@ func newTestAccountPoolWithShootsUsingSecret() AccountPool {
 	mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
 	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 
-	return NewAccountPool(mockClient, mockSecretBindings, mockShoots)
+	return NewAccountPool(mockClient, mockSecretBindings, mockShoots), mockSecretBindings
 }
 
 func newTestAccountPoolWithoutShoots() (AccountPool, v1beta1.SecretBindingInterface) {
