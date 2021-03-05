@@ -138,6 +138,8 @@ type Config struct {
 
 	TrialRegionMappingFilePath string
 	MaxPaginationPage          int `envconfig:"default=100"`
+
+	LogLevel string `envconfig:"default=info"`
 }
 
 func main() {
@@ -158,6 +160,10 @@ func main() {
 
 	logs := logrus.New()
 	logs.SetFormatter(&logrus.JSONFormatter{})
+	if cfg.LogLevel != "" {
+		l, _ := logrus.ParseLevel(cfg.LogLevel)
+		logs.SetLevel(l)
+	}
 
 	logger.Info("Registering healthz endpoint for health probes")
 	health.NewServer(cfg.Host, cfg.StatusPort, logs).ServeAsync()

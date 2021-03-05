@@ -35,6 +35,10 @@ func NewDisabledComponentsProvider() DisabledComponentsProvider {
 			components.NatsStreaming:           {},
 			components.KnativeProvisionerNatss: {},
 		},
+		broker.AWSPlanID: {
+			components.NatsStreaming:           {},
+			components.KnativeProvisionerNatss: {},
+		},
 		broker.TrialPlanID: {
 			components.KnativeEventingKafka: {},
 		},
