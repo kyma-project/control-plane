@@ -63,7 +63,7 @@ func (p *provisioner) Provision(log logrus.FieldLogger, smClient servicemanager.
 		return nil, errors.Wrapf(err, "while updating a cls instance for global account %s", request.GlobalAccountID)
 	}
 
-	log.Infof("Referencing the cls instance for global account %s by the skr %s", request.SKRInstanceID, request.GlobalAccountID)
+	log.Infof("Referencing the cls instance for global account %s by the skr %s", request.GlobalAccountID, request.SKRInstanceID)
 
 	return &ProvisionResult{
 		InstanceID:            instance.ID(),
@@ -85,7 +85,7 @@ func (p *provisioner) createNewInstance(log logrus.FieldLogger, smClient service
 	request.Instance.InstanceID = instance.ID()
 	err = p.creator.CreateInstance(smClient, request.Instance)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while deleting a cls instance for global account %s", instance.GlobalAccountID())
+		return nil, errors.Wrapf(err, "while creating a cls instance for global account %s", instance.GlobalAccountID())
 	}
 
 	return &ProvisionResult{
