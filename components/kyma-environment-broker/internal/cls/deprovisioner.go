@@ -62,7 +62,7 @@ func (d *Deprovisioner) Deprovision(log logrus.FieldLogger, smClient servicemana
 	}
 
 	if instance.IsBeingRemoved() {
-		log.Infof("Removing the cls instance %s", instance.ID)
+		log.Infof("Removing the cls instance %s", instance.ID())
 
 		if err := d.remover.RemoveInstance(smClient, request.Instance); err != nil {
 			return errors.Wrapf(err, "while removing the cls instance %s", instance.ID())

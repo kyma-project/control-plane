@@ -39,7 +39,7 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
 	skrInstanceID := operation.InstanceID
 
-	if !operation.Cls.Instance.Provisioned {
+	if operation.Cls.Instance.InstanceID == "" {
 		log.Warnf("Unable to deprovision a cls instance for global account %s since it is not provisioned", globalAccountID)
 		return operation, 0, nil
 	}
