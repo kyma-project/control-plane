@@ -32,6 +32,31 @@ paths:
               $ref: '#/components/schemas/OrchestrationParameters'
         description: Orchestration parameters to configure orchestration
 
+  /upgrade/cluster:
+    post:
+      summary: Orchestrates cluster (shoot) upgrade
+      operationId: upgradeCluster
+      description: Starts the processing of cluster upgrade, returns the orchestration ID
+      responses:
+        '202':
+          description: Upgrade started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpgradeResponse'
+        '400':
+          description: Invalid input or object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errObj'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrchestrationParameters'
+        description: Orchestration parameters to configure orchestration
+
   /orchestrations:
     get:
       summary: Returns a list of orchestrations
@@ -348,6 +373,14 @@ components:
     StatusResponse:
       type: object
       properties:
+        type:
+          type: string
+          enum: [
+            "upgradeKyma",
+            "upgradeCluster"
+          ]
+          description: "Orchestration type, either kyma upgrade or cluster upgrade"
+          example: "upgradeKyma"
         state:
           type: string
           example: in progress

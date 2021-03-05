@@ -28,6 +28,7 @@ type Operations interface {
 	Provisioning
 	Deprovisioning
 	UpgradeKyma
+	UpgradeCluster
 
 	GetLastOperation(instanceID string) (*internal.Operation, error)
 	GetOperationByID(operationID string) (*internal.Operation, error)
@@ -60,7 +61,6 @@ type Orchestrations interface {
 	Update(orchestration internal.Orchestration) error
 	GetByID(orchestrationID string) (*internal.Orchestration, error)
 	List(filter dbmodel.OrchestrationFilter) ([]internal.Orchestration, int, int, error)
-	ListByState(state string) ([]internal.Orchestration, error)
 }
 
 type RuntimeStates interface {
@@ -79,16 +79,23 @@ type UpgradeKyma interface {
 	ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeKymaOperation, int, int, error)
 }
 
+type UpgradeCluster interface {
+	InsertUpgradeClusterOperation(operation internal.UpgradeClusterOperation) error
+	UpdateUpgradeClusterOperation(operation internal.UpgradeClusterOperation) (*internal.UpgradeClusterOperation, error)
+	GetUpgradeClusterOperationByID(operationID string) (*internal.UpgradeClusterOperation, error)
+	ListUpgradeClusterOperationsByInstanceID(instanceID string) ([]internal.UpgradeClusterOperation, error)
+	ListUpgradeClusterOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeClusterOperation, int, int, error)
+}
+
 type LMSTenants interface {
 	FindTenantByName(name, region string) (internal.LMSTenant, bool, error)
 	InsertTenant(tenant internal.LMSTenant) error
 }
 
 type CLSInstances interface {
-	FindInstance(name string) (*internal.CLSInstance, bool, error)
-	InsertInstance(instance internal.CLSInstance) error
-	Reference(version int, globalAccountID, skrInstanceID string) error
-	Unreference(version int, globalAccountID, skrInstanceID string) error
-	MarkAsBeingRemoved(version int, globalAccountID, skrInstanceID string) error
-	RemoveInstance(version int, globalAccountID string) error
+	FindActiveByGlobalAccountID(name string) (*internal.CLSInstance, bool, error)
+	FindByID(clsInstanceID string) (*internal.CLSInstance, bool, error)
+	Insert(instance internal.CLSInstance) error
+	Update(instance internal.CLSInstance) error
+	Delete(clsInstanceID string) error
 }

@@ -234,6 +234,7 @@ func FixTables() map[string]string {
 		postsql.OrchestrationTableName: fmt.Sprintf(
 			`CREATE TABLE IF NOT EXISTS %s (
 			orchestration_id varchar(255) PRIMARY KEY,
+			type varchar(32) NOT NULL,
 			state varchar(32) NOT NULL,
 			description text,
 			parameters text NOT NULL,
@@ -260,5 +261,21 @@ func FixTables() map[string]string {
 			kyma_version text,
 			k8s_version text
 			)`, postsql.RuntimeStateTableName),
+		postsql.CLSInstanceTableName: fmt.Sprintf(
+			`CREATE TABLE IF NOT EXISTS %s (
+			id varchar(255) PRIMARY KEY,
+			version integer NOT NULL,
+			global_account_id varchar(255) NOT NULL,
+			region varchar(12) NOT NULL,
+			created_at TIMESTAMPTZ NOT NULL,
+			removed_by_skr_instance_id varchar(255),
+			unique (global_account_id, removed_by_skr_instance_id));
+
+			CREATE TABLE IF NOT EXISTS %s (
+			id SERIAL,
+			cls_instance_id varchar(255) NOT NULL,
+			skr_instance_id varchar(255) NOT NULL,
+			FOREIGN KEY(cls_instance_id) REFERENCES %s(id) ON DELETE CASCADE);
+			`, postsql.CLSInstanceTableName, postsql.CLSInstanceReferenceTableName, postsql.CLSInstanceTableName),
 	}
 }

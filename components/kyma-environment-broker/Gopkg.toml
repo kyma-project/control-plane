@@ -63,8 +63,12 @@
   version = "1.2.0"
 
 [[constraint]]
+  name = "github.com/Peripli/service-manager"
+  version = "v0.18.9"
+
+[[constraint]]
   name = "github.com/Peripli/service-manager-cli"
-  version = "v1.11.2"
+  version = "v1.11.6"
 
 # Azure
 [[constraint]]
@@ -81,7 +85,7 @@
 
 [[override]]
   name = "github.com/tidwall/gjson"
-  version = "v1.6.3"
+  version = "v1.6.8"
 
 [[override]]
   name = "github.com/satori/go.uuid"

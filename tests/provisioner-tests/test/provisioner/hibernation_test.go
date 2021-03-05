@@ -94,7 +94,7 @@ func TestHibernation(t *testing.T) {
 				log.Log("Waiting for deprovisioning to finish...")
 				deprovisioningOperationStatus, err = testSuite.WaitUntilOperationIsFinished(testSuite.config.Timeouts.Deprovisioning, deprovisioningOperationID, log)
 				assertions.RequireNoError(t, err)
-				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeHibernate, runtimeID, deprovisioningOperationStatus)
+				assertions.AssertOperationSucceed(t, gqlschema.OperationTypeDeprovision, runtimeID, deprovisioningOperationStatus)
 				log.Log("Deprovisioning finished.")
 			})
 		}(provider)

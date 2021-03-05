@@ -40,19 +40,26 @@ func (rl RuntimeLister) ListAllRuntimes() ([]runtime.RuntimeDTO, error) {
 			continue
 		}
 
-		pOpr, err := rl.operationsDb.GetProvisioningOperationByInstanceID(inst.InstanceID)
+		pOprs, err := rl.operationsDb.ListProvisioningOperationsByInstanceID(inst.InstanceID)
 		if err != nil {
 			rl.log.Errorf("while getting provision operation for instance %s: %s", inst.InstanceID, err.Error())
 			continue
 		}
-		rl.converter.ApplyProvisioningOperation(&dto, pOpr)
+		if len(pOprs) > 0 {
+			rl.converter.ApplyProvisioningOperation(&dto, &pOprs[len(pOprs)-1])
+		}
+		rl.converter.ApplyUnsuspensionOperations(&dto, pOprs)
 
-		dOpr, err := rl.operationsDb.GetDeprovisioningOperationByInstanceID(inst.InstanceID)
+		dOprs, err := rl.operationsDb.ListDeprovisioningOperationsByInstanceID(inst.InstanceID)
 		if err != nil && !dberr.IsNotFound(err) {
 			rl.log.Errorf("while getting deprovision operation for instance %s: %s", inst.InstanceID, err.Error())
 			continue
 		}
-		rl.converter.ApplyDeprovisioningOperation(&dto, dOpr)
+		if len(dOprs) > 0 {
+			rl.converter.ApplyDeprovisioningOperation(&dto, &dOprs[0])
+		}
+
+		rl.converter.ApplySuspensionOperations(&dto, dOprs)
 
 		runtimes = append(runtimes, dto)
 	}
