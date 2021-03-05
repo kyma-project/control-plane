@@ -79,11 +79,10 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 			},
 		},
 	}
-	provisionerMock := &clsMock.ClsProvisioner{}
 
-	fakeGlobalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
-	provisionerMock.On("Provision", mock.Anything, &cls.ProvisionRequest{
-		GlobalAccountID: fakeGlobalAccountID,
+	provisionerMock := &clsMock.ClsProvisioner{}
+	provisionerMock.On("Provision", mock.Anything, mock.Anything, &cls.ProvisionRequest{
+		GlobalAccountID: operation.ProvisioningParameters.ErsContext.GlobalAccountID,
 		Region:          "eu",
 		Instance: servicemanager.InstanceKey{
 			BrokerID:  fakeBrokerID,

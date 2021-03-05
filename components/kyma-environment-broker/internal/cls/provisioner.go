@@ -23,14 +23,12 @@ type InstanceCreator interface {
 type provisioner struct {
 	storage ProvisionerStorage
 	creator InstanceCreator
-	log     logrus.FieldLogger
 }
 
-func NewProvisioner(storage ProvisionerStorage, creator InstanceCreator, log logrus.FieldLogger) *provisioner {
+func NewProvisioner(storage ProvisionerStorage, creator InstanceCreator) *provisioner {
 	return &provisioner{
 		storage: storage,
 		creator: creator,
-		log:     log,
 	}
 }
 
@@ -47,17 +45,17 @@ type ProvisionResult struct {
 	Region                string
 }
 
-func (p *provisioner) Provision(smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
+func (p *provisioner) Provision(log logrus.FieldLogger, smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
 	instance, exists, err := p.storage.FindActiveByGlobalAccountID(request.GlobalAccountID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while checking if instance is already created for global account %s", request.GlobalAccountID)
 	}
 
-	p.log.Infof("Found existing cls instance for global account %s", request.GlobalAccountID)
+	log.Infof("Found existing cls instance for global account %s", request.GlobalAccountID)
 
 	if !exists {
-		p.log.Infof("No cls instance found for global account %s", request.GlobalAccountID)
-		return p.createNewInstance(smClient, request)
+		log.Infof("No cls instance found for global account %s", request.GlobalAccountID)
+		return p.createNewInstance(log, smClient, request)
 	}
 
 	instance.AddReference(request.SKRInstanceID)
@@ -65,7 +63,7 @@ func (p *provisioner) Provision(smClient servicemanager.Client, request *Provisi
 		return nil, errors.Wrapf(err, "while updating a cls instance for global account %s", request.GlobalAccountID)
 	}
 
-	p.log.Infof("Referencing the cls instance for global account %s by the skr %s", request.SKRInstanceID, request.GlobalAccountID)
+	log.Infof("Referencing the cls instance for global account %s by the skr %s", request.SKRInstanceID, request.GlobalAccountID)
 
 	return &ProvisionResult{
 		InstanceID:            instance.ID(),
@@ -74,7 +72,7 @@ func (p *provisioner) Provision(smClient servicemanager.Client, request *Provisi
 	}, nil
 }
 
-func (p *provisioner) createNewInstance(smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
+func (p *provisioner) createNewInstance(log logrus.FieldLogger, smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
 	instance := internal.NewCLSInstance(request.GlobalAccountID, request.Region, internal.WithReferences(request.SKRInstanceID))
 
 	err := p.storage.Insert(*instance)
@@ -82,7 +80,7 @@ func (p *provisioner) createNewInstance(smClient servicemanager.Client, request 
 		return nil, errors.Wrapf(err, "while inserting a cls instance for global account %s", instance.GlobalAccountID())
 	}
 
-	p.log.Infof("Creating a new cls instance for global account %s", request.GlobalAccountID)
+	log.Infof("Creating a new cls instance for global account %s", request.GlobalAccountID)
 
 	request.Instance.InstanceID = instance.ID()
 	err = p.creator.CreateInstance(smClient, request.Instance)

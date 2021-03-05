@@ -6,7 +6,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 type parameters struct {
@@ -46,14 +45,12 @@ type BindingRequest struct {
 // Client wraps a generic servicemanager.Client an performs CLS specific calls
 type Client struct {
 	config *Config
-	log    logrus.FieldLogger
 }
 
 //NewClient creates a new Client instance
-func NewClient(config *Config, log logrus.FieldLogger) *Client {
+func NewClient(config *Config) *Client {
 	return &Client{
 		config: config,
-		log:    log,
 	}
 }
 
@@ -70,12 +67,10 @@ func (c *Client) CreateInstance(smClient servicemanager.Client, instance service
 	}
 	input.Parameters = createParameters(c.config)
 
-	resp, err := smClient.Provision(instance.BrokerID, input, true)
+	_, err := smClient.Provision(instance.BrokerID, input, true)
 	if err != nil {
 		return errors.Wrapf(err, "while provisioning a cls instance %s", instance.InstanceID)
 	}
-
-	c.log.Infof("Response from service manager while provisioning an instance %s: %#v", instance.InstanceID, resp)
 
 	return nil
 }
@@ -104,7 +99,7 @@ func (c *Client) CreateBinding(smClient servicemanager.Client, request *BindingR
 
 	resp, err := smClient.Bind(request.InstanceKey, request.BindingID, emptyParams, false)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Bind() call failed")
+		return nil, errors.Wrapf(err, "while creating a binding %s", request.BindingID)
 	}
 
 	return &OverrideParams{
@@ -117,12 +112,10 @@ func (c *Client) CreateBinding(smClient servicemanager.Client, request *BindingR
 
 // RemoveInstance sends a request to Service Manager to remove a CLS Instance
 func (c *Client) RemoveInstance(smClient servicemanager.Client, instance servicemanager.InstanceKey) error {
-	resp, err := smClient.Deprovision(instance, true)
+	_, err := smClient.Deprovision(instance, true)
 	if err != nil {
 		return errors.Wrapf(err, "while deprovisioning a cls instance %s", instance.InstanceID)
 	}
-
-	c.log.Infof("Response from service manager while deprovisioning an instance %s: %#v", instance.InstanceID, resp)
 
 	return nil
 }

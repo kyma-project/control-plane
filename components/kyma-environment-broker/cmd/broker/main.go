@@ -230,9 +230,9 @@ func main() {
 	if err != nil {
 		fatalOnError(err)
 	}
-	clsClient := cls.NewClient(clsConfig, logs.WithField("service", "clsClient"))
+	clsClient := cls.NewClient(clsConfig)
 	var clsDb = storage.NewMemoryStorage()
-	clsProvisioner := cls.NewProvisioner(clsDb.CLSInstances(), clsClient, logs.WithField("service", "clsProvisioner"))
+	clsProvisioner := cls.NewProvisioner(clsDb.CLSInstances(), clsClient)
 
 	//// LMS
 	//fatalOnError(cfg.LMS.Validate())
@@ -442,7 +442,7 @@ func main() {
 
 	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, serviceManagerClientFactory, cfg.OperationTimeout)
 	deprovisionManager.InitStep(deprovisioningInit)
-	clsDeprovisioner := cls.NewDeprovisioner(clsDb.CLSInstances(), clsClient, logs.WithField("service", "clsDeprovisioner"))
+	clsDeprovisioner := cls.NewDeprovisioner(clsDb.CLSInstances(), clsClient)
 
 	deprovisioningSteps := []struct {
 		disabled bool

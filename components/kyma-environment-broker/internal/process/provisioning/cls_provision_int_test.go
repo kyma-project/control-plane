@@ -83,8 +83,8 @@ func TestClsProvisionSteps(t *testing.T) {
 	require.NoError(t, err)
 	require.Zero(t, retry)
 
-	clsClient := cls.NewClient(clsConfig, log)
-	clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient, log)
+	clsClient := cls.NewClient(clsConfig)
+	clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient)
 	provisioningStep := NewClsProvisionStep(clsConfig, clsProvisioner, repo)
 	operation, retry, err = provisioningStep.Run(operation, log)
 	fmt.Printf(">>> Provisioning: %#v\n", operation.Cls)

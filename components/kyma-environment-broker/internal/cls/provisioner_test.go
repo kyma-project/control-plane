@@ -34,10 +34,10 @@ func TestProvisionReturnsExistingInstanceIfFoundInDB(t *testing.T) {
 	smClientMock := &smautomock.Client{}
 	creatorMock := &automock.InstanceCreator{}
 
-	sut := NewProvisioner(fakeStorage, creatorMock, logger.NewLogDummy())
+	sut := NewProvisioner(fakeStorage, creatorMock)
 
 	// when
-	result, err := sut.Provision(smClientMock, &ProvisionRequest{
+	result, err := sut.Provision(logger.NewLogDummy(), smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
 		Instance: servicemanager.InstanceKey{
@@ -77,10 +77,10 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 			isValidUUID(instance.InstanceID)
 	})).Return(nil)
 
-	sut := NewProvisioner(fakeStorage, creatorMock, logger.NewLogDummy())
+	sut := NewProvisioner(fakeStorage, creatorMock)
 
 	// when
-	result, err := sut.Provision(smClientMock, &ProvisionRequest{
+	result, err := sut.Provision(logger.NewLogDummy(), smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
 		Region:          fakeRegion,
@@ -118,10 +118,10 @@ func TestProvisionDoesNotCreateNewInstanceIfFindQueryFails(t *testing.T) {
 	smClientMock := &smautomock.Client{}
 	creatorMock := &automock.InstanceCreator{}
 
-	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
+	sut := NewProvisioner(storageMock, creatorMock)
 
 	// when
-	result, err := sut.Provision(smClientMock, &ProvisionRequest{
+	result, err := sut.Provision(logger.NewLogDummy(), smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
 		Instance: servicemanager.InstanceKey{
@@ -155,10 +155,10 @@ func TestProvisionDoesNotCreateNewInstanceIfInsertQueryFails(t *testing.T) {
 	smClientMock := &smautomock.Client{}
 	creatorMock := &automock.InstanceCreator{}
 
-	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
+	sut := NewProvisioner(storageMock, creatorMock)
 
 	// when
-	result, err := sut.Provision(smClientMock, &ProvisionRequest{
+	result, err := sut.Provision(logger.NewLogDummy(), smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
 		Instance: servicemanager.InstanceKey{
@@ -190,10 +190,10 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 	creatorMock := &automock.InstanceCreator{}
 	creatorMock.On("CreateInstance", smClientMock, mock.Anything).Return(nil)
 
-	sut := NewProvisioner(fakeStorage, creatorMock, logger.NewLogDummy())
+	sut := NewProvisioner(fakeStorage, creatorMock)
 
 	// when
-	result, err := sut.Provision(smClientMock, &ProvisionRequest{
+	result, err := sut.Provision(logger.NewLogDummy(), smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   fakeSKRInstanceID,
 		Instance: servicemanager.InstanceKey{
@@ -233,10 +233,10 @@ func TestProvisionAddsReferenceIfFoundInDB(t *testing.T) {
 	smClientMock := &smautomock.Client{}
 	creatorMock := &automock.InstanceCreator{}
 
-	sut := NewProvisioner(fakeStorage, creatorMock, logger.NewLogDummy())
+	sut := NewProvisioner(fakeStorage, creatorMock)
 
 	// when
-	result, err := sut.Provision(smClientMock, &ProvisionRequest{
+	result, err := sut.Provision(logger.NewLogDummy(), smClientMock, &ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		SKRInstanceID:   secondFakeSKRInstanceID,
 		Instance: servicemanager.InstanceKey{

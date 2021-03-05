@@ -4,11 +4,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/automock"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -118,7 +116,7 @@ func TestCreateInstance(t *testing.T) {
 			// given
 			smClientMock := &automock.Client{}
 			smClientMock.On("Provision", fakeBrokerID, mock.MatchedBy(tc.matcher), true).Return(&servicemanager.ProvisionResponse{}, nil)
-			sut := NewClient(config, logger.NewLogDummy())
+			sut := NewClient(config)
 
 			// when
 			err := sut.CreateInstance(smClientMock, servicemanager.InstanceKey{
@@ -146,7 +144,7 @@ func TestCreateBinding(t *testing.T) {
 		HTTPResponse: servicemanager.HTTPResponse{StatusCode: 200},
 	}
 	smClientMock.On("Bind", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&resB, nil)
-	sut := NewClient(config, logrus.New())
+	sut := NewClient(config)
 
 	br := BindingRequest{
 		InstanceKey: servicemanager.InstanceKey{},
@@ -194,7 +192,7 @@ func TestRemoveInstance(t *testing.T) {
 			// given
 			smClientMock := &automock.Client{}
 			smClientMock.On("Deprovision", fakeInstance, true).Return(&servicemanager.DeprovisionResponse{}, tc.deprovisionErr)
-			sut := NewClient(new(Config), logger.NewLogDummy())
+			sut := NewClient(new(Config))
 
 			// when
 			err := sut.RemoveInstance(smClientMock, fakeInstance)
