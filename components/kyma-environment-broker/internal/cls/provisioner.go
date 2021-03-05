@@ -51,12 +51,12 @@ func (p *provisioner) Provision(log logrus.FieldLogger, smClient servicemanager.
 		return nil, errors.Wrapf(err, "while checking if instance is already created for global account %s", request.GlobalAccountID)
 	}
 
-	log.Infof("Found existing cls instance for global account %s", request.GlobalAccountID)
-
 	if !exists {
 		log.Infof("No cls instance found for global account %s", request.GlobalAccountID)
 		return p.createNewInstance(log, smClient, request)
 	}
+
+	log.Infof("Found existing cls instance for global account %s", request.GlobalAccountID)
 
 	instance.AddReference(request.SKRInstanceID)
 	if err := p.storage.Update(*instance); err != nil {
