@@ -44,8 +44,6 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 		return operation, 0, nil
 	}
 
-	log.Debugf("Starting deprovisioning a cls instance %s", operation.Cls.Instance.InstanceID)
-
 	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, operation.Cls.Region)
 	if err != nil {
 		failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
@@ -84,8 +82,6 @@ func (s *ClsDeprovisionStep) checkDeprovisioningStatus(operation internal.Deprov
 		log.Error(failureReason)
 		return s.operationManager.RetryOperation(operation, failureReason, 1*time.Minute, 5*time.Minute, log)
 	}
-
-	log.Debugf("Response from service manager while polling the status of a cls instance %s: %#v", instanceID, resp)
 
 	switch resp.State {
 	case servicemanager.InProgress:

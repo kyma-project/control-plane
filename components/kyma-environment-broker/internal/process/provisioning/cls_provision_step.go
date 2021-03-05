@@ -57,8 +57,6 @@ func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
 
-	log.Infof("Starting provisioning a cls instance for global account %s", globalAccountID)
-
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 	skrInstanceID := operation.InstanceID
 	result, err := s.instanceProvider.Provision(smClient, &cls.ProvisionRequest{
