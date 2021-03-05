@@ -90,8 +90,7 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 			PlanID:    "plan-id",
 		},
 	}).Return(&cls.ProvisionResult{
-		InstanceID:            "instance_id",
-		ProvisioningTriggered: true,
+		InstanceID: "instance_id",
 	}, nil)
 
 	offeringStep := NewClsOfferingStep(config, repo)

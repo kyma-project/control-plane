@@ -40,9 +40,8 @@ type ProvisionRequest struct {
 }
 
 type ProvisionResult struct {
-	InstanceID            string
-	ProvisioningTriggered bool
-	Region                string
+	InstanceID string
+	Region     string
 }
 
 func (p *provisioner) Provision(log logrus.FieldLogger, smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
@@ -66,9 +65,8 @@ func (p *provisioner) Provision(log logrus.FieldLogger, smClient servicemanager.
 	log.Infof("Referencing the cls instance for global account %s by the skr %s", request.GlobalAccountID, request.SKRInstanceID)
 
 	return &ProvisionResult{
-		InstanceID:            instance.ID(),
-		ProvisioningTriggered: false,
-		Region:                instance.Region(),
+		InstanceID: instance.ID(),
+		Region:     instance.Region(),
 	}, nil
 }
 
@@ -89,8 +87,7 @@ func (p *provisioner) createNewInstance(log logrus.FieldLogger, smClient service
 	}
 
 	return &ProvisionResult{
-		InstanceID:            instance.ID(),
-		ProvisioningTriggered: true,
-		Region:                request.Region,
+		InstanceID: instance.ID(),
+		Region:     request.Region,
 	}, nil
 }

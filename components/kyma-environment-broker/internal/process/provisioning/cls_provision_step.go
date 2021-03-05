@@ -75,7 +75,7 @@ func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 	op, repeat := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 		operation.Cls.Region = result.Region
 		operation.Cls.Instance.InstanceID = result.InstanceID
-		operation.Cls.Instance.ProvisioningTriggered = result.ProvisioningTriggered
+		operation.Cls.Instance.ProvisioningTriggered = true
 	}, log)
 	if repeat != 0 {
 		log.Errorf("Unable to update operation: %s", err)

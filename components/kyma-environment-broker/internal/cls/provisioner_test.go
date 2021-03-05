@@ -51,7 +51,6 @@ func TestProvisionReturnsExistingInstanceIfFoundInDB(t *testing.T) {
 	require.NotNil(t, result)
 	require.NoError(t, err)
 	require.Equal(t, fakeInstanceID, result.InstanceID)
-	require.False(t, result.ProvisioningTriggered)
 	require.Equal(t, fakeRegion, result.Region)
 }
 
@@ -95,7 +94,6 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 	require.NotNil(t, result)
 	require.NoError(t, err)
 	require.NotEmpty(t, result.InstanceID)
-	require.True(t, result.ProvisioningTriggered)
 	require.Equal(t, fakeRegion, result.Region)
 
 	creatorMock.AssertNumberOfCalls(t, "CreateInstance", 1)
