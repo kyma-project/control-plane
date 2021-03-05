@@ -73,6 +73,12 @@ func GCPRegions() []string {
 		"northamerica-northeast1", "southamerica-east1"}
 }
 
+func AWSRegions() []string {
+	// be aware of zones defined in internal/provider/aws_provider.go
+	return []string{"eu-central-1", "eu-west-2", "ca-central-1", "sa-east-1", "us-east-1", "us-west-1",
+		"ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2"}
+}
+
 func GCPSchema(machineTypes []string) []byte {
 	properties := NewProvisioningProperties(machineTypes, GCPRegions())
 	schema := NewSchema(properties, DefaultControlsOrder())
@@ -93,12 +99,6 @@ func AWSSchema(machineTypes []string) []byte {
 		panic(err)
 	}
 	return bytes
-}
-
-func AWSRegions() []string {
-	// be aware of zones defined in internal/provider/aws_provider.go
-	return []string{"eu-central-1", "eu-west-2", "ca-central-1", "sa-east-1", "us-east-1", "us-west-1",
-		"ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2"}
 }
 
 func AzureSchema(machineTypes []string) []byte {

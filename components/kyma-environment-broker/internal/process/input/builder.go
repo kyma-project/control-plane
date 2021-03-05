@@ -79,7 +79,6 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 }
 
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
-	logrus.Infof(planID)
 	switch planID {
 	case broker.GCPPlanID, broker.AWSPlanID, broker.AzurePlanID, broker.AzureLitePlanID, broker.TrialPlanID:
 		return true

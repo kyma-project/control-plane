@@ -54,3 +54,7 @@ services:
         description: "GCP"
         metadata:
           displayName: "GCP"
+      aws:
+        description: "AWS"
+        metadata:
+          displayName: "AWS"
