@@ -92,6 +92,13 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 			operation = op
 		}
 
+		op, retry := s.operationManager.UpdateOperation(operation)
+		if retry > 0 {
+			log.Errorf("unable to update operation")
+			return operation, time.Second, nil
+		}
+		operation = op
+
 		// Create a binding
 		overrideParams, err = s.bindingProvider.CreateBinding(smCli, &cls.BindingRequest{
 			InstanceKey: operation.Cls.Instance.InstanceKey(),
