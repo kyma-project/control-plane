@@ -50,20 +50,20 @@ func (s *ClsUpgradeOfferingStep) Run(operation internal.UpgradeKymaOperation, lo
 
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 
-	offeringInfo, retryable, err := servicemanager.GenerateOfferingInfo(smClient, provisioning.ClsOfferingName, provisioning.ClsPlanName)
-	if offeringInfo.ServiceID != "" && offeringInfo.BrokerID != "" {
-		log.Infof("Found offering: catalogID=%s brokerID=%s", offeringInfo.ServiceID, offeringInfo.BrokerID)
+	meta, err := servicemanager.GenerateMetadata(smClient, provisioning.ClsOfferingName, provisioning.ClsPlanName)
+	if meta.ServiceID != "" && meta.BrokerID != "" {
+		log.Infof("Found offering: catalogID=%s brokerID=%s", meta.ServiceID, meta.BrokerID)
 	}
 	if err != nil {
-		if retryable {
+		if kebError.IsTemporaryError(err) {
 			return s.handleError(operation, err, err.Error(), log)
 		}
 		return s.operationManager.OperationFailed(operation, err.Error())
 	}
-	log.Infof("Found plan: catalogID=%s", offeringInfo.PlanID)
-	info.ServiceID = offeringInfo.ServiceID
-	info.BrokerID = offeringInfo.BrokerID
-	info.PlanID = offeringInfo.PlanID
+	log.Infof("Found plan: catalogID=%s", meta.PlanID)
+	info.ServiceID = meta.ServiceID
+	info.BrokerID = meta.BrokerID
+	info.PlanID = meta.PlanID
 
 	op, retry := s.operationManager.SimpleUpdateOperation(operation)
 	if retry > 0 {

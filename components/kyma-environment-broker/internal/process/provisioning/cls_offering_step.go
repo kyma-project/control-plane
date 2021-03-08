@@ -57,6 +57,7 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	// try to find the offering
 	offerings, err := smClient.ListOfferingsByName(ClsOfferingName)
 	if err != nil {
@@ -80,15 +81,23 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 			fmt.Sprintf("expected one %s Service Manager plan, but found %d", ClsPlanName, len(offerings.ServiceOfferings)), log)
 =======
 		if retryable {
+=======
+	meta, err := servicemanager.GenerateMetadata(smClient, ClsOfferingName, ClsPlanName)
+	if meta.ServiceID != "" && meta.BrokerID != "" {
+		log.Infof("Found offering: catalogID=%s brokerID=%s", meta.ServiceID, meta.BrokerID)
+	}
+	if err != nil {
+		if kebError.IsTemporaryError(err) {
+>>>>>>> Improve
 			return s.handleError(operation, err, err.Error(), log)
 		}
 		return s.operationManager.OperationFailed(operation, err.Error())
 >>>>>>> Unify offering logic
 	}
-	log.Infof("Found plan: catalogID=%s", offeringInfo.PlanID)
-	info.ServiceID = offeringInfo.ServiceID
-	info.BrokerID = offeringInfo.BrokerID
-	info.PlanID = offeringInfo.PlanID
+	log.Infof("Found plan: catalogID=%s", meta.PlanID)
+	info.ServiceID = meta.ServiceID
+	info.BrokerID = meta.BrokerID
+	info.PlanID = meta.PlanID
 
 	op, retry := s.operationManager.SimpleUpdateOperation(operation)
 	if retry > 0 {
