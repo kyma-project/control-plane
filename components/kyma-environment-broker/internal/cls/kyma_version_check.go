@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func IsKymaVersion_1_20(runTimeVersion string) (bool, error) {
+func IsKymaVersionAtLeast_1_20(runTimeVersion string) (bool, error) {
 	c, err := semver.NewConstraint("<1.20.x")
 	if err != nil {
 		return false, errors.New("unable to parse constraint for kyma version %s to set correct fluent bit plugin")
@@ -17,10 +17,5 @@ func IsKymaVersion_1_20(runTimeVersion string) (bool, error) {
 		return true, nil
 	}
 
-	check := c.Check(version)
-	if check {
-		return false, nil
-	} else {
-		return true, nil
-	}
+	return !c.Check(version), nil
 }

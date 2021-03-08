@@ -1,10 +1,11 @@
-package provisioning
+package upgrade_kyma
 
 import (
 	"testing"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 
@@ -17,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestClsAuditLogStep_ScriptFileDoesNotExist(t *testing.T) {
+func TestClsUpgradeAuditLogStep_ScriptFileDoesNotExist(t *testing.T) {
 	// given
 	mm := afero.NewMemMapFs()
 
@@ -28,26 +29,26 @@ func TestClsAuditLogStep_ScriptFileDoesNotExist(t *testing.T) {
 		Password: "aaaa",
 		Tenant:   "tenant",
 	}
-	svc := NewClsAuditLogOverridesStep(repo, cfg, "1234567890123456")
+	svc := NewClsUpgradeAuditLogOverridesStep(repo, cfg, "1234567890123456")
 	svc.fs = mm
 
-	operation := internal.ProvisioningOperation{
+	operation := internal.UpgradeKymaOperation{
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{SubAccountID: "1234567890"}},
 		},
 	}
-	err := repo.InsertProvisioningOperation(operation)
+	err := repo.InsertUpgradeKymaOperation(operation)
 	require.NoError(t, err)
 
 	// when
-	_, _, err = svc.Run(operation, NewLogDummy())
+	_, _, err = svc.Run(operation, logger.NewLogDummy())
 	//then
 	require.Error(t, err)
 	require.EqualError(t, err, "open /auditlog-script/script: file does not exist")
 
 }
 
-func TestClsAuditLogStep_HappyPath(t *testing.T) {
+func TestClsUpgradeAuditLogStep_HappyPath(t *testing.T) {
 	// given
 	mm := afero.NewMemMapFs()
 
@@ -80,7 +81,7 @@ return "fooBar"
 		Password: "aaaa",
 		Tenant:   "tenant",
 	}
-	svc := NewClsAuditLogOverridesStep(repo, cfg, secretKey)
+	svc := NewClsUpgradeAuditLogOverridesStep(repo, cfg, secretKey)
 	svc.fs = mm
 
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
@@ -219,7 +220,7 @@ return "fooBar"
 		},
 	}).Return(nil).Once()
 
-	operation := internal.ProvisioningOperation{
+	operation := internal.UpgradeKymaOperation{
 		InputCreator: inputCreatorMock,
 		Operation: internal.Operation{
 
@@ -235,15 +236,15 @@ return "fooBar"
 			Origin:  "foo",
 		},
 	}
-	repo.InsertProvisioningOperation(operation)
+	repo.InsertUpgradeKymaOperation(operation)
 	// when
-	_, repeat, err := svc.Run(operation, NewLogDummy())
+	_, repeat, err := svc.Run(operation, logger.NewLogDummy())
 	//then
 	assert.NoError(t, err)
 	assert.Equal(t, time.Duration(0), repeat)
 }
 
-func TestClsAuditLogStep_HappyPath_SeqHttp(t *testing.T) {
+func TestClsUpgradeAuditLogStep_HappyPath_SeqHttp(t *testing.T) {
 	// given
 	mm := afero.NewMemMapFs()
 
@@ -279,7 +280,7 @@ return "fooBar"
 		Tenant:        "tenant",
 		EnableSeqHttp: true,
 	}
-	svc := NewClsAuditLogOverridesStep(repo, cfg, "1234567890123456")
+	svc := NewClsUpgradeAuditLogOverridesStep(repo, cfg, "1234567890123456")
 	svc.fs = mm
 
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
@@ -395,7 +396,7 @@ return "fooBar"
 		},
 	}).Return(nil).Once()
 
-	operation := internal.ProvisioningOperation{
+	operation := internal.UpgradeKymaOperation{
 		RuntimeVersion: internal.RuntimeVersionData{
 			Version: "1.20",
 			Origin:  "foo",
@@ -410,9 +411,9 @@ return "fooBar"
 			},
 		},
 	}
-	repo.InsertProvisioningOperation(operation)
+	repo.InsertUpgradeKymaOperation(operation)
 	// when
-	_, repeat, err := svc.Run(operation, NewLogDummy())
+	_, repeat, err := svc.Run(operation, logger.NewLogDummy())
 	//then
 	assert.NoError(t, err)
 	assert.Equal(t, time.Duration(0), repeat)
