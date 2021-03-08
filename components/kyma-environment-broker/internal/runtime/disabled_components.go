@@ -20,9 +20,12 @@ type DisabledComponentsProvider map[string]map[string]struct{}
 func NewDisabledComponentsProvider() DisabledComponentsProvider {
 	return map[string]map[string]struct{}{
 		broker.AllPlansSelector: {
-			components.Backup:               {},
-			components.BackupInit:           {},
-			components.KnativeEventingKafka: {},
+			components.Backup:                  {},
+			components.BackupInit:              {},
+			components.KnativeEventing:         {},
+			components.KnativeEventingKafka:    {},
+			components.KnativeProvisionerNatss: {},
+			components.NatsStreaming:           {},
 		},
 		broker.GCPPlanID:       {},
 		broker.AzurePlanID:     {},
