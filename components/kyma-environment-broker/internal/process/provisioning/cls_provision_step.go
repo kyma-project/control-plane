@@ -43,13 +43,7 @@ func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
 
 	skrRegion := operation.ProvisioningParameters.Parameters.Region
-	smRegion, err := cls.DetermineServiceManagerRegion(skrRegion)
-	if err != nil {
-		failureReason := fmt.Sprintf("Unable to determine cls service manager region %v: %s", skrRegion, err)
-		log.Error(failureReason)
-		return s.operationManager.OperationFailed(operation, failureReason, log)
-	}
-
+	smRegion := cls.DetermineServiceManagerRegion(skrRegion)
 	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, smRegion)
 	if err != nil {
 		failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)

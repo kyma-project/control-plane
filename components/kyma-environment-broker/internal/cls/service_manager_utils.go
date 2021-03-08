@@ -7,43 +7,105 @@ import (
 )
 
 var (
-	regionMap = map[string]string{
-		"westeurope":    "eu",
-		"northeurope":   "eu",
-		"westus2":       "eu",
-		"uksouth":       "eu",
-		"francecentral": "eu",
-		"uaenorth":      "eu",
+	azureRegionsForClsEu = []string{
+		"northeurope",
+		"westeurope",
+		"uksouth",
+		"ukwest",
+		"southafricanorth",
+		"southafricawest",
+		"francecentral",
+		"francesouth",
+		"germanywestcentral",
+		"germanynorth",
+		"norwayeast",
+		"norwaywest",
+		"switzerlandnorth",
+		"switzerlandwest",
+		"uaenorth",
+		"uaecentral",
+		"europe",
+		"uk",
+	}
 
-		"eastus":      "us",
-		"eastus2":     "us",
-		"centralus":   "us",
-		"eastus2euap": "us",
+	azureRegionsForClsUs = []string{
+		"eastus",
+		"eastus2",
+		"southcentralus",
+		"westus2",
+		"australiaeast",
+		"southeastasia",
+		"centralus",
+		"northcentralus",
+		"westus",
+		"centralindia",
+		"eastasia",
+		"japaneast",
+		"koreacentral",
+		"canadacentral",
+		"brazilsouth",
+		"centralusstage",
+		"eastusstage",
+		"eastus2stage",
+		"northcentralusstage",
+		"southcentralusstage",
+		"westusstage",
+		"westus2stage",
+		"asia",
+		"asiapacific",
+		"australia",
+		"brazil",
+		"canada",
+		"india",
+		"japan",
+		"unitedstates",
+		"eastasiastage",
+		"southeastasiastage",
+		"centraluseuap",
+		"eastus2euap",
+		"westcentralus",
+		"westus3",
+		"australiacentral",
+		"australiacentral2",
+		"australiasoutheast",
+		"japanwest",
+		"koreasouth",
+		"southindia",
+		"westindia",
+		"canadaeast",
+		"brazilsoutheast",
 	}
 )
 
 const (
-	defaultServiceManagerRegion = "eu"
+	fallbackServiceManagerRegion = RegionEurope
 )
 
-//DetermineServiceManagerRegion maps a hyperscaler-specific region (currently, Azure only) to a region where a CLS instance is to be provisioned
-func DetermineServiceManagerRegion(skrRegion *string) (string, error) {
+//DetermineServiceManagerRegion maps a hyperscaler-specific region (currently, Azure only) to a region where a CLS instance is to be provisioned. Returns eu as a fallback regions.
+func DetermineServiceManagerRegion(skrRegion *string) string {
 	if skrRegion == nil {
-		return defaultServiceManagerRegion, nil
+		return fallbackServiceManagerRegion
 	}
 
-	serviceManagerRegion, exists := regionMap[*skrRegion]
-	if !exists {
-		return "", fmt.Errorf("unsupported region: %s", *skrRegion)
+	for _, region := range azureRegionsForClsEu {
+		if region == *skrRegion {
+			return RegionEurope
+		}
 	}
 
-	return serviceManagerRegion, nil
+	for _, region := range azureRegionsForClsUs {
+		if region == *skrRegion {
+			return RegionUS
+		}
+	}
+
+	return fallbackServiceManagerRegion
 }
 
 //FindCredentials searches for Service Manager credentials for a given region
 func FindCredentials(config *ServiceManagerConfig, region string) (*servicemanager.Credentials, error) {
 	for _, credentials := range config.Credentials {
-		if string(credentials.Region) == region {
+		if credentials.Region == region {
 			return &servicemanager.Credentials{
 				URL:      credentials.URL,
 				Username: credentials.Username,
