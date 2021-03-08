@@ -2,14 +2,13 @@ package hyperscaler
 
 import (
 	"fmt"
-	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
-	"k8s.io/client-go/kubernetes"
 	"sync"
 
+	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/pkg/errors"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 type Type string

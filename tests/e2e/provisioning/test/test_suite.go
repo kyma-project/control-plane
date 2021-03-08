@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"k8s.io/client-go/kubernetes"
 	"net/http"
 	"testing"
 	"time"
@@ -17,7 +16,6 @@ import (
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/broker"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/runtime"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/v1_client"
-
 	"github.com/ory/hydra-maester/api/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -26,6 +24,7 @@ import (
 	"github.com/vrischmann/envconfig"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
