@@ -43,8 +43,11 @@ func (p ProvisioningParameters) IsEqual(input ProvisioningParameters) bool {
 
 type TrialCloudProvider string
 
-const Gcp TrialCloudProvider = "GCP"
-const Azure TrialCloudProvider = "Azure"
+const (
+	Azure TrialCloudProvider = "Azure"
+	AWS   TrialCloudProvider = "AWS"
+	Gcp   TrialCloudProvider = "GCP"
+)
 
 type ProvisioningParametersDTO struct {
 	Name         string  `json:"name"`
