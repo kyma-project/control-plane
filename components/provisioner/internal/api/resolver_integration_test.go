@@ -69,21 +69,14 @@ type provisioningInput struct {
 	runtimeInput gqlschema.RuntimeInput
 }
 
+/*
+Testing of these provisioning configs is time-consuming!
+Here should be added only happy path test cases where parameter differences actually matter from Resolver's perspective.
+Everything else should be tested in appropriate package
+*/
 func newTestProvisioningConfigs() []testCase {
 	return []testCase{
-		{name: "GCP on Gardener",
-			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct GCP configuration for Gardener",
-			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bbb",
-			auditLogTenant: "e7382275-e835-4549-94e1-3b1101ebd5ab",
-			provisioningInput: provisioningInput{
-				config: gcpGardenerClusterConfigInput(),
-				runtimeInput: gqlschema.RuntimeInput{
-					Name:        "test runtime 1",
-					Description: new(string),
-				}},
-			upgradeShootInput: NewUpgradeShootInput(),
-		},
-		{name: "Azure on Gardener (with zones)",
+		{name: "Azure on Gardener",
 			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones passed",
 			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb4",
 			auditLogTenant: "12d68c35-556b-4966-a061-235d4a060929",
@@ -91,42 +84,6 @@ func newTestProvisioningConfigs() []testCase {
 				config: azureGardenerClusterConfigInput("1", "2"),
 				runtimeInput: gqlschema.RuntimeInput{
 					Name:        "test runtime 2",
-					Description: new(string),
-				}},
-			upgradeShootInput: NewUpgradeShootInput(),
-		},
-		{name: "Azure on Gardener (without zones)",
-			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones are empty",
-			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb1",
-			auditLogTenant: "12d68c35-556b-4966-a061-235d4a060929",
-			provisioningInput: provisioningInput{
-				config: azureGardenerClusterConfigInput(),
-				runtimeInput: gqlschema.RuntimeInput{
-					Name:        "test runtime 3",
-					Description: new(string),
-				}},
-			upgradeShootInput: NewUpgradeShootInput(),
-		},
-		{name: "AWS on Gardener",
-			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct AWS configuration for Gardener",
-			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb5",
-			auditLogTenant: "e7382275-e835-4549-94e1-3b1101ebda55",
-			provisioningInput: provisioningInput{
-				config: awsGardenerClusterConfigInput(),
-				runtimeInput: gqlschema.RuntimeInput{
-					Name:        "test runtime 4",
-					Description: new(string),
-				}},
-			upgradeShootInput: NewUpgradeShootInput(),
-		},
-		{name: "Azure on Gardener seed is empty",
-			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when seed is empty",
-			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb2",
-			auditLogTenant: "e7382275-e835-4549-94e1-3b1101e3a1fa",
-			provisioningInput: provisioningInput{
-				config: azureGardenerClusterConfigInputNoSeed(),
-				runtimeInput: gqlschema.RuntimeInput{
-					Name:        "test runtime 5",
 					Description: new(string),
 				}},
 			upgradeShootInput: NewUpgradeShootInput(),
@@ -142,33 +99,6 @@ func newTestProvisioningConfigs() []testCase {
 					Description: new(string),
 				}},
 			upgradeShootInput: NewUpgradeOpenStackShootInput(),
-		},
-	}
-}
-
-func gcpGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
-	return gqlschema.ClusterConfigInput{
-		GardenerConfig: &gqlschema.GardenerConfigInput{
-			Name:              util.CreateGardenerClusterName(),
-			KubernetesVersion: "version",
-			Purpose:           util.StringPtr("evaluation"),
-			Provider:          "GCP",
-			TargetSecret:      "secret",
-			Seed:              util.StringPtr("gcp-eu1"),
-			Region:            "europe-west1",
-			MachineType:       "n1-standard-1",
-			DiskType:          util.StringPtr("pd-ssd"),
-			VolumeSizeGb:      util.IntPtr(40),
-			WorkerCidr:        "cidr",
-			AutoScalerMin:     1,
-			AutoScalerMax:     5,
-			MaxSurge:          1,
-			MaxUnavailable:    2,
-			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-				GcpConfig: &gqlschema.GCPProviderConfigInput{
-					Zones: []string{"gcp-zone1", "fix-gcp-zone-2"},
-				},
-			},
 		},
 	}
 }
@@ -195,63 +125,6 @@ func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInp
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "cidr",
 					Zones:    zones,
-				},
-			},
-		},
-	}
-}
-
-func azureGardenerClusterConfigInputNoSeed(zones ...string) gqlschema.ClusterConfigInput {
-	return gqlschema.ClusterConfigInput{
-		GardenerConfig: &gqlschema.GardenerConfigInput{
-			Name:              util.CreateGardenerClusterName(),
-			KubernetesVersion: "version",
-			Purpose:           util.StringPtr("evaluation"),
-			Provider:          "Azure",
-			TargetSecret:      "secret",
-			Region:            "westeurope",
-			MachineType:       "Standard_D8_v3",
-			DiskType:          util.StringPtr("Standard_LRS"),
-			VolumeSizeGb:      util.IntPtr(40),
-			WorkerCidr:        "cidr",
-			AutoScalerMin:     1,
-			AutoScalerMax:     5,
-			MaxSurge:          1,
-			MaxUnavailable:    2,
-			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-				AzureConfig: &gqlschema.AzureProviderConfigInput{
-					VnetCidr: "cidr",
-					Zones:    zones,
-				},
-			},
-		},
-	}
-}
-
-func awsGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
-	return gqlschema.ClusterConfigInput{
-		GardenerConfig: &gqlschema.GardenerConfigInput{
-			Name:              util.CreateGardenerClusterName(),
-			KubernetesVersion: "version",
-			Purpose:           util.StringPtr("evaluation"),
-			Provider:          "AWS",
-			TargetSecret:      "secret",
-			Seed:              util.StringPtr("aws-eu1"),
-			Region:            "eu-central-1",
-			MachineType:       "t3-xlarge",
-			DiskType:          util.StringPtr("gp2"),
-			VolumeSizeGb:      util.IntPtr(40),
-			WorkerCidr:        "cidr",
-			AutoScalerMin:     1,
-			AutoScalerMax:     5,
-			MaxSurge:          1,
-			MaxUnavailable:    2,
-			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-				AwsConfig: &gqlschema.AWSProviderConfigInput{
-					Zone:         "zone",
-					InternalCidr: "cidr",
-					VpcCidr:      "cidr",
-					PublicCidr:   "cidr",
 				},
 			},
 		},
