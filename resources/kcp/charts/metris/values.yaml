@@ -24,8 +24,6 @@ securityContext:
 podAnnotations:
   sidecar.istio.io/inject: "false"
 
-loglevel: info
-port: 8080
 serviceAccount:
   enabled: true
   ## Name of an already existing service account. Setting this value disables the automatic service account creation.
@@ -42,6 +40,7 @@ provider:
   maxretries: 20
 
 edp:
+  namespace: "TBD"
   datastream:
     name: "TBD"
     namespace: "TBD"
@@ -109,3 +108,23 @@ extraEnv: []
 
 # Define custom arguments to pass to metris container
 extraArgs: []
+
+publicCloudInfo:
+  configMap:
+    name:
+    key: providers
+
+## Metris general configurations
+config:
+  scrapeInterval: 10m
+  workerPoolSize: 5
+  loglevel: info
+  port: 8080
+
+## KEB configurations
+keb:
+  serviceName: "kcp-kyma-environment-broker"
+  timeout: "30s"
+  retryCount: "5"
+  pollWaitDuration: "10m"
+  runtimesPath: "runtimes"

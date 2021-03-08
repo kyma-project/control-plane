@@ -1,31 +1,22 @@
-FROM golang:1.14.4-alpine3.12 as build
+FROM eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20210125-6234473e as builder
 
-ARG VERSION
-ARG COMMITHASH
-ARG CGO_ENABLED
-ARG GO111MODULE
-
-ENV VERSION=${VERSION:-dev}
-ENV COMMITHASH=${COMMITHASH:-dev}
-ENV CGO_ENABLED=${CGO_ENABLED:-0}
-ENV GO111MODULE=${GO111MODULE:-on}
-ENV BASE_APP_DIR=/go/src/github.com/kyma-project/control-plane/components/metris
-
+ENV BASE_APP_DIR /go/src/github.com/kyma-project/control-plane/components/metris
+ENV CGO_ENABLED 0
 WORKDIR ${BASE_APP_DIR}
 
 COPY . .
+RUN go build -v -o metris ./cmd/main.go
+RUN mkdir /app && mv ./metris /app/metris
 
-RUN go build -v -a -o /bin/metris \
-    -ldflags "-s -w -extldflags '-static' \
-      -X 'github.com/kyma-project/control-plane/components/metris/internal/version.Version=${VERSION}' \
-      -X 'github.com/kyma-project/control-plane/components/metris/internal/version.CommitHash=${COMMITHASH}' \
-      -X 'github.com/kyma-project/control-plane/components/metris/internal/version.BuildDate=$(date --utc +%FT%T%z)'" \
-    ./cmd/metris/main.go
+FROM alpine:3.13.2
+LABEL source = git@github.com:kyma-project/control-plane.git
 
-# https://github.com/GoogleContainerTools/distroless/blob/master/base/README.md
-FROM gcr.io/distroless/static-debian10:nonroot
-LABEL source=git@github.com:kyma-project/control-plane.git
+WORKDIR /app
 
-COPY --from=build /bin/metris /bin/metris
+RUN apk update \
+	&& apk add ca-certificates openssl &&\
+	rm -rf /var/cache/apk/*
 
-ENTRYPOINT ["/bin/metris"]
+COPY --from=builder /app /app
+
+CMD ["/app/metris"]

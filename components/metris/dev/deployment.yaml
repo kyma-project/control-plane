@@ -1,0 +1,72 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: metrisv2
+  name: metrisv2
+  namespace: kcp-system
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: metrisv2
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: metrisv2
+    spec:
+      containers:
+      - image: ko://github.com/kyma-incubator/metris/cmd
+        imagePullPolicy: Always
+        name: metrisv2
+        args:
+          - "-log-level=debug"
+        env:
+          - name: PUBLIC_CLOUD_SPECS
+            valueFrom:
+              configMapKeyRef:
+                name: public-cloud-specs
+                key: providers
+          - name: KEB_URL
+            value: http://kcp-kyma-environment-broker.kcp-system/runtimes
+          - name: EDP_URL
+#            value: http://edp-mock.kcp-system:8080
+            value: https://input.yevents.io
+          - name: EDP_TOKEN
+            valueFrom:
+              secretKeyRef:
+                key: token
+                name: kcp-metrisv2
+          - name: EDP_NAMESPACE
+            value: kyma-dev
+          - name: EDP_DATASTREAM_NAME
+            value: consumption-metrics-new-test
+          - name: EDP_DATASTREAM_VERSION
+            value: "1"
+          - name: EDP_DATASTREAM_ENV
+            value: dev
+        volumeMounts:
+          - mountPath: /gardener
+            name: gardener-kubeconfig
+            readOnly: true
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+
+        ## readiness and liveness probe
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: gardener-kubeconfig
+        secret:
+          secretName: gardener-credentials
+

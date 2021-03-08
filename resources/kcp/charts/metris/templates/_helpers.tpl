@@ -36,6 +36,14 @@ release: {{ .Release.Name | quote }}
 heritage: {{ .Release.Service | quote }}
 {{- end }}
 
+{{- define "metris.publicCloud.configMap.labels" -}}
+{{ template "metris.labels" . }}
+user-by: {{ template "metris.name" . }}
+{{- end }}
+
+{{- define "metris.publicCloud.configMap.name" -}}
+{{ printf "%s-%s" (include "metris.fullname" .) "public-cloud-spec" }}
+{{- end -}}
 
 {{- define "metris.imagePullSecrets" -}}
 {{- if .Values.image.pullSecrets }}
@@ -75,4 +83,9 @@ imagePullSecrets:
 {{- end -}}
 {{- end -}}
 {{- printf "%s:%s" $repository $tag -}}
+{{- end -}}
+
+{{- define "metris.public-cloud-specs-configmap.name" }}
+{{/*printf "%s-%s" {{ template "metris.fullname" }} {{ "what" }}*/}}
+printf "%s" {{ "what" }}
 {{- end -}}
