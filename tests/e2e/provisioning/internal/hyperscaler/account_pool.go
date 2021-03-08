@@ -51,7 +51,7 @@ func (p *secretBindingsAccountPool) Credentials(hyperscalerType Type, tenantName
 		return Credentials{}, err
 	}
 	if secretBinding != nil {
-		return credentialsFromBoundSecret(p.kubernetesInterface, secretBinding, hyperscalerType)
+		return credentialsFromBoundSecret(p.kubernetesInterface, secretBinding, hyperscalerType, tenantName)
 	}
 
 	// lock so that only one thread can fetch an unassigned secret and assign it (update secret with tenantName)
@@ -74,7 +74,7 @@ func (p *secretBindingsAccountPool) Credentials(hyperscalerType Type, tenantName
 		return Credentials{}, errors.Wrapf(err, "updating secret binding with tenantName: %s", tenantName)
 	}
 
-	return credentialsFromBoundSecret(p.kubernetesInterface, updatedSecretBinding, hyperscalerType)
+	return credentialsFromBoundSecret(p.kubernetesInterface, updatedSecretBinding, hyperscalerType, tenantName)
 }
 
 func getSecretBinding(secretBindingsClient gardener_apis.SecretBindingInterface, labelSelector string) (*v1beta1.SecretBinding, error) {
@@ -91,7 +91,7 @@ func getSecretBinding(secretBindingsClient gardener_apis.SecretBindingInterface,
 	return nil, nil
 }
 
-func credentialsFromBoundSecret(kubernetesInterface kubernetes.Interface, secretBinding *v1beta1.SecretBinding, hyperscalerType Type) (Credentials, error) {
+func credentialsFromBoundSecret(kubernetesInterface kubernetes.Interface, secretBinding *v1beta1.SecretBinding, hyperscalerType Type, tenantName string) (Credentials, error) {
 	secretClient := kubernetesInterface.CoreV1().Secrets(secretBinding.SecretRef.Namespace)
 
 	secret, err := secretClient.Get(secretBinding.SecretRef.Name, metav1.GetOptions{})
