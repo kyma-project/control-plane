@@ -1,12 +1,11 @@
 package upgrade_kyma
 
 import (
-	"fmt"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 
@@ -51,30 +50,20 @@ func (s *ClsUpgradeOfferingStep) Run(operation internal.UpgradeKymaOperation, lo
 
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 
-	// try to find the offering
-	offerings, err := smClient.ListOfferingsByName(provisioning.ClsOfferingName)
+	offeringInfo, retryable, err := servicemanager.GenerateOfferingInfo(smClient, provisioning.ClsOfferingName, provisioning.ClsPlanName)
+	if offeringInfo.ServiceID != "" && offeringInfo.BrokerID != "" {
+		log.Infof("Found offering: catalogID=%s brokerID=%s", offeringInfo.ServiceID, offeringInfo.BrokerID)
+	}
 	if err != nil {
-		return s.handleError(operation, err, "unable to get Service Manager offerings", log)
+		if retryable {
+			return s.handleError(operation, err, err.Error(), log)
+		}
+		return s.operationManager.OperationFailed(operation, err.Error())
 	}
-	if len(offerings.ServiceOfferings) != 1 {
-		return s.operationManager.OperationFailed(operation,
-			fmt.Sprintf("expected one %s Service Manager offering, but found %d", provisioning.ClsOfferingName, len(offerings.ServiceOfferings)), log)
-	}
-	info.ServiceID = offerings.ServiceOfferings[0].CatalogID
-	info.BrokerID = offerings.ServiceOfferings[0].BrokerID
-	log.Infof("Found offering: catalogID=%s brokerID=%s", info.ServiceID, info.BrokerID)
-
-	// try to find the plan
-	plans, err := smClient.ListPlansByName(provisioning.ClsPlanName, offerings.ServiceOfferings[0].ID)
-	if err != nil {
-		return s.handleError(operation, err, "unable to get Service Manager plan", log)
-	}
-	if len(plans.ServicePlans) != 1 {
-		return s.operationManager.OperationFailed(operation,
-			fmt.Sprintf("expected one %s Service Manager plan, but found %d", provisioning.ClsPlanName, len(offerings.ServiceOfferings)), log)
-	}
-	info.PlanID = plans.ServicePlans[0].CatalogID
-	log.Infof("Found plan: catalogID=%s", info.PlanID)
+	log.Infof("Found plan: catalogID=%s", offeringInfo.PlanID)
+	info.ServiceID = offeringInfo.ServiceID
+	info.BrokerID = offeringInfo.BrokerID
+	info.PlanID = offeringInfo.PlanID
 
 	op, retry := s.operationManager.SimpleUpdateOperation(operation)
 	if retry > 0 {

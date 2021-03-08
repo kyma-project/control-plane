@@ -1,11 +1,10 @@
 package provisioning
 
 import (
-	"fmt"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 
@@ -57,6 +56,7 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 
+<<<<<<< HEAD
 	// try to find the offering
 	offerings, err := smClient.ListOfferingsByName(ClsOfferingName)
 	if err != nil {
@@ -65,22 +65,30 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 	if len(offerings.ServiceOfferings) != 1 {
 		return s.operationManager.OperationFailed(operation,
 			fmt.Sprintf("expected one %s Service Manager offering, but found %d", ClsOfferingName, len(offerings.ServiceOfferings)), log)
+=======
+	offeringInfo, retryable, err := servicemanager.GenerateOfferingInfo(smClient, ClsOfferingName, ClsPlanName)
+	if offeringInfo.ServiceID != "" && offeringInfo.BrokerID != "" {
+		log.Infof("Found offering: catalogID=%s brokerID=%s", offeringInfo.ServiceID, offeringInfo.BrokerID)
+>>>>>>> Unify offering logic
 	}
-	info.ServiceID = offerings.ServiceOfferings[0].CatalogID
-	info.BrokerID = offerings.ServiceOfferings[0].BrokerID
-	log.Infof("Found offering: catalogID=%s brokerID=%s", info.ServiceID, info.BrokerID)
-
-	// try to find the plan
-	plans, err := smClient.ListPlansByName(ClsPlanName, offerings.ServiceOfferings[0].ID)
 	if err != nil {
+<<<<<<< HEAD
 		return s.handleError(operation, err, "unable to get Service Manager plan", log)
 	}
 	if len(plans.ServicePlans) != 1 {
 		return s.operationManager.OperationFailed(operation,
 			fmt.Sprintf("expected one %s Service Manager plan, but found %d", ClsPlanName, len(offerings.ServiceOfferings)), log)
+=======
+		if retryable {
+			return s.handleError(operation, err, err.Error(), log)
+		}
+		return s.operationManager.OperationFailed(operation, err.Error())
+>>>>>>> Unify offering logic
 	}
-	info.PlanID = plans.ServicePlans[0].CatalogID
-	log.Infof("Found plan: catalogID=%s", info.PlanID)
+	log.Infof("Found plan: catalogID=%s", offeringInfo.PlanID)
+	info.ServiceID = offeringInfo.ServiceID
+	info.BrokerID = offeringInfo.BrokerID
+	info.PlanID = offeringInfo.PlanID
 
 	op, retry := s.operationManager.SimpleUpdateOperation(operation)
 	if retry > 0 {
