@@ -94,7 +94,7 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 
 		op, retry := s.operationManager.UpdateOperation(operation)
 		if retry > 0 {
-			log.Errorf("unable to update operation")
+			log.Errorf("Unable to update operation")
 			return operation, time.Second, nil
 		}
 		operation = op
@@ -105,14 +105,14 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 			BindingID:   operation.Cls.Binding.BindingID,
 		})
 		if err != nil {
-			failureReason := fmt.Sprintf("Cls Binding failed")
+			failureReason := "Unable to create a binding"
 			log.Errorf("%s: %s", failureReason, err)
 			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
 
 		encryptedOverrideParams, err := cls.EncryptOverrides(s.secretKey, overrideParams)
 		if err != nil {
-			failureReason := fmt.Sprintf("encryptClsOverrides() call failed")
+			failureReason := "Unable to create encrypt overrides"
 			log.Errorf("%s: %s", failureReason, err)
 			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
@@ -131,7 +131,7 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		// fetch existing overrides
 		overrideParams, err = cls.DecryptOverrides(s.secretKey, operation.Cls.Overrides)
 		if err != nil {
-			failureReason := fmt.Sprintf("decryptClsOverrides() call failed")
+			failureReason := "Unable to decrypt overrides"
 			log.Errorf("%s: %s", failureReason, err)
 			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
