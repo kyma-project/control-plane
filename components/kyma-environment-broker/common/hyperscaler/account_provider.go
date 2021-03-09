@@ -78,13 +78,13 @@ func (p *accountProvider) MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType
 		return nil
 	}
 
-	secretUsed, err := p.gardenerPool.IsSecretBindingUsed(hyperscalerType, tenantName)
+	secretBindingUsed, err := p.gardenerPool.IsSecretBindingUsed(hyperscalerType, tenantName)
 
 	if err != nil {
-		return errors.Wrapf(err, "cannot determine whether %s secret is used for tenant: %s", hyperscalerType, tenantName)
+		return errors.Wrapf(err, "cannot determine whether %s secret binding is used for tenant: %s", hyperscalerType, tenantName)
 	}
 
-	if !secretUsed {
+	if !secretBindingUsed {
 		return p.gardenerPool.MarkSecretBindingAsDirty(hyperscalerType, tenantName)
 	}
 

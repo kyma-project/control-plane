@@ -52,7 +52,7 @@ func (p *secretBindingsAccountPool) IsSecretBindingInternal(hyperscalerType Type
 	labelSelector := fmt.Sprintf("internal=true, tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
 	secretBinding, err := getSecretBinding(p.secretBindingsClient, labelSelector)
 	if err != nil {
-		return false, errors.Wrapf(err, "error looking for a secret binding used by the tenant %s and hyperscaler %s", tenantName, hyperscalerType)
+		return false, errors.Wrapf(err, "looking for a secret binding used by the tenant %s and hyperscaler %s", tenantName, hyperscalerType)
 	}
 
 	if secretBinding != nil {
@@ -124,7 +124,7 @@ func (p *secretBindingsAccountPool) Credentials(hyperscalerType Type, tenantName
 		return credentialsFromBoundSecret(p.kubernetesInterface, secretBinding, hyperscalerType)
 	}
 
-	// lock so that only one thread can fetch an unassigned secret and assign it (update secret with tenantName)
+	// lock so that only one thread can fetch an unassigned secret binding and assign it (update secret binding with tenantName)
 	p.mux.Lock()
 	defer p.mux.Unlock()
 

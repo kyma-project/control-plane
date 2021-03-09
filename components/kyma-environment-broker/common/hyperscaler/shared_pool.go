@@ -85,9 +85,9 @@ func (sp *SharedAccountPool) getLeastUsed(secretBindings []v1beta1.SecretBinding
 	min := usageCount[secretBindings[0].Name]
 	minIndex := 0
 
-	for i, s := range secretBindings {
-		if usageCount[s.Name] < min {
-			min = usageCount[s.Name]
+	for i, sb := range secretBindings {
+		if usageCount[sb.Name] < min {
+			min = usageCount[sb.Name]
 			minIndex = i
 		}
 	}
