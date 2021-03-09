@@ -46,8 +46,6 @@ func (s *CreateRuntimeStep) Name() string {
 }
 
 func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	return s.operationManager.OperationSucceeded(operation, "TODO: remove me after testing CLS")
-
 	if time.Since(operation.UpdatedAt) > CreateRuntimeTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout), log)
