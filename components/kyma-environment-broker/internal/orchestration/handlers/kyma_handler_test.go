@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestHandler_AttachRoutes(t *testing.T) {
+func TestKymaHandler_AttachRoutes(t *testing.T) {
 	t.Run("upgrade", func(t *testing.T) {
 		// given
 		kHandler := fixKymaHandler(t)
@@ -62,7 +62,7 @@ func TestHandler_AttachRoutes(t *testing.T) {
 }
 
 // Testing Kyma Version is disabled due to GitHub API RATE limits
-func TestHandler_KymaVersion(t *testing.T) {
+func TestKymaHandler_KymaVersion(t *testing.T) {
 	t.Run("kyma version validation", func(t *testing.T) {
 		// given
 		kHandler := fixKymaHandler(t)

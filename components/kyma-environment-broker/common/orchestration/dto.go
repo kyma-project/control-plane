@@ -58,6 +58,13 @@ type RuntimeTarget struct {
 	Shoot string `json:"shoot,omitempty"`
 }
 
+type Type string
+
+const (
+	UpgradeKymaOrchestration    Type = "upgradeKyma"
+	UpgradeClusterOrchestration Type = "upgradeCluster"
+)
+
 type StrategyType string
 
 const (
@@ -91,6 +98,7 @@ type TargetSpec struct {
 
 type StatusResponse struct {
 	OrchestrationID string         `json:"orchestrationID"`
+	Type            Type           `json:"type"`
 	State           string         `json:"state"`
 	Description     string         `json:"description"`
 	CreatedAt       time.Time      `json:"createdAt"`

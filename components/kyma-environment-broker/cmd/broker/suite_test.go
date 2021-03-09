@@ -20,6 +20,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
+	kebOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
@@ -50,11 +51,11 @@ const (
 )
 
 type OrchestrationSuite struct {
-	gardenerNamespace  string
-	provisionerClient  *provisioner.FakeClient
-	orchestrationQueue *process.Queue
-	storage            storage.BrokerStorage
-	gardenerClient     *gardenerFake.Clientset
+	gardenerNamespace string
+	provisionerClient *provisioner.FakeClient
+	kymaQueue         *process.Queue
+	storage           storage.BrokerStorage
+	gardenerClient    *gardenerFake.Clientset
 
 	t *testing.T
 }
@@ -105,21 +106,22 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 	avsClient, _ := avs.NewClient(ctx, avs.Config{}, logs)
 	avsDel := avs.NewDelegator(avsClient, avs.Config{}, db.Operations())
 	upgradeEvaluationManager := upgrade_kyma.NewEvaluationManager(avsDel, avs.Config{})
+	runtimeLister := kebOrchestration.NewRuntimeLister(db.Instances(), db.Operations(), kebRuntime.NewConverter(defaultRegion), logs)
+	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient.CoreV1beta1(), gardenerNamespace, runtimeLister, logs)
 
-	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, gardenerClient.CoreV1beta1(),
-		gardenerNamespace, eventBroker, inputFactory, &upgrade_kyma.TimeSchedule{
-			Retry:              10 * time.Millisecond,
-			StatusCheck:        100 * time.Millisecond,
-			UpgradeKymaTimeout: 4 * time.Second,
-		}, 250*time.Millisecond, runtimeVerConfigurator, defaultRegion, upgradeEvaluationManager,
+	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, &upgrade_kyma.TimeSchedule{
+		Retry:              10 * time.Millisecond,
+		StatusCheck:        100 * time.Millisecond,
+		UpgradeKymaTimeout: 4 * time.Second,
+	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
 		&cfg, hyperscaler.NewAccountProvider(nil, nil), nil, nil, logs)
 
 	return &OrchestrationSuite{
-		gardenerNamespace:  gardenerNamespace,
-		provisionerClient:  provisionerClient,
-		orchestrationQueue: kymaQueue,
-		storage:            db,
-		gardenerClient:     gardenerClient,
+		gardenerNamespace: gardenerNamespace,
+		provisionerClient: provisionerClient,
+		kymaQueue:         kymaQueue,
+		storage:           db,
+		gardenerClient:    gardenerClient,
 
 		t: t,
 	}
@@ -239,10 +241,11 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 	return runtimeID
 }
 
-func (s *OrchestrationSuite) CreateOrchestration(runtimeID string) string {
+func (s *OrchestrationSuite) CreateUpgradeKymaOrchestration(runtimeID string) string {
 	now := time.Now()
 	o := internal.Orchestration{
 		OrchestrationID: uuid.New(),
+		Type:            orchestration.UpgradeKymaOrchestration,
 		State:           orchestration.Pending,
 		Description:     "started processing of Kyma upgrade",
 		Parameters: orchestration.Parameters{
@@ -263,7 +266,7 @@ func (s *OrchestrationSuite) CreateOrchestration(runtimeID string) string {
 	}
 	require.NoError(s.t, s.storage.Orchestrations().Insert(o))
 
-	s.orchestrationQueue.Add(o.OrchestrationID)
+	s.kymaQueue.Add(o.OrchestrationID)
 	return o.OrchestrationID
 }
 

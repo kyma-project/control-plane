@@ -150,6 +150,7 @@ func (o *Operation) IsFinished() bool {
 // on specific targets of SKRs.
 type Orchestration struct {
 	OrchestrationID string
+	Type            orchestration.Type
 	State           string
 	Description     string
 	CreatedAt       time.Time
@@ -273,6 +274,14 @@ type UpgradeKymaOperation struct {
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 
 	SMClientFactory SMClientFactory `json:"-"`
+}
+
+// UpgradeClusterOperation holds all information about upgrade cluster (shoot) operation
+type UpgradeClusterOperation struct {
+	Operation
+
+	orchestration.RuntimeOperation `json:"runtime_operation"`
+	InputCreator                   ProvisionerInputCreator `json:"-"`
 }
 
 func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaConfigInput, clusterConfig *gqlschema.GardenerConfigInput) RuntimeState {

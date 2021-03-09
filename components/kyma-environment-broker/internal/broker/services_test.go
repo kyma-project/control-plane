@@ -18,7 +18,7 @@ func TestServices_Services(t *testing.T) {
 	)
 
 	cfg := broker.Config{
-		EnablePlans: []string{"gcp", "azure"},
+		EnablePlans: []string{"gcp", "azure", "aws"},
 	}
 	servicesConfig := map[string]broker.Service{
 		broker.KymaServiceName: {
@@ -36,7 +36,7 @@ func TestServices_Services(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.Len(t, services, 1)
-	assert.Len(t, services[0].Plans, 2)
+	assert.Len(t, services[0].Plans, 3)
 
 	assert.Equal(t, name, services[0].Metadata.DisplayName)
 	assert.Equal(t, supportURL, services[0].Metadata.SupportUrl)

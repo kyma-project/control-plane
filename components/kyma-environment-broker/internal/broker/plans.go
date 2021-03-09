@@ -12,6 +12,8 @@ const (
 
 	GCPPlanID         = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
 	GCPPlanName       = "gcp"
+	AWSPlanID         = "361c511f-f939-4621-b228-d0fb79a1fe15"
+	AWSPlanName       = "aws"
 	AzurePlanID       = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
 	AzurePlanName     = "azure"
 	AzureLitePlanID   = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
@@ -22,6 +24,7 @@ const (
 
 var PlanNamesMapping = map[string]string{
 	GCPPlanID:       GCPPlanName,
+	AWSPlanID:       AWSPlanName,
 	AzurePlanID:     AzurePlanName,
 	AzureLitePlanID: AzureLitePlanName,
 	TrialPlanID:     TrialPlanName,
@@ -29,6 +32,7 @@ var PlanNamesMapping = map[string]string{
 
 var PlanIDsMapping = map[string]string{
 	AzurePlanName:     AzurePlanID,
+	AWSPlanName:       AWSPlanID,
 	AzureLitePlanName: AzureLitePlanID,
 	GCPPlanName:       GCPPlanID,
 	TrialPlanName:     TrialPlanID,
@@ -69,8 +73,25 @@ func GCPRegions() []string {
 		"northamerica-northeast1", "southamerica-east1"}
 }
 
+func AWSRegions() []string {
+	// be aware of zones defined in internal/provider/aws_provider.go
+	return []string{"eu-central-1", "eu-west-2", "ca-central-1", "sa-east-1", "us-east-1", "us-west-1",
+		"ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2"}
+}
+
 func GCPSchema(machineTypes []string) []byte {
 	properties := NewProvisioningProperties(machineTypes, GCPRegions())
+	schema := NewSchema(properties, DefaultControlsOrder())
+
+	bytes, err := json.Marshal(schema)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
+}
+
+func AWSSchema(machineTypes []string) []byte {
+	properties := NewProvisioningProperties(machineTypes, AWSRegions())
 	schema := NewSchema(properties, DefaultControlsOrder())
 
 	bytes, err := json.Marshal(schema)
@@ -113,6 +134,21 @@ type Plan struct {
 // keep internal/hyperscaler/azure/config.go in sync with any changes to available zones
 func Plans(plans PlansConfig) map[string]Plan {
 	return map[string]Plan{
+		AWSPlanID: {
+			PlanDefinition: domain.ServicePlan{
+				ID:          AWSPlanID,
+				Name:        AWSPlanName,
+				Description: defaultDescription(AWSPlanName, plans),
+				Metadata:    defaultMetadata(AWSPlanName, plans), Schemas: &domain.ServiceSchemas{
+					Instance: domain.ServiceInstanceSchema{
+						Create: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
+					},
+				},
+			},
+			provisioningRawSchema: AWSSchema([]string{"m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m4.16xlarge"}),
+		},
 		GCPPlanID: {
 			PlanDefinition: domain.ServicePlan{
 				ID:          GCPPlanID,

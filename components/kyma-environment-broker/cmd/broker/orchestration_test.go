@@ -11,7 +11,7 @@ func TestOrchestration_OneRuntimeHappyPath(t *testing.T) {
 	suite := NewOrchestrationSuite(t)
 	runtimeID := suite.CreateProvisionedRuntime(RuntimeOptions{})
 	otherRuntimeID := suite.CreateProvisionedRuntime(RuntimeOptions{})
-	orchestrationID := suite.CreateOrchestration(runtimeID)
+	orchestrationID := suite.CreateUpgradeKymaOrchestration(runtimeID)
 
 	suite.WaitForOrchestrationState(orchestrationID, orchestration.InProgress)
 

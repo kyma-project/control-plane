@@ -19,6 +19,12 @@ func TestSchemaGenerator(t *testing.T) {
 		file         string
 	}{
 		{
+			name:         "AWS schema is correct",
+			generator:    AWSSchema,
+			machineTypes: []string{"m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m4.16xlarge"},
+			file:         "aws-schema.json",
+		},
+		{
 			name:         "Azure schema is correct",
 			generator:    AzureSchema,
 			machineTypes: []string{"Standard_D8_v3"},

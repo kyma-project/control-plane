@@ -79,7 +79,7 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	switch planID {
-	case broker.GCPPlanID, broker.AzurePlanID, broker.AzureLitePlanID, broker.TrialPlanID:
+	case broker.GCPPlanID, broker.AWSPlanID, broker.AzurePlanID, broker.AzureLitePlanID, broker.TrialPlanID:
 		return true
 	default:
 		return false
@@ -97,6 +97,8 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, par
 		provider = &cloudProvider.AzureLiteInput{}
 	case broker.TrialPlanID:
 		provider = f.forTrialPlan(parametersProvider)
+	case broker.AWSPlanID:
+		provider = &cloudProvider.AWSInput{}
 		// insert cases for other providers like AWS or GCP
 	default:
 		return nil, errors.Errorf("case with plan %s is not supported", planID)
@@ -140,15 +142,20 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 }
 
 func (f *InputBuilderFactory) forTrialPlan(provider *internal.TrialCloudProvider) HyperscalerInputProvider {
+	var trialProvider internal.TrialCloudProvider
 	if provider == nil {
-		return &cloudProvider.AzureTrialInput{
-			PlatformRegionMapping: f.trialPlatformRegionMapping,
-		}
+		trialProvider = f.config.DefaultTrialProvider
+	} else {
+		trialProvider = *provider
 	}
 
-	switch *provider {
+	switch trialProvider {
 	case internal.Gcp:
 		return &cloudProvider.GcpTrialInput{
+			PlatformRegionMapping: f.trialPlatformRegionMapping,
+		}
+	case internal.AWS:
+		return &cloudProvider.AWSTrialInput{
 			PlatformRegionMapping: f.trialPlatformRegionMapping,
 		}
 	default:
