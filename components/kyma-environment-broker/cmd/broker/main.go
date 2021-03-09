@@ -549,7 +549,7 @@ func main() {
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 	kymaQueue, err := NewOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, gardenerClient,
 		gardenerNamespace, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, cfg.DefaultRequestRegion, upgradeEvalManager,
-		&cfg, accountProvider, serviceManagerClientFactory, logs)
+		&cfg, accountProvider, serviceManagerClientFactory, clsConfig, logs)
 	fatalOnError(err)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
@@ -691,7 +691,7 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 	inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
 	defaultRegion string, upgradeEvalManager *upgrade_kyma.EvaluationManager,
-	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory, logs logrus.FieldLogger) (*process.Queue, error) {
+	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory, clsConfig *cls.Config, logs logrus.FieldLogger) (*process.Queue, error) {
 
 	//CLS
 	clsFile, err := ioutil.ReadFile("/secrets/cls-config/cls-config.yaml")
@@ -699,10 +699,6 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 		fatalOnError(err)
 	}
 
-	clsConfig, err := cls.Load(string(clsFile))
-	if err != nil {
-		fatalOnError(err)
-	}
 	clsClient := cls.NewClient(clsConfig, logs.WithField("service", "clsClient"))
 	var clsDb = storage.NewMemoryStorage()
 	clsProvisioner := cls.NewProvisioner(clsDb.CLSInstances(), clsClient, logs.WithField("service", "clsProvisioner"))
