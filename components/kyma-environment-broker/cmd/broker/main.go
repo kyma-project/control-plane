@@ -155,7 +155,16 @@ func main() {
 
 	// create and fill config
 	var cfg Config
-	err := envconfig.InitWithPrefix(&cfg, "APP")
+	clsFile, err := ioutil.ReadFile("/secrets/cls-config/cls-config.yaml")
+	if err != nil {
+		fatalOnError(err)
+	}
+
+	cfg.ClsConfig, err = cls.Load(string(clsFile))
+	if err != nil {
+		fatalOnError(err)
+	}
+	err = envconfig.InitWithPrefix(&cfg, "APP")
 	fatalOnError(err)
 
 	// create logger
@@ -221,15 +230,7 @@ func main() {
 		fatalOnError(err)
 	}
 	//CLS
-	clsFile, err := ioutil.ReadFile("/secrets/cls-config/cls-config.yaml")
-	if err != nil {
-		fatalOnError(err)
-	}
 
-	cfg.ClsConfig, err = cls.Load(string(clsFile))
-	if err != nil {
-		fatalOnError(err)
-	}
 	clsClient := cls.NewClient(cfg.ClsConfig, logs.WithField("service", "clsClient"))
 	var clsDb = storage.NewMemoryStorage()
 	clsProvisioner := cls.NewProvisioner(clsDb.CLSInstances(), clsClient, logs.WithField("service", "clsProvisioner"))
