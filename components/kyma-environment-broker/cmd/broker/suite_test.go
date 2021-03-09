@@ -66,6 +66,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 
 	var cfg Config
 	cfg.Ems.Disabled = true
+	cfg.Cls.Disabled = true
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
