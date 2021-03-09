@@ -420,7 +420,7 @@ func main() {
 		{
 			weight: 8,
 			//TODO: Rethink the prio as CLS needs to be bound before
-			step: provisioning.NewCLSAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
+			step: provisioning.NewClsAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
 		},
 
 		{
@@ -693,6 +693,20 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 	defaultRegion string, upgradeEvalManager *upgrade_kyma.EvaluationManager,
 	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory, logs logrus.FieldLogger) (*process.Queue, error) {
 
+	//CLS
+	clsFile, err := ioutil.ReadFile("/secrets/cls-config/cls-config.yaml")
+	if err != nil {
+		fatalOnError(err)
+	}
+
+	clsConfig, err := cls.Load(string(clsFile))
+	if err != nil {
+		fatalOnError(err)
+	}
+	clsClient := cls.NewClient(clsConfig, logs.WithField("service", "clsClient"))
+	var clsDb = storage.NewMemoryStorage()
+	clsProvisioner := cls.NewProvisioner(clsDb.CLSInstances(), clsClient, logs.WithField("service", "clsProvisioner"))
+
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Orchestrations(), db.Instances(),
 		provisionerClient, inputFactory, upgradeEvalManager, icfg, runtimeVerConfigurator, smcf)
@@ -712,6 +726,11 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight:   1,
+			step:     upgrade_kyma.NewClsUpgradeOfferingStep(clsConfig, db.Operations()),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
 			weight: 2,
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
@@ -726,9 +745,24 @@ func NewOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStora
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight:   4,
+			step:     upgrade_kyma.NewClsUpgradeProvisionStep(clsConfig, clsProvisioner, db.Operations()),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
 			weight:   7,
 			step:     upgrade_kyma.NewEmsUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   7,
+			step:     upgrade_kyma.NewClsUpgradeBindStep(clsConfig, clsClient, db.Operations(), cfg.Database.SecretKey),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
+			weight:   8,
+			step:     upgrade_kyma.NewClsUpgradeAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
+			disabled: cfg.Cls.Disabled,
 		},
 
 		{
