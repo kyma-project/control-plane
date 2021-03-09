@@ -115,7 +115,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, hyperscaler.NewAccountProvider(nil, nil), nil, logs)
+		&cfg, hyperscaler.NewAccountProvider(nil, nil), nil, nil, logs)
 
 	return &OrchestrationSuite{
 		gardenerNamespace: gardenerNamespace,

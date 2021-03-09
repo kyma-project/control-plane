@@ -137,7 +137,6 @@ type Config struct {
 	}
 
 	AuditLog      auditlog.Config
-	ClsConfig     *cls.Config
 	VersionConfig struct {
 		Namespace string
 		Name      string
@@ -155,16 +154,7 @@ func main() {
 
 	// create and fill config
 	var cfg Config
-	clsFile, err := ioutil.ReadFile("/secrets/cls-config/cls-config.yaml")
-	if err != nil {
-		fatalOnError(err)
-	}
-
-	cfg.ClsConfig, err = cls.Load(string(clsFile))
-	if err != nil {
-		fatalOnError(err)
-	}
-	err = envconfig.InitWithPrefix(&cfg, "APP")
+	err := envconfig.InitWithPrefix(&cfg, "APP")
 	fatalOnError(err)
 
 	// create logger
@@ -230,8 +220,17 @@ func main() {
 		fatalOnError(err)
 	}
 	//CLS
+	clsFile, err := ioutil.ReadFile("/secrets/cls-config/cls-config.yaml")
+	if err != nil {
+		fatalOnError(err)
+	}
 
-	clsClient := cls.NewClient(cfg.ClsConfig, logs.WithField("service", "clsClient"))
+	clsConfig, err := cls.Load(string(clsFile))
+	if err != nil {
+		fatalOnError(err)
+	}
+
+	clsClient := cls.NewClient(clsConfig, logs.WithField("service", "clsClient"))
 	var clsDb = storage.NewMemoryStorage()
 	clsProvisioner := cls.NewProvisioner(clsDb.CLSInstances(), clsClient, logs.WithField("service", "clsProvisioner"))
 
@@ -336,7 +335,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewClsOfferingStep(cfg.ClsConfig, db.Operations()),
+			step:     provisioning.NewClsOfferingStep(clsConfig, db.Operations()),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -366,7 +365,7 @@ func main() {
 		},
 		{
 			weight:   2,
-			step:     provisioning.NewClsProvisionStep(cfg.ClsConfig, clsProvisioner, db.Operations()),
+			step:     provisioning.NewClsProvisionStep(clsConfig, clsProvisioner, db.Operations()),
 			disabled: cfg.Cls.Disabled,
 		},
 		//{
@@ -420,7 +419,7 @@ func main() {
 		},
 		{
 			weight:   7,
-			step:     provisioning.NewClsBindStep(cfg.ClsConfig, clsClient, db.Operations(), cfg.Database.SecretKey),
+			step:     provisioning.NewClsBindStep(clsConfig, clsClient, db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Cls.Disabled,
 		},
 
@@ -480,7 +479,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     deprovisioning.NewClsUnbindStep(cfg.ClsConfig, db.Operations()),
+			step:     deprovisioning.NewClsUnbindStep(clsConfig, db.Operations()),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -495,7 +494,7 @@ func main() {
 		},
 		{
 			weight:   2,
-			step:     deprovisioning.NewClsDeprovisionStep(cfg.ClsConfig, db.Operations(), clsDeprovisioner),
+			step:     deprovisioning.NewClsDeprovisionStep(clsConfig, db.Operations(), clsDeprovisioner),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -559,7 +558,7 @@ func main() {
 	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
-		&cfg, accountProvider, serviceManagerClientFactory, logs)
+		&cfg, accountProvider, serviceManagerClientFactory, clsConfig, logs)
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, time.Minute, runtimeResolver, logs)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
@@ -717,10 +716,10 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
 	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *upgrade_kyma.EvaluationManager,
-	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory, logs logrus.FieldLogger) *process.Queue {
+	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory, clsConfig *cls.Config, logs logrus.FieldLogger) *process.Queue {
 
 	//CLS
-	clsClient := cls.NewClient(cfg.ClsConfig, logs.WithField("service", "clsClient"))
+	clsClient := cls.NewClient(clsConfig, logs.WithField("service", "clsClient"))
 	var clsDb = storage.NewMemoryStorage()
 	clsProvisioner := cls.NewProvisioner(clsDb.CLSInstances(), clsClient, logs.WithField("service", "clsProvisioner"))
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
@@ -757,7 +756,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight:   4,
-			step:     upgrade_kyma.NewClsUpgradeProvisionStep(cfg.ClsConfig, clsProvisioner, db.Operations()),
+			step:     upgrade_kyma.NewClsUpgradeProvisionStep(clsConfig, clsProvisioner, db.Operations()),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -767,7 +766,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight:   7,
-			step:     upgrade_kyma.NewClsUpgradeBindStep(cfg.ClsConfig, clsClient, db.Operations(), cfg.Database.SecretKey),
+			step:     upgrade_kyma.NewClsUpgradeBindStep(clsConfig, clsClient, db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
