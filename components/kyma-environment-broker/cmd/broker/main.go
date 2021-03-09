@@ -716,7 +716,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
 	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *upgrade_kyma.EvaluationManager,
-	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory,clsConfig *cls.Config logs logrus.FieldLogger) *process.Queue {
+	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory, clsConfig *cls.Config, logs logrus.FieldLogger) *process.Queue {
 	//CLS
 	clsClient := cls.NewClient(clsConfig, logs.WithField("service", "clsClient"))
 	var clsDb = storage.NewMemoryStorage()
