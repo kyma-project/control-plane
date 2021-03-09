@@ -21,7 +21,11 @@ type Cleaner interface {
 	Do() error
 }
 
-func NewCleaner(context context.Context, kubernetesInterface kubernetes.Interface, secretBindingsClient gardener_apis.SecretBindingInterface, providerFactory cloudprovider.ProviderFactory) Cleaner {
+func NewCleaner(context context.Context,
+	kubernetesInterface kubernetes.Interface,
+	secretBindingsClient gardener_apis.SecretBindingInterface,
+	providerFactory cloudprovider.ProviderFactory) Cleaner {
+
 	return &cleaner{
 		kubernetesInterface:  kubernetesInterface,
 		secretBindingsClient: secretBindingsClient,
@@ -65,7 +69,7 @@ func (p *cleaner) Do() error {
 func (p *cleaner) releaseResources(secretBinding v1beta1.SecretBinding) error {
 	hyperscalerType, err := model.NewHyperscalerType(secretBinding.Labels["hyperscalerType"])
 	if err != nil {
-		return errors.Wrap(err, "failed to start releasing resources")
+		return errors.Wrap(err, "starting releasing resources")
 	}
 
 	secret, err := p.getBoundSecret(secretBinding)
@@ -75,7 +79,7 @@ func (p *cleaner) releaseResources(secretBinding v1beta1.SecretBinding) error {
 
 	cleaner, err := p.providerFactory.New(hyperscalerType, secret.Data)
 	if err != nil {
-		return errors.Wrap(err, "failed to initialize cloud provider cleaner")
+		return errors.Wrap(err, "initializing cloud provider cleaner")
 	}
 
 	return cleaner.Do()
@@ -93,15 +97,15 @@ func (p *cleaner) getBoundSecret(secretBinding v1beta1.SecretBinding) (*apiv1.Se
 }
 
 func (p *cleaner) returnSecretBindingToThePool(secretBinding v1beta1.SecretBinding) error {
-	s, err := p.secretBindingsClient.Get(p.context, secretBinding.Name, metav1.GetOptions{})
+	sb, err := p.secretBindingsClient.Get(p.context, secretBinding.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	delete(s.Labels, "dirty")
-	delete(s.Labels, "tenantName")
+	delete(sb.Labels, "dirty")
+	delete(sb.Labels, "tenantName")
 
-	_, err = p.secretBindingsClient.Update(p.context, s, metav1.UpdateOptions{})
+	_, err = p.secretBindingsClient.Update(p.context, sb, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to return secret binding to the hyperscaler account pool")
 	}
@@ -119,10 +123,9 @@ func getSecretBindings(ctx context.Context, secretBindingsClient gardener_apis.S
 	secrets, err := secretBindingsClient.List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
-
 	if err != nil {
 		return nil,
-			errors.Wrapf(err, "failed to list secrets bindings for LabelSelector: %s", labelSelector)
+			errors.Wrapf(err, "listing secrets bindings for LabelSelector: %s", labelSelector)
 	}
 
 	return secrets.Items, nil

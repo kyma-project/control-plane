@@ -51,7 +51,6 @@ func TestCleanerJob(t *testing.T) {
 		}
 
 		mockClient := fake.NewSimpleClientset(secret)
-		mockSecrets := mockClient.CoreV1().Secrets(namespace)
 
 		gardenerFake := gardener_fake.NewSimpleClientset(secretBinding)
 		mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(namespace)
@@ -67,11 +66,11 @@ func TestCleanerJob(t *testing.T) {
 
 		//then
 		require.NoError(t, err)
-		cleanedSecret, err := mockSecrets.Get(context.Background(), secret.Name, machineryv1.GetOptions{})
+		cleanedSecretBinding, err := mockSecretBindings.Get(context.Background(), secretBinding.Name, machineryv1.GetOptions{})
 		require.NoError(t, err)
 
-		assert.Equal(t, "", cleanedSecret.Labels["dirty"])
-		assert.Equal(t, "", cleanedSecret.Labels["tenantName"])
+		assert.Equal(t, "", cleanedSecretBinding.Labels["dirty"])
+		assert.Equal(t, "", cleanedSecretBinding.Labels["tenantName"])
 	})
 }
 

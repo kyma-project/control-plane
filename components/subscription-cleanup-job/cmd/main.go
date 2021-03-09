@@ -29,13 +29,13 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Failed to load application config")
 
-	kubeconfig, err := newKubeconfig(cfg)
+	clusterConfig, err := newClusterConfig(cfg)
 	exitOnError(err, "Failed to create kubernetes cluster client")
 
-	kubernetesInterface, err := newKubernetesInterface(kubeconfig)
+	kubernetesInterface, err := newKubernetesInterface(clusterConfig)
 	exitOnError(err, "Failed to create kubernetes client")
 
-	gardenerClient, err := gardener.NewClient(kubeconfig)
+	gardenerClient, err := gardener.NewClient(clusterConfig)
 	exitOnError(err, "Failed to create kubernetes client")
 	secretBindingsInterface := gardener.NewGardenerSecretBindingsInterface(gardenerClient, cfg.Gardener.Project)
 
@@ -52,7 +52,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func newKubeconfig(cfg config) (*restclient.Config, error) {
+func newClusterConfig(cfg config) (*restclient.Config, error) {
 	rawKubeconfig, err := ioutil.ReadFile(cfg.Gardener.KubeconfigPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read Gardener Kubeconfig from path %s: %s",
