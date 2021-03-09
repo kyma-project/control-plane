@@ -1,9 +1,10 @@
-package provisioning
+package upgrade_kyma
 
 import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
@@ -13,30 +14,23 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
 
-const (
-	//ClsOfferingName is an identifier that Service Manager uses to refer to Cloud Logging services
-	ClsOfferingName = "cloud-logging"
-	//ClsPlanName is a default plan, a Cloud Logging service is created with
-	ClsPlanName = "standard"
-)
-
-type ClsOfferingStep struct {
+type ClsUpgradeOfferingStep struct {
 	config           *cls.Config
-	operationManager *process.ProvisionOperationManager
+	operationManager *process.UpgradeKymaOperationManager
 }
 
-func NewClsOfferingStep(config *cls.Config, repo storage.Operations) *ClsOfferingStep {
-	return &ClsOfferingStep{
+func NewClsUpgradeOfferingStep(config *cls.Config, repo storage.Operations) *ClsUpgradeOfferingStep {
+	return &ClsUpgradeOfferingStep{
 		config:           config,
-		operationManager: process.NewProvisionOperationManager(repo),
+		operationManager: process.NewUpgradeKymaOperationManager(repo),
 	}
 }
 
-func (s *ClsOfferingStep) Name() string {
-	return "CLS_Offering"
+func (s *ClsUpgradeOfferingStep) Name() string {
+	return "CLS_UpgradeOffering"
 }
 
-func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *ClsUpgradeOfferingStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if operation.Cls.Instance.ServiceID != "" && operation.Cls.Instance.PlanID != "" {
 		return operation, 0, nil
 	}
@@ -51,9 +45,10 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 	if err != nil {
 		return s.handleError(operation, err, err.Error(), log)
 	}
+
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 
-	meta, err := servicemanager.GenerateMetadata(smClient, ClsOfferingName, ClsPlanName)
+	meta, err := servicemanager.GenerateMetadata(smClient, provisioning.ClsOfferingName, provisioning.ClsPlanName)
 	if meta.ServiceID != "" && meta.BrokerID != "" {
 		log.Infof("Found offering: catalogID=%s brokerID=%s", meta.ServiceID, meta.BrokerID)
 	}
@@ -66,7 +61,7 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 
 	log.Infof("Found plan: catalogID=%s", meta.PlanID)
 
-	op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+	op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
 		operation.Cls.Instance.ServiceID = meta.ServiceID
 		operation.Cls.Instance.BrokerID = meta.BrokerID
 		operation.Cls.Instance.PlanID = meta.PlanID
@@ -78,7 +73,7 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 	return op, 0, nil
 }
 
-func (s *ClsOfferingStep) handleError(operation internal.ProvisioningOperation, err error, msg string, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *ClsUpgradeOfferingStep) handleError(operation internal.UpgradeKymaOperation, err error, msg string, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
 	switch {
 	case kebError.IsTemporaryError(err):

@@ -19,7 +19,7 @@ func TestCheckKymaVersionPR(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Log(tt.summary)
-		res, err := IsKymaVersion_1_20(tt.version)
+		res, err := IsKymaVersionAtLeast_1_20(tt.version)
 		require.NoError(t, err)
 		require.Equal(t, tt.res, res)
 	}
