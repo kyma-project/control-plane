@@ -137,7 +137,7 @@ type Config struct {
 	}
 
 	AuditLog auditlog.Config
-
+	clsConfig *cls.Config
 	VersionConfig struct {
 		Namespace string
 		Name      string
@@ -226,11 +226,11 @@ func main() {
 		fatalOnError(err)
 	}
 
-	clsConfig, err := cls.Load(string(clsFile))
+	cfg.clsConfig , err = cls.Load(string(clsFile))
 	if err != nil {
 		fatalOnError(err)
 	}
-	clsClient := cls.NewClient(clsConfig, logs.WithField("service", "clsClient"))
+	clsClient := cls.NewClient(cfg.clsConfig, logs.WithField("service", "clsClient"))
 	var clsDb = storage.NewMemoryStorage()
 	clsProvisioner := cls.NewProvisioner(clsDb.CLSInstances(), clsClient, logs.WithField("service", "clsProvisioner"))
 
@@ -335,7 +335,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewClsOfferingStep(clsConfig, db.Operations()),
+			step:     provisioning.NewClsOfferingStep(cfg.clsConfig, db.Operations()),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -365,7 +365,7 @@ func main() {
 		},
 		{
 			weight:   2,
-			step:     provisioning.NewClsProvisionStep(clsConfig, clsProvisioner, db.Operations()),
+			step:     provisioning.NewClsProvisionStep(cfg.clsConfig, clsProvisioner, db.Operations()),
 			disabled: cfg.Cls.Disabled,
 		},
 		//{
@@ -419,14 +419,14 @@ func main() {
 		},
 		{
 			weight:   7,
-			step:     provisioning.NewClsBindStep(clsConfig, clsClient, db.Operations(), cfg.Database.SecretKey),
+			step:     provisioning.NewClsBindStep(cfg.clsConfig, clsClient, db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Cls.Disabled,
 		},
 
 		{
 			weight: 8,
 			//TODO: Rethink the prio as CLS needs to be bound before
-			step: provisioning.NewCLSAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
+			step: provisioning.NewClsAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
 		},
 
 		{
@@ -479,7 +479,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     deprovisioning.NewClsUnbindStep(clsConfig, db.Operations()),
+			step:     deprovisioning.NewClsUnbindStep(cfg.clsConfig, db.Operations()),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -494,7 +494,7 @@ func main() {
 		},
 		{
 			weight:   2,
-			step:     deprovisioning.NewClsDeprovisionStep(clsConfig, db.Operations(), clsDeprovisioner),
+			step:     deprovisioning.NewClsDeprovisionStep(cfg.clsConfig, db.Operations(), clsDeprovisioner),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -718,6 +718,10 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *upgrade_kyma.EvaluationManager,
 	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory, logs logrus.FieldLogger) *process.Queue {
 
+	//CLS
+	clsClient := cls.NewClient(cfg.clsConfig, logs.WithField("service", "clsClient"))
+	var clsDb = storage.NewMemoryStorage()
+	clsProvisioner := cls.NewProvisioner(clsDb.CLSInstances(), clsClient, logs.WithField("service", "clsProvisioner"))
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Orchestrations(), db.Instances(),
 		provisionerClient, inputFactory, upgradeEvalManager, icfg, runtimeVerConfigurator, smcf)
@@ -751,9 +755,24 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight:   4,
+			step:     upgrade_kyma.NewClsUpgradeProvisionStep(cfg.clsConfig, clsProvisioner, db.Operations()),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
 			weight:   7,
 			step:     upgrade_kyma.NewEmsUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   7,
+			step:     upgrade_kyma.NewClsUpgradeBindStep(cfg.clsConfig, clsClient, db.Operations(), cfg.Database.SecretKey),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
+			weight:   8,
+			step:     upgrade_kyma.NewClsUpgradeAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
+			disabled: cfg.Cls.Disabled,
 		},
 
 		{
