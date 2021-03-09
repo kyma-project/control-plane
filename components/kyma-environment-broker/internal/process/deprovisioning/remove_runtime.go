@@ -39,14 +39,14 @@ func (s *RemoveRuntimeStep) Name() string {
 func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > RemoveRuntimeTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", RemoveRuntimeTimeout))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", RemoveRuntimeTimeout), log)
 	}
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:
 	case dberr.IsNotFound(err):
-		return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned")
+		return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned", log)
 	default:
 		log.Errorf("unable to get instance from storage: %s", err)
 		return operation, 1 * time.Second, nil
@@ -56,7 +56,7 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 		// happens when provisioning process failed and Create_Runtime step was never reached
 		log.Warnf("Runtime does not exist for instance id %q", instance.InstanceID)
 
-		operation, _, _ := s.operationManager.OperationSucceeded(operation, "Runtime was never provisioned")
+		operation, _, _ := s.operationManager.OperationSucceeded(operation, "Runtime was never provisioned", log)
 		// return repeat mode (1 sec) to start the initialization step which will finish process and remove instance
 		return operation, 1 * time.Second, nil
 	}
@@ -70,12 +70,12 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 			log.Errorf("unable to deprovision runtime: %s", err)
 			return operation, 10 * time.Second, nil
 		}
-		operation.ProvisionerOperationID = provisionerResponse
 		log.Infof("fetched ProvisionerOperationID=%s", provisionerResponse)
-
-		operation, repeat, err := s.operationManager.UpdateOperation(operation)
+		repeat := time.Duration(0)
+		operation, repeat = s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
+			operation.ProvisionerOperationID = provisionerResponse
+		}, log)
 		if repeat != 0 {
-			log.Errorf("cannot save operation ID from provisioner: %s", err)
 			return operation, 5 * time.Second, nil
 		}
 	}

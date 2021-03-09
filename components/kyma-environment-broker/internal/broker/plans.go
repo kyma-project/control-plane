@@ -12,26 +12,34 @@ const (
 
 	GCPPlanID         = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
 	GCPPlanName       = "gcp"
+	AWSPlanID         = "361c511f-f939-4621-b228-d0fb79a1fe15"
+	AWSPlanName       = "aws"
 	AzurePlanID       = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
 	AzurePlanName     = "azure"
 	AzureLitePlanID   = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
 	AzureLitePlanName = "azure_lite"
 	TrialPlanID       = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
 	TrialPlanName     = "trial"
+	OpenStackPlanID   = "03b812ac-c991-4528-b5bd-08b303523a63"
+	OpenStackPlanName = "openstack"
 )
 
 var PlanNamesMapping = map[string]string{
 	GCPPlanID:       GCPPlanName,
+	AWSPlanID:       AWSPlanName,
 	AzurePlanID:     AzurePlanName,
 	AzureLitePlanID: AzureLitePlanName,
 	TrialPlanID:     TrialPlanName,
+	OpenStackPlanID: OpenStackPlanName,
 }
 
 var PlanIDsMapping = map[string]string{
 	AzurePlanName:     AzurePlanID,
+	AWSPlanName:       AWSPlanID,
 	AzureLitePlanName: AzureLitePlanID,
 	GCPPlanName:       GCPPlanID,
 	TrialPlanName:     TrialPlanID,
+	OpenStackPlanName: OpenStackPlanID,
 }
 
 type TrialCloudRegion string
@@ -69,8 +77,40 @@ func GCPRegions() []string {
 		"northamerica-northeast1", "southamerica-east1"}
 }
 
+func AWSRegions() []string {
+	// be aware of zones defined in internal/provider/aws_provider.go
+	return []string{"eu-central-1", "eu-west-2", "ca-central-1", "sa-east-1", "us-east-1", "us-west-1",
+		"ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2"}
+}
+
+func OpenStackRegions() []string {
+	return []string{"eu-de-1", "ap-sa-1"}
+}
+
+func OpenStackSchema(machineTypes []string) []byte {
+	properties := NewProvisioningProperties(machineTypes, OpenStackRegions())
+	schema := NewSchema(properties, DefaultControlsOrder())
+
+	bytes, err := json.Marshal(schema)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
+}
+
 func GCPSchema(machineTypes []string) []byte {
 	properties := NewProvisioningProperties(machineTypes, GCPRegions())
+	schema := NewSchema(properties, DefaultControlsOrder())
+
+	bytes, err := json.Marshal(schema)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
+}
+
+func AWSSchema(machineTypes []string) []byte {
+	properties := NewProvisioningProperties(machineTypes, AWSRegions())
 	schema := NewSchema(properties, DefaultControlsOrder())
 
 	bytes, err := json.Marshal(schema)
@@ -113,6 +153,21 @@ type Plan struct {
 // keep internal/hyperscaler/azure/config.go in sync with any changes to available zones
 func Plans(plans PlansConfig) map[string]Plan {
 	return map[string]Plan{
+		AWSPlanID: {
+			PlanDefinition: domain.ServicePlan{
+				ID:          AWSPlanID,
+				Name:        AWSPlanName,
+				Description: defaultDescription(AWSPlanName, plans),
+				Metadata:    defaultMetadata(AWSPlanName, plans), Schemas: &domain.ServiceSchemas{
+					Instance: domain.ServiceInstanceSchema{
+						Create: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
+					},
+				},
+			},
+			provisioningRawSchema: AWSSchema([]string{"m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m4.16xlarge"}),
+		},
 		GCPPlanID: {
 			PlanDefinition: domain.ServicePlan{
 				ID:          GCPPlanID,
@@ -128,6 +183,22 @@ func Plans(plans PlansConfig) map[string]Plan {
 				},
 			},
 			provisioningRawSchema: GCPSchema([]string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"}),
+		},
+		OpenStackPlanID: {
+			PlanDefinition: domain.ServicePlan{
+				ID:          OpenStackPlanID,
+				Name:        OpenStackPlanName,
+				Description: defaultDescription(OpenStackPlanName, plans),
+				Metadata:    defaultMetadata(OpenStackPlanName, plans),
+				Schemas: &domain.ServiceSchemas{
+					Instance: domain.ServiceInstanceSchema{
+						Create: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
+					},
+				},
+			},
+			provisioningRawSchema: OpenStackSchema([]string{"m2.xlarge", "m1.2xlarge"}),
 		},
 		AzurePlanID: {
 			PlanDefinition: domain.ServicePlan{

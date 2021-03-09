@@ -50,7 +50,7 @@ func (s *EmsUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, l
 	}
 	// save the status
 	operation.Ems.Instance.ProvisioningTriggered = true
-	operation, retry := s.operationManager.UpdateOperation(operation)
+	operation, retry := s.operationManager.SimpleUpdateOperation(operation)
 	if retry > 0 {
 		log.Errorf("unable to update operation")
 		return operation, time.Second, nil
@@ -74,5 +74,5 @@ func (s *EmsUpgradeProvisionStep) provision(smCli servicemanager.Client, operati
 
 func (s *EmsUpgradeProvisionStep) handleError(operation internal.UpgradeKymaOperation, err error, log logrus.FieldLogger, msg string) (internal.UpgradeKymaOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
-	return s.operationManager.OperationFailed(operation, msg)
+	return s.operationManager.OperationFailed(operation, msg, log)
 }

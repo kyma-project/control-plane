@@ -122,35 +122,3 @@ func (s *orchestrations) Update(orchestration internal.Orchestration) error {
 	}
 	return nil
 }
-
-func (s *orchestrations) ListByState(state string) ([]internal.Orchestration, error) {
-	sess := s.NewReadSession()
-	var (
-		lastErr error
-		result  []internal.Orchestration
-		filter  = dbmodel.OrchestrationFilter{
-			States: []string{state},
-		}
-	)
-	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		var dtos []dbmodel.OrchestrationDTO
-		dtos, _, _, lastErr = sess.ListOrchestrations(filter)
-		if lastErr != nil {
-			log.Errorf("while listing %s orchestrations: %v", state, lastErr)
-			return false, nil
-		}
-		for _, dto := range dtos {
-			var o internal.Orchestration
-			o, lastErr = dto.ToOrchestration()
-			if lastErr != nil {
-				return false, lastErr
-			}
-			result = append(result, o)
-		}
-		return true, nil
-	})
-	if err != nil {
-		return nil, lastErr
-	}
-	return result, nil
-}

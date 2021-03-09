@@ -25,7 +25,7 @@ func TestSkipForTrialPlanStepShouldSkip(t *testing.T) {
 	mockStep := &automock.Step{}
 	mockStep.On("Name").Return("Test")
 
-	skipStep := NewSkipForTrialPlanStep(mockStep)
+	skipStep := NewAzureEventHubActivationStep(mockStep)
 
 	// When
 	returnedOperation, time, err := skipStep.Run(operation, log)
@@ -48,7 +48,7 @@ func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 	mockStep := &automock.Step{}
 	mockStep.On("Run", operation, log).Return(anotherOperation, skipTime, nil)
 
-	skipStep := NewSkipForTrialPlanStep(mockStep)
+	skipStep := NewAzureEventHubActivationStep(mockStep)
 
 	// When
 	returnedOperation, time, err := skipStep.Run(operation, log)

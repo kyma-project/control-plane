@@ -1,8 +1,10 @@
 package process
 
 import (
-	"errors"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -21,8 +23,8 @@ func NewUpgradeKymaOperationManager(storage storage.Operations) *UpgradeKymaOper
 }
 
 // OperationSucceeded marks the operation as succeeded and only repeats it if there is a storage error
-func (om *UpgradeKymaOperationManager) OperationSucceeded(operation internal.UpgradeKymaOperation, description string) (internal.UpgradeKymaOperation, time.Duration, error) {
-	updatedOperation, repeat := om.update(operation, orchestration.Succeeded, description)
+func (om *UpgradeKymaOperationManager) OperationSucceeded(operation internal.UpgradeKymaOperation, description string, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	updatedOperation, repeat := om.update(operation, orchestration.Succeeded, description, log)
 	// repeat in case of storage error
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
@@ -32,8 +34,8 @@ func (om *UpgradeKymaOperationManager) OperationSucceeded(operation internal.Upg
 }
 
 // OperationFailed marks the operation as failed and only repeats it if there is a storage error
-func (om *UpgradeKymaOperationManager) OperationFailed(operation internal.UpgradeKymaOperation, description string) (internal.UpgradeKymaOperation, time.Duration, error) {
-	updatedOperation, repeat := om.update(operation, orchestration.Failed, description)
+func (om *UpgradeKymaOperationManager) OperationFailed(operation internal.UpgradeKymaOperation, description string, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	updatedOperation, repeat := om.update(operation, orchestration.Failed, description, log)
 	// repeat in case of storage error
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
@@ -43,8 +45,8 @@ func (om *UpgradeKymaOperationManager) OperationFailed(operation internal.Upgrad
 }
 
 // OperationSucceeded marks the operation as succeeded and only repeats it if there is a storage error
-func (om *UpgradeKymaOperationManager) OperationCanceled(operation internal.UpgradeKymaOperation, description string) (internal.UpgradeKymaOperation, time.Duration, error) {
-	updatedOperation, repeat := om.update(operation, orchestration.Canceled, description)
+func (om *UpgradeKymaOperationManager) OperationCanceled(operation internal.UpgradeKymaOperation, description string, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	updatedOperation, repeat := om.update(operation, orchestration.Canceled, description, log)
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
 	}
@@ -62,11 +64,37 @@ func (om *UpgradeKymaOperationManager) RetryOperation(operation internal.Upgrade
 		return operation, retryInterval, nil
 	}
 	log.Errorf("Aborting after %s of failing retries", maxTime.String())
-	return om.OperationFailed(operation, errorMessage)
+	return om.OperationFailed(operation, errorMessage, log)
 }
 
-// UpdateOperation updates a given operation
-func (om *UpgradeKymaOperationManager) UpdateOperation(operation internal.UpgradeKymaOperation) (internal.UpgradeKymaOperation, time.Duration) {
+// UpdateOperation updates a given operation and handles conflict situation
+func (om *UpgradeKymaOperationManager) UpdateOperation(operation internal.UpgradeKymaOperation, update func(operation *internal.UpgradeKymaOperation), log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration) {
+	update(&operation)
+	updatedOperation, err := om.storage.UpdateUpgradeKymaOperation(operation)
+	switch {
+	case dberr.IsConflict(err):
+		{
+			op, err := om.storage.GetUpgradeKymaOperationByID(operation.Operation.ID)
+			if err != nil {
+				log.Errorf("while getting operation: %v", err)
+				return operation, 1 * time.Minute
+			}
+			update(op)
+			updatedOperation, err = om.storage.UpdateUpgradeKymaOperation(*op)
+			if err != nil {
+				log.Errorf("while updating operation after conflict: %v", err)
+				return operation, 1 * time.Minute
+			}
+		}
+	case err != nil:
+		log.Errorf("while updating operation: %v", err)
+		return operation, 1 * time.Minute
+	}
+	return *updatedOperation, 0
+}
+
+// Deprecated: SimpleUpdateOperation updates a given operation without handling conflicts. Should be used when operation's data mutations are not clear
+func (om *UpgradeKymaOperationManager) SimpleUpdateOperation(operation internal.UpgradeKymaOperation) (internal.UpgradeKymaOperation, time.Duration) {
 	updatedOperation, err := om.storage.UpdateUpgradeKymaOperation(operation)
 	if err != nil {
 		logrus.WithField("orchestrationID", operation.OrchestrationID).
@@ -87,7 +115,7 @@ func (om *UpgradeKymaOperationManager) RetryOperationWithoutFail(operation inter
 		return operation, retryInterval, nil
 	}
 	// update description to track failed steps
-	updatedOperation, repeat := om.update(operation, domain.InProgress, description)
+	updatedOperation, repeat := om.update(operation, domain.InProgress, description, log)
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
 	}
@@ -96,9 +124,9 @@ func (om *UpgradeKymaOperationManager) RetryOperationWithoutFail(operation inter
 	return updatedOperation, 0, nil
 }
 
-func (om *UpgradeKymaOperationManager) update(operation internal.UpgradeKymaOperation, state domain.LastOperationState, description string) (internal.UpgradeKymaOperation, time.Duration) {
-	operation.State = state
-	operation.Description = description
-
-	return om.UpdateOperation(operation)
+func (om *UpgradeKymaOperationManager) update(operation internal.UpgradeKymaOperation, state domain.LastOperationState, description string, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration) {
+	return om.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
+		operation.State = state
+		operation.Description = description
+	}, log)
 }

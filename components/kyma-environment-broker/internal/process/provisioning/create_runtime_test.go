@@ -67,10 +67,10 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				Name:              ptr.String(shootName),
+				Name:              shootName,
 				KubernetesVersion: k8sVersion,
-				DiskType:          "pd-standard",
-				VolumeSizeGb:      30,
+				DiskType:          ptr.String("pd-standard"),
+				VolumeSizeGb:      ptr.Integer(30),
 				MachineType:       "n1-standard-4",
 				Region:            "europe-west4-a",
 				Provider:          "gcp",

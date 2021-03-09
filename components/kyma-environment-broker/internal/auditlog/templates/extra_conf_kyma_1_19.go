@@ -38,10 +38,10 @@ const (
 [OUTPUT]
   Name              http
   Match             *
-  Host              {{.ClsOverrides.FluentdEndPoint}}
+  Host              {{.ClsOverrideParams.FluentdEndPoint}}
   Port              443
-  HTTP_User         {{.ClsOverrides.FluentdUsername}}
-  HTTP_Passwd       {{.ClsOverrides.FluentdPassword}}
+  HTTP_User         {{.ClsOverrideParams.FluentdUsername}}
+  HTTP_Passwd       {{.ClsOverrideParams.FluentdPassword}}
   tls               true
   tls.verify        true
   tls.debug         1

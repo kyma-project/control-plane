@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCLS_AuditLog_ScriptFileDoesNotExist(t *testing.T) {
+func TestClsAuditLogStep_ScriptFileDoesNotExist(t *testing.T) {
 	// given
 	mm := afero.NewMemMapFs()
 
@@ -28,7 +28,7 @@ func TestCLS_AuditLog_ScriptFileDoesNotExist(t *testing.T) {
 		Password: "aaaa",
 		Tenant:   "tenant",
 	}
-	svc := NewCLSAuditLogOverridesStep(repo, cfg, "1234567890123456")
+	svc := NewClsAuditLogOverridesStep(repo, cfg, "1234567890123456")
 	svc.fs = mm
 
 	operation := internal.ProvisioningOperation{
@@ -43,11 +43,11 @@ func TestCLS_AuditLog_ScriptFileDoesNotExist(t *testing.T) {
 	_, _, err = svc.Run(operation, NewLogDummy())
 	//then
 	require.Error(t, err)
-	require.EqualError(t, err, "open /auditlog-script/script: file does not exist")
+	require.EqualError(t, err, "Unable to read audit config script")
 
 }
 
-func TestCLS_AuditLog_HappyPath(t *testing.T) {
+func TestClsAuditLogStep_HappyPath(t *testing.T) {
 	// given
 	mm := afero.NewMemMapFs()
 
@@ -58,7 +58,7 @@ bar: tenant_id
 return "fooBar"
 }
 `
-	overridesIn := cls.ClsOverrideParams{
+	overridesIn := cls.OverrideParams{
 		FluentdEndPoint: "foo.bar",
 		FluentdPassword: "fooPass",
 		FluentdUsername: "fooUser",
@@ -80,7 +80,7 @@ return "fooBar"
 		Password: "aaaa",
 		Tenant:   "tenant",
 	}
-	svc := NewCLSAuditLogOverridesStep(repo, cfg, secretKey)
+	svc := NewClsAuditLogOverridesStep(repo, cfg, secretKey)
 	svc.fs = mm
 
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
@@ -243,7 +243,7 @@ return "fooBar"
 	assert.Equal(t, time.Duration(0), repeat)
 }
 
-func TestCLS_AuditLog_HappyPath_SeqHttp(t *testing.T) {
+func TestClsAuditLogStep_HappyPath_SeqHttp(t *testing.T) {
 	// given
 	mm := afero.NewMemMapFs()
 
@@ -254,7 +254,7 @@ bar: tenant_id
 return "fooBar"
 }
 `
-	overridesIn := cls.ClsOverrideParams{
+	overridesIn := cls.OverrideParams{
 		FluentdEndPoint: "foo.bar",
 		FluentdPassword: "fooPass",
 		FluentdUsername: "fooUser",
@@ -279,7 +279,7 @@ return "fooBar"
 		Tenant:        "tenant",
 		EnableSeqHttp: true,
 	}
-	svc := NewCLSAuditLogOverridesStep(repo, cfg, "1234567890123456")
+	svc := NewClsAuditLogOverridesStep(repo, cfg, "1234567890123456")
 	svc.fs = mm
 
 	inputCreatorMock := &automock.ProvisionerInputCreator{}

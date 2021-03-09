@@ -25,7 +25,7 @@ func TestEnableForTrialPlanStepShouldEnable(t *testing.T) {
 	mockStep.On("Name").Return("Test")
 	mockStep.On("Run", operation, log).Return(anotherOperation, runTime, nil)
 
-	enableStep := NewEnableForTrialPlanStep(mockStep)
+	enableStep := NewNatsActivationStep(mockStep)
 
 	// When
 	returnedOperation, time, err := enableStep.Run(operation, log)
@@ -50,7 +50,7 @@ func TestEnableForTrialPlanStepShouldNotEnable(t *testing.T) {
 	mockStep.On("Name").Return("Test")
 	mockStep.On("Run", operation, log).Return(anotherOperation, runTime, nil)
 
-	enableStep := NewEnableForTrialPlanStep(mockStep)
+	enableStep := NewNatsActivationStep(mockStep)
 
 	// When
 	returnedOperation, time, err := enableStep.Run(operation, log)

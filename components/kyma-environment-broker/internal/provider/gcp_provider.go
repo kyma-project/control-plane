@@ -3,6 +3,8 @@ package provider
 import (
 	"fmt"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -33,8 +35,8 @@ type (
 func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			DiskType:       "pd-standard",
-			VolumeSizeGb:   30,
+			DiskType:       ptr.String("pd-standard"),
+			VolumeSizeGb:   ptr.Integer(30),
 			MachineType:    "n1-standard-4",
 			Region:         DefaultGCPRegion,
 			Provider:       "gcp",
@@ -67,8 +69,8 @@ func (p *GcpInput) Profile() gqlschema.KymaProfile {
 func (p *GcpTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			DiskType:       "pd-standard",
-			VolumeSizeGb:   30,
+			DiskType:       ptr.String("pd-standard"),
+			VolumeSizeGb:   ptr.Integer(30),
 			MachineType:    "n1-standard-4",
 			Region:         DefaultGCPRegion,
 			Provider:       "gcp",
