@@ -31,9 +31,7 @@ func (s *ClsUpgradeOfferingStep) Name() string {
 }
 
 func (s *ClsUpgradeOfferingStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	info := &operation.Cls.Instance
-
-	if info.ServiceID != "" && info.PlanID != "" {
+	if operation.Cls.Instance.ServiceID != "" && operation.Cls.Instance.PlanID != "" {
 		return operation, 0, nil
 	}
 
@@ -58,14 +56,16 @@ func (s *ClsUpgradeOfferingStep) Run(operation internal.UpgradeKymaOperation, lo
 		if kebError.IsTemporaryError(err) {
 			return s.handleError(operation, err, err.Error(), log)
 		}
-		return s.operationManager.OperationFailed(operation, err.Error())
+		return s.operationManager.OperationFailed(operation, err.Error(), log)
 	}
-	log.Infof("Found plan: catalogID=%s", meta.PlanID)
-	info.ServiceID = meta.ServiceID
-	info.BrokerID = meta.BrokerID
-	info.PlanID = meta.PlanID
 
-	op, retry := s.operationManager.SimpleUpdateOperation(operation)
+	log.Infof("Found plan: catalogID=%s", meta.PlanID)
+
+	op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
+		operation.Cls.Instance.ServiceID = meta.ServiceID
+		operation.Cls.Instance.BrokerID = meta.BrokerID
+		operation.Cls.Instance.PlanID = meta.PlanID
+	}, log)
 	if retry > 0 {
 		log.Errorf("unable to update the operation")
 		return op, retry, nil

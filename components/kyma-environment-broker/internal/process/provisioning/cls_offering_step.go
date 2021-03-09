@@ -37,9 +37,7 @@ func (s *ClsOfferingStep) Name() string {
 }
 
 func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	info := &operation.Cls.Instance
-
-	if info.ServiceID != "" && info.PlanID != "" {
+	if operation.Cls.Instance.ServiceID != "" && operation.Cls.Instance.PlanID != "" {
 		return operation, 0, nil
 	}
 
@@ -53,53 +51,26 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 	if err != nil {
 		return s.handleError(operation, err, err.Error(), log)
 	}
-
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-	// try to find the offering
-	offerings, err := smClient.ListOfferingsByName(ClsOfferingName)
-	if err != nil {
-		return s.handleError(operation, err, "unable to get Service Manager offerings", log)
-	}
-	if len(offerings.ServiceOfferings) != 1 {
-		return s.operationManager.OperationFailed(operation,
-			fmt.Sprintf("expected one %s Service Manager offering, but found %d", ClsOfferingName, len(offerings.ServiceOfferings)), log)
-=======
-	offeringInfo, retryable, err := servicemanager.GenerateOfferingInfo(smClient, ClsOfferingName, ClsPlanName)
-	if offeringInfo.ServiceID != "" && offeringInfo.BrokerID != "" {
-		log.Infof("Found offering: catalogID=%s brokerID=%s", offeringInfo.ServiceID, offeringInfo.BrokerID)
->>>>>>> Unify offering logic
-	}
-	if err != nil {
-<<<<<<< HEAD
-		return s.handleError(operation, err, "unable to get Service Manager plan", log)
-	}
-	if len(plans.ServicePlans) != 1 {
-		return s.operationManager.OperationFailed(operation,
-			fmt.Sprintf("expected one %s Service Manager plan, but found %d", ClsPlanName, len(offerings.ServiceOfferings)), log)
-=======
-		if retryable {
-=======
 	meta, err := servicemanager.GenerateMetadata(smClient, ClsOfferingName, ClsPlanName)
 	if meta.ServiceID != "" && meta.BrokerID != "" {
 		log.Infof("Found offering: catalogID=%s brokerID=%s", meta.ServiceID, meta.BrokerID)
 	}
 	if err != nil {
 		if kebError.IsTemporaryError(err) {
->>>>>>> Improve
 			return s.handleError(operation, err, err.Error(), log)
 		}
-		return s.operationManager.OperationFailed(operation, err.Error())
->>>>>>> Unify offering logic
+		return s.operationManager.OperationFailed(operation, err.Error(), log)
 	}
-	log.Infof("Found plan: catalogID=%s", meta.PlanID)
-	info.ServiceID = meta.ServiceID
-	info.BrokerID = meta.BrokerID
-	info.PlanID = meta.PlanID
 
-	op, retry := s.operationManager.SimpleUpdateOperation(operation)
+	log.Infof("Found plan: catalogID=%s", meta.PlanID)
+
+	op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+		operation.Cls.Instance.ServiceID = meta.ServiceID
+		operation.Cls.Instance.BrokerID = meta.BrokerID
+		operation.Cls.Instance.PlanID = meta.PlanID
+	}, log)
 	if retry > 0 {
 		log.Errorf("unable to update the operation")
 		return op, retry, nil

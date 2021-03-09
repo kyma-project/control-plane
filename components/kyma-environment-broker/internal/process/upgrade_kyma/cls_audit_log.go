@@ -39,11 +39,12 @@ func NewClsUpgradeAuditLogOverridesStep(os storage.Operations, cfg auditlog.Conf
 	}
 }
 
-func (alo *ClsUpgradeAuditLogOverridesStep) Run(operation internal.UpgradeKymaOperation, logger logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+func (alo *ClsUpgradeAuditLogOverridesStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	luaScript, err := afero.ReadFile(alo.fs, "/auditlog-script/script")
 	if err != nil {
-		logger.Errorf("Unable to read audit config script: %v", err)
-		return operation, 0, err
+		failureReason := "Unable to read audit config script"
+		log.Errorf("%s: %v", failureReason, err)
+		return alo.operationManager.OperationFailed(operation, failureReason, log)
 	}
 
 	replaceSubAccountID := strings.Replace(string(luaScript), "sub_account_id", operation.ProvisioningParameters.ErsContext.SubAccountID, -1)
@@ -51,20 +52,23 @@ func (alo *ClsUpgradeAuditLogOverridesStep) Run(operation internal.UpgradeKymaOp
 
 	auditlogOverrideParams, err := auditlog.PrepareOverrideParams(&alo.auditLogConfig, alo.secretKey, operation.Cls.Overrides)
 	if err != nil {
-		logger.Errorf("Unable to prepare Audit Log override parameters: %v", err)
-		return operation, 0, err
+		failureReason := "Unable to prepare Audit Log override parameters"
+		log.Errorf("%s: %v", failureReason, err)
+		return alo.operationManager.OperationFailed(operation, failureReason, log)
 	}
 
 	extraConfTemplate, err := auditlog.GetExtraConfTemplate(operation.RuntimeVersion.Version)
 	if err != nil {
-		logger.Errorf("Unable to get extra config template: %v", err)
-		return operation, 0, err
+		failureReason := "Unable to get extra config template"
+		log.Errorf("%s: %v", failureReason, err)
+		return alo.operationManager.OperationFailed(operation, failureReason, log)
 	}
 
 	extraConfOverrides, err := cls.RenderOverrides(auditlogOverrideParams, extraConfTemplate)
 	if err != nil {
-		logger.Errorf("Unable to render Audit Log extra config overrides: %v", err)
-		return operation, 0, err
+		failureReason := "Unable to render Audit Log extra config overrides"
+		log.Errorf("%s: %v", failureReason, err)
+		return alo.operationManager.OperationFailed(operation, failureReason, log)
 	}
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
