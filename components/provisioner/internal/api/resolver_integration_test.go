@@ -88,6 +88,18 @@ func newTestProvisioningConfigs() []testCase {
 				}},
 			upgradeShootInput: NewUpgradeShootInput(),
 		},
+		{name: "Azure on Gardener seed is empty",
+			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when seed is empty",
+			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb2",
+			auditLogTenant: "e7382275-e835-4549-94e1-3b1101e3a1fa",
+			provisioningInput: provisioningInput{
+				config: azureGardenerClusterConfigInputNoSeed(),
+				runtimeInput: gqlschema.RuntimeInput{
+					Name:        "test runtime 5",
+					Description: new(string),
+				}},
+			upgradeShootInput: NewUpgradeShootInput(),
+		},
 		{name: "OpenStack on Gardener",
 			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct OpenStack configuration for Gardener",
 			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb8",
@@ -112,6 +124,33 @@ func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInp
 			Provider:          "Azure",
 			TargetSecret:      "secret",
 			Seed:              util.StringPtr("az-eu2"),
+			Region:            "westeurope",
+			MachineType:       "Standard_D8_v3",
+			DiskType:          util.StringPtr("Standard_LRS"),
+			VolumeSizeGb:      util.IntPtr(40),
+			WorkerCidr:        "cidr",
+			AutoScalerMin:     1,
+			AutoScalerMax:     5,
+			MaxSurge:          1,
+			MaxUnavailable:    2,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				AzureConfig: &gqlschema.AzureProviderConfigInput{
+					VnetCidr: "cidr",
+					Zones:    zones,
+				},
+			},
+		},
+	}
+}
+
+func azureGardenerClusterConfigInputNoSeed(zones ...string) gqlschema.ClusterConfigInput {
+	return gqlschema.ClusterConfigInput{
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:              util.CreateGardenerClusterName(),
+			KubernetesVersion: "version",
+			Purpose:           util.StringPtr("evaluation"),
+			Provider:          "Azure",
+			TargetSecret:      "secret",
 			Region:            "westeurope",
 			MachineType:       "Standard_D8_v3",
 			DiskType:          util.StringPtr("Standard_LRS"),
