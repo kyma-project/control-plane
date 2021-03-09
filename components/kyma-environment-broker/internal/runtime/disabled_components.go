@@ -23,6 +23,9 @@ func NewDisabledComponentsProvider() DisabledComponentsProvider {
 			components.Backup:     {},
 			components.BackupInit: {},
 		},
+		broker.OpenStackPlanID: {
+			components.KnativeEventingKafka: {},
+		},
 		broker.GCPPlanID: {
 			components.NatsStreaming:           {},
 			components.KnativeProvisionerNatss: {},
@@ -36,8 +39,7 @@ func NewDisabledComponentsProvider() DisabledComponentsProvider {
 			components.KnativeProvisionerNatss: {},
 		},
 		broker.AWSPlanID: {
-			components.NatsStreaming:           {},
-			components.KnativeProvisionerNatss: {},
+			components.KnativeEventingKafka: {},
 		},
 		broker.TrialPlanID: {
 			components.KnativeEventingKafka: {},
