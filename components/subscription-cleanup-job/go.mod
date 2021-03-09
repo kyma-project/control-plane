@@ -26,7 +26,7 @@ replace (
 	github.com/kyma-project/control-plane => github.com/franpog859/control-plane v0.0.0-20210308125010-7afa0e3bf7d8
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	golang.org/x/text => golang.org/x/text v0.3.3
-	k8s.io/apimachinery => k8s.io/apimachinery v0.18.15
 	k8s.io/api => k8s.io/api v0.18.15
+	k8s.io/apimachinery => k8s.io/apimachinery v0.18.15
 	k8s.io/client-go => k8s.io/client-go v0.18.15
 )
