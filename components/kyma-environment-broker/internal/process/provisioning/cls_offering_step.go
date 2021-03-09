@@ -57,6 +57,19 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 
+	operation, err := FindOffering(smClient, operation)
+	if err != nil {
+		return s.handleError(operation, err, "unable to get Service Manager offerings", log)
+	}
+
+	// when you rebase it - then please use SimpleUpdateOperation method
+	op, retry := s.operationManager.UpdateOperation(operation)
+	if retry > 0 {
+		log.Errorf("unable to update the operation")
+		return op, retry, nil
+	}
+	return op, 0, nil
+
 	// try to find the offering
 	offerings, err := smClient.ListOfferingsByName(ClsOfferingName)
 	if err != nil {
