@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/cloudprovider"
 	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/job"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/client-go/kubernetes"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -28,10 +29,17 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Failed to load application config")
 
-	secretsInterface, err := newSecretsInterface(cfg)
-	exitOnError(err, "Failed to create secrets client ")
+	kubeconfig, err := newKubeconfig(cfg)
+	exitOnError(err, "Failed to create kubernetes cluster client")
 
-	err = job.NewCleaner(context.Background(), secretsInterface, cloudprovider.NewProviderFactory()).Do()
+	kubernetesInterface, err := newKubernetesInterface(kubeconfig)
+	exitOnError(err, "Failed to create kubernetes client")
+
+	gardenerClient, err := gardener.NewClient(kubeconfig)
+	exitOnError(err, "Failed to create kubernetes client")
+	secretBindingsInterface := gardener.NewGardenerSecretBindingsInterface(gardenerClient, cfg.Gardener.Project)
+
+	err = job.NewCleaner(context.Background(), kubernetesInterface, secretBindingsInterface, cloudprovider.NewProviderFactory()).Do()
 	exitOnError(err, "Job execution failed")
 
 	log.Info("Cleanup job finished successfully!")
@@ -44,24 +52,24 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func newSecretsInterface(cfg config) (corev1.SecretInterface, error) {
+func newKubeconfig(cfg config) (*restclient.Config, error) {
 	rawKubeconfig, err := ioutil.ReadFile(cfg.Gardener.KubeconfigPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read Gardener Kubeconfig from path %s: %s", cfg.Gardener.KubeconfigPath, err.Error())
+		return nil, fmt.Errorf("failed to read Gardener Kubeconfig from path %s: %s",
+			cfg.Gardener.KubeconfigPath, err.Error())
 	}
 
 	gardenerClusterConfig, err := clientcmd.RESTConfigFromKubeConfig(rawKubeconfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Gardener cluster config: %s", err.Error())
 	}
+	return gardenerClusterConfig, nil
+}
 
-	k8sCoreClientSet, err := kubernetes.NewForConfig(gardenerClusterConfig)
+func newKubernetesInterface(kubeconfig *restclient.Config) (kubernetes.Interface, error) {
+	k8sCoreClientSet, err := kubernetes.NewForConfig(kubeconfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create kubernetes client: %s", err.Error())
 	}
-
-	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
-	secretsInterface := k8sCoreClientSet.CoreV1().Secrets(gardenerNamespace)
-
-	return secretsInterface, nil
+	return k8sCoreClientSet, nil
 }

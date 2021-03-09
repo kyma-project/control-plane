@@ -50,6 +50,13 @@ func TestCredentials(t *testing.T) {
 		{"No Available credential for tenant6, GCP returns error - ignore secret binding with label shared=true",
 			"tenant6", GCP, "",
 			"failed to find unassigned secret binding for hyperscalerType: gcp"},
+
+		{"Available credential for tenant7, AWS labels and returns existing secret from different namespace",
+			"tenant7", AWS, "secret7", ""},
+
+		{"No Available credential for tenant8, AWS returns error - failed to get referenced secret",
+			"tenant8", AWS, "",
+			"getting garden-namespace/notexistingsecret secret: secrets \"notexistingsecret\" not found"},
 	}
 	for _, testcase := range testcases {
 
@@ -225,6 +232,14 @@ func newTestAccountPool() AccountPool {
 			"credentials": []byte("secret6"),
 		},
 	}
+	secret7 := &corev1.Secret{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name: "secret7", Namespace: "anothernamespace",
+		},
+		Data: map[string][]byte{
+			"credentials": []byte("secret7"),
+		},
+	}
 
 	secretBinding1 := &gardener_types.SecretBinding{
 		ObjectMeta: machineryv1.ObjectMeta{
@@ -308,9 +323,35 @@ func newTestAccountPool() AccountPool {
 			Namespace: testNamespace,
 		},
 	}
+	secretBinding7 := &gardener_types.SecretBinding{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name:      "secretBinding7",
+			Namespace: testNamespace,
+			Labels: map[string]string{
+				"hyperscalerType": "aws",
+			},
+		},
+		SecretRef: corev1.SecretReference{
+			Name:      "secret7",
+			Namespace: "anothernamespace",
+		},
+	}
+	secretBinding8 := &gardener_types.SecretBinding{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name:      "secretBinding8",
+			Namespace: testNamespace,
+			Labels: map[string]string{
+				"hyperscalerType": "aws",
+			},
+		},
+		SecretRef: corev1.SecretReference{
+			Name:      "notexistingsecret",
+			Namespace: testNamespace,
+		},
+	}
 
-	mockClient := fake.NewSimpleClientset(secret1, secret2, secret3, secret4, secret5, secret6)
-	gardenerFake := gardener_fake.NewSimpleClientset(secretBinding1, secretBinding2, secretBinding3, secretBinding4, secretBinding5, secretBinding6).
+	mockClient := fake.NewSimpleClientset(secret1, secret2, secret3, secret4, secret5, secret6, secret7)
+	gardenerFake := gardener_fake.NewSimpleClientset(secretBinding1, secretBinding2, secretBinding3, secretBinding4, secretBinding5, secretBinding6, secretBinding7, secretBinding8).
 		CoreV1beta1().SecretBindings(testNamespace)
 
 	pool := NewAccountPool(mockClient, gardenerFake, nil)
