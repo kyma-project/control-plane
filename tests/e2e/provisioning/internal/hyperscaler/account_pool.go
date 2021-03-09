@@ -53,7 +53,7 @@ func (p *secretBindingsAccountPool) Credentials(hyperscalerType Type, tenantName
 		return credentialsFromBoundSecret(p.kubernetesInterface, secretBinding, hyperscalerType, tenantName)
 	}
 
-	// lock so that only one thread can fetch an unassigned secret and assign it (update secret with tenantName)
+	// lock so that only one thread can fetch an unassigned secret binding and assign it (update secret binding with tenantName)
 	p.mux.Lock()
 	defer p.mux.Unlock()
 
@@ -95,7 +95,8 @@ func credentialsFromBoundSecret(kubernetesInterface kubernetes.Interface, secret
 
 	secret, err := secretClient.Get(secretBinding.SecretRef.Name, metav1.GetOptions{})
 	if err != nil {
-		return Credentials{}, errors.Wrapf(err, "getting %s/%s secret", secretBinding.SecretRef.Namespace, secretBinding.SecretRef.Name)
+		return Credentials{}, errors.Wrapf(err, "getting %s/%s secret",
+			secretBinding.SecretRef.Namespace, secretBinding.SecretRef.Name)
 	}
 
 	return Credentials{
