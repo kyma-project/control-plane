@@ -41,8 +41,10 @@ func (s *XSUAADeprovisionStep) Run(operation internal.DeprovisioningOperation, l
 	if err != nil {
 		return s.handleError(operation, err, "unable to deprovision", log)
 	}
-	operation.XSUAA.Instance.InstanceID = ""
-	return s.operationManager.UpdateOperation(operation)
+	updatedOperation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
+		operation.XSUAA.Instance.InstanceID = ""
+	}, log)
+	return updatedOperation, retry, nil
 }
 
 func (s *XSUAADeprovisionStep) handleError(operation internal.DeprovisioningOperation, err error, msg string, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
@@ -51,6 +53,6 @@ func (s *XSUAADeprovisionStep) handleError(operation internal.DeprovisioningOper
 	case kebError.IsTemporaryError(err):
 		return s.operationManager.RetryOperation(operation, msg, 10*time.Second, time.Minute*30, log)
 	default:
-		return s.operationManager.OperationFailed(operation, msg)
+		return s.operationManager.OperationFailed(operation, msg, log)
 	}
 }

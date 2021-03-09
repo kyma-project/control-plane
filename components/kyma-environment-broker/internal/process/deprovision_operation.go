@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -24,8 +26,8 @@ func NewDeprovisionOperationManager(storage storage.Operations) *DeprovisionOper
 }
 
 // OperationSucceeded marks the operation as succeeded and only repeats it if there is a storage error
-func (om *DeprovisionOperationManager) OperationSucceeded(operation internal.DeprovisioningOperation, description string) (internal.DeprovisioningOperation, time.Duration, error) {
-	updatedOperation, repeat := om.update(operation, domain.Succeeded, description)
+func (om *DeprovisionOperationManager) OperationSucceeded(operation internal.DeprovisioningOperation, description string, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+	updatedOperation, repeat := om.update(operation, domain.Succeeded, description, log)
 	// repeat in case of storage error
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
@@ -35,8 +37,8 @@ func (om *DeprovisionOperationManager) OperationSucceeded(operation internal.Dep
 }
 
 // OperationFailed marks the operation as failed and only repeats it if there is a storage error
-func (om *DeprovisionOperationManager) OperationFailed(operation internal.DeprovisioningOperation, description string) (internal.DeprovisioningOperation, time.Duration, error) {
-	updatedOperation, repeat := om.update(operation, domain.Failed, description)
+func (om *DeprovisionOperationManager) OperationFailed(operation internal.DeprovisioningOperation, description string, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+	updatedOperation, repeat := om.update(operation, domain.Failed, description, log)
 	// repeat in case of storage error
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
@@ -45,13 +47,30 @@ func (om *DeprovisionOperationManager) OperationFailed(operation internal.Deprov
 	return updatedOperation, 0, errors.New(description)
 }
 
-// UpdateOperation updates a given operation
-func (om *DeprovisionOperationManager) UpdateOperation(operation internal.DeprovisioningOperation) (internal.DeprovisioningOperation, time.Duration, error) {
+// UpdateOperation updates a given operation and handles conflict situation
+func (om *DeprovisionOperationManager) UpdateOperation(operation internal.DeprovisioningOperation, overwrite func(operation *internal.DeprovisioningOperation), log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration) {
+	overwrite(&operation)
 	updatedOperation, err := om.storage.UpdateDeprovisioningOperation(operation)
-	if err != nil {
-		return operation, 1 * time.Minute, nil
+	switch {
+	case dberr.IsConflict(err):
+		{
+			op, err := om.storage.GetDeprovisioningOperationByID(operation.ID)
+			if err != nil {
+				log.Errorf("while getting operation: %v", err)
+				return operation, 1 * time.Minute
+			}
+			overwrite(op)
+			updatedOperation, err = om.storage.UpdateDeprovisioningOperation(*op)
+			if err != nil {
+				log.Errorf("while updating operation after conflict: %v", err)
+				return operation, 1 * time.Minute
+			}
+		}
+	case err != nil:
+		log.Errorf("while updating operation: %v", err)
+		return operation, 1 * time.Minute
 	}
-	return *updatedOperation, 0, nil
+	return *updatedOperation, 0
 }
 
 // InsertOperation stores operation in database
@@ -77,7 +96,7 @@ func (om *DeprovisionOperationManager) RetryOperation(operation internal.Deprovi
 		return operation, retryInterval, nil
 	}
 	log.Errorf("Aborting after %s of failing retries", maxTime.String())
-	return om.OperationFailed(operation, errorMessage)
+	return om.OperationFailed(operation, errorMessage, log)
 }
 
 // RetryOperationWithoutFail retries an operation for at maxTime in retryInterval steps and omits the operation if retrying failed
@@ -90,7 +109,7 @@ func (om *DeprovisionOperationManager) RetryOperationWithoutFail(operation inter
 		return operation, retryInterval, nil
 	}
 	// update description to track failed steps
-	updatedOperation, repeat := om.update(operation, domain.InProgress, description)
+	updatedOperation, repeat := om.update(operation, domain.InProgress, description, log)
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
 	}
@@ -99,15 +118,9 @@ func (om *DeprovisionOperationManager) RetryOperationWithoutFail(operation inter
 	return updatedOperation, 0, nil
 }
 
-func (om *DeprovisionOperationManager) update(operation internal.DeprovisioningOperation, state domain.LastOperationState, description string) (internal.DeprovisioningOperation, time.Duration) {
-	operation.State = state
-	operation.Description = fmt.Sprintf("%s : %s", operation.Description, description)
-
-	updatedOperation, err := om.storage.UpdateDeprovisioningOperation(operation)
-	// repeat if there is a problem with the storage
-	if err != nil {
-		return operation, 1 * time.Minute
-	}
-
-	return *updatedOperation, 0
+func (om *DeprovisionOperationManager) update(operation internal.DeprovisioningOperation, state domain.LastOperationState, description string, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration) {
+	return om.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
+		operation.State = state
+		operation.Description = fmt.Sprintf("%s : %s", operation.Description, description)
+	}, log)
 }

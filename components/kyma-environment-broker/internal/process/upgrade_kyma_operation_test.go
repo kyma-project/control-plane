@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -23,7 +25,7 @@ func TestUpgradeKymaOperationManager_OperationSucceeded(t *testing.T) {
 	require.NoError(t, err)
 
 	// when
-	op, when, err := opManager.OperationSucceeded(op, "task succeeded")
+	op, when, err := opManager.OperationSucceeded(op, "task succeeded", logrus.New())
 
 	// then
 	assert.NoError(t, err)
@@ -43,7 +45,7 @@ func TestUpgradeKymaOperationManager_OperationFailed(t *testing.T) {
 	errMsg := "task failed miserably"
 
 	// when
-	op, when, err := opManager.OperationFailed(op, errMsg)
+	op, when, err := opManager.OperationFailed(op, errMsg, logrus.New())
 
 	// then
 	assert.Error(t, err)

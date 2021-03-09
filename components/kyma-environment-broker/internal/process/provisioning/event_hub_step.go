@@ -72,7 +72,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure config: %v", err)
-		return p.operationManager.OperationFailed(operation, errorMessage)
+		return p.operationManager.OperationFailed(operation, errorMessage, log)
 	}
 
 	// create hyperscaler client
@@ -80,7 +80,7 @@ func (p *ProvisionAzureEventHubStep) Run(operation internal.ProvisioningOperatio
 	if err != nil {
 		// internal error, repeating doesn't solve the problem
 		errorMessage := fmt.Sprintf("Failed to create Azure EventHubs client: %v", err)
-		return p.operationManager.OperationFailed(operation, errorMessage)
+		return p.operationManager.OperationFailed(operation, errorMessage, log)
 	}
 
 	// prepare azure tags

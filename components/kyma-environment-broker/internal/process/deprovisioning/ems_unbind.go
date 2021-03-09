@@ -45,14 +45,16 @@ func (s *EmsUnbindStep) Run(operation internal.DeprovisioningOperation, log logr
 		return s.handleError(operation, err, log, fmt.Sprintf("unable to unbind, bindingId=%s", operation.Ems.BindingID))
 	}
 	log.Infof("unbinding for EMS instance: %s finished", operation.Ems.Instance.InstanceID)
-	operation.Ems.BindingID = ""
-	operation.Ems.Overrides = ""
 
-	return s.operationManager.UpdateOperation(operation)
+	updatedOperation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
+		operation.Ems.BindingID = ""
+		operation.Ems.Overrides = ""
+	}, log)
+	return updatedOperation, retry, nil
 }
 
 func (s *EmsUnbindStep) handleError(operation internal.DeprovisioningOperation, err error, log logrus.FieldLogger,
 	msg string) (internal.DeprovisioningOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
-	return s.operationManager.OperationFailed(operation, msg)
+	return s.operationManager.OperationFailed(operation, msg, log)
 }
