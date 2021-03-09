@@ -136,8 +136,8 @@ type Config struct {
 		Disabled bool `envconfig:"default=true"`
 	}
 
-	AuditLog auditlog.Config
-	clsConfig *cls.Config
+	AuditLog      auditlog.Config
+	clsConfig     *cls.Config
 	VersionConfig struct {
 		Namespace string
 		Name      string
@@ -226,7 +226,7 @@ func main() {
 		fatalOnError(err)
 	}
 
-	cfg.clsConfig , err = cls.Load(string(clsFile))
+	cfg.clsConfig, err = cls.Load(string(clsFile))
 	if err != nil {
 		fatalOnError(err)
 	}
