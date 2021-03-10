@@ -81,7 +81,7 @@ func TestClsUpgradeProvisionStep_Run(t *testing.T) {
 	provisionerMock := &clsMock.ClsProvisioner{}
 
 	fakeGlobalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
-	provisionerMock.On("Provision", mock.Anything, &cls.ProvisionRequest{
+	provisionerMock.On("Provision", mock.Anything, mock.Anything, &cls.ProvisionRequest{
 		GlobalAccountID: fakeGlobalAccountID,
 		Region:          "eu",
 		Instance: servicemanager.InstanceKey{
@@ -90,8 +90,7 @@ func TestClsUpgradeProvisionStep_Run(t *testing.T) {
 			PlanID:    "plan-id",
 		},
 	}).Return(&cls.ProvisionResult{
-		InstanceID:            "instance_id",
-		ProvisioningTriggered: true,
+		InstanceID: "instance_id",
 	}, nil)
 
 	offeringStep := NewClsUpgradeOfferingStep(config, repo)

@@ -92,14 +92,6 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 			operation = op
 		}
 
-			op, retry := s.operationManager.UpdateOperation(operation)
-			if retry > 0 {
-				log.Errorf("Unable to update operation")
-				return operation, time.Second, nil
-			}
-			operation = op
-		}
-
 		// Create a binding
 		overrideParams, err = s.bindingProvider.CreateBinding(smCli, &cls.BindingRequest{
 			InstanceKey: operation.Cls.Instance.InstanceKey(),
@@ -119,14 +111,10 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		}
 
 		// save the status
-<<<<<<< HEAD
 		op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 			operation.Cls.Overrides = encryptedOverrideParams
 			operation.Cls.Binding.Bound = true
 		}, log)
-=======
-		op, retry := s.operationManager.UpdateOperation(operation)
->>>>>>> Small improvement
 		if retry > 0 {
 			log.Errorf("Unable to update operation")
 			return operation, time.Second, nil

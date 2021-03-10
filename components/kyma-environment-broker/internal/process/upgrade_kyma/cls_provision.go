@@ -39,13 +39,7 @@ func (s *clsUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, l
 	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
 
 	skrRegion := operation.ProvisioningParameters.Parameters.Region
-	smRegion, err := cls.DetermineServiceManagerRegion(skrRegion)
-	if err != nil {
-		failureReason := fmt.Sprintf("Unable to determine cls service manager region %v: %s", skrRegion, err)
-		log.Error(failureReason)
-		return s.operationManager.OperationFailed(operation, failureReason, log)
-	}
-
+	smRegion := cls.DetermineServiceManagerRegion(skrRegion)
 	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, smRegion)
 	if err != nil {
 		failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
@@ -57,7 +51,7 @@ func (s *clsUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, l
 
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 	skrInstanceID := operation.InstanceID
-	result, err := s.instanceProvider.Provision(smClient, &cls.ProvisionRequest{
+	result, err := s.instanceProvider.Provision(log, smClient, &cls.ProvisionRequest{
 		GlobalAccountID: globalAccountID,
 		Region:          smRegion,
 		SKRInstanceID:   skrInstanceID,
@@ -74,7 +68,7 @@ func (s *clsUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, l
 	op, repeat := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
 		operation.Cls.Region = result.Region
 		operation.Cls.Instance.InstanceID = result.InstanceID
-		operation.Cls.Instance.ProvisioningTriggered = result.ProvisioningTriggered
+		operation.Cls.Instance.ProvisioningTriggered = true
 	}, log)
 	if repeat != 0 {
 		log.Errorf("Unable to update operation: %s", err)

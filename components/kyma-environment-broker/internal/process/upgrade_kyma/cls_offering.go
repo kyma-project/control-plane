@@ -36,11 +36,7 @@ func (s *ClsUpgradeOfferingStep) Run(operation internal.UpgradeKymaOperation, lo
 	}
 
 	skrRegion := operation.ProvisioningParameters.Parameters.Region
-	smRegion, err := cls.DetermineServiceManagerRegion(skrRegion)
-	if err != nil {
-		return s.handleError(operation, err, err.Error(), log)
-	}
-
+	smRegion := cls.DetermineServiceManagerRegion(skrRegion)
 	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, smRegion)
 	if err != nil {
 		return s.handleError(operation, err, err.Error(), log)
