@@ -44,6 +44,16 @@ func (s *EmsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manage client"))
 	}
 
+	if operation.Ems.Instance.InstanceID == "" {
+		operation.Ems.Instance.InstanceID = uuid.New().String()
+		// save the status
+		op, retry := s.operationManager.UpdateOperation(operation)
+		if retry > 0 {
+			return operation, time.Second, nil
+		}
+		operation = op
+	}
+
 	// provision
 	operation, _, err = s.provision(smCli, operation, log)
 	if err != nil {
@@ -69,8 +79,6 @@ func (s *EmsProvisionStep) provision(smCli servicemanager.Client, operation inte
 	}
 	log.Debugf("response from EMS provisioning call: %#v", resp)
 
-	operation.Ems.Instance.InstanceID = input.ID
-
 	return operation, 0, nil
 }
 
@@ -82,7 +90,7 @@ func (s *EmsProvisionStep) handleError(operation internal.ProvisioningOperation,
 func GetEventingProvisioningData(emsInstanceDetails internal.EmsData) *servicemanager.ProvisioningInput {
 	var input servicemanager.ProvisioningInput
 
-	input.ID = uuid.New().String()
+	input.ID = emsInstanceDetails.Instance.InstanceID
 	input.ServiceID = emsInstanceDetails.Instance.ServiceID
 	input.PlanID = emsInstanceDetails.Instance.PlanID
 	input.SpaceGUID = uuid.New().String()
