@@ -4,7 +4,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	cloudProvider "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
@@ -79,7 +78,7 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	switch planID {
-	case broker.GCPPlanID, broker.AzurePlanID, broker.AzureLitePlanID, broker.TrialPlanID:
+	case broker.AWSPlanID, broker.GCPPlanID, broker.AzurePlanID, broker.AzureLitePlanID, broker.TrialPlanID, broker.OpenStackPlanID:
 		return true
 	default:
 		return false
@@ -91,12 +90,16 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, par
 	switch planID {
 	case broker.GCPPlanID:
 		provider = &cloudProvider.GcpInput{}
+	case broker.OpenStackPlanID:
+		provider = &cloudProvider.OpenStackInput{}
 	case broker.AzurePlanID:
 		provider = &cloudProvider.AzureInput{}
 	case broker.AzureLitePlanID:
 		provider = &cloudProvider.AzureLiteInput{}
 	case broker.TrialPlanID:
 		provider = f.forTrialPlan(parametersProvider)
+	case broker.AWSPlanID:
+		provider = &cloudProvider.AWSInput{}
 		// insert cases for other providers like AWS or GCP
 	default:
 		return nil, errors.Errorf("case with plan %s is not supported", planID)
@@ -140,15 +143,20 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 }
 
 func (f *InputBuilderFactory) forTrialPlan(provider *internal.TrialCloudProvider) HyperscalerInputProvider {
+	var trialProvider internal.TrialCloudProvider
 	if provider == nil {
-		return &cloudProvider.AzureTrialInput{
-			PlatformRegionMapping: f.trialPlatformRegionMapping,
-		}
+		trialProvider = f.config.DefaultTrialProvider
+	} else {
+		trialProvider = *provider
 	}
 
-	switch *provider {
+	switch trialProvider {
 	case internal.Gcp:
 		return &cloudProvider.GcpTrialInput{
+			PlatformRegionMapping: f.trialPlatformRegionMapping,
+		}
+	case internal.AWS:
+		return &cloudProvider.AWSTrialInput{
 			PlatformRegionMapping: f.trialPlatformRegionMapping,
 		}
 	default:
@@ -192,9 +200,6 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 	}
 
 	provisionInput.ClusterConfig.GardenerConfig.KubernetesVersion = f.config.KubernetesVersion
-	if provisionInput.ClusterConfig.GardenerConfig.Name == nil {
-		provisionInput.ClusterConfig.GardenerConfig.Name = ptr.String("")
-	}
 	if provisionInput.ClusterConfig.GardenerConfig.Purpose == nil {
 		provisionInput.ClusterConfig.GardenerConfig.Purpose = &f.config.DefaultGardenerShootPurpose
 	}

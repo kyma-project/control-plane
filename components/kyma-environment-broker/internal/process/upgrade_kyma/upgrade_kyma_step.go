@@ -51,12 +51,12 @@ func (s *UpgradeKymaStep) Name() string {
 func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > s.timeSchedule.UpgradeKymaTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeKymaTimeout))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeKymaTimeout), log)
 	}
 
 	requestInput, err := s.createUpgradeKymaInput(operation)
 	if err != nil {
-		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeKyma input")
+		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeKyma input", log)
 	}
 
 	if operation.DryRun {
@@ -67,7 +67,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 		if err != nil {
 			return operation, 10 * time.Second, nil
 		}
-		return s.operationManager.OperationSucceeded(operation, "dry run succeeded")
+		return s.operationManager.OperationSucceeded(operation, "dry run succeeded", log)
 	}
 
 	var provisionerResponse gqlschema.OperationStatus
@@ -78,10 +78,11 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 			log.Errorf("call to provisioner failed: %s", err)
 			return operation, s.timeSchedule.Retry, nil
 		}
-		operation.ProvisionerOperationID = *provisionerResponse.ID
-		operation.Description = "kyma upgrade in progress"
-
-		operation, repeat := s.operationManager.UpdateOperation(operation)
+		repeat := time.Duration(0)
+		operation, repeat = s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
+			operation.ProvisionerOperationID = *provisionerResponse.ID
+			operation.Description = "kyma upgrade in progress"
+		}, log)
 		if repeat != 0 {
 			log.Errorf("cannot save operation ID from provisioner")
 			return operation, s.timeSchedule.Retry, nil

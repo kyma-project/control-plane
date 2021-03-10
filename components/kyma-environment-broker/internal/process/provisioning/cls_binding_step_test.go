@@ -28,18 +28,19 @@ func TestClsBindingStep_Run(t *testing.T) {
 
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
-	expectedOverride := `[OUTPUT]
-  Name              http
-  Match             *
-  Host              fooEndPoint
-  Port              443
-  HTTP_User         fooUser
-  HTTP_Passwd       fooPass
-  tls               true
-  tls.verify        true
-  tls.debug         1
-  URI               /
-  Format            json`
+	expectedOverride := `
+[OUTPUT]
+    Name              http
+    Match             *
+    Host              fooEndPoint
+    Port              443
+    HTTP_User         fooUser
+    HTTP_Passwd       fooPass
+    tls               true
+    tls.verify        true
+    tls.debug         1
+    URI               /
+    Format            json`
 	expectedKibanaUrl := "kibUrl"
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
 		{
@@ -107,7 +108,7 @@ func TestClsBindingStep_Run(t *testing.T) {
 		},
 	}
 	clsBindingProvider := &clsMock.ClsBindingProvider{}
-	clsBindingProvider.On("CreateBinding", mock.Anything, mock.Anything).Return(&cls.ClsOverrideParams{
+	clsBindingProvider.On("CreateBinding", mock.Anything, mock.Anything).Return(&cls.OverrideParams{
 		FluentdEndPoint: "fooEndPoint",
 		FluentdPassword: "fooPass",
 		FluentdUsername: "fooUser",

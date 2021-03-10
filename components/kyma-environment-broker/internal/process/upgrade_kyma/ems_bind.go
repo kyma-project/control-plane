@@ -55,7 +55,7 @@ func (s *EmsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 	case servicemanager.InProgress:
 		return operation, 10 * time.Second, nil
 	case servicemanager.Failed:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("Ems provisioning failed: %s", resp.Description))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("Ems provisioning failed: %s", resp.Description), log)
 	}
 	// execute binding
 	var eventingOverrides *provisioning.EventingOverrides
@@ -76,13 +76,13 @@ func (s *EmsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("encryptOverrides() call failed"))
 		}
-		operation.Ems.Overrides = encryptedOverrides
-		operation.Ems.Instance.Provisioned = true
-		operation.Ems.Instance.ProvisioningTriggered = false
 		// save the status
-		op, retry := s.operationManager.UpdateOperation(operation)
+		op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
+			operation.Ems.Overrides = encryptedOverrides
+			operation.Ems.Instance.Provisioned = true
+			operation.Ems.Instance.ProvisioningTriggered = false
+		}, log)
 		if retry > 0 {
-			log.Errorf("unable to update operation")
 			return operation, time.Second, nil
 		}
 		operation = op
@@ -102,5 +102,5 @@ func (s *EmsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 
 func (s *EmsUpgradeBindStep) handleError(operation internal.UpgradeKymaOperation, err error, log logrus.FieldLogger, msg string) (internal.UpgradeKymaOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
-	return s.operationManager.OperationFailed(operation, msg)
+	return s.operationManager.OperationFailed(operation, msg, log)
 }

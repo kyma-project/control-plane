@@ -19,6 +19,12 @@ func TestSchemaGenerator(t *testing.T) {
 		file         string
 	}{
 		{
+			name:         "AWS schema is correct",
+			generator:    AWSSchema,
+			machineTypes: []string{"m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m4.16xlarge"},
+			file:         "aws-schema.json",
+		},
+		{
 			name:         "Azure schema is correct",
 			generator:    AzureSchema,
 			machineTypes: []string{"Standard_D8_v3"},
@@ -35,6 +41,12 @@ func TestSchemaGenerator(t *testing.T) {
 			generator:    GCPSchema,
 			machineTypes: []string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"},
 			file:         "gcp-schema.json",
+		},
+		{
+			name:         "OpenStack schema is correct",
+			generator:    OpenStackSchema,
+			machineTypes: []string{"m1.large"},
+			file:         "openstack-schema.json",
 		},
 	}
 	for _, tt := range tests {

@@ -28,14 +28,13 @@ func TestDeprovisionFailsIfFindQueryFails(t *testing.T) {
 	storageMock.On("FindByID", fakeInstance.InstanceID).Return(nil, false, errors.New("unable to connect"))
 
 	deprovisioner := &Deprovisioner{
-		log:     logger.NewLogDummy(),
 		storage: storageMock,
 	}
 
 	smClientMock := &smautomock.Client{}
 
 	// when
-	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
+	err := deprovisioner.Deprovision(logger.NewLogDummy(), smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	})
@@ -61,14 +60,13 @@ func TestDeprovisionReturnsEarlyIfCLSNotReferenced(t *testing.T) {
 	fakeStorage.Insert(*found)
 
 	deprovisioner := &Deprovisioner{
-		log:     logger.NewLogDummy(),
 		storage: fakeStorage,
 	}
 
 	smClientMock := &smautomock.Client{}
 
 	// when
-	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
+	err := deprovisioner.Deprovision(logger.NewLogDummy(), smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	})
@@ -95,14 +93,13 @@ func TestDeprovisionUnreferencesIfNotLastReference(t *testing.T) {
 	fakeStorage.Insert(*found)
 
 	deprovisioner := &Deprovisioner{
-		log:     logger.NewLogDummy(),
 		storage: fakeStorage,
 	}
 
 	smClientMock := &smautomock.Client{}
 
 	// when
-	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
+	err := deprovisioner.Deprovision(logger.NewLogDummy(), smClientMock, &DeprovisionRequest{
 		SKRInstanceID: secondFakeSKRInstanceID,
 		Instance:      fakeInstance,
 	})
@@ -137,13 +134,12 @@ func TestDeprovisionFailsIfUpdateQueryFailsAfterUnreferencing(t *testing.T) {
 	removerMock.On("RemoveInstance", smClientMock, fakeInstance).Return(nil)
 
 	deprovisioner := &Deprovisioner{
-		log:     logger.NewLogDummy(),
 		storage: storageMock,
 		remover: removerMock,
 	}
 
 	// when
-	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
+	err := deprovisioner.Deprovision(logger.NewLogDummy(), smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	})
@@ -174,13 +170,12 @@ func TestDeprovisionRemovesIfLastReference(t *testing.T) {
 	removerMock.On("RemoveInstance", smClientMock, fakeInstance).Return(nil)
 
 	deprovisioner := &Deprovisioner{
-		log:     logger.NewLogDummy(),
 		storage: fakeStorage,
 		remover: removerMock,
 	}
 
 	// when
-	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
+	err := deprovisioner.Deprovision(logger.NewLogDummy(), smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	})
@@ -214,13 +209,12 @@ func TestDeprovisionFailsIfUpdateQueryFails(t *testing.T) {
 	removerMock.On("RemoveInstance", smClientMock, fakeInstance).Return(nil)
 
 	deprovisioner := &Deprovisioner{
-		log:     logger.NewLogDummy(),
 		storage: storageMock,
 		remover: removerMock,
 	}
 
 	// when
-	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
+	err := deprovisioner.Deprovision(logger.NewLogDummy(), smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	})
@@ -251,13 +245,12 @@ func TestDeprovisionRemovesInstanceIfLastReference(t *testing.T) {
 	removerMock.On("RemoveInstance", smClientMock, fakeInstance).Return(nil)
 
 	deprovisioner := &Deprovisioner{
-		log:     logger.NewLogDummy(),
 		storage: fakeStorage,
 		remover: removerMock,
 	}
 
 	// when
-	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
+	err := deprovisioner.Deprovision(logger.NewLogDummy(), smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	})

@@ -8,18 +8,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -663,7 +661,7 @@ func TestPostgres(t *testing.T) {
 			assert.Equal(t, 2, len(opList))
 
 		})
-		t.Run("Upgrade", func(t *testing.T) {
+		t.Run("Upgrade Kyma", func(t *testing.T) {
 			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
@@ -749,6 +747,110 @@ func TestPostgres(t *testing.T) {
 			assert.Len(t, ops, 3)
 			assert.Equal(t, count, 3)
 			assert.Equal(t, totalCount, 3)
+		})
+		t.Run("Upgrade Cluster", func(t *testing.T) {
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+			require.NoError(t, err)
+			defer containerCleanupFunc()
+
+			orchestrationID := "orchestration-id"
+			givenOperation1 := internal.UpgradeClusterOperation{
+				Operation: internal.Operation{
+					ID:    "operation-id-1",
+					State: domain.InProgress,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second),
+					InstanceID:             fixInstanceId,
+					ProvisionerOperationID: "target-op-id",
+					Description:            "description",
+					Version:                1,
+					OrchestrationID:        orchestrationID,
+				},
+				RuntimeOperation: orchestration.RuntimeOperation{},
+			}
+
+			givenOperation2 := internal.UpgradeClusterOperation{
+				Operation: internal.Operation{
+					ID:    "operation-id-2",
+					State: domain.InProgress,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Minute),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Second).Add(time.Minute),
+					InstanceID:             fixInstanceId,
+					ProvisionerOperationID: "target-op-id",
+					Description:            "description",
+					Version:                1,
+					OrchestrationID:        orchestrationID,
+					ProvisioningParameters: internal.ProvisioningParameters{},
+				},
+				RuntimeOperation: fixRuntimeOperation("operation-id-2"),
+			}
+
+			givenOperation3 := internal.UpgradeClusterOperation{
+				Operation: internal.Operation{
+					ID:    "operation-id-3",
+					State: orchestration.Pending,
+					// used Round and set timezone to be able to compare timestamps
+					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Hour),
+					UpdatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Hour).Add(10 * time.Minute),
+					InstanceID:             fixInstanceId,
+					ProvisionerOperationID: "target-op-id",
+					Description:            "pending-operation",
+					Version:                1,
+					OrchestrationID:        orchestrationID,
+				},
+				RuntimeOperation: fixRuntimeOperation("operation-id-3"),
+			}
+
+			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+			require.NoError(t, err)
+
+			cipher := storage.NewEncrypter(cfg.SecretKey)
+			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+			require.NoError(t, err)
+
+			svc := brokerStorage.Operations()
+
+			// when
+			err = svc.InsertUpgradeClusterOperation(givenOperation1)
+			require.NoError(t, err)
+			err = svc.InsertUpgradeClusterOperation(givenOperation2)
+			require.NoError(t, err)
+			err = svc.InsertUpgradeClusterOperation(givenOperation3)
+			require.NoError(t, err)
+
+			// then
+			op, err := svc.GetUpgradeClusterOperationByID(givenOperation3.Operation.ID)
+			require.NoError(t, err)
+			assertUpgradeClusterOperation(t, givenOperation3, *op)
+
+			lastOp, err := svc.GetLastOperation(fixInstanceId)
+			require.NoError(t, err)
+			assert.Equal(t, givenOperation2.Operation.ID, lastOp.ID)
+
+			ops, count, totalCount, err := svc.ListUpgradeClusterOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{PageSize: 10, Page: 1})
+			require.NoError(t, err)
+			assert.Len(t, ops, 3)
+			assert.Equal(t, count, 3)
+			assert.Equal(t, totalCount, 3)
+
+			ops, err = svc.ListUpgradeClusterOperationsByInstanceID(fixInstanceId)
+			require.NoError(t, err)
+			assert.Len(t, ops, 3)
+
+			// when
+			givenOperation3.Description = "diff"
+			givenOperation3.ProvisionerOperationID = "modified-op-id"
+			op, err = svc.UpdateUpgradeClusterOperation(givenOperation3)
+			op.CreatedAt = op.CreatedAt.Truncate(time.Millisecond)
+			op.MaintenanceWindowBegin = op.MaintenanceWindowBegin.Truncate(time.Millisecond)
+			op.MaintenanceWindowEnd = op.MaintenanceWindowEnd.Truncate(time.Millisecond)
+
+			// then
+			got, err := svc.GetUpgradeClusterOperationByID(givenOperation3.Operation.ID)
+			require.NoError(t, err)
+			assertUpgradeClusterOperation(t, *op, *got)
 		})
 	})
 	t.Run("Operations conflicts", func(t *testing.T) {
@@ -924,6 +1026,7 @@ func TestPostgres(t *testing.T) {
 		const fixID = "test"
 		givenOrchestration := internal.Orchestration{
 			OrchestrationID: fixID,
+			Type:            orchestration.UpgradeKymaOrchestration,
 			State:           "test",
 			Description:     "test",
 			CreatedAt:       now,
@@ -949,6 +1052,7 @@ func TestPostgres(t *testing.T) {
 		gotOrchestration, err := svc.GetByID(fixID)
 		require.NoError(t, err)
 		assert.Equal(t, givenOrchestration.Parameters, gotOrchestration.Parameters)
+		assert.Equal(t, orchestration.UpgradeKymaOrchestration, gotOrchestration.Type)
 
 		gotOrchestration.Description = "new modified description 1"
 		err = svc.Update(givenOrchestration)
@@ -963,9 +1067,11 @@ func TestPostgres(t *testing.T) {
 		assert.Equal(t, 1, count)
 		assert.Equal(t, 1, totalCount)
 
-		l, err = svc.ListByState("test")
+		l, c, tc, err := svc.List(dbmodel.OrchestrationFilter{States: []string{"test"}, Types: []string{string(orchestration.UpgradeKymaOrchestration)}})
 		require.NoError(t, err)
 		assert.Len(t, l, 1)
+		assert.Equal(t, 1, c)
+		assert.Equal(t, 1, tc)
 	})
 	t.Run("RuntimeStates", func(t *testing.T) {
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
@@ -1165,6 +1271,20 @@ func assertUpgradeKymaOperation(t *testing.T, expected, got internal.UpgradeKyma
 	assert.Equal(t, expected, got)
 }
 
+func assertUpgradeClusterOperation(t *testing.T, expected, got internal.UpgradeClusterOperation) {
+	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
+	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
+	assert.True(t, expected.MaintenanceWindowBegin.Equal(got.MaintenanceWindowBegin))
+	assert.True(t, expected.MaintenanceWindowEnd.Equal(got.MaintenanceWindowEnd))
+	assert.Equal(t, expected.InstanceDetails, got.InstanceDetails)
+
+	expected.CreatedAt = got.CreatedAt
+	expected.UpdatedAt = got.UpdatedAt
+	expected.MaintenanceWindowBegin = got.MaintenanceWindowBegin
+	expected.MaintenanceWindowEnd = got.MaintenanceWindowEnd
+	assert.Equal(t, expected, got)
+}
+
 func assertOperation(t *testing.T, expected, got internal.Operation) {
 	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
 	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
@@ -1243,6 +1363,7 @@ func fixInstance(testData instanceData) *internal.Instance {
 	instance.ProviderRegion = testData.val
 	instance.Parameters.ErsContext.SubAccountID = suid
 	instance.Parameters.ErsContext.GlobalAccountID = gaid
+	instance.InstanceDetails = internal.InstanceDetails{}
 
 	return &instance
 }
@@ -1269,6 +1390,7 @@ func fixProvisioningParameters() internal.ProvisioningParameters {
 	pp := fixture.FixProvisioningParameters("test")
 	pp.PlanID = broker.TrialPlanID
 	pp.ServiceID = broker.KymaServiceID
+
 	return pp
 }
 

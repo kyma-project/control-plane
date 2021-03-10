@@ -5,6 +5,8 @@ package automock
 import (
 	cls "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 
+	logrus "github.com/sirupsen/logrus"
+
 	mock "github.com/stretchr/testify/mock"
 
 	servicemanager "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
@@ -15,13 +17,13 @@ type ClsDeprovisioner struct {
 	mock.Mock
 }
 
-// Deprovision provides a mock function with given fields: smClient, request
-func (_m *ClsDeprovisioner) Deprovision(smClient servicemanager.Client, request *cls.DeprovisionRequest) error {
-	ret := _m.Called(smClient, request)
+// Deprovision provides a mock function with given fields: log, smClient, request
+func (_m *ClsDeprovisioner) Deprovision(log logrus.FieldLogger, smClient servicemanager.Client, request *cls.DeprovisionRequest) error {
+	ret := _m.Called(log, smClient, request)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(servicemanager.Client, *cls.DeprovisionRequest) error); ok {
-		r0 = rf(smClient, request)
+	if rf, ok := ret.Get(0).(func(logrus.FieldLogger, servicemanager.Client, *cls.DeprovisionRequest) error); ok {
+		r0 = rf(log, smClient, request)
 	} else {
 		r0 = ret.Error(0)
 	}

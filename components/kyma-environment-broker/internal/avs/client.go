@@ -140,7 +140,7 @@ func (c *Client) SetStatus(evaluationID int64, status string) (*BasicEvaluationC
 	}
 	request.Header.Set("Content-Type", "application/json")
 
-	response, err := c.execute(request, false, true)
+	response, err := c.execute(request, true, true)
 	if err != nil {
 		return &responseObject, errors.Wrap(err, "while executing SetStatus request")
 	}

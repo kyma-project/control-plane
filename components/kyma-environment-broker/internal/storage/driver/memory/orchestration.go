@@ -76,20 +76,6 @@ func (s *orchestrations) Update(orchestration internal.Orchestration) error {
 	return nil
 }
 
-func (s *orchestrations) ListByState(state string) ([]internal.Orchestration, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	result := make([]internal.Orchestration, 0)
-
-	for _, o := range s.orchestrations {
-		if o.State == state {
-			result = append(result, o)
-		}
-	}
-
-	return result, nil
-}
-
 func (s *orchestrations) sortByCreatedAt(orchestrations []internal.Orchestration) {
 	sort.Slice(orchestrations, func(i, j int) bool {
 		return orchestrations[i].CreatedAt.Before(orchestrations[j].CreatedAt)
@@ -100,6 +86,9 @@ func (s *orchestrations) filter(filter dbmodel.OrchestrationFilter) []internal.O
 	orchestrations := make([]internal.Orchestration, 0, len(s.orchestrations))
 	equal := func(a, b string) bool { return a == b }
 	for _, v := range s.orchestrations {
+		if ok := matchFilter(string(v.Type), filter.Types, equal); !ok {
+			continue
+		}
 		if ok := matchFilter(v.State, filter.States, equal); !ok {
 			continue
 		}

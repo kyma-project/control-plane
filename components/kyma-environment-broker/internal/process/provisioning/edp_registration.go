@@ -86,7 +86,7 @@ func (s *EDPRegistrationStep) handleError(operation internal.ProvisioningOperati
 		return operation, 0, nil
 	}
 
-	return s.operationManager.OperationFailed(operation, msg)
+	return s.operationManager.OperationFailed(operation, msg, log)
 }
 
 func (s *EDPRegistrationStep) selectEnvironmentKey(region string, log logrus.FieldLogger) string {

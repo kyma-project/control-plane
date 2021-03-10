@@ -576,6 +576,9 @@ func addInstanceFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
 }
 
 func addOrchestrationFilters(stmt *dbr.SelectStmt, filter dbmodel.OrchestrationFilter) {
+	if len(filter.Types) > 0 {
+		stmt.Where("type IN ?", filter.Types)
+	}
 	if len(filter.States) > 0 {
 		stmt.Where("state IN ?", filter.States)
 	}

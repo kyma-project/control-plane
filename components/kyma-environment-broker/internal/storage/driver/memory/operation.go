@@ -20,6 +20,7 @@ type operations struct {
 	provisioningOperations   map[string]internal.ProvisioningOperation
 	deprovisioningOperations map[string]internal.DeprovisioningOperation
 	upgradeKymaOperations    map[string]internal.UpgradeKymaOperation
+	upgradeClusterOperations map[string]internal.UpgradeClusterOperation
 }
 
 // NewOperation creates in-memory storage for OSB operations.
@@ -28,6 +29,7 @@ func NewOperation() *operations {
 		provisioningOperations:   make(map[string]internal.ProvisioningOperation, 0),
 		deprovisioningOperations: make(map[string]internal.DeprovisioningOperation, 0),
 		upgradeKymaOperations:    make(map[string]internal.UpgradeKymaOperation, 0),
+		upgradeClusterOperations: make(map[string]internal.UpgradeClusterOperation, 0),
 	}
 }
 
@@ -232,6 +234,44 @@ func (s *operations) UpdateUpgradeKymaOperation(op internal.UpgradeKymaOperation
 	return &op, nil
 }
 
+func (s *operations) InsertUpgradeClusterOperation(operation internal.UpgradeClusterOperation) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	id := operation.Operation.ID
+	if _, exists := s.upgradeClusterOperations[id]; exists {
+		return dberr.AlreadyExists("instance operation with id %s already exist", id)
+	}
+
+	s.upgradeClusterOperations[id] = operation
+	return nil
+}
+
+func (s *operations) GetUpgradeClusterOperationByID(operationID string) (*internal.UpgradeClusterOperation, error) {
+	op, exists := s.upgradeClusterOperations[operationID]
+	if !exists {
+		return nil, dberr.NotFound("instance upgradeKyma operation with id %s not found", operationID)
+	}
+	return &op, nil
+}
+
+func (s *operations) UpdateUpgradeClusterOperation(op internal.UpgradeClusterOperation) (*internal.UpgradeClusterOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	oldOp, exists := s.upgradeClusterOperations[op.Operation.ID]
+	if !exists {
+		return nil, dberr.NotFound("instance operation with id %s not found", op.Operation.ID)
+	}
+	if oldOp.Version != op.Version {
+		return nil, dberr.Conflict("unable to update upgradeKyma operation with id %s (for instance id %s) - conflict", op.Operation.ID, op.InstanceID)
+	}
+	op.Version = op.Version + 1
+	s.upgradeClusterOperations[op.Operation.ID] = op
+
+	return &op, nil
+}
+
 func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, error) {
 	var rows []internal.Operation
 
@@ -424,8 +464,8 @@ func (s *operations) ListUpgradeKymaOperations() ([]internal.UpgradeKymaOperatio
 	defer s.mu.Unlock()
 
 	// Empty filter means get all
-	operations := s.filterUpgrade(dbmodel.OperationFilter{})
-	s.sortUpgradeByCreatedAt(operations)
+	operations := s.filterUpgradeKyma("", dbmodel.OperationFilter{})
+	s.sortUpgradeKymaByCreatedAt(operations)
 
 	return operations, nil
 }
@@ -437,11 +477,11 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 	result := make([]internal.UpgradeKymaOperation, 0)
 	offset := pagination.ConvertPageAndPageSizeToOffset(filter.PageSize, filter.Page)
 
-	operations := s.filterUpgrade(filter)
-	s.sortUpgradeByCreatedAt(operations)
+	operations := s.filterUpgradeKyma(orchestrationID, filter)
+	s.sortUpgradeKymaByCreatedAt(operations)
 
-	for i := offset; (filter.PageSize < 1 || i < offset+filter.PageSize) && i < len(operations)+offset; i++ {
-		result = append(result, s.upgradeKymaOperations[operations[i].OrchestrationID])
+	for i := offset; (filter.PageSize < 1 || i < offset+filter.PageSize) && i < len(operations); i++ {
+		result = append(result, s.upgradeKymaOperations[operations[i].Operation.ID])
 	}
 
 	return result,
@@ -455,13 +495,50 @@ func (s *operations) ListUpgradeKymaOperationsByInstanceID(instanceID string) ([
 	defer s.mu.Unlock()
 
 	// Empty filter means get all
-	operations := s.filterUpgrade(dbmodel.OperationFilter{})
-	s.sortUpgradeByCreatedAt(operations)
+	operations := s.filterUpgradeKyma("", dbmodel.OperationFilter{})
+	s.sortUpgradeKymaByCreatedAt(operations)
 
 	return operations, nil
 }
 
-func (s *operations) sortUpgradeByCreatedAt(operations []internal.UpgradeKymaOperation) {
+func (s *operations) ListUpgradeClusterOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeClusterOperation, int, int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	result := make([]internal.UpgradeClusterOperation, 0)
+	offset := pagination.ConvertPageAndPageSizeToOffset(filter.PageSize, filter.Page)
+
+	operations := s.filterUpgradeCluster(orchestrationID, filter)
+	s.sortUpgradeClusterByCreatedAt(operations)
+
+	for i := offset; (filter.PageSize < 1 || i < offset+filter.PageSize) && i < len(operations); i++ {
+		result = append(result, s.upgradeClusterOperations[operations[i].Operation.ID])
+	}
+
+	return result,
+		len(result),
+		len(operations),
+		nil
+}
+
+func (s *operations) ListUpgradeClusterOperationsByInstanceID(instanceID string) ([]internal.UpgradeClusterOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Empty filter means get all
+	operations := s.filterUpgradeCluster("", dbmodel.OperationFilter{})
+	s.sortUpgradeClusterByCreatedAt(operations)
+
+	return operations, nil
+}
+
+func (s *operations) sortUpgradeKymaByCreatedAt(operations []internal.UpgradeKymaOperation) {
+	sort.Slice(operations, func(i, j int) bool {
+		return operations[i].CreatedAt.Before(operations[j].CreatedAt)
+	})
+}
+
+func (s *operations) sortUpgradeClusterByCreatedAt(operations []internal.UpgradeClusterOperation) {
 	sort.Slice(operations, func(i, j int) bool {
 		return operations[i].CreatedAt.Before(operations[j].CreatedAt)
 	})
@@ -566,9 +643,28 @@ func (s *operations) filterAll(filter dbmodel.OperationFilter) ([]internal.Opera
 	return result, nil
 }
 
-func (s *operations) filterUpgrade(filter dbmodel.OperationFilter) []internal.UpgradeKymaOperation {
+func (s *operations) filterUpgradeKyma(orchestrationID string, filter dbmodel.OperationFilter) []internal.UpgradeKymaOperation {
 	operations := make([]internal.UpgradeKymaOperation, 0, len(s.upgradeKymaOperations))
 	for _, v := range s.upgradeKymaOperations {
+		if orchestrationID != "" && orchestrationID != v.OrchestrationID {
+			continue
+		}
+		if ok := matchFilter(string(v.State), filter.States, s.equalFilter); !ok {
+			continue
+		}
+
+		operations = append(operations, v)
+	}
+
+	return operations
+}
+
+func (s *operations) filterUpgradeCluster(orchestrationID string, filter dbmodel.OperationFilter) []internal.UpgradeClusterOperation {
+	operations := make([]internal.UpgradeClusterOperation, 0, len(s.upgradeClusterOperations))
+	for _, v := range s.upgradeClusterOperations {
+		if orchestrationID != "" && orchestrationID != v.OrchestrationID {
+			continue
+		}
 		if ok := matchFilter(string(v.State), filter.States, s.equalFilter); !ok {
 			continue
 		}

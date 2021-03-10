@@ -50,7 +50,15 @@ services:
         description: "Trial"
         metadata:
           displayName: "Trial"
+      openstack:
+        description: "Openstack"
+        metadata:
+          displayName: "Openstack"
       gcp:
         description: "GCP"
         metadata:
           displayName: "GCP"
+      aws:
+        description: "AWS"
+        metadata:
+          displayName: "AWS"

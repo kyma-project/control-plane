@@ -20,12 +20,13 @@ const (
 
 type Config struct {
 	URL                         string
-	Timeout                     time.Duration `envconfig:"default=12h"`
-	KubernetesVersion           string        `envconfig:"default=1.16.9"`
-	DefaultGardenerShootPurpose string        `envconfig:"default=development"`
-	MachineImage                string        `envconfig:"optional"`
-	MachineImageVersion         string        `envconfig:"optional"`
-	TrialNodesNumber            int           `envconfig:"optional"`
+	Timeout                     time.Duration               `envconfig:"default=12h"`
+	KubernetesVersion           string                      `envconfig:"default=1.16.9"`
+	DefaultGardenerShootPurpose string                      `envconfig:"default=development"`
+	MachineImage                string                      `envconfig:"optional"`
+	MachineImageVersion         string                      `envconfig:"optional"`
+	TrialNodesNumber            int                         `envconfig:"optional"`
+	DefaultTrialProvider        internal.TrialCloudProvider `envconfig:"default=Azure"` // could be: Azure, AWS, GCP
 }
 
 type RuntimeInput struct {
@@ -190,8 +191,8 @@ func (r *RuntimeInput) applyProvisioningParameters() error {
 	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.MaxSurge, params.MaxSurge)
 	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMin, params.AutoScalerMin)
 	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax, params.AutoScalerMax)
-	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.VolumeSizeGb, params.VolumeSizeGb)
-	updateString(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Name, r.shootName)
+	updateInt(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.VolumeSizeGb, params.VolumeSizeGb)
+	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Name, r.shootName)
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Region, params.Region)
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.MachineType, params.MachineType)
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.TargetSecret, params.TargetSecret)

@@ -4,13 +4,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning/automock"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -66,32 +65,18 @@ func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 }
 
 func fixOperationWithPlanID(planID string) internal.DeprovisioningOperation {
-	return internal.DeprovisioningOperation{
-		Operation: internal.Operation{
-			ID:         operationID,
-			InstanceID: instanceID,
-			UpdatedAt:  time.Now(),
-			ProvisioningParameters: internal.ProvisioningParameters{
-				PlanID: planID,
-				ErsContext: internal.ERSContext{
-					GlobalAccountID: globalAccountID,
-					SubAccountID:    subAccountID,
-					ServiceManager: &internal.ServiceManagerEntryDTO{
-						Credentials: internal.ServiceManagerCredentials{
-							BasicAuth: internal.ServiceManagerBasicAuth{
-								Username: serviceManagerUser,
-								Password: serviceManagerPassword,
-							},
-						},
-						URL: serviceManagerURL,
-					},
-				},
-				Parameters: internal.ProvisioningParametersDTO{
-					Name:   "dummy",
-					Region: ptr.String("europe-west4-a"),
-					Zones:  []string{"europe-west4-b", "europe-west4-c"},
-				},
+	deprovisioningOperation := fixture.FixDeprovisioningOperation(operationID, instanceID)
+	deprovisioningOperation.Operation.ProvisioningParameters.PlanID = planID
+	deprovisioningOperation.Operation.ProvisioningParameters.ErsContext.GlobalAccountID = globalAccountID
+	deprovisioningOperation.Operation.ProvisioningParameters.ErsContext.SubAccountID = subAccountID
+	deprovisioningOperation.Operation.ProvisioningParameters.ErsContext.ServiceManager = &internal.ServiceManagerEntryDTO{
+		Credentials: internal.ServiceManagerCredentials{
+			BasicAuth: internal.ServiceManagerBasicAuth{
+				Username: serviceManagerUser,
+				Password: serviceManagerPassword,
 			},
 		},
+		URL: serviceManagerURL,
 	}
+	return deprovisioningOperation
 }

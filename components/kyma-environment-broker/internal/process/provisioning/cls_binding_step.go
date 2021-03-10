@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"bytes"
 	"fmt"
 	"time"
 
@@ -19,7 +18,7 @@ import (
 
 //go:generate mockery --name=ClsBindingProvider --output=automock --outpkg=automock --case=underscore
 type ClsBindingProvider interface {
-	CreateBinding(smClient servicemanager.Client, request *cls.BindingRequest) (*cls.ClsOverrideParams, error)
+	CreateBinding(smClient servicemanager.Client, request *cls.BindingRequest) (*cls.OverrideParams, error)
 }
 
 type ClsBindStep struct {
@@ -48,19 +47,20 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 	if !operation.Cls.Instance.ProvisioningTriggered {
 		failureReason := fmt.Sprintf("cls provisioning step was not triggered")
 		log.Error(failureReason)
-		return s.operationManager.OperationFailed(operation, failureReason)
+		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
 
-	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, operation.Cls.Region)
-	if err != nil {
-		failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
-		log.Error(failureReason)
-		return s.operationManager.OperationFailed(operation, failureReason)
-	}
-	smCli := operation.SMClientFactory.ForCredentials(smCredentials)
-	var overrides *cls.ClsOverrideParams
-
+	var overrideParams *cls.OverrideParams
+	var err error
 	if !operation.Cls.Binding.Bound {
+		smCredentials, err := cls.FindCredentials(s.config.ServiceManager, operation.Cls.Region)
+		if err != nil {
+			failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
+			log.Error(failureReason)
+			return s.operationManager.OperationFailed(operation, failureReason, log)
+		}
+		smCli := operation.SMClientFactory.ForCredentials(smCredentials)
+
 		// test if the provisioning is finished, if not, retry after 10s
 		resp, err := smCli.LastInstanceOperation(operation.Cls.Instance.InstanceKey(), "")
 		if err != nil {
@@ -72,9 +72,9 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		case servicemanager.InProgress:
 			return operation, 10 * time.Second, nil
 		case servicemanager.Failed:
-			failureReason := fmt.Sprintf("Cls instance is state failed")
+			failureReason := fmt.Sprintf("Cls instance is in failed state")
 			log.Errorf("%s: %s", failureReason, resp.Description)
-			return s.operationManager.OperationFailed(operation, fmt.Sprintf("Cls provisioning failed: %s", resp.Description))
+			return s.operationManager.OperationFailed(operation, fmt.Sprintf("Cls provisioning failed: %s", resp.Description), log)
 		case servicemanager.Succeeded:
 			operation.Cls.Instance.Provisioned = true
 			operation.Cls.Instance.ProvisioningTriggered = false
@@ -82,88 +82,81 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		}
 
 		if operation.Cls.Binding.BindingID == "" {
-			operation.Cls.Binding.BindingID = uuid.New().String()
+			op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+				operation.Cls.Binding.BindingID = uuid.New().String()
+			}, log)
+			if retry > 0 {
+				log.Errorf("Unable to update operation")
+				return operation, time.Second, nil
+			}
+			operation = op
 		}
 
 		// Create a binding
-		overrides, err = s.bindingProvider.CreateBinding(smCli, &cls.BindingRequest{
+		overrideParams, err = s.bindingProvider.CreateBinding(smCli, &cls.BindingRequest{
 			InstanceKey: operation.Cls.Instance.InstanceKey(),
 			BindingID:   operation.Cls.Binding.BindingID,
 		})
-
 		if err != nil {
-			failureReason := fmt.Sprintf("Cls Binding failed")
+			failureReason := "Unable to create a binding"
 			log.Errorf("%s: %s", failureReason, err)
-			return s.operationManager.OperationFailed(operation, failureReason)
+			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
 
-		encryptedOverrides, err := cls.EncryptOverrides(s.secretKey, overrides)
+		encryptedOverrideParams, err := cls.EncryptOverrides(s.secretKey, overrideParams)
 		if err != nil {
-			failureReason := fmt.Sprintf("encryptClsOverrides() call failed")
+			failureReason := "Unable to create encrypt overrides"
 			log.Errorf("%s: %s", failureReason, err)
-			return s.operationManager.OperationFailed(operation, failureReason)
+			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
-
-		operation.Cls.Overrides = encryptedOverrides
-		operation.Cls.Binding.Bound = true
 
 		// save the status
-		op, retry := s.operationManager.UpdateOperation(operation)
+		op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+			operation.Cls.Overrides = encryptedOverrideParams
+			operation.Cls.Binding.Bound = true
+		}, log)
 		if retry > 0 {
-			log.Errorf("unable to update operation")
+			log.Errorf("Unable to update operation")
 			return operation, time.Second, nil
 		}
 		operation = op
 	} else {
 		// fetch existing overrides
-		overrides, err = cls.DecryptOverrides(s.secretKey, operation.Cls.Overrides)
+		overrideParams, err = cls.DecryptOverrides(s.secretKey, operation.Cls.Overrides)
 		if err != nil {
-			failureReason := fmt.Sprintf("decryptClsOverrides() call failed")
+			failureReason := "Unable to decrypt overrides"
 			log.Errorf("%s: %s", failureReason, err)
-			return s.operationManager.OperationFailed(operation, failureReason)
+			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
 	}
 
-	operation.InputCreator.SetLabel(kibanaURLLabelKey, overrides.KibanaUrl)
-	flOverride, err := s.injectOverrides(overrides, log)
+	operation.InputCreator.SetLabel(kibanaURLLabelKey, overrideParams.KibanaUrl)
+
+	extraConfTemplate, err := cls.GetExtraConfTemplate()
 	if err != nil {
-		log.Errorf("Unable to generate forward plugin to push logs: %v", err)
+		log.Errorf("Unable to get extra config template: %v", err)
 		return operation, time.Second, nil
 	}
 
-	isVersion1_20, err := cls.IsKymaVersion_1_20(operation.RuntimeVersion.Version)
+	fluentBitClsOverrides, err := cls.RenderOverrides(overrideParams, extraConfTemplate)
+	if err != nil {
+		log.Errorf("Unable to render overrides: %v", err)
+		return operation, time.Second, nil
+	}
+
+	isVersion1_20, err := cls.IsKymaVersionAtLeast_1_20(operation.RuntimeVersion.Version)
 	if err != nil {
 		failureReason := fmt.Sprintf("unable to check kyma version: %v", err)
 		log.Error(failureReason)
-		return s.operationManager.OperationFailed(operation, failureReason)
+		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
 	if isVersion1_20 {
-		operation.InputCreator.AppendOverrides(components.CLS, getClsOverrides(flOverride))
+		operation.InputCreator.AppendOverrides(components.CLS, []*gqlschema.ConfigEntryInput{
+			{
+				Key:   "fluent-bit.config.outputs.additional",
+				Value: fluentBitClsOverrides,
+			}})
 	}
 
 	return operation, 0, nil
-}
-
-func (s *ClsBindStep) injectOverrides(overrides *cls.ClsOverrideParams, log logrus.FieldLogger) (string, error) {
-	tmpl, err := cls.GetExtraConfTemplate()
-	if err != nil {
-		log.Errorf("Template error: %v", err)
-		return "", err
-	}
-	var flOutputs bytes.Buffer
-	err = tmpl.Execute(&flOutputs, overrides)
-	if err != nil {
-		log.Errorf("Template error: %v", err)
-		return "", err
-	}
-	return flOutputs.String(), nil
-}
-
-func getClsOverrides(flInputsAdditional string) []*gqlschema.ConfigEntryInput {
-	return []*gqlschema.ConfigEntryInput{
-		{
-			Key:   "fluent-bit.config.outputs.additional",
-			Value: flInputsAdditional,
-		},
-	}
 }

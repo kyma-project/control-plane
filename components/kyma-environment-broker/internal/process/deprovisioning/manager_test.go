@@ -1,19 +1,18 @@
 package deprovisioning
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-
-	"context"
-	"sync"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -102,25 +101,15 @@ func TestManager_Execute(t *testing.T) {
 }
 
 func fixDeprovisionOperation(ID string) internal.DeprovisioningOperation {
-	return internal.DeprovisioningOperation{
-		Operation: internal.Operation{
-			ID:                     ID,
-			State:                  domain.InProgress,
-			InstanceID:             fakeInstanceID,
-			ProvisioningParameters: internal.ProvisioningParameters{PlanID: "321"},
-		},
-	}
+	deprovisioningOperation := fixture.FixDeprovisioningOperation(ID, fakeInstanceID)
+	deprovisioningOperation.State = domain.InProgress
+	deprovisioningOperation.Description = ""
+
+	return deprovisioningOperation
 }
 
 func fixProvisionOperation() internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     "6bc401aa-2ec4-4303-bf3f-2e04990f6d8f",
-			InstanceID:             fakeInstanceID,
-			State:                  domain.Succeeded,
-			ProvisioningParameters: internal.ProvisioningParameters{PlanID: "321"},
-		},
-	}
+	return fixture.FixProvisioningOperation("6bc401aa-2ec4-4303-bf3f-2e04990f6d8f", fakeInstanceID)
 }
 
 type testStep struct {
