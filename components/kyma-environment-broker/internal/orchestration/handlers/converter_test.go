@@ -3,11 +3,10 @@ package handlers_test
 import (
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -103,13 +102,8 @@ func TestConverter_UpgradeKymaOperationToDetailDTO(t *testing.T) {
 }
 
 func fixOperation(id string) internal.UpgradeKymaOperation {
-	return internal.UpgradeKymaOperation{
-		Operation: internal.Operation{
-			OrchestrationID: id,
-			ProvisioningParameters: internal.ProvisioningParameters{
-				PlanID: "4deee563-e5ec-4731-b9b1-53b42d855f0c",
-			},
-		},
-		RuntimeOperation: orchestration.RuntimeOperation{},
-	}
+	upgradeOperation := fixture.FixUpgradeKymaOperation("", "")
+	upgradeOperation.OrchestrationID = id
+
+	return upgradeOperation
 }

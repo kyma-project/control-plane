@@ -8,17 +8,15 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +31,7 @@ const (
 	subAccountID    = "3cb65e5b-e455-4799-bf35-be46e8f5a533"
 
 	instanceID       = "d3d5dca4-5dc8-44ee-a825-755c2a3fb839"
-	otherInstanceID  = "87bfaeaa-48eb-40d6-84f3-3d5368eed3eb\n"
+	otherInstanceID  = "87bfaeaa-48eb-40d6-84f3-3d5368eed3eb"
 	existOperationID = "920cbfd9-24e9-4aa2-aa77-879e9aabe140"
 	clusterName      = "cluster-testing"
 	region           = "eu"
@@ -542,22 +540,21 @@ func TestProvision_Provision(t *testing.T) {
 }
 
 func fixExistOperation() internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:         existOperationID,
-			InstanceID: instanceID,
-			ProvisioningParameters: internal.ProvisioningParameters{
-				PlanID:    planID,
-				ServiceID: serviceID,
-				ErsContext: internal.ERSContext{
-					SubAccountID:    subAccountID,
-					GlobalAccountID: globalAccountID,
-				},
-				Parameters:     internal.ProvisioningParametersDTO{Name: clusterName},
-				PlatformRegion: region,
-			},
+	provisioningOperation := fixture.FixProvisioningOperation(existOperationID, instanceID)
+	provisioningOperation.ProvisioningParameters = internal.ProvisioningParameters{
+		PlanID:    planID,
+		ServiceID: serviceID,
+		ErsContext: internal.ERSContext{
+			SubAccountID:    subAccountID,
+			GlobalAccountID: globalAccountID,
 		},
+		Parameters: internal.ProvisioningParametersDTO{
+			Name: clusterName,
+		},
+		PlatformRegion: region,
 	}
+
+	return provisioningOperation
 }
 
 func fixAlwaysPassJSONValidator() broker.PlansSchemaValidator {
@@ -574,11 +571,7 @@ func fixAlwaysPassJSONValidator() broker.PlansSchemaValidator {
 }
 
 func fixInstance() internal.Instance {
-	instance := fixture.FixInstance(instanceID)
-	instance.GlobalAccountID = globalAccountID
-	instance.ServiceID = serviceID
-	instance.ServicePlanID = planID
-	return instance
+	return fixture.FixInstance(instanceID)
 }
 
 func fixReqCtxWithRegion(t *testing.T, region string) context.Context {

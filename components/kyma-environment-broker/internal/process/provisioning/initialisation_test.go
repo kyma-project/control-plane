@@ -5,20 +5,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -190,61 +188,34 @@ func TestInitialisationStep(t *testing.T) {
 }
 
 func fixOperationRuntimeStatus(planId string) internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     statusOperationID,
-			InstanceID:             statusInstanceID,
-			ProvisionerOperationID: statusProvisionerOperationID,
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Now(),
-			ProvisioningParameters: fixProvisioningParametersRuntimeStatus(planId),
-			InstanceDetails: internal.InstanceDetails{
-				RuntimeID: runtimeID,
-			},
-		},
-	}
+	provisioningOperation := fixture.FixProvisioningOperation(statusOperationID, statusInstanceID)
+	provisioningOperation.State = ""
+	provisioningOperation.ProvisionerOperationID = statusProvisionerOperationID
+	provisioningOperation.InstanceDetails.RuntimeID = runtimeID
+	provisioningOperation.ProvisioningParameters.PlanID = planId
+	provisioningOperation.ProvisioningParameters.ErsContext.GlobalAccountID = statusGlobalAccountID
+
+	return provisioningOperation
 }
 
 func fixOperationRuntimeStatusWithProvider(planId string, provider internal.TrialCloudProvider) internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     statusOperationID,
-			InstanceID:             statusInstanceID,
-			ProvisionerOperationID: statusProvisionerOperationID,
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Now(),
-			ProvisioningParameters: fixProvisioningParametersRuntimeStatusWithProvider(planId, &provider),
-		},
-	}
-}
+	provisioningOperation := fixture.FixProvisioningOperation(statusOperationID, statusInstanceID)
+	provisioningOperation.State = ""
+	provisioningOperation.ProvisionerOperationID = statusProvisionerOperationID
+	provisioningOperation.ProvisioningParameters.PlanID = planId
+	provisioningOperation.ProvisioningParameters.ErsContext.GlobalAccountID = statusGlobalAccountID
+	provisioningOperation.ProvisioningParameters.Parameters.Provider = &provider
 
-func fixProvisioningParametersRuntimeStatus(planId string) internal.ProvisioningParameters {
-	return fixProvisioningParametersRuntimeStatusWithProvider(planId, nil)
-}
-
-func fixProvisioningParametersRuntimeStatusWithProvider(planId string, provider *internal.TrialCloudProvider) internal.ProvisioningParameters {
-	return internal.ProvisioningParameters{
-		PlanID:    planId,
-		ServiceID: "",
-		ErsContext: internal.ERSContext{
-			GlobalAccountID: statusGlobalAccountID,
-		},
-		Parameters: internal.ProvisioningParametersDTO{
-			Provider: provider,
-		},
-	}
+	return provisioningOperation
 }
 
 func fixInstanceRuntimeStatus() internal.Instance {
-	return internal.Instance{
-		InstanceID:      statusInstanceID,
-		RuntimeID:       statusRuntimeID,
-		DashboardURL:    dashboardURL,
-		GlobalAccountID: statusGlobalAccountID,
-		CreatedAt:       time.Time{},
-		UpdatedAt:       time.Time{},
-		DeletedAt:       time.Time{},
-	}
+	instance := fixture.FixInstance(statusInstanceID)
+	instance.RuntimeID = statusRuntimeID
+	instance.DashboardURL = dashboardURL
+	instance.GlobalAccountID = statusGlobalAccountID
+
+	return instance
 }
 
 func fixAvsEvaluation() *avs.BasicEvaluationCreateResponse {

@@ -3,18 +3,16 @@ package input
 import (
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
-
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Currently on production only azure is supported
@@ -218,12 +216,13 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 }
 
 func fixProvisioningParameters(planID, kymaVersion string) internal.ProvisioningParameters {
-	return internal.ProvisioningParameters{
-		PlanID: planID,
-		Parameters: internal.ProvisioningParametersDTO{
-			KymaVersion: kymaVersion,
-		},
-	}
+	pp := fixture.FixProvisioningParameters("")
+	pp.PlanID = planID
+	pp.Parameters.KymaVersion = kymaVersion
+	pp.Parameters.AutoScalerMin = ptr.Integer(1)
+	pp.Parameters.AutoScalerMax = ptr.Integer(1)
+
+	return pp
 }
 
 func fixTrialRegionMapping() map[string]string {

@@ -6,24 +6,22 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma/automock"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
-
 	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -707,67 +705,45 @@ func fixUpgradeKymaOperation() internal.UpgradeKymaOperation {
 }
 
 func fixUpgradeKymaOperationWithAvs(avsData internal.AvsLifecycleData) internal.UpgradeKymaOperation {
-	n := time.Now()
-	windowEnd := n.Add(time.Minute)
-	return internal.UpgradeKymaOperation{
-		Operation: internal.Operation{
-			InstanceDetails: internal.InstanceDetails{
-				Avs: avsData,
-			},
-			ID:                     fixUpgradeOperationID,
-			InstanceID:             fixInstanceID,
-			OrchestrationID:        fixOrchestrationID,
-			ProvisionerOperationID: fixProvisionerOperationID,
-			State:                  orchestration.Pending,
-			Description:            "",
-			CreatedAt:              n,
-			UpdatedAt:              n,
-			ProvisioningParameters: fixProvisioningParameters(),
-		},
-		RuntimeOperation: orchestration.RuntimeOperation{
-			Runtime: orchestration.Runtime{
-				MaintenanceWindowEnd: windowEnd,
-			},
-		},
-	}
+	upgradeOperation := fixture.FixUpgradeKymaOperation(fixUpgradeOperationID, fixInstanceID)
+	upgradeOperation.OrchestrationID = fixOrchestrationID
+	upgradeOperation.ProvisionerOperationID = fixProvisionerOperationID
+	upgradeOperation.State = orchestration.Pending
+	upgradeOperation.Description = ""
+	upgradeOperation.UpdatedAt = time.Now()
+	upgradeOperation.RuntimeVersion = internal.RuntimeVersionData{}
+	upgradeOperation.InstanceDetails.Avs = avsData
+	upgradeOperation.ProvisioningParameters = fixProvisioningParameters()
+	upgradeOperation.RuntimeOperation.Runtime = fixture.FixRuntime(fixUpgradeOperationID)
+
+	return upgradeOperation
 }
 
 func fixProvisioningOperation() internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     fixProvisioningOperationID,
-			InstanceID:             fixInstanceID,
-			ProvisionerOperationID: fixProvisionerOperationID,
-			Description:            "",
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Now(),
-			ProvisioningParameters: fixProvisioningParameters(),
-		},
-	}
+	provisioningOperation := fixture.FixProvisioningOperation(fixProvisioningOperationID, fixInstanceID)
+	provisioningOperation.ProvisionerOperationID = fixProvisionerOperationID
+	provisioningOperation.Description = ""
+	provisioningOperation.ProvisioningParameters = fixProvisioningParameters()
+
+	return provisioningOperation
 }
 
 func fixProvisioningParameters() internal.ProvisioningParameters {
-	return internal.ProvisioningParameters{
-		PlanID:    broker.GCPPlanID,
-		ServiceID: "",
-		ErsContext: internal.ERSContext{
-			GlobalAccountID: fixGlobalAccountID,
-			SubAccountID:    fixSubAccountID,
-		},
-		Parameters: internal.ProvisioningParametersDTO{},
-	}
+	pp := fixture.FixProvisioningParameters("1")
+	pp.PlanID = broker.GCPPlanID
+	pp.ServiceID = ""
+	pp.ErsContext.GlobalAccountID = fixGlobalAccountID
+	pp.ErsContext.SubAccountID = fixSubAccountID
+
+	return pp
 }
 
 func fixInstanceRuntimeStatus() internal.Instance {
-	return internal.Instance{
-		InstanceID:      fixInstanceID,
-		RuntimeID:       fixRuntimeID,
-		DashboardURL:    "",
-		GlobalAccountID: fixGlobalAccountID,
-		CreatedAt:       time.Time{},
-		UpdatedAt:       time.Time{},
-		DeletedAt:       time.Time{},
-	}
+	instance := fixture.FixInstance(fixInstanceID)
+	instance.RuntimeID = fixRuntimeID
+	instance.GlobalAccountID = fixGlobalAccountID
+
+	return instance
 }
 
 func StringPtr(s string) *string {
