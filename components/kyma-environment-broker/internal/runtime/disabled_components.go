@@ -27,6 +27,7 @@ func NewDisabledComponentsProvider() DisabledComponentsProvider {
 			components.KnativeProvisionerNatss: {},
 			components.NatsStreaming:           {},
 		},
+		broker.OpenStackPlanID: {},
 		broker.GCPPlanID:       {},
 		broker.AzurePlanID:     {},
 		broker.AzureLitePlanID: {},
