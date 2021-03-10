@@ -3,15 +3,18 @@ title: Cloud Logging Service Account setup
 type: Details
 ---
 
-The image below explains the account setup for SKR and CLS instances
+The following image explains the account setup for SKR and CLS instances:
 
 ![CLS Account diagram](./assets/cls-acc.jpeg)
 
 
-The CLS instances are created inside a sub account inside the Kyma Global Account. There is one CLS instance created for every customer SKR global account. This CLS instance is created for a given customer Global account when the customer provision first SKR instance.
+The CLS instances are created inside a subaccount inside the Kyma global account: When the customer provisions the first SKR instance (SKR 1) for their SKR global account, one CLS instance is created inside the Kyma global account.
 
-From the diagram above we can see when customer with Global Account X provisions first SKR (SKR 1) this would provsion a CLS instance (CLS for customer X) in the CLS sub account which is part of kyma global account. After provision of CLS instance, a binding is created and the credentials are passed over to SRK 1 so that the logs could be pushed to the CLS instance.
+The diagram illustrates the following: 
+1. When a customer with global account X provisions the first SKR (SKR 1), a CLS instance (CLS for customer X) is created in the CLS subaccount that is part of the Kyma global account. 
+2. After provisioning a CLS instance, a binding is created, and the credentials are passed over to SRK 1.  
+3. With this setup, the logs are pushed to the CLS instance.
 
-On subsequent provision of SKR (eg SKR X-2) within the same global account there is no new CLS instance provisioned rather the existing CLS instance is used by creating a new binding (which would create a new set of crednetials to access the CLS instnace). These new set of credentials are passed over to SKR X-2, so that it can push logs to CLS instance.
+For any subsequent provisioning of SKR (for example, SKR X-2) within the same global account, no new CLS instance is provisioned. Instead, the existing CLS instance is used by creating a new binding, which creates a new set of credentials to access the CLS instance. The new set of credentials is passed over to SKR X-2, so that it can push logs to CLS instance.
 
-The Kibana of each of the CLS instance requires SAML authentiacation to access.
+For each of the CLS instances, Kibana needs SAML authentication to access.
