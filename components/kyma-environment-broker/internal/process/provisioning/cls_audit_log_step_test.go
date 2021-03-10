@@ -85,98 +85,101 @@ return "fooBar"
 
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
-	expectedOverride_conf := `[INPUT]
-  Name              tail
-  Tag               dex.*
-  Path              /var/log/containers/*_dex-*.log
-  DB                /var/log/flb_kube_dex.db
-  parser            docker
-  Mem_Buf_Limit     5MB
-  Skip_Long_Lines   On
-  Refresh_Interval  10
+	expectedOverride_conf := `
+[INPUT]
+    Name              tail
+    Tag               dex.*
+    Path              /var/log/containers/*_dex-*.log
+    DB                /var/log/flb_kube_dex.db
+    parser            docker
+    Mem_Buf_Limit     5MB
+    Skip_Long_Lines   On
+    Refresh_Interval  10
 [FILTER]
-  Name    lua
-  Match   dex.*
-  script  script.lua
-  call    reformat
+    Name    lua
+    Match   dex.*
+    script  script.lua
+    call    reformat
 [FILTER]
-  Name    grep
-  Match   dex.*
-  Regex   time .*
+    Name    grep
+    Match   dex.*
+    Regex   time .*
 [FILTER]
-  Name    grep
-  Match   dex.*
-  Regex   data .*\"xsuaa
+    Name    grep
+    Match   dex.*
+    Regex   data .*\"xsuaa
 [OUTPUT]
-  Name             http
-  Match            dex.*
-  Retry_Limit      False
-  Host             host1
-  Port             8080
-  URI              /aaa/v2/security-events
-  Header           Content-Type application/json
-  HTTP_User        aaaa
-  HTTP_Passwd      aaaa
-  Format           json_stream
-  tls              on
+    Name             http
+    Match            dex.*
+    Retry_Limit      False
+    Host             host1
+    Port             8080
+    URI              /aaa/v2/security-events
+    Header           Content-Type application/json
+    HTTP_User        aaaa
+    HTTP_Passwd      aaaa
+    Format           json_stream
+    tls              on
 [OUTPUT]
-  Name              http
-  Match             *
-  Host              foo.bar
-  Port              443
-  HTTP_User         fooUser
-  HTTP_Passwd       fooPass
-  tls               true
-  tls.verify        true
-  tls.debug         1
-  URI               /
-  Format            json`
-	expectedOverride_config := `[INPUT]
-  Name              tail
-  Tag               dex.*
-  Path              /var/log/containers/*_dex-*.log
-  DB                /var/log/flb_kube_dex.db
-  parser            docker
-  Mem_Buf_Limit     5MB
-  Skip_Long_Lines   On
-  Refresh_Interval  10
+    Name              http
+    Match             *
+    Host              foo.bar
+    Port              443
+    HTTP_User         fooUser
+    HTTP_Passwd       fooPass
+    tls               true
+    tls.verify        true
+    tls.debug         1
+    URI               /
+    Format            json`
+	expectedOverride_config := `
+[INPUT]
+    Name              tail
+    Tag               dex.*
+    Path              /var/log/containers/*_dex-*.log
+    DB                /var/log/flb_kube_dex.db
+    parser            docker
+    Mem_Buf_Limit     5MB
+    Skip_Long_Lines   On
+    Refresh_Interval  10
 [FILTER]
-  Name    lua
-  Match   dex.*
-  script  script.lua
-  call    reformat
+    Name    lua
+    Match   dex.*
+    script  script.lua
+    call    reformat
 [FILTER]
-  Name    grep
-  Match   dex.*
-  Regex   time .*
+    Name    grep
+    Match   dex.*
+    Regex   time .*
 [FILTER]
-  Name    grep
-  Match   dex.*
-  Regex   data .*\"xsuaa
+    Name    grep
+    Match   dex.*
+    Regex   data .*\"xsuaa
 [OUTPUT]
-  Name             http
-  Match            dex.*
-  Retry_Limit      False
-  Host             host1
-  Port             8080
-  URI              /aaa/v2/security-events
-  Header           Content-Type application/json
-  HTTP_User        aaaa
-  HTTP_Passwd      aaaa
-  Format           json_stream
-  tls              on
+    Name             http
+    Match            dex.*
+    Retry_Limit      False
+    Host             host1
+    Port             8080
+    URI              /aaa/v2/security-events
+    Header           Content-Type application/json
+    HTTP_User        aaaa
+    HTTP_Passwd      aaaa
+    Format           json_stream
+    tls              on
 [OUTPUT]
-  Name              http
-  Match             *
-  Host              foo.bar
-  Port              443
-  HTTP_User         fooUser
-  HTTP_Passwd       fooPass
-  tls               true
-  tls.verify        true
-  tls.debug         1
-  URI               /
-  Format            json`
+    Name              http
+    Match             *
+    Host              foo.bar
+    Port              443
+    HTTP_User         fooUser
+    HTTP_Passwd       fooPass
+    tls               true
+    tls.verify        true
+    tls.debug         1
+    URI               /
+    Format            json`
+
 	expectedFileScript := `
 func myScript() {
 foo: 1234567890
@@ -285,74 +288,76 @@ return "fooBar"
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
 
-	expectedOverride_conf := `[INPUT]
-  Name              tail
-  Tag               dex.*
-  Path              /var/log/containers/*_dex-*.log
-  DB                /var/log/flb_kube_dex.db
-  parser            docker
-  Mem_Buf_Limit     5MB
-  Skip_Long_Lines   On
-  Refresh_Interval  10
+	expectedOverride_conf := `
+[INPUT]
+    Name              tail
+    Tag               dex.*
+    Path              /var/log/containers/*_dex-*.log
+    DB                /var/log/flb_kube_dex.db
+    parser            docker
+    Mem_Buf_Limit     5MB
+    Skip_Long_Lines   On
+    Refresh_Interval  10
 [FILTER]
-  Name    lua
-  Match   dex.*
-  script  script.lua
-  call    reformat
+    Name    lua
+    Match   dex.*
+    script  script.lua
+    call    reformat
 [FILTER]
-  Name    grep
-  Match   dex.*
-  Regex   time .*
+    Name    grep
+    Match   dex.*
+    Regex   time .*
 [FILTER]
-  Name    grep
-  Match   dex.*
-  Regex   data .*\"xsuaa
+    Name    grep
+    Match   dex.*
+    Regex   data .*\"xsuaa
 [OUTPUT]
-  Name             sequentialhttp
-  Match            dex.*
-  Retry_Limit      False
-  Host             host1
-  Port             8080
-  URI              /aaa/v2/security-events
-  Header           Content-Type application/json
-  HTTP_User        aaaa
-  HTTP_Passwd      aaaa
-  Format           json_stream
-  tls              on`
-	expectedOverride_config := `[INPUT]
-  Name              tail
-  Tag               dex.*
-  Path              /var/log/containers/*_dex-*.log
-  DB                /var/log/flb_kube_dex.db
-  parser            docker
-  Mem_Buf_Limit     5MB
-  Skip_Long_Lines   On
-  Refresh_Interval  10
+    Name             sequentialhttp
+    Match            dex.*
+    Retry_Limit      False
+    Host             host1
+    Port             8080
+    URI              /aaa/v2/security-events
+    Header           Content-Type application/json
+    HTTP_User        aaaa
+    HTTP_Passwd      aaaa
+    Format           json_stream
+    tls              on`
+	expectedOverride_config := `
+[INPUT]
+    Name              tail
+    Tag               dex.*
+    Path              /var/log/containers/*_dex-*.log
+    DB                /var/log/flb_kube_dex.db
+    parser            docker
+    Mem_Buf_Limit     5MB
+    Skip_Long_Lines   On
+    Refresh_Interval  10
 [FILTER]
-  Name    lua
-  Match   dex.*
-  script  script.lua
-  call    reformat
+    Name    lua
+    Match   dex.*
+    script  script.lua
+    call    reformat
 [FILTER]
-  Name    grep
-  Match   dex.*
-  Regex   time .*
+    Name    grep
+    Match   dex.*
+    Regex   time .*
 [FILTER]
-  Name    grep
-  Match   dex.*
-  Regex   data .*\"xsuaa
+    Name    grep
+    Match   dex.*
+    Regex   data .*\"xsuaa
 [OUTPUT]
-  Name             sequentialhttp
-  Match            dex.*
-  Retry_Limit      False
-  Host             host1
-  Port             8080
-  URI              /aaa/v2/security-events
-  Header           Content-Type application/json
-  HTTP_User        aaaa
-  HTTP_Passwd      aaaa
-  Format           json_stream
-  tls              on`
+    Name             sequentialhttp
+    Match            dex.*
+    Retry_Limit      False
+    Host             host1
+    Port             8080
+    URI              /aaa/v2/security-events
+    Header           Content-Type application/json
+    HTTP_User        aaaa
+    HTTP_Passwd      aaaa
+    Format           json_stream
+    tls              on`
 	expectedFileScript := `
 func myScript() {
 foo: 1234567890
