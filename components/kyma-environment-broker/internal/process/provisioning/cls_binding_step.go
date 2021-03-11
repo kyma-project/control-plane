@@ -44,7 +44,7 @@ func (s *ClsBindStep) Name() string {
 }
 
 func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	if !operation.Cls.Instance.ProvisioningTriggered {
+	if operation.Cls.Instance.InstanceID != "" {
 		failureReason := fmt.Sprintf("cls provisioning step was not triggered")
 		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason, log)
@@ -52,7 +52,7 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 
 	var overrideParams *cls.OverrideParams
 	var err error
-	if !operation.Cls.Binding.Bound {
+	if operation.Cls.Overrides == "" {
 		smCredentials, err := cls.FindCredentials(s.config.ServiceManager, operation.Cls.Region)
 		if err != nil {
 			failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
@@ -75,15 +75,12 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 			failureReason := fmt.Sprintf("Cls instance is in failed state")
 			log.Errorf("%s: %s", failureReason, resp.Description)
 			return s.operationManager.OperationFailed(operation, fmt.Sprintf("Cls provisioning failed: %s", resp.Description), log)
-		case servicemanager.Succeeded:
-			operation.Cls.Instance.Provisioned = true
-			operation.Cls.Instance.ProvisioningTriggered = false
-			log.Info("Cls instance is provisioned.")
 		}
 
 		if operation.Cls.Binding.BindingID == "" {
 			op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 				operation.Cls.Binding.BindingID = uuid.New().String()
+				operation.Cls.Instance.Provisioned = true
 			}, log)
 			if retry > 0 {
 				log.Errorf("Unable to update operation")
@@ -113,7 +110,6 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		// save the status
 		op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 			operation.Cls.Overrides = encryptedOverrideParams
-			operation.Cls.Binding.Bound = true
 		}, log)
 		if retry > 0 {
 			log.Errorf("Unable to update operation")

@@ -52,7 +52,7 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 
 	var overrideParams *cls.OverrideParams
 	var err error
-	if len(operation.Cls.Overrides) == 0 {
+	if operation.Cls.Overrides == "" {
 
 		smCredentials, err := cls.FindCredentials(s.config.ServiceManager, operation.Cls.Region)
 		if err != nil {

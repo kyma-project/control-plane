@@ -36,7 +36,8 @@ func (s *clsProvisionStep) Name() string {
 }
 
 func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	if operation.Cls.Instance.ProvisioningTriggered {
+	if operation.Cls.Instance.InstanceID != "" {
+		log.Infof("CLS instance already exists")
 		return operation, 0, nil
 	}
 
