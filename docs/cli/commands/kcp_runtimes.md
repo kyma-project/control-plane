@@ -21,7 +21,7 @@ kcp runtimes [flags]
                                                          Display the custom fields about one Runtime identified by a Shoot name.
   kcp runtimes -o custom="INSTANCE ID:instanceID,SHOOTNAME:shootName,runtimeID:runtimeID,STATUS:{status.provisioning}"
                                                          Display all Runtimes with specific custom fields.
-  kcp runtimes -t "failed" -o custom="INSTANCE ID:instanceID,SHOOTNAME:shootName,STATUS:runtimeStatus"
+  kcp runtimes -t "failed"                               Display all Runtimes with specific state.
 ```
 
 ## Options

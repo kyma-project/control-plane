@@ -83,7 +83,7 @@ The command supports filtering Runtimes based on various attributes. See the lis
                                                          Display the custom fields about one Runtime identified by a Shoot name.
   kcp runtimes -o custom="INSTANCE ID:instanceID,SHOOTNAME:shootName,runtimeID:runtimeID,STATUS:{status.provisioning}"
                                                          Display all Runtimes with specific custom fields.
-  kcp runtimes -t "failed" -o custom="INSTANCE ID:instanceID,SHOOTNAME:shootName,STATUS:runtimeStatus"`,
+  kcp runtimes -t "failed"                               Display all Runtimes with specific state.`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}
@@ -144,7 +144,7 @@ func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
 		jp.PrintObj(runtimes)
 	case strings.HasPrefix(cmd.output, customOutput):
 		_, templateFile := printer.ParseOutputToTemplateTypeAndElement(cmd.output)
-		column, err := parseColumnToHeaderAndFields(templateFile)
+		column, err := printer.ParseColumnToHeaderAndFieldSpec(templateFile)
 		if err != nil {
 			return err
 		}
@@ -199,31 +199,4 @@ func operationStatusToString(op runtime.Operation, t runtime.OperationType) stri
 func runtimeCreatedAt(obj interface{}) string {
 	rt := obj.(runtime.RuntimeDTO)
 	return rt.Status.CreatedAt.Format("2006/01/02 15:04:05")
-}
-
-func parseColumnToHeaderAndFields(spec string) ([]printer.Column, error) {
-	if len(spec) == 0 {
-		return nil, fmt.Errorf("custom format specified but no custom columns given")
-	}
-	parts := strings.Split(spec, ",")
-	columnsOut := make([]printer.Column, len(parts))
-	for ix := range parts {
-		colSpec := strings.SplitN(parts[ix], ":", 2)
-		if len(colSpec) != 2 {
-			return nil, fmt.Errorf("unexpected custom spec: %s, expected <header>:<json-path-expr>", parts[ix])
-		}
-		spec, err := printer.RelaxedJSONPathExpression(colSpec[1])
-		if err != nil {
-			return nil, err
-		}
-		if strings.Contains(spec, "runtimeStatus") {
-			columnsOut[ix] = printer.Column{Header: colSpec[0], FieldFormatter: runtimeStatus}
-		} else if strings.Contains(spec, "runtimeCreatedAt") {
-			columnsOut[ix] = printer.Column{Header: colSpec[0], FieldFormatter: runtimeCreatedAt}
-		} else {
-			columnsOut[ix] = printer.Column{Header: colSpec[0], FieldSpec: spec}
-		}
-	}
-
-	return columnsOut, nil
 }
