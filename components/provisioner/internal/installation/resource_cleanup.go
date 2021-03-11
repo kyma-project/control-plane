@@ -91,6 +91,7 @@ func (s *serviceCatalogClient) PerformCleanup(resourceSelector string) error {
 	}
 
 	s.deleteServiceInstances(serviceInstances)
+	s.removeClusterBrokersFinalizers(clusterServiceBrokers.Items)
 
 	return nil
 }
@@ -224,6 +225,24 @@ func (s *serviceCatalogClient) deleteServiceInstances(serviceInstances []v1beta1
 				if apiErrors.IsNotFound(err) {
 					return true, nil
 				}
+				return false, nil
+			}
+			return true, nil
+		})
+	}
+}
+
+func (s *serviceCatalogClient) removeClusterBrokersFinalizers(brokers []v1beta1.ClusterServiceBroker) {
+	for _, broker := range brokers {
+		logrus.Debugf("trying to delete ClusterServiceBroker %q", broker.Name)
+
+		_ = wait.PollImmediate(10*time.Second, 2*time.Minute, func() (bool, error) {
+			broker.Finalizers = []string{}
+			if _, err := s.client.ServicecatalogV1beta1().ClusterServiceBrokers().Update(context.Background(), &broker, metav1.UpdateOptions{}); err != nil {
+				if apiErrors.IsNotFound(err) {
+					return true, nil
+				}
+				logrus.Errorf("while updating ClusterServiceBroker %s: %s", broker.Name, err.Error())
 				return false, nil
 			}
 			return true, nil
