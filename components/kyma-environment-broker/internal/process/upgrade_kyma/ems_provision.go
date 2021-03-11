@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
@@ -43,6 +45,17 @@ func (s *EmsUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, l
 		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manage client"))
 	}
 
+	if operation.Ems.Instance.InstanceID == "" {
+		op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
+			operation.Ems.Instance.InstanceID = uuid.New().String()
+		}, log)
+		if retry > 0 {
+			log.Errorf("unable to update operation")
+			return operation, time.Second, nil
+		}
+		operation = op
+	}
+
 	// provision
 	operation, _, err = s.provision(smCli, operation, log)
 	if err != nil {
@@ -66,8 +79,6 @@ func (s *EmsUpgradeProvisionStep) provision(smCli servicemanager.Client, operati
 		return s.handleError(operation, err, log, fmt.Sprintf("Provision() call failed for brokerID: %s; input: %#v", operation.Ems.Instance.BrokerID, input))
 	}
 	log.Debugf("response from EMS provisioning call: %#v", resp)
-
-	operation.Ems.Instance.InstanceID = input.ID
 
 	return operation, 0, nil
 }

@@ -73,7 +73,6 @@ func (s *EmsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 }
 
 func (s *EmsProvisionStep) provision(smCli servicemanager.Client, operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-
 	input := GetEventingProvisioningData(operation.Ems)
 	resp, err := smCli.Provision(operation.Ems.Instance.BrokerID, *input, true)
 	if err != nil {
