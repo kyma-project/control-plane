@@ -719,8 +719,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 
 	//CLS
 	clsClient := cls.NewClient(clsConfig)
-	var clsDb = storage.NewMemoryStorage()
-	clsProvisioner := cls.NewProvisioner(clsDb.CLSInstances(), clsClient)
+	clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient)
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Orchestrations(), db.Instances(),

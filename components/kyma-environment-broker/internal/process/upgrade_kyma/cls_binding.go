@@ -44,7 +44,7 @@ func (s *ClsUpgradeBindStep) Name() string {
 }
 
 func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if !operation.Cls.Instance.ProvisioningTriggered {
+	if operation.Cls.Instance.InstanceID != "" {
 		failureReason := fmt.Sprintf("cls provisioning step was not triggered")
 		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason, log)
@@ -52,7 +52,7 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 
 	var overrideParams *cls.OverrideParams
 	var err error
-	if !operation.Cls.Binding.Bound {
+	if len(operation.Cls.Overrides) == 0 {
 
 		smCredentials, err := cls.FindCredentials(s.config.ServiceManager, operation.Cls.Region)
 		if err != nil {
@@ -76,15 +76,12 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 			failureReason := fmt.Sprintf("Cls instance is in failed state")
 			log.Errorf("%s: %s", failureReason, resp.Description)
 			return s.operationManager.OperationFailed(operation, fmt.Sprintf("Cls provisioning failed: %s", resp.Description), log)
-		case servicemanager.Succeeded:
-			operation.Cls.Instance.Provisioned = true
-			operation.Cls.Instance.ProvisioningTriggered = false
-			log.Info("Cls instance is provisioned.")
 		}
 
 		if operation.Cls.Binding.BindingID == "" {
 			op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
 				operation.Cls.Binding.BindingID = uuid.New().String()
+				operation.Cls.Instance.Provisioned = true
 			}, log)
 			if retry > 0 {
 				log.Errorf("Unable to update operation")
@@ -114,7 +111,6 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 		// save the status
 		op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
 			operation.Cls.Overrides = encryptedOverrideParams
-			operation.Cls.Binding.Bound = true
 		}, log)
 		if retry > 0 {
 			log.Errorf("Unable to update operation")
