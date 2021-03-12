@@ -97,7 +97,11 @@
 
 [[override]]
   name = "golang.org/x/text"
-  version = "v0.3.3"
+  version = "v0.3.5"
+
+[[override]]
+  name = "github.com/gogo/protobuf"
+  version = "v1.3.2"
 
 [prune]
   go-tests = true
