@@ -12,8 +12,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/migrations"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"code.cloudfoundry.org/lager"
@@ -71,11 +69,9 @@ import (
 
 // Config holds configuration for the whole application
 type Config struct {
-	DbInMemory                        bool `envconfig:"default=false"`
-	EnableInstanceDetailsMigration    bool `envconfig:"default=false"`
-	EnableInstanceParametersMigration bool `envconfig:"default=false"`
-	EnableInstanceParametersRollback  bool `envconfig:"default=false"`
-	EnableOperationsUserIDMigration   bool `envconfig:"default=false"`
+	// DbInMemory allows to use memory storage instead of the postgres one.
+	// Suitable for development purposes.
+	DbInMemory bool `envconfig:"default=false"`
 
 	// DisableProcessOperationsInProgress allows to disable processing operations
 	// which are in progress on starting application. Set to true if you are
@@ -191,27 +187,6 @@ func main() {
 		db = store
 		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 		prometheus.MustRegister(dbStatsCollector)
-	}
-
-	// todo: remove after instance details was done on each environment
-	// instance details migration to upgradeKyma operations
-	if cfg.EnableInstanceDetailsMigration {
-		err = migrations.NewInstanceDetailsMigration(db.Operations(), logs.WithField("service", "instanceDetailsMigration")).Migrate()
-		fatalOnError(err)
-	}
-	// encrypting instances SM credentials
-	if cfg.EnableInstanceParametersMigration {
-		err = migrations.NewInstanceParametersMigration(db.Instances(), cipher, logs).Migrate()
-		fatalOnError(err)
-	}
-	if cfg.EnableInstanceParametersRollback {
-		err = migrations.NewInstanceParametersMigrationRollback(db.Instances(), logs).Migrate()
-		fatalOnError(err)
-	}
-	// migration to remove the userID parameter from succeeded deprovisioning operations
-	if cfg.EnableOperationsUserIDMigration {
-		err = migrations.NewOperationsUserIDMigration(db.Operations(), logs.WithField("service", "userIDMigration")).Migrate()
-		fatalOnError(err)
 	}
 
 	// LMS
