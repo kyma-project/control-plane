@@ -80,7 +80,6 @@ func TestClsUnbindStep_Run(t *testing.T) {
 	require.NoError(t, err)
 	assert.Zero(t, retry)
 	assert.Empty(t, operation.Cls.Binding.BindingID)
-	assert.False(t, operation.Cls.Binding.Bound)
 	assert.Empty(t, operation.Cls.Overrides)
 	clientFactory.AssertUnbindCalled(t, servicemanager.InstanceKey{
 		BrokerID:   "broker-id",
