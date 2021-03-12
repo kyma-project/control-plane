@@ -72,8 +72,10 @@ func (alo *ClsUpgradeAuditLogOverridesStep) Run(operation internal.UpgradeKymaOp
 	}
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
+		{Key: "fluent-bit.conf.Output.forward.enabled", Value: "false"},
 		{Key: "fluent-bit.conf.script", Value: replaceTenantID},
 		{Key: "fluent-bit.conf.extra", Value: extraConfOverrides},
+		{Key: "fluent-bit.config.outputs.forward.enabled", Value: "false"},
 		{Key: "fluent-bit.config.script", Value: replaceTenantID},
 		{Key: "fluent-bit.config.extra", Value: extraConfOverrides},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},

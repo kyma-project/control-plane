@@ -193,12 +193,20 @@ return "fooBar"
   protocol: TLS`
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
 		{
+			Key:   "fluent-bit.conf.Output.forward.enabled",
+			Value: "false",
+		},
+		{
 			Key:   "fluent-bit.conf.script",
 			Value: expectedFileScript,
 		},
 		{
 			Key:   "fluent-bit.conf.extra",
 			Value: expectedOverride_conf,
+		},
+		{
+			Key:   "fluent-bit.config.outputs.forward.enabled",
+			Value: "false",
 		},
 		{
 			Key:   "fluent-bit.config.script",
@@ -371,12 +379,20 @@ return "fooBar"
   protocol: TLS`
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
 		{
+			Key:   "fluent-bit.conf.Output.forward.enabled",
+			Value: "false",
+		},
+		{
 			Key:   "fluent-bit.conf.script",
 			Value: expectedFileScript,
 		},
 		{
 			Key:   "fluent-bit.conf.extra",
 			Value: expectedOverride_conf,
+		},
+		{
+			Key:   "fluent-bit.config.outputs.forward.enabled",
+			Value: "false",
 		},
 		{
 			Key:   "fluent-bit.config.script",
