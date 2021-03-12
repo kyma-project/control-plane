@@ -44,7 +44,7 @@ func (s *ClsUpgradeBindStep) Name() string {
 }
 
 func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if operation.Cls.Instance.InstanceID != "" {
+	if operation.Cls.Instance.InstanceID == "" {
 		failureReason := fmt.Sprintf("cls provisioning step was not triggered")
 		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason, log)
@@ -53,7 +53,6 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 	var overrideParams *cls.OverrideParams
 	var err error
 	if operation.Cls.Overrides == "" {
-
 		smCredentials, err := cls.FindCredentials(s.config.ServiceManager, operation.Cls.Region)
 		if err != nil {
 			failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
