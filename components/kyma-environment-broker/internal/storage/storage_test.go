@@ -77,8 +77,9 @@ func TestPostgres(t *testing.T) {
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
-			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
+			defer tablesCleanupFunc()
 
 			// when
 			cipher := storage.NewEncrypter(cfg.SecretKey)
@@ -190,8 +191,9 @@ func TestPostgres(t *testing.T) {
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
-			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
+			defer tablesCleanupFunc()
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
 			psqlStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -234,8 +236,9 @@ func TestPostgres(t *testing.T) {
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
-			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
+			defer tablesCleanupFunc()
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
 			psqlStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -294,8 +297,9 @@ func TestPostgres(t *testing.T) {
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
-			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
+			defer tablesCleanupFunc()
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
 			psqlStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -332,8 +336,9 @@ func TestPostgres(t *testing.T) {
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
-			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
+			defer tablesCleanupFunc()
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
 			psqlStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -377,8 +382,9 @@ func TestPostgres(t *testing.T) {
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
-			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
+			defer tablesCleanupFunc()
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
 			psqlStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -620,8 +626,9 @@ func TestPostgres(t *testing.T) {
 				},
 			}
 
-			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
+			defer tablesCleanupFunc()
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
 			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -707,8 +714,9 @@ func TestPostgres(t *testing.T) {
 				},
 			}
 
-			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
+			defer tablesCleanupFunc()
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
 			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -822,8 +830,9 @@ func TestPostgres(t *testing.T) {
 				RuntimeOperation: fixRuntimeOperation("operation-id-3"),
 			}
 
-			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
+			defer tablesCleanupFunc()
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
 			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -986,8 +995,9 @@ func TestPostgres(t *testing.T) {
 				},
 			}
 
-			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
+			defer tablesCleanupFunc()
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
 			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -1041,8 +1051,9 @@ func TestPostgres(t *testing.T) {
 				},
 			}
 
-			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
+			defer tablesCleanupFunc()
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
 			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -1083,8 +1094,9 @@ func TestPostgres(t *testing.T) {
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -1147,8 +1159,9 @@ func TestPostgres(t *testing.T) {
 			},
 		}
 
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -1203,8 +1216,9 @@ func TestPostgres(t *testing.T) {
 			},
 		}
 
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -1236,8 +1250,10 @@ func TestPostgres(t *testing.T) {
 			Region: "na",
 			Name:   "some-company",
 		}
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())

@@ -14,6 +14,11 @@ import (
 )
 
 func TestOrchestration(t *testing.T) {
+
+	if testsRanInSuite {
+		t.Skip("TestOrchestration already ran in suite")
+	}
+
 	ctx := context.Background()
 	cleanupNetwork, err := storage.EnsureTestNetworkForDB(t, ctx)
 	require.NoError(t, err)
@@ -29,8 +34,9 @@ func TestOrchestration(t *testing.T) {
 		givenOrchestration.Description = "test"
 		givenOrchestration.Parameters.DryRun = true
 
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())

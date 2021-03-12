@@ -14,6 +14,11 @@ import (
 )
 
 func TestRuntimeState(t *testing.T) {
+
+	if testsRanInSuite {
+		t.Skip("TestRuntimeState already ran in suite")
+	}
+
 	ctx := context.Background()
 	cleanupNetwork, err := storage.EnsureTestNetworkForDB(t, ctx)
 	require.NoError(t, err)
@@ -38,8 +43,9 @@ func TestRuntimeState(t *testing.T) {
 			},
 		}
 
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())

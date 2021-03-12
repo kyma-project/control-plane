@@ -28,6 +28,8 @@ const (
 	EnvPipelineBuild  = "PIPELINE_BUILD"
 )
 
+var mappedPort string
+
 func makeConnectionString(hostname string, port string) Config {
 	host := "localhost"
 	if os.Getenv(EnvPipelineBuild) != "" {
@@ -62,6 +64,15 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 	_, err := isDockerTestNetworkPresent(ctx)
 	if err != nil {
 		return nil, Config{}, err
+	}
+
+	isAvailable, dbCfg, err := isDBContainerAvailable(hostname, mappedPort)
+	if err != nil {
+		return nil, Config{}, err
+	} else if !isAvailable {
+		t.Log("cannot connect to DB container. Creating new Postgres container...")
+	} else if isAvailable {
+		return func() {}, dbCfg, nil
 	}
 
 	req := testcontainers.ContainerRequest{
@@ -103,30 +114,46 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 	cleanupFunc := func() {
 		err := postgresContainer.Terminate(ctx)
 		assert.NoError(t, err)
-		time.Sleep(2 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 
-	dbCfg := makeConnectionString(hostname, port.Port())
+	dbCfg = makeConnectionString(hostname, port.Port())
+	mappedPort = port.Port()
 
 	return cleanupFunc, dbCfg, nil
 }
 
-func InitTestDBTables(t *testing.T, connectionURL string) error {
+func InitTestDBTables(t *testing.T, connectionURL string) (func(), error) {
 	connection, err := postsql.WaitForDatabaseAccess(connectionURL, 10, 100*time.Millisecond, logrus.New())
 	if err != nil {
 		t.Logf("Cannot connect to database with URL %s", connectionURL)
-		return err
+		return nil, err
+	}
+
+	cleanupFunc := func() {
+		_, err = connection.Exec(clearDBQuery())
+		if err != nil {
+			errors.Wrap(err, "failed to clear DB tables...")
+		}
+	}
+
+	initialized, err := postsql.CheckIfDatabaseInitialized(connection)
+	if err != nil {
+		CloseDatabase(t, connection)
+		return nil, err
+	} else if initialized {
+		return cleanupFunc, nil
 	}
 
 	for name, v := range FixTables() {
 		if _, err := connection.Exec(v); err != nil {
 			t.Logf("Cannot create table %s", name)
-			return err
+			return nil, err
 		}
 		t.Logf("Table %s added to database", name)
 	}
 
-	return nil
+	return cleanupFunc, nil
 }
 
 func isDockerTestNetworkPresent(ctx context.Context) (bool, error) {
@@ -190,10 +217,33 @@ func EnsureTestNetworkForDB(t *testing.T, ctx context.Context) (func(), error) {
 	cleanupFunc := func() {
 		err = createdNetwork.Remove(ctx)
 		assert.NoError(t, err)
-		time.Sleep(2 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 
 	return cleanupFunc, nil
+}
+
+func isDBContainerAvailable(hostname, port string) (isAvailable bool, dbCfg Config, err error) {
+	dbCfg = makeConnectionString(hostname, port)
+
+	connection, err := dbr.Open("postgres", dbCfg.ConnectionURL(), nil)
+	if err != nil {
+		return false, Config{}, errors.Wrap(err, "invalid connection string")
+	}
+
+	defer func(c *dbr.Connection) {
+		err = c.Close()
+		if err != nil {
+			errors.Wrap(err,"failed to close database connection...")
+		}
+	}(connection)
+
+	err = connection.Ping()
+	if err == nil {
+		return true, dbCfg, nil
+	}
+
+	return false, Config{}, err
 }
 
 func FixTables() map[string]string {
@@ -278,4 +328,14 @@ func FixTables() map[string]string {
 			FOREIGN KEY(cls_instance_id) REFERENCES %s(id) ON DELETE CASCADE);
 			`, postsql.CLSInstanceTableName, postsql.CLSInstanceReferenceTableName, postsql.CLSInstanceTableName),
 	}
+}
+
+func clearDBQuery() string {
+	return fmt.Sprintf("TRUNCATE TABLE %s, %s, %s, %s, %s RESTART IDENTITY CASCADE",
+		postsql.InstancesTableName,
+		postsql.OperationTableName,
+		postsql.OrchestrationTableName,
+		postsql.LMSTenantTableName,
+		postsql.RuntimeStateTableName,
+	)
 }

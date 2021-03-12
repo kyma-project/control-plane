@@ -31,7 +31,7 @@ func InitializeDatabase(connectionURL string, retries int, log logrus.FieldLogge
 		return nil, err
 	}
 
-	initialized, err := checkIfDatabaseInitialized(connection)
+	initialized, err := CheckIfDatabaseInitialized(connection)
 	if err != nil {
 		closeDBConnection(connection, log)
 		return nil, errors.Wrap(err, "Failed to check if database is initialized")
@@ -53,7 +53,7 @@ func closeDBConnection(db *dbr.Connection, log logrus.FieldLogger) {
 
 const TableNotExistsError = "42P01"
 
-func checkIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
+func CheckIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
 	checkQuery := fmt.Sprintf(`SELECT '%s.%s'::regclass;`, schemaName, InstancesTableName)
 
 	row := db.QueryRow(checkQuery)

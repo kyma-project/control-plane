@@ -12,6 +12,11 @@ import (
 )
 
 func TestLMSTenant(t *testing.T) {
+
+	if testsRanInSuite {
+		t.Skip("TestLMSTenant already ran in suite")
+	}
+
 	ctx := context.Background()
 	cleanupNetwork, err := storage.EnsureTestNetworkForDB(t, ctx)
 	require.NoError(t, err)
@@ -27,8 +32,10 @@ func TestLMSTenant(t *testing.T) {
 			Region: "na",
 			Name:   "some-company",
 		}
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())

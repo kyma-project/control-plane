@@ -19,6 +19,11 @@ import (
 )
 
 func TestOperation(t *testing.T) {
+
+	if testsRanInSuite {
+		t.Skip("TestOperation already ran in suite")
+	}
+
 	ctx := context.Background()
 	cleanupNetwork, err := storage.EnsureTestNetworkForDB(t, ctx)
 	require.NoError(t, err)
@@ -58,8 +63,9 @@ func TestOperation(t *testing.T) {
 		latestPendingOperation.OrchestrationID = orchestrationID
 		latestPendingOperation.ProvisioningParameters.PlanID = broker.TrialPlanID
 
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -139,8 +145,9 @@ func TestOperation(t *testing.T) {
 		givenOperation.Description = "description"
 		givenOperation.Version = 1
 
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -234,8 +241,9 @@ func TestOperation(t *testing.T) {
 		givenOperation3.InputCreator = nil
 		givenOperation3.Version = 1
 
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())

@@ -12,6 +12,11 @@ import (
 )
 
 func TestInitialization(t *testing.T) {
+
+	if testsRanInSuite {
+		t.Skip("TestInitialization already ran in suite")
+	}
+
 	ctx := context.Background()
 	cleanupNetwork, err := storage.EnsureTestNetworkForDB(t, ctx)
 	require.NoError(t, err)

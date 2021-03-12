@@ -21,6 +21,11 @@ import (
 )
 
 func TestInstance(t *testing.T) {
+
+	if testsRanInSuite {
+		t.Skip("TestInstance already ran in suite")
+	}
+
 	ctx := context.Background()
 	cleanupNetwork, err := storage.EnsureTestNetworkForDB(t, ctx)
 	require.NoError(t, err)
@@ -32,8 +37,9 @@ func TestInstance(t *testing.T) {
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		// when
 		cipher := storage.NewEncrypter(cfg.SecretKey)
@@ -112,8 +118,9 @@ func TestInstance(t *testing.T) {
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		psqlStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -157,8 +164,9 @@ func TestInstance(t *testing.T) {
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		psqlStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -233,8 +241,9 @@ func TestInstance(t *testing.T) {
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		psqlStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -273,8 +282,9 @@ func TestInstance(t *testing.T) {
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		psqlStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -319,8 +329,9 @@ func TestInstance(t *testing.T) {
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		psqlStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())

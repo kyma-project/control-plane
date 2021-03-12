@@ -16,6 +16,11 @@ import (
 )
 
 func TestConflict(t *testing.T) {
+
+	if testsRanInSuite {
+		t.Skip("TestConflict already ran in suite")
+	}
+
 	ctx := context.Background()
 	cleanupNetwork, err := storage.EnsureTestNetworkForDB(t, ctx)
 	require.NoError(t, err)
@@ -31,8 +36,9 @@ func TestConflict(t *testing.T) {
 			givenOperation.State = domain.InProgress
 			givenOperation.ProvisionerOperationID = "target-op-id"
 
-			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
+			defer tablesCleanupFunc()
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
 			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -77,8 +83,9 @@ func TestConflict(t *testing.T) {
 			givenOperation.State = domain.InProgress
 			givenOperation.ProvisionerOperationID = "target-op-id"
 
-			err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
+			defer tablesCleanupFunc()
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
 			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -120,8 +127,9 @@ func TestConflict(t *testing.T) {
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
-		err = storage.InitTestDBTables(t, cfg.ConnectionURL())
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
+		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
