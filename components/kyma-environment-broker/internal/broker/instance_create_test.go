@@ -400,7 +400,7 @@ func TestProvision_Provision(t *testing.T) {
 		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", planID).Return(true)
 
-		fixValidator, err := broker.NewPlansSchemaValidator()
+		fixValidator, err := broker.NewPlansSchemaValidator(broker.PlansConfig{})
 		require.NoError(t, err)
 
 		provisionEndpoint := broker.NewProvision(
@@ -411,6 +411,7 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			factoryBuilder,
 			fixValidator,
+			broker.PlansConfig{},
 			true,
 			logrus.StandardLogger(),
 		)
