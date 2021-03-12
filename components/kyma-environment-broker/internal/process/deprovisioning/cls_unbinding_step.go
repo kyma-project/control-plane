@@ -32,8 +32,8 @@ func (s *ClsUnbindStep) Name() string {
 }
 
 func (s *ClsUnbindStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
-	if operation.Cls.Overrides != "" {
-		log.Infof("Cls Unbind step skipped, instance not bound: %#v", operation.Cls)
+	if operation.Cls.Overrides == "" {
+		log.Info("Cls Unbind step skipped, instance not bound")
 		return operation, 0, nil
 	}
 
