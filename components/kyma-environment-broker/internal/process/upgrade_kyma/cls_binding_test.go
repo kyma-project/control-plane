@@ -57,9 +57,10 @@ func TestClsBindingStep_Run(t *testing.T) {
 
 			InstanceDetails: internal.InstanceDetails{
 				Cls: internal.ClsData{Instance: internal.ServiceManagerInstanceInfo{
-					BrokerID:  fakeBrokerID,
-					ServiceID: "svc-id",
-					PlanID:    "plan-id",
+					BrokerID:   fakeBrokerID,
+					ServiceID:  "svc-id",
+					PlanID:     "plan-id",
+					InstanceID: "instnace-id",
 				},
 					Region: "eu",
 				},

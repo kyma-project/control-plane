@@ -44,7 +44,7 @@ func (s *ClsUpgradeBindStep) Name() string {
 }
 
 func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if operation.Cls.Instance.InstanceID != "" {
+	if operation.Cls.Instance.InstanceID == "" {
 		failureReason := fmt.Sprintf("cls provisioning step was not triggered")
 		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason, log)
