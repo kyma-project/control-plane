@@ -130,7 +130,6 @@ return "fooBar"
     HTTP_Passwd       fooPass
     tls               true
     tls.verify        true
-    tls.debug         1
     URI               /
     Format            json`
 	expectedOverride_config := `
@@ -177,7 +176,6 @@ return "fooBar"
     HTTP_Passwd       fooPass
     tls               true
     tls.verify        true
-    tls.debug         1
     URI               /
     Format            json`
 	expectedFileScript := `

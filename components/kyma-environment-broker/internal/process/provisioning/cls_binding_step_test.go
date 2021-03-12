@@ -38,7 +38,6 @@ func TestClsBindingStep_Run(t *testing.T) {
     HTTP_Passwd       fooPass
     tls               true
     tls.verify        true
-    tls.debug         1
     URI               /
     Format            json`
 	expectedKibanaUrl := "kibUrl"
