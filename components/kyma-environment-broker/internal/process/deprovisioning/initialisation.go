@@ -114,6 +114,10 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
 	case err == nil:
+		// If the instance is currently suspended, let this deprovision operation clean up the instance
+		if instance.Parameters.ErsContext.Active != nil && !*instance.Parameters.ErsContext.Active {
+			return s.operationManager.OperationSucceeded(operation, "instance has been suspended previously", log)
+		}
 		if operation.State == orchestration.Pending {
 			upgrades, err := s.operationStorage.ListUpgradeKymaOperationsByInstanceID(operation.InstanceID)
 			if err != nil {
