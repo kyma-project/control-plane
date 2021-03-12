@@ -47,14 +47,14 @@ func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 	if err != nil {
 		failureReason := fmt.Sprintf("Unable to determine cls service manager region %v: %s", skrRegion, err)
 		log.Error(failureReason)
-		return s.operationManager.OperationFailed(operation, failureReason)
+		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
 
 	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, smRegion)
 	if err != nil {
 		failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
 		log.Error(failureReason)
-		return s.operationManager.OperationFailed(operation, failureReason)
+		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
 
 	log.Infof("Starting provisioning a cls instance for global account %s", globalAccountID)
@@ -70,20 +70,19 @@ func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 	if err != nil {
 		failureReason := fmt.Sprintf("Unable to provision a cls instance for global account %s: %s", globalAccountID, err)
 		log.Error(failureReason)
-		return s.operationManager.OperationFailed(operation, failureReason)
+		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
-
-	operation.Cls.Region = result.Region
-	operation.Cls.Instance.InstanceID = result.InstanceID
-	operation.Cls.Instance.ProvisioningTriggered = result.ProvisioningTriggered
-
 	log.Infof("Finished provisioning a cls instance for global account %s", globalAccountID)
 
-	_, repeat := s.operationManager.UpdateOperation(operation)
+	op, repeat := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+		operation.Cls.Region = result.Region
+		operation.Cls.Instance.InstanceID = result.InstanceID
+		operation.Cls.Instance.ProvisioningTriggered = result.ProvisioningTriggered
+	}, log)
 	if repeat != 0 {
 		log.Errorf("Unable to update operation: %s", err)
 		return operation, time.Second, nil
 	}
 
-	return operation, 0, nil
+	return op, 0, nil
 }

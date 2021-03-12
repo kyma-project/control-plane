@@ -8,6 +8,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	inputAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
@@ -15,7 +16,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
@@ -67,10 +67,10 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				Name:              ptr.String(shootName),
+				Name:              shootName,
 				KubernetesVersion: k8sVersion,
-				DiskType:          "pd-standard",
-				VolumeSizeGb:      30,
+				DiskType:          ptr.String("pd-standard"),
+				VolumeSizeGb:      ptr.Integer(30),
 				MachineType:       "n1-standard-4",
 				Region:            "europe-west4-a",
 				Provider:          "gcp",
@@ -170,24 +170,20 @@ func TestCreateRuntimeStep_RunWithBadRequestError(t *testing.T) {
 }
 
 func fixOperationCreateRuntime(t *testing.T, planID, region string) internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     operationID,
-			InstanceID:             instanceID,
-			UpdatedAt:              time.Now(),
-			State:                  domain.InProgress,
-			ProvisioningParameters: fixProvisioningParameters(planID, region),
-			InstanceDetails:        internal.InstanceDetails{ShootName: shootName},
-		},
-		InputCreator: fixInputCreator(t),
-	}
+	provisioningOperation := fixture.FixProvisioningOperation(operationID, instanceID)
+	provisioningOperation.State = domain.InProgress
+	provisioningOperation.InputCreator = fixInputCreator(t)
+	provisioningOperation.InstanceDetails.ShootName = shootName
+	provisioningOperation.ProvisioningParameters = fixProvisioningParameters(planID, region)
+
+	return provisioningOperation
 }
 
 func fixInstance() internal.Instance {
-	return internal.Instance{
-		InstanceID:      instanceID,
-		GlobalAccountID: globalAccountID,
-	}
+	instance := fixture.FixInstance(instanceID)
+	instance.GlobalAccountID = globalAccountID
+
+	return instance
 }
 
 func fixProvisioningParameters(planID, region string) internal.ProvisioningParameters {

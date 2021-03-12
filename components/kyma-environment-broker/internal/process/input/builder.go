@@ -4,7 +4,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	cloudProvider "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
@@ -80,7 +79,7 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	switch planID {
-	case broker.GCPPlanID, broker.AWSPlanID, broker.AzurePlanID, broker.AzureLitePlanID, broker.TrialPlanID:
+	case broker.AWSPlanID, broker.GCPPlanID, broker.AzurePlanID, broker.AzureLitePlanID, broker.TrialPlanID, broker.OpenStackPlanID:
 		return true
 	default:
 		return false
@@ -92,6 +91,8 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, par
 	switch planID {
 	case broker.GCPPlanID:
 		provider = &cloudProvider.GcpInput{}
+	case broker.OpenStackPlanID:
+		provider = &cloudProvider.OpenStackInput{}
 	case broker.AzurePlanID:
 		provider = &cloudProvider.AzureInput{}
 	case broker.AzureLitePlanID:
@@ -200,9 +201,6 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 	}
 
 	provisionInput.ClusterConfig.GardenerConfig.KubernetesVersion = f.config.KubernetesVersion
-	if provisionInput.ClusterConfig.GardenerConfig.Name == nil {
-		provisionInput.ClusterConfig.GardenerConfig.Name = ptr.String("")
-	}
 	if provisionInput.ClusterConfig.GardenerConfig.Purpose == nil {
 		provisionInput.ClusterConfig.GardenerConfig.Purpose = &f.config.DefaultGardenerShootPurpose
 	}
@@ -325,12 +323,6 @@ func (f *InputBuilderFactory) initUpgradeShootInput(provider HyperscalerInputPro
 	if defaults.GardenerConfig.MachineType != "" {
 		input.GardenerConfig.MachineType = &defaults.GardenerConfig.MachineType
 	}
-	if defaults.GardenerConfig.DiskType != "" {
-		input.GardenerConfig.DiskType = &defaults.GardenerConfig.DiskType
-	}
-	if defaults.GardenerConfig.VolumeSizeGb != 0 {
-		input.GardenerConfig.VolumeSizeGb = &defaults.GardenerConfig.VolumeSizeGb
-	}
 	if defaults.GardenerConfig.AutoScalerMin != 0 {
 		input.GardenerConfig.AutoScalerMin = &defaults.GardenerConfig.AutoScalerMin
 	}
@@ -350,6 +342,8 @@ func (f *InputBuilderFactory) initUpgradeShootInput(provider HyperscalerInputPro
 		input.GardenerConfig.MaxUnavailable = &defaults.GardenerConfig.MaxUnavailable
 	}
 	input.GardenerConfig.Purpose = defaults.GardenerConfig.Purpose
+	input.GardenerConfig.DiskType = defaults.GardenerConfig.DiskType
+	input.GardenerConfig.VolumeSizeGb = defaults.GardenerConfig.VolumeSizeGb
 
 	return input
 }

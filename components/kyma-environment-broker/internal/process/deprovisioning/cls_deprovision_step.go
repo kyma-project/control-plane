@@ -50,7 +50,7 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 	if err != nil {
 		failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
 		log.Error(failureReason)
-		return s.operationManager.OperationFailed(operation, failureReason)
+		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
 
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
@@ -66,9 +66,10 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 			log.Error(failureReason)
 			return s.operationManager.RetryOperation(operation, failureReason, 1*time.Minute, 5*time.Minute, log)
 		}
-
-		operation.Cls.Instance.DeprovisioningTriggered = true
-		return s.operationManager.UpdateOperation(operation)
+		operation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
+			operation.Cls.Instance.DeprovisioningTriggered = true
+		}, log)
+		return operation, retry, nil
 	}
 
 	return s.checkDeprovisioningStatus(operation, log, smClient)
@@ -92,12 +93,13 @@ func (s *ClsDeprovisionStep) checkDeprovisioningStatus(operation internal.Deprov
 	case servicemanager.Failed:
 		failureReason := fmt.Sprintf("Deprovisioning of a cls instance %s failed", instanceID)
 		log.Error(failureReason)
-		return s.operationManager.OperationFailed(operation, failureReason)
-	case servicemanager.Succeeded:
-		operation.Cls.Instance.InstanceID = ""
-		operation.Cls.Instance.Provisioned = false
+		return s.operationManager.OperationFailed(operation, failureReason, log)
+	default:
 		log.Debugf("Finished deprovisioning a cls instance %s", instanceID)
+		updatedOperation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
+			operation.Cls.Instance.InstanceID = ""
+			operation.Cls.Instance.Provisioned = false
+		}, log)
+		return updatedOperation, retry, nil
 	}
-
-	return s.operationManager.UpdateOperation(operation)
 }

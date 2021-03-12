@@ -33,20 +33,20 @@ func NewDelegator(client *Client, avsConfig Config, os storage.Operations) *Dele
 	}
 }
 
-func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant, url string) (internal.ProvisioningOperation, time.Duration, error) {
-	logger.Infof("starting the step avs internal id [%d] and avs external id [%d]", operation.Avs.AvsEvaluationInternalId, operation.Avs.AVSEvaluationExternalId)
+func (del *Delegator) CreateEvaluation(log logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant, url string) (internal.ProvisioningOperation, time.Duration, error) {
+	log.Infof("starting the step avs internal id [%d] and avs external id [%d]", operation.Avs.AvsEvaluationInternalId, operation.Avs.AVSEvaluationExternalId)
 
 	var updatedOperation internal.ProvisioningOperation
 	d := 0 * time.Second
 
 	if evalAssistant.IsAlreadyCreated(operation.Avs) {
-		logger.Infof("step has already been finished previously")
+		log.Infof("step has already been finished previously")
 		updatedOperation = operation
 	} else {
-		logger.Infof("making avs calls to create the Evaluation")
+		log.Infof("making avs calls to create the Evaluation")
 		evaluationObject, err := evalAssistant.CreateBasicEvaluationRequest(operation, url)
 		if err != nil {
-			logger.Errorf("step failed with error %v", err)
+			log.Errorf("step failed with error %v", err)
 			return operation, 5 * time.Second, nil
 		}
 
@@ -55,18 +55,17 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 		case err == nil:
 		case kebError.IsTemporaryError(err):
 			errMsg := "cannot create AVS evaluation (temporary)"
-			logger.Errorf("%s: %s", errMsg, err)
+			log.Errorf("%s: %s", errMsg, err)
 			retryConfig := evalAssistant.provideRetryConfig()
-			return del.provisionManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
+			return del.provisionManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, log)
 		default:
 			errMsg := "cannot create AVS evaluation"
-			logger.Errorf("%s: %s", errMsg, err)
-			return del.provisionManager.OperationFailed(operation, errMsg)
+			log.Errorf("%s: %s", errMsg, err)
+			return del.provisionManager.OperationFailed(operation, errMsg, log)
 		}
-
-		evalAssistant.SetEvalId(&operation.Avs, evalResp.Id)
-
-		updatedOperation, d = del.provisionManager.UpdateOperation(operation)
+		updatedOperation, d = del.provisionManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+			evalAssistant.SetEvalId(&operation.Avs, evalResp.Id)
+		}, log)
 	}
 
 	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.Avs.AvsEvaluationInternalId, updatedOperation.ProvisioningParameters)
@@ -74,12 +73,12 @@ func (del *Delegator) CreateEvaluation(logger logrus.FieldLogger, operation inte
 	return updatedOperation, d, nil
 }
 
-func (del *Delegator) AddTags(logger logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant, tags []*Tag) (internal.ProvisioningOperation, time.Duration, error) {
-	logger.Infof("starting the AddTag to avs internal id [%d]", operation.Avs.AvsEvaluationInternalId)
+func (del *Delegator) AddTags(log logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant, tags []*Tag) (internal.ProvisioningOperation, time.Duration, error) {
+	log.Infof("starting the AddTag to avs internal id [%d]", operation.Avs.AvsEvaluationInternalId)
 	var updatedOperation internal.ProvisioningOperation
 	d := 0 * time.Second
 
-	logger.Infof("making avs calls to add tags to the Evaluation")
+	log.Infof("making avs calls to add tags to the Evaluation")
 	evalID := evalAssistant.GetEvaluationId(operation.Avs)
 
 	for _, tag := range tags {
@@ -88,24 +87,24 @@ func (del *Delegator) AddTags(logger logrus.FieldLogger, operation internal.Prov
 		case err == nil:
 		case kebError.IsTemporaryError(err):
 			errMsg := "cannot add tags to AVS evaluation (temporary)"
-			logger.Errorf("%s: %s", errMsg, err)
+			log.Errorf("%s: %s", errMsg, err)
 			retryConfig := evalAssistant.provideRetryConfig()
-			op, duration, err := del.provisionManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, logger)
+			op, duration, err := del.provisionManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, log)
 			return op, duration, err
 		default:
 			errMsg := "cannot add tags to AVS evaluation"
-			logger.Errorf("%s: %s", errMsg, err)
-			op, duration, err := del.provisionManager.OperationFailed(operation, errMsg)
+			log.Errorf("%s: %s", errMsg, err)
+			op, duration, err := del.provisionManager.OperationFailed(operation, errMsg, log)
 			return op, duration, err
 		}
 	}
 
-	updatedOperation, d = del.provisionManager.UpdateOperation(operation)
+	updatedOperation, d = del.provisionManager.SimpleUpdateOperation(operation)
 
 	return updatedOperation, d, nil
 }
 
-func (del *Delegator) ResetStatus(logger logrus.FieldLogger, lifecycleData *internal.AvsLifecycleData, evalAssistant EvalAssistant) error {
+func (del *Delegator) ResetStatus(log logrus.FieldLogger, lifecycleData *internal.AvsLifecycleData, evalAssistant EvalAssistant) error {
 	status := evalAssistant.GetOriginalEvalStatus(*lifecycleData)
 	// For cases when operation is not loaded (properly) from DB, status fields will be rendered
 	// invalid. This will lead to a failing operation on reset in the following scenario:
@@ -114,23 +113,23 @@ func (del *Delegator) ResetStatus(logger logrus.FieldLogger, lifecycleData *inte
 	// When launching post operation logic, SetStatus will be invoked with invalid value, failing the operation.
 	// One of possible hotfixes is to ensure that for invalid status there is a default value (such as Active).
 	if !ValidStatus(status) {
-		logger.Errorf("invalid status for ResetStatus: %s", status)
+		log.Errorf("invalid status for ResetStatus: %s", status)
 		status = StatusActive
 	}
 
-	return del.SetStatus(logger, lifecycleData, evalAssistant, status)
+	return del.SetStatus(log, lifecycleData, evalAssistant, status)
 }
 
 // RefreshStatus ensures that operation AVS lifecycle data is fetched from Avs API
-func (del *Delegator) RefreshStatus(logger logrus.FieldLogger, lifecycleData *internal.AvsLifecycleData, evalAssistant EvalAssistant) string {
+func (del *Delegator) RefreshStatus(log logrus.FieldLogger, lifecycleData *internal.AvsLifecycleData, evalAssistant EvalAssistant) string {
 	evalID := evalAssistant.GetEvaluationId(*lifecycleData)
 	currentStatus := evalAssistant.GetEvalStatus(*lifecycleData)
 
 	// obtain status from avs
-	logger.Infof("making avs calls to get evaluation data")
+	log.Infof("making avs calls to get evaluation data")
 	eval, err := del.client.GetEvaluation(evalID)
 	if err != nil || eval == nil {
-		logger.Errorf("cannot obtain evaluation data on RefreshStatus: %s", err)
+		log.Errorf("cannot obtain evaluation data on RefreshStatus: %s", err)
 	} else {
 		currentStatus = eval.Status
 	}
@@ -140,7 +139,7 @@ func (del *Delegator) RefreshStatus(logger logrus.FieldLogger, lifecycleData *in
 	return currentStatus
 }
 
-func (del *Delegator) SetStatus(logger logrus.FieldLogger, lifecycleData *internal.AvsLifecycleData, evalAssistant EvalAssistant, status string) error {
+func (del *Delegator) SetStatus(log logrus.FieldLogger, lifecycleData *internal.AvsLifecycleData, evalAssistant EvalAssistant, status string) error {
 	// skip for non-existent or deleted evaluation
 	if !evalAssistant.IsValid(*lifecycleData) {
 		return nil
@@ -149,33 +148,32 @@ func (del *Delegator) SetStatus(logger logrus.FieldLogger, lifecycleData *intern
 	// fail for invalid status request
 	if !ValidStatus(status) {
 		errMsg := fmt.Sprintf("avs SetStatus tried invalid status: %s", status)
-		logger.Error(errMsg)
+		log.Error(errMsg)
 		return errors.New(errMsg)
 	}
 
 	evalID := evalAssistant.GetEvaluationId(*lifecycleData)
-	currentStatus := del.RefreshStatus(logger, lifecycleData, evalAssistant)
+	currentStatus := del.RefreshStatus(log, lifecycleData, evalAssistant)
 
-	logger.Infof("SetStatus %s to avs id [%d]", status, evalID)
+	log.Infof("SetStatus %s to avs id [%d]", status, evalID)
 
 	// do api call iff current and requested status are different
 	if currentStatus != status {
-		logger.Infof("making avs calls to set status %s to the evaluation", status)
+		log.Infof("making avs calls to set status %s to the evaluation", status)
 		_, err := del.client.SetStatus(evalID, status)
 
 		switch {
 		case err == nil:
 		case kebError.IsTemporaryError(err):
 			errMsg := "cannot set status to AVS evaluation (temporary)"
-			logger.Errorf("%s: %s", errMsg, err)
+			log.Errorf("%s: %s", errMsg, err)
 			return err
 		default:
 			errMsg := "cannot set status to AVS evaluation"
-			logger.Errorf("%s: %s", errMsg, err)
+			log.Errorf("%s: %s", errMsg, err)
 			return err
 		}
 	}
-
 	// update operation with newly configured status
 	evalAssistant.SetEvalStatus(lifecycleData, status)
 

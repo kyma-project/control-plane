@@ -10,6 +10,7 @@ import (
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/pkg/errors"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/mux"
@@ -487,6 +488,10 @@ func (tmr testMutationResolver) DeprovisionRuntime(_ context.Context, id string)
 	return tmr.runtime.deprovisionOperationID, nil
 }
 
+func (tmr testMutationResolver) HibernateRuntime(ctx context.Context, id string) (*schema.OperationStatus, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (tmr testMutationResolver) RollBackUpgradeOperation(_ context.Context, id string) (*schema.RuntimeStatus, error) {
 	return nil, nil
 }
@@ -564,6 +569,8 @@ func fixProvisionRuntimeInput() schema.ProvisionRuntimeInput {
 		ClusterConfig: &schema.ClusterConfigInput{
 			GardenerConfig: &schema.GardenerConfigInput{
 				ProviderSpecificConfig: &schema.ProviderSpecificInput{},
+				Name:                   "abcd",
+				VolumeSizeGb:           ptr.Integer(50),
 			},
 		},
 		KymaConfig: &schema.KymaConfigInput{

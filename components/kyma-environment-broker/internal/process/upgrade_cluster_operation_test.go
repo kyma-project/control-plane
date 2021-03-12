@@ -5,10 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,7 +24,7 @@ func TestUpgradeClusterOperationManager_OperationSucceeded(t *testing.T) {
 	require.NoError(t, err)
 
 	// when
-	op, when, err := opManager.OperationSucceeded(op, "task succeeded")
+	op, when, err := opManager.OperationSucceeded(op, "task succeeded", logrus.New())
 
 	// then
 	assert.NoError(t, err)
@@ -43,7 +44,7 @@ func TestUpgradeClusterOperationManager_OperationFailed(t *testing.T) {
 	errMsg := "task failed miserably"
 
 	// when
-	op, when, err := opManager.OperationFailed(op, errMsg)
+	op, when, err := opManager.OperationFailed(op, errMsg, logrus.New())
 
 	// then
 	assert.Error(t, err)
@@ -87,26 +88,11 @@ func TestUpgradeClusterOperationManager_RetryOperation(t *testing.T) {
 }
 
 func fixUpgradeClusterOperation() internal.UpgradeClusterOperation {
-	return internal.UpgradeClusterOperation{
-		Operation: internal.Operation{
-			ID:                     "2c538027-d1c4-41ef-a26c-c9604483cb6d",
-			Version:                0,
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Time{},
-			InstanceID:             "2b6645a1-87e7-491d-bce3-cc0fbe16b6c0",
-			ProvisionerOperationID: "",
-			State:                  domain.InProgress,
-			Description:            "op description",
-			ProvisioningParameters: internal.ProvisioningParameters{},
-		},
-		RuntimeOperation: orchestration.RuntimeOperation{
-			ID: "2c538027-d1c4-41ef-a26c-c9604483cb6d",
-			Runtime: orchestration.Runtime{
-				SubAccountID: "",
-				RuntimeID:    "",
-			},
-			DryRun: false,
-		},
-		InputCreator: nil,
-	}
+	upgradeOperation := fixture.FixUpgradeClusterOperation(
+		"2c538027-d1c4-41ef-a26c-c9604483cb6d",
+		"2b6645a1-87e7-491d-bce3-cc0fbe16b6c0",
+	)
+	upgradeOperation.State = domain.InProgress
+
+	return upgradeOperation
 }

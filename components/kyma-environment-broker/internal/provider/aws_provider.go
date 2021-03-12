@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -33,8 +35,8 @@ type (
 func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			DiskType:       "gp2",
-			VolumeSizeGb:   50,
+			DiskType:       ptr.String("gp2"),
+			VolumeSizeGb:   ptr.Integer(50),
 			MachineType:    "m4.2xlarge",
 			Region:         DefaultAWSRegion,
 			Provider:       "aws",
@@ -93,8 +95,8 @@ func (p *AWSInput) Profile() gqlschema.KymaProfile {
 func (p *AWSTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			DiskType:       "gp2",
-			VolumeSizeGb:   50,
+			DiskType:       ptr.String("gp2"),
+			VolumeSizeGb:   ptr.Integer(50),
 			MachineType:    "m4.xlarge",
 			Region:         DefaultAWSRegion,
 			Provider:       "aws",

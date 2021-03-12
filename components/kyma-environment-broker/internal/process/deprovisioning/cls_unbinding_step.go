@@ -41,7 +41,7 @@ func (s *ClsUnbindStep) Run(operation internal.DeprovisioningOperation, log logr
 	if err != nil {
 		failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
 		log.Error(failureReason)
-		return s.operationManager.OperationFailed(operation, failureReason)
+		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
 	smCli := operation.SMClientFactory.ForCredentials(smCredentials)
 
@@ -52,15 +52,17 @@ func (s *ClsUnbindStep) Run(operation internal.DeprovisioningOperation, log logr
 		return s.handleError(operation, err, log, fmt.Sprintf("unable to unbind, bindingId=%s", operation.Cls.Binding.BindingID))
 	}
 	log.Infof("unbinding for CLS instance: %s finished", operation.Cls.Instance.InstanceID)
-	operation.Cls.Binding.BindingID = ""
-	operation.Cls.Binding.Bound = false
-	operation.Cls.Overrides = ""
 
-	return s.operationManager.UpdateOperation(operation)
+	updatedOperation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
+		operation.Cls.Binding.BindingID = ""
+		operation.Cls.Binding.Bound = false
+		operation.Cls.Overrides = ""
+	}, log)
+	return updatedOperation, retry, nil
 }
 
 func (s *ClsUnbindStep) handleError(operation internal.DeprovisioningOperation, err error, log logrus.FieldLogger,
 	msg string) (internal.DeprovisioningOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
-	return s.operationManager.OperationFailed(operation, msg)
+	return s.operationManager.OperationFailed(operation, msg, log)
 }

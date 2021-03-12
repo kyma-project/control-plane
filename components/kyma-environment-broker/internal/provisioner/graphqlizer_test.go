@@ -151,12 +151,12 @@ func Test_GardenerConfigInputToGraphQL(t *testing.T) {
 	// when
 	name := "c-90a3016"
 	got, err := sut.GardenerConfigInputToGraphQL(gqlschema.GardenerConfigInput{
-		Name:              &name,
+		Name:              name,
 		Region:            "europe",
-		VolumeSizeGb:      50,
+		VolumeSizeGb:      ptr.Integer(50),
 		WorkerCidr:        "10.250.0.0/19",
 		Provider:          "Azure",
-		DiskType:          "Standard_LRS",
+		DiskType:          ptr.String("Standard_LRS"),
 		TargetSecret:      "scr",
 		MachineType:       "Standard_D4_v3",
 		KubernetesVersion: "1.18",
@@ -191,12 +191,12 @@ func Test_GardenerConfigInputToGraphQLWithMachineImage(t *testing.T) {
 	// when
 	name := "c-90a3016"
 	got, err := sut.GardenerConfigInputToGraphQL(gqlschema.GardenerConfigInput{
-		Name:                &name,
+		Name:                name,
 		Region:              "europe",
-		VolumeSizeGb:        50,
+		VolumeSizeGb:        ptr.Integer(50),
 		WorkerCidr:          "10.250.0.0/19",
 		Provider:            "Azure",
-		DiskType:            "Standard_LRS",
+		DiskType:            ptr.String("Standard_LRS"),
 		TargetSecret:        "scr",
 		MachineType:         "Standard_D4_v3",
 		KubernetesVersion:   "1.18",
@@ -335,6 +335,49 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, exp, got)
+}
+
+func TestOpenstack(t *testing.T) {
+	// given
+	input := gqlschema.ProviderSpecificInput{
+		OpenStackConfig: &gqlschema.OpenStackProviderConfigInput{
+			Zones:                []string{"z1"},
+			FloatingPoolName:     "fp",
+			CloudProfileName:     "cp",
+			LoadBalancerProvider: "lbp",
+		},
+	}
+
+	g := &Graphqlizer{}
+
+	// when
+	got, err := g.GardenerConfigInputToGraphQL(gqlschema.GardenerConfigInput{
+		ProviderSpecificConfig: &input,
+	})
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, `{
+		kubernetesVersion: "",
+		machineType: "",
+		region: "",
+		provider: "",
+		targetSecret: "",
+		workerCidr: "",
+        autoScalerMin: 0,
+        autoScalerMax: 0,
+        maxSurge: 0,
+		maxUnavailable: 0,
+		providerSpecificConfig: {
+			openStackConfig: {
+		zones: ["z1"],
+		floatingPoolName: "fp",
+		cloudProfileName: "cp",
+		loadBalancerProvider: "lbp"
+},
+        }
+	}`, got)
+
 }
 
 func strPrt(s string) *string {

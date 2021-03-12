@@ -8,18 +8,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -1381,6 +1379,7 @@ func fixInstance(testData instanceData) *internal.Instance {
 	instance.ProviderRegion = testData.val
 	instance.Parameters.ErsContext.SubAccountID = suid
 	instance.Parameters.ErsContext.GlobalAccountID = gaid
+	instance.InstanceDetails = internal.InstanceDetails{}
 
 	return &instance
 }
@@ -1407,6 +1406,7 @@ func fixProvisioningParameters() internal.ProvisioningParameters {
 	pp := fixture.FixProvisioningParameters("test")
 	pp.PlanID = broker.TrialPlanID
 	pp.ServiceID = broker.KymaServiceID
+
 	return pp
 }
 

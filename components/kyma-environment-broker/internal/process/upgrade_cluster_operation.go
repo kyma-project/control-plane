@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -20,8 +21,8 @@ func NewUpgradeClusterOperationManager(storage storage.Operations) *UpgradeClust
 }
 
 // OperationSucceeded marks the operation as succeeded and only repeats it if there is a storage error
-func (om *UpgradeClusterOperationManager) OperationSucceeded(operation internal.UpgradeClusterOperation, description string) (internal.UpgradeClusterOperation, time.Duration, error) {
-	updatedOperation, repeat := om.update(operation, orchestration.Succeeded, description)
+func (om *UpgradeClusterOperationManager) OperationSucceeded(operation internal.UpgradeClusterOperation, description string, log logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error) {
+	updatedOperation, repeat := om.update(operation, orchestration.Succeeded, description, log)
 	// repeat in case of storage error
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
@@ -31,8 +32,8 @@ func (om *UpgradeClusterOperationManager) OperationSucceeded(operation internal.
 }
 
 // OperationFailed marks the operation as failed and only repeats it if there is a storage error
-func (om *UpgradeClusterOperationManager) OperationFailed(operation internal.UpgradeClusterOperation, description string) (internal.UpgradeClusterOperation, time.Duration, error) {
-	updatedOperation, repeat := om.update(operation, orchestration.Failed, description)
+func (om *UpgradeClusterOperationManager) OperationFailed(operation internal.UpgradeClusterOperation, description string, log logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error) {
+	updatedOperation, repeat := om.update(operation, orchestration.Failed, description, log)
 	// repeat in case of storage error
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
@@ -42,8 +43,8 @@ func (om *UpgradeClusterOperationManager) OperationFailed(operation internal.Upg
 }
 
 // OperationSucceeded marks the operation as succeeded and only repeats it if there is a storage error
-func (om *UpgradeClusterOperationManager) OperationCanceled(operation internal.UpgradeClusterOperation, description string) (internal.UpgradeClusterOperation, time.Duration, error) {
-	updatedOperation, repeat := om.update(operation, orchestration.Canceled, description)
+func (om *UpgradeClusterOperationManager) OperationCanceled(operation internal.UpgradeClusterOperation, description string, log logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error) {
+	updatedOperation, repeat := om.update(operation, orchestration.Canceled, description, log)
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
 	}
@@ -61,16 +62,42 @@ func (om *UpgradeClusterOperationManager) RetryOperation(operation internal.Upgr
 		return operation, retryInterval, nil
 	}
 	log.Errorf("Aborting after %s of failing retries", maxTime.String())
-	return om.OperationFailed(operation, errorMessage)
+	return om.OperationFailed(operation, errorMessage, log)
 }
 
 // UpdateOperation updates a given operation
-func (om *UpgradeClusterOperationManager) UpdateOperation(operation internal.UpgradeClusterOperation) (internal.UpgradeClusterOperation, time.Duration) {
+func (om *UpgradeClusterOperationManager) UpdateOperation(operation internal.UpgradeClusterOperation, update func(operation *internal.UpgradeClusterOperation), log logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration) {
+	update(&operation)
+	updatedOperation, err := om.storage.UpdateUpgradeClusterOperation(operation)
+	switch {
+	case dberr.IsConflict(err):
+		{
+			op, err := om.storage.GetUpgradeClusterOperationByID(operation.Operation.ID)
+			if err != nil {
+				log.Errorf("while getting operation: %v", err)
+				return operation, 1 * time.Minute
+			}
+			update(op)
+			updatedOperation, err = om.storage.UpdateUpgradeClusterOperation(*op)
+			if err != nil {
+				log.Errorf("while updating operation after conflict: %v", err)
+				return operation, 1 * time.Minute
+			}
+		}
+	case err != nil:
+		log.Errorf("while updating operation: %v", err)
+		return operation, 1 * time.Minute
+	}
+	return *updatedOperation, 0
+}
+
+// Deprecated: SimpleUpdateOperation updates a given operation without handling conflicts. Should be used when operation's data mutations are not clear
+func (om *UpgradeClusterOperationManager) SimpleUpdateOperation(operation internal.UpgradeClusterOperation) (internal.UpgradeClusterOperation, time.Duration) {
 	updatedOperation, err := om.storage.UpdateUpgradeClusterOperation(operation)
 	if err != nil {
 		logrus.WithField("orchestrationID", operation.OrchestrationID).
 			WithField("instanceID", operation.InstanceID).
-			Errorf("Update provisioning operation failed: %s", err.Error())
+			Errorf("Update upgradeCluster operation failed: %s", err.Error())
 		return operation, 1 * time.Minute
 	}
 	return *updatedOperation, 0
@@ -86,7 +113,7 @@ func (om *UpgradeClusterOperationManager) RetryOperationWithoutFail(operation in
 		return operation, retryInterval, nil
 	}
 	// update description to track failed steps
-	updatedOperation, repeat := om.update(operation, domain.InProgress, description)
+	updatedOperation, repeat := om.update(operation, domain.InProgress, description, log)
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
 	}
@@ -95,9 +122,9 @@ func (om *UpgradeClusterOperationManager) RetryOperationWithoutFail(operation in
 	return updatedOperation, 0, nil
 }
 
-func (om *UpgradeClusterOperationManager) update(operation internal.UpgradeClusterOperation, state domain.LastOperationState, description string) (internal.UpgradeClusterOperation, time.Duration) {
-	operation.State = state
-	operation.Description = description
-
-	return om.UpdateOperation(operation)
+func (om *UpgradeClusterOperationManager) update(operation internal.UpgradeClusterOperation, state domain.LastOperationState, description string, log logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration) {
+	return om.UpdateOperation(operation, func(operation *internal.UpgradeClusterOperation) {
+		operation.State = state
+		operation.Description = description
+	}, log)
 }

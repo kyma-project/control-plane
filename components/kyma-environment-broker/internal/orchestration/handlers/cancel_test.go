@@ -1,16 +1,15 @@
 package handlers
 
 import (
+	"testing"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"testing"
-	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -88,12 +87,8 @@ func isCanceling(s storage.Orchestrations) (bool, error) {
 }
 
 func fixOrchestration() internal.Orchestration {
-	n := time.Now()
-	return internal.Orchestration{
-		OrchestrationID: fixOrchestrationID,
-		State:           orchestration.InProgress,
-		CreatedAt:       n,
-		UpdatedAt:       n,
-		Parameters:      orchestration.Parameters{},
-	}
+	o := fixture.FixOrchestration(fixOrchestrationID)
+	o.State = orchestration.InProgress
+
+	return o
 }

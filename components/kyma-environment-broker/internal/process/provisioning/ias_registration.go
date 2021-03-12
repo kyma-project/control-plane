@@ -36,7 +36,7 @@ func (s *IASRegistrationStep) Run(operation internal.ProvisioningOperation, log 
 		if err != nil {
 			msg := "failed to create new ServiceProvider Bundle"
 			log.Errorf("%s: %s", msg, err)
-			return s.operationManager.OperationFailed(operation, msg)
+			return s.operationManager.OperationFailed(operation, msg, log)
 		}
 
 		log.Infof("Check if IAS ServiceProvider %q already exist", spb.ServiceProviderName())
@@ -95,6 +95,6 @@ func (s *IASRegistrationStep) handleError(operation internal.ProvisioningOperati
 	case kebError.IsTemporaryError(err):
 		return s.operationManager.RetryOperation(operation, msg, 10*time.Second, time.Minute*30, log)
 	default:
-		return s.operationManager.OperationFailed(operation, msg)
+		return s.operationManager.OperationFailed(operation, msg, log)
 	}
 }

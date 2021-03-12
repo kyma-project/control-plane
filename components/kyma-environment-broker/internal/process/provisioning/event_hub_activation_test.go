@@ -4,13 +4,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
 )
 
 //go:generate mockery -name=Step -output=automock -outpkg=automock -case=underscore
@@ -25,7 +25,7 @@ func TestSkipForTrialPlanStepShouldSkip(t *testing.T) {
 	mockStep := &automock.Step{}
 	mockStep.On("Name").Return("Test")
 
-	skipStep := NewSkipForTrialPlanStep(mockStep)
+	skipStep := NewAzureEventHubActivationStep(mockStep)
 
 	// When
 	returnedOperation, time, err := skipStep.Run(operation, log)
@@ -48,7 +48,7 @@ func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 	mockStep := &automock.Step{}
 	mockStep.On("Run", operation, log).Return(anotherOperation, skipTime, nil)
 
-	skipStep := NewSkipForTrialPlanStep(mockStep)
+	skipStep := NewAzureEventHubActivationStep(mockStep)
 
 	// When
 	returnedOperation, time, err := skipStep.Run(operation, log)
@@ -62,12 +62,8 @@ func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 }
 
 func fixOperationWithPlanID(planID string) internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     operationID,
-			InstanceID:             instanceID,
-			UpdatedAt:              time.Now(),
-			ProvisioningParameters: fixProvisioningParametersWithPlanID(planID, "region"),
-		},
-	}
+	provisioningOperation := fixture.FixProvisioningOperation(operationID, instanceID)
+	provisioningOperation.ProvisioningParameters = fixProvisioningParametersWithPlanID(planID, "region")
+
+	return provisioningOperation
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
@@ -43,6 +45,17 @@ func (s *EmsUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, l
 		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manage client"))
 	}
 
+	if operation.Ems.Instance.InstanceID == "" {
+		op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
+			operation.Ems.Instance.InstanceID = uuid.New().String()
+		}, log)
+		if retry > 0 {
+			log.Errorf("unable to update operation")
+			return operation, time.Second, nil
+		}
+		operation = op
+	}
+
 	// provision
 	operation, _, err = s.provision(smCli, operation, log)
 	if err != nil {
@@ -50,7 +63,7 @@ func (s *EmsUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, l
 	}
 	// save the status
 	operation.Ems.Instance.ProvisioningTriggered = true
-	operation, retry := s.operationManager.UpdateOperation(operation)
+	operation, retry := s.operationManager.SimpleUpdateOperation(operation)
 	if retry > 0 {
 		log.Errorf("unable to update operation")
 		return operation, time.Second, nil
@@ -67,12 +80,10 @@ func (s *EmsUpgradeProvisionStep) provision(smCli servicemanager.Client, operati
 	}
 	log.Debugf("response from EMS provisioning call: %#v", resp)
 
-	operation.Ems.Instance.InstanceID = input.ID
-
 	return operation, 0, nil
 }
 
 func (s *EmsUpgradeProvisionStep) handleError(operation internal.UpgradeKymaOperation, err error, log logrus.FieldLogger, msg string) (internal.UpgradeKymaOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
-	return s.operationManager.OperationFailed(operation, msg)
+	return s.operationManager.OperationFailed(operation, msg, log)
 }

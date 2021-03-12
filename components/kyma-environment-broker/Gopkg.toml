@@ -24,7 +24,7 @@
 
 [[constraint]]
   name = "github.com/kyma-project/control-plane"
-  revision = "21c4a144cb9378dd6519b127d80171c5977bd7c1"
+  revision = "dbd90902ce293f594793d54020287c138859f2eb"
 
 [[constraint]]
   name = "github.com/kyma-project/kyma"

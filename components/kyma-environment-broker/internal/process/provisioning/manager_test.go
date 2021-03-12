@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
@@ -100,14 +100,12 @@ func TestManager_Execute(t *testing.T) {
 }
 
 func fixProvisionOperation(ID string) internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     ID,
-			State:                  domain.InProgress,
-			InstanceID:             "fea2c1a1-139d-43f6-910a-a618828a79d5",
-			ProvisioningParameters: fixProvisioningParameters(broker.AzurePlanID, "westeurope"),
-		},
-	}
+	provisioningOperation := fixture.FixProvisioningOperation(ID, "fea2c1a1-139d-43f6-910a-a618828a79d5")
+	provisioningOperation.State = domain.InProgress
+	provisioningOperation.Description = ""
+	provisioningOperation.ProvisioningParameters = fixProvisioningParameters(broker.AzurePlanID, "westeurope")
+
+	return provisioningOperation
 }
 
 type testStep struct {

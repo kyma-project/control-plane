@@ -51,12 +51,12 @@ func (s *UpgradeClusterStep) Name() string {
 func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > s.timeSchedule.UpgradeClusterTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeClusterTimeout))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeClusterTimeout), log)
 	}
 
 	input, err := s.createUpgradeShootInput(operation)
 	if err != nil {
-		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeShoot input")
+		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeShoot input", log)
 	}
 
 	if operation.DryRun {
@@ -67,7 +67,7 @@ func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log
 		if err != nil {
 			return operation, 10 * time.Second, nil
 		}
-		return s.operationManager.OperationSucceeded(operation, "dry run succeeded")
+		return s.operationManager.OperationSucceeded(operation, "dry run succeeded", log)
 	}
 
 	var provisionerResponse gqlschema.OperationStatus
@@ -78,10 +78,11 @@ func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log
 			log.Errorf("call to provisioner failed: %s", err)
 			return operation, s.timeSchedule.Retry, nil
 		}
-		operation.ProvisionerOperationID = *provisionerResponse.ID
-		operation.Description = "cluster upgrade in progress"
 
-		operation, repeat := s.operationManager.UpdateOperation(operation)
+		operation, repeat := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeClusterOperation) {
+			op.ProvisionerOperationID = *provisionerResponse.ID
+			op.Description = "cluster upgrade in progress"
+		}, log)
 		if repeat != 0 {
 			log.Errorf("cannot save operation ID from provisioner")
 			return operation, s.timeSchedule.Retry, nil
@@ -130,6 +131,8 @@ func gardenerUpgradeInputToConfigInput(input gqlschema.UpgradeShootInput) *gqlsc
 	result := &gqlschema.GardenerConfigInput{
 		MachineImage:        input.GardenerConfig.MachineImage,
 		MachineImageVersion: input.GardenerConfig.MachineImageVersion,
+		DiskType:            input.GardenerConfig.DiskType,
+		VolumeSizeGb:        input.GardenerConfig.VolumeSizeGb,
 		Purpose:             input.GardenerConfig.Purpose,
 	}
 	if input.GardenerConfig.KubernetesVersion != nil {
@@ -137,12 +140,6 @@ func gardenerUpgradeInputToConfigInput(input gqlschema.UpgradeShootInput) *gqlsc
 	}
 	if input.GardenerConfig.MachineType != nil {
 		result.MachineType = *input.GardenerConfig.MachineType
-	}
-	if input.GardenerConfig.DiskType != nil {
-		result.DiskType = *input.GardenerConfig.DiskType
-	}
-	if input.GardenerConfig.VolumeSizeGb != nil {
-		result.VolumeSizeGb = *input.GardenerConfig.VolumeSizeGb
 	}
 	if input.GardenerConfig.AutoScalerMin != nil {
 		result.AutoScalerMin = *input.GardenerConfig.AutoScalerMin

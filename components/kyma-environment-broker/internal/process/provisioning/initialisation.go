@@ -92,7 +92,7 @@ func (s *InitialisationStep) Name() string {
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if time.Since(operation.CreatedAt) > s.operationTimeout {
 		log.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout), log)
 	}
 	operation.SMClientFactory = s.serviceManagerClientFactory
 
@@ -107,7 +107,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 		return s.checkRuntimeStatus(operation, log.WithField("runtimeID", inst.RuntimeID))
 	case dberr.IsNotFound(err):
 		log.Info("instance not exist")
-		return s.operationManager.OperationFailed(operation, "instance was not created")
+		return s.operationManager.OperationFailed(operation, "instance was not created", log)
 	default:
 		log.Errorf("unable to get instance from storage: %s", err)
 		return operation, 1 * time.Second, nil
@@ -115,7 +115,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 }
 
 func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	err := s.configureKymaVersion(&operation)
+	err := s.configureKymaVersion(&operation, log)
 	if err != nil {
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	}
@@ -131,11 +131,11 @@ func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.Pr
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	default:
 		log.Errorf("cannot create input creator for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator")
+		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", log)
 	}
 }
 
-func (s *InitialisationStep) configureKymaVersion(operation *internal.ProvisioningOperation) error {
+func (s *InitialisationStep) configureKymaVersion(operation *internal.ProvisioningOperation, log logrus.FieldLogger) error {
 	if !operation.RuntimeVersion.IsEmpty() {
 		return nil
 	}
@@ -144,10 +144,10 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.Provisioni
 		return errors.Wrap(err, "while getting the runtime version")
 	}
 
-	operation.RuntimeVersion = *version
-
 	var repeat time.Duration
-	if *operation, repeat = s.operationManager.UpdateOperation(*operation); repeat != 0 {
+	if *operation, repeat = s.operationManager.UpdateOperation(*operation, func(operation *internal.ProvisioningOperation) {
+		operation.RuntimeVersion = *version
+	}, log); repeat != 0 {
 		return errors.New("unable to update operation with RuntimeVersion property")
 	}
 	return nil
@@ -156,7 +156,7 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.Provisioni
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > s.provisioningTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout), log)
 	}
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
@@ -183,7 +183,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 		}
 		if err != nil {
 			log.Errorf("cannot handle dashboard URL: %s", err)
-			return s.operationManager.OperationFailed(operation, "cannot handle dashboard URL")
+			return s.operationManager.OperationFailed(operation, "cannot handle dashboard URL", log)
 		}
 		return s.launchPostActions(operation, instance, log, msg)
 	case gqlschema.OperationStateInProgress:
@@ -191,10 +191,10 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 	case gqlschema.OperationStatePending:
 		return operation, 2 * time.Minute, nil
 	case gqlschema.OperationStateFailed:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), log)
 	}
 
-	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()))
+	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), log)
 }
 
 func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance, log logrus.FieldLogger) (time.Duration, error) {
@@ -219,8 +219,9 @@ func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOp
 
 	// Mark post-actions in description, reset UpdatedAt as provisioning status check is completed
 	if !strings.Contains(operation.Description, postActionsDescription) {
-		operation.Description = fmt.Sprintf("%s : %s", operation.Description, postActionsDescription)
-		operation, repeat = s.operationManager.UpdateOperation(operation)
+		operation, repeat = s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+			operation.Description = fmt.Sprintf("%s : %s", operation.Description, postActionsDescription)
+		}, log)
 		if repeat != 0 {
 			return operation, repeat, nil
 		}
@@ -263,7 +264,7 @@ func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOp
 		}
 	}
 
-	return s.operationManager.OperationSucceeded(operation, msg)
+	return s.operationManager.OperationSucceeded(operation, msg, log)
 }
 
 func (s *InitialisationStep) createExternalEval(operation internal.ProvisioningOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {

@@ -42,6 +42,12 @@ func TestSchemaGenerator(t *testing.T) {
 			machineTypes: []string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"},
 			file:         "gcp-schema.json",
 		},
+		{
+			name:         "OpenStack schema is correct",
+			generator:    OpenStackSchema,
+			machineTypes: []string{"m1.large"},
+			file:         "openstack-schema.json",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

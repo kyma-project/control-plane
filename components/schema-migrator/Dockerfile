@@ -1,7 +1,7 @@
-FROM alpine:3.12.3
+FROM alpine:3.13.2
 LABEL source=git@github.com:kyma-project/control-plane.git
 
-ARG MIGRATE_VER=4.5.0
+ARG MIGRATE_VER=4.14.1
 
 WORKDIR /migrate
 
