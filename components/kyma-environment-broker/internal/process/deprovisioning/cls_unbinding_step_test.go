@@ -23,7 +23,7 @@ func TestClsUnbindStep_Run(t *testing.T) {
 		MaxDataInstances:   2,
 		MaxIngestInstances: 2,
 		SAML: &cls.SAMLConfig{
-			AdminGroup:  "runtimeAdmin",
+			AdminGroup:  "runtime-admin",
 			ExchangeKey: "base64-jibber-jabber",
 			RolesKey:    "groups",
 			Idp: &cls.SAMLIdpConfig{
