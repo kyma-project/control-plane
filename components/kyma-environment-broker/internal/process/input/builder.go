@@ -41,6 +41,7 @@ type (
 		IsPlanSupport(planID string) bool
 		CreateProvisionInput(parameters internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error)
 		CreateUpgradeInput(parameters internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error)
+		CreateUpgradeShootInput(parameters internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error)
 	}
 
 	ComponentListProvider interface {
@@ -292,4 +293,63 @@ func mergeMaps(maps ...map[string]struct{}) map[string]struct{} {
 		}
 	}
 	return res
+}
+
+func (f *InputBuilderFactory) CreateUpgradeShootInput(pp internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error) {
+	if !f.IsPlanSupport(pp.PlanID) {
+		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
+	}
+
+	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.Parameters.Provider)
+	if err != nil {
+		return nil, errors.Wrap(err, "during createing provision input")
+	}
+
+	input := f.initUpgradeShootInput(provider)
+	return &RuntimeInput{
+		upgradeShootInput:        input,
+		mutex:                    nsync.NewNamedMutex(),
+		hyperscalerInputProvider: provider,
+		trialNodesNumber:         f.config.TrialNodesNumber,
+	}, nil
+}
+
+func (f *InputBuilderFactory) initUpgradeShootInput(provider HyperscalerInputProvider) gqlschema.UpgradeShootInput {
+	defaults := provider.Defaults()
+	input := gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			KubernetesVersion: &f.config.KubernetesVersion,
+		},
+	}
+
+	if defaults.GardenerConfig.MachineType != "" {
+		input.GardenerConfig.MachineType = &defaults.GardenerConfig.MachineType
+	}
+	if defaults.GardenerConfig.DiskType != "" {
+		input.GardenerConfig.DiskType = &defaults.GardenerConfig.DiskType
+	}
+	if defaults.GardenerConfig.VolumeSizeGb != 0 {
+		input.GardenerConfig.VolumeSizeGb = &defaults.GardenerConfig.VolumeSizeGb
+	}
+	if defaults.GardenerConfig.AutoScalerMin != 0 {
+		input.GardenerConfig.AutoScalerMin = &defaults.GardenerConfig.AutoScalerMin
+	}
+	if defaults.GardenerConfig.AutoScalerMax != 0 {
+		input.GardenerConfig.AutoScalerMax = &defaults.GardenerConfig.AutoScalerMax
+	}
+	if f.config.MachineImage != "" {
+		input.GardenerConfig.MachineImage = &f.config.MachineImage
+	}
+	if f.config.MachineImageVersion != "" {
+		input.GardenerConfig.MachineImageVersion = &f.config.MachineImageVersion
+	}
+	if defaults.GardenerConfig.MaxSurge != 0 {
+		input.GardenerConfig.MaxSurge = &defaults.GardenerConfig.MaxSurge
+	}
+	if defaults.GardenerConfig.MaxUnavailable != 0 {
+		input.GardenerConfig.MaxUnavailable = &defaults.GardenerConfig.MaxUnavailable
+	}
+	input.GardenerConfig.Purpose = defaults.GardenerConfig.Purpose
+
+	return input
 }

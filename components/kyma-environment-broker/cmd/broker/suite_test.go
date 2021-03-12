@@ -105,7 +105,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 
 	avsClient, _ := avs.NewClient(ctx, avs.Config{}, logs)
 	avsDel := avs.NewDelegator(avsClient, avs.Config{}, db.Operations())
-	upgradeEvaluationManager := upgrade_kyma.NewEvaluationManager(avsDel, avs.Config{})
+	upgradeEvaluationManager := avs.NewEvaluationManager(avsDel, avs.Config{})
 	runtimeLister := kebOrchestration.NewRuntimeLister(db.Instances(), db.Operations(), kebRuntime.NewConverter(defaultRegion), logs)
 	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient.CoreV1beta1(), gardenerNamespace, runtimeLister, logs)
 

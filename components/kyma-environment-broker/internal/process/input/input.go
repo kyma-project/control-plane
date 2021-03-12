@@ -32,6 +32,7 @@ type Config struct {
 type RuntimeInput struct {
 	provisionRuntimeInput gqlschema.ProvisionRuntimeInput
 	upgradeRuntimeInput   gqlschema.UpgradeRuntimeInput
+	upgradeShootInput     gqlschema.UpgradeShootInput
 	mutex                 *nsync.NamedMutex
 	overrides             map[string][]*gqlschema.ConfigEntryInput
 	labels                map[string]string
@@ -114,7 +115,7 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 	}{
 		{
 			name:    "applying provisioning parameters customization",
-			execute: r.applyProvisioningParameters,
+			execute: r.applyProvisioningParametersForProvisionRuntime,
 		},
 		{
 			name:    "disabling components",
@@ -138,7 +139,7 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 		},
 		{
 			name:    "set number of nodes from configuration",
-			execute: r.setNodesForTrial,
+			execute: r.setNodesForTrialProvision,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -172,7 +173,7 @@ func (r *RuntimeInput) CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInpu
 		},
 		{
 			name:    "set number of nodes from configuration",
-			execute: r.setNodesForTrial,
+			execute: r.setNodesForTrialProvision,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -183,7 +184,29 @@ func (r *RuntimeInput) CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInpu
 	return r.upgradeRuntimeInput, nil
 }
 
-func (r *RuntimeInput) applyProvisioningParameters() error {
+func (r *RuntimeInput) CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, error) {
+
+	for _, step := range []struct {
+		name    string
+		execute func() error
+	}{
+		{
+			name:    "applying provisioning parameters customization",
+			execute: r.applyProvisioningParametersForUpgradeShoot,
+		},
+		{
+			name:    "setting number of trial nodes from configuration",
+			execute: r.setNodesForTrialUpgrade,
+		},
+	} {
+		if err := step.execute(); err != nil {
+			return gqlschema.UpgradeShootInput{}, errors.Wrapf(err, "while %s", step.name)
+		}
+	}
+	return r.upgradeShootInput, nil
+}
+
+func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 	params := r.provisioningParameters.Parameters
 	updateString(&r.provisionRuntimeInput.RuntimeInput.Name, &params.Name)
 
@@ -202,6 +225,34 @@ func (r *RuntimeInput) applyProvisioningParameters() error {
 	}
 
 	r.hyperscalerInputProvider.ApplyParameters(r.provisionRuntimeInput.ClusterConfig, r.provisioningParameters)
+
+	return nil
+}
+
+func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
+	params := r.provisioningParameters.Parameters
+
+	if params.MaxSurge != nil {
+		r.upgradeShootInput.GardenerConfig.MaxSurge = params.MaxSurge
+	}
+	if params.MaxUnavailable != nil {
+		r.upgradeShootInput.GardenerConfig.MaxUnavailable = params.MaxUnavailable
+	}
+	if params.AutoScalerMin != nil {
+		r.upgradeShootInput.GardenerConfig.AutoScalerMin = params.AutoScalerMin
+	}
+	if params.AutoScalerMax != nil {
+		r.upgradeShootInput.GardenerConfig.AutoScalerMax = params.AutoScalerMax
+	}
+	if params.VolumeSizeGb != nil {
+		r.upgradeShootInput.GardenerConfig.VolumeSizeGb = params.VolumeSizeGb
+	}
+	if params.MachineType != nil {
+		r.upgradeShootInput.GardenerConfig.MachineType = params.MachineType
+	}
+	if params.Purpose != nil {
+		r.upgradeShootInput.GardenerConfig.Purpose = params.Purpose
+	}
 
 	return nil
 }
@@ -311,7 +362,7 @@ func (r *RuntimeInput) addRandomStringToRuntimeName() error {
 	return nil
 }
 
-func (r *RuntimeInput) setNodesForTrial() error {
+func (r *RuntimeInput) setNodesForTrialProvision() error {
 	// parameter with number of notes for trial plan is optional; if parameter is not set value is equal to 0
 	if r.trialNodesNumber == 0 {
 		return nil
@@ -319,6 +370,18 @@ func (r *RuntimeInput) setNodesForTrial() error {
 	if broker.IsTrialPlan(r.provisioningParameters.PlanID) {
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMin = r.trialNodesNumber
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax = r.trialNodesNumber
+	}
+	return nil
+}
+
+func (r *RuntimeInput) setNodesForTrialUpgrade() error {
+	// parameter with number of notes for trial plan is optional; if parameter is not set value is equal to 0
+	if r.trialNodesNumber == 0 {
+		return nil
+	}
+	if broker.IsTrialPlan(r.provisioningParameters.PlanID) {
+		r.upgradeShootInput.GardenerConfig.AutoScalerMin = &r.trialNodesNumber
+		r.upgradeShootInput.GardenerConfig.AutoScalerMax = &r.trialNodesNumber
 	}
 	return nil
 }

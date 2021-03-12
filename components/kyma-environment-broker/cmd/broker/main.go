@@ -260,7 +260,7 @@ func main() {
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
 	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 	internalEvalUpdater := provisioning.NewInternalEvalUpdater(avsDel, internalEvalAssistant, cfg.Avs)
-	upgradeEvalManager := upgrade_kyma.NewEvaluationManager(avsDel, cfg.Avs)
+	upgradeEvalManager := avs.NewEvaluationManager(avsDel, cfg.Avs)
 
 	clientHTTPForIAS := httputil.NewClient(60, cfg.IAS.SkipCertVerification)
 	if cfg.IAS.TLSRenegotiationEnable {
@@ -510,9 +510,9 @@ func main() {
 	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, clusterQueue, cfg.MaxPaginationPage, logs)
 
 	if !cfg.DisableProcessOperationsInProgress {
-		err = processOperationsInProgressByType(dbmodel.OperationTypeProvision, db.Operations(), provisionQueue, logs)
+		err = processOperationsInProgressByType(internal.OperationTypeProvision, db.Operations(), provisionQueue, logs)
 		fatalOnError(err)
-		err = processOperationsInProgressByType(dbmodel.OperationTypeDeprovision, db.Operations(), deprovisionQueue, logs)
+		err = processOperationsInProgressByType(internal.OperationTypeDeprovision, db.Operations(), deprovisionQueue, logs)
 		fatalOnError(err)
 		err = reprocessOrchestrations(orchestrationExt.UpgradeKymaOrchestration, db.Orchestrations(), db.Operations(), kymaQueue, logs)
 		fatalOnError(err)
@@ -548,7 +548,7 @@ func main() {
 }
 
 // queues all in progress operations by type
-func processOperationsInProgressByType(opType dbmodel.OperationType, op storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
+func processOperationsInProgressByType(opType internal.OperationType, op storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
 	operations, err := op.GetNotFinishedOperationsByType(opType)
 	if err != nil {
 		return errors.Wrap(err, "while getting in progress operations from storage")
@@ -660,7 +660,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	runtimeOverrides upgrade_kyma.RuntimeOverridesAppender, provisionerClient provisioner.Client,
 	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
-	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *upgrade_kyma.EvaluationManager,
+	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager,
 	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory, logs logrus.FieldLogger) *process.Queue {
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))

@@ -5,8 +5,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -89,7 +87,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 				logStep.Errorf("Process operation failed: %s", err)
 				return 0, err
 			}
-			if operation.IsFinished() || operation.State == orchestration.Canceled {
+			if operation.IsFinished() {
 				logStep.Infof("Operation %q got status %s. Process finished.", operation.Operation.ID, operation.State)
 				return 0, nil
 			}
@@ -105,6 +103,22 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 
 	logOperation.Infof("Operation %q got status %s. All steps finished.", operation.Operation.ID, operation.State)
 	return 0, nil
+}
+
+func (m Manager) Reschedule(operationID string, maintenanceWindowBegin, maintenanceWindowEnd time.Time) error {
+	op, err := m.operationStorage.GetUpgradeKymaOperationByID(operationID)
+	if err != nil {
+		m.log.Errorf("Cannot fetch operation %s from storage: %s", operationID, err)
+		return err
+	}
+	op.MaintenanceWindowBegin = maintenanceWindowBegin
+	op.MaintenanceWindowEnd = maintenanceWindowEnd
+	op, err = m.operationStorage.UpdateUpgradeKymaOperation(*op)
+	if err != nil {
+		m.log.Errorf("Cannot update (reschedule) operation %s in storage: %s", operationID, err)
+	}
+
+	return err
 }
 
 func (m *Manager) sortWeight() []int {

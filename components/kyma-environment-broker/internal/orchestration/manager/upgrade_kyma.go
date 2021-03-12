@@ -21,7 +21,7 @@ type upgradeKymaFactory struct {
 }
 
 func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
-	kymaUpgradeExecutor process.Executor, resolver orchestration.RuntimeResolver,
+	kymaUpgradeExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver,
 	pollingInterval time.Duration, smcf *servicemanager.ClientFactory, log logrus.FieldLogger) process.Executor {
 	return &orchestrationManager{
 		orchestrationStorage: orchestrationStorage,
@@ -46,6 +46,7 @@ func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestrat
 			Version:                0,
 			CreatedAt:              time.Now(),
 			UpdatedAt:              time.Now(),
+			Type:                   internal.OperationTypeUpgradeKyma,
 			InstanceID:             r.InstanceID,
 			State:                  orchestration.Pending,
 			Description:            "Operation created",
@@ -59,6 +60,9 @@ func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestrat
 			DryRun:  o.Parameters.DryRun,
 		},
 		SMClientFactory: u.smcf,
+	}
+	if o.Parameters.Kyma.Version != "" {
+		op.RuntimeVersion = *internal.NewRuntimeVersionFromParameters(o.Parameters.Kyma.Version)
 	}
 
 	err := u.operationStorage.InsertUpgradeKymaOperation(op)

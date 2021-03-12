@@ -30,3 +30,9 @@ type UpgradeKymaStepProcessed struct {
 	OldOperation internal.UpgradeKymaOperation
 	Operation    internal.UpgradeKymaOperation
 }
+
+type UpgradeClusterStepProcessed struct {
+	StepProcessed
+	OldOperation internal.UpgradeClusterOperation
+	Operation    internal.UpgradeClusterOperation
+}

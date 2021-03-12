@@ -24,6 +24,7 @@ type ProvisionerInputCreator interface {
 	AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator
 	CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntimeInput, error)
 	CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInput, error)
+	CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, error)
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 }
 
@@ -122,14 +123,31 @@ type Instance struct {
 	Version int
 }
 
+// OperationType defines the possible types of an asynchronous operation to a broker.
+type OperationType string
+
+const (
+	// OperationTypeProvision means provisioning OperationType
+	OperationTypeProvision OperationType = "provision"
+	// OperationTypeDeprovision means deprovision OperationType
+	OperationTypeDeprovision OperationType = "deprovision"
+	// OperationTypeUndefined means undefined OperationType
+	OperationTypeUndefined OperationType = ""
+	// OperationTypeUpgradeKyma means upgrade Kyma OperationType
+	OperationTypeUpgradeKyma OperationType = "upgradeKyma"
+	// OperationTypeUpgradeCluster means upgrade cluster (shoot) OperationType
+	OperationTypeUpgradeCluster OperationType = "upgradeCluster"
+)
+
 type Operation struct {
 	// following fields are serialized to JSON and stored in the storage
 	InstanceDetails
 
-	ID        string    `json:"-"`
-	Version   int       `json:"-"`
-	CreatedAt time.Time `json:"-"`
-	UpdatedAt time.Time `json:"-"`
+	ID        string        `json:"-"`
+	Version   int           `json:"-"`
+	CreatedAt time.Time     `json:"-"`
+	UpdatedAt time.Time     `json:"-"`
+	Type      OperationType `json:"-"`
 
 	InstanceID             string                    `json:"-"`
 	ProvisionerOperationID string                    `json:"-"`
@@ -142,7 +160,7 @@ type Operation struct {
 }
 
 func (o *Operation) IsFinished() bool {
-	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceled
+	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceling
 }
 
 // Orchestration holds all information about an orchestration.
@@ -346,6 +364,7 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			State:                  domain.InProgress,
 			CreatedAt:              time.Now(),
 			UpdatedAt:              time.Now(),
+			Type:                   OperationTypeProvision,
 			ProvisioningParameters: parameters,
 			InstanceDetails: InstanceDetails{
 				SubAccountID: parameters.ErsContext.SubAccountID,
@@ -365,6 +384,7 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 			State:           domain.InProgress,
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
+			Type:            OperationTypeDeprovision,
 			InstanceDetails: instance.InstanceDetails,
 		},
 	}, nil
@@ -381,6 +401,7 @@ func NewSuspensionOperationWithID(operationID string, instance *Instance) Deprov
 			State:           orchestration.Pending,
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
+			Type:            OperationTypeDeprovision,
 			InstanceDetails: instance.InstanceDetails,
 		},
 		Temporary: true,

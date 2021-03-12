@@ -117,19 +117,6 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 	switch {
 	case err == nil:
 		if operation.State == orchestration.Pending {
-			upgrades, err := s.operationStorage.ListUpgradeKymaOperationsByInstanceID(operation.InstanceID)
-			if err != nil {
-				log.Errorf("unable to get upgrade operations for the instance")
-				return operation, time.Second, nil
-			}
-
-			for _, op := range upgrades {
-				// check if there is not finished operation
-				if op.State != domain.Failed && op.State != domain.Succeeded {
-					log.Debugf("waiting for the operation %s to be finished", op.Operation.ID)
-					return operation, time.Minute, nil
-				}
-			}
 			log.Info("Setting state 'in progress' and refreshing instance details")
 			operation.State = domain.InProgress
 			operation.InstanceDetails = instance.InstanceDetails

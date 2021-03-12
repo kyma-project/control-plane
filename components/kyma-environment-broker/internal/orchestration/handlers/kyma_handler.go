@@ -67,10 +67,10 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 	}
 
 	// validate Kyma version
-	err = h.ValidateKymaVersion(params.Version)
+	err = h.ValidateKymaVersion(params.Kyma.Version)
 	if err != nil {
-		h.log.Errorf("while validating target: %v", err)
-		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while validating target"))
+		h.log.Errorf("while validating kyma version: %v", err)
+		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while validating kyma version"))
 		return
 	}
 

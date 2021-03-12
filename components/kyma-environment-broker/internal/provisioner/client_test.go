@@ -26,6 +26,12 @@ const (
 	deprovisionRuntimeOperationID = "f9f7b734-7538-419c-8ac1-37060c60531a"
 )
 
+var (
+	testKubernetesVersion   = "1.17.16"
+	testMachineImage        = "gardenlinux"
+	testMachineImageVersion = "184.0.0"
+)
+
 func TestClient_ProvisionRuntime(t *testing.T) {
 	t.Run("should trigger provisioning", func(t *testing.T) {
 		// Given
@@ -146,6 +152,51 @@ func TestClient_UpgradeRuntime(t *testing.T) {
 
 		// when
 		status, err := client.UpgradeRuntime(testAccountID, *operation.RuntimeID, fixUpgradeRuntimeInput("1.14.0"))
+
+		// Then
+		assert.Error(t, err)
+		assert.Empty(t, status)
+
+		assert.Equal(t, "", tr.getRuntime().upgradeOperationID)
+	})
+}
+
+func TestClient_UpgradeShoot(t *testing.T) {
+	t.Run("should trigger shoot upgrade", func(t *testing.T) {
+		// given
+		tr := &testResolver{t: t, runtime: &testRuntime{}}
+		testServer := fixHTTPServer(tr)
+		defer testServer.Close()
+
+		client := NewProvisionerClient(testServer.URL, false)
+		operation, err := client.ProvisionRuntime(testAccountID, testSubAccountID, fixProvisionRuntimeInput())
+		assert.NoError(t, err)
+
+		// when
+		status, err := client.UpgradeShoot(testAccountID, *operation.RuntimeID, fixUpgradeShootInput())
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, ptr.String(upgradeRuntimeOperationID), status.ID)
+		assert.Equal(t, schema.OperationStateInProgress, status.State)
+		assert.Equal(t, schema.OperationTypeUpgradeShoot, status.Operation)
+		assert.Equal(t, ptr.String(provisionRuntimeID), status.RuntimeID)
+	})
+
+	t.Run("provisioner should return error", func(t *testing.T) {
+		// given
+		tr := &testResolver{t: t, runtime: &testRuntime{}}
+		testServer := fixHTTPServer(tr)
+		defer testServer.Close()
+
+		client := NewProvisionerClient(testServer.URL, false)
+		operation, err := client.ProvisionRuntime(testAccountID, testSubAccountID, fixProvisionRuntimeInput())
+		assert.NoError(t, err)
+
+		tr.failed = true
+
+		// when
+		status, err := client.UpgradeShoot(testAccountID, *operation.RuntimeID, fixUpgradeShootInput())
 
 		// Then
 		assert.Error(t, err)
@@ -454,8 +505,23 @@ func (tmr testMutationResolver) ReconnectRuntimeAgent(_ context.Context, id stri
 	return "", nil
 }
 
-func (tqr testMutationResolver) UpgradeShoot(ctx context.Context, id string, config schema.UpgradeShootInput) (*schema.OperationStatus, error) {
-	return nil, nil
+func (tmr testMutationResolver) UpgradeShoot(_ context.Context, id string, config schema.UpgradeShootInput) (*schema.OperationStatus, error) {
+	tmr.t.Log("UpgradeShoot testMutationResolver")
+
+	if tmr.failed {
+		return nil, fmt.Errorf("upgrade runtime failed for version %s", id)
+	}
+
+	if tmr.runtime.runtimeID == id {
+		tmr.runtime.upgradeOperationID = upgradeRuntimeOperationID
+	}
+
+	return &schema.OperationStatus{
+		ID:        ptr.String(tmr.runtime.upgradeOperationID),
+		State:     schema.OperationStateInProgress,
+		Operation: schema.OperationTypeUpgradeShoot,
+		RuntimeID: ptr.String(tmr.runtime.runtimeID),
+	}, nil
 }
 
 type testQueryResolver struct {
@@ -526,4 +592,14 @@ func fixUpgradeRuntimeInput(kymaVersion string) schema.UpgradeRuntimeInput {
 			},
 		},
 	}}
+}
+
+func fixUpgradeShootInput() schema.UpgradeShootInput {
+	return schema.UpgradeShootInput{
+		GardenerConfig: &schema.GardenerUpgradeInput{
+			KubernetesVersion:   &testKubernetesVersion,
+			MachineImage:        &testMachineImage,
+			MachineImageVersion: &testMachineImageVersion,
+		},
+	}
 }

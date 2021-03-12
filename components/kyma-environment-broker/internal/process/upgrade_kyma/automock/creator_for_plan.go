@@ -58,6 +58,29 @@ func (_m *CreatorForPlan) CreateUpgradeInput(parameters internal.ProvisioningPar
 	return r0, r1
 }
 
+// CreateUpgradeShootInput provides a mock function with given fields: parameters
+func (_m *CreatorForPlan) CreateUpgradeShootInput(parameters internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error) {
+	ret := _m.Called(parameters)
+
+	var r0 internal.ProvisionerInputCreator
+	if rf, ok := ret.Get(0).(func(internal.ProvisioningParameters) internal.ProvisionerInputCreator); ok {
+		r0 = rf(parameters)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(internal.ProvisionerInputCreator)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(internal.ProvisioningParameters) error); ok {
+		r1 = rf(parameters)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // IsPlanSupport provides a mock function with given fields: planID
 func (_m *CreatorForPlan) IsPlanSupport(planID string) bool {
 	ret := _m.Called(planID)

@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
 )
 
@@ -92,10 +91,10 @@ func (h *RuntimeInfoHandler) mapToDTO(instances []internal.InstanceWithOperation
 			State:       inst.State.String,
 			Description: inst.Description.String,
 		}
-		switch dbmodel.OperationType(inst.Type.String) {
-		case dbmodel.OperationTypeProvision:
+		switch internal.OperationType(inst.Type.String) {
+		case internal.OperationTypeProvision:
 			items[idx].Status.Provisioning = opStatus
-		case dbmodel.OperationTypeDeprovision:
+		case internal.OperationTypeDeprovision:
 			items[idx].Status.Deprovisioning = opStatus
 		}
 	}

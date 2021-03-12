@@ -315,6 +315,10 @@ func (c *SimpleInputCreator) CreateUpgradeRuntimeInput() (gqlschema.UpgradeRunti
 	return gqlschema.UpgradeRuntimeInput{}, nil
 }
 
+func (c *SimpleInputCreator) CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, error) {
+	return gqlschema.UpgradeShootInput{}, nil
+}
+
 func (c *SimpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionerInputCreator {
 	c.EnabledComponents = append(c.EnabledComponents, name)
 	return c

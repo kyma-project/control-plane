@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -107,11 +106,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		current, _ := setOpAvsStatus(&op, StatusActive, StatusMaintenance)
 
 		// When
-		op, d, err := delegator.SetStatus(logger, op, internalEA, requested)
+		err := delegator.SetStatus(logger, &op.Avs, internalEA, requested)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		assert.Equal(t, requested, internalEA.GetEvalStatus(op.Avs))
 		assert.Equal(t, current, internalEA.GetOriginalEvalStatus(op.Avs))
 	})
@@ -123,11 +121,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		current, _ := setOpAvsStatus(&op, requested, StatusMaintenance)
 
 		// When
-		op, d, err := delegator.SetStatus(logger, op, internalEA, requested)
+		err := delegator.SetStatus(logger, &op.Avs, internalEA, requested)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		assert.Equal(t, current, internalEA.GetEvalStatus(op.Avs))
 		assert.Equal(t, StatusActive, internalEA.GetOriginalEvalStatus(op.Avs))
 	})
@@ -139,11 +136,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		current, _ := setOpAvsStatus(&op, StatusActive, "")
 
 		// When
-		op, d, err := delegator.SetStatus(logger, op, internalEA, requested)
+		err := delegator.SetStatus(logger, &op.Avs, internalEA, requested)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		assert.Equal(t, requested, internalEA.GetEvalStatus(op.Avs))
 		assert.Equal(t, current, internalEA.GetOriginalEvalStatus(op.Avs))
 	})
@@ -155,11 +151,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		current, _ := setOpAvsStatus(&op, requested, "")
 
 		// When
-		op, d, err := delegator.SetStatus(logger, op, internalEA, requested)
+		err := delegator.SetStatus(logger, &op.Avs, internalEA, requested)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		assert.Equal(t, current, internalEA.GetEvalStatus(op.Avs))
 		assert.Equal(t, StatusActive, internalEA.GetOriginalEvalStatus(op.Avs))
 	})
@@ -171,11 +166,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		setOpAvsStatus(&op, "", StatusMaintenance)
 
 		// When
-		op, d, err := delegator.SetStatus(logger, op, internalEA, requested)
+		err := delegator.SetStatus(logger, &op.Avs, internalEA, requested)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		assert.Equal(t, requested, internalEA.GetEvalStatus(op.Avs))
 		assert.Equal(t, params.internalMonitor.Status, internalEA.GetOriginalEvalStatus(op.Avs))
 	})
@@ -187,11 +181,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		_, original := setOpAvsStatus(&op, "", StatusMaintenance)
 
 		// When
-		op, d, err := delegator.SetStatus(logger, op, internalEA, requested)
+		err := delegator.SetStatus(logger, &op.Avs, internalEA, requested)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		assert.Equal(t, params.internalMonitor.Status, internalEA.GetEvalStatus(op.Avs))
 		assert.Equal(t, original, internalEA.GetOriginalEvalStatus(op.Avs))
 	})
@@ -203,11 +196,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		_, _ = setOpAvsStatus(&op, "", "")
 
 		// When
-		op, d, err := delegator.SetStatus(logger, op, internalEA, requested)
+		err := delegator.SetStatus(logger, &op.Avs, internalEA, requested)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		assert.Equal(t, requested, internalEA.GetEvalStatus(op.Avs))
 		// even though the avs Lifecycle data was initially empty,
 		// during SetStatus call it was reloaded from avs backend api
@@ -221,7 +213,7 @@ func TestDelegator_SetStatus(t *testing.T) {
 		_, _ = setOpAvsStatus(&op, StatusActive, StatusMaintenance)
 
 		// When
-		op, _, err := delegator.SetStatus(logger, op, internalEA, requested)
+		err := delegator.SetStatus(logger, &op.Avs, internalEA, requested)
 
 		// Then
 		assert.NotNil(t, err)
@@ -235,7 +227,7 @@ func TestDelegator_SetStatus(t *testing.T) {
 		version := op.Version
 
 		// When
-		op, _, err := delegator.SetStatus(logger, op, internalEA, StatusActive)
+		err := delegator.SetStatus(logger, &op.Avs, internalEA, StatusActive)
 
 		// Then
 		assert.NoError(t, err)
@@ -249,7 +241,7 @@ func TestDelegator_SetStatus(t *testing.T) {
 		version := op.Version
 
 		// When
-		op, _, err := delegator.SetStatus(logger, op, internalEA, StatusActive)
+		err := delegator.SetStatus(logger, &op.Avs, internalEA, StatusActive)
 
 		// Then
 		assert.NoError(t, err)
@@ -262,11 +254,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		current, original := setOpAvsStatus(&op, StatusActive, StatusMaintenance)
 
 		// When
-		op, d, err := delegator.ResetStatus(logger, op, internalEA)
+		err := delegator.ResetStatus(logger, &op.Avs, internalEA)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		assert.Equal(t, original, internalEA.GetEvalStatus(op.Avs))
 		assert.Equal(t, current, internalEA.GetOriginalEvalStatus(op.Avs))
 	})
@@ -277,11 +268,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		current, _ := setOpAvsStatus(&op, StatusInactive, StatusInactive)
 
 		// When
-		op, d, err := delegator.ResetStatus(logger, op, internalEA)
+		err := delegator.ResetStatus(logger, &op.Avs, internalEA)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		assert.Equal(t, current, internalEA.GetEvalStatus(op.Avs))
 		assert.Equal(t, StatusActive, internalEA.GetOriginalEvalStatus(op.Avs))
 	})
@@ -294,11 +284,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		_, original := setOpAvsStatus(&op, "", "")
 
 		// When
-		op, d, err := delegator.ResetStatus(logger, op, internalEA)
+		err := delegator.ResetStatus(logger, &op.Avs, internalEA)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		// restores current status from default
 		assert.Equal(t, StatusActive, internalEA.GetEvalStatus(op.Avs))
 		assert.Equal(t, original, internalEA.GetOriginalEvalStatus(op.Avs))
@@ -312,11 +301,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		current, _ := setOpAvsStatus(&op, StatusMaintenance, "")
 
 		// When
-		op, d, err := delegator.ResetStatus(logger, op, internalEA)
+		err := delegator.ResetStatus(logger, &op.Avs, internalEA)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		// restores current status from default
 		assert.Equal(t, StatusActive, internalEA.GetEvalStatus(op.Avs))
 		assert.Equal(t, current, internalEA.GetOriginalEvalStatus(op.Avs))
@@ -333,11 +321,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		_, original := setOpAvsStatus(&op, "", StatusMaintenance)
 
 		// When
-		op, d, err := delegator.ResetStatus(logger, op, internalEA)
+		err := delegator.ResetStatus(logger, &op.Avs, internalEA)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		assert.Equal(t, original, internalEA.GetEvalStatus(op.Avs))
 		// restores original status from current, which is restored from Avs
 		assert.Equal(t, instanceStatus, internalEA.GetOriginalEvalStatus(op.Avs))
@@ -349,11 +336,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		current, _ := setOpAvsStatus(&op, StatusInactive, "invalid")
 
 		// When
-		op, d, err := delegator.ResetStatus(logger, op, internalEA)
+		err := delegator.ResetStatus(logger, &op.Avs, internalEA)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		// restores current status from default
 		assert.Equal(t, StatusActive, internalEA.GetEvalStatus(op.Avs))
 		// restores original status from current, which is restored from Avs
@@ -366,11 +352,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		_, original := setOpAvsStatus(&op, "invalidField", StatusMaintenance)
 
 		// When
-		op, d, err := delegator.ResetStatus(logger, op, internalEA)
+		err := delegator.ResetStatus(logger, &op.Avs, internalEA)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		assert.Equal(t, original, internalEA.GetEvalStatus(op.Avs))
 		// restores original status from current, which is restored from Avs
 		assert.Equal(t, params.internalMonitor.Status, internalEA.GetOriginalEvalStatus(op.Avs))
@@ -385,11 +370,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		current, _ := setOpAvsStatus(&op, StatusInactive, "invalid")
 
 		// When
-		op, d, err := delegator.ResetStatus(logger, op, internalEA)
+		err := delegator.ResetStatus(logger, &op.Avs, internalEA)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		// restores current status from default
 		assert.Equal(t, StatusActive, internalEA.GetEvalStatus(op.Avs))
 		// restores original status from current, which is restored from Avs
@@ -405,11 +389,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		current, _ := setOpAvsStatus(&op, StatusInactive, instanceStatus)
 
 		// When
-		op, d, err := delegator.ResetStatus(logger, op, internalEA)
+		err := delegator.ResetStatus(logger, &op.Avs, internalEA)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		// restores current status from default
 		assert.Equal(t, StatusActive, internalEA.GetEvalStatus(op.Avs))
 		// restores original status from current, which is restored from Avs
@@ -425,11 +408,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		_, original := setOpAvsStatus(&op, "invalid", StatusInactive)
 
 		// When
-		op, d, err := delegator.ResetStatus(logger, op, internalEA)
+		err := delegator.ResetStatus(logger, &op.Avs, internalEA)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		assert.Equal(t, original, internalEA.GetEvalStatus(op.Avs))
 		// don't push junk data into original, leave as is
 		assert.Equal(t, original, internalEA.GetOriginalEvalStatus(op.Avs))
@@ -444,11 +426,10 @@ func TestDelegator_SetStatus(t *testing.T) {
 		_, original := setOpAvsStatus(&op, instanceStatus, StatusInactive)
 
 		// When
-		op, d, err := delegator.ResetStatus(logger, op, internalEA)
+		err := delegator.ResetStatus(logger, &op.Avs, internalEA)
 
 		// Then
 		assert.NoError(t, err)
-		assert.Equal(t, time.Duration(0), d)
 		assert.Equal(t, original, internalEA.GetEvalStatus(op.Avs))
 		// don't push junk data into original, leave as is
 		assert.Equal(t, original, internalEA.GetOriginalEvalStatus(op.Avs))
