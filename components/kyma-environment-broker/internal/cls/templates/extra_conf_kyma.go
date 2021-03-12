@@ -11,7 +11,6 @@ const (
     HTTP_Passwd       {{.FluentdPassword}}
     tls               true
     tls.verify        true
-    tls.debug         1
     URI               /
     Format            json`
 )

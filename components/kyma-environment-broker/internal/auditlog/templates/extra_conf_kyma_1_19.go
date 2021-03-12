@@ -45,7 +45,6 @@ const (
     HTTP_Passwd       {{.ClsOverrideParams.FluentdPassword}}
     tls               true
     tls.verify        true
-    tls.debug         1
     URI               /
     Format            json`
 )
