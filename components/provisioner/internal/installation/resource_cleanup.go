@@ -234,7 +234,7 @@ func (s *serviceCatalogClient) deleteServiceInstances(serviceInstances []v1beta1
 
 func (s *serviceCatalogClient) removeClusterBrokersFinalizers(brokers []v1beta1.ClusterServiceBroker) {
 	for _, broker := range brokers {
-		logrus.Debugf("trying to delete ClusterServiceBroker %q", broker.Name)
+		logrus.Debugf("trying to remove finalizers from ClusterServiceBroker %q", broker.Name)
 
 		_ = wait.PollImmediate(10*time.Second, 2*time.Minute, func() (bool, error) {
 			broker.Finalizers = []string{}
