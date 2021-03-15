@@ -45,7 +45,7 @@ func (s *ClsUpgradeBindStep) Name() string {
 
 func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if !operation.Cls.Instance.ProvisioningTriggered {
-		failureReason := fmt.Sprintf("cls provisioning step was not triggered")
+		failureReason := "CLS provisioning step was not triggered"
 		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
@@ -56,8 +56,8 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 
 		smCredentials, err := cls.FindCredentials(s.config.ServiceManager, operation.Cls.Region)
 		if err != nil {
-			failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
-			log.Error(failureReason)
+			failureReason := fmt.Sprintf("Unable to find credentials for CLS Service Manager in region %s", operation.Cls.Region)
+			log.Errorf("%s: %v", failureReason, err)
 			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
 		smCli := operation.SMClientFactory.ForCredentials(smCredentials)
@@ -68,18 +68,18 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 			log.Errorf("Unable to fetch LastInstanceOperation()")
 			return operation, 10 * time.Second, nil
 		}
-		log.Debug("Provisioning Cls (instanceID=%s) state: %s", operation.Cls.Instance.InstanceID, resp.State)
+		log.Debug("Provisioning CLS with instance ID %s is in state: %s", operation.Cls.Instance.InstanceID, resp.State)
 		switch resp.State {
 		case servicemanager.InProgress:
 			return operation, 10 * time.Second, nil
 		case servicemanager.Failed:
-			failureReason := fmt.Sprintf("Cls instance is in failed state")
+			failureReason := fmt.Sprintf("CLS instance is in failed state")
 			log.Errorf("%s: %s", failureReason, resp.Description)
-			return s.operationManager.OperationFailed(operation, fmt.Sprintf("Cls provisioning failed: %s", resp.Description), log)
+			return s.operationManager.OperationFailed(operation, failureReason, log)
 		case servicemanager.Succeeded:
 			operation.Cls.Instance.Provisioned = true
 			operation.Cls.Instance.ProvisioningTriggered = false
-			log.Info("Cls instance is provisioned.")
+			log.Info("CLS instance is provisioned.")
 		}
 
 		if operation.Cls.Binding.BindingID == "" {
@@ -99,15 +99,15 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 			BindingID:   operation.Cls.Binding.BindingID,
 		})
 		if err != nil {
-			failureReason := fmt.Sprintf("Cls Binding failed")
-			log.Errorf("%s: %s", failureReason, err)
+			failureReason := fmt.Sprintf("Unable to create CLS Binding")
+			log.Errorf("%s: %v", failureReason, err)
 			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
 
 		encryptedOverrideParams, err := cls.EncryptOverrides(s.secretKey, overrideParams)
 		if err != nil {
-			failureReason := fmt.Sprintf("encryptClsOverrides() call failed")
-			log.Errorf("%s: %s", failureReason, err)
+			failureReason := fmt.Sprintf("Unable to encrypt CLS overrides")
+			log.Errorf("%s: %v", failureReason, err)
 			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
 
@@ -125,8 +125,8 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 		// fetch existing overrides
 		overrideParams, err = cls.DecryptOverrides(s.secretKey, operation.Cls.Overrides)
 		if err != nil {
-			failureReason := fmt.Sprintf("decryptClsOverrides() call failed")
-			log.Errorf("%s: %s", failureReason, err)
+			failureReason := fmt.Sprintf("Unable to decrypt CLS overrides")
+			log.Errorf("%s: %v", failureReason, err)
 			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
 	}
@@ -135,20 +135,20 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 
 	extraConfTemplate, err := cls.GetExtraConfTemplate()
 	if err != nil {
-		log.Errorf("Unable to get extra config template: %v", err)
+		log.Errorf("Unable to get CLS extra config template: %v", err)
 		return operation, time.Second, nil
 	}
 
 	fluentBitClsOverrides, err := cls.RenderOverrides(overrideParams, extraConfTemplate)
 	if err != nil {
-		log.Errorf("Unable to render overrides: %v", err)
+		log.Errorf("Unable to render CLS overrides: %v", err)
 		return operation, time.Second, nil
 	}
 
 	isVersionAtLeast1_20, err := cls.IsKymaVersionAtLeast_1_20(operation.RuntimeVersion.Version)
 	if err != nil {
-		failureReason := fmt.Sprintf("unable to check kyma version: %v", err)
-		log.Error(failureReason)
+		failureReason := "Unable to check kyma version"
+		log.Errorf("%s: %v", failureReason, err)
 		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
 	if isVersionAtLeast1_20 {

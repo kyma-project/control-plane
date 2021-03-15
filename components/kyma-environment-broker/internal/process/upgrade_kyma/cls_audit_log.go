@@ -42,7 +42,7 @@ func NewClsUpgradeAuditLogOverridesStep(os storage.Operations, cfg auditlog.Conf
 func (alo *ClsUpgradeAuditLogOverridesStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	luaScript, err := afero.ReadFile(alo.fs, "/auditlog-script/script")
 	if err != nil {
-		failureReason := "Unable to read audit config script"
+		failureReason := "Unable to read Audit Log config script"
 		log.Errorf("%s: %v", failureReason, err)
 		return alo.operationManager.OperationFailed(operation, failureReason, log)
 	}
@@ -59,7 +59,7 @@ func (alo *ClsUpgradeAuditLogOverridesStep) Run(operation internal.UpgradeKymaOp
 
 	extraConfTemplate, err := auditlog.GetExtraConfTemplate(operation.RuntimeVersion.Version)
 	if err != nil {
-		failureReason := "Unable to get extra config template"
+		failureReason := "Unable to get Audit Log extra config template"
 		log.Errorf("%s: %v", failureReason, err)
 		return alo.operationManager.OperationFailed(operation, failureReason, log)
 	}
