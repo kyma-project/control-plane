@@ -41,7 +41,7 @@ func (s *clsUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, l
 	skrRegion := operation.ProvisioningParameters.Parameters.Region
 	smRegion, err := cls.DetermineServiceManagerRegion(skrRegion)
 	if err != nil {
-		failureReason := fmt.Sprintf("Unable to determine CLS Service Manager in region %s", skrRegion)
+		failureReason := fmt.Sprintf("Unable to determine CLS Service Manager in region %s", *skrRegion)
 		log.Errorf("%s: %v", failureReason, err)
 		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
