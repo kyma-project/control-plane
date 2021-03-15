@@ -37,10 +37,86 @@ func TestEnableForTrialPlanStepShouldEnable(t *testing.T) {
 	assert.Equal(t, anotherOperation, returnedOperation)
 }
 
+func TestEnableForTrialPlanStepShouldEnableForKymaVersion(t *testing.T) {
+	// Given
+	log := logrus.New()
+	operation := fixOperationWithPlanID("hyperscaler")
+	operation.ProvisioningParameters.Parameters.KymaVersion = "1.20.0"
+	simpleInputCreator := newInputCreator()
+	operation.InputCreator = simpleInputCreator
+	anotherOperation := fixOperationWithPlanID("enabled")
+	var runTime time.Duration = 10
+
+	mockStep := &automock.Step{}
+	mockStep.On("Name").Return("Test")
+	mockStep.On("Run", operation, log).Return(anotherOperation, runTime, nil)
+
+	enableStep := NewNatsActivationStep(mockStep)
+
+	// When
+	returnedOperation, time, err := enableStep.Run(operation, log)
+
+	// Then
+	require.NoError(t, err)
+	assert.Equal(t, runTime, time)
+	assert.Equal(t, anotherOperation, returnedOperation)
+}
+
 func TestEnableForTrialPlanStepShouldNotEnable(t *testing.T) {
 	// Given
 	log := logrus.New()
 	operation := fixOperationWithPlanID("another")
+	simpleInputCreator := newInputCreator()
+	operation.InputCreator = simpleInputCreator
+	anotherOperation := fixOperationWithPlanID("not enabled")
+	var runTime time.Duration = 0
+
+	mockStep := &automock.Step{}
+	mockStep.On("Name").Return("Test")
+	mockStep.On("Run", operation, log).Return(anotherOperation, runTime, nil)
+
+	enableStep := NewNatsActivationStep(mockStep)
+
+	// When
+	returnedOperation, time, err := enableStep.Run(operation, log)
+
+	// Then
+	assert.Empty(t, simpleInputCreator.enabledComponents)
+	require.NoError(t, err)
+	assert.Equal(t, runTime, time)
+	assert.Equal(t, operation, returnedOperation)
+}
+
+func TestEnableForTrialPlanStepShouldNotEnableOnAzure(t *testing.T) {
+	// Given
+	log := logrus.New()
+	operation := fixOperationWithPlanID(broker.AzurePlanID)
+	simpleInputCreator := newInputCreator()
+	operation.InputCreator = simpleInputCreator
+	anotherOperation := fixOperationWithPlanID("not enabled")
+	var runTime time.Duration = 0
+
+	mockStep := &automock.Step{}
+	mockStep.On("Name").Return("Test")
+	mockStep.On("Run", operation, log).Return(anotherOperation, runTime, nil)
+
+	enableStep := NewNatsActivationStep(mockStep)
+
+	// When
+	returnedOperation, time, err := enableStep.Run(operation, log)
+
+	// Then
+	assert.Empty(t, simpleInputCreator.enabledComponents)
+	require.NoError(t, err)
+	assert.Equal(t, runTime, time)
+	assert.Equal(t, operation, returnedOperation)
+}
+
+func TestEnableForTrialPlanStepShouldNotEnableOnAzureForKymaVersion(t *testing.T) {
+	// Given
+	log := logrus.New()
+	operation := fixOperationWithPlanID(broker.AzurePlanID)
+	operation.ProvisioningParameters.Parameters.KymaVersion = "1.20.0"
 	simpleInputCreator := newInputCreator()
 	operation.InputCreator = simpleInputCreator
 	anotherOperation := fixOperationWithPlanID("not enabled")
