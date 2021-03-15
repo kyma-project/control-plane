@@ -10,7 +10,7 @@ func TestLoadEmptyString(t *testing.T) {
 	var in string
 	_, err := Load(in)
 
-	expected := "invalid config: no service manager credentials"
+	expected := "invalid config: no Service Manager credentials"
 	require.Error(t, err)
 	require.EqualError(t, err, expected)
 }
@@ -29,7 +29,7 @@ serviceManager:
       password: 
 saml:
   initiated: true
-`, expected: "invalid config: service manager credentials: no password"},
+`, expected: "invalid config: while validating Service Manager credentials: no password"},
 		{in: `
 serviceManager:
   credentials:
@@ -39,7 +39,7 @@ serviceManager:
       password: qwerty
 saml:
   initiated: true
-`, expected: "invalid config: service manager credentials: no username"},
+`, expected: "invalid config: while validating Service Manager credentials: no username"},
 		{in: `
 serviceManager:
   credentials:
@@ -49,7 +49,7 @@ serviceManager:
       password: qwerty
 saml:
   initiated: true
-`, expected: "invalid config: service manager credentials: no url"},
+`, expected: "invalid config: while validating Service Manager credentials: no URL"},
 		{in: `
 serviceManager:
   credentials:
@@ -59,7 +59,7 @@ serviceManager:
       password: qwerty
 saml:
   initiated: true
-`, expected: "invalid config: service manager credentials: no region"},
+`, expected: "invalid config: while validating Service Manager credentials: no region"},
 		{in: `
 serviceManager:
   credentials:
@@ -69,7 +69,7 @@ serviceManager:
       password: qwerty
 saml:
   initiated: true  
-`, expected: "invalid config: service manager credentials: unsupported region: aus (eu,us supported only)"},
+`, expected: "invalid config: while validating Service Manager credentials: unsupported region: aus (eu,us supported only)"},
 		{in: `
 serviceManager:
   credentials:
@@ -77,7 +77,7 @@ serviceManager:
       url: https://service-manager.cfapps.sap.hana.ondemand.com
       username: sm
       password: qwerty
-`, expected: "invalid config: no saml"},
+`, expected: "invalid config: no SAML"},
 	}
 
 	for _, tc := range tests {
