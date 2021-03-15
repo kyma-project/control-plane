@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
 
@@ -50,7 +51,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
 
-	//"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/metrics"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
@@ -121,7 +121,7 @@ type Config struct {
 	CatalogFilePath string
 
 	Avs avs.Config
-	//LMS lms.Config
+	LMS lms.Config
 	IAS ias.Config
 	EDP edp.Config
 
@@ -220,7 +220,8 @@ func main() {
 		err = migrations.NewOperationsUserIDMigration(db.Operations(), logs.WithField("service", "userIDMigration")).Migrate()
 		fatalOnError(err)
 	}
-	//CLS
+
+	// CLS
 	clsFile, err := ioutil.ReadFile("/secrets/cls-config/cls-config.yaml")
 	if err != nil {
 		fatalOnError(err)
@@ -233,10 +234,10 @@ func main() {
 	clsClient := cls.NewClient(clsConfig)
 	clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient)
 
-	//// LMS
-	//fatalOnError(cfg.LMS.Validate())
-	//lmsClient := lms.NewClient(cfg.LMS, logs.WithField("service", "lmsClient"))
-	//lmsTenantManager := lms.NewTenantManager(db.LMSTenants(), lmsClient, logs.WithField("service", "lmsTenantManager"))
+	// LMS
+	fatalOnError(cfg.LMS.Validate())
+	lmsClient := lms.NewClient(cfg.LMS, logs.WithField("service", "lmsClient"))
+	lmsTenantManager := lms.NewTenantManager(db.LMSTenants(), lmsClient, logs.WithField("service", "lmsTenantManager"))
 
 	// Register disabler. Convention:
 	// {component-name} : {component-disabler-service}
@@ -367,10 +368,11 @@ func main() {
 			step:     provisioning.NewClsProvisionStep(clsConfig, clsProvisioner, db.Operations()),
 			disabled: cfg.Cls.Disabled,
 		},
-		//{
-		//	weight: 2,
-		//	step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
-		//},
+		{
+			weight:   2,
+			step:     provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
+			disabled: !cfg.Cls.Disabled,
+		},
 		{
 			weight:   2,
 			step:     provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
@@ -392,15 +394,16 @@ func main() {
 			weight: 3,
 			step:   provisioning.NewServiceManagerOverridesStep(db.Operations()),
 		},
-		//{
-		//	weight: 3,
-		//	//TODO: Rethink the prio as CLS needs to be bound before
-		//	step: provisioning.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
-		//},
-		//{
-		//	weight: 5,
-		//	step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
-		//},
+		{
+			weight:   3,
+			step:     provisioning.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog),
+			disabled: !cfg.Cls.Disabled,
+		},
+		{
+			weight:   5,
+			step:     provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
+			disabled: !cfg.Cls.Disabled,
+		},
 		{
 			weight:   6,
 			step:     provisioning.NewIASRegistrationStep(db.Operations(), bundleBuilder),
@@ -423,9 +426,9 @@ func main() {
 		},
 
 		{
-			weight: 8,
-			//TODO: Rethink the prio as CLS needs to be bound before
-			step: provisioning.NewClsAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
+			weight:   8,
+			step:     provisioning.NewClsAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
+			disabled: !cfg.Cls.Disabled,
 		},
 
 		{
