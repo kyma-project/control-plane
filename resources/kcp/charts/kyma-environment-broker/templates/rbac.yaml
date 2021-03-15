@@ -14,7 +14,7 @@ rules:
     resources: ["configmaps"]
     verbs: ["list", "get"]
   - apiGroups: ["core.gardener.cloud"]
-    resources: ["shoots"]
+    resources: ["shoots, secretbindings"]
     verbs: ["list", "get"]
 
 ---
