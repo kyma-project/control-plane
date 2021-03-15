@@ -11,11 +11,9 @@ The Cloud Logging service (CLS) is a managed logging service for shipping logs f
 
 1. CSI sends the request to KEB to provision a new SKR.
 2. A check determines if there is an existing CLS instance for the global account. If there isn't, KEB provisions a new instance of CLS for the global account.
-
-
 3. After the CLS instance is provisioned, a binding is created, through which the KEB gets the credentials to push logs to the CLS instance.
 4. After getting the CLS credentials, these credentials are appended to SKR overrides
-5. KEB triggers Provisioner to provision a new SKR after along the overrides for SKR.
+5. KEB triggers Provisioner to provision a new SKR along with the overrides for SKR.
 6. Provisioner provisions the SKR and the Fluent Bit plugin is configured using the CLS credentials.
 7. With this configuration, SKR pushes logs to the CLS instance.
 
