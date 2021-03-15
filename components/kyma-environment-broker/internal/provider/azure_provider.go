@@ -3,6 +3,7 @@ package provider
 import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
@@ -33,8 +34,8 @@ type (
 func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			DiskType:       "Standard_LRS",
-			VolumeSizeGb:   50,
+			DiskType:       ptr.String("Standard_LRS"),
+			VolumeSizeGb:   ptr.Integer(50),
 			MachineType:    "Standard_D8_v3",
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
@@ -64,8 +65,8 @@ func (p *AzureInput) Profile() gqlschema.KymaProfile {
 func (p *AzureLiteInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			DiskType:       "Standard_LRS",
-			VolumeSizeGb:   50,
+			DiskType:       ptr.String("Standard_LRS"),
+			VolumeSizeGb:   ptr.Integer(50),
 			MachineType:    "Standard_D4_v3",
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
@@ -95,8 +96,8 @@ func (p *AzureLiteInput) Profile() gqlschema.KymaProfile {
 func (p *AzureTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			DiskType:       "Standard_LRS",
-			VolumeSizeGb:   50,
+			DiskType:       ptr.String("Standard_LRS"),
+			VolumeSizeGb:   ptr.Integer(50),
 			MachineType:    "Standard_D4_v3",
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",

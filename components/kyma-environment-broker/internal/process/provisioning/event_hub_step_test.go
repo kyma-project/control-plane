@@ -6,30 +6,26 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
-
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	hyperscalerautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
 	azuretesting "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure/testing"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	inputAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func fixLogger() logrus.FieldLogger {
@@ -372,19 +368,12 @@ func fixEventHubStep(memoryStorageOp storage.Operations, hyperscalerProvider azu
 }
 
 func fixProvisioningOperation(t *testing.T, planID, region string) internal.ProvisioningOperation {
-	op := internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     operationID,
-			InstanceID:             instanceID,
-			ProvisioningParameters: fixProvisioningParameters(planID, region),
-		},
-		InputCreator: fixKnativeKafkaInputCreator(t),
-		RuntimeVersion: internal.RuntimeVersionData{
-			Version: "1.8.0",
-			Origin:  internal.Defaults,
-		},
-	}
-	return op
+	provisioningOperation := fixture.FixProvisioningOperation(operationID, instanceID)
+	provisioningOperation.ProvisioningParameters = fixProvisioningParameters(planID, region)
+	provisioningOperation.InputCreator = fixKnativeKafkaInputCreator(t)
+	provisioningOperation.State = ""
+
+	return provisioningOperation
 }
 
 func fixTags() azure.Tags {

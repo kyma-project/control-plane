@@ -14,9 +14,10 @@ import (
 type Type string
 
 const (
-	GCP   Type = "gcp"
-	Azure Type = "azure"
-	AWS   Type = "aws"
+	GCP       Type = "gcp"
+	Azure     Type = "azure"
+	AWS       Type = "aws"
+	Openstack Type = "openstack"
 )
 
 type Credentials struct {

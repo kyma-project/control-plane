@@ -4,16 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker/automock"
-	"github.com/stretchr/testify/mock"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -113,17 +111,15 @@ func TestDeprovisionEndpoint_DeprovisionExistingOperationFailed(t *testing.T) {
 }
 
 func fixDeprovisioningOperation(state domain.LastOperationState) internal.DeprovisioningOperation {
-	return internal.DeprovisioningOperation{
-		Operation: internal.Operation{
-			ID:         operationID,
-			InstanceID: instanceID,
-			State:      state,
-		},
-	}
+	deprovisioningOperation := fixture.FixDeprovisioningOperation(operationID, instanceID)
+	deprovisioningOperation.State = state
+
+	return deprovisioningOperation
 }
 
 func fixInstance() internal.Instance {
 	instance := fixture.FixInstance(instanceID)
 	instance.ServicePlanID = planID
+
 	return instance
 }

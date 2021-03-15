@@ -76,9 +76,9 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 				return operation, repeat, err
 			}
 			log.Info("Removing the userID field from operation")
-			op, repeat, err = s.removeUserID(op)
-			if err != nil || repeat != 0 {
-				return operation, repeat, err
+			op, repeat = s.removeUserID(op, log)
+			if repeat != 0 {
+				return operation, repeat, nil
 			}
 		}
 	}
@@ -88,7 +88,7 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	if time.Since(operation.CreatedAt) > s.operationTimeout {
 		log.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout), log)
 	}
 
 	// rewrite necessary data from ProvisioningOperation to operation internal.DeprovisioningOperation
@@ -101,15 +101,13 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 		log.Info("waiting for provisioning operation to finish")
 		return operation, time.Minute, nil
 	}
-	operation.SMClientFactory = s.serviceManagerClientFactory
-
-	setAvsIds(&operation, op, log)
-
-	operation.SubAccountID = operation.ProvisioningParameters.ErsContext.SubAccountID
-	operation.ProvisioningParameters = op.ProvisioningParameters
-	operation, repeat, _ := s.operationManager.UpdateOperation(operation)
+	operation, repeat := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
+		operation.SMClientFactory = s.serviceManagerClientFactory
+		setAvsIds(operation, op, log)
+		operation.SubAccountID = operation.ProvisioningParameters.ErsContext.SubAccountID
+		operation.ProvisioningParameters = op.ProvisioningParameters
+	}, log)
 	if repeat != 0 {
-		log.Errorf("cannot save the operation")
 		return operation, time.Second, nil
 	}
 
@@ -131,9 +129,10 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 				}
 			}
 			log.Info("Setting state 'in progress' and refreshing instance details")
-			operation.State = domain.InProgress
-			operation.InstanceDetails = instance.InstanceDetails
-			operation, retry, _ := s.operationManager.UpdateOperation(operation)
+			operation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
+				operation.State = domain.InProgress
+				operation.InstanceDetails = instance.InstanceDetails
+			}, log)
 			if retry > 0 {
 				return operation, retry, nil
 			}
@@ -146,7 +145,7 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 		operation.RuntimeID = instance.RuntimeID
 		return s.checkRuntimeStatus(operation, instance, log.WithField("runtimeID", instance.RuntimeID))
 	case dberr.IsNotFound(err):
-		return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned")
+		return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned", log)
 	default:
 		log.Errorf("unable to get instance from storage: %s", err)
 		return operation, 1 * time.Second, nil
@@ -166,7 +165,7 @@ func setAvsIds(deprovisioningOperation *internal.DeprovisioningOperation, provis
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.DeprovisioningOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), log)
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
@@ -198,7 +197,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 					return operation, 10 * time.Second, nil
 				}
 			}
-			return s.operationManager.OperationSucceeded(operation, msg)
+			return s.operationManager.OperationSucceeded(operation, msg, log)
 		}
 
 	case gqlschema.OperationStateInProgress:
@@ -206,10 +205,10 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 	case gqlschema.OperationStatePending:
 		return operation, 1 * time.Minute, nil
 	case gqlschema.OperationStateFailed:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg))
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), log)
 	}
 
-	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()))
+	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), log)
 }
 
 func (s *InitialisationStep) removeInstance(instanceID string) (time.Duration, error) {
@@ -221,9 +220,10 @@ func (s *InitialisationStep) removeInstance(instanceID string) (time.Duration, e
 	return 0, nil
 }
 
-func (s *InitialisationStep) removeUserID(operation internal.DeprovisioningOperation) (internal.DeprovisioningOperation, time.Duration, error) {
-	operation.ProvisioningParameters.ErsContext.UserID = ""
-	return s.operationManager.UpdateOperation(operation)
+func (s *InitialisationStep) removeUserID(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration) {
+	return s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
+		operation.ProvisioningParameters.ErsContext.UserID = ""
+	}, log)
 }
 
 func (s *InitialisationStep) removeRuntimeID(instanceID string) error {

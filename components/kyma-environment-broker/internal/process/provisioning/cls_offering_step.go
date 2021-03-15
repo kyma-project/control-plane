@@ -1,11 +1,10 @@
 package provisioning
 
 import (
-	"fmt"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 
@@ -38,9 +37,7 @@ func (s *ClsOfferingStep) Name() string {
 }
 
 func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	info := &operation.Cls.Instance
-
-	if info.ServiceID != "" && info.PlanID != "" {
+	if operation.Cls.Instance.ServiceID != "" && operation.Cls.Instance.PlanID != "" {
 		return operation, 0, nil
 	}
 
@@ -54,35 +51,26 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 	if err != nil {
 		return s.handleError(operation, err, err.Error(), log)
 	}
-
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 
-	// try to find the offering
-	offerings, err := smClient.ListOfferingsByName(ClsOfferingName)
+	meta, err := servicemanager.GenerateMetadata(smClient, ClsOfferingName, ClsPlanName)
+	if meta.ServiceID != "" && meta.BrokerID != "" {
+		log.Infof("Found offering: catalogID=%s brokerID=%s", meta.ServiceID, meta.BrokerID)
+	}
 	if err != nil {
-		return s.handleError(operation, err, "unable to get Service Manager offerings", log)
+		if kebError.IsTemporaryError(err) {
+			return s.handleError(operation, err, err.Error(), log)
+		}
+		return s.operationManager.OperationFailed(operation, err.Error(), log)
 	}
-	if len(offerings.ServiceOfferings) != 1 {
-		return s.operationManager.OperationFailed(operation,
-			fmt.Sprintf("expected one %s Service Manager offering, but found %d", ClsOfferingName, len(offerings.ServiceOfferings)))
-	}
-	info.ServiceID = offerings.ServiceOfferings[0].CatalogID
-	info.BrokerID = offerings.ServiceOfferings[0].BrokerID
-	log.Infof("Found offering: catalogID=%s brokerID=%s", info.ServiceID, info.BrokerID)
 
-	// try to find the plan
-	plans, err := smClient.ListPlansByName(ClsPlanName, offerings.ServiceOfferings[0].ID)
-	if err != nil {
-		return s.handleError(operation, err, "unable to get Service Manager plan", log)
-	}
-	if len(plans.ServicePlans) != 1 {
-		return s.operationManager.OperationFailed(operation,
-			fmt.Sprintf("expected one %s Service Manager plan, but found %d", ClsPlanName, len(offerings.ServiceOfferings)))
-	}
-	info.PlanID = plans.ServicePlans[0].CatalogID
-	log.Infof("Found plan: catalogID=%s", info.PlanID)
+	log.Infof("Found plan: catalogID=%s", meta.PlanID)
 
-	op, retry := s.operationManager.UpdateOperation(operation)
+	op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+		operation.Cls.Instance.ServiceID = meta.ServiceID
+		operation.Cls.Instance.BrokerID = meta.BrokerID
+		operation.Cls.Instance.PlanID = meta.PlanID
+	}, log)
 	if retry > 0 {
 		log.Errorf("unable to update the operation")
 		return op, retry, nil
@@ -96,6 +84,6 @@ func (s *ClsOfferingStep) handleError(operation internal.ProvisioningOperation, 
 	case kebError.IsTemporaryError(err):
 		return s.operationManager.RetryOperation(operation, msg, 10*time.Second, time.Minute*30, log)
 	default:
-		return s.operationManager.OperationFailed(operation, msg)
+		return s.operationManager.OperationFailed(operation, msg, log)
 	}
 }

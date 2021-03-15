@@ -31,6 +31,10 @@ func HyperscalerTypeForPlanID(planID string) (Type, error) {
 		return GCP, nil
 	case broker.AzurePlanID, broker.AzureLitePlanID:
 		return Azure, nil
+	case broker.OpenStackPlanID:
+		return Openstack, nil
+	case broker.AWSPlanID:
+		return AWS, nil
 	default:
 		return "", errors.Errorf("cannot determine the type of Hyperscaler to use for planID: %s", planID)
 	}

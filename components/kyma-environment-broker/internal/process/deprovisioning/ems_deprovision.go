@@ -46,13 +46,15 @@ func (s *EmsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 	}
 	log.Infof("deprovisioning for EMS instance: %s finished", operation.Ems.Instance.InstanceID)
 
-	operation.Ems.Instance.InstanceID = ""
-	operation.Ems.Instance.Provisioned = false
-	return s.operationManager.UpdateOperation(operation)
+	updatedOperation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
+		operation.Ems.Instance.InstanceID = ""
+		operation.Ems.Instance.Provisioned = false
+	}, log)
+	return updatedOperation, retry, nil
 }
 
 func (s *EmsDeprovisionStep) handleError(operation internal.DeprovisioningOperation, err error, log logrus.FieldLogger,
 	msg string) (internal.DeprovisioningOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
-	return s.operationManager.OperationFailed(operation, msg)
+	return s.operationManager.OperationFailed(operation, msg, log)
 }

@@ -7,18 +7,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	hyperscalerautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
 	azuretesting "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure/testing"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -334,22 +335,12 @@ func Test_StepsUnhappyPath(t *testing.T) {
 }
 
 func fixInstance() internal.Instance {
-	var pp2 internal.ProvisioningParameters
-	json.Unmarshal([]byte(
-		`{
-			"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
-			"ers_context": {
-				"subaccount_id": "`+subAccountID+`"
-			},
-			"parameters": {
-				"name": "nachtmaar-15",
-				"components": [],
-				"region": "westeurope"
-			}
-		}`), &pp2)
-	return internal.Instance{
-		InstanceID: fixInstanceID,
-		Parameters: pp2}
+	instance := fixture.FixInstance(fixInstanceID)
+	instance.Parameters.ErsContext.SubAccountID = subAccountID
+	instance.Parameters.Parameters.Name = "nachtmaar-15"
+	instance.Parameters.Parameters.Region = ptr.String("westeurope")
+
+	return instance
 }
 
 func fixInvalidInstance() internal.Instance {
@@ -384,44 +375,34 @@ func fixLogger() logrus.FieldLogger {
 }
 
 func fixDeprovisioningOperationWithParameters() internal.UpgradeKymaOperation {
-	return internal.UpgradeKymaOperation{
-		Operation: internal.Operation{
-			ID:                     fixOperationID,
-			InstanceID:             fixInstanceID,
-			ProvisionerOperationID: fixProvisionerOperationID,
-			Description:            "",
-			UpdatedAt:              time.Now(),
-			ProvisioningParameters: internal.ProvisioningParameters{
-				PlanID:         "",
-				ServiceID:      "",
-				ErsContext:     internal.ERSContext{},
-				Parameters:     internal.ProvisioningParametersDTO{},
-				PlatformRegion: "",
-			},
-		},
+	upgradeOperation := fixture.FixUpgradeKymaOperation(fixOperationID, fixInstanceID)
+	upgradeOperation.ProvisionerOperationID = fixProvisionerOperationID
+	upgradeOperation.Description = ""
+	upgradeOperation.State = ""
+	upgradeOperation.ProvisioningParameters = internal.ProvisioningParameters{
+		PlanID:         "",
+		ServiceID:      "",
+		ErsContext:     internal.ERSContext{},
+		Parameters:     internal.ProvisioningParametersDTO{},
+		PlatformRegion: "",
 	}
+
+	return upgradeOperation
 }
 
 func fixDeprovisioningOperation() internal.UpgradeKymaOperation {
-	return internal.UpgradeKymaOperation{
-		Operation: internal.Operation{
-			ID:                     fixOperationID,
-			InstanceID:             fixInstanceID,
-			ProvisionerOperationID: fixProvisionerOperationID,
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Now(),
-		},
-	}
+	upgradeOperation := fixture.FixUpgradeKymaOperation(fixOperationID, fixInstanceID)
+	upgradeOperation.ProvisionerOperationID = fixProvisionerOperationID
+
+	return upgradeOperation
 }
 
 func fixDeprovisioningOperationWithDeletedEventHub() internal.UpgradeKymaOperation {
-	return internal.UpgradeKymaOperation{
-		Operation: internal.Operation{InstanceDetails: internal.InstanceDetails{
-			EventHub: internal.EventHub{
-				Deleted: true,
-			},
-		}},
-	}
+	upgradeOperation := fixture.FixUpgradeKymaOperation(fixOperationID, fixInstanceID)
+	upgradeOperation.State = ""
+	upgradeOperation.InstanceDetails.EventHub.Deleted = true
+
+	return upgradeOperation
 }
 
 // operationManager.OperationFailed(...)

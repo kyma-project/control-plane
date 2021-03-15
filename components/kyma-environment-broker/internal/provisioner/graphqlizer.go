@@ -60,9 +60,13 @@ func (g *Graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (s
 
 func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
+		{{- if .Name }}
 		name: "{{.Name}}",
+        {{- end }}
 		kubernetesVersion: "{{.KubernetesVersion}}",
+        {{- if .VolumeSizeGb }}
 		volumeSizeGB: {{.VolumeSizeGb }},
+        {{- end }}
 		machineType: "{{.MachineType}}",
 		{{- if .MachineImage }}
 		machineImage: "{{.MachineImage}}",
@@ -78,7 +82,9 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		{{- if .LicenceType }}
 		licenceType: "{{ .LicenceType }}",
 		{{- end }}
+        {{- if .DiskType }}
 		diskType: "{{.DiskType}}",
+        {{- end }}
 		targetSecret: "{{ .TargetSecret }}",
 		workerCidr: "{{ .WorkerCidr }}",
         autoScalerMin: {{ .AutoScalerMin }},
@@ -93,8 +99,11 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 			{{- if .ProviderSpecificConfig.GcpConfig }}
 			gcpConfig: {{ GCPProviderConfigInputToGraphQL .ProviderSpecificConfig.GcpConfig }},
 			{{- end}}
-			{{- if .ProviderSpecificConfig.AwsConfig }}
+            {{- if .ProviderSpecificConfig.AwsConfig }}
 			awsConfig: {{ AWSProviderConfigInputToGraphQL .ProviderSpecificConfig.AwsConfig }},
+			{{- end}}
+            {{- if .ProviderSpecificConfig.OpenStackConfig }}
+			openStackConfig: {{ OpenStackProviderConfigInputToGraphQL .ProviderSpecificConfig.OpenStackConfig }},
 			{{- end}}
         }
 		{{- end}}
@@ -121,6 +130,15 @@ func (g *Graphqlizer) AWSProviderConfigInputToGraphQL(in gqlschema.AWSProviderCo
 		vpcCidr: "%s",
         internalCidr: "%s",
 }`, in.Zone, in.PublicCidr, in.VpcCidr, in.InternalCidr), nil
+}
+
+func (g *Graphqlizer) OpenStackProviderConfigInputToGraphQL(in gqlschema.OpenStackProviderConfigInput) (string, error) {
+	return fmt.Sprintf(`{
+		zones: %s,
+		floatingPoolName: "%s",
+		cloudProfileName: "%s",
+		loadBalancerProvider: "%s"
+}`, g.marshal(in.Zones), in.FloatingPoolName, in.CloudProfileName, in.LoadBalancerProvider), nil
 }
 
 func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string, error) {
@@ -219,6 +237,7 @@ func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, er
 	fm["AzureProviderConfigInputToGraphQL"] = g.AzureProviderConfigInputToGraphQL
 	fm["GCPProviderConfigInputToGraphQL"] = g.GCPProviderConfigInputToGraphQL
 	fm["AWSProviderConfigInputToGraphQL"] = g.AWSProviderConfigInputToGraphQL
+	fm["OpenStackProviderConfigInputToGraphQL"] = g.OpenStackProviderConfigInputToGraphQL
 	fm["LabelsToGQL"] = g.LabelsToGQL
 	fm["strQuote"] = strconv.Quote
 

@@ -24,7 +24,7 @@
 
 [[constraint]]
   name = "github.com/kyma-project/control-plane"
-  revision = "21c4a144cb9378dd6519b127d80171c5977bd7c1"
+  revision = "dbd90902ce293f594793d54020287c138859f2eb"
 
 [[constraint]]
   name = "github.com/kyma-project/kyma"
@@ -97,7 +97,11 @@
 
 [[override]]
   name = "golang.org/x/text"
-  version = "v0.3.3"
+  version = "v0.3.5"
+
+[[override]]
+  name = "github.com/gogo/protobuf"
+  version = "v1.3.2"
 
 [prune]
   go-tests = true

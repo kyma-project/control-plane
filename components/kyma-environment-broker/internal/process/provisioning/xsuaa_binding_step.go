@@ -48,14 +48,15 @@ func (s *XSUAABindingStep) Run(operation internal.ProvisioningOperation, log log
 		case servicemanager.InProgress:
 			return operation, 15 * time.Second, nil
 		case servicemanager.Failed:
-			return s.operationManager.OperationFailed(operation, fmt.Sprintf("xsuaa provisioning failed: %s", resp.Description))
+			return s.operationManager.OperationFailed(operation, fmt.Sprintf("xsuaa provisioning failed: %s", resp.Description), log)
 		}
 	}
 
 	// execute binding
 	if operation.XSUAA.BindingID == "" {
-		operation.XSUAA.BindingID = uuid.New().String()
-		operation, retry := s.operationManager.UpdateOperation(operation)
+		operation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+			operation.XSUAA.BindingID = uuid.New().String()
+		}, log)
 		if retry > 0 {
 			log.Errorf("unable to update operation")
 			return operation, time.Second, nil
@@ -83,6 +84,6 @@ func (s *XSUAABindingStep) handleError(operation internal.ProvisioningOperation,
 	case kebError.IsTemporaryError(err):
 		return s.operationManager.RetryOperation(operation, msg, 10*time.Second, time.Minute*30, log)
 	default:
-		return s.operationManager.OperationFailed(operation, msg)
+		return s.operationManager.OperationFailed(operation, msg, log)
 	}
 }

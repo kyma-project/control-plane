@@ -347,11 +347,11 @@ func main() {
 		},
 		{
 			weight: 3,
-			step:   provisioning.NewSkipForTrialPlanStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+			step:   provisioning.NewAzureEventHubActivationStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
 		{
 			weight: 3,
-			step:   provisioning.NewEnableForTrialPlanStep(provisioning.NewNatsStreamingOverridesStep()),
+			step:   provisioning.NewNatsActivationStep(provisioning.NewNatsStreamingOverridesStep()),
 		},
 		{
 			weight: 3,
