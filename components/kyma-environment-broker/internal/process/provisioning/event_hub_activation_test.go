@@ -41,7 +41,7 @@ func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 
 	// Given
 	log := logrus.New()
-	operation := fixOperationWithPlanID("another")
+	operation := fixOperationWithPlanIDAndKymaVersion(broker.AzurePlanID, "1.20.0")
 	anotherOperation := fixOperationWithPlanID("not skipped")
 	var skipTime time.Duration = 10
 
@@ -64,6 +64,13 @@ func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 func fixOperationWithPlanID(planID string) internal.ProvisioningOperation {
 	provisioningOperation := fixture.FixProvisioningOperation(operationID, instanceID)
 	provisioningOperation.ProvisioningParameters = fixProvisioningParametersWithPlanID(planID, "region")
+
+	return provisioningOperation
+}
+
+func fixOperationWithPlanIDAndKymaVersion(planID, version string) internal.ProvisioningOperation {
+	provisioningOperation := fixOperationWithPlanID(planID)
+	provisioningOperation.ProvisioningParameters.Parameters.KymaVersion = version
 
 	return provisioningOperation
 }

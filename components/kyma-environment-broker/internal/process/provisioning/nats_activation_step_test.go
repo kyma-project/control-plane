@@ -16,6 +16,7 @@ func TestEnableForTrialPlanStepShouldEnable(t *testing.T) {
 	// Given
 	log := logrus.New()
 	operation := fixOperationWithPlanID(broker.TrialPlanID)
+	operation.ProvisioningParameters.Parameters.KymaVersion = "1.20.0"
 	simpleInputCreator := newInputCreator()
 	operation.InputCreator = simpleInputCreator
 	anotherOperation := fixOperationWithPlanID("enabled")
@@ -31,7 +32,6 @@ func TestEnableForTrialPlanStepShouldEnable(t *testing.T) {
 	returnedOperation, time, err := enableStep.Run(operation, log)
 
 	// Then
-	mockStep.AssertExpectations(t)
 	require.NoError(t, err)
 	assert.Equal(t, runTime, time)
 	assert.Equal(t, anotherOperation, returnedOperation)
