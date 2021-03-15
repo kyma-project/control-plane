@@ -1,4 +1,4 @@
-package provisioning
+package deprovisioning
 
 import (
 	"time"
@@ -12,25 +12,22 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 )
 
-type NatsActivationStep struct {
+type AzureEventHubActivationStep struct {
 	step Step
 }
 
-// ensure the interface is implemented
-var _ Step = (*NatsActivationStep)(nil)
-
-func NewNatsActivationStep(step Step) *NatsActivationStep {
-	return &NatsActivationStep{
+func NewAzureEventHubActivationStep(step Step) *AzureEventHubActivationStep {
+	return &AzureEventHubActivationStep{
 		step: step,
 	}
 }
 
-func (s *NatsActivationStep) Name() string {
+func (s *AzureEventHubActivationStep) Name() string {
 	return s.step.Name()
 }
 
-func (s *NatsActivationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	// run the step only if Kyma<1.21  && (IsAzure==false || IsTrial==true)
+func (s *AzureEventHubActivationStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+	// run the step only if  Kyma<1.21 && IsAzure==true && IsTrial==false
 	kymaVersion := operation.ProvisioningParameters.Parameters.KymaVersion
 	atLeast_1_21, err := cls.IsKymaVersionAtLeast_1_21(kymaVersion)
 	if err != nil {

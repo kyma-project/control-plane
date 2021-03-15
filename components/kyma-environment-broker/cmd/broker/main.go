@@ -324,6 +324,14 @@ func main() {
 		},
 		{
 			weight: 3,
+			step:   provisioning.NewAzureEventHubActivationStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+		},
+		{
+			weight: 3,
+			step:   provisioning.NewNatsActivationStep(provisioning.NewNatsStreamingOverridesStep()),
+		},
+		{
+			weight: 3,
 			step:   provisioning.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
 		{
@@ -374,6 +382,12 @@ func main() {
 		{
 			weight: 1,
 			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
+		},
+		{
+			weight: 1,
+			step: deprovisioning.NewSkipForTrialPlanStep(
+				deprovisioning.NewAzureEventHubActivationStep(
+					deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx))),
 		},
 		{
 			weight:   1,
