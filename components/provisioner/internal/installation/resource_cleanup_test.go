@@ -55,9 +55,15 @@ func TestServiceCatalogClient_PerformCleanup(t *testing.T) {
 		require.NoError(t, err)
 
 		// when
-		res, err := cli.listServiceInstance(metav1.ListOptions{})
+		instances, err := cli.listServiceInstance(metav1.ListOptions{})
 		require.NoError(t, err)
-		assert.Nil(t, res.Items)
+		assert.Nil(t, instances.Items)
+
+		brokers, err := cli.listClusterServiceBroker(metav1.ListOptions{})
+		require.NoError(t, err)
+		for _, broker := range brokers.Items {
+			assert.Empty(t, broker.Finalizers)
+		}
 	})
 
 	t.Run("should fail cleanup when unable to list ClusterServiceBrokers", func(t *testing.T) {
@@ -396,8 +402,9 @@ func newTestCR() []runtime.Object {
 		&v1beta1.ClusterServiceBroker{},
 		&v1beta1.ClusterServiceBroker{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      ClusterBrokerNameProvidingClusterServiceClasses,
-				Namespace: "kcp-system",
+				Name:       ClusterBrokerNameProvidingClusterServiceClasses,
+				Namespace:  "kcp-system",
+				Finalizers: []string{"test"},
 			},
 			Spec: v1beta1.ClusterServiceBrokerSpec{
 				CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
