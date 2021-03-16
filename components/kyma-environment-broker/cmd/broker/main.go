@@ -428,7 +428,7 @@ func main() {
 		{
 			weight:   8,
 			step:     provisioning.NewClsAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
-			disabled: !cfg.Cls.Disabled,
+			disabled: cfg.Cls.Disabled,
 		},
 
 		{
