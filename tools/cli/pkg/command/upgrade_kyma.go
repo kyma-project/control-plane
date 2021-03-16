@@ -46,7 +46,7 @@ Additional Kyma configurations to use for the upgrade are taken from Kyma Contro
 // SetUpgradeOpts configures the upgrade kyma specific options on the given command
 func (cmd *UpgradeKymaCommand) SetUpgradeOpts(cobraCmd *cobra.Command) {
 	cmd.UpgradeCommand.SetUpgradeOpts(cobraCmd)
-	cobraCmd.Flags().StringVarP(&cmd.version, "version", "v", "", "Kyma version to use. Supports semantic (1.18.0), PR-<number> (PR-123), and <branch name>-<commit hash> (master-00e83e99) as values.")
+	cobraCmd.Flags().StringVar(&cmd.version, "version", "", "Kyma version to use. Supports semantic (1.18.0), PR-<number> (PR-123), and <branch name>-<commit hash> (master-00e83e99) as values.")
 }
 
 // Run executes the upgrade kyma command
