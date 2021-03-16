@@ -183,7 +183,7 @@ ems:
 
 cls:
   disabled: true
-  secretName: "cls-config"
+  secretName: "kcp-cls-config"
 
 cis:
   v1:
