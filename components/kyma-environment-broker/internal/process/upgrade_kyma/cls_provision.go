@@ -42,12 +42,12 @@ func (s *clsUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, l
 	smRegion := cls.DetermineServiceManagerRegion(skrRegion)
 	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, smRegion)
 	if err != nil {
-		failureReason := fmt.Sprintf("Unable to find credentials for cls service manager in region %s: %s", operation.Cls.Region, err)
-		log.Error(failureReason)
+		failureReason := fmt.Sprintf("Unable to find credentials for CLS Service Manager in region %s", operation.Cls.Region)
+		log.Errorf("%s: %v", failureReason, err)
 		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
 
-	log.Infof("Starting provisioning a cls instance for global account %s", globalAccountID)
+	log.Infof("Starting provisioning a CLS instance for global account %s", globalAccountID)
 
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 	skrInstanceID := operation.InstanceID
@@ -58,12 +58,12 @@ func (s *clsUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, l
 		Instance:        operation.Cls.Instance.InstanceKey(),
 	})
 	if err != nil {
-		failureReason := fmt.Sprintf("Unable to provision a cls instance for global account %s: %s", globalAccountID, err)
-		log.Error(failureReason)
+		failureReason := fmt.Sprintf("Unable to provision a CLS instance for global account %s", globalAccountID)
+		log.Errorf("%s: %v", failureReason, err)
 		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
 
-	log.Infof("Finished provisioning a cls instance for global account %s", globalAccountID)
+	log.Infof("Finished provisioning a CLS instance for global account %s", globalAccountID)
 
 	op, repeat := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
 		operation.Cls.Region = result.Region
@@ -71,7 +71,7 @@ func (s *clsUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, l
 		operation.Cls.Instance.ProvisioningTriggered = true
 	}, log)
 	if repeat != 0 {
-		log.Errorf("Unable to update operation: %s", err)
+		log.Errorf("Unable to update operation")
 		return operation, time.Second, nil
 	}
 

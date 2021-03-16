@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	pkgErr "github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
 
@@ -105,17 +106,17 @@ func Load(s string) (*Config, error) {
 
 func (c *Config) validate() error {
 	if c.ServiceManager == nil || len(c.ServiceManager.Credentials) == 0 {
-		return errors.New("no service manager credentials")
+		return errors.New("no Service Manager credentials")
 	}
 
 	for _, creds := range c.ServiceManager.Credentials {
 		if err := creds.validate(); err != nil {
-			return fmt.Errorf("service manager credentials: %v", err)
+			return pkgErr.Wrapf(err, "while validating Service Manager credentials")
 		}
 	}
 
 	if c.SAML == nil {
-		return errors.New("no saml")
+		return errors.New("no SAML")
 	}
 
 	return nil
@@ -131,7 +132,7 @@ func (c *ServiceManagerCredentials) validate() error {
 	}
 
 	if len(c.URL) == 0 {
-		return errors.New("no url")
+		return errors.New("no URL")
 	}
 
 	if len(c.Username) == 0 {

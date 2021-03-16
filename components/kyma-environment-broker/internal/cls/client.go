@@ -69,7 +69,7 @@ func (c *Client) CreateInstance(smClient servicemanager.Client, instance service
 
 	_, err := smClient.Provision(instance.BrokerID, input, true)
 	if err != nil {
-		return errors.Wrapf(err, "while provisioning a cls instance %s", instance.InstanceID)
+		return errors.Wrapf(err, "while provisioning a CLS instance %s", instance.InstanceID)
 	}
 
 	return nil
@@ -99,7 +99,7 @@ func (c *Client) CreateBinding(smClient servicemanager.Client, request *BindingR
 
 	resp, err := smClient.Bind(request.InstanceKey, request.BindingID, emptyParams, false)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while creating a binding %s", request.BindingID)
+		return nil, errors.Wrapf(err, "while creating a CLS binding")
 	}
 
 	return &OverrideParams{
@@ -114,7 +114,7 @@ func (c *Client) CreateBinding(smClient servicemanager.Client, request *BindingR
 func (c *Client) RemoveInstance(smClient servicemanager.Client, instance servicemanager.InstanceKey) error {
 	_, err := smClient.Deprovision(instance, true)
 	if err != nil {
-		return errors.Wrapf(err, "while deprovisioning a cls instance %s", instance.InstanceID)
+		return errors.Wrapf(err, "while deprovisioning a CLS instance %s", instance.InstanceID)
 	}
 
 	return nil

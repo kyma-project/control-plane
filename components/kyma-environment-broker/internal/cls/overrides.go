@@ -13,12 +13,12 @@ import (
 func EncryptOverrides(secretKey string, overrides *OverrideParams) (string, error) {
 	ovrs, err := json.Marshal(*overrides)
 	if err != nil {
-		return "", errors.Wrap(err, "while marshalling cls overrides")
+		return "", errors.Wrap(err, "while marshalling CLS overrides")
 	}
 	encrypter := storage.NewEncrypter(secretKey)
 	encryptedOverrides, err := encrypter.Encrypt(ovrs)
 	if err != nil {
-		return "", errors.Wrap(err, "while encrypting cls overrides")
+		return "", errors.Wrap(err, "while encrypting CLS overrides")
 	}
 	return string(encryptedOverrides), nil
 }
@@ -27,11 +27,11 @@ func DecryptOverrides(secretKey string, encryptedOverrides string) (*OverridePar
 	encrypter := storage.NewEncrypter(secretKey)
 	decryptedOverrides, err := encrypter.Decrypt([]byte(encryptedOverrides))
 	if err != nil {
-		return nil, errors.Wrap(err, "while decrypting eventing overrides")
+		return nil, errors.Wrap(err, "while decrypting CLS overrides")
 	}
 	var overrideParams OverrideParams
 	if err := json.Unmarshal(decryptedOverrides, &overrideParams); err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling eventing overrides")
+		return nil, errors.Wrap(err, "while unmarshalling CLS overrides")
 	}
 	return &overrideParams, nil
 }
@@ -39,7 +39,7 @@ func DecryptOverrides(secretKey string, encryptedOverrides string) (*OverridePar
 func GetExtraConfTemplate() (*template.Template, error) {
 	tpl, err := template.New("fluent-bit-cls-extra-conf").Parse(templates.FluentBitExtraConf)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while parsing CLS extra config file")
 	}
 	return tpl, nil
 }
@@ -48,7 +48,7 @@ func RenderOverrides(data interface{}, tmp *template.Template) (string, error) {
 	var flOutputs bytes.Buffer
 	err := tmp.Execute(&flOutputs, data)
 	if err != nil {
-		return "", errors.Wrapf(err, "Template error while injecting cls overrides: %v", err)
+		return "", errors.Wrapf(err, "while rendering overrides")
 	}
 	return flOutputs.String(), nil
 }

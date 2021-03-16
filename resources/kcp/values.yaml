@@ -6,19 +6,19 @@ global:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-569"
+      version: "PR-589"
     provisioner:
       dir:
-      version: "PR-524"
+      version: "PR-580"
     kyma_environment_broker:
       dir:
-      version: "PR-523"
+      version: "PR-593"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-473"
+      version: "PR-593"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-407"
+      version: "PR-593"
     subscription_cleanup_job:
       dir:
       version: "PR-574"
