@@ -40,15 +40,12 @@ func TestClsBindingStep_Run(t *testing.T) {
     tls.verify        true
     URI               /
     Format            json`
-	expectedKibanaUrl := "kibUrl"
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
 		{
 			Key:   "fluent-bit.config.outputs.additional",
 			Value: expectedOverride,
 		},
 	}).Return(nil).Once()
-
-	inputCreatorMock.On("SetLabel", kibanaURLLabelKey, expectedKibanaUrl).Return(nil).Once()
 
 	operation := internal.ProvisioningOperation{
 		Operation: internal.Operation{

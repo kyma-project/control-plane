@@ -126,8 +126,6 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		}
 	}
 
-	operation.InputCreator.SetLabel(kibanaURLLabelKey, overrideParams.KibanaUrl)
-
 	extraConfTemplate, err := cls.GetExtraConfTemplate()
 	if err != nil {
 		log.Errorf("Unable to get CLS extra config template: %v", err)
