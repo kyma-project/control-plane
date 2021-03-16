@@ -60,7 +60,6 @@ func TestCheckKymaVersionAtLeast_1_21(t *testing.T) {
 		{"Check Kyma image 1.21.1", "1.21.1", true},
 		{"Check Kyma image 1.21.0", "1.21.0", true},
 		{"Check Kyma image 1.20.0", "1.20.0", false},
-		{"Check Kyma image 1.20.0-rc4", "1.20.0-rc4", true},
 		{"Check Kyma image 1.21.1", "1.21.1", true},
 		{"Check Kyma image 1.19.1", "1.19.1", false},
 	}

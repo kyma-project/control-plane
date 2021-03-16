@@ -38,7 +38,7 @@ func (s *AzureEventHubActivationStep) Run(operation internal.DeprovisioningOpera
 		log.Infof("Skipping step %s for Kyma version %s", s.Name(), kymaVersion)
 		return operation, 0, nil
 	}
-	if planID := operation.ProvisioningParameters.PlanID; broker.IsAzurePlan(planID) && !broker.IsTrialPlan(planID) {
+	if planID := operation.ProvisioningParameters.PlanID; !broker.IsAzurePlan(planID) || broker.IsTrialPlan(planID) {
 		log.Infof("Skipping step %s for planID %s", s.Name(), planID)
 		return operation, 0, nil
 	}
