@@ -34,10 +34,10 @@ func TestDeprovisionFailsIfFindQueryFails(t *testing.T) {
 	smClientMock := &smautomock.Client{}
 
 	// when
-	err := deprovisioner.Deprovision(logger.NewLogDummy(), smClientMock, &DeprovisionRequest{
+	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
-	})
+	}, logger.NewLogDummy())
 
 	// then
 	require.Error(t, err)
@@ -66,10 +66,10 @@ func TestDeprovisionReturnsEarlyIfCLSNotReferenced(t *testing.T) {
 	smClientMock := &smautomock.Client{}
 
 	// when
-	err := deprovisioner.Deprovision(logger.NewLogDummy(), smClientMock, &DeprovisionRequest{
+	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
-	})
+	}, logger.NewLogDummy())
 
 	// then
 	require.NoError(t, err)
@@ -99,10 +99,10 @@ func TestDeprovisionUnreferencesIfNotLastReference(t *testing.T) {
 	smClientMock := &smautomock.Client{}
 
 	// when
-	err := deprovisioner.Deprovision(logger.NewLogDummy(), smClientMock, &DeprovisionRequest{
+	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: secondFakeSKRInstanceID,
 		Instance:      fakeInstance,
-	})
+	}, logger.NewLogDummy())
 
 	// then
 	require.NoError(t, err)
@@ -139,10 +139,10 @@ func TestDeprovisionFailsIfUpdateQueryFailsAfterUnreferencing(t *testing.T) {
 	}
 
 	// when
-	err := deprovisioner.Deprovision(logger.NewLogDummy(), smClientMock, &DeprovisionRequest{
+	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
-	})
+	}, logger.NewLogDummy())
 
 	// then
 	require.Error(t, err)
@@ -175,10 +175,10 @@ func TestDeprovisionRemovesIfLastReference(t *testing.T) {
 	}
 
 	// when
-	err := deprovisioner.Deprovision(logger.NewLogDummy(), smClientMock, &DeprovisionRequest{
+	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
-	})
+	}, logger.NewLogDummy())
 
 	// then
 	require.NoError(t, err)
@@ -214,10 +214,10 @@ func TestDeprovisionFailsIfUpdateQueryFails(t *testing.T) {
 	}
 
 	// when
-	err := deprovisioner.Deprovision(logger.NewLogDummy(), smClientMock, &DeprovisionRequest{
+	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
-	})
+	}, logger.NewLogDummy())
 
 	// then
 	require.Error(t, err)
@@ -250,10 +250,10 @@ func TestDeprovisionRemovesInstanceIfLastReference(t *testing.T) {
 	}
 
 	// when
-	err := deprovisioner.Deprovision(logger.NewLogDummy(), smClientMock, &DeprovisionRequest{
+	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
-	})
+	}, logger.NewLogDummy())
 
 	// then
 	require.NoError(t, err)

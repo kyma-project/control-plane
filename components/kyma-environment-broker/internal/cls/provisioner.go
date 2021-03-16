@@ -52,7 +52,7 @@ func (p *provisioner) Provision(log logrus.FieldLogger, smClient servicemanager.
 
 	if !exists {
 		log.Infof("No CLS instance found for global account %s", request.GlobalAccountID)
-		return p.createNewInstance(log, smClient, request)
+		return p.createNewInstance(smClient, request, log)
 	}
 
 	log.Infof("Found existing cls instance for global account %s", request.GlobalAccountID)
@@ -70,7 +70,7 @@ func (p *provisioner) Provision(log logrus.FieldLogger, smClient servicemanager.
 	}, nil
 }
 
-func (p *provisioner) createNewInstance(log logrus.FieldLogger, smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
+func (p *provisioner) createNewInstance(smClient servicemanager.Client, request *ProvisionRequest, log logrus.FieldLogger) (*ProvisionResult, error) {
 	instance := internal.NewCLSInstance(request.GlobalAccountID, request.Region, internal.WithReferences(request.SKRInstanceID))
 
 	err := p.storage.Insert(*instance)

@@ -36,7 +36,7 @@ type DeprovisionRequest struct {
 	Instance      servicemanager.InstanceKey
 }
 
-func (d *Deprovisioner) Deprovision(log logrus.FieldLogger, smClient servicemanager.Client, request *DeprovisionRequest) error {
+func (d *Deprovisioner) Deprovision(smClient servicemanager.Client, request *DeprovisionRequest, log logrus.FieldLogger) error {
 	instance, exists, err := d.storage.FindByID(request.Instance.InstanceID)
 	if err != nil {
 		return errors.Wrapf(err, "while finding CLS instance %s", request.Instance.InstanceID)
