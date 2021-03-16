@@ -79,7 +79,8 @@ func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log
 			return operation, s.timeSchedule.Retry, nil
 		}
 
-		operation, repeat := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeClusterOperation) {
+		repeat := time.Duration(0)
+		operation, repeat = s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeClusterOperation) {
 			op.ProvisionerOperationID = *provisionerResponse.ID
 			op.Description = "cluster upgrade in progress"
 		}, log)

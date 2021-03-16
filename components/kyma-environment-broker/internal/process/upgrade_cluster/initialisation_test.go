@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma/automock"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
@@ -200,6 +201,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.NotNil(t, op.InputCreator)
 
 		storedOp, err := memoryStorage.Operations().GetUpgradeClusterOperationByID(op.Operation.ID)
+		op.InputCreator = nil
 		assert.Equal(t, op, *storedOp)
 		assert.NoError(t, err)
 	})
@@ -691,71 +693,46 @@ func fixUpgradeClusterOperation() internal.UpgradeClusterOperation {
 }
 
 func fixUpgradeClusterOperationWithAvs(avsData internal.AvsLifecycleData) internal.UpgradeClusterOperation {
-	n := time.Now()
-	windowEnd := n.Add(time.Minute)
-	return internal.UpgradeClusterOperation{
-		Operation: internal.Operation{
-			InstanceDetails: internal.InstanceDetails{
-				Avs: avsData,
-			},
-			ID:                     fixUpgradeOperationID,
-			InstanceID:             fixInstanceID,
-			OrchestrationID:        fixOrchestrationID,
-			ProvisionerOperationID: fixProvisionerOperationID,
-			State:                  orchestration.Pending,
-			Description:            "",
-			CreatedAt:              n,
-			UpdatedAt:              n,
-			ProvisioningParameters: fixProvisioningParameters(),
-		},
-		RuntimeOperation: orchestration.RuntimeOperation{
-			Runtime: orchestration.Runtime{
-				InstanceID:           fixInstanceID,
-				RuntimeID:            fixRuntimeID,
-				GlobalAccountID:      fixGlobalAccountID,
-				SubAccountID:         fixSubAccountID,
-				MaintenanceWindowEnd: windowEnd,
-			},
-		},
-	}
+	upgradeOperation := fixture.FixUpgradeClusterOperation(fixUpgradeOperationID, fixInstanceID)
+	upgradeOperation.OrchestrationID = fixOrchestrationID
+	upgradeOperation.ProvisionerOperationID = fixProvisionerOperationID
+	upgradeOperation.State = orchestration.Pending
+	upgradeOperation.Description = ""
+	upgradeOperation.UpdatedAt = time.Now()
+	upgradeOperation.InstanceDetails.Avs = avsData
+	upgradeOperation.ProvisioningParameters = fixProvisioningParameters()
+	upgradeOperation.RuntimeOperation.GlobalAccountID = fixGlobalAccountID
+	upgradeOperation.RuntimeOperation.SubAccountID = fixSubAccountID
+	upgradeOperation.InputCreator = nil
+
+	return upgradeOperation
 }
 
 func fixProvisioningOperation() internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ID:                     fixProvisioningOperationID,
-			InstanceID:             fixInstanceID,
-			ProvisionerOperationID: fixProvisionerOperationID,
-			Description:            "",
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Now(),
-			ProvisioningParameters: fixProvisioningParameters(),
-		},
-	}
+	provisioningOperation := fixture.FixProvisioningOperation(fixProvisioningOperationID, fixInstanceID)
+	provisioningOperation.ProvisionerOperationID = fixProvisionerOperationID
+	provisioningOperation.Description = ""
+	provisioningOperation.ProvisioningParameters = fixProvisioningParameters()
+
+	return provisioningOperation
 }
 
 func fixProvisioningParameters() internal.ProvisioningParameters {
-	return internal.ProvisioningParameters{
-		PlanID:    broker.GCPPlanID,
-		ServiceID: "",
-		ErsContext: internal.ERSContext{
-			GlobalAccountID: fixGlobalAccountID,
-			SubAccountID:    fixSubAccountID,
-		},
-		Parameters: internal.ProvisioningParametersDTO{},
-	}
+	pp := fixture.FixProvisioningParameters("1")
+	pp.PlanID = broker.AzurePlanID
+	pp.ServiceID = ""
+	pp.ErsContext.GlobalAccountID = fixGlobalAccountID
+	pp.ErsContext.SubAccountID = fixSubAccountID
+
+	return pp
 }
 
 func fixInstanceRuntimeStatus() internal.Instance {
-	return internal.Instance{
-		InstanceID:      fixInstanceID,
-		RuntimeID:       fixRuntimeID,
-		DashboardURL:    "",
-		GlobalAccountID: fixGlobalAccountID,
-		CreatedAt:       time.Time{},
-		UpdatedAt:       time.Time{},
-		DeletedAt:       time.Time{},
-	}
+	instance := fixture.FixInstance(fixInstanceID)
+	instance.RuntimeID = fixRuntimeID
+	instance.GlobalAccountID = fixGlobalAccountID
+
+	return instance
 }
 
 func StringPtr(s string) *string {

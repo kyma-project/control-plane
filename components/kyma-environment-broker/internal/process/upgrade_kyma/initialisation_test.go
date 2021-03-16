@@ -714,7 +714,8 @@ func fixUpgradeKymaOperationWithAvs(avsData internal.AvsLifecycleData) internal.
 	upgradeOperation.RuntimeVersion = internal.RuntimeVersionData{}
 	upgradeOperation.InstanceDetails.Avs = avsData
 	upgradeOperation.ProvisioningParameters = fixProvisioningParameters()
-	upgradeOperation.RuntimeOperation.Runtime = fixture.FixRuntime(fixUpgradeOperationID)
+	upgradeOperation.RuntimeOperation.GlobalAccountID = fixGlobalAccountID
+	upgradeOperation.RuntimeOperation.SubAccountID = fixSubAccountID
 
 	return upgradeOperation
 }
