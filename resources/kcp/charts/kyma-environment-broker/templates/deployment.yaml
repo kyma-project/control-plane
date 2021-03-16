@@ -54,6 +54,8 @@ spec:
               value: "{{ .Values.onlySingleTrialPerGA }}"
             - name: APP_OPERATION_TIMEOUT
               value: "{{ .Values.broker.operationTimeout }}"
+            - name: APP_PROVISIONING_DEFAULT_TRIAL_PROVIDER
+              value: "{{ .Values.defaultTrialProvider }}"
             - name: APP_PROVISIONING_URL
               value: "{{ .Values.provisioner.URL }}"
             - name: APP_PROVISIONING_TIMEOUT
