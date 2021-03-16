@@ -72,7 +72,7 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		case servicemanager.InProgress:
 			return operation, 10 * time.Second, nil
 		case servicemanager.Failed:
-			failureReason := fmt.Sprintf("CLS instance is in failed state")
+			failureReason := "CLS instance is in failed state"
 			log.Errorf("%s: %s", failureReason, resp.Description)
 			return s.operationManager.OperationFailed(operation, failureReason, log)
 		case servicemanager.Succeeded:
@@ -98,14 +98,14 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 			BindingID:   operation.Cls.Binding.BindingID,
 		})
 		if err != nil {
-			failureReason := fmt.Sprintf("Unable to create CLS Binding")
+			failureReason := "Unable to create CLS Binding"
 			log.Errorf("%s: %v", failureReason, err)
 			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
 
 		encryptedOverrideParams, err := cls.EncryptOverrides(s.secretKey, overrideParams)
 		if err != nil {
-			failureReason := fmt.Sprintf("Unable to encrypt CLS overrides")
+			failureReason := "Unable to encrypt CLS overrides"
 			log.Errorf("%s: %v", failureReason, err)
 			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
@@ -124,7 +124,7 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		// fetch existing overrides
 		overrideParams, err = cls.DecryptOverrides(s.secretKey, operation.Cls.Overrides)
 		if err != nil {
-			failureReason := fmt.Sprintf("Unable to decrypt CLS overrides")
+			failureReason := "Unable to decrypt CLS overrides"
 			log.Errorf("%s: %v", failureReason, err)
 			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
