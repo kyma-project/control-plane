@@ -234,7 +234,7 @@ func isDBContainerAvailable(hostname, port string) (isAvailable bool, dbCfg Conf
 	defer func(c *dbr.Connection) {
 		err = c.Close()
 		if err != nil {
-			errors.Wrap(err,"failed to close database connection...")
+			errors.Wrap(err, "failed to close database connection...")
 		}
 	}(connection)
 

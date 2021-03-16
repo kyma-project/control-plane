@@ -9,14 +9,14 @@ import (
 )
 
 const (
-	initTests = "Initialization tests"
-	instanceTests = "Instances tests"
-	operationTests = "Operations tests"
-	conflictTests = "Conflicts tests"
+	initTests          = "Initialization tests"
+	instanceTests      = "Instances tests"
+	operationTests     = "Operations tests"
+	conflictTests      = "Conflicts tests"
 	orchestrationTests = "Orchestrations tests"
-	runtimestateTests = "RuntimeStates tests"
-	lmstenantTests = "LMS Tenants"
-	clsinstanceTests = "CLS Instances"
+	runtimestateTests  = "RuntimeStates tests"
+	lmstenantTests     = "LMS Tenants"
+	clsinstanceTests   = "CLS Instances"
 )
 
 var testsRanInSuite bool
@@ -44,13 +44,13 @@ func TestPostgres(t *testing.T) {
 
 func fixTests() map[string]func(t *testing.T) {
 	return map[string]func(t *testing.T){
-		initTests: TestInitialization,
-		instanceTests: TestInstance,
-		operationTests: TestOperation,
-		conflictTests: TestConflict,
+		initTests:          TestInitialization,
+		instanceTests:      TestInstance,
+		operationTests:     TestOperation,
+		conflictTests:      TestConflict,
 		orchestrationTests: TestOrchestration,
-		runtimestateTests: TestRuntimeState,
-		lmstenantTests: TestLMSTenant,
-		clsinstanceTests: TestClsInstance,
+		runtimestateTests:  TestRuntimeState,
+		lmstenantTests:     TestLMSTenant,
+		clsinstanceTests:   TestClsInstance,
 	}
 }

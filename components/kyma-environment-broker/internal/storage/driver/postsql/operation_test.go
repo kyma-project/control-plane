@@ -303,7 +303,6 @@ func TestOperation(t *testing.T) {
 		givenOperation2.Description = "description"
 		givenOperation2.Version = 1
 		givenOperation2.OrchestrationID = orchestrationID
-		givenOperation2.ProvisioningParameters = internal.ProvisioningParameters{}
 		givenOperation2.RuntimeOperation = fixRuntimeOperation("operation-id-2")
 
 		givenOperation3 := internal.UpgradeClusterOperation{
