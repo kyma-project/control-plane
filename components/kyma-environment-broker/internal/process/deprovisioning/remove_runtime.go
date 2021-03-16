@@ -54,14 +54,14 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 
 	if instance.RuntimeID == "" {
 		// happens when provisioning process failed and Create_Runtime step was never reached
-		log.Warnf("Runtime does not exist for instance id %q", instance.InstanceID)
+		// It can also happen when the SKR is suspended (technically deprovisioned)
+		log.Infof("Runtime does not exist for instance id %q", instance.InstanceID)
 
 		err := s.cleanUp(&operation, log)
 		if err != nil {
 			return operation, 1 * time.Second, nil
 		}
 		operation, _, _ := s.operationManager.OperationSucceeded(operation, "Runtime was never provisioned", log)
-		// return repeat mode (1 sec) to start the initialization step which will finish process and remove instance
 		return operation, 1 * time.Second, nil
 	}
 	log = log.WithField("runtimeID", instance.RuntimeID)
