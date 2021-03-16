@@ -135,7 +135,6 @@ func TestCreateInstance(t *testing.T) {
 func TestCreateBinding(t *testing.T) {
 	smClientMock := &automock.Client{}
 	creds := make(map[string]interface{})
-	creds["Kibana-endpoint"] = "kibUrl"
 	creds["Fluentd-username"] = "fbUser"
 	creds["Fluentd-password"] = "fbPass"
 	creds["Fluentd-endpoint"] = "fbEndpoint"
@@ -154,7 +153,6 @@ func TestCreateBinding(t *testing.T) {
 		FluentdEndPoint: "fbEndpoint",
 		FluentdPassword: "fbPass",
 		FluentdUsername: "fbUser",
-		KibanaUrl:       "kibUrl",
 	}
 	res, err := sut.CreateBinding(smClientMock, &br)
 	require.NoError(t, err)

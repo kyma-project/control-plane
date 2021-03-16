@@ -40,7 +40,6 @@ func TestClsBindingStep_Run(t *testing.T) {
     tls.verify        true
     URI               /
     Format            json`
-	//expectedKibanaUrl := "kibUrl"
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
 		{Key: "fluent-bit.config.outputs.forward.enabled", Value: "false"},
 		{Key: "fluent-bit.config.outputs.additional", Value: expectedOverride},
@@ -108,7 +107,6 @@ func TestClsBindingStep_Run(t *testing.T) {
 		FluentdEndPoint: "fooEndPoint",
 		FluentdPassword: "fooPass",
 		FluentdUsername: "fooUser",
-		KibanaUrl:       "kibUrl",
 	}, nil)
 
 	bindingStep := NewClsUpgradeBindStep(config, clsBindingProvider, repo, "1234567890123456")

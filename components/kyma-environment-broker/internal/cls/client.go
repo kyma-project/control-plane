@@ -34,7 +34,6 @@ type OverrideParams struct {
 	FluentdEndPoint string `json:"Fluentd-endpoint"`
 	FluentdPassword string `json:"Fluentd-password"`
 	FluentdUsername string `json:"Fluentd-username"`
-	KibanaUrl       string `json:"Kibana-endpoint"`
 }
 
 type BindingRequest struct {
@@ -103,7 +102,6 @@ func (c *Client) CreateBinding(smClient servicemanager.Client, request *BindingR
 	}
 
 	return &OverrideParams{
-		KibanaUrl:       resp.Credentials["Kibana-endpoint"].(string),
 		FluentdUsername: resp.Credentials["Fluentd-username"].(string),
 		FluentdPassword: resp.Credentials["Fluentd-password"].(string),
 		FluentdEndPoint: resp.Credentials["Fluentd-endpoint"].(string),

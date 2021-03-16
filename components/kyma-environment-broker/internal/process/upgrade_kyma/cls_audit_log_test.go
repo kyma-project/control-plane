@@ -63,7 +63,6 @@ return "fooBar"
 		FluentdEndPoint: "foo.bar",
 		FluentdPassword: "fooPass",
 		FluentdUsername: "fooUser",
-		KibanaUrl:       "Kiib.url",
 	}
 	secretKey := "1234567890123456"
 	encrypted, err := cls.EncryptOverrides(secretKey, &overridesIn)
@@ -267,7 +266,6 @@ return "fooBar"
 		FluentdEndPoint: "foo.bar",
 		FluentdPassword: "fooPass",
 		FluentdUsername: "fooUser",
-		KibanaUrl:       "Kiib.url",
 	}
 	secretKey := "1234567890123456"
 
