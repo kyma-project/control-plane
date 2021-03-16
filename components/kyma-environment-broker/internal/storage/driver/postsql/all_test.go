@@ -16,6 +16,7 @@ const (
 	orchestrationTests = "Orchestrations tests"
 	runtimestateTests = "RuntimeStates tests"
 	lmstenantTests = "LMS Tenants"
+	clsinstanceTests = "CLS Instances"
 )
 
 var testsRanInSuite bool
@@ -50,5 +51,6 @@ func fixTests() map[string]func(t *testing.T) {
 		orchestrationTests: TestOrchestration,
 		runtimestateTests: TestRuntimeState,
 		lmstenantTests: TestLMSTenant,
+		clsinstanceTests: TestClsInstance,
 	}
 }
