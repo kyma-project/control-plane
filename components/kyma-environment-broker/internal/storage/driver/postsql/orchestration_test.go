@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -30,6 +31,7 @@ func TestOrchestration(t *testing.T) {
 		defer containerCleanupFunc()
 
 		givenOrchestration := fixture.FixOrchestration("test")
+		givenOrchestration.Type = orchestration.UpgradeKymaOrchestration
 		givenOrchestration.State = "test"
 		givenOrchestration.Description = "test"
 		givenOrchestration.Parameters.DryRun = true
@@ -51,6 +53,7 @@ func TestOrchestration(t *testing.T) {
 		gotOrchestration, err := svc.GetByID("test")
 		require.NoError(t, err)
 		assert.Equal(t, givenOrchestration.Parameters, gotOrchestration.Parameters)
+		assert.Equal(t, orchestration.UpgradeKymaOrchestration, gotOrchestration.Type)
 
 		gotOrchestration.Description = "new modified description 1"
 		err = svc.Update(givenOrchestration)
@@ -65,8 +68,10 @@ func TestOrchestration(t *testing.T) {
 		assert.Equal(t, 1, count)
 		assert.Equal(t, 1, totalCount)
 
-		l, err = svc.ListByState("test")
+		l, c, tc, err := svc.List(dbmodel.OrchestrationFilter{States: []string{"test"}, Types: []string{string(orchestration.UpgradeKymaOrchestration)}})
 		require.NoError(t, err)
 		assert.Len(t, l, 1)
+		assert.Equal(t, 1, c)
+		assert.Equal(t, 1, tc)
 	})
 }

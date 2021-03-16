@@ -202,7 +202,7 @@ func TestOperation(t *testing.T) {
 		assert.Equal(t, 2, len(opList))
 	})
 
-	t.Run("Upgrade", func(t *testing.T) {
+	t.Run("Upgrade Kyma", func(t *testing.T) {
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
@@ -274,6 +274,100 @@ func TestOperation(t *testing.T) {
 		assert.Equal(t, count, 3)
 		assert.Equal(t, totalCount, 3)
 	})
+
+	t.Run("Upgrade Cluster", func(t *testing.T) {
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		require.NoError(t, err)
+		defer containerCleanupFunc()
+
+		orchestrationID := "orchestration-id"
+
+		givenOperation1 := internal.UpgradeClusterOperation{
+			Operation: fixture.FixOperation("operation-id-1", "inst-id"),
+		}
+		givenOperation1.State = domain.InProgress
+		givenOperation1.CreatedAt = givenOperation1.CreatedAt.Truncate(time.Millisecond)
+		givenOperation1.UpdatedAt = givenOperation1.UpdatedAt.Truncate(time.Millisecond).Add(time.Second)
+		givenOperation1.ProvisionerOperationID = "target-op-id"
+		givenOperation1.Description = "description"
+		givenOperation1.Version = 1
+		givenOperation1.OrchestrationID = orchestrationID
+
+		givenOperation2 := internal.UpgradeClusterOperation{
+			Operation: fixture.FixOperation("operation-id-2", "inst-id"),
+		}
+		givenOperation2.State = domain.InProgress
+		givenOperation2.CreatedAt = givenOperation2.CreatedAt.Truncate(time.Millisecond).Add(time.Minute)
+		givenOperation2.UpdatedAt = givenOperation2.UpdatedAt.Truncate(time.Millisecond).Add(time.Minute).Add(time.Second)
+		givenOperation2.ProvisionerOperationID = "target-op-id"
+		givenOperation2.Description = "description"
+		givenOperation2.Version = 1
+		givenOperation2.OrchestrationID = orchestrationID
+		givenOperation2.ProvisioningParameters = internal.ProvisioningParameters{}
+		givenOperation2.RuntimeOperation = fixRuntimeOperation("operation-id-2")
+
+		givenOperation3 := internal.UpgradeClusterOperation{
+			Operation: fixture.FixOperation("operation-id-3", "inst-id"),
+		}
+		givenOperation3.State = orchestration.Pending
+		givenOperation3.CreatedAt = givenOperation3.CreatedAt.Truncate(time.Millisecond).Add(2 * time.Hour)
+		givenOperation3.UpdatedAt = givenOperation3.UpdatedAt.Truncate(time.Millisecond).Add(2 * time.Hour).Add(10 * time.Minute)
+		givenOperation3.ProvisionerOperationID = "target-op-id"
+		givenOperation3.Description = "pending-operation"
+		givenOperation3.Version = 1
+		givenOperation3.OrchestrationID = orchestrationID
+		givenOperation3.RuntimeOperation = fixRuntimeOperation("operation-id-3")
+
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+		defer tablesCleanupFunc()
+
+		cipher := storage.NewEncrypter(cfg.SecretKey)
+		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		require.NoError(t, err)
+
+		svc := brokerStorage.Operations()
+
+		// when
+		err = svc.InsertUpgradeClusterOperation(givenOperation1)
+		require.NoError(t, err)
+		err = svc.InsertUpgradeClusterOperation(givenOperation2)
+		require.NoError(t, err)
+		err = svc.InsertUpgradeClusterOperation(givenOperation3)
+		require.NoError(t, err)
+
+		// then
+		op, err := svc.GetUpgradeClusterOperationByID(givenOperation3.Operation.ID)
+		require.NoError(t, err)
+		assertUpgradeClusterOperation(t, givenOperation3, *op)
+
+		lastOp, err := svc.GetLastOperation("inst-id")
+		require.NoError(t, err)
+		assert.Equal(t, givenOperation2.Operation.ID, lastOp.ID)
+
+		ops, count, totalCount, err := svc.ListUpgradeClusterOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{PageSize: 10, Page: 1})
+		require.NoError(t, err)
+		assert.Len(t, ops, 3)
+		assert.Equal(t, count, 3)
+		assert.Equal(t, totalCount, 3)
+
+		ops, err = svc.ListUpgradeClusterOperationsByInstanceID("inst-id")
+		require.NoError(t, err)
+		assert.Len(t, ops, 3)
+
+		// when
+		givenOperation3.Description = "diff"
+		givenOperation3.ProvisionerOperationID = "modified-op-id"
+		op, err = svc.UpdateUpgradeClusterOperation(givenOperation3)
+		op.CreatedAt = op.CreatedAt.Truncate(time.Millisecond)
+		op.MaintenanceWindowBegin = op.MaintenanceWindowBegin.Truncate(time.Millisecond)
+		op.MaintenanceWindowEnd = op.MaintenanceWindowEnd.Truncate(time.Millisecond)
+
+		// then
+		got, err := svc.GetUpgradeClusterOperationByID(givenOperation3.Operation.ID)
+		require.NoError(t, err)
+		assertUpgradeClusterOperation(t, *op, *got)
+	})
 }
 
 func assertProvisioningOperation(t *testing.T, expected, got internal.ProvisioningOperation) {
@@ -299,6 +393,20 @@ func assertDeprovisioningOperation(t *testing.T, expected, got internal.Deprovis
 }
 
 func assertUpgradeKymaOperation(t *testing.T, expected, got internal.UpgradeKymaOperation) {
+	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
+	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
+	assert.True(t, expected.MaintenanceWindowBegin.Equal(got.MaintenanceWindowBegin))
+	assert.True(t, expected.MaintenanceWindowEnd.Equal(got.MaintenanceWindowEnd))
+	assert.Equal(t, expected.InstanceDetails, got.InstanceDetails)
+
+	expected.CreatedAt = got.CreatedAt
+	expected.UpdatedAt = got.UpdatedAt
+	expected.MaintenanceWindowBegin = got.MaintenanceWindowBegin
+	expected.MaintenanceWindowEnd = got.MaintenanceWindowEnd
+	assert.Equal(t, expected, got)
+}
+
+func assertUpgradeClusterOperation(t *testing.T, expected, got internal.UpgradeClusterOperation) {
 	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
 	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
 	assert.True(t, expected.MaintenanceWindowBegin.Equal(got.MaintenanceWindowBegin))
