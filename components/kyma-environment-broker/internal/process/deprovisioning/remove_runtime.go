@@ -56,6 +56,10 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 		// happens when provisioning process failed and Create_Runtime step was never reached
 		log.Warnf("Runtime does not exist for instance id %q", instance.InstanceID)
 
+		err := s.cleanUp(&operation, log)
+		if err != nil {
+			return operation, 1 * time.Second, nil
+		}
 		operation, _, _ := s.operationManager.OperationSucceeded(operation, "Runtime was never provisioned", log)
 		// return repeat mode (1 sec) to start the initialization step which will finish process and remove instance
 		return operation, 1 * time.Second, nil
@@ -83,4 +87,17 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 	log.Infof("runtime deletion process initiated successfully")
 	// return repeat mode (1 sec) to start the initialization step which will now check the runtime status
 	return operation, 1 * time.Second, nil
+}
+
+func (s *RemoveRuntimeStep) cleanUp(operation *internal.DeprovisioningOperation, log logrus.FieldLogger) error {
+	if !operation.Temporary {
+		log.Info("Removing the instance")
+		err := s.instanceStorage.Delete(operation.InstanceID)
+		if err != nil {
+			return err
+		}
+		log.Info("Removing the userID field from operation")
+		operation.ProvisioningParameters.ErsContext.UserID = ""
+	}
+	return nil
 }
