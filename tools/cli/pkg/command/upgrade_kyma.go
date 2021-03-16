@@ -2,16 +2,19 @@ package command
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"golang.org/x/mod/semver"
 )
 
 // UpgradeKymaCommand represents an execution of the kcp upgrade kyma command. Inherits fields and methods of UpgradeCommand
 type UpgradeKymaCommand struct {
 	UpgradeCommand
+	version  string
 	cobraCmd *cobra.Command
 }
 
@@ -40,6 +43,12 @@ Additional Kyma configurations to use for the upgrade are taken from Kyma Contro
 	return cobraCmd
 }
 
+// SetUpgradeOpts configures the upgrade kyma specific options on the given command
+func (cmd *UpgradeKymaCommand) SetUpgradeOpts(cobraCmd *cobra.Command) {
+	cmd.UpgradeCommand.SetUpgradeOpts(cobraCmd)
+	cobraCmd.Flags().StringVarP(&cmd.version, "version", "v", "", "Kyma version to use. Supports semantic (1.18.0), PR-<number> (PR-123), and <branch name>-<commit hash> (master-00e83e99) as values.")
+}
+
 // Run executes the upgrade kyma command
 func (cmd *UpgradeKymaCommand) Run() error {
 	cmd.log = logger.New()
@@ -58,5 +67,29 @@ func (cmd *UpgradeKymaCommand) Validate() error {
 	if err != nil {
 		return err
 	}
+
+	// Validate version
+	// More advanced Kyma validation (via git resolution) is handled by KEB
+	if err = ValidateUpgradeKymaVersionFmt(cmd.version); err != nil {
+		return err
+	}
+	cmd.orchestrationParams.Version = cmd.version
+
 	return nil
+}
+
+func ValidateUpgradeKymaVersionFmt(version string) error {
+	switch {
+	// handle semantic version
+	case semver.IsValid(fmt.Sprintf("v%s", version)):
+		return nil
+	// handle PR-<number>
+	case strings.HasPrefix(version, "PR-"):
+		return nil
+	// handle <branch name>-<commit hash>
+	case strings.Contains(version, "-"):
+		return nil
+	}
+
+	return fmt.Errorf("unsupported version format: %s", version)
 }

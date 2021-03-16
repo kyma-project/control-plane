@@ -2,9 +2,6 @@ package command
 
 import (
 	"fmt"
-	"strings"
-
-	"golang.org/x/mod/semver"
 
 	"github.com/spf13/cobra"
 
@@ -19,7 +16,6 @@ type UpgradeCommand struct {
 	targetExcludeInputs []string
 	strategy            string
 	schedule            string
-	version             string
 	orchestrationParams orchestration.Parameters
 }
 
@@ -48,7 +44,6 @@ func (cmd *UpgradeCommand) SetUpgradeOpts(cobraCmd *cobra.Command) {
 	cobraCmd.Flags().StringVar(&cmd.strategy, "strategy", string(orchestration.ParallelStrategy), "Orchestration strategy to use.")
 	cobraCmd.Flags().IntVar(&cmd.orchestrationParams.Strategy.Parallel.Workers, "parallel-workers", 0, "Number of parallel workers to use in parallel orchestration strategy. By default the amount of workers will be auto-selected on control plane server side.")
 	cobraCmd.Flags().StringVar(&cmd.schedule, "schedule", "", "Orchestration schedule to use. Possible values: \"immediate\", \"maintenancewindow\". By default the schedule will be auto-selected on control plane server side.")
-	cobraCmd.Flags().StringVarP(&cmd.version, "version", "v", "", "Kyma version to use. Supports semantic (1.18.0), PR-<number> (PR-123), and <branch name>-<commit hash> (master-00e83e99) as values.")
 	cobraCmd.Flags().BoolVar(&cmd.orchestrationParams.DryRun, "dry-run", false, "Perform the orchestration without executing the actual upgrage operations for the Runtimes. The details can be obtained using the \"kcp orchestrations\" command.")
 }
 
@@ -74,28 +69,5 @@ func (cmd *UpgradeCommand) ValidateTransformUpgradeOpts() error {
 		return fmt.Errorf("invalid value for strategy: %s", cmd.strategy)
 	}
 
-	// Validate version
-	// More advanced Kyma validation (via git resolution) is handled by KEB
-	if err = ValidateUpgradeKymaVersionFmt(cmd.version); err != nil {
-		return err
-	}
-	cmd.orchestrationParams.Version = cmd.version
-
 	return nil
-}
-
-func ValidateUpgradeKymaVersionFmt(version string) error {
-	switch {
-	// handle semantic version
-	case semver.IsValid(fmt.Sprintf("v%s", version)):
-		return nil
-	// handle PR-<number>
-	case strings.HasPrefix(version, "PR-"):
-		return nil
-	// handle <branch name>-<commit hash>
-	case strings.Contains(version, "-"):
-		return nil
-	}
-
-	return fmt.Errorf("unsupported version format: %s", version)
 }
