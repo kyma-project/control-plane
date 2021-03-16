@@ -57,7 +57,8 @@ func TestClsDeprovisionSteps(t *testing.T) {
 				ErsContext: internal.ERSContext{GlobalAccountID: globalAccountID}},
 			InstanceDetails: internal.InstanceDetails{
 				Cls: internal.ClsData{
-					Region: "eu",
+					Region:    "eu",
+					Overrides: "bsae64-encrypted-overrides",
 					Instance: internal.ServiceManagerInstanceInfo{
 						BrokerID:              os.Getenv("BROKER_ID"), // saved in InstanceKey, see the provisioning step
 						ServiceID:             os.Getenv("SERVICE_ID"),

@@ -222,7 +222,7 @@ func main() {
 	}
 
 	// CLS
-	clsFile, err := ioutil.ReadFile("/secrets/cls-config/cls-config.yaml")
+	clsFile, err := ioutil.ReadFile("/cls-config/cls-config.yaml")
 	if err != nil {
 		fatalOnError(err)
 	}
