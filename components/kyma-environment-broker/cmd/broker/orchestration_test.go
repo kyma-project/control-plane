@@ -6,7 +6,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 )
 
-func TestOrchestration_OneRuntimeHappyPath(t *testing.T) {
+func TestKymaUpgrade_OneRuntimeHappyPath(t *testing.T) {
 	// given
 	suite := NewOrchestrationSuite(t)
 	runtimeID := suite.CreateProvisionedRuntime(RuntimeOptions{})

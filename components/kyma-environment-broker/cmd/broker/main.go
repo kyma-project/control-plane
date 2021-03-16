@@ -504,7 +504,7 @@ func main() {
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
 		&cfg, accountProvider, serviceManagerClientFactory, logs)
-	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, time.Minute, runtimeResolver, logs)
+	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, time.Minute, runtimeResolver, upgradeEvalManager, logs)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
 	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, clusterQueue, cfg.MaxPaginationPage, logs)
@@ -716,23 +716,40 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		upgradeKymaManager, runtimeResolver, pollingInterval, smcf, logs.WithField("upgradeKyma", "orchestration"))
 	queue := process.NewQueue(orchestrateKymaManager, logs)
 
-	// TODO: allow multiple orchestration processing concurrently
-	queue.Run(ctx.Done(), 1)
+	queue.Run(ctx.Done(), 3)
 
 	return queue
 }
 
 func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStorage, provisionerClient provisioner.Client,
 	pub event.Publisher, inputFactory input.CreatorForPlan, pollingInterval time.Duration, runtimeResolver orchestrationExt.RuntimeResolver,
-	logs logrus.FieldLogger) *process.Queue {
+	upgradeEvalManager *avs.EvaluationManager, logs logrus.FieldLogger) *process.Queue {
 
 	upgradeClusterManager := upgrade_cluster.NewManager(db.Operations(), pub, logs.WithField("upgradeCluster", "manager"))
+	upgradeClusterInit := upgrade_cluster.NewInitialisationStep(db.Operations(), db.Orchestrations(), provisionerClient, inputFactory, upgradeEvalManager, nil)
+	upgradeClusterManager.InitStep(upgradeClusterInit)
+
+	upgradeClusterSteps := []struct {
+		disabled bool
+		weight   int
+		step     upgrade_cluster.Step
+	}{
+		{
+			weight: 10,
+			step:   upgrade_cluster.NewUpgradeClusterStep(db.Operations(), db.RuntimeStates(), provisionerClient, nil),
+		},
+	}
+	for _, step := range upgradeClusterSteps {
+		if !step.disabled {
+			upgradeClusterManager.AddStep(step.weight, step.step)
+		}
+	}
+
 	orchestrateClusterManager := manager.NewUpgradeClusterManager(db.Orchestrations(), db.Operations(), db.Instances(),
 		upgradeClusterManager, runtimeResolver, pollingInterval, logs.WithField("upgradeCluster", "orchestration"))
 	queue := process.NewQueue(orchestrateClusterManager, logs)
 
-	// TODO: allow multiple orchestration processing concurrently
-	queue.Run(ctx.Done(), 1)
+	queue.Run(ctx.Done(), 3)
 
 	return queue
 }
