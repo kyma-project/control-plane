@@ -18,7 +18,7 @@ type ClsDeprovisioner struct {
 }
 
 // Deprovision provides a mock function with given fields: log, smClient, request
-func (_m *ClsDeprovisioner) Deprovision(log logrus.FieldLogger, smClient servicemanager.Client, request *cls.DeprovisionRequest) error {
+func (_m *ClsDeprovisioner) Deprovision(smClient servicemanager.Client, request *cls.DeprovisionRequest, log logrus.FieldLogger) error {
 	ret := _m.Called(log, smClient, request)
 
 	var r0 error
