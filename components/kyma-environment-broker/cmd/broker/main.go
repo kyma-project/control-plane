@@ -335,7 +335,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     provisioning.NewClsOfferingStep(clsConfig, db.Operations()),
+			step:     provisioning.NewSkipForTrialPlanStep(provisioning.NewClsOfferingStep(clsConfig, db.Operations())),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -365,7 +365,7 @@ func main() {
 		},
 		{
 			weight:   2,
-			step:     provisioning.NewClsProvisionStep(clsConfig, clsProvisioner, db.Operations()),
+			step:     provisioning.NewSkipForTrialPlanStep(provisioning.NewClsProvisionStep(clsConfig, clsProvisioner, db.Operations())),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -421,13 +421,13 @@ func main() {
 		},
 		{
 			weight:   7,
-			step:     provisioning.NewClsBindStep(clsConfig, clsClient, db.Operations(), cfg.Database.SecretKey),
+			step:     provisioning.NewSkipForTrialPlanStep(provisioning.NewClsBindStep(clsConfig, clsClient, db.Operations(), cfg.Database.SecretKey)),
 			disabled: cfg.Cls.Disabled,
 		},
 
 		{
 			weight:   8,
-			step:     provisioning.NewClsAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
+			step:     provisioning.NewSkipForTrialPlanStep(provisioning.NewClsAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey)),
 			disabled: cfg.Cls.Disabled,
 		},
 
@@ -481,7 +481,7 @@ func main() {
 		},
 		{
 			weight:   1,
-			step:     deprovisioning.NewClsUnbindStep(clsConfig, db.Operations()),
+			step:     deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewClsUnbindStep(clsConfig, db.Operations())),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -496,7 +496,7 @@ func main() {
 		},
 		{
 			weight:   2,
-			step:     deprovisioning.NewClsDeprovisionStep(clsConfig, db.Operations(), clsDeprovisioner),
+			step:     deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewClsDeprovisionStep(clsConfig, db.Operations(), clsDeprovisioner)),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -744,7 +744,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight:   1,
-			step:     upgrade_kyma.NewClsUpgradeOfferingStep(clsConfig, db.Operations()),
+			step:     upgrade_kyma.NewSkipForTrialPlanStep(upgrade_kyma.NewClsUpgradeOfferingStep(clsConfig, db.Operations())),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -763,7 +763,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight:   4,
-			step:     upgrade_kyma.NewClsUpgradeProvisionStep(clsConfig, clsProvisioner, db.Operations()),
+			step:     upgrade_kyma.NewSkipForTrialPlanStep(upgrade_kyma.NewClsUpgradeProvisionStep(clsConfig, clsProvisioner, db.Operations())),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -773,12 +773,12 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight:   7,
-			step:     upgrade_kyma.NewClsUpgradeBindStep(clsConfig, clsClient, db.Operations(), cfg.Database.SecretKey),
+			step:     upgrade_kyma.NewSkipForTrialPlanStep(upgrade_kyma.NewClsUpgradeBindStep(clsConfig, clsClient, db.Operations(), cfg.Database.SecretKey)),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
 			weight:   8,
-			step:     upgrade_kyma.NewClsUpgradeAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey),
+			step:     upgrade_kyma.NewSkipForTrialPlanStep(upgrade_kyma.NewClsUpgradeAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey)),
 			disabled: cfg.Cls.Disabled,
 		},
 
