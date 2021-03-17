@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -82,8 +83,9 @@ const (
 )
 
 //DetermineServiceManagerRegion maps a hyperscaler-specific region (currently, Azure only) to a region where a CLS instance is to be provisioned. Returns eu as a fallback regions.
-func DetermineServiceManagerRegion(skrRegion *string) string {
+func DetermineServiceManagerRegion(skrRegion *string, log logrus.FieldLogger) string {
 	if skrRegion == nil {
+		log.Warnf("No region provided, falling back to %s", fallbackServiceManagerRegion)
 		return fallbackServiceManagerRegion
 	}
 
@@ -98,6 +100,8 @@ func DetermineServiceManagerRegion(skrRegion *string) string {
 			return RegionUS
 		}
 	}
+
+	log.Warnf("Unknown region %s, falling back to %s", *skrRegion, fallbackServiceManagerRegion)
 
 	return fallbackServiceManagerRegion
 }

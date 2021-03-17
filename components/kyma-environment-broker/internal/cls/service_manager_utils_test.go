@@ -3,6 +3,7 @@ package cls
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/stretchr/testify/require"
 )
@@ -39,7 +40,7 @@ func TestDetermineServiceManagerRegion(t *testing.T) {
 		t.Run(tc.summary, func(t *testing.T) {
 			// given
 			// when
-			smRegion := DetermineServiceManagerRegion(tc.givenSKRRegion)
+			smRegion := DetermineServiceManagerRegion(tc.givenSKRRegion, logger.NewLogDummy())
 
 			// then
 			require.Equal(t, tc.expectedSMRegion, smRegion)
