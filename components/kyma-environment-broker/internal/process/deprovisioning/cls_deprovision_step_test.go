@@ -114,10 +114,10 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 	t.Run("triggering of deprovisioning succeeds", func(t *testing.T) {
 		// given
 		deprovisionerMock := &automock.ClsDeprovisioner{}
-		deprovisionerMock.On("Deprovision", mock.Anything, mock.Anything, &cls.DeprovisionRequest{
+		deprovisionerMock.On("Deprovision", mock.Anything, &cls.DeprovisionRequest{
 			SKRInstanceID: skrInstanceID,
 			Instance:      clsInstance.InstanceKey(),
-		}).Return(nil)
+		}, mock.Anything).Return(nil)
 
 		step := NewClsDeprovisionStep(config, repo, deprovisionerMock)
 
