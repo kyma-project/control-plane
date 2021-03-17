@@ -16,13 +16,13 @@ type ClsProvisioner struct {
 	mock.Mock
 }
 
-// Provision provides a mock function with given fields: log, smClient, request
+// Provision provides a mock function with given fields: smClient, request, log
 func (_m *ClsProvisioner) Provision(smClient servicemanager.Client, request *cls.ProvisionRequest, log logrus.FieldLogger) (*cls.ProvisionResult, error) {
-	ret := _m.Called(log, smClient, request)
+	ret := _m.Called(smClient, request, log)
 
 	var r0 *cls.ProvisionResult
-	if rf, ok := ret.Get(0).(func(logrus.FieldLogger, servicemanager.Client, *cls.ProvisionRequest) *cls.ProvisionResult); ok {
-		r0 = rf(log, smClient, request)
+	if rf, ok := ret.Get(0).(func(servicemanager.Client, *cls.ProvisionRequest, logrus.FieldLogger) *cls.ProvisionResult); ok {
+		r0 = rf(smClient, request, log)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*cls.ProvisionResult)
@@ -30,8 +30,8 @@ func (_m *ClsProvisioner) Provision(smClient servicemanager.Client, request *cls
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(logrus.FieldLogger, servicemanager.Client, *cls.ProvisionRequest) error); ok {
-		r1 = rf(log, smClient, request)
+	if rf, ok := ret.Get(1).(func(servicemanager.Client, *cls.ProvisionRequest, logrus.FieldLogger) error); ok {
+		r1 = rf(smClient, request, log)
 	} else {
 		r1 = ret.Error(1)
 	}

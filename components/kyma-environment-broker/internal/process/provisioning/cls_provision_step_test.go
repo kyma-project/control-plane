@@ -81,7 +81,7 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 	}
 
 	provisionerMock := &clsMock.ClsProvisioner{}
-	provisionerMock.On("Provision", mock.Anything, mock.Anything, &cls.ProvisionRequest{
+	provisionerMock.On("Provision", mock.Anything, &cls.ProvisionRequest{
 		GlobalAccountID: operation.ProvisioningParameters.ErsContext.GlobalAccountID,
 		Region:          "eu",
 		Instance: servicemanager.InstanceKey{
@@ -89,7 +89,7 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 			ServiceID: "svc-id",
 			PlanID:    "plan-id",
 		},
-	}).Return(&cls.ProvisionResult{
+	},mock.Anything).Return(&cls.ProvisionResult{
 		InstanceID: "instance_id",
 	}, nil)
 

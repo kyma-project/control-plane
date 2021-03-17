@@ -17,13 +17,13 @@ type ClsDeprovisioner struct {
 	mock.Mock
 }
 
-// Deprovision provides a mock function with given fields: log, smClient, request
+// Deprovision provides a mock function with given fields: smClient, request, log
 func (_m *ClsDeprovisioner) Deprovision(smClient servicemanager.Client, request *cls.DeprovisionRequest, log logrus.FieldLogger) error {
-	ret := _m.Called(log, smClient, request)
+	ret := _m.Called(smClient, request, log)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(logrus.FieldLogger, servicemanager.Client, *cls.DeprovisionRequest) error); ok {
-		r0 = rf(log, smClient, request)
+	if rf, ok := ret.Get(0).(func(servicemanager.Client, *cls.DeprovisionRequest, logrus.FieldLogger) error); ok {
+		r0 = rf(smClient, request, log)
 	} else {
 		r0 = ret.Error(0)
 	}
