@@ -23,9 +23,10 @@ type FakeClient struct {
 
 func NewFakeClient() *FakeClient {
 	return &FakeClient{
-		runtimes:   []runtime{},
-		operations: make(map[string]schema.OperationStatus),
-		upgrades:   make(map[string]schema.UpgradeRuntimeInput),
+		runtimes:      []runtime{},
+		operations:    make(map[string]schema.OperationStatus),
+		upgrades:      make(map[string]schema.UpgradeRuntimeInput),
+		shootUpgrades: make(map[string]schema.UpgradeShootInput),
 	}
 }
 

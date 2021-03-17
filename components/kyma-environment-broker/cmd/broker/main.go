@@ -504,7 +504,7 @@ func main() {
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
 		&cfg, accountProvider, serviceManagerClientFactory, logs)
-	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, time.Minute, runtimeResolver, upgradeEvalManager, logs)
+	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeResolver, upgradeEvalManager, logs)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
 	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, clusterQueue, cfg.MaxPaginationPage, logs)
@@ -722,11 +722,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 }
 
 func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStorage, provisionerClient provisioner.Client,
-	pub event.Publisher, inputFactory input.CreatorForPlan, pollingInterval time.Duration, runtimeResolver orchestrationExt.RuntimeResolver,
-	upgradeEvalManager *avs.EvaluationManager, logs logrus.FieldLogger) *process.Queue {
+	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_cluster.TimeSchedule, pollingInterval time.Duration,
+	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager, logs logrus.FieldLogger) *process.Queue {
 
 	upgradeClusterManager := upgrade_cluster.NewManager(db.Operations(), pub, logs.WithField("upgradeCluster", "manager"))
-	upgradeClusterInit := upgrade_cluster.NewInitialisationStep(db.Operations(), db.Orchestrations(), provisionerClient, inputFactory, upgradeEvalManager, nil)
+	upgradeClusterInit := upgrade_cluster.NewInitialisationStep(db.Operations(), db.Orchestrations(), provisionerClient, inputFactory, upgradeEvalManager, icfg)
 	upgradeClusterManager.InitStep(upgradeClusterInit)
 
 	upgradeClusterSteps := []struct {
@@ -736,7 +736,7 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 	}{
 		{
 			weight: 10,
-			step:   upgrade_cluster.NewUpgradeClusterStep(db.Operations(), db.RuntimeStates(), provisionerClient, nil),
+			step:   upgrade_cluster.NewUpgradeClusterStep(db.Operations(), db.RuntimeStates(), provisionerClient, icfg),
 		},
 	}
 	for _, step := range upgradeClusterSteps {

@@ -24,6 +24,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_cluster"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	kebRuntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
@@ -54,6 +55,7 @@ type OrchestrationSuite struct {
 	gardenerNamespace string
 	provisionerClient *provisioner.FakeClient
 	kymaQueue         *process.Queue
+	clusterQueue      *process.Queue
 	storage           storage.BrokerStorage
 	gardenerClient    *gardenerFake.Clientset
 
@@ -116,10 +118,17 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
 		&cfg, hyperscaler.NewAccountProvider(nil, nil), nil, logs)
 
+	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
+		Retry:                 10 * time.Millisecond,
+		StatusCheck:           100 * time.Millisecond,
+		UpgradeClusterTimeout: 4 * time.Second,
+	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, logs)
+
 	return &OrchestrationSuite{
 		gardenerNamespace: gardenerNamespace,
 		provisionerClient: provisionerClient,
 		kymaQueue:         kymaQueue,
+		clusterQueue:      clusterQueue,
 		storage:           db,
 		gardenerClient:    gardenerClient,
 
@@ -241,11 +250,11 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 	return runtimeID
 }
 
-func (s *OrchestrationSuite) CreateUpgradeKymaOrchestration(runtimeID string) string {
+func (s *OrchestrationSuite) createOrchestration(oType orchestration.Type, queue *process.Queue, runtimeID string) string {
 	now := time.Now()
 	o := internal.Orchestration{
 		OrchestrationID: uuid.New(),
-		Type:            orchestration.UpgradeKymaOrchestration,
+		Type:            oType,
 		State:           orchestration.Pending,
 		Description:     "started processing of Kyma upgrade",
 		Parameters: orchestration.Parameters{
@@ -266,13 +275,21 @@ func (s *OrchestrationSuite) CreateUpgradeKymaOrchestration(runtimeID string) st
 	}
 	require.NoError(s.t, s.storage.Orchestrations().Insert(o))
 
-	s.kymaQueue.Add(o.OrchestrationID)
+	queue.Add(o.OrchestrationID)
 	return o.OrchestrationID
 }
 
-func (s *OrchestrationSuite) FinishUpgradeOperationByProvisioner(runtimeID string) {
+func (s *OrchestrationSuite) CreateUpgradeKymaOrchestration(runtimeID string) string {
+	return s.createOrchestration(orchestration.UpgradeKymaOrchestration, s.kymaQueue, runtimeID)
+}
+
+func (s *OrchestrationSuite) CreateUpgradeClusterOrchestration(runtimeID string) string {
+	return s.createOrchestration(orchestration.UpgradeClusterOrchestration, s.clusterQueue, runtimeID)
+}
+
+func (s *OrchestrationSuite) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
 	err := wait.Poll(time.Millisecond*100, 15*time.Second, func() (bool, error) {
-		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, gqlschema.OperationTypeUpgrade)
+		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
 			s.provisionerClient.FinishProvisionerOperation(*status.ID)
 			return true, nil
@@ -280,6 +297,14 @@ func (s *OrchestrationSuite) FinishUpgradeOperationByProvisioner(runtimeID strin
 		return false, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for provisioner operation to exist")
+}
+
+func (s *OrchestrationSuite) FinishUpgradeOperationByProvisioner(runtimeID string) {
+	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgrade, runtimeID)
+}
+
+func (s *OrchestrationSuite) FinishUpgradeShootOperationByProvisioner(runtimeID string) {
+	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgradeShoot, runtimeID)
 }
 
 func (s *OrchestrationSuite) WaitForOrchestrationState(orchestrationID string, state string) {
@@ -297,6 +322,14 @@ func (s *OrchestrationSuite) AssertRuntimeUpgraded(runtimeID string) {
 
 func (s *OrchestrationSuite) AssertRuntimeNotUpgraded(runtimeID string) {
 	assert.False(s.t, s.provisionerClient.IsRuntimeUpgraded(runtimeID), "The runtime %s expected to be not upgraded", runtimeID)
+}
+
+func (s *OrchestrationSuite) AssertShootUpgraded(runtimeID string) {
+	assert.True(s.t, s.provisionerClient.IsShootUpgraded(runtimeID), "The shoot %s expected to be upgraded", runtimeID)
+}
+
+func (s *OrchestrationSuite) AssertShootNotUpgraded(runtimeID string) {
+	assert.False(s.t, s.provisionerClient.IsShootUpgraded(runtimeID), "The shoot %s expected to be not upgraded", runtimeID)
 }
 
 func fixK8sResources() []runtime.Object {
