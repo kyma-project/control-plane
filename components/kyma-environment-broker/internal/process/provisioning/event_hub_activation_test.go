@@ -15,7 +15,7 @@ import (
 
 //go:generate mockery -name=Step -output=automock -outpkg=automock -case=underscore
 
-func TestSkipForTrialPlanStepShouldSkip(t *testing.T) {
+func TestEventHubActivationPlanStepShouldSkip(t *testing.T) {
 
 	// Given
 	log := logrus.New()
@@ -37,7 +37,7 @@ func TestSkipForTrialPlanStepShouldSkip(t *testing.T) {
 	assert.Equal(t, operation, returnedOperation)
 }
 
-func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
+func TestEventHubActivationStepShouldNotSkip(t *testing.T) {
 
 	// Given
 	log := logrus.New()
