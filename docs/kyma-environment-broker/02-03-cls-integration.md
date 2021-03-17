@@ -3,11 +3,11 @@ title: Cloud Logging Service Integration
 type: Architecture
 ---
 
-The Cloud Logging service (CLS) is a managed logging service for shipping logs from various runtimes such as SKR. It uses the Elastic Stack (open source logging platform Elasticsearch, Fluentd, Kibana) to store, parse, and visualize the application log data coming from Kubernetes, Cloud Foundry applications or any other sources.
+The Cloud Logging service (CLS) is a managed logging service for shipping logs from various runtimes such as SKR. It uses the Elastic Stack (open source logging platform [Elasticsearch](https://www.elastic.co/about/free-and-open), [Fluentd](https://www.fluentd.org/), [Kibana](https://www.elastic.co/kibana)) to store, parse, and visualize the application log data coming from Kubernetes, Cloud Foundry applications, or any other sources.
 
- Kyma Environment Broker (KEB) provisions a CLS instance for a global account and creates a binding per SKR cluster. It passes the CLS credentials to the provisioner as SKR overrides, so that Fluent Bit in the SKR is properly configured to push the logs to the CLS instance. The following architecture diagram explains the complete process:
+The Kyma Environment Broker (KEB) provisions a CLS instance for a global account and creates a binding per SKR cluster. It passes the CLS credentials to the provisioner as SKR overrides, so that Fluent Bit in the SKR is properly configured to push the logs to the CLS instance. The following architecture diagram explains the complete process:
 
-![CLS diagram](./assets/cls-arch.svg)
+![CLS diagram](./assets/cls-int-diag.svg)
 
 1. CSI sends the request to KEB to provision a new SKR.
 2. A check determines if there is an existing CLS instance for the global account. If there isn't, KEB provisions a new instance of CLS for the global account.
