@@ -44,7 +44,7 @@ type ProvisionResult struct {
 	Region     string
 }
 
-func (p *provisioner) Provision(log logrus.FieldLogger, smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
+func (p *provisioner) Provision(smClient servicemanager.Client, request *ProvisionRequest, log logrus.FieldLogger) (*ProvisionResult, error) {
 	instance, exists, err := p.storage.FindActiveByGlobalAccountID(request.GlobalAccountID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while checking if CLS instance is already created for global account %s", request.GlobalAccountID)

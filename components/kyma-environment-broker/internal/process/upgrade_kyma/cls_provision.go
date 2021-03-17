@@ -51,12 +51,12 @@ func (s *clsUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, l
 
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 	skrInstanceID := operation.InstanceID
-	result, err := s.instanceProvider.Provision(log, smClient, &cls.ProvisionRequest{
+	result, err := s.instanceProvider.Provision(smClient, &cls.ProvisionRequest{
 		GlobalAccountID: globalAccountID,
 		Region:          smRegion,
 		SKRInstanceID:   skrInstanceID,
 		Instance:        operation.Cls.Instance.InstanceKey(),
-	})
+	}, log)
 	if err != nil {
 		failureReason := fmt.Sprintf("Unable to provision a CLS instance for global account %s", globalAccountID)
 		log.Errorf("%s: %v", failureReason, err)

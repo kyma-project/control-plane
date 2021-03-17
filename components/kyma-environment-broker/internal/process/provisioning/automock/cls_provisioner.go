@@ -17,7 +17,7 @@ type ClsProvisioner struct {
 }
 
 // Provision provides a mock function with given fields: log, smClient, request
-func (_m *ClsProvisioner) Provision(log logrus.FieldLogger, smClient servicemanager.Client, request *cls.ProvisionRequest) (*cls.ProvisionResult, error) {
+func (_m *ClsProvisioner) Provision(smClient servicemanager.Client, request *cls.ProvisionRequest, log logrus.FieldLogger) (*cls.ProvisionResult, error) {
 	ret := _m.Called(log, smClient, request)
 
 	var r0 *cls.ProvisionResult
