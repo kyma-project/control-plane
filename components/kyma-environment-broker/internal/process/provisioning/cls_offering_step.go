@@ -55,16 +55,13 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 
 	meta, err := servicemanager.GenerateMetadata(smClient, ClsOfferingName, ClsPlanName)
 	if meta.ServiceID != "" && meta.BrokerID != "" {
-		log.Infof("Found offering: catalogID=%s brokerID=%s", meta.ServiceID, meta.BrokerID)
+		log.Debugf("Found offering with catalog ID %s and broker ID %s", meta.ServiceID, meta.BrokerID)
 	}
 	if err != nil {
-		if kebError.IsTemporaryError(err) {
-			return s.handleError(operation, err, err.Error(), log)
-		}
-		return s.operationManager.OperationFailed(operation, err.Error(), log)
+		return s.handleError(operation, err, err.Error(), log)
 	}
 
-	log.Infof("Found plan: catalogID=%s", meta.PlanID)
+	log.Debugf("Found plan with catalog ID %s", meta.PlanID)
 
 	op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 		operation.Cls.Instance.ServiceID = meta.ServiceID
@@ -72,14 +69,14 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 		operation.Cls.Instance.PlanID = meta.PlanID
 	}, log)
 	if retry > 0 {
-		log.Errorf("unable to update the operation")
+		log.Errorf("Unable to update the operation")
 		return op, retry, nil
 	}
 	return op, 0, nil
 }
 
 func (s *ClsOfferingStep) handleError(operation internal.ProvisioningOperation, err error, msg string, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	log.Errorf("%s: %s", msg, err)
+	log.Errorf("%s: %v", msg, err)
 	switch {
 	case kebError.IsTemporaryError(err):
 		return s.operationManager.RetryOperation(operation, msg, 10*time.Second, time.Minute*30, log)
