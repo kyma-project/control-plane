@@ -18,6 +18,6 @@ The diagram illustrates the following:
 
 For any subsequent provisioning of SKR (for example, SKR X-2) within the same global account, no new CLS instance is provisioned. Instead, the existing CLS instance is used by creating a new binding, which creates a new set of credentials to access the CLS instance. The new set of credentials is passed over to SKR X-2, so that it can push logs to CLS instance.
 
-To access Kibana, one must authenticate against an ID provider based on SAML2 protocol.
+To access Kibana, you must authenticate against an ID provider based on SAML2 protocol.
 
 Learn more about the CLS integration with KEB under [Cloud Logging Service Integration](./02-03-cls-integration.md).
