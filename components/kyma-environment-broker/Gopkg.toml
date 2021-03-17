@@ -44,7 +44,7 @@
 
 [[constraint]]
   name = "github.com/pkg/errors"
-  version = "0.8.1"
+  version = "0.9.1"
 
 [[override]]
   name = "github.com/sirupsen/logrus"
@@ -56,7 +56,7 @@
 
 [[constraint]]
   name = "github.com/testcontainers/testcontainers-go"
-  version = "v0.9.0"
+  version = "v0.10.0"
 
 [[constraint]]
   name = "github.com/vrischmann/envconfig"
@@ -102,6 +102,14 @@
 [[override]]
   name = "github.com/gogo/protobuf"
   version = "v1.3.2"
+
+[[override]]
+name = "github.com/docker/docker"
+version = "v20.10.5"
+
+[[override]]
+name = "github.com/Microsoft/hcsshim"
+version = "v0.8.15"
 
 [prune]
   go-tests = true

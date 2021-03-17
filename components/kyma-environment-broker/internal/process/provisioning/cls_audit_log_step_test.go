@@ -43,7 +43,7 @@ func TestClsAuditLogStep_ScriptFileDoesNotExist(t *testing.T) {
 	_, _, err = svc.Run(operation, NewLogDummy())
 	//then
 	require.Error(t, err)
-	require.EqualError(t, err, "Unable to read audit config script")
+	require.EqualError(t, err, "Unable to read Audit Log config script")
 
 }
 
