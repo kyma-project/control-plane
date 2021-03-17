@@ -1,4 +1,4 @@
-package provisioning
+package deprovisioning
 
 import (
 	"testing"
@@ -6,8 +6,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning/automock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,28 +14,7 @@ import (
 
 //go:generate mockery -name=Step -output=automock -outpkg=automock -case=underscore
 
-func TestSkipForTrialPlanStepShouldSkip(t *testing.T) {
-	// Given
-	log := logrus.New()
-	operation := fixOperationWithPlanID(broker.TrialPlanID)
-	var skipTime time.Duration = 0
-
-	mockStep := &automock.Step{}
-	mockStep.On("Name").Return("Test")
-
-	skipStep := NewAzureEventHubActivationStep(mockStep)
-
-	// When
-	returnedOperation, time, err := skipStep.Run(operation, log)
-
-	// Then
-	mockStep.AssertExpectations(t)
-	require.NoError(t, err)
-	assert.Equal(t, skipTime, time)
-	assert.Equal(t, operation, returnedOperation)
-}
-
-func TestSkipForTrialPlanStepShouldSkipOnAzureForKymaVersion(t *testing.T) {
+func TestSkipForAzurePlanStepShouldSkipForKymaVersion(t *testing.T) {
 	// Given
 	log := logrus.New()
 	operation := fixOperationWithPlanIDAndKymaVersion(broker.AzurePlanID, "1.21.0")
@@ -57,7 +35,7 @@ func TestSkipForTrialPlanStepShouldSkipOnAzureForKymaVersion(t *testing.T) {
 	assert.Equal(t, operation, returnedOperation)
 }
 
-func TestSkipForTrialPlanStepShouldSkipOnAnyForKymaVersion(t *testing.T) {
+func TestSkipForAnyPlanStepShouldSkipForKymaVersion(t *testing.T) {
 	// Given
 	log := logrus.New()
 	operation := fixOperationWithPlanIDAndKymaVersion("any", "1.21.0")
@@ -78,7 +56,7 @@ func TestSkipForTrialPlanStepShouldSkipOnAnyForKymaVersion(t *testing.T) {
 	assert.Equal(t, operation, returnedOperation)
 }
 
-func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
+func TestSkipForAzurePlanStepShouldNotSkipForKymaVersion(t *testing.T) {
 	// Given
 	log := logrus.New()
 	operation := fixOperationWithPlanIDAndKymaVersion(broker.AzurePlanID, "1.20.0")
@@ -98,19 +76,11 @@ func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, skipTime, time)
 	assert.Equal(t, anotherOperation, returnedOperation)
-
 }
 
-func fixOperationWithPlanID(planID string) internal.ProvisioningOperation {
-	provisioningOperation := fixture.FixProvisioningOperation(operationID, instanceID)
-	provisioningOperation.ProvisioningParameters = fixProvisioningParametersWithPlanID(planID, "region")
+func fixOperationWithPlanIDAndKymaVersion(planID, version string) internal.DeprovisioningOperation {
+	deprovisioningOperation := fixOperationWithPlanID(planID)
+	deprovisioningOperation.ProvisioningParameters.Parameters.KymaVersion = version
 
-	return provisioningOperation
-}
-
-func fixOperationWithPlanIDAndKymaVersion(planID, version string) internal.ProvisioningOperation {
-	provisioningOperation := fixOperationWithPlanID(planID)
-	provisioningOperation.ProvisioningParameters.Parameters.KymaVersion = version
-
-	return provisioningOperation
+	return deprovisioningOperation
 }

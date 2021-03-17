@@ -385,7 +385,9 @@ func main() {
 		},
 		{
 			weight: 1,
-			step:   deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+			step: deprovisioning.NewSkipForTrialPlanStep(
+				deprovisioning.NewAzureEventHubActivationStep(
+					deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx))),
 		},
 		{
 			weight:   1,
