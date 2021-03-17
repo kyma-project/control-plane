@@ -39,7 +39,7 @@ func (s *clsUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, l
 	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
 
 	skrRegion := operation.ProvisioningParameters.Parameters.Region
-	smRegion := cls.DetermineServiceManagerRegion(skrRegion)
+	smRegion := cls.DetermineServiceManagerRegion(skrRegion, log)
 	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, smRegion)
 	if err != nil {
 		failureReason := fmt.Sprintf("Unable to find credentials for CLS Service Manager in region %s", operation.Cls.Region)

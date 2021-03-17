@@ -42,7 +42,7 @@ func (s *ClsOfferingStep) Run(operation internal.ProvisioningOperation, log logr
 	}
 
 	skrRegion := operation.ProvisioningParameters.Parameters.Region
-	smRegion := cls.DetermineServiceManagerRegion(skrRegion)
+	smRegion := cls.DetermineServiceManagerRegion(skrRegion, log)
 	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, smRegion)
 	if err != nil {
 		return s.handleError(operation, err, err.Error(), log)
