@@ -54,6 +54,7 @@ type ComponentConfiguration struct {
 type ComponentConfigurationInput struct {
 	Component        string              `json:"component"`
 	Namespace        string              `json:"namespace"`
+	Prerequisite     *bool               `json:"prerequisite"`
 	Configuration    []*ConfigEntryInput `json:"configuration"`
 	SourceURL        *string             `json:"sourceURL"`
 	ConflictStrategy *ConflictStrategy   `json:"conflictStrategy"`

@@ -997,9 +997,9 @@ input AWSProviderConfigInput {
 }
 
 input OpenStackProviderConfigInput {
-    zones:           [String!]! # Zones in which to create the cluster
-    floatingPoolName: String!  # FloatingPoolName name in which LoadBalancer FIPs should be created.
-    cloudProfileName: String!  # Name of the target Cloud Profile
+    zones:           [String!]!   # Zones in which to create the cluster
+    floatingPoolName: String!     # FloatingPoolName name in which LoadBalancer FIPs should be created.
+    cloudProfileName: String!     # Name of the target Cloud Profile
     loadBalancerProvider: String! # Name of load balancer provider, e.g. f5
 }
 
@@ -1020,6 +1020,7 @@ input ConfigEntryInput {
 input ComponentConfigurationInput {
     component: String!                    # Kyma component name
     namespace: String!                    # Namespace to which component should be installed
+    prerequisite: Boolean                 # Specifies if component is prerequisite or it is optional
     configuration: [ConfigEntryInput]     # Component specific configuration
     sourceURL: String                     # Custom URL for the source files of the given component
     conflictStrategy: ConflictStrategy  # Defines merging strategy if conflicts occur for component overrides
@@ -1075,7 +1076,8 @@ type Query {
 
     # Provides status of specified operation
     runtimeOperationStatus(id: String!): OperationStatus
-}`},
+}
+`},
 )
 
 // endregion ************************** generated!.gotpl **************************
@@ -5078,6 +5080,12 @@ func (ec *executionContext) unmarshalInputComponentConfigurationInput(ctx contex
 		case "namespace":
 			var err error
 			it.Namespace, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "prerequisite":
+			var err error
+			it.Prerequisite, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}

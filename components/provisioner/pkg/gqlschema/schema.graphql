@@ -231,6 +231,7 @@ input ConfigEntryInput {
 input ComponentConfigurationInput {
     component: String!                    # Kyma component name
     namespace: String!                    # Namespace to which component should be installed
+    prerequisite: Boolean                 # Specifies if component is prerequisite or it is optional
     configuration: [ConfigEntryInput]     # Component specific configuration
     sourceURL: String                     # Custom URL for the source files of the given component
     conflictStrategy: ConflictStrategy  # Defines merging strategy if conflicts occur for component overrides
