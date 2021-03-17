@@ -196,27 +196,6 @@ func main() {
 		prometheus.MustRegister(dbStatsCollector)
 	}
 
-	// todo: remove after instance details was done on each environment
-	// instance details migration to upgradeKyma operations
-	if cfg.EnableInstanceDetailsMigration {
-		err = migrations.NewInstanceDetailsMigration(db.Operations(), logs.WithField("service", "instanceDetailsMigration")).Migrate()
-		fatalOnError(err)
-	}
-	// encrypting instances SM credentials
-	if cfg.EnableInstanceParametersMigration {
-		err = migrations.NewInstanceParametersMigration(db.Instances(), cipher, logs).Migrate()
-		fatalOnError(err)
-	}
-	if cfg.EnableInstanceParametersRollback {
-		err = migrations.NewInstanceParametersMigrationRollback(db.Instances(), logs).Migrate()
-		fatalOnError(err)
-	}
-	// migration to remove the userID parameter from succeeded deprovisioning operations
-	if cfg.EnableOperationsUserIDMigration {
-		err = migrations.NewOperationsUserIDMigration(db.Operations(), logs.WithField("service", "userIDMigration")).Migrate()
-		fatalOnError(err)
-	}
-
 	// CLS
 	clsFile, err := ioutil.ReadFile("/cls-config/cls-config.yaml")
 	if err != nil {
