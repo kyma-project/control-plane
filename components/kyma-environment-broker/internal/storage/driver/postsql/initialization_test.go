@@ -13,24 +13,15 @@ import (
 
 func TestInitialization(t *testing.T) {
 
-	if testsRanInSuite {
-		t.Skip("TestInitialization already ran in suite")
-	}
-
 	ctx := context.Background()
-	cleanupNetwork, err := storage.EnsureTestNetworkForDB(t, ctx)
-	require.NoError(t, err)
-	defer cleanupNetwork()
 
 	t.Run("Should initialize database when schema not applied", func(t *testing.T) {
-		// given
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
 		// when
 		connection, err := postsql.InitializeDatabase(cfg.ConnectionURL(), 1, logrus.New())
-
 		require.NoError(t, err)
 		require.NotNil(t, connection)
 

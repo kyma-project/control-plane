@@ -20,19 +20,21 @@ import (
 
 func TestOperation(t *testing.T) {
 
-	if testsRanInSuite {
-		t.Skip("TestOperation already ran in suite")
-	}
-
 	ctx := context.Background()
-	cleanupNetwork, err := storage.EnsureTestNetworkForDB(t, ctx)
-	require.NoError(t, err)
-	defer cleanupNetwork()
 
 	t.Run("Provisioning", func(t *testing.T) {
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
+
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+		defer tablesCleanupFunc()
+
+		cipher := storage.NewEncrypter(cfg.SecretKey)
+		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
 
 		orchestrationID := "orch-id"
 
@@ -62,14 +64,6 @@ func TestOperation(t *testing.T) {
 		latestPendingOperation.Version = 1
 		latestPendingOperation.OrchestrationID = orchestrationID
 		latestPendingOperation.ProvisioningParameters.PlanID = broker.TrialPlanID
-
-		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
-		require.NoError(t, err)
-		defer tablesCleanupFunc()
-
-		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
-		require.NoError(t, err)
 
 		err = brokerStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: orchestrationID})
 		require.NoError(t, err)
@@ -137,14 +131,6 @@ func TestOperation(t *testing.T) {
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
-		givenOperation := fixture.FixDeprovisioningOperation("operation-id", "inst-id")
-		givenOperation.State = domain.InProgress
-		givenOperation.CreatedAt = time.Now().Truncate(time.Millisecond)
-		givenOperation.UpdatedAt = time.Now().Truncate(time.Millisecond).Add(time.Second)
-		givenOperation.ProvisionerOperationID = "target-op-id"
-		givenOperation.Description = "description"
-		givenOperation.Version = 1
-
 		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
 		defer tablesCleanupFunc()
@@ -152,6 +138,15 @@ func TestOperation(t *testing.T) {
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
+
+		givenOperation := fixture.FixDeprovisioningOperation("operation-id", "inst-id")
+		givenOperation.State = domain.InProgress
+		givenOperation.CreatedAt = time.Now().Truncate(time.Millisecond)
+		givenOperation.UpdatedAt = time.Now().Truncate(time.Millisecond).Add(time.Second)
+		givenOperation.ProvisionerOperationID = "target-op-id"
+		givenOperation.Description = "description"
+		givenOperation.Version = 1
 
 		svc := brokerStorage.Operations()
 
@@ -207,6 +202,15 @@ func TestOperation(t *testing.T) {
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+		defer tablesCleanupFunc()
+
+		cipher := storage.NewEncrypter(cfg.SecretKey)
+		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
+
 		orchestrationID := "orchestration-id"
 
 		givenOperation1 := fixture.FixUpgradeKymaOperation("operation-id-1", "inst-id")
@@ -241,14 +245,6 @@ func TestOperation(t *testing.T) {
 		givenOperation3.InputCreator = nil
 		givenOperation3.Version = 1
 
-		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
-		require.NoError(t, err)
-		defer tablesCleanupFunc()
-
-		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
-		require.NoError(t, err)
-
 		svc := brokerStorage.Operations()
 
 		// when
@@ -279,6 +275,15 @@ func TestOperation(t *testing.T) {
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
+
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+		defer tablesCleanupFunc()
+
+		cipher := storage.NewEncrypter(cfg.SecretKey)
+		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
 
 		orchestrationID := "orchestration-id"
 
@@ -316,14 +321,6 @@ func TestOperation(t *testing.T) {
 		givenOperation3.Version = 1
 		givenOperation3.OrchestrationID = orchestrationID
 		givenOperation3.RuntimeOperation = fixRuntimeOperation("operation-id-3")
-
-		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
-		require.NoError(t, err)
-		defer tablesCleanupFunc()
-
-		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
-		require.NoError(t, err)
 
 		svc := brokerStorage.Operations()
 

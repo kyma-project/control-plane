@@ -16,25 +16,12 @@ import (
 
 func TestOrchestration(t *testing.T) {
 
-	if testsRanInSuite {
-		t.Skip("TestOrchestration already ran in suite")
-	}
-
 	ctx := context.Background()
-	cleanupNetwork, err := storage.EnsureTestNetworkForDB(t, ctx)
-	require.NoError(t, err)
-	defer cleanupNetwork()
 
 	t.Run("Orchestrations", func(t *testing.T) {
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
-
-		givenOrchestration := fixture.FixOrchestration("test")
-		givenOrchestration.Type = orchestration.UpgradeKymaOrchestration
-		givenOrchestration.State = "test"
-		givenOrchestration.Description = "test"
-		givenOrchestration.Parameters.DryRun = true
 
 		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
@@ -43,6 +30,13 @@ func TestOrchestration(t *testing.T) {
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
+
+		givenOrchestration := fixture.FixOrchestration("test")
+		givenOrchestration.Type = orchestration.UpgradeKymaOrchestration
+		givenOrchestration.State = "test"
+		givenOrchestration.Description = "test"
+		givenOrchestration.Parameters.DryRun = true
 
 		svc := brokerStorage.Orchestrations()
 

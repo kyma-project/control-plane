@@ -22,17 +22,9 @@ import (
 
 func TestInstance(t *testing.T) {
 
-	if testsRanInSuite {
-		t.Skip("TestInstance already ran in suite")
-	}
-
 	ctx := context.Background()
-	cleanupNetwork, err := storage.EnsureTestNetworkForDB(t, ctx)
-	require.NoError(t, err)
-	defer cleanupNetwork()
 
 	t.Run("Should create and update instance", func(t *testing.T) {
-		// given
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
@@ -41,10 +33,8 @@ func TestInstance(t *testing.T) {
 		require.NoError(t, err)
 		defer tablesCleanupFunc()
 
-		// when
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
-
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 
@@ -113,7 +103,6 @@ func TestInstance(t *testing.T) {
 	})
 
 	t.Run("Should fetch instance statistics", func(t *testing.T) {
-		// given
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
@@ -123,9 +112,9 @@ func TestInstance(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		psqlStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
-		require.NotNil(t, psqlStorage)
+		require.NotNil(t, brokerStorage)
 
 		// populate database with samples
 		fixInstances := []internal.Instance{
@@ -135,16 +124,16 @@ func TestInstance(t *testing.T) {
 		}
 
 		for _, i := range fixInstances {
-			err = psqlStorage.Instances().Insert(i)
+			err = brokerStorage.Instances().Insert(i)
 			require.NoError(t, err)
 		}
 
 		// when
-		stats, err := psqlStorage.Instances().GetInstanceStats()
+		stats, err := brokerStorage.Instances().GetInstanceStats()
 		require.NoError(t, err)
-		numberOfInstancesA, err := psqlStorage.Instances().GetNumberOfInstancesForGlobalAccountID("A")
+		numberOfInstancesA, err := brokerStorage.Instances().GetNumberOfInstancesForGlobalAccountID("A")
 		require.NoError(t, err)
-		numberOfInstancesC, err := psqlStorage.Instances().GetNumberOfInstancesForGlobalAccountID("C")
+		numberOfInstancesC, err := brokerStorage.Instances().GetNumberOfInstancesForGlobalAccountID("C")
 		require.NoError(t, err)
 
 		t.Logf("%+v", stats)
@@ -159,7 +148,6 @@ func TestInstance(t *testing.T) {
 	})
 
 	t.Run("Should fetch instances along with their operations", func(t *testing.T) {
-		// given
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
@@ -169,9 +157,9 @@ func TestInstance(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		psqlStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
-		require.NotNil(t, psqlStorage)
+		require.NotNil(t, brokerStorage)
 
 		// populate database with samples
 		fixInstances := []internal.Instance{
@@ -181,7 +169,7 @@ func TestInstance(t *testing.T) {
 		}
 
 		for _, i := range fixInstances {
-			err = psqlStorage.Instances().Insert(i)
+			err = brokerStorage.Instances().Insert(i)
 			require.NoError(t, err)
 		}
 
@@ -192,7 +180,7 @@ func TestInstance(t *testing.T) {
 		}
 
 		for _, op := range fixProvisionOps {
-			err = psqlStorage.Operations().InsertProvisioningOperation(op)
+			err = brokerStorage.Operations().InsertProvisioningOperation(op)
 			require.NoError(t, err)
 		}
 
@@ -203,12 +191,12 @@ func TestInstance(t *testing.T) {
 		}
 
 		for _, op := range fixDeprovisionOps {
-			err = psqlStorage.Operations().InsertDeprovisioningOperation(op)
+			err = brokerStorage.Operations().InsertDeprovisioningOperation(op)
 			require.NoError(t, err)
 		}
 
 		// then
-		out, err := psqlStorage.Instances().FindAllJoinedWithOperations(predicate.SortAscByCreatedAt())
+		out, err := brokerStorage.Instances().FindAllJoinedWithOperations(predicate.SortAscByCreatedAt())
 		require.NoError(t, err)
 
 		require.Len(t, out, 6)
@@ -236,7 +224,6 @@ func TestInstance(t *testing.T) {
 	})
 
 	t.Run("Should fetch instances based on subaccount list", func(t *testing.T) {
-		// given
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
@@ -246,9 +233,9 @@ func TestInstance(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		psqlStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
-		require.NotNil(t, psqlStorage)
+		require.NotNil(t, brokerStorage)
 
 		// populate database with samples
 		subaccounts := []string{"sa1", "sa2", "sa3"}
@@ -260,12 +247,12 @@ func TestInstance(t *testing.T) {
 		}
 
 		for _, i := range fixInstances {
-			err = psqlStorage.Instances().Insert(i)
+			err = brokerStorage.Instances().Insert(i)
 			require.NoError(t, err)
 		}
 
 		// when
-		out, err := psqlStorage.Instances().FindAllInstancesForSubAccounts(subaccounts)
+		out, err := brokerStorage.Instances().FindAllInstancesForSubAccounts(subaccounts)
 
 		// then
 		require.NoError(t, err)
@@ -277,7 +264,6 @@ func TestInstance(t *testing.T) {
 	})
 
 	t.Run("Should list instances based on page and page size", func(t *testing.T) {
-		// given
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
@@ -287,9 +273,9 @@ func TestInstance(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		psqlStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
-		require.NotNil(t, psqlStorage)
+		require.NotNil(t, brokerStorage)
 
 		// populate database with samples
 		fixInstances := []internal.Instance{
@@ -298,11 +284,11 @@ func TestInstance(t *testing.T) {
 			*fixInstance(instanceData{val: "3"}),
 		}
 		for _, i := range fixInstances {
-			err = psqlStorage.Instances().Insert(i)
+			err = brokerStorage.Instances().Insert(i)
 			require.NoError(t, err)
 		}
 		// when
-		out, count, totalCount, err := psqlStorage.Instances().List(dbmodel.InstanceFilter{PageSize: 2, Page: 1})
+		out, count, totalCount, err := brokerStorage.Instances().List(dbmodel.InstanceFilter{PageSize: 2, Page: 1})
 
 		// then
 		require.NoError(t, err)
@@ -313,7 +299,7 @@ func TestInstance(t *testing.T) {
 		assertInstanceByIgnoreTime(t, fixInstances[1], out[1])
 
 		// when
-		out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{PageSize: 2, Page: 2})
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{PageSize: 2, Page: 2})
 
 		// then
 		require.NoError(t, err)
@@ -324,7 +310,6 @@ func TestInstance(t *testing.T) {
 	})
 
 	t.Run("Should list instances based on filters", func(t *testing.T) {
-		// given
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
@@ -334,9 +319,9 @@ func TestInstance(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		psqlStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
-		require.NotNil(t, psqlStorage)
+		require.NotNil(t, brokerStorage)
 
 		// populate database with samples
 		fixInstances := []internal.Instance{
@@ -345,11 +330,11 @@ func TestInstance(t *testing.T) {
 			*fixInstance(instanceData{val: "inst3"}),
 		}
 		for _, i := range fixInstances {
-			err = psqlStorage.Instances().Insert(i)
+			err = brokerStorage.Instances().Insert(i)
 			require.NoError(t, err)
 		}
 		// when
-		out, count, totalCount, err := psqlStorage.Instances().List(dbmodel.InstanceFilter{InstanceIDs: []string{fixInstances[0].InstanceID}})
+		out, count, totalCount, err := brokerStorage.Instances().List(dbmodel.InstanceFilter{InstanceIDs: []string{fixInstances[0].InstanceID}})
 
 		// then
 		require.NoError(t, err)
@@ -359,7 +344,7 @@ func TestInstance(t *testing.T) {
 		assert.Equal(t, fixInstances[0].InstanceID, out[0].InstanceID)
 
 		// when
-		out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{GlobalAccountIDs: []string{fixInstances[1].GlobalAccountID}})
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{GlobalAccountIDs: []string{fixInstances[1].GlobalAccountID}})
 
 		// then
 		require.NoError(t, err)
@@ -369,7 +354,7 @@ func TestInstance(t *testing.T) {
 		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
 
 		// when
-		out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{SubAccountIDs: []string{fixInstances[1].SubAccountID}})
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{SubAccountIDs: []string{fixInstances[1].SubAccountID}})
 
 		// then
 		require.NoError(t, err)
@@ -379,7 +364,7 @@ func TestInstance(t *testing.T) {
 		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
 
 		// when
-		out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{RuntimeIDs: []string{fixInstances[1].RuntimeID}})
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{RuntimeIDs: []string{fixInstances[1].RuntimeID}})
 
 		// then
 		require.NoError(t, err)
@@ -389,7 +374,7 @@ func TestInstance(t *testing.T) {
 		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
 
 		// when
-		out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{Plans: []string{fixInstances[1].ServicePlanName}})
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Plans: []string{fixInstances[1].ServicePlanName}})
 
 		// then
 		require.NoError(t, err)
@@ -399,7 +384,7 @@ func TestInstance(t *testing.T) {
 		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
 
 		// when
-		out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{Domains: []string{"inst2"}})
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Domains: []string{"inst2"}})
 
 		// then
 		require.NoError(t, err)
@@ -409,7 +394,7 @@ func TestInstance(t *testing.T) {
 		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
 
 		// when
-		out, count, totalCount, err = psqlStorage.Instances().List(dbmodel.InstanceFilter{Regions: []string{"inst2"}})
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Regions: []string{"inst2"}})
 
 		// then
 		require.NoError(t, err)

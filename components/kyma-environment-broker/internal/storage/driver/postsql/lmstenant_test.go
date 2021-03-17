@@ -13,25 +13,12 @@ import (
 
 func TestLMSTenant(t *testing.T) {
 
-	if testsRanInSuite {
-		t.Skip("TestLMSTenant already ran in suite")
-	}
-
 	ctx := context.Background()
-	cleanupNetwork, err := storage.EnsureTestNetworkForDB(t, ctx)
-	require.NoError(t, err)
-	defer cleanupNetwork()
 
 	t.Run("LMS Tenants", func(t *testing.T) {
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
-
-		lmsTenant := internal.LMSTenant{
-			ID:     "tenant-001",
-			Region: "na",
-			Name:   "some-company",
-		}
 
 		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
@@ -39,9 +26,16 @@ func TestLMSTenant(t *testing.T) {
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
-		svc := brokerStorage.LMSTenants()
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
+
+		lmsTenant := internal.LMSTenant{
+			ID:     "tenant-001",
+			Region: "na",
+			Name:   "some-company",
+		}
+
+		svc := brokerStorage.LMSTenants()
 
 		// when
 		err = svc.InsertTenant(lmsTenant)

@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"testing"
@@ -57,6 +58,15 @@ func CloseDatabase(t *testing.T, connection *dbr.Connection) {
 	if connection != nil {
 		err := connection.Close()
 		assert.Nil(t, err, "Failed to close db connection")
+	}
+}
+
+func closeDBConnection(connection *dbr.Connection) {
+	if connection != nil {
+		err := connection.Close()
+		if err != nil {
+			log.Printf("failed to close db connection: %v", err)
+		}
 	}
 }
 
@@ -123,6 +133,71 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 	return cleanupFunc, dbCfg, nil
 }
 
+func SetupTestDBContainer(ctx context.Context, hostname string) (cleanupFunc func(), dbCfg Config, err error) {
+	_, err = isDockerTestNetworkPresent(ctx)
+	if err != nil {
+		return nil, Config{}, err
+	}
+
+	isAvailable, dbCfg, err := isDBContainerAvailable(hostname, mappedPort)
+	if err != nil {
+		return nil, Config{}, err
+	} else if !isAvailable {
+		log.Print("cannot connect to DB container. Creating new Postgres container...")
+	} else if isAvailable {
+		return func() {}, dbCfg, nil
+	}
+
+	req := testcontainers.ContainerRequest{
+		Image:        "postgres:11",
+		SkipReaper:   true,
+		ExposedPorts: []string{fmt.Sprintf("%s", DbPort)},
+		Networks:     []string{DockerUserNetwork},
+		NetworkAliases: map[string][]string{
+			DockerUserNetwork: {hostname},
+		},
+		Env: map[string]string{
+			"POSTGRES_USER":     DbUser,
+			"POSTGRES_PASSWORD": DbPass,
+			"POSTGRES_DB":       DbName,
+		},
+		WaitingFor: wait.ForListeningPort(DbPort),
+	}
+
+	postgresContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+
+	if err != nil {
+		errors.Wrap(err, "failed to create DB contianer")
+		return nil, Config{}, err
+	}
+
+	port, err := postgresContainer.MappedPort(ctx, DbPort)
+	if err != nil {
+		log.Printf("Failed to get mapped port for container %s : %s", postgresContainer.GetContainerID(), err)
+		errTerminate := postgresContainer.Terminate(ctx)
+		if errTerminate != nil {
+			log.Printf("Failed to terminate container %s after failing of getting mapped port: %s", postgresContainer.GetContainerID(), err)
+		}
+		return nil, Config{}, err
+	}
+
+	cleanupFunc = func() {
+		err = postgresContainer.Terminate(ctx)
+		if err != nil {
+			errors.Wrap(err, "failed to remove docker DB container...")
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	dbCfg = makeConnectionString(hostname, port.Port())
+	mappedPort = port.Port()
+
+	return cleanupFunc, dbCfg, err
+}
+
 func InitTestDBTables(t *testing.T, connectionURL string) (func(), error) {
 	connection, err := postsql.WaitForDatabaseAccess(connectionURL, 10, 100*time.Millisecond, logrus.New())
 	if err != nil {
@@ -151,6 +226,39 @@ func InitTestDBTables(t *testing.T, connectionURL string) (func(), error) {
 			return nil, err
 		}
 		t.Logf("Table %s added to database", name)
+	}
+
+	return cleanupFunc, nil
+}
+
+func SetupTestDBTables(connectionURL string) (cleanupFunc func(), err error) {
+	connection, err := postsql.WaitForDatabaseAccess(connectionURL, 10, 100*time.Millisecond, logrus.New())
+	if err != nil {
+		log.Printf("Cannot connect to database with URL %s", connectionURL)
+		return nil, err
+	}
+
+	cleanupFunc = func() {
+		_, err = connection.Exec(clearDBQuery())
+		if err != nil {
+			errors.Wrap(err, "failed to clear DB tables...")
+		}
+	}
+
+	initialized, err := postsql.CheckIfDatabaseInitialized(connection)
+	if err != nil {
+		closeDBConnection(connection)
+		return nil, err
+	} else if initialized {
+		return cleanupFunc, nil
+	}
+
+	for name, v := range FixTables() {
+		if _, err := connection.Exec(v); err != nil {
+			log.Printf("Cannot create table %s", name)
+			return nil, err
+		}
+		log.Printf("Table %s added to database", name)
 	}
 
 	return cleanupFunc, nil
@@ -221,6 +329,35 @@ func EnsureTestNetworkForDB(t *testing.T, ctx context.Context) (func(), error) {
 	}
 
 	return cleanupFunc, nil
+}
+
+func SetupTestNetworkForDB(ctx context.Context) (cleanupFunc func(), err error) {
+	exec.Command("systemctl start docker.service")
+
+	networkPresent, err := isDockerTestNetworkPresent(ctx)
+	if networkPresent && err == nil {
+		return func() {}, nil
+	}
+
+	if os.Getenv(EnvPipelineBuild) != "" {
+		return func() {}, errors.Errorf("Docker network %s does not exist", DockerUserNetwork)
+	}
+
+	createdNetwork, err := createTestNetworkForDB(ctx)
+
+	if err != nil {
+		return func() {}, err
+	}
+
+	cleanupFunc = func() {
+		err = createdNetwork.Remove(ctx)
+		if err != nil {
+			errors.Wrap(err, "failed to remove docker network:"+DockerUserNetwork)
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	return cleanupFunc, err
 }
 
 func isDBContainerAvailable(hostname, port string) (isAvailable bool, dbCfg Config, err error) {

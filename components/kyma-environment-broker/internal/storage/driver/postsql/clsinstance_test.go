@@ -12,14 +12,7 @@ import (
 
 func TestClsInstance(t *testing.T) {
 
-	if testsRanInSuite {
-		t.Skip("TestClsInstance already ran in suite")
-	}
-
 	ctx := context.Background()
-	cleanupNetwork, err := storage.EnsureTestNetworkForDB(t, ctx)
-	require.NoError(t, err)
-	defer cleanupNetwork()
 
 	t.Run("CLS Instances", func(t *testing.T) {
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
@@ -32,9 +25,10 @@ func TestClsInstance(t *testing.T) {
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
-		storage := brokerStorage.CLSInstances()
-		require.NotNil(t, brokerStorage)
 		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
+
+		storage := brokerStorage.CLSInstances()
 
 		globalAccountID := "fake-global-account-id"
 

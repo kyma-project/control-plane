@@ -17,14 +17,7 @@ import (
 
 func TestConflict(t *testing.T) {
 
-	if testsRanInSuite {
-		t.Skip("TestConflict already ran in suite")
-	}
-
 	ctx := context.Background()
-	cleanupNetwork, err := storage.EnsureTestNetworkForDB(t, ctx)
-	require.NoError(t, err)
-	defer cleanupNetwork()
 
 	t.Run("Conflict Operations", func(t *testing.T) {
 		t.Run("Provisioning", func(t *testing.T) {
@@ -32,16 +25,19 @@ func TestConflict(t *testing.T) {
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
-			givenOperation := fixture.FixProvisioningOperation("operation-001", "inst-id")
-			givenOperation.State = domain.InProgress
-			givenOperation.ProvisionerOperationID = "target-op-id"
-
 			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 			defer tablesCleanupFunc()
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
 			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+			require.NoError(t, err)
+			require.NotNil(t, brokerStorage)
+
+			givenOperation := fixture.FixProvisioningOperation("operation-001", "inst-id")
+			givenOperation.State = domain.InProgress
+			givenOperation.ProvisionerOperationID = "target-op-id"
+
 			svc := brokerStorage.Provisioning()
 
 			require.NoError(t, err)
@@ -79,10 +75,6 @@ func TestConflict(t *testing.T) {
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
-			givenOperation := fixture.FixDeprovisioningOperation("operation-001", "inst-id")
-			givenOperation.State = domain.InProgress
-			givenOperation.ProvisionerOperationID = "target-op-id"
-
 			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 			require.NoError(t, err)
 			defer tablesCleanupFunc()
@@ -90,6 +82,11 @@ func TestConflict(t *testing.T) {
 			cipher := storage.NewEncrypter(cfg.SecretKey)
 			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
 			require.NoError(t, err)
+			require.NotNil(t, brokerStorage)
+
+			givenOperation := fixture.FixDeprovisioningOperation("operation-001", "inst-id")
+			givenOperation.State = domain.InProgress
+			givenOperation.ProvisionerOperationID = "target-op-id"
 
 			svc := brokerStorage.Deprovisioning()
 
@@ -134,6 +131,7 @@ func TestConflict(t *testing.T) {
 		cipher := storage.NewEncrypter(cfg.SecretKey)
 		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
 
 		svc := brokerStorage.Instances()
 
