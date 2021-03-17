@@ -353,14 +353,6 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: APP_VERSION_CONFIG_NAME
               value: "kyma-versions"
-            - name: APP_ENABLE_INSTANCE_DETAILS_MIGRATION
-              value: "{{ .Values.enableInstanceDetailsMigration }}"
-            - name: APP_ENABLE_INSTANCE_PARAMETERS_MIGRATION
-              value: "{{ .Values.enableInstanceParametersMigration }}"
-            - name: APP_ENABLE_INSTANCE_PARAMETERS_ROLLBACK
-              value: "{{ .Values.enableInstanceParametersRollback }}"
-            - name: APP_ENABLE_OPERATIONS_USER_ID_MIGRATION
-              value: "{{ .Values.enableOperationsUserIDMigration }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

@@ -96,21 +96,24 @@
   version = "v2.22.0"
 
 [[projects]]
-  digest = "1:4816836c291b7f2a0da7deefa679ef234be8ad845a199ed2e48779234536cefa"
+  digest = "1:d7a7668f89b3bc6f65ee0e7006af5d762aa7ef2819fba56d4e7b3acc89f523ef"
   name = "github.com/Microsoft/go-winio"
   packages = [
     ".",
     "pkg/guid",
+    "pkg/security",
+    "vhd",
   ]
   pruneopts = "NUT"
   revision = "6c72808b55902eae4c5943626030429ff20f3b63"
   version = "v0.4.14"
 
 [[projects]]
-  digest = "1:64541c49a1b189d587bec7bf1922030d4f5a1dec0e7bfa811853647d71c2c46d"
+  digest = "1:944156b278aca18159fbe3f4b8acdc1b54e0035a8842abc0703c04c1933bf832"
   name = "github.com/Microsoft/hcsshim"
   packages = [
     ".",
+    "computestorage",
     "internal/cow",
     "internal/hcs",
     "internal/hcserror",
@@ -127,11 +130,12 @@
     "internal/timeout",
     "internal/vmcompute",
     "internal/wclayer",
+    "internal/winapi",
     "osversion",
   ]
   pruneopts = "NUT"
-  revision = "b3f49c06ffaeef24d09c6c08ec8ec8425a0303e2"
-  version = "v0.8.7"
+  revision = "75535b904555dad23b8d51cf9f58302d9babe242"
+  version = "v0.8.15"
 
 [[projects]]
   digest = "1:b39df10ac0e2d415e62d66b1859c902a49321c6b00df60a86c2c1c525f3f4a9d"

@@ -12,13 +12,13 @@ global:
       version: "PR-580"
     kyma_environment_broker:
       dir:
-      version: "PR-595"
+      version: "PR-592"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-593"
+      version: "PR-597"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-593"
+      version: "PR-597"
     subscription_cleanup_job:
       dir:
       version: "PR-574"
