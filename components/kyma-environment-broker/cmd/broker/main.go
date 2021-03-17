@@ -16,8 +16,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/migrations"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"code.cloudfoundry.org/lager"
@@ -75,11 +73,9 @@ import (
 
 // Config holds configuration for the whole application
 type Config struct {
-	DbInMemory                        bool `envconfig:"default=false"`
-	EnableInstanceDetailsMigration    bool `envconfig:"default=false"`
-	EnableInstanceParametersMigration bool `envconfig:"default=false"`
-	EnableInstanceParametersRollback  bool `envconfig:"default=false"`
-	EnableOperationsUserIDMigration   bool `envconfig:"default=false"`
+	// DbInMemory allows to use memory storage instead of the postgres one.
+	// Suitable for development purposes.
+	DbInMemory bool `envconfig:"default=false"`
 
 	// DisableProcessOperationsInProgress allows to disable processing operations
 	// which are in progress on starting application. Set to true if you are

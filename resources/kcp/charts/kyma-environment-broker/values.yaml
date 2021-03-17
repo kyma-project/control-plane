@@ -80,11 +80,6 @@ onlySingleTrialPerGA: "true"
 
 osbUpdateProcessingEnabled: "false"
 
-enableInstanceDetailsMigration: "false"
-enableInstanceParametersMigration: "false"
-enableInstanceParametersRollback: "false"
-enableOperationsUserIDMigration: "false"
-
 gardener:
   project: "kyma-dev" # Gardener project connected to SA for HAP credentials lookup
   shootDomain: "shoot.canary.k8s-hana.ondemand.com"
