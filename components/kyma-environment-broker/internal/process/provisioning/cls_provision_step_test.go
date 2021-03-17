@@ -89,7 +89,7 @@ func TestClsProvisioningStep_Run(t *testing.T) {
 			ServiceID: "svc-id",
 			PlanID:    "plan-id",
 		},
-	},mock.Anything).Return(&cls.ProvisionResult{
+	}, mock.Anything).Return(&cls.ProvisionResult{
 		InstanceID: "instance_id",
 	}, nil)
 
