@@ -1,4 +1,4 @@
-package provisioning
+package deprovisioning
 
 import (
 	"time"
@@ -26,8 +26,8 @@ func (s *AzureEventHubActivationStep) Name() string {
 	return s.step.Name()
 }
 
-func (s *AzureEventHubActivationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	// run the step only if  KymaVersion<1.21 && IsAzure==true && IsTrial==false
+func (s *AzureEventHubActivationStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+	// run the step only if  Kyma<1.21 && IsAzure==true && IsTrial==false
 	kymaVersion := operation.ProvisioningParameters.Parameters.KymaVersion
 	atLeast_1_21, err := cls.IsKymaVersionAtLeast_1_21(kymaVersion)
 	if err != nil {
