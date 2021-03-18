@@ -65,7 +65,7 @@ func TestEnableForTrialPlanStepShouldEnableForKymaVersion(t *testing.T) {
 func TestEnableForTrialPlanStepShouldNotEnable(t *testing.T) {
 	// Given
 	log := logrus.New()
-	operation := fixOperationWithPlanID("another")
+	operation := fixOperationWithPlanIDAndKymaVersion("another", "1.21") //fixOperationWithPlanID("another")
 	simpleInputCreator := newInputCreator()
 	operation.InputCreator = simpleInputCreator
 	anotherOperation := fixOperationWithPlanID("not enabled")
@@ -116,7 +116,7 @@ func TestEnableForTrialPlanStepShouldNotEnableOnAzureForKymaVersion(t *testing.T
 	// Given
 	log := logrus.New()
 	operation := fixOperationWithPlanID(broker.AzurePlanID)
-	operation.ProvisioningParameters.Parameters.KymaVersion = "1.20.0"
+	operation.RuntimeVersion.Version = "1.20.0"
 	simpleInputCreator := newInputCreator()
 	operation.InputCreator = simpleInputCreator
 	anotherOperation := fixOperationWithPlanID("not enabled")
