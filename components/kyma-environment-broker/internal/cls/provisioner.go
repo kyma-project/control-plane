@@ -55,7 +55,7 @@ func (p *provisioner) Provision(smClient servicemanager.Client, request *Provisi
 		return p.createNewInstance(smClient, request, log)
 	}
 
-	log.Infof("Found existing cls instance for global account %s", request.GlobalAccountID)
+	log.Infof("Found existing CLS instance for global account %s", request.GlobalAccountID)
 
 	instance.AddReference(request.SKRInstanceID)
 	if err := p.storage.Update(*instance); err != nil {

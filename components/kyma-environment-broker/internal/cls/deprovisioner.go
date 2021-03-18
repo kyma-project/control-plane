@@ -51,7 +51,7 @@ func (d *Deprovisioner) Deprovision(smClient servicemanager.Client, request *Dep
 		return nil
 	}
 
-	log.Infof("Unreferencing the cls instance %s by the skr %s", instance.ID(), request.SKRInstanceID)
+	log.Infof("Unreferencing CLS instance %s by the skr %s", instance.ID(), request.SKRInstanceID)
 
 	if err := instance.RemoveReference(request.SKRInstanceID); err != nil {
 		return errors.Wrapf(err, "while unreferencing CLS instance %s", instance.ID())
