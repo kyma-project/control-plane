@@ -17,6 +17,9 @@ import (
 	"github.com/spf13/afero"
 )
 
+// TODO: delete this step after all SKR clusters are migrated to 1.20!
+// the only reason why it's there is the old rigid way of configuring FluentBit (via extra.conf),
+// which makes it impossible to decouple CLS overrides from Audit Log overrides (both will end up in the same FluentBit config section)
 type ClsUpgradeAuditLogOverridesStep struct {
 	operationManager *process.UpgradeKymaOperationManager
 	fs               afero.Fs

@@ -138,6 +138,7 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 		return operation, time.Second, nil
 	}
 
+	// TODO: delete this check (isVersionAtLeast1_20) after all SKR clusters are migrated to 1.20!
 	isVersionAtLeast1_20, err := cls.IsKymaVersionAtLeast_1_20(operation.RuntimeVersion.Version)
 	if err != nil {
 		failureReason := "Unable to check kyma version"
