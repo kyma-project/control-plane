@@ -14,27 +14,6 @@ import (
 
 //go:generate mockery -name=Step -output=automock -outpkg=automock -case=underscore
 
-func TestSkipForAzurePlanStepShouldSkipForKymaVersion(t *testing.T) {
-	// Given
-	log := logrus.New()
-	operation := fixOperationWithPlanIDAndKymaVersion(broker.AzurePlanID, "1.21.0")
-	var skipTime time.Duration = 0
-
-	mockStep := &automock.Step{}
-	mockStep.On("Name").Return("Test")
-
-	skipStep := NewAzureEventHubActivationStep(mockStep)
-
-	// When
-	returnedOperation, time, err := skipStep.Run(operation, log)
-
-	// Then
-	mockStep.AssertExpectations(t)
-	require.NoError(t, err)
-	assert.Equal(t, skipTime, time)
-	assert.Equal(t, operation, returnedOperation)
-}
-
 func TestSkipForAnyPlanStepShouldSkipForKymaVersion(t *testing.T) {
 	// Given
 	log := logrus.New()

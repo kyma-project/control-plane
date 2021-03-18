@@ -111,7 +111,7 @@ func fixOperationWithPlanID(planID string) internal.ProvisioningOperation {
 
 func fixOperationWithPlanIDAndKymaVersion(planID, version string) internal.ProvisioningOperation {
 	provisioningOperation := fixOperationWithPlanID(planID)
-	provisioningOperation.ProvisioningParameters.Parameters.KymaVersion = version
+	provisioningOperation.RuntimeVersion.Version = version
 
 	return provisioningOperation
 }

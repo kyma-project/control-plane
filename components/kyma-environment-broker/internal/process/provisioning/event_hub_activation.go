@@ -28,7 +28,7 @@ func (s *AzureEventHubActivationStep) Name() string {
 
 func (s *AzureEventHubActivationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	// run the step only if  KymaVersion<1.21 && IsAzure==true && IsTrial==false
-	kymaVersion := operation.ProvisioningParameters.Parameters.KymaVersion
+	kymaVersion := operation.RuntimeVersion.Version
 	atLeast_1_21, err := cls.IsKymaVersionAtLeast_1_21(kymaVersion)
 	if err != nil {
 		log.Error(pkgErrors.Wrapf(err, "while checking Kyma version"))
