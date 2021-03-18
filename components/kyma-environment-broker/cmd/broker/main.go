@@ -370,9 +370,8 @@ func main() {
 			step:   provisioning.NewServiceManagerOverridesStep(db.Operations()),
 		},
 		{
-			weight:   3,
-			step:     provisioning.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog),
-			disabled: !cfg.Cls.Disabled,
+			weight: 3,
+			step:   newAuditLogStep(&cfg, db.Operations()),
 		},
 		{
 			weight:   5,
@@ -579,6 +578,23 @@ func main() {
 	})
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
+}
+
+// TODO: delete this function after all SKR clusters are migrated to 1.20!
+// the only reason why it's there is the old rigid way of configuring FluentBit (via extra.conf),
+// which makes it impossible to decouple CLS overrides from Audit Log overrides (both will end up in the same FluentBit config section).
+// In this case the following rules apply:
+// * If CLS is globally disabled, just use the regular Audit Log step
+// * If CLS is enabled and the cluster is Trial, just use the regular Audit Log step
+// * If CLS is enabled and the cluster is NOT Trial, use the combined CLS + Audit Log step
+func newAuditLogStep(cfg *Config, ops storage.Operations) provisioning.Step {
+	var auditLogStep provisioning.Step
+	auditLogStep = provisioning.NewAuditLogOverridesStep(ops, cfg.AuditLog)
+	if !cfg.Cls.Disabled {
+		return provisioning.NewEnableForTrialPlanStep(auditLogStep)
+	}
+
+	return auditLogStep
 }
 
 // queues all in progress operations by type
