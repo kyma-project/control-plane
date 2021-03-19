@@ -2,7 +2,7 @@
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: e2e-provisioning-suspension
+  name: e2e-trial
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
@@ -87,7 +87,7 @@ spec:
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: e2e-provisioning-suspension-cleanup
+  name: e2e-trial-cleanup
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
