@@ -89,9 +89,8 @@ func TestClsUpgradeProvisionStep_Run(t *testing.T) {
 			ServiceID: "svc-id",
 			PlanID:    "plan-id",
 		},
-	}).Return(&cls.ProvisionResult{
-		InstanceID:            "instance_id",
-		ProvisioningTriggered: true,
+	}, mock.Anything).Return(&cls.ProvisionResult{
+		InstanceID: "instance_id",
 	}, nil)
 
 	offeringStep := NewClsUpgradeOfferingStep(config, repo)

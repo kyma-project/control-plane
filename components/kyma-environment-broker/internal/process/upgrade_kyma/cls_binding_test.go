@@ -28,25 +28,22 @@ func TestClsBindingStep_Run(t *testing.T) {
 
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
-	expectedOverride := `[OUTPUT]
-  Name              http
-  Match             *
-  Host              fooEndPoint
-  Port              443
-  HTTP_User         fooUser
-  HTTP_Passwd       fooPass
-  tls               true
-  tls.verify        true
-  tls.debug         1
-  URI               /
-  Format            json`
-	expectedKibanaUrl := "kibUrl"
+	expectedOverride := `
+[OUTPUT]
+    Name              http
+    Match             *
+    Host              fooEndPoint
+    Port              443
+    HTTP_User         fooUser
+    HTTP_Passwd       fooPass
+    tls               true
+    tls.verify        true
+    URI               /
+    Format            json`
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
 		{Key: "fluent-bit.config.outputs.forward.enabled", Value: "false"},
 		{Key: "fluent-bit.config.outputs.additional", Value: expectedOverride},
 	}).Return(nil).Once()
-
-	inputCreatorMock.On("SetLabel", kibanaURLLabelKey, expectedKibanaUrl).Return(nil).Once()
 
 	operation := internal.UpgradeKymaOperation{
 		Operation: internal.Operation{
@@ -56,9 +53,10 @@ func TestClsBindingStep_Run(t *testing.T) {
 
 			InstanceDetails: internal.InstanceDetails{
 				Cls: internal.ClsData{Instance: internal.ServiceManagerInstanceInfo{
-					BrokerID:  fakeBrokerID,
-					ServiceID: "svc-id",
-					PlanID:    "plan-id",
+					BrokerID:   fakeBrokerID,
+					ServiceID:  "svc-id",
+					PlanID:     "plan-id",
+					InstanceID: "instnace-id",
 				},
 					Region: "eu",
 				},
@@ -109,7 +107,6 @@ func TestClsBindingStep_Run(t *testing.T) {
 		FluentdEndPoint: "fooEndPoint",
 		FluentdPassword: "fooPass",
 		FluentdUsername: "fooUser",
-		KibanaUrl:       "kibUrl",
 	}, nil)
 
 	bindingStep := NewClsUpgradeBindStep(config, clsBindingProvider, repo, "1234567890123456")
