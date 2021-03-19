@@ -138,6 +138,7 @@ func TestCreateBinding(t *testing.T) {
 	creds["Fluentd-username"] = "fbUser"
 	creds["Fluentd-password"] = "fbPass"
 	creds["Fluentd-endpoint"] = "fbEndpoint"
+	creds["Kibana-endpoint"] = "kibUrl"
 	resB := servicemanager.BindingResponse{
 		Binding:      servicemanager.Binding{Credentials: creds},
 		HTTPResponse: servicemanager.HTTPResponse{StatusCode: 200},
@@ -153,6 +154,7 @@ func TestCreateBinding(t *testing.T) {
 		FluentdEndPoint: "fbEndpoint",
 		FluentdPassword: "fbPass",
 		FluentdUsername: "fbUser",
+		KibanaURL:       "kibUrl",
 	}
 	res, err := sut.CreateBinding(smClientMock, &br)
 	require.NoError(t, err)
