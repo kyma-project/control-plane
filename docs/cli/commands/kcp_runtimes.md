@@ -33,7 +33,7 @@ kcp runtimes [flags]
   -r, --region strings       Filter by provider region. You can provide multiple values, either separated by a comma (e.g. westeurope,northeurope), or by specifying the option multiple times.
   -i, --runtime-id strings   Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.
   -c, --shoot strings        Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.
-  -t, --state string         Filter by state. You can provide multiple values, either separated by a comma (e.g. succeeded,failed,provision,deprovision), or by specifying the option multiple times.
+  -t, --state string         Filter by state. You can provide one value (e.g. succeeded,failed,provision,deprovision).
   -s, --subaccount strings   Filter by subaccount ID. You can provide multiple values, either separated by a comma (e.g. SAID1,SAID2), or by specifying the option multiple times.
 ```
 
