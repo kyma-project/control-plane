@@ -68,6 +68,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 
 	var cfg Config
 	cfg.Ems.Disabled = true
+	cfg.Cls.Disabled = true
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
@@ -116,7 +117,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, hyperscaler.NewAccountProvider(nil, nil), nil, logs)
+		&cfg, hyperscaler.NewAccountProvider(nil, nil), nil, nil, logs)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,

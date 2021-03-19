@@ -4,11 +4,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/automock"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -118,7 +116,7 @@ func TestCreateInstance(t *testing.T) {
 			// given
 			smClientMock := &automock.Client{}
 			smClientMock.On("Provision", fakeBrokerID, mock.MatchedBy(tc.matcher), true).Return(&servicemanager.ProvisionResponse{}, nil)
-			sut := NewClient(config, logger.NewLogDummy())
+			sut := NewClient(config)
 
 			// when
 			err := sut.CreateInstance(smClientMock, servicemanager.InstanceKey{
@@ -137,16 +135,16 @@ func TestCreateInstance(t *testing.T) {
 func TestCreateBinding(t *testing.T) {
 	smClientMock := &automock.Client{}
 	creds := make(map[string]interface{})
-	creds["Kibana-endpoint"] = "kibUrl"
 	creds["Fluentd-username"] = "fbUser"
 	creds["Fluentd-password"] = "fbPass"
 	creds["Fluentd-endpoint"] = "fbEndpoint"
+	creds["Kibana-endpoint"] = "kibUrl"
 	resB := servicemanager.BindingResponse{
 		Binding:      servicemanager.Binding{Credentials: creds},
 		HTTPResponse: servicemanager.HTTPResponse{StatusCode: 200},
 	}
 	smClientMock.On("Bind", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&resB, nil)
-	sut := NewClient(config, logrus.New())
+	sut := NewClient(config)
 
 	br := BindingRequest{
 		InstanceKey: servicemanager.InstanceKey{},
@@ -156,7 +154,7 @@ func TestCreateBinding(t *testing.T) {
 		FluentdEndPoint: "fbEndpoint",
 		FluentdPassword: "fbPass",
 		FluentdUsername: "fbUser",
-		KibanaUrl:       "kibUrl",
+		KibanaURL:       "kibUrl",
 	}
 	res, err := sut.CreateBinding(smClientMock, &br)
 	require.NoError(t, err)
@@ -194,7 +192,7 @@ func TestRemoveInstance(t *testing.T) {
 			// given
 			smClientMock := &automock.Client{}
 			smClientMock.On("Deprovision", fakeInstance, true).Return(&servicemanager.DeprovisionResponse{}, tc.deprovisionErr)
-			sut := NewClient(new(Config), logger.NewLogDummy())
+			sut := NewClient(new(Config))
 
 			// when
 			err := sut.RemoveInstance(smClientMock, fakeInstance)

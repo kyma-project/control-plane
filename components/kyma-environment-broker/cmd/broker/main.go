@@ -4,11 +4,15 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"sort"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
 
@@ -44,7 +48,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/health"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/metrics"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
@@ -124,6 +128,9 @@ type Config struct {
 	Ems struct {
 		Disabled bool `envconfig:"default=true"`
 	}
+	Cls struct {
+		Disabled bool `envconfig:"default=true"`
+	}
 
 	AuditLog auditlog.Config
 
@@ -188,6 +195,19 @@ func main() {
 		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 		prometheus.MustRegister(dbStatsCollector)
 	}
+
+	// CLS
+	clsFile, err := ioutil.ReadFile("/cls-config/cls-config.yaml")
+	if err != nil {
+		fatalOnError(err)
+	}
+
+	clsConfig, err := cls.Load(string(clsFile))
+	if err != nil {
+		fatalOnError(err)
+	}
+	clsClient := cls.NewClient(clsConfig)
+	clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient)
 
 	// LMS
 	fatalOnError(cfg.LMS.Validate())
@@ -289,6 +309,11 @@ func main() {
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight:   1,
+			step:     provisioning.NewSkipForTrialPlanStep(provisioning.NewClsOfferingStep(clsConfig, db.Operations())),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
 			weight: 2,
 			step:   provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
 		},
@@ -314,8 +339,14 @@ func main() {
 			disabled: cfg.Avs.Disabled,
 		},
 		{
-			weight: 2,
-			step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
+			weight:   2,
+			step:     provisioning.NewSkipForTrialPlanStep(provisioning.NewClsProvisionStep(clsConfig, clsProvisioner, db.Operations())),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
+			weight:   2,
+			step:     provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
+			disabled: !cfg.Cls.Disabled,
 		},
 		{
 			weight:   2,
@@ -340,11 +371,12 @@ func main() {
 		},
 		{
 			weight: 3,
-			step:   provisioning.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog),
+			step:   newAuditLogStep(&cfg, db.Operations()),
 		},
 		{
-			weight: 5,
-			step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
+			weight:   5,
+			step:     provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
+			disabled: !cfg.Cls.Disabled,
 		},
 		{
 			weight:   6,
@@ -362,6 +394,18 @@ func main() {
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight:   7,
+			step:     provisioning.NewSkipForTrialPlanStep(provisioning.NewClsBindStep(clsConfig, clsClient, db.Operations(), cfg.Database.SecretKey)),
+			disabled: cfg.Cls.Disabled,
+		},
+
+		{
+			weight:   8,
+			step:     provisioning.NewSkipForTrialPlanStep(provisioning.NewClsAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey)),
+			disabled: cfg.Cls.Disabled,
+		},
+
+		{
 			weight: 10,
 			step:   provisioning.NewCreateRuntimeStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
 		},
@@ -374,6 +418,8 @@ func main() {
 
 	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, serviceManagerClientFactory, cfg.OperationTimeout)
 	deprovisionManager.InitStep(deprovisioningInit)
+	clsDeprovisioner := cls.NewDeprovisioner(db.CLSInstances(), clsClient)
+
 	deprovisioningSteps := []struct {
 		disabled bool
 		weight   int
@@ -385,7 +431,9 @@ func main() {
 		},
 		{
 			weight: 1,
-			step:   deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+			step: deprovisioning.NewSkipForTrialPlanStep(
+				deprovisioning.NewAzureEventHubActivationStep(
+					deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx))),
 		},
 		{
 			weight:   1,
@@ -408,6 +456,11 @@ func main() {
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight:   1,
+			step:     deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewClsUnbindStep(clsConfig, db.Operations())),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
 			weight:   2,
 			step:     deprovisioning.NewXSUAADeprovisionStep(db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
@@ -416,6 +469,11 @@ func main() {
 			weight:   2,
 			step:     deprovisioning.NewEmsDeprovisionStep(db.Operations()),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   2,
+			step:     deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewClsDeprovisionStep(clsConfig, db.Operations(), clsDeprovisioner)),
+			disabled: cfg.Cls.Disabled,
 		},
 		{
 			weight: 10,
@@ -478,7 +536,7 @@ func main() {
 	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
-		&cfg, accountProvider, serviceManagerClientFactory, logs)
+		&cfg, accountProvider, serviceManagerClientFactory, clsConfig, logs)
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeResolver, upgradeEvalManager, logs)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
@@ -520,6 +578,23 @@ func main() {
 	})
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
+}
+
+// TODO: delete this function after all SKR clusters are migrated to 1.20!
+// the only reason why it's there is the old rigid way of configuring FluentBit (via extra.conf),
+// which makes it impossible to decouple CLS overrides from Audit Log overrides (both will end up in the same FluentBit config section).
+// In this case the following rules apply:
+// * If CLS is globally disabled, just use the regular Audit Log step
+// * If CLS is enabled and the cluster is Trial, just use the regular Audit Log step
+// * If CLS is enabled and the cluster is NOT Trial, use the combined CLS + Audit Log step
+func newAuditLogStep(cfg *Config, ops storage.Operations) provisioning.Step {
+	var auditLogStep provisioning.Step
+	auditLogStep = provisioning.NewAuditLogOverridesStep(ops, cfg.AuditLog)
+	if !cfg.Cls.Disabled {
+		return provisioning.NewEnableForTrialPlanStep(auditLogStep)
+	}
+
+	return auditLogStep
 }
 
 // queues all in progress operations by type
@@ -636,7 +711,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
 	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager,
-	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory, logs logrus.FieldLogger) *process.Queue {
+	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory, clsConfig *cls.Config, logs logrus.FieldLogger) *process.Queue {
+
+	//CLS
+	clsClient := cls.NewClient(clsConfig)
+	clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient)
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Orchestrations(), db.Instances(),
@@ -657,6 +736,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight:   1,
+			step:     upgrade_kyma.NewSkipForTrialPlanStep(upgrade_kyma.NewClsUpgradeOfferingStep(clsConfig, db.Operations())),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
 			weight: 2,
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
@@ -671,9 +755,24 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight:   4,
+			step:     upgrade_kyma.NewSkipForTrialPlanStep(upgrade_kyma.NewClsUpgradeProvisionStep(clsConfig, clsProvisioner, db.Operations())),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
 			weight:   7,
 			step:     upgrade_kyma.NewEmsUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   7,
+			step:     upgrade_kyma.NewSkipForTrialPlanStep(upgrade_kyma.NewClsUpgradeBindStep(clsConfig, clsClient, db.Operations(), cfg.Database.SecretKey)),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
+			weight:   8,
+			step:     upgrade_kyma.NewSkipForTrialPlanStep(upgrade_kyma.NewClsUpgradeAuditLogOverridesStep(db.Operations(), cfg.AuditLog, cfg.Database.SecretKey)),
+			disabled: cfg.Cls.Disabled,
 		},
 
 		{

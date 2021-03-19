@@ -34,7 +34,7 @@ func TestProvisionReturnsExistingInstanceIfFoundInDB(t *testing.T) {
 	smClientMock := &smautomock.Client{}
 	creatorMock := &automock.InstanceCreator{}
 
-	sut := NewProvisioner(fakeStorage, creatorMock, logger.NewLogDummy())
+	sut := NewProvisioner(fakeStorage, creatorMock)
 
 	// when
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
@@ -45,13 +45,12 @@ func TestProvisionReturnsExistingInstanceIfFoundInDB(t *testing.T) {
 			ServiceID: fakeServiceID,
 			PlanID:    fakePlanID,
 		},
-	})
+	}, logger.NewLogDummy())
 
 	// then
 	require.NotNil(t, result)
 	require.NoError(t, err)
 	require.Equal(t, fakeInstanceID, result.InstanceID)
-	require.False(t, result.ProvisioningTriggered)
 	require.Equal(t, fakeRegion, result.Region)
 }
 
@@ -77,7 +76,7 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 			isValidUUID(instance.InstanceID)
 	})).Return(nil)
 
-	sut := NewProvisioner(fakeStorage, creatorMock, logger.NewLogDummy())
+	sut := NewProvisioner(fakeStorage, creatorMock)
 
 	// when
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
@@ -89,13 +88,12 @@ func TestProvisionCreatesNewInstanceIfNoneFoundInDB(t *testing.T) {
 			ServiceID: fakeServiceID,
 			PlanID:    fakePlanID,
 		},
-	})
+	}, logger.NewLogDummy())
 
 	// then
 	require.NotNil(t, result)
 	require.NoError(t, err)
 	require.NotEmpty(t, result.InstanceID)
-	require.True(t, result.ProvisioningTriggered)
 	require.Equal(t, fakeRegion, result.Region)
 
 	creatorMock.AssertNumberOfCalls(t, "CreateInstance", 1)
@@ -118,7 +116,7 @@ func TestProvisionDoesNotCreateNewInstanceIfFindQueryFails(t *testing.T) {
 	smClientMock := &smautomock.Client{}
 	creatorMock := &automock.InstanceCreator{}
 
-	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
+	sut := NewProvisioner(storageMock, creatorMock)
 
 	// when
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
@@ -129,7 +127,7 @@ func TestProvisionDoesNotCreateNewInstanceIfFindQueryFails(t *testing.T) {
 			ServiceID: fakeServiceID,
 			PlanID:    fakePlanID,
 		},
-	})
+	}, logger.NewLogDummy())
 	require.Nil(t, result)
 	require.Error(t, err)
 
@@ -155,7 +153,7 @@ func TestProvisionDoesNotCreateNewInstanceIfInsertQueryFails(t *testing.T) {
 	smClientMock := &smautomock.Client{}
 	creatorMock := &automock.InstanceCreator{}
 
-	sut := NewProvisioner(storageMock, creatorMock, logger.NewLogDummy())
+	sut := NewProvisioner(storageMock, creatorMock)
 
 	// when
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
@@ -166,7 +164,7 @@ func TestProvisionDoesNotCreateNewInstanceIfInsertQueryFails(t *testing.T) {
 			ServiceID: fakeServiceID,
 			PlanID:    fakePlanID,
 		},
-	})
+	}, logger.NewLogDummy())
 
 	// then
 	require.Nil(t, result)
@@ -190,7 +188,7 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 	creatorMock := &automock.InstanceCreator{}
 	creatorMock.On("CreateInstance", smClientMock, mock.Anything).Return(nil)
 
-	sut := NewProvisioner(fakeStorage, creatorMock, logger.NewLogDummy())
+	sut := NewProvisioner(fakeStorage, creatorMock)
 
 	// when
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
@@ -201,7 +199,7 @@ func TestProvisionSavesNewInstanceToDB(t *testing.T) {
 			ServiceID: fakeServiceID,
 			PlanID:    fakePlanID,
 		},
-	})
+	}, logger.NewLogDummy())
 
 	// then
 	require.NotNil(t, result)
@@ -233,7 +231,7 @@ func TestProvisionAddsReferenceIfFoundInDB(t *testing.T) {
 	smClientMock := &smautomock.Client{}
 	creatorMock := &automock.InstanceCreator{}
 
-	sut := NewProvisioner(fakeStorage, creatorMock, logger.NewLogDummy())
+	sut := NewProvisioner(fakeStorage, creatorMock)
 
 	// when
 	result, err := sut.Provision(smClientMock, &ProvisionRequest{
@@ -244,7 +242,7 @@ func TestProvisionAddsReferenceIfFoundInDB(t *testing.T) {
 			ServiceID: fakeServiceID,
 			PlanID:    fakePlanID,
 		},
-	})
+	}, logger.NewLogDummy())
 
 	// then
 	require.NotNil(t, result)
