@@ -17,6 +17,9 @@ import (
 	"github.com/spf13/afero"
 )
 
+// TODO: delete this step after all SKR clusters are migrated to 1.20!
+// the only reason why it's there is the old rigid way of configuring FluentBit (via extra.conf),
+// which makes it impossible to decouple CLS overrides from Audit Log overrides (both will end up in the same FluentBit config section)
 type ClsAuditLogOverridesStep struct {
 	operationManager *process.ProvisionOperationManager
 	fs               afero.Fs
@@ -72,8 +75,10 @@ func (alo *ClsAuditLogOverridesStep) Run(operation internal.ProvisioningOperatio
 	}
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
+		{Key: "fluent-bit.conf.Output.forward.enabled", Value: "false"},
 		{Key: "fluent-bit.conf.script", Value: replaceTenantID},
 		{Key: "fluent-bit.conf.extra", Value: extraConfOverrides},
+		{Key: "fluent-bit.config.outputs.forward.enabled", Value: "false"},
 		{Key: "fluent-bit.config.script", Value: replaceTenantID},
 		{Key: "fluent-bit.config.extra", Value: extraConfOverrides},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},

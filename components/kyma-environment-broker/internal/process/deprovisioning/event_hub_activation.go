@@ -1,10 +1,7 @@
-package provisioning
+package deprovisioning
 
 import (
 	"time"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
-	pkgErrors "github.com/pkg/errors"
 
 	"github.com/sirupsen/logrus"
 
@@ -26,18 +23,8 @@ func (s *AzureEventHubActivationStep) Name() string {
 	return s.step.Name()
 }
 
-func (s *AzureEventHubActivationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	// run the step only if  KymaVersion<1.21 && IsAzure==true && IsTrial==false
-	kymaVersion := operation.RuntimeVersion.Version
-	atLeast_1_21, err := cls.IsKymaVersionAtLeast_1_21(kymaVersion)
-	if err != nil {
-		log.Error(pkgErrors.Wrapf(err, "while checking Kyma version"))
-		return operation, 0, nil
-	}
-	if atLeast_1_21 {
-		log.Infof("Skipping step %s for Kyma version %s", s.Name(), kymaVersion)
-		return operation, 0, nil
-	}
+func (s *AzureEventHubActivationStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+	// run the step only if IsAzure==true && IsTrial==false
 	if planID := operation.ProvisioningParameters.PlanID; !broker.IsAzurePlan(planID) || broker.IsTrialPlan(planID) {
 		log.Infof("Skipping step %s for planID %s", s.Name(), planID)
 		return operation, 0, nil

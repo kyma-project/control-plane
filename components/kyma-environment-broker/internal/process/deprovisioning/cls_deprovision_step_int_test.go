@@ -3,7 +3,6 @@
 package deprovisioning
 
 import (
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -45,14 +44,12 @@ func TestClsDeprovisionSteps(t *testing.T) {
 		},
 	}
 
+	instance := internal.NewCLSInstance(globalAccountID, "eu", internal.WithID(os.Getenv("INSTANCE_ID")), internal.WithReferences(skrInstanceID))
 	db := storage.NewMemoryStorage()
-	db.CLSInstances().InsertInstance(internal.CLSInstance{
-		GlobalAccountID:          globalAccountID,
-		ReferencedSKRInstanceIDs: []string{skrInstanceID},
-	})
+	clsStorage := db.CLSInstances()
+	clsStorage.Insert(*instance)
 
-	repo := db.Operations()
-
+	operationStorage := db.Operations()
 	operation := internal.DeprovisioningOperation{
 		Operation: internal.Operation{
 			InstanceID: skrInstanceID,
@@ -60,7 +57,8 @@ func TestClsDeprovisionSteps(t *testing.T) {
 				ErsContext: internal.ERSContext{GlobalAccountID: globalAccountID}},
 			InstanceDetails: internal.InstanceDetails{
 				Cls: internal.ClsData{
-					Region: "eu",
+					Region:    "eu",
+					Overrides: "bsae64-encrypted-overrides",
 					Instance: internal.ServiceManagerInstanceInfo{
 						BrokerID:              os.Getenv("BROKER_ID"), // saved in InstanceKey, see the provisioning step
 						ServiceID:             os.Getenv("SERVICE_ID"),
@@ -69,26 +67,39 @@ func TestClsDeprovisionSteps(t *testing.T) {
 						Provisioned:           true,
 						ProvisioningTriggered: false,
 					},
+					Binding: internal.BindingInfo{
+						Bound:     true,
+						BindingID: os.Getenv("BINDING_ID"),
+					},
 				},
 			},
 		},
 		SMClientFactory: servicemanager.NewClientFactory(servicemanager.Config{}),
 	}
+	operationStorage.InsertDeprovisioningOperation(operation)
 
 	log := logrus.New()
+	log.SetLevel(logrus.DebugLevel)
 	log.SetFormatter(&logrus.JSONFormatter{})
 
-	clsClient := cls.NewClient(clsConfig, log)
-	clsDeprovisioner := cls.NewDeprovisioner(db.CLSInstances(), clsClient, log)
+	if len(operation.Cls.Binding.BindingID) > 0 {
+		unbindStep := NewClsUnbindStep(clsConfig, operationStorage)
+		op, _, err := unbindStep.Run(operation, log)
+		require.NoError(t, err)
+		operation = op
+	}
 
-	step := NewClsDeprovisionStep(clsConfig, repo, clsDeprovisioner)
+	clsClient := cls.NewClient(clsConfig)
+	clsDeprovisioner := cls.NewDeprovisioner(clsStorage, clsClient)
+
+	step := NewClsDeprovisionStep(clsConfig, operationStorage, clsDeprovisioner)
 
 	for i := 0; i < 10; i++ {
 		op, offset, err := step.Run(operation, log)
 		require.NoError(t, err)
 		operation = op
 
-		fmt.Printf("deprovisioned flag: %#v", op.Cls.Instance)
+		log.Debugf("CLS Instance: %#v\n", op.Cls.Instance)
 		if !operation.Cls.Instance.Provisioned {
 			require.Empty(t, op.Cls.Instance.InstanceID)
 			break

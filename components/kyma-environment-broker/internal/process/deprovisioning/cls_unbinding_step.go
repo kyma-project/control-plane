@@ -28,12 +28,12 @@ func NewClsUnbindStep(config *cls.Config, os storage.Operations) *ClsUnbindStep 
 var _ Step = (*ClsUnbindStep)(nil)
 
 func (s *ClsUnbindStep) Name() string {
-	return "Cls_Unbind"
+	return "CLS_Unbind"
 }
 
 func (s *ClsUnbindStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
-	if !operation.Cls.Binding.Bound {
-		log.Infof("Cls Unbind step skipped, instance not bound")
+	if operation.Cls.Overrides == "" {
+		log.Info("Cls Unbind step skipped, instance not bound")
 		return operation, 0, nil
 	}
 
@@ -55,7 +55,6 @@ func (s *ClsUnbindStep) Run(operation internal.DeprovisioningOperation, log logr
 
 	updatedOperation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
 		operation.Cls.Binding.BindingID = ""
-		operation.Cls.Binding.Bound = false
 		operation.Cls.Overrides = ""
 	}, log)
 	return updatedOperation, retry, nil

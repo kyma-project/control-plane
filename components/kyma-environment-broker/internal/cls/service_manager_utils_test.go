@@ -3,6 +3,7 @@ package cls
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/stretchr/testify/require"
 )
@@ -12,22 +13,26 @@ func TestDetermineServiceManagerRegion(t *testing.T) {
 		summary          string
 		givenSKRRegion   *string
 		expectedSMRegion string
-		expectedError    string
 	}{
 		{
-			summary:        "unsupported skr region",
-			givenSKRRegion: stringPtr("westeurope42"),
-			expectedError:  "unsupported region: westeurope42",
+			summary:          "unsupported skr region",
+			givenSKRRegion:   stringPtr("westeurope42"),
+			expectedSMRegion: RegionEurope,
 		},
 		{
-			summary:          "happy path",
-			givenSKRRegion:   stringPtr("westeurope"),
-			expectedSMRegion: "eu",
-		},
-		{
-			summary:          "happy path (default service manager region)",
+			summary:          "unknown skr region",
 			givenSKRRegion:   nil,
-			expectedSMRegion: "eu",
+			expectedSMRegion: RegionEurope,
+		},
+		{
+			summary:          "supported europian region",
+			givenSKRRegion:   stringPtr("westeurope"),
+			expectedSMRegion: RegionEurope,
+		},
+		{
+			summary:          "supported us region",
+			givenSKRRegion:   stringPtr("eastus"),
+			expectedSMRegion: RegionUS,
 		},
 	}
 
@@ -35,15 +40,10 @@ func TestDetermineServiceManagerRegion(t *testing.T) {
 		t.Run(tc.summary, func(t *testing.T) {
 			// given
 			// when
-			smRegion, err := DetermineServiceManagerRegion(tc.givenSKRRegion)
+			smRegion := DetermineServiceManagerRegion(tc.givenSKRRegion, logger.NewLogDummy())
 
 			// then
-			if len(tc.expectedError) > 0 {
-				require.EqualError(t, err, tc.expectedError)
-			} else {
-				require.NoError(t, err)
-				require.Equal(t, tc.expectedSMRegion, smRegion)
-			}
+			require.Equal(t, tc.expectedSMRegion, smRegion)
 		})
 	}
 }
@@ -60,7 +60,7 @@ func TestFindCredentials(t *testing.T) {
 			summary: "no matching service manager credentials",
 			givenCredentials: []*ServiceManagerCredentials{
 				{
-					Region:   "us",
+					Region:   RegionUS,
 					URL:      "us.service-manager.com",
 					Username: "john.doe",
 					Password: "qwerty",
@@ -73,13 +73,13 @@ func TestFindCredentials(t *testing.T) {
 			summary: "happy path",
 			givenCredentials: []*ServiceManagerCredentials{
 				{
-					Region:   "eu",
+					Region:   RegionEurope,
 					URL:      "eu.service-manager.com",
 					Username: "john.doe",
 					Password: "qwerty",
 				},
 				{
-					Region:   "us",
+					Region:   RegionUS,
 					URL:      "us.service-manager.com",
 					Username: "john.doe",
 					Password: "qwerty",

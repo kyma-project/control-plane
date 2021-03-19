@@ -14,7 +14,7 @@ import (
 
 //go:generate mockery --name=ClsDeprovisioner --output=automock --outpkg=automock --case=underscore
 type ClsDeprovisioner interface {
-	Deprovision(smClient servicemanager.Client, request *cls.DeprovisionRequest) error
+	Deprovision(smClient servicemanager.Client, request *cls.DeprovisionRequest, log logrus.FieldLogger) error
 }
 
 type ClsDeprovisionStep struct {
@@ -39,12 +39,10 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
 	skrInstanceID := operation.InstanceID
 
-	if !operation.Cls.Instance.Provisioned {
+	if operation.Cls.Instance.InstanceID == "" {
 		log.Warnf("Unable to deprovision a cls instance for global account %s since it is not provisioned", globalAccountID)
 		return operation, 0, nil
 	}
-
-	log.Debugf("Starting deprovisioning a cls instance %s", operation.Cls.Instance.InstanceID)
 
 	smCredentials, err := cls.FindCredentials(s.config.ServiceManager, operation.Cls.Region)
 	if err != nil {
@@ -61,7 +59,7 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 	}
 
 	if !operation.Cls.Instance.DeprovisioningTriggered {
-		if err := s.deprovisioner.Deprovision(smClient, request); err != nil {
+		if err := s.deprovisioner.Deprovision(smClient, request, log); err != nil {
 			failureReason := fmt.Sprintf("Unable to deprovision a cls instance %s: %s", operation.Cls.Instance.InstanceID, err)
 			log.Error(failureReason)
 			return s.operationManager.RetryOperation(operation, failureReason, 1*time.Minute, 5*time.Minute, log)
@@ -84,8 +82,6 @@ func (s *ClsDeprovisionStep) checkDeprovisioningStatus(operation internal.Deprov
 		log.Error(failureReason)
 		return s.operationManager.RetryOperation(operation, failureReason, 1*time.Minute, 5*time.Minute, log)
 	}
-
-	log.Debugf("Response from service manager while polling the status of a cls instance %s: %#v", instanceID, resp)
 
 	switch resp.State {
 	case servicemanager.InProgress:

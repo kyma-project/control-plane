@@ -6,7 +6,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 type parameters struct {
@@ -35,7 +34,7 @@ type OverrideParams struct {
 	FluentdEndPoint string `json:"Fluentd-endpoint"`
 	FluentdPassword string `json:"Fluentd-password"`
 	FluentdUsername string `json:"Fluentd-username"`
-	KibanaUrl       string `json:"Kibana-endpoint"`
+	KibanaURL       string `json:"Kibana-endpoint"`
 }
 
 type BindingRequest struct {
@@ -46,14 +45,12 @@ type BindingRequest struct {
 // Client wraps a generic servicemanager.Client an performs CLS specific calls
 type Client struct {
 	config *Config
-	log    logrus.FieldLogger
 }
 
 //NewClient creates a new Client instance
-func NewClient(config *Config, log logrus.FieldLogger) *Client {
+func NewClient(config *Config) *Client {
 	return &Client{
 		config: config,
-		log:    log,
 	}
 }
 
@@ -70,12 +67,10 @@ func (c *Client) CreateInstance(smClient servicemanager.Client, instance service
 	}
 	input.Parameters = createParameters(c.config)
 
-	resp, err := smClient.Provision(instance.BrokerID, input, true)
+	_, err := smClient.Provision(instance.BrokerID, input, true)
 	if err != nil {
 		return errors.Wrapf(err, "while provisioning a CLS instance %s", instance.InstanceID)
 	}
-
-	c.log.Debugf("Response from Service Manager while provisioning a CLS instance %s: %#v", instance.InstanceID, resp)
 
 	return nil
 }
@@ -108,21 +103,19 @@ func (c *Client) CreateBinding(smClient servicemanager.Client, request *BindingR
 	}
 
 	return &OverrideParams{
-		KibanaUrl:       resp.Credentials["Kibana-endpoint"].(string),
 		FluentdUsername: resp.Credentials["Fluentd-username"].(string),
 		FluentdPassword: resp.Credentials["Fluentd-password"].(string),
 		FluentdEndPoint: resp.Credentials["Fluentd-endpoint"].(string),
+		KibanaURL:       resp.Credentials["Kibana-endpoint"].(string),
 	}, nil
 }
 
 // RemoveInstance sends a request to Service Manager to remove a CLS Instance
 func (c *Client) RemoveInstance(smClient servicemanager.Client, instance servicemanager.InstanceKey) error {
-	resp, err := smClient.Deprovision(instance, true)
+	_, err := smClient.Deprovision(instance, true)
 	if err != nil {
 		return errors.Wrapf(err, "while deprovisioning a CLS instance %s", instance.InstanceID)
 	}
-
-	c.log.Debugf("Response from Service Manager while deprovisioning a CLS instance %s: %#v", instance.InstanceID, resp)
 
 	return nil
 }

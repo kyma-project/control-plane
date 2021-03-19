@@ -41,14 +41,6 @@ func Test_E2E_Suspension(t *testing.T) {
 	err = ts.configMapClient.Update(configMap)
 	require.NoError(t, err)
 
-	ts.log.Info("Fetching runtime's kubeconfig")
-	config, err := ts.runtimeClient.FetchRuntimeConfig()
-	require.NoError(t, err)
-
-	ts.log.Infof("Creating a secret %s with test data", ts.ConfigName)
-	err = ts.secretClient.Create(ts.testSecret(config))
-	require.NoError(t, err)
-
 	err = ts.dashboardChecker.AssertRedirectedToUAA(dashboardURL)
 	assert.NoError(t, err)
 
@@ -62,6 +54,14 @@ func Test_E2E_Suspension(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = ts.brokerClient.AwaitOperationSucceeded("", ts.ProvisionTimeout)
+	require.NoError(t, err)
+
+	ts.log.Info("Fetching runtime's kubeconfig")
+	config, err := ts.runtimeClient.FetchRuntimeConfig()
+	require.NoError(t, err)
+
+	ts.log.Infof("Creating a secret %s with test data", ts.ConfigName)
+	err = ts.secretClient.Create(ts.testSecret(config))
 	require.NoError(t, err)
 
 	err = ts.dashboardChecker.AssertRedirectedToUAA(dashboardURL)
