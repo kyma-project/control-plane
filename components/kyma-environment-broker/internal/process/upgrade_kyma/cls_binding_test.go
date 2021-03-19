@@ -107,6 +107,7 @@ func TestClsBindingStep_Run(t *testing.T) {
 		FluentdEndPoint: "fooEndPoint",
 		FluentdPassword: "fooPass",
 		FluentdUsername: "fooUser",
+		KibanaURL:       "kibana.url",
 	}, nil)
 
 	bindingStep := NewClsUpgradeBindStep(config, clsBindingProvider, repo, "1234567890123456")
