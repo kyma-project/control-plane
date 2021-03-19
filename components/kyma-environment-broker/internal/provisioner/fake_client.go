@@ -159,8 +159,12 @@ func (c *FakeClient) UpgradeShoot(accountID, runtimeID string, config schema.Upg
 	}, nil
 }
 
-func (c *FakeClient) IsRuntimeUpgraded(runtimeID string) bool {
-	_, found := c.upgrades[runtimeID]
+func (c *FakeClient) IsRuntimeUpgraded(runtimeID string, version string) bool {
+	input, found := c.upgrades[runtimeID]
+	if found && version != "" && input.KymaConfig != nil {
+		return input.KymaConfig.Version == version
+	}
+
 	return found
 }
 

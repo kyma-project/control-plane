@@ -62,7 +62,7 @@ type OrchestrationSuite struct {
 	t *testing.T
 }
 
-func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
+func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *OrchestrationSuite {
 	logs := logrus.New()
 	logs.Formatter.(*logrus.TextFormatter).TimestampFormat = "15:04:05.000"
 
@@ -93,7 +93,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 	db := storage.NewMemoryStorage()
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
-	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources()...)
+	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources(defaultKymaVer, additionalKymaVersions)...)
 
 	gardenerClient := gardenerFake.NewSimpleClientset()
 	provisionerClient := provisioner.NewFakeClient()
@@ -251,28 +251,16 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 	return runtimeID
 }
 
-func (s *OrchestrationSuite) createOrchestration(oType orchestration.Type, queue *process.Queue, runtimeID string) string {
+func (s *OrchestrationSuite) createOrchestration(oType orchestration.Type, queue *process.Queue, params orchestration.Parameters) string {
 	now := time.Now()
 	o := internal.Orchestration{
 		OrchestrationID: uuid.New(),
 		Type:            oType,
 		State:           orchestration.Pending,
 		Description:     "started processing of Kyma upgrade",
-		Parameters: orchestration.Parameters{
-			Targets: orchestration.TargetSpec{
-				Include: []orchestration.RuntimeTarget{
-					{RuntimeID: runtimeID},
-				},
-			},
-			Strategy: orchestration.StrategySpec{
-				Type:     orchestration.ParallelStrategy,
-				Schedule: orchestration.Immediate,
-				Parallel: orchestration.ParallelStrategySpec{Workers: 1},
-			},
-			DryRun: false,
-		},
-		CreatedAt: now,
-		UpdatedAt: now,
+		Parameters:      params,
+		CreatedAt:       now,
+		UpdatedAt:       now,
 	}
 	require.NoError(s.t, s.storage.Orchestrations().Insert(o))
 
@@ -280,12 +268,12 @@ func (s *OrchestrationSuite) createOrchestration(oType orchestration.Type, queue
 	return o.OrchestrationID
 }
 
-func (s *OrchestrationSuite) CreateUpgradeKymaOrchestration(runtimeID string) string {
-	return s.createOrchestration(orchestration.UpgradeKymaOrchestration, s.kymaQueue, runtimeID)
+func (s *OrchestrationSuite) CreateUpgradeKymaOrchestration(params orchestration.Parameters) string {
+	return s.createOrchestration(orchestration.UpgradeKymaOrchestration, s.kymaQueue, params)
 }
 
-func (s *OrchestrationSuite) CreateUpgradeClusterOrchestration(runtimeID string) string {
-	return s.createOrchestration(orchestration.UpgradeClusterOrchestration, s.clusterQueue, runtimeID)
+func (s *OrchestrationSuite) CreateUpgradeClusterOrchestration(params orchestration.Parameters) string {
+	return s.createOrchestration(orchestration.UpgradeClusterOrchestration, s.clusterQueue, params)
 }
 
 func (s *OrchestrationSuite) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
@@ -317,12 +305,12 @@ func (s *OrchestrationSuite) WaitForOrchestrationState(orchestrationID string, s
 	assert.NoError(s.t, err, "timeout waiting for the orchestration expected state %s. The existing orchestration %+v", state, orchestration)
 }
 
-func (s *OrchestrationSuite) AssertRuntimeUpgraded(runtimeID string) {
-	assert.True(s.t, s.provisionerClient.IsRuntimeUpgraded(runtimeID), "The runtime %s expected to be upgraded", runtimeID)
+func (s *OrchestrationSuite) AssertRuntimeUpgraded(runtimeID string, version string) {
+	assert.True(s.t, s.provisionerClient.IsRuntimeUpgraded(runtimeID, version), "The runtime %s expected to be upgraded", runtimeID)
 }
 
 func (s *OrchestrationSuite) AssertRuntimeNotUpgraded(runtimeID string) {
-	assert.False(s.t, s.provisionerClient.IsRuntimeUpgraded(runtimeID), "The runtime %s expected to be not upgraded", runtimeID)
+	assert.False(s.t, s.provisionerClient.IsRuntimeUpgraded(runtimeID, ""), "The runtime %s expected to be not upgraded", runtimeID)
 }
 
 func (s *OrchestrationSuite) AssertShootUpgraded(runtimeID string) {
@@ -333,22 +321,25 @@ func (s *OrchestrationSuite) AssertShootNotUpgraded(runtimeID string) {
 	assert.False(s.t, s.provisionerClient.IsShootUpgraded(runtimeID), "The shoot %s expected to be not upgraded", runtimeID)
 }
 
-func fixK8sResources() []runtime.Object {
+func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string) []runtime.Object {
 	var resources []runtime.Object
-
-	resources = append(resources, &coreV1.ConfigMap{
+	override := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "overrides",
 			Namespace: "kcp-system",
 			Labels: map[string]string{
-				"overrides-version-1.15.1": "true",
-				"overrides-plan-azure":     "true",
+				fmt.Sprintf("overrides-version-%s", defaultKymaVersion): "true",
+				"overrides-plan-azure": "true",
 			},
 		},
 		Data: map[string]string{
 			"foo": "bar",
 		},
-	})
+	}
+	for _, version := range additionalKymaVersions {
+		override.ObjectMeta.Labels[fmt.Sprintf("overrides-version-%s", version)] = "true"
+	}
+	resources = append(resources, override)
 
 	return resources
 }
