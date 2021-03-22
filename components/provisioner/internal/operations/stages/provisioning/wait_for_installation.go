@@ -3,6 +3,7 @@ package provisioning
 import (
 	"errors"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"time"
 
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
@@ -17,13 +18,15 @@ type WaitForInstallationStep struct {
 	installationClient installation.Service
 	nextStep           model.OperationStage
 	timeLimit          time.Duration
+	dbSession          dbsession.WriteSession
 }
 
-func NewWaitForInstallationStep(installationClient installation.Service, nextStep model.OperationStage, timeLimit time.Duration) *WaitForInstallationStep {
+func NewWaitForInstallationStep(installationClient installation.Service, nextStep model.OperationStage, timeLimit time.Duration, dbSession dbsession.WriteSession) *WaitForInstallationStep {
 	return &WaitForInstallationStep{
 		installationClient: installationClient,
 		nextStep:           nextStep,
 		timeLimit:          timeLimit,
+		dbSession:          dbSession,
 	}
 }
 
@@ -35,7 +38,7 @@ func (s *WaitForInstallationStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *WaitForInstallationStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
+func (s *WaitForInstallationStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
 	if cluster.Kubeconfig == nil {
 		return operations.StageResult{}, fmt.Errorf("error: kubeconfig is nil")
@@ -50,7 +53,9 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, _ model.Operation, 
 	if err != nil {
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {
-			logger.Warnf("installation error occurred: %s", installErr.Error())
+			message := fmt.Sprintf("Installation error occurred: %s", installErr.Error())
+			logger.Warn(message)
+			s.saveInstallationState(message, logger, operation)
 			return operations.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
 		}
 
@@ -58,7 +63,9 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, _ model.Operation, 
 	}
 
 	if installationState.State == "Installed" {
-		logger.Infof("Installation completed: %s", installationState.Description)
+		message := fmt.Sprintf("Installation completed: %s", installationState.Description)
+		logger.Info(message)
+		s.saveInstallationState(message, logger, operation)
 		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 	}
 
@@ -66,6 +73,15 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, _ model.Operation, 
 		return operations.StageResult{}, fmt.Errorf("installation not yet started")
 	}
 
-	logger.Infof("Installation in progress: %s", installationState.Description)
+	message := fmt.Sprintf("Installation in progress: %s", installationState.Description)
+	logger.Info(message)
+	s.saveInstallationState(message, logger, operation)
 	return operations.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
+}
+
+func (s *WaitForInstallationStep) saveInstallationState(message string, logger logrus.FieldLogger, operation model.Operation) {
+	dberr := s.dbSession.UpdateOperationState(operation.ID, message, operation.State, time.Now())
+	if dberr != nil {
+		logger.Errorf("error updating installation state: %s", dberr.Error())
+	}
 }
