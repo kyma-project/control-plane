@@ -111,7 +111,6 @@ func main() {
 	if opts.DebugPort > 0 {
 		enableDebugging(opts.DebugPort, log)
 	}
-	// Start a server to cater to the metrics and healthz endpoints
 	router := mux.NewRouter()
 	router.Path(healthzPath).HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
@@ -124,6 +123,7 @@ func main() {
 		Router: router,
 	}
 
+	// Start a server to cater to the metrics and healthz endpoints
 	metrisSvr.Start()
 }
 

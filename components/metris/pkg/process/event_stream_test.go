@@ -46,9 +46,9 @@ func TestParse(t *testing.T) {
 					ProvisionedCpus:  16,
 					ProvisionedRAMGb: 64,
 					ProvisionedVolumes: edp.ProvisionedVolumes{
-						SizeGbTotal:   435,
-						Count:         5,
-						SizeGbRounded: 448,
+						SizeGbTotal:   35,
+						Count:         3,
+						SizeGbRounded: 96,
 					},
 				},
 				Networking: edp.Networking{
@@ -74,9 +74,9 @@ func TestParse(t *testing.T) {
 					ProvisionedCpus:  24,
 					ProvisionedRAMGb: 96,
 					ProvisionedVolumes: edp.ProvisionedVolumes{
-						SizeGbTotal:   600,
-						Count:         3,
-						SizeGbRounded: 608,
+						SizeGbTotal:   0,
+						Count:         0,
+						SizeGbRounded: 0,
 					},
 				},
 				Networking: edp.Networking{
@@ -101,9 +101,9 @@ func TestParse(t *testing.T) {
 					ProvisionedCpus:  24,
 					ProvisionedRAMGb: 96,
 					ProvisionedVolumes: edp.ProvisionedVolumes{
-						SizeGbTotal:   600,
-						Count:         3,
-						SizeGbRounded: 608,
+						SizeGbTotal:   0,
+						Count:         0,
+						SizeGbRounded: 0,
 					},
 				},
 				Networking: edp.Networking{

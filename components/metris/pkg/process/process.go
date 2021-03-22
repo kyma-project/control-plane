@@ -264,7 +264,6 @@ func (p *Process) execute(identifier int) {
 		if !isOldMetricValid {
 			p.Cache.Set(record.SubAccountID, *record, cache.NoExpiration)
 			p.Logger.Debugf("[worker: %d] successfully saved metric for subAccountID %s", identifier, record.SubAccountID)
-			p.Logger.Infof("[worker: %d] successfully saved metric for subAccountID %s", identifier, record.SubAccountID)
 		}
 
 		// Requeue the subAccountID anyway

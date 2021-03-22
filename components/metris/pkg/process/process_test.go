@@ -537,9 +537,9 @@ func NewMetric() *edp.ConsumptionMetrics {
 			ProvisionedCpus:  24,
 			ProvisionedRAMGb: 96,
 			ProvisionedVolumes: edp.ProvisionedVolumes{
-				SizeGbTotal:   630,
-				Count:         5,
-				SizeGbRounded: 640,
+				SizeGbTotal:   30,
+				Count:         2,
+				SizeGbRounded: 64,
 			},
 		},
 		Networking: edp.Networking{

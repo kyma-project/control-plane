@@ -51,7 +51,6 @@ func (eClient Client) NewRequest(dataTenant string) (*http.Request, error) {
 		eClient.Config.DataStreamEnv,
 	)
 
-	eClient.Logger.Debugf("sending event to '%s'", edpURL)
 	req, err := http.NewRequest(http.MethodPost, edpURL, bytes.NewBuffer([]byte{}))
 	if err != nil {
 		return nil, fmt.Errorf("failed generate request for EDP, %d: %v", http.StatusBadRequest, err)
@@ -105,6 +104,6 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 			eClient.Logger.Warn(err)
 		}
 	}()
-
+	eClient.Logger.Debugf("sent an event to '%s' with eventstream: '%s'", req.URL.String(), string(payload))
 	return resp, nil
 }

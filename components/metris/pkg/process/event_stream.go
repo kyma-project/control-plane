@@ -59,8 +59,8 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 	providerType := inp.shoot.Spec.Provider.Type
 	vmTypes := make(map[string]int)
 
-	nodeStorage := int64(0)
 	pvcStorage := int64(0)
+	pvcStorageRounded := int64(0)
 	volumeCount := 0
 	vnets := 0
 
@@ -76,11 +76,6 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 		provisionedCPUs += vmFeatures.CpuCores
 		provisionedMemory += vmFeatures.Memory
 		vmTypes[nodeType] += 1
-
-		// Calculate node storage
-		nodeStorage += vmFeatures.Storage
-		volumeCount += 1
-
 	}
 
 	if inp.pvcList != nil {
@@ -89,6 +84,7 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 			if pvc.Status.Phase == corev1.ClaimBound {
 				currPVC := getSizeInGB(pvc.Status.Capacity.Storage())
 				pvcStorage += currPVC
+				pvcStorageRounded += getVolumeRoundedToFactor(currPVC)
 				volumeCount += 1
 			}
 		}
@@ -128,9 +124,8 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 	metric.Compute.ProvisionedCpus = provisionedCPUs
 	metric.Compute.ProvisionedRAMGb = provisionedMemory
 
-	totalActualStorage := nodeStorage + pvcStorage
-	metric.Compute.ProvisionedVolumes.SizeGbTotal = totalActualStorage
-	metric.Compute.ProvisionedVolumes.SizeGbRounded = getVolumeRoundedToFactor(totalActualStorage)
+	metric.Compute.ProvisionedVolumes.SizeGbTotal = pvcStorage
+	metric.Compute.ProvisionedVolumes.SizeGbRounded = pvcStorageRounded
 	metric.Compute.ProvisionedVolumes.Count = volumeCount
 
 	metric.Networking.ProvisionedIPs = provisionedIPs
