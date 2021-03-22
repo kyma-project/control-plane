@@ -118,7 +118,7 @@ publicCloudInfo:
 config:
   scrapeInterval: 10m
   workerPoolSize: 5
-  loglevel: info
+  logLevel: info
   port: 8080
 
 ## KEB configurations

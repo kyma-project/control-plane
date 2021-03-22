@@ -28,12 +28,12 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           args:
-          - "--scrape-interval={{ .Values.config.scrapeInterval }}"
-          - "--worker-pool-size={{ .Values.config.workerPoolSize }}"
-          - "--log-level={{ .Values.config.loglevel }}"
-          - "--listen-addr={{ .Values.config.port }}"
+            - "--scrape-interval={{ .Values.config.scrapeInterval }}"
+            - "--worker-pool-size={{ .Values.config.workerPoolSize }}"
+            - "--log-level={{ .Values.config.logLevel }}"
+            - "--listen-addr={{ .Values.config.port }}"
             {{- if .Values.extraArgs }}
-{{ toYaml .Values.extraArgs | trim | indent 10 }}
+{{ toYaml .Values.extraArgs | trim | indent 12 }}
             {{- end }}
           env:
             - name: EDP_TOKEN
@@ -71,14 +71,13 @@ spec:
             {{- if .Values.extraEnv }}
 {{ toYaml .Values.extraEnv | trim | indent 12 }}
             {{- end }}
-{{/*          image: {{ template "metris.image" . }}*/}}
-          image:  shazra/metris
+          image: {{ template "metris.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           livenessProbe:
             httpGet:
               path: /healthz
               port: http
-            initialDelaySeconds: 20
+            initialDelaySeconds: 10
           ports:
             - name: http
               containerPort: {{ .Values.config.port }}
