@@ -9,7 +9,7 @@ CREATE TABLE cluster
     tenant varchar(256) NOT NULL,
     creation_timestamp timestamp without time zone NOT NULL,
     deleted boolean default false,
-    sub_account_id varchar(256) -- subaccount id
+    sub_account_id varchar(256)
 );
 
 -- Cluster Config
@@ -17,8 +17,8 @@ CREATE TABLE cluster
 CREATE TABLE gardener_config
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    cluster_id uuid NOT NULL, -- join with cluster.id
-    name varchar(256) NOT NULL,  -- shoot.NAME
+    cluster_id uuid NOT NULL,
+    name varchar(256) NOT NULL,
     project_name varchar(256) NOT NULL,
     kubernetes_version varchar(256) NOT NULL,
     volume_size_gb varchar(256),
