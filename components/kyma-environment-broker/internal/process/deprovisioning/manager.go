@@ -83,7 +83,6 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 	var when time.Duration
 	logOperation.Info("Start process operation steps")
 	logOperation.Infof("DEBUG: Operation recovered Operation: %#v", operation)
-	logOperation.Infof("DEBUG: Operation recovered CLS: %#v", operation.Cls)
 
 	for _, weightStep := range m.sortWeight() {
 		steps := m.steps[weightStep]
