@@ -28,12 +28,12 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           args:
-            - "--scrape-interval={{ .Values.config.scrapeInterval }}"
-            - "--worker-pool-size={{ .Values.config.workerPoolSize }}"
-            - "--log-level={{ .Values.config.loglevel }}"
-            - "--listen-addr={{ .Values.config.port }}"
+          - "--scrape-interval={{ .Values.config.scrapeInterval }}"
+          - "--worker-pool-size={{ .Values.config.workerPoolSize }}"
+          - "--log-level={{ .Values.config.loglevel }}"
+          - "--listen-addr={{ .Values.config.port }}"
             {{- if .Values.extraArgs }}
-{{ toYaml .Values.extraArgs | trim | indent 12 }}
+{{ toYaml .Values.extraArgs | trim | indent 10 }}
             {{- end }}
           env:
             - name: EDP_TOKEN
@@ -56,7 +56,7 @@ spec:
             - name: EDP_DATASTREAM_ENV
               value: {{ .Values.edp.datastream.env | quote }}
             - name: KEB_URL
-              value: "http://{{ .Values.keb.serviceName }}.{{ .Release.Namespace }}/{{ .Values.keb.runtimesPath }}"
+              value: {{tpl .Values.keb.url .}}
             - name: KEB_TIMEOUT
               value: {{ .Values.keb.timeout | quote }}
             - name: KEB_RETRY_COUNT
@@ -71,7 +71,8 @@ spec:
             {{- if .Values.extraEnv }}
 {{ toYaml .Values.extraEnv | trim | indent 12 }}
             {{- end }}
-          image: {{ template "metris.image" . }}
+{{/*          image: {{ template "metris.image" . }}*/}}
+          image:  shazra/metris
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           livenessProbe:
             httpGet:

@@ -123,6 +123,7 @@ config:
 
 ## KEB configurations
 keb:
+  url: "http://{{ .Values.keb.serviceName }}.{{ .Release.Namespace }}/{{ .Values.keb.runtimesPath }}"
   serviceName: "kcp-kyma-environment-broker"
   timeout: "30s"
   retryCount: "5"
