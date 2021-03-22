@@ -1,9 +1,10 @@
 package provisioning
 
 import (
-	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 	"testing"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 
 	"github.com/kyma-incubator/hydroform/install/installation"
 	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
