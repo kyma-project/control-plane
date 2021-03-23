@@ -99,4 +99,6 @@ func (s *ClsDeprovisionStep) checkDeprovisioningStatus(operation internal.Deprov
 		}, log)
 		return updatedOperation, retry, nil
 	}
+
+	return operation, 0, nil
 }
