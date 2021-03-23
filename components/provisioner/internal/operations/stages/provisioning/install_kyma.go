@@ -1,11 +1,9 @@
 package provisioning
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
-	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
@@ -43,22 +41,6 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
 		return operations.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
-	}
-
-	installationState, err := s.installationClient.CheckInstallationState(k8sConfig)
-	if err != nil {
-		installErr := installationSDK.InstallationError{}
-		if errors.As(err, &installErr) {
-			logger.Warnf("Installation already in progress, proceeding to next step...")
-			return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
-		}
-
-		return operations.StageResult{}, fmt.Errorf("error: failed to check installation state: %s", err.Error())
-	}
-
-	if installationState.State != installationSDK.NoInstallationState {
-		logger.Warnf("Installation already in progress, proceeding to next step...")
-		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 	}
 
 	err = s.installationClient.TriggerInstallation(

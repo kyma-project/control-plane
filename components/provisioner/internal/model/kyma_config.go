@@ -47,6 +47,7 @@ type KymaComponentConfig struct {
 	ID             string
 	Component      KymaComponent
 	Namespace      string
+	Prerequisite   bool
 	SourceURL      *string
 	Configuration  Configuration
 	ComponentOrder int

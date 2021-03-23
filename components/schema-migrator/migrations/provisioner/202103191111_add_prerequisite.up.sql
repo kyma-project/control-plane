@@ -1,0 +1,1 @@
+ALTER TABLE kyma_component_config ADD COLUMN prerequisite boolean NOT NULL DEFAULT false;

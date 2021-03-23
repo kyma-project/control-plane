@@ -29,6 +29,7 @@ import (
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/download"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
@@ -175,6 +176,14 @@ func main() {
 	dbsFactory := dbsession.NewFactory(connection)
 	installationService := installation.NewInstallationService(cfg.ProvisioningTimeout.Installation, installationHandlerConstructor, cfg.Gardener.ClusterCleanupResourceSelector)
 
+	downloadManager := download.NewManager(&sync.Mutex{}, download.Config{
+		KymaURL:              "https://github.com/kyma-project/kyma",
+		ResourcesPathTmp:     "/app/downloads/%s",
+		KymaResourcesPathTmp: "/app/downloads/kyma/%s",
+		ComponentsPathTmp:    "/app/downloads/components/%s",
+	})
+	parallelInstallationService := installation.NewParallelInstallationService(downloadManager, log.WithField("process", "installer"))
+
 	directorClient, err := newDirectorClient(cfg)
 	exitOnError(err, "Failed to initialize Director client")
 
@@ -185,7 +194,7 @@ func main() {
 	provisioningQueue := queue.CreateProvisioningQueue(
 		cfg.ProvisioningTimeout,
 		dbsFactory,
-		installationService,
+		parallelInstallationService,
 		runtimeConfigurator,
 		provisioningStages.NewCompassConnectionClient,
 		directorClient,

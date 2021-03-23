@@ -202,6 +202,7 @@ func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 			ID:             id,
 			Component:      model.KymaComponent(component.Component),
 			Namespace:      component.Namespace,
+			Prerequisite:   util.UnwrapBoolOrDefault(component.Prerequisite, false),
 			SourceURL:      component.SourceURL,
 			Configuration:  c.configurationFromInput(component.Configuration, component.ConflictStrategy),
 			ComponentOrder: i + 1,
