@@ -32,13 +32,6 @@ serviceAccount:
 gardener:
   secretName: "gardener-credentials"
 
-provider:
-  pollinterval: "1m"
-  workers: 5
-  buffer: 100
-  pollmaxinterval: "15m"
-  maxretries: 20
-
 edp:
   namespace: "TBD"
   datastream:
@@ -68,7 +61,6 @@ extraArgs: []
 
 publicCloudInfo:
   configMap:
-    name:
     key: providers
 
 ## Metris general configurations

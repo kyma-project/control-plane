@@ -84,8 +84,3 @@ imagePullSecrets:
 {{- end -}}
 {{- printf "%s:%s" $repository $tag -}}
 {{- end -}}
-
-{{- define "metris.public-cloud-specs-configmap.name" }}
-{{/*printf "%s-%s" {{ template "metris.fullname" }} {{ "what" }}*/}}
-printf "%s" {{ "what" }}
-{{- end -}}
