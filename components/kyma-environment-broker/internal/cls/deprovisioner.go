@@ -43,6 +43,11 @@ func (d *Deprovisioner) Deprovision(smClient servicemanager.Client, request *Dep
 	}
 
 	if !exists {
+		// clean orphaned resources if they exist
+		if err := d.remover.RemoveInstance(smClient, request.Instance); err != nil {
+			return errors.Wrapf(err, "while removing CLS instance %s", instance.ID())
+		}
+
 		return nil
 	}
 
