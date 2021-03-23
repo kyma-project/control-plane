@@ -21,7 +21,7 @@ The diagram and steps describe the Kyma Environment Broker (KEB) workflow and th
 
 4. Provisioner creates a new cluster and installs Kyma Runtime.
 
-5. When the operation is successful, KEB keeps sending a request for a Dashboard URL to Director:
+5. When the operation is successful, KEB keeps sending a request for a Dashboard URL to the [Management Plane](https://github.com/kyma-incubator/compass) (Director):
 
     a. KEB sends a request to Hydra to refresh the OAuth token, if needed.
 
