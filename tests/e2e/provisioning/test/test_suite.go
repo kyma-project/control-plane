@@ -318,9 +318,9 @@ func newAzureClient(t *testing.T, cfg *Config, globalAccountID string) *azure.In
 
 	secretBindingsInterface := gardener.NewGardenerSecretBindingsInterface(gardenerClient, cfg.Gardener.Project)
 
-	gardenerAccountPool := hyperscaler.NewAccountPool(k8sInterface, secretBindingsInterface)
+	gardenerAccountPool := hyperscaler.NewAccountPool(secretBindingsInterface)
 
-	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool)
+	accountProvider := hyperscaler.NewAccountProvider(k8sInterface, nil, gardenerAccountPool)
 
 	credentials, err := accountProvider.GardenerCredentials(hypType, globalAccountID)
 	assert.NoError(t, err)
