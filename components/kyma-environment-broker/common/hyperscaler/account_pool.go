@@ -19,12 +19,6 @@ const (
 	Openstack Type = "openstack"
 )
 
-type Credentials struct {
-	Name            string
-	HyperscalerType Type
-	CredentialData  map[string][]byte
-}
-
 type AccountPool interface {
 	CredentialsSecretBinding(hyperscalerType Type, tenantName string) (*v1beta1.SecretBinding, error)
 	MarkSecretBindingAsDirty(hyperscalerType Type, tenantName string) error
@@ -116,7 +110,7 @@ func (p *secretBindingsAccountPool) CredentialsSecretBinding(hyperscalerType Typ
 	labelSelector := fmt.Sprintf("tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
 	secretBinding, err := p.getSecretBinding(labelSelector)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting secret binding")
 	}
 	if secretBinding != nil {
 		return secretBinding, nil
@@ -130,7 +124,7 @@ func (p *secretBindingsAccountPool) CredentialsSecretBinding(hyperscalerType Typ
 	labelSelector = fmt.Sprintf("shared!=true, !tenantName, !dirty, hyperscalerType=%s", hyperscalerType)
 	secretBinding, err = p.getSecretBinding(labelSelector)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting secret binding")
 	}
 	if secretBinding == nil {
 		return nil, errors.Errorf("failed to find unassigned secret binding for hyperscalerType: %s",
@@ -143,7 +137,7 @@ func (p *secretBindingsAccountPool) CredentialsSecretBinding(hyperscalerType Typ
 		return nil, errors.Wrapf(err, "updating secret binding with tenantName: %s", tenantName)
 	}
 
-	return updatedSecretBinding, err
+	return updatedSecretBinding, nil
 }
 
 func (p *secretBindingsAccountPool) getSecretBinding(labelSelector string) (*v1beta1.SecretBinding, error) {

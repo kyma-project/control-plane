@@ -15,6 +15,12 @@ type AccountProvider interface {
 	MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType Type, tenantName string) error
 }
 
+type Credentials struct {
+	Name            string
+	HyperscalerType Type
+	CredentialData  map[string][]byte
+}
+
 type accountProvider struct {
 	kubernetesInterface kubernetes.Interface
 	gardenerPool        AccountPool
@@ -53,7 +59,7 @@ func (p *accountProvider) GardenerCredentials(hyperscalerType Type, tenantName s
 
 	secretBinding, err := p.gardenerPool.CredentialsSecretBinding(hyperscalerType, tenantName)
 	if err != nil {
-		return Credentials{}, err
+		return Credentials{}, errors.Wrap(err, "getting credentials secret binding")
 	}
 
 	return p.credentialsFromBoundSecret(secretBinding, hyperscalerType)
@@ -67,7 +73,7 @@ func (p *accountProvider) GardenerSharedCredentials(hyperscalerType Type) (Crede
 
 	secretBinding, err := p.sharedGardenerPool.SharedCredentialsSecretBinding(hyperscalerType)
 	if err != nil {
-		return Credentials{}, err
+		return Credentials{}, errors.Wrap(err, "getting shared credentials secret binding")
 	}
 
 	return p.credentialsFromBoundSecret(secretBinding, hyperscalerType)
@@ -80,28 +86,24 @@ func (p *accountProvider) MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType
 
 	internal, err := p.gardenerPool.IsSecretBindingInternal(hyperscalerType, tenantName)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "checking if secret binding is internal")
 	}
-
 	if internal {
 		return nil
 	}
 
 	dirty, err := p.gardenerPool.IsSecretBindingDirty(hyperscalerType, tenantName)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "checking if secret binding is dirty")
 	}
-
 	if dirty {
 		return nil
 	}
 
 	secretBindingUsed, err := p.gardenerPool.IsSecretBindingUsed(hyperscalerType, tenantName)
-
 	if err != nil {
 		return errors.Wrapf(err, "cannot determine whether %s secret binding is used for tenant: %s", hyperscalerType, tenantName)
 	}
-
 	if !secretBindingUsed {
 		return p.gardenerPool.MarkSecretBindingAsDirty(hyperscalerType, tenantName)
 	}

@@ -29,7 +29,7 @@ func (sp *sharedAccountPool) SharedCredentialsSecretBinding(hyperscalerType Type
 	labelSelector := fmt.Sprintf("shared=true,hyperscalerType=%s", hyperscalerType)
 	secretBindings, err := sp.getSecretBindings(labelSelector)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting secret binding")
 	}
 
 	return sp.getLeastUsed(secretBindings)

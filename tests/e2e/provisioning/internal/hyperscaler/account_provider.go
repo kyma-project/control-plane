@@ -37,7 +37,7 @@ func (p *accountProvider) GardenerCredentials(hyperscalerType Type, tenantName s
 
 	secretBinding, err := p.gardenerPool.CredentialsSecretBinding(hyperscalerType, tenantName)
 	if err != nil {
-		return Credentials{}, err
+		return Credentials{}, errors.Wrap(err, "getting credentials secret binding")
 	}
 
 	return p.credentialsFromBoundSecret(secretBinding, hyperscalerType, tenantName)
