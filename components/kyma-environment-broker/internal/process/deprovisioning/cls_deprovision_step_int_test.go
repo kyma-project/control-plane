@@ -83,10 +83,21 @@ func TestClsDeprovisionSteps(t *testing.T) {
 	log.SetFormatter(&logrus.JSONFormatter{})
 
 	if len(operation.Cls.Binding.BindingID) > 0 {
-		unbindStep := NewClsUnbindStep(clsConfig, operationStorage)
-		op, _, err := unbindStep.Run(operation, log)
-		require.NoError(t, err)
-		operation = op
+
+		bindingIDs := []string{
+			"3e818bb5-3d22-4579-85b9-86902b82adb4",
+			"56389f29-87c0-4a01-8c6c-90a61264b675",
+			"7232082e-ff3d-46f9-afc1-7b39751ee373",
+		}
+
+		for _, id := range bindingIDs {
+			operation.Cls.Binding.BindingID = id
+			operation.Cls.Overrides = "garbage"
+			unbindStep := NewClsUnbindStep(clsConfig, operationStorage)
+			op, _, err := unbindStep.Run(operation, log)
+			require.NoError(t, err)
+			operation = op
+		}
 	}
 
 	clsClient := cls.NewClient(clsConfig)
