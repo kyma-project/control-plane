@@ -1,6 +1,8 @@
 package hyperscaler
 
 import (
+	"testing"
+
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_fake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
@@ -8,28 +10,19 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	machineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/fake"
-
-	"testing"
 )
 
-func TestSharedPool_SharedCredentials(t *testing.T) {
+func TestSharedPool_SharedCredentialsSecretBinding(t *testing.T) {
 
 	for _, testCase := range []struct {
 		description    string
-		secrets        []runtime.Object
 		secretBindings []runtime.Object
 		shoots         []runtime.Object
 		hyperscaler    Type
 		expectedSecret string
 	}{
 		{
-			description: "should get only Secrets with proper hyperscaler",
-			secrets: []runtime.Object{
-				newSecret("s1"),
-				newSecret("s2"),
-				newSecret("s3"),
-			},
+			description: "should get only Secret Bindings with proper hyperscaler",
 			secretBindings: []runtime.Object{
 				newSecretBinding("sb1", "s1", "gcp", true),
 				newSecretBinding("sb2", "s2", "azure", true),
@@ -45,12 +38,7 @@ func TestSharedPool_SharedCredentials(t *testing.T) {
 			expectedSecret: "s1",
 		},
 		{
-			description: "should ignore not shared Secrets",
-			secrets: []runtime.Object{
-				newSecret("s1"),
-				newSecret("s2"),
-				newSecret("s3"),
-			},
+			description: "should ignore not shared Secret Bindings",
 			secretBindings: []runtime.Object{
 				newSecretBinding("sb1", "s1", "gcp", true),
 				newSecretBinding("sb2", "s2", "gcp", false),
@@ -66,12 +54,7 @@ func TestSharedPool_SharedCredentials(t *testing.T) {
 			expectedSecret: "s1",
 		},
 		{
-			description: "should get least used Secret for GCP",
-			secrets: []runtime.Object{
-				newSecret("s1"),
-				newSecret("s2"),
-				newSecret("s3"),
-			},
+			description: "should get least used Secret Binding for GCP",
 			secretBindings: []runtime.Object{
 				newSecretBinding("sb1", "s1", "gcp", true),
 				newSecretBinding("sb2", "s2", "gcp", true),
@@ -89,12 +72,7 @@ func TestSharedPool_SharedCredentials(t *testing.T) {
 			expectedSecret: "s3",
 		},
 		{
-			description: "should get least used Secret for Azure",
-			secrets: []runtime.Object{
-				newSecret("s1"),
-				newSecret("s2"),
-				newSecret("s3"),
-			},
+			description: "should get least used Secret Binding for Azure",
 			secretBindings: []runtime.Object{
 				newSecretBinding("sb1", "s1", "azure", true),
 				newSecretBinding("sb2", "s2", "azure", true),
@@ -109,11 +87,7 @@ func TestSharedPool_SharedCredentials(t *testing.T) {
 			expectedSecret: "s2",
 		},
 		{
-			description: "should get least used Secret for AWS",
-			secrets: []runtime.Object{
-				newSecret("s1"),
-				newSecret("s2"),
-			},
+			description: "should get least used Secret Binding for AWS",
 			secretBindings: []runtime.Object{
 				newSecretBinding("sb1", "s1", "aws", true),
 				newSecretBinding("sb2", "s2", "aws", true),
@@ -127,41 +101,35 @@ func TestSharedPool_SharedCredentials(t *testing.T) {
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
 			// given
-			mockClient := fake.NewSimpleClientset(testCase.secrets...)
 			gardenerFake := gardener_fake.NewSimpleClientset(append(testCase.shoots, testCase.secretBindings...)...)
 			mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
 			mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 
-			pool := NewSharedGardenerAccountPool(mockClient, mockSecretBindings, mockShoots)
+			pool := NewSharedGardenerAccountPool(mockSecretBindings, mockShoots)
 
 			// when
-			credentials, err := pool.SharedCredentials(testCase.hyperscaler)
+			secretBinding, err := pool.SharedCredentialsSecretBinding(testCase.hyperscaler)
 			require.NoError(t, err)
 
 			// then
-			assert.Equal(t, testCase.expectedSecret, credentials.Name)
+			assert.Equal(t, testCase.expectedSecret, secretBinding.SecretRef.Name)
 		})
 	}
 }
 
-func TestSharedPool_SharedCredentials_Errors(t *testing.T) {
-
-	t.Run("should return error when no Secrets for hyperscaler found", func(t *testing.T) {
+func TestSharedPool_SharedCredentialsSecretBinding_Errors(t *testing.T) {
+	t.Run("should return error when no Secret Bindings for hyperscaler found", func(t *testing.T) {
 		// given
-		mockClient := fake.NewSimpleClientset(
-			newSecret("s1"),
-			newSecret("s2"),
-		)
 		gardenerFake := gardener_fake.NewSimpleClientset(
 			newSecretBinding("sb1", "s1", "azure", true),
 			newSecretBinding("sb2", "s2", "gcp", false),
 		)
 		mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
 
-		pool := NewSharedGardenerAccountPool(mockClient, mockSecretBindings, nil)
+		pool := NewSharedGardenerAccountPool(mockSecretBindings, nil)
 
 		// when
-		_, err := pool.SharedCredentials("gcp")
+		_, err := pool.SharedCredentialsSecretBinding("gcp")
 
 		// then
 		require.Error(t, err)
@@ -175,7 +143,7 @@ func newSecret(name string) *corev1.Secret {
 			Name: name, Namespace: testNamespace,
 		},
 		Data: map[string][]byte{
-			"credentials": []byte("secret1"),
+			"credentials": []byte(name),
 		},
 	}
 }

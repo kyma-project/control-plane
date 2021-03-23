@@ -7,44 +7,36 @@ import (
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 type SharedPool interface {
-	SharedCredentials(hyperscalerType Type) (Credentials, error)
+	SharedCredentialsSecretBinding(hyperscalerType Type) (*v1beta1.SecretBinding, error)
 }
 
-func NewSharedGardenerAccountPool(kubernetesInterface kubernetes.Interface, secretBindingsClient gardener_apis.SecretBindingInterface, shootsClient gardener_apis.ShootInterface) *SharedAccountPool {
-	return &SharedAccountPool{
-		kubernetesInterface:  kubernetesInterface,
+func NewSharedGardenerAccountPool(secretBindingsClient gardener_apis.SecretBindingInterface, shootsClient gardener_apis.ShootInterface) SharedPool {
+	return &sharedAccountPool{
 		secretBindingsClient: secretBindingsClient,
 		shootsClient:         shootsClient,
 	}
 }
 
-type SharedAccountPool struct {
-	kubernetesInterface  kubernetes.Interface
+type sharedAccountPool struct {
 	secretBindingsClient gardener_apis.SecretBindingInterface
 	shootsClient         gardener_apis.ShootInterface
 }
 
-func (sp *SharedAccountPool) SharedCredentials(hyperscalerType Type) (Credentials, error) {
+func (sp *sharedAccountPool) SharedCredentialsSecretBinding(hyperscalerType Type) (*v1beta1.SecretBinding, error) {
 	labelSelector := fmt.Sprintf("shared=true,hyperscalerType=%s", hyperscalerType)
-	secretBindings, err := getSecretBindings(sp.secretBindingsClient, labelSelector)
+	secretBindings, err := sp.getSecretBindings(labelSelector)
 	if err != nil {
-		return Credentials{}, err
+		return nil, err
 	}
 
-	secretBinding, err := sp.getLeastUsed(secretBindings)
-	if err != nil {
-		return Credentials{}, err
-	}
-
-	return credentialsFromBoundSecret(sp.kubernetesInterface, &secretBinding, hyperscalerType)
+	return sp.getLeastUsed(secretBindings)
 }
 
-func getSecretBindings(secretBindingsClient gardener_apis.SecretBindingInterface, labelSelector string) ([]v1beta1.SecretBinding, error) {
-	secretBindings, err := secretBindingsClient.List(metav1.ListOptions{
+func (sp *sharedAccountPool) getSecretBindings(labelSelector string) ([]v1beta1.SecretBinding, error) {
+	secretBindings, err := sp.secretBindingsClient.List(metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
@@ -58,7 +50,7 @@ func getSecretBindings(secretBindingsClient gardener_apis.SecretBindingInterface
 	return secretBindings.Items, nil
 }
 
-func (sp *SharedAccountPool) getLeastUsed(secretBindings []v1beta1.SecretBinding) (v1beta1.SecretBinding, error) {
+func (sp *sharedAccountPool) getLeastUsed(secretBindings []v1beta1.SecretBinding) (*v1beta1.SecretBinding, error) {
 	usageCount := make(map[string]int, len(secretBindings))
 	for _, s := range secretBindings {
 		usageCount[s.Name] = 0
@@ -66,11 +58,11 @@ func (sp *SharedAccountPool) getLeastUsed(secretBindings []v1beta1.SecretBinding
 
 	shoots, err := sp.shootsClient.List(metav1.ListOptions{})
 	if err != nil {
-		return v1beta1.SecretBinding{}, errors.Wrap(err, "error while listing Shoots")
+		return nil, errors.Wrap(err, "error while listing Shoots")
 	}
 
 	if shoots == nil || len(shoots.Items) == 0 {
-		return secretBindings[0], nil
+		return &secretBindings[0], nil
 	}
 
 	for _, s := range shoots.Items {
@@ -92,5 +84,5 @@ func (sp *SharedAccountPool) getLeastUsed(secretBindings []v1beta1.SecretBinding
 		}
 	}
 
-	return secretBindings[minIndex], nil
+	return &secretBindings[minIndex], nil
 }

@@ -8,7 +8,6 @@ import (
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 type Type string
@@ -27,23 +26,21 @@ type Credentials struct {
 }
 
 type AccountPool interface {
-	Credentials(hyperscalerType Type, tenantName string) (Credentials, error)
+	CredentialsSecretBinding(hyperscalerType Type, tenantName string) (*v1beta1.SecretBinding, error)
 	MarkSecretBindingAsDirty(hyperscalerType Type, tenantName string) error
 	IsSecretBindingUsed(hyperscalerType Type, tenantName string) (bool, error)
 	IsSecretBindingDirty(hyperscalerType Type, tenantName string) (bool, error)
 	IsSecretBindingInternal(hyperscalerType Type, tenantName string) (bool, error)
 }
 
-func NewAccountPool(kubernetesInterface kubernetes.Interface, secretBindingsClient gardener_apis.SecretBindingInterface, shootsClient gardener_apis.ShootInterface) AccountPool {
+func NewAccountPool(secretBindingsClient gardener_apis.SecretBindingInterface, shootsClient gardener_apis.ShootInterface) AccountPool {
 	return &secretBindingsAccountPool{
-		kubernetesInterface:  kubernetesInterface,
 		secretBindingsClient: secretBindingsClient,
 		shootsClient:         shootsClient,
 	}
 }
 
 type secretBindingsAccountPool struct {
-	kubernetesInterface  kubernetes.Interface
 	secretBindingsClient gardener_apis.SecretBindingInterface
 	shootsClient         gardener_apis.ShootInterface
 	mux                  sync.Mutex
@@ -51,7 +48,7 @@ type secretBindingsAccountPool struct {
 
 func (p *secretBindingsAccountPool) IsSecretBindingInternal(hyperscalerType Type, tenantName string) (bool, error) {
 	labelSelector := fmt.Sprintf("internal=true, tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
-	secretBinding, err := getSecretBinding(p.secretBindingsClient, labelSelector)
+	secretBinding, err := p.getSecretBinding(labelSelector)
 	if err != nil {
 		return false, errors.Wrapf(err, "looking for a secret binding used by the tenant %s and hyperscaler %s", tenantName, hyperscalerType)
 	}
@@ -64,7 +61,7 @@ func (p *secretBindingsAccountPool) IsSecretBindingInternal(hyperscalerType Type
 
 func (p *secretBindingsAccountPool) IsSecretBindingDirty(hyperscalerType Type, tenantName string) (bool, error) {
 	labelSelector := fmt.Sprintf("shared!=true, dirty=true, tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
-	secretBinding, err := getSecretBinding(p.secretBindingsClient, labelSelector)
+	secretBinding, err := p.getSecretBinding(labelSelector)
 	if err != nil {
 		return false, errors.Wrapf(err, "looking for a secret binding used by the tenant %s and hyperscaler %s", tenantName, hyperscalerType)
 	}
@@ -80,7 +77,7 @@ func (p *secretBindingsAccountPool) MarkSecretBindingAsDirty(hyperscalerType Typ
 	defer p.mux.Unlock()
 
 	labelSelector := fmt.Sprintf("shared!=true, tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
-	secretBinding, err := getSecretBinding(p.secretBindingsClient, labelSelector)
+	secretBinding, err := p.getSecretBinding(labelSelector)
 	if err != nil || secretBinding == nil {
 		return errors.Wrapf(err, "marking secret binding as dirty: failed to find secret binding used by the tenant %s and hyperscaler %s", tenantName, hyperscalerType)
 	}
@@ -96,7 +93,7 @@ func (p *secretBindingsAccountPool) MarkSecretBindingAsDirty(hyperscalerType Typ
 
 func (p *secretBindingsAccountPool) IsSecretBindingUsed(hyperscalerType Type, tenantName string) (bool, error) {
 	labelSelector := fmt.Sprintf("tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
-	secretBinding, err := getSecretBinding(p.secretBindingsClient, labelSelector)
+	secretBinding, err := p.getSecretBinding(labelSelector)
 	if err != nil || secretBinding == nil {
 		return false, errors.Wrapf(err, "counting subscription usage: could not find secret binding used by the tenant %s and hyperscaler %s", tenantName, hyperscalerType)
 	}
@@ -115,41 +112,42 @@ func (p *secretBindingsAccountPool) IsSecretBindingUsed(hyperscalerType Type, te
 	return false, nil
 }
 
-func (p *secretBindingsAccountPool) Credentials(hyperscalerType Type, tenantName string) (Credentials, error) {
+func (p *secretBindingsAccountPool) CredentialsSecretBinding(hyperscalerType Type, tenantName string) (*v1beta1.SecretBinding, error) {
 	labelSelector := fmt.Sprintf("tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
-	secretBinding, err := getSecretBinding(p.secretBindingsClient, labelSelector)
+	secretBinding, err := p.getSecretBinding(labelSelector)
 	if err != nil {
-		return Credentials{}, err
+		return nil, err
 	}
 	if secretBinding != nil {
-		return credentialsFromBoundSecret(p.kubernetesInterface, secretBinding, hyperscalerType)
+		return secretBinding, nil
 	}
 
-	// lock so that only one thread can fetch an unassigned secret binding and assign it (update secret binding with tenantName)
+	// lock so that only one thread can fetch an unassigned secret binding and assign it
+	// (update secret binding with tenantName)
 	p.mux.Lock()
 	defer p.mux.Unlock()
 
 	labelSelector = fmt.Sprintf("shared!=true, !tenantName, !dirty, hyperscalerType=%s", hyperscalerType)
-	secretBinding, err = getSecretBinding(p.secretBindingsClient, labelSelector)
+	secretBinding, err = p.getSecretBinding(labelSelector)
 	if err != nil {
-		return Credentials{}, err
+		return nil, err
 	}
-
 	if secretBinding == nil {
-		return Credentials{}, errors.Errorf("failed to find unassigned secret binding for hyperscalerType: %s", hyperscalerType)
+		return nil, errors.Errorf("failed to find unassigned secret binding for hyperscalerType: %s",
+			hyperscalerType)
 	}
 
 	secretBinding.Labels["tenantName"] = tenantName
 	updatedSecretBinding, err := p.secretBindingsClient.Update(secretBinding)
 	if err != nil {
-		return Credentials{}, errors.Wrapf(err, "updating secret binding with tenantName: %s", tenantName)
+		return nil, errors.Wrapf(err, "updating secret binding with tenantName: %s", tenantName)
 	}
 
-	return credentialsFromBoundSecret(p.kubernetesInterface, updatedSecretBinding, hyperscalerType)
+	return updatedSecretBinding, err
 }
 
-func getSecretBinding(secretBindingsClient gardener_apis.SecretBindingInterface, labelSelector string) (*v1beta1.SecretBinding, error) {
-	secretBindings, err := secretBindingsClient.List(metav1.ListOptions{
+func (p *secretBindingsAccountPool) getSecretBinding(labelSelector string) (*v1beta1.SecretBinding, error) {
+	secretBindings, err := p.secretBindingsClient.List(metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
@@ -160,19 +158,4 @@ func getSecretBinding(secretBindingsClient gardener_apis.SecretBindingInterface,
 		return &secretBindings.Items[0], nil
 	}
 	return nil, nil
-}
-
-func credentialsFromBoundSecret(kubernetesInterface kubernetes.Interface, secretBinding *v1beta1.SecretBinding, hyperscalerType Type) (Credentials, error) {
-	secretClient := kubernetesInterface.CoreV1().Secrets(secretBinding.SecretRef.Namespace)
-
-	secret, err := secretClient.Get(secretBinding.SecretRef.Name, metav1.GetOptions{})
-	if err != nil {
-		return Credentials{}, errors.Wrapf(err, "getting %s/%s secret", secretBinding.SecretRef.Namespace, secretBinding.SecretRef.Name)
-	}
-
-	return Credentials{
-		Name:            secret.Name,
-		HyperscalerType: hyperscalerType,
-		CredentialData:  secret.Data,
-	}, nil
 }
