@@ -120,8 +120,9 @@ func (c Client) GetRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 	}
 	defer func() {
 		if resp.Body != nil {
-			err = resp.Body.Close()
-			c.Logger.Errorf("failed to close body for KEB runtimes req: %v", err)
+			if err = resp.Body.Close(); err != nil {
+				c.Logger.Errorf("failed to close body for KEB runtimes req: %v", err)
+			}
 		}
 	}()
 	runtimesPage := new(kebruntime.RuntimesPage)
