@@ -1,38 +1,69 @@
-# Metris
+### Metris
 
-## Overview
+#### Description
+Metris scrapes all Kyma clusters and uses Shoot information to generate metrics as event streams. The generated event streams are POST-ed to an events collecting system.
 
-Metris is a metering component that collects data and sends them to EDP.
+#### Usage
 
-## Configuration
+- `Metris` comes with the following command line argument flags:
 
-| CLI argument | Environment variable | Description | Default value |
-| ------------ | -------------------- | ----------- | ------------- |
-| `--edp-url` | **EDP_URL** | EDP base URL | `https://input.yevents.io` |
-| `--edp-token` | **EDP_TOKEN** | EDP source token | None |
-| `--edp-namespace` | **EDP_NAMESPACE** | EDP Namespace | None |
-| `--edp-data-stream` | **EDP_DATASTREAM_NAME** | EDP data stream name | None |
-| `--edp-data-stream-version` | **EDP_DATASTREAM_VERSION** | EDP data stream version | None |
-| `--edp-data-stream-env` | **EDP_DATASTREAM_ENV** | EDP data stream environment | None |
-| `--edp-timeout` | **EDP_TIMEOUT** | Time limit for requests made by the EDP client | `30s` |
-| `--edp-buffer` | **EDP_BUFFER** | Number of events that the buffer can have | `100` |
-| `--edp-workers` | **EDP_WORKERS** | Number of workers to send metrics | `5` |
-| `--edp-event-retry` | **EDP_RETRY** | Number of retries for sending an event | `5` |
-| `--provider-poll-interval` | **PROVIDER_POLLINTERVAL** | Interval at which metrics are fetched | `5m` |
-| `--provider-poll-max-interval` | **PROVIDER_POLLMAXINTERVAL** | maximum Interval at which metrics are fetch | `15m` |
-| `--provider-poll-duration` | **PROVIDER_POLLDURATION** | Time limit for requests made by the provider client | `5m` |
-| `--provider-max-retries` | **PROVIDER_MAXRETRIES** | Maximum number of retries before a cluster is removed from the cache if it is not found on the provider. NOTE: This will stop sending events for the removed cluster | `20` |
-| `--provider-workers` | **PROVIDER_WORKERS** | Number of workers to fetch metrics | `10` |
-| `--provider-buffer` | **PROVIDER_BUFFER** | Number of clusters that the buffer can have | `100` |
-| `--listen-addr` | **METRIS_LISTEN_ADDRESS** | Address and port the metrics and health HTTP endpoints will bind to | None |
-| `--debug-port` | **METRIS_DEBUG_PORT** | Port the debug HTTP endpoint will bind to (always listen on localhost) | None |
-| `--config-file` | None | Location of the `config` file | None |
-| `--kubeconfig` | **METRIS_KUBECONFIG** | Path to the Gardener `kubeconfig` file | None |
-| `--log-level` | **METRIS_LOGLEVEL** | Logging level (`debug`,`info`,`warn`,`error`) | `info` |
-| `--tracing` | **TRACING_ENABLE** | Enable tracing | `false` |
-| `--zipkin-url` | **ZIPKIN_URL** | Zipkin Collector URL | `http://localhost:9411/api/v2/spans` |
+    | Flag | Description | Default Value   |
+    | ----- | ------------ | --------------- |
+    | `gardener-secret-path` | The path to the secret which contains kubeconfig of the Gardener MPS cluster. | `/gardener/kubeconfig` |
+    | `gardener-namespace` | The namespace in gardener cluster where information on Kyma clusters are. | `garden-kyma-dev`    |
+    | `scrape-interval` | The wait duration of the interval between 2 executions of metrics generation. | `3m`         |
+    | `worker-pool-size` | The number of workers in the pool. | `5` |
+    | `log-level` | The log-level of the application. E.g. fatal, error, info, debug etc. | `info` |
+    | `listen-addr` | The application starts server in this port to cater to the metrics and health endpoints. | `8080` |
+    | `debug-port` | The custom port to debug when needed. `0` will disable debugging server. | `0` |
 
-## Data collection
+- `Metris` comes with the following environment variables:
+     
+     | Variable | Description | Default Value   |
+     | ----- | ------------ | ------------- |
+     | `PUBLIC_CLOUD_SPECS` | The specification contains the CPU, Network and Disk information for all machine types from a public cloud provider.  | `-` |
+     | `KEB_URL` | The KEB URL where Metris fetches runtime information. | `-` |
+     | `KEB_TIMEOUT` | The timeout governs the connections from Metris to KEB | `30s` |
+     | `KEB_RETRY_COUNT` | The number of retries Metris will do when connecting to KEB fails. | 5 |
+     | `KEB_POLL_WAIT_DURATION` | The wait duration for Metris between each execution of polling KEB for runtime information. | `10m` |
+     | `EDP_URL` | The EDP base URL where Metris will ingest event-stream to. | `-` |
+     | `EDP_TOKEN` | The token used to connect to EDP. | `-` |
+     | `EDP_NAMESPACE` | The namespace in EDP where Metris will ingest event-stream to.| `kyma-dev` |
+     | `EDP_DATASTREAM_NAME` | The datastream in EDP where Metris will ingest event-stream to. | `consumption-metrics` |
+     | `EDP_DATASTREAM_VERSION` | The datastream version which Metris will use. | `1` |
+     | `EDP_DATASTREAM_ENV` | The datastream environment which Metris will use.  | `dev` |
+     | `EDP_TIMEOUT` | The timeout for Metris connections to EDP. | `30s` |
+     | `EDP_RETRY` | The number of retries for Metris connections to EDP. | `3` |
+
+#### Development
+- Run a deployment in currently configured k8s cluster
+
+```
+ko apply -f dev/  
+```
+
+- Resolve all dependencies
+```
+make gomod-vendor
+```
+
+- Run tests
+```
+make tests
+```
+
+- Run tests and publish a test coverage report
+```
+make publish-test-results
+```
+
+#### Troubleshooting
+- Check logs
+```
+kubectl logs -l app=metrisv2 -n kcp-system -c metrisv2 -f
+```
+
+#### Data collection
 
 Metris collects information about billable hyperscaler usage and sends it to EDP. This data has to adhere to the following schema:
 
@@ -45,10 +76,8 @@ Metris collects information about billable hyperscaler usage and sends it to EDP
     "description": "SKR Metering Schema.",
     "required": [
       "timestamp",
-      "resource_groups",
       "compute",
-      "networking",
-      "event_hub"
+      "networking"
     ],
     "properties": {
       "timestamp": {
@@ -59,21 +88,6 @@ Metris collects information about billable hyperscaler usage and sends it to EDP
         "description": "Event Creation Timestamp",
         "default": "",
         "examples": ["2020-03-25T09:16:41+00:00"]
-      },
-      "resource_groups": {
-        "$id": "#/properties/resource_groups",
-        "type": "array",
-        "title": "The Resource_groups Schema",
-        "description": "A list of resource groups that have been used for generating this event. In General these are the resource groups of the Gardener Shoot and the Azure Event Hub for knative.",
-        "default": [],
-        "items": {
-          "$id": "#/properties/resource_groups/items",
-          "type": "string",
-          "title": "The Items Schema",
-          "description": "The name of the resource group",
-          "default": "",
-          "examples": ["group1", "group2"]
-        }
       },
       "compute": {
         "$id": "#/properties/compute",
@@ -172,7 +186,7 @@ Metris collects information about billable hyperscaler usage and sends it to EDP
             "$id": "#/properties/compute/properties/provisioned_volumes",
             "type": "object",
             "title": "The Provisioned_volumes Schema",
-            "description": "Volumes (Disk) provisioned.",
+            "description": "Volumes (Disk) provisioned(excluding the Node volumes).",
             "default": {},
             "examples": [
               {
@@ -220,24 +234,14 @@ Metris collects information about billable hyperscaler usage and sends it to EDP
         "examples": [
           {
             "provisioned_vnets": 2.0,
-            "provisioned_loadbalancers": 1.0,
             "provisioned_ips": 3.0
           }
         ],
         "required": [
-          "provisioned_loadbalancers",
           "provisioned_vnets",
           "provisioned_ips"
         ],
         "properties": {
-          "provisioned_loadbalancers": {
-            "$id": "#/properties/networking/properties/provisioned_loadbalancers",
-            "type": "integer",
-            "title": "The Provisioned_loadbalancers Schema",
-            "description": "Number of loadbalancers.",
-            "default": 0,
-            "examples": [1]
-          },
           "provisioned_vnets": {
             "$id": "#/properties/networking/properties/provisioned_vnets",
             "type": "integer",
@@ -255,88 +259,6 @@ Metris collects information about billable hyperscaler usage and sends it to EDP
             "examples": [3]
           }
         }
-      },
-      "event_hub": {
-        "$id": "#/properties/event_hub",
-        "type": "object",
-        "title": "The Event_hub Schema",
-        "description": "The Azure Event Hub Metrics.",
-        "default": {},
-        "examples": [
-          {
-            "number_namespaces": 3.0,
-            "max_outgoing_bytes_pt5m": 5600.0,
-            "incoming_requests_pt5m": 3.0,
-            "max_incoming_bytes_pt5m": 5600.0
-          }
-        ],
-        "required": [
-          "number_namespaces",
-          "incoming_requests_pt1m",
-          "max_incoming_bytes_pt1m",
-          "max_outgoing_bytes_pt1m",
-          "incoming_requests_pt5m",
-          "max_incoming_bytes_pt5m",
-          "max_outgoing_bytes_pt5m"
-        ],
-        "properties": {
-          "number_namespaces": {
-            "$id": "#/properties/event_hub/properties/number_namespaces",
-            "type": "integer",
-            "title": "The Number_namespaces Schema",
-            "description": "The number of provisioned namespaces.",
-            "default": 0,
-            "examples": [3]
-          },
-          "incoming_requests_pt1m": {
-            "$id": "#/properties/event_hub/properties/incoming_requests_pt1m",
-            "type": "integer",
-            "title": "The incoming_requests_pt1m Schema",
-            "description": "The number of incoming events counted of the last minute.",
-            "default": 0,
-            "examples": [3]
-          },
-          "max_incoming_bytes_pt1m": {
-            "$id": "#/properties/event_hub/properties/max_incoming_bytes_pt1m",
-            "type": "integer",
-            "title": "The Max_incoming_bytes_pt1m Schema",
-            "description": "The maximum incoming bytes over last minute.",
-            "default": 0,
-            "examples": [5600]
-          },
-          "max_outgoing_bytes_pt1m": {
-            "$id": "#/properties/event_hub/properties/max_outgoing_bytes_pt1m",
-            "type": "integer",
-            "title": "The max_outgoing_bytes_pt1m Schema",
-            "description": "The maximum outgoing byte over last minute.",
-            "default": 0,
-            "examples": [5600]
-          },
-          "incoming_requests_pt5m": {
-            "$id": "#/properties/event_hub/properties/incoming_requests_pt5m",
-            "type": "integer",
-            "title": "The incoming_requests_pt5m Schema",
-            "description": "The number of incoming events counted of the last 5 mins.",
-            "default": 0,
-            "examples": [3]
-          },
-          "max_incoming_bytes_pt5m": {
-            "$id": "#/properties/event_hub/properties/max_incoming_bytes_pt5m",
-            "type": "integer",
-            "title": "The Max_incoming_bytes_pt5m Schema",
-            "description": "The maximum incoming bytes over last 5 minutes.",
-            "default": 0,
-            "examples": [5600]
-          },
-          "max_outgoing_bytes_pt5m": {
-            "$id": "#/properties/event_hub/properties/max_outgoing_bytes_pt5m",
-            "type": "integer",
-            "title": "The Max_outgoing_bytes_pt5m Schema",
-            "description": "The maximum outgoing byte over last 5 minutes.",
-            "default": 0,
-            "examples": [5600]
-          }
-        }
       }
     }
   },
@@ -349,10 +271,6 @@ See the example of data sent to EDP:
 
 ```json
 {
-  "resource_groups": [
-    "group1",
-    "group2"
-  ],
   "compute": {
     "vm_types": [
       {
@@ -373,20 +291,8 @@ See the example of data sent to EDP:
     }
   },
   "networking": {
-    "provisioned_loadbalancers": 1,
     "provisioned_vnets": 2,
     "provisioned_ips": 3
-  },
-  "event_hub": {
-    "number_namespaces": 3,
-    "incoming_requests_pt1m": 3,
-    "max_incoming_bytes_pt1m": 5600,
-    "max_outgoing_bytes_pt1m": 5600,
-    "incoming_requests_pt5m": 0,
-    "max_incoming_bytes_pt5m": 0,
-    "max_outgoing_bytes_pt5m": 0
   }
 }
 ```
-
-The `event_hub` part of the data is specific for Azure but the other sections can be used with other hyperscalers as well.
