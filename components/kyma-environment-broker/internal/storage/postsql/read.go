@@ -508,10 +508,26 @@ func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]dbmodel.Ins
 	var instances []dbmodel.InstanceDTO
 
 	// Base select and order by created at
-	stmt := r.session.
-		Select("*").
-		From(InstancesTableName).
-		OrderBy(CreatedAtField)
+	var stmt *dbr.SelectStmt
+	if len(filter.States) == 0 {
+		stmt = r.session.
+			Select("*").
+			From(InstancesTableName).
+			OrderBy(CreatedAtField)
+	} else {
+		// Find and join the last operation for each instance matching the state filter(s).
+		// Last operation is found with the greatest-n-per-group problem solved with OUTER JOIN, followed by a (INNER) JOIN to get instance columns.
+		stmt = r.session.
+			Select(fmt.Sprintf("%s.*", InstancesTableName)).
+			From(InstancesTableName).
+			Join(dbr.I(OperationTableName).As("o1"), fmt.Sprintf("%s.instance_id = o1.instance_id", InstancesTableName)).
+			LeftJoin(dbr.I(OperationTableName).As("o2"), fmt.Sprintf("%s.instance_id = o2.instance_id AND o1.created_at < o2.created_at", InstancesTableName)).
+			Where("o2.created_at IS NULL").
+			OrderBy(fmt.Sprintf("%s.%s", InstancesTableName, CreatedAtField))
+
+		stateFilters := buildInstanceStateFilters("o1", filter)
+		stmt.Where(stateFilters)
+	}
 
 	// Add pagination
 	if filter.Page > 0 && filter.PageSize > 0 {
@@ -540,38 +556,94 @@ func (r readSession) getInstanceCount(filter dbmodel.InstanceFilter) (int, error
 	var res struct {
 		Total int
 	}
-	stmt := r.session.Select("count(*) as total").From(InstancesTableName)
+	var stmt *dbr.SelectStmt
+	if len(filter.States) == 0 {
+		stmt = r.session.Select("count(*) as total").From(InstancesTableName)
+	} else {
+		stmt = r.session.
+			Select("count(*) as total").
+			From(InstancesTableName).
+			Join(dbr.I(OperationTableName).As("o1"), fmt.Sprintf("%s.instance_id = o1.instance_id", InstancesTableName)).
+			LeftJoin(dbr.I(OperationTableName).As("o2"), fmt.Sprintf("%s.instance_id = o2.instance_id AND o1.created_at < o2.created_at", InstancesTableName)).
+			Where("o2.created_at IS NULL")
+
+		stateFilters := buildInstanceStateFilters("o1", filter)
+		stmt.Where(stateFilters)
+	}
+
 	addInstanceFilters(stmt, filter)
 	err := stmt.LoadOne(&res)
 
 	return res.Total, err
 }
 
+func buildInstanceStateFilters(table string, filter dbmodel.InstanceFilter) dbr.Builder {
+	exprs := []dbr.Builder{}
+	for _, f := range filter.States {
+		switch f {
+		case dbmodel.InstanceSucceeded:
+			exprs = append(exprs, dbr.And(
+				dbr.Eq(fmt.Sprintf("%s.state", table), domain.Succeeded),
+				dbr.Neq(fmt.Sprintf("%s.type", table), dbmodel.OperationTypeDeprovision),
+			))
+		case dbmodel.InstanceFailed:
+			exprs = append(exprs, dbr.Eq(fmt.Sprintf("%s.state", table), domain.Failed))
+		case dbmodel.InstanceProvisioning:
+			exprs = append(exprs, dbr.And(
+				dbr.Eq(fmt.Sprintf("%s.type", table), dbmodel.OperationTypeProvision),
+				dbr.Eq(fmt.Sprintf("%s.state", table), domain.InProgress),
+			))
+		case dbmodel.InstanceDeprovisioning:
+			exprs = append(exprs, dbr.And(
+				dbr.Eq(fmt.Sprintf("%s.type", table), dbmodel.OperationTypeDeprovision),
+				dbr.Eq(fmt.Sprintf("%s.state", table), domain.InProgress),
+			))
+		case dbmodel.InstanceUpgrading:
+			exprs = append(exprs, dbr.And(
+				dbr.Like(fmt.Sprintf("%s.type", table), "upgrade%"),
+				dbr.Eq(fmt.Sprintf("%s.state", table), domain.InProgress),
+			))
+		case dbmodel.InstanceDeprovisioned:
+			exprs = append(exprs, dbr.And(
+				dbr.Eq(fmt.Sprintf("%s.type", table), dbmodel.OperationTypeDeprovision),
+				dbr.Eq(fmt.Sprintf("%s.state", table), domain.Succeeded),
+			))
+		case dbmodel.InstanceNotDeprovisioned:
+			exprs = append(exprs, dbr.Or(
+				dbr.Neq(fmt.Sprintf("%s.type", table), dbmodel.OperationTypeDeprovision),
+				dbr.Neq(fmt.Sprintf("%s.state", table), domain.Succeeded),
+			))
+		}
+	}
+
+	return dbr.Or(exprs...)
+}
+
 func addInstanceFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
 	if len(filter.GlobalAccountIDs) > 0 {
-		stmt.Where("global_account_id IN ?", filter.GlobalAccountIDs)
+		stmt.Where("instances.global_account_id IN ?", filter.GlobalAccountIDs)
 	}
 	if len(filter.SubAccountIDs) > 0 {
-		stmt.Where("sub_account_id IN ?", filter.SubAccountIDs)
+		stmt.Where("instances.sub_account_id IN ?", filter.SubAccountIDs)
 	}
 	if len(filter.InstanceIDs) > 0 {
-		stmt.Where("instance_id IN ?", filter.InstanceIDs)
+		stmt.Where("instances.instance_id IN ?", filter.InstanceIDs)
 	}
 	if len(filter.RuntimeIDs) > 0 {
-		stmt.Where("runtime_id IN ?", filter.RuntimeIDs)
+		stmt.Where("instances.runtime_id IN ?", filter.RuntimeIDs)
 	}
 	if len(filter.Regions) > 0 {
-		stmt.Where("provider_region IN ?", filter.Regions)
+		stmt.Where("instances.provider_region IN ?", filter.Regions)
 	}
 	if len(filter.Plans) > 0 {
-		stmt.Where("service_plan_name IN ?", filter.Plans)
+		stmt.Where("instances.service_plan_name IN ?", filter.Plans)
 	}
 	if len(filter.Domains) > 0 {
 		// Preceeding character is either a . or / (after protocol://)
 		// match subdomain inputs
 		// match any .upperdomain zero or more times
 		domainMatch := fmt.Sprintf(`[./](%s)(\.[0-9A-Za-z-]+)*$`, strings.Join(filter.Domains, "|"))
-		stmt.Where("dashboard_url ~ ?", domainMatch)
+		stmt.Where("instances.dashboard_url ~ ?", domainMatch)
 	}
 }
 
