@@ -22,6 +22,11 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 		Kubeconfig: util.StringPtr(kubeconfig),
 	}
 
+	operation := model.Operation{
+		ID:    "id",
+		State: model.InProgress,
+	}
+
 	for _, testCase := range []struct {
 		description          string
 		installationMockFunc func(installationSvc *installationMocks.Service)
@@ -61,15 +66,15 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 			installationSvc := &installationMocks.Service{}
 			session := &mocks.WriteSession{}
 
-			session.On("UpdateOperationState", mock.AnythingOfType("string"), mock.AnythingOfType("string"),
-				mock.AnythingOfType("model.OperationState"), mock.AnythingOfType("time.Time")).Return(nil).Once()
+			session.On("UpdateOperationState", operation.ID, mock.AnythingOfType("string"),
+				operation.State, mock.AnythingOfType("time.Time")).Return(nil).Once()
 
 			testCase.installationMockFunc(installationSvc)
 
 			waitForInstallationStep := NewWaitForInstallationStep(installationSvc, nextStageName, 10*time.Minute, session)
 
 			// when
-			result, err := waitForInstallationStep.Run(cluster, model.Operation{}, logrus.New())
+			result, err := waitForInstallationStep.Run(cluster, operation, logrus.New())
 
 			// then
 			require.NoError(t, err)
