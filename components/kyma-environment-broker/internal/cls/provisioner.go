@@ -23,14 +23,12 @@ type InstanceCreator interface {
 type provisioner struct {
 	storage ProvisionerStorage
 	creator InstanceCreator
-	log     logrus.FieldLogger
 }
 
-func NewProvisioner(storage ProvisionerStorage, creator InstanceCreator, log logrus.FieldLogger) *provisioner {
+func NewProvisioner(storage ProvisionerStorage, creator InstanceCreator) *provisioner {
 	return &provisioner{
 		storage: storage,
 		creator: creator,
-		log:     log,
 	}
 }
 
@@ -42,39 +40,37 @@ type ProvisionRequest struct {
 }
 
 type ProvisionResult struct {
-	InstanceID            string
-	ProvisioningTriggered bool
-	Region                string
+	InstanceID string
+	Region     string
 }
 
-func (p *provisioner) Provision(smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
+func (p *provisioner) Provision(smClient servicemanager.Client, request *ProvisionRequest, log logrus.FieldLogger) (*ProvisionResult, error) {
 	instance, exists, err := p.storage.FindActiveByGlobalAccountID(request.GlobalAccountID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while checking if CLS instance is already created for global account %s", request.GlobalAccountID)
 	}
 
-	p.log.Infof("Found existing CLS instance for global account %s", request.GlobalAccountID)
-
 	if !exists {
-		p.log.Infof("No CLS instance found for global account %s", request.GlobalAccountID)
-		return p.createNewInstance(smClient, request)
+		log.Infof("No CLS instance found for global account %s", request.GlobalAccountID)
+		return p.createNewInstance(smClient, request, log)
 	}
+
+	log.Infof("Found existing CLS instance for global account %s", request.GlobalAccountID)
 
 	instance.AddReference(request.SKRInstanceID)
 	if err := p.storage.Update(*instance); err != nil {
 		return nil, errors.Wrapf(err, "while updating CLS instance for global account %s", request.GlobalAccountID)
 	}
 
-	p.log.Debugf("Referencing CLS instance for global account %s by the SKR %s", request.SKRInstanceID, request.GlobalAccountID)
+	log.Debugf("Referencing CLS instance for global account %s by the SKR %s", request.SKRInstanceID, request.GlobalAccountID)
 
 	return &ProvisionResult{
-		InstanceID:            instance.ID(),
-		ProvisioningTriggered: false,
-		Region:                instance.Region(),
+		InstanceID: instance.ID(),
+		Region:     instance.Region(),
 	}, nil
 }
 
-func (p *provisioner) createNewInstance(smClient servicemanager.Client, request *ProvisionRequest) (*ProvisionResult, error) {
+func (p *provisioner) createNewInstance(smClient servicemanager.Client, request *ProvisionRequest, log logrus.FieldLogger) (*ProvisionResult, error) {
 	instance := internal.NewCLSInstance(request.GlobalAccountID, request.Region, internal.WithReferences(request.SKRInstanceID))
 
 	err := p.storage.Insert(*instance)
@@ -82,17 +78,16 @@ func (p *provisioner) createNewInstance(smClient servicemanager.Client, request 
 		return nil, errors.Wrapf(err, "while inserting a CLS instance for global account %s", instance.GlobalAccountID())
 	}
 
-	p.log.Infof("Creating a new CLS instance for global account %s", request.GlobalAccountID)
+	log.Infof("Creating a new CLS instance for global account %s", request.GlobalAccountID)
 
 	request.Instance.InstanceID = instance.ID()
 	err = p.creator.CreateInstance(smClient, request.Instance)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while deleting a CLS instance for global account %s", instance.GlobalAccountID())
+		return nil, errors.Wrapf(err, "while creating a CLS instance for global account %s", instance.GlobalAccountID())
 	}
 
 	return &ProvisionResult{
-		InstanceID:            instance.ID(),
-		ProvisioningTriggered: true,
-		Region:                request.Region,
+		InstanceID: instance.ID(),
+		Region:     request.Region,
 	}, nil
 }

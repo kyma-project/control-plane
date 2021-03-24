@@ -15,7 +15,8 @@ import (
 
 //go:generate mockery -name=Step -output=automock -outpkg=automock -case=underscore
 
-func TestSkipForTrialPlanStepShouldSkip(t *testing.T) {
+func TestEventHubActivationPlanStepShouldSkip(t *testing.T) {
+
 	// Given
 	log := logrus.New()
 	operation := fixOperationWithPlanID(broker.TrialPlanID)
@@ -36,7 +37,7 @@ func TestSkipForTrialPlanStepShouldSkip(t *testing.T) {
 	assert.Equal(t, operation, returnedOperation)
 }
 
-func TestSkipForTrialPlanStepShouldSkipOnAzureForKymaVersion(t *testing.T) {
+func TestEventHubActivationStepShouldSkipOnAzureForKymaVersion(t *testing.T) {
 	// Given
 	log := logrus.New()
 	operation := fixOperationWithPlanIDAndKymaVersion(broker.AzurePlanID, "1.21.0")
@@ -57,7 +58,7 @@ func TestSkipForTrialPlanStepShouldSkipOnAzureForKymaVersion(t *testing.T) {
 	assert.Equal(t, operation, returnedOperation)
 }
 
-func TestSkipForTrialPlanStepShouldSkipOnAnyForKymaVersion(t *testing.T) {
+func TestEventHubActivationStepShouldSkipOnAnyForKymaVersion(t *testing.T) {
 	// Given
 	log := logrus.New()
 	operation := fixOperationWithPlanIDAndKymaVersion("any", "1.21.0")
@@ -78,7 +79,7 @@ func TestSkipForTrialPlanStepShouldSkipOnAnyForKymaVersion(t *testing.T) {
 	assert.Equal(t, operation, returnedOperation)
 }
 
-func TestSkipForTrialPlanStepShouldNotSkip(t *testing.T) {
+func TestEventHubActivationStepStepShouldNotSkip(t *testing.T) {
 	// Given
 	log := logrus.New()
 	operation := fixOperationWithPlanIDAndKymaVersion(broker.AzurePlanID, "1.20.0")
@@ -110,7 +111,7 @@ func fixOperationWithPlanID(planID string) internal.ProvisioningOperation {
 
 func fixOperationWithPlanIDAndKymaVersion(planID, version string) internal.ProvisioningOperation {
 	provisioningOperation := fixOperationWithPlanID(planID)
-	provisioningOperation.ProvisioningParameters.Parameters.KymaVersion = version
+	provisioningOperation.RuntimeVersion.Version = version
 
 	return provisioningOperation
 }

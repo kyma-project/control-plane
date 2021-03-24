@@ -13,7 +13,7 @@ func TestClsEncryptDecrypt(t *testing.T) {
 		FluentdEndPoint: "foo.bar",
 		FluentdPassword: "fooPass",
 		FluentdUsername: "fooUser",
-		KibanaUrl:       "Kiib.url",
+		KibanaURL:       "kibana.url",
 	}
 
 	// when

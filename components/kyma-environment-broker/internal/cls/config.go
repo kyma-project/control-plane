@@ -40,19 +40,16 @@ type ServiceManagerConfig struct {
 
 //ServiceManagerCredentials contains basic auth credentials for a ServiceManager tenant in a particular region
 type ServiceManagerCredentials struct {
-	Region   Region `yaml:"region"`
+	Region   string `yaml:"region"`
 	URL      string `yaml:"url"`
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 }
 
-//Region represents an SAP Cloud Platform region, where a CLS instance can be provisioned
-type Region string
-
-//Supported regions
+//Supported SAP Cloud Platform regions, where a CLS instance can be provisioned
 const (
-	RegionEurope Region = "eu"
-	RegionUS     Region = "us"
+	RegionEurope = "eu"
+	RegionUS     = "us"
 )
 
 // SAMLConfig to be used by Kibana
@@ -130,7 +127,7 @@ func (c *ServiceManagerCredentials) validate() error {
 		return errors.New("no region")
 	}
 
-	if err := c.Region.validate(); err != nil {
+	if err := validateRegion(c.Region); err != nil {
 		return err
 	}
 
@@ -149,7 +146,7 @@ func (c *ServiceManagerCredentials) validate() error {
 	return nil
 }
 
-func (r Region) validate() error {
+func validateRegion(r string) error {
 	supportedRegions := []string{string(RegionEurope), string(RegionUS)}
 	for _, sr := range supportedRegions {
 		if sr == string(r) {
