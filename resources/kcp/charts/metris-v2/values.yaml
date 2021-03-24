@@ -1,0 +1,80 @@
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  # these override the values from global chart
+  repository: ""
+  tag: ""
+  pullSecrets: []
+  pullPolicy: Always
+
+resources: {}
+  # requests:
+  #   memory: "64Mi"
+  #   cpu: "50m"
+  # limits:
+  #   memory: "250Mi"
+  #   cpu: "200m"
+
+nodeSelector: {}
+
+securityContext:
+  runAsUser: 1001
+
+podAnnotations:
+  sidecar.istio.io/inject: "false"
+
+serviceAccount:
+  enabled: true
+  ## Name of an already existing service account. Setting this value disables the automatic service account creation.
+  # name:
+
+gardener:
+  secretName: "gardener-credentials"
+
+edp:
+  namespace: "TBD"
+  datastream:
+    name: "TBD"
+    namespace: "TBD"
+    version: 1
+    env: "TBD"
+  token: "TBD"
+  url: "TBD"
+  workers: 5
+  buffer: 100
+  timeout: "30s"
+  retry: 5
+
+# Define custom environment variables to pass to metris
+  # — name: ENV_VAR1
+  #   value: test1
+  # - name: ENV_VAR2
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: secretname
+  #       key: secretkey
+extraEnv: []
+
+# Define custom arguments to pass to metris container
+extraArgs: []
+
+publicCloudInfo:
+  configMap:
+    key: providers
+
+## Metris general configurations
+config:
+  scrapeInterval: 5m
+  workerPoolSize: 5
+  logLevel: info
+  port: 8080
+
+## KEB configurations
+keb:
+  url: "http://{{ .Values.keb.serviceName }}.{{ .Release.Namespace }}/{{ .Values.keb.runtimesPath }}"
+  serviceName: "kcp-kyma-environment-broker"
+  timeout: "30s"
+  retryCount: "5"
+  pollWaitDuration: "10m"
+  runtimesPath: "runtimes"

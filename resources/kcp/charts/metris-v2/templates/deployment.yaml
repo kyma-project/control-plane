@@ -28,23 +28,10 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           args:
-            - "--edp-url={{ .Values.edp.url }}"
-            - "--edp-namespace={{ .Values.edp.datastream.namespace }}"
-            - "--edp-data-stream={{ .Values.edp.datastream.name }}"
-            - "--edp-data-stream-version={{ .Values.edp.datastream.version }}"
-            - "--edp-data-stream-env={{ .Values.edp.datastream.env }}"
-            - "--edp-timeout={{ .Values.edp.timeout }}"
-            - "--edp-buffer={{ .Values.edp.buffer }}"
-            - "--edp-workers={{ .Values.edp.workers }}"
-            - "--edp-event-retry={{ .Values.edp.retry }}"
-            - "--provider-poll-interval={{ .Values.provider.pollinterval }}"
-            - "--provider-poll-max-interval={{ .Values.provider.pollmaxinterval }}"
-            - "--provider-max-retries={{ .Values.provider.maxretries }}"
-            - "--provider-workers={{ .Values.provider.workers }}"
-            - "--provider-buffer={{ .Values.provider.buffer }}"
-            - "--listen-addr=0.0.0.0:{{ .Values.port }}"
-            - "--kubeconfig=/gardener/kubeconfig"
-            - "--log-level={{ .Values.loglevel }}"
+            - "--scrape-interval={{ .Values.config.scrapeInterval }}"
+            - "--worker-pool-size={{ .Values.config.workerPoolSize }}"
+            - "--log-level={{ .Values.config.logLevel }}"
+            - "--listen-addr={{ .Values.config.port }}"
             {{- if .Values.extraArgs }}
 {{ toYaml .Values.extraArgs | trim | indent 12 }}
             {{- end }}
@@ -54,6 +41,33 @@ spec:
                 secretKeyRef:
                   name: {{ template "metris.fullname" . }}
                   key: token
+            - name: EDP_URL
+              value: {{ .Values.edp.url | quote }}
+            - name: EDP_NAMESPACE
+              value: {{ .Values.edp.namespace | quote }}
+            - name: EDP_TIMEOUT
+              value: {{ .Values.edp.timeout | quote }}
+            - name: EDP_RETRY
+              value: {{ .Values.edp.retry | quote }}
+            - name: EDP_DATASTREAM_NAME
+              value: {{ .Values.edp.datastream.name | quote }}
+            - name: EDP_DATASTREAM_VERSION
+              value: {{ .Values.edp.datastream.version | quote }}
+            - name: EDP_DATASTREAM_ENV
+              value: {{ .Values.edp.datastream.env | quote }}
+            - name: KEB_URL
+              value: {{tpl .Values.keb.url .}}
+            - name: KEB_TIMEOUT
+              value: {{ .Values.keb.timeout | quote }}
+            - name: KEB_RETRY_COUNT
+              value: {{ .Values.keb.retryCount | quote }}
+            - name: KEB_POLL_WAIT_DURATION
+              value: {{ .Values.keb.pollWaitDuration | quote }}
+            - name: PUBLIC_CLOUD_SPECS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "metris.publicCloud.configMap.name" . }}
+                  key: {{ .Values.publicCloudInfo.configMap.key }}
             {{- if .Values.extraEnv }}
 {{ toYaml .Values.extraEnv | trim | indent 12 }}
             {{- end }}
@@ -66,7 +80,7 @@ spec:
             initialDelaySeconds: 10
           ports:
             - name: http
-              containerPort: {{ .Values.port }}
+              containerPort: {{ .Values.config.port }}
               protocol: TCP
           {{- with .Values.resources }}
           resources:
