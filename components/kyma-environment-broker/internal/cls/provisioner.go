@@ -1,9 +1,8 @@
 package cls
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -13,6 +12,7 @@ type ProvisionerStorage interface {
 	FindActiveByGlobalAccountID(globalAccountID string) (*internal.CLSInstance, bool, error)
 	Insert(instance internal.CLSInstance) error
 	Update(instance internal.CLSInstance) error
+	Delete(clsInstanceID string) error
 }
 
 //go:generate mockery --name=InstanceCreator --output=automock --outpkg=automock --case=underscore
@@ -43,6 +43,8 @@ type ProvisionResult struct {
 	InstanceID string
 	Region     string
 }
+
+type ProvisionStatus string
 
 func (p *provisioner) Provision(smClient servicemanager.Client, request *ProvisionRequest, log logrus.FieldLogger) (*ProvisionResult, error) {
 	instance, exists, err := p.storage.FindActiveByGlobalAccountID(request.GlobalAccountID)

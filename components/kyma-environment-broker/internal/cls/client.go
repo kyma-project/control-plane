@@ -2,6 +2,7 @@ package cls
 
 import (
 	"github.com/google/uuid"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
@@ -29,6 +30,13 @@ type parameters struct {
 		} `json:"sp"`
 	} `json:"saml"`
 }
+
+const (
+	InProgress ProvisionStatus = "in progress"
+	Succeeded  ProvisionStatus = "succeeded"
+	Retry      ProvisionStatus = "retry"
+	Failed     ProvisionStatus = "failed"
+)
 
 type OverrideParams struct {
 	FluentdEndPoint string `json:"Fluentd-endpoint"`
@@ -118,4 +126,24 @@ func (c *Client) RemoveInstance(smClient servicemanager.Client, instance service
 	}
 
 	return nil
+}
+
+func (c *Client) CheckStatus(smClient servicemanager.Client, instanceKey servicemanager.InstanceKey) (ProvisionStatus, error) {
+	resp, err := smClient.LastInstanceOperation(instanceKey, "")
+	if err != nil {
+		switch {
+		case kebError.IsTemporaryError(err):
+			return Retry, err
+		default:
+			return Failed, err
+		}
+	}
+
+	switch resp.State {
+	case servicemanager.InProgress:
+		return InProgress, nil
+	case servicemanager.Failed:
+		return Failed, err
+	}
+	return Succeeded, nil
 }
