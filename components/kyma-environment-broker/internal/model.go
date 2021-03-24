@@ -194,6 +194,7 @@ type InstanceDetails struct {
 	XSUAA        XSUAAData `json:"xsuaa"`
 	Ems          EmsData   `json:"ems"`
 	Cls          ClsData   `json:"cls"`
+	Conn         ConnData  `json:"connectivity"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -235,6 +236,13 @@ type EmsData struct {
 type ClsData struct {
 	Instance ServiceManagerInstanceInfo `json:"instance"`
 	Region   string                     `json:"region"`
+
+	Binding   BindingInfo `json:"binding"`
+	Overrides string      `json:"overrides"`
+}
+
+type ConnData struct {
+	Instance ServiceManagerInstanceInfo `json:"instance"`
 
 	Binding   BindingInfo `json:"binding"`
 	Overrides string      `json:"overrides"`

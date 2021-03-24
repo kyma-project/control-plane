@@ -128,6 +128,9 @@ type Config struct {
 	Ems struct {
 		Disabled bool `envconfig:"default=true"`
 	}
+	Conn struct {
+		Disabled bool `envconfig:"default=true"`
+	}
 	Cls struct {
 		Disabled bool `envconfig:"default=true"`
 	}
@@ -309,6 +312,16 @@ func main() {
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight: 1,
+			// TODO: Should we skip connectivity for trial plan?
+			// TODO: CLS provisioning is based on region and the question that I have is why?
+			step: provisioning.NewServiceManagerOfferingStep("CONN_Offering",
+				provisioning.ConnOfferingName, provisioning.ConnPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
+					return &op.Conn.Instance
+				}, db.Operations()),
+			disabled: cfg.Conn.Disabled,
+		},
+		{
 			weight:   1,
 			step:     provisioning.NewSkipForTrialPlanStep(provisioning.NewClsOfferingStep(clsConfig, db.Operations())),
 			disabled: cfg.Cls.Disabled,
@@ -332,6 +345,11 @@ func main() {
 			weight:   2,
 			step:     provisioning.NewEmsProvisionStep(db.Operations()),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   2,
+			step:     provisioning.NewConnProvisionStep(db.Operations()),
+			disabled: cfg.Conn.Disabled,
 		},
 		{
 			weight:   2,
