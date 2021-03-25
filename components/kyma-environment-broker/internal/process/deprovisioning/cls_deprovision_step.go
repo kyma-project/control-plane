@@ -64,10 +64,14 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 			log.Error(failureReason)
 			return s.operationManager.RetryOperation(operation, failureReason, 1*time.Minute, 5*time.Minute, log)
 		}
-		operation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
+		updatedOperation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
 			operation.Cls.Instance.DeprovisioningTriggered = true
 		}, log)
-		return operation, retry, nil
+		if retry > 0 {
+			log.Errorf("Unable to update operation")
+			return operation, retry, nil
+		}
+		return updatedOperation, time.Second, nil
 	}
 
 	return s.checkDeprovisioningStatus(operation, log, smClient)
