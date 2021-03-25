@@ -28,7 +28,11 @@ func (p *checker) CheckProvisionStatus(smClient servicemanager.Client, instanceK
 		switch res {
 		case Failed:
 			log.Infof("Deleting the CLS instance from DB: %v", instanceKey.InstanceID)
-			p.storage.Delete(instanceKey.InstanceID)
+			err = p.storage.Delete(instanceKey.InstanceID)
+			if err != nil {
+				log.Warnf("Unable to delete CLS Instance from DB: %v", instanceKey.InstanceID)
+				return Retry, err
+			}
 			return Failed, err
 		case Retry:
 			return Retry, err
