@@ -379,6 +379,11 @@ func main() {
 			disabled: !cfg.Cls.Disabled,
 		},
 		{
+			weight:   5,
+			step:     provisioning.NewSkipForTrialPlanStep(provisioning.NewClsCheckStatus(clsConfig, cls.NewStatusChecker(db.CLSInstances()), db.Operations())),
+			disabled: !cfg.Cls.Disabled,
+		},
+		{
 			weight:   6,
 			step:     provisioning.NewIASRegistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
@@ -472,7 +477,7 @@ func main() {
 		},
 		{
 			weight:   2,
-			step:     deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewClsDeprovisionStep(clsConfig, db.Operations(), clsDeprovisioner)),
+			step:     deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewClsDeprovisionStep(clsConfig, clsDeprovisioner, db.Operations())),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -758,6 +763,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			weight:   4,
 			step:     upgrade_kyma.NewSkipForTrialPlanStep(upgrade_kyma.NewClsUpgradeProvisionStep(clsConfig, clsProvisioner, db.Operations())),
 			disabled: cfg.Cls.Disabled,
+		},
+		{
+			weight:   5,
+			step:     upgrade_kyma.NewSkipForTrialPlanStep(upgrade_kyma.NewClsCheckStatus(clsConfig, cls.NewStatusChecker(db.CLSInstances()), db.Operations())),
+			disabled: !cfg.Cls.Disabled,
 		},
 		{
 			weight:   7,

@@ -14,7 +14,7 @@ import (
 
 //go:generate mockery --name=ClsDeprovisioner --output=automock --outpkg=automock --case=underscore
 type ClsDeprovisioner interface {
-	Deprovision(smClient servicemanager.Client, request *cls.DeprovisionRequest, log logrus.FieldLogger) error
+	Deprovision(smClient servicemanager.Client, request *cls.DeprovisionRequest, log logrus.FieldLogger) (*cls.DeprovisionResult, error)
 }
 
 type ClsDeprovisionStep struct {
@@ -59,7 +59,8 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 	}
 
 	if !operation.Cls.Instance.DeprovisioningTriggered {
-		if err := s.deprovisioner.Deprovision(smClient, request, log); err != nil {
+		result, err := s.deprovisioner.Deprovision(smClient, request, log)
+		if err != nil {
 			failureReason := fmt.Sprintf("Unable to deprovision a CLS instance %s: %s", operation.Cls.Instance.InstanceID, err)
 			log.Error(failureReason)
 			return s.operationManager.RetryOperation(operation, failureReason, 1*time.Minute, 5*time.Minute, log)
@@ -71,7 +72,12 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 			log.Errorf("Unable to update operation")
 			return operation, retry, nil
 		}
-		return updatedOperation, 10 * time.Second, nil
+
+		if result.IsLastReference {
+			return updatedOperation, 10 * time.Second, nil
+		}
+
+		return updatedOperation, 0, nil
 	}
 
 	return s.checkDeprovisioningStatus(operation, log, smClient)

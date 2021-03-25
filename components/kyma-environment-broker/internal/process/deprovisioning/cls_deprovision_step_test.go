@@ -97,7 +97,7 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 		deprovisionerMock.On("Deprovision", mock.Anything, &cls.DeprovisionRequest{
 			SKRInstanceID: skrInstanceID,
 			Instance:      clsInstance.InstanceKey(),
-		}, mock.Anything).Return(errors.New("failure"))
+		}, mock.Anything).Return(nil, errors.New("failure"))
 
 		step := NewClsDeprovisionStep(config, deprovisionerMock, repo)
 
@@ -117,7 +117,7 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 		deprovisionerMock.On("Deprovision", mock.Anything, &cls.DeprovisionRequest{
 			SKRInstanceID: skrInstanceID,
 			Instance:      clsInstance.InstanceKey(),
-		}, mock.Anything).Return(nil)
+		}, mock.Anything).Return(&cls.DeprovisionResult{IsLastReference: false}, nil)
 
 		step := NewClsDeprovisionStep(config, deprovisionerMock, repo)
 

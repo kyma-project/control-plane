@@ -34,7 +34,7 @@ func TestDeprovisionFailsIfFindQueryFails(t *testing.T) {
 	smClientMock := &smautomock.Client{}
 
 	// when
-	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
+	_, err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	}, logger.NewLogDummy())
@@ -64,7 +64,7 @@ func TestDeprovisionRemovesInstanceIfNoCLSFound(t *testing.T) {
 	}
 
 	// when
-	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
+	_, err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	}, logger.NewLogDummy())
@@ -97,7 +97,7 @@ func TestDeprovisionReturnsEarlyIfCLSNotReferenced(t *testing.T) {
 	smClientMock := &smautomock.Client{}
 
 	// when
-	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
+	_, err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	}, logger.NewLogDummy())
@@ -130,13 +130,14 @@ func TestDeprovisionUnreferencesIfNotLastCLSReference(t *testing.T) {
 	smClientMock := &smautomock.Client{}
 
 	// when
-	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
+	result, err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: secondFakeSKRInstanceID,
 		Instance:      fakeInstance,
 	}, logger.NewLogDummy())
 
 	// then
 	require.NoError(t, err)
+	require.False(t, result.IsLastReference)
 
 	instance, exists, _ := fakeStorage.FindByID(fakeInstance.InstanceID)
 	require.True(t, exists)
@@ -170,7 +171,7 @@ func TestDeprovisionFailsIfUpdateQueryFailsAfterCLSUnreferencing(t *testing.T) {
 	}
 
 	// when
-	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
+	_, err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	}, logger.NewLogDummy())
@@ -206,13 +207,14 @@ func TestDeprovisionRemovesIfLastCLSReference(t *testing.T) {
 	}
 
 	// when
-	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
+	result, err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	}, logger.NewLogDummy())
 
 	// then
 	require.NoError(t, err)
+	require.True(t, result.IsLastReference)
 
 	_, exists, _ := fakeStorage.FindByID(fakeInstance.InstanceID)
 	require.False(t, exists)
@@ -244,7 +246,7 @@ func TestDeprovisionRemovesInstanceIfLastReference(t *testing.T) {
 	}
 
 	// when
-	err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
+	_, err := deprovisioner.Deprovision(smClientMock, &DeprovisionRequest{
 		SKRInstanceID: fakeSKRInstanceID,
 		Instance:      fakeInstance,
 	}, logger.NewLogDummy())

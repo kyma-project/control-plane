@@ -6,6 +6,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -65,6 +66,9 @@ func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 	if err != nil {
 		failureReason := fmt.Sprintf("Unable to provision a CLS instance for global account %s", globalAccountID)
 		log.Errorf("%s: %v", failureReason, err)
+		if kebError.IsTemporaryError(err) {
+			return s.operationManager.RetryOperation(operation, failureReason, 10*time.Second, time.Minute*30, log)
+		}
 		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
 

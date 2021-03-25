@@ -79,7 +79,7 @@ func runClsEndToEndFlow(t *testing.T, clsConfig *cls.Config, db storage.BrokerSt
 	provisioningSteps := []Step{
 		NewClsOfferingStep(clsConfig, db.Operations()),
 		NewClsProvisionStep(clsConfig, cls.NewProvisioner(db.CLSInstances(), clsClient), db.Operations()),
-		NewClsCheckStatus(clsConfig, cls.NewStatusChecker(db.CLSInstances(), clsClient), db.Operations()),
+		NewClsCheckStatus(clsConfig, cls.NewStatusChecker(db.CLSInstances()), db.Operations()),
 		NewClsBindStep(clsConfig, clsClient, db.Operations(), fakeEncryptionKey),
 		newFinishProvisioningStep(db.Operations()),
 	}
