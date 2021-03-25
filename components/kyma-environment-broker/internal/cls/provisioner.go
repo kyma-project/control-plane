@@ -45,8 +45,6 @@ type ProvisionResult struct {
 	Region     string
 }
 
-type ProvisionStatus string
-
 func (p *provisioner) Provision(smClient servicemanager.Client, request *ProvisionRequest, log logrus.FieldLogger) (*ProvisionResult, error) {
 	instance, exists, err := p.storage.FindActiveByGlobalAccountID(request.GlobalAccountID)
 	if err != nil {

@@ -30,13 +30,6 @@ type parameters struct {
 	} `json:"saml"`
 }
 
-const (
-	InProgress ProvisionStatus = "in progress"
-	Succeeded  ProvisionStatus = "succeeded"
-	Retry      ProvisionStatus = "retry"
-	Failed     ProvisionStatus = "failed"
-)
-
 type OverrideParams struct {
 	FluentdEndPoint string `json:"Fluentd-endpoint"`
 	FluentdPassword string `json:"Fluentd-password"`

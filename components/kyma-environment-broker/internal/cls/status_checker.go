@@ -7,6 +7,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type ProvisionStatus string
+
+const (
+	InProgress ProvisionStatus = "in progress"
+	Succeeded  ProvisionStatus = "succeeded"
+	Retry      ProvisionStatus = "retry"
+	Failed     ProvisionStatus = "failed"
+)
+
 type checker struct {
 	storage ProvisionerStorage
 }
