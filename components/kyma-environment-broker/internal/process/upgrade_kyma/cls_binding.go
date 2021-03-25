@@ -71,15 +71,13 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 			operation = op
 		}
 
-		// Create a binding
 		overrideParams, err = s.bindingProvider.CreateBinding(smCli, &cls.BindingRequest{
 			InstanceKey: operation.Cls.Instance.InstanceKey(),
 			BindingID:   operation.Cls.BindingID,
 		})
 		if err != nil {
-			failureReason := "Unable to create CLS Binding"
-			log.Errorf("%s: %v", failureReason, err)
-			return s.operationManager.OperationFailed(operation, failureReason, log)
+			log.Errorf("Unable to create CLS Binding: %v. Retrying", err)
+			return operation, 30 * time.Second, nil
 		}
 
 		encryptedOverrideParams, err := cls.EncryptOverrides(s.secretKey, overrideParams)
@@ -89,7 +87,6 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
 
-		// save the status
 		op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
 			operation.Cls.Overrides = encryptedOverrideParams
 		}, log)
@@ -99,7 +96,6 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 		}
 		operation = op
 	} else {
-		// fetch existing overrides
 		overrideParams, err = cls.DecryptOverrides(s.secretKey, operation.Cls.Overrides)
 		if err != nil {
 			failureReason := "Unable to decrypt CLS overrides"
@@ -110,14 +106,16 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 
 	extraConfTemplate, err := cls.GetExtraConfTemplate()
 	if err != nil {
-		log.Errorf("Unable to get CLS extra config template: %v", err)
-		return operation, time.Second, nil
+		failureReason := "Unable to get CLS extra config template"
+		log.Errorf("%s: %v", failureReason, err)
+		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
 
 	fluentBitClsOverrides, err := cls.RenderOverrides(overrideParams, extraConfTemplate)
 	if err != nil {
-		log.Errorf("Unable to render CLS overrides: %v", err)
-		return operation, time.Second, nil
+		failureReason := "Unable to render CLS overrides"
+		log.Errorf("%s: %v", failureReason, err)
+		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
 
 	// TODO: delete this check (isVersionAtLeast1_20) after all SKR clusters are migrated to 1.20!
