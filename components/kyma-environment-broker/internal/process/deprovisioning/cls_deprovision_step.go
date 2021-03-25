@@ -19,15 +19,15 @@ type ClsDeprovisioner interface {
 
 type ClsDeprovisionStep struct {
 	config           *cls.Config
-	operationManager *process.DeprovisionOperationManager
 	deprovisioner    ClsDeprovisioner
+	operationManager *process.DeprovisionOperationManager
 }
 
-func NewClsDeprovisionStep(config *cls.Config, os storage.Operations, deprovisioner ClsDeprovisioner) *ClsDeprovisionStep {
+func NewClsDeprovisionStep(config *cls.Config, deprovisioner ClsDeprovisioner, os storage.Operations) *ClsDeprovisionStep {
 	return &ClsDeprovisionStep{
 		config:           config,
-		operationManager: process.NewDeprovisionOperationManager(os),
 		deprovisioner:    deprovisioner,
+		operationManager: process.NewDeprovisionOperationManager(os),
 	}
 }
 
