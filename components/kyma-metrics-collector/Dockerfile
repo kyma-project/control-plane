@@ -7,7 +7,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -v -o kyma-metrics-collector ./cmd/main.go
 RUN mkdir /app && mv ./kyma-metrics-collector /app/kyma-metrics-collector
 
-FROM alpine:3.13.2
+FROM alpine:3.13.3
 LABEL source = git@github.com:kyma-project/control-plane.git
 
 WORKDIR /app
