@@ -22,20 +22,10 @@ func TestClsSteps(t *testing.T) {
 	clsClient := cls.NewClient(clsConfig)
 	smClient := createMockServiceManagerClient()
 
-	fakeOperationID := "operation-id"
-	fakeGlobalAccountID := "global-account-id"
-	fakeSKRInstanceID := "skr-instance-id"
-	operation := fixture.FixProvisioningOperation(fakeOperationID, fakeSKRInstanceID)
-	operation.Cls = internal.ClsData{}
-	operation.SMClientFactory = servicemanager.NewPassthroughServiceManagerClientFactory(smClient)
-	operation.State = domain.InProgress
-	operation.ProvisioningParameters.ErsContext.GlobalAccountID = fakeGlobalAccountID
+	fakeGlobalAccountID := "fake-global-account-id"
 
 	db := storage.NewMemoryStorage()
-	encryptionKey := "1234567890123456"
-	err := db.Operations().InsertProvisioningOperation(operation)
-	require.NoError(t, err)
-
+	fakeEncryptionKey := "1234567890123456"
 	log := logrus.New()
 	log.SetLevel(logrus.DebugLevel)
 	log.SetFormatter(&logrus.TextFormatter{
@@ -47,25 +37,56 @@ func TestClsSteps(t *testing.T) {
 		NewClsOfferingStep(clsConfig, db.Operations()),
 		NewClsProvisionStep(clsConfig, cls.NewProvisioner(db.CLSInstances(), clsClient), db.Operations()),
 		NewClsCheckStatus(clsConfig, cls.NewStatusChecker(db.CLSInstances(), clsClient), db.Operations()),
-		NewClsBindStep(clsConfig, clsClient, db.Operations(), encryptionKey),
+		NewClsBindStep(clsConfig, clsClient, db.Operations(), fakeEncryptionKey),
 	}
 	for i, step := range provisioningSteps {
 		provisioningManager.AddStep(i, step)
 	}
 
-	_, err = provisioningManager.Execute(operation.ID)
+	fakeOperationID1 := "fake-operation-id-1"
+	fakeSKRInstanceID1 := "fake-skr-instance-id-1"
+	operation1 := createProvisioningOperation(fakeOperationID1, fakeSKRInstanceID1, fakeGlobalAccountID, smClient)
+
+	t.Log("Executing the CLS provisioning steps for the first time (no CLS exists for the global account)")
+	err := db.Operations().InsertProvisioningOperation(operation1)
+	require.NoError(t, err)
+	_, err = provisioningManager.Execute(operation1.ID)
 	require.NoError(t, err)
 
 	foundCLS, exists, err := db.CLSInstances().FindActiveByGlobalAccountID(fakeGlobalAccountID)
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.Len(t, foundCLS.References(), 1)
-	require.True(t, foundCLS.IsReferencedBy(fakeSKRInstanceID))
+	require.True(t, foundCLS.IsReferencedBy(fakeSKRInstanceID1))
 
-	foundOp, err := db.Operations().GetProvisioningOperationByID(fakeOperationID)
+	foundOp, err := db.Operations().GetProvisioningOperationByID(fakeOperationID1)
 	require.NoError(t, err)
 	require.NotEmpty(t, foundOp.Cls.BindingID)
 	require.NotEmpty(t, foundOp.Cls.Overrides)
+	require.True(t, foundOp.Cls.Instance.Provisioned)
+
+	fakeOperationID2 := "fake-operation-id-2"
+	fakeSKRInstanceID2 := "fake-skr-instance-id-2"
+	operation2 := createProvisioningOperation(fakeOperationID2, fakeSKRInstanceID2, fakeGlobalAccountID, smClient)
+	err = db.Operations().InsertProvisioningOperation(operation2)
+	require.NoError(t, err)
+
+	t.Log("Executing the CLS provisioning steps for the second time (there is an existing CLS for the global account)")
+	_, err = provisioningManager.Execute(operation2.ID)
+	require.NoError(t, err)
+
+	foundCLS, exists, err = db.CLSInstances().FindActiveByGlobalAccountID(fakeGlobalAccountID)
+	require.NoError(t, err)
+	require.True(t, exists)
+	require.Len(t, foundCLS.References(), 2)
+	require.True(t, foundCLS.IsReferencedBy(fakeSKRInstanceID1))
+	require.True(t, foundCLS.IsReferencedBy(fakeSKRInstanceID2))
+
+	foundOp, err = db.Operations().GetProvisioningOperationByID(fakeOperationID1)
+	require.NoError(t, err)
+	require.NotEmpty(t, foundOp.Cls.BindingID)
+	require.NotEmpty(t, foundOp.Cls.Overrides)
+	require.True(t, foundOp.Cls.Instance.Provisioned)
 }
 
 func createDummyConfig() *cls.Config {
@@ -99,11 +120,20 @@ func createDummyConfig() *cls.Config {
 	}
 }
 
+func createProvisioningOperation(operationID, skrInstanceID, globalAccountID string, smClient servicemanager.Client) internal.ProvisioningOperation {
+	operation := fixture.FixProvisioningOperation(operationID, skrInstanceID)
+	operation.Cls = internal.ClsData{}
+	operation.SMClientFactory = servicemanager.NewPassthroughServiceManagerClientFactory(smClient)
+	operation.State = domain.InProgress
+	operation.ProvisioningParameters.ErsContext.GlobalAccountID = globalAccountID
+	return operation
+}
+
 func createMockServiceManagerClient() servicemanager.Client {
-	fakeClsOfferingID := "cls-offering-id"
-	fakeClsServiceID := "cls-service-id"
-	fakeClsBrokerID := "cls-broker-id"
-	fakeClsPlanID := "cls-plan-id"
+	fakeClsOfferingID := "fake-cls-offering-id"
+	fakeClsServiceID := "fake-cls-service-id"
+	fakeClsBrokerID := "fake-cls-broker-id"
+	fakeClsPlanID := "fake-cls-plan-id"
 
 	clientMock := &smautomock.Client{}
 	clientMock.On("ListOfferingsByName", "cloud-logging").
