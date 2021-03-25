@@ -24,6 +24,9 @@ global:
       version: "PR-529"
     metris:
       dir:
+      version: "PR-376"
+    kyma_metrics_collector:
+      dir:
       version: "PR-583"
     tests:
       provisioner:

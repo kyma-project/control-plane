@@ -46,7 +46,7 @@ edp:
   timeout: "30s"
   retry: 5
 
-# Define custom environment variables to pass to metris
+# Define custom environment variables to pass to kyma-metrics-collector
   # — name: ENV_VAR1
   #   value: test1
   # - name: ENV_VAR2
@@ -56,14 +56,14 @@ edp:
   #       key: secretkey
 extraEnv: []
 
-# Define custom arguments to pass to metris container
+# Define custom arguments to pass to kyma-metrics-collector container
 extraArgs: []
 
 publicCloudInfo:
   configMap:
     key: providers
 
-## Metris general configurations
+## kyma-metrics-collector general configurations
 config:
   scrapeInterval: 5m
   workerPoolSize: 5

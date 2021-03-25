@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "metris.publicCloud.configMap.name" . }}
-  labels: {{ include "metris.publicCloud.configMap.labels" . | nindent 4 }}
+  name: {{ include "kyma-metrics-collector.publicCloud.configMap.name" . }}
+  labels: {{ include "kyma-metrics-collector.publicCloud.configMap.labels" . | nindent 4 }}
 data:
   providers: |
     {

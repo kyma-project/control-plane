@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "metris.fullname" . }}
+  name: {{ template "kyma-metrics-collector.fullname" . }}
   labels:
     app: {{ .Chart.Name }}
-{{ include "metris.labels" . | indent 4 }}
+{{ include "kyma-metrics-collector.labels" . | indent 4 }}
 spec:
   replicas: 1
   selector:
@@ -15,14 +15,14 @@ spec:
     metadata:
       labels:
         app: {{ .Chart.Name }}
-{{ include "metris.labels" . | indent 8 }}
+{{ include "kyma-metrics-collector.labels" . | indent 8 }}
 {{- if .Values.podAnnotations }}
       annotations:
 {{ toYaml .Values.podAnnotations | trim | indent 8 }}
 {{- end }}
     spec:
-{{- include "metris.imagePullSecrets" . | indent 6 }}
-      serviceAccountName: {{ template "metris.fullname" . }}
+{{- include "kyma-metrics-collector.imagePullSecrets" . | indent 6 }}
+      serviceAccountName: {{ template "kyma-metrics-collector.fullname" . }}
       nodeSelector:
         {{- toYaml .Values.nodeSelector | nindent 8 }}
       containers:
@@ -39,7 +39,7 @@ spec:
             - name: EDP_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ template "metris.fullname" . }}
+                  name: {{ template "kyma-metrics-collector.fullname" . }}
                   key: token
             - name: EDP_URL
               value: {{ .Values.edp.url | quote }}
@@ -66,12 +66,12 @@ spec:
             - name: PUBLIC_CLOUD_SPECS
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "metris.publicCloud.configMap.name" . }}
+                  name: {{ include "kyma-metrics-collector.publicCloud.configMap.name" . }}
                   key: {{ .Values.publicCloudInfo.configMap.key }}
             {{- if .Values.extraEnv }}
 {{ toYaml .Values.extraEnv | trim | indent 12 }}
             {{- end }}
-          image: {{ template "metris.image" . }}
+          image: {{ template "kyma-metrics-collector.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           livenessProbe:
             httpGet:
