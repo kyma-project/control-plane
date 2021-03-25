@@ -39,19 +39,19 @@ func TestClsSteps(t *testing.T) {
 	})
 
 	provisioningManager := NewManager(db.Operations(), event.NewPubSub(log), log)
-
 	provisioningSteps := []Step{
 		NewClsOfferingStep(clsConfig, db.Operations()),
 		NewClsProvisionStep(clsConfig, cls.NewProvisioner(db.CLSInstances(), clsClient), db.Operations()),
+		NewClsCheckStatus(clsConfig, cls.NewStatusChecker(db.CLSInstances(), clsClient), db.Operations()),
 		NewClsBindStep(clsConfig, clsClient, db.Operations(), encryptionKey),
 	}
-
 	for i, step := range provisioningSteps {
 		provisioningManager.AddStep(i, step)
 	}
 
 	_, err = provisioningManager.Execute(operation.ID)
 	require.NoError(t, err)
+
 }
 
 func createDummyConfig() *cls.Config {
