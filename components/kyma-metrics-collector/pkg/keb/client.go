@@ -8,6 +8,7 @@ import (
 	"net/url"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -42,6 +43,9 @@ func NewClient(config *Config, logger *logrus.Logger) *Client {
 func (c Client) NewRequest() (*http.Request, error) {
 	kebURL, err := url.ParseRequestURI(c.Config.URL)
 	if err != nil {
+		failedRequest.WithLabelValues(fmt.Sprintf("%d", http.StatusBadRequest)).Inc()
+		totalRequest.WithLabelValues(fmt.Sprintf("%d", http.StatusBadRequest)).Inc()
+
 		return nil, err
 	}
 	req := &http.Request{
@@ -52,12 +56,15 @@ func (c Client) NewRequest() (*http.Request, error) {
 }
 
 func (c Client) GetAllRuntimes(req *http.Request) (*kebruntime.RuntimesPage, error) {
+	metricTimer := prometheus.NewTimer(sentRequestDuration)
+	defer metricTimer.ObserveDuration()
+
 	morePages := true
 	pageNum := 1
 	recordsSeen := 0
 	finalRuntimesPage := new(kebruntime.RuntimesPage)
 	for morePages {
-		runtimesPage, err := c.GetRuntimesPerPage(req, pageNum)
+		runtimesPage, err := c.getRuntimesPerPage(req, pageNum)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get runtimes from KEB")
 		}
@@ -75,7 +82,7 @@ func (c Client) GetAllRuntimes(req *http.Request) (*kebruntime.RuntimesPage, err
 	return finalRuntimesPage, nil
 }
 
-func (c Client) GetRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.RuntimesPage, error) {
+func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.RuntimesPage, error) {
 	c.Logger.Debugf("polling for runtimes with URL: %s", req.URL.String())
 	query := url.Values{
 		"page": []string{fmt.Sprintf("%d", pageNum)},
@@ -97,17 +104,26 @@ func (c Client) GetRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 	}, func() (err error) {
 		resp, err = c.HTTPClient.Do(req)
 		if err != nil {
+			failedRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
+			totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
+
 			c.Logger.Warnf("will be retried: failed while getting runtimes from KEB: %v", err)
 		}
 		return
 	})
 
 	if err != nil {
+		failedRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
+		totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
+
 		c.Logger.Errorf("failed to get runtimes from KEB: %v", err)
 		return nil, errors.Wrapf(err, "failed to get runtimes from KEB")
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		failedRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
+		totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
+
 		failedErr := fmt.Errorf("KEB returned status code: %d", resp.StatusCode)
 		c.Logger.Errorf("%v", failedErr)
 		return nil, failedErr
@@ -115,6 +131,9 @@ func (c Client) GetRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		failedRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
+		totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
+
 		c.Logger.Errorf("failed to read body: %v", err)
 		return nil, err
 	}
@@ -127,7 +146,13 @@ func (c Client) GetRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 	}()
 	runtimesPage := new(kebruntime.RuntimesPage)
 	if err := json.Unmarshal(body, runtimesPage); err != nil {
+		failedRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
+		totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
+
 		return nil, errors.Wrapf(err, "failed to unmarshal runtimes response")
 	}
+
+	totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
+
 	return runtimesPage, nil
 }

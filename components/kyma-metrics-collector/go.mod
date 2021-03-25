@@ -10,10 +10,11 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kyma-project/control-plane v0.0.0-20210131083023-031b4c8683db
+	github.com/kyma-project/control-plane/components/metris v0.0.0-20210319121903-21aab64f41a6 // indirect
 	github.com/onsi/gomega v1.10.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.8.0
+	github.com/prometheus/client_golang v1.10.0
 	github.com/sirupsen/logrus v1.7.0
 	golang.org/x/oauth2 v0.0.0-20210126194326-f9ce19ea3013 // indirect
 	k8s.io/api v0.20.2
