@@ -32,7 +32,7 @@ func newFinishProvisioningStep(repo storage.Operations) *finishProvisioningStep 
 }
 
 func (s *finishProvisioningStep) Name() string {
-	return "CLS_Success"
+	return "CLS_Provision_Success"
 }
 
 func (s *finishProvisioningStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
@@ -50,7 +50,7 @@ func newFinishDeprovisioningStep(repo storage.Operations) *finishDeprovisioningS
 }
 
 func (s *finishDeprovisioningStep) Name() string {
-	return "CLS_Success"
+	return "CLS_Deprovision_Success"
 }
 
 func (s *finishDeprovisioningStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
