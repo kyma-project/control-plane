@@ -19,15 +19,15 @@ type ClsProvisioner interface {
 
 type clsProvisionStep struct {
 	config           *cls.Config
-	instanceProvider ClsProvisioner
+	provisioner      ClsProvisioner
 	operationManager *process.ProvisionOperationManager
 }
 
-func NewClsProvisionStep(config *cls.Config, ip ClsProvisioner, repo storage.Operations) *clsProvisionStep {
+func NewClsProvisionStep(config *cls.Config, provisioner ClsProvisioner, repo storage.Operations) *clsProvisionStep {
 	return &clsProvisionStep{
 		config:           config,
+		provisioner:      provisioner,
 		operationManager: process.NewProvisionOperationManager(repo),
-		instanceProvider: ip,
 	}
 }
 
@@ -56,7 +56,7 @@ func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 	skrInstanceID := operation.InstanceID
-	result, err := s.instanceProvider.Provision(smClient, &cls.ProvisionRequest{
+	result, err := s.provisioner.Provision(smClient, &cls.ProvisionRequest{
 		GlobalAccountID: globalAccountID,
 		Region:          smRegion,
 		SKRInstanceID:   skrInstanceID,
