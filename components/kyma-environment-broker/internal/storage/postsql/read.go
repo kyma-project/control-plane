@@ -521,8 +521,9 @@ func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]dbmodel.Ins
 			Select(fmt.Sprintf("%s.*", InstancesTableName)).
 			From(InstancesTableName).
 			Join(dbr.I(OperationTableName).As("o1"), fmt.Sprintf("%s.instance_id = o1.instance_id", InstancesTableName)).
-			LeftJoin(dbr.I(OperationTableName).As("o2"), fmt.Sprintf("%s.instance_id = o2.instance_id AND o1.created_at < o2.created_at", InstancesTableName)).
+			LeftJoin(dbr.I(OperationTableName).As("o2"), fmt.Sprintf("%s.instance_id = o2.instance_id AND o1.created_at < o2.created_at AND o2.state <> %s", InstancesTableName, orchestration.Pending)).
 			Where("o2.created_at IS NULL").
+			Where(fmt.Sprintf("o1.state <> %s", orchestration.Pending)).
 			OrderBy(fmt.Sprintf("%s.%s", InstancesTableName, CreatedAtField))
 
 		stateFilters := buildInstanceStateFilters("o1", filter)
@@ -564,8 +565,9 @@ func (r readSession) getInstanceCount(filter dbmodel.InstanceFilter) (int, error
 			Select("count(*) as total").
 			From(InstancesTableName).
 			Join(dbr.I(OperationTableName).As("o1"), fmt.Sprintf("%s.instance_id = o1.instance_id", InstancesTableName)).
-			LeftJoin(dbr.I(OperationTableName).As("o2"), fmt.Sprintf("%s.instance_id = o2.instance_id AND o1.created_at < o2.created_at", InstancesTableName)).
-			Where("o2.created_at IS NULL")
+			LeftJoin(dbr.I(OperationTableName).As("o2"), fmt.Sprintf("%s.instance_id = o2.instance_id AND o1.created_at < o2.created_at AND o2.state <> %s", InstancesTableName, orchestration.Pending)).
+			Where("o2.created_at IS NULL").
+			Where(fmt.Sprintf("o1.state <> %s", orchestration.Pending))
 
 		stateFilters := buildInstanceStateFilters("o1", filter)
 		stmt.Where(stateFilters)
