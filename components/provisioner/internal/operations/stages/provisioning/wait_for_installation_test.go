@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
+
 	"github.com/kyma-incubator/hydroform/install/installation"
 	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -20,15 +22,20 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 		Kubeconfig: util.StringPtr(kubeconfig),
 	}
 
+	operation := model.Operation{
+		ID:    "id",
+		State: model.InProgress,
+	}
+
 	for _, testCase := range []struct {
-		description   string
-		mockFunc      func(installationSvc *installationMocks.Service)
-		expectedStage model.OperationStage
-		expectedDelay time.Duration
+		description          string
+		installationMockFunc func(installationSvc *installationMocks.Service)
+		expectedStage        model.OperationStage
+		expectedDelay        time.Duration
 	}{
 		{
 			description: "should continue installation if Installation error occurred",
-			mockFunc: func(installationSvc *installationMocks.Service) {
+			installationMockFunc: func(installationSvc *installationMocks.Service) {
 				installationSvc.On("CheckInstallationState", mock.AnythingOfType("*rest.Config")).
 					Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "error"})
 			},
@@ -37,7 +44,7 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 		},
 		{
 			description: "should continue installation if still in progress",
-			mockFunc: func(installationSvc *installationMocks.Service) {
+			installationMockFunc: func(installationSvc *installationMocks.Service) {
 				installationSvc.On("CheckInstallationState", mock.AnythingOfType("*rest.Config")).
 					Return(installation.InstallationState{State: "InProgress"}, nil)
 			},
@@ -46,7 +53,7 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 		},
 		{
 			description: "should go to the next stage if Kyma installed",
-			mockFunc: func(installationSvc *installationMocks.Service) {
+			installationMockFunc: func(installationSvc *installationMocks.Service) {
 				installationSvc.On("CheckInstallationState", mock.AnythingOfType("*rest.Config")).
 					Return(installation.InstallationState{State: "Installed"}, nil)
 			},
@@ -57,19 +64,24 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 		t.Run(testCase.description, func(t *testing.T) {
 			// given
 			installationSvc := &installationMocks.Service{}
+			session := &mocks.WriteSession{}
 
-			testCase.mockFunc(installationSvc)
+			session.On("UpdateOperationState", operation.ID, mock.AnythingOfType("string"),
+				operation.State, mock.AnythingOfType("time.Time")).Return(nil).Once()
 
-			waitForInstallationStep := NewWaitForInstallationStep(installationSvc, nextStageName, 10*time.Minute)
+			testCase.installationMockFunc(installationSvc)
+
+			waitForInstallationStep := NewWaitForInstallationStep(installationSvc, nextStageName, 10*time.Minute, session)
 
 			// when
-			result, err := waitForInstallationStep.Run(cluster, model.Operation{}, logrus.New())
+			result, err := waitForInstallationStep.Run(cluster, operation, logrus.New())
 
 			// then
 			require.NoError(t, err)
 			assert.Equal(t, testCase.expectedStage, result.Stage)
 			assert.Equal(t, testCase.expectedDelay, result.Delay)
 			installationSvc.AssertExpectations(t)
+			session.AssertExpectations(t)
 		})
 	}
 
@@ -79,7 +91,9 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 		installationSvc.On("CheckInstallationState", mock.AnythingOfType("*rest.Config")).
 			Return(installation.InstallationState{State: installation.NoInstallationState}, nil)
 
-		waitForInstallationStep := NewWaitForInstallationStep(installationSvc, nextStageName, 10*time.Minute)
+		session := &mocks.WriteSession{}
+
+		waitForInstallationStep := NewWaitForInstallationStep(installationSvc, nextStageName, 10*time.Minute, session)
 
 		// when
 		_, err := waitForInstallationStep.Run(cluster, model.Operation{}, logrus.New())

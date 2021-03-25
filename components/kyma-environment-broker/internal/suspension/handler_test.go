@@ -125,6 +125,8 @@ func TestUnsuspension(t *testing.T) {
 
 	svc := NewContextUpdateHandler(st.Operations(), provisioning, deprovisioning, logrus.New())
 	instance := fixInstance(fixInactiveErsContext())
+	instance.InstanceDetails.ShootName = "c-012345"
+	instance.InstanceDetails.ShootDomain = "c-012345.sap.com"
 
 	st.Instances().Insert(*instance)
 
@@ -140,6 +142,38 @@ func TestUnsuspension(t *testing.T) {
 
 	assert.Equal(t, domain.InProgress, op.State)
 	assert.Equal(t, instance.InstanceID, op.InstanceID)
+	assert.Equal(t, "c-012345", op.ShootName)
+	assert.Equal(t, "c-012345.sap.com", op.ShootDomain)
+}
+
+func TestUnsuspensionWithoutShootname(t *testing.T) {
+	// given
+	provisioning := NewDummyQueue()
+	deprovisioning := NewDummyQueue()
+	st := storage.NewMemoryStorage()
+
+	svc := NewContextUpdateHandler(st.Operations(), provisioning, deprovisioning, logrus.New())
+	instance := fixInstance(fixInactiveErsContext())
+	instance.InstanceDetails.ShootName = ""
+	instance.InstanceDetails.ShootDomain = ""
+	instance.DashboardURL = "https://console.c-7f1eb9e.kyma-dev.shoot.canary.k8s-hana.ondemand.com"
+
+	st.Instances().Insert(*instance)
+
+	// when
+	err := svc.Handle(instance, fixActiveErsContext())
+	require.NoError(t, err)
+
+	// then
+	op, err := st.Operations().GetProvisioningOperationByInstanceID("instance-id")
+	require.NoError(t, err)
+	assertQueue(t, deprovisioning)
+	assertQueue(t, provisioning, op.ID)
+
+	assert.Equal(t, domain.InProgress, op.State)
+	assert.Equal(t, instance.InstanceID, op.InstanceID)
+	assert.Equal(t, "c-7f1eb9e", op.ShootName)
+	assert.Equal(t, "c-7f1eb9e.kyma-dev.shoot.canary.k8s-hana.ondemand.com", op.ShootDomain)
 }
 
 func fixInstance(ersContext internal.ERSContext) *internal.Instance {
