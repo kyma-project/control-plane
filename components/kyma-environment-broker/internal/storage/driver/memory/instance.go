@@ -3,6 +3,7 @@ package memory
 import (
 	"database/sql"
 	"errors"
+	"os"
 	"regexp"
 	"sort"
 	"sync"
@@ -14,6 +15,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
 type instances struct {
@@ -244,6 +246,9 @@ func (s *instances) filterInstances(filter dbmodel.InstanceFilter) []internal.In
 		if ok = matchFilter(v.DashboardURL, filter.Domains, domainMatch); !ok {
 			continue
 		}
+		if ok = s.matchInstanceState(v.InstanceID, filter.States); !ok {
+			continue
+		}
 
 		inst = append(inst, v)
 	}
@@ -261,4 +266,72 @@ func matchFilter(value string, filters []string, match func(string, string) bool
 		}
 	}
 	return false
+}
+
+func (s *instances) matchInstanceState(instanceID string, states []dbmodel.InstanceState) bool {
+	if len(states) == 0 {
+		return true
+	}
+	op, err := s.operationsStorage.GetLastOperation(instanceID)
+	if err != nil {
+		// To support instance test cases without any operations
+		return true
+	}
+	opType := s.getOperationTypeByID(op.ID)
+	fmt.Fprintf(os.Stderr, "%s - %s - %s\n", instanceID, opType, op.State)
+	for _, s := range states {
+		switch s {
+		case dbmodel.InstanceSucceeded:
+			if op.State == domain.Succeeded && opType != dbmodel.OperationTypeDeprovision {
+				return true
+			}
+		case dbmodel.InstanceFailed:
+			if op.State == domain.Failed {
+				return true
+			}
+		case dbmodel.InstanceProvisioning:
+			if opType == dbmodel.OperationTypeProvision && op.State == domain.InProgress {
+				return true
+			}
+		case dbmodel.InstanceDeprovisioning:
+			if opType == dbmodel.OperationTypeDeprovision && op.State == domain.InProgress {
+				return true
+			}
+		case dbmodel.InstanceUpgrading:
+			if (opType == dbmodel.OperationTypeUpgradeKyma || opType == dbmodel.OperationTypeUpgradeCluster) && op.State == domain.InProgress {
+				return true
+			}
+		case dbmodel.InstanceDeprovisioned:
+			if op.State == domain.Succeeded && opType == dbmodel.OperationTypeDeprovision {
+				return true
+			}
+		case dbmodel.InstanceNotDeprovisioned:
+			if !(op.State == domain.Succeeded && opType == dbmodel.OperationTypeDeprovision) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (s *instances) getOperationTypeByID(operationID string) dbmodel.OperationType {
+	_, err := s.operationsStorage.GetProvisioningOperationByID(operationID)
+	if err == nil {
+		return dbmodel.OperationTypeProvision
+	}
+	_, err = s.operationsStorage.GetDeprovisioningOperationByID(operationID)
+	if err == nil {
+		return dbmodel.OperationTypeDeprovision
+	}
+	_, err = s.operationsStorage.GetUpgradeKymaOperationByID(operationID)
+	if err == nil {
+		return dbmodel.OperationTypeUpgradeKyma
+	}
+	_, err = s.operationsStorage.GetUpgradeClusterOperationByID(operationID)
+	if err == nil {
+		return dbmodel.OperationTypeUpgradeCluster
+	}
+
+	return dbmodel.OperationTypeUndefined
 }
