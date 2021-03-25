@@ -71,5 +71,13 @@ func (s *ClsCheckStatusStep) Run(operation internal.ProvisioningOperation, log l
 		log.Infof("CLS Instance successfully provisioned")
 	}
 
-	return operation, 0, nil
+	op, retry := s.operationManager.UpdateOperation(operation, func(op *internal.ProvisioningOperation) {
+		op.Cls.Instance.Provisioned = true
+	}, log)
+	if retry > 0 {
+		log.Errorf("Unable to update operation")
+		return op, time.Second, nil
+	}
+
+	return op, 0, nil
 }

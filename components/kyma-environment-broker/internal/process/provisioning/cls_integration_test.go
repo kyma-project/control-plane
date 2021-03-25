@@ -22,10 +22,14 @@ func TestClsSteps(t *testing.T) {
 	clsClient := cls.NewClient(clsConfig)
 	smClient := createMockServiceManagerClient()
 
-	operation := fixture.FixProvisioningOperation("operation-id", "instance-id")
+	fakeOperationID := "operation-id"
+	fakeGlobalAccountID := "global-account-id"
+	fakeSKRInstanceID := "skr-instance-id"
+	operation := fixture.FixProvisioningOperation(fakeOperationID, fakeSKRInstanceID)
 	operation.Cls = internal.ClsData{}
 	operation.SMClientFactory = servicemanager.NewPassthroughServiceManagerClientFactory(smClient)
 	operation.State = domain.InProgress
+	operation.ProvisioningParameters.ErsContext.GlobalAccountID = fakeGlobalAccountID
 
 	db := storage.NewMemoryStorage()
 	encryptionKey := "1234567890123456"
@@ -52,6 +56,16 @@ func TestClsSteps(t *testing.T) {
 	_, err = provisioningManager.Execute(operation.ID)
 	require.NoError(t, err)
 
+	foundCLS, exists, err := db.CLSInstances().FindActiveByGlobalAccountID(fakeGlobalAccountID)
+	require.NoError(t, err)
+	require.True(t, exists)
+	require.Len(t, foundCLS.References(), 1)
+	require.True(t, foundCLS.IsReferencedBy(fakeSKRInstanceID))
+
+	foundOp, err := db.Operations().GetProvisioningOperationByID(fakeOperationID)
+	require.NoError(t, err)
+	require.NotEmpty(t, foundOp.Cls.Binding.BindingID)
+	require.NotEmpty(t, foundOp.Cls.Overrides)
 }
 
 func createDummyConfig() *cls.Config {

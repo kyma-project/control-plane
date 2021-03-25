@@ -44,8 +44,8 @@ func (s *ClsBindStep) Name() string {
 }
 
 func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	if operation.Cls.Instance.InstanceID == "" {
-		failureReason := "CLS provisioning step was not triggered"
+	if !operation.Cls.Instance.Provisioned {
+		failureReason := "CLS provisioning step was not provisioned"
 		log.Error(failureReason)
 		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
@@ -60,22 +60,6 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
 		smCli := operation.SMClientFactory.ForCredentials(smCredentials)
-
-		// test if the provisioning is finished, if not, retry after 10s
-		resp, err := smCli.LastInstanceOperation(operation.Cls.Instance.InstanceKey(), "")
-		if err != nil {
-			log.Errorf("Unable to fetch LastInstanceOperation()")
-			return operation, 10 * time.Second, nil
-		}
-		log.Debug("Provisioning CLS with instance ID %s is in state: %s", operation.Cls.Instance.InstanceID, resp.State)
-		switch resp.State {
-		case servicemanager.InProgress:
-			return operation, 10 * time.Second, nil
-		case servicemanager.Failed:
-			failureReason := "CLS instance is in failed state"
-			log.Errorf("%s: %s", failureReason, resp.Description)
-			return s.operationManager.OperationFailed(operation, failureReason, log)
-		}
 
 		if operation.Cls.Binding.BindingID == "" {
 			op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
