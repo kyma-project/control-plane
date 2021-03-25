@@ -71,7 +71,7 @@ func (s *ClsDeprovisionStep) Run(operation internal.DeprovisioningOperation, log
 			log.Errorf("Unable to update operation")
 			return operation, retry, nil
 		}
-		return updatedOperation, time.Second, nil
+		return updatedOperation, 10 * time.Second, nil
 	}
 
 	return s.checkDeprovisioningStatus(operation, log, smClient)
@@ -90,7 +90,7 @@ func (s *ClsDeprovisionStep) checkDeprovisioningStatus(operation internal.Deprov
 	switch resp.State {
 	case servicemanager.InProgress:
 		log.Infof("Deprovisioning a CLS instance %s is in progress. Retrying", instanceID)
-		return operation, 30 * time.Second, nil
+		return operation, 10 * time.Second, nil
 	case servicemanager.Failed:
 		failureReason := fmt.Sprintf("Deprovisioning of a CLS instance %s failed", instanceID)
 		log.Error(failureReason)
