@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 )
@@ -60,22 +59,6 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
 		smCli := operation.SMClientFactory.ForCredentials(smCredentials)
-
-		// test if the provisioning is finished, if not, retry after 10s
-		resp, err := smCli.LastInstanceOperation(operation.Cls.Instance.InstanceKey(), "")
-		if err != nil {
-			log.Errorf("Unable to fetch LastInstanceOperation()")
-			return operation, 10 * time.Second, nil
-		}
-		log.Debug("Provisioning CLS with instance ID %s is in state: %s", operation.Cls.Instance.InstanceID, resp.State)
-		switch resp.State {
-		case servicemanager.InProgress:
-			return operation, 10 * time.Second, nil
-		case servicemanager.Failed:
-			failureReason := "CLS instance is in failed state"
-			log.Errorf("%s: %s", failureReason, resp.Description)
-			return s.operationManager.OperationFailed(operation, failureReason, log)
-		}
 
 		if operation.Cls.BindingID == "" {
 			op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {

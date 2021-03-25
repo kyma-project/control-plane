@@ -1,4 +1,4 @@
-package provisioning
+package upgrade_kyma
 
 import (
 	"github.com/Peripli/service-manager-cli/pkg/types"
@@ -25,7 +25,7 @@ func TestClsStatusCheckStep_Run(t *testing.T) {
 	clientFactory.SynchronousProvisioning()
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
 
-	operation := internal.ProvisioningOperation{
+	operation := internal.UpgradeKymaOperation{
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{
 				Parameters: internal.ProvisioningParametersDTO{Region: &fakeRegion},

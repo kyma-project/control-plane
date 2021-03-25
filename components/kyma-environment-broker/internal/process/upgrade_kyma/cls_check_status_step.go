@@ -1,4 +1,4 @@
-package provisioning
+package upgrade_kyma
 
 import (
 	"fmt"
@@ -22,24 +22,24 @@ type ClsStatusChecker interface {
 type ClsCheckStatusStep struct {
 	config           *cls.Config
 	statusChecker    ClsStatusChecker
-	operationManager *process.ProvisionOperationManager
+	operationManager *process.UpgradeKymaOperationManager
 }
 
 func NewClsCheckStatus(config *cls.Config, sc ClsStatusChecker, os storage.Operations) *ClsCheckStatusStep {
 	return &ClsCheckStatusStep{
 		config:           config,
 		statusChecker:    sc,
-		operationManager: process.NewProvisionOperationManager(os),
+		operationManager: process.NewUpgradeKymaOperationManager(os),
 	}
 }
 
 var _ Step = (*ClsCheckStatusStep)(nil)
 
 func (s *ClsCheckStatusStep) Name() string {
-	return "CLS_CheckInstanceStatus"
+	return "CLS_UpgradeCheckInstanceStatus"
 }
 
-func (s *ClsCheckStatusStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *ClsCheckStatusStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if operation.Cls.Instance.InstanceID == "" {
 		failureReason := "CLS provisioning step was not triggered"
 		log.Error(failureReason)
@@ -71,7 +71,7 @@ func (s *ClsCheckStatusStep) Run(operation internal.ProvisioningOperation, log l
 		log.Infof("CLS instance successfully provisioned")
 	}
 
-	op, retry := s.operationManager.UpdateOperation(operation, func(op *internal.ProvisioningOperation) {
+	op, retry := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeKymaOperation) {
 		op.Cls.Instance.Provisioned = true
 	}, log)
 	if retry > 0 {
