@@ -64,7 +64,7 @@ func TestClsSteps(t *testing.T) {
 
 	foundOp, err := db.Operations().GetProvisioningOperationByID(fakeOperationID)
 	require.NoError(t, err)
-	require.NotEmpty(t, foundOp.Cls.Binding.BindingID)
+	require.NotEmpty(t, foundOp.Cls.BindingID)
 	require.NotEmpty(t, foundOp.Cls.Overrides)
 }
 

@@ -61,10 +61,9 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		}
 		smCli := operation.SMClientFactory.ForCredentials(smCredentials)
 
-		if operation.Cls.Binding.BindingID == "" {
+		if operation.Cls.BindingID == "" {
 			op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
-				operation.Cls.Binding.BindingID = uuid.New().String()
-				operation.Cls.Instance.Provisioned = true
+				operation.Cls.BindingID = uuid.New().String()
 			}, log)
 			if retry > 0 {
 				log.Errorf("Unable to update operation")
@@ -76,7 +75,7 @@ func (s *ClsBindStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		// Create a binding
 		overrideParams, err = s.bindingProvider.CreateBinding(smCli, &cls.BindingRequest{
 			InstanceKey: operation.Cls.Instance.InstanceKey(),
-			BindingID:   operation.Cls.Binding.BindingID,
+			BindingID:   operation.Cls.BindingID,
 		})
 		if err != nil {
 			failureReason := "Unable to create CLS Binding"
