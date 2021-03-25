@@ -8,7 +8,7 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
-	metristesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
+	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 	"github.com/onsi/gomega"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 )
@@ -17,7 +17,7 @@ func TestList(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	ctx := context.Background()
 
-	nodeList := metristesting.Get3NodesWithStandardD8v3VMType()
+	nodeList := kmctesting.Get3NodesWithStandardD8v3VMType()
 	client, err := NewFakeClient(nodeList)
 	g.Expect(err).Should(gomega.BeNil())
 

@@ -5,7 +5,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 
-	metristesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
+	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 	"github.com/onsi/gomega"
 )
 
@@ -15,7 +15,7 @@ const (
 
 func TestGetFeatures(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	providersData, err := metristesting.LoadFixtureFromFile(providersFile)
+	providersData, err := kmctesting.LoadFixtureFromFile(providersFile)
 	g.Expect(err).Should(gomega.BeNil())
 	config := &env.Config{PublicCloudSpecs: string(providersData)}
 	providers, err := LoadPublicCloudSpecs(config)

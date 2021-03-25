@@ -9,7 +9,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	metristesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
+	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 
 	"github.com/onsi/gomega"
 )
@@ -31,7 +31,7 @@ func TestClient(t *testing.T) {
 	expectedHeaders := http.Header{
 		"Authorization":   []string{fmt.Sprintf("Bearer %s", testToken)},
 		"Accept-Encoding": []string{"gzip"},
-		"User-Agent":      []string{"metris"},
+		"User-Agent":      []string{"kyma-metrics-collector"},
 		"Content-Type":    []string{"application/json;charset=utf-8"},
 	}
 	edpTestHandler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
@@ -41,7 +41,7 @@ func TestClient(t *testing.T) {
 		rw.WriteHeader(http.StatusCreated)
 	})
 
-	srv := metristesting.StartTestServer(expectedPath, edpTestHandler, g)
+	srv := kmctesting.StartTestServer(expectedPath, edpTestHandler, g)
 	// Close the server when test finishes
 	defer srv.Close()
 	config := NewTestConfig(srv.URL)
@@ -76,7 +76,7 @@ func TestClientRetry(t *testing.T) {
 		rw.WriteHeader(http.StatusInternalServerError)
 	})
 
-	srv := metristesting.StartTestServer(expectedPath, edpTestHandler, g)
+	srv := kmctesting.StartTestServer(expectedPath, edpTestHandler, g)
 	// Close the server when test finishes
 	defer srv.Close()
 	config := NewTestConfig(srv.URL)

@@ -7,14 +7,14 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
-	metristesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
+	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 
 	"github.com/onsi/gomega"
 )
 
 func TestParse(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	providersData, err := metristesting.LoadFixtureFromFile(providersFile)
+	providersData, err := kmctesting.LoadFixtureFromFile(providersFile)
 	g.Expect(err).Should(gomega.BeNil())
 	config := &env.Config{PublicCloudSpecs: string(providersData)}
 	providers, err := LoadPublicCloudSpecs(config)
@@ -30,10 +30,10 @@ func TestParse(t *testing.T) {
 		{
 			name: "with Azure, 2 vm types, 3 pvcs(5,10 and 20Gi) and 2 svcs(1 clusterIP and 1 LoadBalancer)",
 			input: Input{
-				shoot:    metristesting.GetShoot("testShoot", metristesting.WithAzureProviderAndStandardD8V3VMs),
-				nodeList: metristesting.Get2Nodes(),
-				pvcList:  metristesting.Get3PVCs(),
-				svcList:  metristesting.Get2SvcsOfDiffTypes(),
+				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithAzureProviderAndStandardD8V3VMs),
+				nodeList: kmctesting.Get2Nodes(),
+				pvcList:  kmctesting.Get3PVCs(),
+				svcList:  kmctesting.Get2SvcsOfDiffTypes(),
 			},
 			providers: *providers,
 			expectedMetrics: edp.ConsumptionMetrics{
@@ -60,8 +60,8 @@ func TestParse(t *testing.T) {
 		{
 			name: "with Azure with 3 vms and no pvc and svc",
 			input: Input{
-				shoot:    metristesting.GetShoot("testShoot", metristesting.WithAzureProviderAndStandardD8V3VMs),
-				nodeList: metristesting.Get3NodesWithStandardD8v3VMType(),
+				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithAzureProviderAndStandardD8V3VMs),
+				nodeList: kmctesting.Get3NodesWithStandardD8v3VMType(),
 			},
 			providers: *providers,
 			expectedMetrics: edp.ConsumptionMetrics{
@@ -88,8 +88,8 @@ func TestParse(t *testing.T) {
 		{
 			name: "with Azure with 3 vms and no pvc and svc",
 			input: Input{
-				shoot:    metristesting.GetShoot("testShoot", metristesting.WithAzureProviderAndStandardD8V3VMs),
-				nodeList: metristesting.Get3NodesWithStandardD8v3VMType(),
+				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithAzureProviderAndStandardD8V3VMs),
+				nodeList: kmctesting.Get3NodesWithStandardD8v3VMType(),
 			},
 			providers: *providers,
 			expectedMetrics: edp.ConsumptionMetrics{
@@ -115,8 +115,8 @@ func TestParse(t *testing.T) {
 		{
 			name: "with Azure and vm type missing from the list of vmtypes",
 			input: Input{
-				shoot:    metristesting.GetShoot("testShoot", metristesting.WithAzureProviderAndFooVMType),
-				nodeList: metristesting.Get3NodesWithFooVMType(),
+				shoot:    kmctesting.GetShoot("testShoot", kmctesting.WithAzureProviderAndFooVMType),
+				nodeList: kmctesting.Get3NodesWithFooVMType(),
 			},
 			providers:   *providers,
 			expectedErr: true,

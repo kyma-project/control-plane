@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	metristesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
+	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 
 	"github.com/onsi/gomega"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,7 +21,7 @@ func TestGet(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	ctx := context.Background()
 
-	shoot := metristesting.GetShoot("foo-shoot", metristesting.WithVMSpecs)
+	shoot := kmctesting.GetShoot("foo-shoot", kmctesting.WithVMSpecs)
 	nsResourceClient, err := NewFakeClient(shoot)
 	g.Expect(err).Should(gomega.BeNil())
 	client := Client{ResourceClient: nsResourceClient}

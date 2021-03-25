@@ -24,7 +24,7 @@ import (
 
 	gardenersecret "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/secret"
 	gardenershoot "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/shoot"
-	metrisprocess "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/process"
+	kmcprocess "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/process"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
@@ -52,7 +52,7 @@ func main() {
 	log.Debugf("log level: %s", log.Level.String())
 
 	// Load public cloud specs
-	publicCloudSpecs, err := metrisprocess.LoadPublicCloudSpecs(cfg)
+	publicCloudSpecs, err := kmcprocess.LoadPublicCloudSpecs(cfg)
 	if err != nil {
 		log.Fatalf("failed to load public cloud specs: %v", err)
 	}
@@ -88,7 +88,7 @@ func main() {
 
 	queue := workqueue.NewDelayingQueue()
 
-	metrisProcess := metrisprocess.Process{
+	kmcProcess := kmcprocess.Process{
 		KEBClient:       kebClient,
 		ShootClient:     shootClient,
 		SecretClient:    secretClient,
@@ -105,7 +105,7 @@ func main() {
 	}
 
 	// Start execution
-	go metrisProcess.Start()
+	go kmcProcess.Start()
 
 	// add debug service.
 	if opts.DebugPort > 0 {
@@ -117,14 +117,14 @@ func main() {
 	})
 	router.Path(metricsPath).Handler(promhttp.Handler())
 
-	metrisSvr := service.Server{
+	kmcSvr := service.Server{
 		Addr:   fmt.Sprintf(":%d", opts.ListenAddr),
 		Logger: log,
 		Router: router,
 	}
 
 	// Start a server to cater to the metrics and healthz endpoints
-	metrisSvr.Start()
+	kmcSvr.Start()
 }
 
 func enableDebugging(debugPort int, log *logrus.Logger) {

@@ -22,7 +22,7 @@ type Client struct {
 const (
 	edpPathFormat          = "%s/namespaces/%s/dataStreams/%s/%s/dataTenants/%s/%s/events"
 	contentType            = "application/json;charset=utf-8"
-	userAgentMetris        = "metris"
+	userAgentKMC           = "kyma-metrics-collector"
 	userAgentKeyHeader     = "User-Agent"
 	contentTypeKeyHeader   = "Content-Type"
 	authorizationKeyHeader = "Authorization"
@@ -55,7 +55,7 @@ func (eClient Client) NewRequest(dataTenant string) (*http.Request, error) {
 		return nil, fmt.Errorf("failed generate request for EDP, %d: %v", http.StatusBadRequest, err)
 	}
 
-	req.Header.Set(userAgentKeyHeader, userAgentMetris)
+	req.Header.Set(userAgentKeyHeader, userAgentKMC)
 	req.Header.Add(contentTypeKeyHeader, contentType)
 	req.Header.Add(authorizationKeyHeader, fmt.Sprintf("Bearer %s", eClient.Config.Token))
 

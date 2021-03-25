@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/keb"
 
 	gardenerv1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	metriscache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
+	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
 	gardenersecret "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/secret"
 	gardenershoot "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/shoot"
 	skrnode "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/node"
@@ -49,7 +49,7 @@ type Process struct {
 
 const shootKubeconfigKey = "kubeconfig"
 
-func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) (record metriscache.Record, err error) {
+func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) (record kmccache.Record, err error) {
 	ctx := context.Background()
 	var ok bool
 
@@ -60,7 +60,7 @@ func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) 
 	}
 
 	defer p.Queue.Done(subAccountID)
-	if record, ok = obj.(metriscache.Record); !ok {
+	if record, ok = obj.(kmccache.Record); !ok {
 		err = fmt.Errorf("bad item from cache, could not cast to a record obj")
 		return
 	}
@@ -143,7 +143,7 @@ func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) 
 }
 
 // getOldRecordIfMetricExists gets old record from cache if old metric exists
-func (p Process) getOldRecordIfMetricExists(subAccountID string) (*metriscache.Record, error) {
+func (p Process) getOldRecordIfMetricExists(subAccountID string) (*kmccache.Record, error) {
 	oldRecordObj, found := p.Cache.Get(subAccountID)
 	if !found {
 		notFoundErr := fmt.Errorf("subAccountID: %s not found", subAccountID)
@@ -151,7 +151,7 @@ func (p Process) getOldRecordIfMetricExists(subAccountID string) (*metriscache.R
 		return nil, notFoundErr
 	}
 
-	if oldRecord, ok := oldRecordObj.(metriscache.Record); ok {
+	if oldRecord, ok := oldRecordObj.(kmccache.Record); ok {
 		if oldRecord.Metric != nil {
 			return &oldRecord, nil
 		}
@@ -272,7 +272,7 @@ func (p *Process) execute(identifier int) {
 	}
 }
 
-func (p Process) getRecordWithOldOrNewMetric(identifier int, subAccountID string) (*metriscache.Record, bool, error) {
+func (p Process) getRecordWithOldOrNewMetric(identifier int, subAccountID string) (*kmccache.Record, bool, error) {
 	record, err := p.generateRecordWithMetrics(identifier, subAccountID)
 	if err != nil {
 		p.Logger.Errorf("failed to generate new metric for subaccountID: %v, err: %v", subAccountID, err)
@@ -329,7 +329,7 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 		}
 		recordObj, isFound := p.Cache.Get(runtime.SubAccountID)
 		if isClusterTrackable(&runtime) {
-			newRecord := metriscache.Record{
+			newRecord := kmccache.Record{
 				SubAccountID: runtime.SubAccountID,
 				ShootName:    runtime.ShootName,
 				KubeConfig:   "",
@@ -347,7 +347,7 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 			}
 
 			// Cluster is trackable and exists in the cache
-			if record, ok := recordObj.(metriscache.Record); ok {
+			if record, ok := recordObj.(kmccache.Record); ok {
 				if record.ShootName != runtime.ShootName {
 					// The shootname has changed hence the record in the cache is not valid anymore
 					// No need to queue as the subAccountID already exists in queue

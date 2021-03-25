@@ -31,9 +31,9 @@ import (
 
 	"github.com/google/uuid"
 
-	metriscache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
-	metriskeb "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/keb"
-	metristesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
+	kmccache "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/cache"
+	kmckeb "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/keb"
+	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 
 	"github.com/onsi/gomega"
 
@@ -67,18 +67,18 @@ func TestGetOldRecordIfMetricExists(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
 	expectedSubAccIDToExist := uuid.New().String()
-	expectedRecord := metriscache.Record{
+	expectedRecord := kmccache.Record{
 		SubAccountID: expectedSubAccIDToExist,
-		ShootName:    fmt.Sprintf("shoot-%s", metristesting.GenerateRandomAlphaString(5)),
+		ShootName:    fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)),
 		KubeConfig:   "foo",
 		Metric:       NewMetric(),
 	}
 	expectedSubAccIDWithNoMetrics := uuid.New().String()
-	recordsToBeAdded := []metriscache.Record{
+	recordsToBeAdded := []kmccache.Record{
 		expectedRecord,
 		{
 			SubAccountID: uuid.New().String(),
-			ShootName:    fmt.Sprintf("shoot-%s", metristesting.GenerateRandomAlphaString(5)),
+			ShootName:    fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)),
 			KubeConfig:   "foo",
 		},
 		{
@@ -122,7 +122,7 @@ func TestPollKEBForRuntimes(t *testing.T) {
 
 	t.Run("execute KEB poller for 2 times", func(t *testing.T) {
 
-		runtimesResponse, err := metristesting.LoadFixtureFromFile(kebRuntimeResponseFilePath)
+		runtimesResponse, err := kmctesting.LoadFixtureFromFile(kebRuntimeResponseFilePath)
 		g.Expect(err).Should(gomega.BeNil())
 
 		expectedRuntimes := new(kebruntime.RuntimesPage)
@@ -142,7 +142,7 @@ func TestPollKEBForRuntimes(t *testing.T) {
 		})
 
 		// Start a local test HTTP server
-		srv := metristesting.StartTestServer(expectedPathPrefix, getRuntimesHandler, g)
+		srv := kmctesting.StartTestServer(expectedPathPrefix, getRuntimesHandler, g)
 		defer srv.Close()
 		// Wait until test server is ready
 		g.Eventually(func() int {
@@ -154,13 +154,13 @@ func TestPollKEBForRuntimes(t *testing.T) {
 
 		kebURL := fmt.Sprintf("%s%s", srv.URL, expectedPathPrefix)
 
-		config := &metriskeb.Config{
+		config := &kmckeb.Config{
 			URL:              kebURL,
 			Timeout:          timeout,
 			RetryCount:       1,
 			PollWaitDuration: 2 * time.Second,
 		}
-		kebClient := &metriskeb.Client{
+		kebClient := &kmckeb.Client{
 			HTTPClient: http.DefaultClient,
 			Logger:     &logrus.Logger{},
 			Config:     config,
@@ -207,8 +207,8 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		g.Expect(err).Should(gomega.BeNil())
 
 		for _, failedID := range provisionedFailedSubAccIDs {
-			shootName := fmt.Sprintf("shoot-%s", metristesting.GenerateRandomAlphaString(5))
-			runtime := metristesting.NewRuntimesDTO(failedID, shootName, metristesting.WithFailedState)
+			shootName := fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5))
+			runtime := kmctesting.NewRuntimesDTO(failedID, shootName, kmctesting.WithFailedState)
 			runtimesPage.Data = append(runtimesPage.Data, runtime)
 		}
 
@@ -236,7 +236,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		g.Expect(err).Should(gomega.BeNil())
 
 		for _, failedID := range provisionedAndDeprovisionedSubAccIDs {
-			runtime := metristesting.NewRuntimesDTO(failedID, fmt.Sprintf("shoot-%s", metristesting.GenerateRandomAlphaString(5)), metristesting.WithProvisionedAndDeprovisionedState)
+			runtime := kmctesting.NewRuntimesDTO(failedID, fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)), kmctesting.WithProvisionedAndDeprovisionedState)
 			runtimesPage.Data = append(runtimesPage.Data, runtime)
 		}
 
@@ -249,8 +249,8 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		subAccID := uuid.New().String()
 		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
 		queue := workqueue.NewDelayingQueue()
-		oldShootName := fmt.Sprintf("shoot-%s", metristesting.GenerateRandomAlphaString(5))
-		newShootName := fmt.Sprintf("shoot-%s", metristesting.GenerateRandomAlphaString(5))
+		oldShootName := fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5))
+		newShootName := fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5))
 
 		p := Process{
 			Queue:  queue,
@@ -269,7 +269,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		err = expectedCache.Add(subAccID, newRecord, gocache.NoExpiration)
 		g.Expect(err).Should(gomega.BeNil())
 
-		runtime := metristesting.NewRuntimesDTO(subAccID, newShootName, metristesting.WithSucceededState)
+		runtime := kmctesting.NewRuntimesDTO(subAccID, newShootName, kmctesting.WithSucceededState)
 		runtimesPage.Data = append(runtimesPage.Data, runtime)
 
 		p.populateCacheAndQueue(runtimesPage)
@@ -281,8 +281,8 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		subAccID := uuid.New().String()
 		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
 		queue := workqueue.NewDelayingQueue()
-		oldShootName := fmt.Sprintf("shoot-%s", metristesting.GenerateRandomAlphaString(5))
-		newShootName := fmt.Sprintf("shoot-%s", metristesting.GenerateRandomAlphaString(5))
+		oldShootName := fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5))
+		newShootName := fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5))
 
 		p := Process{
 			Queue:  queue,
@@ -298,7 +298,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		expectedQueue := workqueue.NewDelayingQueue()
 		expectedCache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
 
-		runtime := metristesting.NewRuntimesDTO(subAccID, newShootName, metristesting.WithProvisionedAndDeprovisionedState)
+		runtime := kmctesting.NewRuntimesDTO(subAccID, newShootName, kmctesting.WithProvisionedAndDeprovisionedState)
 		runtimesPage.Data = append(runtimesPage.Data, runtime)
 
 		p.populateCacheAndQueue(runtimesPage)
@@ -326,17 +326,17 @@ func TestExecute(t *testing.T) {
 		rw.WriteHeader(http.StatusCreated)
 	})
 
-	srv := metristesting.StartTestServer(expectedPath, edpTestHandler, g)
+	srv := kmctesting.StartTestServer(expectedPath, edpTestHandler, g)
 	defer srv.Close()
 
 	edpConfig := newEDPConfig(srv.URL)
 	edpClient := edp.NewClient(edpConfig, log)
-	shootName := fmt.Sprintf("shoot-%s", metristesting.GenerateRandomAlphaString(5))
-	secret := metristesting.NewSecret(shootName, expectedKubeconfig)
+	shootName := fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5))
+	secret := kmctesting.NewSecret(shootName, expectedKubeconfig)
 
 	// Populate cache
 	cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
-	newRecord := metriscache.Record{
+	newRecord := kmccache.Record{
 		SubAccountID: subAccID,
 		ShootName:    shootName,
 		KubeConfig:   "",
@@ -353,13 +353,13 @@ func TestExecute(t *testing.T) {
 	queue := workqueue.NewDelayingQueue()
 	queue.Add(subAccID)
 
-	shoot := metristesting.GetShoot(shootName, metristesting.WithAzureProviderAndStandardD8V3VMs)
+	shoot := kmctesting.GetShoot(shootName, kmctesting.WithAzureProviderAndStandardD8V3VMs)
 	shootClient, err := NewFakeShootClient(shoot)
 	g.Expect(err).Should(gomega.BeNil())
 	secretClient, err := NewFakeSecretClient(secret)
 	g.Expect(err).Should(gomega.BeNil())
 
-	providersData, err := metristesting.LoadFixtureFromFile(providersFile)
+	providersData, err := kmctesting.LoadFixtureFromFile(providersFile)
 	g.Expect(err).Should(gomega.BeNil())
 	config := &env.Config{PublicCloudSpecs: string(providersData)}
 	providers, err := LoadPublicCloudSpecs(config)
@@ -398,7 +398,7 @@ func TestExecute(t *testing.T) {
 		if !found {
 			return fmt.Errorf("subAccID not found in cache")
 		}
-		record, ok := gotItemFromCache.(metriscache.Record)
+		record, ok := gotItemFromCache.(kmccache.Record)
 		g.Expect(ok).To(gomega.BeTrue())
 		if record.KubeConfig != expectedRecord.KubeConfig {
 			return fmt.Errorf("kubeconfigs mismatch, got: %s,expected: %s", record.KubeConfig, expectedRecord.KubeConfig)
@@ -459,8 +459,8 @@ func NewFakeSecretClient(secret *corev1.Secret) (*gardenersecret.Client, error) 
 	return &gardenersecret.Client{ResourceClient: nsResourceClient}, nil
 }
 
-func NewRecord(subAccId, shootName, kubeconfig string) metriscache.Record {
-	return metriscache.Record{
+func NewRecord(subAccId, shootName, kubeconfig string) kmccache.Record {
+	return kmccache.Record{
 		SubAccountID: subAccId,
 		ShootName:    shootName,
 		KubeConfig:   kubeconfig,
@@ -484,11 +484,11 @@ func areQueuesEqual(src, dest workqueue.DelayingInterface) bool {
 
 func AddSuccessfulIDsToCacheQueueAndRuntimes(runtimesPage *kebruntime.RuntimesPage, successfulIDs []string, expectedCache *gocache.Cache, expectedQueue workqueue.DelayingInterface) (*kebruntime.RuntimesPage, *gocache.Cache, workqueue.DelayingInterface, error) {
 	for _, successfulID := range successfulIDs {
-		shootID := metristesting.GenerateRandomAlphaString(5)
+		shootID := kmctesting.GenerateRandomAlphaString(5)
 		shootName := fmt.Sprintf("shoot-%s", shootID)
-		runtime := metristesting.NewRuntimesDTO(successfulID, shootName, metristesting.WithSucceededState)
+		runtime := kmctesting.NewRuntimesDTO(successfulID, shootName, kmctesting.WithSucceededState)
 		runtimesPage.Data = append(runtimesPage.Data, runtime)
-		err := expectedCache.Add(successfulID, metriscache.Record{
+		err := expectedCache.Add(successfulID, kmccache.Record{
 			SubAccountID: successfulID,
 			ShootName:    shootName,
 		}, gocache.NoExpiration)
@@ -517,7 +517,7 @@ func expectedHeadersInEDPReq() http.Header {
 	return http.Header{
 		"Authorization":   []string{fmt.Sprintf("Bearer %s", testToken)},
 		"Accept-Encoding": []string{"gzip"},
-		"User-Agent":      []string{"metris"},
+		"User-Agent":      []string{"kyma-metrics-collector"},
 		"Content-Type":    []string{"application/json;charset=utf-8"},
 	}
 }

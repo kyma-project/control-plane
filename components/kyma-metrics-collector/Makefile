@@ -1,4 +1,4 @@
-APP_NAME = metris
+APP_NAME = kyma-metrics-collector
 APP_PATH = components/kyma-metrics-collector
 ENTRYPOINT = cmd/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20200423-1d9d6590

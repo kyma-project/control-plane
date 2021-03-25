@@ -1,11 +1,11 @@
-### Metris
+### Kyma Metrics Collector
 
 #### Description
-Metris scrapes all Kyma clusters and uses Shoot information to generate metrics as event streams. The generated event streams are POST-ed to an events collecting system.
+Kyma Metrics Collector scrapes all Kyma clusters and uses Shoot information to generate metrics as event streams. The generated event streams are POST-ed to an events collecting system.
 
 #### Usage
 
-- `Metris` comes with the following command line argument flags:
+- `Kyma Metrics Collector` comes with the following command line argument flags:
 
     | Flag | Description | Default Value   |
     | ----- | ------------ | --------------- |
@@ -17,23 +17,23 @@ Metris scrapes all Kyma clusters and uses Shoot information to generate metrics 
     | `listen-addr` | The application starts server in this port to cater to the metrics and health endpoints. | `8080` |
     | `debug-port` | The custom port to debug when needed. `0` will disable debugging server. | `0` |
 
-- `Metris` comes with the following environment variables:
+- `Kyma Metrics Collector` comes with the following environment variables:
      
      | Variable | Description | Default Value   |
      | ----- | ------------ | ------------- |
      | `PUBLIC_CLOUD_SPECS` | The specification contains the CPU, Network and Disk information for all machine types from a public cloud provider.  | `-` |
-     | `KEB_URL` | The KEB URL where Metris fetches runtime information. | `-` |
-     | `KEB_TIMEOUT` | The timeout governs the connections from Metris to KEB | `30s` |
-     | `KEB_RETRY_COUNT` | The number of retries Metris will do when connecting to KEB fails. | 5 |
-     | `KEB_POLL_WAIT_DURATION` | The wait duration for Metris between each execution of polling KEB for runtime information. | `10m` |
-     | `EDP_URL` | The EDP base URL where Metris will ingest event-stream to. | `-` |
+     | `KEB_URL` | The KEB URL where Kyma Metrics Collector fetches runtime information. | `-` |
+     | `KEB_TIMEOUT` | The timeout governs the connections from Kyma Metrics Collector to KEB | `30s` |
+     | `KEB_RETRY_COUNT` | The number of retries Kyma Metrics Collector will do when connecting to KEB fails. | 5 |
+     | `KEB_POLL_WAIT_DURATION` | The wait duration for Kyma Metrics Collector between each execution of polling KEB for runtime information. | `10m` |
+     | `EDP_URL` | The EDP base URL where Kyma Metrics Collector will ingest event-stream to. | `-` |
      | `EDP_TOKEN` | The token used to connect to EDP. | `-` |
-     | `EDP_NAMESPACE` | The namespace in EDP where Metris will ingest event-stream to.| `kyma-dev` |
-     | `EDP_DATASTREAM_NAME` | The datastream in EDP where Metris will ingest event-stream to. | `consumption-metrics` |
-     | `EDP_DATASTREAM_VERSION` | The datastream version which Metris will use. | `1` |
-     | `EDP_DATASTREAM_ENV` | The datastream environment which Metris will use.  | `dev` |
-     | `EDP_TIMEOUT` | The timeout for Metris connections to EDP. | `30s` |
-     | `EDP_RETRY` | The number of retries for Metris connections to EDP. | `3` |
+     | `EDP_NAMESPACE` | The namespace in EDP where Kyma Metrics Collector will ingest event-stream to.| `kyma-dev` |
+     | `EDP_DATASTREAM_NAME` | The datastream in EDP where Kyma Metrics Collector will ingest event-stream to. | `consumption-metrics` |
+     | `EDP_DATASTREAM_VERSION` | The datastream version which Kyma Metrics Collector will use. | `1` |
+     | `EDP_DATASTREAM_ENV` | The datastream environment which Kyma Metrics Collector will use.  | `dev` |
+     | `EDP_TIMEOUT` | The timeout for Kyma Metrics Collector connections to EDP. | `30s` |
+     | `EDP_RETRY` | The number of retries for Kyma Metrics Collector connections to EDP. | `3` |
 
 #### Development
 - Run a deployment in currently configured k8s cluster
@@ -61,12 +61,12 @@ make publish-test-results
 #### Troubleshooting
 - Check logs
 ```
-kubectl logs -l app=metrisv2 -n kcp-system -c metrisv2 -f
+kubectl logs -l app=kyma-metrics-collector -n kcp-system -c kyma-metrics-collector -f
 ```
 
 #### Data collection
 
-Metris collects information about billable hyperscaler usage and sends it to EDP. This data has to adhere to the following schema:
+Kyma Metrics Collector collects information about billable hyperscaler usage and sends it to EDP. This data has to adhere to the following schema:
 
 ```json
 {

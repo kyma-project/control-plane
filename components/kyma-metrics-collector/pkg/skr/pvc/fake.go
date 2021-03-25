@@ -2,14 +2,14 @@ package pvc
 
 import (
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
-	metristesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
+	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 )
 
 type FakePVCClient struct{}
 
 func (fakePVCClient FakePVCClient) NewClient(string) (*Client, error) {
-	pvcList := metristesting.GetPVCs()
+	pvcList := kmctesting.GetPVCs()
 	scheme, err := commons.SetupSchemeOrDie()
 	if err != nil {
 		return nil, err

@@ -23,7 +23,7 @@ spec:
         app: kyma-metrics-collector
     spec:
       containers:
-      - image: ko://github.com/kyma-incubator/metris/cmd
+      - image: ko://github.com/kyma-project/control-plane/kyma-metrics-collector/cmd
         imagePullPolicy: Always
         name: kyma-metrics-collector
         args:
@@ -37,7 +37,7 @@ spec:
           - name: KEB_URL
             value: http://kcp-kyma-environment-broker.kcp-system/runtimes
           - name: EDP_URL
-#            value: http://edp-mock.kcp-system:8080
+#           value: http://edp-mock.kcp-system:8080
           - name: EDP_TOKEN
             valueFrom:
               secretKeyRef:

@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
-	metristesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
+	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 	"github.com/onsi/gomega"
 )
 
@@ -28,13 +28,13 @@ func TestGetAllRuntimes(t *testing.T) {
 	t.Run("when 2 pages are returned for all runtimes on matching path and HTTP 404 for non matched ones", func(t *testing.T) {
 		g := gomega.NewGomegaWithT(t)
 
-		runtimesResponse, err := metristesting.LoadFixtureFromFile(kebRuntimeResponseFilePath)
+		runtimesResponse, err := kmctesting.LoadFixtureFromFile(kebRuntimeResponseFilePath)
 		g.Expect(err).Should(gomega.BeNil())
 
-		runtimesPage1Response, err := metristesting.LoadFixtureFromFile(kebRuntimePage1ResponseFilePath)
+		runtimesPage1Response, err := kmctesting.LoadFixtureFromFile(kebRuntimePage1ResponseFilePath)
 		g.Expect(err).Should(gomega.BeNil())
 
-		runtimesPage2Response, err := metristesting.LoadFixtureFromFile(kebRuntimePage2ResponseFilePath)
+		runtimesPage2Response, err := kmctesting.LoadFixtureFromFile(kebRuntimePage2ResponseFilePath)
 		g.Expect(err).Should(gomega.BeNil())
 
 		expectedRuntimes := new(runtime.RuntimesPage)
@@ -71,7 +71,7 @@ func TestGetAllRuntimes(t *testing.T) {
 		})
 
 		// Start a local test HTTP server
-		srv := metristesting.StartTestServer(expectedPathPrefix, getRuntimesHandler, g)
+		srv := kmctesting.StartTestServer(expectedPathPrefix, getRuntimesHandler, g)
 
 		// Wait until test server is ready
 		g.Eventually(func() int {
@@ -116,7 +116,7 @@ func TestGetAllRuntimes(t *testing.T) {
 	t.Run("when all runtimes are returned in 1 page", func(t *testing.T) {
 		g := gomega.NewGomegaWithT(t)
 
-		runtimesResponse, err := metristesting.LoadFixtureFromFile(kebRuntimeResponseFilePath)
+		runtimesResponse, err := kmctesting.LoadFixtureFromFile(kebRuntimeResponseFilePath)
 		g.Expect(err).Should(gomega.BeNil())
 
 		expectedRuntimes := new(runtime.RuntimesPage)
@@ -132,7 +132,7 @@ func TestGetAllRuntimes(t *testing.T) {
 		})
 
 		// Start a local test HTTP server
-		srv := metristesting.StartTestServer(expectedPathPrefixWith1Page, getRuntimesHandler, g)
+		srv := kmctesting.StartTestServer(expectedPathPrefixWith1Page, getRuntimesHandler, g)
 
 		// Wait until test server is ready
 		g.Eventually(func() int {
