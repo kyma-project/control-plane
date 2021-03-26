@@ -8,42 +8,22 @@ import (
 	clsMock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"testing"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
-func TestClsBindingStep_Run(t *testing.T) {
+func TestClsStatusCheckStep_Run(t *testing.T) {
 	//given
 	fakeRegion := "westeurope"
 	db := storage.NewMemoryStorage()
 	repo := db.Operations()
 	clientFactory := servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{}, []types.ServicePlan{})
 	clientFactory.SynchronousProvisioning()
-
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
-	defer inputCreatorMock.AssertExpectations(t)
-	expectedOverride := `
-[OUTPUT]
-    Name              http
-    Match             *
-    Host              fooEndPoint
-    Port              443
-    HTTP_User         fooUser
-    HTTP_Passwd       fooPass
-    tls               true
-    tls.verify        true
-    URI               /
-    Format            json`
-	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
-		{Key: "fluent-bit.config.outputs.forward.enabled", Value: "false"},
-		{Key: "fluent-bit.config.outputs.additional", Value: expectedOverride},
-	}).Return(nil).Once()
 
 	operation := internal.UpgradeKymaOperation{
 		Operation: internal.Operation{
@@ -56,10 +36,9 @@ func TestClsBindingStep_Run(t *testing.T) {
 					BrokerID:    fakeBrokerID,
 					ServiceID:   "svc-id",
 					PlanID:      "plan-id",
-					InstanceID:  "instnace-id",
+					InstanceID:  "instance-id",
 					Provisioned: true,
 				},
-
 					Region: "eu",
 				},
 				ShootDomain: "cls-test.sap.com",
@@ -72,7 +51,7 @@ func TestClsBindingStep_Run(t *testing.T) {
 			Origin:  "foo",
 		},
 	}
-	operation.Cls.Instance.ProvisioningTriggered = true
+	operation.Cls.Instance.InstanceID = "fooInstance"
 	logs := logrus.New()
 	logs.SetFormatter(&logrus.JSONFormatter{})
 
@@ -104,20 +83,12 @@ func TestClsBindingStep_Run(t *testing.T) {
 			},
 		},
 	}
-	clsBindingProvider := &clsMock.ClsBindingProvider{}
-	clsBindingProvider.On("CreateBinding", mock.Anything, mock.Anything).Return(&cls.OverrideParams{
-		FluentdEndPoint: "fooEndPoint",
-		FluentdPassword: "fooPass",
-		FluentdUsername: "fooUser",
-		KibanaURL:       "kibana.url",
-	}, nil)
+	clsStausCheckProvider := &clsMock.ClsStatusChecker{}
+	clsStausCheckProvider.On("CheckProvisionStatus", mock.Anything, mock.Anything, mock.Anything).Return(cls.Succeeded, nil)
 
-	bindingStep := NewClsUpgradeBindStep(config, clsBindingProvider, repo, "1234567890123456")
-
-	repo.InsertUpgradeKymaOperation(operation)
+	statusCheckStep := NewClsCheckStatus(config, clsStausCheckProvider, repo)
 	log := logger.NewLogDummy()
 	// when
-	operation, retry, err := bindingStep.Run(operation, log)
+	operation, _, err := statusCheckStep.Run(operation, log)
 	require.NoError(t, err)
-	require.Zero(t, retry)
 }

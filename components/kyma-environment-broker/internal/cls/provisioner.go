@@ -1,9 +1,9 @@
 package cls
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -13,6 +13,7 @@ type ProvisionerStorage interface {
 	FindActiveByGlobalAccountID(globalAccountID string) (*internal.CLSInstance, bool, error)
 	Insert(instance internal.CLSInstance) error
 	Update(instance internal.CLSInstance) error
+	Delete(clsInstanceID string) error
 }
 
 //go:generate mockery --name=InstanceCreator --output=automock --outpkg=automock --case=underscore
@@ -83,7 +84,12 @@ func (p *provisioner) createNewInstance(smClient servicemanager.Client, request 
 	request.Instance.InstanceID = instance.ID()
 	err = p.creator.CreateInstance(smClient, request.Instance)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while creating a CLS instance for global account %s", instance.GlobalAccountID())
+		if !kebError.IsTemporaryError(err) {
+			if err := p.storage.Delete(request.Instance.InstanceID); err != nil {
+				return nil, errors.Wrapf(err, "while deleting CLS instance for global account %s", instance.GlobalAccountID())
+			}
+		}
+		return nil, errors.Wrapf(err, "while creating CLS instance for global account %s", instance.GlobalAccountID())
 	}
 
 	return &ProvisionResult{
