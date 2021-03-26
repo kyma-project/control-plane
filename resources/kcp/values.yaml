@@ -130,7 +130,7 @@ global:
     enabled: false
 
   kyma_metrics_collector:
-    enabled: true
+    enabled: false
 
   oathkeeper:
     host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
