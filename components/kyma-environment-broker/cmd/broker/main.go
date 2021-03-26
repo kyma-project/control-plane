@@ -381,7 +381,7 @@ func main() {
 		{
 			weight:   5,
 			step:     provisioning.NewSkipForTrialPlanStep(provisioning.NewClsCheckStatus(clsConfig, cls.NewStatusChecker(db.CLSInstances()), db.Operations())),
-			disabled: !cfg.Cls.Disabled,
+			disabled: cfg.Cls.Disabled,
 		},
 		{
 			weight:   6,
@@ -767,7 +767,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight:   5,
 			step:     upgrade_kyma.NewSkipForTrialPlanStep(upgrade_kyma.NewClsCheckStatus(clsConfig, cls.NewStatusChecker(db.CLSInstances()), db.Operations())),
-			disabled: !cfg.Cls.Disabled,
+			disabled: cfg.Cls.Disabled,
 		},
 		{
 			weight:   7,
