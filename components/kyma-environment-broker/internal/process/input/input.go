@@ -230,30 +230,7 @@ func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 }
 
 func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
-	params := r.provisioningParameters.Parameters
-
-	if params.MaxSurge != nil {
-		r.upgradeShootInput.GardenerConfig.MaxSurge = params.MaxSurge
-	}
-	if params.MaxUnavailable != nil {
-		r.upgradeShootInput.GardenerConfig.MaxUnavailable = params.MaxUnavailable
-	}
-	if params.AutoScalerMin != nil {
-		r.upgradeShootInput.GardenerConfig.AutoScalerMin = params.AutoScalerMin
-	}
-	if params.AutoScalerMax != nil {
-		r.upgradeShootInput.GardenerConfig.AutoScalerMax = params.AutoScalerMax
-	}
-	if params.VolumeSizeGb != nil {
-		r.upgradeShootInput.GardenerConfig.VolumeSizeGb = params.VolumeSizeGb
-	}
-	if params.MachineType != nil {
-		r.upgradeShootInput.GardenerConfig.MachineType = params.MachineType
-	}
-	if params.Purpose != nil {
-		r.upgradeShootInput.GardenerConfig.Purpose = params.Purpose
-	}
-
+	// As of now cluster upgrade doesn't support upgrading parameters which could also be specified as provisioning parameters
 	return nil
 }
 
@@ -375,7 +352,7 @@ func (r *RuntimeInput) setNodesForTrialProvision() error {
 }
 
 func (r *RuntimeInput) setNodesForTrialUpgrade() error {
-	// parameter with number of notes for trial plan is optional; if parameter is not set value is equal to 0
+	// parameter with number of nodes for trial plan is optional; if parameter is not set value is equal to 0
 	if r.trialNodesNumber == 0 {
 		return nil
 	}

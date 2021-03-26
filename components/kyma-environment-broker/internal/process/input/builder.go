@@ -313,37 +313,18 @@ func (f *InputBuilderFactory) CreateUpgradeShootInput(pp internal.ProvisioningPa
 }
 
 func (f *InputBuilderFactory) initUpgradeShootInput(provider HyperscalerInputProvider) gqlschema.UpgradeShootInput {
-	defaults := provider.Defaults()
 	input := gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion: &f.config.KubernetesVersion,
 		},
 	}
 
-	if defaults.GardenerConfig.MachineType != "" {
-		input.GardenerConfig.MachineType = &defaults.GardenerConfig.MachineType
-	}
-	if defaults.GardenerConfig.AutoScalerMin != 0 {
-		input.GardenerConfig.AutoScalerMin = &defaults.GardenerConfig.AutoScalerMin
-	}
-	if defaults.GardenerConfig.AutoScalerMax != 0 {
-		input.GardenerConfig.AutoScalerMax = &defaults.GardenerConfig.AutoScalerMax
-	}
 	if f.config.MachineImage != "" {
 		input.GardenerConfig.MachineImage = &f.config.MachineImage
 	}
 	if f.config.MachineImageVersion != "" {
 		input.GardenerConfig.MachineImageVersion = &f.config.MachineImageVersion
 	}
-	if defaults.GardenerConfig.MaxSurge != 0 {
-		input.GardenerConfig.MaxSurge = &defaults.GardenerConfig.MaxSurge
-	}
-	if defaults.GardenerConfig.MaxUnavailable != 0 {
-		input.GardenerConfig.MaxUnavailable = &defaults.GardenerConfig.MaxUnavailable
-	}
-	input.GardenerConfig.Purpose = defaults.GardenerConfig.Purpose
-	input.GardenerConfig.DiskType = defaults.GardenerConfig.DiskType
-	input.GardenerConfig.VolumeSizeGb = defaults.GardenerConfig.VolumeSizeGb
 
 	return input
 }
