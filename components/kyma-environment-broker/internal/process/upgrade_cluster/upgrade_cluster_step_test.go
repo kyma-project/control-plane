@@ -23,14 +23,6 @@ const (
 	fixKubernetesVersion   = "1.17.16"
 	fixMachineImage        = "gardenlinux"
 	fixMachineImageVersion = "184.0.0"
-	fixMachineType         = "Standard_D8_v3"
-	fixDiskType            = "Standard_LRS"
-	fixVolumeSizeGb        = 50
-	fixAutoScalerMin       = 3
-	fixAutoScalerMax       = 10
-	fixMaxSurge            = 4
-	fixMaxUnavailable      = 1
-	fixPurpose             = "Purpose"
 )
 
 func TestUpgradeKymaStep_Run(t *testing.T) {
@@ -51,14 +43,6 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 			KubernetesVersion:   ptr.String(fixKubernetesVersion),
 			MachineImage:        ptr.String(fixMachineImage),
 			MachineImageVersion: ptr.String(fixMachineImageVersion),
-			MachineType:         ptr.String(fixMachineType),
-			DiskType:            ptr.String(fixDiskType),
-			VolumeSizeGb:        ptr.Integer(fixVolumeSizeGb),
-			AutoScalerMin:       ptr.Integer(fixAutoScalerMin),
-			AutoScalerMax:       ptr.Integer(fixAutoScalerMax),
-			MaxSurge:            ptr.Integer(fixMaxSurge),
-			MaxUnavailable:      ptr.Integer(fixMaxUnavailable),
-			Purpose:             ptr.String(fixPurpose),
 		},
 	}).Return(gqlschema.OperationStatus{
 		ID:        StringPtr(fixProvisionerOperationID),
