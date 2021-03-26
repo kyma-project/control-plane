@@ -1,3 +1,4 @@
+{{- if .Values.global.kyma_metrics_collector.enabled -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -269,3 +270,4 @@ data:
         }
       }
     }
+{{- end -}}
