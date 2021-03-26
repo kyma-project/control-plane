@@ -129,12 +129,9 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 	}
 
 	cls := internal.ClsData{
-		Instance: serviceManagerInstanceInfo,
-		Region:   Region,
-		Binding: internal.BindingInfo{
-			Bound:     false,
-			BindingID: bindingId,
-		},
+		Instance:  serviceManagerInstanceInfo,
+		Region:    Region,
+		BindingID: bindingId,
 		Overrides: "Overrides",
 	}
 

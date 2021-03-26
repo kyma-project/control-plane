@@ -252,15 +252,10 @@ type EmsData struct {
 
 type ClsData struct {
 	Instance ServiceManagerInstanceInfo `json:"instance"`
-	Region   string                     `json:"region"`
 
-	Binding   BindingInfo `json:"binding"`
-	Overrides string      `json:"overrides"`
-}
-
-type BindingInfo struct {
-	Bound     bool   `json:"bound"`
+	Region    string `json:"region"`
 	BindingID string `json:"bindingId"`
+	Overrides string `json:"overrides"`
 }
 
 func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {

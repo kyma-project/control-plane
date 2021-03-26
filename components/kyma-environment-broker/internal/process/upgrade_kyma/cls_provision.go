@@ -14,15 +14,15 @@ import (
 
 type clsUpgradeProvisionStep struct {
 	config           *cls.Config
-	instanceProvider provisioning.ClsProvisioner
+	provisioner      provisioning.ClsProvisioner
 	operationManager *process.UpgradeKymaOperationManager
 }
 
-func NewClsUpgradeProvisionStep(config *cls.Config, ip provisioning.ClsProvisioner, repo storage.Operations) *clsUpgradeProvisionStep {
+func NewClsUpgradeProvisionStep(config *cls.Config, provisioner provisioning.ClsProvisioner, repo storage.Operations) *clsUpgradeProvisionStep {
 	return &clsUpgradeProvisionStep{
 		config:           config,
+		provisioner:      provisioner,
 		operationManager: process.NewUpgradeKymaOperationManager(repo),
-		instanceProvider: ip,
 	}
 }
 
@@ -51,7 +51,7 @@ func (s *clsUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, l
 
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 	skrInstanceID := operation.InstanceID
-	result, err := s.instanceProvider.Provision(smClient, &cls.ProvisionRequest{
+	result, err := s.provisioner.Provision(smClient, &cls.ProvisionRequest{
 		GlobalAccountID: globalAccountID,
 		Region:          smRegion,
 		SKRInstanceID:   skrInstanceID,
