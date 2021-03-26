@@ -66,7 +66,7 @@ func (s *ClsCheckStatusStep) Run(operation internal.ProvisioningOperation, log l
 		return operation, time.Minute, nil
 	case cls.InProgress:
 		log.Infof("CLS instance: %s provisioning is still in progress", operation.Cls.Instance.InstanceID)
-		return operation, 3 * time.Minute, nil
+		return operation, 2 * time.Minute, nil
 	case cls.Succeeded:
 		log.Infof("CLS instance successfully provisioned")
 	}
