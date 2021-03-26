@@ -67,6 +67,7 @@ type ProvisioningParametersDTO struct {
 	MaxUnavailable              *int     `json:"maxUnavailable"`
 	OptionalComponentsToInstall []string `json:"components"`
 	KymaVersion                 string   `json:"kymaVersion"`
+	OverridesVersion            string   `json:"overridesVersion"`
 	//Provider - used in Trial plan to determine which cloud provider to use during provisioning
 	Provider *TrialCloudProvider `json:"provider"`
 }
