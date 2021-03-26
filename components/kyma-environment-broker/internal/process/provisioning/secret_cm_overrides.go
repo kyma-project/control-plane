@@ -57,7 +57,7 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 			log.Error(errMsg)
 			return s.operationManager.RetryOperation(operation, errMsg, 10*time.Second, 30*time.Minute, log)
 		}
-		
+
 		versionNumber = version.Version
 	}
 
