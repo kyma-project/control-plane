@@ -224,7 +224,7 @@ func (c *client) call(method, path string, response interface{}, q *query.Parame
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return 0, err
+		return 0, kebError.NewTemporaryError(err.Error())
 	}
 	defer func() {
 		// go ahead (close body) even if draining fails
