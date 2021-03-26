@@ -84,8 +84,8 @@ func (s *OverridesFromSecretsAndConfigStep) getRuntimeVersion(op internal.Provis
 
 func (s *OverridesFromSecretsAndConfigStep) getOverridesVersion(op internal.ProvisioningOperation) string {
 	if op.ProvisioningParameters.OverridesVersion != "" {
-		return op.ProvisioningParameters.OverridesVersion, nil
+		return op.ProvisioningParameters.OverridesVersion
 	}
 
-	return "", nil
+	return ""
 }
