@@ -290,6 +290,11 @@ func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, e
 			rows = append(rows, op.Operation)
 		}
 	}
+	for _, op := range s.upgradeClusterOperations {
+		if op.InstanceID == instanceID && op.State != orchestration.Pending {
+			rows = append(rows, op.Operation)
+		}
+	}
 
 	if len(rows) == 0 {
 		return nil, dberr.NotFound("instance operation with instance_id %s not found", instanceID)
@@ -317,6 +322,10 @@ func (s *operations) GetOperationByID(operationID string) (*internal.Operation, 
 	if exists {
 		res = &upgradeKymaOp.Operation
 	}
+	upgradeClusterOp, exists := s.upgradeClusterOperations[operationID]
+	if exists {
+		res = &upgradeClusterOp.Operation
+	}
 	if res == nil {
 		return nil, dberr.NotFound("instance operation with id %s not found", operationID)
 	}
@@ -324,19 +333,19 @@ func (s *operations) GetOperationByID(operationID string) (*internal.Operation, 
 	return res, nil
 }
 
-func (s *operations) GetNotFinishedOperationsByType(opType dbmodel.OperationType) ([]internal.Operation, error) {
+func (s *operations) GetNotFinishedOperationsByType(opType internal.OperationType) ([]internal.Operation, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	ops := make([]internal.Operation, 0)
 	switch opType {
-	case dbmodel.OperationTypeProvision:
+	case internal.OperationTypeProvision:
 		for _, op := range s.provisioningOperations {
 			if op.State == domain.InProgress {
 				ops = append(ops, op.Operation)
 			}
 		}
-	case dbmodel.OperationTypeDeprovision:
+	case internal.OperationTypeDeprovision:
 		for _, op := range s.deprovisioningOperations {
 			if op.State == domain.InProgress {
 				ops = append(ops, op.Operation)
@@ -354,6 +363,13 @@ func (s *operations) GetOperationsForIDs(opIdList []string) ([]internal.Operatio
 	ops := make([]internal.Operation, 0)
 	for _, opID := range opIdList {
 		for _, op := range s.upgradeKymaOperations {
+			if op.Operation.ID == opID {
+				ops = append(ops, op.Operation)
+			}
+		}
+	}
+	for _, opID := range opIdList {
+		for _, op := range s.upgradeClusterOperations {
 			if op.Operation.ID == opID {
 				ops = append(ops, op.Operation)
 			}
@@ -429,6 +445,12 @@ func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (
 		orchestration.Failed:     0,
 	}
 	for _, op := range s.upgradeKymaOperations {
+		if op.OrchestrationID == orchestrationID {
+			result[string(op.State)] = result[string(op.State)] + 1
+		}
+	}
+
+	for _, op := range s.upgradeClusterOperations {
 		if op.OrchestrationID == orchestrationID {
 			result[string(op.State)] = result[string(op.State)] + 1
 		}
@@ -562,57 +584,12 @@ func (s *operations) sortByCreatedAt(operations []internal.Operation) {
 	})
 }
 
-func (s *operations) getOperation(id string) (internal.Operation, error) {
-	for _, op := range s.upgradeKymaOperations {
-		if op.Operation.ID == id {
-			return op.Operation, nil
-		}
-	}
-	for _, op := range s.provisioningOperations {
-		if op.Operation.ID == id {
-			return op.Operation, nil
-		}
-	}
-	for _, op := range s.deprovisioningOperations {
-		if op.Operation.ID == id {
-			return op.Operation, nil
-		}
-	}
-
-	return internal.Operation{}, dberr.NotFound("operation not found")
-}
-
-func (s *operations) updateOperation(operation internal.Operation) (internal.Operation, error) {
-	for i, op := range s.upgradeKymaOperations {
-		if op.Operation.ID == operation.ID {
-			temp := s.upgradeKymaOperations[i]
-			temp.ProvisioningParameters = operation.ProvisioningParameters
-			s.upgradeKymaOperations[i] = temp
-			return operation, nil
-		}
-	}
-	for i, op := range s.provisioningOperations {
-		if op.Operation.ID == operation.ID {
-			temp := s.provisioningOperations[i]
-			temp.ProvisioningParameters = operation.ProvisioningParameters
-			s.provisioningOperations[i] = temp
-			return operation, nil
-		}
-	}
-	for i, op := range s.deprovisioningOperations {
-		if op.Operation.ID == operation.ID {
-			temp := s.deprovisioningOperations[i]
-			temp.ProvisioningParameters = operation.ProvisioningParameters
-			s.deprovisioningOperations[i] = temp
-			return operation, nil
-		}
-	}
-	return internal.Operation{}, dberr.NotFound("operation not found")
-}
-
 func (s *operations) getAll() ([]internal.Operation, error) {
 	ops := make([]internal.Operation, 0)
 	for _, op := range s.upgradeKymaOperations {
+		ops = append(ops, op.Operation)
+	}
+	for _, op := range s.upgradeClusterOperations {
 		ops = append(ops, op.Operation)
 	}
 	for _, op := range s.provisioningOperations {

@@ -32,7 +32,7 @@ type Operations interface {
 
 	GetLastOperation(instanceID string) (*internal.Operation, error)
 	GetOperationByID(operationID string) (*internal.Operation, error)
-	GetNotFinishedOperationsByType(operationType dbmodel.OperationType) ([]internal.Operation, error)
+	GetNotFinishedOperationsByType(operationType internal.OperationType) ([]internal.Operation, error)
 	GetOperationStatsByPlan() (map[string]internal.OperationStats, error)
 	GetOperationsForIDs(operationIDList []string) ([]internal.Operation, error)
 	GetOperationStatsForOrchestration(orchestrationID string) (map[string]int, error)
