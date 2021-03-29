@@ -91,7 +91,7 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
         autoScalerMax: {{ .AutoScalerMax }},
         maxSurge: {{ .MaxSurge }},
 		maxUnavailable: {{ .MaxUnavailable }},
-		{{- if .ProviderSpecificConfig }}	
+		{{- if .ProviderSpecificConfig }}
 		providerSpecificConfig: {
 			{{- if .ProviderSpecificConfig.AzureConfig }}
 			azureConfig: {{ AzureProviderConfigInputToGraphQL .ProviderSpecificConfig.AzureConfig }},
@@ -124,7 +124,7 @@ func (g *Graphqlizer) GCPProviderConfigInputToGraphQL(in gqlschema.GCPProviderCo
 }
 
 func (g *Graphqlizer) AWSProviderConfigInputToGraphQL(in gqlschema.AWSProviderConfigInput) (string, error) {
-	return fmt.Sprintf(`{ 
+	return fmt.Sprintf(`{
 		zone: "%s" ,
 		publicCidr: "%s",
 		vpcCidr: "%s",
@@ -166,11 +166,11 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
                 secret: true,
 				{{- end }}
               }
-		      {{- end }} 
+		      {{- end }}
             ]
-		    {{- end }} 
+		    {{- end }}
           }
-		  {{- end }} 
+		  {{- end }}
         ]
       	{{- end }}
 		{{- with .Configuration }}
@@ -225,6 +225,28 @@ func (g *Graphqlizer) UpgradeRuntimeInputToGraphQL(in gqlschema.UpgradeRuntimeIn
 	return g.genericToGraphQL(in, `{
 		kymaConfig: {{ KymaConfigToGraphQL .KymaConfig }}
 	}`)
+}
+
+func (g Graphqlizer) UpgradeShootInputToGraphQL(in gqlschema.UpgradeShootInput) (string, error) {
+	return g.genericToGraphQL(in.GardenerConfig, `{
+    gardenerConfig: {
+      {{- if .KubernetesVersion }}
+      kubernetesVersion: "{{.KubernetesVersion}}",
+      {{- end }}
+      {{- if .MachineImage }}
+      machineImage: "{{.MachineImage}}",
+      {{- end}}
+      {{- if .MachineImageVersion }}
+      machineImageVersion: "{{.MachineImageVersion}}",
+      {{- end }}
+      {{- if .EnableKubernetesVersionAutoUpdate }}
+      enableKubernetesVersionAutoUpdate: {{.EnableKubernetesVersionAutoUpdate}},
+      {{- end }}
+      {{- if .EnableMachineImageVersionAutoUpdate }}
+      enableMachineImageVersionAutoUpdate: {{.EnableMachineImageVersionAutoUpdate}},
+      {{- end }}
+    }
+  }`)
 }
 
 func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, error) {

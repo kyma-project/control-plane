@@ -60,7 +60,7 @@ func (s *instances) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]
 		if !dberr.IsNotFound(dErr) {
 			instances = append(instances, internal.InstanceWithOperation{
 				Instance:    v,
-				Type:        sql.NullString{String: string(dbmodel.OperationTypeDeprovision), Valid: true},
+				Type:        sql.NullString{String: string(internal.OperationTypeDeprovision), Valid: true},
 				State:       sql.NullString{String: string(dOp.State), Valid: true},
 				Description: sql.NullString{String: dOp.Description, Valid: true},
 			})
@@ -68,7 +68,7 @@ func (s *instances) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]
 		if !dberr.IsNotFound(pErr) {
 			instances = append(instances, internal.InstanceWithOperation{
 				Instance:    v,
-				Type:        sql.NullString{String: string(dbmodel.OperationTypeProvision), Valid: true},
+				Type:        sql.NullString{String: string(internal.OperationTypeProvision), Valid: true},
 				State:       sql.NullString{String: string(pOp.State), Valid: true},
 				Description: sql.NullString{String: pOp.Description, Valid: true},
 			})
@@ -76,7 +76,7 @@ func (s *instances) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]
 		if !dberr.IsNotFound(uErr) {
 			instances = append(instances, internal.InstanceWithOperation{
 				Instance:    v,
-				Type:        sql.NullString{String: string(dbmodel.OperationTypeUpgradeKyma), Valid: true},
+				Type:        sql.NullString{String: string(internal.OperationTypeUpgradeKyma), Valid: true},
 				State:       sql.NullString{String: string(uOp.State), Valid: true},
 				Description: sql.NullString{String: uOp.Description, Valid: true},
 			})

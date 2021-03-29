@@ -232,6 +232,10 @@ func (c *simpleInputCreator) CreateUpgradeRuntimeInput() (gqlschema.UpgradeRunti
 	return gqlschema.UpgradeRuntimeInput{}, nil
 }
 
+func (c *simpleInputCreator) CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, error) {
+	return gqlschema.UpgradeShootInput{}, nil
+}
+
 func (c *simpleInputCreator) SetProvisioningParameters(params internal.ProvisioningParameters) internal.ProvisionerInputCreator {
 	return c
 }

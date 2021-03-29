@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -201,7 +202,7 @@ func (r readSession) ListOrchestrations(filter dbmodel.OrchestrationFilter) ([]d
 		nil
 }
 
-func (r readSession) GetNotFinishedOperationsByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
+func (r readSession) GetNotFinishedOperationsByType(operationType internal.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
 	stateInProgress := dbr.Eq("state", domain.InProgress)
 	statePending := dbr.Eq("state", orchestration.Pending)
 	stateCondition := dbr.Or(statePending, stateInProgress)
@@ -220,7 +221,7 @@ func (r readSession) GetNotFinishedOperationsByType(operationType dbmodel.Operat
 	return operations, nil
 }
 
-func (r readSession) GetOperationByTypeAndInstanceID(inID string, opType dbmodel.OperationType) (dbmodel.OperationDTO, dberr.Error) {
+func (r readSession) GetOperationByTypeAndInstanceID(inID string, opType internal.OperationType) (dbmodel.OperationDTO, dberr.Error) {
 	idCondition := dbr.Eq("instance_id", inID)
 	typeCondition := dbr.Eq("type", string(opType))
 	var operation dbmodel.OperationDTO
@@ -242,7 +243,7 @@ func (r readSession) GetOperationByTypeAndInstanceID(inID string, opType dbmodel
 	return operation, nil
 }
 
-func (r readSession) GetOperationsByTypeAndInstanceID(inID string, opType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
+func (r readSession) GetOperationsByTypeAndInstanceID(inID string, opType internal.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
 	idCondition := dbr.Eq("instance_id", inID)
 	typeCondition := dbr.Eq("type", string(opType))
 	var operations []dbmodel.OperationDTO
@@ -275,7 +276,7 @@ func (r readSession) GetOperationsForIDs(opIDlist []string) ([]dbmodel.Operation
 	return operations, nil
 }
 
-func (r readSession) ListOperationsByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
+func (r readSession) ListOperationsByType(operationType internal.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
 	typeCondition := dbr.Eq("type", operationType)
 	var operations []dbmodel.OperationDTO
 
