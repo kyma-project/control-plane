@@ -6,6 +6,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -19,15 +20,15 @@ type ClsProvisioner interface {
 
 type clsProvisionStep struct {
 	config           *cls.Config
-	instanceProvider ClsProvisioner
+	provisioner      ClsProvisioner
 	operationManager *process.ProvisionOperationManager
 }
 
-func NewClsProvisionStep(config *cls.Config, ip ClsProvisioner, repo storage.Operations) *clsProvisionStep {
+func NewClsProvisionStep(config *cls.Config, provisioner ClsProvisioner, repo storage.Operations) *clsProvisionStep {
 	return &clsProvisionStep{
 		config:           config,
+		provisioner:      provisioner,
 		operationManager: process.NewProvisionOperationManager(repo),
-		instanceProvider: ip,
 	}
 }
 
@@ -56,7 +57,7 @@ func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 
 	smClient := operation.SMClientFactory.ForCredentials(smCredentials)
 	skrInstanceID := operation.InstanceID
-	result, err := s.instanceProvider.Provision(smClient, &cls.ProvisionRequest{
+	result, err := s.provisioner.Provision(smClient, &cls.ProvisionRequest{
 		GlobalAccountID: globalAccountID,
 		Region:          smRegion,
 		SKRInstanceID:   skrInstanceID,
@@ -65,6 +66,9 @@ func (s *clsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 	if err != nil {
 		failureReason := fmt.Sprintf("Unable to provision a CLS instance for global account %s", globalAccountID)
 		log.Errorf("%s: %v", failureReason, err)
+		if kebError.IsTemporaryError(err) {
+			return s.operationManager.RetryOperation(operation, failureReason, 10*time.Second, time.Minute*30, log)
+		}
 		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
 

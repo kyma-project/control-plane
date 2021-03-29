@@ -61,10 +61,7 @@ func TestClsUnbindStep_Run(t *testing.T) {
 						InstanceID:  "instance-id",
 						Provisioned: true,
 					},
-					Binding: internal.BindingInfo{
-						Bound:     true,
-						BindingID: "binding-id",
-					},
+					BindingID: "binding-id",
 					Overrides: "clsOverrides",
 				},
 			},
@@ -79,7 +76,7 @@ func TestClsUnbindStep_Run(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.Zero(t, retry)
-	assert.Empty(t, operation.Cls.Binding.BindingID)
+	assert.Empty(t, operation.Cls.BindingID)
 	assert.Empty(t, operation.Cls.Overrides)
 	clientFactory.AssertUnbindCalled(t, servicemanager.InstanceKey{
 		BrokerID:   "broker-id",
