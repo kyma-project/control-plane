@@ -418,11 +418,11 @@ func assertEqualOperation(t *testing.T, want interface{}, got internal.InstanceW
 	t.Helper()
 	switch want := want.(type) {
 	case internal.ProvisioningOperation:
-		assert.EqualValues(t, dbmodel.OperationTypeProvision, got.Type.String)
+		assert.EqualValues(t, internal.OperationTypeProvision, got.Type.String)
 		assert.EqualValues(t, want.State, got.State.String)
 		assert.EqualValues(t, want.Description, got.Description.String)
 	case internal.DeprovisioningOperation:
-		assert.EqualValues(t, dbmodel.OperationTypeDeprovision, got.Type.String)
+		assert.EqualValues(t, internal.OperationTypeDeprovision, got.Type.String)
 		assert.EqualValues(t, want.State, got.State.String)
 		assert.EqualValues(t, want.Description, got.Description.String)
 	}

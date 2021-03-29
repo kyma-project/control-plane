@@ -9,7 +9,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )
 
-
 func TestMain(m *testing.M) {
 	exitVal := 0
 	defer func() { os.Exit(exitVal) }()

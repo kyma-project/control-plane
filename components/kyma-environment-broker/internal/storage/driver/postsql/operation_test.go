@@ -78,7 +78,7 @@ func TestOperation(t *testing.T) {
 		err = svc.InsertProvisioningOperation(latestPendingOperation)
 		require.NoError(t, err)
 
-		ops, err := svc.GetNotFinishedOperationsByType(dbmodel.OperationTypeProvision)
+		ops, err := svc.GetNotFinishedOperationsByType(internal.OperationTypeProvision)
 		require.NoError(t, err)
 		assert.Len(t, ops, 3)
 		assertOperation(t, givenOperation.Operation, ops[0])
@@ -154,7 +154,7 @@ func TestOperation(t *testing.T) {
 		err = svc.InsertDeprovisioningOperation(givenOperation)
 		require.NoError(t, err)
 
-		ops, err := svc.GetNotFinishedOperationsByType(dbmodel.OperationTypeDeprovision)
+		ops, err := svc.GetNotFinishedOperationsByType(internal.OperationTypeDeprovision)
 		require.NoError(t, err)
 		assert.Len(t, ops, 1)
 		assertOperation(t, givenOperation.Operation, ops[0])
@@ -288,7 +288,7 @@ func TestOperation(t *testing.T) {
 		orchestrationID := "orchestration-id"
 
 		givenOperation1 := internal.UpgradeClusterOperation{
-			Operation: fixture.FixOperation("operation-id-1", "inst-id"),
+			Operation: fixture.FixOperation("operation-id-1", "inst-id", internal.OperationTypeUpgradeCluster),
 		}
 		givenOperation1.State = domain.InProgress
 		givenOperation1.CreatedAt = givenOperation1.CreatedAt.Truncate(time.Millisecond)
@@ -299,7 +299,7 @@ func TestOperation(t *testing.T) {
 		givenOperation1.OrchestrationID = orchestrationID
 
 		givenOperation2 := internal.UpgradeClusterOperation{
-			Operation: fixture.FixOperation("operation-id-2", "inst-id"),
+			Operation: fixture.FixOperation("operation-id-2", "inst-id", internal.OperationTypeUpgradeCluster),
 		}
 		givenOperation2.State = domain.InProgress
 		givenOperation2.CreatedAt = givenOperation2.CreatedAt.Truncate(time.Millisecond).Add(time.Minute)
@@ -311,7 +311,7 @@ func TestOperation(t *testing.T) {
 		givenOperation2.RuntimeOperation = fixRuntimeOperation("operation-id-2")
 
 		givenOperation3 := internal.UpgradeClusterOperation{
-			Operation: fixture.FixOperation("operation-id-3", "inst-id"),
+			Operation: fixture.FixOperation("operation-id-3", "inst-id", internal.OperationTypeUpgradeCluster),
 		}
 		givenOperation3.State = orchestration.Pending
 		givenOperation3.CreatedAt = givenOperation3.CreatedAt.Truncate(time.Millisecond).Add(2 * time.Hour)
