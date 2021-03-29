@@ -9,7 +9,7 @@ The Kyma Environment Broker (KEB) provisions a CLS instance for a global account
 
 ![CLS diagram](./assets/cls-int-diag.svg)
 
-1. CSI sends the request to KEB to provision a new SKR.
+1. CIS sends the request to KEB to provision a new SKR.
 2. A check determines if there is an existing CLS instance for the global account. If there isn't, KEB provisions a new instance of CLS for the global account.
 3. After the CLS instance is provisioned, a binding is created, through which the KEB gets the credentials to push logs to the CLS instance.
 4. After getting the CLS credentials, these credentials are appended to SKR overrides
