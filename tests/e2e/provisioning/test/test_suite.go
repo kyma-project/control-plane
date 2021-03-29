@@ -16,7 +16,6 @@ import (
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/broker"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/runtime"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/v1_client"
-
 	"github.com/ory/hydra-maester/api/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -25,6 +24,7 @@ import (
 	"github.com/vrischmann/envconfig"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -310,12 +310,17 @@ func newAzureClient(t *testing.T, cfg *Config, globalAccountID string) *azure.In
 	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
 	require.NoError(t, err)
 
-	gardenerSecrets, err := gardener.NewGardenerSecretsInterface(gardenerClusterConfig, cfg.Gardener.Project)
+	k8sInterface, err := kubernetes.NewForConfig(gardenerClusterConfig)
 	require.NoError(t, err)
 
-	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
+	gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
+	require.NoError(t, err)
 
-	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool)
+	secretBindingsInterface := gardener.NewGardenerSecretBindingsInterface(gardenerClient, cfg.Gardener.Project)
+
+	gardenerAccountPool := hyperscaler.NewAccountPool(secretBindingsInterface)
+
+	accountProvider := hyperscaler.NewAccountProvider(k8sInterface, nil, gardenerAccountPool)
 
 	credentials, err := accountProvider.GardenerCredentials(hypType, globalAccountID)
 	assert.NoError(t, err)

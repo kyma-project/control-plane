@@ -43,4 +43,7 @@ rules:
   - apiGroups: ["hydra.ory.sh"]
     resources: ["oauth2clients"]
     verbs: ["get"]
+  - apiGroups: ["core.gardener.cloud"]
+    resources: ["secretbindings"]
+    verbs: ["get", "list", "create", "update", "delete"]
 {{- end -}}

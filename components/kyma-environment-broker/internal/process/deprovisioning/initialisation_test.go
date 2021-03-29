@@ -28,7 +28,7 @@ const (
 
 func TestInitialisationStep_Run(t *testing.T) {
 	accountProviderMock := &hyperscalerMocks.AccountProvider{}
-	accountProviderMock.On("MarkUnusedGardenerSecretAsDirty", mock.Anything, mock.AnythingOfType("string")).Return(nil)
+	accountProviderMock.On("MarkUnusedGardenerSecretBindingAsDirty", mock.Anything, mock.AnythingOfType("string")).Return(nil)
 
 	t.Run("Should mark operation as Succeeded when operation has succeeded", func(t *testing.T) {
 		// given
