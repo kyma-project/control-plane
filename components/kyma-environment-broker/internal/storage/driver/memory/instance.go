@@ -277,12 +277,11 @@ func (s *instances) matchInstanceState(instanceID string, states []dbmodel.Insta
 		// To support instance test cases without any operations
 		return true
 	}
-	opType := s.getOperationTypeByID(op.ID)
-	fmt.Fprintf(os.Stderr, "%s - %s - %s\n", instanceID, opType, op.State)
+	fmt.Fprintf(os.Stderr, "%s - %s - %s\n", instanceID, op.Type, op.State)
 	for _, s := range states {
 		switch s {
 		case dbmodel.InstanceSucceeded:
-			if op.State == domain.Succeeded && opType != dbmodel.OperationTypeDeprovision {
+			if op.State == domain.Succeeded && op.Type != internal.OperationTypeDeprovision {
 				return true
 			}
 		case dbmodel.InstanceFailed:
@@ -290,48 +289,27 @@ func (s *instances) matchInstanceState(instanceID string, states []dbmodel.Insta
 				return true
 			}
 		case dbmodel.InstanceProvisioning:
-			if opType == dbmodel.OperationTypeProvision && op.State == domain.InProgress {
+			if op.Type == internal.OperationTypeProvision && op.State == domain.InProgress {
 				return true
 			}
 		case dbmodel.InstanceDeprovisioning:
-			if opType == dbmodel.OperationTypeDeprovision && op.State == domain.InProgress {
+			if op.Type == internal.OperationTypeDeprovision && op.State == domain.InProgress {
 				return true
 			}
 		case dbmodel.InstanceUpgrading:
-			if (opType == dbmodel.OperationTypeUpgradeKyma || opType == dbmodel.OperationTypeUpgradeCluster) && op.State == domain.InProgress {
+			if (op.Type == internal.OperationTypeUpgradeKyma || op.Type == internal.OperationTypeUpgradeCluster) && op.State == domain.InProgress {
 				return true
 			}
 		case dbmodel.InstanceDeprovisioned:
-			if op.State == domain.Succeeded && opType == dbmodel.OperationTypeDeprovision {
+			if op.State == domain.Succeeded && op.Type == internal.OperationTypeDeprovision {
 				return true
 			}
 		case dbmodel.InstanceNotDeprovisioned:
-			if !(op.State == domain.Succeeded && opType == dbmodel.OperationTypeDeprovision) {
+			if !(op.State == domain.Succeeded && op.Type == internal.OperationTypeDeprovision) {
 				return true
 			}
 		}
 	}
 
 	return false
-}
-
-func (s *instances) getOperationTypeByID(operationID string) dbmodel.OperationType {
-	_, err := s.operationsStorage.GetProvisioningOperationByID(operationID)
-	if err == nil {
-		return dbmodel.OperationTypeProvision
-	}
-	_, err = s.operationsStorage.GetDeprovisioningOperationByID(operationID)
-	if err == nil {
-		return dbmodel.OperationTypeDeprovision
-	}
-	_, err = s.operationsStorage.GetUpgradeKymaOperationByID(operationID)
-	if err == nil {
-		return dbmodel.OperationTypeUpgradeKyma
-	}
-	_, err = s.operationsStorage.GetUpgradeClusterOperationByID(operationID)
-	if err == nil {
-		return dbmodel.OperationTypeUpgradeCluster
-	}
-
-	return dbmodel.OperationTypeUndefined
 }

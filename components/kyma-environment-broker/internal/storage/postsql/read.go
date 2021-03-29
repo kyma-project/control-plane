@@ -587,18 +587,18 @@ func buildInstanceStateFilters(table string, filter dbmodel.InstanceFilter) dbr.
 		case dbmodel.InstanceSucceeded:
 			exprs = append(exprs, dbr.And(
 				dbr.Eq(fmt.Sprintf("%s.state", table), domain.Succeeded),
-				dbr.Neq(fmt.Sprintf("%s.type", table), dbmodel.OperationTypeDeprovision),
+				dbr.Neq(fmt.Sprintf("%s.type", table), internal.OperationTypeDeprovision),
 			))
 		case dbmodel.InstanceFailed:
 			exprs = append(exprs, dbr.Eq(fmt.Sprintf("%s.state", table), domain.Failed))
 		case dbmodel.InstanceProvisioning:
 			exprs = append(exprs, dbr.And(
-				dbr.Eq(fmt.Sprintf("%s.type", table), dbmodel.OperationTypeProvision),
+				dbr.Eq(fmt.Sprintf("%s.type", table), internal.OperationTypeProvision),
 				dbr.Eq(fmt.Sprintf("%s.state", table), domain.InProgress),
 			))
 		case dbmodel.InstanceDeprovisioning:
 			exprs = append(exprs, dbr.And(
-				dbr.Eq(fmt.Sprintf("%s.type", table), dbmodel.OperationTypeDeprovision),
+				dbr.Eq(fmt.Sprintf("%s.type", table), internal.OperationTypeDeprovision),
 				dbr.Eq(fmt.Sprintf("%s.state", table), domain.InProgress),
 			))
 		case dbmodel.InstanceUpgrading:
@@ -608,12 +608,12 @@ func buildInstanceStateFilters(table string, filter dbmodel.InstanceFilter) dbr.
 			))
 		case dbmodel.InstanceDeprovisioned:
 			exprs = append(exprs, dbr.And(
-				dbr.Eq(fmt.Sprintf("%s.type", table), dbmodel.OperationTypeDeprovision),
+				dbr.Eq(fmt.Sprintf("%s.type", table), internal.OperationTypeDeprovision),
 				dbr.Eq(fmt.Sprintf("%s.state", table), domain.Succeeded),
 			))
 		case dbmodel.InstanceNotDeprovisioned:
 			exprs = append(exprs, dbr.Or(
-				dbr.Neq(fmt.Sprintf("%s.type", table), dbmodel.OperationTypeDeprovision),
+				dbr.Neq(fmt.Sprintf("%s.type", table), internal.OperationTypeDeprovision),
 				dbr.Neq(fmt.Sprintf("%s.state", table), domain.Succeeded),
 			))
 		}
