@@ -15,7 +15,7 @@ rules:
     verbs: ["list", "get"]
   - apiGroups: ["core.gardener.cloud"]
     resources: ["shoots, secretbindings"]
-    verbs: ["list", "get"]
+    verbs: ["list", "get", "update"]
 
 ---
 kind: RoleBinding
