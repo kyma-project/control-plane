@@ -5,7 +5,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -61,32 +60,32 @@ func NewOperationsCollector(statsGetter OperationsStatsGetter) *OperationsCollec
 	for _, p := range supportedPlansIDs {
 		opStats[p] = OperationStat{
 			inProgressProvisioning: prometheus.NewDesc(
-				fqName(broker.PlanNamesMapping[p], dbmodel.OperationTypeProvision, domain.InProgress),
+				fqName(broker.PlanNamesMapping[p], internal.OperationTypeProvision, domain.InProgress),
 				"The number of provisioning operations in progress",
 				[]string{},
 				nil),
 			succeededProvisioning: prometheus.NewDesc(
-				fqName(broker.PlanNamesMapping[p], dbmodel.OperationTypeProvision, domain.Succeeded),
+				fqName(broker.PlanNamesMapping[p], internal.OperationTypeProvision, domain.Succeeded),
 				"The number of succeeded provisioning operations",
 				[]string{},
 				nil),
 			failedProvisioning: prometheus.NewDesc(
-				fqName(broker.PlanNamesMapping[p], dbmodel.OperationTypeProvision, domain.Failed),
+				fqName(broker.PlanNamesMapping[p], internal.OperationTypeProvision, domain.Failed),
 				"The number of failed provisioning operations",
 				[]string{},
 				nil),
 			inProgressDeprovisioning: prometheus.NewDesc(
-				fqName(broker.PlanNamesMapping[p], dbmodel.OperationTypeDeprovision, domain.InProgress),
+				fqName(broker.PlanNamesMapping[p], internal.OperationTypeDeprovision, domain.InProgress),
 				"The number of deprovisioning operations in progress",
 				[]string{},
 				nil),
 			succeededDeprovisioning: prometheus.NewDesc(
-				fqName(broker.PlanNamesMapping[p], dbmodel.OperationTypeDeprovision, domain.Succeeded),
+				fqName(broker.PlanNamesMapping[p], internal.OperationTypeDeprovision, domain.Succeeded),
 				"The number of succeeded deprovisioning operations",
 				[]string{},
 				nil),
 			failedDeprovisioning: prometheus.NewDesc(
-				fqName(broker.PlanNamesMapping[p], dbmodel.OperationTypeDeprovision, domain.Failed),
+				fqName(broker.PlanNamesMapping[p], internal.OperationTypeDeprovision, domain.Failed),
 				"The number of failed deprovisioning operations",
 				[]string{},
 				nil),
@@ -99,12 +98,12 @@ func NewOperationsCollector(statsGetter OperationsStatsGetter) *OperationsCollec
 	}
 }
 
-func fqName(planName string, operationType dbmodel.OperationType, state domain.LastOperationState) string {
+func fqName(planName string, operationType internal.OperationType, state domain.LastOperationState) string {
 	var opType string
 	switch operationType {
-	case dbmodel.OperationTypeProvision:
+	case internal.OperationTypeProvision:
 		opType = "provisioning"
-	case dbmodel.OperationTypeDeprovision:
+	case internal.OperationTypeDeprovision:
 		opType = "deprovisioning"
 	}
 

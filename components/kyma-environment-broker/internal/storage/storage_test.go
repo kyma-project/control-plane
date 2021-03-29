@@ -109,6 +109,7 @@ func TestPostgres(t *testing.T) {
 						SubAccountID: instanceData.subAccountID,
 					},
 					ID:                     "op-id",
+					Type:                   internal.OperationTypeProvision,
 					Version:                0,
 					CreatedAt:              time.Now(),
 					UpdatedAt:              time.Now().Add(time.Second),
@@ -126,6 +127,7 @@ func TestPostgres(t *testing.T) {
 						SubAccountID: instanceData.subAccountID,
 					},
 					ID:                     "latest-op-id",
+					Type:                   internal.OperationTypeProvision,
 					Version:                0,
 					CreatedAt:              time.Now().Add(time.Minute),
 					UpdatedAt:              time.Now().Add(2 * time.Minute),
@@ -138,6 +140,7 @@ func TestPostgres(t *testing.T) {
 			err = brokerStorage.Operations().InsertUpgradeKymaOperation(internal.UpgradeKymaOperation{
 				Operation: internal.Operation{
 					ID:    "operation-id-3",
+					Type:  internal.OperationTypeUpgradeKyma,
 					State: orchestration.Pending,
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Hour),
@@ -567,6 +570,7 @@ func TestPostgres(t *testing.T) {
 			givenOperation := internal.ProvisioningOperation{
 				Operation: internal.Operation{
 					ID:    "operation-id",
+					Type:  internal.OperationTypeProvision,
 					State: domain.InProgress,
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now().Truncate(time.Millisecond),
@@ -583,6 +587,7 @@ func TestPostgres(t *testing.T) {
 			latestOperation := internal.ProvisioningOperation{
 				Operation: internal.Operation{
 					ID:    "latest-id",
+					Type:  internal.OperationTypeProvision,
 					State: domain.InProgress,
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Minute),
@@ -599,6 +604,7 @@ func TestPostgres(t *testing.T) {
 			latestPendingOperation := internal.ProvisioningOperation{
 				Operation: internal.Operation{
 					ID:    "latest-id-pending",
+					Type:  internal.OperationTypeProvision,
 					State: orchestration.Pending,
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Minute),
@@ -633,7 +639,7 @@ func TestPostgres(t *testing.T) {
 			err = svc.InsertProvisioningOperation(latestPendingOperation)
 			require.NoError(t, err)
 
-			ops, err := svc.GetNotFinishedOperationsByType(dbmodel.OperationTypeProvision)
+			ops, err := svc.GetNotFinishedOperationsByType(internal.OperationTypeProvision)
 			require.NoError(t, err)
 			assert.Len(t, ops, 3)
 			assertOperation(t, givenOperation.Operation, ops[0])
@@ -688,6 +694,7 @@ func TestPostgres(t *testing.T) {
 			givenOperation := internal.DeprovisioningOperation{
 				Operation: internal.Operation{
 					ID:    "operation-id",
+					Type:  internal.OperationTypeDeprovision,
 					State: domain.InProgress,
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now().Truncate(time.Millisecond),
@@ -712,7 +719,7 @@ func TestPostgres(t *testing.T) {
 			err = svc.InsertDeprovisioningOperation(givenOperation)
 			require.NoError(t, err)
 
-			ops, err := svc.GetNotFinishedOperationsByType(dbmodel.OperationTypeDeprovision)
+			ops, err := svc.GetNotFinishedOperationsByType(internal.OperationTypeDeprovision)
 			require.NoError(t, err)
 			assert.Len(t, ops, 1)
 			assertOperation(t, givenOperation.Operation, ops[0])
@@ -742,6 +749,7 @@ func TestPostgres(t *testing.T) {
 			err = svc.InsertDeprovisioningOperation(internal.DeprovisioningOperation{
 				Operation: internal.Operation{
 					ID:         "other-op-id",
+					Type:       internal.OperationTypeDeprovision,
 					InstanceID: fixInstanceId,
 					CreatedAt:  time.Now().Add(1 * time.Hour),
 					UpdatedAt:  time.Now().Add(1 * time.Hour),
@@ -764,6 +772,7 @@ func TestPostgres(t *testing.T) {
 			givenOperation1 := internal.UpgradeKymaOperation{
 				Operation: internal.Operation{
 					ID:    "operation-id-1",
+					Type:  internal.OperationTypeUpgradeKyma,
 					State: domain.InProgress,
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now().Truncate(time.Millisecond),
@@ -780,6 +789,7 @@ func TestPostgres(t *testing.T) {
 			givenOperation2 := internal.UpgradeKymaOperation{
 				Operation: internal.Operation{
 					ID:    "operation-id-2",
+					Type:  internal.OperationTypeUpgradeKyma,
 					State: domain.InProgress,
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Minute),
@@ -797,6 +807,7 @@ func TestPostgres(t *testing.T) {
 			givenOperation3 := internal.UpgradeKymaOperation{
 				Operation: internal.Operation{
 					ID:    "operation-id-3",
+					Type:  internal.OperationTypeUpgradeKyma,
 					State: orchestration.Pending,
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Hour),
@@ -851,6 +862,7 @@ func TestPostgres(t *testing.T) {
 			givenOperation1 := internal.UpgradeClusterOperation{
 				Operation: internal.Operation{
 					ID:    "operation-id-1",
+					Type:  internal.OperationTypeUpgradeCluster,
 					State: domain.InProgress,
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now().Truncate(time.Millisecond),
@@ -867,6 +879,7 @@ func TestPostgres(t *testing.T) {
 			givenOperation2 := internal.UpgradeClusterOperation{
 				Operation: internal.Operation{
 					ID:    "operation-id-2",
+					Type:  internal.OperationTypeUpgradeCluster,
 					State: domain.InProgress,
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(time.Minute),
@@ -884,6 +897,7 @@ func TestPostgres(t *testing.T) {
 			givenOperation3 := internal.UpgradeClusterOperation{
 				Operation: internal.Operation{
 					ID:    "operation-id-3",
+					Type:  internal.OperationTypeUpgradeCluster,
 					State: orchestration.Pending,
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now().Truncate(time.Millisecond).Add(2 * time.Hour),
@@ -956,6 +970,7 @@ func TestPostgres(t *testing.T) {
 			givenOperation := internal.ProvisioningOperation{
 				Operation: internal.Operation{
 					ID:    "operation-001",
+					Type:  internal.OperationTypeProvision,
 					State: domain.InProgress,
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now(),
@@ -1014,6 +1029,7 @@ func TestPostgres(t *testing.T) {
 			givenOperation := internal.DeprovisioningOperation{
 				Operation: internal.Operation{
 					ID:    "operation-001",
+					Type:  internal.OperationTypeDeprovision,
 					State: domain.InProgress,
 					// used Round and set timezone to be able to compare timestamps
 					CreatedAt:              time.Now(),
@@ -1412,11 +1428,11 @@ func assertEqualOperation(t *testing.T, want interface{}, got internal.InstanceW
 	t.Helper()
 	switch want := want.(type) {
 	case internal.ProvisioningOperation:
-		assert.EqualValues(t, dbmodel.OperationTypeProvision, got.Type.String)
+		assert.EqualValues(t, internal.OperationTypeProvision, got.Type.String)
 		assert.EqualValues(t, want.State, got.State.String)
 		assert.EqualValues(t, want.Description, got.Description.String)
 	case internal.DeprovisioningOperation:
-		assert.EqualValues(t, dbmodel.OperationTypeDeprovision, got.Type.String)
+		assert.EqualValues(t, internal.OperationTypeDeprovision, got.Type.String)
 		assert.EqualValues(t, want.State, got.State.String)
 		assert.EqualValues(t, want.Description, got.Description.String)
 	}

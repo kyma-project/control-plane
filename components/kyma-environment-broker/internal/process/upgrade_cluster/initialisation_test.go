@@ -1,4 +1,4 @@
-package upgrade_kyma
+package upgrade_cluster
 
 import (
 	"context"
@@ -6,22 +6,24 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma/automock"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
+
 	"github.com/stretchr/testify/require"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -123,8 +125,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 		require.NoError(t, err)
 
-		upgradeOperation := fixUpgradeKymaOperation()
-		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		upgradeOperation := fixUpgradeClusterOperation()
+		err = memoryStorage.Operations().InsertUpgradeClusterOperation(upgradeOperation)
 		require.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
@@ -140,8 +142,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			nil, evalManager, nil, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient,
+			nil, evalManager, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -151,7 +153,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.Equal(t, time.Duration(0), repeat)
 		assert.Equal(t, domain.Succeeded, upgradeOperation.State)
 
-		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
+		storedOp, err := memoryStorage.Operations().GetUpgradeClusterOperationByID(upgradeOperation.Operation.ID)
 		assert.Equal(t, upgradeOperation, *storedOp)
 		assert.NoError(t, err)
 
@@ -162,7 +164,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
 		evalManager, _ := createEvalManager(t, memoryStorage, log)
-		ver := &internal.RuntimeVersionData{}
 
 		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
 		require.NoError(t, err)
@@ -171,9 +172,9 @@ func TestInitialisationStep_Run(t *testing.T) {
 		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 		require.NoError(t, err)
 
-		upgradeOperation := fixUpgradeKymaOperation()
+		upgradeOperation := fixUpgradeClusterOperation()
 		upgradeOperation.ProvisionerOperationID = ""
-		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		err = memoryStorage.Operations().InsertUpgradeClusterOperation(upgradeOperation)
 		require.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
@@ -182,29 +183,25 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		provisionerClient := &provisionerAutomock.Client{}
 		inputBuilder := &automock.CreatorForPlan{}
-		inputBuilder.On("CreateUpgradeInput", fixProvisioningParameters(), *ver).Return(&input.RuntimeInput{}, nil)
+		inputBuilder.On("CreateUpgradeShootInput", fixProvisioningParameters()).Return(&input.RuntimeInput{}, nil)
 
-		rvc := &automock.RuntimeVersionConfiguratorForUpgrade{}
-		defer rvc.AssertExpectations(t)
 		expectedOperation := upgradeOperation
 		expectedOperation.Version++
 		expectedOperation.State = orchestration.InProgress
-		//rvc.On("ForUpgrade", expectedOperation).Return(ver, nil).Once()
-		rvc.On("ForUpgrade", mock.AnythingOfType("internal.UpgradeKymaOperation")).Return(ver, nil).Once()
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, rvc, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil)
 
 		// when
 		op, repeat, err := step.Run(upgradeOperation, log)
 
 		// then
 		assert.NoError(t, err)
-		inputBuilder.AssertNumberOfCalls(t, "CreateUpgradeInput", 1)
+		inputBuilder.AssertNumberOfCalls(t, "CreateUpgradeShootInput", 1)
 		assert.Equal(t, time.Duration(0), repeat)
 		assert.NotNil(t, op.InputCreator)
 
-		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(op.Operation.ID)
+		storedOp, err := memoryStorage.Operations().GetUpgradeClusterOperationByID(op.Operation.ID)
+		op.InputCreator = nil
 		assert.Equal(t, op, *storedOp)
 		assert.NoError(t, err)
 	})
@@ -218,16 +215,15 @@ func TestInitialisationStep_Run(t *testing.T) {
 		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.Canceled})
 		require.NoError(t, err)
 
-		upgradeOperation := fixUpgradeKymaOperation()
-		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		upgradeOperation := fixUpgradeClusterOperation()
+		err = memoryStorage.Operations().InsertUpgradeClusterOperation(upgradeOperation)
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
 		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 		require.NoError(t, err)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), nil,
-			nil, evalManager, nil, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), nil, nil, evalManager, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -237,7 +233,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.Equal(t, time.Duration(0), repeat)
 		assert.Equal(t, orchestration.Canceled, string(upgradeOperation.State))
 
-		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
+		storedOp, err := memoryStorage.Operations().GetUpgradeClusterOperationByID(upgradeOperation.Operation.ID)
 		require.NoError(t, err)
 		assert.Equal(t, upgradeOperation, *storedOp)
 	})
@@ -257,9 +253,9 @@ func TestInitialisationStep_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		avsData := createMonitors(t, client, "", "")
-		upgradeOperation := fixUpgradeKymaOperationWithAvs(avsData)
+		upgradeOperation := fixUpgradeClusterOperationWithAvs(avsData)
 
-		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		err = memoryStorage.Operations().InsertUpgradeClusterOperation(upgradeOperation)
 		require.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
@@ -275,8 +271,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -288,7 +283,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: avs.StatusActive, Original: avs.StatusMaintenance})
 		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: avs.StatusActive, Original: avs.StatusMaintenance})
 
-		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
+		storedOp, err := memoryStorage.Operations().GetUpgradeClusterOperationByID(upgradeOperation.Operation.ID)
 		assert.Equal(t, upgradeOperation, *storedOp)
 		assert.NoError(t, err)
 	})
@@ -309,9 +304,9 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		internalStatus, externalStatus := avs.StatusActive, avs.StatusInactive
 		avsData := createMonitors(t, client, internalStatus, externalStatus)
-		upgradeOperation := fixUpgradeKymaOperationWithAvs(avsData)
+		upgradeOperation := fixUpgradeClusterOperationWithAvs(avsData)
 
-		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		err = memoryStorage.Operations().InsertUpgradeClusterOperation(upgradeOperation)
 		require.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
@@ -327,8 +322,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -340,7 +334,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: internalStatus, Original: avs.StatusMaintenance})
 		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: externalStatus, Original: avs.StatusMaintenance})
 
-		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
+		storedOp, err := memoryStorage.Operations().GetUpgradeClusterOperationByID(upgradeOperation.Operation.ID)
 		assert.Equal(t, upgradeOperation, *storedOp)
 		assert.NoError(t, err)
 	})
@@ -361,9 +355,9 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		internalStatus, externalStatus := avs.StatusActive, avs.StatusInactive
 		avsData := createMonitors(t, client, internalStatus, externalStatus)
-		upgradeOperation := fixUpgradeKymaOperationWithAvs(avsData)
+		upgradeOperation := fixUpgradeClusterOperationWithAvs(avsData)
 
-		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		err = memoryStorage.Operations().InsertUpgradeClusterOperation(upgradeOperation)
 		require.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
@@ -379,8 +373,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -392,7 +385,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: internalStatus, Original: avs.StatusMaintenance})
 		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: externalStatus, Original: avs.StatusMaintenance})
 
-		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
+		storedOp, err := memoryStorage.Operations().GetUpgradeClusterOperationByID(upgradeOperation.Operation.ID)
 		assert.Equal(t, upgradeOperation, *storedOp)
 		assert.NoError(t, err)
 	})
@@ -414,9 +407,9 @@ func TestInitialisationStep_Run(t *testing.T) {
 		internalStatus, externalStatus := avs.StatusActive, ""
 		avsData := createMonitors(t, client, internalStatus, externalStatus)
 		avsData.AVSEvaluationExternalId = 0
-		upgradeOperation := fixUpgradeKymaOperationWithAvs(avsData)
+		upgradeOperation := fixUpgradeClusterOperationWithAvs(avsData)
 
-		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		err = memoryStorage.Operations().InsertUpgradeClusterOperation(upgradeOperation)
 		require.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
@@ -432,8 +425,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -445,7 +437,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: internalStatus, Original: avs.StatusMaintenance})
 		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: "", Original: ""})
 
-		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
+		storedOp, err := memoryStorage.Operations().GetUpgradeClusterOperationByID(upgradeOperation.Operation.ID)
 		assert.Equal(t, upgradeOperation, *storedOp)
 		assert.NoError(t, err)
 	})
@@ -467,9 +459,9 @@ func TestInitialisationStep_Run(t *testing.T) {
 		internalStatus, externalStatus := "", avs.StatusInactive
 		avsData := createMonitors(t, client, internalStatus, externalStatus)
 		avsData.AvsEvaluationInternalId = 0
-		upgradeOperation := fixUpgradeKymaOperationWithAvs(avsData)
+		upgradeOperation := fixUpgradeClusterOperationWithAvs(avsData)
 
-		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		err = memoryStorage.Operations().InsertUpgradeClusterOperation(upgradeOperation)
 		require.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
@@ -485,8 +477,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -498,7 +489,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: "", Original: ""})
 		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: externalStatus, Original: avs.StatusMaintenance})
 
-		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
+		storedOp, err := memoryStorage.Operations().GetUpgradeClusterOperationByID(upgradeOperation.Operation.ID)
 		assert.Equal(t, upgradeOperation, *storedOp)
 		assert.NoError(t, err)
 	})
@@ -521,9 +512,9 @@ func TestInitialisationStep_Run(t *testing.T) {
 		avsData := createMonitors(t, client, internalStatus, externalStatus)
 		avsData.AvsEvaluationInternalId = 0
 		avsData.AVSEvaluationExternalId = 0
-		upgradeOperation := fixUpgradeKymaOperationWithAvs(avsData)
+		upgradeOperation := fixUpgradeClusterOperationWithAvs(avsData)
 
-		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		err = memoryStorage.Operations().InsertUpgradeClusterOperation(upgradeOperation)
 		require.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
@@ -539,8 +530,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -552,7 +542,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: "", Original: ""})
 		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: "", Original: ""})
 
-		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
+		storedOp, err := memoryStorage.Operations().GetUpgradeClusterOperationByID(upgradeOperation.Operation.ID)
 		assert.Equal(t, upgradeOperation, *storedOp)
 		assert.NoError(t, err)
 	})
@@ -574,9 +564,9 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		internalStatus, externalStatus := avs.StatusInactive, avs.StatusActive
 		avsData := createMonitors(t, client, internalStatus, externalStatus)
-		upgradeOperation := fixUpgradeKymaOperationWithAvs(avsData)
+		upgradeOperation := fixUpgradeClusterOperationWithAvs(avsData)
 
-		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		err = memoryStorage.Operations().InsertUpgradeClusterOperation(upgradeOperation)
 		require.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
@@ -593,8 +583,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 				RuntimeID: StringPtr(fixRuntimeID),
 			}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManagerInvalid, nil, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManagerInvalid, nil)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -624,9 +613,9 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		internalStatus, externalStatus := avs.StatusInactive, avs.StatusActive
 		avsData := createMonitors(t, client, internalStatus, externalStatus)
-		upgradeOperation := fixUpgradeKymaOperationWithAvs(avsData)
+		upgradeOperation := fixUpgradeClusterOperationWithAvs(avsData)
 
-		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
+		err = memoryStorage.Operations().InsertUpgradeClusterOperation(upgradeOperation)
 		require.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
@@ -659,8 +648,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 				}
 			}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManagerInvalid, nil, nil, nil)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManagerInvalid, nil)
 
 		// when invalid client request, this should be delayed
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -693,29 +681,29 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: internalStatus, Original: avs.StatusMaintenance})
 		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: externalStatus, Original: avs.StatusMaintenance})
 
-		storedOp, err := memoryStorage.Operations().GetUpgradeKymaOperationByID(upgradeOperation.Operation.ID)
+		storedOp, err := memoryStorage.Operations().GetUpgradeClusterOperationByID(upgradeOperation.Operation.ID)
 		assert.Equal(t, upgradeOperation, *storedOp)
 		assert.NoError(t, err)
 	})
 
 }
 
-func fixUpgradeKymaOperation() internal.UpgradeKymaOperation {
-	return fixUpgradeKymaOperationWithAvs(internal.AvsLifecycleData{})
+func fixUpgradeClusterOperation() internal.UpgradeClusterOperation {
+	return fixUpgradeClusterOperationWithAvs(internal.AvsLifecycleData{})
 }
 
-func fixUpgradeKymaOperationWithAvs(avsData internal.AvsLifecycleData) internal.UpgradeKymaOperation {
-	upgradeOperation := fixture.FixUpgradeKymaOperation(fixUpgradeOperationID, fixInstanceID)
+func fixUpgradeClusterOperationWithAvs(avsData internal.AvsLifecycleData) internal.UpgradeClusterOperation {
+	upgradeOperation := fixture.FixUpgradeClusterOperation(fixUpgradeOperationID, fixInstanceID)
 	upgradeOperation.OrchestrationID = fixOrchestrationID
 	upgradeOperation.ProvisionerOperationID = fixProvisionerOperationID
 	upgradeOperation.State = orchestration.Pending
 	upgradeOperation.Description = ""
 	upgradeOperation.UpdatedAt = time.Now()
-	upgradeOperation.RuntimeVersion = internal.RuntimeVersionData{}
 	upgradeOperation.InstanceDetails.Avs = avsData
 	upgradeOperation.ProvisioningParameters = fixProvisioningParameters()
 	upgradeOperation.RuntimeOperation.GlobalAccountID = fixGlobalAccountID
 	upgradeOperation.RuntimeOperation.SubAccountID = fixSubAccountID
+	upgradeOperation.InputCreator = nil
 
 	return upgradeOperation
 }
@@ -731,7 +719,7 @@ func fixProvisioningOperation() internal.ProvisioningOperation {
 
 func fixProvisioningParameters() internal.ProvisioningParameters {
 	pp := fixture.FixProvisioningParameters("1")
-	pp.PlanID = broker.GCPPlanID
+	pp.PlanID = broker.AzurePlanID
 	pp.ServiceID = ""
 	pp.ErsContext.GlobalAccountID = fixGlobalAccountID
 	pp.ErsContext.SubAccountID = fixSubAccountID
