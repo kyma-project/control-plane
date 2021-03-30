@@ -592,8 +592,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 10*time.Second, repeat)
 		assert.Equal(t, domain.InProgress, upgradeOperation.State)
-		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: internalStatus, Original: ""})
-		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: externalStatus, Original: ""})
+		assert.Equal(t, internal.AvsEvaluationStatus{Current: internalStatus, Original: internalStatus}, upgradeOperation.Avs.AvsInternalEvaluationStatus)
+		assert.Equal(t, internal.AvsEvaluationStatus{Current: externalStatus, Original: ""}, upgradeOperation.Avs.AvsExternalEvaluationStatus)
 	})
 
 	t.Run("should go through init and finish steps (both monitors)", func(t *testing.T) {
@@ -657,8 +657,8 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 10*time.Second, repeat)
 		assert.Equal(t, domain.InProgress, upgradeOperation.State)
-		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: internalStatus, Original: ""})
-		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: externalStatus, Original: ""})
+		assert.Equal(t, internal.AvsEvaluationStatus{Current: internalStatus, Original: internalStatus}, upgradeOperation.Avs.AvsInternalEvaluationStatus)
+		assert.Equal(t, internal.AvsEvaluationStatus{Current: externalStatus, Original: ""}, upgradeOperation.Avs.AvsExternalEvaluationStatus)
 
 		// when valid client request and InProgress state from RuntimeOperationStatus, this should do init tasks
 		step.evaluationManager = evalManager
