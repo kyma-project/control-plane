@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
@@ -76,8 +77,12 @@ func (s *ClsUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log lo
 			BindingID:   operation.Cls.BindingID,
 		})
 		if err != nil {
-			log.Errorf("Unable to create CLS Binding: %v. Retrying", err)
-			return operation, 30 * time.Second, nil
+			failureReason := "Unable to create CLS Binding"
+			log.Errorf("%s: %v", failureReason, err)
+			if kebError.IsTemporaryError(err) {
+				return s.operationManager.RetryOperation(operation, failureReason, 10*time.Second, time.Minute*30, log)
+			}
+			return s.operationManager.OperationFailed(operation, failureReason, log)
 		}
 
 		encryptedOverrideParams, err := cls.EncryptOverrides(s.secretKey, overrideParams)

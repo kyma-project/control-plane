@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/pkg/errors"
-
-	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 type Type string
@@ -25,81 +24,65 @@ type Credentials struct {
 }
 
 type AccountPool interface {
-	Credentials(hyperscalerType Type, tenantName string) (Credentials, error)
+	CredentialsSecretBinding(hyperscalerType Type, tenantName string) (*v1beta1.SecretBinding, error)
 }
 
-type secretsAccountPool struct {
-	secretsClient corev1.SecretInterface
-	mux           sync.Mutex
+type secretBindingsAccountPool struct {
+	secretBindingsClient gardener_apis.SecretBindingInterface
+	mux                  sync.Mutex
 }
 
 // NewAccountPool returns a new AccountPool
-func NewAccountPool(secretsClient corev1.SecretInterface) AccountPool {
-	return &secretsAccountPool{
-		secretsClient: secretsClient,
+func NewAccountPool(secretBindingsClient gardener_apis.SecretBindingInterface) AccountPool {
+	return &secretBindingsAccountPool{
+		secretBindingsClient: secretBindingsClient,
 	}
 }
 
 // Credentials returns the hyperscaler secret from k8s secret
-func (p *secretsAccountPool) Credentials(hyperscalerType Type, tenantName string) (Credentials, error) {
+func (p *secretBindingsAccountPool) CredentialsSecretBinding(hyperscalerType Type, tenantName string) (*v1beta1.SecretBinding, error) {
 	labelSelector := fmt.Sprintf("tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
-	secret, err := getK8SSecret(p.secretsClient, labelSelector)
-
+	secretBinding, err := getSecretBinding(p.secretBindingsClient, labelSelector)
 	if err != nil {
-		return Credentials{}, err
+		return nil, err
 	}
-	if secret != nil {
-		return credentialsFromSecret(secret, hyperscalerType, tenantName), nil
+	if secretBinding != nil {
+		return secretBinding, nil
 	}
 
-	labelSelector = fmt.Sprintf("!tenantName, hyperscalerType=%s", hyperscalerType)
-	// lock so that only one thread can fetch an unassigned secret and assign it (update secret with tenantName)
+	// lock so that only one thread can fetch an unassigned secret binding and assign it (update secret binding with tenantName)
 	p.mux.Lock()
 	defer p.mux.Unlock()
-	secret, err = getK8SSecret(p.secretsClient, labelSelector)
 
+	labelSelector = fmt.Sprintf("shared!=true, !tenantName, !dirty, hyperscalerType=%s", hyperscalerType)
+	secretBinding, err = getSecretBinding(p.secretBindingsClient, labelSelector)
 	if err != nil {
-		return Credentials{}, errors.Wrap(err, "failed to fetch k8s secret")
-	}
-	if secret == nil {
-		return Credentials{}, fmt.Errorf("accountPool failed to find unassigned secret for hyperscalerType: %s",
-			hyperscalerType)
+		return nil, err
 	}
 
-	secret.Labels["tenantName"] = tenantName
-	updatedSecret, err := p.secretsClient.Update(secret)
+	if secretBinding == nil {
+		return nil, errors.Errorf("failed to find unassigned secret binding for hyperscalerType: %s", hyperscalerType)
+	}
+
+	secretBinding.Labels["tenantName"] = tenantName
+	updatedSecretBinding, err := p.secretBindingsClient.Update(secretBinding)
 	if err != nil {
-		return Credentials{}, errors.Wrapf(err, "accountPool error while updating secret with tenantName: %s", tenantName)
+		return nil, errors.Wrapf(err, "updating secret binding with tenantName: %s", tenantName)
 	}
 
-	return credentialsFromSecret(updatedSecret, hyperscalerType, tenantName), nil
+	return updatedSecretBinding, nil
 }
 
-func getK8SSecret(secretsClient corev1.SecretInterface, labelSelector string) (*apiv1.Secret, error) {
-	secrets, err := secretsClient.List(metav1.ListOptions{
+func getSecretBinding(secretBindingsClient gardener_apis.SecretBindingInterface, labelSelector string) (*v1beta1.SecretBinding, error) {
+	secretBindings, err := secretBindingsClient.List(metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
-
 	if err != nil {
-		return nil, errors.Wrapf(err, "accountPool error during secret list for LabelSelector: %s", labelSelector)
+		return nil, errors.Wrapf(err, "listing secret bindings for LabelSelector: %s", labelSelector)
 	}
 
-	if secrets == nil {
-		return nil, fmt.Errorf("secret is nil for LabelSelector: %s", labelSelector)
+	if secretBindings != nil && len(secretBindings.Items) > 0 {
+		return &secretBindings.Items[0], nil
 	}
-
-	if len(secrets.Items) < 1 {
-		return nil, fmt.Errorf("no secrets returned for LabelSelector: %s", labelSelector)
-	}
-
-	return &secrets.Items[0], nil
-}
-
-func credentialsFromSecret(secret *apiv1.Secret, hyperscalerType Type, tenantName string) Credentials {
-	return Credentials{
-		Name:            secret.Name,
-		TenantName:      tenantName,
-		HyperscalerType: hyperscalerType,
-		CredentialData:  secret.Data,
-	}
+	return nil, nil
 }

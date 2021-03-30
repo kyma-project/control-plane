@@ -236,7 +236,8 @@
   revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
 
 [[projects]]
-  digest = "1:144d8ccde7ad0a3957a3f3ae6415f6a13e1f725f319558f38166181962365c79"
+  branch = "1282-switch-hap-to-secretbindings"
+  digest = "1:15d99214d993a5ef77ae73d23a102de4114d967b3238aa8f82c79113486ec435"
   name = "github.com/kyma-project/control-plane"
   packages = [
     "components/kyma-environment-broker/common/director",
@@ -245,7 +246,8 @@
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "c5a01b1a0147891184075378477713cab222e81b"
+  revision = "b4d630ef25bec3080e90c6bb70c4aef8e2bcb903"
+  source = "github.com/franpog859/control-plane"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -727,6 +729,8 @@
     "github.com/Azure/go-autorest/autorest",
     "github.com/Azure/go-autorest/autorest/adal",
     "github.com/Azure/go-autorest/autorest/azure",
+    "github.com/gardener/gardener/pkg/apis/core/v1beta1",
+    "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1",
     "github.com/google/uuid",
     "github.com/kyma-incubator/compass/tests/director/pkg/ptr",
     "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director",
@@ -746,8 +750,8 @@
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/util/wait",
+    "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/scheme",
-    "k8s.io/client-go/kubernetes/typed/core/v1",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/config",
   ]

@@ -31,7 +31,8 @@
 
 [[constraint]]
   name = "github.com/kyma-project/control-plane"
-  revision = "c5a01b1a0147891184075378477713cab222e81b"
+  branch = "1282-switch-hap-to-secretbindings"
+  source = "github.com/franpog859/control-plane"
 
 [[override]]
   name = "github.com/kyma-incubator/compass"
