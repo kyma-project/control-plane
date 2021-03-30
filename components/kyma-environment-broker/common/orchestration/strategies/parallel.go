@@ -79,10 +79,16 @@ func (p *ParallelOrchestrationStrategy) Wait(executionID string) {
 }
 
 func (p *ParallelOrchestrationStrategy) Cancel(executionID string) {
+	if executionID == "" {
+		return
+	}
+	p.log.Infof("Cancelling strategy execution %s", executionID)
 	p.mux.Lock()
 	defer p.mux.Unlock()
-	p.log.Infof("Cancelling strategy execution %s", executionID)
-	p.dq[executionID].ShutDown()
+	dq := p.dq[executionID]
+	if dq != nil {
+		dq.ShutDown()
+	}
 }
 
 func (p *ParallelOrchestrationStrategy) createWorker(execID string, ops chan orchestration.RuntimeOperation, strategy orchestration.StrategySpec) {
