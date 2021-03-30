@@ -76,11 +76,11 @@ func (s *ConnBindStep) Run(operation internal.ProvisioningOperation, log logrus.
 			return s.handleError(operation, err, log, fmt.Sprintf("Bind() call failed"))
 		}
 		// get overrides
-		connectivityOverrides, err = GetConnectivityCredentials(respBinding.Binding)
+		connectivityOverrides, err = GetConnCredentials(respBinding.Binding)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("getCredentials() call failed"))
 		}
-		encryptedOverrides, err := EncryptConnectivityOverrides(s.secretKey, connectivityOverrides)
+		encryptedOverrides, err := EncryptConnOverrides(s.secretKey, connectivityOverrides)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("encryptOverrides() call failed"))
 		}
@@ -98,14 +98,14 @@ func (s *ConnBindStep) Run(operation internal.ProvisioningOperation, log logrus.
 		operation = op
 	} else {
 		// get the credentials from encrypted string in operation.Conn.Instance.
-		connectivityOverrides, err = DecryptConnectivityOverrides(s.secretKey, operation.Conn.Overrides)
+		connectivityOverrides, err = DecryptConnOverrides(s.secretKey, operation.Conn.Overrides)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("decryptOverrides() call failed"))
 		}
 	}
 
 	// append overrides
-	operation.InputCreator.AppendOverrides(components.Connectivity, GetConnectivityOverrides(connectivityOverrides))
+	operation.InputCreator.AppendOverrides(components.Connectivity, GetConnOverrides(connectivityOverrides))
 
 	return operation, 0, nil
 }
@@ -115,7 +115,7 @@ func (s *ConnBindStep) handleError(operation internal.ProvisioningOperation, err
 	return s.operationManager.OperationFailed(operation, msg, log)
 }
 
-func GetConnectivityCredentials(binding servicemanager.Binding) (*ConnectivityOverrides, error) {
+func GetConnCredentials(binding servicemanager.Binding) (*ConnectivityOverrides, error) {
 	return nil, nil
 }
 
@@ -152,7 +152,7 @@ func GetConnectivityCredentials(binding servicemanager.Binding) (*ConnectivityOv
 //	return &evOverrides, nil
 //}
 
-func GetConnectivityOverrides(cnOverrides *ConnectivityOverrides) []*gqlschema.ConfigEntryInput {
+func GetConnOverrides(cnOverrides *ConnectivityOverrides) []*gqlschema.ConfigEntryInput {
 	return nil
 }
 
@@ -196,7 +196,7 @@ func GetConnectivityOverrides(cnOverrides *ConnectivityOverrides) []*gqlschema.C
 //	}
 //}
 
-func EncryptConnectivityOverrides(secretKey string, overrides *ConnectivityOverrides) (string, error) {
+func EncryptConnOverrides(secretKey string, overrides *ConnectivityOverrides) (string, error) {
 	ovrs, err := json.Marshal(*overrides)
 	if err != nil {
 		return "", errors.Wrap(err, "while encoding connectivity overrides")
@@ -209,7 +209,7 @@ func EncryptConnectivityOverrides(secretKey string, overrides *ConnectivityOverr
 	return string(encryptedOverrides), nil
 }
 
-func DecryptConnectivityOverrides(secretKey string, encryptedOverrides string) (*ConnectivityOverrides, error) {
+func DecryptConnOverrides(secretKey string, encryptedOverrides string) (*ConnectivityOverrides, error) {
 	encrypter := storage.NewEncrypter(secretKey)
 	decryptedOverrides, err := encrypter.Decrypt([]byte(encryptedOverrides))
 	if err != nil {
