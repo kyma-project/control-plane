@@ -78,10 +78,10 @@ func (s *ConnBindStep) Run(operation internal.ProvisioningOperation, log logrus.
 	// execute binding
 	var connectivityOverrides *ConnectivityOverrides
 	if !operation.Conn.Instance.Provisioned {
-		if operation.Conn.Binding.BindingID == "" {
-			operation.Conn.Binding.BindingID = uuid.New().String()
+		if operation.Conn.BindingID == "" {
+			operation.Conn.BindingID = uuid.New().String()
 		}
-		respBinding, err := smCli.Bind(operation.Conn.Instance.InstanceKey(), operation.Conn.Binding.BindingID, nil, false)
+		respBinding, err := smCli.Bind(operation.Conn.Instance.InstanceKey(), operation.Conn.BindingID, nil, false)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("Bind() call failed"))
 		}
