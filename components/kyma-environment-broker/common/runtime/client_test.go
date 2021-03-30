@@ -62,7 +62,10 @@ func TestClient_ListRuntimes(t *testing.T) {
 			assert.ElementsMatch(t, params.Regions, query[RegionParam])
 			assert.ElementsMatch(t, params.Shoots, query[ShootParam])
 			assert.ElementsMatch(t, params.Plans, query[PlanParam])
-			assert.ElementsMatch(t, params.States, query[StateParam])
+			stateParams := query[StateParam]
+			assert.Len(t, stateParams, 2)
+			assert.EqualValues(t, params.States[0], stateParams[0])
+			assert.EqualValues(t, params.States[1], stateParams[1])
 
 			err := respondRuntimes(w, []RuntimeDTO{runtime1, runtime2}, 2)
 			require.NoError(t, err)
