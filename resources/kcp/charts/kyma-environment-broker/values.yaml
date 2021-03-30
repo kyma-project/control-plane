@@ -176,6 +176,9 @@ edp:
 ems:
   disabled: true
 
+conn:
+  disabled: true
+
 cls:
   disabled: true
   secretName: "kcp-cls-config"

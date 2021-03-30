@@ -14,7 +14,7 @@ import (
 
 const (
 	ConnOfferingName = "connectivity"
-	ConnPlanName     = "lite"
+	ConnPlanName     = "connectivity_proxy"
 )
 
 type ConnProvisionStep struct {
@@ -102,9 +102,7 @@ func getEventingProvisioningData(connInstanceData internal.ConnData) *serviceman
 	input.Context = map[string]interface{}{
 		"platform": "kubernetes",
 	}
-	input.Parameters = map[string]interface{}{
-		// TODO: Fill
-	}
+	input.Parameters = map[string]interface{}{}
 
 	return &input
 }

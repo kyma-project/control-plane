@@ -413,6 +413,11 @@ func main() {
 		},
 		{
 			weight:   7,
+			step:     provisioning.NewConnBindStep(db.Operations(), cfg.Database.SecretKey),
+			disabled: cfg.Conn.Disabled,
+		},
+		{
+			weight:   7,
 			step:     provisioning.NewSkipForTrialPlanStep(provisioning.NewClsBindStep(clsConfig, clsClient, db.Operations(), cfg.Database.SecretKey)),
 			disabled: cfg.Cls.Disabled,
 		},
@@ -475,6 +480,11 @@ func main() {
 		},
 		{
 			weight:   1,
+			step:     deprovisioning.NewConnUnbindStep(db.Operations()),
+			disabled: cfg.Conn.Disabled,
+		},
+		{
+			weight:   1,
 			step:     deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewClsUnbindStep(clsConfig, db.Operations())),
 			disabled: cfg.Cls.Disabled,
 		},
@@ -482,6 +492,11 @@ func main() {
 			weight:   2,
 			step:     deprovisioning.NewXSUAADeprovisionStep(db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
+		},
+		{
+			weight:   2,
+			step:     deprovisioning.NewConnDeprovisionStep(db.Operations()),
+			disabled: cfg.Conn.Disabled,
 		},
 		{
 			weight:   2,
