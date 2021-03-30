@@ -45,7 +45,7 @@ func TestClient_ListRuntimes(t *testing.T) {
 			Regions:          []string{"region1", "region2"},
 			Shoots:           []string{"shoot1", "shoot2"},
 			Plans:            []string{"plan1", "plan2"},
-			States:           []string{RuntimeFailed, RuntimeSucceeded},
+			States:           []State{StateFailed, StateSucceeded},
 		}
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			called++

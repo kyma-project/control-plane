@@ -111,7 +111,9 @@ func setQuery(url *url.URL, params ListParameters) {
 	setParamList(query, RegionParam, params.Regions)
 	setParamList(query, ShootParam, params.Shoots)
 	setParamList(query, PlanParam, params.Plans)
-	setParamList(query, StateParam, params.States)
+	for _, s := range params.States {
+		query.Add(StateParam, string(s))
+	}
 	url.RawQuery = query.Encode()
 }
 

@@ -62,14 +62,16 @@ const (
 	StateParam           = "state"
 )
 
+type State string
+
 const (
-	RuntimeSucceeded      = "succeeded"
-	RuntimeFailed         = "failed"
-	RuntimeProvisioning   = "provisioning"
-	RuntimeDeprovisioning = "deprovisioning"
-	RuntimeUpgrading      = "upgrading"
-	RuntimeSuspended      = "suspended"
-	RuntimeAllState       = "all"
+	StateSucceeded      State = "succeeded"
+	StateFailed         State = "failed"
+	StateProvisioning   State = "provisioning"
+	StateDeprovisioning State = "deprovisioning"
+	StateUpgrading      State = "upgrading"
+	StateSuspended      State = "suspended"
+	AllState            State = "all"
 )
 
 type ListParameters struct {
@@ -82,7 +84,7 @@ type ListParameters struct {
 	Regions          []string
 	Shoots           []string
 	Plans            []string
-	States           []string
+	States           []State
 }
 
 type OperationType string

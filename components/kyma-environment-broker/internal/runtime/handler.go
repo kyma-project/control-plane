@@ -141,20 +141,20 @@ func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {
 	} else {
 		allState := false
 		for _, s := range states {
-			switch s {
-			case pkg.RuntimeSucceeded:
+			switch pkg.State(s) {
+			case pkg.StateSucceeded:
 				filter.States = append(filter.States, dbmodel.InstanceSucceeded)
-			case pkg.RuntimeFailed:
+			case pkg.StateFailed:
 				filter.States = append(filter.States, dbmodel.InstanceFailed)
-			case pkg.RuntimeProvisioning:
+			case pkg.StateProvisioning:
 				filter.States = append(filter.States, dbmodel.InstanceProvisioning)
-			case pkg.RuntimeDeprovisioning:
+			case pkg.StateDeprovisioning:
 				filter.States = append(filter.States, dbmodel.InstanceDeprovisioning)
-			case pkg.RuntimeUpgrading:
+			case pkg.StateUpgrading:
 				filter.States = append(filter.States, dbmodel.InstanceUpgrading)
-			case pkg.RuntimeSuspended:
+			case pkg.StateSuspended:
 				filter.States = append(filter.States, dbmodel.InstanceDeprovisioned)
-			case pkg.RuntimeAllState:
+			case pkg.AllState:
 				allState = true
 			}
 		}

@@ -3,7 +3,6 @@ package memory
 import (
 	"database/sql"
 	"errors"
-	"os"
 	"regexp"
 	"sort"
 	"sync"
@@ -277,7 +276,7 @@ func (s *instances) matchInstanceState(instanceID string, states []dbmodel.Insta
 		// To support instance test cases without any operations
 		return true
 	}
-	fmt.Fprintf(os.Stderr, "%s - %s - %s\n", instanceID, op.Type, op.State)
+
 	for _, s := range states {
 		switch s {
 		case dbmodel.InstanceSucceeded:

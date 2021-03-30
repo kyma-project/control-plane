@@ -581,9 +581,9 @@ func (r readSession) getInstanceCount(filter dbmodel.InstanceFilter) (int, error
 }
 
 func buildInstanceStateFilters(table string, filter dbmodel.InstanceFilter) dbr.Builder {
-	exprs := []dbr.Builder{}
-	for _, f := range filter.States {
-		switch f {
+	var exprs []dbr.Builder
+	for _, s := range filter.States {
+		switch s {
 		case dbmodel.InstanceSucceeded:
 			exprs = append(exprs, dbr.And(
 				dbr.Eq(fmt.Sprintf("%s.state", table), domain.Succeeded),

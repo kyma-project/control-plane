@@ -37,7 +37,7 @@ func TestPostgres(t *testing.T) {
 
 	t.Run("Init tests", func(t *testing.T) {
 		t.Run("Should initialize database when schema not applied", func(t *testing.T) {
-			// givenssss
+			// given
 			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
@@ -517,6 +517,7 @@ func TestPostgres(t *testing.T) {
 			err = psqlStorage.Operations().InsertUpgradeKymaOperation(upgrOp3)
 			require.NoError(t, err)
 			deprovOp3 := fixDeprovisionOperation("inst3")
+			deprovOp3.Temporary = true
 			deprovOp3.State = domain.Succeeded
 			deprovOp3.CreatedAt = deprovOp3.CreatedAt.Add(2 * time.Minute)
 			err = psqlStorage.Operations().InsertDeprovisioningOperation(deprovOp3)

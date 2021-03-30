@@ -222,7 +222,7 @@ func TestRuntimeHandler(t *testing.T) {
 		runtimeHandler.AttachRoutes(router)
 
 		// when
-		req, err := http.NewRequest("GET", fmt.Sprintf("/runtimes?state=%s", pkg.RuntimeSucceeded), nil)
+		req, err := http.NewRequest("GET", fmt.Sprintf("/runtimes?state=%s", pkg.StateSucceeded), nil)
 		require.NoError(t, err)
 		router.ServeHTTP(rr, req)
 
@@ -240,7 +240,7 @@ func TestRuntimeHandler(t *testing.T) {
 
 		// when
 		rr = httptest.NewRecorder()
-		req, err = http.NewRequest("GET", fmt.Sprintf("/runtimes?state=%s", pkg.RuntimeFailed), nil)
+		req, err = http.NewRequest("GET", fmt.Sprintf("/runtimes?state=%s", pkg.StateFailed), nil)
 		require.NoError(t, err)
 		router.ServeHTTP(rr, req)
 
