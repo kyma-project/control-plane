@@ -134,6 +134,34 @@ func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {
 	filter.Regions = query[pkg.RegionParam]
 	filter.Domains = query[pkg.ShootParam]
 	filter.Plans = query[pkg.PlanParam]
+	states := query[pkg.StateParam]
+	if len(states) == 0 {
+		// By default if no state filters are specified, suspended/deprovisioned runtimes are still excluded.
+		filter.States = append(filter.States, dbmodel.InstanceNotDeprovisioned)
+	} else {
+		allState := false
+		for _, s := range states {
+			switch pkg.State(s) {
+			case pkg.StateSucceeded:
+				filter.States = append(filter.States, dbmodel.InstanceSucceeded)
+			case pkg.StateFailed:
+				filter.States = append(filter.States, dbmodel.InstanceFailed)
+			case pkg.StateProvisioning:
+				filter.States = append(filter.States, dbmodel.InstanceProvisioning)
+			case pkg.StateDeprovisioning:
+				filter.States = append(filter.States, dbmodel.InstanceDeprovisioning)
+			case pkg.StateUpgrading:
+				filter.States = append(filter.States, dbmodel.InstanceUpgrading)
+			case pkg.StateSuspended:
+				filter.States = append(filter.States, dbmodel.InstanceDeprovisioned)
+			case pkg.AllState:
+				allState = true
+			}
+		}
+		if allState {
+			filter.States = nil
+		}
+	}
 
 	return filter
 }

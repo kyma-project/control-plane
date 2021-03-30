@@ -301,7 +301,7 @@ func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, e
 	}
 
 	sort.Slice(rows, func(i, j int) bool {
-		return rows[i].CreatedAt.Before(rows[j].CreatedAt)
+		return rows[i].CreatedAt.After(rows[j].CreatedAt)
 	})
 
 	return &rows[0], nil

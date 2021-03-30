@@ -271,6 +271,23 @@ paths:
             type: array
             items:
               type: string
+        - in: query
+          name: state
+          required: false
+          description: Filter by Runtime state. By default, if no state(s) are provided, suspended Runtimes are filtered out.
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [
+                "succeeded",
+                "failed",
+                "provisioning",
+                "deprovisioning",
+                "upgrading",
+                "suspended",
+                "all"
+              ]
       responses:
         '200':
           description: List of Runtimes
