@@ -18,12 +18,22 @@ import (
 )
 
 type ConnectivityOverrides struct {
-	OauthClientId      string `json:"oauthClientId"`
-	OauthClientSecret  string `json:"oauthClientSecret"`
-	OauthTokenEndpoint string `json:"oauthTokenEndpoint"`
-	PublishUrl         string `json:"publishUrl"`
-	BebNamespace       string `json:"bebNamespace"`
-	IsBEBEnabled       string `json:"isBEBEnabled"`
+	ClientId            string `json:"clientid"`
+	ClientSecret        string `json:"clientsecret"`
+	ConnectivityService struct {
+		CAsPath        string `json:"CAs_path"`
+		CAsSigningPath string `json:"CAs_signing_path"`
+		ApiPath        string `json:"api_path"`
+		TunnelPath     string `json:"tunnel_path"`
+		Url            string `json:"url"`
+	} `json:"connectivity_service"`
+	SubaccountId                    string `json:"subaccount_id"`
+	SubaccountSubdomain             string `json:"subaccount_subdomain"`
+	TokenServiceDomain              string `json:"token_service_domain"`
+	TokenServiceUrl                 string `json:"token_service_url"`
+	TokenServiceUrlPattern          string `json:"token_service_url_pattern"`
+	TokenServiceUrlPatternTenantKey string `json:"token_service_url_pattern_tenant_key"`
+	Xsappname                       string `json:"xsappname"`
 }
 
 type ConnBindStep struct {
@@ -104,6 +114,11 @@ func (s *ConnBindStep) Run(operation internal.ProvisioningOperation, log logrus.
 		}
 	}
 
+	// TODO: Decide how we want to pass this data to the SKR.
+	//       See the github card - https://github.com/orgs/kyma-project/projects/6#card-56776111
+	//       ...
+	//       - [ ] define what changes need to be done in KEB to
+	//             allow passing secrets data to the Provisioner
 	// append overrides
 	operation.InputCreator.AppendOverrides(components.Connectivity, GetConnOverrides(connectivityOverrides))
 
@@ -116,41 +131,38 @@ func (s *ConnBindStep) handleError(operation internal.ProvisioningOperation, err
 }
 
 func GetConnCredentials(binding servicemanager.Binding) (*ConnectivityOverrides, error) {
-	return nil, nil
-}
+	credentials := binding.Credentials
+	csMap, ok := credentials["connectivity_service"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf(
+			"failed to convert connectivity_service part of the credentials to map[string]interface{}")
+	}
 
-//func GetEventingCredentials(binding servicemanager.Binding) (*EventingOverrides, error) {
-//	evOverrides := EventingOverrides{}
-//	credentials := binding.Credentials
-//	evOverrides.BebNamespace = credentials["namespace"].(string)
-//	evOverrides.IsBEBEnabled = "true"
-//	messaging, ok := credentials["messaging"].([]interface{})
-//	if !ok {
-//		return nil, fmt.Errorf("false type for %s", "messaging")
-//	}
-//	for i, m := range messaging {
-//		m, ok := m.(map[string]interface{})
-//		if !ok {
-//			return nil, fmt.Errorf("false type for %s", fmt.Sprintf("messaging[%d]", i))
-//		}
-//		p, ok := m["protocol"].([]interface{})
-//		if !ok {
-//			return nil, fmt.Errorf("false type for %s", fmt.Sprintf("messaging[%d] -> protocol", i))
-//		}
-//		if p[0] == "httprest" {
-//			evOverrides.PublishUrl = m["uri"].(string)
-//			oa2, ok := m["oa2"].(map[string]interface{})
-//			if !ok {
-//				return nil, fmt.Errorf("false type for %s", fmt.Sprintf("messaging[%d] -> oa2", i))
-//			}
-//			evOverrides.OauthClientId = oa2["clientid"].(string)
-//			evOverrides.OauthClientSecret = oa2["clientsecret"].(string)
-//			evOverrides.OauthTokenEndpoint = oa2["tokenendpoint"].(string)
-//			break
-//		}
-//	}
-//	return &evOverrides, nil
-//}
+	return &ConnectivityOverrides{
+		ClientId:     credentials["clientid"].(string),
+		ClientSecret: credentials["clientsecret"].(string),
+		ConnectivityService: struct {
+			CAsPath        string `json:"CAs_path"`
+			CAsSigningPath string `json:"CAs_signing_path"`
+			ApiPath        string `json:"api_path"`
+			TunnelPath     string `json:"tunnel_path"`
+			Url            string `json:"url"`
+		}{
+			CAsPath:        csMap["CAs_path"].(string),
+			CAsSigningPath: csMap["CAs_signing_path"].(string),
+			ApiPath:        csMap["CAs_signing_path"].(string),
+			TunnelPath:     csMap["tunnel_path"].(string),
+			Url:            csMap["url"].(string),
+		},
+		SubaccountId:                    credentials["subaccount_id"].(string),
+		SubaccountSubdomain:             credentials["subaccount_subdomain"].(string),
+		TokenServiceDomain:              credentials["token_service_domain"].(string),
+		TokenServiceUrl:                 credentials["token_service_url"].(string),
+		TokenServiceUrlPattern:          credentials["token_service_url_pattern"].(string),
+		TokenServiceUrlPatternTenantKey: credentials["token_service_url_pattern_tenant_key"].(string),
+		Xsappname:                       credentials["xsappname"].(string),
+	}, nil
+}
 
 func GetConnOverrides(cnOverrides *ConnectivityOverrides) []*gqlschema.ConfigEntryInput {
 	return nil
