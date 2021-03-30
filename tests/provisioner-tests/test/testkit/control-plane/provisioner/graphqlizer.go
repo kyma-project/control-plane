@@ -143,12 +143,24 @@ func (g *graphqlizer) GardenerUpgradeInputToGraphQL(in gqlschema.GardenerUpgrade
 
 func (g *graphqlizer) ProviderSpecificInputToGraphQL(in *gqlschema.ProviderSpecificInput) (string, error) {
 	return g.genericToGraphQL(in, `{
+		{{- if .AwsConfig }}
+		awsConfig: {{ AWSProviderConfigInputToGraphQL .AwsConfig }}
+		{{- end }}
 		{{- if .AzureConfig }}
 		azureConfig: {{ AzureProviderConfigInputToGraphQL .AzureConfig }}
 		{{- end }}
 		{{- if .GcpConfig }}
 		gcpConfig: {{ GcpProviderConfigInputToGraphQL .GcpConfig }}
 		{{- end }}
+	}`)
+}
+
+func (g *graphqlizer) AwsProviderConfigInputToGraphQL(in *gqlschema.AWSProviderConfigInput) (string, error) {
+	return g.genericToGraphQL(in, `{
+		zone: "{{.Zone}}",
+		vpcCidr: "{{.VpcCidr}}",
+		publicCidr: "{{.PublicCidr}}",
+		internalCidr: "{{.InternalCidr}}",
 	}`)
 }
 
@@ -259,6 +271,7 @@ func (g *graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, er
 	fm["UpgradeClusterConfigToGraphQL"] = g.UpgradeClusterConfigToGraphQL
 	fm["GardenerConfigInputToGraphQL"] = g.GardenerConfigInputToGraphQL
 	fm["ProviderSpecificInputToGraphQL"] = g.ProviderSpecificInputToGraphQL
+	fm["AwsProviderConfigInputToGraphQL"] = g.AwsProviderConfigInputToGraphQL
 	fm["AzureProviderConfigInputToGraphQL"] = g.AzureProviderConfigInputToGraphQL
 	fm["GcpProviderConfigInputToGraphQL"] = g.GcpProviderConfigInputToGraphQL
 	fm["GardenerUpgradeInputToGraphQL"] = g.GardenerUpgradeInputToGraphQL

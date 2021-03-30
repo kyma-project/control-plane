@@ -24,6 +24,20 @@ func CreateGardenerProvisioningInput(config *TestConfig, version, provider strin
 				},
 			},
 		},
+		AWS: {
+			MachineType:  "???",
+			DiskType:     "???",
+			Region:       "???",
+			TargetSecret: config.Gardener.AWSSecret,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				AwsConfig: &gqlschema.AWSProviderConfigInput{
+					Zone:         "???",
+					VpcCidr:      "10.10.11.11/255",
+					PublicCidr:   "10.10.11.12/255",
+					InternalCidr: "10.10.11.13/255",
+				},
+			},
+		},
 		Azure: {
 			MachineType:  "Standard_D4_v3",
 			DiskType:     "Standard_LRS",
