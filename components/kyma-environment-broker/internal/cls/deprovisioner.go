@@ -36,42 +36,53 @@ type DeprovisionRequest struct {
 	Instance      servicemanager.InstanceKey
 }
 
-func (d *Deprovisioner) Deprovision(smClient servicemanager.Client, request *DeprovisionRequest, log logrus.FieldLogger) error {
+type DeprovisionResult struct {
+	IsLastReference bool
+}
+
+func (d *Deprovisioner) Deprovision(smClient servicemanager.Client, request *DeprovisionRequest, log logrus.FieldLogger) (*DeprovisionResult, error) {
 	instance, exists, err := d.storage.FindByID(request.Instance.InstanceID)
 	if err != nil {
-		return errors.Wrapf(err, "while finding CLS instance %s", request.Instance.InstanceID)
+		return nil, errors.Wrapf(err, "while finding CLS instance %s", request.Instance.InstanceID)
 	}
 
 	if !exists {
-		return nil
+		// clean orphaned resources if they exist
+		if err := d.remover.RemoveInstance(smClient, request.Instance); err != nil {
+			return nil, errors.Wrapf(err, "while removing CLS instance %s", instance.ID())
+		}
+
+		return &DeprovisionResult{IsLastReference: false}, nil
 	}
 
 	if !instance.IsReferencedBy(request.SKRInstanceID) {
 		log.Warnf("Provided CLS instance %s is not referenced by the SKR %s", instance.ID, request.SKRInstanceID)
-		return nil
+		return &DeprovisionResult{IsLastReference: false}, nil
 	}
 
 	log.Infof("Unreferencing CLS instance %s by the skr %s", instance.ID(), request.SKRInstanceID)
 
 	if err := instance.RemoveReference(request.SKRInstanceID); err != nil {
-		return errors.Wrapf(err, "while unreferencing CLS instance %s", instance.ID())
+		return nil, errors.Wrapf(err, "while unreferencing CLS instance %s", instance.ID())
 	}
 
 	if err := d.storage.Update(*instance); err != nil {
-		return errors.Wrapf(err, "while updating CLS instance %s", instance.ID())
+		return nil, errors.Wrapf(err, "while updating CLS instance %s", instance.ID())
 	}
 
 	if instance.IsBeingRemoved() {
-		log.Infof("Removing CLS instance %s", instance.ID)
+		log.Infof("Removing CLS instance %s", instance.ID())
 
 		if err := d.remover.RemoveInstance(smClient, request.Instance); err != nil {
-			return errors.Wrapf(err, "while removing CLS instance %s", instance.ID())
+			return nil, errors.Wrapf(err, "while removing CLS instance %s", instance.ID())
 		}
 
 		if err := d.storage.Delete(instance.ID()); err != nil {
-			return errors.Wrapf(err, "while deleting CLS instance %s", instance.ID())
+			return nil, errors.Wrapf(err, "while deleting CLS instance %s", instance.ID())
 		}
+
+		return &DeprovisionResult{IsLastReference: true}, nil
 	}
 
-	return nil
+	return &DeprovisionResult{IsLastReference: false}, nil
 }

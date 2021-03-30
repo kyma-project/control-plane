@@ -3,101 +3,108 @@ package hyperscaler
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
-
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_fake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
+	"github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	machineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/fake"
 )
 
-func TestCredentials(t *testing.T) {
+const (
+	testNamespace = "garden-namespace"
+)
+
+func TestCredentialsSecretBinding(t *testing.T) {
 
 	pool := newTestAccountPool()
 
 	var testcases = []struct {
-		testDescription        string
-		tenantName             string
-		hyperscalerType        Type
-		expectedCredentialName string
-		expectedError          string
+		testDescription           string
+		tenantName                string
+		hyperscalerType           Type
+		expectedSecretBindingName string
+		expectedError             string
 	}{
 		{"In-use credential for tenant1, GCP returns existing secret",
-			"tenant1", GCP, "secret1", ""},
+			"tenant1", GCP, "secretBinding1", ""},
 
 		{"In-use credential for tenant1, Azure returns existing secret",
-			"tenant1", Azure, "secret2", ""},
+			"tenant1", Azure, "secretBinding2", ""},
 
 		{"In-use credential for tenant2, GCP returns existing secret",
-			"tenant2", GCP, "secret3", ""},
+			"tenant2", GCP, "secretBinding3", ""},
 
 		{"Available credential for tenant3, AWS labels and returns existing secret",
-			"tenant3", GCP, "secret4", ""},
+			"tenant3", GCP, "secretBinding4", ""},
 
 		{"Available credential for tenant4, GCP labels and returns existing secret",
-			"tenant4", AWS, "secret5", ""},
+			"tenant4", AWS, "secretBinding5", ""},
 
 		{"No Available credential for tenant5, Azure returns error",
 			"tenant5", Azure, "",
-			"failed to find unassigned secret for hyperscalerType: azure"},
+			"failed to find unassigned secret binding for hyperscalerType: azure"},
 
-		{"No Available credential for tenant6, GCP returns error - ignore secret with label shared=true",
+		{"No Available credential for tenant6, GCP returns error - ignore secret binding with label shared=true",
 			"tenant6", GCP, "",
-			"failed to find unassigned secret for hyperscalerType: gcp"},
+			"failed to find unassigned secret binding for hyperscalerType: gcp"},
+
+		{"Available credential for tenant7, AWS labels and returns existing secret from different namespace",
+			"tenant7", AWS, "secretBinding7", ""},
+
+		{"No Available credential for tenant8, AWS returns error - failed to get referenced secret",
+			"tenant8", AWS, "",
+			"failed to find unassigned secret binding for hyperscalerType: aws"},
 	}
 	for _, testcase := range testcases {
 
 		t.Run(testcase.testDescription, func(t *testing.T) {
-
-			credentials, err := pool.Credentials(testcase.hyperscalerType, testcase.tenantName)
+			secretBinding, err := pool.CredentialsSecretBinding(testcase.hyperscalerType, testcase.tenantName)
 			actualError := ""
 			if err != nil {
 				actualError = err.Error()
 				assert.Equal(t, testcase.expectedError, actualError)
 			} else {
-				assert.Equal(t, testcase.expectedCredentialName, credentials.Name)
-				assert.Equal(t, testcase.hyperscalerType, credentials.HyperscalerType)
-				assert.Equal(t, testcase.expectedCredentialName, string(credentials.CredentialData["credentials"]))
+				assert.Equal(t, testcase.expectedSecretBindingName, secretBinding.Name)
+				assert.Equal(t, string(testcase.hyperscalerType), secretBinding.Labels["hyperscalerType"])
 				assert.Equal(t, testcase.expectedError, actualError)
 			}
 		})
 	}
 }
 
-func TestSecretsAccountPool_IsSecretInternal(t *testing.T) {
-	t.Run("should return true if internal secret found", func(t *testing.T) {
+func TestSecretsAccountPool_IsSecretBindingInternal(t *testing.T) {
+	t.Run("should return true if internal secret binding found", func(t *testing.T) {
 		//given
-		accPool, _ := newTestAccountPoolWithSecretInternal()
+		accPool, _ := newTestAccountPoolWithSecretBindingInternal()
 
 		//when
-		internal, err := accPool.IsSecretInternal("azure", "tenant1")
+		internal, err := accPool.IsSecretBindingInternal("azure", "tenant1")
 
 		//then
 		require.NoError(t, err)
 		assert.True(t, internal)
 	})
 
-	t.Run("should return false if internal secret not found", func(t *testing.T) {
+	t.Run("should return false if internal secret binding not found", func(t *testing.T) {
 		//given
 		accPool := newTestAccountPool()
 
 		//when
-		internal, err := accPool.IsSecretInternal("azure", "tenant1")
+		internal, err := accPool.IsSecretBindingInternal("azure", "tenant1")
 
 		//then
 		require.NoError(t, err)
 		assert.False(t, internal)
 	})
 
-	t.Run("should return false when there is no secret in the pool", func(t *testing.T) {
+	t.Run("should return false when there is no secret binding in the pool", func(t *testing.T) {
 		//given
-		accPool, _ := newEmptyTestAccountPool()
+		accPool := newEmptyTestAccountPool()
 
 		//when
-		internal, err := accPool.IsSecretInternal("azure", "tenant1")
+		internal, err := accPool.IsSecretBindingInternal("azure", "tenant1")
 
 		//then
 		require.NoError(t, err)
@@ -105,25 +112,25 @@ func TestSecretsAccountPool_IsSecretInternal(t *testing.T) {
 	})
 }
 
-func TestSecretsAccountPool_IsSecretDirty(t *testing.T) {
-	t.Run("should return true if dirty secret found", func(t *testing.T) {
+func TestSecretsAccountPool_IsSecretBindingDirty(t *testing.T) {
+	t.Run("should return true if dirty secret binding found", func(t *testing.T) {
 		//given
-		accPool, _ := newTestAccountPoolWithSecretDirty()
+		accPool, _ := newTestAccountPoolWithSecretBindingDirty()
 
 		//when
-		isdirty, err := accPool.IsSecretDirty("azure", "tenant1")
+		isdirty, err := accPool.IsSecretBindingDirty("azure", "tenant1")
 
 		//then
 		require.NoError(t, err)
 		assert.True(t, isdirty)
 	})
 
-	t.Run("should return false if dirty secret not found", func(t *testing.T) {
+	t.Run("should return false if dirty secret binding not found", func(t *testing.T) {
 		//given
 		accPool := newTestAccountPool()
 
 		//when
-		isdirty, err := accPool.IsSecretDirty("azure", "tenant1")
+		isdirty, err := accPool.IsSecretBindingDirty("azure", "tenant1")
 
 		//then
 		require.NoError(t, err)
@@ -131,25 +138,25 @@ func TestSecretsAccountPool_IsSecretDirty(t *testing.T) {
 	})
 }
 
-func TestSecretsAccountPool_IsSecretUsed(t *testing.T) {
-	t.Run("should return true when secret is in use", func(t *testing.T) {
+func TestSecretsAccountPool_IsSecretBindingUsed(t *testing.T) {
+	t.Run("should return true when secret binding is in use", func(t *testing.T) {
 		//given
 		accPool, _ := newTestAccountPoolWithSingleShoot()
 
 		//when
-		used, err := accPool.IsSecretUsed("azure", "tenant1")
+		used, err := accPool.IsSecretBindingUsed("azure", "tenant1")
 
 		//then
 		require.NoError(t, err)
 		assert.True(t, used)
 	})
 
-	t.Run("should return false when secret is not in use", func(t *testing.T) {
+	t.Run("should return false when secret binding is not in use", func(t *testing.T) {
 		//given
 		accPool, _ := newTestAccountPoolWithoutShoots()
 
 		//when
-		used, err := accPool.IsSecretUsed("azure", "tenant1")
+		used, err := accPool.IsSecretBindingUsed("azure", "tenant1")
 
 		//then
 		require.NoError(t, err)
@@ -157,111 +164,138 @@ func TestSecretsAccountPool_IsSecretUsed(t *testing.T) {
 	})
 }
 
-func TestSecretsAccountPool_MarkSecretAsDirty(t *testing.T) {
-	t.Run("should mark secret as dirty", func(t *testing.T) {
+func TestSecretsAccountPool_MarkSecretBindingAsDirty(t *testing.T) {
+	t.Run("should mark secret binding as dirty", func(t *testing.T) {
 		//given
-		accPool, mockSecrets := newTestAccountPoolWithoutShoots()
+		accPool, mockSecretBindings := newTestAccountPoolWithoutShoots()
 
 		//when
-		err := accPool.MarkSecretAsDirty("azure", "tenant1")
+		err := accPool.MarkSecretBindingAsDirty("azure", "tenant1")
 
 		//then
 		require.NoError(t, err)
-		secret, err := mockSecrets.Get("secret1", machineryv1.GetOptions{})
+		secretBinding, err := mockSecretBindings.Get("secretBinding1", machineryv1.GetOptions{})
 		require.NoError(t, err)
-		assert.Equal(t, secret.Labels["dirty"], "true")
+		assert.Equal(t, secretBinding.Labels["dirty"], "true")
 	})
 }
 
 func newTestAccountPool() AccountPool {
-	secret1 := &corev1.Secret{
+	secretBinding1 := &gardener_types.SecretBinding{
 		ObjectMeta: machineryv1.ObjectMeta{
-			Name: "secret1", Namespace: testNamespace,
+			Name:      "secretBinding1",
+			Namespace: testNamespace,
 			Labels: map[string]string{
 				"tenantName":      "tenant1",
 				"hyperscalerType": "gcp",
 			},
 		},
-		Data: map[string][]byte{
-			"credentials": []byte("secret1"),
+		SecretRef: corev1.SecretReference{
+			Name:      "secret1",
+			Namespace: testNamespace,
 		},
 	}
-	secret2 := &corev1.Secret{
+	secretBinding2 := &gardener_types.SecretBinding{
 		ObjectMeta: machineryv1.ObjectMeta{
-			Name: "secret2", Namespace: testNamespace,
+			Name:      "secretBinding2",
+			Namespace: testNamespace,
 			Labels: map[string]string{
 				"tenantName":      "tenant1",
 				"hyperscalerType": "azure",
 			},
 		},
-		Data: map[string][]byte{
-			"credentials": []byte("secret2"),
+		SecretRef: corev1.SecretReference{
+			Name:      "secret2",
+			Namespace: testNamespace,
 		},
 	}
-	secret3 := &corev1.Secret{
+	secretBinding3 := &gardener_types.SecretBinding{
 		ObjectMeta: machineryv1.ObjectMeta{
-			Name: "secret3", Namespace: testNamespace,
+			Name:      "secretBinding3",
+			Namespace: testNamespace,
 			Labels: map[string]string{
 				"tenantName":      "tenant2",
 				"hyperscalerType": "gcp",
 			},
 		},
-		Data: map[string][]byte{
-			"credentials": []byte("secret3"),
+		SecretRef: corev1.SecretReference{
+			Name:      "secret3",
+			Namespace: testNamespace,
 		},
 	}
-	secret4 := &corev1.Secret{
+	secretBinding4 := &gardener_types.SecretBinding{
 		ObjectMeta: machineryv1.ObjectMeta{
-			Name: "secret4", Namespace: testNamespace,
+			Name:      "secretBinding4",
+			Namespace: testNamespace,
 			Labels: map[string]string{
 				"hyperscalerType": "gcp",
 			},
 		},
-		Data: map[string][]byte{
-			"credentials": []byte("secret4"),
+		SecretRef: corev1.SecretReference{
+			Name:      "secret4",
+			Namespace: testNamespace,
 		},
 	}
-	secret5 := &corev1.Secret{
+	secretBinding5 := &gardener_types.SecretBinding{
 		ObjectMeta: machineryv1.ObjectMeta{
-			Name: "secret5", Namespace: testNamespace,
+			Name:      "secretBinding5",
+			Namespace: testNamespace,
 			Labels: map[string]string{
 				"hyperscalerType": "aws",
 			},
 		},
-		Data: map[string][]byte{
-			"credentials": []byte("secret5"),
+		SecretRef: corev1.SecretReference{
+			Name:      "secret5",
+			Namespace: testNamespace,
 		},
 	}
-	secret6 := &corev1.Secret{
+	secretBinding6 := &gardener_types.SecretBinding{
 		ObjectMeta: machineryv1.ObjectMeta{
-			Name: "secret6", Namespace: testNamespace,
+			Name:      "secretBinding6",
+			Namespace: testNamespace,
 			Labels: map[string]string{
 				"hyperscalerType": "gcp",
 				"shared":          "true",
 			},
 		},
-		Data: map[string][]byte{
-			"credentials": []byte("secret6"),
+		SecretRef: corev1.SecretReference{
+			Name:      "secret6",
+			Namespace: testNamespace,
+		},
+	}
+	secretBinding7 := &gardener_types.SecretBinding{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name:      "secretBinding7",
+			Namespace: testNamespace,
+			Labels: map[string]string{
+				"hyperscalerType": "aws",
+			},
+		},
+		SecretRef: corev1.SecretReference{
+			Name:      "secret7",
+			Namespace: "anothernamespace",
 		},
 	}
 
-	mockClient := fake.NewSimpleClientset(secret1, secret2, secret3, secret4, secret5, secret6)
-	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
-	pool := NewAccountPool(mockSecrets, nil)
-	return pool
+	gardenerFake := gardener_fake.NewSimpleClientset(secretBinding1, secretBinding2, secretBinding3, secretBinding4, secretBinding5, secretBinding6, secretBinding7).
+		CoreV1beta1().SecretBindings(testNamespace)
+
+	return NewAccountPool(gardenerFake, nil)
 }
 
-func newTestAccountPoolWithSingleShoot() (AccountPool, v1.SecretInterface) {
-	secret1 := &corev1.Secret{
+func newTestAccountPoolWithSingleShoot() (AccountPool, v1beta1.SecretBindingInterface) {
+	secretBinding1 := &gardener_types.SecretBinding{
 		ObjectMeta: machineryv1.ObjectMeta{
-			Name: "secret1", Namespace: testNamespace,
+			Name:      "secretBinding1",
+			Namespace: testNamespace,
 			Labels: map[string]string{
 				"tenantName":      "tenant1",
 				"hyperscalerType": "azure",
 			},
 		},
-		Data: map[string][]byte{
-			"credentials": []byte("secret1"),
+		SecretRef: corev1.SecretReference{
+			Name:      "secret1",
+			Namespace: testNamespace,
 		},
 	}
 
@@ -271,7 +305,7 @@ func newTestAccountPoolWithSingleShoot() (AccountPool, v1.SecretInterface) {
 			Namespace: testNamespace,
 		},
 		Spec: gardener_types.ShootSpec{
-			SecretBindingName: "secret1",
+			SecretBindingName: "secretBinding1",
 		},
 		Status: gardener_types.ShootStatus{
 			LastOperation: &gardener_types.LastOperation{
@@ -281,68 +315,61 @@ func newTestAccountPoolWithSingleShoot() (AccountPool, v1.SecretInterface) {
 		},
 	}
 
-	mockClient := fake.NewSimpleClientset(secret1)
-	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
-
-	gardenerFake := gardener_fake.NewSimpleClientset(shoot1)
+	gardenerFake := gardener_fake.NewSimpleClientset(shoot1, secretBinding1)
+	mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
 	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 
-	pool := NewAccountPool(mockSecrets, mockShoots)
-
-	return pool, mockSecrets
+	return NewAccountPool(mockSecretBindings, mockShoots), mockSecretBindings
 }
 
-func newEmptyTestAccountPool() (AccountPool, v1.SecretInterface) {
-	secret1 := &corev1.Secret{}
+func newEmptyTestAccountPool() AccountPool {
+	secretBinding1 := &gardener_types.SecretBinding{}
 
-	mockClient := fake.NewSimpleClientset(secret1)
-	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
-
-	gardenerFake := gardener_fake.NewSimpleClientset()
+	gardenerFake := gardener_fake.NewSimpleClientset(secretBinding1)
+	mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
 	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 
-	pool := NewAccountPool(mockSecrets, mockShoots)
-
-	return pool, mockSecrets
+	return NewAccountPool(mockSecretBindings, mockShoots)
 }
 
-func newTestAccountPoolWithSecretInternal() (AccountPool, v1.SecretInterface) {
-	secret1 := &corev1.Secret{
+func newTestAccountPoolWithSecretBindingInternal() (AccountPool, v1beta1.SecretBindingInterface) {
+	secretBinding1 := &gardener_types.SecretBinding{
 		ObjectMeta: machineryv1.ObjectMeta{
-			Name: "secret1", Namespace: testNamespace,
+			Name:      "secretBinding1",
+			Namespace: testNamespace,
 			Labels: map[string]string{
 				"tenantName":      "tenant1",
 				"hyperscalerType": "azure",
 				"internal":        "true",
 			},
 		},
-		Data: map[string][]byte{
-			"credentials": []byte("secret1"),
+		SecretRef: corev1.SecretReference{
+			Name:      "secret1",
+			Namespace: testNamespace,
 		},
 	}
 
-	mockClient := fake.NewSimpleClientset(secret1)
-	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
-
-	gardenerFake := gardener_fake.NewSimpleClientset()
+	gardenerFake := gardener_fake.NewSimpleClientset(secretBinding1)
+	mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
 	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 
-	pool := NewAccountPool(mockSecrets, mockShoots)
-	return pool, mockSecrets
+	return NewAccountPool(mockSecretBindings, mockShoots), mockSecretBindings
 }
 
-func newTestAccountPoolWithSecretDirty() (AccountPool, v1.SecretInterface) {
-	secret1 := &corev1.Secret{
+func newTestAccountPoolWithSecretBindingDirty() (AccountPool, v1beta1.SecretBindingInterface) {
+	secretBinding1 := &gardener_types.SecretBinding{
 		ObjectMeta: machineryv1.ObjectMeta{
-			Name: "secret1", Namespace: testNamespace,
+			Name:      "secretBinding1",
+			Namespace: testNamespace,
 			Labels: map[string]string{
 				"tenantName":      "tenant1",
 				"hyperscalerType": "azure",
 				"dirty":           "true",
 			},
 		},
-		Data: map[string][]byte{
-			"credentials": []byte("secret1"),
+		SecretRef: corev1.SecretReference{
+			Name:      "secret1",
+			Namespace: testNamespace,
 		},
 	}
 
@@ -352,7 +379,7 @@ func newTestAccountPoolWithSecretDirty() (AccountPool, v1.SecretInterface) {
 			Namespace: testNamespace,
 		},
 		Spec: gardener_types.ShootSpec{
-			SecretBindingName: "secret1",
+			SecretBindingName: "secretBinding1",
 		},
 		Status: gardener_types.ShootStatus{
 			LastOperation: &gardener_types.LastOperation{
@@ -362,27 +389,26 @@ func newTestAccountPoolWithSecretDirty() (AccountPool, v1.SecretInterface) {
 		},
 	}
 
-	mockClient := fake.NewSimpleClientset(secret1)
-	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
-
-	gardenerFake := gardener_fake.NewSimpleClientset(shoot1)
+	gardenerFake := gardener_fake.NewSimpleClientset(shoot1, secretBinding1)
+	mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
 	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 
-	pool := NewAccountPool(mockSecrets, mockShoots)
-	return pool, mockSecrets
+	return NewAccountPool(mockSecretBindings, mockShoots), mockSecretBindings
 }
 
-func newTestAccountPoolWithShootsUsingSecret() (AccountPool, v1.SecretInterface) {
-	secret1 := &corev1.Secret{
+func newTestAccountPoolWithShootsUsingSecretBinding() (AccountPool, v1beta1.SecretBindingInterface) {
+	secretBinding1 := &gardener_types.SecretBinding{
 		ObjectMeta: machineryv1.ObjectMeta{
-			Name: "secret1", Namespace: testNamespace,
+			Name:      "secretBinding1",
+			Namespace: testNamespace,
 			Labels: map[string]string{
 				"tenantName":      "tenant1",
 				"hyperscalerType": "azure",
 			},
 		},
-		Data: map[string][]byte{
-			"credentials": []byte("secret1"),
+		SecretRef: corev1.SecretReference{
+			Name:      "secret1",
+			Namespace: testNamespace,
 		},
 	}
 
@@ -392,7 +418,7 @@ func newTestAccountPoolWithShootsUsingSecret() (AccountPool, v1.SecretInterface)
 			Namespace: testNamespace,
 		},
 		Spec: gardener_types.ShootSpec{
-			SecretBindingName: "secret1",
+			SecretBindingName: "secretBinding1",
 		},
 		Status: gardener_types.ShootStatus{
 			LastOperation: &gardener_types.LastOperation{
@@ -408,7 +434,7 @@ func newTestAccountPoolWithShootsUsingSecret() (AccountPool, v1.SecretInterface)
 			Namespace: testNamespace,
 		},
 		Spec: gardener_types.ShootSpec{
-			SecretBindingName: "secret1",
+			SecretBindingName: "secretBinding1",
 		},
 		Status: gardener_types.ShootStatus{
 			LastOperation: &gardener_types.LastOperation{
@@ -418,37 +444,32 @@ func newTestAccountPoolWithShootsUsingSecret() (AccountPool, v1.SecretInterface)
 		},
 	}
 
-	mockClient := fake.NewSimpleClientset(secret1)
-	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
-
-	gardenerFake := gardener_fake.NewSimpleClientset(shoot1, shoot2)
+	gardenerFake := gardener_fake.NewSimpleClientset(shoot1, shoot2, secretBinding1)
+	mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
 	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 
-	pool := NewAccountPool(mockSecrets, mockShoots)
-	return pool, mockSecrets
+	return NewAccountPool(mockSecretBindings, mockShoots), mockSecretBindings
 }
 
-func newTestAccountPoolWithoutShoots() (AccountPool, v1.SecretInterface) {
-	secret1 := &corev1.Secret{
+func newTestAccountPoolWithoutShoots() (AccountPool, v1beta1.SecretBindingInterface) {
+	secretBinding1 := &gardener_types.SecretBinding{
 		ObjectMeta: machineryv1.ObjectMeta{
-			Name: "secret1", Namespace: testNamespace,
+			Name:      "secretBinding1",
+			Namespace: testNamespace,
 			Labels: map[string]string{
 				"tenantName":      "tenant1",
 				"hyperscalerType": "azure",
 			},
 		},
-		Data: map[string][]byte{
-			"credentials": []byte("secret1"),
+		SecretRef: corev1.SecretReference{
+			Name:      "secret1",
+			Namespace: testNamespace,
 		},
 	}
 
-	mockClient := fake.NewSimpleClientset(secret1)
-	mockSecrets := mockClient.CoreV1().Secrets(testNamespace)
-
-	gardenerFake := gardener_fake.NewSimpleClientset()
+	gardenerFake := gardener_fake.NewSimpleClientset(secretBinding1)
+	mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
 	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 
-	pool := NewAccountPool(mockSecrets, mockShoots)
-
-	return pool, mockSecrets
+	return NewAccountPool(mockSecretBindings, mockShoots), mockSecretBindings
 }

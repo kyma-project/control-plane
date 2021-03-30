@@ -3,6 +3,8 @@ package dbmodel
 import (
 	"database/sql"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
 
 // OperationFilter holds the filters when listing multiple operations
@@ -11,22 +13,6 @@ type OperationFilter struct {
 	PageSize int
 	States   []string
 }
-
-// OperationType defines the possible types of an asynchronous operation to a broker.
-type OperationType string
-
-const (
-	// OperationTypeProvision means provisioning OperationType
-	OperationTypeProvision OperationType = "provision"
-	// OperationTypeDeprovision means deprovision OperationType
-	OperationTypeDeprovision OperationType = "deprovision"
-	// OperationTypeUndefined means undefined OperationType
-	OperationTypeUndefined OperationType = ""
-	// OperationTypeUpgradeKyma means upgrade Kyma OperationType
-	OperationTypeUpgradeKyma OperationType = "upgradeKyma"
-	// OperationTypeUpgradeCluster means upgrade cluster (shoot) OperationType
-	OperationTypeUpgradeCluster OperationType = "upgradeCluster"
-)
 
 type OperationDTO struct {
 	ID        string
@@ -43,7 +29,7 @@ type OperationDTO struct {
 	Description            string
 	ProvisioningParameters sql.NullString
 
-	Type OperationType
+	Type internal.OperationType
 }
 
 type OperationStatEntry struct {

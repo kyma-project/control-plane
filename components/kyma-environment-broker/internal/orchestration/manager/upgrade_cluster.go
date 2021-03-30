@@ -18,7 +18,7 @@ type upgradeClusterFactory struct {
 }
 
 func NewUpgradeClusterManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
-	kymaClusterExecutor process.Executor, resolver orchestration.RuntimeResolver,
+	kymaClusterExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver,
 	pollingInterval time.Duration, log logrus.FieldLogger) process.Executor {
 	return &orchestrationManager{
 		orchestrationStorage: orchestrationStorage,
@@ -42,6 +42,7 @@ func (u *upgradeClusterFactory) NewOperation(o internal.Orchestration, r orchest
 			Version:                0,
 			CreatedAt:              time.Now(),
 			UpdatedAt:              time.Now(),
+			Type:                   internal.OperationTypeUpgradeCluster,
 			InstanceID:             r.InstanceID,
 			State:                  orchestration.Pending,
 			Description:            "Operation created",

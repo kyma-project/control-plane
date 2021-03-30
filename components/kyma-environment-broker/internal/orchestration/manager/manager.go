@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration/strategies"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pkg/errors"
@@ -27,7 +26,7 @@ type orchestrationManager struct {
 	instanceStorage      storage.Instances
 	resolver             orchestration.RuntimeResolver
 	factory              OperationFactory
-	executor             process.Executor
+	executor             orchestration.OperationExecutor
 	log                  logrus.FieldLogger
 	pollingInterval      time.Duration
 }
@@ -127,10 +126,10 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration) ([]o
 	return result, nil
 }
 
-func (m *orchestrationManager) resolveStrategy(sType orchestration.StrategyType, executor process.Executor, log logrus.FieldLogger) orchestration.Strategy {
+func (m *orchestrationManager) resolveStrategy(sType orchestration.StrategyType, executor orchestration.OperationExecutor, log logrus.FieldLogger) orchestration.Strategy {
 	switch sType {
 	case orchestration.ParallelStrategy:
-		return strategies.NewParallelOrchestrationStrategy(executor, log)
+		return strategies.NewParallelOrchestrationStrategy(executor, log, 24*time.Hour)
 	}
 	return nil
 }

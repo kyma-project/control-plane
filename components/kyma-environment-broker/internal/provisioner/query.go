@@ -20,6 +20,14 @@ func (qp queryProvider) upgradeRuntime(runtimeID string, config string) string {
 }`, runtimeID, config, operationStatusData())
 }
 
+func (qp queryProvider) upgradeShoot(runtimeID string, config string) string {
+	return fmt.Sprintf(`mutation {
+	result: upgradeShoot(id: "%s", config: %s) {
+		%s
+}
+}`, runtimeID, config, operationStatusData())
+}
+
 func (qp queryProvider) deprovisionRuntime(runtimeID string) string {
 	return fmt.Sprintf(`mutation {
 	result: deprovisionRuntime(id: "%s")
@@ -51,18 +59,18 @@ func (qp queryProvider) runtimeOperationStatus(operationID string) string {
 func runtimeStatusData() string {
 	return fmt.Sprintf(`lastOperationStatus { operation state message }
 			runtimeConnectionStatus { status }
-			runtimeConfiguration { 
+			runtimeConfiguration {
 				kubeconfig
-				clusterConfig { 
+				clusterConfig {
 					%s
-				} 
-				kymaConfig { version } 
+				}
+				kymaConfig { version }
 			}`, clusterConfig())
 }
 
 func clusterConfig() string {
 	return fmt.Sprintf(`
-		name 
+		name
 		kubernetesVersion
 		volumeSizeGB
 		diskType
@@ -85,24 +93,24 @@ func clusterConfig() string {
 
 func providerSpecificConfig() string {
 	return fmt.Sprint(`
-		... on GCPProviderConfig { 
-			zones 
-		} 
+		... on GCPProviderConfig {
+			zones
+		}
 		... on AzureProviderConfig {
 			vnetCidr
 		}
 		... on AWSProviderConfig {
-			zone 
-			internalCidr 
-			vpcCidr 
+			zone
+			internalCidr
+			vpcCidr
 			publicCidr
-		}  
+		}
 	`)
 }
 
 func operationStatusData() string {
 	return `id
-			operation 
+			operation
 			state
 			message
 			runtimeID`

@@ -12,6 +12,20 @@ type ProvisionerStorage struct {
 	mock.Mock
 }
 
+// Delete provides a mock function with given fields: clsInstanceID
+func (_m *ProvisionerStorage) Delete(clsInstanceID string) error {
+	ret := _m.Called(clsInstanceID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(clsInstanceID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // FindActiveByGlobalAccountID provides a mock function with given fields: globalAccountID
 func (_m *ProvisionerStorage) FindActiveByGlobalAccountID(globalAccountID string) (*internal.CLSInstance, bool, error) {
 	ret := _m.Called(globalAccountID)

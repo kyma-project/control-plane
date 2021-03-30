@@ -40,6 +40,7 @@ type (
 		IsPlanSupport(planID string) bool
 		CreateProvisionInput(parameters internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error)
 		CreateUpgradeInput(parameters internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error)
+		CreateUpgradeShootInput(parameters internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error)
 	}
 
 	ComponentListProvider interface {
@@ -290,4 +291,40 @@ func mergeMaps(maps ...map[string]struct{}) map[string]struct{} {
 		}
 	}
 	return res
+}
+
+func (f *InputBuilderFactory) CreateUpgradeShootInput(pp internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error) {
+	if !f.IsPlanSupport(pp.PlanID) {
+		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
+	}
+
+	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.Parameters.Provider)
+	if err != nil {
+		return nil, errors.Wrap(err, "during createing provision input")
+	}
+
+	input := f.initUpgradeShootInput(provider)
+	return &RuntimeInput{
+		upgradeShootInput:        input,
+		mutex:                    nsync.NewNamedMutex(),
+		hyperscalerInputProvider: provider,
+		trialNodesNumber:         f.config.TrialNodesNumber,
+	}, nil
+}
+
+func (f *InputBuilderFactory) initUpgradeShootInput(provider HyperscalerInputProvider) gqlschema.UpgradeShootInput {
+	input := gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			KubernetesVersion: &f.config.KubernetesVersion,
+		},
+	}
+
+	if f.config.MachineImage != "" {
+		input.GardenerConfig.MachineImage = &f.config.MachineImage
+	}
+	if f.config.MachineImageVersion != "" {
+		input.GardenerConfig.MachineImageVersion = &f.config.MachineImageVersion
+	}
+
+	return input
 }

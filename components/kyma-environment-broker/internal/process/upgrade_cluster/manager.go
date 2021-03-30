@@ -1,17 +1,20 @@
 package upgrade_cluster
 
 import (
+	"context"
+	"sort"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 )
 
 type Step interface {
 	Name() string
-	Run(operation internal.UpgradeClusterOperation, logger logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error)
+	Run(operation internal.UpgradeClusterOperation, logger logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error)
 }
 
 type Manager struct {
@@ -42,6 +45,88 @@ func (m *Manager) AddStep(weight int, step Step) {
 	m.steps[weight] = append(m.steps[weight], step)
 }
 
+func (m *Manager) runStep(step Step, operation internal.UpgradeClusterOperation, logger logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error) {
+	start := time.Now()
+	processedOperation, when, err := step.Run(operation, logger)
+	m.publisher.Publish(context.TODO(), process.UpgradeClusterStepProcessed{
+		OldOperation: operation,
+		Operation:    processedOperation,
+		StepProcessed: process.StepProcessed{
+			StepName: step.Name(),
+			Duration: time.Since(start),
+			When:     when,
+			Error:    err,
+		},
+	})
+	return processedOperation, when, err
+}
+
+func (m *Manager) sortWeight() []int {
+	var weight []int
+	for w := range m.steps {
+		weight = append(weight, w)
+	}
+	sort.Ints(weight)
+
+	return weight
+}
+
 func (m *Manager) Execute(operationID string) (time.Duration, error) {
+	op, err := m.operationStorage.GetUpgradeClusterOperationByID(operationID)
+	if err != nil {
+		m.log.Errorf("Cannot fetch operation from storage: %s", err)
+		return 3 * time.Second, nil
+	}
+	operation := *op
+	if operation.IsFinished() {
+		return 0, nil
+	}
+
+	var when time.Duration
+	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID})
+
+	logOperation.Info("Start process operation steps")
+	for _, weightStep := range m.sortWeight() {
+		steps := m.steps[weightStep]
+		for _, step := range steps {
+			logStep := logOperation.WithField("step", step.Name())
+			logStep.Infof("Start step")
+
+			operation, when, err = m.runStep(step, operation, logStep)
+			if err != nil {
+				logStep.Errorf("Process operation failed: %s", err)
+				return 0, err
+			}
+			if operation.IsFinished() {
+				logStep.Infof("Operation %q got status %s. Process finished.", operation.Operation.ID, operation.State)
+				return 0, nil
+			}
+			if when == 0 {
+				logStep.Info("Process operation successful")
+				continue
+			}
+
+			logStep.Infof("Process operation will be repeated in %s ...", when)
+			return when, nil
+		}
+	}
+
+	logOperation.Infof("Operation %q got status %s. All steps finished.", operation.Operation.ID, operation.State)
 	return 0, nil
+}
+
+func (m Manager) Reschedule(operationID string, maintenanceWindowBegin, maintenanceWindowEnd time.Time) error {
+	op, err := m.operationStorage.GetUpgradeClusterOperationByID(operationID)
+	if err != nil {
+		m.log.Errorf("Cannot fetch operation %s from storage: %s", operationID, err)
+		return err
+	}
+	op.MaintenanceWindowBegin = maintenanceWindowBegin
+	op.MaintenanceWindowEnd = maintenanceWindowEnd
+	op, err = m.operationStorage.UpdateUpgradeClusterOperation(*op)
+	if err != nil {
+		m.log.Errorf("Cannot update (reschedule) operation %s in storage: %s", operationID, err)
+	}
+
+	return err
 }
