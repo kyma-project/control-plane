@@ -311,7 +311,6 @@ func main() {
 		{
 			weight: 1,
 			// TODO: Should we skip connectivity for trial plan?
-			// TODO: CLS provisioning is based on region and the question that I have is why?
 			step: provisioning.NewServiceManagerOfferingStep("CONN_Offering",
 				provisioning.ConnOfferingName, provisioning.ConnPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
 					return &op.Conn.Instance
