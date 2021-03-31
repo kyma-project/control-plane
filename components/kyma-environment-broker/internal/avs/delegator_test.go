@@ -178,7 +178,7 @@ func TestDelegator_SetStatus(t *testing.T) {
 		delegator, op := newDelOpsParams(params)
 
 		requested := params.internalMonitor.Status
-		_, original := setOpAvsStatus(&op, "", StatusMaintenance)
+		_, _ = setOpAvsStatus(&op, "", StatusMaintenance)
 
 		// When
 		err := delegator.SetStatus(logger, &op.Avs, internalEA, requested)
@@ -186,7 +186,7 @@ func TestDelegator_SetStatus(t *testing.T) {
 		// Then
 		assert.NoError(t, err)
 		assert.Equal(t, params.internalMonitor.Status, internalEA.GetEvalStatus(op.Avs))
-		assert.Equal(t, original, internalEA.GetOriginalEvalStatus(op.Avs))
+		assert.Equal(t, params.internalMonitor.Status, internalEA.GetOriginalEvalStatus(op.Avs))
 	})
 
 	t.Run("set for empty fields", func(t *testing.T) {
@@ -281,7 +281,7 @@ func TestDelegator_SetStatus(t *testing.T) {
 	t.Run("reset for empty fields", func(t *testing.T) {
 		delegator, op := newDelOpsParams(params)
 
-		_, original := setOpAvsStatus(&op, "", "")
+		_, _ = setOpAvsStatus(&op, "", "")
 
 		// When
 		err := delegator.ResetStatus(logger, &op.Avs, internalEA)
@@ -290,7 +290,7 @@ func TestDelegator_SetStatus(t *testing.T) {
 		assert.NoError(t, err)
 		// restores current status from default
 		assert.Equal(t, StatusActive, internalEA.GetEvalStatus(op.Avs))
-		assert.Equal(t, original, internalEA.GetOriginalEvalStatus(op.Avs))
+		assert.Equal(t, StatusActive, internalEA.GetOriginalEvalStatus(op.Avs))
 	})
 
 	// Since logic is the same for both internal and external monitors,
@@ -298,7 +298,7 @@ func TestDelegator_SetStatus(t *testing.T) {
 	t.Run("reset for partial fields (original empty)", func(t *testing.T) {
 		delegator, op := newDelOpsParams(params)
 
-		current, _ := setOpAvsStatus(&op, StatusMaintenance, "")
+		_, _ = setOpAvsStatus(&op, StatusMaintenance, "")
 
 		// When
 		err := delegator.ResetStatus(logger, &op.Avs, internalEA)
@@ -307,7 +307,7 @@ func TestDelegator_SetStatus(t *testing.T) {
 		assert.NoError(t, err)
 		// restores current status from default
 		assert.Equal(t, StatusActive, internalEA.GetEvalStatus(op.Avs))
-		assert.Equal(t, current, internalEA.GetOriginalEvalStatus(op.Avs))
+		assert.Equal(t, StatusActive, internalEA.GetOriginalEvalStatus(op.Avs))
 	})
 
 	// Since logic is the same for both internal and external monitors,
@@ -333,7 +333,7 @@ func TestDelegator_SetStatus(t *testing.T) {
 	t.Run("reset from invalid fields (original invalid)", func(t *testing.T) {
 		delegator, op := newDelOpsParams(params)
 
-		current, _ := setOpAvsStatus(&op, StatusInactive, "invalid")
+		_, _ = setOpAvsStatus(&op, StatusInactive, "invalid")
 
 		// When
 		err := delegator.ResetStatus(logger, &op.Avs, internalEA)
@@ -343,7 +343,7 @@ func TestDelegator_SetStatus(t *testing.T) {
 		// restores current status from default
 		assert.Equal(t, StatusActive, internalEA.GetEvalStatus(op.Avs))
 		// restores original status from current, which is restored from Avs
-		assert.Equal(t, current, internalEA.GetOriginalEvalStatus(op.Avs))
+		assert.Equal(t, StatusActive, internalEA.GetOriginalEvalStatus(op.Avs))
 	})
 
 	t.Run("reset from invalid fields (current invalid)", func(t *testing.T) {
