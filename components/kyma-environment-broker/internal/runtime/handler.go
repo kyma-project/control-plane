@@ -87,7 +87,7 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching upgrade kyma operation for instance"))
 			return
 		}
-		ukOprs, totalCount := h.takeLastNonDryRunKymaOperations(ukOprs)
+		ukOprs, totalCount := h.takeLastNonDryRunOperations(ukOprs)
 		h.converter.ApplyUpgradingKymaOperations(&dto, ukOprs, totalCount)
 
 		ucOprs, err := h.operationsDb.ListUpgradeClusterOperationsByInstanceID(instance.InstanceID)
@@ -116,57 +116,28 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 	httputil.WriteResponse(w, http.StatusOK, runtimePage)
 }
 
-func (h *Handler) takeLastNonDryRunKymaOperations(oprs []internal.UpgradeKymaOperation) ([]internal.UpgradeKymaOperation, int) {
-	ops := make([]interface{}, len(oprs))
-	for i, o := range oprs {
-		ops[i] = o
+func (h *Handler) takeLastNonDryRunOperations(oprs []internal.UpgradeKymaOperation) ([]internal.UpgradeKymaOperation, int) {
+	toReturn := make([]internal.UpgradeKymaOperation, 0)
+	totalCount := 0
+	for _, op := range oprs {
+		if op.DryRun {
+			continue
+		}
+		if len(toReturn) < numberOfUpgradeOperationsToReturn {
+			toReturn = append(toReturn, op)
+		}
+		totalCount = totalCount + 1
 	}
-
-	ri, totalCount := h.takeLastNonDryRunOperations(ops)
-	toReturn := make([]internal.UpgradeKymaOperation, len(ri))
-	for i, o := range ri {
-		toReturn[i] = o.(internal.UpgradeKymaOperation)
-	}
-
 	return toReturn, totalCount
-
 }
 
 func (h *Handler) takeLastNonDryRunClusterOperations(oprs []internal.UpgradeClusterOperation) ([]internal.UpgradeClusterOperation, int) {
-	ops := make([]interface{}, len(oprs))
-	for i, o := range oprs {
-		ops[i] = o
-	}
-
-	ri, totalCount := h.takeLastNonDryRunOperations(ops)
-	toReturn := make([]internal.UpgradeClusterOperation, len(ri))
-	for i, o := range ri {
-		toReturn[i] = o.(internal.UpgradeClusterOperation)
-	}
-
-	return toReturn, totalCount
-}
-
-// common "counter" for two types of operations
-func (h *Handler) takeLastNonDryRunOperations(oprs []interface{}) ([]interface{}, int) {
-	toReturn := make([]interface{}, 0)
+	toReturn := make([]internal.UpgradeClusterOperation, 0)
 	totalCount := 0
 	for _, op := range oprs {
-		switch op.(type) {
-
-		case internal.UpgradeKymaOperation:
-			o := op.(internal.UpgradeKymaOperation)
-			if o.DryRun {
-				continue
-			}
-
-		case internal.UpgradeClusterOperation:
-			o := op.(internal.UpgradeClusterOperation)
-			if o.DryRun {
-				continue
-			}
+		if op.DryRun {
+			continue
 		}
-
 		if len(toReturn) < numberOfUpgradeOperationsToReturn {
 			toReturn = append(toReturn, op)
 		}
