@@ -14,17 +14,19 @@ type runtime struct {
 }
 
 type FakeClient struct {
-	mu         sync.Mutex
-	runtimes   []runtime
-	upgrades   map[string]schema.UpgradeRuntimeInput
-	operations map[string]schema.OperationStatus
+	mu            sync.Mutex
+	runtimes      []runtime
+	upgrades      map[string]schema.UpgradeRuntimeInput
+	shootUpgrades map[string]schema.UpgradeShootInput
+	operations    map[string]schema.OperationStatus
 }
 
 func NewFakeClient() *FakeClient {
 	return &FakeClient{
-		runtimes:   []runtime{},
-		operations: make(map[string]schema.OperationStatus),
-		upgrades:   make(map[string]schema.UpgradeRuntimeInput),
+		runtimes:      []runtime{},
+		operations:    make(map[string]schema.OperationStatus),
+		upgrades:      make(map[string]schema.UpgradeRuntimeInput),
+		shootUpgrades: make(map[string]schema.UpgradeShootInput),
 	}
 }
 
@@ -139,7 +141,34 @@ func (c *FakeClient) UpgradeRuntime(accountID, runtimeID string, config schema.U
 	}, nil
 }
 
-func (c *FakeClient) IsRuntimeUpgraded(runtimeID string) bool {
-	_, found := c.upgrades[runtimeID]
+func (c *FakeClient) UpgradeShoot(accountID, runtimeID string, config schema.UpgradeShootInput) (schema.OperationStatus, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	opId := uuid.New().String()
+	c.operations[opId] = schema.OperationStatus{
+		ID:        &opId,
+		RuntimeID: &runtimeID,
+		Operation: schema.OperationTypeUpgradeShoot,
+		State:     schema.OperationStateInProgress,
+	}
+	c.shootUpgrades[runtimeID] = config
+	return schema.OperationStatus{
+		RuntimeID: &runtimeID,
+		ID:        &opId,
+	}, nil
+}
+
+func (c *FakeClient) IsRuntimeUpgraded(runtimeID string, version string) bool {
+	input, found := c.upgrades[runtimeID]
+	if found && version != "" && input.KymaConfig != nil {
+		return input.KymaConfig.Version == version
+	}
+
+	return found
+}
+
+func (c *FakeClient) IsShootUpgraded(runtimeID string) bool {
+	_, found := c.shootUpgrades[runtimeID]
 	return found
 }

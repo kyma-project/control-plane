@@ -115,19 +115,6 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 	switch {
 	case err == nil:
 		if operation.State == orchestration.Pending {
-			upgrades, err := s.operationStorage.ListUpgradeKymaOperationsByInstanceID(operation.InstanceID)
-			if err != nil {
-				log.Errorf("unable to get upgrade operations for the instance")
-				return operation, time.Second, nil
-			}
-
-			for _, op := range upgrades {
-				// check if there is not finished operation
-				if op.State != domain.Failed && op.State != domain.Succeeded {
-					log.Debugf("waiting for the operation %s to be finished", op.Operation.ID)
-					return operation, time.Minute, nil
-				}
-			}
 			log.Info("Setting state 'in progress' and refreshing instance details")
 			operation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
 				operation.State = domain.InProgress
@@ -191,7 +178,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 					return operation, 0, nil
 				}
 
-				err = s.accountProvider.MarkUnusedGardenerSecretAsDirty(hypType, instance.GlobalAccountID)
+				err = s.accountProvider.MarkUnusedGardenerSecretBindingAsDirty(hypType, instance.GlobalAccountID)
 				if err != nil {
 					log.Errorf("after successful deprovisioning failed to release hyperscaler subscription: %s", err)
 					return operation, 10 * time.Second, nil

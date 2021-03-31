@@ -25,6 +25,7 @@ type Client interface {
 	ProvisionRuntime(accountID, subAccountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error)
 	DeprovisionRuntime(accountID, runtimeID string) (string, error)
 	UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (schema.OperationStatus, error)
+	UpgradeShoot(accountID, runtimeID string, config schema.UpgradeShootInput) (schema.OperationStatus, error)
 	ReconnectRuntimeAgent(accountID, runtimeID string) (string, error)
 	RuntimeOperationStatus(accountID, operationID string) (schema.OperationStatus, error)
 	RuntimeStatus(accountID, runtimeID string) (schema.RuntimeStatus, error)
@@ -98,6 +99,24 @@ func (c *client) UpgradeRuntime(accountID, runtimeID string, config schema.Upgra
 	err = c.executeRequest(req, &res)
 	if err != nil {
 		return schema.OperationStatus{}, errors.Wrap(err, "Failed to upgrade Runtime")
+	}
+	return res, nil
+}
+
+func (c *client) UpgradeShoot(accountID, runtimeID string, config schema.UpgradeShootInput) (schema.OperationStatus, error) {
+	upgradeShootIptGQL, err := c.graphqlizer.UpgradeShootInputToGraphQL(config)
+	if err != nil {
+		return schema.OperationStatus{}, errors.Wrap(err, "Failed to convert Upgrade Shoot Input to query")
+	}
+
+	query := c.queryProvider.upgradeShoot(runtimeID, upgradeShootIptGQL)
+	req := gcli.NewRequest(query)
+	req.Header.Add(accountIDKey, accountID)
+
+	var res schema.OperationStatus
+	err = c.executeRequest(req, &res)
+	if err != nil {
+		return schema.OperationStatus{}, errors.Wrap(err, "Failed to upgrade Shoot")
 	}
 	return res, nil
 }

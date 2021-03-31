@@ -23,7 +23,7 @@ func TestClsDeprovisionStepNoopRun(t *testing.T) {
 	repo := db.Operations()
 	deprovisionerMock := &automock.ClsDeprovisioner{}
 
-	step := NewClsDeprovisionStep(config, repo, deprovisionerMock)
+	step := NewClsDeprovisionStep(config, deprovisionerMock, repo)
 
 	operation := internal.DeprovisioningOperation{
 		Operation: internal.Operation{
@@ -97,9 +97,9 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 		deprovisionerMock.On("Deprovision", mock.Anything, &cls.DeprovisionRequest{
 			SKRInstanceID: skrInstanceID,
 			Instance:      clsInstance.InstanceKey(),
-		}, mock.Anything).Return(errors.New("failure"))
+		}, mock.Anything).Return(nil, errors.New("failure"))
 
-		step := NewClsDeprovisionStep(config, repo, deprovisionerMock)
+		step := NewClsDeprovisionStep(config, deprovisionerMock, repo)
 
 		// when
 		op, offset, err := step.Run(operation, logger.NewLogDummy())
@@ -117,9 +117,9 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 		deprovisionerMock.On("Deprovision", mock.Anything, &cls.DeprovisionRequest{
 			SKRInstanceID: skrInstanceID,
 			Instance:      clsInstance.InstanceKey(),
-		}, mock.Anything).Return(nil)
+		}, mock.Anything).Return(&cls.DeprovisionResult{IsLastReference: false}, nil)
 
-		step := NewClsDeprovisionStep(config, repo, deprovisionerMock)
+		step := NewClsDeprovisionStep(config, deprovisionerMock, repo)
 
 		// when
 		op, offset, err := step.Run(operation, logger.NewLogDummy())
@@ -139,7 +139,7 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 			State: servicemanager.Failed,
 		}, nil)
 
-		step := NewClsDeprovisionStep(config, repo, &automock.ClsDeprovisioner{})
+		step := NewClsDeprovisionStep(config, &automock.ClsDeprovisioner{}, repo)
 
 		// when
 		op, offset, err := step.Run(operation, logger.NewLogDummy())
@@ -159,7 +159,7 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 			State: servicemanager.InProgress,
 		}, nil)
 
-		step := NewClsDeprovisionStep(config, repo, &automock.ClsDeprovisioner{})
+		step := NewClsDeprovisionStep(config, &automock.ClsDeprovisioner{}, repo)
 
 		// when
 		op, offset, err := step.Run(operation, logger.NewLogDummy())
@@ -179,7 +179,7 @@ func TestClsDeprovisionStepRun(t *testing.T) {
 			State: servicemanager.InProgress,
 		}, nil)
 
-		step := NewClsDeprovisionStep(config, repo, &automock.ClsDeprovisioner{})
+		step := NewClsDeprovisionStep(config, &automock.ClsDeprovisioner{}, repo)
 
 		// when
 		op, offset, err := step.Run(operation, logger.NewLogDummy())

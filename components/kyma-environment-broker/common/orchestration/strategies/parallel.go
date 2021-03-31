@@ -8,31 +8,34 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/util/workqueue"
 )
 
-type Executor interface {
-	Execute(operationID string) (time.Duration, error)
-}
-
 type ParallelOrchestrationStrategy struct {
-	executor Executor
-	dq       map[string]workqueue.DelayingInterface
-	wg       map[string]*sync.WaitGroup
-	mux      sync.RWMutex
-	log      logrus.FieldLogger
+	executor        orchestration.OperationExecutor
+	dq              map[string]workqueue.DelayingInterface
+	wg              map[string]*sync.WaitGroup
+	mux             sync.RWMutex
+	log             logrus.FieldLogger
+	rescheduleDelay time.Duration
 }
 
 // NewParallelOrchestrationStrategy returns a new parallel orchestration strategy, which
 // executes operations in parallel using a pool of workers and a delaying queue to support time-based scheduling.
-func NewParallelOrchestrationStrategy(executor Executor, log logrus.FieldLogger) orchestration.Strategy {
-	return &ParallelOrchestrationStrategy{
-		executor: executor,
-		dq:       map[string]workqueue.DelayingInterface{},
-		wg:       map[string]*sync.WaitGroup{},
-		log:      log,
+func NewParallelOrchestrationStrategy(executor orchestration.OperationExecutor, log logrus.FieldLogger, rescheduleDelay time.Duration) orchestration.Strategy {
+	strategy := &ParallelOrchestrationStrategy{
+		executor:        executor,
+		dq:              map[string]workqueue.DelayingInterface{},
+		wg:              map[string]*sync.WaitGroup{},
+		log:             log,
+		rescheduleDelay: rescheduleDelay,
 	}
+	if strategy.rescheduleDelay <= 0 {
+		strategy.rescheduleDelay = 24 * time.Hour
+	}
+	return strategy
 }
 
 // Execute starts the parallel execution of operations.
@@ -53,16 +56,15 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []orchestration.Runti
 		})
 	}
 
-	// Create workers
-	for i := 0; i < strategySpec.Parallel.Workers; i++ {
-		p.createWorker(execID, ops, strategySpec)
-	}
-
 	// Send operations to workers
 	for _, op := range operations {
 		ops <- op
 	}
-	close(ops)
+
+	// Create workers
+	for i := 0; i < strategySpec.Parallel.Workers; i++ {
+		p.createWorker(execID, ops, strategySpec)
+	}
 
 	return execID, nil
 }
@@ -77,19 +79,32 @@ func (p *ParallelOrchestrationStrategy) Wait(executionID string) {
 }
 
 func (p *ParallelOrchestrationStrategy) Cancel(executionID string) {
+	if executionID == "" {
+		return
+	}
+	p.log.Infof("Cancelling strategy execution %s", executionID)
 	p.mux.Lock()
 	defer p.mux.Unlock()
-	p.log.Infof("Cancelling strategy execution %s", executionID)
-	p.dq[executionID].ShutDown()
+	dq := p.dq[executionID]
+	if dq != nil {
+		dq.ShutDown()
+	}
 }
 
-func (p *ParallelOrchestrationStrategy) createWorker(execID string, ops <-chan orchestration.RuntimeOperation, strategy orchestration.StrategySpec) {
+func (p *ParallelOrchestrationStrategy) createWorker(execID string, ops chan orchestration.RuntimeOperation, strategy orchestration.StrategySpec) {
 	p.wg[execID].Add(1)
 	go func() {
-		for op := range ops {
-			err := p.processOperation(op, strategy, execID)
-			if err != nil {
-				p.log.Errorf("while processing operation %s: %v", op.ID, err)
+		moreOperations := true
+		for moreOperations {
+			select {
+			case op := <-ops:
+				err := p.processOperation(op, ops, strategy, execID)
+				if err != nil {
+					p.log.Errorf("while processing operation %s: %v", op.ID, err)
+				}
+			default:
+				p.log.Infof("Idle worker for %s exiting %v", execID)
+				moreOperations = false
 			}
 		}
 		p.mux.RLock()
@@ -98,18 +113,31 @@ func (p *ParallelOrchestrationStrategy) createWorker(execID string, ops <-chan o
 	}()
 }
 
-func (p *ParallelOrchestrationStrategy) processOperation(op orchestration.RuntimeOperation, strategy orchestration.StrategySpec, executionID string) error {
+func (p *ParallelOrchestrationStrategy) processOperation(op orchestration.RuntimeOperation, ops chan orchestration.RuntimeOperation, strategy orchestration.StrategySpec, executionID string) error {
 	exit := false
 	id := op.ID
 	log := p.log.WithField("operationID", id)
 
 	switch strategy.Schedule {
 	case orchestration.MaintenanceWindow:
+		// if time window for this operation has finished, we requeue and reprocess on next time window
+		if !op.MaintenanceWindowEnd.IsZero() && op.MaintenanceWindowEnd.Before(time.Now()) {
+			op.MaintenanceWindowBegin = op.MaintenanceWindowBegin.Add(p.rescheduleDelay)
+			op.MaintenanceWindowEnd = op.MaintenanceWindowEnd.Add(p.rescheduleDelay)
+			err := p.executor.Reschedule(id, op.MaintenanceWindowBegin, op.MaintenanceWindowEnd)
+			if err != nil {
+				errors.Wrap(err, "while rescheduling operation by executor (still continuing with new schedule)")
+			}
+			ops <- op
+			log.Infof("operation will be rescheduled starting at %v", op.MaintenanceWindowBegin)
+			return err
+		}
+
 		until := time.Until(op.MaintenanceWindowBegin)
-		log.Infof("Upgrade operation will be scheduled in %v", until)
+		log.Infof("operation will be scheduled in %v", until)
 		p.dq[executionID].AddAfter(id, until)
 	case orchestration.Immediate:
-		log.Infof("Upgrade operation is scheduled now")
+		log.Infof("operation is scheduled now")
 		p.dq[executionID].Add(id)
 	}
 

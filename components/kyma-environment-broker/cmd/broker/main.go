@@ -11,28 +11,10 @@ import (
 	"sort"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
-
 	"code.cloudfoundry.org/lager"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
-	"github.com/vrischmann/envconfig"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
@@ -43,12 +25,13 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/health"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
-
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/metrics"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
@@ -66,9 +49,22 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeoverrides"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	uaa "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/xsuaa"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
+	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
+	"github.com/vrischmann/envconfig"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 // Config holds configuration for the whole application
@@ -231,14 +227,15 @@ func main() {
 	fatalOnError(err)
 	gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
 	fatalOnError(err)
-	gardenerSecrets, err := gardener.NewGardenerSecretsInterface(gardenerClusterConfig, cfg.Gardener.Project)
+	kubernetesClient, err := kubernetes.NewForConfig(gardenerClusterConfig)
 	fatalOnError(err)
+	gardenerSecretBindings := gardener.NewGardenerSecretBindingsInterface(gardenerClient, cfg.Gardener.Project)
 	gardenerShoots, err := gardener.NewGardenerShootInterface(gardenerClusterConfig, cfg.Gardener.Project)
 	fatalOnError(err)
 
-	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets, gardenerShoots)
-	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecrets, gardenerShoots)
-	accountProvider := hyperscaler.NewAccountProvider(gardenerAccountPool, gardenerSharedPool)
+	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecretBindings, gardenerShoots)
+	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecretBindings, gardenerShoots)
+	accountProvider := hyperscaler.NewAccountProvider(kubernetesClient, gardenerAccountPool, gardenerSharedPool)
 
 	regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)
 	fatalOnError(err)
@@ -255,7 +252,7 @@ func main() {
 	internalEvalAssistant := avs.NewInternalEvalAssistant(cfg.Avs)
 	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 	internalEvalUpdater := provisioning.NewInternalEvalUpdater(avsDel, internalEvalAssistant, cfg.Avs)
-	upgradeEvalManager := upgrade_kyma.NewEvaluationManager(avsDel, cfg.Avs)
+	upgradeEvalManager := avs.NewEvaluationManager(avsDel, cfg.Avs)
 
 	clientHTTPForIAS := httputil.NewClient(60, cfg.IAS.SkipCertVerification)
 	if cfg.IAS.TLSRenegotiationEnable {
@@ -379,6 +376,11 @@ func main() {
 			disabled: !cfg.Cls.Disabled,
 		},
 		{
+			weight:   5,
+			step:     provisioning.NewSkipForTrialPlanStep(provisioning.NewClsCheckStatus(clsConfig, cls.NewStatusChecker(db.CLSInstances()), db.Operations())),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
 			weight:   6,
 			step:     provisioning.NewIASRegistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
@@ -472,7 +474,7 @@ func main() {
 		},
 		{
 			weight:   2,
-			step:     deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewClsDeprovisionStep(clsConfig, db.Operations(), clsDeprovisioner)),
+			step:     deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewClsDeprovisionStep(clsConfig, clsDeprovisioner, db.Operations())),
 			disabled: cfg.Cls.Disabled,
 		},
 		{
@@ -537,15 +539,15 @@ func main() {
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
 		&cfg, accountProvider, serviceManagerClientFactory, clsConfig, logs)
-	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, time.Minute, runtimeResolver, logs)
+	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeResolver, upgradeEvalManager, logs)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
 	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, clusterQueue, cfg.MaxPaginationPage, logs)
 
 	if !cfg.DisableProcessOperationsInProgress {
-		err = processOperationsInProgressByType(dbmodel.OperationTypeProvision, db.Operations(), provisionQueue, logs)
+		err = processOperationsInProgressByType(internal.OperationTypeProvision, db.Operations(), provisionQueue, logs)
 		fatalOnError(err)
-		err = processOperationsInProgressByType(dbmodel.OperationTypeDeprovision, db.Operations(), deprovisionQueue, logs)
+		err = processOperationsInProgressByType(internal.OperationTypeDeprovision, db.Operations(), deprovisionQueue, logs)
 		fatalOnError(err)
 		err = reprocessOrchestrations(orchestrationExt.UpgradeKymaOrchestration, db.Orchestrations(), db.Operations(), kymaQueue, logs)
 		fatalOnError(err)
@@ -598,7 +600,7 @@ func newAuditLogStep(cfg *Config, ops storage.Operations) provisioning.Step {
 }
 
 // queues all in progress operations by type
-func processOperationsInProgressByType(opType dbmodel.OperationType, op storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
+func processOperationsInProgressByType(opType internal.OperationType, op storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
 	operations, err := op.GetNotFinishedOperationsByType(opType)
 	if err != nil {
 		return errors.Wrap(err, "while getting in progress operations from storage")
@@ -710,7 +712,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	runtimeOverrides upgrade_kyma.RuntimeOverridesAppender, provisionerClient provisioner.Client,
 	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
-	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *upgrade_kyma.EvaluationManager,
+	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager,
 	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory, clsConfig *cls.Config, logs logrus.FieldLogger) *process.Queue {
 
 	//CLS
@@ -760,6 +762,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			disabled: cfg.Cls.Disabled,
 		},
 		{
+			weight:   5,
+			step:     upgrade_kyma.NewSkipForTrialPlanStep(upgrade_kyma.NewClsCheckStatus(clsConfig, cls.NewStatusChecker(db.CLSInstances()), db.Operations())),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
 			weight:   7,
 			step:     upgrade_kyma.NewEmsUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Ems.Disabled,
@@ -790,23 +797,40 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		upgradeKymaManager, runtimeResolver, pollingInterval, smcf, logs.WithField("upgradeKyma", "orchestration"))
 	queue := process.NewQueue(orchestrateKymaManager, logs)
 
-	// TODO: allow multiple orchestration processing concurrently
-	queue.Run(ctx.Done(), 1)
+	queue.Run(ctx.Done(), 3)
 
 	return queue
 }
 
 func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStorage, provisionerClient provisioner.Client,
-	pub event.Publisher, inputFactory input.CreatorForPlan, pollingInterval time.Duration, runtimeResolver orchestrationExt.RuntimeResolver,
-	logs logrus.FieldLogger) *process.Queue {
+	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_cluster.TimeSchedule, pollingInterval time.Duration,
+	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager, logs logrus.FieldLogger) *process.Queue {
 
 	upgradeClusterManager := upgrade_cluster.NewManager(db.Operations(), pub, logs.WithField("upgradeCluster", "manager"))
+	upgradeClusterInit := upgrade_cluster.NewInitialisationStep(db.Operations(), db.Orchestrations(), provisionerClient, inputFactory, upgradeEvalManager, icfg)
+	upgradeClusterManager.InitStep(upgradeClusterInit)
+
+	upgradeClusterSteps := []struct {
+		disabled bool
+		weight   int
+		step     upgrade_cluster.Step
+	}{
+		{
+			weight: 10,
+			step:   upgrade_cluster.NewUpgradeClusterStep(db.Operations(), db.RuntimeStates(), provisionerClient, icfg),
+		},
+	}
+	for _, step := range upgradeClusterSteps {
+		if !step.disabled {
+			upgradeClusterManager.AddStep(step.weight, step.step)
+		}
+	}
+
 	orchestrateClusterManager := manager.NewUpgradeClusterManager(db.Orchestrations(), db.Operations(), db.Instances(),
 		upgradeClusterManager, runtimeResolver, pollingInterval, logs.WithField("upgradeCluster", "orchestration"))
 	queue := process.NewQueue(orchestrateClusterManager, logs)
 
-	// TODO: allow multiple orchestration processing concurrently
-	queue.Run(ctx.Done(), 1)
+	queue.Run(ctx.Done(), 3)
 
 	return queue
 }

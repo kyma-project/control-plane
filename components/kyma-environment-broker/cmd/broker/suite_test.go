@@ -24,6 +24,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_cluster"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	kebRuntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
@@ -54,13 +55,14 @@ type OrchestrationSuite struct {
 	gardenerNamespace string
 	provisionerClient *provisioner.FakeClient
 	kymaQueue         *process.Queue
+	clusterQueue      *process.Queue
 	storage           storage.BrokerStorage
 	gardenerClient    *gardenerFake.Clientset
 
 	t *testing.T
 }
 
-func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
+func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *OrchestrationSuite {
 	logs := logrus.New()
 	logs.Formatter.(*logrus.TextFormatter).TimestampFormat = "15:04:05.000"
 
@@ -91,7 +93,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 	db := storage.NewMemoryStorage()
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
-	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources()...)
+	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources(defaultKymaVer, additionalKymaVersions)...)
 
 	gardenerClient := gardenerFake.NewSimpleClientset()
 	provisionerClient := provisioner.NewFakeClient()
@@ -106,7 +108,7 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 
 	avsClient, _ := avs.NewClient(ctx, avs.Config{}, logs)
 	avsDel := avs.NewDelegator(avsClient, avs.Config{}, db.Operations())
-	upgradeEvaluationManager := upgrade_kyma.NewEvaluationManager(avsDel, avs.Config{})
+	upgradeEvaluationManager := avs.NewEvaluationManager(avsDel, avs.Config{})
 	runtimeLister := kebOrchestration.NewRuntimeLister(db.Instances(), db.Operations(), kebRuntime.NewConverter(defaultRegion), logs)
 	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient.CoreV1beta1(), gardenerNamespace, runtimeLister, logs)
 
@@ -115,12 +117,19 @@ func NewOrchestrationSuite(t *testing.T) *OrchestrationSuite {
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, hyperscaler.NewAccountProvider(nil, nil), nil, nil, logs)
+		&cfg, hyperscaler.NewAccountProvider(nil, nil, nil), nil, nil, logs)
+
+	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
+		Retry:                 10 * time.Millisecond,
+		StatusCheck:           100 * time.Millisecond,
+		UpgradeClusterTimeout: 4 * time.Second,
+	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, logs)
 
 	return &OrchestrationSuite{
 		gardenerNamespace: gardenerNamespace,
 		provisionerClient: provisionerClient,
 		kymaQueue:         kymaQueue,
+		clusterQueue:      clusterQueue,
 		storage:           db,
 		gardenerClient:    gardenerClient,
 
@@ -242,38 +251,34 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 	return runtimeID
 }
 
-func (s *OrchestrationSuite) CreateUpgradeKymaOrchestration(runtimeID string) string {
+func (s *OrchestrationSuite) createOrchestration(oType orchestration.Type, queue *process.Queue, params orchestration.Parameters) string {
 	now := time.Now()
 	o := internal.Orchestration{
 		OrchestrationID: uuid.New(),
-		Type:            orchestration.UpgradeKymaOrchestration,
+		Type:            oType,
 		State:           orchestration.Pending,
 		Description:     "started processing of Kyma upgrade",
-		Parameters: orchestration.Parameters{
-			Targets: orchestration.TargetSpec{
-				Include: []orchestration.RuntimeTarget{
-					{RuntimeID: runtimeID},
-				},
-			},
-			Strategy: orchestration.StrategySpec{
-				Type:     orchestration.ParallelStrategy,
-				Schedule: orchestration.Immediate,
-				Parallel: orchestration.ParallelStrategySpec{Workers: 1},
-			},
-			DryRun: false,
-		},
-		CreatedAt: now,
-		UpdatedAt: now,
+		Parameters:      params,
+		CreatedAt:       now,
+		UpdatedAt:       now,
 	}
 	require.NoError(s.t, s.storage.Orchestrations().Insert(o))
 
-	s.kymaQueue.Add(o.OrchestrationID)
+	queue.Add(o.OrchestrationID)
 	return o.OrchestrationID
 }
 
-func (s *OrchestrationSuite) FinishUpgradeOperationByProvisioner(runtimeID string) {
+func (s *OrchestrationSuite) CreateUpgradeKymaOrchestration(params orchestration.Parameters) string {
+	return s.createOrchestration(orchestration.UpgradeKymaOrchestration, s.kymaQueue, params)
+}
+
+func (s *OrchestrationSuite) CreateUpgradeClusterOrchestration(params orchestration.Parameters) string {
+	return s.createOrchestration(orchestration.UpgradeClusterOrchestration, s.clusterQueue, params)
+}
+
+func (s *OrchestrationSuite) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
 	err := wait.Poll(time.Millisecond*100, 15*time.Second, func() (bool, error) {
-		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, gqlschema.OperationTypeUpgrade)
+		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
 			s.provisionerClient.FinishProvisionerOperation(*status.ID)
 			return true, nil
@@ -281,6 +286,14 @@ func (s *OrchestrationSuite) FinishUpgradeOperationByProvisioner(runtimeID strin
 		return false, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for provisioner operation to exist")
+}
+
+func (s *OrchestrationSuite) FinishUpgradeOperationByProvisioner(runtimeID string) {
+	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgrade, runtimeID)
+}
+
+func (s *OrchestrationSuite) FinishUpgradeShootOperationByProvisioner(runtimeID string) {
+	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgradeShoot, runtimeID)
 }
 
 func (s *OrchestrationSuite) WaitForOrchestrationState(orchestrationID string, state string) {
@@ -292,30 +305,41 @@ func (s *OrchestrationSuite) WaitForOrchestrationState(orchestrationID string, s
 	assert.NoError(s.t, err, "timeout waiting for the orchestration expected state %s. The existing orchestration %+v", state, orchestration)
 }
 
-func (s *OrchestrationSuite) AssertRuntimeUpgraded(runtimeID string) {
-	assert.True(s.t, s.provisionerClient.IsRuntimeUpgraded(runtimeID), "The runtime %s expected to be upgraded", runtimeID)
+func (s *OrchestrationSuite) AssertRuntimeUpgraded(runtimeID string, version string) {
+	assert.True(s.t, s.provisionerClient.IsRuntimeUpgraded(runtimeID, version), "The runtime %s expected to be upgraded", runtimeID)
 }
 
 func (s *OrchestrationSuite) AssertRuntimeNotUpgraded(runtimeID string) {
-	assert.False(s.t, s.provisionerClient.IsRuntimeUpgraded(runtimeID), "The runtime %s expected to be not upgraded", runtimeID)
+	assert.False(s.t, s.provisionerClient.IsRuntimeUpgraded(runtimeID, ""), "The runtime %s expected to be not upgraded", runtimeID)
 }
 
-func fixK8sResources() []runtime.Object {
-	var resources []runtime.Object
+func (s *OrchestrationSuite) AssertShootUpgraded(runtimeID string) {
+	assert.True(s.t, s.provisionerClient.IsShootUpgraded(runtimeID), "The shoot %s expected to be upgraded", runtimeID)
+}
 
-	resources = append(resources, &coreV1.ConfigMap{
+func (s *OrchestrationSuite) AssertShootNotUpgraded(runtimeID string) {
+	assert.False(s.t, s.provisionerClient.IsShootUpgraded(runtimeID), "The shoot %s expected to be not upgraded", runtimeID)
+}
+
+func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string) []runtime.Object {
+	var resources []runtime.Object
+	override := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "overrides",
 			Namespace: "kcp-system",
 			Labels: map[string]string{
-				"overrides-version-1.15.1": "true",
-				"overrides-plan-azure":     "true",
+				fmt.Sprintf("overrides-version-%s", defaultKymaVersion): "true",
+				"overrides-plan-azure": "true",
 			},
 		},
 		Data: map[string]string{
 			"foo": "bar",
 		},
-	})
+	}
+	for _, version := range additionalKymaVersions {
+		override.ObjectMeta.Labels[fmt.Sprintf("overrides-version-%s", version)] = "true"
+	}
+	resources = append(resources, override)
 
 	return resources
 }

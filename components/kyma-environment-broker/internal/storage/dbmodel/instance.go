@@ -5,7 +5,19 @@ import (
 	"time"
 )
 
-// InstanceFilter holds the filters when queryíing Instances
+type InstanceState string
+
+const (
+	InstanceSucceeded        InstanceState = "succeeded"
+	InstanceFailed           InstanceState = "failed"
+	InstanceProvisioning     InstanceState = "provisioning"
+	InstanceDeprovisioning   InstanceState = "deprovisioning"
+	InstanceUpgrading        InstanceState = "upgrading"
+	InstanceDeprovisioned    InstanceState = "deprovisioned"
+	InstanceNotDeprovisioned InstanceState = "notDeprovisioned"
+)
+
+// InstanceFilter holds the filters when querying Instances
 type InstanceFilter struct {
 	PageSize         int
 	Page             int
@@ -16,6 +28,7 @@ type InstanceFilter struct {
 	Regions          []string
 	Plans            []string
 	Domains          []string
+	States           []InstanceState
 }
 
 type InstanceDTO struct {

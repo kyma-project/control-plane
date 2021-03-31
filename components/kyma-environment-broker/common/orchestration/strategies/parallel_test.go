@@ -31,10 +31,14 @@ func (t *testExecutor) Execute(opID string) (time.Duration, error) {
 	}
 }
 
+func (t *testExecutor) Reschedule(operationID string, maintenanceWindowBegin, maintenanceWindowEnd time.Time) error {
+	return nil
+}
+
 func TestNewParallelOrchestrationStrategy_Immediate(t *testing.T) {
 	// given
 	executor := &testExecutor{opCalled: map[string]bool{}}
-	s := NewParallelOrchestrationStrategy(executor, logrus.New())
+	s := NewParallelOrchestrationStrategy(executor, logrus.New(), 0)
 
 	ops := make([]orchestration.RuntimeOperation, 3)
 	for i := range ops {
@@ -54,15 +58,18 @@ func TestNewParallelOrchestrationStrategy_Immediate(t *testing.T) {
 func TestNewParallelOrchestrationStrategy_MaintenanceWindow(t *testing.T) {
 	// given
 	executor := &testExecutor{opCalled: map[string]bool{}}
-	s := NewParallelOrchestrationStrategy(executor, logrus.New())
+	s := NewParallelOrchestrationStrategy(executor, logrus.New(), 0)
 
-	start := time.Now().Add(5 * time.Second)
+	start := time.Now().Add(3 * time.Second)
 
 	ops := make([]orchestration.RuntimeOperation, 3)
 	for i := range ops {
 		ops[i] = orchestration.RuntimeOperation{
-			ID:      rand.String(5),
-			Runtime: orchestration.Runtime{MaintenanceWindowBegin: start},
+			ID: rand.String(5),
+			Runtime: orchestration.Runtime{
+				MaintenanceWindowBegin: start,
+				MaintenanceWindowEnd:   start.Add(10 * time.Minute),
+			},
 		}
 	}
 
@@ -74,27 +81,26 @@ func TestNewParallelOrchestrationStrategy_MaintenanceWindow(t *testing.T) {
 	s.Wait(id)
 }
 
-func TestNewParallelOrchestrationStrategy_Canceled(t *testing.T) {
+func TestNewParallelOrchestrationStrategy_Reschedule(t *testing.T) {
 	// given
 	executor := &testExecutor{opCalled: map[string]bool{}}
-	s := NewParallelOrchestrationStrategy(executor, logrus.New())
+	s := NewParallelOrchestrationStrategy(executor, logrus.New(), 5*time.Second)
 
-	start := time.Now().Add(15 * time.Second)
+	start := time.Now().Add(-5 * time.Second)
 
 	ops := make([]orchestration.RuntimeOperation, 3)
 	for i := range ops {
 		ops[i] = orchestration.RuntimeOperation{
-			ID:      rand.String(5),
-			Runtime: orchestration.Runtime{MaintenanceWindowBegin: start},
+			ID: rand.String(5),
+			Runtime: orchestration.Runtime{
+				MaintenanceWindowBegin: start,
+				MaintenanceWindowEnd:   start.Add(time.Second),
+			},
 		}
 	}
 
 	// when
-	id, err := s.Execute(ops, orchestration.StrategySpec{
-		Type:     orchestration.ParallelStrategy,
-		Schedule: orchestration.MaintenanceWindow,
-		Parallel: orchestration.ParallelStrategySpec{Workers: 2},
-	})
+	id, err := s.Execute(ops, orchestration.StrategySpec{Schedule: orchestration.MaintenanceWindow, Parallel: orchestration.ParallelStrategySpec{Workers: 2}})
 
 	// then
 	assert.NoError(t, err)

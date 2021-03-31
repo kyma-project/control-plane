@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -46,15 +47,20 @@ func (s *ClsUnbindStep) Run(operation internal.DeprovisioningOperation, log logr
 	smCli := operation.SMClientFactory.ForCredentials(smCredentials)
 
 	// Unbind
-	log.Infof("unbinding for CLS instance: %s started; binding: %s", operation.Cls.Instance.InstanceID, operation.Cls.Binding.BindingID)
-	_, err = smCli.Unbind(operation.Cls.Instance.InstanceKey(), operation.Cls.Binding.BindingID, true)
+	log.Infof("Unbinding for CLS instance: %s started; binding: %s", operation.Cls.Instance.InstanceID, operation.Cls.BindingID)
+	_, err = smCli.Unbind(operation.Cls.Instance.InstanceKey(), operation.Cls.BindingID, true)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("unable to unbind, bindingId=%s", operation.Cls.Binding.BindingID))
+		failureReason := "Unable to delete CLS Binding"
+		log.Errorf("%s: %v", failureReason, err)
+		if kebError.IsTemporaryError(err) {
+			return s.operationManager.RetryOperation(operation, failureReason, 10*time.Second, time.Minute*30, log)
+		}
+		return s.operationManager.OperationFailed(operation, failureReason, log)
 	}
-	log.Infof("unbinding for CLS instance: %s finished", operation.Cls.Instance.InstanceID)
+	log.Infof("Unbinding for CLS instance: %s finished", operation.Cls.Instance.InstanceID)
 
 	updatedOperation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
-		operation.Cls.Binding.BindingID = ""
+		operation.Cls.BindingID = ""
 		operation.Cls.Overrides = ""
 	}, log)
 	return updatedOperation, retry, nil

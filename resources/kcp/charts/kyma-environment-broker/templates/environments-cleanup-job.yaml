@@ -44,6 +44,12 @@ spec:
                 value: "{{.Values.gardener.kubeconfigPath}}"
               - name: APP_PROVISIONER_URL
                 value: "{{ .Values.provisioner.URL }}"
+              - name: APP_DATABASE_SECRET_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: "{{ .Values.global.database.managedGCP.encryptionSecretName }}"
+                    key: secretKey
+                    optional: true
               - name: APP_DATABASE_USER
                 valueFrom:
                   secretKeyRef:

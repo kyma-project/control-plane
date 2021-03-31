@@ -67,10 +67,7 @@ func TestClsDeprovisionSteps(t *testing.T) {
 						Provisioned:           true,
 						ProvisioningTriggered: false,
 					},
-					Binding: internal.BindingInfo{
-						Bound:     true,
-						BindingID: os.Getenv("BINDING_ID"),
-					},
+					BindingID: os.Getenv("BINDING_ID"),
 				},
 			},
 		},
@@ -82,7 +79,7 @@ func TestClsDeprovisionSteps(t *testing.T) {
 	log.SetLevel(logrus.DebugLevel)
 	log.SetFormatter(&logrus.JSONFormatter{})
 
-	if len(operation.Cls.Binding.BindingID) > 0 {
+	if len(operation.Cls.BindingID) > 0 {
 		unbindStep := NewClsUnbindStep(clsConfig, operationStorage)
 		op, _, err := unbindStep.Run(operation, log)
 		require.NoError(t, err)
@@ -92,7 +89,7 @@ func TestClsDeprovisionSteps(t *testing.T) {
 	clsClient := cls.NewClient(clsConfig)
 	clsDeprovisioner := cls.NewDeprovisioner(clsStorage, clsClient)
 
-	step := NewClsDeprovisionStep(clsConfig, operationStorage, clsDeprovisioner)
+	step := NewClsDeprovisionStep(clsConfig, clsDeprovisioner, operationStorage)
 
 	for i := 0; i < 10; i++ {
 		op, offset, err := step.Run(operation, log)
