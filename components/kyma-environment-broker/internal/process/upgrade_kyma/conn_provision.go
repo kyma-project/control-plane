@@ -14,11 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	ConnOfferingName = "connectivity"
-	ConnPlanName     = "connectivity_proxy"
-)
-
 type ConnUpgradeProvisionStep struct {
 	operationManager *process.UpgradeKymaOperationManager
 }
@@ -81,7 +76,7 @@ func (s *ConnUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, 
 func (s *ConnUpgradeProvisionStep) provision(smCli servicemanager.Client, operation internal.UpgradeKymaOperation,
 	log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 
-	input := provisioning.GetConnProvisioningData(operation.Conn)
+	input := provisioning.GetConnProvisioningData(operation.Conn.Instance)
 	resp, err := smCli.Provision(operation.Conn.Instance.BrokerID, *input, true)
 	if err != nil {
 		return s.handleError(operation, err, log, fmt.Sprintf("Provision() call failed for brokerID: %s; input: %#v", operation.Conn.Instance.BrokerID, input))
