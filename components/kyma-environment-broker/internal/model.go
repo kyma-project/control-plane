@@ -266,7 +266,6 @@ type ConnData struct {
 	Overrides string `json:"overrides"`
 }
 
-
 func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {
 	return servicemanager.InstanceKey{
 		BrokerID:   s.BrokerID,

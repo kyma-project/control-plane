@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -120,7 +119,7 @@ func (s *ConnBindStep) Run(operation internal.ProvisioningOperation, log logrus.
 	//       - [ ] define what changes need to be done in KEB to
 	//             allow passing secrets data to the Provisioner
 	// append overrides
-	operation.InputCreator.AppendOverrides(components.Connectivity, GetConnOverrides(connectivityOverrides))
+	//operation.InputCreator.AppendOverrides(components.Connectivity, GetConnOverrides(connectivityOverrides))
 
 	return operation, 0, nil
 }
@@ -167,46 +166,6 @@ func GetConnCredentials(binding servicemanager.Binding) (*ConnectivityOverrides,
 func GetConnOverrides(cnOverrides *ConnectivityOverrides) []*gqlschema.ConfigEntryInput {
 	return nil
 }
-
-//func GetEventingOverrides(evOverrides *EventingOverrides) []*gqlschema.ConfigEntryInput {
-//	return []*gqlschema.ConfigEntryInput{
-//		{
-//			Key:    "authentication.oauthClientId",
-//			Value:  evOverrides.OauthClientId,
-//			Secret: ptr.Bool(true),
-//		},
-//		{
-//			Key:    "authentication.oauthClientSecret",
-//			Value:  evOverrides.OauthClientSecret,
-//			Secret: ptr.Bool(true),
-//		},
-//		{
-//			Key:    "authentication.oauthTokenEndpoint",
-//			Value:  evOverrides.OauthTokenEndpoint,
-//			Secret: ptr.Bool(true),
-//		},
-//		{
-//			Key:    "authentication.publishUrl",
-//			Value:  evOverrides.PublishUrl,
-//			Secret: ptr.Bool(true),
-//		},
-//		{
-//			Key:    "authentication.bebNamespace",
-//			Value:  evOverrides.BebNamespace,
-//			Secret: ptr.Bool(true),
-//		},
-//		{
-//			Key:    "global.isBEBEnabled",
-//			Value:  evOverrides.IsBEBEnabled,
-//			Secret: ptr.Bool(false),
-//		},
-//		{
-//			Key:    "global.eventing.backend",
-//			Value:  "beb",
-//			Secret: ptr.Bool(false),
-//		},
-//	}
-//}
 
 func EncryptConnOverrides(secretKey string, overrides *ConnectivityOverrides) (string, error) {
 	ovrs, err := json.Marshal(*overrides)
