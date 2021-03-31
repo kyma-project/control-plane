@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
 type instances struct {
@@ -244,6 +245,9 @@ func (s *instances) filterInstances(filter dbmodel.InstanceFilter) []internal.In
 		if ok = matchFilter(v.DashboardURL, filter.Domains, domainMatch); !ok {
 			continue
 		}
+		if ok = s.matchInstanceState(v.InstanceID, filter.States); !ok {
+			continue
+		}
 
 		inst = append(inst, v)
 	}
@@ -260,5 +264,51 @@ func matchFilter(value string, filters []string, match func(string, string) bool
 			return true
 		}
 	}
+	return false
+}
+
+func (s *instances) matchInstanceState(instanceID string, states []dbmodel.InstanceState) bool {
+	if len(states) == 0 {
+		return true
+	}
+	op, err := s.operationsStorage.GetLastOperation(instanceID)
+	if err != nil {
+		// To support instance test cases without any operations
+		return true
+	}
+
+	for _, s := range states {
+		switch s {
+		case dbmodel.InstanceSucceeded:
+			if op.State == domain.Succeeded && op.Type != internal.OperationTypeDeprovision {
+				return true
+			}
+		case dbmodel.InstanceFailed:
+			if op.State == domain.Failed {
+				return true
+			}
+		case dbmodel.InstanceProvisioning:
+			if op.Type == internal.OperationTypeProvision && op.State == domain.InProgress {
+				return true
+			}
+		case dbmodel.InstanceDeprovisioning:
+			if op.Type == internal.OperationTypeDeprovision && op.State == domain.InProgress {
+				return true
+			}
+		case dbmodel.InstanceUpgrading:
+			if (op.Type == internal.OperationTypeUpgradeKyma || op.Type == internal.OperationTypeUpgradeCluster) && op.State == domain.InProgress {
+				return true
+			}
+		case dbmodel.InstanceDeprovisioned:
+			if op.State == domain.Succeeded && op.Type == internal.OperationTypeDeprovision {
+				return true
+			}
+		case dbmodel.InstanceNotDeprovisioned:
+			if !(op.State == domain.Succeeded && op.Type == internal.OperationTypeDeprovision) {
+				return true
+			}
+		}
+	}
+
 	return false
 }
