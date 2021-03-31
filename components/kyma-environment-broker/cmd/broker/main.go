@@ -218,7 +218,6 @@ func main() {
 	bundleBuilder := ias.NewBundleBuilder(clientHTTPForIAS, cfg.IAS)
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
-
 	// Register disabler. Convention:
 	// {component-name} : {component-disabler-service}
 	//
@@ -263,8 +262,6 @@ func main() {
 	internalEvalUpdater := provisioning.NewInternalEvalUpdater(avsDel, internalEvalAssistant, cfg.Avs)
 	upgradeEvalManager := avs.NewEvaluationManager(avsDel, cfg.Avs)
 
-
-
 	// application event broker
 	eventBroker := event.NewPubSub(logs)
 
@@ -274,96 +271,21 @@ func main() {
 	//setup runtime overrides appender
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 
-	// setup operation managers
-	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
-
 	serviceManagerClientFactory := servicemanager.NewClientFactory(cfg.ServiceManager)
 
 	// define steps
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
 	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, accountVersionMapping)
 
-
-	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, serviceManagerClientFactory, cfg.OperationTimeout)
-	deprovisionManager.InitStep(deprovisioningInit)
-	clsDeprovisioner := cls.NewDeprovisioner(db.CLSInstances(), clsClient)
-
-	deprovisioningSteps := []struct {
-		disabled bool
-		weight   int
-		step     deprovisioning.Step
-	}{
-		{
-			weight: 1,
-			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
-		},
-		{
-			weight: 1,
-			step: deprovisioning.NewSkipForTrialPlanStep(
-				deprovisioning.NewAzureEventHubActivationStep(
-					deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx))),
-		},
-		{
-			weight:   1,
-			step:     deprovisioning.NewEDPDeregistrationStep(edpClient, cfg.EDP),
-			disabled: cfg.EDP.Disabled,
-		},
-		{
-			weight:   1,
-			step:     deprovisioning.NewIASDeregistrationStep(db.Operations(), bundleBuilder),
-			disabled: cfg.IAS.Disabled,
-		},
-		{
-			weight:   1,
-			step:     deprovisioning.NewXSUAAUnbindStep(db.Operations()),
-			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			weight:   1,
-			step:     deprovisioning.NewEmsUnbindStep(db.Operations()),
-			disabled: cfg.Ems.Disabled,
-		},
-		{
-			weight:   1,
-			step:     deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewClsUnbindStep(clsConfig, db.Operations())),
-			disabled: cfg.Cls.Disabled,
-		},
-		{
-			weight:   2,
-			step:     deprovisioning.NewXSUAADeprovisionStep(db.Operations()),
-			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			weight:   2,
-			step:     deprovisioning.NewEmsDeprovisionStep(db.Operations()),
-			disabled: cfg.Ems.Disabled,
-		},
-		{
-			weight:   2,
-			step:     deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewClsDeprovisionStep(clsConfig, clsDeprovisioner, db.Operations())),
-			disabled: cfg.Cls.Disabled,
-		},
-		{
-			weight: 10,
-			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient),
-		},
-	}
-	for _, step := range deprovisioningSteps {
-		if !step.disabled {
-			deprovisionManager.AddStep(step.weight, step.step)
-		}
-	}
-
 	// run queues
 	const workersAmount = 5
 
-	provisionQueue := NewProvisioningProcessingQueue(ctx, workersAmount, &cfg, db,  eventBroker, provisionerClient, directorClient, inputFactory,
+	provisionQueue := NewProvisioningProcessingQueue(ctx, workersAmount, &cfg, db, eventBroker, provisionerClient, directorClient, inputFactory,
 		avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
 		runtimeOverrides, serviceManagerClientFactory, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager,
 		edpClient, accountProvider, clsConfig, clsClient, clsProvisioner, logs)
 
-	deprovisionQueue := process.NewQueue(deprovisionManager, logs)
-	deprovisionQueue.Run(ctx.Done(), workersAmount)
+	deprovisionQueue := NewDeprovisioningProcessingQueue()
 
 	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
 
@@ -727,6 +649,86 @@ func NewProvisioningProcessingQueue(ctx context.Context, workersAmount int, cfg 
 	}
 
 	queue := process.NewQueue(provisionManager, logs)
+	queue.Run(ctx.Done(), workersAmount)
+
+	return queue
+}
+
+func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, cfg *Config, db storage.BrokerStorage, pub event.Publisher, provisionerClient provisioner.Client, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant, externalEvalAssistant *avs.ExternalEvalAssistant, smcf *servicemanager.ClientFactory, bundleBuilder ias.BundleBuilder, edpClient deprovisioning.EDPClient, accountProvider hyperscaler.AccountProvider, clsConfig *cls.Config, clsClient cls.InstanceRemover, logs logrus.FieldLogger) *process.Queue {
+
+	deprovisionManager := deprovisioning.NewManager(db.Operations(), pub, logs.WithField("deprovisioning", "manager"))
+
+	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, smcf, cfg.OperationTimeout)
+	deprovisionManager.InitStep(deprovisioningInit)
+	clsDeprovisioner := cls.NewDeprovisioner(db.CLSInstances(), clsClient)
+
+	deprovisioningSteps := []struct {
+		disabled bool
+		weight   int
+		step     deprovisioning.Step
+	}{
+		{
+			weight: 1,
+			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
+		},
+		{
+			weight: 1,
+			step: deprovisioning.NewSkipForTrialPlanStep(
+				deprovisioning.NewAzureEventHubActivationStep(
+					deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx))),
+		},
+		{
+			weight:   1,
+			step:     deprovisioning.NewEDPDeregistrationStep(edpClient, cfg.EDP),
+			disabled: cfg.EDP.Disabled,
+		},
+		{
+			weight:   1,
+			step:     deprovisioning.NewIASDeregistrationStep(db.Operations(), bundleBuilder),
+			disabled: cfg.IAS.Disabled,
+		},
+		{
+			weight:   1,
+			step:     deprovisioning.NewXSUAAUnbindStep(db.Operations()),
+			disabled: cfg.XSUAA.Disabled,
+		},
+		{
+			weight:   1,
+			step:     deprovisioning.NewEmsUnbindStep(db.Operations()),
+			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   1,
+			step:     deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewClsUnbindStep(clsConfig, db.Operations())),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
+			weight:   2,
+			step:     deprovisioning.NewXSUAADeprovisionStep(db.Operations()),
+			disabled: cfg.XSUAA.Disabled,
+		},
+		{
+			weight:   2,
+			step:     deprovisioning.NewEmsDeprovisionStep(db.Operations()),
+			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   2,
+			step:     deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewClsDeprovisionStep(clsConfig, clsDeprovisioner, db.Operations())),
+			disabled: cfg.Cls.Disabled,
+		},
+		{
+			weight: 10,
+			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient),
+		},
+	}
+	for _, step := range deprovisioningSteps {
+		if !step.disabled {
+			deprovisionManager.AddStep(step.weight, step.step)
+		}
+	}
+
+	queue := process.NewQueue(deprovisionManager, logs)
 	queue.Run(ctx.Done(), workersAmount)
 
 	return queue
