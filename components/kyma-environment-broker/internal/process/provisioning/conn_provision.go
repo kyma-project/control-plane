@@ -35,7 +35,7 @@ func (s *ConnProvisionStep) Name() string {
 
 func (s *ConnProvisionStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if operation.Conn.Instance.ProvisioningTriggered {
-		log.Infof("Conn Provisioning step was already triggered")
+		log.Infof("Connectivity Provisioning step was already triggered")
 		return operation, 0, nil
 	}
 
@@ -58,7 +58,7 @@ func (s *ConnProvisionStep) Run(operation internal.ProvisioningOperation, log lo
 	// provision
 	operation, _, err = s.provision(smCli, operation, log)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("provision()  call failed"))
+		return s.handleError(operation, err, log, fmt.Sprintf("provision() call failed"))
 	}
 	// save the status
 	operation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
@@ -80,7 +80,7 @@ func (s *ConnProvisionStep) provision(smCli servicemanager.Client, operation int
 	if err != nil {
 		return s.handleError(operation, err, log, fmt.Sprintf("Provision() call failed for brokerID: %s; input: %#v", operation.Conn.Instance.BrokerID, input))
 	}
-	log.Debugf("response from Conn provisioning call: %#v", resp)
+	log.Debugf("response from Connectivity provisioning call: %#v", resp)
 
 	return operation, 0, nil
 }
