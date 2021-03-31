@@ -88,13 +88,13 @@ const (
 func FindLastOperation(rt RuntimeDTO) (Operation, OperationType) {
 	op := *rt.Status.Provisioning
 	opType := Provision
-	// Take the first upgrade operation, assuming that Data is sorted by CreatedAt DESC.
+	// Take the first cluster upgrade operation, assuming that Data is sorted by CreatedAt DESC.
 	if rt.Status.UpgradingCluser.Count > 0 {
 		op = rt.Status.UpgradingCluser.Data[0]
 		opType = UpgradeCluster
 	}
 	// Take the first upgrade operation, assuming that Data is sorted by CreatedAt DESC.
-	if rt.Status.UpgradingKyma.Count > 0 {
+	if rt.Status.UpgradingKyma.Count > 0 && rt.Status.UpgradingKyma.Data[0].CreatedAt.After(op.CreatedAt) {
 		op = rt.Status.UpgradingKyma.Data[0]
 		opType = UpgradeKyma
 	}

@@ -98,7 +98,6 @@ func (c *converter) ApplyUpgradingKymaOperations(dto *pkg.RuntimeDTO, oprs []int
 	}
 }
 
-// TODO: no totalCount here?
 func (c *converter) ApplyUpgradingClusterOperations(dto *pkg.RuntimeDTO, oprs []internal.UpgradeClusterOperation, totalCount int) {
 	dto.Status.UpgradingCluser.Data = make([]pkg.Operation, 0)
 
