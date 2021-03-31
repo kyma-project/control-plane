@@ -75,7 +75,7 @@ func (s *ConnProvisionStep) Run(operation internal.ProvisioningOperation, log lo
 func (s *ConnProvisionStep) provision(smCli servicemanager.Client, operation internal.ProvisioningOperation,
 	log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 
-	input := getEventingProvisioningData(operation.Conn)
+	input := GetConnProvisioningData(operation.Conn)
 	resp, err := smCli.Provision(operation.Conn.Instance.BrokerID, *input, true)
 	if err != nil {
 		return s.handleError(operation, err, log, fmt.Sprintf("Provision() call failed for brokerID: %s; input: %#v", operation.Conn.Instance.BrokerID, input))
@@ -90,7 +90,7 @@ func (s *ConnProvisionStep) handleError(operation internal.ProvisioningOperation
 	return s.operationManager.OperationFailed(operation, msg, log)
 }
 
-func getEventingProvisioningData(connInstanceData internal.ConnData) *servicemanager.ProvisioningInput {
+func GetConnProvisioningData(connInstanceData internal.ConnData) *servicemanager.ProvisioningInput {
 	var input servicemanager.ProvisioningInput
 
 	input.ID = connInstanceData.Instance.InstanceID
