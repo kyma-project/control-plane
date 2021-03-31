@@ -46,12 +46,12 @@ type Reconciler struct {
 	auditLogTenantConfigPath string
 }
 
-func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.log.WithField("Shoot", req.NamespacedName)
 	log.Infof("reconciling Shoot")
 
 	var shoot gardener_types.Shoot
-	if err := r.client.Get(context.Background(), req.NamespacedName, &shoot); err != nil {
+	if err := r.client.Get(ctx, req.NamespacedName, &shoot); err != nil {
 		if errors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
