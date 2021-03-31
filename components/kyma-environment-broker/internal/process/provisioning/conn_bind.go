@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 )
 
@@ -113,13 +112,13 @@ func (s *ConnBindStep) Run(operation internal.ProvisioningOperation, log logrus.
 		}
 	}
 
-	// TODO: Decide how we want to pass this data to the SKR.
+	// TODO: Decide how we want to pass this data to the SKR. Currently,
+	//       credentials are prepared as a ConnectivityOverrides structure.
 	//       See the github card - https://github.com/orgs/kyma-project/projects/6#card-56776111
 	//       ...
 	//       - [ ] define what changes need to be done in KEB to
 	//             allow passing secrets data to the Provisioner
-	// append overrides
-	//operation.InputCreator.AppendOverrides(components.Connectivity, GetConnOverrides(connectivityOverrides))
+	log.Debugf("Got Connectivity Service credentials from the binding: %+v", connectivityOverrides)
 
 	return operation, 0, nil
 }
@@ -163,17 +162,12 @@ func GetConnCredentials(binding servicemanager.Binding) (*ConnectivityOverrides,
 	}, nil
 }
 
-func GetConnOverrides(cnOverrides *ConnectivityOverrides) []*gqlschema.ConfigEntryInput {
-	return nil
-}
-
 func EncryptConnOverrides(secretKey string, overrides *ConnectivityOverrides) (string, error) {
-	ovrs, err := json.Marshal(*overrides)
+	marshalledOverrides, err := json.Marshal(*overrides)
 	if err != nil {
 		return "", errors.Wrap(err, "while encoding connectivity overrides")
 	}
-	encrypter := storage.NewEncrypter(secretKey)
-	encryptedOverrides, err := encrypter.Encrypt(ovrs)
+	encryptedOverrides, err := storage.NewEncrypter(secretKey).Encrypt(marshalledOverrides)
 	if err != nil {
 		return "", errors.Wrap(err, "while encrypting connectivity overrides")
 	}
@@ -181,14 +175,13 @@ func EncryptConnOverrides(secretKey string, overrides *ConnectivityOverrides) (s
 }
 
 func DecryptConnOverrides(secretKey string, encryptedOverrides string) (*ConnectivityOverrides, error) {
-	encrypter := storage.NewEncrypter(secretKey)
-	decryptedOverrides, err := encrypter.Decrypt([]byte(encryptedOverrides))
+	decryptedOverrides, err := storage.NewEncrypter(secretKey).Decrypt([]byte(encryptedOverrides))
 	if err != nil {
 		return nil, errors.Wrap(err, "while decrypting connectivity overrides")
 	}
 	connectivityOverrides := ConnectivityOverrides{}
 	if err := json.Unmarshal(decryptedOverrides, &connectivityOverrides); err != nil {
-		return nil, errors.Wrap(err, "while unmarshall connectivity overrides")
+		return nil, errors.Wrap(err, "while unmarshalling connectivity overrides")
 	}
 	return &connectivityOverrides, nil
 }

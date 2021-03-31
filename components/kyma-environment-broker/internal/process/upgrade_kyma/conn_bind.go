@@ -93,13 +93,13 @@ func (s *ConnUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log l
 		}
 	}
 
-	// TODO: Decide how we want to pass this data to the SKR.
+	// TODO: Decide how we want to pass this data to the SKR. Currently,
+	//       credentials are prepared as a ConnectivityOverrides structure.
 	//       See the github card - https://github.com/orgs/kyma-project/projects/6#card-56776111
 	//       ...
 	//       - [ ] define what changes need to be done in KEB to
 	//             allow passing secrets data to the Provisioner
-	// append overrides
-	//operation.InputCreator.AppendOverrides(components.Connectivity, provisioning.GetConnOverrides(connectivityOverrides))
+	log.Debugf("Got Connectivity Service credentials from the binding: %+v", connectivityOverrides)
 
 	return operation, 0, nil
 }

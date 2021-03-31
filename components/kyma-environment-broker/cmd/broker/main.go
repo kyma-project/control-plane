@@ -310,7 +310,7 @@ func main() {
 		},
 		{
 			weight: 1,
-			// TODO: Should we skip connectivity for trial plan?
+			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
 			step: provisioning.NewServiceManagerOfferingStep("CONN_Offering",
 				provisioning.ConnOfferingName, provisioning.ConnPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
 					return &op.Conn.Instance
@@ -770,6 +770,15 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight: 1,
+			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
+			step: upgrade_kyma.NewServiceManagerOfferingStep("CONN_Offering",
+				provisioning.ConnOfferingName, provisioning.ConnPlanName, func(op *internal.UpgradeKymaOperation) *internal.ServiceManagerInstanceInfo {
+					return &op.Conn.Instance
+				}, db.Operations()),
+			disabled: cfg.Conn.Disabled,
+		},
+		{
 			weight:   1,
 			step:     upgrade_kyma.NewSkipForTrialPlanStep(upgrade_kyma.NewClsUpgradeOfferingStep(clsConfig, db.Operations())),
 			disabled: cfg.Cls.Disabled,
@@ -790,6 +799,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight:   4,
+			step:     upgrade_kyma.NewConnUpgradeProvisionStep(db.Operations()),
+			disabled: cfg.Conn.Disabled,
+		},
+		{
+			weight:   4,
 			step:     upgrade_kyma.NewSkipForTrialPlanStep(upgrade_kyma.NewClsUpgradeProvisionStep(clsConfig, clsProvisioner, db.Operations())),
 			disabled: cfg.Cls.Disabled,
 		},
@@ -802,6 +816,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			weight:   7,
 			step:     upgrade_kyma.NewEmsUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   7,
+			step:     upgrade_kyma.NewConnUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
+			disabled: cfg.Conn.Disabled,
 		},
 		{
 			weight:   7,
