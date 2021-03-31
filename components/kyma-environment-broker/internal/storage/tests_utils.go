@@ -9,12 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
-
 	"github.com/gocraft/dbr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"

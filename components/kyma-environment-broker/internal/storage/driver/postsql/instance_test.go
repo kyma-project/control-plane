@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -403,6 +404,103 @@ func TestInstance(t *testing.T) {
 
 		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
 	})
+
+	t.Run("Should list instances based on state filters", func(t *testing.T) {
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		require.NoError(t, err)
+		defer containerCleanupFunc()
+
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+		defer tablesCleanupFunc()
+
+		cipher := storage.NewEncrypter(cfg.SecretKey)
+		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
+
+		// populate database with samples
+		inst1 := fixInstance(instanceData{val: "inst1"})
+		inst2 := fixInstance(instanceData{val: "inst2"})
+		inst3 := fixInstance(instanceData{val: "inst3"})
+		fixInstances := []internal.Instance{*inst1, *inst2, *inst3}
+
+		for _, i := range fixInstances {
+			err = brokerStorage.Instances().Insert(i)
+			require.NoError(t, err)
+		}
+
+		// inst1 is in succeeded state
+		provOp1 := fixProvisionOperation("inst1")
+		provOp1.State = domain.Succeeded
+		err = brokerStorage.Operations().InsertProvisioningOperation(provOp1)
+		require.NoError(t, err)
+
+		// inst2 is in failed state
+		provOp2 := fixProvisionOperation("inst2")
+		provOp2.State = domain.Succeeded
+		err = brokerStorage.Operations().InsertProvisioningOperation(provOp2)
+		require.NoError(t, err)
+		upgrOp2 := fixUpgradeKymaOperation("inst2")
+		upgrOp2.CreatedAt = upgrOp2.CreatedAt.Add(time.Minute)
+		upgrOp2.State = domain.Failed
+		err = brokerStorage.Operations().InsertUpgradeKymaOperation(upgrOp2)
+		require.NoError(t, err)
+
+		// inst3 is in suspended state
+		provOp3 := fixProvisionOperation("inst3")
+		provOp3.State = domain.Succeeded
+		err = brokerStorage.Operations().InsertProvisioningOperation(provOp3)
+		require.NoError(t, err)
+		upgrOp3 := fixUpgradeKymaOperation("inst3")
+		upgrOp3.CreatedAt = upgrOp2.CreatedAt.Add(time.Minute)
+		upgrOp3.State = domain.Failed
+		err = brokerStorage.Operations().InsertUpgradeKymaOperation(upgrOp3)
+		require.NoError(t, err)
+		deprovOp3 := fixDeprovisionOperation("inst3")
+		deprovOp3.Temporary = true
+		deprovOp3.State = domain.Succeeded
+		deprovOp3.CreatedAt = deprovOp3.CreatedAt.Add(2 * time.Minute)
+		err = brokerStorage.Operations().InsertDeprovisioningOperation(deprovOp3)
+		require.NoError(t, err)
+
+		// when
+		out, count, totalCount, err := brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceSucceeded}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+		require.Equal(t, inst1.InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceFailed}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+		require.Equal(t, inst2.InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceDeprovisioned}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+		require.Equal(t, inst3.InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceNotDeprovisioned}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 2, count)
+		require.Equal(t, 2, totalCount)
+		require.NotEqual(t, inst3.InstanceID, out[0].InstanceID)
+		require.NotEqual(t, inst3.InstanceID, out[1].InstanceID)
+	})
 }
 
 func assertInstanceByIgnoreTime(t *testing.T, want, got internal.Instance) {
@@ -484,4 +582,9 @@ func fixProvisionOperation(instanceId string) internal.ProvisioningOperation {
 func fixDeprovisionOperation(instanceId string) internal.DeprovisioningOperation {
 	operationId := fmt.Sprintf("%s-%d", instanceId, rand.Int())
 	return fixture.FixDeprovisioningOperation(operationId, instanceId)
+}
+
+func fixUpgradeKymaOperation(testData string) internal.UpgradeKymaOperation {
+	operationId := fmt.Sprintf("%s-%d", testData, rand.Int())
+	return fixture.FixUpgradeKymaOperation(operationId, testData)
 }
