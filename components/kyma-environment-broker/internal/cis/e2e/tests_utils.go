@@ -3,6 +3,7 @@ package e2e
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -17,7 +18,7 @@ const (
 )
 
 func initTestDBInstancesTables(t *testing.T, connectionURL string) error {
-	connection, err := postsql.WaitForDatabaseAccess(connectionURL, 10, logrus.New())
+	connection, err := postsql.WaitForDatabaseAccess(connectionURL, 10, 100*time.Millisecond, logrus.New())
 	if err != nil {
 		t.Logf("Cannot connect to database with URL %s", connectionURL)
 		return err
