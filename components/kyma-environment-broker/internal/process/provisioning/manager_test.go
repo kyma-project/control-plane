@@ -58,7 +58,7 @@ func TestManager_Execute(t *testing.T) {
 			// given
 			log := logrus.New()
 			memoryStorage := storage.NewMemoryStorage()
-			err := memoryStorage.Operations().InsertProvisioningOperation(fixProvisionOperation(tc.operationID))
+			err := memoryStorage.Operations().InsertProvisioningOperation(FixProvisionOperation(tc.operationID))
 			assert.NoError(t, err)
 
 			sInit := testStep{name: "init", storage: memoryStorage.Operations()}
@@ -67,8 +67,8 @@ func TestManager_Execute(t *testing.T) {
 			sFinal := testStep{name: "final", storage: memoryStorage.Operations()}
 
 			eventBroker := event.NewPubSub(logrus.New())
-			eventCollector := &collectingEventHandler{}
-			eventBroker.Subscribe(process.ProvisioningStepProcessed{}, eventCollector.OnEvent)
+			eventCollector := &CollectingEventHandler{}
+			eventBroker.Subscribe(process.ProvisioningStepProcessed{}, eventCollector.OnStepProcessed)
 
 			manager := NewManager(memoryStorage.Operations(), eventBroker, log)
 			manager.InitStep(&sInit)
@@ -93,14 +93,15 @@ func TestManager_Execute(t *testing.T) {
 			}
 
 			assert.NoError(t, wait.PollImmediate(20*time.Millisecond, 2*time.Second, func() (bool, error) {
-				return len(eventCollector.Events) == tc.expectedNumberOfEvents, nil
+				return len(eventCollector.StepsProcessed) == tc.expectedNumberOfEvents, nil
 			}))
 		})
 	}
 }
 
-func fixProvisionOperation(ID string) internal.ProvisioningOperation {
+func FixProvisionOperation(ID string) internal.ProvisioningOperation {
 	provisioningOperation := fixture.FixProvisioningOperation(ID, "fea2c1a1-139d-43f6-910a-a618828a79d5")
+	provisioningOperation.FinishedStages = make(map[string]struct{})
 	provisioningOperation.State = domain.InProgress
 	provisioningOperation.Description = ""
 	provisioningOperation.ProvisioningParameters = fixProvisioningParameters(broker.AzurePlanID, "westeurope")
@@ -137,15 +138,51 @@ func (ts *testStep) Run(operation internal.ProvisioningOperation, logger logrus.
 	}
 }
 
-type collectingEventHandler struct {
-	mu     sync.Mutex
-	Events []interface{}
+type CollectingEventHandler struct {
+	mu             sync.Mutex
+	StepsProcessed []string // collects events from the Manager
+	stepsExecuted  []string // collects events from testing steps
 }
 
-func (h *collectingEventHandler) OnEvent(ctx context.Context, ev interface{}) error {
+func (h *CollectingEventHandler) OnStepExecuted(_ context.Context, ev interface{}) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.stepsExecuted = append(h.stepsExecuted, ev.(string))
+	return nil
+}
+
+func (h *CollectingEventHandler) OnStepProcessed(_ context.Context, ev interface{}) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.StepsProcessed = append(h.StepsProcessed, ev.(process.ProvisioningStepProcessed).StepName)
+	return nil
+}
+
+func (h *CollectingEventHandler) Publish(ctx context.Context, ev interface{}) {
+	switch ev.(type) {
+	case process.ProvisioningStepProcessed:
+		h.OnStepProcessed(ctx, ev)
+	case string:
+		h.OnStepExecuted(ctx, ev)
+	}
+}
+
+func (h *CollectingEventHandler) WaitForEvents(t *testing.T, count int) {
+	assert.NoError(t, wait.PollImmediate(20*time.Millisecond, 1*time.Second, func() (bool, error) {
+		return len(h.StepsProcessed) == count, nil
+	}))
+}
+
+func (h *CollectingEventHandler) AssertProcessedSteps(t *testing.T, stepNames []string) {
+	h.WaitForEvents(t, len(stepNames))
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	h.Events = append(h.Events, ev)
-	return nil
+	for i, stepName := range stepNames {
+		processed := h.StepsProcessed[i]
+		executed := h.stepsExecuted[i]
+		assert.Equal(t, stepName, processed)
+		assert.Equal(t, stepName, executed)
+	}
+	assert.Len(t, h.StepsProcessed, len(stepNames))
 }

@@ -413,6 +413,7 @@ func FixTables() map[string]string {
 			data json NOT NULL,
 			provisioning_parameters json NOT NULL,
 			orchestration_id varchar(64),
+            finished_stages text,
 			created_at TIMESTAMPTZ NOT NULL,
 			updated_at TIMESTAMPTZ NOT NULL
 			)`, postsql.OperationTableName),
