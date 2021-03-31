@@ -285,7 +285,7 @@ func main() {
 		runtimeOverrides, serviceManagerClientFactory, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager,
 		edpClient, accountProvider, clsConfig, clsClient, clsProvisioner, logs)
 
-	deprovisionQueue := NewDeprovisioningProcessingQueue()
+	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, &cfg, db, eventBroker, provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient, accountProvider, clsConfig, clsClient, logs)
 
 	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
 
@@ -654,7 +654,11 @@ func NewProvisioningProcessingQueue(ctx context.Context, workersAmount int, cfg 
 	return queue
 }
 
-func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, cfg *Config, db storage.BrokerStorage, pub event.Publisher, provisionerClient provisioner.Client, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant, externalEvalAssistant *avs.ExternalEvalAssistant, smcf *servicemanager.ClientFactory, bundleBuilder ias.BundleBuilder, edpClient deprovisioning.EDPClient, accountProvider hyperscaler.AccountProvider, clsConfig *cls.Config, clsClient cls.InstanceRemover, logs logrus.FieldLogger) *process.Queue {
+func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
+	provisionerClient provisioner.Client, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
+	externalEvalAssistant *avs.ExternalEvalAssistant, smcf *servicemanager.ClientFactory, bundleBuilder ias.BundleBuilder,
+	edpClient deprovisioning.EDPClient, accountProvider hyperscaler.AccountProvider,
+	clsConfig *cls.Config, clsClient cls.InstanceRemover, logs logrus.FieldLogger) *process.Queue {
 
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), pub, logs.WithField("deprovisioning", "manager"))
 
@@ -739,7 +743,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
 	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager,
-	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory, clsConfig *cls.Config, logs logrus.FieldLogger) *process.Queue {
+	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory,
+	clsConfig *cls.Config, logs logrus.FieldLogger) *process.Queue {
 
 	//CLS
 	clsClient := cls.NewClient(clsConfig)
