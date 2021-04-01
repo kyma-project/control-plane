@@ -176,7 +176,7 @@ edp:
 ems:
   disabled: true
 
-conn:
+connectivity:
   disabled: true
 
 cls:

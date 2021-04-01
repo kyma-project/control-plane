@@ -188,10 +188,10 @@ func main() {
 	if cfg.DbInMemory {
 		db = storage.NewMemoryStorage()
 	} else {
-		store, Connectivity, err := storage.NewFromConfig(cfg.Database, cipher, logs.WithField("service", "storage"))
+		store, conn, err := storage.NewFromConfig(cfg.Database, cipher, logs.WithField("service", "storage"))
 		fatalOnError(err)
 		db = store
-		dbStatsCollector := sqlstats.NewStatsCollector("broker", Connectivity)
+		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 		prometheus.MustRegister(dbStatsCollector)
 	}
 
