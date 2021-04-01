@@ -57,7 +57,7 @@ make gomod-vendor
 make tests
 ```
 
-- Run tests and publish a test coverage report
+- Run tests and publish a test coverage report:
 ```
 make publish-test-results
 ```
