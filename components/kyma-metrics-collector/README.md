@@ -11,7 +11,7 @@ Kyma Metrics Collector comes with the following command line argument flags:
 
     | Flag | Description | Default Value   |
     | ----- | ------------ | --------------- |
-    | `gardener-secret-path` | The path to the secret which contains kubeconfig of the Gardener MPS cluster. | `/gardener/kubeconfig` |
+    | `gardener-secret-path` | The path to the secret which contains the kubeconfig of the Gardener MPS cluster. | `/gardener/kubeconfig` |
     | `gardener-namespace` | The namespace in gardener cluster where information on Kyma clusters are. | `garden-kyma-dev`    |
     | `scrape-interval` | The wait duration of the interval between 2 executions of metrics generation. | `3m`         |
     | `worker-pool-size` | The number of workers in the pool. | `5` |
