@@ -30,7 +30,7 @@ Kyma Metrics Collector comes with the following environment variables:
      | `KEB_TIMEOUT` | This timeout governs the connections from Kyma Metrics Collector to KEB | `30s` |
      | `KEB_RETRY_COUNT` | The number of retries Kyma Metrics Collector will do when connecting to KEB fails. | 5 |
      | `KEB_POLL_WAIT_DURATION` | The time interval for Kyma Metrics Collector to wait between each execution of polling KEB for runtime information. | `10m` |
-     | `EDP_URL` | The EDP base URL where Kyma Metrics Collector will ingest event-stream to. | `-` |
+     | `EDP_URL` | The EDP base URL where Kyma Metrics Collector will ingest the event-stream to. | `-` |
      | `EDP_TOKEN` | The token used to connect to EDP. | `-` |
      | `EDP_NAMESPACE` | The namespace in EDP where Kyma Metrics Collector will ingest event-stream to.| `kyma-dev` |
      | `EDP_DATASTREAM_NAME` | The datastream in EDP where Kyma Metrics Collector will ingest event-stream to. | `consumption-metrics` |
