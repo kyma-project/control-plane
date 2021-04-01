@@ -47,9 +47,9 @@ func (s *SimpleProvisioner) Run(operation internal.ProvisioningOperation, log lo
 		return s.operationManager.HandleError(operation, err, log, fmt.Sprintf("Unable to create Service Manage client"))
 	}
 
-	if operation.Ems.Instance.InstanceID == "" {
+	if s.serviceInfo.InstanceID == "" {
 		op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
-			operation.Ems.Instance.InstanceID = uuid.New().String()
+			s.serviceInfo.InstanceID = uuid.New().String()
 		}, log)
 		if retry > 0 {
 			log.Errorf("Unable to update operation")
@@ -66,7 +66,7 @@ func (s *SimpleProvisioner) Run(operation internal.ProvisioningOperation, log lo
 
 	// save the status
 	operation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
-		operation.Ems.Instance.ProvisioningTriggered = true
+		s.serviceInfo.ProvisioningTriggered = true
 	}, log)
 	if retry > 0 {
 		log.Errorf("unable to update operation")
