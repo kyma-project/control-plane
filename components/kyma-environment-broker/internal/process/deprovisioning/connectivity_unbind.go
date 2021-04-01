@@ -11,24 +11,24 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
 
-type ConnUnbindStep struct {
+type ConnectivityUnbindStep struct {
 	operationManager *process.DeprovisionOperationManager
 }
 
-func NewConnUnbindStep(os storage.Operations) *ConnUnbindStep {
-	return &ConnUnbindStep{
+func NewConnectivityUnbindStep(os storage.Operations) *ConnectivityUnbindStep {
+	return &ConnectivityUnbindStep{
 		operationManager: process.NewDeprovisionOperationManager(os),
 	}
 }
 
-var _ Step = (*ConnUnbindStep)(nil)
+var _ Step = (*ConnectivityUnbindStep)(nil)
 
-func (s *ConnUnbindStep) Name() string {
+func (s *ConnectivityUnbindStep) Name() string {
 	return "CONN_Unbind"
 }
 
-func (s *ConnUnbindStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
-	if operation.Conn.BindingID == "" {
+func (s *ConnectivityUnbindStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+	if operation.Connectivity.BindingID == "" {
 		log.Infof("Connectivity Unbind step skipped, instance not bound")
 		return operation, 0, nil
 	}
@@ -39,21 +39,21 @@ func (s *ConnUnbindStep) Run(operation internal.DeprovisioningOperation, log log
 	}
 
 	// Unbind
-	log.Infof("unbinding for Connectivity instance: %s started; binding: %s", operation.Conn.Instance.InstanceID, operation.Conn.BindingID)
-	_, err = smCli.Unbind(operation.Conn.Instance.InstanceKey(), operation.Conn.BindingID, true)
+	log.Infof("unbinding for Connectivity instance: %s started; binding: %s", operation.Connectivity.Instance.InstanceID, operation.Connectivity.BindingID)
+	_, err = smCli.Unbind(operation.Connectivity.Instance.InstanceKey(), operation.Connectivity.BindingID, true)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("unable to unbind, bindingId=%s", operation.Conn.BindingID))
+		return s.handleError(operation, err, log, fmt.Sprintf("unable to unbind, bindingId=%s", operation.Connectivity.BindingID))
 	}
-	log.Infof("unbinding for Connectivity instance: %s finished", operation.Conn.Instance.InstanceID)
+	log.Infof("unbinding for Connectivity instance: %s finished", operation.Connectivity.Instance.InstanceID)
 
 	updatedOperation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
-		operation.Conn.BindingID = ""
-		operation.Conn.Overrides = ""
+		operation.Connectivity.BindingID = ""
+		operation.Connectivity.Overrides = ""
 	}, log)
 	return updatedOperation, retry, nil
 }
 
-func (s *ConnUnbindStep) handleError(operation internal.DeprovisioningOperation, err error, log logrus.FieldLogger,
+func (s *ConnectivityUnbindStep) handleError(operation internal.DeprovisioningOperation, err error, log logrus.FieldLogger,
 	msg string) (internal.DeprovisioningOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
 	return s.operationManager.OperationFailed(operation, msg, log)

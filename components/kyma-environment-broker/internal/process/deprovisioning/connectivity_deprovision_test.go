@@ -12,16 +12,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConnDeprovisionStep_Run(t *testing.T) {
+func TestConnectivityDeprovisionStep_Run(t *testing.T) {
 	// given
 	repo := storage.NewMemoryStorage().Operations()
-	step := NewConnDeprovisionStep(repo)
+	step := NewConnectivityDeprovisionStep(repo)
 	clientFactory := servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{}, []types.ServicePlan{})
 
 	operation := internal.DeprovisioningOperation{
 		Operation: internal.Operation{
 			InstanceDetails: internal.InstanceDetails{
-				Conn: internal.ConnData{
+				Connectivity: internal.ConnectivityData{
 					Instance: internal.ServiceManagerInstanceInfo{
 						BrokerID:    "broker-id",
 						ServiceID:   "svc-id",
@@ -44,9 +44,9 @@ func TestConnDeprovisionStep_Run(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.Zero(t, retry)
-	assert.Empty(t, operation.Conn.Instance.InstanceID)
-	assert.False(t, operation.Conn.Instance.Provisioned)
-	assert.False(t, operation.Conn.Instance.ProvisioningTriggered)
+	assert.Empty(t, operation.Connectivity.Instance.InstanceID)
+	assert.False(t, operation.Connectivity.Instance.Provisioned)
+	assert.False(t, operation.Connectivity.Instance.ProvisioningTriggered)
 	clientFactory.AssertDeprovisionCalled(t, servicemanager.InstanceKey{
 		BrokerID:   "broker-id",
 		InstanceID: "instance-id",

@@ -13,30 +13,30 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type ConnUpgradeBindStep struct {
+type ConnectivityUpgradeBindStep struct {
 	operationManager *process.UpgradeKymaOperationManager
 	secretKey        string
 }
 
-func NewConnUpgradeBindStep(os storage.Operations, secretKey string) *ConnUpgradeBindStep {
-	return &ConnUpgradeBindStep{
+func NewConnectivityUpgradeBindStep(os storage.Operations, secretKey string) *ConnectivityUpgradeBindStep {
+	return &ConnectivityUpgradeBindStep{
 		operationManager: process.NewUpgradeKymaOperationManager(os),
 		secretKey:        secretKey,
 	}
 }
 
-var _ Step = (*ConnUpgradeBindStep)(nil)
+var _ Step = (*ConnectivityUpgradeBindStep)(nil)
 
-func (s *ConnUpgradeBindStep) Name() string {
+func (s *ConnectivityUpgradeBindStep) Name() string {
 	return "CONN"
 }
 
-func (s *ConnUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if operation.Conn.BindingID != "" {
+func (s *ConnectivityUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	if operation.Connectivity.BindingID != "" {
 		log.Infof("Connectivity Upgrade-Bind was already done")
 		return operation, 0, nil
 	}
-	if !operation.Conn.Instance.ProvisioningTriggered {
+	if !operation.Connectivity.Instance.ProvisioningTriggered {
 		return s.handleError(operation, fmt.Errorf("Connectivity Provisioning step was not triggered"), log, "")
 	}
 
@@ -45,11 +45,11 @@ func (s *ConnUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log l
 		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manage client"))
 	}
 	// test if the provisioning is finished, if not, retry after 10s
-	resp, err := smCli.LastInstanceOperation(operation.Conn.Instance.InstanceKey(), "")
+	resp, err := smCli.LastInstanceOperation(operation.Connectivity.Instance.InstanceKey(), "")
 	if err != nil {
 		return s.handleError(operation, err, log, fmt.Sprintf("LastInstanceOperation() call failed"))
 	}
-	log.Infof("Provisioning Connectivity (instanceID=%s) state: %s", operation.Conn.Instance.InstanceID, resp.State)
+	log.Infof("Provisioning Connectivity (instanceID=%s) state: %s", operation.Connectivity.Instance.InstanceID, resp.State)
 	switch resp.State {
 	case servicemanager.InProgress:
 		return operation, 10 * time.Second, nil
@@ -58,36 +58,36 @@ func (s *ConnUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log l
 	}
 	// execute binding
 	var connectivityOverrides *provisioning.ConnectivityOverrides
-	if !operation.Conn.Instance.Provisioned {
-		if operation.Conn.BindingID == "" {
-			operation.Conn.BindingID = uuid.New().String()
+	if !operation.Connectivity.Instance.Provisioned {
+		if operation.Connectivity.BindingID == "" {
+			operation.Connectivity.BindingID = uuid.New().String()
 		}
-		respBinding, err := smCli.Bind(operation.Conn.Instance.InstanceKey(), operation.Conn.BindingID, nil, false)
+		respBinding, err := smCli.Bind(operation.Connectivity.Instance.InstanceKey(), operation.Connectivity.BindingID, nil, false)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("Bind() call failed"))
 		}
 		// get overrides
-		connectivityOverrides, err = provisioning.GetConnCredentials(respBinding.Binding)
+		connectivityOverrides, err = provisioning.GetConnectivityCredentials(respBinding.Binding)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("getCredentials() call failed"))
 		}
-		encryptedOverrides, err := provisioning.EncryptConnOverrides(s.secretKey, connectivityOverrides)
+		encryptedOverrides, err := provisioning.EncryptConnectivityOverrides(s.secretKey, connectivityOverrides)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("encryptOverrides() call failed"))
 		}
 		// save the status
 		op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
-			operation.Conn.Overrides = encryptedOverrides
-			operation.Conn.Instance.Provisioned = true
-			operation.Conn.Instance.ProvisioningTriggered = false
+			operation.Connectivity.Overrides = encryptedOverrides
+			operation.Connectivity.Instance.Provisioned = true
+			operation.Connectivity.Instance.ProvisioningTriggered = false
 		}, log)
 		if retry > 0 {
 			return operation, time.Second, nil
 		}
 		operation = op
 	} else {
-		// get the credentials from encrypted string in operation.Conn.Instance.
-		connectivityOverrides, err = provisioning.DecryptConnOverrides(s.secretKey, operation.Conn.Overrides)
+		// get the credentials from encrypted string in operation.Connectivity.Instance.
+		connectivityOverrides, err = provisioning.DecryptConnectivityOverrides(s.secretKey, operation.Connectivity.Overrides)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("decryptOverrides() call failed"))
 		}
@@ -104,7 +104,7 @@ func (s *ConnUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log l
 	return operation, 0, nil
 }
 
-func (s *ConnUpgradeBindStep) handleError(operation internal.UpgradeKymaOperation, err error, log logrus.FieldLogger, msg string) (internal.UpgradeKymaOperation, time.Duration, error) {
+func (s *ConnectivityUpgradeBindStep) handleError(operation internal.UpgradeKymaOperation, err error, log logrus.FieldLogger, msg string) (internal.UpgradeKymaOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
 	return s.operationManager.OperationFailed(operation, msg, log)
 }

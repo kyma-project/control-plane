@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConnProvisioningStep_Run(t *testing.T) {
+func TestConnectivityProvisioningStep_Run(t *testing.T) {
 	// given
 	repo := storage.NewMemoryStorage().Operations()
 	clientFactory := servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{}, []types.ServicePlan{})
@@ -23,7 +23,7 @@ func TestConnProvisioningStep_Run(t *testing.T) {
 	operation := internal.UpgradeKymaOperation{
 		Operation: internal.Operation{
 			InstanceDetails: internal.InstanceDetails{
-				Conn: internal.ConnData{Instance: internal.ServiceManagerInstanceInfo{
+				Connectivity: internal.ConnectivityData{Instance: internal.ServiceManagerInstanceInfo{
 					BrokerID:  "broker-id",
 					ServiceID: "svc-id",
 					PlanID:    "plan-id",
@@ -34,11 +34,11 @@ func TestConnProvisioningStep_Run(t *testing.T) {
 		SMClientFactory: clientFactory,
 	}
 	offeringStep := NewServiceManagerOfferingStep("CONN_Offering",
-		provisioning.ConnOfferingName, provisioning.ConnPlanName, func(op *internal.UpgradeKymaOperation) *internal.ServiceManagerInstanceInfo {
-			return &op.Conn.Instance
+		provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.UpgradeKymaOperation) *internal.ServiceManagerInstanceInfo {
+			return &op.Connectivity.Instance
 		}, repo)
 
-	upgradeStep := NewConnUpgradeProvisionStep(repo)
+	upgradeStep := NewConnectivityUpgradeProvisionStep(repo)
 	repo.InsertUpgradeKymaOperation(operation)
 
 	log := logger.NewLogDummy()
@@ -52,12 +52,12 @@ func TestConnProvisioningStep_Run(t *testing.T) {
 	// then
 	assert.NoError(t, err)
 	assert.Zero(t, retry)
-	assert.NotEmpty(t, operation.Conn.Instance.InstanceID)
-	assert.False(t, operation.Conn.Instance.Provisioned)
-	assert.True(t, operation.Conn.Instance.ProvisioningTriggered)
+	assert.NotEmpty(t, operation.Connectivity.Instance.InstanceID)
+	assert.False(t, operation.Connectivity.Instance.Provisioned)
+	assert.True(t, operation.Connectivity.Instance.ProvisioningTriggered)
 	clientFactory.AssertProvisionCalled(t, servicemanager.InstanceKey{
 		BrokerID:   "broker-id",
-		InstanceID: operation.Conn.Instance.InstanceID,
+		InstanceID: operation.Connectivity.Instance.InstanceID,
 		ServiceID:  "svc-id",
 		PlanID:     "plan-id",
 	})

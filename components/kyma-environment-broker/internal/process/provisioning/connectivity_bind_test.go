@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConnEncryptDecrypt(t *testing.T) {
+func TestConnectivityEncryptDecrypt(t *testing.T) {
 	// given
 	secretKey := "1234567890123456"
 	givenOverrides := ConnectivityOverrides{
@@ -38,16 +38,16 @@ func TestConnEncryptDecrypt(t *testing.T) {
 	}
 
 	// when
-	encryptedOverrides, err := EncryptConnOverrides(secretKey, &givenOverrides)
+	encryptedOverrides, err := EncryptConnectivityOverrides(secretKey, &givenOverrides)
 	assert.NoError(t, err)
-	decryptedOverrides, err := DecryptConnOverrides(secretKey, encryptedOverrides)
+	decryptedOverrides, err := DecryptConnectivityOverrides(secretKey, encryptedOverrides)
 	assert.NoError(t, err)
 
 	// then
 	assert.Equal(t, givenOverrides, *decryptedOverrides)
 }
 
-func TestConnGetCredentials(t *testing.T) {
+func TestConnectivityGetCredentials(t *testing.T) {
 	// given
 	binding := servicemanager.Binding{}
 
@@ -57,7 +57,7 @@ func TestConnGetCredentials(t *testing.T) {
 	assert.NotNil(t, binding.Credentials)
 
 	// then
-	connOverrides, err := GetConnCredentials(binding)
+	connOverrides, err := GetConnectivityCredentials(binding)
 	assert.NoError(t, err)
 	assert.NotNil(t, connOverrides)
 	assert.Equal(t, "clientid314159265359", connOverrides.ClientId)

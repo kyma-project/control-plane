@@ -205,14 +205,14 @@ type InstanceDetails struct {
 	Avs      AvsLifecycleData `json:"avs"`
 	EventHub EventHub         `json:"eh"`
 
-	SubAccountID string    `json:"sub_account_id"`
-	RuntimeID    string    `json:"runtime_id"`
-	ShootName    string    `json:"shoot_name"`
-	ShootDomain  string    `json:"shoot_domain"`
-	XSUAA        XSUAAData `json:"xsuaa"`
-	Ems          EmsData   `json:"ems"`
-	Cls          ClsData   `json:"cls"`
-	Conn         ConnData  `json:"connectivity"`
+	SubAccountID string           `json:"sub_account_id"`
+	RuntimeID    string           `json:"runtime_id"`
+	ShootName    string           `json:"shoot_name"`
+	ShootDomain  string           `json:"shoot_domain"`
+	XSUAA        XSUAAData        `json:"xsuaa"`
+	Ems          EmsData          `json:"ems"`
+	Cls          ClsData          `json:"cls"`
+	Connectivity ConnectivityData `json:"connectivity"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -259,7 +259,7 @@ type ClsData struct {
 	Overrides string `json:"overrides"`
 }
 
-type ConnData struct {
+type ConnectivityData struct {
 	Instance ServiceManagerInstanceInfo `json:"instance"`
 
 	BindingID string `json:"bindingId"`

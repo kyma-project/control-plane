@@ -124,7 +124,7 @@ type Config struct {
 	Ems struct {
 		Disabled bool `envconfig:"default=true"`
 	}
-	Conn struct {
+	Connectivity struct {
 		Disabled bool `envconfig:"default=true"`
 	}
 	Cls struct {
@@ -188,10 +188,10 @@ func main() {
 	if cfg.DbInMemory {
 		db = storage.NewMemoryStorage()
 	} else {
-		store, conn, err := storage.NewFromConfig(cfg.Database, cipher, logs.WithField("service", "storage"))
+		store, Connectivity, err := storage.NewFromConfig(cfg.Database, cipher, logs.WithField("service", "storage"))
 		fatalOnError(err)
 		db = store
-		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
+		dbStatsCollector := sqlstats.NewStatsCollector("broker", Connectivity)
 		prometheus.MustRegister(dbStatsCollector)
 	}
 
@@ -539,6 +539,15 @@ func NewProvisioningProcessingQueue(ctx context.Context, workersAmount int, cfg 
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight: 1,
+			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
+			step: provisioning.NewServiceManagerOfferingStep("CONNECTIVITY_Offering",
+				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
+					return &op.Connectivity.Instance
+				}, db.Operations()),
+			disabled: cfg.Connectivity.Disabled,
+		},
+		{
 			weight:   1,
 			step:     provisioning.NewSkipForTrialPlanStep(provisioning.NewClsOfferingStep(clsConfig, db.Operations())),
 			disabled: cfg.Cls.Disabled,
@@ -562,6 +571,11 @@ func NewProvisioningProcessingQueue(ctx context.Context, workersAmount int, cfg 
 			weight:   2,
 			step:     provisioning.NewEmsProvisionStep(db.Operations()),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   2,
+			step:     provisioning.NewConnectivityProvisionStep(db.Operations()),
+			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			weight:   2,
@@ -627,6 +641,11 @@ func NewProvisioningProcessingQueue(ctx context.Context, workersAmount int, cfg 
 			weight:   7,
 			step:     provisioning.NewEmsBindStep(db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   7,
+			step:     provisioning.NewConnectivityBindStep(db.Operations(), cfg.Database.SecretKey),
+			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			weight:   7,
@@ -706,6 +725,11 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, cf
 		},
 		{
 			weight:   1,
+			step:     deprovisioning.NewConnectivityUnbindStep(db.Operations()),
+			disabled: cfg.Connectivity.Disabled,
+		},
+		{
+			weight:   1,
 			step:     deprovisioning.NewSkipForTrialPlanStep(deprovisioning.NewClsUnbindStep(clsConfig, db.Operations())),
 			disabled: cfg.Cls.Disabled,
 		},
@@ -718,6 +742,11 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, cf
 			weight:   2,
 			step:     deprovisioning.NewEmsDeprovisionStep(db.Operations()),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   2,
+			step:     deprovisioning.NewConnectivityDeprovisionStep(db.Operations()),
+			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			weight:   2,
@@ -774,11 +803,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 1,
 			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
-			step: upgrade_kyma.NewServiceManagerOfferingStep("CONN_Offering",
-				provisioning.ConnOfferingName, provisioning.ConnPlanName, func(op *internal.UpgradeKymaOperation) *internal.ServiceManagerInstanceInfo {
-					return &op.Conn.Instance
+			step: upgrade_kyma.NewServiceManagerOfferingStep("CONNECTIVITY_Offering",
+				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.UpgradeKymaOperation) *internal.ServiceManagerInstanceInfo {
+					return &op.Connectivity.Instance
 				}, db.Operations()),
-			disabled: cfg.Conn.Disabled,
+			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			weight:   1,
@@ -801,8 +830,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight:   4,
-			step:     upgrade_kyma.NewConnUpgradeProvisionStep(db.Operations()),
-			disabled: cfg.Conn.Disabled,
+			step:     upgrade_kyma.NewConnectivityUpgradeProvisionStep(db.Operations()),
+			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			weight:   4,
@@ -821,8 +850,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight:   7,
-			step:     upgrade_kyma.NewConnUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
-			disabled: cfg.Conn.Disabled,
+			step:     upgrade_kyma.NewConnectivityUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
+			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			weight:   7,

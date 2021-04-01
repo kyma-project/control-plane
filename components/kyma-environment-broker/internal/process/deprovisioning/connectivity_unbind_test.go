@@ -13,16 +13,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConnUnbindStep_Run(t *testing.T) {
+func TestConnectivityUnbindStep_Run(t *testing.T) {
 	// given
 	repo := storage.NewMemoryStorage().Operations()
-	step := NewConnUnbindStep(repo)
+	step := NewConnectivityUnbindStep(repo)
 	clientFactory := servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{}, []types.ServicePlan{})
 
 	operation := internal.DeprovisioningOperation{
 		Operation: internal.Operation{
 			InstanceDetails: internal.InstanceDetails{
-				Conn: internal.ConnData{
+				Connectivity: internal.ConnectivityData{
 					Instance: internal.ServiceManagerInstanceInfo{
 						BrokerID:    "broker-id",
 						ServiceID:   "svc-id",
@@ -45,8 +45,8 @@ func TestConnUnbindStep_Run(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.Zero(t, retry)
-	assert.Empty(t, operation.Conn.BindingID)
-	assert.Empty(t, operation.Conn.Overrides)
+	assert.Empty(t, operation.Connectivity.BindingID)
+	assert.Empty(t, operation.Connectivity.Overrides)
 	clientFactory.AssertUnbindCalled(t, servicemanager.InstanceKey{
 		BrokerID:   "broker-id",
 		InstanceID: "instance-id",

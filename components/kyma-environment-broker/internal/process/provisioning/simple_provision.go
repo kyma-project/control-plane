@@ -2,42 +2,43 @@ package provisioning
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 type overrideInputFunc func(*servicemanager.ProvisioningInput) *servicemanager.ProvisioningInput
+type infoExtractor func(*internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo
 
 type SimpleProvisioner struct {
 	operationManager  *process.ProvisionOperationManager
 	serviceName       string
-	serviceInfo       *internal.ServiceManagerInstanceInfo
-	provisioningInput *servicemanager.ProvisioningInput
+	infoExtractorFunc infoExtractor
+	overrideInputFunc overrideInputFunc
 }
 
 type Context interface {
 	getProvisioningInput(operation internal.ProvisioningOperation) *servicemanager.ProvisioningInput
 }
 
-func NewSimpleProvisioning(serviceName string, info *internal.ServiceManagerInstanceInfo, manager *process.ProvisionOperationManager,
+func NewSimpleProvisioning(serviceName string, info infoExtractor, manager *process.ProvisionOperationManager,
 	overrideInput overrideInputFunc) *SimpleProvisioner {
-
-	simpleInput := GetSimpleInput(info)
 
 	return &SimpleProvisioner{
 		operationManager:  manager,
 		serviceName:       serviceName,
-		serviceInfo:       info,
-		provisioningInput: overrideInput(simpleInput),
+		infoExtractorFunc: info,
+		overrideInputFunc: overrideInput,
 	}
 }
 
 func (s *SimpleProvisioner) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	if s.serviceInfo.ProvisioningTriggered {
+	serviceInfo := s.infoExtractorFunc(&operation)
+	if serviceInfo.ProvisioningTriggered {
 		log.Infof("%s Provisioning step was already triggered", s.serviceName)
 		return operation, 0, nil
 	}
@@ -47,9 +48,9 @@ func (s *SimpleProvisioner) Run(operation internal.ProvisioningOperation, log lo
 		return s.operationManager.HandleError(operation, err, log, fmt.Sprintf("Unable to create Service Manage client"))
 	}
 
-	if s.serviceInfo.InstanceID == "" {
+	if serviceInfo.InstanceID == "" {
 		op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
-			s.serviceInfo.InstanceID = uuid.New().String()
+			s.infoExtractorFunc(operation).InstanceID = uuid.New().String()
 		}, log)
 		if retry > 0 {
 			log.Errorf("Unable to update operation")
@@ -66,7 +67,7 @@ func (s *SimpleProvisioner) Run(operation internal.ProvisioningOperation, log lo
 
 	// save the status
 	operation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
-		s.serviceInfo.ProvisioningTriggered = true
+		s.infoExtractorFunc(operation).ProvisioningTriggered = true
 	}, log)
 	if retry > 0 {
 		log.Errorf("unable to update operation")
@@ -81,10 +82,11 @@ func PassThrough(details *servicemanager.ProvisioningInput) *servicemanager.Prov
 }
 
 func (s *SimpleProvisioner) provision(smCli servicemanager.Client, operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	input := s.provisioningInput
-	resp, err := smCli.Provision(s.serviceInfo.BrokerID, *input, true)
+	serviceInfo := s.infoExtractorFunc(&operation)
+	input := s.overrideInputFunc(GetSimpleInput(serviceInfo))
+	resp, err := smCli.Provision(serviceInfo.BrokerID, *input, true)
 	if err != nil {
-		return s.operationManager.HandleError(operation, err, log, fmt.Sprintf("Provision() call failed for brokerID: %s; input: %#v", s.serviceInfo.BrokerID, input))
+		return s.operationManager.HandleError(operation, err, log, fmt.Sprintf("Provision() call failed for brokerID: %s; input: %#v", serviceInfo.BrokerID, input))
 	}
 	log.Debugf("response from %s provisioning call: %#v", s.serviceName, resp)
 

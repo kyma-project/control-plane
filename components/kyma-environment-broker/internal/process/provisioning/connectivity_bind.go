@@ -34,26 +34,26 @@ type ConnectivityOverrides struct {
 	Xsappname                       string `json:"xsappname"`
 }
 
-type ConnBindStep struct {
+type ConnectivityBindStep struct {
 	operationManager *process.ProvisionOperationManager
 	secretKey        string
 }
 
-func NewConnBindStep(os storage.Operations, secretKey string) *ConnBindStep {
-	return &ConnBindStep{
+func NewConnectivityBindStep(os storage.Operations, secretKey string) *ConnectivityBindStep {
+	return &ConnectivityBindStep{
 		operationManager: process.NewProvisionOperationManager(os),
 		secretKey:        secretKey,
 	}
 }
 
-var _ Step = (*ConnBindStep)(nil)
+var _ Step = (*ConnectivityBindStep)(nil)
 
-func (s *ConnBindStep) Name() string {
+func (s *ConnectivityBindStep) Name() string {
 	return "CONN_Bind"
 }
 
-func (s *ConnBindStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	if !operation.Conn.Instance.ProvisioningTriggered {
+func (s *ConnectivityBindStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	if !operation.Connectivity.Instance.ProvisioningTriggered {
 		return s.handleError(operation, fmt.Errorf("Connectivity Provisioning step was not triggered"), log, "")
 	}
 
@@ -62,11 +62,11 @@ func (s *ConnBindStep) Run(operation internal.ProvisioningOperation, log logrus.
 		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manage client"))
 	}
 	// test if the provisioning is finished, if not, retry after 10s
-	resp, err := smCli.LastInstanceOperation(operation.Conn.Instance.InstanceKey(), "")
+	resp, err := smCli.LastInstanceOperation(operation.Connectivity.Instance.InstanceKey(), "")
 	if err != nil {
 		return s.handleError(operation, err, log, fmt.Sprintf("LastInstanceOperation() call failed"))
 	}
-	log.Infof("Provisioning Connectivity (instanceID=%s) state: %s", operation.Conn.Instance.InstanceID, resp.State)
+	log.Infof("Provisioning Connectivity (instanceID=%s) state: %s", operation.Connectivity.Instance.InstanceID, resp.State)
 	switch resp.State {
 	case servicemanager.InProgress:
 		return operation, 10 * time.Second, nil
@@ -75,29 +75,29 @@ func (s *ConnBindStep) Run(operation internal.ProvisioningOperation, log logrus.
 	}
 	// execute binding
 	var connectivityOverrides *ConnectivityOverrides
-	if !operation.Conn.Instance.Provisioned {
-		if operation.Conn.BindingID == "" {
-			operation.Conn.BindingID = uuid.New().String()
+	if !operation.Connectivity.Instance.Provisioned {
+		if operation.Connectivity.BindingID == "" {
+			operation.Connectivity.BindingID = uuid.New().String()
 		}
-		respBinding, err := smCli.Bind(operation.Conn.Instance.InstanceKey(), operation.Conn.BindingID, nil, false)
+		respBinding, err := smCli.Bind(operation.Connectivity.Instance.InstanceKey(), operation.Connectivity.BindingID, nil, false)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("Bind() call failed"))
 		}
 		// get overrides
-		connectivityOverrides, err = GetConnCredentials(respBinding.Binding)
+		connectivityOverrides, err = GetConnectivityCredentials(respBinding.Binding)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("getCredentials() call failed"))
 		}
-		encryptedOverrides, err := EncryptConnOverrides(s.secretKey, connectivityOverrides)
+		encryptedOverrides, err := EncryptConnectivityOverrides(s.secretKey, connectivityOverrides)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("encryptOverrides() call failed"))
 		}
 
 		// save the status
 		op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
-			operation.Conn.Overrides = encryptedOverrides
-			operation.Conn.Instance.Provisioned = true
-			operation.Conn.Instance.ProvisioningTriggered = false
+			operation.Connectivity.Overrides = encryptedOverrides
+			operation.Connectivity.Instance.Provisioned = true
+			operation.Connectivity.Instance.ProvisioningTriggered = false
 		}, log)
 		if retry > 0 {
 			log.Errorf("unable to update operation")
@@ -105,8 +105,8 @@ func (s *ConnBindStep) Run(operation internal.ProvisioningOperation, log logrus.
 		}
 		operation = op
 	} else {
-		// get the credentials from encrypted string in operation.Conn.Instance.
-		connectivityOverrides, err = DecryptConnOverrides(s.secretKey, operation.Conn.Overrides)
+		// get the credentials from encrypted string in operation.Connectivity.Instance.
+		connectivityOverrides, err = DecryptConnectivityOverrides(s.secretKey, operation.Connectivity.Overrides)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("decryptOverrides() call failed"))
 		}
@@ -123,12 +123,12 @@ func (s *ConnBindStep) Run(operation internal.ProvisioningOperation, log logrus.
 	return operation, 0, nil
 }
 
-func (s *ConnBindStep) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *ConnectivityBindStep) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
 	return s.operationManager.OperationFailed(operation, msg, log)
 }
 
-func GetConnCredentials(binding servicemanager.Binding) (*ConnectivityOverrides, error) {
+func GetConnectivityCredentials(binding servicemanager.Binding) (*ConnectivityOverrides, error) {
 	credentials := binding.Credentials
 	csMap, ok := credentials["connectivity_service"].(map[string]interface{})
 	if !ok {
@@ -162,7 +162,7 @@ func GetConnCredentials(binding servicemanager.Binding) (*ConnectivityOverrides,
 	}, nil
 }
 
-func EncryptConnOverrides(secretKey string, overrides *ConnectivityOverrides) (string, error) {
+func EncryptConnectivityOverrides(secretKey string, overrides *ConnectivityOverrides) (string, error) {
 	marshalledOverrides, err := json.Marshal(*overrides)
 	if err != nil {
 		return "", errors.Wrap(err, "while encoding connectivity overrides")
@@ -174,7 +174,7 @@ func EncryptConnOverrides(secretKey string, overrides *ConnectivityOverrides) (s
 	return string(encryptedOverrides), nil
 }
 
-func DecryptConnOverrides(secretKey string, encryptedOverrides string) (*ConnectivityOverrides, error) {
+func DecryptConnectivityOverrides(secretKey string, encryptedOverrides string) (*ConnectivityOverrides, error) {
 	decryptedOverrides, err := storage.NewEncrypter(secretKey).Decrypt([]byte(encryptedOverrides))
 	if err != nil {
 		return nil, errors.Wrap(err, "while decrypting connectivity overrides")

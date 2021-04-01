@@ -35,8 +35,11 @@ func (s *EmsProvisionStep) Name() string {
 func (s *EmsProvisionStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (
 	internal.ProvisioningOperation, time.Duration, error) {
 
-	provisioner := NewSimpleProvisioning("Ems", &operation.Ems.Instance, s.operationManager, getEventingProvisioningData)
+	extractorFunc := func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
+		return &op.Ems.Instance
+	}
 
+	provisioner := NewSimpleProvisioning("Ems", extractorFunc, s.operationManager, getEventingProvisioningData)
 	return provisioner.Run(operation, log)
 }
 
