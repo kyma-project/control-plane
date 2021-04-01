@@ -210,14 +210,6 @@ func main() {
 	lmsClient := lms.NewClient(cfg.LMS, logs.WithField("service", "lmsClient"))
 	lmsTenantManager := lms.NewTenantManager(db.LMSTenants(), lmsClient, logs.WithField("service", "lmsTenantManager"))
 
-	// IAS
-	clientHTTPForIAS := httputil.NewClient(60, cfg.IAS.SkipCertVerification)
-	if cfg.IAS.TLSRenegotiationEnable {
-		clientHTTPForIAS = httputil.NewRenegotiationTLSClient(30, cfg.IAS.SkipCertVerification)
-	}
-	bundleBuilder := ias.NewBundleBuilder(clientHTTPForIAS, cfg.IAS)
-	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
-
 	// Register disabler. Convention:
 	// {component-name} : {component-disabler-service}
 	//
@@ -261,6 +253,14 @@ func main() {
 	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 	internalEvalUpdater := provisioning.NewInternalEvalUpdater(avsDel, internalEvalAssistant, cfg.Avs)
 	upgradeEvalManager := avs.NewEvaluationManager(avsDel, cfg.Avs)
+
+	// IAS
+	clientHTTPForIAS := httputil.NewClient(60, cfg.IAS.SkipCertVerification)
+	if cfg.IAS.TLSRenegotiationEnable {
+		clientHTTPForIAS = httputil.NewRenegotiationTLSClient(30, cfg.IAS.SkipCertVerification)
+	}
+	bundleBuilder := ias.NewBundleBuilder(clientHTTPForIAS, cfg.IAS)
+	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
 	// application event broker
 	eventBroker := event.NewPubSub(logs)
