@@ -41,9 +41,8 @@ Kyma Metrics Collector comes with the following environment variables:
 
 ## Development
 - Run a deployment in a currently configured k8s cluster:
-
+>**NOTE:** In order to do this, you need a token from a secret `kcp-kyma-metrics-collector`.
 ```
-### It needs a token from a secret kcp-kyma-metrics-collector 
 ko apply -f dev/  
 ```
 
