@@ -25,6 +25,9 @@ global:
     metris:
       dir:
       version: "PR-376"
+    kyma_metrics_collector:
+      dir:
+      version: "PR-583"
     tests:
       provisioner:
         dir:
@@ -124,6 +127,9 @@ global:
       brokerDBName: ""
 
   metris:
+    enabled: false
+
+  kyma_metrics_collector:
     enabled: false
 
   oathkeeper:
