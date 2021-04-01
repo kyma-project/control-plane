@@ -99,7 +99,7 @@ func (s *ConnectivityUpgradeBindStep) Run(operation internal.UpgradeKymaOperatio
 	//       ...
 	//       - [ ] define what changes need to be done in KEB to
 	//             allow passing secrets data to the Provisioner
-	log.Debugf("Got Connectivity Service credentials from the binding: %+v", connectivityOverrides)
+	log.Debugf("Got Connectivity Service credentials from the binding.")
 
 	return operation, 0, nil
 }
