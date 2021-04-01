@@ -62,7 +62,7 @@ make tests
 make publish-test-results
 ```
 
-#### Troubleshooting
+### Troubleshooting
 - Check logs
 ```
 kubectl logs -l app=kyma-metrics-collector -n kcp-system -c kyma-metrics-collector -f
