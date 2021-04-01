@@ -3,7 +3,7 @@
 ## Overview
 Kyma Metrics Collector scrapes all Kyma clusters and uses Shoot information to generate metrics as event streams. The generated event streams are POST-ed to an events collecting system.
 
-#### Usage
+## Usage
 
 ### Flags
 
