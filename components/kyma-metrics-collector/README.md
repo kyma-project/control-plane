@@ -63,7 +63,7 @@ make publish-test-results
 ```
 
 ### Troubleshooting
-- Check logs
+- Check logs:
 ```
 kubectl logs -l app=kyma-metrics-collector -n kcp-system -c kyma-metrics-collector -f
 ```
