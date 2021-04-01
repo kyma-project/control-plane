@@ -1,12 +1,13 @@
 package gardener
 
 import (
+	"path/filepath"
+	"testing"
+
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"path/filepath"
-	"testing"
 )
 
 func TestAuditLogConfigurator_CanEnableAuditLogsForShoot(t *testing.T) {

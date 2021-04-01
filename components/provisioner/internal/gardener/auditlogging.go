@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"os"
+
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 )
 
 type AuditLogConfigurator interface {
