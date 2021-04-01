@@ -47,7 +47,7 @@ Kyma Metrics Collector comes with the following environment variables:
 ko apply -f dev/  
 ```
 
-- Resolve all dependencies
+- Resolve all dependencies:
 ```
 make gomod-vendor
 ```
