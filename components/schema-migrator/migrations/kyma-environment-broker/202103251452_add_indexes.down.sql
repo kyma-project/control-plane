@@ -1,0 +1,2 @@
+DROP INDEX operations_by_instance_id;
+DROP INDEX operations_by_orchestration_id;
