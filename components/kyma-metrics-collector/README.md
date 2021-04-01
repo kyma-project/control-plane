@@ -5,7 +5,9 @@ Kyma Metrics Collector scrapes all Kyma clusters and uses Shoot information to g
 
 #### Usage
 
-- `Kyma Metrics Collector` comes with the following command line argument flags:
+### Flags
+
+Kyma Metrics Collector comes with the following command line argument flags:
 
     | Flag | Description | Default Value   |
     | ----- | ------------ | --------------- |
