@@ -40,7 +40,7 @@ Kyma Metrics Collector comes with the following environment variables:
      | `EDP_RETRY` | The number of retries for Kyma Metrics Collector connections to EDP. | `3` |
 
 ## Development
-- Run a deployment in currently configured k8s cluster
+- Run a deployment in a currently configured k8s cluster:
 
 ```
 ### It needs a token from a secret kcp-kyma-metrics-collector 
