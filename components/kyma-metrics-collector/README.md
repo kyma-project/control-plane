@@ -32,7 +32,7 @@ Kyma Metrics Collector comes with the following environment variables:
      | `KEB_POLL_WAIT_DURATION` | The time interval for Kyma Metrics Collector to wait between each execution of polling KEB for runtime information. | `10m` |
      | `EDP_URL` | The EDP base URL where Kyma Metrics Collector will ingest the event-stream to. | `-` |
      | `EDP_TOKEN` | The token used to connect to EDP. | `-` |
-     | `EDP_NAMESPACE` | The namespace in EDP where Kyma Metrics Collector will ingest event-stream to.| `kyma-dev` |
+     | `EDP_NAMESPACE` | The namespace in EDP where Kyma Metrics Collector will ingest the event-stream to.| `kyma-dev` |
      | `EDP_DATASTREAM_NAME` | The datastream in EDP where Kyma Metrics Collector will ingest event-stream to. | `consumption-metrics` |
      | `EDP_DATASTREAM_VERSION` | The datastream version which Kyma Metrics Collector will use. | `1` |
      | `EDP_DATASTREAM_ENV` | The datastream environment which Kyma Metrics Collector will use.  | `dev` |
