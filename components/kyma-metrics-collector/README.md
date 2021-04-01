@@ -25,7 +25,7 @@ Kyma Metrics Collector comes with the following environment variables:
      
      | Variable | Description | Default Value   |
      | ----- | ------------ | ------------- |
-     | `PUBLIC_CLOUD_SPECS` | The specification contains the CPU, Network and Disk information for all machine types from a public cloud provider.  | `-` |
+     | `PUBLIC_CLOUD_SPECS` | This specification contains the CPU, Network and Disk information for all machine types from a public cloud provider.  | `-` |
      | `KEB_URL` | The KEB URL where Kyma Metrics Collector fetches runtime information. | `-` |
      | `KEB_TIMEOUT` | The timeout governs the connections from Kyma Metrics Collector to KEB | `30s` |
      | `KEB_RETRY_COUNT` | The number of retries Kyma Metrics Collector will do when connecting to KEB fails. | 5 |
