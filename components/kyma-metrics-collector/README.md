@@ -19,7 +19,9 @@ Kyma Metrics Collector comes with the following command line argument flags:
     | `listen-addr` | The application starts server in this port to cater to the metrics and health endpoints. | `8080` |
     | `debug-port` | The custom port to debug when needed. `0` will disable debugging server. | `0` |
 
-- `Kyma Metrics Collector` comes with the following environment variables:
+### Environment variables
+
+Kyma Metrics Collector comes with the following environment variables:
      
      | Variable | Description | Default Value   |
      | ----- | ------------ | ------------- |
