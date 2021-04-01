@@ -52,7 +52,7 @@ ko apply -f dev/
 make gomod-vendor
 ```
 
-- Run tests
+- Run tests:
 ```
 make tests
 ```
