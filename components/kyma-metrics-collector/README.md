@@ -39,7 +39,7 @@ Kyma Metrics Collector comes with the following environment variables:
      | `EDP_TIMEOUT` | The timeout for Kyma Metrics Collector connections to EDP. | `30s` |
      | `EDP_RETRY` | The number of retries for Kyma Metrics Collector connections to EDP. | `3` |
 
-#### Development
+## Development
 - Run a deployment in currently configured k8s cluster
 
 ```
