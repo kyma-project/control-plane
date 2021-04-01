@@ -17,7 +17,7 @@ Kyma Metrics Collector comes with the following command line argument flags:
     | `worker-pool-size` | The number of workers in the pool. | `5` |
     | `log-level` | The log-level of the Application. For example, `fatal`, `error`, `info`, `debug`. | `info` |
     | `listen-addr` | The Application starts the server in this port to cater to the metrics and health endpoints. | `8080` |
-    | `debug-port` | The custom port to debug when needed. `0` will disable debugging server. | `0` |
+    | `debug-port` | The custom port to debug when needed. `0` will disable the debugging server. | `0` |
 
 ### Environment variables
 
