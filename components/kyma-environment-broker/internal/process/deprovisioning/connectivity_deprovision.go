@@ -24,7 +24,7 @@ func NewConnectivityDeprovisionStep(os storage.Operations) *ConnectivityDeprovis
 var _ Step = (*ConnectivityDeprovisionStep)(nil)
 
 func (s *ConnectivityDeprovisionStep) Name() string {
-	return "CONN_Deprovision"
+	return "CONNECTIVITY_Deprovision"
 }
 
 func (s *ConnectivityDeprovisionStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (

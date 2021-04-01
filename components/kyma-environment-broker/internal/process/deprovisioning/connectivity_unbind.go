@@ -24,7 +24,7 @@ func NewConnectivityUnbindStep(os storage.Operations) *ConnectivityUnbindStep {
 var _ Step = (*ConnectivityUnbindStep)(nil)
 
 func (s *ConnectivityUnbindStep) Name() string {
-	return "CONN_Unbind"
+	return "CONNECTIVITY_Unbind"
 }
 
 func (s *ConnectivityUnbindStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {

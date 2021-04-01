@@ -27,7 +27,7 @@ func NewConnectivityUpgradeProvisionStep(os storage.Operations) *ConnectivityUpg
 var _ Step = (*ConnectivityUpgradeProvisionStep)(nil)
 
 func (s *ConnectivityUpgradeProvisionStep) Name() string {
-	return "CONN_UpgradeProvision"
+	return "CONNECTIVITY_UpgradeProvision"
 }
 
 func (s *ConnectivityUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
