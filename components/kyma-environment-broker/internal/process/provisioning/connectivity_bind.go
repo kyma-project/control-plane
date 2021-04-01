@@ -49,7 +49,7 @@ func NewConnectivityBindStep(os storage.Operations, secretKey string) *Connectiv
 var _ Step = (*ConnectivityBindStep)(nil)
 
 func (s *ConnectivityBindStep) Name() string {
-	return "CONN_Bind"
+	return "CONNECTIVITY_Bind"
 }
 
 func (s *ConnectivityBindStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
