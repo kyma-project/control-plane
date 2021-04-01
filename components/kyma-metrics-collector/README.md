@@ -68,7 +68,7 @@ make publish-test-results
 kubectl logs -l app=kyma-metrics-collector -n kcp-system -c kyma-metrics-collector -f
 ```
 
-#### Data collection
+### Data collection
 
 Kyma Metrics Collector collects information about billable hyperscaler usage and sends it to EDP. This data has to adhere to the following schema:
 
