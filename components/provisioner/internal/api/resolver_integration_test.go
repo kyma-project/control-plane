@@ -5,6 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
@@ -62,6 +65,7 @@ type testCase struct {
 	auditLogTenant    string
 	provisioningInput provisioningInput
 	upgradeShootInput gqlschema.UpgradeShootInput
+	seed              *gardener_types.Seed
 }
 
 type provisioningInput struct {
@@ -87,11 +91,12 @@ func newTestProvisioningConfigs() []testCase {
 					Description: new(string),
 				}},
 			upgradeShootInput: NewUpgradeShootInput(),
+			seed:              seedConfig("az-eu2", "westeurope", "azure"),
 		},
 		{name: "Azure on Gardener seed is empty",
 			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when seed is empty",
 			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb2",
-			auditLogTenant: "e7382275-e835-4549-94e1-3b1101e3a1fa",
+			auditLogTenant: "",
 			provisioningInput: provisioningInput{
 				config: azureGardenerClusterConfigInputNoSeed(),
 				runtimeInput: gqlschema.RuntimeInput{
@@ -103,7 +108,7 @@ func newTestProvisioningConfigs() []testCase {
 		{name: "OpenStack on Gardener",
 			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct OpenStack configuration for Gardener",
 			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb8",
-			auditLogTenant: "e7382275-e835-4549-94e1-3b1101ebda5c",
+			auditLogTenant: "e7382275-e835-4549-94e1-3b1101e3a1fa",
 			provisioningInput: provisioningInput{
 				config: openStackGardenerClusterConfigInput(),
 				runtimeInput: gqlschema.RuntimeInput{
@@ -111,6 +116,7 @@ func newTestProvisioningConfigs() []testCase {
 					Description: new(string),
 				}},
 			upgradeShootInput: NewUpgradeOpenStackShootInput(),
+			seed:              seedConfig("os-eu1", "eu-central-1", "openstack"),
 		},
 	}
 }
@@ -193,6 +199,20 @@ func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 					CloudProfileName:     "converged-cloud-cp",
 					LoadBalancerProvider: "f5",
 				},
+			},
+		},
+	}
+}
+
+func seedConfig(seedName, region, provider string) *gardener_types.Seed {
+	return &gardener_types.Seed{
+		ObjectMeta: v1.ObjectMeta{
+			Name: seedName,
+		},
+		Spec: gardener_types.SeedSpec{
+			Provider: gardener_types.SeedProvider{
+				Region: region,
+				Type:   provider,
 			},
 		},
 	}
