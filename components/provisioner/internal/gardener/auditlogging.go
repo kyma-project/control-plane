@@ -5,9 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 )
+
+const auditLogConditionType = "AuditlogServiceAvailability"
+const audiInstanceCodePattern = `cf\.[a-z0-9]*(.*?)`
 
 type AuditLogConfigurator interface {
 	CanEnableAuditLogsForShoot(seedName string) bool
@@ -42,12 +46,16 @@ func (a *auditLogConfigurator) SetAuditLogAnnotation(shoot *gardener_types.Shoot
 		return false, errors.New(fmt.Sprintf("cannot find config for provider %s", provider))
 	}
 
-	seedRegion := getSeedRegion(seed)
+	auditID := getAuditLogInstanceIdentifier(seed)
 
-	tenant := providerConfig[seedRegion]
+	if auditID == "" {
+		return false, errors.New("could not find audit identifier")
+	}
+
+	tenant := providerConfig[auditID]
 
 	if tenant == "" {
-		return false, errors.New(fmt.Sprintf("tenant for region %s is empty", seedRegion))
+		return false, errors.New(fmt.Sprintf("tenant for audit identifier %s is empty", auditID))
 	} else if tenant == shoot.Annotations[auditLogsAnnotation] {
 		return false, nil
 	}
@@ -72,10 +80,28 @@ func (a *auditLogConfigurator) getConfigFromFile() (map[string]map[string]string
 	return data, nil
 }
 
-func getSeedRegion(seed gardener_types.Seed) string {
-	return seed.Spec.Provider.Region
-}
-
 func getProviderType(seed gardener_types.Seed) string {
 	return seed.Spec.Provider.Type
+}
+
+func getAuditLogInstanceIdentifier(seed gardener_types.Seed) string {
+	message := findAuditLogConditionMessage(seed)
+
+	if message == "" {
+		return ""
+	}
+
+	pat := regexp.MustCompile(audiInstanceCodePattern)
+	return pat.FindString(message)
+}
+
+func findAuditLogConditionMessage(seed gardener_types.Seed) string {
+	conditions := seed.Status.Conditions
+
+	for _, condition := range conditions {
+		if condition.Type == auditLogConditionType {
+			return condition.Message
+		}
+	}
+	return ""
 }

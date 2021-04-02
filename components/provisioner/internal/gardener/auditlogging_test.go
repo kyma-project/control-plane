@@ -58,8 +58,13 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 			},
 			Spec: gardener_types.SeedSpec{
 				Provider: gardener_types.SeedProvider{
-					Type:   "azure",
-					Region: "westeurope"}},
+					Type: "azure"},
+			},
+			Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{
+				{Type: auditLogConditionType,
+					Message: "Auditlog landscape https://api.auditlog.cf.us21.hana.ondemand.com:8081/ successfully attached to the seed.",
+				},
+			}},
 		}
 
 		configPath := filepath.Join("testdata", "config.json")
@@ -84,8 +89,13 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 			},
 			Spec: gardener_types.SeedSpec{
 				Provider: gardener_types.SeedProvider{
-					Type:   "glazure",
-					Region: "westeurope"}},
+					Type: "glazure"},
+			},
+			Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{
+				{Type: auditLogConditionType,
+					Message: "Auditlog landscape https://api.auditlog.cf.us21.hana.ondemand.com:8081/ successfully attached to the seed.",
+				},
+			}},
 		}
 
 		configPath := filepath.Join("testdata", "config.json")
@@ -101,7 +111,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 		assert.Empty(t, shoot.Annotations[auditLogsAnnotation])
 	})
 
-	t.Run("should return error when config for region is empty", func(t *testing.T) {
+	t.Run("should return error when cannot find audit log landscape identifier", func(t *testing.T) {
 		//given
 		shoot := &gardener_types.Shoot{}
 		seed := gardener_types.Seed{
@@ -110,8 +120,13 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 			},
 			Spec: gardener_types.SeedSpec{
 				Provider: gardener_types.SeedProvider{
-					Type:   "azure",
-					Region: "southerneurope"}},
+					Type: "azure"},
+			},
+			Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{
+				{Type: auditLogConditionType,
+					Message: "",
+				},
+			}},
 		}
 
 		configPath := filepath.Join("testdata", "config.json")
@@ -136,8 +151,13 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 			},
 			Spec: gardener_types.SeedSpec{
 				Provider: gardener_types.SeedProvider{
-					Type:   "azure",
-					Region: "westeurope"}},
+					Type: "azure"},
+			},
+			Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{
+				{Type: auditLogConditionType,
+					Message: "Auditlog landscape https://api.auditlog.cf.us21.hana.ondemand.com:8081/ successfully attached to the seed.",
+				},
+			}},
 		}
 
 		configPath := filepath.Join("testdata", "wrongconfig.json")
