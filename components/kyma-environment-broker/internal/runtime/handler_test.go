@@ -9,7 +9,10 @@ import (
 	"time"
 
 	pkg "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"k8s.io/apimachinery/pkg/util/rand"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -165,6 +168,93 @@ func TestRuntimeHandler(t *testing.T) {
 		assert.Equal(t, testID1, out.Data[0].InstanceID)
 	})
 
+	t.Run("test state filtering should work", func(t *testing.T) {
+		// given
+		operations := memory.NewOperation()
+		instances := memory.NewInstance(operations)
+		testID1 := "Test1"
+		testID2 := "Test2"
+		testID3 := "Test3"
+		testTime1 := time.Now()
+		testTime2 := time.Now().Add(time.Minute)
+		testInstance1 := fixInstance(testID1, testTime1)
+		testInstance2 := fixInstance(testID2, testTime2)
+		testInstance3 := fixInstance(testID3, time.Now().Add(2*time.Minute))
+
+		err := instances.Insert(testInstance1)
+		require.NoError(t, err)
+		err = instances.Insert(testInstance2)
+		require.NoError(t, err)
+		err = instances.Insert(testInstance3)
+		require.NoError(t, err)
+
+		provOp1 := fixture.FixProvisioningOperation(fixRandomID(), testID1)
+		err = operations.InsertProvisioningOperation(provOp1)
+		require.NoError(t, err)
+
+		provOp2 := fixture.FixProvisioningOperation(fixRandomID(), testID2)
+		err = operations.InsertProvisioningOperation(provOp2)
+		require.NoError(t, err)
+		upgOp2 := fixture.FixUpgradeKymaOperation(fixRandomID(), testID2)
+		upgOp2.State = domain.Failed
+		upgOp2.CreatedAt = upgOp2.CreatedAt.Add(time.Minute)
+		err = operations.InsertUpgradeKymaOperation(upgOp2)
+		require.NoError(t, err)
+
+		provOp3 := fixture.FixProvisioningOperation(fixRandomID(), testID3)
+		err = operations.InsertProvisioningOperation(provOp3)
+		require.NoError(t, err)
+		upgOp3 := fixture.FixUpgradeKymaOperation(fixRandomID(), testID3)
+		upgOp3.State = domain.Failed
+		upgOp3.CreatedAt = upgOp3.CreatedAt.Add(time.Minute)
+		err = operations.InsertUpgradeKymaOperation(upgOp3)
+		require.NoError(t, err)
+		deprovOp3 := fixture.FixDeprovisioningOperation(fixRandomID(), testID3)
+		deprovOp3.State = domain.Succeeded
+		deprovOp3.CreatedAt = deprovOp3.CreatedAt.Add(2 * time.Minute)
+		err = operations.InsertDeprovisioningOperation(deprovOp3)
+		require.NoError(t, err)
+
+		runtimeHandler := runtime.NewHandler(instances, operations, 2, "")
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		runtimeHandler.AttachRoutes(router)
+
+		// when
+		req, err := http.NewRequest("GET", fmt.Sprintf("/runtimes?state=%s", pkg.StateSucceeded), nil)
+		require.NoError(t, err)
+		router.ServeHTTP(rr, req)
+
+		// then
+		require.Equal(t, http.StatusOK, rr.Code)
+
+		var out pkg.RuntimesPage
+
+		err = json.Unmarshal(rr.Body.Bytes(), &out)
+		require.NoError(t, err)
+
+		assert.Equal(t, 1, out.TotalCount)
+		assert.Equal(t, 1, out.Count)
+		assert.Equal(t, testID1, out.Data[0].InstanceID)
+
+		// when
+		rr = httptest.NewRecorder()
+		req, err = http.NewRequest("GET", fmt.Sprintf("/runtimes?state=%s", pkg.StateFailed), nil)
+		require.NoError(t, err)
+		router.ServeHTTP(rr, req)
+
+		// then
+		require.Equal(t, http.StatusOK, rr.Code)
+
+		err = json.Unmarshal(rr.Body.Bytes(), &out)
+		require.NoError(t, err)
+
+		assert.Equal(t, 1, out.TotalCount)
+		assert.Equal(t, 1, out.Count)
+		assert.Equal(t, testID2, out.Data[0].InstanceID)
+	})
+
 	t.Run("should show suspension and unsuspension operations", func(t *testing.T) {
 		// given
 		operations := memory.NewOperation()
@@ -261,4 +351,8 @@ func fixInstance(id string, t time.Time) internal.Instance {
 		ProviderRegion:  id,
 		Parameters:      internal.ProvisioningParameters{},
 	}
+}
+
+func fixRandomID() string {
+	return rand.String(16)
 }
