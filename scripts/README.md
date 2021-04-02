@@ -44,17 +44,17 @@ Makefile must contains following vars and statement:
 ```makefile
 APP_NAME = App name
 APP_PATH = App path in repository
-BUILDPACK = BUILDPACK_IMAGE 
+BUILDPACK = BUILDPACK_IMAGE
 SCRIPTS_DIR = Path to generic makefile #e.g. $(realpath $(shell pwd)/../..)/scripts
 include $(SCRIPTS_DIR)/generic_make_go.mk
 ```
-available images are listed in [config.yaml](https://github.com/kyma-project/test-infra/blob/master/templates/config.yaml).
+available images are listed in [config.yaml](https://github.com/kyma-project/test-infra/blob/main/templates/config.yaml).
 
 ## How it works
 By example:
 When CI run`make release` the following steps are executed:
 - rule `release` depends on rules `resolve dep-status verify build-image push-image`
-- rule`resolve` does not appear in the Makefile. but it's generated. 
+- rule`resolve` does not appear in the Makefile. but it's generated.
 Notice this line of code:
 ```makefile
 MOUNT_TARGETS = build resolve ensure dep-status check-imports imports check-fmt fmt errcheck vet generate pull-licenses gqlgen
@@ -91,7 +91,7 @@ verify:: own-rule
 ### How to add new rule in local makefile, which needs buildpack:
 Define rule in local makefile and call function which will create the rule:
 ```makefile
-my-rule-local: 
+my-rule-local:
     do sth
 
 $(eval $(call BUILDPACK_FUNCTION,my-rule)) # function which will create the new rule

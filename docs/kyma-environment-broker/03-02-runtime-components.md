@@ -3,7 +3,7 @@ title: Runtime components
 type: Details
 ---
 
-[Kyma Environment Broker](https://github.com/kyma-project/control-plane/tree/master/components/kyma-environment-broker) (KEB) serves the functionality of composing the list of components that are installed in a Runtime. The diagram and steps describe the KEB workflow in terms of calculating and processing Runtime components:
+[Kyma Environment Broker](https://github.com/kyma-project/control-plane/tree/main/components/kyma-environment-broker) (KEB) serves the functionality of composing the list of components that are installed in a Runtime. The diagram and steps describe the KEB workflow in terms of calculating and processing Runtime components:
 
 ![runtime-components-architecture](./assets/runtime-components.svg)
 
@@ -16,11 +16,11 @@ type: Details
 
 3. KEB composes the final list of components by removing components that were not selected by the user. It also adds the proper global and components overrides and sends the whole provisioning information to the Runtime Provisioner.
 
-There is a defined [list of the component names](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/runtime/components). Use these names in your implementation.
+There is a defined [list of the component names](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/runtime/components). Use these names in your implementation.
 
 ## Disabled components
 
-To disable a component for a [specific plan](#details-service-description-service-plans), add it to the [disabled components list](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/runtime/disabled_components.go).
+To disable a component for a [specific plan](#details-service-description-service-plans), add it to the [disabled components list](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/runtime/disabled_components.go).
 To disable a component for all plans, add its name under the **AllPlansSelector** parameter.
 
 ## Optional components
@@ -39,7 +39,7 @@ If you want to add the optional component, you can do it in two ways.
 
 ```go
 runtime.NewGenericComponentDisabler("component-name", "component-namespace")
-``` 
+```
 
 * If disabling a given component requires more complex logic, create a new file called `internal/runtime/{compoent-name}_disabler.go` and implement a service which fulfills the following interface:
 
@@ -49,11 +49,11 @@ type OptionalComponentDisabler interface {
 	Disable(components internal.ComponentConfigurationInputList) internal.ComponentConfigurationInputList
 ```
 
->**NOTE**: Check the [CustomDisablerExample](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/runtime/custom_disabler_example.go) as an example of custom service for disabling components.
+>**NOTE**: Check the [CustomDisablerExample](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/runtime/custom_disabler_example.go) as an example of custom service for disabling components.
 
-In each method, the framework injects the  **components** parameter which is a list of components that are sent to the Runtime Provisioner. The implemented method is responsible for disabling component and as a result, returns a modified list. 
-  
-This interface allows you to easily register the disabler in the [`cmd/broker/main.go`](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/cmd/broker/main.go) file by adding a new entry in the **optionalComponentsDisablers** list:
+In each method, the framework injects the  **components** parameter which is a list of components that are sent to the Runtime Provisioner. The implemented method is responsible for disabling component and as a result, returns a modified list.
+
+This interface allows you to easily register the disabler in the [`cmd/broker/main.go`](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/cmd/broker/main.go) file by adding a new entry in the **optionalComponentsDisablers** list:
 
 ```go
 // Register disabler. Convention:
@@ -68,4 +68,4 @@ optionalComponentsDisablers := runtime.ComponentsDisablers{
 
 ### Remove the optional component
 
-If you want to remove the option to disable components and make them required during Kyma installation, remove a given entry from the **optionalComponentsDisablers** list in the [`cmd/broker/main.go`](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/cmd/broker/main.go) file.
+If you want to remove the option to disable components and make them required during Kyma installation, remove a given entry from the **optionalComponentsDisablers** list in the [`cmd/broker/main.go`](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/cmd/broker/main.go) file.
