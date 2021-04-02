@@ -1,0 +1,264 @@
+{
+  "data": {
+    "azure": {
+      "vm_specs": {
+        "standard_a1_v2": {
+          "features": {
+            "cpu_cores": 1,
+            "memory": 2,
+            "storage": 10,
+            "max_nics": 1
+          }
+        },
+        "standard_a2_v2": {
+          "features": {
+            "cpu_cores": 2,
+            "memory": 4,
+            "storage": 20,
+            "max_nics": 2
+          }
+        },
+        "standard_a4_v2": {
+          "features": {
+            "cpu_cores": 4,
+            "memory": 8,
+            "storage": 40,
+            "max_nics": 4
+          }
+        },
+        "standard_a8_v2": {
+          "features": {
+            "cpu_cores": 8,
+            "memory": 16,
+            "storage": 80,
+            "max_nics": 8
+          }
+        },
+        "standard_a2m_v2": {
+          "features": {
+            "cpu_cores": 2,
+            "memory": 16,
+            "storage": 20,
+            "max_nics": 2
+          }
+        },
+        "standard_a4m_v2": {
+          "features": {
+            "cpu_cores": 4,
+            "memory": 32,
+            "storage": 40,
+            "max_nics": 4
+          }
+        },
+        "standard_a8m_v2": {
+          "features": {
+            "cpu_cores": 8,
+            "memory": 64,
+            "storage": 80,
+            "max_nics": 8
+          }
+        },
+        "standard_d1": {
+          "features": {
+            "cpu_cores": 1,
+            "memory": 3.5,
+            "storage": 50,
+            "max_nics": 1
+          }
+        },
+        "standard_d2": {
+          "features": {
+            "cpu_cores": 2,
+            "memory": 7,
+            "storage": 100,
+            "max_nics": 2
+          }
+        },
+        "standard_d3": {
+          "features": {
+            "cpu_cores": 4,
+            "memory": 14,
+            "storage": 200,
+            "max_nics": 4
+          }
+        },
+        "standard_d4": {
+          "features": {
+            "cpu_cores": 8,
+            "memory": 128,
+            "storage": 400,
+            "max_nics": 8
+          }
+        },
+        "standard_d11": {
+          "features": {
+            "cpu_cores": 2,
+            "memory": 14,
+            "storage": 100,
+            "max_nics": 2
+          }
+        },
+        "standard_d12": {
+          "features": {
+            "cpu_cores": 4,
+            "memory": 28,
+            "storage": 200,
+            "max_nics": 4
+          }
+        },
+        "standard_d13": {
+          "features": {
+            "cpu_cores": 8,
+            "memory": 56,
+            "storage": 400,
+            "max_nics": 8
+          }
+        },
+        "standard_d14": {
+          "features": {
+            "cpu_cores": 16,
+            "memory": 112,
+            "storage": 800,
+            "max_nics": 8
+          }
+        },
+        "standard_d1_v2": {
+          "features": {
+            "cpu_cores": 1,
+            "memory": 3.5,
+            "storage": 50,
+            "max_nics": 1
+          }
+        },
+        "standard_d2_v2": {
+          "features": {
+            "cpu_cores": 2,
+            "memory": 7,
+            "storage": 100,
+            "max_nics": 2
+          }
+        },
+        "standard_d3_v2": {
+          "features": {
+            "cpu_cores": 4,
+            "memory": 14,
+            "storage": 200,
+            "max_nics": 4
+          }
+        },
+        "standard_d4_v2": {
+          "features": {
+            "cpu_cores": 8,
+            "memory": 28,
+            "storage": 400,
+            "max_nics": 8
+          }
+        },
+        "standard_d5_v2": {
+          "features": {
+            "cpu_cores": 16,
+            "memory": 56,
+            "storage": 800,
+            "max_nics": 8
+          }
+        },
+        "standard_d11_v2": {
+          "features": {
+            "cpu_cores": 2,
+            "memory": 14,
+            "storage": 100,
+            "max_nics": 2
+          }
+        },
+        "standard_d12_v2": {
+          "features": {
+            "cpu_cores": 4,
+            "memory": 28,
+            "storage": 200,
+            "max_nics": 4
+          }
+        },
+        "standard_d13_v2": {
+          "features": {
+            "cpu_cores": 8,
+            "memory": 56,
+            "storage": 400,
+            "max_nics": 8
+          }
+        },
+        "standard_d14_v2": {
+          "features": {
+            "cpu_cores": 16,
+            "memory": 112,
+            "storage": 800,
+            "max_nics": 8
+          }
+        },
+        "standard_d15_v2": {
+          "features": {
+            "cpu_cores": 20,
+            "memory": 140,
+            "storage": 1000,
+            "max_nics": 8
+          }
+        },
+        "standard_d2_v3": {
+          "features": {
+            "cpu_cores": 2,
+            "memory": 8,
+            "storage": 50,
+            "max_nics": 2
+          }
+        },
+        "standard_d4_v3": {
+          "features": {
+            "cpu_cores": 4,
+            "memory": 16,
+            "storage": 100,
+            "max_nics": 2
+          }
+        },
+        "standard_d8_v3": {
+          "features": {
+            "cpu_cores": 8,
+            "memory": 32,
+            "storage": 200,
+            "max_nics": 4
+          }
+        },
+        "standard_d16_v3": {
+          "features": {
+            "cpu_cores": 16,
+            "memory": 64,
+            "storage": 400,
+            "max_nics": 8
+          }
+        },
+        "standard_d32_v3": {
+          "features": {
+            "cpu_cores": 32,
+            "memory": 128,
+            "storage": 800,
+            "max_nics": 8
+          }
+        },
+        "standard_D48_v3": {
+          "features": {
+            "cpu_cores": 48,
+            "memory": 192,
+            "storage": 1200,
+            "max_nics": 8
+          }
+        },
+        "standard_d64_v3": {
+          "features": {
+            "cpu_cores": 64,
+            "memory": 256,
+            "storage": 1600,
+            "max_nics": 8
+          }
+        }
+      }
+    }
+  }
+}

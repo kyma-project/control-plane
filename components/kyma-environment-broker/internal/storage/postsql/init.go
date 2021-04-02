@@ -26,12 +26,12 @@ const (
 
 // InitializeDatabase opens database connection and initializes schema if it does not exist
 func InitializeDatabase(connectionURL string, retries int, log logrus.FieldLogger) (*dbr.Connection, error) {
-	connection, err := WaitForDatabaseAccess(connectionURL, retries, log)
+	connection, err := WaitForDatabaseAccess(connectionURL, retries, 100*time.Millisecond, log)
 	if err != nil {
 		return nil, err
 	}
 
-	initialized, err := checkIfDatabaseInitialized(connection)
+	initialized, err := CheckIfDatabaseInitialized(connection)
 	if err != nil {
 		closeDBConnection(connection, log)
 		return nil, errors.Wrap(err, "Failed to check if database is initialized")
@@ -53,7 +53,7 @@ func closeDBConnection(db *dbr.Connection, log logrus.FieldLogger) {
 
 const TableNotExistsError = "42P01"
 
-func checkIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
+func CheckIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
 	checkQuery := fmt.Sprintf(`SELECT '%s.%s'::regclass;`, schemaName, InstancesTableName)
 
 	row := db.QueryRow(checkQuery)
@@ -74,7 +74,7 @@ func checkIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
 	return tableName == InstancesTableName, nil
 }
 
-func WaitForDatabaseAccess(connString string, retryCount int, log logrus.FieldLogger) (*dbr.Connection, error) {
+func WaitForDatabaseAccess(connString string, retryCount int, sleepTime time.Duration, log logrus.FieldLogger) (*dbr.Connection, error) {
 	var connection *dbr.Connection
 	var err error
 	for ; retryCount > 0; retryCount-- {
@@ -93,8 +93,8 @@ func WaitForDatabaseAccess(connString string, retryCount int, log logrus.FieldLo
 			log.Info("Failed to close database ...")
 		}
 
-		log.Info("Failed to access database, waiting 5 seconds to retry...")
-		time.Sleep(5 * time.Second)
+		log.Infof("Failed to access database, waiting %v to retry...", sleepTime)
+		time.Sleep(sleepTime)
 	}
 
 	return nil, errors.New("timeout waiting for database access")
