@@ -49,7 +49,11 @@ type Process struct {
 
 const shootKubeconfigKey = "kubeconfig"
 
-func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) (record kmccache.Record, err error) {
+var (
+	numOfRuntimes, previousNumOfRuntimes, rateChanged float64
+)
+
+func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) (record metriscache.Record, err error) {
 	ctx := context.Background()
 	var ok bool
 
@@ -73,12 +77,14 @@ func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) 
 		var secret *corev1.Secret
 		secret, err = p.SecretClient.Get(ctx, shootName)
 		if err != nil {
+			gardenerErrorCount.WithLabelValues("secret").Inc()
 			return
 		}
 
 		record.KubeConfig = string(secret.Data[shootKubeconfigKey])
 		if record.KubeConfig == "" {
 			err = fmt.Errorf("kubeconfig for shoot not found")
+			gardenerErrorCount.WithLabelValues("kubeconfig").Inc()
 			return
 		}
 	}
@@ -87,12 +93,14 @@ func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) 
 	var shoot *gardenerv1beta1.Shoot
 	shoot, err = p.ShootClient.Get(ctx, shootName)
 	if err != nil {
+		gardenerErrorCount.WithLabelValues("shoot").Inc()
 		return
 	}
 
 	// Get nodes dynamic client
 	nodesClient, err := p.NodeConfig.NewClient(record.KubeConfig)
 	if err != nil {
+		skrErrorCount.WithLabelValues("nodes_client").Inc()
 		return
 	}
 
@@ -100,22 +108,26 @@ func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) 
 	var nodes *corev1.NodeList
 	nodes, err = nodesClient.List(ctx)
 	if err != nil {
+		skrErrorCount.WithLabelValues("nodes").Inc()
 		return
 	}
 
 	if len(nodes.Items) == 0 {
 		err = fmt.Errorf("no nodes to process")
+		skrErrorCount.WithLabelValues("nodes_items").Inc()
 		return
 	}
 
 	// Get PVCs
 	pvcClient, err := p.PVCConfig.NewClient(record.KubeConfig)
 	if err != nil {
+		skrErrorCount.WithLabelValues("pvc_client").Inc()
 		return
 	}
 	var pvcList *corev1.PersistentVolumeClaimList
 	pvcList, err = pvcClient.List(ctx)
 	if err != nil {
+		skrErrorCount.WithLabelValues("pvc").Inc()
 		return
 	}
 
@@ -123,10 +135,12 @@ func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) 
 	var svcList *corev1.ServiceList
 	svcClient, err := p.SvcConfig.NewClient(record.KubeConfig)
 	if err != nil {
+		skrErrorCount.WithLabelValues("svc_client").Inc()
 		return
 	}
 	svcList, err = svcClient.List(ctx)
 	if err != nil {
+		skrErrorCount.WithLabelValues("svc").Inc()
 		return
 	}
 
@@ -164,17 +178,26 @@ func (p Process) getOldRecordIfMetricExists(subAccountID string) (*kmccache.Reco
 // pollKEBForRuntimes polls KEB for runtimes information
 func (p *Process) pollKEBForRuntimes() {
 	kebReq, err := p.KEBClient.NewRequest()
+	numOfRuntimes = 0.0
 
 	if err != nil {
 		p.Logger.Fatalf("failed to create a new request for KEB: %v", err)
 	}
 	for {
+		previousNumOfRuntimes = numOfRuntimes
 		runtimesPage, err := p.KEBClient.GetAllRuntimes(kebReq)
 		if err != nil {
+			kebErrorCount.WithLabelValues("failed").Inc()
 			p.Logger.Errorf("failed to get runtimes from KEB: %v", err)
 			time.Sleep(p.KEBClient.Config.PollWaitDuration)
 			continue
 		}
+		kebErrorCount.Reset()
+		numOfRuntimes = float64(runtimesPage.Count)
+		clustersScraped.WithLabelValues(kebReq.RequestURI).Set(float64(runtimesPage.Count))
+		rateChanged = numOfRuntimes / previousNumOfRuntimes
+		runtimesRateChanged.WithLabelValues(kebReq.RequestURI).Set(rateChanged)
+
 		p.Logger.Debugf("num of runtimes are: %d", runtimesPage.Count)
 		p.populateCacheAndQueue(runtimesPage)
 		p.Logger.Debugf("length of the cache after KEB is done populating: %d", p.Cache.ItemCount())
@@ -259,6 +282,7 @@ func (p *Process) execute(identifier int) {
 			// Nothing to do further hence continue
 			continue
 		}
+		edpErrorCount.Reset()
 		p.Logger.Infof("[worker: %d] successfully sent event stream for subaccountID: %s, shoot: %s", identifier, subAccountID, record.ShootName)
 
 		if !isOldMetricValid {
@@ -284,21 +308,26 @@ func (p Process) getRecordWithOldOrNewMetric(identifier int, subAccountID string
 		}
 		return oldRecord, true, nil
 	}
+	gardenerErrorCount.Reset()
+	skrErrorCount.Reset()
 	return &record, false, nil
 }
 
 func (p Process) sendEventStreamToEDP(tenant string, payload []byte) error {
 	edpRequest, err := p.EDPClient.NewRequest(tenant)
 	if err != nil {
+		edpErrorCount.WithLabelValues("failed_request").Inc()
 		return errors.Wrapf(err, "failed to create a new request for EDP")
 	}
 
 	resp, err := p.EDPClient.Send(edpRequest, payload)
 	if err != nil {
+		edpErrorCount.WithLabelValues("failed_send").Inc()
 		return errors.Wrapf(err, "failed to send event-stream to EDP")
 	}
 
 	if !isSuccess(resp.StatusCode) {
+		edpErrorCount.WithLabelValues(fmt.Sprintf("http_%d", resp.StatusCode))
 		return fmt.Errorf("failed to send event-stream to EDP as it returned HTTP: %d", resp.StatusCode)
 	}
 	return nil
@@ -338,9 +367,11 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 			if !isFound {
 				err := p.Cache.Add(runtime.SubAccountID, newRecord, cache.NoExpiration)
 				if err != nil {
+					cacheErrorCount.WithLabelValues("failed").Inc()
 					p.Logger.Errorf("failed to add subAccountID: %v to cache hence skipping queueing it", err)
 					continue
 				}
+				cacheErrorCount.Reset()
 				p.Queue.Add(runtime.SubAccountID)
 				p.Logger.Debugf("Queued and added to cache: %v", runtime.SubAccountID)
 				continue
