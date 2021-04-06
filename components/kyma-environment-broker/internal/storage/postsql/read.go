@@ -472,6 +472,18 @@ func (r readSession) GetCLSInstanceByID(clsInstanceID string) ([]dbmodel.CLSInst
 	return dtos, nil
 }
 
+func (r readSession) GetClsInstanceCountByRegion(region string) (int, error){
+	var res struct {
+		Total int
+	}
+	err := r.session.Select("count(*) as total").
+		From(CLSInstanceTableName).
+		Where(dbr.Eq("region", region)).
+		LoadOne(&res)
+
+	return res.Total, err
+}
+
 func (r readSession) GetOperationStats() ([]dbmodel.OperationStatEntry, error) {
 	var rows []dbmodel.OperationStatEntry
 	_, err := r.session.SelectBySql(fmt.Sprintf("select type, state, provisioning_parameters ->> 'plan_id' AS plan_id from %s",

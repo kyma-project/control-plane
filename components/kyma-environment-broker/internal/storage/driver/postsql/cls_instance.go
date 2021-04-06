@@ -145,3 +145,8 @@ func (s *clsInstances) Delete(clsInstanceID string) error {
 	session := s.NewWriteSession()
 	return session.DeleteCLSInstance(clsInstanceID)
 }
+
+func (s *clsInstances) GetCLSInstanceStatsByRegion(region string) (int, error) {
+	session := s.NewReadSession()
+	return session.GetClsInstanceCountByRegion(region)
+}

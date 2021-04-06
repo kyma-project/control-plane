@@ -6,13 +6,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-func RegisterAll(sub event.Subscriber, operationStatsGetter OperationsStatsGetter, instanceStatsGetter InstancesStatsGetter) {
+func RegisterAll(sub event.Subscriber, operationStatsGetter OperationsStatsGetter, instanceStatsGetter InstancesStatsGetter, clsInstanceGetter CLSInstancesStatsGetter) {
 	opResultCollector := NewOperationResultCollector()
 	opDurationCollector := NewOperationDurationCollector()
 	stepResultCollector := NewStepResultCollector()
 	prometheus.MustRegister(opResultCollector, opDurationCollector, stepResultCollector)
 	prometheus.MustRegister(NewOperationsCollector(operationStatsGetter))
 	prometheus.MustRegister(NewInstancesCollector(instanceStatsGetter))
+	prometheus.MustRegister(NewClsCollector(clsInstanceGetter))
 
 	sub.Subscribe(process.ProvisioningStepProcessed{}, opResultCollector.OnProvisioningStepProcessed)
 	sub.Subscribe(process.DeprovisioningStepProcessed{}, opResultCollector.OnDeprovisioningStepProcessed)

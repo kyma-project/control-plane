@@ -156,3 +156,7 @@ func validateRegion(r string) error {
 
 	return fmt.Errorf("unsupported region: %s (%s supported only)", r, strings.Join(supportedRegions, ","))
 }
+
+func GetClsRegions() []string{
+	return []string{RegionUS, RegionEurope}
+}
