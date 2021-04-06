@@ -53,42 +53,22 @@ type SMClientFactory interface {
 
 type InitialisationStep struct {
 	operationManager            *process.ProvisionOperationManager
-	instanceStorage             storage.Instances
-	provisionerClient           provisioner.Client
-	directorClient              DirectorClient
 	inputBuilder                input.CreatorForPlan
-	externalEvalCreator         *ExternalEvalCreator
-	internalEvalUpdater         *InternalEvalUpdater
-	iasType                     *IASType
 	operationTimeout            time.Duration
 	provisioningTimeout         time.Duration
 	runtimeVerConfigurator      RuntimeVersionConfiguratorForProvisioning
 	serviceManagerClientFactory SMClientFactory
-	operationStorage            storage.Operations
 }
 
 func NewInitialisationStep(os storage.Operations,
-	is storage.Instances,
-	pc provisioner.Client,
-	dc DirectorClient,
 	b input.CreatorForPlan,
-	avsExternalEvalCreator *ExternalEvalCreator,
-	avsInternalEvalUpdater *InternalEvalUpdater,
-	iasType *IASType,
 	provisioningTimeout time.Duration,
 	operationTimeout time.Duration,
 	rvc RuntimeVersionConfiguratorForProvisioning,
 	smcf SMClientFactory) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:            process.NewProvisionOperationManager(os),
-		instanceStorage:             is,
-		operationStorage:            os,
-		provisionerClient:           pc,
-		directorClient:              dc,
 		inputBuilder:                b,
-		externalEvalCreator:         avsExternalEvalCreator,
-		internalEvalUpdater:         avsInternalEvalUpdater,
-		iasType:                     iasType,
 		operationTimeout:            operationTimeout,
 		provisioningTimeout:         provisioningTimeout,
 		runtimeVerConfigurator:      rvc,
@@ -101,69 +81,15 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	if time.Since(operation.CreatedAt) > s.operationTimeout {
-		log.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout), log)
-	}
-
-	if operation.State == orchestration.Pending {
-		deprovisionOp, err := s.operationStorage.GetDeprovisioningOperationByInstanceID(operation.InstanceID)
-		if err != nil && !dberr.IsNotFound(err) {
-			log.Errorf("Unable to get deprovisioning operation: %s", err.Error())
-			return operation, time.Second, nil
-		}
-		if deprovisionOp != nil && deprovisionOp.State == domain.InProgress {
-			return operation, time.Minute, nil
-		}
-
-		// if there was a deprovisioning process before, take new InstanceDetails
-		if deprovisionOp != nil {
-			inst, err := s.instanceStorage.GetByID(operation.InstanceID)
-			if err != nil {
-				if dberr.IsNotFound(err) {
-					log.Errorf("Instance does not exists.")
-					return s.operationManager.OperationFailed(operation, "The instance does not exists", log)
-				}
-				log.Errorf("Unable to get the instance: %s", err.Error())
-				return operation, time.Second, nil
-			}
-			log.Infof("Setting the newest InstanceDetails")
-			operation.InstanceDetails, err = inst.GetInstanceDetails()
-			if err != nil {
-				log.Errorf("Unable to provide Instance details: %s", err.Error())
-				return s.operationManager.OperationFailed(operation, "Unable to provide Instance details.", log)
-			}
-		}
-		log.Infof("Setting the operation to 'InProgress'")
-		operation.State = domain.InProgress
-	}
-
 	operation.SMClientFactory = s.serviceManagerClientFactory
 
-	inst, err := s.instanceStorage.GetByID(operation.InstanceID)
-	switch {
-	case err == nil:
-		if inst.RuntimeID == "" {
-			log.Info("runtimeID not exist, initialize runtime input request")
-			return s.initializeRuntimeInputRequest(operation, log)
-		}
-		log.Info("runtimeID exist, check instance status")
-		return s.checkRuntimeStatus(operation, log.WithField("runtimeID", inst.RuntimeID))
-	case dberr.IsNotFound(err):
-		log.Info("instance not exist")
-		return s.operationManager.OperationFailed(operation, "instance was not created", log)
-	default:
-		log.Errorf("unable to get instance from storage: %s", err)
-		return operation, 1 * time.Second, nil
-	}
-}
-
-func (s *InitialisationStep) initializeRuntimeInputRequest(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	// configure the Kyma version to use
 	err := s.configureKymaVersion(&operation, log)
 	if err != nil {
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
 	}
 
+	// create Provisioner InputCreator
 	log.Infof("create provisioner input creator for %q plan ID", operation.ProvisioningParameters.PlanID)
 	creator, err := s.inputBuilder.CreateProvisionInput(operation.ProvisioningParameters, operation.RuntimeVersion)
 	switch {
@@ -195,163 +121,4 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.Provisioni
 		return errors.New("unable to update operation with RuntimeVersion property")
 	}
 	return nil
-}
-
-func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	if time.Since(operation.UpdatedAt) > s.provisioningTimeout {
-		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout), log)
-	}
-
-	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
-	if err != nil {
-		return operation, 10 * time.Second, nil
-	}
-
-	if operation.ProvisionerOperationID == "" {
-		msg := "Operation dos not contain Provisioner Operation ID"
-		log.Error(msg)
-		return s.operationManager.OperationFailed(operation, msg, log)
-	}
-
-	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
-	if err != nil {
-		log.Errorf("call to provisioner RuntimeOperationStatus failed: %s", err.Error())
-		return operation, 1 * time.Minute, nil
-	}
-	log.Infof("call to provisioner returned %s status", status.State.String())
-
-	var msg string
-	if status.Message != nil {
-		msg = *status.Message
-	}
-
-	switch status.State {
-	case gqlschema.OperationStateSucceeded:
-		repeat, err := s.handleDashboardURL(instance, log)
-		if repeat != 0 {
-			return operation, repeat, nil
-		}
-		if err != nil {
-			log.Errorf("cannot handle dashboard URL: %s", err)
-			return s.operationManager.OperationFailed(operation, "cannot handle dashboard URL", log)
-		}
-		return s.launchPostActions(operation, instance, log, msg)
-	case gqlschema.OperationStateInProgress:
-		return operation, 2 * time.Minute, nil
-	case gqlschema.OperationStatePending:
-		return operation, 2 * time.Minute, nil
-	case gqlschema.OperationStateFailed:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), log)
-	}
-
-	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), log)
-}
-
-func (s *InitialisationStep) handleDashboardURL(instance *internal.Instance, log logrus.FieldLogger) (time.Duration, error) {
-	dashboardURL, err := s.directorClient.GetConsoleURL(instance.GlobalAccountID, instance.RuntimeID)
-	if kebError.IsTemporaryError(err) {
-		log.Errorf("cannot get console URL from director client: %s", err)
-		return 3 * time.Minute, nil
-	}
-	if err != nil {
-		return 0, errors.Wrapf(err, "while getting URL from director")
-	}
-
-	if instance.DashboardURL != dashboardURL {
-		return 0, errors.Errorf("dashboard URL from instance %s is not equal to dashboard URL from director %s", instance.DashboardURL, dashboardURL)
-	}
-
-	return 0, nil
-}
-
-func (s *InitialisationStep) launchPostActions(operation internal.ProvisioningOperation, instance *internal.Instance, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
-	repeat := time.Duration(0)
-
-	// Mark post-actions in description, reset UpdatedAt as provisioning status check is completed
-	if !strings.Contains(operation.Description, postActionsDescription) {
-		operation, repeat = s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
-			operation.Description = fmt.Sprintf("%s : %s", operation.Description, postActionsDescription)
-		}, log)
-		if repeat != 0 {
-			return operation, repeat, nil
-		}
-	}
-
-	// action #1
-	operation, repeat, err := s.createExternalEval(operation, instance, log)
-	if err != nil || repeat != 0 {
-		if err != nil {
-			log.Errorf("while creating external Evaluation: %s", err)
-			return operation, repeat, err
-		}
-		return operation, repeat, nil
-	}
-
-	// action #2
-	tags, operation, repeat, err := s.createTagsForRuntime(operation, instance)
-	if err != nil || repeat != 0 {
-		log.Errorf("while creating Tags for Evaluation: %s", err)
-		return operation, repeat, nil
-	}
-	operation, repeat, err = s.internalEvalUpdater.AddTagsToEval(tags, operation, "", log)
-	if err != nil || repeat != 0 {
-		log.Errorf("while adding Tags to Evaluation: %s", err)
-		return operation, repeat, nil
-	}
-
-	// action #3
-	repeat, err = s.iasType.ConfigureType(operation, instance.DashboardURL, log)
-	if err != nil || repeat != 0 {
-		return operation, repeat, nil
-	}
-	if !s.iasType.Disabled() {
-		grafanaPath := strings.Replace(instance.DashboardURL, "console.", "grafana.", 1)
-		err = s.directorClient.SetLabel(instance.GlobalAccountID, instance.RuntimeID, grafanaURLLabel, grafanaPath)
-		if err != nil {
-			log.Errorf("Cannot set labels in director: %s", err)
-		} else {
-			log.Infof("Label %s:%s set correctly", grafanaURLLabel, instance.DashboardURL)
-		}
-	}
-
-	return s.operationManager.OperationSucceeded(operation, msg, log)
-}
-
-func (s *InitialisationStep) createExternalEval(operation internal.ProvisioningOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	if operation.ProvisioningParameters.PlanID == broker.TrialPlanID {
-		log.Info("skipping AVS external evaluation creation for trial plan")
-		return operation, 0, nil
-	}
-	log.Infof("creating external evaluation for instance %s", instance.InstanceID)
-	operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL, log)
-	if err != nil || repeat != 0 {
-		return operation, repeat, err
-	}
-	return operation, 0, nil
-}
-
-func (s *InitialisationStep) createTagsForRuntime(operation internal.ProvisioningOperation, instance *internal.Instance) ([]*avs.Tag, internal.ProvisioningOperation, time.Duration, error) {
-
-	status, err := s.provisionerClient.RuntimeStatus(instance.GlobalAccountID, operation.RuntimeID)
-	if err != nil {
-		return []*avs.Tag{}, operation, 1 * time.Minute, err
-	}
-
-	result := []*avs.Tag{
-		{
-			Content:    ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Name),
-			TagClassId: s.internalEvalUpdater.avsConfig.GardenerShootNameTagClassId,
-		},
-		{
-			Content:    ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Seed),
-			TagClassId: s.internalEvalUpdater.avsConfig.GardenerSeedNameTagClassId,
-		},
-		{
-			Content:    ptr.ToString(status.RuntimeConfiguration.ClusterConfig.Region),
-			TagClassId: s.internalEvalUpdater.avsConfig.RegionTagClassId,
-		},
-	}
-
-	return result, operation, 0 * time.Second, nil
 }

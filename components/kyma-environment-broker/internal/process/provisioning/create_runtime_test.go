@@ -49,6 +49,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	memoryStorage := storage.NewMemoryStorage()
 
 	operation := fixOperationCreateRuntime(t, broker.GCPPlanID, "europe-west4-a")
+	operation.ShootDomain = "kyma.org"
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
@@ -176,7 +177,8 @@ func fixOperationCreateRuntime(t *testing.T, planID, region string) internal.Pro
 	provisioningOperation.State = domain.InProgress
 	provisioningOperation.InputCreator = fixInputCreator(t)
 	provisioningOperation.InstanceDetails.ShootName = shootName
-	provisioningOperation.ProvisioningParameters = fixProvisioningParameters(planID, region)
+	provisioningOperation.ProvisioningParameters = FixProvisioningParameters(planID, region)
+	provisioningOperation.RuntimeID = ""
 
 	return provisioningOperation
 }
@@ -188,7 +190,7 @@ func fixInstance() internal.Instance {
 	return instance
 }
 
-func fixProvisioningParameters(planID, region string) internal.ProvisioningParameters {
+func FixProvisioningParameters(planID, region string) internal.ProvisioningParameters {
 	return fixProvisioningParametersWithPlanID(planID, region)
 }
 

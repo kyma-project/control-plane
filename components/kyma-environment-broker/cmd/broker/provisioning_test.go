@@ -29,6 +29,8 @@ func TestProvisioning_HappyPath(t *testing.T) {
 
 	// when
 	suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+	// simulate the installed fresh Kyma sets the proper label in the Director
+	suite.MarkDirectorWithConsoleURL(provisioningOperationID)
 
 	// then
 	suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)

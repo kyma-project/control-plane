@@ -2,6 +2,7 @@ package provisioning
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -20,7 +21,13 @@ type StagedManager struct {
 	operationStorage storage.Operations
 	publisher        event.Publisher
 
-	stages []*stage
+	stages           []*stage
+	operationTimeout time.Duration
+}
+
+type Step interface {
+	Name() string
+	Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error)
 }
 
 type stage struct {
@@ -28,20 +35,16 @@ type stage struct {
 	steps []Step
 }
 
-type stepInfo struct {
-	step   Step
-	weight int
-}
-
 func (s *stage) AddStep(step Step) {
 	s.steps = append(s.steps, step)
 }
 
-func NewStagedManager(storage storage.Operations, pub event.Publisher, logger logrus.FieldLogger) *StagedManager {
+func NewStagedManager(storage storage.Operations, pub event.Publisher, operationTimeout time.Duration, logger logrus.FieldLogger) *StagedManager {
 	return &StagedManager{
 		log:              logger,
 		operationStorage: storage,
 		publisher:        pub,
+		operationTimeout: operationTimeout,
 	}
 }
 
@@ -79,6 +82,16 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 
 	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID, "planID": operation.ProvisioningParameters.PlanID})
 	logOperation.Infof("Start process operation steps for GlobalAcocunt=%s, ", operation.ProvisioningParameters.ErsContext.GlobalAccountID)
+	if time.Since(operation.CreatedAt) > m.operationTimeout {
+		logOperation.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
+		operation.State = domain.Failed
+		_, err = m.operationStorage.UpdateProvisioningOperation(*operation)
+		if err != nil {
+			logOperation.Infof("Unable to save operation with finished the provisioning process")
+			return time.Second, err
+		}
+		return 0, errors.New("operation has reached the time limit")
+	}
 
 	var when time.Duration
 	processedOperation := *operation
@@ -93,7 +106,7 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 				continue
 			}
 			logStep := logOperation.WithField("step", step.Name()).
-				WithField("stage", stage)
+				WithField("stage", stage.name)
 			logStep.Infof("Start step")
 
 			processedOperation, when, err = m.runStep(step, processedOperation, logStep)
@@ -119,6 +132,13 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 		if err != nil {
 			return time.Second, nil
 		}
+	}
+
+	processedOperation.State = domain.Succeeded
+	_, err = m.operationStorage.UpdateProvisioningOperation(processedOperation)
+	if err != nil {
+		logOperation.Infof("Unable to save operation with finished the provisioning process")
+		return time.Second, err
 	}
 
 	return 0, nil

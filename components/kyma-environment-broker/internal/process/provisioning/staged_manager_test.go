@@ -2,8 +2,15 @@ package provisioning_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
@@ -18,7 +25,7 @@ import (
 func TestHappyPath(t *testing.T) {
 	// given
 	const opID = "op-0001234"
-	operation := provisioning.FixProvisionOperation("op-0001234")
+	operation := FixProvisionOperation("op-0001234")
 	mgr, operationStorage, eventCollector := SetupStagedManager(operation)
 	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector})
 	mgr.AddStep("stage-1", &testingStep{name: "second", eventPublisher: eventCollector})
@@ -42,7 +49,7 @@ func TestHappyPath(t *testing.T) {
 func TestWithRetry(t *testing.T) {
 	// given
 	const opID = "op-0001234"
-	operation := provisioning.FixProvisionOperation("op-0001234")
+	operation := FixProvisionOperation("op-0001234")
 	mgr, operationStorage, eventCollector := SetupStagedManager(operation)
 	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector})
 	mgr.AddStep("stage-1", &testingStep{name: "second", eventPublisher: eventCollector})
@@ -63,7 +70,7 @@ func TestWithRetry(t *testing.T) {
 
 func TestSkipFinishedStage(t *testing.T) {
 	// given
-	operation := provisioning.FixProvisionOperation("op-0001234")
+	operation := FixProvisionOperation("op-0001234")
 	operation.FinishStage("stage-1")
 
 	mgr, operationStorage, eventCollector := SetupStagedManager(operation)
@@ -85,7 +92,7 @@ func TestSkipFinishedStage(t *testing.T) {
 
 func TestSkipSucceededSteps(t *testing.T) {
 	// given
-	operation := provisioning.FixProvisionOperation("op-0001234")
+	operation := FixProvisionOperation("op-0001234")
 
 	mgr, _, eventCollector := SetupStagedManager(operation)
 	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector})
@@ -103,14 +110,14 @@ func TestSkipSucceededSteps(t *testing.T) {
 	eventCollector.AssertProcessedSteps(t, []string{"first", "second", "second"})
 }
 
-func SetupStagedManager(op internal.ProvisioningOperation) (*provisioning.StagedManager, storage.Operations, *provisioning.CollectingEventHandler) {
+func SetupStagedManager(op internal.ProvisioningOperation) (*provisioning.StagedManager, storage.Operations, *CollectingEventHandler) {
 	memoryStorage := storage.NewMemoryStorage()
 	memoryStorage.Operations().InsertProvisioningOperation(op)
 
-	eventCollector := &provisioning.CollectingEventHandler{}
+	eventCollector := &CollectingEventHandler{}
 	l := logrus.New()
 	l.SetLevel(logrus.DebugLevel)
-	mgr := provisioning.NewStagedManager(memoryStorage.Operations(), eventCollector, l)
+	mgr := provisioning.NewStagedManager(memoryStorage.Operations(), eventCollector, 3*time.Second, l)
 	mgr.DefineStages([]string{"stage-1", "stage-2"})
 
 	return mgr, memoryStorage.Operations(), eventCollector
@@ -147,4 +154,63 @@ func (s *onceRetryingStep) Run(operation internal.ProvisioningOperation, logger 
 	}
 	logger.Infof("Running")
 	return operation, 0, nil
+}
+
+func FixProvisionOperation(ID string) internal.ProvisioningOperation {
+	provisioningOperation := fixture.FixProvisioningOperation(ID, "fea2c1a1-139d-43f6-910a-a618828a79d5")
+	provisioningOperation.FinishedStages = make(map[string]struct{})
+	provisioningOperation.State = domain.InProgress
+	provisioningOperation.Description = ""
+	provisioningOperation.ProvisioningParameters = provisioning.FixProvisioningParameters(broker.AzurePlanID, "westeurope")
+
+	return provisioningOperation
+}
+
+type CollectingEventHandler struct {
+	mu             sync.Mutex
+	StepsProcessed []string // collects events from the Manager
+	stepsExecuted  []string // collects events from testing steps
+}
+
+func (h *CollectingEventHandler) OnStepExecuted(_ context.Context, ev interface{}) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.stepsExecuted = append(h.stepsExecuted, ev.(string))
+	return nil
+}
+
+func (h *CollectingEventHandler) OnStepProcessed(_ context.Context, ev interface{}) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.StepsProcessed = append(h.StepsProcessed, ev.(process.ProvisioningStepProcessed).StepName)
+	return nil
+}
+
+func (h *CollectingEventHandler) Publish(ctx context.Context, ev interface{}) {
+	switch ev.(type) {
+	case process.ProvisioningStepProcessed:
+		h.OnStepProcessed(ctx, ev)
+	case string:
+		h.OnStepExecuted(ctx, ev)
+	}
+}
+
+func (h *CollectingEventHandler) WaitForEvents(t *testing.T, count int) {
+	assert.NoError(t, wait.PollImmediate(20*time.Millisecond, 3*time.Second, func() (bool, error) {
+		return len(h.StepsProcessed) == count, nil
+	}))
+}
+
+func (h *CollectingEventHandler) AssertProcessedSteps(t *testing.T, stepNames []string) {
+	h.WaitForEvents(t, len(stepNames))
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	for i, stepName := range stepNames {
+		processed := h.StepsProcessed[i]
+		executed := h.stepsExecuted[i]
+		assert.Equal(t, stepName, processed)
+		assert.Equal(t, stepName, executed)
+	}
+	assert.Len(t, h.StepsProcessed, len(stepNames))
 }

@@ -201,6 +201,7 @@ func FixProvisioningOperation(operationId, instanceId string) internal.Provision
 		},
 		InputCreator:    FixInputCreator(),
 		SMClientFactory: nil,
+		DashboardURL:    "https://console.kyma.org",
 	}
 }
 

@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	automock2 "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias/automock"
@@ -30,15 +32,28 @@ func TestIASType_ConfigureType(t *testing.T) {
 		bundle.On("ConfigureServiceProviderType", iasTypeURLDashboard).Return(nil).Once()
 		bundleBuilder.On("NewBundle", iasTypeInstanceID, inputID).Return(bundle, nil).Once()
 	}
+	directorClient := &automock2.DirectorClient{}
+	directorClient.On("SetLabel", statusGlobalAccountID, statusRuntimeID, grafanaURLLabel, "https://grafana.kyma.org").Return(nil)
+	defer directorClient.AssertExpectations(t)
 
-	step := NewIASType(bundleBuilder, false)
+	step := NewIASTypeStep(bundleBuilder, directorClient)
 
 	// when
-	repeat, err := step.ConfigureType(internal.ProvisioningOperation{
+	_, repeat, err := step.Run(internal.ProvisioningOperation{
 		Operation: internal.Operation{
+			InstanceDetails: internal.InstanceDetails{
+				ShootDomain: "kyma.org",
+				RuntimeID:   statusRuntimeID,
+			},
+			ProvisioningParameters: internal.ProvisioningParameters{
+				ErsContext: internal.ERSContext{
+					GlobalAccountID: statusGlobalAccountID,
+				},
+			},
 			InstanceID: iasTypeInstanceID,
 		},
-	}, iasTypeURLDashboard, logger.NewLogDummy())
+		DashboardURL: iasTypeURLDashboard,
+	}, logger.NewLogDummy())
 
 	// then
 	assert.Equal(t, time.Duration(0), repeat)

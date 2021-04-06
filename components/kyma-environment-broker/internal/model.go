@@ -239,6 +239,7 @@ type ProvisioningOperation struct {
 	Operation
 
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
+	DashboardURL   string             `json:"dashboardURL"`
 
 	// following fields are not stored in the storage
 	InputCreator ProvisionerInputCreator `json:"-"`
@@ -447,6 +448,9 @@ func (o *Operation) IsStepDone(stepName string) bool {
 }
 
 func (o *Operation) FinishStage(stageName string) {
+	if o.FinishedStages == nil {
+		o.FinishedStages = make(map[string]struct{})
+	}
 	o.FinishedStages[stageName] = struct{}{}
 }
 

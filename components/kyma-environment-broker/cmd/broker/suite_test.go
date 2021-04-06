@@ -472,29 +472,28 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	iasFakeClient := ias.NewFakeClient()
 	bundleBuilder := ias.NewBundleBuilder(iasFakeClient, cfg.IAS)
 
-	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
-
 	edpClient := edp.NewFakeClient()
 
 	accountProvider := fixAccountProvider()
 
 	smcf := fixServiceManagerFactory()
 
-	directorClient := director.NewFakeClient(dashboardURL)
+	directorClient := director.NewFakeClient()
 
 	eventBroker := event.NewPubSub(logs)
 
 	// switch to StagedManager when the feature is enabled
-	provisionStagedManager := provisioning.NewStagedManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
 
-	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
-	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, smcf, bundleBuilder, iasTypeSetter, edpClient, accountProvider, inMemoryFs, logs)
+	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
+	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
+		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
+		runtimeOverrides, smcf, bundleBuilder, edpClient, accountProvider, inMemoryFs, logs)
 
 	provisioningQueue.SpeedUp(10000)
 
 	return &ProvisioningSuite{
 		provisionerClient:   provisionerClient,
-		provisioningManager: provisionStagedManager,
+		provisioningManager: provisionManager,
 		provisioningQueue:   provisioningQueue,
 		storage:             db,
 		directorClient:      directorClient,
@@ -533,6 +532,8 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 	require.NoError(s.t, err)
 	operation.ShootName = shootName
 	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, "garden-dummy", strings.Trim("kyma.io", "."))
+	operation.DashboardURL = dashboardURL
+	operation.State = orchestration.Pending
 
 	err = s.storage.Operations().InsertProvisioningOperation(operation)
 	require.NoError(s.t, err)
@@ -678,7 +679,7 @@ func (s *ProvisioningSuite) AssertDirectorGrafanaTag(operationID string) {
 	assert.NoError(s.t, err)
 	val, exists := s.directorClient.GetLabel(globalAccountID, op.RuntimeID, "operator_grafanaUrl")
 	assert.True(s.t, exists)
-	assert.Equal(s.t, "http://grafana.garden-dummy.kyma.io", val)
+	assert.Equal(s.t, fmt.Sprintf("https://grafana.%s.garden-dummy.kyma.io", op.ShootName), val)
 }
 
 func (s *ProvisioningSuite) AssertProvisioningRequest() {
@@ -749,6 +750,12 @@ func (s *ProvisioningSuite) AssertSharedSubscription(shared bool) {
 	} else {
 		assert.Equal(s.t, secretName, subscriptionNameRegular)
 	}
+}
+
+func (s *ProvisioningSuite) MarkDirectorWithConsoleURL(operationID string) {
+	op, err := s.storage.Operations().GetProvisioningOperationByID(operationID)
+	assert.NoError(s.t, err)
+	s.directorClient.SetConsoleURL(op.RuntimeID, op.DashboardURL)
 }
 
 func fixConfig() *Config {

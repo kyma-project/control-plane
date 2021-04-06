@@ -46,6 +46,9 @@ func (s *CreateRuntimeStep) Name() string {
 }
 
 func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	if operation.RuntimeID != "" {
+		return operation, 0, nil
+	}
 	if time.Since(operation.UpdatedAt) > CreateRuntimeTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout), log)
@@ -142,8 +145,6 @@ func (s *CreateRuntimeStep) updateInstance(id, runtimeID, region string) error {
 }
 
 func (s *CreateRuntimeStep) createProvisionInput(operation internal.ProvisioningOperation) (gqlschema.ProvisionRuntimeInput, error) {
-	var request gqlschema.ProvisionRuntimeInput
-
 	operation.InputCreator.SetProvisioningParameters(operation.ProvisioningParameters)
 	operation.InputCreator.SetShootName(operation.ShootName)
 	operation.InputCreator.SetLabel(brokerKeyPrefix+"instance_id", operation.InstanceID)

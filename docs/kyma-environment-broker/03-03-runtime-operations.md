@@ -15,18 +15,24 @@ Kyma Environment Broker allows you to configure operations that you can run on a
 Each provisioning step is responsible for a separate part of preparing Runtime parameters. For example, in a step you can provide tokens, credentials, or URLs to integrate Kyma Runtime with external systems. All data collected in provisioning steps are used in the step called [`create_runtime`](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go) which transforms the data into a request input. The request is sent to the Runtime Provisioner component which provisions a Runtime.
 The provisioning process contains the following steps:
 
-| Name                                   | Domain                   | Description                                                                                                                                     | Owner            |
-|----------------------------------------|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
-| Initialization                         | Provisioning             | Starts the provisioning process and asks the Director for the Dashboard URL if the provisioning in Gardener is finished.                                | @jasiu001 (Team Gopher)       |
-| Resolve_Target_Secret                  | Hyperscaler Account Pool | Provides the name of a Gardener Secret that contains  Hypescaler account credentials used during cluster provisioning.                                | @koala7659 (Team Framefrog)      |
-| AVS_Configuration_Step                 | AvS                      | Sets up external and internal monitoring of Kyma Runtime.                                      | @jasiu001 (Team Gopher)     |
-| IAS_Registration                       | Identity Authentication Service | Registers a new ServiceProvider on IAS, generates client ID and Secret, and inserts them to Grafana overrides. This step is not required and can be disabled. | @jasiu001 (Team Gopher) |
-| EDP_Registration                       | Event Data Platform      | Registers an SKR on Event Data Platform with the necessary parameters. This step is not required and can be disabled. | @jasiu001 (Team Gopher) |
-| Provision Azure Event Hubs             | Event Hub                | Creates the Azure Event Hub Namespace which is a managed Kafka cluster for a Kyma Runtime.                                                       | @k15r (Team SkyDivingTunas)     |
-| Provision EMS                          | EMS                      | Provisions and binds an Enterprise Messaging instance for a Kyma Runtime using the Service Manager.                                | @k15r (Team SkyDivingTunas)     |
-| Overrides_From_Secrets_And_Config_Step | Kyma overrides           | Configures default overrides for Kyma.                                                                                                          | @jasiu001 (Team Gopher)        |
-| ServiceManagerOverrides                | Service Manager          | Configures overrides with Service Manager credentials.                                                                                          | Team Gopher        |
-| Create_Runtime                         | Provisioning             | Triggers provisioning of a Runtime in the Runtime Provisioner.                                                                                                       | @jasiu001 (Team Gopher)        |
+| Stage          | Name                                   | Domain                   | Description                                                                                                                                     | Owner            |
+|----------------|----------------------------------------|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
+| create_runtime | Initialization                         | Provisioning             | Starts the provisioning process.                                                                                                                | @jasiu001 (Team Gopher)       |
+| create_runtime | Resolve_Target_Secret                  | Hyperscaler Account Pool | Provides the name of a Gardener Secret that contains  Hypescaler account credentials used during cluster provisioning.                                | @koala7659 (Team Framefrog)      |
+| create_runtime | AVS_Create_Internal_Eval_Step          | AvS                      | Sets up internal monitoring of Kyma Runtime.                                      | @jasiu001 (Team Gopher)     |
+| create_runtime | IAS_Registration                       | Identity Authentication Service | Registers a new ServiceProvider on IAS, generates client ID and Secret, and inserts them to Grafana overrides. This step is not required and can be disabled. | @jasiu001 (Team Gopher) |
+| create_runtime | EDP_Registration                       | Event Data Platform      | Registers an SKR on Event Data Platform with the necessary parameters. This step is not required and can be disabled. | @jasiu001 (Team Gopher) |
+| create_runtime | Provision Azure Event Hubs             | Event Hub                | Creates the Azure Event Hub Namespace which is a managed Kafka cluster for a Kyma Runtime.                                                       | @k15r (Team SkyDivingTunas)     |
+| create_runtime | Provision EMS                          | EMS                      | Provisions and binds an Enterprise Messaging instance for a Kyma Runtime using the Service Manager.                                | @k15r (Team SkyDivingTunas)     |
+| create_runtime | Overrides_From_Secrets_And_Config_Step | Kyma overrides           | Configures default overrides for Kyma.                                                                                                          | @jasiu001 (Team Gopher)        |
+| create_runtime | ServiceManagerOverrides                | Service Manager          | Configures overrides with Service Manager credentials.                                                                                          | Team Gopher        |
+| create_runtime | Create_Runtime                         | Provisioning             | Triggers provisioning of a Runtime in the Runtime Provisioner.                                                                                                       | @jasiu001 (Team Gopher)        |
+| check_runtime  | Check_Runtime                          | Provisioning             | Checks the status of Provisioner process and asks the Director for the Dashboard URL if the provisioning in Gardener is finished. |  @piotrmiskiewicz (Team Gopher) | 
+| post_actions   | AVS_Create_External_Eval_Step          | AvS                      | Sets up external monitoring of Kyma Runtime.                                                                                      | @piotrmiskiewicz (Team Gopher) |
+| post_actions   | AVS_Tags                               | AvS                      | Sets up proper tags in the internal monitoring system.                                                                            | @piotrmiskiewicz (Team Gopher) |
+| post_actions   | IAS_Type                               | Identity Authentication Service | Configures OIDC authentication.                                                                                            | @piotrmiskiewicz (Team Gopher) |
+
+
 
 >**NOTE:** The timeout for processing this operation is set to `24h`.
 
@@ -215,17 +221,17 @@ You can configure Runtime operations by providing additional steps. To add a new
 
     ```go
     provisioningSteps := []struct {
-   		weight   int
+   		stage   string
    		step     provisioning.Step
    	}{
    		{
-   			weight: 1,
+   			stage: "create_runtime",
    			step:   provisioning.NewHelloWorldStep(db.Operations(), &http.Client{}),
    		},
     }
     ```
 
-    The weight of the step should be greater than or equal to 1. If you want the step to be performed before a call to the Runtime Provisioner, its weight must be lower than the weight of the `create_runtime` step.
+    Once the stage is finished (all steps in the stage has succeeded) it won't be retried (even if the application is restarted).
 
   </details>
   <details>
