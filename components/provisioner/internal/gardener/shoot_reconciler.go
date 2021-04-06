@@ -73,7 +73,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if r.auditLogConfigurator.CanEnableAuditLogsForShoot(seedName) {
 		err := r.enableAuditLogs(log, &shoot, seedName)
 		if err != nil {
-			log.Errorf("failed to enable audit logs for %s shoot: %s", shoot.Name, err.Error())
+			log.Errorf("Failed to enable audit logs for %s shoot: %s", shoot.Name, err.Error())
 		}
 	}
 
@@ -97,12 +97,7 @@ func (r *Reconciler) shouldReconcileShoot(shoot gardener_types.Shoot) (bool, err
 
 func (r *Reconciler) updateShoot(modifiedShoot *gardener_types.Shoot) error {
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		err := r.client.Update(context.Background(), modifiedShoot)
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return r.client.Update(context.Background(), modifiedShoot)
 	})
 }
 

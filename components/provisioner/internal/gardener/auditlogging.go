@@ -11,7 +11,7 @@ import (
 )
 
 const auditLogConditionType = "AuditlogServiceAvailability"
-const audiInstanceCodePattern = `cf\.[a-z0-9]*(.*?)`
+const auditInstanceCodePattern = `cf\.[a-z]+[0-9]+`
 
 type AuditLogConfigurator interface {
 	CanEnableAuditLogsForShoot(seedName string) bool
@@ -19,12 +19,14 @@ type AuditLogConfigurator interface {
 }
 
 type auditLogConfigurator struct {
-	auditLogTenantConfigPath string
+	auditLogTenantConfigPath       string
+	auditInstanceIdentifierPattern *regexp.Regexp
 }
 
 func NewAuditLogConfigurator(auditLogTenantConfigPath string) AuditLogConfigurator {
 	return &auditLogConfigurator{
-		auditLogTenantConfigPath: auditLogTenantConfigPath,
+		auditLogTenantConfigPath:       auditLogTenantConfigPath,
+		auditInstanceIdentifierPattern: regexp.MustCompile(auditInstanceCodePattern),
 	}
 }
 
@@ -33,20 +35,20 @@ func (a *auditLogConfigurator) CanEnableAuditLogsForShoot(seedName string) bool 
 }
 
 func (a *auditLogConfigurator) SetAuditLogAnnotation(shoot *gardener_types.Shoot, seed gardener_types.Seed) (bool, error) {
-	data, err := a.getConfigFromFile()
+	auditLogConfig, err := a.getConfigFromFile()
 	if err != nil {
 		return false, err
 	}
 
 	provider := getProviderType(seed)
 
-	providerConfig := data[provider]
+	providerConfig := auditLogConfig[provider]
 
 	if providerConfig == nil {
 		return false, errors.New(fmt.Sprintf("cannot find config for provider %s", provider))
 	}
 
-	auditID := getAuditLogInstanceIdentifier(seed)
+	auditID := a.getAuditLogInstanceIdentifier(seed)
 
 	if auditID == "" {
 		return false, errors.New("could not find audit identifier")
@@ -84,15 +86,14 @@ func getProviderType(seed gardener_types.Seed) string {
 	return seed.Spec.Provider.Type
 }
 
-func getAuditLogInstanceIdentifier(seed gardener_types.Seed) string {
+func (a *auditLogConfigurator) getAuditLogInstanceIdentifier(seed gardener_types.Seed) string {
 	message := findAuditLogConditionMessage(seed)
 
 	if message == "" {
 		return ""
 	}
 
-	pat := regexp.MustCompile(audiInstanceCodePattern)
-	return pat.FindString(message)
+	return a.auditInstanceIdentifierPattern.FindString(message)
 }
 
 func findAuditLogConditionMessage(seed gardener_types.Seed) string {
