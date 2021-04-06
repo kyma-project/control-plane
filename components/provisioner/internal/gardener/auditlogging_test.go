@@ -174,36 +174,35 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 	})
 
 	t.Run("should return false when shoot is already anotated", func(t *testing.T) {
-		t.Run("should annotate shoot and return true", func(t *testing.T) {
-			//given
-			shoot := &gardener_types.Shoot{}
-			shoot.Annotations[auditLogsAnnotation] = "e7382275-e835-4549-94e1-3b1101e3a1fa"
-			seed := gardener_types.Seed{
-				ObjectMeta: v1.ObjectMeta{
-					Name: "az-eu",
+		//given
+		shoot := &gardener_types.Shoot{}
+		shoot.Annotations = map[string]string{}
+		shoot.Annotations[auditLogsAnnotation] = "e7382275-e835-4549-94e1-3b1101e3a1fa"
+		seed := gardener_types.Seed{
+			ObjectMeta: v1.ObjectMeta{
+				Name: "az-eu",
+			},
+			Spec: gardener_types.SeedSpec{
+				Provider: gardener_types.SeedProvider{
+					Type: "azure"},
+			},
+			Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{
+				{Type: auditLogConditionType,
+					Message: "Auditlog landscape https://api.auditlog.cf.us21.hana.ondemand.com:8081/ successfully attached to the seed.",
 				},
-				Spec: gardener_types.SeedSpec{
-					Provider: gardener_types.SeedProvider{
-						Type: "azure"},
-				},
-				Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{
-					{Type: auditLogConditionType,
-						Message: "Auditlog landscape https://api.auditlog.cf.us21.hana.ondemand.com:8081/ successfully attached to the seed.",
-					},
-				}},
-			}
+			}},
+		}
 
-			configPath := filepath.Join("testdata", "config.json")
+		configPath := filepath.Join("testdata", "config.json")
 
-			auditLogConfigurator := NewAuditLogConfigurator(configPath)
+		auditLogConfigurator := NewAuditLogConfigurator(configPath)
 
-			//when
-			notAnnotated, err := auditLogConfigurator.SetAuditLogAnnotation(shoot, seed)
+		//when
+		notAnnotated, err := auditLogConfigurator.SetAuditLogAnnotation(shoot, seed)
 
-			//then
-			require.NoError(t, err)
-			assert.False(t, notAnnotated)
-			assert.Equal(t, "e7382275-e835-4549-94e1-3b1101e3a1fa", shoot.Annotations[auditLogsAnnotation])
-		})
+		//then
+		require.NoError(t, err)
+		assert.False(t, notAnnotated)
+		assert.Equal(t, "e7382275-e835-4549-94e1-3b1101e3a1fa", shoot.Annotations[auditLogsAnnotation])
 	})
 }
