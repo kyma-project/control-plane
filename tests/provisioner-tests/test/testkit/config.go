@@ -41,7 +41,7 @@ type KymaConfig struct {
 
 type GardenerConfig struct {
 	Providers   []string `envconfig:"default=Azure"`
-	AWSSecret   string   `envconfig:"default=''"`
+	AwsSecret   string   `envconfig:"default=''"`
 	AzureSecret string   `envconfig:"default=''"`
 	GCPSecret   string   `envconfig:"default=''"`
 }
@@ -54,11 +54,11 @@ type DirectorClientConfig struct {
 
 func (c TestConfig) String() string {
 	return fmt.Sprintf("InternalProvisionerURL=%s, Tenant=%s, "+
-		"GardenerProviders=%v, GardenerAWSSecret=%v, GardenerAzureSecret=%v, GardenerGCPSecret=%v, "+
+		"GardenerProviders=%v, GardenerAwsSecret=%v, GardenerAzureSecret=%v, GardenerGCPSecret=%v, "+
 		"DirectorClientURL=%s, DirectorClientNamespace=%s, DirectorClientOauthCredentialsSecretName=%s, "+
 		"KuberentesVersion=%s, UpgradeKubernetesVersion=%s, QueryLogging=%v",
 		c.InternalProvisionerURL, c.Tenant,
-		c.Gardener.Providers, c.Gardener.AWSSecret, c.Gardener.AzureSecret, c.Gardener.GCPSecret,
+		c.Gardener.Providers, c.Gardener.AwsSecret, c.Gardener.AzureSecret, c.Gardener.GCPSecret,
 		c.DirectorClient.URL, c.DirectorClient.Namespace, c.DirectorClient.OauthCredentialsSecretName,
 		c.KubernetesVersion, c.UpgradeKubernetesVersion, c.QueryLogging)
 }
