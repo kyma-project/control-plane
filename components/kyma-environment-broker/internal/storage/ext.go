@@ -98,4 +98,5 @@ type CLSInstances interface {
 	Insert(instance internal.CLSInstance) error
 	Update(instance internal.CLSInstance) error
 	Delete(clsInstanceID string) error
+	GetCLSInstanceStatsByRegion(region string) (int, error)
 }
