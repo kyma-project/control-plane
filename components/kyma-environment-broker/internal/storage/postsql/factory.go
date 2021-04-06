@@ -32,7 +32,7 @@ type ReadSession interface {
 	GetLMSTenant(name, region string) (dbmodel.LMSTenantDTO, dberr.Error)
 	GetCLSInstanceByGlobalAccountID(globalAccountID string) ([]dbmodel.CLSInstanceDTO, dberr.Error)
 	GetCLSInstanceByID(clsInstanceID string) ([]dbmodel.CLSInstanceDTO, dberr.Error)
-	GetClsInstanceCountByRegion(region string)(int, error)
+	GetClsInstanceCountByRegion(region string) (int, error)
 	GetOperationStats() ([]dbmodel.OperationStatEntry, error)
 	GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)

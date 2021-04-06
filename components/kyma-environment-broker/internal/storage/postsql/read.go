@@ -472,7 +472,7 @@ func (r readSession) GetCLSInstanceByID(clsInstanceID string) ([]dbmodel.CLSInst
 	return dtos, nil
 }
 
-func (r readSession) GetClsInstanceCountByRegion(region string) (int, error){
+func (r readSession) GetClsInstanceCountByRegion(region string) (int, error) {
 	var res struct {
 		Total int
 	}

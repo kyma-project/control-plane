@@ -12,9 +12,9 @@ type CLSInstancesStatsGetter interface {
 }
 
 type ClsCollector struct {
-	statsGetter CLSInstancesStatsGetter
-	clsDesc        *prometheus.Desc
-	clsRegionDesc  *prometheus.Desc
+	statsGetter   CLSInstancesStatsGetter
+	clsDesc       *prometheus.Desc
+	clsRegionDesc *prometheus.Desc
 }
 
 func NewClsCollector(statsGetter CLSInstancesStatsGetter) *ClsCollector {
