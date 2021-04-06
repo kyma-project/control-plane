@@ -95,3 +95,13 @@ func (s *clsInstances) Delete(clsInstanceID string) error {
 
 	return nil
 }
+
+func (s *clsInstances) GetCLSInstanceStatsByRegion(region string) (int, error) {
+	numberOfInstances := 0
+	for _, v := range s.data {
+		if v.Region() == region {
+			numberOfInstances++
+		}
+	}
+	return numberOfInstances, nil
+}
