@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
-	"github.com/spf13/afero"
 	"testing"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
+	"github.com/spf13/afero"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 
@@ -71,7 +72,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	var cfg Config
 	cfg.Ems.Disabled = true
 	cfg.Cls.Disabled = true
-	cfg.LMS.EnabledForGlobalAccounts="none"
+	cfg.LMS.EnabledForGlobalAccounts = "none"
 	cfg.AuditLog = auditlog.Config{
 		URL:           "https://host1:8080/aaa/v2/",
 		User:          "fooUser",
@@ -130,7 +131,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, hyperscaler.NewAccountProvider(nil, nil, nil), nil, nil,inMemoryFs, logs)
+		&cfg, hyperscaler.NewAccountProvider(nil, nil, nil), nil, nil, inMemoryFs, logs)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,

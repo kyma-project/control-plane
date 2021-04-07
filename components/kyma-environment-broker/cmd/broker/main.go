@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/spf13/afero"
 	"io"
 	"io/ioutil"
 	"log"
@@ -11,6 +10,8 @@ import (
 	"os"
 	"sort"
 	"time"
+
+	"github.com/spf13/afero"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/dlmiddlecote/sqlstats"
@@ -209,7 +210,6 @@ func main() {
 	// Auditlog
 	fileSystem := afero.NewOsFs()
 
-
 	// LMS
 	fatalOnError(cfg.LMS.Validate())
 	lmsClient := lms.NewClient(cfg.LMS, logs.WithField("service", "lmsClient"))
@@ -334,7 +334,7 @@ func main() {
 	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
-		&cfg, accountProvider, serviceManagerClientFactory, clsConfig,fileSystem, logs)
+		&cfg, accountProvider, serviceManagerClientFactory, clsConfig, fileSystem, logs)
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeResolver, upgradeEvalManager, logs)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
