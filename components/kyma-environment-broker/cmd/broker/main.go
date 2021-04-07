@@ -750,6 +750,9 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	clsClient := cls.NewClient(clsConfig)
 	clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient)
 
+	//LMS
+	lmsClient := lms.NewClient(cfg.LMS, logs.WithField("service", "lmsClient"))
+
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Orchestrations(), db.Instances(),
 		provisionerClient, inputFactory, upgradeEvalManager, icfg, runtimeVerConfigurator, smcf)
@@ -783,6 +786,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight:   3,
+			step:     upgrade_kyma.NewAuditLogOverridesStep(db.Operations(), cfg.AuditLog),
+			disabled: !cfg.Cls.Disabled,
+		},
+		{
 			weight:   4,
 			step:     upgrade_kyma.NewEmsUpgradeProvisionStep(db.Operations()),
 			disabled: cfg.Ems.Disabled,
@@ -791,6 +799,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			weight:   4,
 			step:     upgrade_kyma.NewSkipForTrialPlanStep(upgrade_kyma.NewClsUpgradeProvisionStep(clsConfig, clsProvisioner, db.Operations())),
 			disabled: cfg.Cls.Disabled,
+		},
+		{
+			weight:   5,
+			step:     upgrade_kyma.NewLmsActivationStep(cfg.LMS, upgrade_kyma.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
+			disabled: !cfg.Cls.Disabled,
 		},
 		{
 			weight:   5,
