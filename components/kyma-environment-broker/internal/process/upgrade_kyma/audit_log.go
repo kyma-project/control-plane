@@ -28,9 +28,7 @@ func (alo *AuditLogOverrides) Name() string {
 	return "Upgrade_Audit_Log_Overrides"
 }
 
-func NewAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config) *AuditLogOverrides {
-	fileSystem := afero.NewOsFs()
-
+func NewAuditLogOverridesStep(fileSystem afero.Fs, os storage.Operations, cfg auditlog.Config) *AuditLogOverrides {
 	return &AuditLogOverrides{
 		process.NewUpgradeKymaOperationManager(os),
 		fileSystem,

@@ -2,7 +2,6 @@ package upgrade_kyma
 
 import (
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -70,36 +69,10 @@ func (s *lmsCertStep) Name() string {
 // 2. request certificates
 // 3. poll CA and signed certificates
 func (s *lmsCertStep) Run(operation internal.UpgradeKymaOperation, l logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if operation.Lms.Failed {
-		l.Info("LMS has failed, skipping")
+	if operation.Lms.TenantID == "" {
 		return operation, 0, nil
 	}
 	logger := l.WithField("LMSTenant", operation.Lms.TenantID)
-
-	if operation.Lms.TenantID == "" {
-		logger.Error("Create LMS Tenant step must be run before")
-		return operation, 0, errors.New("the step needs to be run after 'Create LMS tenant' step")
-	}
-
-	// check if LMS tenant is ready
-	status, err := s.provider.GetTenantStatus(operation.Lms.TenantID)
-	if err != nil {
-		return s.handleError(
-			operation,
-			logger,
-			time.Since(operation.Lms.RequestedAt),
-			"Unable to get LMS Tenant status",
-			err)
-	}
-	if !(status.ElasticsearchDNSResolves && status.KibanaDNSResolves) {
-		logger.Infof("LMS tenant not ready: elasticDNS=%v, kibanaDNS=%v", status.ElasticsearchDNSResolves, status.KibanaDNSResolves)
-		if time.Since(operation.Lms.RequestedAt) > lmsTimeout {
-			logger.Error("Setting LMS operation failed - tenant provisioning timed out")
-			return s.failLmsAndUpdate(operation, "LMS Tenant provisioning timeout", l)
-		}
-		return operation, tenantReadyRetryInterval, nil
-	}
-
 	tenantInfo, err := s.provider.GetTenantInfo(operation.Lms.TenantID)
 	if err != nil {
 		return s.handleError(
@@ -164,8 +137,6 @@ func (s *lmsCertStep) Run(operation internal.UpgradeKymaOperation, l logrus.Fiel
 		logger.Errorf("Setting LMS operation failed: %s", err.Error())
 		return s.failLmsAndUpdate(operation, "getting LMS CA certificate timeout", l)
 	}
-
-	operation.InputCreator.SetLabel(upgradekibanaURLLabelKey, fmt.Sprintf("https://kibana.%s", tenantInfo.DNS))
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
 		{Key: "fluent-bit.conf.Output.forward.enabled", Value: "true"},

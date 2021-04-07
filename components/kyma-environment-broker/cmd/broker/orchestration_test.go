@@ -8,6 +8,7 @@ import (
 
 func TestKymaUpgrade_OneRuntimeHappyPath(t *testing.T) {
 	// given
+
 	suite := NewOrchestrationSuite(t, nil)
 	runtimeID := suite.CreateProvisionedRuntime(RuntimeOptions{})
 	otherRuntimeID := suite.CreateProvisionedRuntime(RuntimeOptions{})

@@ -28,8 +28,7 @@ func TestAuditLog_ScriptFileDoesNotExist(t *testing.T) {
 		Password: "aaaa",
 		Tenant:   "tenant",
 	}
-	svc := NewAuditLogOverridesStep(repo, cfg)
-	svc.fs = mm
+	svc := NewAuditLogOverridesStep(mm, repo, cfg)
 
 	operation := internal.UpgradeKymaOperation{
 		Operation: internal.Operation{
@@ -71,8 +70,7 @@ return "fooBar"
 		Password: "aaaa",
 		Tenant:   "tenant",
 	}
-	svc := NewAuditLogOverridesStep(repo, cfg)
-	svc.fs = mm
+	svc := NewAuditLogOverridesStep(mm, repo, cfg)
 
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
@@ -230,8 +228,7 @@ return "fooBar"
 		Tenant:        "tenant",
 		EnableSeqHttp: true,
 	}
-	svc := NewAuditLogOverridesStep(repo, cfg)
-	svc.fs = mm
+	svc := NewAuditLogOverridesStep(mm, repo, cfg)
 
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
