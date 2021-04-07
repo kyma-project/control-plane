@@ -13,24 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCertStep_RunFreshOperation(t *testing.T) {
-	// given
-	repo := storage.NewMemoryStorage().Operations()
-	svc := NewLmsCertificatesStep(nil, repo, false)
-	// a fresh operation
-	operation := internal.UpgradeKymaOperation{
-		Operation: internal.Operation{
-			InstanceDetails: internal.InstanceDetails{Lms: internal.LMS{}},
-		},
-	}
-
-	// when
-	_, _, err := svc.Run(operation, fixLogger())
-
-	//then
-	require.Error(t, err)
-}
-
 func TestCertStep_Run(t *testing.T) {
 	// given
 	cli, tID := newFakeClientWithTenant(0)
@@ -58,74 +40,11 @@ func TestCertStep_Run(t *testing.T) {
 	assert.True(t, cli.IsCertRequestedForTenant(tID))
 }
 
-func TestCertStep_TenantNotReady(t *testing.T) {
-	runForOptionalAndMandatory(t, func(t *testing.T, isMandatory bool, a asserter) {
-		// given
-		cli, tID := newFakeClientWithTenant(time.Hour)
-		repo := storage.NewMemoryStorage().Operations()
-		svc := NewLmsCertificatesStep(cli, repo, isMandatory)
-		operation := internal.UpgradeKymaOperation{
-			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{},
-				InstanceDetails: internal.InstanceDetails{Lms: internal.LMS{
-					TenantID:    tID,
-					RequestedAt: time.Now(),
-				}},
-			},
-		}
-		repo.InsertUpgradeKymaOperation(operation)
-
-		// when
-		op, duration, err := svc.Run(operation, fixLogger())
-
-		// then
-		require.NoError(t, err)
-		assert.NotZero(t, duration.Seconds())
-		assert.False(t, op.Lms.Failed)
-
-		// do not expect call to LMS
-		assert.False(t, cli.IsCertRequestedForTenant(tID))
-	})
-}
-
-func TestCertStep_TenantNotReadyTimeout(t *testing.T) {
-	runForOptionalAndMandatory(t, func(t *testing.T, isMandatory bool, a asserter) {
-		// given
-		cli, tID := newFakeClientWithTenant(time.Hour)
-		repo := storage.NewMemoryStorage().Operations()
-		svc := NewLmsCertificatesStep(cli, repo, isMandatory)
-		operation := internal.UpgradeKymaOperation{
-			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{},
-				InstanceDetails: internal.InstanceDetails{Lms: internal.LMS{
-					TenantID:    tID,
-					RequestedAt: time.Now().Add(-10 * time.Hour), // very old
-				}},
-			},
-		}
-		repo.InsertUpgradeKymaOperation(operation)
-
-		// when
-		op, duration, err := svc.Run(operation, fixLogger())
-
-		// then
-		a.AssertError(t, err)
-		assert.Zero(t, duration.Seconds())
-		assert.True(t, op.Lms.Failed)
-
-		// do not expect call to LMS
-		assert.False(t, cli.IsCertRequestedForTenant(tID))
-	})
-}
-
 func TestLmsStepsHappyPath(t *testing.T) {
 	// given
 	lmsClient := lms.NewFakeClient(0)
 	opRepo := storage.NewMemoryStorage().Operations()
-	//tRepo := storage.NewMemoryStorage().LMSTenants()
 	certStep := NewLmsCertificatesStep(lmsClient, opRepo, false)
-	//tManager := lms.NewTenantManager(tRepo, lmsClient, fixLogger())
-	//tenantStep := provisioner.NewProvideLmsTenantStep(tManager, opRepo, "eu", false)
 	createTenanat := lms.CreateTenantInput{
 		Name:            "foo-bar",
 		Region:          "eu",
@@ -187,8 +106,6 @@ func TestLmsStepsHappyPath(t *testing.T) {
 		Key: "fluent-bit.backend.forward.tls.key", Value: "cHJpdmF0ZS1rZXk="})
 	inputCreator.AssertOverride(t, "logging", gqlschema.ConfigEntryInput{
 		Key: "fluent-bit.config.outputs.forward.tls.key", Value: "cHJpdmF0ZS1rZXk="})
-
-	inputCreator.AssertLabel(t, "operator_lmsUrl", fmt.Sprintf("https://kibana.%s", lms.FakeLmsHost))
 }
 
 func newFakeClientWithTenant(timeToReady time.Duration) (*lms.FakeClient, string) {
