@@ -26,8 +26,6 @@ spec:
           value: {{ .Values.global.defaultTenant }}
         - name: APP_GARDENER_PROVIDERS
           value: {{ .Values.tests.gardener.providers }}
-        - name: APP_GARDENER_AWS_SECRET
-          value: {{ .Values.tests.gardener.awsSecret }}
         - name: APP_GARDENER_AZURE_SECRET
           value: {{ .Values.tests.gardener.azureSecret }}
         - name: APP_GARDENER_GCP_SECRET
