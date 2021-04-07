@@ -53,7 +53,7 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, operation model.Ope
 
 	installationState, err := s.installationClient.CheckInstallationState(cluster.ID, k8sConfig)
 	if err != nil {
-		installErr := installationSDK.InstallationError{}
+		installErr := installationSDK.InstallationError{} // parallers install errors will go here
 		if errors.As(err, &installErr) {
 			message := fmt.Sprintf("Installation error occurred: %s", installErr.Error())
 			logger.Warn(message)

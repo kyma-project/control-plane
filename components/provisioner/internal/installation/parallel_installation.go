@@ -29,20 +29,6 @@ type AsyncDeployment struct {
 	*deployment.Deployment
 }
 
-func (p parallelInstallationService) NewAsyncDeployment(cfg *config.Config, ob *deployment.OverridesBuilder, kubeClient kubernetes.Interface, processUpdates func(deployment.ProcessUpdate)) (*AsyncDeployment, error) {
-	if err := cfg.ValidateDeployment(); err != nil {
-		return nil, err
-	}
-
-	core, err := deployment.NewCore(cfg, ob, kubeClient, processUpdates)
-	if err != nil {
-		return nil, err
-	}
-
-	return &AsyncDeployment{ &deployment.Deployment{core, &sync.Mutex{}, false }}, nil
-}
-
-
 func (a AsyncDeployment) StartKymaDeployment(success func (), error func(error) ) {
 	go func(){
 		err := a.Deployment.StartKymaDeployment()
@@ -53,33 +39,31 @@ func (a AsyncDeployment) StartKymaDeployment(success func (), error func(error) 
 	}()
 }
 
-
-
-
 func callbackErrors(err error) {
-	log.Errorf("Error during installation", err.Error())
+	log.Error("Error during installation startup", err.Error())
 }
 
 func callbackSuccess() {
-	log.Info("Success after installation")
+	log.Info("Installation started successfully")
 }
 
 type parallelInstallationService struct {
 	downloader         ResourceDownloader
 	log                logrus.FieldLogger
-	installationStatus map[string]string    // cluster/phase/
+	installationStatus map[string]deployment.ProcessEvent
 	mux                *sync.Mutex
 }
 
 func NewParallelInstallationService(downloader ResourceDownloader, log logrus.FieldLogger) Service {
 	return &parallelInstallationService{
-		log:        log,
-		downloader: downloader,
-		mux:      &sync.Mutex{},
+		log:                log,
+		downloader:         downloader,
+		mux:                &sync.Mutex{},
+		installationStatus: make(map[string]deployment.ProcessEvent),
 	}
 }
 
-func (p parallelInstallationService)callbackUpdate(update deployment.ProcessUpdate) {
+func (p parallelInstallationService)getCallbackUpdate(runtimeID string) func (deployment.ProcessUpdate) {
 
 	showCompStatus := func(comp components.KymaComponent) {
 		if comp.Name != "" {
@@ -87,38 +71,46 @@ func (p parallelInstallationService)callbackUpdate(update deployment.ProcessUpda
 		}
 	}
 
+	return func (update deployment.ProcessUpdate) {
+		p.mux.Lock()
+		p.installationStatus[runtimeID] = update.Event
+		defer p.mux.Unlock()
 
-	p.mux.Lock()
-	//p.installationStatus[????]
-	defer p.mux.Unlock()
-
-	switch update.Event {
-	case deployment.ProcessStart:
-		log.Infof("Starting installation phase '%s'", update.Phase) // InstallComponents
-
-	case deployment.ProcessRunning:
-		showCompStatus(update.Component)
-	case deployment.ProcessFinished:
-		log.Infof("Finished installation phase '%s' successfully", update.Phase)
-	default:
-		//any failure case
-		log.Infof("Process failed in phase '%s' with error state '%s':", update.Phase, update.Event)
-		showCompStatus(update.Component)
+		switch update.Event {
+		case deployment.ProcessStart:
+			log.Infof("Starting installation phase '%s'", update.Phase)
+			p.installationStatus[runtimeID] = deployment.ProcessStart
+		case deployment.ProcessRunning:
+			p.installationStatus[runtimeID] = deployment.ProcessRunning
+			showCompStatus(update.Component)
+		case deployment.ProcessFinished:
+			log.Infof("Finished installation phase '%s' successfully", update.Phase)
+		default:
+			//any failure case
+			log.Infof("Process failed in phase '%s' with error state '%s':", update.Phase, update.Event)
+			showCompStatus(update.Component)
+		}
 	}
 }
 
-func (p parallelInstallationService) CheckInstallationState(runtimeID string, kubeconfig *rest.Config) (installation.InstallationState, error) {
+func (p parallelInstallationService) CheckInstallationState(runtimeID string, _ *rest.Config) (installation.InstallationState, error) {
 	p.mux.Lock()
 	defer p.mux.Unlock()
 
-	//if v, found := p.installationStatus[kubeconfig]; found {
-	//
-	//}
+	if v, found := p.installationStatus[runtimeID]; found {
+		if v == deployment.ProcessFinished {
+			delete(p.installationStatus, runtimeID) // definetely should go to some cleanup function
+			return installation.InstallationState{State: "Installed"}, nil
+		}
 
+		if v == deployment.ProcessExecutionFailure || v == deployment.ProcessForceQuitFailure || v == deployment.ProcessTimeoutFailure {
+			return installation.InstallationState{State: "Error"}, installation.InstallationError{ShortMessage: "Error"}
+		}
+		return installation.InstallationState{State: "In progress"}, nil
+
+	}
 	return installation.InstallationState{State: installation.NoInstallationState}, nil
 }
-
-
 
 func (p parallelInstallationService) TriggerInstallation(runtimeID string, kubeconfigRaw *rest.Config, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
 	p.log.Info("Installation triggered")
@@ -193,15 +185,15 @@ func (p parallelInstallationService) TriggerInstallation(runtimeID string, kubec
 		return errors.Wrap(err, "while creating namespace")
 	}
 
-	// Install Kyma
 	p.log.Info("Start Kyma deployment")
 
-	deployer, err := p.NewAsyncDeployment(installationCfg, builder, kubeClient, p.callbackUpdate)
+	deployer, err := deployment.NewDeployment(installationCfg, builder, kubeClient, p.getCallbackUpdate(runtimeID))
 	if err != nil {
 		return errors.Wrap(err, "while creating deployer")
 	}
 
-	deployer.StartKymaDeployment(callbackSuccess, callbackErrors)
+	asyncDeployment := &AsyncDeployment{ deployer}
+	asyncDeployment.StartKymaDeployment(callbackSuccess, callbackErrors)
 
 	return nil
 }
@@ -215,7 +207,7 @@ func (p parallelInstallationService) TriggerUninstall(_ *rest.Config) error {
 }
 
 func (p parallelInstallationService) PerformCleanup(_ *rest.Config) error {
-	panic("PerformCleanup is not implemented ")
+	panic("PerformCleanup is not implemented")
 }
 
 func ConvertToComponentList(components []model.KymaComponentConfig) *config.ComponentList {
