@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/99designs/gqlgen v0.9.3
+	github.com/akgalwas/hydroform v0.0.0-20210406153634-864d4d8ad630 // indirect
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/gardener/gardener v1.10.1-0.20200903060046-8bed4ed6c257
 	github.com/gocraft/dbr/v2 v2.6.3
@@ -12,7 +13,7 @@ require (
 	github.com/kubernetes-sigs/service-catalog v0.3.0
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b
 	github.com/kyma-incubator/hydroform/install v0.0.0-20210218125820-f7a76ec2075a
-	github.com/kyma-incubator/hydroform/parallel-install v0.0.0-20210331124544-31d3ac3bb122
+	github.com/kyma-incubator/hydroform/parallel-install v0.0.0-20210406121949-75d1e5caa523
 	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200902131640-31c29c8feb0c
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5
 	github.com/lib/pq v1.9.0
@@ -28,7 +29,6 @@ require (
 	github.com/testcontainers/testcontainers-go v0.7.0
 	github.com/vektah/gqlparser v1.2.0
 	github.com/vrischmann/envconfig v1.3.0
-	gopkg.in/yaml.v2 v2.3.0
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.20.5
 	k8s.io/apiextensions-apiserver v0.20.5
@@ -48,6 +48,7 @@ replace (
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
 	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
 	github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
+	github.com/kyma-incubator/hydroform/parallel-install => github.com/akgalwas/hydroform/parallel-install v0.0.0-20210406153634-864d4d8ad630
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc92
 	go.etcd.io/etcd => go.etcd.io/etcd v3.3.25+incompatible
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a

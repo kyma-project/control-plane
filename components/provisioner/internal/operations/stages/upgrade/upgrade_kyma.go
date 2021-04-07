@@ -46,7 +46,7 @@ func (s *UpgradeKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 		return operations.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
 	}
 
-	installationState, err := s.installationClient.CheckInstallationState(k8sConfig)
+	installationState, err := s.installationClient.CheckInstallationState(cluster.ID, k8sConfig)
 	if err != nil {
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {

@@ -44,6 +44,7 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 	}
 
 	err = s.installationClient.TriggerInstallation(
+		cluster.ID,
 		k8sConfig,
 		cluster.KymaConfig.Profile,
 		cluster.KymaConfig.Release,

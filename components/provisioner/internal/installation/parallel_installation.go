@@ -1,7 +1,7 @@
 package installation
 
 import (
-	"fmt"
+	"github.com/kyma-incubator/hydroform/parallel-install/pkg/components"
 	"sync"
 	"time"
 
@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/hydroform/parallel-install/pkg/config"
 	"github.com/kyma-incubator/hydroform/parallel-install/pkg/deployment"
 	"github.com/kyma-incubator/hydroform/parallel-install/pkg/preinstaller"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 
@@ -24,23 +25,102 @@ type ResourceDownloader interface {
 	Download(string, []model.KymaComponentConfig) (string, string, error)
 }
 
+type AsyncDeployment struct {
+	*deployment.Deployment
+}
+
+func (p parallelInstallationService) NewAsyncDeployment(cfg *config.Config, ob *deployment.OverridesBuilder, kubeClient kubernetes.Interface, processUpdates func(deployment.ProcessUpdate)) (*AsyncDeployment, error) {
+	if err := cfg.ValidateDeployment(); err != nil {
+		return nil, err
+	}
+
+	core, err := deployment.NewCore(cfg, ob, kubeClient, processUpdates)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AsyncDeployment{ &deployment.Deployment{core, &sync.Mutex{}, false }}, nil
+}
+
+
+func (a AsyncDeployment) StartKymaDeployment(success func (), error func(error) ) {
+	go func(){
+		err := a.Deployment.StartKymaDeployment()
+		if err != nil {
+			error(err)
+		}
+		success()
+	}()
+}
+
+
+
+
+func callbackErrors(err error) {
+	log.Errorf("Error during installation", err.Error())
+}
+
+func callbackSuccess() {
+	log.Info("Success after installation")
+}
+
 type parallelInstallationService struct {
-	downloader ResourceDownloader
-	log        logrus.FieldLogger
+	downloader         ResourceDownloader
+	log                logrus.FieldLogger
+	installationStatus map[string]string    // cluster/phase/
+	mux                *sync.Mutex
 }
 
 func NewParallelInstallationService(downloader ResourceDownloader, log logrus.FieldLogger) Service {
 	return &parallelInstallationService{
 		log:        log,
 		downloader: downloader,
+		mux:      &sync.Mutex{},
 	}
 }
 
-func (p parallelInstallationService) CheckInstallationState(kubeconfig *rest.Config) (installation.InstallationState, error) {
-	return installation.InstallationState{State: "Installed"}, nil
+func (p parallelInstallationService)callbackUpdate(update deployment.ProcessUpdate) {
+
+	showCompStatus := func(comp components.KymaComponent) {
+		if comp.Name != "" {
+			log.Infof("Status of component '%s': %s", comp.Name, comp.Status)
+		}
+	}
+
+
+	p.mux.Lock()
+	//p.installationStatus[????]
+	defer p.mux.Unlock()
+
+	switch update.Event {
+	case deployment.ProcessStart:
+		log.Infof("Starting installation phase '%s'", update.Phase) // InstallComponents
+
+	case deployment.ProcessRunning:
+		showCompStatus(update.Component)
+	case deployment.ProcessFinished:
+		log.Infof("Finished installation phase '%s' successfully", update.Phase)
+	default:
+		//any failure case
+		log.Infof("Process failed in phase '%s' with error state '%s':", update.Phase, update.Event)
+		showCompStatus(update.Component)
+	}
 }
 
-func (p parallelInstallationService) TriggerInstallation(kubeconfigRaw *rest.Config, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
+func (p parallelInstallationService) CheckInstallationState(runtimeID string, kubeconfig *rest.Config) (installation.InstallationState, error) {
+	p.mux.Lock()
+	defer p.mux.Unlock()
+
+	//if v, found := p.installationStatus[kubeconfig]; found {
+	//
+	//}
+
+	return installation.InstallationState{State: installation.NoInstallationState}, nil
+}
+
+
+
+func (p parallelInstallationService) TriggerInstallation(runtimeID string, kubeconfigRaw *rest.Config, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
 	p.log.Info("Installation triggered")
 
 	kubeClient, err := kubernetes.NewForConfig(kubeconfigRaw)
@@ -57,7 +137,7 @@ func (p parallelInstallationService) TriggerInstallation(kubeconfigRaw *rest.Con
 	p.log.Info("Collect all require components")
 	resourcePath, installationResourcePath, err := p.downloader.Download(release.Version, componentsConfig)
 	if err != nil {
-		return errors.Wrap(err, "while collecting components for Kyma")
+		return errors.Wrap(err, "while downloading components")
 	}
 
 	// prepare installation
@@ -115,42 +195,15 @@ func (p parallelInstallationService) TriggerInstallation(kubeconfigRaw *rest.Con
 
 	// Install Kyma
 	p.log.Info("Start Kyma deployment")
-	progressCh := make(chan deployment.ProcessUpdate)
-	deployer, err := deployment.NewDeployment(installationCfg, builder, kubeClient, progressCh)
+
+	deployer, err := p.NewAsyncDeployment(installationCfg, builder, kubeClient, p.callbackUpdate)
 	if err != nil {
 		return errors.Wrap(err, "while creating deployer")
 	}
 
-	go func() {
-		for update := range progressCh {
-			switch update.Event {
-			case deployment.ProcessStart:
-				p.log.Info("installation process started")
-			case deployment.ProcessRunning:
-				p.log.Info("installation process in progress...")
-			case deployment.ProcessFinished:
-				p.log.Info("installation process succeeded")
-			default:
-				//any failure case
-				p.log.Errorf("process failed in phase '%s' with error state '%s'", update.Phase, update.Event)
-			}
-		}
-	}()
+	deployer.StartKymaDeployment(callbackSuccess, callbackErrors)
 
-	// Start Kyma deployment
-	var processError error
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		err = deployer.StartKymaDeployment()
-		defer wg.Done()
-		if err != nil {
-			processError = fmt.Errorf("starting Kyma deployment failed: %s", err)
-		}
-	}()
-	wg.Wait()
-
-	return processError
+	return nil
 }
 
 func (p parallelInstallationService) TriggerUpgrade(_ *rest.Config, _ *model.KymaProfile, _ model.Release, _ model.Configuration, _ []model.KymaComponentConfig) error {
