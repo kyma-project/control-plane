@@ -4,10 +4,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
+
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma/automock"
@@ -86,4 +89,21 @@ func TestLmsActivationStepShouldActivateForOne(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, activationTime, time)
 	assert.Equal(t, anotherOperation, returnedOperation)
+}
+
+func fixLMSOperationWithPlanID(planID string) internal.UpgradeKymaOperation {
+	ersContext := internal.ERSContext{
+		TenantID:        "",
+		SubAccountID:    subAccountID,
+		GlobalAccountID: globalAccountID,
+		ServiceManager:  nil,
+		Active:          nil,
+		UserID:          "",
+	}
+	upgradeOperation := fixture.FixUpgradeKymaOperation(operationID, instanceID)
+	upgradeOperation.ProvisioningParameters = fixture.FixProvisioningParameters("dummy")
+	upgradeOperation.ProvisioningParameters.PlanID = planID
+	upgradeOperation.ProvisioningParameters.ErsContext = ersContext
+
+	return upgradeOperation
 }

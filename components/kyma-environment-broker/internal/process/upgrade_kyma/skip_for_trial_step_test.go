@@ -65,20 +65,3 @@ func fixOperationWithPlanID(planID string) internal.UpgradeKymaOperation {
 
 	return upgradeOperation
 }
-
-func fixLMSOperationWithPlanID(planID string) internal.UpgradeKymaOperation {
-	ersContext := internal.ERSContext{
-		TenantID:        "",
-		SubAccountID:    subAccountID,
-		GlobalAccountID: globalAccountID,
-		ServiceManager:  nil,
-		Active:          nil,
-		UserID:          "",
-	}
-	upgradeOperation := fixture.FixUpgradeKymaOperation(operationID, instanceID)
-	upgradeOperation.ProvisioningParameters = fixture.FixProvisioningParameters("dummy")
-	upgradeOperation.ProvisioningParameters.PlanID = planID
-	upgradeOperation.ProvisioningParameters.ErsContext = ersContext
-
-	return upgradeOperation
-}
