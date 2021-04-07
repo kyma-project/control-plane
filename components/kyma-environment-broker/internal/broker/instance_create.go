@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
@@ -226,11 +225,6 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 		}
 	}
 
-	parameters.Name, err = b.adjustRuntimeName(parameters.Name)
-	if err != nil {
-		return ersContext, parameters, errors.Wrap(err, "while adjusting runtime name")
-	}
-
 	return ersContext, parameters, nil
 }
 
@@ -289,13 +283,4 @@ func (b *ProvisionEndpoint) responseLabels(parameters internal.ProvisioningParam
 	responseLabels["GrafanaURL"] = strings.Replace(dashboardURL, "console.", "grafana.", 1)
 
 	return responseLabels
-}
-
-func (b *ProvisionEndpoint) adjustRuntimeName(n string) (string, error) {
-	reg, err := regexp.Compile("[^a-zA-Z0-9\\-\\.]+")
-	if err != nil {
-		return "", errors.Wrap(err, "while compiling regexp")
-	}
-
-	return strings.ToLower(reg.ReplaceAllString(n, "")), nil
 }

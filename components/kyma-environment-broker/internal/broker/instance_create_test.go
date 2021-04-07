@@ -537,46 +537,6 @@ func TestProvision_Provision(t *testing.T) {
 
 		assert.Equal(t, ptr.String(internal.LicenceTypeLite), operation.ProvisioningParameters.Parameters.LicenceType)
 	})
-
-	t.Run("name from parameters should be adjust to proper value", func(t *testing.T) {
-		// given
-		memoryStorage := storage.NewMemoryStorage()
-
-		queue := &automock.Queue{}
-		queue.On("Add", mock.AnythingOfType("string"))
-
-		factoryBuilder := &automock.PlanValidator{}
-		factoryBuilder.On("IsPlanSupport", planID).Return(true)
-
-		// #create provisioner endpoint
-		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure"}, OnlySingleTrialPerGA: true},
-			gardener.Config{Project: "test", ShootDomain: "example.com"},
-			memoryStorage.Operations(),
-			memoryStorage.Instances(),
-			queue,
-			factoryBuilder,
-			fixAlwaysPassJSONValidator(),
-			broker.PlansConfig{},
-			false,
-			logrus.StandardLogger(),
-		)
-
-		// when
-		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
-			ServiceID:     serviceID,
-			PlanID:        planID,
-			RawParameters: json.RawMessage(`{"name": "CLUSTER-?name_123.45!"}`),
-			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
-		}, true)
-		assert.NoError(t, err)
-
-		// then
-		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
-		require.NoError(t, err)
-
-		assert.Equal(t, "cluster-name123.45", operation.ProvisioningParameters.Parameters.Name)
-	})
 }
 
 func fixExistOperation() internal.ProvisioningOperation {
