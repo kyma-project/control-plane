@@ -4,7 +4,6 @@ go 1.15
 
 require (
 	github.com/99designs/gqlgen v0.9.3
-	github.com/akgalwas/hydroform v0.0.0-20210406153634-864d4d8ad630 // indirect
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/gardener/gardener v1.10.1-0.20200903060046-8bed4ed6c257
 	github.com/gocraft/dbr/v2 v2.6.3
@@ -48,7 +47,7 @@ replace (
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
 	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
 	github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
-	github.com/kyma-incubator/hydroform/parallel-install => github.com/akgalwas/hydroform/parallel-install v0.0.0-20210406153634-864d4d8ad630
+	github.com/kyma-incubator/hydroform/parallel-install => github.com/akgalwas/hydroform/parallel-install v0.0.0-20210407141849-b10463f6c82e
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc92
 	go.etcd.io/etcd => go.etcd.io/etcd v3.3.25+incompatible
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
