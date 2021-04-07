@@ -63,7 +63,6 @@ func TestSkipFinishedStage(t *testing.T) {
 	operation.FinishStage("stage-1")
 
 	mgr, operationStorage, eventCollector := SetupStagedManager(operation)
-
 	mgr.AddStep("stage-1", 1, &testingStep{name: "first", eventPublisher: eventCollector})
 	mgr.AddStep("stage-1", 1, &testingStep{name: "second", eventPublisher: eventCollector})
 	mgr.AddStep("stage-1", 2, &testingStep{name: "third", eventPublisher: eventCollector})
@@ -85,7 +84,6 @@ func TestSkipSucceededSteps(t *testing.T) {
 	operation := provisioning.FixProvisionOperation("op-0001234")
 
 	mgr, _, eventCollector := SetupStagedManager(operation)
-
 	mgr.AddStep("stage-1", 1, &testingStep{name: "first", eventPublisher: eventCollector})
 	mgr.AddStep("stage-1", 1, &onceRetryingStep{name: "second", eventPublisher: eventCollector})
 	retry, _ := mgr.Execute(operation.ID)
@@ -109,6 +107,8 @@ func SetupStagedManager(op internal.ProvisioningOperation) (*provisioning.Staged
 	l := logrus.New()
 	l.SetLevel(logrus.DebugLevel)
 	mgr := provisioning.NewStagedManager(memoryStorage.Operations(), eventCollector, l)
+	mgr.DefineStages([]string{"stage-1", "stage-2"})
+
 	return mgr, memoryStorage.Operations(), eventCollector
 }
 

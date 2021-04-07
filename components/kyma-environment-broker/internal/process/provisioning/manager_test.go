@@ -168,7 +168,7 @@ func (h *CollectingEventHandler) Publish(ctx context.Context, ev interface{}) {
 }
 
 func (h *CollectingEventHandler) WaitForEvents(t *testing.T, count int) {
-	assert.NoError(t, wait.PollImmediate(20*time.Millisecond, 1*time.Second, func() (bool, error) {
+	assert.NoError(t, wait.PollImmediate(20*time.Millisecond, 3*time.Second, func() (bool, error) {
 		return len(h.StepsProcessed) == count, nil
 	}))
 }

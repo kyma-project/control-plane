@@ -2,6 +2,7 @@ package provisioning
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
@@ -20,8 +21,35 @@ type StagedManager struct {
 	operationStorage storage.Operations
 	publisher        event.Publisher
 
-	steps  map[string]map[int][]Step
-	stages []string
+	stages []*stage
+}
+
+type stage struct {
+	name  string
+	steps []stepInfo
+}
+
+type stepInfo struct {
+	step   Step
+	weight int
+}
+
+func (s *stage) AddStep(weight int, step Step) {
+	s.steps = append(s.steps, stepInfo{
+		step:   step,
+		weight: weight,
+	})
+	sort.SliceStable(s.steps, func(i, j int) bool {
+		return s.steps[i].weight < s.steps[j].weight
+	})
+}
+
+func (s *stage) Steps() []Step {
+	var result []Step
+	for _, s := range s.steps {
+		result = append(result, s.step)
+	}
+	return result
 }
 
 func NewStagedManager(storage storage.Operations, pub event.Publisher, logger logrus.FieldLogger) *StagedManager {
@@ -29,17 +57,24 @@ func NewStagedManager(storage storage.Operations, pub event.Publisher, logger lo
 		log:              logger,
 		operationStorage: storage,
 		publisher:        pub,
-		stages:           []string{},
-		steps:            make(map[string]map[int][]Step, 0),
 	}
 }
 
-func (m *StagedManager) AddStep(stage string, weight int, step Step) {
-	if _, exists := m.steps[stage]; !exists {
-		m.steps[stage] = make(map[int][]Step)
-		m.stages = append(m.stages, stage)
+func (m *StagedManager) DefineStages(names []string) {
+	m.stages = make([]*stage, len(names))
+	for i, n := range names {
+		m.stages[i] = &stage{name: n, steps: []stepInfo{}}
 	}
-	m.steps[stage][weight] = append(m.steps[stage][weight], step)
+}
+
+func (m *StagedManager) AddStep(stageName string, weight int, step Step) error {
+	for _, s := range m.stages {
+		if s.name == stageName {
+			s.AddStep(weight, step)
+			return nil
+		}
+	}
+	return fmt.Errorf("Stage %s not defined", stageName)
 }
 
 func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
@@ -56,65 +91,55 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 	processedOperation := *operation
 
 	for _, stage := range m.stages {
-		if processedOperation.IsStageFinished(stage) {
+		if processedOperation.IsStageFinished(stage.name) {
 			continue
 		}
-		stageRetry := 0 * time.Second
-		for _, weightStep := range m.sortWeight(stage) {
-			steps := m.steps[stage][weightStep]
-			for _, step := range steps {
-				if operation.IsStepDone(step.Name()) {
-					continue
-				}
-				logStep := logOperation.WithField("step", step.Name()).
-					WithField("stage", stage)
-				logStep.Infof("Start step")
 
-				processedOperation, when, err = m.runStep(step, processedOperation, logStep)
-				if err != nil {
-					logStep.Errorf("Process operation failed: %s", err)
-					return 0, err
-				}
-				if processedOperation.State != domain.InProgress {
-					logStep.Infof("Operation %q got status %s. Process finished.", operation.ID, processedOperation.State)
-					return 0, nil
-				}
-
-				if when == 0 {
-					// mark step processed
-					operation.FinishStep(step.Name())
-				}
-
-				// the step needs a retry
-				if when > 0 {
-					// remember to stageRetry
-					if stageRetry == 0 {
-						stageRetry = when
-					}
-					if when < stageRetry {
-						stageRetry = when
-					}
-				}
+		for _, step := range stage.Steps() {
+			if operation.IsStepDone(step.Name()) {
+				continue
 			}
-			if stageRetry > 0 {
-				return stageRetry, nil
-			}
-		}
+			logStep := logOperation.WithField("step", step.Name()).
+				WithField("stage", stage)
+			logStep.Infof("Start step")
 
-		if stageRetry == 0 {
-			processedOperation.FinishStage(stage)
-			op, err := m.operationStorage.UpdateProvisioningOperation(processedOperation)
+			processedOperation, when, err = m.runStep(step, processedOperation, logStep)
 			if err != nil {
-				logOperation.Infof("Unable to save operation with finished stage %s: %s", stage, err.Error())
-				return time.Second, nil
+				logStep.Errorf("Process operation failed: %s", err)
+				return 0, err
 			}
-			logOperation.Infof("Finished stage %s", stage)
-			processedOperation = *op
+			if processedOperation.State != domain.InProgress {
+				logStep.Infof("Operation %q got status %s. Process finished.", operation.ID, processedOperation.State)
+				return 0, nil
+			}
+
+			// the step needs a retry
+			if when > 0 {
+				return when, nil
+			}
+
+			// mark step processed
+			operation.FinishStep(step.Name())
 		}
 
+		processedOperation, err = m.saveFinishedStage(processedOperation, stage, logOperation)
+		if err != nil {
+			return time.Second, nil
+		}
 	}
 
 	return 0, nil
+}
+
+func (m *StagedManager) saveFinishedStage(operation internal.ProvisioningOperation, s *stage, log logrus.FieldLogger) (internal.ProvisioningOperation, error) {
+	operation.FinishStage(s.name)
+	op, err := m.operationStorage.UpdateProvisioningOperation(operation)
+	if err != nil {
+		log.Infof("Unable to save operation with finished stage %s: %s", s.name, err.Error())
+		return *op, err
+	}
+	log.Infof("Finished stage %s", s.name)
+	return *op, nil
 }
 
 func (m *StagedManager) runStep(step Step, operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
@@ -131,14 +156,4 @@ func (m *StagedManager) runStep(step Step, operation internal.ProvisioningOperat
 		},
 	})
 	return processedOperation, when, err
-}
-
-func (m *StagedManager) sortWeight(stage string) []int {
-	var weight []int
-	for w := range m.steps[stage] {
-		weight = append(weight, w)
-	}
-	sort.Ints(weight)
-
-	return weight
 }
