@@ -136,7 +136,7 @@ func (m *StagedManager) saveFinishedStage(operation internal.ProvisioningOperati
 	op, err := m.operationStorage.UpdateProvisioningOperation(operation)
 	if err != nil {
 		log.Infof("Unable to save operation with finished stage %s: %s", s.name, err.Error())
-		return *op, err
+		return operation, err
 	}
 	log.Infof("Finished stage %s", s.name)
 	return *op, nil
