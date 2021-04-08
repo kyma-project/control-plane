@@ -64,6 +64,7 @@ const (
 	brokerID               = "fake-broker-id"
 	emsOfferingID          = "ems-fake-id"
 	operationID            = "provisioning-op-id"
+	deprovisioningOpID     = "deprovisioning-op-id"
 	instanceID             = "instance-id"
 	smRegion               = "eu"
 	dbSecretKey            = "1234567890123456"
@@ -831,6 +832,7 @@ func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 		},
 		Name: subscriptionNameShared,
 	}, nil)
+	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.Azure, mock.Anything).Return(nil)
 	return &accountProvider
 }
 
