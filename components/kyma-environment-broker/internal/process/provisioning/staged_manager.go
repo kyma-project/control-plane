@@ -33,7 +33,7 @@ type stepInfo struct {
 	weight int
 }
 
-func (s *stage) AddStep(weight int, step Step) {
+func (s *stage) AddStep(step Step) {
 	s.steps = append(s.steps, step)
 }
 
