@@ -59,6 +59,18 @@ func (c *FakeClient) FindOperationByRuntimeIDAndType(runtimeID string, operation
 	return schema.OperationStatus{}
 }
 
+func (c *FakeClient) FindOperationByOperationID(runtimeID string) schema.OperationStatus {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for _, status := range c.operations {
+		if *status.RuntimeID == runtimeID {
+			return status
+		}
+	}
+	return schema.OperationStatus{}
+}
+
 func (c *FakeClient) SetOperation(id string, operation schema.OperationStatus) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

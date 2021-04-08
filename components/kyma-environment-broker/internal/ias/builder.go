@@ -1,9 +1,5 @@
 package ias
 
-import (
-	"net/http"
-)
-
 //go:generate mockery -name=BundleBuilder -output=automock -outpkg=automock -case=underscore
 //go:generate mockery -name=Bundle -output=automock -outpkg=automock -case=underscore
 type (
@@ -25,19 +21,13 @@ type (
 )
 
 type Builder struct {
-	iasClient *Client
+	iasClient IASCLient
 	config    Config
 }
 
-func NewBundleBuilder(httpClient *http.Client, config Config) BundleBuilder {
-	client := NewClient(httpClient, ClientConfig{
-		URL:    config.URL,
-		ID:     config.UserID,
-		Secret: config.UserSecret,
-	})
-
+func NewBundleBuilder(iasClient IASCLient, config Config) BundleBuilder {
 	return &Builder{
-		iasClient: client,
+		iasClient: iasClient,
 		config:    config,
 	}
 }

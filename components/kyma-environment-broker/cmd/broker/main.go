@@ -264,7 +264,12 @@ func main() {
 	if cfg.IAS.TLSRenegotiationEnable {
 		clientHTTPForIAS = httputil.NewRenegotiationTLSClient(30, cfg.IAS.SkipCertVerification)
 	}
-	bundleBuilder := ias.NewBundleBuilder(clientHTTPForIAS, cfg.IAS)
+	iasClient := ias.NewClient(clientHTTPForIAS, ias.ClientConfig{
+		URL:    cfg.IAS.URL,
+		ID:     cfg.IAS.UserID,
+		Secret: cfg.IAS.UserSecret,
+	})
+	bundleBuilder := ias.NewBundleBuilder(iasClient, cfg.IAS)
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
 	// application event broker
@@ -505,10 +510,10 @@ func fatalOnError(err error) {
 }
 
 func NewProvisioningProcessingQueue(ctx context.Context, workersAmount int, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
-	provisionerClient provisioner.Client, directorClient *director.Client, inputFactory input.CreatorForPlan,
+	provisionerClient provisioner.Client, directorClient provisioning.DirectorClient, inputFactory input.CreatorForPlan,
 	avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant, externalEvalCreator *provisioning.ExternalEvalCreator,
 	internalEvalUpdater *provisioning.InternalEvalUpdater, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
-	runtimeOverrides provisioning.RuntimeOverridesAppender, smcf *servicemanager.ClientFactory, bundleBuilder ias.BundleBuilder, iasTypeSetter *provisioning.IASType,
+	runtimeOverrides provisioning.RuntimeOverridesAppender, smcf provisioning.SMClientFactory, bundleBuilder ias.BundleBuilder, iasTypeSetter *provisioning.IASType,
 	lmsClient lms.Client, lmsTenantManager provisioning.LmsTenantProvider, edpClient provisioning.EDPClient,
 	accountProvider hyperscaler.AccountProvider, clsConfig *cls.Config, clsClient provisioning.ClsBindingProvider, clsProvisioner provisioning.ClsProvisioner, fileSystem afero.Fs,
 	logs logrus.FieldLogger) *process.Queue {

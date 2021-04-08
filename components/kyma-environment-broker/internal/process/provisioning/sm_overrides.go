@@ -32,7 +32,7 @@ func (s *ServiceManagerOverridesStep) Name() string {
 func (s *ServiceManagerOverridesStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	creds, err := operation.ProvideServiceManagerCredentials(log)
 	if err != nil {
-		log.Errorf("unable to obtain SM credentials", err)
+		log.Errorf("unable to obtain SM credentials: %s", err)
 		return s.operationManager.OperationFailed(operation, err.Error(), log)
 	}
 
