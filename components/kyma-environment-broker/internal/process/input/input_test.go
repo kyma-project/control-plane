@@ -1,17 +1,16 @@
 package input
 
 import (
-	"strings"
 	"testing"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -368,62 +367,56 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	assertOverrides(t, "keb", input.KymaConfig.Components, kebOverrides)
 }
 
-func TestShouldAddSuffixToRuntimeName(t *testing.T) {
-	// given
-	trialName := "test"
-	optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
-	componentsProvider := &automock.ComponentListProvider{}
-	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+func TestShouldAdjustRuntimeName(t *testing.T) {
+	for name, tc := range map[string]struct {
+		runtimeName               string
+		expectedNameWithoutSuffix string
+	}{
+		"regular string": {
+			runtimeName:               "test",
+			expectedNameWithoutSuffix: "test",
+		},
+		"too long string": {
+			runtimeName:               "this-string-is-too-long-because-it-has-more-than-36-chars",
+			expectedNameWithoutSuffix: "this-string-is-too-long-becaus",
+		},
+		"string with forbidden chars": {
+			runtimeName:               "CLUSTER-?name_123@!",
+			expectedNameWithoutSuffix: "cluster-name123",
+		},
+		"too long string with forbidden chars": {
+			runtimeName:               "ThisStringIsTooLongBecauseItHasMoreThan36Chars",
+			expectedNameWithoutSuffix: "thisstringistoolongbecauseitha",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			// given
+			optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+			componentsProvider := &automock.ComponentListProvider{}
+			componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
-	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{TrialNodesNumber: 0}, "not-important", fixTrialRegionMapping())
-	assert.NoError(t, err)
+			builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{TrialNodesNumber: 0}, "not-important", fixTrialRegionMapping())
+			assert.NoError(t, err)
 
-	pp := fixProvisioningParameters(broker.TrialPlanID, "")
-	pp.Parameters.Name = trialName
+			pp := fixProvisioningParameters(broker.TrialPlanID, "")
+			pp.Parameters.Name = tc.runtimeName
 
-	creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.1.0", Origin: internal.Defaults})
-	require.NoError(t, err)
-	creator.SetProvisioningParameters(pp)
+			creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.1.0", Origin: internal.Defaults})
+			require.NoError(t, err)
+			creator.SetProvisioningParameters(pp)
 
-	// when
-	input, err := creator.CreateProvisionRuntimeInput()
-	require.NoError(t, err)
+			// when
+			input, err := creator.CreateProvisionRuntimeInput()
+			require.NoError(t, err)
 
-	// then
-	assert.NotEqual(t, pp.Parameters.Name, input.RuntimeInput.Name)
-	assert.Greater(t, len(input.RuntimeInput.Name), len(pp.Parameters.Name))
-	assert.Equal(t, 1, input.ClusterConfig.GardenerConfig.AutoScalerMin)
-	assert.Equal(t, 1, input.ClusterConfig.GardenerConfig.AutoScalerMax)
-}
-
-func TestShouldTrimRuntimeNameAndAddSuffix(t *testing.T) {
-	// given
-	trialName := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-	testPrefix := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA-"
-	optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
-	componentsProvider := &automock.ComponentListProvider{}
-	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
-
-	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{TrialNodesNumber: 3}, "not-important", fixTrialRegionMapping())
-	assert.NoError(t, err)
-
-	pp := fixProvisioningParameters(broker.TrialPlanID, "")
-	pp.Parameters.Name = trialName
-
-	creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.1.0", Origin: internal.Defaults})
-	require.NoError(t, err)
-	creator.SetProvisioningParameters(pp)
-
-	// when
-	input, err := creator.CreateProvisionRuntimeInput()
-	require.NoError(t, err)
-
-	// then
-	assert.NotEqual(t, pp.Parameters.Name, input.RuntimeInput.Name)
-	assert.True(t, strings.HasPrefix(input.RuntimeInput.Name, testPrefix))
-	assert.Equal(t, 36, len(input.RuntimeInput.Name))
-	assert.Equal(t, 3, input.ClusterConfig.GardenerConfig.AutoScalerMin)
-	assert.Equal(t, 3, input.ClusterConfig.GardenerConfig.AutoScalerMax)
+			// then
+			assert.NotEqual(t, pp.Parameters.Name, input.RuntimeInput.Name)
+			assert.LessOrEqual(t, len(input.RuntimeInput.Name), 36)
+			assert.Equal(t, tc.expectedNameWithoutSuffix, input.RuntimeInput.Name[:len(input.RuntimeInput.Name)-6])
+			assert.Equal(t, 1, input.ClusterConfig.GardenerConfig.AutoScalerMin)
+			assert.Equal(t, 1, input.ClusterConfig.GardenerConfig.AutoScalerMax)
+		})
+	}
 }
 
 func TestShouldSetNumberOfNodesForTrialPlan(t *testing.T) {
