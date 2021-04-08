@@ -11,7 +11,7 @@ import (
 )
 
 const auditLogConditionType = "AuditlogServiceAvailability"
-const auditInstanceCodePattern = `cf\.[a-z]+[0-9]+`
+const auditInstanceCodePattern = `cf\.[a-z0-9]+`
 
 type AuditLogConfigurator interface {
 	CanEnableAuditLogsForShoot(seedName string) bool
