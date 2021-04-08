@@ -312,7 +312,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 kubernetesVersion: "1.15.11"
                 diskType: "gp2"
                 volumeSizeGB: 35
-                machineType: "m4.2xlarge"
+                machineType: "m5.2xlarge"
                 region: "eu-west-1"
                 provider: "aws"
                 purpose: "testing" # possible values: "development", "evaluation", "production", "testing"; default value: "evaluation"

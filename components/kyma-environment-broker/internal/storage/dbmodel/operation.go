@@ -27,6 +27,7 @@ type OperationDTO struct {
 	Data                   string
 	State                  string
 	Description            string
+	FinishedStages         string
 	ProvisioningParameters sql.NullString
 
 	Type internal.OperationType

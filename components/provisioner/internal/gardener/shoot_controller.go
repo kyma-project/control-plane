@@ -26,7 +26,7 @@ func NewShootController(
 
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&gardener_types.Shoot{}).
-		Complete(NewReconciler(mgr, dbsFactory, auditLogTenantConfigPath))
+		Complete(NewReconciler(mgr, dbsFactory, NewAuditLogConfigurator(auditLogTenantConfigPath)))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create controller: %w", err)
 	}
