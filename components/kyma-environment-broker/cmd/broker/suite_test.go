@@ -531,7 +531,7 @@ func (s *ProvisioningSuite) createProvisioning(options RuntimeOptions) string {
 
 func (s *ProvisioningSuite) WaitForProvisioningState(operationID string, state domain.LastOperationState) {
 	var op *internal.ProvisioningOperation
-	err := wait.PollImmediate(100*time.Millisecond, 15*time.Second, func() (done bool, err error) {
+	err := wait.PollImmediate(100*time.Millisecond, 10*time.Minute, func() (done bool, err error) {
 		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
 		return op.State == state, nil
 	})
