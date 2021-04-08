@@ -10,7 +10,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 
-	"sort"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -26,7 +25,7 @@ type StagedManager struct {
 
 type stage struct {
 	name  string
-	steps []stepInfo
+	steps []Step
 }
 
 type stepInfo struct {
@@ -35,21 +34,7 @@ type stepInfo struct {
 }
 
 func (s *stage) AddStep(weight int, step Step) {
-	s.steps = append(s.steps, stepInfo{
-		step:   step,
-		weight: weight,
-	})
-	sort.SliceStable(s.steps, func(i, j int) bool {
-		return s.steps[i].weight < s.steps[j].weight
-	})
-}
-
-func (s *stage) Steps() []Step {
-	var result []Step
-	for _, s := range s.steps {
-		result = append(result, s.step)
-	}
-	return result
+	s.steps = append(s.steps, step)
 }
 
 func NewStagedManager(storage storage.Operations, pub event.Publisher, logger logrus.FieldLogger) *StagedManager {
@@ -63,14 +48,14 @@ func NewStagedManager(storage storage.Operations, pub event.Publisher, logger lo
 func (m *StagedManager) DefineStages(names []string) {
 	m.stages = make([]*stage, len(names))
 	for i, n := range names {
-		m.stages[i] = &stage{name: n, steps: []stepInfo{}}
+		m.stages[i] = &stage{name: n, steps: []Step{}}
 	}
 }
 
-func (m *StagedManager) AddStep(stageName string, weight int, step Step) error {
+func (m *StagedManager) AddStep(stageName string, step Step) error {
 	for _, s := range m.stages {
 		if s.name == stageName {
-			s.AddStep(weight, step)
+			s.AddStep(step)
 			return nil
 		}
 	}
@@ -95,7 +80,7 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 			continue
 		}
 
-		for _, step := range stage.Steps() {
+		for _, step := range stage.steps {
 			if operation.IsStepDone(step.Name()) {
 				continue
 			}
