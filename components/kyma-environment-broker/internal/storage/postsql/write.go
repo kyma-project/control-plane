@@ -104,6 +104,7 @@ func (ws writeSession) InsertOperation(op dbmodel.OperationDTO) dberr.Error {
 		Pair("data", op.Data).
 		Pair("orchestration_id", op.OrchestrationID.String).
 		Pair("provisioning_parameters", op.ProvisioningParameters.String).
+		Pair("finished_stages", op.FinishedStages).
 		Exec()
 
 	if err != nil {
@@ -326,6 +327,7 @@ func (ws writeSession) UpdateOperation(op dbmodel.OperationDTO) dberr.Error {
 		Set("data", op.Data).
 		Set("orchestration_id", op.OrchestrationID.String).
 		Set("provisioning_parameters", op.ProvisioningParameters.String).
+		Set("finished_stages", op.FinishedStages).
 		Exec()
 
 	if err != nil {

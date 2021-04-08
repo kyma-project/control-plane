@@ -194,6 +194,8 @@ func FixOperation(id, instanceId string, opType internal.OperationType) internal
 		Description:            description,
 		ProvisioningParameters: FixProvisioningParameters(id),
 		OrchestrationID:        orchestrationId,
+		FinishedStages:         map[string]struct{}{"prepare": struct{}{}, "check_provisioning": struct{}{}},
+		FinishedSteps:          make(map[string]struct{}, 0),
 	}
 }
 
