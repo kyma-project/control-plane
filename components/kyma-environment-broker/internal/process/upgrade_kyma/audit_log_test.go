@@ -74,42 +74,6 @@ return "fooBar"
 
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
-	expectedOverride_conf := `
-[INPUT]
-		Name              tail
-		Tag               dex.*
-		Path              /var/log/containers/*_dex-*.log
-		DB                /var/log/flb_kube_dex.db
-		parser            docker
-		Mem_Buf_Limit     5MB
-		Skip_Long_Lines   On
-		Refresh_Interval  10
-[FILTER]
-		Name    lua
-		Match   dex.*
-		script  script.lua
-		call    reformat
-[FILTER]
-		Name    grep
-		Match   dex.*
-		Regex   time .*
-[FILTER]
-		Name    grep
-		Match   dex.*
-		Regex   data .*\"xsuaa
-[OUTPUT]
-		Name             http
-		Match            dex.*
-		Retry_Limit      False
-		Host             host1
-		Port             8080
-		URI              /aaa/v2/security-events
-		Header           Content-Type application/json
-		HTTP_User        aaaa
-		HTTP_Passwd      aaaa
-		Format           json_stream
-		tls              on
-`
 	expectedOverride_config := `
 [INPUT]
     Name              tail
@@ -159,16 +123,8 @@ return "fooBar"
   protocol: TLS`
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
 		{
-			Key:   "fluent-bit.conf.script",
-			Value: expectedFileScript,
-		},
-		{
 			Key:   "fluent-bit.config.script",
 			Value: expectedFileScript,
-		},
-		{
-			Key:   "fluent-bit.conf.extra",
-			Value: expectedOverride_conf,
 		},
 		{
 			Key:   "fluent-bit.config.extra",
@@ -232,42 +188,6 @@ return "fooBar"
 
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
-	expectedOverride_conf := `
-[INPUT]
-		Name              tail
-		Tag               dex.*
-		Path              /var/log/containers/*_dex-*.log
-		DB                /var/log/flb_kube_dex.db
-		parser            docker
-		Mem_Buf_Limit     5MB
-		Skip_Long_Lines   On
-		Refresh_Interval  10
-[FILTER]
-		Name    lua
-		Match   dex.*
-		script  script.lua
-		call    reformat
-[FILTER]
-		Name    grep
-		Match   dex.*
-		Regex   time .*
-[FILTER]
-		Name    grep
-		Match   dex.*
-		Regex   data .*\"xsuaa
-[OUTPUT]
-		Name             sequentialhttp
-		Match            dex.*
-		Retry_Limit      False
-		Host             host1
-		Port             8080
-		URI              /aaa/v2/security-events
-		Header           Content-Type application/json
-		HTTP_User        aaaa
-		HTTP_Passwd      aaaa
-		Format           json_stream
-		tls              on
-`
 	expectedOverride_config := `
 [INPUT]
     Name              tail
@@ -317,16 +237,8 @@ return "fooBar"
   protocol: TLS`
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
 		{
-			Key:   "fluent-bit.conf.script",
-			Value: expectedFileScript,
-		},
-		{
 			Key:   "fluent-bit.config.script",
 			Value: expectedFileScript,
-		},
-		{
-			Key:   "fluent-bit.conf.extra",
-			Value: expectedOverride_conf,
 		},
 		{
 			Key:   "fluent-bit.config.extra",

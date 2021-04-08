@@ -72,7 +72,6 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	var cfg Config
 	cfg.Ems.Disabled = true
 	cfg.Cls.Disabled = true
-	cfg.LMS.EnabledForGlobalAccounts = "none"
 	cfg.AuditLog = auditlog.Config{
 		URL:           "https://host1:8080/aaa/v2/",
 		User:          "fooUser",
