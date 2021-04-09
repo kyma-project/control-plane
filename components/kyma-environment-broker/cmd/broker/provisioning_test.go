@@ -17,9 +17,14 @@ func TestProvisioning_HappyPath(t *testing.T) {
 	provisioningOperationID := suite.CreateProvisioning(RuntimeOptions{})
 	suite.WaitForProvisioningState(provisioningOperationID, domain.InProgress)
 
+	// then
+	suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
+
 	// when
 	suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
 
 	// then
 	suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
+	suite.AssertAllStepsFinished(provisioningOperationID)
+
 }

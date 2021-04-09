@@ -385,10 +385,11 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 }
 
 type ProvisioningSuite struct {
-	provisionerClient *provisioner.FakeClient
-	provisioningQueue *process.Queue
-	storage           storage.BrokerStorage
-	directorClient    *directorMock.DirectorClient
+	provisionerClient   *provisioner.FakeClient
+	provisioningManager *provisioning.StagedManager
+	provisioningQueue   *process.Queue
+	storage             storage.BrokerStorage
+	directorClient      *directorMock.DirectorClient
 
 	t *testing.T
 }
@@ -397,7 +398,6 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	ctx, _ := context.WithTimeout(context.Background(), 20*time.Minute)
 	logs := logrus.New()
 	db := storage.NewMemoryStorage()
-	eventBroker := event.NewPubSub(logs)
 
 	cfg := fixConfig()
 
@@ -462,16 +462,22 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	clsConfig, clsClient, clsProvisioner := fixClsComponents()
 
-	provisioningQueue := NewProvisioningProcessingQueue(ctx, workersAmount, cfg, db, eventBroker, provisionerClient,
-		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, smcf, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager,
-		edpClient, accountProvider, clsConfig, clsClient, clsProvisioner, logs)
+	eventBroker := event.NewPubSub(logs)
+
+	// switch to StagedManager when the feature is enabled
+	provisionStagedManager := provisioning.NewStagedManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
+
+	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
+	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, smcf, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager, edpClient, accountProvider, clsConfig, clsClient, clsProvisioner, logs)
+
+	provisioningQueue.SpeedUp(1000)
 
 	return &ProvisioningSuite{
-		provisionerClient: provisionerClient,
-		provisioningQueue: provisioningQueue,
-		storage:           db,
-		directorClient:    directorClient,
+		provisionerClient:   provisionerClient,
+		provisioningManager: provisionStagedManager,
+		provisioningQueue:   provisioningQueue,
+		storage:             db,
+		directorClient:      directorClient,
 
 		t: t,
 	}
@@ -554,9 +560,43 @@ func (s *ProvisioningSuite) FinishProvisioningOperationByProvisioner(operationID
 	s.finishOperationByProvisioner(op.RuntimeID)
 }
 
-func (s *ProvisioningSuite) finishOperationByProvisioner(operationID string) {
-	err := wait.Poll(time.Second*1, 15*time.Minute, func() (bool, error) {
-		status := s.provisionerClient.FindOperationByOperationID(operationID)
+func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID string) {
+	// wait until ProvisioningOperation reaches CreateRuntime step
+	var provisioningOp *internal.ProvisioningOperation
+	err := wait.Poll(time.Second*1, 2*time.Minute, func() (bool, error) {
+		op, err := s.storage.Operations().GetProvisioningOperationByID(operationID)
+		assert.NoError(s.t, err)
+		if op.ProvisionerOperationID != "" {
+			provisioningOp = op
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+
+	var status gqlschema.OperationStatus
+	err = wait.Poll(time.Second*1, 2*time.Minute, func() (bool, error) {
+		status = s.provisionerClient.FindOperationByRuntimeID(provisioningOp.RuntimeID)
+		if status.ID != nil {
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+	assert.Equal(s.t, gqlschema.OperationStateInProgress, status.State)
+}
+
+func (s *ProvisioningSuite) AssertAllStepsFinished(operationID string) {
+	operation, _ := s.storage.Operations().GetProvisioningOperationByID(operationID)
+	steps := s.provisioningManager.GetAllSteps()
+	for _, step := range steps {
+		assert.True(s.t, operation.IsStepDone(step.Name()))
+	}
+}
+
+func (s *ProvisioningSuite) finishOperationByProvisioner(runtimeID string) {
+	err := wait.Poll(time.Second*1, 2*time.Minute, func() (bool, error) {
+		status := s.provisionerClient.FindOperationByRuntimeID(runtimeID)
 		if status.ID != nil {
 			s.provisionerClient.FinishProvisionerOperation(*status.ID)
 			return true, nil

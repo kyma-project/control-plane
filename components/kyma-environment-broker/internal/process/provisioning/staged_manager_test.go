@@ -33,6 +33,10 @@ func TestHappyPath(t *testing.T) {
 	op, _ := operationStorage.GetProvisioningOperationByID(operation.ID)
 	assert.True(t, op.IsStageFinished("stage-1"))
 	assert.True(t, op.IsStageFinished("stage-2"))
+	steps := mgr.GetAllSteps()
+	for _, s := range steps {
+		assert.True(t, operation.IsStepDone(s.Name()))
+	}
 }
 
 func TestWithRetry(t *testing.T) {

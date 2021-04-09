@@ -59,7 +59,7 @@ func (c *FakeClient) FindOperationByRuntimeIDAndType(runtimeID string, operation
 	return schema.OperationStatus{}
 }
 
-func (c *FakeClient) FindOperationByOperationID(runtimeID string) schema.OperationStatus {
+func (c *FakeClient) FindOperationByRuntimeID(runtimeID string) schema.OperationStatus {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

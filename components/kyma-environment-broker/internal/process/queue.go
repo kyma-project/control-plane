@@ -19,6 +19,8 @@ type Queue struct {
 	executor  Executor
 	waitGroup sync.WaitGroup
 	log       logrus.FieldLogger
+
+	speedFactor int64
 }
 
 func NewQueue(executor Executor, log logrus.FieldLogger) *Queue {
@@ -27,6 +29,8 @@ func NewQueue(executor Executor, log logrus.FieldLogger) *Queue {
 		executor:  executor,
 		waitGroup: sync.WaitGroup{},
 		log:       log,
+
+		speedFactor: 1,
 	}
 }
 
@@ -45,18 +49,24 @@ func (q *Queue) ShutDown() {
 func (q *Queue) Run(stop <-chan struct{}, workersAmount int) {
 	for i := 0; i < workersAmount; i++ {
 		q.waitGroup.Add(1)
-		createWorker(q.queue, q.executor.Execute, stop, &q.waitGroup, q.log)
+		q.createWorker(q.queue, q.executor.Execute, stop, &q.waitGroup, q.log)
 	}
 }
 
-func createWorker(queue workqueue.RateLimitingInterface, process func(id string) (time.Duration, error), stopCh <-chan struct{}, waitGroup *sync.WaitGroup, log logrus.FieldLogger) {
+// SpeedUp changes speedFactor parameter to reduce time between processing operations.
+//This method should only be used for testing purposes
+func (q *Queue) SpeedUp(speedFactor int64) {
+	q.speedFactor = speedFactor
+}
+
+func (q *Queue) createWorker(queue workqueue.RateLimitingInterface, process func(id string) (time.Duration, error), stopCh <-chan struct{}, waitGroup *sync.WaitGroup, log logrus.FieldLogger) {
 	go func() {
-		wait.Until(worker(queue, process, log), time.Second, stopCh)
+		wait.Until(q.worker(queue, process, log), time.Second, stopCh)
 		waitGroup.Done()
 	}()
 }
 
-func worker(queue workqueue.RateLimitingInterface, process func(key string) (time.Duration, error), log logrus.FieldLogger) func() {
+func (q *Queue) worker(queue workqueue.RateLimitingInterface, process func(key string) (time.Duration, error), log logrus.FieldLogger) func() {
 	return func() {
 		exit := false
 		for !exit {
@@ -77,7 +87,8 @@ func worker(queue workqueue.RateLimitingInterface, process func(key string) (tim
 				when, err := process(id)
 				if err == nil && when != 0 {
 					log.Infof("Adding %q item after %s", id, when)
-					queue.AddAfter(key, when)
+					afterDuration := time.Duration(int64(when) / q.speedFactor)
+					queue.AddAfter(key, afterDuration)
 					return false
 				}
 				if err != nil {
