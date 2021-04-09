@@ -466,3 +466,20 @@ func serviceManagerRequestCreds(parameters ProvisioningParameters) *servicemanag
 	}
 	return creds
 }
+
+func (i *ServiceManagerInstanceInfo) ToProvisioningInput() *servicemanager.ProvisioningInput {
+	var input servicemanager.ProvisioningInput
+
+	input.ID = i.InstanceID
+	input.ServiceID = i.ServiceID
+	input.PlanID = i.PlanID
+	input.SpaceGUID = uuid.New().String()
+	input.OrganizationGUID = uuid.New().String()
+
+	input.Context = map[string]interface{}{
+		"platform": "kubernetes",
+	}
+	input.Parameters = map[string]interface{}{}
+
+	return &input
+}

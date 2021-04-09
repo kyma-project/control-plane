@@ -38,10 +38,10 @@ func (s *ConnectivityProvisionStep) Run(operation internal.ProvisioningOperation
 	extractorFunc := func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
 		return &op.Connectivity.Instance
 	}
-	provisioner := NewSimpleProvisioning("Connectivity", extractorFunc, s.operationManager, PassThrough)
+	provisioner := NewServiceManagerProvisioner("Connectivity", extractorFunc, s.operationManager, PassThrough)
 	return provisioner.Run(operation, log)
 }
 
 func GetConnectivityProvisioningData(info internal.ServiceManagerInstanceInfo) *servicemanager.ProvisioningInput {
-	return GetSimpleInput(&info)
+	return info.ToProvisioningInput()
 }

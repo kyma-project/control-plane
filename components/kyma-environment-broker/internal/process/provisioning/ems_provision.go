@@ -39,12 +39,12 @@ func (s *EmsProvisionStep) Run(operation internal.ProvisioningOperation, log log
 		return &op.Ems.Instance
 	}
 
-	provisioner := NewSimpleProvisioning("Ems", extractorFunc, s.operationManager, getEventingProvisioningData)
+	provisioner := NewServiceManagerProvisioner("Ems", extractorFunc, s.operationManager, getEventingProvisioningData)
 	return provisioner.Run(operation, log)
 }
 
 func GetEventingProvisioningData(info internal.ServiceManagerInstanceInfo) *servicemanager.ProvisioningInput {
-	input := GetSimpleInput(&info)
+	input := info.ToProvisioningInput()
 	return getEventingProvisioningData(input)
 }
 

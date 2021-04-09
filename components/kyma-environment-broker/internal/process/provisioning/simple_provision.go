@@ -14,7 +14,7 @@ import (
 type overrideInputFunc func(*servicemanager.ProvisioningInput) *servicemanager.ProvisioningInput
 type infoExtractor func(*internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo
 
-type SimpleProvisioner struct {
+type ServiceManagerProvisioner struct {
 	operationManager  *process.ProvisionOperationManager
 	serviceName       string
 	infoExtractorFunc infoExtractor
@@ -25,10 +25,10 @@ type Context interface {
 	getProvisioningInput(operation internal.ProvisioningOperation) *servicemanager.ProvisioningInput
 }
 
-func NewSimpleProvisioning(serviceName string, info infoExtractor, manager *process.ProvisionOperationManager,
-	overrideInput overrideInputFunc) *SimpleProvisioner {
+func NewServiceManagerProvisioner(serviceName string, info infoExtractor, manager *process.ProvisionOperationManager,
+	overrideInput overrideInputFunc) *ServiceManagerProvisioner {
 
-	return &SimpleProvisioner{
+	return &ServiceManagerProvisioner{
 		operationManager:  manager,
 		serviceName:       serviceName,
 		infoExtractorFunc: info,
@@ -36,7 +36,7 @@ func NewSimpleProvisioning(serviceName string, info infoExtractor, manager *proc
 	}
 }
 
-func (s *SimpleProvisioner) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *ServiceManagerProvisioner) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	serviceInfo := s.infoExtractorFunc(&operation)
 	if serviceInfo.ProvisioningTriggered {
 		log.Infof("%s Provisioning step was already triggered", s.serviceName)
@@ -60,9 +60,9 @@ func (s *SimpleProvisioner) Run(operation internal.ProvisioningOperation, log lo
 	}
 
 	// provision
-	operation, _, err = s.provision(smCli, operation, log)
+	operation, delay, err := s.provision(smCli, operation, log)
 	if err != nil {
-		return s.operationManager.HandleError(operation, err, log, fmt.Sprintf("provision()  call failed"))
+		return operation, delay, err
 	}
 
 	// save the status
@@ -81,9 +81,9 @@ func PassThrough(details *servicemanager.ProvisioningInput) *servicemanager.Prov
 	return details
 }
 
-func (s *SimpleProvisioner) provision(smCli servicemanager.Client, operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *ServiceManagerProvisioner) provision(smCli servicemanager.Client, operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	serviceInfo := s.infoExtractorFunc(&operation)
-	input := s.overrideInputFunc(GetSimpleInput(serviceInfo))
+	input := s.overrideInputFunc(serviceInfo.ToProvisioningInput())
 	resp, err := smCli.Provision(serviceInfo.BrokerID, *input, true)
 	if err != nil {
 		return s.operationManager.HandleError(operation, err, log, fmt.Sprintf("Provision() call failed for brokerID: %s; input: %#v", serviceInfo.BrokerID, input))
@@ -91,21 +91,4 @@ func (s *SimpleProvisioner) provision(smCli servicemanager.Client, operation int
 	log.Debugf("response from %s provisioning call: %#v", s.serviceName, resp)
 
 	return operation, 0, nil
-}
-
-func GetSimpleInput(info *internal.ServiceManagerInstanceInfo) *servicemanager.ProvisioningInput {
-	var input servicemanager.ProvisioningInput
-
-	input.ID = info.InstanceID
-	input.ServiceID = info.ServiceID
-	input.PlanID = info.PlanID
-	input.SpaceGUID = uuid.New().String()
-	input.OrganizationGUID = uuid.New().String()
-
-	input.Context = map[string]interface{}{
-		"platform": "kubernetes",
-	}
-	input.Parameters = map[string]interface{}{}
-
-	return &input
 }

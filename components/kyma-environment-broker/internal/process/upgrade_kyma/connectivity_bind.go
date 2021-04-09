@@ -28,7 +28,7 @@ func NewConnectivityUpgradeBindStep(os storage.Operations, secretKey string) *Co
 var _ Step = (*ConnectivityUpgradeBindStep)(nil)
 
 func (s *ConnectivityUpgradeBindStep) Name() string {
-	return "CONN"
+	return "CONNECTIVITY_Bind"
 }
 
 func (s *ConnectivityUpgradeBindStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
