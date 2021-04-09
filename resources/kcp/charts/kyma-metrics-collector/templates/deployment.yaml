@@ -33,6 +33,7 @@ spec:
             - "--worker-pool-size={{ .Values.config.workerPoolSize }}"
             - "--log-level={{ .Values.config.logLevel }}"
             - "--listen-addr={{ .Values.config.port }}"
+            - "--gardener-namespace={{ .Values.gardener.namespace }}"
             {{- if .Values.extraArgs }}
 {{ toYaml .Values.extraArgs | trim | indent 12 }}
             {{- end }}
