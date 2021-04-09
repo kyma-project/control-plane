@@ -1,8 +1,10 @@
-package provisioning
+package upgrade_kyma
 
 import (
 	"testing"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 
@@ -28,16 +30,16 @@ func TestAuditLog_ScriptFileDoesNotExist(t *testing.T) {
 	}
 	svc := NewAuditLogOverridesStep(mm, repo, cfg)
 
-	operation := internal.ProvisioningOperation{
+	operation := internal.UpgradeKymaOperation{
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{SubAccountID: "1234567890"}},
 		},
 	}
-	err := repo.InsertProvisioningOperation(operation)
+	err := repo.InsertUpgradeKymaOperation(operation)
 	require.NoError(t, err)
 
 	// when
-	_, _, err = svc.Run(operation, NewLogDummy())
+	_, _, err = svc.Run(operation, logger.NewLogDummy())
 	//then
 	require.Error(t, err)
 	require.EqualError(t, err, "open /auditlog-script/script: file does not exist")
@@ -72,42 +74,6 @@ return "fooBar"
 
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
-	expectedOverride_conf := `
-[INPUT]
-		Name              tail
-		Tag               dex.*
-		Path              /var/log/containers/*_dex-*.log
-		DB                /var/log/flb_kube_dex.db
-		parser            docker
-		Mem_Buf_Limit     5MB
-		Skip_Long_Lines   On
-		Refresh_Interval  10
-[FILTER]
-		Name    lua
-		Match   dex.*
-		script  script.lua
-		call    reformat
-[FILTER]
-		Name    grep
-		Match   dex.*
-		Regex   time .*
-[FILTER]
-		Name    grep
-		Match   dex.*
-		Regex   data .*\"xsuaa
-[OUTPUT]
-		Name             http
-		Match            dex.*
-		Retry_Limit      False
-		Host             host1
-		Port             8080
-		URI              /aaa/v2/security-events
-		Header           Content-Type application/json
-		HTTP_User        aaaa
-		HTTP_Passwd      aaaa
-		Format           json_stream
-		tls              on
-`
 	expectedOverride_config := `
 [INPUT]
     Name              tail
@@ -157,16 +123,8 @@ return "fooBar"
   protocol: TLS`
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
 		{
-			Key:   "fluent-bit.conf.script",
-			Value: expectedFileScript,
-		},
-		{
 			Key:   "fluent-bit.config.script",
 			Value: expectedFileScript,
-		},
-		{
-			Key:   "fluent-bit.conf.extra",
-			Value: expectedOverride_conf,
 		},
 		{
 			Key:   "fluent-bit.config.extra",
@@ -186,16 +144,16 @@ return "fooBar"
 		},
 	}).Return(nil).Once()
 
-	operation := internal.ProvisioningOperation{
+	operation := internal.UpgradeKymaOperation{
 		InputCreator: inputCreatorMock,
 		Operation: internal.Operation{
 
 			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{SubAccountID: "1234567890"}},
 		},
 	}
-	repo.InsertProvisioningOperation(operation)
+	repo.InsertUpgradeKymaOperation(operation)
 	// when
-	_, repeat, err := svc.Run(operation, NewLogDummy())
+	_, repeat, err := svc.Run(operation, logger.NewLogDummy())
 	//then
 	assert.NoError(t, err)
 	assert.Equal(t, time.Duration(0), repeat)
@@ -227,44 +185,9 @@ return "fooBar"
 		EnableSeqHttp: true,
 	}
 	svc := NewAuditLogOverridesStep(mm, repo, cfg)
+
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
-	expectedOverride_conf := `
-[INPUT]
-		Name              tail
-		Tag               dex.*
-		Path              /var/log/containers/*_dex-*.log
-		DB                /var/log/flb_kube_dex.db
-		parser            docker
-		Mem_Buf_Limit     5MB
-		Skip_Long_Lines   On
-		Refresh_Interval  10
-[FILTER]
-		Name    lua
-		Match   dex.*
-		script  script.lua
-		call    reformat
-[FILTER]
-		Name    grep
-		Match   dex.*
-		Regex   time .*
-[FILTER]
-		Name    grep
-		Match   dex.*
-		Regex   data .*\"xsuaa
-[OUTPUT]
-		Name             sequentialhttp
-		Match            dex.*
-		Retry_Limit      False
-		Host             host1
-		Port             8080
-		URI              /aaa/v2/security-events
-		Header           Content-Type application/json
-		HTTP_User        aaaa
-		HTTP_Passwd      aaaa
-		Format           json_stream
-		tls              on
-`
 	expectedOverride_config := `
 [INPUT]
     Name              tail
@@ -314,16 +237,8 @@ return "fooBar"
   protocol: TLS`
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
 		{
-			Key:   "fluent-bit.conf.script",
-			Value: expectedFileScript,
-		},
-		{
 			Key:   "fluent-bit.config.script",
 			Value: expectedFileScript,
-		},
-		{
-			Key:   "fluent-bit.conf.extra",
-			Value: expectedOverride_conf,
 		},
 		{
 			Key:   "fluent-bit.config.extra",
@@ -343,7 +258,7 @@ return "fooBar"
 		},
 	}).Return(nil).Once()
 
-	operation := internal.ProvisioningOperation{
+	operation := internal.UpgradeKymaOperation{
 		RuntimeVersion: internal.RuntimeVersionData{
 			Version: "1.20",
 			Origin:  "foo",
@@ -353,9 +268,9 @@ return "fooBar"
 			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{SubAccountID: "1234567890"}},
 		},
 	}
-	repo.InsertProvisioningOperation(operation)
+	repo.InsertUpgradeKymaOperation(operation)
 	// when
-	_, repeat, err := svc.Run(operation, NewLogDummy())
+	_, repeat, err := svc.Run(operation, logger.NewLogDummy())
 	//then
 	assert.NoError(t, err)
 	assert.Equal(t, time.Duration(0), repeat)

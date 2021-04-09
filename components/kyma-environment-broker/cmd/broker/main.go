@@ -11,6 +11,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/spf13/afero"
+
 	"code.cloudfoundry.org/lager"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/handlers"
@@ -205,6 +207,9 @@ func main() {
 	clsClient := cls.NewClient(clsConfig)
 	clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient)
 
+	// Auditlog
+	fileSystem := afero.NewOsFs()
+
 	// LMS
 	fatalOnError(cfg.LMS.Validate())
 	lmsClient := lms.NewClient(cfg.LMS, logs.WithField("service", "lmsClient"))
@@ -283,7 +288,7 @@ func main() {
 	provisionQueue := NewProvisioningProcessingQueue(ctx, workersAmount, &cfg, db, eventBroker, provisionerClient, directorClient, inputFactory,
 		avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
 		runtimeOverrides, serviceManagerClientFactory, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager,
-		edpClient, accountProvider, clsConfig, clsClient, clsProvisioner, logs)
+		edpClient, accountProvider, clsConfig, clsClient, clsProvisioner, fileSystem, logs)
 
 	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, &cfg, db, eventBroker, provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient, accountProvider, clsConfig, clsClient, logs)
 
@@ -329,7 +334,7 @@ func main() {
 	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
-		&cfg, accountProvider, serviceManagerClientFactory, clsConfig, logs)
+		&cfg, accountProvider, serviceManagerClientFactory, clsConfig, fileSystem, logs)
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeResolver, upgradeEvalManager, logs)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
@@ -380,9 +385,9 @@ func main() {
 // * If CLS is globally disabled, just use the regular Audit Log step
 // * If CLS is enabled and the cluster is Trial, just use the regular Audit Log step
 // * If CLS is enabled and the cluster is NOT Trial, use the combined CLS + Audit Log step
-func newAuditLogStep(cfg *Config, ops storage.Operations) provisioning.Step {
+func newAuditLogStep(fileSystem afero.Fs, cfg *Config, ops storage.Operations) provisioning.Step {
 	var auditLogStep provisioning.Step
-	auditLogStep = provisioning.NewAuditLogOverridesStep(ops, cfg.AuditLog)
+	auditLogStep = provisioning.NewAuditLogOverridesStep(fileSystem, ops, cfg.AuditLog)
 	if !cfg.Cls.Disabled {
 		return provisioning.NewEnableForTrialPlanStep(auditLogStep)
 	}
@@ -505,7 +510,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, workersAmount int, cfg 
 	internalEvalUpdater *provisioning.InternalEvalUpdater, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
 	runtimeOverrides provisioning.RuntimeOverridesAppender, smcf *servicemanager.ClientFactory, bundleBuilder ias.BundleBuilder, iasTypeSetter *provisioning.IASType,
 	lmsClient lms.Client, lmsTenantManager provisioning.LmsTenantProvider, edpClient provisioning.EDPClient,
-	accountProvider hyperscaler.AccountProvider, clsConfig *cls.Config, clsClient provisioning.ClsBindingProvider, clsProvisioner provisioning.ClsProvisioner,
+	accountProvider hyperscaler.AccountProvider, clsConfig *cls.Config, clsClient provisioning.ClsBindingProvider, clsProvisioner provisioning.ClsProvisioner, fileSystem afero.Fs,
 	logs logrus.FieldLogger) *process.Queue {
 
 	provisionManager := provisioning.NewManager(db.Operations(), pub, logs.WithField("provisioning", "manager"))
@@ -598,7 +603,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, workersAmount int, cfg 
 		},
 		{
 			weight: 3,
-			step:   newAuditLogStep(cfg, db.Operations()),
+			step:   newAuditLogStep(fileSystem, cfg, db.Operations()),
 		},
 		{
 			weight:   5,
@@ -744,7 +749,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
 	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager,
 	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory,
-	clsConfig *cls.Config, logs logrus.FieldLogger) *process.Queue {
+	clsConfig *cls.Config, fileSystem afero.Fs, logs logrus.FieldLogger) *process.Queue {
 
 	//CLS
 	clsClient := cls.NewClient(clsConfig)
@@ -781,6 +786,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			weight:   3,
 			step:     upgrade_kyma.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   3,
+			step:     upgrade_kyma.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
+			disabled: !cfg.Cls.Disabled,
 		},
 		{
 			weight:   4,

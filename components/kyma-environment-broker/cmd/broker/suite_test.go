@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
+	"github.com/spf13/afero"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -69,6 +72,16 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	var cfg Config
 	cfg.Ems.Disabled = true
 	cfg.Cls.Disabled = true
+	cfg.AuditLog = auditlog.Config{
+		URL:           "https://host1:8080/aaa/v2/",
+		User:          "fooUser",
+		Password:      "barPass",
+		Tenant:        "fooTen",
+		EnableSeqHttp: true,
+	}
+
+	//auditLog create file here.
+	inMemoryFs, err := createInMemFS()
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
@@ -117,7 +130,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, hyperscaler.NewAccountProvider(nil, nil, nil), nil, nil, logs)
+		&cfg, hyperscaler.NewAccountProvider(nil, nil, nil), nil, nil, inMemoryFs, logs)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
@@ -342,4 +355,19 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 	resources = append(resources, override)
 
 	return resources
+}
+
+func createInMemFS() (afero.Fs, error) {
+
+	inMemoryFs := afero.NewMemMapFs()
+
+	fileScript := `
+		func myScript() {
+		foo: sub_account_id
+		bar: tenant_id
+		return "fooBar"
+	}`
+
+	err := afero.WriteFile(inMemoryFs, "/auditlog-script/script", []byte(fileScript), 0755)
+	return inMemoryFs, err
 }
