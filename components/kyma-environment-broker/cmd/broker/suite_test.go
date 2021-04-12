@@ -550,7 +550,7 @@ func (s *ProvisioningSuite) FinishProvisioningOperationByProvisioner(operationID
 
 	s.directorClient.On("GetConsoleURL", globalAccountID, op.RuntimeID).Return(dashboardURL, nil)
 	s.directorClient.On("SetLabel", globalAccountID, op.RuntimeID, mock.Anything, mock.Anything).Return(nil)
-	s.finishOperationByProvisioner(op.RuntimeID)
+	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, op.RuntimeID)
 }
 
 func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID string) {
@@ -569,7 +569,7 @@ func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID str
 
 	var status gqlschema.OperationStatus
 	err = wait.Poll(time.Second*1, 2*time.Minute, func() (bool, error) {
-		status = s.provisionerClient.FindOperationByRuntimeID(provisioningOp.RuntimeID)
+		status = s.provisionerClient.FindOperationByRuntimeIDAndType(provisioningOp.RuntimeID, gqlschema.OperationTypeProvision)
 		if status.ID != nil {
 			return true, nil
 		}
@@ -587,9 +587,9 @@ func (s *ProvisioningSuite) AssertAllStepsFinished(operationID string) {
 	}
 }
 
-func (s *ProvisioningSuite) finishOperationByProvisioner(runtimeID string) {
+func (s *ProvisioningSuite) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
 	err := wait.Poll(time.Second*1, 2*time.Minute, func() (bool, error) {
-		status := s.provisionerClient.FindOperationByRuntimeID(runtimeID)
+		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
 			s.provisionerClient.FinishProvisionerOperation(*status.ID)
 			return true, nil
