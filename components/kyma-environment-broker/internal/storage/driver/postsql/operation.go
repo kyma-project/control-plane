@@ -821,7 +821,7 @@ func (s *operations) operationToDB(op internal.Operation) (dbmodel.OperationDTO,
 		InstanceID:             op.InstanceID,
 		OrchestrationID:        storage.StringToSQLNullString(op.OrchestrationID),
 		ProvisioningParameters: storage.StringToSQLNullString(string(pp)),
-		FinishedStages:         strings.Join(stages, ","),
+		FinishedStages:         storage.StringToSQLNullString(strings.Join(stages, ",")),
 	}, nil
 }
 
@@ -839,7 +839,7 @@ func (s *operations) toOperation(op *dbmodel.OperationDTO, instanceDetails inter
 	}
 
 	stages := make(map[string]struct{})
-	for _, s := range strings.Split(op.FinishedStages, ",") {
+	for _, s := range strings.Split(storage.SQLNullStringToString(op.FinishedStages), ",") {
 		stages[s] = struct{}{}
 	}
 	return internal.Operation{
