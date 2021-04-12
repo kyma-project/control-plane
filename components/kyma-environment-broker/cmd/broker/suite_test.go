@@ -481,7 +481,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 		PlanID: broker.AzurePlanID,
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,
-			SubAccountID:    "subAccountID",
+			SubAccountID:    options.ProvideSubAccountID(),
 			ServiceManager: &internal.ServiceManagerEntryDTO{
 				URL: "sm_url",
 				Credentials: internal.ServiceManagerCredentials{
