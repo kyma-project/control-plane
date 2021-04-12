@@ -45,10 +45,12 @@ type ClusterConfigInput struct {
 }
 
 type ComponentConfiguration struct {
-	Component     string         `json:"component"`
-	Namespace     string         `json:"namespace"`
-	Configuration []*ConfigEntry `json:"configuration"`
-	SourceURL     *string        `json:"sourceURL"`
+	Component             string                 `json:"component"`
+	Namespace             string                 `json:"namespace"`
+	Configuration         []*ConfigEntry         `json:"configuration"`
+	SourceURL             *string                `json:"sourceURL"`
+	Prerequisite          *bool                  `json:"prerequisite"`
+	PrerequisiteResources *PrerequisiteResources `json:"prerequisiteResources"`
 }
 
 type ComponentConfigurationInput struct {
@@ -83,6 +85,18 @@ func (GCPProviderConfig) IsProviderSpecificConfig() {}
 
 type GCPProviderConfigInput struct {
 	Zones []string `json:"zones"`
+}
+
+type GardenerCertificatePrerequisite struct {
+	ResourceName string `json:"resourceName"`
+	SecretName   string `json:"secretName"`
+	CommonName   string `json:"commonName"`
+}
+
+type GardenerCertificatePrerequisiteInput struct {
+	ResourceName string `json:"resourceName"`
+	SecretName   string `json:"secretName"`
+	CommonName   string `json:"commonName"`
 }
 
 type GardenerConfig struct {
@@ -196,6 +210,16 @@ type OperationStatus struct {
 	RuntimeID *string        `json:"runtimeID"`
 }
 
+type PrerequisiteResources struct {
+	Secrets      []*SecretPrerequisite              `json:"secrets"`
+	Certificates []*GardenerCertificatePrerequisite `json:"certificates"`
+}
+
+type PrerequisiteResourcesInput struct {
+	Secrets      []*SecretPrerequisiteInput              `json:"secrets"`
+	Certificates []*GardenerCertificatePrerequisiteInput `json:"certificates"`
+}
+
 type ProviderSpecificInput struct {
 	GcpConfig       *GCPProviderConfigInput       `json:"gcpConfig"`
 	AzureConfig     *AzureProviderConfigInput     `json:"azureConfig"`
@@ -231,6 +255,26 @@ type RuntimeStatus struct {
 	RuntimeConnectionStatus *RuntimeConnectionStatus `json:"runtimeConnectionStatus"`
 	RuntimeConfiguration    *RuntimeConfig           `json:"runtimeConfiguration"`
 	HibernationStatus       *HibernationStatus       `json:"hibernationStatus"`
+}
+
+type SecretPrerequisite struct {
+	ResourceName string                     `json:"resourceName"`
+	Entries      []*SecretPrerequisiteEntry `json:"entries"`
+}
+
+type SecretPrerequisiteEntry struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+type SecretPrerequisiteEntryInput struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+type SecretPrerequisiteInput struct {
+	ResourceName string                          `json:"resourceName"`
+	Entries      []*SecretPrerequisiteEntryInput `json:"entries"`
 }
 
 type UpgradeRuntimeInput struct {

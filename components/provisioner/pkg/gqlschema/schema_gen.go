@@ -55,10 +55,12 @@ type ComplexityRoot struct {
 	}
 
 	ComponentConfiguration struct {
-		Component     func(childComplexity int) int
-		Configuration func(childComplexity int) int
-		Namespace     func(childComplexity int) int
-		SourceURL     func(childComplexity int) int
+		Component             func(childComplexity int) int
+		Configuration         func(childComplexity int) int
+		Namespace             func(childComplexity int) int
+		Prerequisite          func(childComplexity int) int
+		PrerequisiteResources func(childComplexity int) int
+		SourceURL             func(childComplexity int) int
 	}
 
 	ConfigEntry struct {
@@ -73,6 +75,12 @@ type ComplexityRoot struct {
 
 	GCPProviderConfig struct {
 		Zones func(childComplexity int) int
+	}
+
+	GardenerCertificatePrerequisite struct {
+		CommonName   func(childComplexity int) int
+		ResourceName func(childComplexity int) int
+		SecretName   func(childComplexity int) int
 	}
 
 	GardenerConfig struct {
@@ -137,6 +145,11 @@ type ComplexityRoot struct {
 		State     func(childComplexity int) int
 	}
 
+	PrerequisiteResources struct {
+		Certificates func(childComplexity int) int
+		Secrets      func(childComplexity int) int
+	}
+
 	Query struct {
 		RuntimeOperationStatus func(childComplexity int, id string) int
 		RuntimeStatus          func(childComplexity int, id string) int
@@ -158,6 +171,16 @@ type ComplexityRoot struct {
 		LastOperationStatus     func(childComplexity int) int
 		RuntimeConfiguration    func(childComplexity int) int
 		RuntimeConnectionStatus func(childComplexity int) int
+	}
+
+	SecretPrerequisite struct {
+		Entries      func(childComplexity int) int
+		ResourceName func(childComplexity int) int
+	}
+
+	SecretPrerequisiteEntry struct {
+		Key   func(childComplexity int) int
+		Value func(childComplexity int) int
 	}
 }
 
@@ -253,6 +276,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ComponentConfiguration.Namespace(childComplexity), true
 
+	case "ComponentConfiguration.prerequisite":
+		if e.complexity.ComponentConfiguration.Prerequisite == nil {
+			break
+		}
+
+		return e.complexity.ComponentConfiguration.Prerequisite(childComplexity), true
+
+	case "ComponentConfiguration.prerequisiteResources":
+		if e.complexity.ComponentConfiguration.PrerequisiteResources == nil {
+			break
+		}
+
+		return e.complexity.ComponentConfiguration.PrerequisiteResources(childComplexity), true
+
 	case "ComponentConfiguration.sourceURL":
 		if e.complexity.ComponentConfiguration.SourceURL == nil {
 			break
@@ -294,6 +331,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GCPProviderConfig.Zones(childComplexity), true
+
+	case "GardenerCertificatePrerequisite.commonName":
+		if e.complexity.GardenerCertificatePrerequisite.CommonName == nil {
+			break
+		}
+
+		return e.complexity.GardenerCertificatePrerequisite.CommonName(childComplexity), true
+
+	case "GardenerCertificatePrerequisite.resourceName":
+		if e.complexity.GardenerCertificatePrerequisite.ResourceName == nil {
+			break
+		}
+
+		return e.complexity.GardenerCertificatePrerequisite.ResourceName(childComplexity), true
+
+	case "GardenerCertificatePrerequisite.secretName":
+		if e.complexity.GardenerCertificatePrerequisite.SecretName == nil {
+			break
+		}
+
+		return e.complexity.GardenerCertificatePrerequisite.SecretName(childComplexity), true
 
 	case "GardenerConfig.allowPrivilegedContainers":
 		if e.complexity.GardenerConfig.AllowPrivilegedContainers == nil {
@@ -638,6 +696,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OperationStatus.State(childComplexity), true
 
+	case "PrerequisiteResources.certificates":
+		if e.complexity.PrerequisiteResources.Certificates == nil {
+			break
+		}
+
+		return e.complexity.PrerequisiteResources.Certificates(childComplexity), true
+
+	case "PrerequisiteResources.secrets":
+		if e.complexity.PrerequisiteResources.Secrets == nil {
+			break
+		}
+
+		return e.complexity.PrerequisiteResources.Secrets(childComplexity), true
+
 	case "Query.runtimeOperationStatus":
 		if e.complexity.Query.RuntimeOperationStatus == nil {
 			break
@@ -724,6 +796,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RuntimeStatus.RuntimeConnectionStatus(childComplexity), true
+
+	case "SecretPrerequisite.entries":
+		if e.complexity.SecretPrerequisite.Entries == nil {
+			break
+		}
+
+		return e.complexity.SecretPrerequisite.Entries(childComplexity), true
+
+	case "SecretPrerequisite.resourceName":
+		if e.complexity.SecretPrerequisite.ResourceName == nil {
+			break
+		}
+
+		return e.complexity.SecretPrerequisite.ResourceName(childComplexity), true
+
+	case "SecretPrerequisiteEntry.key":
+		if e.complexity.SecretPrerequisiteEntry.Key == nil {
+			break
+		}
+
+		return e.complexity.SecretPrerequisiteEntry.Key(childComplexity), true
+
+	case "SecretPrerequisiteEntry.value":
+		if e.complexity.SecretPrerequisiteEntry.Value == nil {
+			break
+		}
+
+		return e.complexity.SecretPrerequisiteEntry.Value(childComplexity), true
 
 	}
 	return 0, false
@@ -851,11 +951,34 @@ type ConfigEntry {
     secret: Boolean
 }
 
+type SecretPrerequisiteEntry {
+    key: String!        # Configuration property key
+    value: String!      # Configuration property value
+}
+
+type SecretPrerequisite {
+    resourceName: String!
+    entries: [SecretPrerequisiteEntry]
+}
+
+type GardenerCertificatePrerequisite {
+    resourceName: String!
+    secretName: String!
+    commonName: String!
+}
+
+type PrerequisiteResources {
+    secrets: [SecretPrerequisite]
+    certificates: [GardenerCertificatePrerequisite]
+}
+
 type ComponentConfiguration {
     component: String!
     namespace: String!
     configuration: [ConfigEntry]
     sourceURL: String
+    prerequisite: Boolean
+    prerequisiteResources: PrerequisiteResources
 }
 
 type KymaConfig {
@@ -986,7 +1109,7 @@ input GCPProviderConfigInput {
 
 input AzureProviderConfigInput {
     vnetCidr: String!   # Classless Inter-Domain Routing for the Azure Virtual Network
-    zones: [String!]      # Zones in which to create the cluster
+    zones: [String!]    # Zones in which to create the cluster
 }
 
 input AWSProviderConfigInput {
@@ -997,9 +1120,9 @@ input AWSProviderConfigInput {
 }
 
 input OpenStackProviderConfigInput {
-    zones:           [String!]! # Zones in which to create the cluster
-    floatingPoolName: String!  # FloatingPoolName name in which LoadBalancer FIPs should be created.
-    cloudProfileName: String!  # Name of the target Cloud Profile
+    zones:           [String!]!   # Zones in which to create the cluster
+    floatingPoolName: String!     # FloatingPoolName name in which LoadBalancer FIPs should be created.
+    cloudProfileName: String!     # Name of the target Cloud Profile
     loadBalancerProvider: String! # Name of load balancer provider, e.g. f5
 }
 
@@ -1008,7 +1131,7 @@ input KymaConfigInput {
     profile: KymaProfile                        # Optional resources profile
     components: [ComponentConfigurationInput]!  # List of Kyma Components with specific configuration
     configuration: [ConfigEntryInput]           # Global Kyma configuration
-    conflictStrategy: ConflictStrategy        # Defines merging strategy if conflicts occur for global overrides
+    conflictStrategy: ConflictStrategy          # Defines merging strategy if conflicts occur for global overrides
 }
 
 input ConfigEntryInput {
@@ -1017,12 +1140,33 @@ input ConfigEntryInput {
     secret: Boolean     # Specifies if the property is confidential
 }
 
+input SecretPrerequisiteEntryInput {
+    key: String!        # Configuration property key
+    value: String!      # Configuration property value
+}
+
+input SecretPrerequisiteInput {
+    resourceName: String!
+    entries: [SecretPrerequisiteEntryInput]
+}
+
+input GardenerCertificatePrerequisiteInput {
+    resourceName: String!
+    secretName: String!
+    commonName: String!
+}
+
+input PrerequisiteResourcesInput {
+    secrets: [SecretPrerequisiteInput]
+    certificates: [GardenerCertificatePrerequisiteInput]
+}
+
 input ComponentConfigurationInput {
     component: String!                    # Kyma component name
     namespace: String!                    # Namespace to which component should be installed
     configuration: [ConfigEntryInput]     # Component specific configuration
     sourceURL: String                     # Custom URL for the source files of the given component
-    conflictStrategy: ConflictStrategy  # Defines merging strategy if conflicts occur for component overrides
+    conflictStrategy: ConflictStrategy    # Defines merging strategy if conflicts occur for component overrides
 }
 
 input UpgradeRuntimeInput {
@@ -1075,7 +1219,8 @@ type Query {
 
     # Provides status of specified operation
     runtimeOperationStatus(id: String!): OperationStatus
-}`},
+}
+`},
 )
 
 // endregion ************************** generated!.gotpl **************************
@@ -1620,6 +1765,74 @@ func (ec *executionContext) _ComponentConfiguration_sourceURL(ctx context.Contex
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ComponentConfiguration_prerequisite(ctx context.Context, field graphql.CollectedField, obj *ComponentConfiguration) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "ComponentConfiguration",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Prerequisite, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ComponentConfiguration_prerequisiteResources(ctx context.Context, field graphql.CollectedField, obj *ComponentConfiguration) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "ComponentConfiguration",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PrerequisiteResources, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*PrerequisiteResources)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOPrerequisiteResources2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐPrerequisiteResources(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _ConfigEntry_key(ctx context.Context, field graphql.CollectedField, obj *ConfigEntry) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -1797,6 +2010,117 @@ func (ec *executionContext) _GCPProviderConfig_zones(ctx context.Context, field 
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2ᚕstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerCertificatePrerequisite_resourceName(ctx context.Context, field graphql.CollectedField, obj *GardenerCertificatePrerequisite) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerCertificatePrerequisite",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ResourceName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerCertificatePrerequisite_secretName(ctx context.Context, field graphql.CollectedField, obj *GardenerCertificatePrerequisite) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerCertificatePrerequisite",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SecretName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerCertificatePrerequisite_commonName(ctx context.Context, field graphql.CollectedField, obj *GardenerCertificatePrerequisite) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerCertificatePrerequisite",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CommonName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _GardenerConfig_name(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
@@ -3368,6 +3692,74 @@ func (ec *executionContext) _OperationStatus_runtimeID(ctx context.Context, fiel
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PrerequisiteResources_secrets(ctx context.Context, field graphql.CollectedField, obj *PrerequisiteResources) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PrerequisiteResources",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Secrets, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*SecretPrerequisite)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOSecretPrerequisite2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisite(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PrerequisiteResources_certificates(ctx context.Context, field graphql.CollectedField, obj *PrerequisiteResources) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PrerequisiteResources",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Certificates, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*GardenerCertificatePrerequisite)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOGardenerCertificatePrerequisite2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerCertificatePrerequisite(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_runtimeStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -3832,6 +4224,151 @@ func (ec *executionContext) _RuntimeStatus_hibernationStatus(ctx context.Context
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOHibernationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐHibernationStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SecretPrerequisite_resourceName(ctx context.Context, field graphql.CollectedField, obj *SecretPrerequisite) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SecretPrerequisite",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ResourceName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SecretPrerequisite_entries(ctx context.Context, field graphql.CollectedField, obj *SecretPrerequisite) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SecretPrerequisite",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Entries, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*SecretPrerequisiteEntry)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOSecretPrerequisiteEntry2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteEntry(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SecretPrerequisiteEntry_key(ctx context.Context, field graphql.CollectedField, obj *SecretPrerequisiteEntry) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SecretPrerequisiteEntry",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Key, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SecretPrerequisiteEntry_value(ctx context.Context, field graphql.CollectedField, obj *SecretPrerequisiteEntry) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SecretPrerequisiteEntry",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -5153,6 +5690,36 @@ func (ec *executionContext) unmarshalInputGCPProviderConfigInput(ctx context.Con
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputGardenerCertificatePrerequisiteInput(ctx context.Context, obj interface{}) (GardenerCertificatePrerequisiteInput, error) {
+	var it GardenerCertificatePrerequisiteInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "resourceName":
+			var err error
+			it.ResourceName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "secretName":
+			var err error
+			it.SecretName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "commonName":
+			var err error
+			it.CommonName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Context, obj interface{}) (GardenerConfigInput, error) {
 	var it GardenerConfigInput
 	var asMap = obj.(map[string]interface{})
@@ -5471,6 +6038,30 @@ func (ec *executionContext) unmarshalInputOpenStackProviderConfigInput(ctx conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPrerequisiteResourcesInput(ctx context.Context, obj interface{}) (PrerequisiteResourcesInput, error) {
+	var it PrerequisiteResourcesInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "secrets":
+			var err error
+			it.Secrets, err = ec.unmarshalOSecretPrerequisiteInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "certificates":
+			var err error
+			it.Certificates, err = ec.unmarshalOGardenerCertificatePrerequisiteInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerCertificatePrerequisiteInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputProviderSpecificInput(ctx context.Context, obj interface{}) (ProviderSpecificInput, error) {
 	var it ProviderSpecificInput
 	var asMap = obj.(map[string]interface{})
@@ -5558,6 +6149,54 @@ func (ec *executionContext) unmarshalInputRuntimeInput(ctx context.Context, obj 
 		case "labels":
 			var err error
 			it.Labels, err = ec.unmarshalOLabels2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLabels(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSecretPrerequisiteEntryInput(ctx context.Context, obj interface{}) (SecretPrerequisiteEntryInput, error) {
+	var it SecretPrerequisiteEntryInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "key":
+			var err error
+			it.Key, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "value":
+			var err error
+			it.Value, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSecretPrerequisiteInput(ctx context.Context, obj interface{}) (SecretPrerequisiteInput, error) {
+	var it SecretPrerequisiteInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "resourceName":
+			var err error
+			it.ResourceName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "entries":
+			var err error
+			it.Entries, err = ec.unmarshalOSecretPrerequisiteEntryInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteEntryInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5717,6 +6356,10 @@ func (ec *executionContext) _ComponentConfiguration(ctx context.Context, sel ast
 			out.Values[i] = ec._ComponentConfiguration_configuration(ctx, field, obj)
 		case "sourceURL":
 			out.Values[i] = ec._ComponentConfiguration_sourceURL(ctx, field, obj)
+		case "prerequisite":
+			out.Values[i] = ec._ComponentConfiguration_prerequisite(ctx, field, obj)
+		case "prerequisiteResources":
+			out.Values[i] = ec._ComponentConfiguration_prerequisiteResources(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5799,6 +6442,43 @@ func (ec *executionContext) _GCPProviderConfig(ctx context.Context, sel ast.Sele
 			out.Values[i] = graphql.MarshalString("GCPProviderConfig")
 		case "zones":
 			out.Values[i] = ec._GCPProviderConfig_zones(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var gardenerCertificatePrerequisiteImplementors = []string{"GardenerCertificatePrerequisite"}
+
+func (ec *executionContext) _GardenerCertificatePrerequisite(ctx context.Context, sel ast.SelectionSet, obj *GardenerCertificatePrerequisite) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, gardenerCertificatePrerequisiteImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GardenerCertificatePrerequisite")
+		case "resourceName":
+			out.Values[i] = ec._GardenerCertificatePrerequisite_resourceName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "secretName":
+			out.Values[i] = ec._GardenerCertificatePrerequisite_secretName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "commonName":
+			out.Values[i] = ec._GardenerCertificatePrerequisite_commonName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -6061,6 +6741,32 @@ func (ec *executionContext) _OperationStatus(ctx context.Context, sel ast.Select
 	return out
 }
 
+var prerequisiteResourcesImplementors = []string{"PrerequisiteResources"}
+
+func (ec *executionContext) _PrerequisiteResources(ctx context.Context, sel ast.SelectionSet, obj *PrerequisiteResources) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, prerequisiteResourcesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PrerequisiteResources")
+		case "secrets":
+			out.Values[i] = ec._PrerequisiteResources_secrets(ctx, field, obj)
+		case "certificates":
+			out.Values[i] = ec._PrerequisiteResources_certificates(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -6189,6 +6895,67 @@ func (ec *executionContext) _RuntimeStatus(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._RuntimeStatus_runtimeConfiguration(ctx, field, obj)
 		case "hibernationStatus":
 			out.Values[i] = ec._RuntimeStatus_hibernationStatus(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var secretPrerequisiteImplementors = []string{"SecretPrerequisite"}
+
+func (ec *executionContext) _SecretPrerequisite(ctx context.Context, sel ast.SelectionSet, obj *SecretPrerequisite) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, secretPrerequisiteImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SecretPrerequisite")
+		case "resourceName":
+			out.Values[i] = ec._SecretPrerequisite_resourceName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "entries":
+			out.Values[i] = ec._SecretPrerequisite_entries(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var secretPrerequisiteEntryImplementors = []string{"SecretPrerequisiteEntry"}
+
+func (ec *executionContext) _SecretPrerequisiteEntry(ctx context.Context, sel ast.SelectionSet, obj *SecretPrerequisiteEntry) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, secretPrerequisiteEntryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SecretPrerequisiteEntry")
+		case "key":
+			out.Values[i] = ec._SecretPrerequisiteEntry_key(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "value":
+			out.Values[i] = ec._SecretPrerequisiteEntry_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7156,6 +7923,89 @@ func (ec *executionContext) unmarshalOGCPProviderConfigInput2ᚖgithubᚗcomᚋk
 	return &res, err
 }
 
+func (ec *executionContext) marshalOGardenerCertificatePrerequisite2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerCertificatePrerequisite(ctx context.Context, sel ast.SelectionSet, v GardenerCertificatePrerequisite) graphql.Marshaler {
+	return ec._GardenerCertificatePrerequisite(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOGardenerCertificatePrerequisite2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerCertificatePrerequisite(ctx context.Context, sel ast.SelectionSet, v []*GardenerCertificatePrerequisite) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOGardenerCertificatePrerequisite2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerCertificatePrerequisite(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOGardenerCertificatePrerequisite2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerCertificatePrerequisite(ctx context.Context, sel ast.SelectionSet, v *GardenerCertificatePrerequisite) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._GardenerCertificatePrerequisite(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOGardenerCertificatePrerequisiteInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerCertificatePrerequisiteInput(ctx context.Context, v interface{}) (GardenerCertificatePrerequisiteInput, error) {
+	return ec.unmarshalInputGardenerCertificatePrerequisiteInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOGardenerCertificatePrerequisiteInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerCertificatePrerequisiteInput(ctx context.Context, v interface{}) ([]*GardenerCertificatePrerequisiteInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*GardenerCertificatePrerequisiteInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOGardenerCertificatePrerequisiteInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerCertificatePrerequisiteInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOGardenerCertificatePrerequisiteInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerCertificatePrerequisiteInput(ctx context.Context, v interface{}) (*GardenerCertificatePrerequisiteInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOGardenerCertificatePrerequisiteInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerCertificatePrerequisiteInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) marshalOGardenerConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerConfig(ctx context.Context, sel ast.SelectionSet, v GardenerConfig) graphql.Marshaler {
 	return ec._GardenerConfig(ctx, sel, &v)
 }
@@ -7283,6 +8133,17 @@ func (ec *executionContext) marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑpro
 	return ec._OperationStatus(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOPrerequisiteResources2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐPrerequisiteResources(ctx context.Context, sel ast.SelectionSet, v PrerequisiteResources) graphql.Marshaler {
+	return ec._PrerequisiteResources(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOPrerequisiteResources2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐPrerequisiteResources(ctx context.Context, sel ast.SelectionSet, v *PrerequisiteResources) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PrerequisiteResources(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOProviderSpecificConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificConfig(ctx context.Context, sel ast.SelectionSet, v ProviderSpecificConfig) graphql.Marshaler {
 	return ec._ProviderSpecificConfig(ctx, sel, &v)
 }
@@ -7330,6 +8191,172 @@ func (ec *executionContext) marshalORuntimeStatus2ᚖgithubᚗcomᚋkymaᚑproje
 		return graphql.Null
 	}
 	return ec._RuntimeStatus(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSecretPrerequisite2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisite(ctx context.Context, sel ast.SelectionSet, v SecretPrerequisite) graphql.Marshaler {
+	return ec._SecretPrerequisite(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOSecretPrerequisite2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisite(ctx context.Context, sel ast.SelectionSet, v []*SecretPrerequisite) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOSecretPrerequisite2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisite(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOSecretPrerequisite2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisite(ctx context.Context, sel ast.SelectionSet, v *SecretPrerequisite) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SecretPrerequisite(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSecretPrerequisiteEntry2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteEntry(ctx context.Context, sel ast.SelectionSet, v SecretPrerequisiteEntry) graphql.Marshaler {
+	return ec._SecretPrerequisiteEntry(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOSecretPrerequisiteEntry2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteEntry(ctx context.Context, sel ast.SelectionSet, v []*SecretPrerequisiteEntry) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOSecretPrerequisiteEntry2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteEntry(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOSecretPrerequisiteEntry2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteEntry(ctx context.Context, sel ast.SelectionSet, v *SecretPrerequisiteEntry) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SecretPrerequisiteEntry(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOSecretPrerequisiteEntryInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteEntryInput(ctx context.Context, v interface{}) (SecretPrerequisiteEntryInput, error) {
+	return ec.unmarshalInputSecretPrerequisiteEntryInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOSecretPrerequisiteEntryInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteEntryInput(ctx context.Context, v interface{}) ([]*SecretPrerequisiteEntryInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*SecretPrerequisiteEntryInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOSecretPrerequisiteEntryInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteEntryInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOSecretPrerequisiteEntryInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteEntryInput(ctx context.Context, v interface{}) (*SecretPrerequisiteEntryInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOSecretPrerequisiteEntryInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteEntryInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOSecretPrerequisiteInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteInput(ctx context.Context, v interface{}) (SecretPrerequisiteInput, error) {
+	return ec.unmarshalInputSecretPrerequisiteInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOSecretPrerequisiteInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteInput(ctx context.Context, v interface{}) ([]*SecretPrerequisiteInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*SecretPrerequisiteInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOSecretPrerequisiteInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOSecretPrerequisiteInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteInput(ctx context.Context, v interface{}) (*SecretPrerequisiteInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOSecretPrerequisiteInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐSecretPrerequisiteInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
