@@ -7,16 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
-	"github.com/spf13/afero"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
-
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-	"github.com/stretchr/testify/assert"
-	"k8s.io/apimachinery/pkg/util/wait"
-
 	"github.com/Peripli/service-manager-cli/pkg/types"
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
@@ -27,6 +17,7 @@ import (
 	hyperscalerautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
@@ -53,6 +44,7 @@ import (
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -463,12 +455,13 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	clsConfig, clsClient, clsProvisioner := fixClsComponents()
 
 	eventBroker := event.NewPubSub(logs)
+	mm := afero.NewMemMapFs()
 
 	// switch to StagedManager when the feature is enabled
 	provisionStagedManager := provisioning.NewStagedManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
 
 	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
-	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, smcf, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager, edpClient, accountProvider, clsConfig, clsClient, clsProvisioner, logs)
+	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, smcf, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager, edpClient, accountProvider, clsConfig, clsClient, clsProvisioner, mm, logs)
 
 	provisioningQueue.SpeedUp(1000)
 
