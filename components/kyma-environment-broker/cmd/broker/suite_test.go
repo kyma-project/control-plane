@@ -477,10 +477,6 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 }
 
 func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
-	return s.createProvisioning(options)
-}
-
-func (s *ProvisioningSuite) createProvisioning(options RuntimeOptions) string {
 	provisioningParameters := internal.ProvisioningParameters{
 		PlanID: broker.AzurePlanID,
 		ErsContext: internal.ERSContext{
