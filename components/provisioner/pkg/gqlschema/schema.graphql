@@ -62,11 +62,34 @@ type ConfigEntry {
     secret: Boolean
 }
 
+type SecretPrerequisiteEntry {
+    key: String!        # Configuration property key
+    value: String!      # Configuration property value
+}
+
+type SecretPrerequisite {
+    resourceName: String!
+    entries: [SecretPrerequisiteEntry]
+}
+
+type GardenerCertificatePrerequisite {
+    resourceName: String!
+    secretName: String!
+    commonName: String!
+}
+
+type PrerequisiteResources {
+    secrets: [SecretPrerequisite]
+    certificates: [GardenerCertificatePrerequisite]
+}
+
 type ComponentConfiguration {
     component: String!
     namespace: String!
     configuration: [ConfigEntry]
     sourceURL: String
+    prerequisite: Boolean
+    prerequisiteResources: PrerequisiteResources
 }
 
 type KymaConfig {
@@ -197,7 +220,7 @@ input GCPProviderConfigInput {
 
 input AzureProviderConfigInput {
     vnetCidr: String!   # Classless Inter-Domain Routing for the Azure Virtual Network
-    zones: [String!]      # Zones in which to create the cluster
+    zones: [String!]    # Zones in which to create the cluster
 }
 
 input AWSProviderConfigInput {
@@ -219,7 +242,7 @@ input KymaConfigInput {
     profile: KymaProfile                        # Optional resources profile
     components: [ComponentConfigurationInput]!  # List of Kyma Components with specific configuration
     configuration: [ConfigEntryInput]           # Global Kyma configuration
-    conflictStrategy: ConflictStrategy        # Defines merging strategy if conflicts occur for global overrides
+    conflictStrategy: ConflictStrategy          # Defines merging strategy if conflicts occur for global overrides
 }
 
 input ConfigEntryInput {
@@ -228,12 +251,33 @@ input ConfigEntryInput {
     secret: Boolean     # Specifies if the property is confidential
 }
 
+input SecretPrerequisiteEntryInput {
+    key: String!        # Configuration property key
+    value: String!      # Configuration property value
+}
+
+input SecretPrerequisiteInput {
+    resourceName: String!
+    entries: [SecretPrerequisiteEntryInput]
+}
+
+input GardenerCertificatePrerequisiteInput {
+    resourceName: String!
+    secretName: String!
+    commonName: String!
+}
+
+input PrerequisiteResourcesInput {
+    secrets: [SecretPrerequisiteInput]
+    certificates: [GardenerCertificatePrerequisiteInput]
+}
+
 input ComponentConfigurationInput {
     component: String!                    # Kyma component name
     namespace: String!                    # Namespace to which component should be installed
     configuration: [ConfigEntryInput]     # Component specific configuration
     sourceURL: String                     # Custom URL for the source files of the given component
-    conflictStrategy: ConflictStrategy  # Defines merging strategy if conflicts occur for component overrides
+    conflictStrategy: ConflictStrategy    # Defines merging strategy if conflicts occur for component overrides
 }
 
 input UpgradeRuntimeInput {
