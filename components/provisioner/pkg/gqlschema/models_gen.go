@@ -54,11 +54,12 @@ type ComponentConfiguration struct {
 }
 
 type ComponentConfigurationInput struct {
-	Component        string              `json:"component"`
-	Namespace        string              `json:"namespace"`
-	Configuration    []*ConfigEntryInput `json:"configuration"`
-	SourceURL        *string             `json:"sourceURL"`
-	ConflictStrategy *ConflictStrategy   `json:"conflictStrategy"`
+	Component             string                      `json:"component"`
+	Namespace             string                      `json:"namespace"`
+	SourceURL             *string                     `json:"sourceURL"`
+	PrerequisiteResources *PrerequisiteResourcesInput `json:"prerequisiteResources"`
+	Configuration         []*ConfigEntryInput         `json:"configuration"`
+	ConflictStrategy      *ConflictStrategy           `json:"conflictStrategy"`
 }
 
 type ConfigEntry struct {

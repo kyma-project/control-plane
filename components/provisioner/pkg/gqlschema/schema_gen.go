@@ -952,8 +952,8 @@ type ConfigEntry {
 }
 
 type SecretPrerequisiteEntry {
-    key: String!        # Configuration property key
-    value: String!      # Configuration property value
+    key: String!
+    value: String!
 }
 
 type SecretPrerequisite {
@@ -1162,11 +1162,12 @@ input PrerequisiteResourcesInput {
 }
 
 input ComponentConfigurationInput {
-    component: String!                    # Kyma component name
-    namespace: String!                    # Namespace to which component should be installed
-    configuration: [ConfigEntryInput]     # Component specific configuration
-    sourceURL: String                     # Custom URL for the source files of the given component
-    conflictStrategy: ConflictStrategy    # Defines merging strategy if conflicts occur for component overrides
+    component: String!                                # Kyma component name
+    namespace: String!                                # Namespace to which component should be installed
+    sourceURL: String                                 # Custom URL for the source files of the given component
+    prerequisiteResources: PrerequisiteResourcesInput # Prerequisites for the component installation
+    configuration: [ConfigEntryInput]                 # Component specific configuration
+    conflictStrategy: ConflictStrategy                # Defines merging strategy if conflicts occur for component overrides
 }
 
 input UpgradeRuntimeInput {
@@ -5618,15 +5619,21 @@ func (ec *executionContext) unmarshalInputComponentConfigurationInput(ctx contex
 			if err != nil {
 				return it, err
 			}
-		case "configuration":
-			var err error
-			it.Configuration, err = ec.unmarshalOConfigEntryInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "sourceURL":
 			var err error
 			it.SourceURL, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "prerequisiteResources":
+			var err error
+			it.PrerequisiteResources, err = ec.unmarshalOPrerequisiteResourcesInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐPrerequisiteResourcesInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "configuration":
+			var err error
+			it.Configuration, err = ec.unmarshalOConfigEntryInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntryInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8142,6 +8149,18 @@ func (ec *executionContext) marshalOPrerequisiteResources2ᚖgithubᚗcomᚋkyma
 		return graphql.Null
 	}
 	return ec._PrerequisiteResources(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOPrerequisiteResourcesInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐPrerequisiteResourcesInput(ctx context.Context, v interface{}) (PrerequisiteResourcesInput, error) {
+	return ec.unmarshalInputPrerequisiteResourcesInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOPrerequisiteResourcesInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐPrerequisiteResourcesInput(ctx context.Context, v interface{}) (*PrerequisiteResourcesInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOPrerequisiteResourcesInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐPrerequisiteResourcesInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalOProviderSpecificConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificConfig(ctx context.Context, sel ast.SelectionSet, v ProviderSpecificConfig) graphql.Marshaler {

@@ -63,8 +63,8 @@ type ConfigEntry {
 }
 
 type SecretPrerequisiteEntry {
-    key: String!        # Configuration property key
-    value: String!      # Configuration property value
+    key: String!
+    value: String!
 }
 
 type SecretPrerequisite {
@@ -273,11 +273,12 @@ input PrerequisiteResourcesInput {
 }
 
 input ComponentConfigurationInput {
-    component: String!                    # Kyma component name
-    namespace: String!                    # Namespace to which component should be installed
-    configuration: [ConfigEntryInput]     # Component specific configuration
-    sourceURL: String                     # Custom URL for the source files of the given component
-    conflictStrategy: ConflictStrategy    # Defines merging strategy if conflicts occur for component overrides
+    component: String!                                # Kyma component name
+    namespace: String!                                # Namespace to which component should be installed
+    sourceURL: String                                 # Custom URL for the source files of the given component
+    prerequisiteResources: PrerequisiteResourcesInput # Prerequisites for the component installation
+    configuration: [ConfigEntryInput]                 # Component specific configuration
+    conflictStrategy: ConflictStrategy                # Defines merging strategy if conflicts occur for component overrides
 }
 
 input UpgradeRuntimeInput {
