@@ -45,7 +45,7 @@ func (s *ServiceManagerProvisioner) Run(operation internal.ProvisioningOperation
 
 	smCli, err := operation.ServiceManagerClient(log)
 	if err != nil {
-		return s.operationManager.HandleError(operation, err, log, fmt.Sprintf("Unable to create Service Manage client"))
+		return s.operationManager.HandleError(operation, err, log, fmt.Sprintf("Unable to create Service Manager client"))
 	}
 
 	if serviceInfo.InstanceID == "" {

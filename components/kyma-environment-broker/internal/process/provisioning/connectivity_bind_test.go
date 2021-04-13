@@ -9,10 +9,32 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const connectivityServiceKey = `
+	{
+		"clientid" : "clientid314159265359",
+		"clientsecret": "Y2xpZW50c2VjcmV0Cg==",
+		"connectivity_service":
+			{
+				"CAs_path": "/api/v1/CAs",
+				"CAs_signing_path": "/api/v1/CAs/signing",
+				"api_path": "/api/v1/CAs/signing",
+				"tunnel_path": "/api/v1/tunnel",
+				"url": "https://connectivity.company.com"
+			},
+		"subaccount_id": "db4dc3bd-3cb7-42d4-a6c0-23aa7842cb7d",
+		"subaccount_subdomain": "some-subaccount-subdomain",
+		"token_service_domain": "authentication.company.com",
+		"token_service_url": "https://authentication.company.com/oauth/token",
+		"token_service_url_pattern": "https://{tenant}.authentication.company.com/oauth/token",
+		"token_service_url_pattern_tenant_key": "subaccount_subdomain",
+		"xsappname": "xsappname314159265359"
+	}
+`
+
 func TestConnectivityEncryptDecrypt(t *testing.T) {
 	// given
 	secretKey := "1234567890123456"
-	givenOverrides := ConnectivityOverrides{
+	givenOverrides := ConnectivityConfig{
 		ClientId:     "clientid",
 		ClientSecret: "clientsecret",
 		ConnectivityService: struct {
@@ -38,9 +60,9 @@ func TestConnectivityEncryptDecrypt(t *testing.T) {
 	}
 
 	// when
-	encryptedOverrides, err := EncryptConnectivityOverrides(secretKey, &givenOverrides)
+	encryptedOverrides, err := EncryptConnectivityConfig(secretKey, &givenOverrides)
 	assert.NoError(t, err)
-	decryptedOverrides, err := DecryptConnectivityOverrides(secretKey, encryptedOverrides)
+	decryptedOverrides, err := DecryptConnectivityConfig(secretKey, encryptedOverrides)
 	assert.NoError(t, err)
 
 	// then
@@ -75,25 +97,3 @@ func TestConnectivityGetCredentials(t *testing.T) {
 	assert.Equal(t, "subaccount_subdomain", connOverrides.TokenServiceUrlPatternTenantKey)
 	assert.Equal(t, "xsappname314159265359", connOverrides.Xsappname)
 }
-
-const connectivityServiceKey = `
-	{
-		"clientid" : "clientid314159265359",
-		"clientsecret": "Y2xpZW50c2VjcmV0Cg==",
-		"connectivity_service":
-			{
-				"CAs_path": "/api/v1/CAs",
-				"CAs_signing_path": "/api/v1/CAs/signing",
-				"api_path": "/api/v1/CAs/signing",
-				"tunnel_path": "/api/v1/tunnel",
-				"url": "https://connectivity.company.com"
-			},
-		"subaccount_id": "db4dc3bd-3cb7-42d4-a6c0-23aa7842cb7d",
-		"subaccount_subdomain": "some-subaccount-subdomain",
-		"token_service_domain": "authentication.company.com",
-		"token_service_url": "https://authentication.company.com/oauth/token",
-		"token_service_url_pattern": "https://{tenant}.authentication.company.com/oauth/token",
-		"token_service_url_pattern_tenant_key": "subaccount_subdomain",
-		"xsappname": "xsappname314159265359"
-	}
-`

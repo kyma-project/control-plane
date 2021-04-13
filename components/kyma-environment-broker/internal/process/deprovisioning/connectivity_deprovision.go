@@ -24,7 +24,7 @@ func NewConnectivityDeprovisionStep(os storage.Operations) *ConnectivityDeprovis
 var _ Step = (*ConnectivityDeprovisionStep)(nil)
 
 func (s *ConnectivityDeprovisionStep) Name() string {
-	return "CONNECTIVITY_Deprovision"
+	return "Connectivity_Deprovision"
 }
 
 func (s *ConnectivityDeprovisionStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (
@@ -36,7 +36,7 @@ func (s *ConnectivityDeprovisionStep) Run(operation internal.DeprovisioningOpera
 
 	smCli, err := operation.ServiceManagerClient(log)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manage client"))
+		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manager client"))
 	}
 
 	log.Infof("deprovisioning for Connectivity instance: %s started", operation.Connectivity.Instance.InstanceID)

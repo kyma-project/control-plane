@@ -24,7 +24,7 @@ func NewConnectivityUnbindStep(os storage.Operations) *ConnectivityUnbindStep {
 var _ Step = (*ConnectivityUnbindStep)(nil)
 
 func (s *ConnectivityUnbindStep) Name() string {
-	return "CONNECTIVITY_Unbind"
+	return "Connectivity_Unbind"
 }
 
 func (s *ConnectivityUnbindStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
@@ -35,7 +35,7 @@ func (s *ConnectivityUnbindStep) Run(operation internal.DeprovisioningOperation,
 
 	smCli, err := operation.ServiceManagerClient(log)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manage client"))
+		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manager client"))
 	}
 
 	// Unbind

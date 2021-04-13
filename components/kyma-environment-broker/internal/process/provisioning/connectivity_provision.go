@@ -29,7 +29,7 @@ func NewConnectivityProvisionStep(os storage.Operations) *ConnectivityProvisionS
 var _ Step = (*ConnectivityProvisionStep)(nil)
 
 func (s *ConnectivityProvisionStep) Name() string {
-	return "CONNECTIVITY_Provision"
+	return "Connectivity_Provision"
 }
 
 func (s *ConnectivityProvisionStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (

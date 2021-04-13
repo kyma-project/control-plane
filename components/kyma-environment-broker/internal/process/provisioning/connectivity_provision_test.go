@@ -32,7 +32,7 @@ func TestConnectivityProvisioningStep_Run(t *testing.T) {
 		},
 		SMClientFactory: clientFactory,
 	}
-	offeringStep := NewServiceManagerOfferingStep("CONNECTIVITY_Offering",
+	offeringStep := NewServiceManagerOfferingStep("Connectivity_Offering",
 		ConnectivityOfferingName, ConnectivityPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
 			return &op.Connectivity.Instance
 		}, repo)

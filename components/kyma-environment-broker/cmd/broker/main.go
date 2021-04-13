@@ -541,7 +541,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, workersAmount int, cfg 
 		{
 			weight: 1,
 			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
-			step: provisioning.NewServiceManagerOfferingStep("CONNECTIVITY_Offering",
+			step: provisioning.NewServiceManagerOfferingStep("Connectivity_Offering",
 				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
 					return &op.Connectivity.Instance
 				}, db.Operations()),
@@ -803,7 +803,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 1,
 			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
-			step: upgrade_kyma.NewServiceManagerOfferingStep("CONNECTIVITY_Offering",
+			step: upgrade_kyma.NewServiceManagerOfferingStep("Connectivity_Offering",
 				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.UpgradeKymaOperation) *internal.ServiceManagerInstanceInfo {
 					return &op.Connectivity.Instance
 				}, db.Operations()),

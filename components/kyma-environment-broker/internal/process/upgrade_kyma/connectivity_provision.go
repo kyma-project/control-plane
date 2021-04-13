@@ -27,7 +27,7 @@ func NewConnectivityUpgradeProvisionStep(os storage.Operations) *ConnectivityUpg
 var _ Step = (*ConnectivityUpgradeProvisionStep)(nil)
 
 func (s *ConnectivityUpgradeProvisionStep) Name() string {
-	return "CONNECTIVITY_UpgradeProvision"
+	return "Connectivity_UpgradeProvision"
 }
 
 func (s *ConnectivityUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
@@ -42,7 +42,7 @@ func (s *ConnectivityUpgradeProvisionStep) Run(operation internal.UpgradeKymaOpe
 
 	smCli, err := operation.ServiceManagerClient(log)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manage client"))
+		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manager client"))
 	}
 
 	if operation.Connectivity.Instance.InstanceID == "" {

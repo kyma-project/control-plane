@@ -15,7 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type ConnectivityOverrides struct {
+type ConnectivityConfig struct {
 	ClientId            string `json:"clientid"`
 	ClientSecret        string `json:"clientsecret"`
 	ConnectivityService struct {
@@ -49,17 +49,17 @@ func NewConnectivityBindStep(os storage.Operations, secretKey string) *Connectiv
 var _ Step = (*ConnectivityBindStep)(nil)
 
 func (s *ConnectivityBindStep) Name() string {
-	return "CONNECTIVITY_Bind"
+	return "Connectivity_Bind"
 }
 
 func (s *ConnectivityBindStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if !operation.Connectivity.Instance.ProvisioningTriggered {
-		return s.handleError(operation, fmt.Errorf("Connectivity Provisioning step was not triggered"), log, "")
+		return s.handleError(operation, fmt.Errorf("connectivity Provisioning step was not triggered"), log, "")
 	}
 
 	smCli, err := operation.ServiceManagerClient(log)
 	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manage client"))
+		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manager client"))
 	}
 	// test if the provisioning is finished, if not, retry after 10s
 	resp, err := smCli.LastInstanceOperation(operation.Connectivity.Instance.InstanceKey(), "")
@@ -74,7 +74,7 @@ func (s *ConnectivityBindStep) Run(operation internal.ProvisioningOperation, log
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("Connectivity provisioning failed: %s", resp.Description), log)
 	}
 	// execute binding
-	var connectivityOverrides *ConnectivityOverrides
+	var connectivityOverrides *ConnectivityConfig
 	if !operation.Connectivity.Instance.Provisioned {
 		if operation.Connectivity.BindingID == "" {
 			operation.Connectivity.BindingID = uuid.New().String()
@@ -86,11 +86,11 @@ func (s *ConnectivityBindStep) Run(operation internal.ProvisioningOperation, log
 		// get overrides
 		connectivityOverrides, err = GetConnectivityCredentials(respBinding.Binding)
 		if err != nil {
-			return s.handleError(operation, err, log, fmt.Sprintf("getCredentials() call failed"))
+			return s.handleError(operation, err, log, fmt.Sprintf("unable to load config"))
 		}
-		encryptedOverrides, err := EncryptConnectivityOverrides(s.secretKey, connectivityOverrides)
+		encryptedOverrides, err := EncryptConnectivityConfig(s.secretKey, connectivityOverrides)
 		if err != nil {
-			return s.handleError(operation, err, log, fmt.Sprintf("encryptOverrides() call failed"))
+			return s.handleError(operation, err, log, fmt.Sprintf("unable to encrypt config"))
 		}
 
 		// save the status
@@ -106,14 +106,14 @@ func (s *ConnectivityBindStep) Run(operation internal.ProvisioningOperation, log
 		operation = op
 	} else {
 		// get the credentials from encrypted string in operation.Connectivity.Instance.
-		connectivityOverrides, err = DecryptConnectivityOverrides(s.secretKey, operation.Connectivity.Overrides)
+		connectivityOverrides, err = DecryptConnectivityConfig(s.secretKey, operation.Connectivity.Overrides)
 		if err != nil {
-			return s.handleError(operation, err, log, fmt.Sprintf("decryptOverrides() call failed"))
+			return s.handleError(operation, err, log, fmt.Sprintf("unable to decrypt configs"))
 		}
 	}
 
 	// TODO: Decide how we want to pass this data to the SKR. Currently,
-	//       credentials are prepared as a ConnectivityOverrides structure.
+	//       credentials are prepared as a ConnectivityConfig structure.
 	//       See the github card - https://github.com/orgs/kyma-project/projects/6#card-56776111
 	//       ...
 	//       - [ ] define what changes need to be done in KEB to
@@ -128,7 +128,7 @@ func (s *ConnectivityBindStep) handleError(operation internal.ProvisioningOperat
 	return s.operationManager.OperationFailed(operation, msg, log)
 }
 
-func GetConnectivityCredentials(binding servicemanager.Binding) (*ConnectivityOverrides, error) {
+func GetConnectivityCredentials(binding servicemanager.Binding) (*ConnectivityConfig, error) {
 	credentials := binding.Credentials
 	csMap, ok := credentials["connectivity_service"].(map[string]interface{})
 	if !ok {
@@ -136,7 +136,7 @@ func GetConnectivityCredentials(binding servicemanager.Binding) (*ConnectivityOv
 			"failed to convert connectivity_service part of the credentials to map[string]interface{}")
 	}
 
-	return &ConnectivityOverrides{
+	return &ConnectivityConfig{
 		ClientId:     credentials["clientid"].(string),
 		ClientSecret: credentials["clientsecret"].(string),
 		ConnectivityService: struct {
@@ -162,7 +162,7 @@ func GetConnectivityCredentials(binding servicemanager.Binding) (*ConnectivityOv
 	}, nil
 }
 
-func EncryptConnectivityOverrides(secretKey string, overrides *ConnectivityOverrides) (string, error) {
+func EncryptConnectivityConfig(secretKey string, overrides *ConnectivityConfig) (string, error) {
 	marshalledOverrides, err := json.Marshal(*overrides)
 	if err != nil {
 		return "", errors.Wrap(err, "while encoding connectivity overrides")
@@ -174,12 +174,12 @@ func EncryptConnectivityOverrides(secretKey string, overrides *ConnectivityOverr
 	return string(encryptedOverrides), nil
 }
 
-func DecryptConnectivityOverrides(secretKey string, encryptedOverrides string) (*ConnectivityOverrides, error) {
+func DecryptConnectivityConfig(secretKey string, encryptedOverrides string) (*ConnectivityConfig, error) {
 	decryptedOverrides, err := storage.NewEncrypter(secretKey).Decrypt([]byte(encryptedOverrides))
 	if err != nil {
 		return nil, errors.Wrap(err, "while decrypting connectivity overrides")
 	}
-	connectivityOverrides := ConnectivityOverrides{}
+	connectivityOverrides := ConnectivityConfig{}
 	if err := json.Unmarshal(decryptedOverrides, &connectivityOverrides); err != nil {
 		return nil, errors.Wrap(err, "while unmarshalling connectivity overrides")
 	}

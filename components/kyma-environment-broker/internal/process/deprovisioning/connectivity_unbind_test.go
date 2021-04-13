@@ -31,7 +31,7 @@ func TestConnectivityUnbindStep_Run(t *testing.T) {
 						Provisioned: true,
 					},
 					BindingID: "binding-id",
-					Overrides: "eventingOverrides",
+					Overrides: "connectivity-overrides",
 				},
 			},
 		},
