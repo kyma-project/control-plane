@@ -264,7 +264,12 @@ func main() {
 	if cfg.IAS.TLSRenegotiationEnable {
 		clientHTTPForIAS = httputil.NewRenegotiationTLSClient(30, cfg.IAS.SkipCertVerification)
 	}
-	bundleBuilder := ias.NewBundleBuilder(clientHTTPForIAS, cfg.IAS)
+	iasClient := ias.NewClient(clientHTTPForIAS, ias.ClientConfig{
+		URL:    cfg.IAS.URL,
+		ID:     cfg.IAS.UserID,
+		Secret: cfg.IAS.UserSecret,
+	})
+	bundleBuilder := ias.NewBundleBuilder(iasClient, cfg.IAS)
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
 	// application event broker
@@ -284,13 +289,14 @@ func main() {
 
 	// run queues
 	const workersAmount = 5
-
-	provisionQueue := NewProvisioningProcessingQueue(ctx, workersAmount, &cfg, db, eventBroker, provisionerClient, directorClient, inputFactory,
+	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
+	provisionQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, &cfg, db, provisionerClient, directorClient, inputFactory,
 		avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
 		runtimeOverrides, serviceManagerClientFactory, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager,
 		edpClient, accountProvider, clsConfig, clsClient, clsProvisioner, fileSystem, logs)
 
-	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, &cfg, db, eventBroker, provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient, accountProvider, clsConfig, clsClient, logs)
+	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
+	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, &cfg, db, eventBroker, provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient, accountProvider, clsConfig, clsClient, logs)
 
 	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
 
@@ -504,16 +510,16 @@ func fatalOnError(err error) {
 	}
 }
 
-func NewProvisioningProcessingQueue(ctx context.Context, workersAmount int, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
-	provisionerClient provisioner.Client, directorClient *director.Client, inputFactory input.CreatorForPlan,
-	avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant, externalEvalCreator *provisioning.ExternalEvalCreator,
-	internalEvalUpdater *provisioning.InternalEvalUpdater, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
-	runtimeOverrides provisioning.RuntimeOverridesAppender, smcf *servicemanager.ClientFactory, bundleBuilder ias.BundleBuilder, iasTypeSetter *provisioning.IASType,
+func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provisioning.Manager, workersAmount int,
+	cfg *Config, db storage.BrokerStorage, provisionerClient provisioner.Client, directorClient provisioning.DirectorClient,
+	inputFactory input.CreatorForPlan, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
+	externalEvalCreator *provisioning.ExternalEvalCreator, internalEvalUpdater *provisioning.InternalEvalUpdater,
+	runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeOverrides provisioning.RuntimeOverridesAppender,
+	smcf provisioning.SMClientFactory, bundleBuilder ias.BundleBuilder, iasTypeSetter *provisioning.IASType,
 	lmsClient lms.Client, lmsTenantManager provisioning.LmsTenantProvider, edpClient provisioning.EDPClient,
-	accountProvider hyperscaler.AccountProvider, clsConfig *cls.Config, clsClient provisioning.ClsBindingProvider, clsProvisioner provisioning.ClsProvisioner, fileSystem afero.Fs,
-	logs logrus.FieldLogger) *process.Queue {
+	accountProvider hyperscaler.AccountProvider, clsConfig *cls.Config, clsClient provisioning.ClsBindingProvider,
+	clsProvisioner provisioning.ClsProvisioner, fileSystem afero.Fs, logs logrus.FieldLogger) *process.Queue {
 
-	provisionManager := provisioning.NewManager(db.Operations(), pub, logs.WithField("provisioning", "manager"))
 	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),
 		provisionerClient, directorClient, inputFactory, externalEvalCreator, internalEvalUpdater, iasTypeSetter,
 		cfg.Provisioning.Timeout, cfg.OperationTimeout, runtimeVerConfigurator, smcf)
@@ -659,13 +665,11 @@ func NewProvisioningProcessingQueue(ctx context.Context, workersAmount int, cfg 
 	return queue
 }
 
-func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
+func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, deprovisionManager *deprovisioning.Manager, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
 	provisionerClient provisioner.Client, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
 	externalEvalAssistant *avs.ExternalEvalAssistant, smcf *servicemanager.ClientFactory, bundleBuilder ias.BundleBuilder,
 	edpClient deprovisioning.EDPClient, accountProvider hyperscaler.AccountProvider,
 	clsConfig *cls.Config, clsClient cls.InstanceRemover, logs logrus.FieldLogger) *process.Queue {
-
-	deprovisionManager := deprovisioning.NewManager(db.Operations(), pub, logs.WithField("deprovisioning", "manager"))
 
 	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, smcf, cfg.OperationTimeout)
 	deprovisionManager.InitStep(deprovisioningInit)

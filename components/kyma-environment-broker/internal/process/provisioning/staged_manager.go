@@ -62,6 +62,14 @@ func (m *StagedManager) AddStep(stageName string, step Step) error {
 	return fmt.Errorf("Stage %s not defined", stageName)
 }
 
+func (m *StagedManager) GetAllSteps() []Step {
+	var allSteps []Step
+	for _, s := range m.stages {
+		allSteps = append(allSteps, s.steps...)
+	}
+	return allSteps
+}
+
 func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 	operation, err := m.operationStorage.GetProvisioningOperationByID(operationID)
 	if err != nil {
