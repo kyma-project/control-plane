@@ -11,7 +11,6 @@ import (
 
 const (
 	FakeEmsServiceID = "fake-ems-svc-id"
-	FakeClsServiceID = "fake-cls-svc-id"
 )
 
 type passthroughServiceManagerClientFactory struct {
@@ -126,7 +125,7 @@ func (f *fakeServiceManagerClient) Bind(instanceKey InstanceKey, bindingID strin
 	f.bindings[bindingID] = instanceKey
 
 	return &BindingResponse{
-		Binding: f.resolveBinding(instanceKey),
+		Binding: f.fixEmsBinding(),
 	}, nil
 }
 
@@ -180,26 +179,6 @@ func (f *fakeServiceManagerClientFactory) AssertDeprovisionCalled(t *testing.T, 
 	assert.True(t, exists, "deprovision endpoint was not called")
 
 	assert.Equal(t, deprovision, key)
-}
-
-func (f *fakeServiceManagerClient) resolveBinding(instanceKey InstanceKey) Binding {
-	binding := Binding{}
-	switch instanceKey.ServiceID {
-	case FakeEmsServiceID:
-		binding = f.fixEmsBinding()
-	case FakeClsServiceID:
-		binding = f.fixClsBinding()
-	}
-	return binding
-}
-
-func (f *fakeServiceManagerClient) fixClsBinding() Binding {
-	return Binding{Credentials: map[string]interface{}{
-		"Fluentd-username": "fluentd-username",
-		"Fluentd-password": "fluentd-password",
-		"Fluentd-endpoint": "fluentd-endpoint",
-		"Kibana-endpoint":  "kibana-endpoint"},
-	}
 }
 
 func (f *fakeServiceManagerClient) fixEmsBinding() Binding {
