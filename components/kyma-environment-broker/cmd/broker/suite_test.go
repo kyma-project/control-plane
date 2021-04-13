@@ -157,6 +157,9 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		UpgradeClusterTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, logs)
 
+	kymaQueue.SpeedUp(1000)
+	clusterQueue.SpeedUp(1000)
+
 	return &OrchestrationSuite{
 		gardenerNamespace: gardenerNamespace,
 		provisionerClient: provisionerClient,
@@ -309,7 +312,7 @@ func (s *OrchestrationSuite) CreateUpgradeClusterOrchestration(params orchestrat
 }
 
 func (s *OrchestrationSuite) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
-	err := wait.Poll(time.Millisecond*100, 15*time.Second, func() (bool, error) {
+	err := wait.Poll(time.Millisecond*100, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
 			s.provisionerClient.FinishProvisionerOperation(*status.ID)
@@ -330,7 +333,7 @@ func (s *OrchestrationSuite) FinishUpgradeShootOperationByProvisioner(runtimeID 
 
 func (s *OrchestrationSuite) WaitForOrchestrationState(orchestrationID string, state string) {
 	var orchestration *internal.Orchestration
-	err := wait.PollImmediate(100*time.Millisecond, 15*time.Second, func() (done bool, err error) {
+	err := wait.PollImmediate(100*time.Millisecond, 2*time.Second, func() (done bool, err error) {
 		orchestration, _ = s.storage.Orchestrations().GetByID(orchestrationID)
 		return orchestration.State == state, nil
 	})
@@ -441,7 +444,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
-	lmsClient := lms.NewFakeClient(1 * time.Minute)
+	lmsClient := lms.NewFakeClient(1 * time.Second)
 	lmsTenantManager := lms.NewTenantManager(db.LMSTenants(), lmsClient, logs)
 
 	edpClient := edp.NewFakeClient()
@@ -526,7 +529,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 
 func (s *ProvisioningSuite) WaitForProvisioningState(operationID string, state domain.LastOperationState) {
 	var op *internal.ProvisioningOperation
-	err := wait.PollImmediate(100*time.Millisecond, 10*time.Minute, func() (done bool, err error) {
+	err := wait.PollImmediate(100*time.Millisecond, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
 		return op.State == state, nil
 	})
@@ -535,7 +538,7 @@ func (s *ProvisioningSuite) WaitForProvisioningState(operationID string, state d
 
 func (s *ProvisioningSuite) FinishProvisioningOperationByProvisioner(operationID string) {
 	var op *internal.ProvisioningOperation
-	err := wait.PollImmediate(100*time.Millisecond, 30*time.Second, func() (done bool, err error) {
+	err := wait.PollImmediate(100*time.Millisecond, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
 		if op.RuntimeID != "" {
 			return true, nil
@@ -552,7 +555,7 @@ func (s *ProvisioningSuite) FinishProvisioningOperationByProvisioner(operationID
 func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID string) {
 	// wait until ProvisioningOperation reaches CreateRuntime step
 	var provisioningOp *internal.ProvisioningOperation
-	err := wait.Poll(time.Second*1, 2*time.Minute, func() (bool, error) {
+	err := wait.Poll(100*time.Millisecond, 2*time.Second, func() (bool, error) {
 		op, err := s.storage.Operations().GetProvisioningOperationByID(operationID)
 		assert.NoError(s.t, err)
 		if op.ProvisionerOperationID != "" {
@@ -564,7 +567,7 @@ func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID str
 	assert.NoError(s.t, err)
 
 	var status gqlschema.OperationStatus
-	err = wait.Poll(time.Second*1, 2*time.Minute, func() (bool, error) {
+	err = wait.Poll(100*time.Millisecond, 2*time.Second, func() (bool, error) {
 		status = s.provisionerClient.FindOperationByRuntimeIDAndType(provisioningOp.RuntimeID, gqlschema.OperationTypeProvision)
 		if status.ID != nil {
 			return true, nil
@@ -584,7 +587,7 @@ func (s *ProvisioningSuite) AssertAllStepsFinished(operationID string) {
 }
 
 func (s *ProvisioningSuite) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
-	err := wait.Poll(time.Second*1, 2*time.Minute, func() (bool, error) {
+	err := wait.Poll(100*time.Millisecond, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
 			s.provisionerClient.FinishProvisionerOperation(*status.ID)
@@ -601,9 +604,9 @@ func fixConfig() *Config {
 		DisableProcessOperationsInProgress: false,
 		DevelopmentMode:                    true,
 		DumpProvisionerRequests:            true,
-		OperationTimeout:                   10 * time.Minute,
+		OperationTimeout:                   2 * time.Minute,
 		Provisioning: input.Config{
-			Timeout: 10 * time.Minute,
+			Timeout: 2 * time.Minute,
 		},
 		Director: director.Config{},
 		Database: storage.Config{

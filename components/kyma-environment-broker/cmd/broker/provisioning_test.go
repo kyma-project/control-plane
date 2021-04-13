@@ -14,10 +14,12 @@ const (
 func TestProvisioning_HappyPath(t *testing.T) {
 	// given
 	suite := NewProvisioningSuite(t)
+
+	// when
 	provisioningOperationID := suite.CreateProvisioning(RuntimeOptions{})
-	suite.WaitForProvisioningState(provisioningOperationID, domain.InProgress)
 
 	// then
+	suite.WaitForProvisioningState(provisioningOperationID, domain.InProgress)
 	suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
 
 	// when
