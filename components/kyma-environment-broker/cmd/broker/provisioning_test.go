@@ -28,5 +28,6 @@ func TestProvisioning_HappyPath(t *testing.T) {
 	// then
 	suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
 	suite.AssertAllStepsFinished(provisioningOperationID)
-
+	suite.AssertDirectorGrafanaTag(provisioningOperationID)
+	suite.AssertProvisioningRequest()
 }
