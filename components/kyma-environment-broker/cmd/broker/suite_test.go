@@ -31,7 +31,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
 	clsMock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
-	directorMock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_cluster"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -384,9 +383,10 @@ type ProvisioningSuite struct {
 	provisioningManager *provisioning.StagedManager
 	provisioningQueue   *process.Queue
 	storage             storage.BrokerStorage
-	directorClient      *directorMock.DirectorClient
+	directorClient      *director.FakeClient
 
-	t *testing.T
+	t         *testing.T
+	avsServer *avs.MockAvsServer
 }
 
 func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
@@ -427,6 +427,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 		OauthTokenEndpoint: fmt.Sprintf("%s/oauth/token", mockServer.URL),
 		ApiEndpoint:        fmt.Sprintf("%s/api/v2/evaluationmetadata", mockServer.URL),
 	}
+
 	client, err := avs.NewClient(context.TODO(), avsConfig, logrus.New())
 	assert.NoError(t, err)
 	avsDel := avs.NewDelegator(client, avsConfig, db.Operations())
@@ -453,7 +454,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	smcf := fixServiceManagerFactory()
 
-	directorClient := &directorMock.DirectorClient{}
+	directorClient := director.NewFakeClient(dashboardURL)
 
 	clsConfig, clsClient, clsProvisioner := fixClsComponents()
 
@@ -474,6 +475,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 		provisioningQueue:   provisioningQueue,
 		storage:             db,
 		directorClient:      directorClient,
+		avsServer:           server,
 
 		t: t,
 	}
@@ -547,8 +549,6 @@ func (s *ProvisioningSuite) FinishProvisioningOperationByProvisioner(operationID
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
 
-	s.directorClient.On("GetConsoleURL", globalAccountID, op.RuntimeID).Return(dashboardURL, nil)
-	s.directorClient.On("SetLabel", globalAccountID, op.RuntimeID, mock.Anything, mock.Anything).Return(nil)
 	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, op.RuntimeID)
 }
 
@@ -596,6 +596,22 @@ func (s *ProvisioningSuite) finishOperationByProvisioner(operationType gqlschema
 		return false, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for provisioner operation to exist")
+}
+
+func (s *ProvisioningSuite) AssertDirectorGrafanaTag(operationID string) {
+	op, err := s.storage.Operations().GetOperationByID(operationID)
+	assert.NoError(s.t, err)
+	val, exists := s.directorClient.GetLabel(globalAccountID, op.RuntimeID, "operator_grafanaUrl")
+	assert.True(s.t, exists)
+	assert.Equal(s.t, "http://grafana.garden-dummy.kyma.io", val)
+}
+
+func (s *ProvisioningSuite) AssertProvisioningRequest() {
+	input := s.provisionerClient.GetProvisionRuntimeInput(0)
+
+	labels := *input.RuntimeInput.Labels
+	assert.Equal(s.t, instanceID, labels["broker_instance_id"])
+	assert.Contains(s.t, labels, "global_subaccount_id")
 }
 
 func fixConfig() *Config {
