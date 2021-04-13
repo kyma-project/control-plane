@@ -236,8 +236,7 @@
   revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
 
 [[projects]]
-  branch = "1282-switch-hap-to-secretbindings"
-  digest = "1:15d99214d993a5ef77ae73d23a102de4114d967b3238aa8f82c79113486ec435"
+  digest = "1:852748989840e99120832cc760944c4a18def8c7322248f7c22960318eb38582"
   name = "github.com/kyma-project/control-plane"
   packages = [
     "components/kyma-environment-broker/common/director",
@@ -246,8 +245,7 @@
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "b4d630ef25bec3080e90c6bb70c4aef8e2bcb903"
-  source = "github.com/franpog859/control-plane"
+  revision = "83c2707efc14d99b07334fd2fa734f03ca4a9e76"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"

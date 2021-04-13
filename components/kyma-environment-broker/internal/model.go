@@ -156,7 +156,9 @@ type Operation struct {
 	ProvisioningParameters ProvisioningParameters    `json:"-"`
 
 	// OrchestrationID specifies the origin orchestration which triggers the operation, empty for OSB operations (provisioning/deprovisioning)
-	OrchestrationID string `json:"-"`
+	OrchestrationID string              `json:"-"`
+	FinishedStages  map[string]struct{} `json:"-"`
+	FinishedSteps   map[string]struct{} `json:"-"`
 }
 
 func (o *Operation) IsFinished() bool {
@@ -372,6 +374,7 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			InstanceDetails: InstanceDetails{
 				SubAccountID: parameters.ErsContext.SubAccountID,
 			},
+			FinishedSteps: make(map[string]struct{}, 0),
 		},
 	}, nil
 }
@@ -389,6 +392,7 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 			UpdatedAt:       time.Now(),
 			Type:            OperationTypeDeprovision,
 			InstanceDetails: instance.InstanceDetails,
+			FinishedSteps:   make(map[string]struct{}, 0),
 		},
 	}, nil
 }
@@ -406,6 +410,7 @@ func NewSuspensionOperationWithID(operationID string, instance *Instance) Deprov
 			UpdatedAt:       time.Now(),
 			Type:            OperationTypeDeprovision,
 			InstanceDetails: instance.InstanceDetails,
+			FinishedSteps:   make(map[string]struct{}, 0),
 		},
 		Temporary: true,
 	}
@@ -417,6 +422,24 @@ func (po *ProvisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (s
 
 func (po *ProvisioningOperation) ProvideServiceManagerCredentials(log logrus.FieldLogger) (*servicemanager.Credentials, error) {
 	return po.SMClientFactory.ProvideCredentials(serviceManagerRequestCreds(po.ProvisioningParameters), log)
+}
+
+func (o *Operation) FinishStep(stepName string) {
+	o.FinishedSteps[stepName] = struct{}{}
+}
+
+func (o *Operation) IsStepDone(stepName string) bool {
+	_, found := o.FinishedSteps[stepName]
+	return found
+}
+
+func (o *Operation) FinishStage(stageName string) {
+	o.FinishedStages[stageName] = struct{}{}
+}
+
+func (o *Operation) IsStageFinished(stage string) bool {
+	_, found := o.FinishedStages[stage]
+	return found
 }
 
 func (do *DeprovisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {

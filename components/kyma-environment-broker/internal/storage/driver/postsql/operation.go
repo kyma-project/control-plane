@@ -3,6 +3,7 @@ package postsql
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/storage"
@@ -804,6 +805,10 @@ func (s *operations) operationToDB(op internal.Operation) (dbmodel.OperationDTO,
 		return dbmodel.OperationDTO{}, errors.Wrap(err, "while marshal provisioning parameters")
 	}
 
+	stages := []string{}
+	for s, _ := range op.FinishedStages {
+		stages = append(stages, s)
+	}
 	return dbmodel.OperationDTO{
 		ID:                     op.ID,
 		Type:                   op.Type,
@@ -816,6 +821,7 @@ func (s *operations) operationToDB(op internal.Operation) (dbmodel.OperationDTO,
 		InstanceID:             op.InstanceID,
 		OrchestrationID:        storage.StringToSQLNullString(op.OrchestrationID),
 		ProvisioningParameters: storage.StringToSQLNullString(string(pp)),
+		FinishedStages:         storage.StringToSQLNullString(strings.Join(stages, ",")),
 	}, nil
 }
 
@@ -832,6 +838,10 @@ func (s *operations) toOperation(op *dbmodel.OperationDTO, instanceDetails inter
 		return internal.Operation{}, errors.Wrap(err, "while decrypting basic auth")
 	}
 
+	stages := make(map[string]struct{})
+	for _, s := range strings.Split(storage.SQLNullStringToString(op.FinishedStages), ",") {
+		stages[s] = struct{}{}
+	}
 	return internal.Operation{
 		ID:                     op.ID,
 		CreatedAt:              op.CreatedAt,
@@ -845,6 +855,8 @@ func (s *operations) toOperation(op *dbmodel.OperationDTO, instanceDetails inter
 		OrchestrationID:        storage.SQLNullStringToString(op.OrchestrationID),
 		ProvisioningParameters: pp,
 		InstanceDetails:        instanceDetails,
+		FinishedStages:         stages,
+		FinishedSteps:          make(map[string]struct{}, 0),
 	}, nil
 }
 

@@ -11,6 +11,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/spf13/afero"
+
 	"code.cloudfoundry.org/lager"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/handlers"
@@ -208,6 +210,9 @@ func main() {
 	clsClient := cls.NewClient(clsConfig)
 	clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient)
 
+	// Auditlog
+	fileSystem := afero.NewOsFs()
+
 	// LMS
 	fatalOnError(cfg.LMS.Validate())
 	lmsClient := lms.NewClient(cfg.LMS, logs.WithField("service", "lmsClient"))
@@ -262,7 +267,12 @@ func main() {
 	if cfg.IAS.TLSRenegotiationEnable {
 		clientHTTPForIAS = httputil.NewRenegotiationTLSClient(30, cfg.IAS.SkipCertVerification)
 	}
-	bundleBuilder := ias.NewBundleBuilder(clientHTTPForIAS, cfg.IAS)
+	iasClient := ias.NewClient(clientHTTPForIAS, ias.ClientConfig{
+		URL:    cfg.IAS.URL,
+		ID:     cfg.IAS.UserID,
+		Secret: cfg.IAS.UserSecret,
+	})
+	bundleBuilder := ias.NewBundleBuilder(iasClient, cfg.IAS)
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
 	// application event broker
@@ -282,13 +292,14 @@ func main() {
 
 	// run queues
 	const workersAmount = 5
-
-	provisionQueue := NewProvisioningProcessingQueue(ctx, workersAmount, &cfg, db, eventBroker, provisionerClient, directorClient, inputFactory,
+	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
+	provisionQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, &cfg, db, provisionerClient, directorClient, inputFactory,
 		avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
 		runtimeOverrides, serviceManagerClientFactory, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager,
-		edpClient, accountProvider, clsConfig, clsClient, clsProvisioner, logs)
+		edpClient, accountProvider, clsConfig, clsClient, clsProvisioner, fileSystem, logs)
 
-	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, &cfg, db, eventBroker, provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient, accountProvider, clsConfig, clsClient, logs)
+	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
+	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, &cfg, db, eventBroker, provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient, accountProvider, clsConfig, clsClient, logs)
 
 	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
 
@@ -332,7 +343,7 @@ func main() {
 	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
-		&cfg, accountProvider, serviceManagerClientFactory, clsConfig, logs)
+		&cfg, accountProvider, serviceManagerClientFactory, clsConfig, fileSystem, logs)
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeResolver, upgradeEvalManager, logs)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
@@ -383,9 +394,9 @@ func main() {
 // * If CLS is globally disabled, just use the regular Audit Log step
 // * If CLS is enabled and the cluster is Trial, just use the regular Audit Log step
 // * If CLS is enabled and the cluster is NOT Trial, use the combined CLS + Audit Log step
-func newAuditLogStep(cfg *Config, ops storage.Operations) provisioning.Step {
+func newAuditLogStep(fileSystem afero.Fs, cfg *Config, ops storage.Operations) provisioning.Step {
 	var auditLogStep provisioning.Step
-	auditLogStep = provisioning.NewAuditLogOverridesStep(ops, cfg.AuditLog)
+	auditLogStep = provisioning.NewAuditLogOverridesStep(fileSystem, ops, cfg.AuditLog)
 	if !cfg.Cls.Disabled {
 		return provisioning.NewEnableForTrialPlanStep(auditLogStep)
 	}
@@ -502,16 +513,16 @@ func fatalOnError(err error) {
 	}
 }
 
-func NewProvisioningProcessingQueue(ctx context.Context, workersAmount int, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
-	provisionerClient provisioner.Client, directorClient *director.Client, inputFactory input.CreatorForPlan,
-	avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant, externalEvalCreator *provisioning.ExternalEvalCreator,
-	internalEvalUpdater *provisioning.InternalEvalUpdater, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
-	runtimeOverrides provisioning.RuntimeOverridesAppender, smcf *servicemanager.ClientFactory, bundleBuilder ias.BundleBuilder, iasTypeSetter *provisioning.IASType,
+func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provisioning.Manager, workersAmount int,
+	cfg *Config, db storage.BrokerStorage, provisionerClient provisioner.Client, directorClient provisioning.DirectorClient,
+	inputFactory input.CreatorForPlan, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
+	externalEvalCreator *provisioning.ExternalEvalCreator, internalEvalUpdater *provisioning.InternalEvalUpdater,
+	runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeOverrides provisioning.RuntimeOverridesAppender,
+	smcf provisioning.SMClientFactory, bundleBuilder ias.BundleBuilder, iasTypeSetter *provisioning.IASType,
 	lmsClient lms.Client, lmsTenantManager provisioning.LmsTenantProvider, edpClient provisioning.EDPClient,
-	accountProvider hyperscaler.AccountProvider, clsConfig *cls.Config, clsClient provisioning.ClsBindingProvider, clsProvisioner provisioning.ClsProvisioner,
-	logs logrus.FieldLogger) *process.Queue {
+	accountProvider hyperscaler.AccountProvider, clsConfig *cls.Config, clsClient provisioning.ClsBindingProvider,
+	clsProvisioner provisioning.ClsProvisioner, fileSystem afero.Fs, logs logrus.FieldLogger) *process.Queue {
 
-	provisionManager := provisioning.NewManager(db.Operations(), pub, logs.WithField("provisioning", "manager"))
 	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),
 		provisionerClient, directorClient, inputFactory, externalEvalCreator, internalEvalUpdater, iasTypeSetter,
 		cfg.Provisioning.Timeout, cfg.OperationTimeout, runtimeVerConfigurator, smcf)
@@ -615,7 +626,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, workersAmount int, cfg 
 		},
 		{
 			weight: 3,
-			step:   newAuditLogStep(cfg, db.Operations()),
+			step:   newAuditLogStep(fileSystem, cfg, db.Operations()),
 		},
 		{
 			weight:   5,
@@ -676,13 +687,11 @@ func NewProvisioningProcessingQueue(ctx context.Context, workersAmount int, cfg 
 	return queue
 }
 
-func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
+func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, deprovisionManager *deprovisioning.Manager, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
 	provisionerClient provisioner.Client, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
 	externalEvalAssistant *avs.ExternalEvalAssistant, smcf *servicemanager.ClientFactory, bundleBuilder ias.BundleBuilder,
 	edpClient deprovisioning.EDPClient, accountProvider hyperscaler.AccountProvider,
 	clsConfig *cls.Config, clsClient cls.InstanceRemover, logs logrus.FieldLogger) *process.Queue {
-
-	deprovisionManager := deprovisioning.NewManager(db.Operations(), pub, logs.WithField("deprovisioning", "manager"))
 
 	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, smcf, cfg.OperationTimeout)
 	deprovisionManager.InitStep(deprovisioningInit)
@@ -776,7 +785,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
 	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager,
 	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory,
-	clsConfig *cls.Config, logs logrus.FieldLogger) *process.Queue {
+	clsConfig *cls.Config, fileSystem afero.Fs, logs logrus.FieldLogger) *process.Queue {
 
 	//CLS
 	clsClient := cls.NewClient(clsConfig)
@@ -822,6 +831,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			weight:   3,
 			step:     upgrade_kyma.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   3,
+			step:     upgrade_kyma.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
+			disabled: !cfg.Cls.Disabled,
 		},
 		{
 			weight:   4,

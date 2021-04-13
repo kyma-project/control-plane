@@ -5,14 +5,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	pkgErrors "github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
@@ -43,6 +42,18 @@ func NewClsAuditLogOverridesStep(os storage.Operations, cfg auditlog.Config, sec
 }
 
 func (alo *ClsAuditLogOverridesStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	// run the step only if  KymaVersion<1.21
+	kymaVersion := operation.RuntimeVersion.Version
+	atLeast_1_21, err := cls.IsKymaVersionAtLeast_1_21(kymaVersion)
+	if err != nil {
+		log.Error(pkgErrors.Wrapf(err, "while checking Kyma version"))
+		return operation, 0, nil
+	}
+	if atLeast_1_21 {
+		log.Infof("Skipping step %s for Kyma version %s", alo.Name(), kymaVersion)
+		return operation, 0, nil
+	}
+
 	luaScript, err := afero.ReadFile(alo.fs, "/auditlog-script/script")
 	if err != nil {
 		failureReason := "Unable to read Audit Log config script"

@@ -49,3 +49,7 @@
 
 # Owners of the .kyma-project-io folder
 /.kyma-project-io/ @m00g3n @aerfio @pPrecel @magicmatatjahu
+
+# Kyma Metrics Collector
+/resources/kcp/charts/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @berkanercan
+/components/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @berkanercan
