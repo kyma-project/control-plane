@@ -97,6 +97,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 
 	//auditLog create file here.
 	inMemoryFs, err := createInMemFS()
+	require.NoError(t, err)
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
@@ -393,6 +394,10 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	cfg := fixConfig()
 
+	//auditLog create file here.
+	inMemoryFs, err := createInMemFS()
+	require.NoError(t, err)
+
 	provisionerClient := provisioner.NewFakeClient()
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
@@ -454,13 +459,12 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	directorClient := director.NewFakeClient(dashboardURL)
 
 	eventBroker := event.NewPubSub(logs)
-	mm := afero.NewMemMapFs()
 
 	// switch to StagedManager when the feature is enabled
 	provisionStagedManager := provisioning.NewStagedManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
 
 	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
-	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, smcf, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager, edpClient, accountProvider, mm, logs)
+	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, smcf, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager, edpClient, accountProvider, inMemoryFs, logs)
 
 	provisioningQueue.SpeedUp(1000)
 
@@ -611,6 +615,13 @@ func (s *ProvisioningSuite) AssertProvisioningRequest() {
 
 func fixConfig() *Config {
 	return &Config{
+		AuditLog: auditlog.Config{
+			URL:           "https://host1:8080/aaa/v2/",
+			User:          "fooUser",
+			Password:      "barPass",
+			Tenant:        "fooTen",
+			EnableSeqHttp: true,
+		},
 		DbInMemory:                         true,
 		DisableProcessOperationsInProgress: false,
 		DevelopmentMode:                    true,
