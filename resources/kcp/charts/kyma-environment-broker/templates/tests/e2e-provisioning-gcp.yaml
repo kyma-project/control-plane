@@ -81,7 +81,7 @@ spec:
             - name: APP_GARDENER_KUBECONFIG_PATH
               value: {{ .Values.gardener.kubeconfigPath }}
             - name: APP_TEST_AZURE_EVENT_HUBS_ENABLED
-              value: "true"
+              value: "false"
             - name: APP_UPGRADE_TEST
               value: "false"
           command: ["/bin/sh"]
@@ -165,7 +165,7 @@ spec:
             - name: APP_GARDENER_KUBECONFIG_PATH
               value: {{ .Values.gardener.kubeconfigPath }}
             - name: APP_TEST_AZURE_EVENT_HUBS_ENABLED
-              value: "true"
+              value: "false"
             - name: APP_UPGRADE_TEST
               value: "false"
           command: ["/bin/sh"]
