@@ -90,7 +90,6 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	var cfg Config
 	cfg.Ems.Disabled = true
 	cfg.Ems.SkipDeprovisionAzureEventingAtUpgrade = true
-	cfg.Cls.Disabled = true
 	cfg.AuditLog = auditlog.Config{
 		URL:           "https://host1:8080/aaa/v2/",
 		User:          "fooUser",

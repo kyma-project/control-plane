@@ -176,10 +176,6 @@ edp:
 ems:
   disabled: true
 
-cls:
-  disabled: true
-  secretName: "kcp-cls-config"
-
 cis:
   v1:
     authURL: "TBD"
