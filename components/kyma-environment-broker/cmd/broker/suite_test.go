@@ -397,6 +397,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	db := storage.NewMemoryStorage()
 
 	cfg := fixConfig()
+	cfg.Connectivity.Disabled = true
 
 	provisionerClient := provisioner.NewFakeClient()
 

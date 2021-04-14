@@ -77,11 +77,10 @@ func (s *ConnectivityUpgradeProvisionStep) provision(smCli servicemanager.Client
 	log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 
 	input := provisioning.GetConnectivityProvisioningData(operation.Connectivity.Instance)
-	resp, err := smCli.Provision(operation.Connectivity.Instance.BrokerID, *input, true)
+	_, err := smCli.Provision(operation.Connectivity.Instance.BrokerID, *input, true)
 	if err != nil {
 		return s.handleError(operation, err, log, fmt.Sprintf("Provision() call failed for brokerID: %s; input: %#v", operation.Connectivity.Instance.BrokerID, input))
 	}
-	log.Debugf("response from Connectivity provisioning call: %#v", resp)
 
 	return operation, 0, nil
 }
