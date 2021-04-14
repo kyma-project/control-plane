@@ -35,7 +35,7 @@ function generateArtifact() {
 
 function copyKymaInstaller() {
     release=$(<"${RESOURCES_DIR}"/KYMA_VERSION)
-    if [[ $release == *PR-* ]] || [[ $release == *master* ]]; then
+    if [[ $release == *PR-* ]] || [[ $release == *main* ]]; then
         curl -L https://storage.googleapis.com/kyma-development-artifacts/${release}/kyma-installer-cluster.yaml -o kyma-installer.yaml
         curl -L https://storage.googleapis.com/kyma-development-artifacts/${release}/kyma-installer-cluster.yaml -o kyma-kcp-installer.yaml
 

@@ -48,10 +48,10 @@ func (o *GCSDownloader) DownloadRelease(version string) (model.Release, error) {
 
 // Detection rules:
 //   For pull requests: PR-<number>
-//   For changes to the master branch: master-<commit_sha>
-//   For the latest changes in the master branch: master
+//   For changes to the main branch: main-<commit_sha>
+//   For the latest changes in the main branch: main
 //
-// source: https://github.com/kyma-project/test-infra/blob/master/docs/prow/prow-architecture.md#generate-development-artifacts
+// source: https://github.com/kyma-project/test-infra/blob/main/docs/prow/prow-architecture.md#generate-development-artifacts
 func (o *GCSDownloader) isOnDemandVersion(version string) bool {
 	isOnDemandVersion := strings.HasPrefix(version, "PR-") ||
 		strings.HasPrefix(version, "master-") ||

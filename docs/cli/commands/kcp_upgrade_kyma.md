@@ -21,7 +21,7 @@ kcp upgrade kyma --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...]
   kcp upgrade kyma --target "account=CA.*"                       Upgrade Kyma on Runtimes of all global accounts starting with CA.
   kcp upgrade kyma --target all --target-exclude "account=CA.*"  Upgrade Kyma on Runtimes of all global accounts not starting with CA.
   kcp upgrade kyma --target "region=europe|eu|uk"                Upgrade Kyma on Runtimes whose region belongs to Europe.
-  kcp upgrade kyma --target all --version "master-00e83e99"      Upgrade Kyma on Runtimes of all global accounts to the custom Kyma version (master-00e83e99).
+  kcp upgrade kyma --target all --version "main-00e83e99"      Upgrade Kyma on Runtimes of all global accounts to the custom Kyma version (main-00e83e99).
 ```
 
 ## Options
@@ -42,7 +42,7 @@ kcp upgrade kyma --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...]
                                        shoot={NAME}        : Specific Runtime by Shoot cluster name
   -e, --target-exclude stringArray   List of Runtime target specifiers to exclude. You can specify this option multiple times.
                                      A target specifier is a comma-separated list of the selectors described under the --target option.
-      --version string               Kyma version to use. Supports semantic (1.18.0), PR-<number> (PR-123), and <branch name>-<commit hash> (master-00e83e99) as values.
+      --version string               Kyma version to use. Supports semantic (1.18.0), PR-<number> (PR-123), and <branch name>-<commit hash> (main-00e83e99) as values.
 ```
 
 ## Global Options
@@ -63,4 +63,3 @@ kcp upgrade kyma --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...]
 ## See also
 
 * [kcp upgrade](kcp_upgrade.md)	 - Performs upgrade operations on Kyma Runtimes.
-

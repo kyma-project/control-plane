@@ -19,7 +19,7 @@ metadata:
 data:
   GA_3e64ebae-38b5-46a0-b1ed-9ccee153a0ae: "1.15.0-rc1"
   SA_df29c526-0c3d-4e2c-ba41-8b69cde41961: "PR-3721"
-  SA_4abbc9b5-055a-4571-b762-9d61b4b8a2e7: "master-1ab234"
+  SA_4abbc9b5-055a-4571-b762-9d61b4b8a2e7: "main-1ab234"
 ```
 
 This ConfigMap contains a default version for a global account and a subaccount. The **3e64ebae-38b5-46a0-b1ed-9ccee153a0ae** parameter is a global account ID, and the value is the Kyma version specified for this global account. The **df29c526-0c3d-4e2c-ba41-8b69cde41961** and **4abbc9b5-055a-4571-b762-9d61b4b8a2e7** parameters are a subaccount IDs, and the values are the Kyma versions specified for those subaccounts.
