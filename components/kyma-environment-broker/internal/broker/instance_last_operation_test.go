@@ -26,7 +26,7 @@ func TestLastOperation_LastOperation(t *testing.T) {
 		err := memoryStorage.Operations().InsertProvisioningOperation(fixOperation())
 		assert.NoError(t, err)
 
-		lastOperationEndpoint := broker.NewLastOperation(memoryStorage.Operations(), memoryStorage.Instances(), logrus.StandardLogger())
+		lastOperationEndpoint := broker.NewLastOperation(memoryStorage.Operations(), logrus.StandardLogger())
 
 		// when
 		response, err := lastOperationEndpoint.LastOperation(context.TODO(), instID, domain.PollDetails{OperationData: operationID})
