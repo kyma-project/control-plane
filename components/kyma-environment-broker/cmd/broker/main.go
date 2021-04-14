@@ -317,7 +317,7 @@ func main() {
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
 		broker.NewUpdate(db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, logs),
 		broker.NewGetInstance(db.Instances(), logs),
-		broker.NewLastOperation(db.Operations(), db.Instances(), logs),
+		broker.NewLastOperation(db.Operations(), logs),
 		broker.NewBind(logs),
 		broker.NewUnbind(logs),
 		broker.NewGetBinding(logs),

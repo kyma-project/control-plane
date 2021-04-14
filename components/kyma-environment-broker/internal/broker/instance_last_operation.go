@@ -13,15 +13,13 @@ import (
 
 type LastOperationEndpoint struct {
 	operationStorage storage.Operations
-	instancesStorage storage.Instances
 
 	log logrus.FieldLogger
 }
 
-func NewLastOperation(os storage.Operations, is storage.Instances, log logrus.FieldLogger) *LastOperationEndpoint {
+func NewLastOperation(os storage.Operations, log logrus.FieldLogger) *LastOperationEndpoint {
 	return &LastOperationEndpoint{
 		operationStorage: os,
-		instancesStorage: is,
 		log:              log.WithField("service", "LastOperationEndpoint"),
 	}
 }
