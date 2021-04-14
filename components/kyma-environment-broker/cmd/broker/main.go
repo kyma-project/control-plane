@@ -124,7 +124,8 @@ type Config struct {
 		Disabled bool `envconfig:"default=true"`
 	}
 	Ems struct {
-		Disabled bool `envconfig:"default=true"`
+		Disabled                              bool `envconfig:"default=true"`
+		SkipDeprovisionAzureEventingAtUpgrade bool `envconfig:"default=false"`
 	}
 	Cls struct {
 		Disabled bool `envconfig:"default=true"`
@@ -789,7 +790,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight:   3,
 			step:     upgrade_kyma.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
-			disabled: cfg.Ems.Disabled,
+			disabled: cfg.Ems.SkipDeprovisionAzureEventingAtUpgrade,
 		},
 		{
 			weight:   3,
