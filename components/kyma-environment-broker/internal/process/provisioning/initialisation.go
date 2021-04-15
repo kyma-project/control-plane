@@ -5,6 +5,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
@@ -61,6 +64,7 @@ type InitialisationStep struct {
 	provisioningTimeout         time.Duration
 	runtimeVerConfigurator      RuntimeVersionConfiguratorForProvisioning
 	serviceManagerClientFactory SMClientFactory
+	operationStorage            storage.Operations
 }
 
 func NewInitialisationStep(os storage.Operations,
@@ -78,6 +82,7 @@ func NewInitialisationStep(os storage.Operations,
 	return &InitialisationStep{
 		operationManager:            process.NewProvisionOperationManager(os),
 		instanceStorage:             is,
+		operationStorage:            os,
 		provisionerClient:           pc,
 		directorClient:              dc,
 		inputBuilder:                b,
@@ -100,6 +105,35 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 		log.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout), log)
 	}
+
+	if operation.State == orchestration.Pending {
+		deprovisionOp, err := s.operationStorage.GetDeprovisioningOperationByInstanceID(operation.InstanceID)
+		if err != nil && !dberr.IsNotFound(err) {
+			log.Errorf("Unable to get deprovisioning operation: %s", err.Error())
+			return operation, time.Second, nil
+		}
+		if deprovisionOp != nil && deprovisionOp.State == domain.InProgress {
+			return operation, time.Minute, nil
+		}
+
+		// if there was a deprovisioning process before, take new InstanceDetails
+		if deprovisionOp != nil {
+			inst, err := s.instanceStorage.GetByID(operation.InstanceID)
+			if err != nil {
+				if dberr.IsNotFound(err) {
+					log.Errorf("Instance does not exists.")
+					return s.operationManager.OperationFailed(operation, "The instance does not exists", log)
+				}
+				log.Errorf("Unable to get the instance: %s", err.Error())
+				return operation, time.Second, nil
+			}
+			log.Infof("Setting the newest InstanceDetails")
+			operation.InstanceDetails = inst.InstanceDetails
+		}
+		log.Infof("Setting the operation to 'InProgress'")
+		operation.State = domain.InProgress
+	}
+
 	operation.SMClientFactory = s.serviceManagerClientFactory
 
 	inst, err := s.instanceStorage.GetByID(operation.InstanceID)

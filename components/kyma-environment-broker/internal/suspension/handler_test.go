@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
@@ -110,6 +112,7 @@ func TestSuspension_Retrigger(t *testing.T) {
 }
 
 func assertQueue(t *testing.T, q *dummyQueue, id ...string) {
+	t.Helper()
 	if len(id) == 0 {
 		assert.Empty(t, q.IDs)
 		return
@@ -130,6 +133,10 @@ func TestUnsuspension(t *testing.T) {
 
 	st.Instances().Insert(*instance)
 
+	deprovisioningOperation := fixture.FixDeprovisioningOperation("d-op", "instance-id")
+	deprovisioningOperation.Temporary = true
+	st.Operations().InsertDeprovisioningOperation(deprovisioningOperation)
+
 	// when
 	err := svc.Handle(instance, fixActiveErsContext())
 	require.NoError(t, err)
@@ -144,6 +151,33 @@ func TestUnsuspension(t *testing.T) {
 	assert.Equal(t, instance.InstanceID, op.InstanceID)
 	assert.Equal(t, "c-012345", op.ShootName)
 	assert.Equal(t, "c-012345.sap.com", op.ShootDomain)
+}
+
+func TestUnsuspensionForDeprovisioningInstance(t *testing.T) {
+	// given
+	provisioning := NewDummyQueue()
+	deprovisioning := NewDummyQueue()
+	st := storage.NewMemoryStorage()
+
+	svc := NewContextUpdateHandler(st.Operations(), provisioning, deprovisioning, logrus.New())
+	instance := fixInstance(fixInactiveErsContext())
+	instance.InstanceDetails.ShootName = "c-012345"
+	instance.InstanceDetails.ShootDomain = "c-012345.sap.com"
+
+	st.Instances().Insert(*instance)
+	deprovisioningOperation := fixture.FixDeprovisioningOperation("d-op", "instance-id")
+	deprovisioningOperation.Temporary = false
+	st.Operations().InsertDeprovisioningOperation(deprovisioningOperation)
+
+	// when
+	err := svc.Handle(instance, fixActiveErsContext())
+	require.NoError(t, err)
+
+	// then
+	_, err = st.Operations().GetProvisioningOperationByInstanceID("instance-id")
+	assert.True(t, dberr.IsNotFound(err))
+	assertQueue(t, deprovisioning)
+	assertQueue(t, provisioning)
 }
 
 func TestUnsuspensionWithoutShootname(t *testing.T) {
