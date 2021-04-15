@@ -175,6 +175,7 @@ edp:
 
 ems:
   disabled: true
+  skipDeprovisionAzureEventingAtUpgrade: false
 
 connectivity:
   disabled: true
