@@ -60,7 +60,7 @@ kcp completion bash                            Display completions in bash.
 ## Options
 
 ```
-      --o string   autocompletion file (default "/home/i349725/kcp_completion")
+      --o string   autocompletion file (default "$HOME/kcp_completion")
 ```
 
 ## Global Options
