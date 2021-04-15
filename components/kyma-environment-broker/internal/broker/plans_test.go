@@ -37,6 +37,12 @@ func TestSchemaGenerator(t *testing.T) {
 			file:         "azure-lite-schema.json",
 		},
 		{
+			name:         "AzureHA schema is correct",
+			generator:    AzureSchema, // TODO: adjust AzureSchema() function to pass autoScalerMin/autoScalerMax parameter for proper plan schema properties
+			machineTypes: []string{"Standard_D4_v3"},
+			file:         "azure-ha-schema.json",
+		},
+		{
 			name:         "GCP schema is correct",
 			generator:    GCPSchema,
 			machineTypes: []string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"},

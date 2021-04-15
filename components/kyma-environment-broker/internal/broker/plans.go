@@ -18,6 +18,8 @@ const (
 	AzurePlanName     = "azure"
 	AzureLitePlanID   = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
 	AzureLitePlanName = "azure_lite"
+	AzureHAPlanID     = "f2951649-02ca-43a5-9188-9c07fb612491"
+	AzureHAPlanName   = "azure_ha"
 	TrialPlanID       = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
 	TrialPlanName     = "trial"
 	OpenStackPlanID   = "03b812ac-c991-4528-b5bd-08b303523a63"
@@ -29,6 +31,7 @@ var PlanNamesMapping = map[string]string{
 	AWSPlanID:       AWSPlanName,
 	AzurePlanID:     AzurePlanName,
 	AzureLitePlanID: AzureLitePlanName,
+	AzureHAPlanID:   AzureHAPlanName,
 	TrialPlanID:     TrialPlanName,
 	OpenStackPlanID: OpenStackPlanName,
 }
@@ -37,6 +40,7 @@ var PlanIDsMapping = map[string]string{
 	AzurePlanName:     AzurePlanID,
 	AWSPlanName:       AWSPlanID,
 	AzureLitePlanName: AzureLitePlanID,
+	AzureHAPlanName:   AzureHAPlanID,
 	GCPPlanName:       GCPPlanID,
 	TrialPlanName:     TrialPlanID,
 	OpenStackPlanName: OpenStackPlanID,
@@ -222,6 +226,22 @@ func Plans(plans PlansConfig) map[string]Plan {
 				Name:        AzureLitePlanName,
 				Description: defaultDescription(AzureLitePlanName, plans),
 				Metadata:    defaultMetadata(AzureLitePlanName, plans),
+				Schemas: &domain.ServiceSchemas{
+					Instance: domain.ServiceInstanceSchema{
+						Create: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
+					},
+				},
+			},
+			provisioningRawSchema: AzureSchema([]string{"Standard_D4_v3"}),
+		},
+		AzureHAPlanID: {
+			PlanDefinition: domain.ServicePlan{
+				ID:          AzureHAPlanID,
+				Name:        AzureHAPlanName,
+				Description: defaultDescription(AzureHAPlanName, plans),
+				Metadata:    defaultMetadata(AzureHAPlanName, plans),
 				Schemas: &domain.ServiceSchemas{
 					Instance: domain.ServiceInstanceSchema{
 						Create: domain.Schema{

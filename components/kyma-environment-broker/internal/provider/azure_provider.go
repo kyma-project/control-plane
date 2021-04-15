@@ -29,6 +29,7 @@ type (
 	AzureTrialInput struct {
 		PlatformRegionMapping map[string]string
 	}
+	AzureHAInput struct{}
 )
 
 func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
@@ -134,6 +135,37 @@ func (p *AzureTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, p
 	}
 
 	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, params.Zones)
+}
+
+func (p *AzureHAInput) Defaults() *gqlschema.ClusterConfigInput {
+	return &gqlschema.ClusterConfigInput{
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			DiskType:       ptr.String("Standard_LRS"),
+			VolumeSizeGb:   ptr.Integer(50),
+			MachineType:    "Standard_D4_v3",
+			Region:         DefaultAzureRegion,
+			Provider:       "azure",
+			WorkerCidr:     "10.250.0.0/19",
+			AutoScalerMin:  4,
+			AutoScalerMax:  10,
+			MaxSurge:       4,
+			MaxUnavailable: 0,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				AzureConfig: &gqlschema.AzureProviderConfigInput{
+					VnetCidr: "10.250.0.0/19",
+					Zones:    []string{"1", "2"},
+				},
+			},
+		},
+	}
+}
+
+func (p *AzureHAInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
+	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, pp.Parameters.Zones)
+}
+
+func (p *AzureHAInput) Profile() gqlschema.KymaProfile {
+	return gqlschema.KymaProfileProduction
 }
 
 func (p *AzureTrialInput) Profile() gqlschema.KymaProfile {
