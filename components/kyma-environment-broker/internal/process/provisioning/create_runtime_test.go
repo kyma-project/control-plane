@@ -56,6 +56,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	assert.NoError(t, err)
 
 	profile := gqlschema.KymaProfileProduction
+	strategy := gqlschema.ConflictStrategyReplace
 	provisionerInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "dummy",
@@ -99,8 +100,9 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 					Configuration: nil,
 				},
 			},
-			Configuration: []*gqlschema.ConfigEntryInput{},
-			Profile:       &profile,
+			Configuration:    []*gqlschema.ConfigEntryInput{},
+			Profile:          &profile,
+			ConflictStrategy: &strategy,
 		},
 	}
 
