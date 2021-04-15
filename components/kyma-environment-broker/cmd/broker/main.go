@@ -26,7 +26,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/health"
@@ -193,19 +192,6 @@ func main() {
 		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 		prometheus.MustRegister(dbStatsCollector)
 	}
-
-	// CLS
-	clsFile, err := ioutil.ReadFile("/cls-config/cls-config.yaml")
-	if err != nil {
-		fatalOnError(err)
-	}
-
-	clsConfig, err := cls.Load(string(clsFile))
-	if err != nil {
-		fatalOnError(err)
-	}
-	clsClient := cls.NewClient(clsConfig)
-	clsProvisioner := cls.NewProvisioner(db.CLSInstances(), clsClient)
 
 	// Auditlog
 	fileSystem := afero.NewOsFs()
