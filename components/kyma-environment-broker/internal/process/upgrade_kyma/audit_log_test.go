@@ -1,10 +1,10 @@
-package provisioning
+package upgrade_kyma
 
 import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 
@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestClsAuditLogStep_ScriptFileDoesNotExist(t *testing.T) {
+func TestAuditLog_ScriptFileDoesNotExist(t *testing.T) {
 	// given
 	mm := afero.NewMemMapFs()
 
@@ -28,26 +28,25 @@ func TestClsAuditLogStep_ScriptFileDoesNotExist(t *testing.T) {
 		Password: "aaaa",
 		Tenant:   "tenant",
 	}
-	svc := NewClsAuditLogOverridesStep(repo, cfg, "1234567890123456")
-	svc.fs = mm
+	svc := NewAuditLogOverridesStep(mm, repo, cfg)
 
-	operation := internal.ProvisioningOperation{
+	operation := internal.UpgradeKymaOperation{
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{SubAccountID: "1234567890"}},
 		},
 	}
-	err := repo.InsertProvisioningOperation(operation)
+	err := repo.InsertUpgradeKymaOperation(operation)
 	require.NoError(t, err)
 
 	// when
-	_, _, err = svc.Run(operation, NewLogDummy())
+	_, _, err = svc.Run(operation, logger.NewLogDummy())
 	//then
 	require.Error(t, err)
-	require.EqualError(t, err, "Unable to read Audit Log config script")
+	require.EqualError(t, err, "open /auditlog-script/script: file does not exist")
 
 }
 
-func TestClsAuditLogStep_HappyPath(t *testing.T) {
+func TestAuditLog_HappyPath(t *testing.T) {
 	// given
 	mm := afero.NewMemMapFs()
 
@@ -58,17 +57,8 @@ bar: tenant_id
 return "fooBar"
 }
 `
-	overridesIn := cls.OverrideParams{
-		FluentdEndPoint: "foo.bar",
-		FluentdPassword: "fooPass",
-		FluentdUsername: "fooUser",
-		KibanaURL:       "kibana.url",
-	}
-	secretKey := "1234567890123456"
-	encrypted, err := cls.EncryptOverrides(secretKey, &overridesIn)
-	assert.NoError(t, err)
 
-	err = afero.WriteFile(mm, "/auditlog-script/script", []byte(fileScript), 0755)
+	err := afero.WriteFile(mm, "/auditlog-script/script", []byte(fileScript), 0755)
 	if err != nil {
 		t.Fatalf("Unable to write contents to file: audit-log-script!!: %v", err)
 	}
@@ -80,57 +70,10 @@ return "fooBar"
 		Password: "aaaa",
 		Tenant:   "tenant",
 	}
-	svc := NewClsAuditLogOverridesStep(repo, cfg, secretKey)
-	svc.fs = mm
+	svc := NewAuditLogOverridesStep(mm, repo, cfg)
 
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
-	expectedOverride_conf := `
-[INPUT]
-    Name              tail
-    Tag               dex.*
-    Path              /var/log/containers/*_dex-*.log
-    DB                /var/log/flb_kube_dex.db
-    parser            docker
-    Mem_Buf_Limit     5MB
-    Skip_Long_Lines   On
-    Refresh_Interval  10
-[FILTER]
-    Name    lua
-    Match   dex.*
-    script  script.lua
-    call    reformat
-[FILTER]
-    Name    grep
-    Match   dex.*
-    Regex   time .*
-[FILTER]
-    Name    grep
-    Match   dex.*
-    Regex   data .*\"xsuaa
-[OUTPUT]
-    Name             http
-    Match            dex.*
-    Retry_Limit      False
-    Host             host1
-    Port             8080
-    URI              /aaa/v2/security-events
-    Header           Content-Type application/json
-    HTTP_User        aaaa
-    HTTP_Passwd      aaaa
-    Format           json_stream
-    tls              on
-[OUTPUT]
-    Name              http
-    Match             *
-    Host              foo.bar
-    Port              443
-    HTTP_User         fooUser
-    HTTP_Passwd       fooPass
-    tls               true
-    tls.verify        true
-    URI               /
-    Format            json`
 	expectedOverride_config := `
 [INPUT]
     Name              tail
@@ -166,18 +109,7 @@ return "fooBar"
     HTTP_Passwd      aaaa
     Format           json_stream
     tls              on
-[OUTPUT]
-    Name              http
-    Match             *
-    Host              foo.bar
-    Port              443
-    HTTP_User         fooUser
-    HTTP_Passwd       fooPass
-    tls               true
-    tls.verify        true
-    URI               /
-    Format            json`
-
+`
 	expectedFileScript := `
 func myScript() {
 foo: 1234567890
@@ -190,22 +122,6 @@ return "fooBar"
   name: https
   protocol: TLS`
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
-		{
-			Key:   "fluent-bit.conf.Output.forward.enabled",
-			Value: "false",
-		},
-		{
-			Key:   "fluent-bit.conf.script",
-			Value: expectedFileScript,
-		},
-		{
-			Key:   "fluent-bit.conf.extra",
-			Value: expectedOverride_conf,
-		},
-		{
-			Key:   "fluent-bit.config.outputs.forward.enabled",
-			Value: "false",
-		},
 		{
 			Key:   "fluent-bit.config.script",
 			Value: expectedFileScript,
@@ -228,31 +144,22 @@ return "fooBar"
 		},
 	}).Return(nil).Once()
 
-	operation := internal.ProvisioningOperation{
+	operation := internal.UpgradeKymaOperation{
 		InputCreator: inputCreatorMock,
 		Operation: internal.Operation{
 
 			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{SubAccountID: "1234567890"}},
-			InstanceDetails: internal.InstanceDetails{
-				Cls: internal.ClsData{
-					Overrides: encrypted,
-				},
-			},
-		},
-		RuntimeVersion: internal.RuntimeVersionData{
-			Version: "1.19",
-			Origin:  "foo",
 		},
 	}
-	repo.InsertProvisioningOperation(operation)
+	repo.InsertUpgradeKymaOperation(operation)
 	// when
-	_, repeat, err := svc.Run(operation, NewLogDummy())
+	_, repeat, err := svc.Run(operation, logger.NewLogDummy())
 	//then
 	assert.NoError(t, err)
 	assert.Equal(t, time.Duration(0), repeat)
 }
 
-func TestClsAuditLogStep_HappyPath_SeqHttp(t *testing.T) {
+func TestAuditLog_HappyPath_SeqHttp(t *testing.T) {
 	// given
 	mm := afero.NewMemMapFs()
 
@@ -263,19 +170,8 @@ bar: tenant_id
 return "fooBar"
 }
 `
-	overridesIn := cls.OverrideParams{
-		FluentdEndPoint: "foo.bar",
-		FluentdPassword: "fooPass",
-		FluentdUsername: "fooUser",
-		KibanaURL:       "kibana.url",
-	}
-	secretKey := "1234567890123456"
 
-	// when
-	encrypted, err := cls.EncryptOverrides(secretKey, &overridesIn)
-	assert.NoError(t, err)
-
-	err = afero.WriteFile(mm, "/auditlog-script/script", []byte(fileScript), 0755)
+	err := afero.WriteFile(mm, "/auditlog-script/script", []byte(fileScript), 0755)
 	if err != nil {
 		t.Fatalf("Unable to write contents to file: audit-log-script!!: %v", err)
 	}
@@ -288,47 +184,10 @@ return "fooBar"
 		Tenant:        "tenant",
 		EnableSeqHttp: true,
 	}
-	svc := NewClsAuditLogOverridesStep(repo, cfg, "1234567890123456")
-	svc.fs = mm
+	svc := NewAuditLogOverridesStep(mm, repo, cfg)
 
 	inputCreatorMock := &automock.ProvisionerInputCreator{}
 	defer inputCreatorMock.AssertExpectations(t)
-
-	expectedOverride_conf := `
-[INPUT]
-    Name              tail
-    Tag               dex.*
-    Path              /var/log/containers/*_dex-*.log
-    DB                /var/log/flb_kube_dex.db
-    parser            docker
-    Mem_Buf_Limit     5MB
-    Skip_Long_Lines   On
-    Refresh_Interval  10
-[FILTER]
-    Name    lua
-    Match   dex.*
-    script  script.lua
-    call    reformat
-[FILTER]
-    Name    grep
-    Match   dex.*
-    Regex   time .*
-[FILTER]
-    Name    grep
-    Match   dex.*
-    Regex   data .*\"xsuaa
-[OUTPUT]
-    Name             sequentialhttp
-    Match            dex.*
-    Retry_Limit      False
-    Host             host1
-    Port             8080
-    URI              /aaa/v2/security-events
-    Header           Content-Type application/json
-    HTTP_User        aaaa
-    HTTP_Passwd      aaaa
-    Format           json_stream
-    tls              on`
 	expectedOverride_config := `
 [INPUT]
     Name              tail
@@ -363,7 +222,8 @@ return "fooBar"
     HTTP_User        aaaa
     HTTP_Passwd      aaaa
     Format           json_stream
-    tls              on`
+    tls              on
+`
 	expectedFileScript := `
 func myScript() {
 foo: 1234567890
@@ -376,22 +236,6 @@ return "fooBar"
   name: https
   protocol: TLS`
 	inputCreatorMock.On("AppendOverrides", "logging", []*gqlschema.ConfigEntryInput{
-		{
-			Key:   "fluent-bit.conf.Output.forward.enabled",
-			Value: "false",
-		},
-		{
-			Key:   "fluent-bit.conf.script",
-			Value: expectedFileScript,
-		},
-		{
-			Key:   "fluent-bit.conf.extra",
-			Value: expectedOverride_conf,
-		},
-		{
-			Key:   "fluent-bit.config.outputs.forward.enabled",
-			Value: "false",
-		},
 		{
 			Key:   "fluent-bit.config.script",
 			Value: expectedFileScript,
@@ -414,7 +258,7 @@ return "fooBar"
 		},
 	}).Return(nil).Once()
 
-	operation := internal.ProvisioningOperation{
+	operation := internal.UpgradeKymaOperation{
 		RuntimeVersion: internal.RuntimeVersionData{
 			Version: "1.20",
 			Origin:  "foo",
@@ -422,16 +266,11 @@ return "fooBar"
 		InputCreator: inputCreatorMock,
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{ErsContext: internal.ERSContext{SubAccountID: "1234567890"}},
-			InstanceDetails: internal.InstanceDetails{
-				Cls: internal.ClsData{
-					Overrides: encrypted,
-				},
-			},
 		},
 	}
-	repo.InsertProvisioningOperation(operation)
+	repo.InsertUpgradeKymaOperation(operation)
 	// when
-	_, repeat, err := svc.Run(operation, NewLogDummy())
+	_, repeat, err := svc.Run(operation, logger.NewLogDummy())
 	//then
 	assert.NoError(t, err)
 	assert.Equal(t, time.Duration(0), repeat)

@@ -128,13 +128,6 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 		Overrides: "Overrides",
 	}
 
-	cls := internal.ClsData{
-		Instance:  serviceManagerInstanceInfo,
-		Region:    Region,
-		BindingID: bindingId,
-		Overrides: "Overrides",
-	}
-
 	return internal.InstanceDetails{
 		Lms:          lms,
 		Avs:          internal.AvsLifecycleData{},
@@ -145,7 +138,6 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 		ShootDomain:  "ShootDomain",
 		XSUAA:        xsuaaData,
 		Ems:          emsData,
-		Cls:          cls,
 	}
 }
 
@@ -194,6 +186,8 @@ func FixOperation(id, instanceId string, opType internal.OperationType) internal
 		Description:            description,
 		ProvisioningParameters: FixProvisioningParameters(id),
 		OrchestrationID:        orchestrationId,
+		FinishedStages:         map[string]struct{}{"prepare": struct{}{}, "check_provisioning": struct{}{}},
+		FinishedSteps:          make(map[string]struct{}, 0),
 	}
 }
 

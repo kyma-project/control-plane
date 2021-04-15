@@ -148,8 +148,8 @@ spec:
                   key: secret
             - name: APP_EMS_DISABLED
               value: "{{ .Values.ems.disabled }}"
-            - name: APP_CLS_DISABLED
-              value: "{{ .Values.cls.disabled }}"
+            - name: APP_EMS_SKIP_DEPROVISION_AZURE_EVENTING_AT_UPGRADE
+              value: "{{ .Values.ems.skipDeprovisionAzureEventingAtUpgrade }}"
             - name: APP_DATABASE_SECRET_KEY
               valueFrom:
                 secretKeyRef:
@@ -385,8 +385,6 @@ spec:
               name: swagger-volume
             - mountPath: /auditlog-script
               name: auditlog-script
-            - mountPath: /cls-config
-              name: cls-config
           {{if eq .Values.global.database.embedded.enabled false}}
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
@@ -426,6 +424,3 @@ spec:
       - name: auditlog-script
         configMap:
           name: {{ .Values.global.auditlog.script.configMapName }}
-      - name: cls-config
-        secret:
-          secretName: {{ .Values.cls.secretName }}

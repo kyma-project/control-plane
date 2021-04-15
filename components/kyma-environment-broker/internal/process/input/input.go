@@ -3,6 +3,8 @@ package input
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -87,7 +89,7 @@ func (r *RuntimeInput) AppendOverrides(component string, overrides []*gqlschema.
 	return r
 }
 
-// AppendAppendGlobalOverrides appends overrides, the existing overrides are preserved.
+// AppendGlobalOverrides appends overrides, the existing overrides are preserved.
 func (r *RuntimeInput) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	r.mutex.Lock("AppendGlobalOverrides")
 	defer r.mutex.Unlock("AppendGlobalOverrides")
@@ -134,8 +136,12 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 			execute: r.applyGlobalOverridesForProvisionRuntime,
 		},
 		{
-			name:    "adding random string to runtime name",
-			execute: r.addRandomStringToRuntimeName,
+			name:    "applying global configuration",
+			execute: r.applyGlobalConfigurationForProvisionRuntime,
+		},
+		{
+			name:    "removing forbidden chars and adding random string to runtime name",
+			execute: r.adjustRuntimeName,
 		},
 		{
 			name:    "set number of nodes from configuration",
@@ -170,6 +176,10 @@ func (r *RuntimeInput) CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInpu
 		{
 			name:    "applying global overrides",
 			execute: r.applyGlobalOverridesForUpgradeRuntime,
+		},
+		{
+			name:    "applying global configuration",
+			execute: r.applyGlobalConfigurationForUpgradeRuntime,
 		},
 		{
 			name:    "set number of nodes from configuration",
@@ -328,14 +338,33 @@ func (r *RuntimeInput) applyGlobalOverridesForUpgradeRuntime() error {
 	return nil
 }
 
-func (r *RuntimeInput) addRandomStringToRuntimeName() error {
+func (r *RuntimeInput) applyGlobalConfigurationForProvisionRuntime() error {
+	strategy := gqlschema.ConflictStrategyReplace
+	r.provisionRuntimeInput.KymaConfig.ConflictStrategy = &strategy
+	return nil
+}
+
+func (r *RuntimeInput) applyGlobalConfigurationForUpgradeRuntime() error {
+	strategy := gqlschema.ConflictStrategyReplace
+	r.upgradeRuntimeInput.KymaConfig.ConflictStrategy = &strategy
+	return nil
+}
+
+func (r *RuntimeInput) adjustRuntimeName() error {
 	rand.Seed(time.Now().UnixNano())
-	modifiedLength := len(r.provisionRuntimeInput.RuntimeInput.Name) + trialSuffixLength + 1
-	if modifiedLength > maxRuntimeNameLength {
-		r.provisionRuntimeInput.RuntimeInput.Name = trimLastCharacters(r.provisionRuntimeInput.RuntimeInput.Name, modifiedLength-maxRuntimeNameLength)
+
+	reg, err := regexp.Compile("[^a-zA-Z0-9\\-\\.]+")
+	if err != nil {
+		return errors.Wrap(err, "while compiling regexp")
 	}
-	r.provisionRuntimeInput.RuntimeInput.Name =
-		fmt.Sprintf("%s-%s", r.provisionRuntimeInput.RuntimeInput.Name, randomString(trialSuffixLength))
+
+	name := strings.ToLower(reg.ReplaceAllString(r.provisionRuntimeInput.RuntimeInput.Name, ""))
+	modifiedLength := len(name) + trialSuffixLength + 1
+	if modifiedLength > maxRuntimeNameLength {
+		name = trimLastCharacters(name, modifiedLength-maxRuntimeNameLength)
+	}
+
+	r.provisionRuntimeInput.RuntimeInput.Name = fmt.Sprintf("%s-%s", name, randomString(trialSuffixLength))
 	return nil
 }
 

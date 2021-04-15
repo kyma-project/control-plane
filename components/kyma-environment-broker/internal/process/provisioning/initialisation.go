@@ -42,6 +42,12 @@ type KymaVersionConfigurator interface {
 	ForGlobalAccount(string) (string, bool, error)
 }
 
+type SMClientFactory interface {
+	ForCredentials(credentials *servicemanager.Credentials) servicemanager.Client
+	ForCustomerCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (servicemanager.Client, error)
+	ProvideCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (*servicemanager.Credentials, error)
+}
+
 type InitialisationStep struct {
 	operationManager            *process.ProvisionOperationManager
 	instanceStorage             storage.Instances
@@ -54,7 +60,7 @@ type InitialisationStep struct {
 	operationTimeout            time.Duration
 	provisioningTimeout         time.Duration
 	runtimeVerConfigurator      RuntimeVersionConfiguratorForProvisioning
-	serviceManagerClientFactory *servicemanager.ClientFactory
+	serviceManagerClientFactory SMClientFactory
 }
 
 func NewInitialisationStep(os storage.Operations,
@@ -68,7 +74,7 @@ func NewInitialisationStep(os storage.Operations,
 	provisioningTimeout time.Duration,
 	operationTimeout time.Duration,
 	rvc RuntimeVersionConfiguratorForProvisioning,
-	smcf *servicemanager.ClientFactory) *InitialisationStep {
+	smcf SMClientFactory) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:            process.NewProvisionOperationManager(os),
 		instanceStorage:             is,
@@ -272,7 +278,7 @@ func (s *InitialisationStep) createExternalEval(operation internal.ProvisioningO
 		log.Info("skipping AVS external evaluation creation for trial plan")
 		return operation, 0, nil
 	}
-	log.Infof("creating external evaluation for instance %", instance.InstanceID)
+	log.Infof("creating external evaluation for instance %s", instance.InstanceID)
 	operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL, log)
 	if err != nil || repeat != 0 {
 		return operation, repeat, err
