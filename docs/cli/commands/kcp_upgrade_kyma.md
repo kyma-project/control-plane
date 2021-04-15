@@ -21,7 +21,7 @@ kcp upgrade kyma --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...]
   kcp upgrade kyma --target "account=CA.*"                       Upgrade Kyma on Runtimes of all global accounts starting with CA.
   kcp upgrade kyma --target all --target-exclude "account=CA.*"  Upgrade Kyma on Runtimes of all global accounts not starting with CA.
   kcp upgrade kyma --target "region=europe|eu|uk"                Upgrade Kyma on Runtimes whose region belongs to Europe.
-  kcp upgrade kyma --target all --version "main-00e83e99"      Upgrade Kyma on Runtimes of all global accounts to the custom Kyma version (main-00e83e99).
+  kcp upgrade kyma --target all --version "main-00e83e99"        Upgrade Kyma on Runtimes of all global accounts to the custom Kyma version (main-00e83e99).
 ```
 
 ## Options
