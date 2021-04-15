@@ -213,7 +213,6 @@ type InstanceDetails struct {
 	ShootDomain  string           `json:"shoot_domain"`
 	XSUAA        XSUAAData        `json:"xsuaa"`
 	Ems          EmsData          `json:"ems"`
-	Cls          ClsData          `json:"cls"`
 	Connectivity ConnectivityData `json:"connectivity"`
 }
 
@@ -249,14 +248,6 @@ type XSUAAData struct {
 type EmsData struct {
 	Instance ServiceManagerInstanceInfo `json:"instance"`
 
-	BindingID string `json:"bindingId"`
-	Overrides string `json:"overrides"`
-}
-
-type ClsData struct {
-	Instance ServiceManagerInstanceInfo `json:"instance"`
-
-	Region    string `json:"region"`
 	BindingID string `json:"bindingId"`
 	Overrides string `json:"overrides"`
 }

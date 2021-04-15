@@ -13,5 +13,4 @@ const (
 	AvSBridge               = "avs-bridge"
 	Eventing                = "eventing"
 	Connectivity            = "connectivity"
-	CLS                     = "logging"
 )
