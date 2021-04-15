@@ -147,6 +147,9 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
 		{{- if .Profile }}
 		profile: {{ .Profile }},
 		{{- end }}
+		{{- if .ConflictStrategy }}
+		conflictStrategy: {{ .ConflictStrategy }},
+		{{- end }}
 		{{- with .Components }}
         components: [
 		  {{- range . }}
@@ -156,6 +159,9 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
             {{- if .SourceURL }}
             sourceURL: "{{ .SourceURL }}",
             {{- end }}
+			{{- if .ConflictStrategy }}
+			conflictStrategy: {{ .ConflictStrategy }},
+			{{- end }}
       	    {{- with .Configuration }}
             configuration: [
 			  {{- range . }}
