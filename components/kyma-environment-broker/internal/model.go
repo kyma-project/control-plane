@@ -482,6 +482,7 @@ func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfig
 			Component:     component.Component,
 			Namespace:     component.Namespace,
 			SourceURL:     component.SourceURL,
+			Prerequisite:  component.Prerequisite,
 			Configuration: cpyCfg,
 		})
 	}

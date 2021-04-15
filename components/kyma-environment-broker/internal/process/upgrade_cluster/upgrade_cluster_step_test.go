@@ -10,9 +10,9 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -85,14 +85,16 @@ func fixUpgradeClusterOperationWithInputCreator(t *testing.T) internal.UpgradeCl
 }
 
 func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
-	kymaComponentList := []v1alpha1.KymaComponent{
-		{
-			Name:      "to-remove-component",
-			Namespace: "kyma-system",
-		},
-		{
-			Name:      "keb",
-			Namespace: "kyma-system",
+	kymaComponentList := runtime.ComponentListData{
+		Components: []runtime.ComponentDefinition{
+			{
+				Name:      "to-remove-component",
+				Namespace: "kyma-system",
+			},
+			{
+				Name:      "keb",
+				Namespace: "kyma-system",
+			},
 		},
 	}
 	componentsProvider := &automock.ComponentListProvider{}
@@ -104,7 +106,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 		MachineImage:        fixMachineImage,
 		MachineImageVersion: fixMachineImageVersion,
 		TrialNodesNumber:    1,
-	}, fixKymaVersion, nil, nil)
+	}, fixKymaVersion, nil, nil, &fixture.FakeListDecider{})
 	require.NoError(t, err, "Input factory creation error")
 
 	creator, err := ibf.CreateUpgradeShootInput(fixProvisioningParameters())

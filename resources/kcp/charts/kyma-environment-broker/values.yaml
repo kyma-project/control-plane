@@ -111,6 +111,10 @@ serviceManager:
 xsuaa:
   disabled: true
 
+switcher:
+  configMapName: "new-installation-versions"
+  configMapNamespace: "kcp-system"
+
 avs:
   secretName: "avs-creds"
   apiEndpoint: "TBD"

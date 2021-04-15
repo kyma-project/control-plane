@@ -10,10 +10,6 @@ import (
 	"sort"
 	"time"
 
-	"code.cloudfoundry.org/lager"
-	"github.com/dlmiddlecote/sqlstats"
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
@@ -32,6 +28,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/kubeconfig"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/metrics"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/newinstallation"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	orchestrate "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/manager"
@@ -53,6 +50,11 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/swagger"
+
+	"code.cloudfoundry.org/lager"
+	"github.com/dlmiddlecote/sqlstats"
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -116,6 +118,8 @@ type Config struct {
 	Avs avs.Config
 	IAS ias.Config
 	EDP edp.Config
+
+	Switcher newinstallation.Config
 
 	// Service Manager services
 	XSUAA struct {
@@ -219,7 +223,8 @@ func main() {
 
 	disabledComponentsProvider := runtime.NewDisabledComponentsProvider()
 
-	runtimeProvider := runtime.NewComponentsListProvider(cfg.ManagedRuntimeComponentsYAMLFilePath)
+	switcher := newinstallation.NewSwitcher(cfg.Switcher, cli)
+	runtimeProvider := runtime.NewComponentsListProvider(switcher, cfg.ManagedRuntimeComponentsYAMLFilePath)
 	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
 	fatalOnError(err)
 	gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
@@ -240,7 +245,7 @@ func main() {
 	fatalOnError(err)
 	logs.Infof("Platform region mapping for trial: %v", regions)
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider,
-		cfg.Provisioning, cfg.KymaVersion, regions, cfg.FreemiumProviders)
+		cfg.Provisioning, cfg.KymaVersion, regions, cfg.FreemiumProviders, switcher)
 	fatalOnError(err)
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))

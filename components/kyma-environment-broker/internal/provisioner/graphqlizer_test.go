@@ -13,24 +13,29 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 	// given
 	profile := gqlschema.KymaProfileProduction
 	strategy := gqlschema.ConflictStrategyReplace
+	installationType := gqlschema.KymaInstallationMethodKymaOperator
 	fixInput := gqlschema.KymaConfigInput{
 		Version:          "966",
 		Profile:          &profile,
 		ConflictStrategy: &strategy,
+		KymaInstaller:    &installationType,
 		Components: []*gqlschema.ComponentConfigurationInput{
 			{
-				Component: "pico",
-				Namespace: "bello",
+				Component:    "pico",
+				Namespace:    "bello",
+				Prerequisite: ptr.Bool(true),
 			},
 			{
 				Component:        "custom-component",
 				Namespace:        "bello",
 				ConflictStrategy: &strategy,
+				Prerequisite:     ptr.Bool(false),
 				SourceURL:        ptr.String("github.com/kyma-incubator/custom-component"),
 			},
 			{
-				Component: "hakuna",
-				Namespace: "matata",
+				Component:    "hakuna",
+				Namespace:    "matata",
+				Prerequisite: ptr.Bool(false),
 				Configuration: []*gqlschema.ConfigEntryInput{
 					{
 						Key:    "testing-secret-key",
@@ -60,20 +65,24 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 		version: "966",
 		profile: Production,
 		conflictStrategy: Replace,
+		kymaInstaller: KymaOperator,
         components: [
           {
             component: "pico",
             namespace: "bello",
+            prerequisite: true,
           }
           {
             component: "custom-component",
             namespace: "bello",
+            prerequisite: false,
             sourceURL: "github.com/kyma-incubator/custom-component",
 			conflictStrategy: Replace,
           }
           {
             component: "hakuna",
             namespace: "matata",
+            prerequisite: false,
             configuration: [
               {
                 key: "testing-secret-key",

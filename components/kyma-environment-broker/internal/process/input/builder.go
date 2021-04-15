@@ -7,15 +7,15 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	cloudProvider "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
+
 	"github.com/pkg/errors"
 	"github.com/vburenin/nsync"
 )
 
 //go:generate mockery -name=ComponentListProvider -output=automock -outpkg=automock -case=underscore
-//go:generate mockery -name=CreatorForPlan -output=automock -outpkg=automock -case=underscore
 //go:generate mockery -name=ComponentsDisabler -output=automock -outpkg=automock -case=underscore
 
 type (
@@ -48,7 +48,11 @@ type (
 	}
 
 	ComponentListProvider interface {
-		AllComponents(kymaVersion string) ([]v1alpha1.KymaComponent, error)
+		AllComponents(kymaVersion string) (runtime.ComponentListData, error)
+	}
+
+	ListDecider interface {
+		IsNewComponentList(string) (bool, error)
 	}
 )
 
@@ -59,12 +63,20 @@ type InputBuilderFactory struct {
 	fullComponentsList         internal.ComponentConfigurationInputList
 	componentsProvider         ComponentListProvider
 	disabledComponentsProvider DisabledComponentsProvider
+	listDecider                ListDecider
 	trialPlatformRegionMapping map[string]string
 	enabledFreemiumProviders   map[string]struct{}
 }
 
-func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledComponentsProvider DisabledComponentsProvider, componentsListProvider ComponentListProvider, config Config,
-	defaultKymaVersion string, trialPlatformRegionMapping map[string]string, enabledFreemiumProviders []string) (CreatorForPlan, error) {
+func NewInputBuilderFactory(optComponentsSvc OptionalComponentService,
+	disabledComponentsProvider DisabledComponentsProvider,
+	componentsListProvider ComponentListProvider,
+	config Config,
+	defaultKymaVersion string,
+	trialPlatformRegionMapping map[string]string,
+	enabledFreemiumProviders []string,
+	decider ListDecider,
+) (CreatorForPlan, error) {
 
 	components, err := componentsListProvider.AllComponents(defaultKymaVersion)
 	if err != nil {
@@ -83,6 +95,7 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 		fullComponentsList:         mapToGQLComponentConfigurationInput(components),
 		componentsProvider:         componentsListProvider,
 		disabledComponentsProvider: disabledComponentsProvider,
+		listDecider:                decider,
 		trialPlatformRegionMapping: trialPlatformRegionMapping,
 		enabledFreemiumProviders:   freemiumProviders,
 	}, nil
@@ -199,20 +212,42 @@ func (f *InputBuilderFactory) provideComponentList(version internal.RuntimeVersi
 	return internal.ComponentConfigurationInputList{}, errors.Errorf("Unknown version.Origin: %s", version.Origin)
 }
 
+// specifyKymaInstallation specifies based on version what kind of installation will be used: old with KymaOperator or
+// new parallel installation
+// TODO: method could be removed when only new installation will be used in provisioner
+func (f *InputBuilderFactory) specifyKymaInstallation(version internal.RuntimeVersionData) (gqlschema.KymaInstallationMethod, error) {
+	kymaInstaller := gqlschema.KymaInstallationMethodKymaOperator
+	newList, err := f.listDecider.IsNewComponentList(version.Version)
+	if err != nil {
+		return kymaInstaller, errors.Wrap(err, "while specifying component list version")
+	}
+	if newList {
+		kymaInstaller = gqlschema.KymaInstallationMethodParallelInstall
+	}
+
+	return kymaInstaller, nil
+}
+
 func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInputProvider, version internal.RuntimeVersionData) (gqlschema.ProvisionRuntimeInput, error) {
 	components, err := f.provideComponentList(version)
 	if err != nil {
-		return gqlschema.ProvisionRuntimeInput{}, err
+		return gqlschema.ProvisionRuntimeInput{}, errors.Wrap(err, "while providing component list")
 	}
 	kymaProfile := provider.Profile()
+
+	kymaInstaller, err := f.specifyKymaInstallation(version)
+	if err != nil {
+		return gqlschema.ProvisionRuntimeInput{}, errors.Wrap(err, "while specifying component list version")
+	}
 
 	provisionInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput:  &gqlschema.RuntimeInput{},
 		ClusterConfig: provider.Defaults(),
 		KymaConfig: &gqlschema.KymaConfigInput{
-			Profile:    &kymaProfile,
-			Version:    version.Version,
-			Components: components.DeepCopy(),
+			Profile:       &kymaProfile,
+			Version:       version.Version,
+			Components:    components.DeepCopy(),
+			KymaInstaller: &kymaInstaller,
 		},
 	}
 
@@ -273,29 +308,49 @@ func (f *InputBuilderFactory) initUpgradeRuntimeInput(version internal.RuntimeVe
 		return gqlschema.UpgradeRuntimeInput{}, err
 	}
 
+	kymaInstaller, err := f.specifyKymaInstallation(version)
+	if err != nil {
+		return gqlschema.UpgradeRuntimeInput{}, errors.Wrap(err, "while specifying component list version")
+	}
+
 	return gqlschema.UpgradeRuntimeInput{
 		KymaConfig: &gqlschema.KymaConfigInput{
-			Profile:    &kymaProfile,
-			Version:    version.Version,
-			Components: components.DeepCopy(),
+			Profile:       &kymaProfile,
+			Version:       version.Version,
+			Components:    components.DeepCopy(),
+			KymaInstaller: &kymaInstaller,
 		},
 	}, nil
 }
 
-func mapToGQLComponentConfigurationInput(kymaComponents []v1alpha1.KymaComponent) internal.ComponentConfigurationInputList {
+func mapToGQLComponentConfigurationInput(kymaComponents runtime.ComponentListData) internal.ComponentConfigurationInputList {
 	var input internal.ComponentConfigurationInputList
-	for _, component := range kymaComponents {
+
+	for _, component := range kymaComponents.Prerequisites {
 		var sourceURL *string
 		if component.Source != nil {
 			sourceURL = &component.Source.URL
 		}
-
 		input = append(input, &gqlschema.ComponentConfigurationInput{
-			Component: component.Name,
-			Namespace: component.Namespace,
-			SourceURL: sourceURL,
+			Component:    component.Name,
+			Namespace:    component.Namespace,
+			SourceURL:    sourceURL,
+			Prerequisite: ptr.Bool(true),
 		})
 	}
+	for _, component := range kymaComponents.Components {
+		var sourceURL *string
+		if component.Source != nil {
+			sourceURL = &component.Source.URL
+		}
+		input = append(input, &gqlschema.ComponentConfigurationInput{
+			Component:    component.Name,
+			Namespace:    component.Namespace,
+			SourceURL:    sourceURL,
+			Prerequisite: ptr.Bool(false),
+		})
+	}
+
 	return input
 }
 

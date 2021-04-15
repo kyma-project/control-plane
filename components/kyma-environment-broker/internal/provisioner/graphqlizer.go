@@ -163,12 +163,16 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
 		{{- if .ConflictStrategy }}
 		conflictStrategy: {{ .ConflictStrategy }},
 		{{- end }}
+		{{- if .KymaInstaller }}
+		kymaInstaller: {{ .KymaInstaller }},
+		{{- end }}
 		{{- with .Components }}
         components: [
 		  {{- range . }}
           {
             component: "{{ .Component }}",
             namespace: "{{ .Namespace }}",
+            prerequisite: {{ .Prerequisite }},
             {{- if .SourceURL }}
             sourceURL: "{{ .SourceURL }}",
             {{- end }}

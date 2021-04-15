@@ -94,6 +94,10 @@ spec:
               value: "{{ .Values.director.scope }}"
             - name: APP_XSUAA_DISABLED
               value: "{{ .Values.xsuaa.disabled }}"
+            - name: APP_SWITCHER_CONFIG_MAP_NAME
+              value: "{{ .Values.switcher.configMapName }}"
+            - name: APP_SWITCHER_CONFIG_MAP_NAMESPACE
+              value: "{{ .Values.switcher.configMapNamespace }}"
             - name: APP_IAS_URL
               value: "{{ .Values.ias.url }}"
             - name: APP_IAS_USER_ID

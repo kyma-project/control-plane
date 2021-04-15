@@ -15,7 +15,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -58,6 +57,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	administrator := ""
 	profile := gqlschema.KymaProfileProduction
 	strategy := gqlschema.ConflictStrategyReplace
+	installationType := gqlschema.KymaInstallationMethodKymaOperator
 	provisionerInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "dummy",
@@ -106,6 +106,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 			Configuration:    []*gqlschema.ConfigEntryInput{},
 			Profile:          &profile,
 			ConflictStrategy: &strategy,
+			KymaInstaller:    &installationType,
 		},
 	}
 
@@ -221,11 +222,13 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 		{
 			Component:     "to-remove-component",
 			Namespace:     "kyma-system",
+			Prerequisite:  ptr.Bool(false),
 			Configuration: nil,
 		},
 		{
 			Component:     "keb",
 			Namespace:     "kyma-system",
+			Prerequisite:  ptr.Bool(false),
 			Configuration: nil,
 		},
 	}).Return(internal.ComponentConfigurationInputList{
@@ -236,14 +239,16 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 		},
 	}, nil)
 
-	kymaComponentList := []v1alpha1.KymaComponent{
-		{
-			Name:      "to-remove-component",
-			Namespace: "kyma-system",
-		},
-		{
-			Name:      "keb",
-			Namespace: "kyma-system",
+	kymaComponentList := runtime.ComponentListData{
+		Components: []runtime.ComponentDefinition{
+			{
+				Name:      "to-remove-component",
+				Namespace: "kyma-system",
+			},
+			{
+				Name:      "keb",
+				Namespace: "kyma-system",
+			},
 		},
 	}
 	componentsProvider := &inputAutomock.ComponentListProvider{}
@@ -253,7 +258,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{
 		KubernetesVersion:           k8sVersion,
 		DefaultGardenerShootPurpose: shootPurpose,
-	}, kymaVersion, fixTrialRegionMapping(), fixFreemiumProviders())
+	}, kymaVersion, fixTrialRegionMapping(), fixFreemiumProviders(), &fixture.FakeListDecider{})
 	assert.NoError(t, err)
 
 	pp := internal.ProvisioningParameters{

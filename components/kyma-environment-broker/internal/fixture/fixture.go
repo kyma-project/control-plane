@@ -333,3 +333,11 @@ func (c *SimpleInputCreator) EnableOptionalComponent(name string) internal.Provi
 func (c *SimpleInputCreator) Provider() internal.CloudProvider {
 	return c.CloudProvider
 }
+
+type FakeListDecider struct {
+	NewComponentList bool
+}
+
+func (fld *FakeListDecider) IsNewComponentList(_ string) (bool, error) {
+	return fld.NewComponentList, nil
+}

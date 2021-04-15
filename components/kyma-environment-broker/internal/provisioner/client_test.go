@@ -576,7 +576,8 @@ func fixProvisionRuntimeInput() schema.ProvisionRuntimeInput {
 		KymaConfig: &schema.KymaConfigInput{
 			Components: []*schema.ComponentConfigurationInput{
 				{
-					Component: "test",
+					Component:    "test",
+					Prerequisite: ptr.Bool(false),
 				},
 			},
 		},
@@ -594,8 +595,9 @@ func fixUpgradeRuntimeInput(kymaVersion string) schema.UpgradeRuntimeInput {
 		},
 		Components: []*schema.ComponentConfigurationInput{
 			{
-				Component: "test-component",
-				Namespace: "test-namespace",
+				Component:    "test-component",
+				Namespace:    "test-namespace",
+				Prerequisite: ptr.Bool(false),
 			},
 		},
 	}}

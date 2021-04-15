@@ -3,5 +3,7 @@ components:
     namespace: "kyma-system"
   - name: "uaa-activator"
     namespace: "kyma-system"
+    source:
+      url: http://example.com
   - name: "compass-runtime-agent"
     namespace: "compass-system"

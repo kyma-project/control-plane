@@ -5,6 +5,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -33,14 +33,16 @@ func TestShouldEnableComponents(t *testing.T) {
 		}
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
-			Return([]v1alpha1.KymaComponent{
-				{Name: components.Kiali},
-				{Name: components.Tracing},
-				{Name: "dex"},
+			Return(runtime.ComponentListData{
+				Components: []runtime.ComponentDefinition{
+					{Name: components.Kiali},
+					{Name: components.Tracing},
+					{Name: "dex"},
+				},
 			}, nil)
 
 		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders())
+			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders(), &fixture.FakeListDecider{})
 		assert.NoError(t, err)
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "")
@@ -74,14 +76,16 @@ func TestShouldEnableComponents(t *testing.T) {
 		}
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
-			Return([]v1alpha1.KymaComponent{
-				{Name: components.Kiali},
-				{Name: components.Tracing},
-				{Name: "dex"},
+			Return(runtime.ComponentListData{
+				Components: []runtime.ComponentDefinition{
+					{Name: components.Kiali},
+					{Name: components.Tracing},
+					{Name: "dex"},
+				},
 			}, nil)
 
 		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders())
+			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders(), &fixture.FakeListDecider{})
 		assert.NoError(t, err)
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "1.14.0")
@@ -116,14 +120,16 @@ func TestShouldDisableComponents(t *testing.T) {
 		optionalComponentsDisablers := runtime.ComponentsDisablers{}
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
-			Return([]v1alpha1.KymaComponent{
-				{Name: components.Kiali},
-				{Name: components.Tracing},
-				{Name: components.Backup},
+			Return(runtime.ComponentListData{
+				Components: []runtime.ComponentDefinition{
+					{Name: components.Kiali},
+					{Name: components.Tracing},
+					{Name: components.Backup},
+				},
 			}, nil)
 
 		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders())
+			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders(), &fixture.FakeListDecider{})
 		assert.NoError(t, err)
 		creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.10.0", Origin: internal.Defaults})
 		require.NoError(t, err)
@@ -149,14 +155,16 @@ func TestShouldDisableComponents(t *testing.T) {
 		optionalComponentsDisablers := runtime.ComponentsDisablers{}
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
-			Return([]v1alpha1.KymaComponent{
-				{Name: components.Kiali},
-				{Name: components.Tracing},
-				{Name: components.Backup},
+			Return(runtime.ComponentListData{
+				Components: []runtime.ComponentDefinition{
+					{Name: components.Kiali},
+					{Name: components.Tracing},
+					{Name: components.Backup},
+				},
 			}, nil)
 
 		builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders())
+			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders(), &fixture.FakeListDecider{})
 		assert.NoError(t, err)
 		creator, err := builder.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.14.0", Origin: internal.Defaults})
 		require.NoError(t, err)
@@ -183,14 +191,16 @@ func TestDisabledComponentsForPlanNotExist(t *testing.T) {
 	optionalComponentsDisablers := runtime.ComponentsDisablers{}
 	componentsProvider := &automock.ComponentListProvider{}
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).
-		Return([]v1alpha1.KymaComponent{
-			{Name: components.Kiali},
-			{Name: components.Tracing},
-			{Name: components.Backup},
+		Return(runtime.ComponentListData{
+			Components: []runtime.ComponentDefinition{
+				{Name: components.Kiali},
+				{Name: components.Tracing},
+				{Name: components.Backup},
+			},
 		}, nil)
 
 	builder, err := NewInputBuilderFactory(runtime.NewOptionalComponentsService(optionalComponentsDisablers), runtime.NewDisabledComponentsProvider(),
-		componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders())
+		componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders(), &fixture.FakeListDecider{})
 	assert.NoError(t, err)
 	// when
 	_, err = builder.CreateProvisionInput(pp, emptyVersion)
@@ -218,7 +228,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
 		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders())
+			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders(), &fixture.FakeListDecider{})
 		assert.NoError(t, err)
 		creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.10.0", Origin: internal.Defaults})
 		require.NoError(t, err)
@@ -257,7 +267,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "")
 		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders())
+			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders(), &fixture.FakeListDecider{})
 		assert.NoError(t, err)
 		creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.10.0", Origin: internal.Defaults})
 		require.NoError(t, err)
@@ -293,7 +303,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "1.14.0")
 		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders())
+			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders(), &fixture.FakeListDecider{})
 		assert.NoError(t, err)
 		creator, err := builder.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.14.0", Origin: internal.Defaults})
 		require.NoError(t, err)
@@ -336,7 +346,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	defer componentsProvider.AssertExpectations(t)
 
 	factory, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-		componentsProvider, config, "1.10.0", fixTrialRegionMapping(), fixTrialProviders())
+		componentsProvider, config, "1.10.0", fixTrialRegionMapping(), fixTrialProviders(), &fixture.FakeListDecider{})
 	assert.NoError(t, err)
 	pp := fixProvisioningParameters(broker.AzurePlanID, "")
 
@@ -408,7 +418,8 @@ func TestShouldAdjustRuntimeName(t *testing.T) {
 			componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
 			builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-				componentsProvider, Config{TrialNodesNumber: 0}, "not-important", fixTrialRegionMapping(), fixTrialProviders())
+				componentsProvider, Config{TrialNodesNumber: 0}, "not-important",
+				fixTrialRegionMapping(), fixTrialProviders(), &fixture.FakeListDecider{})
 			assert.NoError(t, err)
 
 			pp := fixProvisioningParameters(broker.TrialPlanID, "")
@@ -439,7 +450,8 @@ func TestShouldSetNumberOfNodesForTrialPlan(t *testing.T) {
 	componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
 	builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-		componentsProvider, Config{TrialNodesNumber: 2}, "not-important", fixTrialRegionMapping(), fixTrialProviders())
+		componentsProvider, Config{TrialNodesNumber: 2}, "not-important",
+		fixTrialRegionMapping(), fixTrialProviders(), &fixture.FakeListDecider{})
 	assert.NoError(t, err)
 
 	pp := fixProvisioningParameters(broker.TrialPlanID, "")
@@ -465,7 +477,7 @@ func TestShouldSetGlobalConfiguration(t *testing.T) {
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
 		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "", fixTrialRegionMapping(), fixTrialProviders())
+			componentsProvider, Config{}, "", fixTrialRegionMapping(), fixTrialProviders(), &fixture.FakeListDecider{})
 		assert.NoError(t, err)
 
 		pp := fixProvisioningParameters(broker.TrialPlanID, "")
@@ -490,7 +502,7 @@ func TestShouldSetGlobalConfiguration(t *testing.T) {
 		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
 
 		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "", fixTrialRegionMapping(), fixTrialProviders())
+			componentsProvider, Config{}, "", fixTrialRegionMapping(), fixTrialProviders(), &fixture.FakeListDecider{})
 		assert.NoError(t, err)
 
 		pp := fixProvisioningParameters(broker.TrialPlanID, "")
@@ -525,15 +537,17 @@ func find(in internal.ComponentConfigurationInputList, name string) (*gqlschema.
 	return nil, false
 }
 
-func fixKymaComponentList() []v1alpha1.KymaComponent {
-	return []v1alpha1.KymaComponent{
-		{Name: "dex", Namespace: "kyma-system"},
-		{Name: "ory", Namespace: "kyma-system"},
-		{Name: "keb", Namespace: "kyma-system"},
+func fixKymaComponentList() runtime.ComponentListData {
+	return runtime.ComponentListData{
+		Components: []runtime.ComponentDefinition{
+			{Name: "dex", Namespace: "kyma-system"},
+			{Name: "ory", Namespace: "kyma-system"},
+			{Name: "keb", Namespace: "kyma-system"},
+		},
 	}
 }
 
-func dummyOptionalComponentServiceMock(inputComponentList []v1alpha1.KymaComponent) *automock.OptionalComponentService {
+func dummyOptionalComponentServiceMock(inputComponentList runtime.ComponentListData) *automock.OptionalComponentService {
 	mappedComponentList := mapToGQLComponentConfigurationInput(inputComponentList)
 
 	optComponentsSvc := &automock.OptionalComponentService{}
