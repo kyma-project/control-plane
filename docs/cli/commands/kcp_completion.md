@@ -1,4 +1,5 @@
 # kcp completion
+
 Generates completion script
 
 ## Synopsis
@@ -59,13 +60,13 @@ kcp completion bash                            Display completions in bash.
 ## Options
 
 ```
-      --o string   autocompletion file (default "$HOME/kcp_completion")
+      --o string   autocompletion file (default "/home/i349725/kcp_completion")
 ```
 
 ## Global Options
 
 ```
-      --config string                Path to the KCP CLI config file. Can also be set using the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml .
+      --config string                Path to the KCP CLI config file. Can also be set using the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml . (default "/home/i349725/.kcp/config-prod.yaml")
       --gardener-kubeconfig string   Path to the kubeconfig file of the corresponding Gardener project which has permissions to list/get Shoots. Can also be set using the KCP_GARDENER_KUBECONFIG environment variable.
       --gardener-namespace string    Gardener Namespace (project) to use. Can also be set using the KCP_GARDENER_NAMESPACE environment variable.
   -h, --help                         Option that displays help for the CLI.
