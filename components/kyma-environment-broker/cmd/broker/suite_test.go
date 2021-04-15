@@ -20,7 +20,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
@@ -30,7 +29,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
-	clsMock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_cluster"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -64,7 +62,6 @@ const (
 	globalAccountID        = "dummy-ga-id"
 	dashboardURL           = "http://console.garden-dummy.kyma.io"
 	brokerID               = "fake-broker-id"
-	clsOfferingID          = "cls-fake-id"
 	emsOfferingID          = "ems-fake-id"
 	operationID            = "provisioning-op-id"
 	instanceID             = "instance-id"
@@ -90,7 +87,6 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	var cfg Config
 	cfg.Ems.Disabled = true
 	cfg.Ems.SkipDeprovisionAzureEventingAtUpgrade = true
-	cfg.Cls.Disabled = true
 	cfg.AuditLog = auditlog.Config{
 		URL:           "https://host1:8080/aaa/v2/",
 		User:          "fooUser",
@@ -101,6 +97,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 
 	//auditLog create file here.
 	inMemoryFs, err := createInMemFS()
+	require.NoError(t, err)
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
@@ -149,7 +146,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, hyperscaler.NewAccountProvider(nil, nil, nil), nil, nil, inMemoryFs, logs)
+		&cfg, hyperscaler.NewAccountProvider(nil, nil, nil), nil, inMemoryFs, logs)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
@@ -397,6 +394,10 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	cfg := fixConfig()
 
+	//auditLog create file here.
+	inMemoryFs, err := createInMemFS()
+	require.NoError(t, err)
+
 	provisionerClient := provisioner.NewFakeClient()
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
@@ -457,16 +458,13 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	directorClient := director.NewFakeClient(dashboardURL)
 
-	clsConfig, clsClient, clsProvisioner := fixClsComponents()
-
 	eventBroker := event.NewPubSub(logs)
-	mm := afero.NewMemMapFs()
 
 	// switch to StagedManager when the feature is enabled
 	provisionStagedManager := provisioning.NewStagedManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
 
 	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
-	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, smcf, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager, edpClient, accountProvider, clsConfig, clsClient, clsProvisioner, mm, logs)
+	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, smcf, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager, edpClient, accountProvider, inMemoryFs, logs)
 
 	provisioningQueue.SpeedUp(1000)
 
@@ -617,6 +615,13 @@ func (s *ProvisioningSuite) AssertProvisioningRequest() {
 
 func fixConfig() *Config {
 	return &Config{
+		AuditLog: auditlog.Config{
+			URL:           "https://host1:8080/aaa/v2/",
+			User:          "fooUser",
+			Password:      "barPass",
+			Tenant:        "fooTen",
+			EnableSeqHttp: true,
+		},
 		DbInMemory:                         true,
 		DisableProcessOperationsInProgress: false,
 		DevelopmentMode:                    true,
@@ -661,12 +666,6 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 		BrokerID:  brokerID,
 	},
 		{
-			ID:        clsOfferingID,
-			Name:      provisioning.ClsOfferingName,
-			CatalogID: servicemanager.FakeClsServiceID,
-			BrokerID:  brokerID,
-		},
-		{
 			ID:        emsOfferingID,
 			Name:      provisioning.EmsOfferingName,
 			CatalogID: servicemanager.FakeEmsServiceID,
@@ -678,12 +677,6 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 		CatalogID: "xsuaa",
 	},
 		{
-
-			ID:        "cls-plan-id",
-			Name:      provisioning.ClsPlanName,
-			CatalogID: provisioning.ClsPlanName,
-		},
-		{
 			ID:        "ems-plan-id",
 			Name:      provisioning.EmsPlanName,
 			CatalogID: provisioning.EmsPlanName,
@@ -692,54 +685,6 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 	smcf.SynchronousProvisioning()
 
 	return smcf
-}
-
-func fixClsComponents() (*cls.Config, provisioning.ClsBindingProvider, provisioning.ClsProvisioner) {
-	clsConfig := &cls.Config{
-		RetentionPeriod:    7,
-		MaxDataInstances:   2,
-		MaxIngestInstances: 2,
-		SAML: &cls.SAMLConfig{
-			AdminGroup:  "runtimeAdmin",
-			ExchangeKey: "base64-jibber-jabber",
-			RolesKey:    "groups",
-			Idp: &cls.SAMLIdpConfig{
-				EntityID:    "https://sso.example.org/idp",
-				MetadataURL: "https://sso.example.org/idp/saml2/metadata",
-			},
-			Sp: &cls.SAMLSpConfig{
-				EntityID:            "cls-dev",
-				SignaturePrivateKey: "base64-jibber-jabber",
-			},
-		},
-		ServiceManager: &cls.ServiceManagerConfig{
-			Credentials: []*cls.ServiceManagerCredentials{
-				{
-					Region:   smRegion,
-					URL:      "https://foo.bar",
-					Username: "fooUser",
-					Password: "barPassword",
-				},
-			},
-		},
-	}
-	clsClient := cls.NewClient(clsConfig)
-	provisionerMock := &clsMock.ClsProvisioner{}
-	provisionerMock.On("Provision", mock.Anything, &cls.ProvisionRequest{
-		GlobalAccountID: globalAccountID,
-		Region:          smRegion,
-		SKRInstanceID:   instanceID,
-		Instance: servicemanager.InstanceKey{
-			BrokerID:  brokerID,
-			ServiceID: servicemanager.FakeClsServiceID,
-			PlanID:    provisioning.ClsPlanName,
-		},
-	}, mock.Anything).Return(&cls.ProvisionResult{
-		InstanceID: "instance_id",
-		Region:     smRegion,
-	}, nil)
-
-	return clsConfig, clsClient, provisionerMock
 }
 
 func createInMemFS() (afero.Fs, error) {

@@ -177,10 +177,6 @@ ems:
   disabled: true
   skipDeprovisionAzureEventingAtUpgrade: false
 
-cls:
-  disabled: true
-  secretName: "kcp-cls-config"
-
 cis:
   v1:
     authURL: "TBD"

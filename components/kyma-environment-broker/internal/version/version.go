@@ -1,4 +1,4 @@
-package cls
+package version
 
 import (
 	"github.com/Masterminds/semver"
