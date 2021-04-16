@@ -88,25 +88,6 @@ spec:
                   optional: true
             - name: APP_DIRECTOR_OAUTH_SCOPE
               value: "{{ .Values.director.scope }}"
-            - name: APP_LMS_URL
-              value: "{{ .Values.lms.url }}"
-            - name: APP_LMS_CLUSTER_TYPE
-              value: "{{ .Values.lms.clusterType }}"
-            - name: APP_LMS_ENVIRONMENT
-              value: "{{ .Values.lms.environment }}"
-            - name: APP_LMS_SAML_TENANT
-              value: "{{ .Values.lms.samlTenant }}"
-            - name: APP_LMS_ENABLED_FOR_GLOBAL_ACCOUNTS
-              value: "{{ .Values.lms.enabledForGlobalAccounts }}"
-            - name: APP_LMS_MANDATORY
-              value: "{{ .Values.lms.mandatory }}"
-            - name: APP_LMS_REGION
-              value: "{{ .Values.lms.region }}"
-            - name: APP_LMS_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Values.lms.secretName}}"
-                  key: token
             - name: APP_XSUAA_DISABLED
               value: "{{ .Values.xsuaa.disabled }}"
             - name: APP_IAS_URL

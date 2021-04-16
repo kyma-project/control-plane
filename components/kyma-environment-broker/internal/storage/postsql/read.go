@@ -417,24 +417,6 @@ func (r readSession) getOrchestration(condition dbr.Builder) (dbmodel.Orchestrat
 	return operation, nil
 }
 
-func (r readSession) GetLMSTenant(name, region string) (dbmodel.LMSTenantDTO, dberr.Error) {
-	var dto dbmodel.LMSTenantDTO
-	err := r.session.
-		Select("*").
-		From(LMSTenantTableName).
-		Where(dbr.Eq("name", name)).
-		Where(dbr.Eq("region", region)).
-		LoadOne(&dto)
-
-	if err != nil {
-		if err == dbr.ErrNotFound {
-			return dbmodel.LMSTenantDTO{}, dberr.NotFound("Cannot find lms tenant for name/region: '%s/%s'", name, region)
-		}
-		return dbmodel.LMSTenantDTO{}, dberr.Internal("Failed to get operation: %s", err)
-	}
-	return dto, nil
-}
-
 func (r readSession) GetOperationStats() ([]dbmodel.OperationStatEntry, error) {
 	var rows []dbmodel.OperationStatEntry
 	_, err := r.session.SelectBySql(fmt.Sprintf("select type, state, provisioning_parameters ->> 'plan_id' AS plan_id from %s",

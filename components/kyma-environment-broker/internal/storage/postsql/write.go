@@ -195,26 +195,6 @@ func (ws writeSession) InsertRuntimeState(state dbmodel.RuntimeStateDTO) dberr.E
 	return nil
 }
 
-func (ws writeSession) InsertLMSTenant(dto dbmodel.LMSTenantDTO) dberr.Error {
-	_, err := ws.insertInto(LMSTenantTableName).
-		Pair("id", dto.ID).
-		Pair("name", dto.Name).
-		Pair("region", dto.Region).
-		Pair("created_at", dto.CreatedAt).
-		Exec()
-
-	if err != nil {
-		if err, ok := err.(*pq.Error); ok {
-			if err.Code == UniqueViolationErrorCode {
-				return dberr.AlreadyExists("lms tenant already exist")
-			}
-		}
-		return dberr.Internal("Failed to insert record to lms tenant table: %s", err)
-	}
-
-	return nil
-}
-
 func (ws writeSession) UpdateOperation(op dbmodel.OperationDTO) dberr.Error {
 	res, err := ws.update(OperationTableName).
 		Where(dbr.Eq("id", op.ID)).
