@@ -20,8 +20,8 @@ The following table lists all the Installation custom resource (CR) files needed
 
 | Value                  | Example value     | Description             |
 | ---------------------- | ----------------- | ----------------------- |
-| `master`               | `master`          | Latest master version   |
-| `master-{COMMIT_HASH}` | `master-34edf09a` | Specific master version |
+| `main`               | `main`          | Latest main version   |
+| `main-{COMMIT_HASH}` | `main-34edf09a` | Specific main version |
 | `PR-{PR_NUMBER}`       | `PR-1420`         | Specific PR version     |
 | `{RELEASE_NUMBER}`     | `1.13.0`          | Release version         |
 
@@ -33,6 +33,6 @@ The following table lists all the Installation custom resource (CR) files needed
 
 | Value                  | Example value     | Description             |
 | ---------------------- | ----------------- | ----------------------- |
-| `master`               | `master`          | Latest master version   |
-| `master-{COMMIT_HASH}` | `master-34edf09a` | Specific master version |
+| `main`               | `main`          | Latest main version   |
+| `main-{COMMIT_HASH}` | `main-34edf09a` | Specific main version |
 | `PR-{PR_NUMBER}`       | `PR-1420`         | Specific PR version     |
