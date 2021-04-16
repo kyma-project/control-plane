@@ -60,6 +60,12 @@ func (h *ContextUpdateHandler) handleContextChange(newCtx internal.ERSContext, i
 		isActivated = *instance.Parameters.ErsContext.Active
 	}
 
+	lastDeprovisioning, err := h.operations.GetDeprovisioningOperationByInstanceID(instance.InstanceID)
+	// there was an error - fail
+	if err != nil && !dberr.IsNotFound(err) {
+		return err
+	}
+
 	if newCtx.Active == nil || isActivated == *newCtx.Active {
 		l.Debugf("Context.Active flag was not changed, the current value: %v", *newCtx.Active)
 		if isActivated {
@@ -69,12 +75,6 @@ func (h *ContextUpdateHandler) handleContextChange(newCtx internal.ERSContext, i
 		}
 		if !isActivated {
 			// instance is inactive and incoming context update is suspension - verify if KEB should retrigger the operation
-			lastDeprovisioning, err := h.operations.GetDeprovisioningOperationByInstanceID(instance.InstanceID)
-			// there was an error - fail
-			if err != nil && !dberr.IsNotFound(err) {
-				return err
-			}
-
 			if lastDeprovisioning.Temporary && lastDeprovisioning.State == domain.Failed {
 				l.Infof("Retriggering suspension for instance id %s", instance.InstanceID)
 				return h.suspend(instance, l)
@@ -84,6 +84,10 @@ func (h *ContextUpdateHandler) handleContextChange(newCtx internal.ERSContext, i
 	}
 
 	if *newCtx.Active {
+		if lastDeprovisioning != nil && !lastDeprovisioning.Temporary {
+			l.Infof("Instance has a deprovisioning operation %s (%s), skipping unsuspension.", lastDeprovisioning.ID, lastDeprovisioning.State)
+			return nil
+		}
 		return h.unsuspend(instance, l)
 	} else {
 		return h.suspend(instance, l)
@@ -118,6 +122,7 @@ func (h *ContextUpdateHandler) unsuspend(instance *internal.Instance, log logrus
 
 	operation, err := internal.NewProvisioningOperationWithID(id, instance.InstanceID, instance.Parameters)
 	operation.InstanceDetails = instance.InstanceDetails
+	operation.State = orchestration.Pending
 	log.Infof("Starting unsuspension: shootName=%s shootDomain=%s", operation.ShootName, operation.ShootDomain)
 	// RuntimeID must be cleaned  - this mean that there is no runtime in the provisioner/director
 	operation.RuntimeID = ""
