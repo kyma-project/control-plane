@@ -84,10 +84,10 @@ func TestKymaHandler_KymaVersion(t *testing.T) {
 		require.Contains(t, err.Error(), "not found")
 
 		// test <branch name>-<commit hash> version
-		// Exists: master-f5e6d75
-		require.NoError(t, kHandler.ValidateKymaVersion("master-f5e6d75"))
+		// Exists: main-f5e6d75
+		require.NoError(t, kHandler.ValidateKymaVersion("main-f5e6d75"))
 
-		err = kHandler.ValidateKymaVersion("master-123456")
+		err = kHandler.ValidateKymaVersion("main-123456")
 		require.NotNil(t, err)
 		require.Contains(t, err.Error(), "not present on branch")
 
@@ -124,7 +124,7 @@ func fixGithubServer(t *testing.T) *httptest.Server {
 			10542: true,
 		},
 		branchCommit: map[string]map[string]bool{
-			"master": map[string]bool{
+			"main": map[string]bool{
 				"f5e6d75": true,
 			},
 		},

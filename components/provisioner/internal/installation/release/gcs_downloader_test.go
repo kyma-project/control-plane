@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	onDemandVersion = "master-1bcdef"
+	onDemandVersion = "main-1bcdef"
 	kymaVersion     = "1.13.0"
 )
 

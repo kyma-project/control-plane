@@ -174,11 +174,11 @@ func (r *ComponentsListProvider) getInstallerYamlURL(kymaVersion string) string 
 //
 // Detection rules:
 //   For pull requests: PR-<number>
-//   For changes to the master branch: master-<commit_sha>
+//   For changes to the main branch: main-<commit_sha>
 //
-// source: https://github.com/kyma-project/test-infra/blob/master/docs/prow/prow-architecture.md#generate-development-artifacts
+// source: https://github.com/kyma-project/test-infra/blob/main/docs/prow/prow-architecture.md#generate-development-artifacts
 func (r *ComponentsListProvider) isOnDemandRelease(version string) bool {
 	isOnDemandVersion := strings.HasPrefix(version, "PR-") ||
-		strings.HasPrefix(version, "master-")
+		strings.HasPrefix(version, "main-")
 	return isOnDemandVersion
 }
