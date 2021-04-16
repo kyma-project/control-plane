@@ -3,14 +3,14 @@ module github.com/kyma-project/control-plane/components/kyma-metrics-collector
 go 1.15
 
 require (
-	github.com/gardener/gardener v1.16.2
+	github.com/gardener/gardener v1.19.0
+	github.com/gardener/gardener-extension-provider-aws v1.22.2
 	github.com/gardener/gardener-extension-provider-azure v1.18.1
-	github.com/golang/mock v1.4.4 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.7.3
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kyma-project/control-plane v0.0.0-20210131083023-031b4c8683db
-	github.com/onsi/gomega v1.10.2
+	github.com/onsi/gomega v1.10.5
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.8.0

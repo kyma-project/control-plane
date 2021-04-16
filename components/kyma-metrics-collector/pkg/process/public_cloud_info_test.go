@@ -13,7 +13,7 @@ const (
 	providersFile = "../testing/fixtures/static_providers.json"
 )
 
-func TestGetFeatures(t *testing.T) {
+func TestGetFeature(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	providersData, err := kmctesting.LoadFixtureFromFile(providersFile)
 	g.Expect(err).Should(gomega.BeNil())
@@ -50,15 +50,34 @@ func TestGetFeatures(t *testing.T) {
 			cloudProvider: "azure",
 			vmType:        "standard_d8_foo",
 		},
+		{
+			cloudProvider: "aws",
+			vmType:        "m5.2xlarge",
+			expectedFeature: Feature{
+				CpuCores: 8,
+				Memory:   32,
+			},
+		},
+		{
+			cloudProvider: "aws",
+			vmType:        "t4g.nano",
+			expectedFeature: Feature{
+				CpuCores: 2,
+				Memory:   0.5,
+			},
+		},
+		{
+			cloudProvider: "aws",
+			vmType:        "m5.2xlarge.foo",
+		},
 	}
 
 	for _, tc := range testCases {
-		gotFeatures := providers.GetFeatures(tc.cloudProvider, tc.vmType)
-		if gotFeatures != nil {
-			gotFeature := gotFeatures.Feature
+		gotFeature := providers.GetFeature(tc.cloudProvider, tc.vmType)
+		if gotFeature != nil {
 			g.Expect(*gotFeature).Should(gomega.Equal(tc.expectedFeature))
 			continue
 		}
-		g.Expect(gotFeatures).Should(gomega.BeNil())
+		g.Expect(gotFeature).Should(gomega.BeNil())
 	}
 }
