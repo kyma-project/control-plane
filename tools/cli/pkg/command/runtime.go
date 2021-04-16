@@ -86,7 +86,7 @@ The command supports filtering Runtimes based on various attributes. See the lis
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.RuntimeIDs, "runtime-id", "r", nil, "Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.Regions, "region", "R", nil, "Filter by provider region. You can provide multiple values, either separated by a comma (e.g. westeurope,northeurope), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.Plans, "plan", "p", nil, "Filter by service plan name. You can provide multiple values, either separated by a comma (e.g. azure,trial), or by specifying the option multiple times.")
-	cobraCmd.Flags().StringSliceVarP(&cmd.states, "state", "S", nil, "Filter by Runtime State. The possible values are: succeedeed, failed, provisioning, deprovisioning, upgrading, suspended, all. Suspended Runtimes are filtered out unless the \"all\" or \"suspended\" values are provided. You can provide multiple values, either separated by a comma (e.g. succeeded,failed), or by specifying the option multiple times.")
+	cobraCmd.Flags().StringSliceVarP(&cmd.states, "state", "S", nil, "Filter by Runtime State. The possible values are: succeeded, failed, provisioning, deprovisioning, upgrading, suspended, all. Suspended Runtimes are filtered out unless the \"all\" or \"suspended\" values are provided. You can provide multiple values, either separated by a comma (e.g. succeeded,failed), or by specifying the option multiple times.")
 
 	return cobraCmd
 }
@@ -122,7 +122,7 @@ func (cmd *RuntimeCommand) Validate() error {
 		case runtime.StateSucceeded, runtime.StateFailed, runtime.StateProvisioning, runtime.StateDeprovisioning, runtime.StateUpgrading, runtime.StateSuspended, runtime.AllState:
 			cmd.params.States = append(cmd.params.States, val)
 		default:
-			return fmt.Errorf("invalud value for state: %s", s)
+			return fmt.Errorf("invalid value for state: %s", s)
 		}
 	}
 
