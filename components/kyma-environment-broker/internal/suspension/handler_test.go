@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -147,7 +149,7 @@ func TestUnsuspension(t *testing.T) {
 	assertQueue(t, deprovisioning)
 	assertQueue(t, provisioning, op.ID)
 
-	assert.Equal(t, domain.InProgress, op.State)
+	assert.Equal(t, domain.LastOperationState(orchestration.Pending), op.State)
 	assert.Equal(t, instance.InstanceID, op.InstanceID)
 	assert.Equal(t, "c-012345", op.ShootName)
 	assert.Equal(t, "c-012345.sap.com", op.ShootDomain)
@@ -204,7 +206,7 @@ func TestUnsuspensionWithoutShootname(t *testing.T) {
 	assertQueue(t, deprovisioning)
 	assertQueue(t, provisioning, op.ID)
 
-	assert.Equal(t, domain.InProgress, op.State)
+	assert.Equal(t, domain.LastOperationState(orchestration.Pending), op.State)
 	assert.Equal(t, instance.InstanceID, op.InstanceID)
 	assert.Equal(t, "c-7f1eb9e", op.ShootName)
 	assert.Equal(t, "c-7f1eb9e.kyma-dev.shoot.canary.k8s-hana.ondemand.com", op.ShootDomain)
