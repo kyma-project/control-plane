@@ -35,19 +35,6 @@ const (
 	GitKymaRepo    = "kyma"
 )
 
-type LMSTenant struct {
-	ID        string
-	Name      string
-	Region    string
-	CreatedAt time.Time
-}
-
-type LMS struct {
-	TenantID    string    `json:"tenant_id"`
-	Failed      bool      `json:"failed"`
-	RequestedAt time.Time `json:"requested_at"`
-}
-
 type AvsEvaluationStatus struct {
 	Current  string `json:"current_value"`
 	Original string `json:"original_value"`
@@ -202,8 +189,6 @@ type SMClientFactory interface {
 }
 
 type InstanceDetails struct {
-	Lms LMS `json:"lms"`
-
 	Avs      AvsLifecycleData `json:"avs"`
 	EventHub EventHub         `json:"eh"`
 

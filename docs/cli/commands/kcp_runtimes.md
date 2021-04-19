@@ -26,13 +26,15 @@ kcp runtimes [flags]
 ## Options
 
 ```
-  -g, --account strings      Filter by global account ID. You can provide multiple values, either separated by a comma (e.g. GAID1,GAID2), or by specifying the option multiple times.
-  -o, --output string        Output type of displayed Runtime(s). The possible values are: table, json, custom(e.g. custom=<header>:<jsonpath-field-spec>. (default "table")
-  -p, --plan strings         Filter by service plan name. You can provide multiple values, either separated by a comma (e.g. azure,trial), or by specifying the option multiple times.
-  -r, --region strings       Filter by provider region. You can provide multiple values, either separated by a comma (e.g. westeurope,northeurope), or by specifying the option multiple times.
-  -i, --runtime-id strings   Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.
-  -c, --shoot strings        Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.
-  -s, --subaccount strings   Filter by subaccount ID. You can provide multiple values, either separated by a comma (e.g. SAID1,SAID2), or by specifying the option multiple times.
+  -g, --account strings       Filter by global account ID. You can provide multiple values, either separated by a comma (e.g. GAID1,GAID2), or by specifying the option multiple times.
+  -i, --instance-id strings   Filter by instance ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.
+  -o, --output string         Output type of displayed Runtime(s). The possible values are: table, json, custom(e.g. custom=<header>:<jsonpath-field-spec>. (default "table")
+  -p, --plan strings          Filter by service plan name. You can provide multiple values, either separated by a comma (e.g. azure,trial), or by specifying the option multiple times.
+  -R, --region strings        Filter by provider region. You can provide multiple values, either separated by a comma (e.g. westeurope,northeurope), or by specifying the option multiple times.
+  -r, --runtime-id strings    Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.
+  -c, --shoot strings         Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.
+  -S, --state strings         Filter by Runtime state. The possible values are: succeeded, failed, provisioning, deprovisioning, upgrading, suspended, all. Suspended Runtimes are filtered out unless the "all" or "suspended" values are provided. You can provide multiple values, either separated by a comma (e.g. succeeded,failed), or by specifying the option multiple times.
+  -s, --subaccount strings    Filter by subaccount ID. You can provide multiple values, either separated by a comma (e.g. SAID1,SAID2), or by specifying the option multiple times.
 ```
 
 ## Global Options

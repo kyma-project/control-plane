@@ -4,38 +4,41 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 )
 
 type Providers struct {
-	Data Data `json:"data"`
+	Azure AzureMachines
+	AWS   AWSMachines
 }
 
-type Data map[string]interface{}
+type AzureMachines map[string]Feature
 
-type Vm struct {
-	VmSpecs *map[string]interface{} `json:"vm_specs"`
-}
-
-type Features struct {
-	*Feature `json:"features"`
-}
+type AWSMachines map[string]Feature
 
 type Feature struct {
 	CpuCores int     `json:"cpu_cores"`
 	Memory   float64 `json:"memory"`
-	Storage  int64   `json:"storage"`
-	MaxNICs  int     `json:"max_nics"`
+	Storage  int     `json:"storage,omitempty"`
+	MaxNICs  int     `json:"max_nics,omitempty"`
 }
 
-func (p Providers) GetFeatures(cloudProvider, vmType string) (f *Features) {
-	if providerVm, ok := p.Data[cloudProvider].(*Vm); ok {
-		spec := *providerVm.VmSpecs
-		if features, ok := spec[vmType].(*Features); ok {
-			f = features
+type MachineInfo map[string]json.RawMessage
+
+func (p Providers) GetFeature(cloudProvider, vmType string) (f *Feature) {
+	switch cloudProvider {
+	case AWS:
+		if feature, ok := p.AWS[vmType]; ok {
+			return &feature
+		}
+	case Azure:
+		if feature, ok := p.Azure[vmType]; ok {
+			return &feature
 		}
 	}
-	return
+	return nil
 }
 
 // LoadPublicCloudSpecs loads string data to Providers object from an env var
@@ -43,38 +46,35 @@ func LoadPublicCloudSpecs(cfg *env.Config) (*Providers, error) {
 	if cfg.PublicCloudSpecs == "" {
 		return nil, fmt.Errorf("public cloud specification is not configured")
 	}
-	providers := new(Providers)
-	err := json.Unmarshal([]byte(cfg.PublicCloudSpecs), providers)
+
+	var machineInfo MachineInfo
+	err := json.Unmarshal([]byte(cfg.PublicCloudSpecs), &machineInfo)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to unmarshal machine info")
+	}
+	awsMachinesData, err := machineInfo[AWS].MarshalJSON()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal AWS info")
+	}
+	awsMachines := &AWSMachines{}
+	err = json.Unmarshal(awsMachinesData, &awsMachines)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal AWS machines data")
+	}
+	azureMachinesData, err := machineInfo[Azure].MarshalJSON()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal Azure info")
+	}
+	azureMachines := &AzureMachines{}
+	err = json.Unmarshal(azureMachinesData, azureMachines)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to uunmarshal Azure machines data")
 	}
 
-	for provider := range providers.Data {
-
-		vmByte, err := json.Marshal(providers.Data[provider])
-		if err != nil {
-			return nil, err
-		}
-		vm := new(Vm)
-		err = json.Unmarshal(vmByte, vm)
-		if err != nil {
-			return nil, err
-		}
-		spec := *vm.VmSpecs
-		for sp := range spec {
-			featuresByte, err := json.Marshal(spec[sp])
-			if err != nil {
-				return nil, err
-			}
-			features := new(Features)
-			err = json.Unmarshal(featuresByte, features)
-			if err != nil {
-				return nil, err
-			}
-			providers.Data[provider] = vm
-			spec := *vm.VmSpecs
-			spec[sp] = features
-		}
+	providers := Providers{
+		AWS:   *awsMachines,
+		Azure: *azureMachines,
 	}
-	return providers, nil
+
+	return &providers, nil
 }

@@ -23,7 +23,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
 	kebOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
@@ -448,9 +447,6 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
-	lmsClient := lms.NewFakeClient(1 * time.Second)
-	lmsTenantManager := lms.NewTenantManager(db.LMSTenants(), lmsClient, logs)
-
 	edpClient := edp.NewFakeClient()
 
 	accountProvider := fixAccountProvider()
@@ -465,7 +461,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	provisionStagedManager := provisioning.NewStagedManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
 
 	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
-	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, smcf, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager, edpClient, accountProvider, inMemoryFs, logs)
+	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, smcf, bundleBuilder, iasTypeSetter, edpClient, accountProvider, inMemoryFs, logs)
 
 	provisioningQueue.SpeedUp(1000)
 
@@ -638,7 +634,6 @@ func fixConfig() *Config {
 		KymaVersion: "1.21",
 		Broker:      broker.Config{},
 		Avs:         avs.Config{},
-		LMS:         lms.Config{},
 		IAS: ias.Config{
 			IdentityProvider: ias.FakeIdentityProviderName,
 		},

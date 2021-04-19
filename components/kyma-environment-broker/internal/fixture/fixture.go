@@ -95,16 +95,9 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 	var (
 		runtimeId    = fmt.Sprintf("Runtime-%s", id)
 		subAccountId = fmt.Sprintf("SA-%s", id)
-		tenantId     = fmt.Sprintf("Tenant-%s", id)
 		bindingId    = fmt.Sprintf("Binding-%s", id)
 		brokerId     = fmt.Sprintf("Broker-%s", id)
 	)
-
-	lms := internal.LMS{
-		TenantID:    tenantId,
-		Failed:      false,
-		RequestedAt: time.Time{},
-	}
 
 	serviceManagerInstanceInfo := internal.ServiceManagerInstanceInfo{
 		BrokerID:                brokerId,
@@ -129,7 +122,6 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 	}
 
 	return internal.InstanceDetails{
-		Lms:          lms,
 		Avs:          internal.AvsLifecycleData{},
 		EventHub:     internal.EventHub{Deleted: false},
 		SubAccountID: subAccountId,
