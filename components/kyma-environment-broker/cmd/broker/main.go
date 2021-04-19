@@ -666,9 +666,8 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			disabled: cfg.Ems.Disabled,
 		},
 		{
-			weight:   2,
-			step:     deprovisioning.NewConnectivityDeprovisionStep(db.Operations()),
-			disabled: cfg.Connectivity.Disabled,
+			weight: 2,
+			step:   deprovisioning.NewConnectivityDeprovisionStep(db.Operations()),
 		},
 		{
 			weight: 10,
