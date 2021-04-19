@@ -17,22 +17,13 @@ type RuntimeCommand struct {
 	log      logger.Logger
 	output   string
 	params   runtime.ListParameters
+	states   []string
 }
 
 const (
 	inProgress = "in progress"
 	succeeded  = "succeeded"
 	failed     = "failed"
-)
-
-type operationType string
-
-const (
-	provision    operationType = "provision"
-	deprovision  operationType = "deprovision"
-	upgradeKyma  operationType = "kyma upgrade"
-	suspension   operationType = "suspension"
-	unsuspension operationType = "unsuspension"
 )
 
 var tableColumns = []printer.Column{
@@ -91,9 +82,11 @@ The command supports filtering Runtimes based on various attributes. See the lis
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.Shoots, "shoot", "c", nil, "Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.GlobalAccountIDs, "account", "g", nil, "Filter by global account ID. You can provide multiple values, either separated by a comma (e.g. GAID1,GAID2), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.SubAccountIDs, "subaccount", "s", nil, "Filter by subaccount ID. You can provide multiple values, either separated by a comma (e.g. SAID1,SAID2), or by specifying the option multiple times.")
-	cobraCmd.Flags().StringSliceVarP(&cmd.params.RuntimeIDs, "runtime-id", "i", nil, "Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
-	cobraCmd.Flags().StringSliceVarP(&cmd.params.Regions, "region", "r", nil, "Filter by provider region. You can provide multiple values, either separated by a comma (e.g. westeurope,northeurope), or by specifying the option multiple times.")
+	cobraCmd.Flags().StringSliceVarP(&cmd.params.InstanceIDs, "instance-id", "i", nil, "Filter by instance ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
+	cobraCmd.Flags().StringSliceVarP(&cmd.params.RuntimeIDs, "runtime-id", "r", nil, "Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
+	cobraCmd.Flags().StringSliceVarP(&cmd.params.Regions, "region", "R", nil, "Filter by provider region. You can provide multiple values, either separated by a comma (e.g. westeurope,northeurope), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.Plans, "plan", "p", nil, "Filter by service plan name. You can provide multiple values, either separated by a comma (e.g. azure,trial), or by specifying the option multiple times.")
+	cobraCmd.Flags().StringSliceVarP(&cmd.states, "state", "S", nil, "Filter by Runtime state. The possible values are: succeeded, failed, provisioning, deprovisioning, upgrading, suspended, all. Suspended Runtimes are filtered out unless the \"all\" or \"suspended\" values are provided. You can provide multiple values, either separated by a comma (e.g. succeeded,failed), or by specifying the option multiple times.")
 
 	return cobraCmd
 }
@@ -121,6 +114,18 @@ func (cmd *RuntimeCommand) Validate() error {
 	if err != nil {
 		return err
 	}
+
+	// Validate and transform states
+	for _, s := range cmd.states {
+		val := runtime.State(s)
+		switch val {
+		case runtime.StateSucceeded, runtime.StateFailed, runtime.StateProvisioning, runtime.StateDeprovisioning, runtime.StateUpgrading, runtime.StateSuspended, runtime.AllState:
+			cmd.params.States = append(cmd.params.States, val)
+		default:
+			return fmt.Errorf("invalid value for state: %s", s)
+		}
+	}
+
 	return nil
 }
 

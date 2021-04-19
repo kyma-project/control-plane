@@ -428,14 +428,6 @@ func FixTables() map[string]string {
 			created_at TIMESTAMPTZ NOT NULL,
 			updated_at TIMESTAMPTZ NOT NULL
 			)`, postsql.OrchestrationTableName),
-		postsql.LMSTenantTableName: fmt.Sprintf(
-			`CREATE TABLE IF NOT EXISTS %s (
-			id varchar(255) PRIMARY KEY,
-			name varchar(255) NOT NULL,
-			region varchar(12) NOT NULL,
-			created_at TIMESTAMPTZ NOT NULL,
-            unique (name, region)
-			)`, postsql.LMSTenantTableName),
 		postsql.RuntimeStateTableName: fmt.Sprintf(
 			`CREATE TABLE IF NOT EXISTS %s (
 			id varchar(255) PRIMARY KEY,
@@ -451,11 +443,10 @@ func FixTables() map[string]string {
 }
 
 func clearDBQuery() string {
-	return fmt.Sprintf("TRUNCATE TABLE %s, %s, %s, %s, %s RESTART IDENTITY CASCADE",
+	return fmt.Sprintf("TRUNCATE TABLE %s, %s, %s, %s RESTART IDENTITY CASCADE",
 		postsql.InstancesTableName,
 		postsql.OperationTableName,
 		postsql.OrchestrationTableName,
-		postsql.LMSTenantTableName,
 		postsql.RuntimeStateTableName,
 	)
 }
