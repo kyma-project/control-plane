@@ -11,7 +11,6 @@ import (
 
 type UpgradeClusterCommand struct {
 	UpgradeCommand
-	version  string
 	cobraCmd *cobra.Command
 }
 
@@ -23,27 +22,20 @@ func NewUpgradeClusterCommand() *cobra.Command {
 		Long: `Upgrade Kubernetes cluster on targets of Runtimes.
 The upgrade is performed by Kyma Control Plane (KCP) within a new orchestration asynchronously. The ID of the orchestration is returned by the command upon success.
 The targets of Runtimes are specified via the --target and --target-exclude options. At least one --target must be specified.
-The version is specified using the --version (or -v) option.
+The version of Kubernetes is configured by Kyma Environment Broker (KEB).
 Additional Kyma configurations to use for the upgrade are taken from Kyma Control Plane during the processing of the orchestration.`,
 		Example: `kcp upgrade cluster --target all --schedule maintenancewindow    Upgrade Kubernetes cluster on Runtime in their next respective maintenance window hours.
 		kcp upgrade cluster --target "account=CA.*"                       Upgrade Kubernetes cluster on Runtimes of all global accounts starting with CA.
 		kcp upgrade cluster --target all --target-exclude "account=CA.*"  Upgrade Kubernetes cluster on Runtimes of all global accounts not starting with CA.
-		kcp upgrade cluster --target "region=europe|eu|uk"                Upgrade Kubernetes cluster on Runtimes whose region belongs to Europe.
-		kcp upgrade cluster --target all --version "v1.20.0"      Upgrade Kubernetes cluster on Runtimes of all global accounts to the custom Kubernetes cluster version (1.20.0).`,
+		kcp upgrade cluster --target "region=europe|eu|uk"                Upgrade Kubernetes cluster on Runtimes whose region belongs to Europe.`,
+
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}
 
 	cmd.cobraCmd = cobraCmd
 
-	cmd.SetUpgradeClusterOpts(cobraCmd)
 	return cobraCmd
-}
-
-// SetUpgradeOpts configures the upgrade kyma specific options on the given command
-func (cmd *UpgradeClusterCommand) SetUpgradeClusterOpts(cobraCmd *cobra.Command) {
-	cmd.UpgradeCommand.SetUpgradeOpts(cobraCmd)
-	cobraCmd.Flags().StringVar(&cmd.version, "version", "", "Kubernetes version to use. like v1.21.0 as values.")
 }
 
 func (cmd *UpgradeClusterCommand) Validate() error {
@@ -51,8 +43,6 @@ func (cmd *UpgradeClusterCommand) Validate() error {
 	if err != nil {
 		return err
 	}
-
-	cmd.orchestrationParams.Version = cmd.version
 
 	return nil
 }
