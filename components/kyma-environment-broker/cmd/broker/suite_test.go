@@ -66,6 +66,11 @@ const (
 	instanceID             = "instance-id"
 	smRegion               = "eu"
 	dbSecretKey            = "1234567890123456"
+
+	subscriptionNameRegular = "regular"
+	subscriptionNameShared  = "shared"
+
+	pollingInterval = 3 * time.Millisecond
 )
 
 type OrchestrationSuite struct {
@@ -173,6 +178,7 @@ type RuntimeOptions struct {
 	SubAccountID    string
 	PlatformRegion  string
 	Region          string
+	PlanID          string
 }
 
 func (o *RuntimeOptions) ProvideRegion() *string {
@@ -208,10 +214,18 @@ func (o *RuntimeOptions) ProvidePlatformRegion() string {
 	}
 }
 
+func (o *RuntimeOptions) ProvidePlanID() string {
+	if o.PlanID == "" {
+		return broker.AzurePlanID
+	} else {
+		return o.PlanID
+	}
+}
+
 func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) string {
-	planID := broker.AzurePlanID
-	planName := broker.AzurePlanName
 	runtimeID := uuid.New().String()
+	planID := options.ProvidePlanID()
+	planName := broker.AzurePlanName
 	globalAccountID := options.ProvideGlobalAccountID()
 	subAccountID := options.ProvideSubAccountID()
 	instanceID := uuid.New().String()
@@ -361,6 +375,8 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 			Labels: map[string]string{
 				fmt.Sprintf("overrides-version-%s", defaultKymaVersion): "true",
 				"overrides-plan-azure": "true",
+				"overrides-plan-trial": "true",
+				"overrides-plan-aws":   "true",
 			},
 		},
 		Data: map[string]string{
@@ -462,7 +478,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, smcf, bundleBuilder, iasTypeSetter, edpClient, accountProvider, inMemoryFs, logs)
 
-	provisioningQueue.SpeedUp(1000)
+	provisioningQueue.SpeedUp(10000)
 
 	return &ProvisioningSuite{
 		provisionerClient:   provisionerClient,
@@ -478,7 +494,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 	provisioningParameters := internal.ProvisioningParameters{
-		PlanID: broker.AzurePlanID,
+		PlanID: options.ProvidePlanID(),
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,
 			SubAccountID:    options.ProvideSubAccountID(),
@@ -526,7 +542,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 
 func (s *ProvisioningSuite) WaitForProvisioningState(operationID string, state domain.LastOperationState) {
 	var op *internal.ProvisioningOperation
-	err := wait.PollImmediate(100*time.Millisecond, 2*time.Second, func() (done bool, err error) {
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
 		return op.State == state, nil
 	})
@@ -535,7 +551,7 @@ func (s *ProvisioningSuite) WaitForProvisioningState(operationID string, state d
 
 func (s *ProvisioningSuite) FinishProvisioningOperationByProvisioner(operationID string) {
 	var op *internal.ProvisioningOperation
-	err := wait.PollImmediate(100*time.Millisecond, 2*time.Second, func() (done bool, err error) {
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
 		if op.RuntimeID != "" {
 			return true, nil
@@ -550,7 +566,7 @@ func (s *ProvisioningSuite) FinishProvisioningOperationByProvisioner(operationID
 func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID string) {
 	// wait until ProvisioningOperation reaches CreateRuntime step
 	var provisioningOp *internal.ProvisioningOperation
-	err := wait.Poll(100*time.Millisecond, 2*time.Second, func() (bool, error) {
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		op, err := s.storage.Operations().GetProvisioningOperationByID(operationID)
 		assert.NoError(s.t, err)
 		if op.ProvisionerOperationID != "" {
@@ -562,7 +578,7 @@ func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID str
 	assert.NoError(s.t, err)
 
 	var status gqlschema.OperationStatus
-	err = wait.Poll(100*time.Millisecond, 2*time.Second, func() (bool, error) {
+	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status = s.provisionerClient.FindOperationByRuntimeIDAndType(provisioningOp.RuntimeID, gqlschema.OperationTypeProvision)
 		if status.ID != nil {
 			return true, nil
@@ -582,7 +598,7 @@ func (s *ProvisioningSuite) AssertAllStepsFinished(operationID string) {
 }
 
 func (s *ProvisioningSuite) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
-	err := wait.Poll(100*time.Millisecond, 2*time.Second, func() (bool, error) {
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
 			s.provisionerClient.FinishProvisionerOperation(*status.ID)
@@ -602,11 +618,44 @@ func (s *ProvisioningSuite) AssertDirectorGrafanaTag(operationID string) {
 }
 
 func (s *ProvisioningSuite) AssertProvisioningRequest() {
-	input := s.provisionerClient.GetProvisionRuntimeInput(0)
+	input := s.fetchProvisionInput()
 
 	labels := *input.RuntimeInput.Labels
 	assert.Equal(s.t, instanceID, labels["broker_instance_id"])
 	assert.Contains(s.t, labels, "global_subaccount_id")
+}
+
+func (s *ProvisioningSuite) AssertKymaProfile(expectedProfile gqlschema.KymaProfile) {
+	input := s.fetchProvisionInput()
+
+	assert.Equal(s.t, expectedProfile, *input.KymaConfig.Profile)
+}
+
+func (s *ProvisioningSuite) AssertProvider(provider string) {
+	input := s.fetchProvisionInput()
+
+	assert.Equal(s.t, provider, input.ClusterConfig.GardenerConfig.Provider)
+}
+
+func (s *ProvisioningSuite) fetchProvisionInput() gqlschema.ProvisionRuntimeInput {
+	input := s.provisionerClient.GetProvisionRuntimeInput(0)
+	return input
+}
+
+func (s *ProvisioningSuite) AssertMinimalNumberOfNodes(nodes int) {
+	input := s.fetchProvisionInput()
+
+	assert.Equal(s.t, nodes, input.ClusterConfig.GardenerConfig.AutoScalerMin)
+}
+
+func (s *ProvisioningSuite) AssertSharedSubscription(shared bool) {
+	input := s.fetchProvisionInput()
+	secretName := input.ClusterConfig.GardenerConfig.TargetSecret
+	if shared {
+		assert.Equal(s.t, secretName, subscriptionNameShared)
+	} else {
+		assert.Equal(s.t, secretName, subscriptionNameRegular)
+	}
 }
 
 func fixConfig() *Config {
@@ -641,6 +690,7 @@ func fixConfig() *Config {
 
 func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 	accountProvider := hyperscalerautomock.AccountProvider{}
+
 	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
 		HyperscalerType: hyperscaler.Azure,
 		CredentialData: map[string][]byte{
@@ -649,6 +699,48 @@ func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 			"clientSecret":   []byte("clientSecret"),
 			"tenantID":       []byte("tenantID"),
 		},
+		Name: subscriptionNameRegular,
+	}, nil)
+
+	accountProvider.On("GardenerCredentials", hyperscaler.GCP, mock.Anything).Return(hyperscaler.Credentials{
+		HyperscalerType: hyperscaler.GCP,
+		CredentialData: map[string][]byte{
+			"subscriptionID": []byte("subscriptionID"),
+			"clientID":       []byte("clientID"),
+			"clientSecret":   []byte("clientSecret"),
+			"tenantID":       []byte("tenantID"),
+		},
+		Name: subscriptionNameRegular,
+	}, nil)
+	accountProvider.On("GardenerCredentials", hyperscaler.Openstack, mock.Anything).Return(hyperscaler.Credentials{
+		HyperscalerType: hyperscaler.Openstack,
+		CredentialData: map[string][]byte{
+			"subscriptionID": []byte("subscriptionID"),
+			"clientID":       []byte("clientID"),
+			"clientSecret":   []byte("clientSecret"),
+			"tenantID":       []byte("tenantID"),
+		},
+		Name: subscriptionNameRegular,
+	}, nil)
+	accountProvider.On("GardenerCredentials", hyperscaler.AWS, mock.Anything).Return(hyperscaler.Credentials{
+		HyperscalerType: hyperscaler.AWS,
+		CredentialData: map[string][]byte{
+			"subscriptionID": []byte("subscriptionID"),
+			"clientID":       []byte("clientID"),
+			"clientSecret":   []byte("clientSecret"),
+			"tenantID":       []byte("tenantID"),
+		},
+		Name: subscriptionNameRegular,
+	}, nil)
+	accountProvider.On("GardenerSharedCredentials", hyperscaler.Azure).Return(hyperscaler.Credentials{
+		HyperscalerType: hyperscaler.Azure,
+		CredentialData: map[string][]byte{
+			"subscriptionID": []byte("subscriptionID"),
+			"clientID":       []byte("clientID"),
+			"clientSecret":   []byte("clientSecret"),
+			"tenantID":       []byte("tenantID"),
+		},
+		Name: subscriptionNameShared,
 	}, nil)
 	return &accountProvider
 }
