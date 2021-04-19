@@ -9,11 +9,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 )
 
-const (
-	azure = "azure"
-	aws   = "aws"
-)
-
 type Providers struct {
 	Azure AzureMachines
 	AWS   AWSMachines
@@ -34,11 +29,11 @@ type MachineInfo map[string]json.RawMessage
 
 func (p Providers) GetFeature(cloudProvider, vmType string) (f *Feature) {
 	switch cloudProvider {
-	case aws:
+	case AWS:
 		if feature, ok := p.AWS[vmType]; ok {
 			return &feature
 		}
-	case azure:
+	case Azure:
 		if feature, ok := p.Azure[vmType]; ok {
 			return &feature
 		}
@@ -57,7 +52,7 @@ func LoadPublicCloudSpecs(cfg *env.Config) (*Providers, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal machine info")
 	}
-	awsMachinesData, err := machineInfo[aws].MarshalJSON()
+	awsMachinesData, err := machineInfo[AWS].MarshalJSON()
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal AWS info")
 	}
@@ -66,7 +61,7 @@ func LoadPublicCloudSpecs(cfg *env.Config) (*Providers, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal AWS machines data")
 	}
-	azureMachinesData, err := machineInfo[azure].MarshalJSON()
+	azureMachinesData, err := machineInfo[Azure].MarshalJSON()
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal Azure info")
 	}
