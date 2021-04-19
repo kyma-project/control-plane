@@ -394,7 +394,6 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	db := storage.NewMemoryStorage()
 
 	cfg := fixConfig()
-	cfg.Connectivity.Disabled = true
 
 	//auditLog create file here.
 	inMemoryFs, err := createInMemFS()
@@ -673,6 +672,12 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 			CatalogID: servicemanager.FakeEmsServiceID,
 			BrokerID:  brokerID,
 		},
+		{
+			ID:        "connectivity-oferring-id",
+			Name:      provisioning.ConnectivityOfferingName,
+			CatalogID: "connectivity-service-id",
+			BrokerID:  brokerID,
+		},
 	}, []types.ServicePlan{{
 		ID:        "xsuaa-plan-id",
 		Name:      "application",
@@ -682,6 +687,11 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 			ID:        "ems-plan-id",
 			Name:      provisioning.EmsPlanName,
 			CatalogID: provisioning.EmsPlanName,
+		},
+		{
+			ID:        "connectivity-plan-id",
+			Name:      provisioning.ConnectivityPlanName,
+			CatalogID: provisioning.ConnectivityPlanName,
 		},
 	})
 	smcf.SynchronousProvisioning()
