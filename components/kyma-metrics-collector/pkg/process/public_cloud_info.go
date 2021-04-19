@@ -3,7 +3,8 @@ package process
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 )
@@ -54,25 +55,25 @@ func LoadPublicCloudSpecs(cfg *env.Config) (*Providers, error) {
 	var machineInfo MachineInfo
 	err := json.Unmarshal([]byte(cfg.PublicCloudSpecs), &machineInfo)
 	if err != nil {
-		log.Fatal(err)
+		return nil, errors.Wrapf(err, "failed to unmarshal machine info")
 	}
 	awsMachinesData, err := machineInfo[aws].MarshalJSON()
 	if err != nil {
-		log.Fatal(err)
+		return nil, errors.Wrapf(err, "failed to marshal AWS info")
 	}
 	awsMachines := &AWSMachines{}
 	err = json.Unmarshal(awsMachinesData, &awsMachines)
 	if err != nil {
-		log.Fatal(err)
+		return nil, errors.Wrapf(err, "failed to unmarshal AWS machines data")
 	}
 	azureMachinesData, err := machineInfo[azure].MarshalJSON()
 	if err != nil {
-		log.Fatal(err)
+		return nil, errors.Wrapf(err, "failed to marshal Azure info")
 	}
 	azureMachines := &AzureMachines{}
 	err = json.Unmarshal(azureMachinesData, azureMachines)
 	if err != nil {
-		log.Fatal(err)
+		return nil, errors.Wrapf(err, "failed to uunmarshal Azure machines data")
 	}
 
 	providers := Providers{

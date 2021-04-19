@@ -2,7 +2,6 @@ package process
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"strings"
 	"time"
@@ -76,7 +75,6 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 		if vmFeature == nil {
 			return nil, fmt.Errorf("providerType: %s and nodeType: %s does not exist in the map", providerType, nodeType)
 		}
-		log.Printf("feature: %v", vmFeature)
 		provisionedCPUs += vmFeature.CpuCores
 		provisionedMemory += vmFeature.Memory
 		vmTypes[nodeType] += 1
