@@ -70,18 +70,19 @@ func (cmd *UpgradeKymaCommand) Validate() error {
 
 	// Validate version
 	// More advanced Kyma validation (via git resolution) is handled by KEB
-	if cmd.version != "" {
-		if err = ValidateUpgradeKymaVersionFmt(cmd.version); err != nil {
-			return err
-		}
-		cmd.orchestrationParams.Kyma.Version = cmd.version
+	if err = ValidateUpgradeKymaVersionFmt(cmd.version); err != nil {
+		return err
 	}
+	cmd.orchestrationParams.Kyma.Version = cmd.version
 
 	return nil
 }
 
 func ValidateUpgradeKymaVersionFmt(version string) error {
 	switch {
+	// default empty is allowed
+	case version == "":
+		return nil
 	// handle semantic version
 	case semver.IsValid(fmt.Sprintf("v%s", version)):
 		return nil
