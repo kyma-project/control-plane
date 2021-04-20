@@ -54,6 +54,10 @@ services:
         description: "Trial"
         metadata:
           displayName: "Trial"
+      free:
+        description: "Free"
+        metadata:
+          displayName: "Free"
       openstack:
         description: "Openstack"
         metadata:

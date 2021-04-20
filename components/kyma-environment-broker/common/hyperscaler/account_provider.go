@@ -2,6 +2,7 @@ package hyperscaler
 
 import (
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,8 +36,9 @@ func NewAccountProvider(kubernetesInterface kubernetes.Interface, gardenerPool A
 	}
 }
 
-func HyperscalerTypeForPlanID(planID string) (Type, error) {
+func HyperscalerTypeForPlanID(pp internal.ProvisioningParameters) (Type, error) {
 
+	planID := pp.PlanID
 	switch planID {
 	case broker.GCPPlanID:
 		return GCP, nil
@@ -46,6 +48,8 @@ func HyperscalerTypeForPlanID(planID string) (Type, error) {
 		return Openstack, nil
 	case broker.AWSPlanID:
 		return AWS, nil
+	case broker.FreemiumPlanID:
+		return pp.PlatformProvider, nil
 	default:
 		return "", errors.Errorf("cannot determine the type of Hyperscaler to use for planID: %s", planID)
 	}

@@ -285,7 +285,7 @@ func fixOperationRuntimeStatus(planId string) internal.ProvisioningOperation {
 	return provisioningOperation
 }
 
-func fixOperationRuntimeStatusWithProvider(planId string, provider internal.TrialCloudProvider) internal.ProvisioningOperation {
+func fixOperationRuntimeStatusWithProvider(planId string, provider internal.CloudProvider) internal.ProvisioningOperation {
 	provisioningOperation := fixture.FixProvisioningOperation(statusOperationID, statusInstanceID)
 	provisioningOperation.State = ""
 	provisioningOperation.ProvisionerOperationID = statusProvisionerOperationID
