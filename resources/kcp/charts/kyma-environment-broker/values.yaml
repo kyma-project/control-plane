@@ -164,6 +164,9 @@ ems:
   disabled: true
   skipDeprovisionAzureEventingAtUpgrade: false
 
+connectivity:
+  disabled: true
+
 cis:
   v1:
     authURL: "TBD"

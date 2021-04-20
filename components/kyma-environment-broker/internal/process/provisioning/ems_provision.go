@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -33,73 +32,24 @@ func (s *EmsProvisionStep) Name() string {
 	return "EMS_Provision"
 }
 
-func (s *EmsProvisionStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	if operation.Ems.Instance.ProvisioningTriggered {
-		log.Infof("Ems Provisioning step was already triggered")
-		return operation, 0, nil
+func (s *EmsProvisionStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (
+	internal.ProvisioningOperation, time.Duration, error) {
+
+	extractorFunc := func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
+		return &op.Ems.Instance
 	}
 
-	smCli, err := operation.ServiceManagerClient(log)
-	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("unable to create Service Manage client"))
-	}
-
-	if operation.Ems.Instance.InstanceID == "" {
-		op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
-			operation.Ems.Instance.InstanceID = uuid.New().String()
-		}, log)
-		if retry > 0 {
-			log.Errorf("unable to update operation")
-			return operation, time.Second, nil
-		}
-		operation = op
-	}
-
-	// provision
-	operation, _, err = s.provision(smCli, operation, log)
-	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("provision()  call failed"))
-	}
-	// save the status
-	operation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
-		operation.Ems.Instance.ProvisioningTriggered = true
-	}, log)
-	if retry > 0 {
-		log.Errorf("unable to update operation")
-		return operation, time.Second, nil
-	}
-
-	return operation, 0, nil
+	provisioner := NewServiceManagerProvisioner("Ems", extractorFunc, s.operationManager, getEventingProvisioningData)
+	return provisioner.Run(operation, log)
 }
 
-func (s *EmsProvisionStep) provision(smCli servicemanager.Client, operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	input := GetEventingProvisioningData(operation.Ems)
-	resp, err := smCli.Provision(operation.Ems.Instance.BrokerID, *input, true)
-	if err != nil {
-		return s.handleError(operation, err, log, fmt.Sprintf("Provision() call failed for brokerID: %s; input: %#v", operation.Ems.Instance.BrokerID, input))
-	}
-	log.Debugf("response from EMS provisioning call: %#v", resp)
-
-	return operation, 0, nil
+func GetEventingProvisioningData(info internal.ServiceManagerInstanceInfo) *servicemanager.ProvisioningInput {
+	input := info.ToProvisioningInput()
+	return getEventingProvisioningData(input)
 }
 
-func (s *EmsProvisionStep) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
-	log.Errorf("%s: %s", msg, err)
-	return s.operationManager.OperationFailed(operation, msg, log)
-}
-
-func GetEventingProvisioningData(emsInstanceDetails internal.EmsData) *servicemanager.ProvisioningInput {
-	var input servicemanager.ProvisioningInput
-
-	input.ID = emsInstanceDetails.Instance.InstanceID
-	input.ServiceID = emsInstanceDetails.Instance.ServiceID
-	input.PlanID = emsInstanceDetails.Instance.PlanID
-	input.SpaceGUID = uuid.New().String()
-	input.OrganizationGUID = uuid.New().String()
-	input.Context = map[string]interface{}{
-		"platform": "kubernetes",
-	}
-	input.Parameters = map[string]interface{}{
+func getEventingProvisioningData(details *servicemanager.ProvisioningInput) *servicemanager.ProvisioningInput {
+	details.Parameters = map[string]interface{}{
 		"options": map[string]string{
 			"management":    "true",
 			"messagingrest": "true",
@@ -130,5 +80,5 @@ func GetEventingProvisioningData(emsInstanceDetails internal.EmsData) *servicema
 		"namespace": "default/sap.kyma/" + uuid.New().String(),
 	}
 
-	return &input
+	return details
 }

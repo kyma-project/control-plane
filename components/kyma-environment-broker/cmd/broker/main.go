@@ -123,6 +123,9 @@ type Config struct {
 		Disabled                              bool `envconfig:"default=true"`
 		SkipDeprovisionAzureEventingAtUpgrade bool `envconfig:"default=false"`
 	}
+	Connectivity struct {
+		Disabled bool `envconfig:"default=true"`
+	}
 
 	AuditLog auditlog.Config
 
@@ -504,6 +507,15 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight: 1,
+			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
+			step: provisioning.NewServiceManagerOfferingStep("Connectivity_Offering",
+				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
+					return &op.Connectivity.Instance
+				}, db.Operations()),
+			disabled: cfg.Connectivity.Disabled,
+		},
+		{
 			weight: 2,
 			step:   provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
 		},
@@ -522,6 +534,11 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			weight:   2,
 			step:     provisioning.NewEmsProvisionStep(db.Operations()),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   2,
+			step:     provisioning.NewConnectivityProvisionStep(db.Operations()),
+			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			weight:   2,
@@ -567,6 +584,11 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			weight:   7,
 			step:     provisioning.NewEmsBindStep(db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   7,
+			step:     provisioning.NewConnectivityBindStep(db.Operations(), cfg.Database.SecretKey),
+			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			weight: 10,
@@ -629,6 +651,11 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight:   1,
+			step:     deprovisioning.NewConnectivityUnbindStep(db.Operations()),
+			disabled: cfg.Connectivity.Disabled,
+		},
+		{
 			weight:   2,
 			step:     deprovisioning.NewXSUAADeprovisionStep(db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
@@ -637,6 +664,10 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			weight:   2,
 			step:     deprovisioning.NewEmsDeprovisionStep(db.Operations()),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight: 2,
+			step:   deprovisioning.NewConnectivityDeprovisionStep(db.Operations()),
 		},
 		{
 			weight: 10,
@@ -682,6 +713,15 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight: 1,
+			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
+			step: upgrade_kyma.NewServiceManagerOfferingStep("Connectivity_Offering",
+				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.UpgradeKymaOperation) *internal.ServiceManagerInstanceInfo {
+					return &op.Connectivity.Instance
+				}, db.Operations()),
+			disabled: cfg.Connectivity.Disabled,
+		},
+		{
 			weight: 2,
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
@@ -700,9 +740,19 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight:   4,
+			step:     upgrade_kyma.NewConnectivityUpgradeProvisionStep(db.Operations()),
+			disabled: cfg.Connectivity.Disabled,
+		},
+		{
 			weight:   7,
 			step:     upgrade_kyma.NewEmsUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   7,
+			step:     upgrade_kyma.NewConnectivityUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
+			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			weight: 10,

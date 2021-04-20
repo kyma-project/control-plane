@@ -192,12 +192,13 @@ type InstanceDetails struct {
 	Avs      AvsLifecycleData `json:"avs"`
 	EventHub EventHub         `json:"eh"`
 
-	SubAccountID string    `json:"sub_account_id"`
-	RuntimeID    string    `json:"runtime_id"`
-	ShootName    string    `json:"shoot_name"`
-	ShootDomain  string    `json:"shoot_domain"`
-	XSUAA        XSUAAData `json:"xsuaa"`
-	Ems          EmsData   `json:"ems"`
+	SubAccountID string           `json:"sub_account_id"`
+	RuntimeID    string           `json:"runtime_id"`
+	ShootName    string           `json:"shoot_name"`
+	ShootDomain  string           `json:"shoot_domain"`
+	XSUAA        XSUAAData        `json:"xsuaa"`
+	Ems          EmsData          `json:"ems"`
+	Connectivity ConnectivityData `json:"connectivity"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -230,6 +231,13 @@ type XSUAAData struct {
 }
 
 type EmsData struct {
+	Instance ServiceManagerInstanceInfo `json:"instance"`
+
+	BindingID string `json:"bindingId"`
+	Overrides string `json:"overrides"`
+}
+
+type ConnectivityData struct {
 	Instance ServiceManagerInstanceInfo `json:"instance"`
 
 	BindingID string `json:"bindingId"`
@@ -456,4 +464,21 @@ func serviceManagerRequestCreds(parameters ProvisioningParameters) *servicemanag
 		}
 	}
 	return creds
+}
+
+func (i *ServiceManagerInstanceInfo) ToProvisioningInput() *servicemanager.ProvisioningInput {
+	var input servicemanager.ProvisioningInput
+
+	input.ID = i.InstanceID
+	input.ServiceID = i.ServiceID
+	input.PlanID = i.PlanID
+	input.SpaceGUID = uuid.New().String()
+	input.OrganizationGUID = uuid.New().String()
+
+	input.Context = map[string]interface{}{
+		"platform": "kubernetes",
+	}
+	input.Parameters = map[string]interface{}{}
+
+	return &input
 }

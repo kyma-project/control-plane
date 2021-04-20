@@ -72,7 +72,7 @@ func (s *ServiceManagerOfferingStep) Run(operation internal.ProvisioningOperatio
 	}
 	if len(plans.ServicePlans) != 1 {
 		return s.operationManager.OperationFailed(operation,
-			fmt.Sprintf("expected one %s Service Manager plan, but found %d", s.offeringName, len(offerings.ServiceOfferings)), log)
+			fmt.Sprintf("expected one %s Service Manager plan, but found %d", s.offeringName, len(plans.ServicePlans)), log)
 	}
 	info.PlanID = plans.ServicePlans[0].CatalogID
 	log.Infof("Found plan: catalogID=%s", info.PlanID)

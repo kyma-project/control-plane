@@ -91,6 +91,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	var cfg Config
 	cfg.Ems.Disabled = true
 	cfg.Ems.SkipDeprovisionAzureEventingAtUpgrade = true
+	cfg.Connectivity.Disabled = true
 	cfg.AuditLog = auditlog.Config{
 		URL:           "https://host1:8080/aaa/v2/",
 		User:          "fooUser",
@@ -758,6 +759,12 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 			CatalogID: servicemanager.FakeEmsServiceID,
 			BrokerID:  brokerID,
 		},
+		{
+			ID:        "connectivity-oferring-id",
+			Name:      provisioning.ConnectivityOfferingName,
+			CatalogID: "connectivity-service-id",
+			BrokerID:  brokerID,
+		},
 	}, []types.ServicePlan{{
 		ID:        "xsuaa-plan-id",
 		Name:      "application",
@@ -767,6 +774,11 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 			ID:        "ems-plan-id",
 			Name:      provisioning.EmsPlanName,
 			CatalogID: provisioning.EmsPlanName,
+		},
+		{
+			ID:        "connectivity-plan-id",
+			Name:      provisioning.ConnectivityPlanName,
+			CatalogID: provisioning.ConnectivityPlanName,
 		},
 	})
 	smcf.SynchronousProvisioning()
