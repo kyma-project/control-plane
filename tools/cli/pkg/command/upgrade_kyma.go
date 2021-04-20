@@ -33,7 +33,7 @@ Additional Kyma configurations to use for the upgrade are taken from Kyma Contro
   kcp upgrade kyma --target "account=CA.*"                       Upgrade Kyma on Runtimes of all global accounts starting with CA.
   kcp upgrade kyma --target all --target-exclude "account=CA.*"  Upgrade Kyma on Runtimes of all global accounts not starting with CA.
   kcp upgrade kyma --target "region=europe|eu|uk"                Upgrade Kyma on Runtimes whose region belongs to Europe.
-  kcp upgrade kyma --target all --version "main-00e83e99"      Upgrade Kyma on Runtimes of all global accounts to the custom Kyma version (main-00e83e99).`,
+  kcp upgrade kyma --target all --version "main-00e83e99"        Upgrade Kyma on Runtimes of all global accounts to the custom Kyma version (main-00e83e99).`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}
@@ -70,10 +70,12 @@ func (cmd *UpgradeKymaCommand) Validate() error {
 
 	// Validate version
 	// More advanced Kyma validation (via git resolution) is handled by KEB
-	if err = ValidateUpgradeKymaVersionFmt(cmd.version); err != nil {
-		return err
+	if cmd.version != "" {
+		if err = ValidateUpgradeKymaVersionFmt(cmd.version); err != nil {
+			return err
+		}
+		cmd.orchestrationParams.Kyma.Version = cmd.version
 	}
-	cmd.orchestrationParams.Kyma.Version = cmd.version
 
 	return nil
 }
