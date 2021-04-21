@@ -2,6 +2,7 @@ package provisioning
 
 import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
@@ -99,12 +100,20 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 func (c graphQLConverter) kymaConfigToGraphQLConfig(config model.KymaConfig) *gqlschema.KymaConfig {
 	var components []*gqlschema.ComponentConfiguration
 	for _, cmp := range config.Components {
+		var prerequisiteResourcesPtr *gqlschema.PrerequisiteResources
+
+		prerequisites := cmp.HasPrerequisites()
+		if prerequisites {
+			prerequisiteResourcesPtr = c.prerequisitesToGraphQLConfig(cmp.Prerequisites)
+		}
 
 		component := gqlschema.ComponentConfiguration{
-			Component:     string(cmp.Component),
-			Namespace:     cmp.Namespace,
-			Configuration: c.configurationToGraphQLConfig(cmp.Configuration),
-			SourceURL:     cmp.SourceURL,
+			Component:             string(cmp.Component),
+			Namespace:             cmp.Namespace,
+			SourceURL:             cmp.SourceURL,
+			Prerequisite:          util.BoolPtr(prerequisites),
+			PrerequisiteResources: prerequisiteResourcesPtr,
+			Configuration:         c.configurationToGraphQLConfig(cmp.Configuration),
 		}
 
 		components = append(components, &component)
@@ -132,6 +141,38 @@ func (c graphQLConverter) configurationToGraphQLConfig(cfg model.Configuration) 
 	}
 
 	return configuration
+}
+
+func (c graphQLConverter) prerequisitesToGraphQLConfig(cfg model.Prerequisites) *gqlschema.PrerequisiteResources {
+	secrets := make([]*gqlschema.SecretPrerequisite, 0, len(cfg.Secrets))
+	certificates := make([]*gqlschema.GardenerCertificatePrerequisite, 0, len(cfg.Certificates))
+
+	for _, secret := range cfg.Secrets {
+		entries := make([]*gqlschema.SecretPrerequisiteEntry, 0, len(secret.Entries))
+		for _, entry := range secret.Entries {
+			entries = append(entries, &gqlschema.SecretPrerequisiteEntry{
+				Key:   entry.Key,
+				Value: entry.Value,
+			})
+		}
+
+		secrets = append(secrets, &gqlschema.SecretPrerequisite{
+			ResourceName: secret.ResourceName,
+			Entries:      entries,
+		})
+	}
+
+	for _, cert := range cfg.Certificates {
+		certificates = append(certificates, &gqlschema.GardenerCertificatePrerequisite{
+			ResourceName: cert.ResourceName,
+			SecretName:   cert.SecretName,
+			CommonName:   cert.CommonName,
+		})
+	}
+	return &gqlschema.PrerequisiteResources{
+		Secrets:      secrets,
+		Certificates: certificates,
+	}
 }
 
 func (c graphQLConverter) operationTypeToGraphQLType(operationType model.OperationType) gqlschema.OperationType {

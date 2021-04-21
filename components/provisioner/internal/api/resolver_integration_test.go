@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/testkit"
+
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -346,39 +348,31 @@ func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
 				Component: coreComponent,
 				Namespace: kymaSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntry{
-					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
-					fixGQLConfigEntry("test.config.key2", "value2", util.BoolPtr(false)),
+					testkit.FixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
+					testkit.FixGQLConfigEntry("test.config.key2", "value2", util.BoolPtr(false)),
 				},
 			},
 			{
 				Component: applicationConnectorComponent,
 				Namespace: kymaIntegrationNamespace,
 				Configuration: []*gqlschema.ConfigEntry{
-					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
-					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
+					testkit.FixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
+					testkit.FixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
 				},
 			},
 			{
 				Component: runtimeAgentComponent,
 				Namespace: compassSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntry{
-					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
-					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
+					testkit.FixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
+					testkit.FixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
 				},
 			},
 		},
 		Configuration: []*gqlschema.ConfigEntry{
-			fixGQLConfigEntry("global.config.key", "globalValue", util.BoolPtr(false)),
-			fixGQLConfigEntry("global.config.key2", "globalValue2", util.BoolPtr(false)),
-			fixGQLConfigEntry("global.secret.key", "globalSecretValue", util.BoolPtr(true)),
+			testkit.FixGQLConfigEntry("global.config.key", "globalValue", util.BoolPtr(false)),
+			testkit.FixGQLConfigEntry("global.config.key2", "globalValue2", util.BoolPtr(false)),
+			testkit.FixGQLConfigEntry("global.secret.key", "globalSecretValue", util.BoolPtr(true)),
 		},
-	}
-}
-
-func fixGQLConfigEntry(key, val string, secret *bool) *gqlschema.ConfigEntry {
-	return &gqlschema.ConfigEntry{
-		Key:    key,
-		Value:  val,
-		Secret: secret,
 	}
 }

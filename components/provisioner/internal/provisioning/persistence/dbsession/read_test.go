@@ -34,6 +34,7 @@ func Test_parseToKymaConfig(t *testing.T) {
 			ClusterID:           runtimeId,
 			GlobalConfiguration: []byte("{}"),
 			Configuration:       []byte("{}"),
+			Prerequisites:       []byte("{}"),
 		}
 	}
 
@@ -109,30 +110,33 @@ func Test_parseToKymaConfig(t *testing.T) {
 				Components: []model.KymaComponentConfig{
 					{
 						ID:             "comp-3",
+						KymaConfigID:   kymaConfigId,
 						Component:      "even-less-essential",
 						Namespace:      "core",
 						SourceURL:      nil,
-						Configuration:  model.Configuration{},
 						ComponentOrder: 0,
-						KymaConfigID:   kymaConfigId,
+						Prerequisites:  model.Prerequisites{},
+						Configuration:  model.Configuration{},
 					},
 					{
 						ID:             "comp-1",
+						KymaConfigID:   kymaConfigId,
 						Component:      "essential",
 						Namespace:      "core",
 						SourceURL:      nil,
-						Configuration:  model.Configuration{},
 						ComponentOrder: 0,
-						KymaConfigID:   kymaConfigId,
+						Prerequisites:  model.Prerequisites{},
+						Configuration:  model.Configuration{},
 					},
 					{
 						ID:             "comp-2",
+						KymaConfigID:   kymaConfigId,
 						Component:      "less-essential",
 						Namespace:      "other",
 						SourceURL:      nil,
-						Configuration:  model.Configuration{},
 						ComponentOrder: 0,
-						KymaConfigID:   kymaConfigId,
+						Prerequisites:  model.Prerequisites{},
+						Configuration:  model.Configuration{},
 					},
 				},
 				GlobalConfiguration: model.Configuration{},

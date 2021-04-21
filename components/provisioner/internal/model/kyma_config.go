@@ -45,12 +45,53 @@ type Asset struct {
 
 type KymaComponentConfig struct {
 	ID             string
+	KymaConfigID   string
 	Component      KymaComponent
 	Namespace      string
 	SourceURL      *string
-	Configuration  Configuration
 	ComponentOrder int
-	KymaConfigID   string
+	Prerequisites  Prerequisites
+	Configuration  Configuration
+}
+
+func (c KymaComponentConfig) HasPrerequisites() bool {
+	return len(c.Prerequisites.Secrets) > 0 || len(c.Prerequisites.Certificates) > 0
+}
+
+type Prerequisites struct {
+	Secrets      []SecretPrerequisite              `json:"secrets"`
+	Certificates []GardenerCertificatePrerequisite `json:"certificates"`
+}
+
+type SecretPrerequisite struct {
+	ResourceName string        `json:"resourceName"`
+	Entries      []SecretEntry `json:"entries"`
+}
+
+type SecretEntry struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+func NewSecretEntry(key, val string) SecretEntry {
+	return SecretEntry{
+		Key:   key,
+		Value: val,
+	}
+}
+
+type GardenerCertificatePrerequisite struct {
+	ResourceName string `json:"resourceName"`
+	SecretName   string `json:"secretName"`
+	CommonName   string `json:"commonName"`
+}
+
+func NewGardenerCertificatePrerequisite(resourceName, secretName, commonName string) GardenerCertificatePrerequisite {
+	return GardenerCertificatePrerequisite{
+		ResourceName: resourceName,
+		SecretName:   secretName,
+		CommonName:   commonName,
+	}
 }
 
 type Configuration struct {

@@ -145,6 +145,7 @@ type kymaComponentConfigDTO struct {
 	Namespace           string
 	SourceURL           *string
 	Configuration       []byte
+	Prerequisites       []byte
 	ComponentOrder      *int
 	ClusterID           string
 }
@@ -156,19 +157,25 @@ func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, db
 
 	for _, componentCfg := range c {
 		var configuration model.Configuration
+		var prerequisites model.Prerequisites
 		err := json.Unmarshal(componentCfg.Configuration, &configuration)
 		if err != nil {
 			return model.KymaConfig{}, dberrors.Internal("Failed to unmarshal configuration for %s component: %s", componentCfg.Component, err.Error())
 		}
+		err = json.Unmarshal(componentCfg.Prerequisites, &prerequisites)
+		if err != nil {
+			return model.KymaConfig{}, dberrors.Internal("Failed to unmarshal prerequisites for %s component: %s", componentCfg.Component, err.Error())
+		}
 
 		kymaComponentConfig := model.KymaComponentConfig{
 			ID:             componentCfg.ID,
+			KymaConfigID:   componentCfg.KymaConfigID,
 			Component:      model.KymaComponent(componentCfg.Component),
 			Namespace:      componentCfg.Namespace,
 			SourceURL:      componentCfg.SourceURL,
-			Configuration:  configuration,
-			KymaConfigID:   componentCfg.KymaConfigID,
 			ComponentOrder: util.UnwrapInt(componentCfg.ComponentOrder),
+			Configuration:  configuration,
+			Prerequisites:  prerequisites,
 		}
 
 		// In case order is 0 for all components map stores slice (it is the case for Runtimes created before migration)
@@ -219,7 +226,7 @@ func (r readSession) getKymaConfig(runtimeID, kymaConfigId string) (model.KymaCo
 	rowsCount, err := r.session.
 		Select("kyma_config_id", "kyma_config.release_id", "kyma_config.profile", "kyma_config.global_configuration",
 			"kyma_component_config.id", "kyma_component_config.component", "kyma_component_config.namespace",
-			"kyma_component_config.source_url", "kyma_component_config.configuration",
+			"kyma_component_config.source_url", "kyma_component_config.configuration", "kyma_component_config.prerequisites",
 			"kyma_component_config.component_order",
 			"cluster_id",
 			"kyma_release.version", "kyma_release.tiller_yaml", "kyma_release.installer_yaml").

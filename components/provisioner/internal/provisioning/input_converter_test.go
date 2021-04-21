@@ -3,6 +3,7 @@ package provisioning
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/testkit"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	realeaseMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/release/mocks"
@@ -18,25 +19,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	kymaVersion                                = "1.5"
-	kymaVersionWithoutTiller                   = "1.15"
-	clusterEssentialsComponent                 = "cluster-essentials"
-	coreComponent                              = "core"
-	rafterComponent                            = "rafter"
-	applicationConnectorComponent              = "application-connector"
-	rafterSourceURL                            = "github.com/kyma-project/kyma.git//resources/rafter"
-	gardenerProject                            = "gardener-project"
-	defaultEnableKubernetesVersionAutoUpdate   = false
-	defaultEnableMachineImageVersionAutoUpdate = false
-	forceAllowPrivilegedContainers             = false
-)
-
 func Test_ProvisioningInputToCluster(t *testing.T) {
 
 	releaseProvider := &realeaseMocks.Provider{}
-	releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
-	releaseProvider.On("GetReleaseByVersion", kymaVersionWithoutTiller).Return(fixKymaReleaseWithoutTiller(), nil)
+	releaseProvider.On("GetReleaseByVersion", testkit.KymaVersion).Return(testkit.FixKymaRelease(), nil)
+	releaseProvider.On("GetReleaseByVersion", testkit.KymaVersionWithoutTiller).Return(testkit.FixKymaReleaseWithoutTiller(), nil)
 
 	gcpGardenerProvider := &gqlschema.GCPProviderConfigInput{Zones: []string{"fix-gcp-zone-1", "fix-gcp-zone-2"}}
 
@@ -86,7 +73,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ClusterConfig: model.GardenerConfig{
 			ID:                                  "id",
 			Name:                                "verylon",
-			ProjectName:                         gardenerProject,
+			ProjectName:                         testkit.GardenerProject,
 			MachineType:                         "n1-standard-1",
 			Region:                              "region",
 			KubernetesVersion:                   "version",
@@ -108,7 +95,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			GardenerProviderConfig:              expectedGCPProviderCfg,
 		},
 		Kubeconfig:   nil,
-		KymaConfig:   fixKymaConfig(&modelProductionProfile),
+		KymaConfig:   testkit.FixKymaConfig(&modelProductionProfile),
 		Tenant:       tenant,
 		SubAccountId: util.StringPtr(subAccountId),
 	}
@@ -161,7 +148,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			ClusterConfig: model.GardenerConfig{
 				ID:                                  "id",
 				Name:                                "verylon",
-				ProjectName:                         gardenerProject,
+				ProjectName:                         testkit.GardenerProject,
 				MachineType:                         "n1-standard-1",
 				MachineImage:                        util.StringPtr("gardenlinux"),
 				MachineImageVersion:                 util.StringPtr("25.0.0"),
@@ -185,24 +172,24 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				GardenerProviderConfig:              expectedAzureProviderCfg,
 			},
 			Kubeconfig:   nil,
-			KymaConfig:   fixKymaConfig(&modelProductionProfile),
+			KymaConfig:   testkit.FixKymaConfig(&modelProductionProfile),
 			Tenant:       tenant,
 			SubAccountId: util.StringPtr(subAccountId),
 		}
 	}
 
 	gardenerAzureGQLInputWithoutTiller := createGQLRuntimeInputAzure(nil)
-	gardenerAzureGQLInputWithoutTiller.KymaConfig.Version = kymaVersionWithoutTiller
+	gardenerAzureGQLInputWithoutTiller.KymaConfig.Version = testkit.KymaVersionWithoutTiller
 	expectedGardenerAzureRuntimeConfigWithoutTiller := expectedGardenerAzureRuntimeConfig(nil)
 	expectedGardenerAzureRuntimeConfigWithoutTiller.ClusterConfig.AllowPrivilegedContainers = false
-	expectedGardenerAzureRuntimeConfigWithoutTiller.KymaConfig.Release = fixKymaReleaseWithoutTiller()
+	expectedGardenerAzureRuntimeConfigWithoutTiller.KymaConfig.Release = testkit.FixKymaReleaseWithoutTiller()
 
 	gardenerAzureGQLInputWithNoTillerButAllowedPrivilegedContainers := createGQLRuntimeInputAzure(nil)
 	gardenerAzureGQLInputWithNoTillerButAllowedPrivilegedContainers.ClusterConfig.GardenerConfig.AllowPrivilegedContainers = util.BoolPtr(true)
-	gardenerAzureGQLInputWithNoTillerButAllowedPrivilegedContainers.KymaConfig.Version = kymaVersionWithoutTiller
+	gardenerAzureGQLInputWithNoTillerButAllowedPrivilegedContainers.KymaConfig.Version = testkit.KymaVersionWithoutTiller
 	expectedGardenerAzureRuntimeConfigWithNoTillerButAllowedPrivilegedContainers := expectedGardenerAzureRuntimeConfig(nil)
 	expectedGardenerAzureRuntimeConfigWithNoTillerButAllowedPrivilegedContainers.ClusterConfig.AllowPrivilegedContainers = true
-	expectedGardenerAzureRuntimeConfigWithNoTillerButAllowedPrivilegedContainers.KymaConfig.Release = fixKymaReleaseWithoutTiller()
+	expectedGardenerAzureRuntimeConfigWithNoTillerButAllowedPrivilegedContainers.KymaConfig.Release = testkit.FixKymaReleaseWithoutTiller()
 
 	awsGardenerProvider := &gqlschema.AWSProviderConfigInput{
 		Zone:         "zone",
@@ -251,7 +238,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ClusterConfig: model.GardenerConfig{
 			ID:                                  "id",
 			Name:                                "verylon",
-			ProjectName:                         gardenerProject,
+			ProjectName:                         testkit.GardenerProject,
 			MachineType:                         "n1-standard-1",
 			Region:                              "region",
 			KubernetesVersion:                   "version",
@@ -273,7 +260,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			GardenerProviderConfig:              expectedAWSProviderCfg,
 		},
 		Kubeconfig:   nil,
-		KymaConfig:   fixKymaConfig(&modelEvaluationProfile),
+		KymaConfig:   testkit.FixKymaConfig(&modelEvaluationProfile),
 		Tenant:       tenant,
 		SubAccountId: util.StringPtr(subAccountId),
 	}
@@ -323,7 +310,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ClusterConfig: model.GardenerConfig{
 			ID:                                  "id",
 			Name:                                "verylon",
-			ProjectName:                         gardenerProject,
+			ProjectName:                         testkit.GardenerProject,
 			MachineType:                         "large.1n",
 			Region:                              "region",
 			KubernetesVersion:                   "version",
@@ -343,7 +330,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			GardenerProviderConfig:              expectedOpenStackProviderCfg,
 		},
 		Kubeconfig:   nil,
-		KymaConfig:   fixKymaConfig(&modelEvaluationProfile),
+		KymaConfig:   testkit.FixKymaConfig(&modelEvaluationProfile),
 		Tenant:       tenant,
 		SubAccountId: util.StringPtr(subAccountId),
 	}
@@ -402,10 +389,10 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			inputConverter := NewInputConverter(
 				uuidGeneratorMock,
 				releaseProvider,
-				gardenerProject,
-				defaultEnableKubernetesVersionAutoUpdate,
-				defaultEnableMachineImageVersionAutoUpdate,
-				forceAllowPrivilegedContainers)
+				testkit.GardenerProject,
+				testkit.DefaultEnableKubernetesVersionAutoUpdate,
+				testkit.DefaultEnableMachineImageVersionAutoUpdate,
+				testkit.ForceAllowPrivilegedContainers)
 
 			//when
 			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input, tenant, subAccountId)
@@ -420,11 +407,11 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	t.Run("Should use force allow privileged containers if equals true even if everything else says false", func(t *testing.T) {
 		// given
 		gardenerAzureGQLInput := createGQLRuntimeInputAzure(nil)
-		gardenerAzureGQLInput.KymaConfig.Version = kymaVersionWithoutTiller
+		gardenerAzureGQLInput.KymaConfig.Version = testkit.KymaVersionWithoutTiller
 		gardenerAzureGQLInput.ClusterConfig.GardenerConfig.AllowPrivilegedContainers = util.BoolPtr(false)
 
 		expectedGardenerAzureRuntimeConfig := expectedGardenerAzureRuntimeConfig(nil)
-		expectedGardenerAzureRuntimeConfig.KymaConfig.Release = fixKymaReleaseWithoutTiller()
+		expectedGardenerAzureRuntimeConfig.KymaConfig.Release = testkit.FixKymaReleaseWithoutTiller()
 		expectedGardenerAzureRuntimeConfig.ClusterConfig.AllowPrivilegedContainers = true
 
 		uuidGeneratorMock := &mocks.UUIDGenerator{}
@@ -436,9 +423,9 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		inputConverter := NewInputConverter(
 			uuidGeneratorMock,
 			releaseProvider,
-			gardenerProject,
-			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate,
+			testkit.GardenerProject,
+			testkit.DefaultEnableKubernetesVersionAutoUpdate,
+			testkit.DefaultEnableMachineImageVersionAutoUpdate,
 			forceAllowPrivilegedContainers)
 
 		// when
@@ -460,22 +447,22 @@ func TestConverter_ParseInput(t *testing.T) {
 		uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hyphens")
 
 		releaseProvider := &realeaseMocks.Provider{}
-		releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
-		releaseProvider.On("GetReleaseByVersion", kymaVersionWithoutTiller).Return(fixKymaReleaseWithoutTiller(), nil)
+		releaseProvider.On("GetReleaseByVersion", testkit.KymaVersion).Return(testkit.FixKymaRelease(), nil)
+		releaseProvider.On("GetReleaseByVersion", testkit.KymaVersionWithoutTiller).Return(testkit.FixKymaReleaseWithoutTiller(), nil)
 
 		replace := gqlschema.ConflictStrategyReplace
 		input := gqlschema.KymaConfigInput{
-			Version:          kymaVersion,
+			Version:          testkit.KymaVersion,
 			ConflictStrategy: &replace,
 		}
 
 		inputConverter := NewInputConverter(
 			uuidGeneratorMock,
 			releaseProvider,
-			gardenerProject,
-			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate,
-			forceAllowPrivilegedContainers)
+			testkit.GardenerProject,
+			testkit.DefaultEnableKubernetesVersionAutoUpdate,
+			testkit.DefaultEnableMachineImageVersionAutoUpdate,
+			testkit.ForceAllowPrivilegedContainers)
 
 		// when
 		output, err := inputConverter.KymaConfigFromInput("runtimeID", input)
@@ -495,24 +482,24 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		// given
 		uuidGeneratorMock := &mocks.UUIDGenerator{}
 		releaseProvider := &realeaseMocks.Provider{}
-		releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(model.Release{}, dberrors.NotFound("error"))
+		releaseProvider.On("GetReleaseByVersion", testkit.KymaVersion).Return(model.Release{}, dberrors.NotFound("error"))
 
 		input := gqlschema.ProvisionRuntimeInput{
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: &gqlschema.GardenerConfigInput{},
 			},
 			KymaConfig: &gqlschema.KymaConfigInput{
-				Version: kymaVersion,
+				Version: testkit.KymaVersion,
 			},
 		}
 
 		inputConverter := NewInputConverter(
 			uuidGeneratorMock,
 			releaseProvider,
-			gardenerProject,
-			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate,
-			forceAllowPrivilegedContainers)
+			testkit.GardenerProject,
+			testkit.DefaultEnableKubernetesVersionAutoUpdate,
+			testkit.DefaultEnableMachineImageVersionAutoUpdate,
+			testkit.ForceAllowPrivilegedContainers)
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
@@ -529,10 +516,10 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		inputConverter := NewInputConverter(
 			nil,
 			nil,
-			gardenerProject,
-			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate,
-			forceAllowPrivilegedContainers)
+			testkit.GardenerProject,
+			testkit.DefaultEnableKubernetesVersionAutoUpdate,
+			testkit.DefaultEnableMachineImageVersionAutoUpdate,
+			testkit.ForceAllowPrivilegedContainers)
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
@@ -553,10 +540,10 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		inputConverter := NewInputConverter(
 			nil,
 			nil,
-			gardenerProject,
-			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate,
-			forceAllowPrivilegedContainers)
+			testkit.GardenerProject,
+			testkit.DefaultEnableKubernetesVersionAutoUpdate,
+			testkit.DefaultEnableMachineImageVersionAutoUpdate,
+			testkit.ForceAllowPrivilegedContainers)
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
@@ -580,10 +567,10 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		inputConverter := NewInputConverter(
 			uuidGeneratorMock,
 			nil,
-			gardenerProject,
-			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate,
-			forceAllowPrivilegedContainers)
+			testkit.GardenerProject,
+			testkit.DefaultEnableKubernetesVersionAutoUpdate,
+			testkit.DefaultEnableMachineImageVersionAutoUpdate,
+			testkit.ForceAllowPrivilegedContainers)
 
 		//when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
@@ -600,7 +587,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 	testingPurpose := "testing"
 
 	releaseProvider := &realeaseMocks.Provider{}
-	releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
+	releaseProvider.On("GetReleaseByVersion", testkit.KymaVersion).Return(testkit.FixKymaRelease(), nil)
 
 	initialGCPProviderConfig, _ := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{Zones: []string{"europe-west1-a"}})
 	upgradedGCPProviderConfig, _ := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{Zones: []string{"europe-west1-a", "europe-west1-b"}})
@@ -770,10 +757,10 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			inputConverter := NewInputConverter(
 				uuidGeneratorMock,
 				releaseProvider,
-				gardenerProject,
-				defaultEnableKubernetesVersionAutoUpdate,
-				defaultEnableMachineImageVersionAutoUpdate,
-				forceAllowPrivilegedContainers,
+				testkit.GardenerProject,
+				testkit.DefaultEnableKubernetesVersionAutoUpdate,
+				testkit.DefaultEnableMachineImageVersionAutoUpdate,
+				testkit.ForceAllowPrivilegedContainers,
 			)
 
 			//when
@@ -793,10 +780,10 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			inputConverter := NewInputConverter(
 				uuidGeneratorMock,
 				releaseProvider,
-				gardenerProject,
-				defaultEnableKubernetesVersionAutoUpdate,
-				defaultEnableMachineImageVersionAutoUpdate,
-				forceAllowPrivilegedContainers,
+				testkit.GardenerProject,
+				testkit.DefaultEnableKubernetesVersionAutoUpdate,
+				testkit.DefaultEnableMachineImageVersionAutoUpdate,
+				testkit.ForceAllowPrivilegedContainers,
 			)
 
 			//when
@@ -890,39 +877,54 @@ func newUpgradeShootInputWithoutProviderConfig(newPurpose string) gqlschema.Upgr
 
 func fixKymaGraphQLConfigInput(profile *gqlschema.KymaProfile) *gqlschema.KymaConfigInput {
 	return &gqlschema.KymaConfigInput{
-		Version: kymaVersion,
+		Version: testkit.KymaVersion,
 		Profile: profile,
 		Components: []*gqlschema.ComponentConfigurationInput{
 			{
-				Component: clusterEssentialsComponent,
-				Namespace: kymaSystemNamespace,
+				Component: testkit.ClusterEssentialsComponent,
+				Namespace: testkit.KymaSystemNamespace,
 			},
 			{
-				Component: coreComponent,
-				Namespace: kymaSystemNamespace,
+				Component: testkit.CoreComponent,
+				Namespace: testkit.KymaSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
-					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
+					fixGQLConfigEntryInput("test.config.key1", "value1", util.BoolPtr(false)),
 					fixGQLConfigEntryInput("test.config.key2", "value2", util.BoolPtr(false)),
 				},
 			},
 			{
-				Component: rafterComponent,
-				Namespace: kymaSystemNamespace,
-				SourceURL: util.StringPtr(rafterSourceURL),
+				Component: testkit.RafterComponent,
+				Namespace: testkit.KymaSystemNamespace,
+				SourceURL: util.StringPtr(testkit.RafterSourceURL),
 			},
 			{
-				Component: applicationConnectorComponent,
-				Namespace: kymaIntegrationNamespace,
+				Component: testkit.ApplicationConnectorComponent,
+				Namespace: testkit.KymaIntegrationNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
 					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
 				},
+				PrerequisiteResources: &gqlschema.PrerequisiteResourcesInput{
+					Secrets: []*gqlschema.SecretPrerequisiteInput{
+						testkit.FixGQLSecretPrerequisiteInput("prerequisite-secret1",
+							testkit.FixGQLSecretPrerequisiteEntryInput("key1", "value1"),
+							testkit.FixGQLSecretPrerequisiteEntryInput("key2", "value2"),
+						),
+						testkit.FixGQLSecretPrerequisiteInput("prerequisite-secret2",
+							testkit.FixGQLSecretPrerequisiteEntryInput("key1", "value1"),
+							testkit.FixGQLSecretPrerequisiteEntryInput("key2", "value2"),
+						),
+					},
+					Certificates: []*gqlschema.GardenerCertificatePrerequisiteInput{
+						testkit.FixGQLGardenerCertificatePrerequisiteInput("certificate", "secret", "domain.com"),
+					},
+				},
 			},
 		},
 		Configuration: []*gqlschema.ConfigEntryInput{
-			fixGQLConfigEntryInput("global.config.key", "globalValue", util.BoolPtr(false)),
+			fixGQLConfigEntryInput("global.config.key1", "globalValue1", util.BoolPtr(false)),
 			fixGQLConfigEntryInput("global.config.key2", "globalValue2", util.BoolPtr(false)),
-			fixGQLConfigEntryInput("global.secret.key", "globalSecretValue", util.BoolPtr(true)),
+			fixGQLConfigEntryInput("global.secret.key1", "globalSecretValue1", util.BoolPtr(true)),
 		},
 	}
 }
@@ -932,14 +934,5 @@ func fixGQLConfigEntryInput(key, val string, secret *bool) *gqlschema.ConfigEntr
 		Key:    key,
 		Value:  val,
 		Secret: secret,
-	}
-}
-
-func fixKymaReleaseWithoutTiller() model.Release {
-	return model.Release{
-		Id:            "e829b1b5-2e82-426d-91b0-f94978c0c140",
-		Version:       kymaVersionWithoutTiller,
-		TillerYAML:    "",
-		InstallerYAML: "installer yaml",
 	}
 }

@@ -200,12 +200,13 @@ func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 
 		kymaConfigModule := model.KymaComponentConfig{
 			ID:             id,
+			KymaConfigID:   kymaConfigID,
 			Component:      model.KymaComponent(component.Component),
 			Namespace:      component.Namespace,
 			SourceURL:      component.SourceURL,
-			Configuration:  c.configurationFromInput(component.Configuration, component.ConflictStrategy),
 			ComponentOrder: i + 1,
-			KymaConfigID:   kymaConfigID,
+			Prerequisites:  c.prerequisitesFromInput(component.PrerequisiteResources),
+			Configuration:  c.configurationFromInput(component.Configuration, component.ConflictStrategy),
 		}
 
 		components = append(components, kymaConfigModule)
@@ -239,6 +240,42 @@ func (c converter) graphQLProfileToProfile(profile *gqlschema.KymaProfile) *mode
 
 	return &result
 
+}
+
+func (c converter) prerequisitesFromInput(input *gqlschema.PrerequisiteResourcesInput) model.Prerequisites {
+	if input == nil {
+		return model.Prerequisites{}
+	}
+
+	prerequisites := model.Prerequisites{
+		Secrets:      make([]model.SecretPrerequisite, 0, len(input.Secrets)),
+		Certificates: make([]model.GardenerCertificatePrerequisite, 0, len(input.Certificates)),
+	}
+
+	for _, secret := range input.Secrets {
+		prerequisites.Secrets = append(prerequisites.Secrets, secretPrerequisiteFromInput(secret))
+	}
+	for _, cert := range input.Certificates {
+		prerequisites.Certificates = append(prerequisites.Certificates, certificatePrerequisiteFromInput(cert))
+	}
+
+	return prerequisites
+}
+
+func secretPrerequisiteFromInput(input *gqlschema.SecretPrerequisiteInput) model.SecretPrerequisite {
+	entries := make([]model.SecretEntry, 0, len(input.Entries))
+	for _, se := range input.Entries {
+		entries = append(entries, model.NewSecretEntry(se.Key, se.Value))
+	}
+
+	return model.SecretPrerequisite{
+		ResourceName: input.ResourceName,
+		Entries:      entries,
+	}
+}
+
+func certificatePrerequisiteFromInput(input *gqlschema.GardenerCertificatePrerequisiteInput) model.GardenerCertificatePrerequisite {
+	return model.NewGardenerCertificatePrerequisite(input.ResourceName, input.SecretName, input.CommonName)
 }
 
 func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput, conflict *gqlschema.ConflictStrategy) model.Configuration {
