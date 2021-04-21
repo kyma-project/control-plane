@@ -75,19 +75,27 @@ func NewAWSInfrastructure(workerCIDR string, awsConfig AWSGardenerConfig) *aws.I
 			APIVersion: awsAPIVersion,
 		},
 		Networks: aws.Networks{
-			Zones: []aws.Zone{
-				{
-					Name:     awsConfig.input.Zone,
-					Internal: awsConfig.input.InternalCidr,
-					Public:   awsConfig.input.PublicCidr,
-					Workers:  workerCIDR,
-				},
-			},
+			Zones: createAWSZones(workerCIDR, awsConfig),
 			VPC: aws.VPC{
 				CIDR: util.StringPtr(awsConfig.input.VpcCidr),
 			},
 		},
 	}
+}
+
+func createAWSZones(workerCIDR string, awsConfig AWSGardenerConfig) []aws.Zone {
+	zones := make([]aws.Zone, 0)
+
+	for _, inputZone := range awsConfig.input.Zones {
+		zone := aws.Zone{
+			Name:     inputZone,
+			Internal: awsConfig.input.InternalCidr,
+			Public:   awsConfig.input.PublicCidr,
+			Workers:  workerCIDR,
+		}
+		zones = append(zones, zone)
+	}
+	return zones
 }
 
 func NewAWSControlPlane() *aws.ControlPlaneConfig {

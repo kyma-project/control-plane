@@ -46,7 +46,7 @@ type ComplexityRoot struct {
 		InternalCidr func(childComplexity int) int
 		PublicCidr   func(childComplexity int) int
 		VpcCidr      func(childComplexity int) int
-		Zone         func(childComplexity int) int
+		Zones        func(childComplexity int) int
 	}
 
 	AzureProviderConfig struct {
@@ -211,12 +211,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AWSProviderConfig.VpcCidr(childComplexity), true
 
-	case "AWSProviderConfig.zone":
-		if e.complexity.AWSProviderConfig.Zone == nil {
+	case "AWSProviderConfig.zones":
+		if e.complexity.AWSProviderConfig.Zones == nil {
 			break
 		}
 
-		return e.complexity.AWSProviderConfig.Zone(childComplexity), true
+		return e.complexity.AWSProviderConfig.Zones(childComplexity), true
 
 	case "AzureProviderConfig.vnetCidr":
 		if e.complexity.AzureProviderConfig.VnetCidr == nil {
@@ -832,7 +832,7 @@ type AzureProviderConfig {
 }
 
 type AWSProviderConfig {
-    zone: String
+    zones: [String!]!
     vpcCidr: String
     publicCidr: String
     internalCidr: String
@@ -990,16 +990,16 @@ input AzureProviderConfigInput {
 }
 
 input AWSProviderConfigInput {
-    zone: String!           # Zone in which to create the cluster
+    zones: [String!]!        # Zones in which to create the cluster
     vpcCidr: String!        # Classless Inter-Domain Routing for the virtual public cloud
     publicCidr: String!     # Classless Inter-Domain Routing for the public subnet
     internalCidr: String!   # Classless Inter-Domain Routing for the private subnet
 }
 
 input OpenStackProviderConfigInput {
-    zones:           [String!]! # Zones in which to create the cluster
-    floatingPoolName: String!  # FloatingPoolName name in which LoadBalancer FIPs should be created.
-    cloudProfileName: String!  # Name of the target Cloud Profile
+    zones:           [String!]!   # Zones in which to create the cluster
+    floatingPoolName: String!     # FloatingPoolName name in which LoadBalancer FIPs should be created.
+    cloudProfileName: String!     # Name of the target Cloud Profile
     loadBalancerProvider: String! # Name of load balancer provider, e.g. f5
 }
 
@@ -1075,7 +1075,8 @@ type Query {
 
     # Provides status of specified operation
     runtimeOperationStatus(id: String!): OperationStatus
-}`},
+}
+`},
 )
 
 // endregion ************************** generated!.gotpl **************************
@@ -1274,7 +1275,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _AWSProviderConfig_zone(ctx context.Context, field graphql.CollectedField, obj *AWSProviderConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _AWSProviderConfig_zones(ctx context.Context, field graphql.CollectedField, obj *AWSProviderConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1293,19 +1294,22 @@ func (ec *executionContext) _AWSProviderConfig_zone(ctx context.Context, field g
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Zone, nil
+		return obj.Zones, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.([]string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AWSProviderConfig_vpcCidr(ctx context.Context, field graphql.CollectedField, obj *AWSProviderConfig) (ret graphql.Marshaler) {
@@ -4991,9 +4995,9 @@ func (ec *executionContext) unmarshalInputAWSProviderConfigInput(ctx context.Con
 
 	for k, v := range asMap {
 		switch k {
-		case "zone":
+		case "zones":
 			var err error
-			it.Zone, err = ec.unmarshalNString2string(ctx, v)
+			it.Zones, err = ec.unmarshalNString2ᚕstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5647,8 +5651,11 @@ func (ec *executionContext) _AWSProviderConfig(ctx context.Context, sel ast.Sele
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("AWSProviderConfig")
-		case "zone":
-			out.Values[i] = ec._AWSProviderConfig_zone(ctx, field, obj)
+		case "zones":
+			out.Values[i] = ec._AWSProviderConfig_zones(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "vpcCidr":
 			out.Values[i] = ec._AWSProviderConfig_vpcCidr(ctx, field, obj)
 		case "publicCidr":
