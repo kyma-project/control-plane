@@ -135,6 +135,16 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			expectedSharedSubscription:         false,
 			expectedSubsciptionHyperscalerType: hyperscaler.AWS,
 		},
+		"HA AWS": {
+			planID: broker.AWSHAPlanID,
+
+			expectedMinimalNumberOfNodes: 4,
+			expectedMaximumNumberOfNodes: 10,
+			expectedMachineType:          "m5d.xlarge",
+			expectedProfile:              gqlschema.KymaProfileProduction,
+			expectedProvider:             "aws",
+			expectedSharedSubscription:   false,
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			// given

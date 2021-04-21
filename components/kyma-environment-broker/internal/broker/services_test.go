@@ -18,7 +18,7 @@ func TestServices_Services(t *testing.T) {
 	)
 
 	cfg := broker.Config{
-		EnablePlans: []string{"gcp", "azure", "openstack", "aws", "free", "azure_ha"},
+		EnablePlans: []string{"gcp", "azure", "openstack", "aws", "free", "azure_ha", "aws_ha"},
 	}
 	servicesConfig := map[string]broker.Service{
 		broker.KymaServiceName: {

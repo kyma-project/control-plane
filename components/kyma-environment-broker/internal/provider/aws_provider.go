@@ -3,6 +3,8 @@ package provider
 import (
 	"fmt"
 	"math/rand"
+	"strings"
+	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
@@ -12,7 +14,8 @@ import (
 )
 
 const (
-	DefaultAWSRegion = "eu-central-1"
+	DefaultAWSRegion       = "eu-central-1"
+	MultizoneAWSZonesCount = 2
 )
 
 var europeAWS = "eu-central-1"
@@ -27,6 +30,7 @@ var toAWSSpecific = map[string]string{
 
 type (
 	AWSInput      struct{}
+	AWSHAInput    struct{}
 	AWSTrialInput struct {
 		PlatformRegionMapping map[string]string
 	}
@@ -79,8 +83,22 @@ func ZoneForAWSRegion(region string) string {
 	if !found {
 		zones = "a"
 	}
+	rand.Seed(time.Now().UnixNano())
 	zone := string(zones[rand.Intn(len(zones))])
 	return fmt.Sprintf("%s%s", region, zone)
+}
+
+func MultizoneZonesForAWSRegion(region string, zonesCount int) string {
+	zones, found := awsZones[region]
+	if !found {
+		zones = "a"
+	}
+	rand.Seed(time.Now().UnixNano())
+
+	availableZones := strings.Split(zones, "")
+	rand.Shuffle(len(availableZones), func(i, j int) { availableZones[i], availableZones[j] = availableZones[j], availableZones[i] })
+	randomZones := strings.Join(availableZones[:zonesCount], "")
+	return fmt.Sprintf("%s%s", region, randomZones)
 }
 
 func (p *AWSInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
@@ -90,6 +108,41 @@ func (p *AWSInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp inter
 }
 
 func (p *AWSInput) Profile() gqlschema.KymaProfile {
+	return gqlschema.KymaProfileProduction
+}
+
+func (p *AWSHAInput) Defaults() *gqlschema.ClusterConfigInput {
+	return &gqlschema.ClusterConfigInput{
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			DiskType:       ptr.String("gp2"),
+			VolumeSizeGb:   ptr.Integer(50),
+			MachineType:    "m5d.xlarge",
+			Region:         DefaultAWSRegion,
+			Provider:       "aws",
+			WorkerCidr:     "10.250.0.0/19",
+			AutoScalerMin:  4,
+			AutoScalerMax:  10,
+			MaxSurge:       4,
+			MaxUnavailable: 0,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				AwsConfig: &gqlschema.AWSProviderConfigInput{
+					Zone:         MultizoneZonesForAWSRegion(DefaultAWSRegion, MultizoneAWSZonesCount),
+					VpcCidr:      "10.250.0.0/16",
+					PublicCidr:   "10.250.32.0/20",
+					InternalCidr: "10.250.48.0/20",
+				},
+			},
+		},
+	}
+}
+
+func (p *AWSHAInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
+	if pp.Parameters.Region != nil && pp.Parameters.Zones == nil {
+		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.Zone = ZoneForAWSRegion(*pp.Parameters.Region)
+	}
+}
+
+func (p *AWSHAInput) Profile() gqlschema.KymaProfile {
 	return gqlschema.KymaProfileProduction
 }
 
