@@ -135,6 +135,23 @@ func AzureSchema(machineTypes []string) []byte {
 	return bytes
 }
 
+func AzureHASchema(machineTypes []string) []byte {
+	properties := NewProvisioningProperties(machineTypes, AzureRegions())
+	schema := NewSchema(properties, DefaultControlsOrder())
+
+	properties.AutoScalerMin.Default = 4
+	properties.AutoScalerMin.Minimum = 4
+
+	properties.AutoScalerMax.Default = 10
+	properties.AutoScalerMax.Maximum = 10
+
+	bytes, err := json.Marshal(schema)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
+}
+
 func TrialSchema() []byte {
 	schema := NewSchema(
 		ProvisioningProperties{
@@ -250,7 +267,7 @@ func Plans(plans PlansConfig) map[string]Plan {
 					},
 				},
 			},
-			provisioningRawSchema: AzureSchema([]string{"Standard_D4_v3"}),
+			provisioningRawSchema: AzureHASchema([]string{"Standard_D4_v3"}),
 		},
 		TrialPlanID: {
 			PlanDefinition: domain.ServicePlan{

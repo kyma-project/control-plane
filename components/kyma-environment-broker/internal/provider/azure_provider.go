@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	DefaultAzureRegion = "westeurope"
+	DefaultAzureRegion  = "westeurope"
+	MultizoneZonesCount = 2
 )
 
 var europeAzure = "westeurope"
@@ -153,7 +154,7 @@ func (p *AzureHAInput) Defaults() *gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "10.250.0.0/19",
-					Zones:    []string{"1", "2"},
+					Zones:    generateMultipleAzureZones(MultizoneZonesCount),
 				},
 			},
 		},

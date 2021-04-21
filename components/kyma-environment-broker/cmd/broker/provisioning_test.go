@@ -39,34 +39,52 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 	for tn, tc := range map[string]struct {
 		planID string
 
-		expectedProfile            gqlschema.KymaProfile
-		expectedProvider           string
-		expectedNumberOfNodes      int
-		expectedSharedSubscription bool
+		expectedProfile              gqlschema.KymaProfile
+		expectedProvider             string
+		expectedMinimalNumberOfNodes int
+		expectedMaximumNumberOfNodes int
+		expectedMachineType          string
+		expectedSharedSubscription   bool
 	}{
 		"Regular trial": {
 			planID: broker.TrialPlanID,
 
-			expectedNumberOfNodes:      1,
-			expectedProfile:            gqlschema.KymaProfileEvaluation,
-			expectedProvider:           "azure",
-			expectedSharedSubscription: true,
+			expectedMinimalNumberOfNodes: 1,
+			expectedMaximumNumberOfNodes: 1,
+			expectedMachineType:          "Standard_D4_v3",
+			expectedProfile:              gqlschema.KymaProfileEvaluation,
+			expectedProvider:             "azure",
+			expectedSharedSubscription:   true,
 		},
 		"Production Azure": {
 			planID: broker.AzurePlanID,
 
-			expectedNumberOfNodes:      2,
-			expectedProfile:            gqlschema.KymaProfileProduction,
-			expectedProvider:           "azure",
-			expectedSharedSubscription: false,
+			expectedMinimalNumberOfNodes: 2,
+			expectedMaximumNumberOfNodes: 10,
+			expectedMachineType:          "Standard_D8_v3",
+			expectedProfile:              gqlschema.KymaProfileProduction,
+			expectedProvider:             "azure",
+			expectedSharedSubscription:   false,
+		},
+		"HA Azure": {
+			planID: broker.AzureHAPlanID,
+
+			expectedMinimalNumberOfNodes: 4,
+			expectedMaximumNumberOfNodes: 10,
+			expectedMachineType:          "Standard_D4_v3",
+			expectedProfile:              gqlschema.KymaProfileProduction,
+			expectedProvider:             "azure",
+			expectedSharedSubscription:   false,
 		},
 		"Production AWS": {
 			planID: broker.AWSPlanID,
 
-			expectedNumberOfNodes:      2,
-			expectedProfile:            gqlschema.KymaProfileProduction,
-			expectedProvider:           "aws",
-			expectedSharedSubscription: false,
+			expectedMinimalNumberOfNodes: 2,
+			expectedMaximumNumberOfNodes: 10,
+			expectedMachineType:          "m5.2xlarge",
+			expectedProfile:              gqlschema.KymaProfileProduction,
+			expectedProvider:             "aws",
+			expectedSharedSubscription:   false,
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
@@ -91,7 +109,9 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 
 			suite.AssertKymaProfile(tc.expectedProfile)
 			suite.AssertProvider(tc.expectedProvider)
-			suite.AssertMinimalNumberOfNodes(tc.expectedNumberOfNodes)
+			suite.AssertMinimalNumberOfNodes(tc.expectedMinimalNumberOfNodes)
+			suite.AssertMaximumNumberOfNodes(tc.expectedMaximumNumberOfNodes)
+			suite.AssertMachineType(tc.expectedMachineType)
 			suite.AssertSharedSubscription(tc.expectedSharedSubscription)
 		})
 

@@ -375,9 +375,10 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 			Namespace: "kcp-system",
 			Labels: map[string]string{
 				fmt.Sprintf("overrides-version-%s", defaultKymaVersion): "true",
-				"overrides-plan-azure": "true",
-				"overrides-plan-trial": "true",
-				"overrides-plan-aws":   "true",
+				"overrides-plan-azure":    "true",
+				"overrides-plan-trial":    "true",
+				"overrides-plan-aws":      "true",
+				"overrides-plan-azure_ha": "true",
 			},
 		},
 		Data: map[string]string{
@@ -699,6 +700,18 @@ func (s *ProvisioningSuite) AssertMinimalNumberOfNodes(nodes int) {
 	input := s.fetchProvisionInput()
 
 	assert.Equal(s.t, nodes, input.ClusterConfig.GardenerConfig.AutoScalerMin)
+}
+
+func (s *ProvisioningSuite) AssertMaximumNumberOfNodes(nodes int) {
+	input := s.fetchProvisionInput()
+
+	assert.Equal(s.t, nodes, input.ClusterConfig.GardenerConfig.AutoScalerMax)
+}
+
+func (s *ProvisioningSuite) AssertMachineType(machineType string) {
+	input := s.fetchProvisionInput()
+
+	assert.Equal(s.t, machineType, input.ClusterConfig.GardenerConfig.MachineType)
 }
 
 func (s *ProvisioningSuite) AssertSharedSubscription(shared bool) {

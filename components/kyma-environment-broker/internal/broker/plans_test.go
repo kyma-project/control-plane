@@ -38,7 +38,7 @@ func TestSchemaGenerator(t *testing.T) {
 		},
 		{
 			name:         "AzureHA schema is correct",
-			generator:    AzureSchema, // TODO: adjust AzureSchema() function to pass autoScalerMin/autoScalerMax parameter for proper plan schema properties
+			generator:    AzureHASchema,
 			machineTypes: []string{"Standard_D4_v3"},
 			file:         "azure-ha-schema.json",
 		},
