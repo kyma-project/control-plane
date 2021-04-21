@@ -103,7 +103,7 @@ func TestUnsuspensionWithoutShootName(t *testing.T) {
 	suite := NewProvisioningSuite(t)
 
 	// when
-	// Create an instance, succeeded suspension operation in the past and a pending unsuspensionOperationID operation
+	// Create an instance, succeeded suspension operation in the past and a pending unsuspension operation
 	unsuspensionOperationID := suite.CreateUnsuspension(RuntimeOptions{})
 
 	// then

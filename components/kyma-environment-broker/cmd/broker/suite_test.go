@@ -568,8 +568,6 @@ func (s *ProvisioningSuite) CreateUnsuspension(options RuntimeOptions) string {
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
 	operation.State = orchestration.Pending
 	require.NoError(s.t, err)
-	operation.ShootName = shootName
-	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, "garden-dummy", strings.Trim("kyma.io", "."))
 
 	err = s.storage.Operations().InsertProvisioningOperation(operation)
 	require.NoError(s.t, err)
