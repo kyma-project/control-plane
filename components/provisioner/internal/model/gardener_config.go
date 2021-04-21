@@ -301,7 +301,7 @@ func NewAWSGardenerConfig(input *gqlschema.AWSProviderConfigInput) (*AWSGardener
 
 func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
 	return gqlschema.AWSProviderConfig{
-		Zone:         &c.input.Zone,
+		Zones:        c.input.Zones,
 		VpcCidr:      &c.input.VpcCidr,
 		PublicCidr:   &c.input.PublicCidr,
 		InternalCidr: &c.input.InternalCidr,
@@ -309,13 +309,13 @@ func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 }
 
 func (c AWSGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-	return updateShootConfig(gardenerConfig, shoot, []string{c.input.Zone})
+	return updateShootConfig(gardenerConfig, shoot, c.input.Zones)
 }
 
 func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 	shoot.Spec.CloudProfileName = "aws"
 
-	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, []string{c.input.Zone})}
+	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, c.input.Zones)}
 
 	awsInfra := NewAWSInfrastructure(gardenerConfig.WorkerCidr, c)
 	jsonData, err := json.Marshal(awsInfra)

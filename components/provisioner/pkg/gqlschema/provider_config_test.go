@@ -16,7 +16,7 @@ func TestGardenerConfig_UnmarshalJSON(t *testing.T) {
 	azureProviderCfg := &AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/25"), Zones: []string{"az-zone-1", "az-zone-2"}}
 	gcpProviderCfg := &GCPProviderConfig{Zones: []string{"gcp-zone-1", "gcp-zone-2"}}
 	awsProviderCfg := &AWSProviderConfig{
-		Zone:         util.StringPtr("aws zone"),
+		Zones:        []string{"aws zone"},
 		VpcCidr:      util.StringPtr("10.10.10.11/25"),
 		PublicCidr:   util.StringPtr("10.10.10.12/25"),
 		InternalCidr: util.StringPtr("10.10.10.13/25"),

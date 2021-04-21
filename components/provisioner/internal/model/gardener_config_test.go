@@ -66,14 +66,14 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 			expectedConfig: &AWSGardenerConfig{
 				ProviderSpecificConfig: ProviderSpecificConfig(awsConfigJSON),
 				input: &gqlschema.AWSProviderConfigInput{
-					Zone:         "zone",
+					Zones:        []string{"zone"},
 					VpcCidr:      "10.10.11.11/255",
 					PublicCidr:   "10.10.11.12/255",
 					InternalCidr: "10.10.11.13/255",
 				},
 			},
 			expectedProviderSpecificConfig: gqlschema.AWSProviderConfig{
-				Zone:         util.StringPtr("zone"),
+				Zones:        []string{"zone"},
 				VpcCidr:      util.StringPtr("10.10.11.11/255"),
 				PublicCidr:   util.StringPtr("10.10.11.12/255"),
 				InternalCidr: util.StringPtr("10.10.11.13/255"),
@@ -474,7 +474,7 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 
 func fixAWSGardenerInput() *gqlschema.AWSProviderConfigInput {
 	return &gqlschema.AWSProviderConfigInput{
-		Zone:         "zone",
+		Zones:        []string{"zone"},
 		VpcCidr:      "10.10.11.11/255",
 		PublicCidr:   "10.10.11.12/255",
 		InternalCidr: "10.10.11.13/255",
