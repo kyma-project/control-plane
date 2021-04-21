@@ -563,8 +563,6 @@ func (s *ProvisioningSuite) CreateUnsuspension(options RuntimeOptions) string {
 		},
 	}
 
-	shootName := gardener.CreateShootName()
-
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
 	operation.State = orchestration.Pending
 	require.NoError(s.t, err)
