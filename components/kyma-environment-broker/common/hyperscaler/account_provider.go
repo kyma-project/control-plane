@@ -40,7 +40,7 @@ func HyperscalerTypeForPlanID(planID string) (Type, error) {
 	switch planID {
 	case broker.GCPPlanID:
 		return GCP, nil
-	case broker.AzurePlanID, broker.AzureLitePlanID:
+	case broker.AzurePlanID, broker.AzureLitePlanID, broker.AzureHAPlanID:
 		return Azure, nil
 	case broker.OpenStackPlanID:
 		return Openstack, nil
