@@ -89,7 +89,7 @@ func (r *RuntimeInput) AppendOverrides(component string, overrides []*gqlschema.
 	return r
 }
 
-// AppendAppendGlobalOverrides appends overrides, the existing overrides are preserved.
+// AppendGlobalOverrides appends overrides, the existing overrides are preserved.
 func (r *RuntimeInput) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	r.mutex.Lock("AppendGlobalOverrides")
 	defer r.mutex.Unlock("AppendGlobalOverrides")
@@ -136,6 +136,10 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 			execute: r.applyGlobalOverridesForProvisionRuntime,
 		},
 		{
+			name:    "applying global configuration",
+			execute: r.applyGlobalConfigurationForProvisionRuntime,
+		},
+		{
 			name:    "removing forbidden chars and adding random string to runtime name",
 			execute: r.adjustRuntimeName,
 		},
@@ -172,6 +176,10 @@ func (r *RuntimeInput) CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInpu
 		{
 			name:    "applying global overrides",
 			execute: r.applyGlobalOverridesForUpgradeRuntime,
+		},
+		{
+			name:    "applying global configuration",
+			execute: r.applyGlobalConfigurationForUpgradeRuntime,
 		},
 		{
 			name:    "set number of nodes from configuration",
@@ -327,6 +335,18 @@ func (r *RuntimeInput) applyGlobalOverridesForProvisionRuntime() error {
 
 func (r *RuntimeInput) applyGlobalOverridesForUpgradeRuntime() error {
 	r.upgradeRuntimeInput.KymaConfig.Configuration = r.globalOverrides
+	return nil
+}
+
+func (r *RuntimeInput) applyGlobalConfigurationForProvisionRuntime() error {
+	strategy := gqlschema.ConflictStrategyReplace
+	r.provisionRuntimeInput.KymaConfig.ConflictStrategy = &strategy
+	return nil
+}
+
+func (r *RuntimeInput) applyGlobalConfigurationForUpgradeRuntime() error {
+	strategy := gqlschema.ConflictStrategyReplace
+	r.upgradeRuntimeInput.KymaConfig.ConflictStrategy = &strategy
 	return nil
 }
 

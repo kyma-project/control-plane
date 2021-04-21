@@ -3,13 +3,13 @@ package provisioning
 import (
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	pkgErrors "github.com/pkg/errors"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/version"
 )
 
 type NatsActivationStep struct {
@@ -32,7 +32,7 @@ func (s *NatsActivationStep) Name() string {
 func (s *NatsActivationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	// run the step only if Kyma<1.21  && (IsAzure==false || IsTrial==true)
 	kymaVersion := operation.RuntimeVersion.Version
-	atLeast_1_21, err := cls.IsKymaVersionAtLeast_1_21(kymaVersion)
+	atLeast_1_21, err := version.IsKymaVersionAtLeast_1_21(kymaVersion)
 	if err != nil {
 		log.Error(pkgErrors.Wrapf(err, "while checking Kyma version"))
 		return operation, 0, nil

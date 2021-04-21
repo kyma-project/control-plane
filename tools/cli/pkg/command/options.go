@@ -37,6 +37,8 @@ const (
 	azureLitePlan = "azure_lite"
 	trialPlan     = "trial"
 	gcpPlan       = "gcp"
+	openstackPlan = "openstack"
+	awsPlan       = "aws"
 )
 
 // GlobalOptionsKey is the type for holding the configuration key for each global parameter
@@ -171,7 +173,7 @@ A target specifier is a comma-separated list of the following selectors:
   subaccount={REGEXP} : Regex pattern to match against the Runtime's subaccount field, e.g. "0d20e315-d0b4-48a2-9512-49bc8eb03cd1"
   region={REGEXP}     : Regex pattern to match against the Runtime's provider region field, e.g. "europe|eu-"
   runtime-id={ID}     : Specific Runtime by Runtime ID
-  plan={NAME}         : Name of the Runtime's service plan. The possible values are: azure, azure_lite, trial, gcp
+  plan={NAME}         : Name of the Runtime's service plan. The possible values are: azure, azure_lite, aws, trial, gcp, openstack
   shoot={NAME}        : Specific Runtime by Shoot cluster name`)
 	cmd.Flags().StringArrayVarP(targetExcludeInputs, "target-exclude", "e", nil,
 		`List of Runtime target specifiers to exclude. You can specify this option multiple times.
@@ -238,7 +240,7 @@ func parseRuntimeTarget(targetInput string, targets *[]orchestration.RuntimeTarg
 			target.RuntimeID = selectorValue
 		case planTarget:
 			switch selectorValue {
-			case azurePlan, azureLitePlan, trialPlan, gcpPlan:
+			case azurePlan, azureLitePlan, trialPlan, gcpPlan, openstackPlan, awsPlan:
 				target.PlanName = selectorValue
 			default:
 				return fmt.Errorf("invalid value for selector: %s %s=%s", flagName, selectorKey, selectorValue)

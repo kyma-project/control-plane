@@ -104,10 +104,7 @@ Trial plan allows you to install Kyma either on Azure or GCP. The Trial plan ass
 - It's possible to provision only one Kyma Runtime per global account.
 
 To reduce the costs, the Trial plan skips some of the [provisioning steps](./03-03-runtime-operations.md#provisioning).
-These are the steps that are skipped during the Trial plan provisioning:
-- `Create_LMS_Tenant`
 - `Provision_Azure_Event_Hubs`
-- `Request_LMS_Certificates`
 - `AVS External Evaluation` (part of the post actions during the `Initialisation` step)
 
 ### Provisioning parameters

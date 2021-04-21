@@ -20,17 +20,14 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cls"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
 	kebOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
-	clsMock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_cluster"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -64,12 +61,16 @@ const (
 	globalAccountID        = "dummy-ga-id"
 	dashboardURL           = "http://console.garden-dummy.kyma.io"
 	brokerID               = "fake-broker-id"
-	clsOfferingID          = "cls-fake-id"
 	emsOfferingID          = "ems-fake-id"
 	operationID            = "provisioning-op-id"
 	instanceID             = "instance-id"
 	smRegion               = "eu"
 	dbSecretKey            = "1234567890123456"
+
+	subscriptionNameRegular = "regular"
+	subscriptionNameShared  = "shared"
+
+	pollingInterval = 3 * time.Millisecond
 )
 
 type OrchestrationSuite struct {
@@ -90,7 +91,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	var cfg Config
 	cfg.Ems.Disabled = true
 	cfg.Ems.SkipDeprovisionAzureEventingAtUpgrade = true
-	cfg.Cls.Disabled = true
+	cfg.Connectivity.Disabled = true
 	cfg.AuditLog = auditlog.Config{
 		URL:           "https://host1:8080/aaa/v2/",
 		User:          "fooUser",
@@ -101,6 +102,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 
 	//auditLog create file here.
 	inMemoryFs, err := createInMemFS()
+	require.NoError(t, err)
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
@@ -149,7 +151,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, hyperscaler.NewAccountProvider(nil, nil, nil), nil, nil, inMemoryFs, logs)
+		&cfg, hyperscaler.NewAccountProvider(nil, nil, nil), nil, inMemoryFs, logs)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
@@ -177,6 +179,7 @@ type RuntimeOptions struct {
 	SubAccountID    string
 	PlatformRegion  string
 	Region          string
+	PlanID          string
 }
 
 func (o *RuntimeOptions) ProvideRegion() *string {
@@ -212,10 +215,18 @@ func (o *RuntimeOptions) ProvidePlatformRegion() string {
 	}
 }
 
+func (o *RuntimeOptions) ProvidePlanID() string {
+	if o.PlanID == "" {
+		return broker.AzurePlanID
+	} else {
+		return o.PlanID
+	}
+}
+
 func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) string {
-	planID := broker.AzurePlanID
-	planName := broker.AzurePlanName
 	runtimeID := uuid.New().String()
+	planID := options.ProvidePlanID()
+	planName := broker.AzurePlanName
 	globalAccountID := options.ProvideGlobalAccountID()
 	subAccountID := options.ProvideSubAccountID()
 	instanceID := uuid.New().String()
@@ -365,6 +376,8 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 			Labels: map[string]string{
 				fmt.Sprintf("overrides-version-%s", defaultKymaVersion): "true",
 				"overrides-plan-azure": "true",
+				"overrides-plan-trial": "true",
+				"overrides-plan-aws":   "true",
 			},
 		},
 		Data: map[string]string{
@@ -396,6 +409,10 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	db := storage.NewMemoryStorage()
 
 	cfg := fixConfig()
+
+	//auditLog create file here.
+	inMemoryFs, err := createInMemFS()
+	require.NoError(t, err)
 
 	provisionerClient := provisioner.NewFakeClient()
 
@@ -446,9 +463,6 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
-	lmsClient := lms.NewFakeClient(1 * time.Second)
-	lmsTenantManager := lms.NewTenantManager(db.LMSTenants(), lmsClient, logs)
-
 	edpClient := edp.NewFakeClient()
 
 	accountProvider := fixAccountProvider()
@@ -457,18 +471,15 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	directorClient := director.NewFakeClient(dashboardURL)
 
-	clsConfig, clsClient, clsProvisioner := fixClsComponents()
-
 	eventBroker := event.NewPubSub(logs)
-	mm := afero.NewMemMapFs()
 
 	// switch to StagedManager when the feature is enabled
 	provisionStagedManager := provisioning.NewStagedManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
 
 	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
-	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, smcf, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager, edpClient, accountProvider, clsConfig, clsClient, clsProvisioner, mm, logs)
+	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, smcf, bundleBuilder, iasTypeSetter, edpClient, accountProvider, inMemoryFs, logs)
 
-	provisioningQueue.SpeedUp(1000)
+	provisioningQueue.SpeedUp(10000)
 
 	return &ProvisioningSuite{
 		provisionerClient:   provisionerClient,
@@ -484,7 +495,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 	provisioningParameters := internal.ProvisioningParameters{
-		PlanID: broker.AzurePlanID,
+		PlanID: options.ProvidePlanID(),
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,
 			SubAccountID:    options.ProvideSubAccountID(),
@@ -532,7 +543,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 
 func (s *ProvisioningSuite) WaitForProvisioningState(operationID string, state domain.LastOperationState) {
 	var op *internal.ProvisioningOperation
-	err := wait.PollImmediate(100*time.Millisecond, 2*time.Second, func() (done bool, err error) {
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
 		return op.State == state, nil
 	})
@@ -541,7 +552,7 @@ func (s *ProvisioningSuite) WaitForProvisioningState(operationID string, state d
 
 func (s *ProvisioningSuite) FinishProvisioningOperationByProvisioner(operationID string) {
 	var op *internal.ProvisioningOperation
-	err := wait.PollImmediate(100*time.Millisecond, 2*time.Second, func() (done bool, err error) {
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
 		if op.RuntimeID != "" {
 			return true, nil
@@ -556,7 +567,7 @@ func (s *ProvisioningSuite) FinishProvisioningOperationByProvisioner(operationID
 func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID string) {
 	// wait until ProvisioningOperation reaches CreateRuntime step
 	var provisioningOp *internal.ProvisioningOperation
-	err := wait.Poll(100*time.Millisecond, 2*time.Second, func() (bool, error) {
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		op, err := s.storage.Operations().GetProvisioningOperationByID(operationID)
 		assert.NoError(s.t, err)
 		if op.ProvisionerOperationID != "" {
@@ -568,7 +579,7 @@ func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID str
 	assert.NoError(s.t, err)
 
 	var status gqlschema.OperationStatus
-	err = wait.Poll(100*time.Millisecond, 2*time.Second, func() (bool, error) {
+	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status = s.provisionerClient.FindOperationByRuntimeIDAndType(provisioningOp.RuntimeID, gqlschema.OperationTypeProvision)
 		if status.ID != nil {
 			return true, nil
@@ -588,7 +599,7 @@ func (s *ProvisioningSuite) AssertAllStepsFinished(operationID string) {
 }
 
 func (s *ProvisioningSuite) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
-	err := wait.Poll(100*time.Millisecond, 2*time.Second, func() (bool, error) {
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
 			s.provisionerClient.FinishProvisionerOperation(*status.ID)
@@ -608,15 +619,55 @@ func (s *ProvisioningSuite) AssertDirectorGrafanaTag(operationID string) {
 }
 
 func (s *ProvisioningSuite) AssertProvisioningRequest() {
-	input := s.provisionerClient.GetProvisionRuntimeInput(0)
+	input := s.fetchProvisionInput()
 
 	labels := *input.RuntimeInput.Labels
 	assert.Equal(s.t, instanceID, labels["broker_instance_id"])
 	assert.Contains(s.t, labels, "global_subaccount_id")
 }
 
+func (s *ProvisioningSuite) AssertKymaProfile(expectedProfile gqlschema.KymaProfile) {
+	input := s.fetchProvisionInput()
+
+	assert.Equal(s.t, expectedProfile, *input.KymaConfig.Profile)
+}
+
+func (s *ProvisioningSuite) AssertProvider(provider string) {
+	input := s.fetchProvisionInput()
+
+	assert.Equal(s.t, provider, input.ClusterConfig.GardenerConfig.Provider)
+}
+
+func (s *ProvisioningSuite) fetchProvisionInput() gqlschema.ProvisionRuntimeInput {
+	input := s.provisionerClient.GetProvisionRuntimeInput(0)
+	return input
+}
+
+func (s *ProvisioningSuite) AssertMinimalNumberOfNodes(nodes int) {
+	input := s.fetchProvisionInput()
+
+	assert.Equal(s.t, nodes, input.ClusterConfig.GardenerConfig.AutoScalerMin)
+}
+
+func (s *ProvisioningSuite) AssertSharedSubscription(shared bool) {
+	input := s.fetchProvisionInput()
+	secretName := input.ClusterConfig.GardenerConfig.TargetSecret
+	if shared {
+		assert.Equal(s.t, secretName, subscriptionNameShared)
+	} else {
+		assert.Equal(s.t, secretName, subscriptionNameRegular)
+	}
+}
+
 func fixConfig() *Config {
 	return &Config{
+		AuditLog: auditlog.Config{
+			URL:           "https://host1:8080/aaa/v2/",
+			User:          "fooUser",
+			Password:      "barPass",
+			Tenant:        "fooTen",
+			EnableSeqHttp: true,
+		},
 		DbInMemory:                         true,
 		DisableProcessOperationsInProgress: false,
 		DevelopmentMode:                    true,
@@ -632,7 +683,6 @@ func fixConfig() *Config {
 		KymaVersion: "1.21",
 		Broker:      broker.Config{},
 		Avs:         avs.Config{},
-		LMS:         lms.Config{},
 		IAS: ias.Config{
 			IdentityProvider: ias.FakeIdentityProviderName,
 		},
@@ -641,6 +691,7 @@ func fixConfig() *Config {
 
 func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 	accountProvider := hyperscalerautomock.AccountProvider{}
+
 	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
 		HyperscalerType: hyperscaler.Azure,
 		CredentialData: map[string][]byte{
@@ -649,6 +700,48 @@ func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 			"clientSecret":   []byte("clientSecret"),
 			"tenantID":       []byte("tenantID"),
 		},
+		Name: subscriptionNameRegular,
+	}, nil)
+
+	accountProvider.On("GardenerCredentials", hyperscaler.GCP, mock.Anything).Return(hyperscaler.Credentials{
+		HyperscalerType: hyperscaler.GCP,
+		CredentialData: map[string][]byte{
+			"subscriptionID": []byte("subscriptionID"),
+			"clientID":       []byte("clientID"),
+			"clientSecret":   []byte("clientSecret"),
+			"tenantID":       []byte("tenantID"),
+		},
+		Name: subscriptionNameRegular,
+	}, nil)
+	accountProvider.On("GardenerCredentials", hyperscaler.Openstack, mock.Anything).Return(hyperscaler.Credentials{
+		HyperscalerType: hyperscaler.Openstack,
+		CredentialData: map[string][]byte{
+			"subscriptionID": []byte("subscriptionID"),
+			"clientID":       []byte("clientID"),
+			"clientSecret":   []byte("clientSecret"),
+			"tenantID":       []byte("tenantID"),
+		},
+		Name: subscriptionNameRegular,
+	}, nil)
+	accountProvider.On("GardenerCredentials", hyperscaler.AWS, mock.Anything).Return(hyperscaler.Credentials{
+		HyperscalerType: hyperscaler.AWS,
+		CredentialData: map[string][]byte{
+			"subscriptionID": []byte("subscriptionID"),
+			"clientID":       []byte("clientID"),
+			"clientSecret":   []byte("clientSecret"),
+			"tenantID":       []byte("tenantID"),
+		},
+		Name: subscriptionNameRegular,
+	}, nil)
+	accountProvider.On("GardenerSharedCredentials", hyperscaler.Azure).Return(hyperscaler.Credentials{
+		HyperscalerType: hyperscaler.Azure,
+		CredentialData: map[string][]byte{
+			"subscriptionID": []byte("subscriptionID"),
+			"clientID":       []byte("clientID"),
+			"clientSecret":   []byte("clientSecret"),
+			"tenantID":       []byte("tenantID"),
+		},
+		Name: subscriptionNameShared,
 	}, nil)
 	return &accountProvider
 }
@@ -661,15 +754,15 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 		BrokerID:  brokerID,
 	},
 		{
-			ID:        clsOfferingID,
-			Name:      provisioning.ClsOfferingName,
-			CatalogID: servicemanager.FakeClsServiceID,
-			BrokerID:  brokerID,
-		},
-		{
 			ID:        emsOfferingID,
 			Name:      provisioning.EmsOfferingName,
 			CatalogID: servicemanager.FakeEmsServiceID,
+			BrokerID:  brokerID,
+		},
+		{
+			ID:        "connectivity-oferring-id",
+			Name:      provisioning.ConnectivityOfferingName,
+			CatalogID: "connectivity-service-id",
 			BrokerID:  brokerID,
 		},
 	}, []types.ServicePlan{{
@@ -678,68 +771,19 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 		CatalogID: "xsuaa",
 	},
 		{
-
-			ID:        "cls-plan-id",
-			Name:      provisioning.ClsPlanName,
-			CatalogID: provisioning.ClsPlanName,
-		},
-		{
 			ID:        "ems-plan-id",
 			Name:      provisioning.EmsPlanName,
 			CatalogID: provisioning.EmsPlanName,
+		},
+		{
+			ID:        "connectivity-plan-id",
+			Name:      provisioning.ConnectivityPlanName,
+			CatalogID: provisioning.ConnectivityPlanName,
 		},
 	})
 	smcf.SynchronousProvisioning()
 
 	return smcf
-}
-
-func fixClsComponents() (*cls.Config, provisioning.ClsBindingProvider, provisioning.ClsProvisioner) {
-	clsConfig := &cls.Config{
-		RetentionPeriod:    7,
-		MaxDataInstances:   2,
-		MaxIngestInstances: 2,
-		SAML: &cls.SAMLConfig{
-			AdminGroup:  "runtimeAdmin",
-			ExchangeKey: "base64-jibber-jabber",
-			RolesKey:    "groups",
-			Idp: &cls.SAMLIdpConfig{
-				EntityID:    "https://sso.example.org/idp",
-				MetadataURL: "https://sso.example.org/idp/saml2/metadata",
-			},
-			Sp: &cls.SAMLSpConfig{
-				EntityID:            "cls-dev",
-				SignaturePrivateKey: "base64-jibber-jabber",
-			},
-		},
-		ServiceManager: &cls.ServiceManagerConfig{
-			Credentials: []*cls.ServiceManagerCredentials{
-				{
-					Region:   smRegion,
-					URL:      "https://foo.bar",
-					Username: "fooUser",
-					Password: "barPassword",
-				},
-			},
-		},
-	}
-	clsClient := cls.NewClient(clsConfig)
-	provisionerMock := &clsMock.ClsProvisioner{}
-	provisionerMock.On("Provision", mock.Anything, &cls.ProvisionRequest{
-		GlobalAccountID: globalAccountID,
-		Region:          smRegion,
-		SKRInstanceID:   instanceID,
-		Instance: servicemanager.InstanceKey{
-			BrokerID:  brokerID,
-			ServiceID: servicemanager.FakeClsServiceID,
-			PlanID:    provisioning.ClsPlanName,
-		},
-	}, mock.Anything).Return(&cls.ProvisionResult{
-		InstanceID: "instance_id",
-		Region:     smRegion,
-	}, nil)
-
-	return clsConfig, clsClient, provisionerMock
 }
 
 func createInMemFS() (afero.Fs, error) {

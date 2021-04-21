@@ -11,7 +11,6 @@ import (
 
 const (
 	FakeEmsServiceID = "fake-ems-svc-id"
-	FakeClsServiceID = "fake-cls-svc-id"
 )
 
 type passthroughServiceManagerClientFactory struct {
@@ -126,7 +125,7 @@ func (f *fakeServiceManagerClient) Bind(instanceKey InstanceKey, bindingID strin
 	f.bindings[bindingID] = instanceKey
 
 	return &BindingResponse{
-		Binding: f.resolveBinding(instanceKey),
+		Binding: f.fixEmsBinding(),
 	}, nil
 }
 
@@ -182,28 +181,16 @@ func (f *fakeServiceManagerClientFactory) AssertDeprovisionCalled(t *testing.T, 
 	assert.Equal(t, deprovision, key)
 }
 
-func (f *fakeServiceManagerClient) resolveBinding(instanceKey InstanceKey) Binding {
-	binding := Binding{}
-	switch instanceKey.ServiceID {
-	case FakeEmsServiceID:
-		binding = f.fixEmsBinding()
-	case FakeClsServiceID:
-		binding = f.fixClsBinding()
-	}
-	return binding
-}
-
-func (f *fakeServiceManagerClient) fixClsBinding() Binding {
-	return Binding{Credentials: map[string]interface{}{
-		"Fluentd-username": "fluentd-username",
-		"Fluentd-password": "fluentd-password",
-		"Fluentd-endpoint": "fluentd-endpoint",
-		"Kibana-endpoint":  "kibana-endpoint"},
-	}
-}
-
 func (f *fakeServiceManagerClient) fixEmsBinding() Binding {
 	return Binding{Credentials: map[string]interface{}{
+		"clientid":                             "connectivity-oa2-clientid",            // For connectivity
+		"clientsecret":                         "connectivity-oa2-clientsecret",        // For connectivity
+		"subaccount_id":                        "subaccount_id",                        // For connectivity
+		"subaccount_subdomain":                 "subaccount_subdomain",                 // For connectivity
+		"token_service_domain":                 "token_service_domain",                 // For connectivity
+		"token_service_url":                    "token_service_url",                    // For connectivity
+		"token_service_url_pattern":            "toke_service_url_pattern",             // For connectivity
+		"token_service_url_pattern_tenant_key": "token_service_url_pattern_tenant_key", // For connectivity
 		"management": []interface{}{
 			map[string]interface{}{
 				"oa2": map[string]interface{}{
@@ -214,6 +201,14 @@ func (f *fakeServiceManagerClient) fixEmsBinding() Binding {
 				},
 				"uri": "https://management-uri",
 			},
+		},
+		// For connectivity
+		"connectivity_service": map[string]interface{}{
+			"CAs_path":         "...",
+			"CAs_signing_path": "...",
+			"api_path":         "...",
+			"tunnel_path":      "...",
+			"url":              "...",
 		},
 		"messaging": []interface{}{
 			map[string]interface{}{

@@ -428,14 +428,6 @@ func FixTables() map[string]string {
 			created_at TIMESTAMPTZ NOT NULL,
 			updated_at TIMESTAMPTZ NOT NULL
 			)`, postsql.OrchestrationTableName),
-		postsql.LMSTenantTableName: fmt.Sprintf(
-			`CREATE TABLE IF NOT EXISTS %s (
-			id varchar(255) PRIMARY KEY,
-			name varchar(255) NOT NULL,
-			region varchar(12) NOT NULL,
-			created_at TIMESTAMPTZ NOT NULL,
-            unique (name, region)
-			)`, postsql.LMSTenantTableName),
 		postsql.RuntimeStateTableName: fmt.Sprintf(
 			`CREATE TABLE IF NOT EXISTS %s (
 			id varchar(255) PRIMARY KEY,
@@ -447,31 +439,14 @@ func FixTables() map[string]string {
 			kyma_version text,
 			k8s_version text
 			)`, postsql.RuntimeStateTableName),
-		postsql.CLSInstanceTableName: fmt.Sprintf(
-			`CREATE TABLE IF NOT EXISTS %s (
-			id varchar(255) PRIMARY KEY,
-			version integer NOT NULL,
-			global_account_id varchar(255) NOT NULL,
-			region varchar(12) NOT NULL,
-			created_at TIMESTAMPTZ NOT NULL,
-			removed_by_skr_instance_id varchar(255),
-			unique (global_account_id, removed_by_skr_instance_id));
-
-			CREATE TABLE IF NOT EXISTS %s (
-			id SERIAL,
-			cls_instance_id varchar(255) NOT NULL,
-			skr_instance_id varchar(255) NOT NULL,
-			FOREIGN KEY(cls_instance_id) REFERENCES %s(id) ON DELETE CASCADE);
-			`, postsql.CLSInstanceTableName, postsql.CLSInstanceReferenceTableName, postsql.CLSInstanceTableName),
 	}
 }
 
 func clearDBQuery() string {
-	return fmt.Sprintf("TRUNCATE TABLE %s, %s, %s, %s, %s RESTART IDENTITY CASCADE",
+	return fmt.Sprintf("TRUNCATE TABLE %s, %s, %s, %s RESTART IDENTITY CASCADE",
 		postsql.InstancesTableName,
 		postsql.OperationTableName,
 		postsql.OrchestrationTableName,
-		postsql.LMSTenantTableName,
 		postsql.RuntimeStateTableName,
 	)
 }

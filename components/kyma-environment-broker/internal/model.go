@@ -35,19 +35,6 @@ const (
 	GitKymaRepo    = "kyma"
 )
 
-type LMSTenant struct {
-	ID        string
-	Name      string
-	Region    string
-	CreatedAt time.Time
-}
-
-type LMS struct {
-	TenantID    string    `json:"tenant_id"`
-	Failed      bool      `json:"failed"`
-	RequestedAt time.Time `json:"requested_at"`
-}
-
 type AvsEvaluationStatus struct {
 	Current  string `json:"current_value"`
 	Original string `json:"original_value"`
@@ -202,18 +189,16 @@ type SMClientFactory interface {
 }
 
 type InstanceDetails struct {
-	Lms LMS `json:"lms"`
-
 	Avs      AvsLifecycleData `json:"avs"`
 	EventHub EventHub         `json:"eh"`
 
-	SubAccountID string    `json:"sub_account_id"`
-	RuntimeID    string    `json:"runtime_id"`
-	ShootName    string    `json:"shoot_name"`
-	ShootDomain  string    `json:"shoot_domain"`
-	XSUAA        XSUAAData `json:"xsuaa"`
-	Ems          EmsData   `json:"ems"`
-	Cls          ClsData   `json:"cls"`
+	SubAccountID string           `json:"sub_account_id"`
+	RuntimeID    string           `json:"runtime_id"`
+	ShootName    string           `json:"shoot_name"`
+	ShootDomain  string           `json:"shoot_domain"`
+	XSUAA        XSUAAData        `json:"xsuaa"`
+	Ems          EmsData          `json:"ems"`
+	Connectivity ConnectivityData `json:"connectivity"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -252,10 +237,9 @@ type EmsData struct {
 	Overrides string `json:"overrides"`
 }
 
-type ClsData struct {
+type ConnectivityData struct {
 	Instance ServiceManagerInstanceInfo `json:"instance"`
 
-	Region    string `json:"region"`
 	BindingID string `json:"bindingId"`
 	Overrides string `json:"overrides"`
 }
@@ -480,4 +464,21 @@ func serviceManagerRequestCreds(parameters ProvisioningParameters) *servicemanag
 		}
 	}
 	return creds
+}
+
+func (i *ServiceManagerInstanceInfo) ToProvisioningInput() *servicemanager.ProvisioningInput {
+	var input servicemanager.ProvisioningInput
+
+	input.ID = i.InstanceID
+	input.ServiceID = i.ServiceID
+	input.PlanID = i.PlanID
+	input.SpaceGUID = uuid.New().String()
+	input.OrganizationGUID = uuid.New().String()
+
+	input.Context = map[string]interface{}{
+		"platform": "kubernetes",
+	}
+	input.Parameters = map[string]interface{}{}
+
+	return &input
 }
