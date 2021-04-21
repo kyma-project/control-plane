@@ -47,4 +47,6 @@ replace (
 	golang.org/x/text => golang.org/x/text v0.3.3
 	k8s.io/apiserver => k8s.io/apiserver v0.20.5
 	k8s.io/client-go => k8s.io/client-go v0.20.5
+
+	github.com/kyma-project/control-plane => github.com/rafalpotempa/control-plane v0.0.0-20210421064234-ba5c66ac602e
 )

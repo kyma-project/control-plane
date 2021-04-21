@@ -130,6 +130,11 @@ func (ws writeSession) insertKymaComponentConfig(kymaConfigModule model.KymaComp
 		return dberrors.Internal("Failed to marshal %s component configuration: %s", kymaConfigModule.Component, err.Error())
 	}
 
+	jsonPrerequisites, err := json.Marshal(kymaConfigModule.Configuration)
+	if err != nil {
+		return dberrors.Internal("Failed to marshal %s component prerequisites: %s", kymaConfigModule.Prerequisites, err.Error())
+	}
+
 	_, err = ws.insertInto("kyma_component_config").
 		Pair("id", kymaConfigModule.ID).
 		Pair("component", kymaConfigModule.Component).
@@ -137,6 +142,7 @@ func (ws writeSession) insertKymaComponentConfig(kymaConfigModule model.KymaComp
 		Pair("source_url", kymaConfigModule.SourceURL).
 		Pair("kyma_config_id", kymaConfigModule.KymaConfigID).
 		Pair("configuration", jsonConfig).
+		Pair("prerequisites", jsonPrerequisites).
 		Pair("component_order", &kymaConfigModule.ComponentOrder).
 		Exec()
 
