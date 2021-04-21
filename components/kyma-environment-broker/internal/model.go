@@ -291,6 +291,7 @@ type DeprovisioningOperation struct {
 	Operation
 
 	SMClientFactory SMClientFactory `json:"-"`
+	EdpRemoved      bool            `json:"edp_removed"`
 
 	// Temporary indicates that this deprovisioning operation must not remove the instance
 	Temporary bool `json:"temporary"`
