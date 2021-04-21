@@ -121,7 +121,7 @@ func (i *Instance) GetInstanceDetails() (InstanceDetails, error) {
 		logrus.Infof("extracting shoot name/domain from dashboard_url %s for instance %s", i.DashboardURL, i.InstanceID)
 		shoot, domain, e := i.extractShootNameAndDomain()
 		if e != nil {
-			logrus.Errorf("unable to extract shoot name: %s (instance %s)", e.Error())
+			logrus.Errorf("unable to extract shoot name: %s (instance %s)", e.Error(), i.InstanceID)
 			return result, e
 		}
 		result.ShootName = shoot
