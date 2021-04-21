@@ -541,6 +541,61 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 	return operation.ID
 }
 
+func (s *ProvisioningSuite) CreateUnsuspension(options RuntimeOptions) string {
+	provisioningParameters := internal.ProvisioningParameters{
+		PlanID: options.ProvidePlanID(),
+		ErsContext: internal.ERSContext{
+			GlobalAccountID: globalAccountID,
+			SubAccountID:    options.ProvideSubAccountID(),
+			ServiceManager: &internal.ServiceManagerEntryDTO{
+				URL: "sm_url",
+				Credentials: internal.ServiceManagerCredentials{
+					BasicAuth: internal.ServiceManagerBasicAuth{
+						Username: "sm_username",
+						Password: "sm_password",
+					},
+				},
+			},
+		},
+		PlatformRegion: options.ProvidePlatformRegion(),
+		Parameters: internal.ProvisioningParametersDTO{
+			Region: options.ProvideRegion(),
+		},
+	}
+
+	shootName := gardener.CreateShootName()
+
+	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
+	operation.State = orchestration.Pending
+	require.NoError(s.t, err)
+	operation.ShootName = shootName
+	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, "garden-dummy", strings.Trim("kyma.io", "."))
+
+	err = s.storage.Operations().InsertProvisioningOperation(operation)
+	require.NoError(s.t, err)
+
+	instance := &internal.Instance{
+		InstanceID:      instanceID,
+		GlobalAccountID: globalAccountID,
+		SubAccountID:    "dummy-sa",
+		ServiceID:       provisioningParameters.ServiceID,
+		ServiceName:     broker.KymaServiceName,
+		ServicePlanID:   provisioningParameters.PlanID,
+		ServicePlanName: broker.AzurePlanName,
+		DashboardURL:    dashboardURL,
+		Parameters:      operation.ProvisioningParameters,
+	}
+	err = s.storage.Instances().Insert(*instance)
+
+	suspensionOp := internal.NewSuspensionOperationWithID("susp-id", instance)
+	suspensionOp.CreatedAt = time.Now().AddDate(0, 0, -10)
+	suspensionOp.State = domain.Succeeded
+	s.storage.Operations().InsertDeprovisioningOperation(suspensionOp)
+
+	s.provisioningQueue.Add(operation.ID)
+	return operation.ID
+}
+
 func (s *ProvisioningSuite) WaitForProvisioningState(operationID string, state domain.LastOperationState) {
 	var op *internal.ProvisioningOperation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
@@ -624,6 +679,7 @@ func (s *ProvisioningSuite) AssertProvisioningRequest() {
 	labels := *input.RuntimeInput.Labels
 	assert.Equal(s.t, instanceID, labels["broker_instance_id"])
 	assert.Contains(s.t, labels, "global_subaccount_id")
+	assert.NotEmpty(s.t, input.ClusterConfig.GardenerConfig.Name)
 }
 
 func (s *ProvisioningSuite) AssertKymaProfile(expectedProfile gqlschema.KymaProfile) {
