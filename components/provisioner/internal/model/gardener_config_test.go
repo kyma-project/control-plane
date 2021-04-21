@@ -25,7 +25,7 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 	gcpConfigJSON := `{"zones":["fix-gcp-zone-1", "fix-gcp-zone-2"]}`
 	azureConfigJSON := `{"vnetCidr":"10.10.11.11/255", "zones":["fix-az-zone-1", "fix-az-zone-2"]}`
 	azureNoZonesConfigJSON := `{"vnetCidr":"10.10.11.11/255"}`
-	awsConfigJSON := `{"zone":"zone","vpcCidr":"10.10.11.11/255","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255"}`
+	awsConfigJSON := `{"zones":["zone"],"vpcCidr":"10.10.11.11/255","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255"}`
 
 	for _, testCase := range []struct {
 		description                    string
