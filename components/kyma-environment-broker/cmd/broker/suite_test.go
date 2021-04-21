@@ -395,6 +395,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-aws":      "true",
 				"overrides-plan-free":     "true",
 				"overrides-plan-azure_ha": "true",
+				"overrides-plan-aws_ha": "true",
 			},
 		},
 		Data: map[string]string{
