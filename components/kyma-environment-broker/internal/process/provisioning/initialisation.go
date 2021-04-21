@@ -128,7 +128,11 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 				return operation, time.Second, nil
 			}
 			log.Infof("Setting the newest InstanceDetails")
-			operation.InstanceDetails = inst.InstanceDetails
+			operation.InstanceDetails, err = inst.GetInstanceDetails()
+			if err != nil {
+				log.Errorf("Unable to provide Instance details: %s", err.Error())
+				return s.operationManager.OperationFailed(operation, "Unable to provide Instance details.", log)
+			}
 		}
 		log.Infof("Setting the operation to 'InProgress'")
 		operation.State = domain.InProgress
