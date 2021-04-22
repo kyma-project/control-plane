@@ -30,6 +30,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_cluster"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	kebRuntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeoverrides"
@@ -180,6 +181,7 @@ type RuntimeOptions struct {
 	PlatformRegion  string
 	Region          string
 	PlanID          string
+	ZonesCount      *int
 }
 
 func (o *RuntimeOptions) ProvideRegion() *string {
@@ -221,6 +223,10 @@ func (o *RuntimeOptions) ProvidePlanID() string {
 	} else {
 		return o.PlanID
 	}
+}
+
+func (o *RuntimeOptions) ProvideZonesCount() *int {
+	return o.ZonesCount
 }
 
 func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) string {
@@ -512,7 +518,8 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 		},
 		PlatformRegion: options.ProvidePlatformRegion(),
 		Parameters: internal.ProvisioningParametersDTO{
-			Region: options.ProvideRegion(),
+			Region:     options.ProvideRegion(),
+			ZonesCount: options.ProvideZonesCount(),
 		},
 	}
 
@@ -712,6 +719,22 @@ func (s *ProvisioningSuite) AssertMachineType(machineType string) {
 	input := s.fetchProvisionInput()
 
 	assert.Equal(s.t, machineType, input.ClusterConfig.GardenerConfig.MachineType)
+}
+
+func (s *ProvisioningSuite) AssertZonesCount(zonesCount *int, planID string) {
+	input := s.fetchProvisionInput()
+
+	switch planID {
+	case broker.AzureHAPlanID:
+		if zonesCount != nil {
+			// zonesCount was provided in provisioning request
+			assert.Equal(s.t, *zonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
+			break
+		}
+		// zonesCount was not provided, should use default value
+		assert.Equal(s.t, provider.DefaultAzureHAZonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
+	default:
+	}
 }
 
 func (s *ProvisioningSuite) AssertSharedSubscription(shared bool) {

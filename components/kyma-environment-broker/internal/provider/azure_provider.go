@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	DefaultAzureRegion  = "westeurope"
-	MultizoneZonesCount = 2
+	DefaultAzureRegion       = "westeurope"
+	DefaultAzureHAZonesCount = 2
 )
 
 var europeAzure = "westeurope"
@@ -154,7 +154,7 @@ func (p *AzureHAInput) Defaults() *gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "10.250.0.0/19",
-					Zones:    generateMultipleAzureZones(MultizoneZonesCount),
+					Zones:    generateMultipleAzureZones(DefaultAzureHAZonesCount),
 				},
 			},
 		},
@@ -162,6 +162,10 @@ func (p *AzureHAInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *AzureHAInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
+	if pp.Parameters.Zones == nil && pp.Parameters.ZonesCount != nil {
+		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, generateMultipleAzureZones(*pp.Parameters.ZonesCount))
+		return
+	}
 	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, pp.Parameters.Zones)
 }
 
