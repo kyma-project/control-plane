@@ -130,6 +130,7 @@ func (h *ContextUpdateHandler) unsuspend(instance *internal.Instance, log logrus
 	log.Infof("Starting unsuspension: shootName=%s shootDomain=%s", operation.ShootName, operation.ShootDomain)
 	// RuntimeID must be cleaned  - this mean that there is no runtime in the provisioner/director
 	operation.RuntimeID = ""
+	operation.DashboardURL = instance.DashboardURL
 
 	err = h.operations.InsertProvisioningOperation(operation)
 	if err != nil {

@@ -30,8 +30,6 @@ import (
 const (
 	// label key used to send to director
 	grafanaURLLabel = "operator_grafanaUrl"
-
-	postActionsDescription = "Performing post-actions"
 )
 
 //go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore

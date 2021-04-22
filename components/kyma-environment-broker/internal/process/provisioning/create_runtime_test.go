@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -65,6 +64,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 			Labels: &gqlschema.Labels{
 				"broker_instance_id":   instanceID,
 				"global_subaccount_id": subAccountID,
+				"operator_grafanaUrl":  "https://grafana.kyma.org",
 			},
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
@@ -119,14 +119,6 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 		Operation: "",
 		State:     "",
 		Message:   nil,
-		RuntimeID: nil,
-	}, nil)
-
-	provisionerClient.On("RuntimeOperationStatus", globalAccountID, provisionerOperationID).Return(gqlschema.OperationStatus{
-		ID:        ptr.String(provisionerOperationID),
-		Operation: "",
-		State:     "",
-		Message:   nil,
 		RuntimeID: ptr.String(runtimeID),
 	}, nil)
 
@@ -138,7 +130,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 
 	// then
 	assert.NoError(t, err)
-	assert.Equal(t, 1*time.Second, repeat)
+	assert.Zero(t, repeat)
 	assert.Equal(t, provisionerOperationID, operation.ProvisionerOperationID)
 
 	instance, err := memoryStorage.Instances().GetByID(operation.InstanceID)

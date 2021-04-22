@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -16,17 +15,15 @@ const (
 )
 
 type IASTypeStep struct {
-	bundleBuilder  ias.BundleBuilder
-	directorClient DirectorClient
+	bundleBuilder ias.BundleBuilder
 }
 
 // ensure the interface is implemented
 var _ Step = (*IASTypeStep)(nil)
 
-func NewIASTypeStep(builder ias.BundleBuilder, directorClient DirectorClient) *IASTypeStep {
+func NewIASTypeStep(builder ias.BundleBuilder) *IASTypeStep {
 	return &IASTypeStep{
-		bundleBuilder:  builder,
-		directorClient: directorClient,
+		bundleBuilder: builder,
 	}
 }
 
@@ -51,14 +48,6 @@ func (s *IASTypeStep) Run(operation internal.ProvisioningOperation, log logrus.F
 		if err != nil {
 			return s.handleError(operation, err, log, "setting SSO Type failed")
 		}
-	}
-
-	grafanaURL := fmt.Sprintf("https://grafana.%s", operation.ShootDomain)
-	err := s.directorClient.SetLabel(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.RuntimeID, grafanaURLLabel, grafanaURL)
-	if err != nil {
-		log.Errorf("Cannot set labels in director: %s", err)
-	} else {
-		log.Infof("Label %s:%s set correctly", grafanaURLLabel, fmt.Sprintf("https://grafana.%s", operation.ShootDomain))
 	}
 
 	return operation, 0, nil

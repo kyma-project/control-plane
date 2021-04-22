@@ -578,6 +578,8 @@ func (s *ProvisioningSuite) CreateUnsuspension(options RuntimeOptions) string {
 
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
 	operation.State = orchestration.Pending
+	// in the real processing the URL is set in the handler
+	operation.DashboardURL = dashboardURL
 	require.NoError(s.t, err)
 
 	err = s.storage.Operations().InsertProvisioningOperation(operation)
@@ -672,14 +674,6 @@ func (s *ProvisioningSuite) finishOperationByProvisioner(operationType gqlschema
 		return false, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for provisioner operation to exist")
-}
-
-func (s *ProvisioningSuite) AssertDirectorGrafanaTag(operationID string) {
-	op, err := s.storage.Operations().GetOperationByID(operationID)
-	assert.NoError(s.t, err)
-	val, exists := s.directorClient.GetLabel(globalAccountID, op.RuntimeID, "operator_grafanaUrl")
-	assert.True(s.t, exists)
-	assert.Equal(s.t, fmt.Sprintf("https://grafana.%s.garden-dummy.kyma.io", op.ShootName), val)
 }
 
 func (s *ProvisioningSuite) AssertProvisioningRequest() {

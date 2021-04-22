@@ -384,7 +384,8 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			InstanceDetails: InstanceDetails{
 				SubAccountID: parameters.ErsContext.SubAccountID,
 			},
-			FinishedSteps: make(map[string]struct{}, 0),
+			FinishedSteps:  make(map[string]struct{}, 0),
+			FinishedStages: make(map[string]struct{}, 0),
 		},
 	}, nil
 }
@@ -407,6 +408,7 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 			Type:            OperationTypeDeprovision,
 			InstanceDetails: details,
 			FinishedSteps:   make(map[string]struct{}, 0),
+			FinishedStages:  make(map[string]struct{}, 0),
 		},
 	}, nil
 }
@@ -425,6 +427,7 @@ func NewSuspensionOperationWithID(operationID string, instance *Instance) Deprov
 			Type:            OperationTypeDeprovision,
 			InstanceDetails: instance.InstanceDetails,
 			FinishedSteps:   make(map[string]struct{}, 0),
+			FinishedStages:  make(map[string]struct{}, 0),
 		},
 		Temporary: true,
 	}
@@ -448,9 +451,6 @@ func (o *Operation) IsStepDone(stepName string) bool {
 }
 
 func (o *Operation) FinishStage(stageName string) {
-	if o.FinishedStages == nil {
-		o.FinishedStages = make(map[string]struct{})
-	}
 	o.FinishedStages[stageName] = struct{}{}
 }
 

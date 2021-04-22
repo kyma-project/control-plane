@@ -35,7 +35,6 @@ func TestProvisioning_HappyPath(t *testing.T) {
 	// then
 	suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
 	suite.AssertAllStepsFinished(provisioningOperationID)
-	suite.AssertDirectorGrafanaTag(provisioningOperationID)
 	suite.AssertProvisioningRequest()
 }
 
@@ -145,6 +144,8 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 
 			// when
 			suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+			// simulate the installed fresh Kyma sets the proper label in the Director
+			suite.MarkDirectorWithConsoleURL(provisioningOperationID)
 
 			// then
 			suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
@@ -176,10 +177,11 @@ func TestUnsuspensionWithoutShootName(t *testing.T) {
 
 	// when
 	suite.FinishProvisioningOperationByProvisioner(unsuspensionOperationID)
+	// simulate the installed fresh Kyma sets the proper label in the Director
+	suite.MarkDirectorWithConsoleURL(unsuspensionOperationID)
 
 	// then
 	suite.WaitForProvisioningState(unsuspensionOperationID, domain.Succeeded)
 	suite.AssertAllStepsFinished(unsuspensionOperationID)
-	suite.AssertDirectorGrafanaTag(unsuspensionOperationID)
 	suite.AssertProvisioningRequest()
 }

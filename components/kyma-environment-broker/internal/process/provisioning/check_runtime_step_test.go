@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -42,9 +41,6 @@ func TestCheckRuntimeStep_RunProvisioningSucceeded(t *testing.T) {
 				Message:   nil,
 				RuntimeID: ptr.String(statusRuntimeID),
 			})
-			directorClient := &automock.DirectorClient{}
-			directorClient.On("GetConsoleURL", statusGlobalAccountID, statusRuntimeID).Return(dashboardURL, nil)
-
 			st := storage.NewMemoryStorage()
 			operation := fixOperationRuntimeStatus(broker.GCPPlanID)
 			operation.RuntimeID = statusRuntimeID
@@ -52,7 +48,7 @@ func TestCheckRuntimeStep_RunProvisioningSucceeded(t *testing.T) {
 			err := st.Operations().InsertProvisioningOperation(operation)
 			assert.NoError(t, err)
 
-			step := NewCheckRuntimeStep(st.Operations(), provisionerClient, directorClient, time.Second)
+			step := NewCheckRuntimeStep(st.Operations(), provisionerClient, time.Second)
 
 			// when
 			operation, repeat, err := step.Run(operation, logrus.New())

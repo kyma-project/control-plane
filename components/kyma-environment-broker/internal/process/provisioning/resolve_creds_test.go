@@ -141,7 +141,6 @@ func TestResolveCredentialsStepRetry_Run(t *testing.T) {
 	assert.Nil(t, operation.ProvisioningParameters.Parameters.TargetSecret)
 	assert.Equal(t, domain.InProgress, operation.State)
 
-	time.Sleep(repeat)
 	operation, repeat, err = step.Run(operation, log)
 
 	assert.NoError(t, err)

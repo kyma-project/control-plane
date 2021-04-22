@@ -145,6 +145,12 @@ type Config struct {
 	DomainName string
 }
 
+const (
+	createRuntimeStageName = "create_runtime"
+	checkRuntimeStageName  = "check_runtime"
+	startStageName         = "start"
+)
+
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -494,7 +500,8 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 	smcf provisioning.SMClientFactory, bundleBuilder ias.BundleBuilder, edpClient provisioning.EDPClient,
 	accountProvider hyperscaler.AccountProvider, fileSystem afero.Fs, logs logrus.FieldLogger) *process.Queue {
 
-	provisionManager.DefineStages([]string{"start", "create_runtime", "check_runtime", "post_actions"})
+	const postActionsStageName = "post_actions"
+	provisionManager.DefineStages([]string{startStageName, createRuntimeStageName, checkRuntimeStageName, postActionsStageName})
 	/*
 		The provisioning process contains the following stages:
 		1. "start" - changes the state from pending to in progress if no deprovisioning is ongoing.
@@ -512,15 +519,15 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		step     provisioning.Step
 	}{
 		{
-			stage: "start",
+			stage: startStageName,
 			step:  provisioning.NewStartStep(db.Operations(), db.Instances()),
 		},
 		{
-			stage: "create_runtime",
+			stage: createRuntimeStageName,
 			step:  provisioning.NewInitialisationStep(db.Operations(), inputFactory, cfg.Provisioning.Timeout, cfg.OperationTimeout, runtimeVerConfigurator, smcf),
 		},
 		{
-			stage: "create_runtime",
+			stage: createRuntimeStageName,
 			step: provisioning.NewServiceManagerOfferingStep("XSUAA_Offering",
 				"xsuaa", "application", func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
 					return &op.XSUAA.Instance
@@ -528,7 +535,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			disabled: cfg.XSUAA.Disabled,
 		},
 		{
-			stage: "create_runtime",
+			stage: createRuntimeStageName,
 			step: provisioning.NewServiceManagerOfferingStep("EMS_Offering",
 				provisioning.EmsOfferingName, provisioning.EmsPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
 					return &op.Ems.Instance
@@ -536,20 +543,11 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			disabled: cfg.Ems.Disabled,
 		},
 		{
-			stage: "create_runtime",
-			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
-			step: provisioning.NewServiceManagerOfferingStep("Connectivity_Offering",
-				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
-					return &op.Connectivity.Instance
-				}, db.Operations()),
-			disabled: cfg.Connectivity.Disabled,
+			stage: createRuntimeStageName,
+			step:  provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
 		},
 		{
-			stage: "create_runtime",
-			step:   provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
-		},
-		{
-			stage: "create_runtime",
+			stage: createRuntimeStageName,
 			step: provisioning.NewXSUAAProvisioningStep(db.Operations(), uaa.Config{
 				// todo: set correct values from env variables
 				DeveloperGroup:      "devGroup",
@@ -560,86 +558,90 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			disabled: cfg.XSUAA.Disabled,
 		},
 		{
-			stage:    "create_runtime",
+			stage:    createRuntimeStageName,
 			step:     provisioning.NewEmsProvisionStep(db.Operations()),
 			disabled: cfg.Ems.Disabled,
 		},
 		{
-			stage:    "create_runtime",
+			stage:    createRuntimeStageName,
 			step:     provisioning.NewConnectivityProvisionStep(db.Operations()),
 			disabled: cfg.Connectivity.Disabled,
 		},
 		{
-			stage:    "create_runtime",
+			stage:    createRuntimeStageName,
 			step:     provisioning.NewInternalEvaluationStep(avsDel, internalEvalAssistant),
 			disabled: cfg.Avs.Disabled,
 		},
 		{
-			stage:    "create_runtime",
+			stage:    createRuntimeStageName,
 			step:     provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
 			disabled: cfg.EDP.Disabled,
 		},
 		{
-			stage: "create_runtime",
+			stage: createRuntimeStageName,
 			step:  provisioning.NewAzureEventHubActivationStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
 		{
-			stage: "create_runtime",
+			stage: createRuntimeStageName,
 			step:  provisioning.NewNatsActivationStep(provisioning.NewNatsStreamingOverridesStep()),
 		},
 		{
-			stage: "create_runtime",
+			stage: createRuntimeStageName,
 			step:  provisioning.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
 		{
-			stage: "create_runtime",
+			stage: createRuntimeStageName,
 			step:  provisioning.NewServiceManagerOverridesStep(db.Operations()),
 		},
 		{
-			stage: "create_runtime",
+			stage: createRuntimeStageName,
 			step:  provisioning.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
 		},
 		{
-			stage:    "create_runtime",
+			stage:    createRuntimeStageName,
 			step:     provisioning.NewIASRegistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
 		},
 		{
-			stage:    "create_runtime",
+			stage:    createRuntimeStageName,
 			step:     provisioning.NewXSUAABindingStep(db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
 		},
 		{
-			stage:    "create_runtime",
+			stage:    createRuntimeStageName,
 			step:     provisioning.NewEmsBindStep(db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Ems.Disabled,
 		},
 		{
-			stage:    "create_runtime",
+			stage:    createRuntimeStageName,
 			step:     provisioning.NewConnectivityBindStep(db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Connectivity.Disabled,
 		},
 		{
-			stage:    "create_runtime",
-			step:   provisioning.NewCreateRuntimeStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
+			stage: createRuntimeStageName,
+			step:  provisioning.NewCreateRuntimeStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
 		},
 		// check the runtime status
 		{
-			stage: "check_runtime",
-			step:  provisioning.NewCheckRuntimeStep(db.Operations(), provisionerClient, directorClient, cfg.Provisioning.Timeout),
+			stage: checkRuntimeStageName,
+			step:  provisioning.NewCheckRuntimeStep(db.Operations(), provisionerClient, cfg.Provisioning.Timeout),
+		},
+		{
+			stage: checkRuntimeStageName,
+			step:  provisioning.NewCheckDashboardURLStep(db.Operations(), directorClient, cfg.Provisioning.Timeout),
 		},
 		// post actions
 		{
-			stage: "post_actions",
-			step:  provisioning.NewSkipForTrialPlanStep(provisioning.NewExternalEvalStep(externalEvalCreator)),
+			stage: postActionsStageName,
+			step:  provisioning.NewExternalEvalStep(externalEvalCreator),
 		},
 		{
-			stage: "post_actions",
+			stage: postActionsStageName,
 			step:  provisioning.NewRuntimeTagsStep(internalEvalUpdater, provisionerClient),
 		},
 		{
-			stage:    "post_actions",
-			step:     provisioning.NewIASTypeStep(bundleBuilder, directorClient),
+			stage:    postActionsStageName,
+			step:     provisioning.NewIASTypeStep(bundleBuilder),
 			disabled: cfg.IAS.Disabled,
 		},
 	}
