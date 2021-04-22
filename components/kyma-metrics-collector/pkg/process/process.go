@@ -50,7 +50,7 @@ type Process struct {
 const shootKubeconfigKey = "kubeconfig"
 
 var (
-	numOfRuntimes, previousNumOfRuntimes, rateChanged float64
+	numOfRuntimes float64
 )
 
 func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) (record kmccache.Record, err error) {
@@ -184,7 +184,7 @@ func (p *Process) pollKEBForRuntimes() {
 		p.Logger.Fatalf("failed to create a new request for KEB: %v", err)
 	}
 	for {
-		previousNumOfRuntimes = numOfRuntimes
+		//previousNumOfRuntimes = numOfRuntimes
 		runtimesPage, err := p.KEBClient.GetAllRuntimes(kebReq)
 		if err != nil {
 			kebErrorCount.WithLabelValues("failed").Inc()
@@ -195,8 +195,8 @@ func (p *Process) pollKEBForRuntimes() {
 		kebErrorCount.Reset()
 		numOfRuntimes = float64(runtimesPage.Count)
 		clustersScraped.WithLabelValues(kebReq.RequestURI).Set(float64(runtimesPage.Count))
-		rateChanged = numOfRuntimes / previousNumOfRuntimes
-		runtimesRateChanged.WithLabelValues(kebReq.RequestURI).Set(rateChanged)
+		//rateChanged = numOfRuntimes / previousNumOfRuntimes
+		//runtimesRateChanged.WithLabelValues(kebReq.RequestURI).Set(rateChanged)
 
 		p.Logger.Debugf("num of runtimes are: %d", runtimesPage.Count)
 		p.populateCacheAndQueue(runtimesPage)
