@@ -53,7 +53,7 @@ var (
 	numOfRuntimes, previousNumOfRuntimes, rateChanged float64
 )
 
-func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) (record metriscache.Record, err error) {
+func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) (record kmccache.Record, err error) {
 	ctx := context.Background()
 	var ok bool
 
