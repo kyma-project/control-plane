@@ -37,6 +37,10 @@
 /resources/kcp/charts/metris @maksd @anishj0shi @k15r @lilitgh @marcobebway @montaro @nachtmaar @radufa @sayanh
 /components/metris @maksd @anishj0shi @k15r @lilitgh @marcobebway @montaro @nachtmaar @radufa @sayanh
 
+# Kyma metrics collector
+/resources/kcp/charts/kyma-metrics-collector @k15r @lilitgh @marcobebway @montaro @nachtmaar @radufa @sayanh
+/components/kyma-metrics-collector @k15r @lilitgh @marcobebway @montaro @nachtmaar @radufa @sayanh
+
 # OIDC-Kubeconfig-Service
 /components/kubeconfig-service @piotrmsc @kubadz @strekm @jakkab @Tomasz-Smelcerz-SAP @Demonsthere @colunira
 /resources/oidc-kubeconfig-service @piotrmsc @kubadz @strekm @jakkab @Tomasz-Smelcerz-SAP @Demonsthere @colunira
