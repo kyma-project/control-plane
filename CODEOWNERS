@@ -34,8 +34,12 @@
 /tests/e2e/provisioning @PK85 @piotrmiskiewicz @polskikiel @ksputo @jasiu001 @crabtree @kjaksik
 
 # Metris
-/resources/kcp/charts/metris @maksd @anishj0shi @k15r @lilitgh @marcobebway @montaro @nachtmaar @radufa @sayanh
-/components/metris @maksd @anishj0shi @k15r @lilitgh @marcobebway @montaro @nachtmaar @radufa @sayanh
+/resources/kcp/charts/metris @maksd @anishj0shi @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @themue
+/components/metris @maksd @anishj0shi @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @themue
+
+# Kyma metrics collector
+/resources/kcp/charts/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @themue
+/components/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @themue
 
 # OIDC-Kubeconfig-Service
 /components/kubeconfig-service @piotrmsc @kubadz @strekm @jakkab @Tomasz-Smelcerz-SAP @Demonsthere @colunira
