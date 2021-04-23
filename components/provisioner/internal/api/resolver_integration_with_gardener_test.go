@@ -345,7 +345,7 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 	}
 
 	assert.Equal(t, expectedSeed, *runtimeStatusProvisioned.RuntimeConfiguration.ClusterConfig.Seed)
-	assert.Equal(t, testkit.FixKymaConfig(nil), runtimeStatusProvisioned.RuntimeConfiguration.KymaConfig)
+	assert.Equal(t, testkit.FixGQLKymaConfig(nil), runtimeStatusProvisioned.RuntimeConfiguration.KymaConfig)
 }
 
 func testUpgradeRuntimeAndRollback(t *testing.T, ctx context.Context, resolver *api.Resolver, dbsFactory dbsession.Factory, runtimeID string) {
