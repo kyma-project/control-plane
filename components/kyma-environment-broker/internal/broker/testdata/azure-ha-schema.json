@@ -32,7 +32,7 @@
     "zonesCount": {
       "type": "integer",
       "description": "Specifies the number of availability zones for HA cluster",
-      "minimum": 1,
+      "minimum": 2,
       "maximum": 3,
       "default": 2
     }},

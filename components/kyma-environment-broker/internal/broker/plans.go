@@ -139,7 +139,7 @@ func AzureHASchema(machineTypes []string) []byte {
 	properties := NewProvisioningProperties(machineTypes, AzureRegions())
 	properties.ZonesCount = &Type{
 		Type:        "integer",
-		Minimum:     1,
+		Minimum:     2,
 		Maximum:     3,
 		Default:     2,
 		Description: "Specifies the number of availability zones for HA cluster",
