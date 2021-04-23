@@ -137,7 +137,16 @@ func AzureSchema(machineTypes []string) []byte {
 
 func AzureHASchema(machineTypes []string) []byte {
 	properties := NewProvisioningProperties(machineTypes, AzureRegions())
-	schema := NewSchema(properties, DefaultControlsOrder())
+	properties.ZonesCount = &Type{
+		Type:        "integer",
+		Minimum:     1,
+		Maximum:     3,
+		Default:     2,
+		Description: "Specifies the number of availability zones for HA cluster",
+	}
+	azureHaControlsOrder := DefaultControlsOrder()
+	azureHaControlsOrder = append(azureHaControlsOrder, "zonesCount")
+	schema := NewSchema(properties, azureHaControlsOrder)
 
 	properties.AutoScalerMin.Default = 4
 	properties.AutoScalerMin.Minimum = 4
