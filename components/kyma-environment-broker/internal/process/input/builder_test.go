@@ -30,6 +30,7 @@ func TestInputBuilderFactory_IsPlanSupport(t *testing.T) {
 	// when/then
 	assert.True(t, ibf.IsPlanSupport(broker.GCPPlanID))
 	assert.True(t, ibf.IsPlanSupport(broker.AzurePlanID))
+	assert.True(t, ibf.IsPlanSupport(broker.AzureHAPlanID))
 	assert.True(t, ibf.IsPlanSupport(broker.TrialPlanID))
 }
 

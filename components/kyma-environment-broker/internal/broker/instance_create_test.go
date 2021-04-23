@@ -51,7 +51,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure"}, OnlySingleTrialPerGA: true},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_ha"}, OnlySingleTrialPerGA: true},
 			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
@@ -108,7 +108,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}, OnlySingleTrialPerGA: true},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite", "azure_ha"}, OnlySingleTrialPerGA: true},
 			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),

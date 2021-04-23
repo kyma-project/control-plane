@@ -92,3 +92,16 @@ func TestAzureTrialInput_ApplyParametersWithRegion(t *testing.T) {
 		assert.Equal(t, "westeurope", input.GardenerConfig.Region)
 	})
 }
+
+func TestAzureHAInput_Defaults(t *testing.T) {
+	// given
+	svc := AzureHAInput{}
+
+	// when
+	input := svc.Defaults()
+
+	// then
+	assert.Equal(t, 4, input.GardenerConfig.AutoScalerMin)
+	assert.Equal(t, 10, input.GardenerConfig.AutoScalerMax)
+	assert.Equal(t, 2, len(input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
+}

@@ -18,6 +18,7 @@ type ProvisioningProperties struct {
 	MachineType   *Type `json:"machineType,omitempty"`
 	AutoScalerMin *Type `json:"autoScalerMin,omitempty"`
 	AutoScalerMax *Type `json:"autoScalerMax,omitempty"`
+	ZonesCount    *Type `json:"zonesCount,omitempty"`
 }
 
 type Type struct {
