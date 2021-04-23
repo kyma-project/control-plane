@@ -39,6 +39,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/testkit"
 	runtimeConfig "github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
@@ -73,7 +74,6 @@ const (
 	rafterComponent               = "rafter"
 	coreComponent                 = "core"
 	applicationConnectorComponent = "application-connector"
-	runtimeAgentComponent         = "compass-runtime-agent"
 
 	tenant               = "tenant"
 	rafterSourceURL      = "github.com/kyma-project/kyma.git//resources/rafter"
@@ -190,7 +190,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	kymaConfig := fixKymaGraphQLConfigInput()
+	kymaConfig := testkit.FixGQLKymaConfigInput(nil)
 	clusterConfigurations := newTestProvisioningConfigs()
 
 	for _, config := range clusterConfigurations {
@@ -345,13 +345,13 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 	}
 
 	assert.Equal(t, expectedSeed, *runtimeStatusProvisioned.RuntimeConfiguration.ClusterConfig.Seed)
-	assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioned.RuntimeConfiguration.KymaConfig)
+	assert.Equal(t, testkit.FixKymaConfig(nil), runtimeStatusProvisioned.RuntimeConfiguration.KymaConfig)
 }
 
 func testUpgradeRuntimeAndRollback(t *testing.T, ctx context.Context, resolver *api.Resolver, dbsFactory dbsession.Factory, runtimeID string) {
 
 	// when Upgrading Runtime
-	upgradeRuntimeOp, err := resolver.UpgradeRuntime(ctx, runtimeID, gqlschema.UpgradeRuntimeInput{KymaConfig: fixKymaGraphQLConfigInput()})
+	upgradeRuntimeOp, err := resolver.UpgradeRuntime(ctx, runtimeID, gqlschema.UpgradeRuntimeInput{KymaConfig: testkit.FixGQLKymaConfigInput(nil)})
 
 	// then
 	require.NoError(t, err)

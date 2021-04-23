@@ -92,6 +92,19 @@ func FixKymaComponents() []model.KymaComponentConfig {
 			},
 			ComponentOrder: 4,
 		},
+		{
+			ID:           "id",
+			KymaConfigID: "id",
+			Component:    RuntimeAgentComponent,
+			Namespace:    CompassSystemNamespace,
+			Configuration: model.Configuration{
+				ConfigEntries: []model.ConfigEntry{
+					model.NewConfigEntry("test.config.key", "value", false),
+					model.NewConfigEntry("test.secret.key", "secretValue", true),
+				},
+			},
+			ComponentOrder: 5,
+		},
 	}
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/testkit"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -271,7 +272,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 
 	upgradeInput := gqlschema.UpgradeRuntimeInput{
-		KymaConfig: fixKymaGraphQLConfigInput(),
+		KymaConfig: testkit.FixGQLKymaConfigInput(nil),
 	}
 
 	t.Run("Should start upgrade and return operation id", func(t *testing.T) {

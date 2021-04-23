@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/testkit"
-
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -271,108 +269,4 @@ func insertDummyReleaseIfNotExist(releaseRepo release.Repository, id, version st
 	})
 
 	return err
-}
-
-func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
-
-	return &gqlschema.KymaConfigInput{
-		Version: kymaVersion,
-		Components: []*gqlschema.ComponentConfigurationInput{
-			{
-				Component: clusterEssentialsComponent,
-				Namespace: kymaSystemNamespace,
-			},
-			{
-				Component: rafterComponent,
-				Namespace: kymaSystemNamespace,
-				SourceURL: util.StringPtr(rafterSourceURL),
-			},
-			{
-				Component: coreComponent,
-				Namespace: kymaSystemNamespace,
-				Configuration: []*gqlschema.ConfigEntryInput{
-					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
-					fixGQLConfigEntryInput("test.config.key2", "value2", util.BoolPtr(false)),
-				},
-			},
-			{
-				Component: applicationConnectorComponent,
-				Namespace: kymaIntegrationNamespace,
-				Configuration: []*gqlschema.ConfigEntryInput{
-					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
-					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
-				},
-			},
-			{
-				Component: runtimeAgentComponent,
-				Namespace: compassSystemNamespace,
-				Configuration: []*gqlschema.ConfigEntryInput{
-					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
-					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
-				},
-			},
-		},
-		Configuration: []*gqlschema.ConfigEntryInput{
-			fixGQLConfigEntryInput("global.config.key", "globalValue", util.BoolPtr(false)),
-			fixGQLConfigEntryInput("global.config.key2", "globalValue2", util.BoolPtr(false)),
-			fixGQLConfigEntryInput("global.secret.key", "globalSecretValue", util.BoolPtr(true)),
-		},
-	}
-}
-
-func fixGQLConfigEntryInput(key, val string, secret *bool) *gqlschema.ConfigEntryInput {
-	return &gqlschema.ConfigEntryInput{
-		Key:    key,
-		Value:  val,
-		Secret: secret,
-	}
-}
-
-func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
-
-	return &gqlschema.KymaConfig{
-		Version: util.StringPtr(kymaVersion),
-		Components: []*gqlschema.ComponentConfiguration{
-			{
-				Component:     clusterEssentialsComponent,
-				Namespace:     kymaSystemNamespace,
-				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
-			},
-			{
-				Component:     rafterComponent,
-				Namespace:     kymaSystemNamespace,
-				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
-				SourceURL:     util.StringPtr(rafterSourceURL),
-			},
-			{
-				Component: coreComponent,
-				Namespace: kymaSystemNamespace,
-				Configuration: []*gqlschema.ConfigEntry{
-					testkit.FixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
-					testkit.FixGQLConfigEntry("test.config.key2", "value2", util.BoolPtr(false)),
-				},
-			},
-			{
-				Component: applicationConnectorComponent,
-				Namespace: kymaIntegrationNamespace,
-				Configuration: []*gqlschema.ConfigEntry{
-					testkit.FixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
-					testkit.FixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
-				},
-			},
-			{
-				Component: runtimeAgentComponent,
-				Namespace: compassSystemNamespace,
-				Configuration: []*gqlschema.ConfigEntry{
-					testkit.FixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
-					testkit.FixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
-				},
-			},
-		},
-		Configuration: []*gqlschema.ConfigEntry{
-			testkit.FixGQLConfigEntry("global.config.key", "globalValue", util.BoolPtr(false)),
-			testkit.FixGQLConfigEntry("global.config.key2", "globalValue2", util.BoolPtr(false)),
-			testkit.FixGQLConfigEntry("global.secret.key", "globalSecretValue", util.BoolPtr(true)),
-		},
-	}
 }

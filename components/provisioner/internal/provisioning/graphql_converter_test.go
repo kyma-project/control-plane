@@ -187,7 +187,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						Zones: zones,
 					},
 				},
-				KymaConfig: testkit.FixKymaGraphQLConfig(nil),
+				KymaConfig: testkit.FixGQLKymaConfig(nil),
 				Kubeconfig: &kubeconfig,
 			},
 			HibernationStatus: &gqlschema.HibernationStatus{
@@ -302,7 +302,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						Zones:    nil, // Expected empty when no zones specified in input.
 					},
 				},
-				KymaConfig: testkit.FixKymaGraphQLConfig(&gqlProductionProfile),
+				KymaConfig: testkit.FixGQLKymaConfig(&gqlProductionProfile),
 				Kubeconfig: &kubeconfig,
 			},
 			HibernationStatus: &gqlschema.HibernationStatus{
