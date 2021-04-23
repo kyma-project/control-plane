@@ -140,19 +140,6 @@ avs:
   trialGroupId: "0"
   trialParentId: "0"
 
-lms:
-  secretName: "lms-creds"
-  token: "TBD"
-  url: "TBD"
-  clusterType: "single-node"
-  environment: "dev"
-  samlTenant: "TBD"
-  enabledForGlobalAccounts: "all" # possible values: "all", "none", "{global-account-ID-1}, {global-account-ID-2}, .."
-  # if set - always use this region, if empty - region is mapped from the OSB API request
-  region: ""
-  # if false - failing LMS step does not break provisioning
-  mandatory: true
-
 ias:
   secretName: "ias-creds"
   url: "TBD"
@@ -175,10 +162,10 @@ edp:
 
 ems:
   disabled: true
+  skipDeprovisionAzureEventingAtUpgrade: false
 
-cls:
+connectivity:
   disabled: true
-  secretName: "kcp-cls-config"
 
 cis:
   v1:

@@ -13,6 +13,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
+	gardenerawsv1alpha1 "github.com/gardener/gardener-extension-provider-aws/pkg/apis/aws/v1alpha1"
 	gardenerazurev1alpha1 "github.com/gardener/gardener-extension-provider-azure/pkg/apis/azure/v1alpha1"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
@@ -25,6 +26,7 @@ const (
 	storageRoundingFactor = 32
 
 	Azure = "azure"
+	AWS   = "aws"
 )
 
 type EventStream struct {
@@ -69,12 +71,12 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 		nodeType = strings.ToLower(nodeType)
 
 		// Calculate CPU and Memory
-		vmFeatures := providers.GetFeatures(providerType, nodeType)
-		if vmFeatures == nil {
+		vmFeature := providers.GetFeature(providerType, nodeType)
+		if vmFeature == nil {
 			return nil, fmt.Errorf("providerType: %s and nodeType: %s does not exist in the map", providerType, nodeType)
 		}
-		provisionedCPUs += vmFeatures.CpuCores
-		provisionedMemory += vmFeatures.Memory
+		provisionedCPUs += vmFeature.CpuCores
+		provisionedMemory += vmFeature.Memory
 		vmTypes[nodeType] += 1
 	}
 
@@ -100,7 +102,7 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 		}
 	}
 
-	// Calculate vnets
+	// Calculate vnets(for Azure) or vpc(for AWS)
 	if inp.shoot.Spec.Provider.InfrastructureConfig != nil {
 		rawExtension := *inp.shoot.Spec.Provider.InfrastructureConfig
 		switch inp.shoot.Spec.Provider.Type {
@@ -114,6 +116,16 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 				return nil, err
 			}
 			if infraConfig.Networks.VNet.CIDR != nil {
+				vnets += 1
+			}
+		case AWS:
+			decoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
+			infraConfig := &gardenerawsv1alpha1.InfrastructureConfig{}
+			err := runtime.DecodeInto(decoder, rawExtension.Raw, infraConfig)
+			if err != nil {
+				return nil, err
+			}
+			if infraConfig.Networks.VPC.CIDR != nil {
 				vnets += 1
 			}
 		default:

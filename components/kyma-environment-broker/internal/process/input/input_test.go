@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -15,8 +16,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 )
 
 var emptyVersion = internal.RuntimeVersionData{}
@@ -441,6 +440,56 @@ func TestShouldSetNumberOfNodesForTrialPlan(t *testing.T) {
 	// then
 	assert.Equal(t, 2, input.ClusterConfig.GardenerConfig.AutoScalerMin)
 	assert.Equal(t, 2, input.ClusterConfig.GardenerConfig.AutoScalerMax)
+}
+
+func TestShouldSetGlobalConfiguration(t *testing.T) {
+	t.Run("When creating ProvisionRuntimeInput", func(t *testing.T) {
+		// given
+		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+
+		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "", fixTrialRegionMapping())
+		assert.NoError(t, err)
+
+		pp := fixProvisioningParameters(broker.TrialPlanID, "")
+
+		creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "", Origin: internal.Defaults})
+		require.NoError(t, err)
+		creator.SetProvisioningParameters(pp)
+
+		// when
+		input, err := creator.CreateProvisionRuntimeInput()
+		require.NoError(t, err)
+
+		// then
+		expectedStrategy := gqlschema.ConflictStrategyReplace
+		assert.Equal(t, &expectedStrategy, input.KymaConfig.ConflictStrategy)
+	})
+
+	t.Run("When creating UpgradeRuntimeInput", func(t *testing.T) {
+		// given
+		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+
+		builder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "", fixTrialRegionMapping())
+		assert.NoError(t, err)
+
+		pp := fixProvisioningParameters(broker.TrialPlanID, "")
+
+		creator, err := builder.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.21.0", Origin: internal.Defaults})
+		require.NoError(t, err)
+		creator.SetProvisioningParameters(pp)
+
+		// when
+		input, err := creator.CreateUpgradeRuntimeInput()
+		require.NoError(t, err)
+
+		// then
+		expectedStrategy := gqlschema.ConflictStrategyReplace
+		assert.Equal(t, &expectedStrategy, input.KymaConfig.ConflictStrategy)
+	})
 }
 
 func assertOverrides(t *testing.T, componentName string, components internal.ComponentConfigurationInputList, overrides []*gqlschema.ConfigEntryInput) {

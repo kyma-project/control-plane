@@ -20,14 +20,12 @@ The provisioning process contains the following steps:
 | Initialization                         | Provisioning             | Starts the provisioning process and asks the Director for the Dashboard URL if the provisioning in Gardener is finished.                                | @jasiu001 (Team Gopher)       |
 | Resolve_Target_Secret                  | Hyperscaler Account Pool | Provides the name of a Gardener Secret that contains  Hypescaler account credentials used during cluster provisioning.                                | @koala7659 (Team Framefrog)      |
 | AVS_Configuration_Step                 | AvS                      | Sets up external and internal monitoring of Kyma Runtime.                                      | @jasiu001 (Team Gopher)     |
-| Create_LMS_Tenant                      | LMS                      | Requests a tenant in the LMS system or provides a tenant ID if it was created before.                                                              | @piotrmiskiewicz (Team Gopher) |
 | IAS_Registration                       | Identity Authentication Service | Registers a new ServiceProvider on IAS, generates client ID and Secret, and inserts them to Grafana overrides. This step is not required and can be disabled. | @jasiu001 (Team Gopher) |
 | EDP_Registration                       | Event Data Platform      | Registers an SKR on Event Data Platform with the necessary parameters. This step is not required and can be disabled. | @jasiu001 (Team Gopher) |
 | Provision Azure Event Hubs             | Event Hub                | Creates the Azure Event Hub Namespace which is a managed Kafka cluster for a Kyma Runtime.                                                       | @k15r (Team SkyDivingTunas)     |
 | Provision EMS                          | EMS                      | Provisions and binds an Enterprise Messaging instance for a Kyma Runtime using the Service Manager.                                | @k15r (Team SkyDivingTunas)     |
 | Overrides_From_Secrets_And_Config_Step | Kyma overrides           | Configures default overrides for Kyma.                                                                                                          | @jasiu001 (Team Gopher)        |
 | ServiceManagerOverrides                | Service Manager          | Configures overrides with Service Manager credentials.                                                                                          | Team Gopher        |
-| Request_LMS_Certificates               | LMS                      | Checks if the LMS tenant is ready and requests certificates. The step configures Fluent Bit in a Kyma Runtime. It requires the Create_LMS_Tenant step to be completed beforehand. The step does not fail the provisioning operation. | @piotrmiskiewicz (Team Gopher) |
 | Create_Runtime                         | Provisioning             | Triggers provisioning of a Runtime in the Runtime Provisioner.                                                                                                       | @jasiu001 (Team Gopher)        |
 
 >**NOTE:** The timeout for processing this operation is set to `24h`.
@@ -115,7 +113,6 @@ You can configure Runtime operations by providing additional steps. To add a new
         Operation `json:"-"`
 
         // These fields are serialized to JSON and stored in the storage
-        LmsTenantID            string `json:"lms_tenant_id"`
         ProvisioningParameters string `json:"provisioning_parameters"`
 
         NewFieldFromCustomStep string `json:"new_field_from_custom_step"`    

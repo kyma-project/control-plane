@@ -12,18 +12,21 @@ import (
 func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 	// given
 	profile := gqlschema.KymaProfileProduction
+	strategy := gqlschema.ConflictStrategyReplace
 	fixInput := gqlschema.KymaConfigInput{
-		Version: "966",
-		Profile: &profile,
+		Version:          "966",
+		Profile:          &profile,
+		ConflictStrategy: &strategy,
 		Components: []*gqlschema.ComponentConfigurationInput{
 			{
 				Component: "pico",
 				Namespace: "bello",
 			},
 			{
-				Component: "custom-component",
-				Namespace: "bello",
-				SourceURL: ptr.String("github.com/kyma-incubator/custom-component"),
+				Component:        "custom-component",
+				Namespace:        "bello",
+				ConflictStrategy: &strategy,
+				SourceURL:        ptr.String("github.com/kyma-incubator/custom-component"),
 			},
 			{
 				Component: "hakuna",
@@ -56,6 +59,7 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 	expRender := `{
 		version: "966",
 		profile: Production,
+		conflictStrategy: Replace,
         components: [
           {
             component: "pico",
@@ -65,6 +69,7 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
             component: "custom-component",
             namespace: "bello",
             sourceURL: "github.com/kyma-incubator/custom-component",
+			conflictStrategy: Replace,
           }
           {
             component: "hakuna",

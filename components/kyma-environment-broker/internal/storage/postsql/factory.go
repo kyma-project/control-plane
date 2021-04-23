@@ -29,9 +29,6 @@ type ReadSession interface {
 	GetOperationsForIDs(opIdList []string) ([]dbmodel.OperationDTO, dberr.Error)
 	ListOperations(filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error)
 	ListOperationsByType(operationType internal.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
-	GetLMSTenant(name, region string) (dbmodel.LMSTenantDTO, dberr.Error)
-	GetCLSInstanceByGlobalAccountID(globalAccountID string) ([]dbmodel.CLSInstanceDTO, dberr.Error)
-	GetCLSInstanceByID(clsInstanceID string) ([]dbmodel.CLSInstanceDTO, dberr.Error)
 	GetOperationStats() ([]dbmodel.OperationStatEntry, error)
 	GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
@@ -54,12 +51,6 @@ type WriteSession interface {
 	InsertOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
 	UpdateOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
 	InsertRuntimeState(state dbmodel.RuntimeStateDTO) dberr.Error
-	InsertLMSTenant(dto dbmodel.LMSTenantDTO) dberr.Error
-	InsertCLSInstance(dto dbmodel.CLSInstanceDTO) dberr.Error
-	UpdateCLSInstance(dto dbmodel.CLSInstanceDTO) dberr.Error
-	DeleteCLSInstance(clsInstanceID string) dberr.Error
-	InsertCLSInstanceReference(dto dbmodel.CLSInstanceReferenceDTO) dberr.Error
-	DeleteCLSInstanceReference(dto dbmodel.CLSInstanceReferenceDTO) dberr.Error
 }
 
 type Transaction interface {

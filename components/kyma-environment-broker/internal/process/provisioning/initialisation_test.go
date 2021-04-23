@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -114,10 +116,12 @@ func TestInitialisationStep(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 
 		operation := fixOperationRuntimeStatus(broker.GCPPlanID)
+		operation.State = orchestration.Pending
 		err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 		assert.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
+		instance.InstanceDetails = operation.InstanceDetails
 		err = memoryStorage.Instances().Insert(instance)
 		assert.NoError(t, err)
 
@@ -162,6 +166,89 @@ func TestInitialisationStep(t *testing.T) {
 
 		// setup ProvisioningOperation and mockAvsService state to simulate InternalEvaluationStep execution
 		operation.Avs.AvsEvaluationInternalId = fixAvsEvaluationInternalId
+		mockAvsSvc.evals[fixAvsEvaluationInternalId] = fixAvsEvaluation()
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient,
+			directorClient, nil, externalEvalCreator, InternalEvalUpdater, iasType, time.Hour, time.Hour, rvc, nil)
+
+		// when
+		operation, repeat, err := step.Run(operation, logger.NewLogDummy())
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, time.Duration(0), repeat)
+		assert.Equal(t, domain.Succeeded, operation.State)
+
+		updatedInstance, err := memoryStorage.Instances().GetByID(statusInstanceID)
+		assert.NoError(t, err)
+		assert.Equal(t, dashboardURL, updatedInstance.DashboardURL)
+
+		inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(operation.ID)
+		assert.NoError(t, err)
+		assert.Contains(t, mockAvsSvc.evals, inDB.Avs.AVSEvaluationExternalId)
+		assert.Contains(t, mockAvsSvc.evals, inDB.Avs.AvsEvaluationInternalId)
+		assert.Equal(t, 4, len(mockAvsSvc.evals[inDB.Avs.AvsEvaluationInternalId].Tags))
+	})
+
+	t.Run("run unintialized after deprovisioning", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+
+		operation := fixOperationRuntimeStatus(broker.GCPPlanID)
+		operation.State = orchestration.Pending
+		err := memoryStorage.Operations().InsertProvisioningOperation(operation)
+		assert.NoError(t, err)
+
+		deprovisioningOperation := fixture.FixDeprovisioningOperation("dep-id", operation.InstanceID)
+		deprovisioningOperation.Avs.AvsEvaluationInternalId = fixAvsEvaluationInternalId
+		err = memoryStorage.Operations().InsertDeprovisioningOperation(deprovisioningOperation)
+		assert.NoError(t, err)
+
+		instance := fixInstanceRuntimeStatus()
+		// setup ProvisioningOperation and mockAvsService state to simulate InternalEvaluationStep execution
+		operation.Avs.AvsEvaluationInternalId = fixAvsEvaluationInternalId
+		instance.InstanceDetails = operation.InstanceDetails
+		err = memoryStorage.Instances().Insert(instance)
+		assert.NoError(t, err)
+
+		provisionerClient := &provisionerAutomock.Client{}
+		provisionerClient.On("RuntimeOperationStatus", statusGlobalAccountID, statusProvisionerOperationID).Return(gqlschema.OperationStatus{
+			ID:        ptr.String(statusProvisionerOperationID),
+			Operation: "",
+			State:     gqlschema.OperationStateSucceeded,
+			Message:   nil,
+			RuntimeID: nil,
+		}, nil)
+		provisionerClient.On("RuntimeStatus", statusGlobalAccountID, operation.RuntimeID).Return(gqlschema.RuntimeStatus{
+			LastOperationStatus:     nil,
+			RuntimeConnectionStatus: nil,
+			RuntimeConfiguration: &gqlschema.RuntimeConfig{ClusterConfig: &gqlschema.GardenerConfig{
+				Name:   ptr.String("test-gardener-name"),
+				Region: ptr.String("test-gardener-region"),
+				Seed:   ptr.String("test-gardener-seed"),
+			}},
+		}, nil)
+
+		directorClient := &automock.DirectorClient{}
+		directorClient.On("GetConsoleURL", statusGlobalAccountID, statusRuntimeID).Return(dashboardURL, nil)
+
+		mockOauthServer := newMockAvsOauthServer()
+		defer mockOauthServer.Close()
+		mockAvsSvc := newMockAvsService(t, false)
+		mockAvsSvc.startServer()
+		defer mockAvsSvc.server.Close()
+		avsConfig := avsConfig(mockOauthServer, mockAvsSvc.server)
+		avsClient, err := avs.NewClient(context.TODO(), avsConfig, logger.NewLogDummy())
+		assert.NoError(t, err)
+		avsDel := avs.NewDelegator(avsClient, avsConfig, memoryStorage.Operations())
+		externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
+		externalEvalCreator := NewExternalEvalCreator(avsDel, false, externalEvalAssistant)
+		internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
+		InternalEvalUpdater := NewInternalEvalUpdater(avsDel, internalEvalAssistant, avsConfig)
+		iasType := NewIASType(nil, true)
+
+		rvc := &automock.RuntimeVersionConfiguratorForProvisioning{}
+		defer rvc.AssertExpectations(t)
 		mockAvsSvc.evals[fixAvsEvaluationInternalId] = fixAvsEvaluation()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient,
