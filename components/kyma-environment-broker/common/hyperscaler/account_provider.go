@@ -49,6 +49,16 @@ func HyperscalerTypeForPlanID(pp internal.ProvisioningParameters) (Type, error) 
 	case broker.AWSPlanID:
 		return AWS, nil
 	case broker.FreemiumPlanID:
+		switch pp.PlatformProvider {
+		case internal.AWS:
+			return AWS, nil
+		case internal.Azure:
+			return Azure, nil
+		case internal.Gcp:
+			return GCP, nil
+		default:
+			return "", errors.Errorf("cannot determine the type of hyperscaler for free plan with provider: %s", pp.PlatformProvider)
+		}
 		return pp.PlatformProvider, nil
 	default:
 		return "", errors.Errorf("cannot determine the type of Hyperscaler to use for planID: %s", planID)

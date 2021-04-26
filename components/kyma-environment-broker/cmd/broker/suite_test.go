@@ -521,7 +521,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 		},
 		PlatformProvider: options.PlatformProvider,
 		Parameters: internal.ProvisioningParametersDTO{
-			Provider:   options.ProvidePlatformProvider(),
+			Provider:   &options.PlatformProvider,
 			Region:     options.ProvideRegion(),
 			ZonesCount: options.ProvideZonesCount(),
 		},
