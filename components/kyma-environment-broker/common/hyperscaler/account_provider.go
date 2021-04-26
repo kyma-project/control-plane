@@ -59,7 +59,6 @@ func HyperscalerTypeForPlanID(pp internal.ProvisioningParameters) (Type, error) 
 		default:
 			return "", errors.Errorf("cannot determine the type of hyperscaler for free plan with provider: %s", pp.PlatformProvider)
 		}
-		return pp.PlatformProvider, nil
 	default:
 		return "", errors.Errorf("cannot determine the type of Hyperscaler to use for planID: %s", planID)
 	}

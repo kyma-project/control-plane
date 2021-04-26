@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/swagger"
@@ -143,8 +142,9 @@ type Config struct {
 	LogLevel string `envconfig:"default=info"`
 
 	// FreemiumProviders is a comma separated list of providers for freemium
-	FreemiumProviders string `envconfig:"default=aws"`
-	DomainName        string
+	FreemiumProviders []string `envconfig:"default=aws"`
+
+	DomainName string
 }
 
 func main() {
@@ -232,7 +232,7 @@ func main() {
 	fatalOnError(err)
 	logs.Infof("Platform region mapping for trial: %v", regions)
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider,
-		cfg.Provisioning, cfg.KymaVersion, regions, strings.Split(cfg.FreemiumProviders, ","))
+		cfg.Provisioning, cfg.KymaVersion, regions, cfg.FreemiumProviders)
 	fatalOnError(err)
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
@@ -292,9 +292,6 @@ func main() {
 
 	defaultPlansConfig, err := servicesConfig.DefaultPlansConfig()
 	fatalOnError(err)
-
-	//plansValidator, err := broker.NewPlansSchemaValidator(defaultPlansConfig)
-	//fatalOnError(err)
 
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{

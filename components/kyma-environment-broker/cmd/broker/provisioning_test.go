@@ -70,6 +70,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			expectedProfile:              gqlschema.KymaProfileEvaluation,
 			expectedProvider:             "aws",
 			expectedSharedSubscription:   false,
+			expectedMachineType:          "m5.xlarge",
 		},
 		"Freemium azure": {
 			planID:           broker.FreemiumPlanID,
@@ -80,6 +81,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			expectedProfile:              gqlschema.KymaProfileEvaluation,
 			expectedProvider:             "azure",
 			expectedSharedSubscription:   false,
+			expectedMachineType:          "Standard_D4_v3",
 		},
 		"Production Azure": {
 			planID: broker.AzurePlanID,

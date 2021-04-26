@@ -84,7 +84,7 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 
 	hypType, err := getHyperscalerType(operation.ProvisioningParameters)
 	if err != nil {
-		log.Error("Aborting after failing to determine the type of Hyperscaler to use for planID: %s", operation.ProvisioningParameters.PlanID)
+		log.Errorf("Aborting after failing to determine the type of Hyperscaler to use for planID: %s", operation.ProvisioningParameters.PlanID)
 		return s.operationManager.OperationFailed(operation, err.Error(), log)
 	}
 

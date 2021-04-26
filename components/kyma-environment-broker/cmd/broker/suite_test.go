@@ -121,7 +121,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		Timeout:                     time.Minute,
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, strings.Split(cfg.FreemiumProviders, ","))
+	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders)
 	require.NoError(t, err)
 
 	ctx, _ := context.WithTimeout(context.Background(), 20*time.Minute)
@@ -441,7 +441,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 		Timeout:                     time.Minute,
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, strings.Split(cfg.FreemiumProviders, ","))
+	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders)
 
 	require.NoError(t, err)
 
@@ -521,7 +521,6 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 		},
 		PlatformProvider: options.PlatformProvider,
 		Parameters: internal.ProvisioningParametersDTO{
-			Provider:   &options.PlatformProvider,
 			Region:     options.ProvideRegion(),
 			ZonesCount: options.ProvideZonesCount(),
 		},
@@ -778,7 +777,7 @@ func fixConfig() *Config {
 		IAS: ias.Config{
 			IdentityProvider: ias.FakeIdentityProviderName,
 		},
-		FreemiumProviders: "aws,azure",
+		FreemiumProviders: []string{"aws", "azure"},
 	}
 }
 
