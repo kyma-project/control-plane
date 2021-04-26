@@ -22,9 +22,6 @@ global:
     subscription_cleanup_job:
       dir:
       version: "PR-568"
-    metris:
-      dir:
-      version: "PR-376"
     kyma_metrics_collector:
       dir:
       version: "26c3f6a3"
@@ -125,9 +122,6 @@ global:
       dbPassword: ""
       provisionerDBName: ""
       brokerDBName: ""
-
-  metris:
-    enabled: false
 
   kyma_metrics_collector:
     enabled: false
