@@ -577,8 +577,8 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:   provisioning.NewServiceManagerOverridesStep(db.Operations()),
 		},
 		{
-			weight: 3,
-			step:   provisioning.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
+			weight:   3,
+			step:     provisioning.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
 			disabled: cfg.AuditLog.Disabled,
 		},
 		{
@@ -742,8 +742,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			disabled: cfg.Ems.SkipDeprovisionAzureEventingAtUpgrade,
 		},
 		{
-			weight: 3,
-			step:   upgrade_kyma.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
+			weight:   3,
+			step:     upgrade_kyma.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
 			disabled: cfg.AuditLog.Disabled,
 		},
 		{
