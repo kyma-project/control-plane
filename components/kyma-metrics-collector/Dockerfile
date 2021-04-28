@@ -7,15 +7,12 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -v -o kyma-metrics-collector ./cmd/main.go
 RUN mkdir /app && mv ./kyma-metrics-collector /app/kyma-metrics-collector
 
-FROM alpine:3.13.2
+FROM gcr.io/distroless/static:nonroot
 LABEL source = git@github.com:kyma-project/control-plane.git
 
 WORKDIR /app
 
-RUN apk update \
-	&& apk add ca-certificates openssl &&\
-	rm -rf /var/cache/apk/*
-
 COPY --from=builder /app /app
+USER nonroot:nonroot
 
 ENTRYPOINT ["/app/kyma-metrics-collector"]

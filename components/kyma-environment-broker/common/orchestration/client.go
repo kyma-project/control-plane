@@ -27,6 +27,7 @@ type Client interface {
 	ListOperations(orchestrationID string, params ListParameters) (OperationResponseList, error)
 	GetOperation(orchestrationID, operationID string) (OperationDetailResponse, error)
 	UpgradeKyma(params Parameters) (UpgradeResponse, error)
+	UpgradeCluster(params Parameters) (UpgradeResponse, error)
 	CancelOrchestration(orchestrationID string) error
 }
 

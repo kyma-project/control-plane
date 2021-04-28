@@ -86,16 +86,3 @@ type UpgradeCluster interface {
 	ListUpgradeClusterOperationsByInstanceID(instanceID string) ([]internal.UpgradeClusterOperation, error)
 	ListUpgradeClusterOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeClusterOperation, int, int, error)
 }
-
-type LMSTenants interface {
-	FindTenantByName(name, region string) (internal.LMSTenant, bool, error)
-	InsertTenant(tenant internal.LMSTenant) error
-}
-
-type CLSInstances interface {
-	FindActiveByGlobalAccountID(name string) (*internal.CLSInstance, bool, error)
-	FindByID(clsInstanceID string) (*internal.CLSInstance, bool, error)
-	Insert(instance internal.CLSInstance) error
-	Update(instance internal.CLSInstance) error
-	Delete(clsInstanceID string) error
-}

@@ -5,6 +5,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
@@ -42,6 +45,12 @@ type KymaVersionConfigurator interface {
 	ForGlobalAccount(string) (string, bool, error)
 }
 
+type SMClientFactory interface {
+	ForCredentials(credentials *servicemanager.Credentials) servicemanager.Client
+	ForCustomerCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (servicemanager.Client, error)
+	ProvideCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (*servicemanager.Credentials, error)
+}
+
 type InitialisationStep struct {
 	operationManager            *process.ProvisionOperationManager
 	instanceStorage             storage.Instances
@@ -54,7 +63,8 @@ type InitialisationStep struct {
 	operationTimeout            time.Duration
 	provisioningTimeout         time.Duration
 	runtimeVerConfigurator      RuntimeVersionConfiguratorForProvisioning
-	serviceManagerClientFactory *servicemanager.ClientFactory
+	serviceManagerClientFactory SMClientFactory
+	operationStorage            storage.Operations
 }
 
 func NewInitialisationStep(os storage.Operations,
@@ -68,10 +78,11 @@ func NewInitialisationStep(os storage.Operations,
 	provisioningTimeout time.Duration,
 	operationTimeout time.Duration,
 	rvc RuntimeVersionConfiguratorForProvisioning,
-	smcf *servicemanager.ClientFactory) *InitialisationStep {
+	smcf SMClientFactory) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:            process.NewProvisionOperationManager(os),
 		instanceStorage:             is,
+		operationStorage:            os,
 		provisionerClient:           pc,
 		directorClient:              dc,
 		inputBuilder:                b,
@@ -94,6 +105,39 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 		log.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout), log)
 	}
+
+	if operation.State == orchestration.Pending {
+		deprovisionOp, err := s.operationStorage.GetDeprovisioningOperationByInstanceID(operation.InstanceID)
+		if err != nil && !dberr.IsNotFound(err) {
+			log.Errorf("Unable to get deprovisioning operation: %s", err.Error())
+			return operation, time.Second, nil
+		}
+		if deprovisionOp != nil && deprovisionOp.State == domain.InProgress {
+			return operation, time.Minute, nil
+		}
+
+		// if there was a deprovisioning process before, take new InstanceDetails
+		if deprovisionOp != nil {
+			inst, err := s.instanceStorage.GetByID(operation.InstanceID)
+			if err != nil {
+				if dberr.IsNotFound(err) {
+					log.Errorf("Instance does not exists.")
+					return s.operationManager.OperationFailed(operation, "The instance does not exists", log)
+				}
+				log.Errorf("Unable to get the instance: %s", err.Error())
+				return operation, time.Second, nil
+			}
+			log.Infof("Setting the newest InstanceDetails")
+			operation.InstanceDetails, err = inst.GetInstanceDetails()
+			if err != nil {
+				log.Errorf("Unable to provide Instance details: %s", err.Error())
+				return s.operationManager.OperationFailed(operation, "Unable to provide Instance details.", log)
+			}
+		}
+		log.Infof("Setting the operation to 'InProgress'")
+		operation.State = domain.InProgress
+	}
+
 	operation.SMClientFactory = s.serviceManagerClientFactory
 
 	inst, err := s.instanceStorage.GetByID(operation.InstanceID)
@@ -272,7 +316,7 @@ func (s *InitialisationStep) createExternalEval(operation internal.ProvisioningO
 		log.Info("skipping AVS external evaluation creation for trial plan")
 		return operation, 0, nil
 	}
-	log.Infof("creating external evaluation for instance %", instance.InstanceID)
+	log.Infof("creating external evaluation for instance %s", instance.InstanceID)
 	operation, repeat, err := s.externalEvalCreator.createEval(operation, instance.DashboardURL, log)
 	if err != nil || repeat != 0 {
 		return operation, repeat, err

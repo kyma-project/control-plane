@@ -21,13 +21,13 @@ kcp upgrade kyma --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...]
   kcp upgrade kyma --target "account=CA.*"                       Upgrade Kyma on Runtimes of all global accounts starting with CA.
   kcp upgrade kyma --target all --target-exclude "account=CA.*"  Upgrade Kyma on Runtimes of all global accounts not starting with CA.
   kcp upgrade kyma --target "region=europe|eu|uk"                Upgrade Kyma on Runtimes whose region belongs to Europe.
-  kcp upgrade kyma --target all --version "master-00e83e99"      Upgrade Kyma on Runtimes of all global accounts to the custom Kyma version (master-00e83e99).
+  kcp upgrade kyma --target all --version "main-00e83e99"        Upgrade Kyma on Runtimes of all global accounts to the custom Kyma version (main-00e83e99).
 ```
 
 ## Options
 
 ```
-      --dry-run                      Perform the orchestration without executing the actual upgrage operations for the Runtimes. The details can be obtained using the "kcp orchestrations" command.
+      --dry-run                      Perform the orchestration without executing the actual upgrade operations for the Runtimes. The details can be obtained using the "kcp orchestrations" command.
       --parallel-workers int         Number of parallel workers to use in parallel orchestration strategy. By default the amount of workers will be auto-selected on control plane server side.
       --schedule string              Orchestration schedule to use. Possible values: "immediate", "maintenancewindow". By default the schedule will be auto-selected on control plane server side.
       --strategy string              Orchestration strategy to use. (default "parallel")
@@ -38,11 +38,11 @@ kcp upgrade kyma --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...]
                                        subaccount={REGEXP} : Regex pattern to match against the Runtime's subaccount field, e.g. "0d20e315-d0b4-48a2-9512-49bc8eb03cd1"
                                        region={REGEXP}     : Regex pattern to match against the Runtime's provider region field, e.g. "europe|eu-"
                                        runtime-id={ID}     : Specific Runtime by Runtime ID
-                                       plan={NAME}         : Name of the Runtime's service plan. The possible values are: azure, azure_lite, trial, gcp
+                                       plan={NAME}         : Name of the Runtime's service plan. The possible values are: azure, azure_lite, aws, trial, gcp, openstack
                                        shoot={NAME}        : Specific Runtime by Shoot cluster name
   -e, --target-exclude stringArray   List of Runtime target specifiers to exclude. You can specify this option multiple times.
                                      A target specifier is a comma-separated list of the selectors described under the --target option.
-      --version string               Kyma version to use. Supports semantic (1.18.0), PR-<number> (PR-123), and <branch name>-<commit hash> (master-00e83e99) as values.
+      --version string               Kyma version to use. Supports semantic (1.18.0), PR-<number> (PR-123), and <branch name>-<commit hash> (main-00e83e99) as values.
 ```
 
 ## Global Options
@@ -63,4 +63,3 @@ kcp upgrade kyma --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...]
 ## See also
 
 * [kcp upgrade](kcp_upgrade.md)	 - Performs upgrade operations on Kyma Runtimes.
-

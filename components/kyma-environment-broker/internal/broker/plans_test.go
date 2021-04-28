@@ -21,7 +21,7 @@ func TestSchemaGenerator(t *testing.T) {
 		{
 			name:         "AWS schema is correct",
 			generator:    AWSSchema,
-			machineTypes: []string{"m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m4.16xlarge"},
+			machineTypes: []string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m4.16xlarge"},
 			file:         "aws-schema.json",
 		},
 		{
@@ -35,6 +35,12 @@ func TestSchemaGenerator(t *testing.T) {
 			generator:    AzureSchema,
 			machineTypes: []string{"Standard_D4_v3"},
 			file:         "azure-lite-schema.json",
+		},
+		{
+			name:         "AzureHA schema is correct",
+			generator:    AzureHASchema,
+			machineTypes: []string{"Standard_D4_v3"},
+			file:         "azure-ha-schema.json",
 		},
 		{
 			name:         "GCP schema is correct",

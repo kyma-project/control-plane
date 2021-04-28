@@ -61,6 +61,7 @@ type ProvisioningParametersDTO struct {
 	// with "provisioning-runtime-override" label when LicenceType is "TestDevelopmentAndDemo"
 	LicenceType                 *string  `json:"licence_type"`
 	Zones                       []string `json:"zones"`
+	ZonesCount                  *int     `json:"zonesCount"`
 	AutoScalerMin               *int     `json:"autoScalerMin"`
 	AutoScalerMax               *int     `json:"autoScalerMax"`
 	MaxSurge                    *int     `json:"maxSurge"`
