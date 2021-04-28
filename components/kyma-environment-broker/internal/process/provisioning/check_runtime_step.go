@@ -50,6 +50,12 @@ func (s *CheckRuntimeStep) checkRuntimeStatus(operation internal.ProvisioningOpe
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout), log)
 	}
 
+	if operation.ProvisionerOperationID == "" {
+		msg := "Operation dos not contain Provisioner Operation ID"
+		log.Error(msg)
+		return s.operationManager.OperationFailed(operation, msg, log)
+	}
+
 	status, err := s.provisionerClient.RuntimeOperationStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisionerOperationID)
 	if err != nil {
 		log.Errorf("call to provisioner RuntimeOperationStatus failed: %s", err.Error())
