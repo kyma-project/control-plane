@@ -52,6 +52,7 @@ func (s *CheckRuntimeStep) checkRuntimeStatus(operation internal.ProvisioningOpe
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisionerOperationID)
 	if err != nil {
+		log.Errorf("call to provisioner RuntimeOperationStatus failed: %s", err.Error())
 		return operation, 1 * time.Minute, nil
 	}
 	log.Infof("call to provisioner returned %s status", status.State.String())
