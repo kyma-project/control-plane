@@ -19,15 +19,15 @@ func NewUpgradeClusterCommand() *cobra.Command {
 	cobraCmd := &cobra.Command{
 		Use:   "cluster --target {TARGET SPEC} ... [--target-exclude {TARGET SPEC} ...]",
 		Short: "Upgrades Kubernetes cluster on one or more Kyma Runtimes.",
-		Long: `Upgrade Kubernetes cluster on targets of Runtimes.
+		Long: `Upgrade Kubernetes cluster and/or machine images on targets of Runtimes.
 The upgrade is performed by Kyma Control Plane (KCP) within a new orchestration asynchronously. The ID of the orchestration is returned by the command upon success.
 The targets of Runtimes are specified via the --target and --target-exclude options. At least one --target must be specified.
-The version of Kubernetes is configured by Kyma Environment Broker (KEB).
+The version of Kubernetes and machine images is configured by Kyma Environment Broker (KEB).
 Additional Kyma configurations to use for the upgrade are taken from Kyma Control Plane during the processing of the orchestration.`,
 		Example: `kcp upgrade cluster --target all --schedule maintenancewindow    Upgrade Kubernetes cluster on Runtime in their next respective maintenance window hours.
-		kcp upgrade cluster --target "account=CA.*"                       Upgrade Kubernetes cluster on Runtimes of all global accounts starting with CA.
-		kcp upgrade cluster --target all --target-exclude "account=CA.*"  Upgrade Kubernetes cluster on Runtimes of all global accounts not starting with CA.
-		kcp upgrade cluster --target "region=europe|eu|uk"                Upgrade Kubernetes cluster on Runtimes whose region belongs to Europe.`,
+  kcp upgrade cluster --target "account=CA.*"                       Upgrade Kubernetes cluster on Runtimes of all global accounts starting with CA.
+  kcp upgrade cluster --target all --target-exclude "account=CA.*"  Upgrade Kubernetes cluster on Runtimes of all global accounts not starting with CA.
+  kcp upgrade cluster --target "region=europe|eu|uk"                Upgrade Kubernetes cluster on Runtimes whose region belongs to Europe.`,
 
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },

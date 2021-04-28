@@ -35,6 +35,7 @@ func NewUpgradeCmd() *cobra.Command {
 	}
 
 	cobraCmd.AddCommand(NewUpgradeKymaCmd())
+	cobraCmd.AddCommand(NewUpgradeClusterCommand())
 	return cobraCmd
 }
 
