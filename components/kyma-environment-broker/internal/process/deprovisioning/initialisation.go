@@ -159,8 +159,15 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), log)
 	}
 
+	if operation.ProvisionerOperationID == "" {
+		msg := "Operation dos not contain Provisioner Operation ID"
+		log.Error(msg)
+		return s.operationManager.OperationFailed(operation, msg, log)
+	}
+
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
 	if err != nil {
+		log.Errorf("call to provisioner RuntimeOperationStatus failed: %s", err.Error())
 		return operation, 1 * time.Minute, nil
 	}
 	log.Infof("call to provisioner returned %s status", status.State.String())
