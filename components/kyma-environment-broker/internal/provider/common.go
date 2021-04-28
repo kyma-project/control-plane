@@ -37,3 +37,10 @@ func generateRandomAzureZone() string {
 
 	return strconv.Itoa(getRandomNumber())
 }
+
+func generateMultipleAzureZones(zoneCount int) []string {
+	zones := []string{"1", "2", "3"}
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(zones), func(i, j int) { zones[i], zones[j] = zones[j], zones[i] })
+	return zones[:zoneCount]
+}

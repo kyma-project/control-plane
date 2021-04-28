@@ -3,7 +3,6 @@ package test
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -12,11 +11,9 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/hyperscaler"
-	"github.com/kyma-project/control-plane/tests/e2e/provisioning/internal/hyperscaler/azure"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/broker"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/runtime"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/v1_client"
-
 	"github.com/ory/hydra-maester/api/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -44,10 +41,9 @@ type Config struct {
 	ConfigName         string        `default:"e2e-runtime-config"`
 	DeployNamespace    string        `default:"kcp-system"`
 
-	UpgradeTest               bool `envconfig:"default=false"`
-	DummyTest                 bool `default:"false"`
-	CleanupPhase              bool `default:"false"`
-	TestAzureEventHubsEnabled bool `default:"true"`
+	UpgradeTest  bool `envconfig:"default=false"`
+	DummyTest    bool `default:"false"`
+	CleanupPhase bool `default:"false"`
 }
 
 // Suite provides set of clients able to provision and test Kyma runtime
@@ -62,7 +58,6 @@ type Suite struct {
 	secretClient    v1_client.Secrets
 	configMapClient v1_client.ConfigMaps
 	accountProvider hyperscaler.AccountProvider
-	azureClient     *azure.Interface
 
 	dashboardChecker *runtime.DashboardChecker
 
@@ -76,23 +71,20 @@ type Suite struct {
 	ConfigName      string
 	DeployNamespace string
 
-	IsUpgradeTest               bool
-	IsDummyTest                 bool
-	IsCleanupPhase              bool
-	IsTestAzureEventHubsEnabled bool
+	IsUpgradeTest  bool
+	IsDummyTest    bool
+	IsCleanupPhase bool
 }
 
 const (
-	instanceIdKey        = "instanceId"
-	dashboardUrlKey      = "dashboardUrl"
-	kubeconfigKey        = "config"
-	subAccountID         = "39ba9a66-2c1a-4fe4-a28e-6e5db434084e"
-	DefaultAzureEHRegion = "westeurope"
+	instanceIdKey   = "instanceId"
+	dashboardUrlKey = "dashboardUrl"
+	kubeconfigKey   = "config"
+	subAccountID    = "39ba9a66-2c1a-4fe4-a28e-6e5db434084e"
 )
 
 func newTestSuite(t *testing.T) *Suite {
 	ctx := context.Background()
-	var azureClient *azure.Interface
 	cfg := &Config{}
 	err := envconfig.InitWithPrefix(cfg, "APP")
 	require.NoError(t, err)
@@ -136,10 +128,6 @@ func newTestSuite(t *testing.T) *Suite {
 
 	dashboardChecker := runtime.NewDashboardChecker(*httpClient, log.WithField("service", "dashboard_checker"))
 
-	if cfg.TestAzureEventHubsEnabled {
-		azureClient = newAzureClient(t, cfg, brokerClient.GlobalAccountID())
-	}
-
 	suite := &Suite{
 		t:   t,
 		log: log,
@@ -149,7 +137,6 @@ func newTestSuite(t *testing.T) *Suite {
 		runtimeClient:    runtimeClient,
 		secretClient:     secretClient,
 		configMapClient:  configMapClient,
-		azureClient:      azureClient,
 
 		directorClient: directorClient,
 
@@ -160,10 +147,9 @@ func newTestSuite(t *testing.T) *Suite {
 		ConfigName:      cfg.ConfigName,
 		DeployNamespace: cfg.DeployNamespace,
 
-		IsUpgradeTest:               cfg.UpgradeTest,
-		IsDummyTest:                 cfg.DummyTest,
-		IsCleanupPhase:              cfg.CleanupPhase,
-		IsTestAzureEventHubsEnabled: cfg.TestAzureEventHubsEnabled,
+		IsUpgradeTest:  cfg.UpgradeTest,
+		IsDummyTest:    cfg.DummyTest,
+		IsCleanupPhase: cfg.CleanupPhase,
 	}
 
 	if suite.IsUpgradeTest {
@@ -182,21 +168,6 @@ func (ts *Suite) Cleanup() {
 	require.NoError(ts.t, err)
 	err = ts.brokerClient.AwaitOperationSucceeded(operationID, ts.DeprovisionTimeout)
 	assert.NoError(ts.t, err)
-
-	if ts.IsTestAzureEventHubsEnabled {
-		ts.log.Info("Checking the de-provisioned Azure EventHubs")
-		ts.ensureAzureResourceGroupRemoved()
-	}
-}
-
-// ensureAzureResourceGroupRemoved ensures ResourceGroup is removed which also means EventHub is removed
-func (ts *Suite) ensureAzureResourceGroupRemoved() {
-	filter := fmt.Sprintf("tagName eq 'InstanceID' and tagValue eq '%s'", ts.InstanceID)
-	groupListResultPage, err := (*ts.azureClient).ListResourceGroup(context.TODO(), filter, nil)
-
-	assert.NoError(ts.t, err)
-	assert.Equal(ts.t, http.StatusOK, groupListResultPage.Response().StatusCode, "HTTP GET fails for ListResourceGroup")
-	assert.Equal(ts.t, 0, len(groupListResultPage.Values()), "groupListResultPage should return 0 ResourceGroup")
 }
 
 // cleanupResources removes secret and config map used to store data about the test
@@ -300,31 +271,4 @@ func newHTTPClient(insecureSkipVerify bool) *http.Client {
 		},
 		Timeout: 30 * time.Second,
 	}
-}
-
-func newAzureClient(t *testing.T, cfg *Config, globalAccountID string) *azure.Interface {
-	hypType := hyperscaler.Azure
-
-	hyperscalerProvider := azure.NewAzureProvider()
-
-	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
-	require.NoError(t, err)
-
-	gardenerSecrets, err := gardener.NewGardenerSecretsInterface(gardenerClusterConfig, cfg.Gardener.Project)
-	require.NoError(t, err)
-
-	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecrets)
-
-	accountProvider := hyperscaler.NewAccountProvider(nil, gardenerAccountPool)
-
-	credentials, err := accountProvider.GardenerCredentials(hypType, globalAccountID)
-	assert.NoError(t, err)
-
-	azureCfg, err := azure.GetConfigFromHAPCredentialsAndProvisioningParams(credentials, DefaultAzureEHRegion)
-	assert.NoError(t, err)
-
-	azureClient, err := hyperscalerProvider.GetClient(azureCfg)
-	assert.NoError(t, err)
-
-	return &azureClient
 }

@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"path"
 	"strconv"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
@@ -26,6 +27,7 @@ type Client interface {
 	ListOperations(orchestrationID string, params ListParameters) (OperationResponseList, error)
 	GetOperation(orchestrationID, operationID string) (OperationDetailResponse, error)
 	UpgradeKyma(params Parameters) (UpgradeResponse, error)
+	UpgradeCluster(params Parameters) (UpgradeResponse, error)
 	CancelOrchestration(orchestrationID string) error
 }
 
@@ -244,15 +246,46 @@ func (c client) GetOperation(orchestrationID, operationID string) (OperationDeta
 // UpgradeKyma creates a new Kyma upgrade orchestration according to the given orchestration parameters.
 // If successful, the UpgradeResponse returned contains the ID of the newly created orchestration.
 func (c client) UpgradeKyma(params Parameters) (UpgradeResponse, error) {
+	uri := "/upgrade/kyma"
+
+	ur, err := c.upgradeOperation(uri, params)
+	if err != nil {
+		return ur, errors.Wrap(err, "while calling kyma upgrade operation")
+	}
+
+	return ur, nil
+}
+
+// UpgradeCluster creates a new Cluster upgrade orchestration according to the given orchestration parameters.
+// If successful, the UpgradeResponse returned contains the ID of the newly created orchestration.
+func (c client) UpgradeCluster(params Parameters) (UpgradeResponse, error) {
+	uri := "/upgrade/cluster"
+
+	ur, err := c.upgradeOperation(uri, params)
+	if err != nil {
+		return ur, errors.Wrap(err, "while calling cluster upgrade operation")
+	}
+
+	return ur, nil
+}
+
+// common func trigger kyma or cluster upgrade
+func (c client) upgradeOperation(uri string, params Parameters) (UpgradeResponse, error) {
 	ur := UpgradeResponse{}
 	blob, err := json.Marshal(params)
 	if err != nil {
 		return ur, errors.Wrap(err, "while converting upgrade parameters to JSON")
 	}
 
-	resp, err := c.httpClient.Post(fmt.Sprintf("%s/upgrade/kyma", c.url), "application/json", bytes.NewBuffer(blob))
+	u, err := url.Parse(c.url)
 	if err != nil {
-		return ur, errors.Wrapf(err, "while calling %s/upgrade/kyma", c.url)
+		return ur, errors.Wrapf(err, "while parsing %s", c.url)
+	}
+	u.Path = path.Join(u.Path, uri)
+
+	resp, err := c.httpClient.Post(u.String(), "application/json", bytes.NewBuffer(blob))
+	if err != nil {
+		return ur, errors.Wrapf(err, "while calling %s", u)
 	}
 
 	// Drain response body and close, return error to context if there isn't any.
@@ -268,7 +301,7 @@ func (c client) UpgradeKyma(params Parameters) (UpgradeResponse, error) {
 	}()
 
 	if resp.StatusCode != http.StatusAccepted {
-		return ur, fmt.Errorf("calling %s/upgrade/kyma returned %s status", c.url, resp.Status)
+		return ur, fmt.Errorf("calling %s returned %s status", u, resp.Status)
 	}
 
 	decoder := json.NewDecoder(resp.Body)

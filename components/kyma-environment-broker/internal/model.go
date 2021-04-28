@@ -2,7 +2,12 @@ package internal
 
 import (
 	"database/sql"
+	"fmt"
+	"net/url"
+	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/sirupsen/logrus"
@@ -24,6 +29,7 @@ type ProvisionerInputCreator interface {
 	AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) ProvisionerInputCreator
 	CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntimeInput, error)
 	CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInput, error)
+	CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, error)
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 }
 
@@ -33,19 +39,6 @@ const (
 	GitKymaProject = "kyma-project"
 	GitKymaRepo    = "kyma"
 )
-
-type LMSTenant struct {
-	ID        string
-	Name      string
-	Region    string
-	CreatedAt time.Time
-}
-
-type LMS struct {
-	TenantID    string    `json:"tenant_id"`
-	Failed      bool      `json:"failed"`
-	RequestedAt time.Time `json:"requested_at"`
-}
 
 type AvsEvaluationStatus struct {
 	Current  string `json:"current_value"`
@@ -122,14 +115,59 @@ type Instance struct {
 	Version int
 }
 
+func (i *Instance) GetInstanceDetails() (InstanceDetails, error) {
+	result := i.InstanceDetails
+	if result.ShootName == "" {
+		logrus.Infof("extracting shoot name/domain from dashboard_url %s for instance %s", i.DashboardURL, i.InstanceID)
+		shoot, domain, e := i.extractShootNameAndDomain()
+		if e != nil {
+			logrus.Errorf("unable to extract shoot name: %s (instance %s)", e.Error(), i.InstanceID)
+			return result, e
+		}
+		result.ShootName = shoot
+		result.ShootDomain = domain
+	}
+	return result, nil
+}
+
+func (i *Instance) extractShootNameAndDomain() (string, string, error) {
+	parsed, err := url.Parse(i.DashboardURL)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "while parsing dashboard url %s", i.DashboardURL)
+	}
+
+	parts := strings.Split(parsed.Host, ".")
+	if len(parts) <= 1 {
+		return "", "", fmt.Errorf("host is too short: %s", parsed.Host)
+	}
+	return parts[1], parsed.Host[len(parts[0])+1:], nil
+}
+
+// OperationType defines the possible types of an asynchronous operation to a broker.
+type OperationType string
+
+const (
+	// OperationTypeProvision means provisioning OperationType
+	OperationTypeProvision OperationType = "provision"
+	// OperationTypeDeprovision means deprovision OperationType
+	OperationTypeDeprovision OperationType = "deprovision"
+	// OperationTypeUndefined means undefined OperationType
+	OperationTypeUndefined OperationType = ""
+	// OperationTypeUpgradeKyma means upgrade Kyma OperationType
+	OperationTypeUpgradeKyma OperationType = "upgradeKyma"
+	// OperationTypeUpgradeCluster means upgrade cluster (shoot) OperationType
+	OperationTypeUpgradeCluster OperationType = "upgradeCluster"
+)
+
 type Operation struct {
 	// following fields are serialized to JSON and stored in the storage
 	InstanceDetails
 
-	ID        string    `json:"-"`
-	Version   int       `json:"-"`
-	CreatedAt time.Time `json:"-"`
-	UpdatedAt time.Time `json:"-"`
+	ID        string        `json:"-"`
+	Version   int           `json:"-"`
+	CreatedAt time.Time     `json:"-"`
+	UpdatedAt time.Time     `json:"-"`
+	Type      OperationType `json:"-"`
 
 	InstanceID             string                    `json:"-"`
 	ProvisionerOperationID string                    `json:"-"`
@@ -138,11 +176,13 @@ type Operation struct {
 	ProvisioningParameters ProvisioningParameters    `json:"-"`
 
 	// OrchestrationID specifies the origin orchestration which triggers the operation, empty for OSB operations (provisioning/deprovisioning)
-	OrchestrationID string `json:"-"`
+	OrchestrationID string              `json:"-"`
+	FinishedStages  map[string]struct{} `json:"-"`
+	FinishedSteps   map[string]struct{} `json:"-"`
 }
 
 func (o *Operation) IsFinished() bool {
-	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceled
+	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceling
 }
 
 // Orchestration holds all information about an orchestration.
@@ -182,18 +222,16 @@ type SMClientFactory interface {
 }
 
 type InstanceDetails struct {
-	Lms LMS `json:"lms"`
-
 	Avs      AvsLifecycleData `json:"avs"`
 	EventHub EventHub         `json:"eh"`
 
-	SubAccountID string    `json:"sub_account_id"`
-	RuntimeID    string    `json:"runtime_id"`
-	ShootName    string    `json:"shoot_name"`
-	ShootDomain  string    `json:"shoot_domain"`
-	XSUAA        XSUAAData `json:"xsuaa"`
-	Ems          EmsData   `json:"ems"`
-	Cls          ClsData   `json:"cls"`
+	SubAccountID string           `json:"sub_account_id"`
+	RuntimeID    string           `json:"runtime_id"`
+	ShootName    string           `json:"shoot_name"`
+	ShootDomain  string           `json:"shoot_domain"`
+	XSUAA        XSUAAData        `json:"xsuaa"`
+	Ems          EmsData          `json:"ems"`
+	Connectivity ConnectivityData `json:"connectivity"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -232,17 +270,11 @@ type EmsData struct {
 	Overrides string `json:"overrides"`
 }
 
-type ClsData struct {
+type ConnectivityData struct {
 	Instance ServiceManagerInstanceInfo `json:"instance"`
-	Region   string                     `json:"region"`
 
-	Binding   BindingInfo `json:"binding"`
-	Overrides string      `json:"overrides"`
-}
-
-type BindingInfo struct {
-	Bound     bool   `json:"bound"`
 	BindingID string `json:"bindingId"`
+	Overrides string `json:"overrides"`
 }
 
 func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {
@@ -346,16 +378,22 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			State:                  domain.InProgress,
 			CreatedAt:              time.Now(),
 			UpdatedAt:              time.Now(),
+			Type:                   OperationTypeProvision,
 			ProvisioningParameters: parameters,
 			InstanceDetails: InstanceDetails{
 				SubAccountID: parameters.ErsContext.SubAccountID,
 			},
+			FinishedSteps: make(map[string]struct{}, 0),
 		},
 	}, nil
 }
 
 // NewDeprovisioningOperationWithID creates a fresh (just starting) instance of the DeprovisioningOperation with provided ID
 func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (DeprovisioningOperation, error) {
+	details, err := instance.GetInstanceDetails()
+	if err != nil {
+		return DeprovisioningOperation{}, err
+	}
 	return DeprovisioningOperation{
 		Operation: Operation{
 			ID:              operationID,
@@ -365,7 +403,9 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 			State:           domain.InProgress,
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
-			InstanceDetails: instance.InstanceDetails,
+			Type:            OperationTypeDeprovision,
+			InstanceDetails: details,
+			FinishedSteps:   make(map[string]struct{}, 0),
 		},
 	}, nil
 }
@@ -381,7 +421,9 @@ func NewSuspensionOperationWithID(operationID string, instance *Instance) Deprov
 			State:           orchestration.Pending,
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
+			Type:            OperationTypeDeprovision,
 			InstanceDetails: instance.InstanceDetails,
+			FinishedSteps:   make(map[string]struct{}, 0),
 		},
 		Temporary: true,
 	}
@@ -393,6 +435,24 @@ func (po *ProvisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (s
 
 func (po *ProvisioningOperation) ProvideServiceManagerCredentials(log logrus.FieldLogger) (*servicemanager.Credentials, error) {
 	return po.SMClientFactory.ProvideCredentials(serviceManagerRequestCreds(po.ProvisioningParameters), log)
+}
+
+func (o *Operation) FinishStep(stepName string) {
+	o.FinishedSteps[stepName] = struct{}{}
+}
+
+func (o *Operation) IsStepDone(stepName string) bool {
+	_, found := o.FinishedSteps[stepName]
+	return found
+}
+
+func (o *Operation) FinishStage(stageName string) {
+	o.FinishedStages[stageName] = struct{}{}
+}
+
+func (o *Operation) IsStageFinished(stage string) bool {
+	_, found := o.FinishedStages[stage]
+	return found
 }
 
 func (do *DeprovisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {
@@ -441,4 +501,21 @@ func serviceManagerRequestCreds(parameters ProvisioningParameters) *servicemanag
 		}
 	}
 	return creds
+}
+
+func (i *ServiceManagerInstanceInfo) ToProvisioningInput() *servicemanager.ProvisioningInput {
+	var input servicemanager.ProvisioningInput
+
+	input.ID = i.InstanceID
+	input.ServiceID = i.ServiceID
+	input.PlanID = i.PlanID
+	input.SpaceGUID = uuid.New().String()
+	input.OrganizationGUID = uuid.New().String()
+
+	input.Context = map[string]interface{}{
+		"platform": "kubernetes",
+	}
+	input.Parameters = map[string]interface{}{}
+
+	return &input
 }

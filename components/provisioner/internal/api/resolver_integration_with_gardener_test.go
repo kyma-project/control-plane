@@ -8,6 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/api/fake/seeds"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/api/fake/shoots"
+
 	provisioning2 "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api"
@@ -28,7 +31,6 @@ import (
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 
 	"github.com/kyma-incubator/hydroform/install/installation"
-	gardener_fake "github.com/kyma-project/control-plane/components/provisioner/internal/api/fake"
 	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
@@ -148,7 +150,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	auditLogsConfigPath := filepath.Join("testdata", "config.json")
 	maintenanceWindowConfigPath := filepath.Join("testdata", "maintwindow.json")
 
-	shootInterface := gardener_fake.NewFakeShootsInterface(t, cfg)
+	shootInterface := shoots.NewFakeShootsInterface(t, cfg)
+	seedInterface := seeds.NewFakeSeedsInterface(t, cfg)
 	secretsInterface := setupSecretsClient(t, cfg)
 	dbsFactory := dbsession.NewFactory(connection)
 
@@ -192,6 +195,11 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	for _, config := range clusterConfigurations {
 		t.Run(config.description, func(t *testing.T) {
+			if config.seed != nil {
+				_, err := seedInterface.Create(context.Background(), config.seed, metav1.CreateOptions{})
+				require.NoError(t, err)
+			}
+
 			clusterConfig := config.provisioningInput.config
 			runtimeInput := config.provisioningInput.runtimeInput
 

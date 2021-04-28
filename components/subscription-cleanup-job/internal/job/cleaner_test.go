@@ -4,6 +4,9 @@ import (
 	"context"
 	"testing"
 
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardener_fake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
+
 	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/cloudprovider/mocks"
 	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -17,16 +20,11 @@ import (
 var namespace = "test_gardener"
 
 func TestCleanerJob(t *testing.T) {
-	t.Run("should return secret to the secrets pool", func(t *testing.T) {
+	t.Run("should return secret binding to the secrets pool", func(t *testing.T) {
 		//given
 		secret := &v1.Secret{
 			ObjectMeta: machineryv1.ObjectMeta{
 				Name: "secret1", Namespace: namespace,
-				Labels: map[string]string{
-					"tenantName":      "tenant1",
-					"hyperscalerType": "azure",
-					"dirty":           "true",
-				},
 			},
 			Data: map[string][]byte{
 				"credentials":    []byte("secret1"),
@@ -36,27 +34,43 @@ func TestCleanerJob(t *testing.T) {
 				"tenantID":       []byte("tenant1"),
 			},
 		}
+		secretBinding := &gardener_types.SecretBinding{
+			ObjectMeta: machineryv1.ObjectMeta{
+				Name:      "secretBinding1",
+				Namespace: namespace,
+				Labels: map[string]string{
+					"tenantName":      "tenant1",
+					"hyperscalerType": "azure",
+					"dirty":           "true",
+				},
+			},
+			SecretRef: v1.SecretReference{
+				Name:      "secret1",
+				Namespace: namespace,
+			},
+		}
 
 		mockClient := fake.NewSimpleClientset(secret)
-		mockSecrets := mockClient.CoreV1().Secrets(namespace)
+
+		gardenerFake := gardener_fake.NewSimpleClientset(secretBinding)
+		mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(namespace)
 
 		resCleaner := &azureMockResourceCleaner{}
-
 		providerFactory := &mocks.ProviderFactory{}
 		providerFactory.On("New", model.Azure, mock.Anything).Return(resCleaner, nil)
 
-		cleaner := NewCleaner(context.Background(), mockSecrets, providerFactory)
+		cleaner := NewCleaner(context.Background(), mockClient, mockSecretBindings, providerFactory)
 
 		//when
 		err := cleaner.Do()
 
 		//then
 		require.NoError(t, err)
-		cleanedSecret, err := mockSecrets.Get(context.Background(), secret.Name, machineryv1.GetOptions{})
+		cleanedSecretBinding, err := mockSecretBindings.Get(context.Background(), secretBinding.Name, machineryv1.GetOptions{})
 		require.NoError(t, err)
 
-		assert.Equal(t, "", cleanedSecret.Labels["dirty"])
-		assert.Equal(t, "", cleanedSecret.Labels["tenantName"])
+		assert.Equal(t, "", cleanedSecretBinding.Labels["dirty"])
+		assert.Equal(t, "", cleanedSecretBinding.Labels["tenantName"])
 	})
 }
 

@@ -3,6 +3,7 @@ package postsql
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/storage"
@@ -82,7 +83,7 @@ func (s *operations) GetProvisioningOperationByInstanceID(instanceID string) (*i
 	operation := dbmodel.OperationDTO{}
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		operation, lastErr = session.GetOperationByTypeAndInstanceID(instanceID, dbmodel.OperationTypeProvision)
+		operation, lastErr = session.GetOperationByTypeAndInstanceID(instanceID, internal.OperationTypeProvision)
 		if lastErr != nil {
 			if dberr.IsNotFound(lastErr) {
 				lastErr = dberr.NotFound("operation does not exist")
@@ -139,7 +140,7 @@ func (s *operations) ListProvisioningOperationsByInstanceID(instanceID string) (
 	operations := []dbmodel.OperationDTO{}
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		operations, lastErr = session.GetOperationsByTypeAndInstanceID(instanceID, dbmodel.OperationTypeProvision)
+		operations, lastErr = session.GetOperationsByTypeAndInstanceID(instanceID, internal.OperationTypeProvision)
 		if lastErr != nil {
 			log.Errorf("while reading operation from the storage: %v", lastErr)
 			return false, nil
@@ -212,7 +213,7 @@ func (s *operations) GetDeprovisioningOperationByInstanceID(instanceID string) (
 	operation := dbmodel.OperationDTO{}
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		operation, lastErr = session.GetOperationByTypeAndInstanceID(instanceID, dbmodel.OperationTypeDeprovision)
+		operation, lastErr = session.GetOperationByTypeAndInstanceID(instanceID, internal.OperationTypeDeprovision)
 		if lastErr != nil {
 			if dberr.IsNotFound(lastErr) {
 				lastErr = dberr.NotFound("operation does not exist")
@@ -271,7 +272,7 @@ func (s *operations) ListDeprovisioningOperationsByInstanceID(instanceID string)
 	operations := []dbmodel.OperationDTO{}
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		operations, lastErr = session.GetOperationsByTypeAndInstanceID(instanceID, dbmodel.OperationTypeDeprovision)
+		operations, lastErr = session.GetOperationsByTypeAndInstanceID(instanceID, internal.OperationTypeDeprovision)
 		if lastErr != nil {
 			log.Errorf("while reading operation from the storage: %v", lastErr)
 			return false, nil
@@ -295,7 +296,7 @@ func (s *operations) ListDeprovisioningOperations() ([]internal.DeprovisioningOp
 	var operations []dbmodel.OperationDTO
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		operations, lastErr = session.ListOperationsByType(dbmodel.OperationTypeDeprovision)
+		operations, lastErr = session.ListOperationsByType(internal.OperationTypeDeprovision)
 		if lastErr != nil {
 			log.Errorf("while reading operation from the storage: %v", lastErr)
 			return false, nil
@@ -368,7 +369,7 @@ func (s *operations) GetUpgradeKymaOperationByInstanceID(instanceID string) (*in
 	operation := dbmodel.OperationDTO{}
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		operation, lastErr = session.GetOperationByTypeAndInstanceID(instanceID, dbmodel.OperationTypeUpgradeKyma)
+		operation, lastErr = session.GetOperationByTypeAndInstanceID(instanceID, internal.OperationTypeUpgradeKyma)
 		if lastErr != nil {
 			if dberr.IsNotFound(lastErr) {
 				lastErr = dberr.NotFound("operation does not exist")
@@ -395,7 +396,7 @@ func (s *operations) ListUpgradeKymaOperations() ([]internal.UpgradeKymaOperatio
 	var operations []dbmodel.OperationDTO
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		operations, lastErr = session.ListOperationsByType(dbmodel.OperationTypeUpgradeKyma)
+		operations, lastErr = session.ListOperationsByType(internal.OperationTypeUpgradeKyma)
 		if lastErr != nil {
 			log.Errorf("while reading operation from the storage: %v", lastErr)
 			return false, nil
@@ -418,7 +419,7 @@ func (s *operations) ListUpgradeKymaOperationsByInstanceID(instanceID string) ([
 	operations := []dbmodel.OperationDTO{}
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		operations, lastErr = session.GetOperationsByTypeAndInstanceID(instanceID, dbmodel.OperationTypeUpgradeKyma)
+		operations, lastErr = session.GetOperationsByTypeAndInstanceID(instanceID, internal.OperationTypeUpgradeKyma)
 		if lastErr != nil {
 			log.Errorf("while reading operation from the storage: %v", lastErr)
 			return false, nil
@@ -530,7 +531,7 @@ func (s *operations) GetOperationByID(operationID string) (*internal.Operation, 
 	return &op, nil
 }
 
-func (s *operations) GetNotFinishedOperationsByType(operationType dbmodel.OperationType) ([]internal.Operation, error) {
+func (s *operations) GetNotFinishedOperationsByType(operationType internal.OperationType) ([]internal.Operation, error) {
 	session := s.NewReadSession()
 	operations := make([]dbmodel.OperationDTO, 0)
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
@@ -565,10 +566,10 @@ func (s *operations) GetOperationStatsByPlan() (map[string]internal.OperationSta
 				Deprovisioning: make(map[domain.LastOperationState]int),
 			}
 		}
-		switch dbmodel.OperationType(e.Type) {
-		case dbmodel.OperationTypeProvision:
+		switch internal.OperationType(e.Type) {
+		case internal.OperationTypeProvision:
 			result[e.PlanID].Provisioning[domain.LastOperationState(e.State)] += 1
-		case dbmodel.OperationTypeDeprovision:
+		case internal.OperationTypeDeprovision:
 			result[e.PlanID].Deprovisioning[domain.LastOperationState(e.State)] += 1
 		}
 	}
@@ -745,7 +746,7 @@ func (s *operations) ListUpgradeClusterOperationsByInstanceID(instanceID string)
 	operations := []dbmodel.OperationDTO{}
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		operations, lastErr = session.GetOperationsByTypeAndInstanceID(instanceID, dbmodel.OperationTypeUpgradeCluster)
+		operations, lastErr = session.GetOperationsByTypeAndInstanceID(instanceID, internal.OperationTypeUpgradeCluster)
 		if lastErr != nil {
 			log.Errorf("while reading operation from the storage: %v", lastErr)
 			return false, nil
@@ -804,8 +805,13 @@ func (s *operations) operationToDB(op internal.Operation) (dbmodel.OperationDTO,
 		return dbmodel.OperationDTO{}, errors.Wrap(err, "while marshal provisioning parameters")
 	}
 
+	stages := []string{}
+	for s, _ := range op.FinishedStages {
+		stages = append(stages, s)
+	}
 	return dbmodel.OperationDTO{
 		ID:                     op.ID,
+		Type:                   op.Type,
 		TargetOperationID:      op.ProvisionerOperationID,
 		State:                  string(op.State),
 		Description:            op.Description,
@@ -815,6 +821,7 @@ func (s *operations) operationToDB(op internal.Operation) (dbmodel.OperationDTO,
 		InstanceID:             op.InstanceID,
 		OrchestrationID:        storage.StringToSQLNullString(op.OrchestrationID),
 		ProvisioningParameters: storage.StringToSQLNullString(string(pp)),
+		FinishedStages:         storage.StringToSQLNullString(strings.Join(stages, ",")),
 	}, nil
 }
 
@@ -831,10 +838,15 @@ func (s *operations) toOperation(op *dbmodel.OperationDTO, instanceDetails inter
 		return internal.Operation{}, errors.Wrap(err, "while decrypting basic auth")
 	}
 
+	stages := make(map[string]struct{})
+	for _, s := range strings.Split(storage.SQLNullStringToString(op.FinishedStages), ",") {
+		stages[s] = struct{}{}
+	}
 	return internal.Operation{
 		ID:                     op.ID,
 		CreatedAt:              op.CreatedAt,
 		UpdatedAt:              op.UpdatedAt,
+		Type:                   op.Type,
 		ProvisionerOperationID: op.TargetOperationID,
 		State:                  domain.LastOperationState(op.State),
 		InstanceID:             op.InstanceID,
@@ -843,6 +855,8 @@ func (s *operations) toOperation(op *dbmodel.OperationDTO, instanceDetails inter
 		OrchestrationID:        storage.SQLNullStringToString(op.OrchestrationID),
 		ProvisioningParameters: pp,
 		InstanceDetails:        instanceDetails,
+		FinishedStages:         stages,
+		FinishedSteps:          make(map[string]struct{}, 0),
 	}, nil
 }
 
@@ -864,7 +878,7 @@ func (s *operations) toOperations(op []dbmodel.OperationDTO) ([]internal.Operati
 }
 
 func (s *operations) toProvisioningOperation(op *dbmodel.OperationDTO) (*internal.ProvisioningOperation, error) {
-	if op.Type != dbmodel.OperationTypeProvision {
+	if op.Type != internal.OperationTypeProvision {
 		return nil, errors.New(fmt.Sprintf("expected operation type Provisioning, but was %s", op.Type))
 	}
 	var operation internal.ProvisioningOperation
@@ -919,12 +933,12 @@ func (s *operations) provisioningOperationToDTO(op *internal.ProvisioningOperati
 		return dbmodel.OperationDTO{}, errors.Wrapf(err, "while converting to operationDB %v", op)
 	}
 	ret.Data = string(serialized)
-	ret.Type = dbmodel.OperationTypeProvision
+	ret.Type = internal.OperationTypeProvision
 	return ret, nil
 }
 
 func (s *operations) toDeprovisioningOperation(op *dbmodel.OperationDTO) (*internal.DeprovisioningOperation, error) {
-	if op.Type != dbmodel.OperationTypeDeprovision {
+	if op.Type != internal.OperationTypeDeprovision {
 		return nil, errors.New(fmt.Sprintf("expected operation type Provisioning, but was %s", op.Type))
 	}
 	var operation internal.DeprovisioningOperation
@@ -952,12 +966,12 @@ func (s *operations) deprovisioningOperationToDTO(op *internal.DeprovisioningOpe
 		return dbmodel.OperationDTO{}, errors.Wrapf(err, "while converting to operationDB %v", op)
 	}
 	ret.Data = string(serialized)
-	ret.Type = dbmodel.OperationTypeDeprovision
+	ret.Type = internal.OperationTypeDeprovision
 	return ret, nil
 }
 
 func (s *operations) toUpgradeKymaOperation(op *dbmodel.OperationDTO) (*internal.UpgradeKymaOperation, error) {
-	if op.Type != dbmodel.OperationTypeUpgradeKyma {
+	if op.Type != internal.OperationTypeUpgradeKyma {
 		return nil, errors.New(fmt.Sprintf("expected operation type Upgrade Kyma, but was %s", op.Type))
 	}
 	var operation internal.UpgradeKymaOperation
@@ -1003,13 +1017,13 @@ func (s *operations) upgradeKymaOperationToDTO(op *internal.UpgradeKymaOperation
 		return dbmodel.OperationDTO{}, errors.Wrapf(err, "while converting to operationDB %v", op)
 	}
 	ret.Data = string(serialized)
-	ret.Type = dbmodel.OperationTypeUpgradeKyma
+	ret.Type = internal.OperationTypeUpgradeKyma
 	ret.OrchestrationID = storage.StringToSQLNullString(op.OrchestrationID)
 	return ret, nil
 }
 
 func (s *operations) toUpgradeClusterOperation(op *dbmodel.OperationDTO) (*internal.UpgradeClusterOperation, error) {
-	if op.Type != dbmodel.OperationTypeUpgradeCluster {
+	if op.Type != internal.OperationTypeUpgradeCluster {
 		return nil, errors.New(fmt.Sprintf("expected operation type upgradeCluster, but was %s", op.Type))
 	}
 	var operation internal.UpgradeClusterOperation
@@ -1055,7 +1069,7 @@ func (s *operations) upgradeClusterOperationToDTO(op *internal.UpgradeClusterOpe
 		return dbmodel.OperationDTO{}, errors.Wrapf(err, "while converting to operationDB %v", op)
 	}
 	ret.Data = string(serialized)
-	ret.Type = dbmodel.OperationTypeUpgradeCluster
+	ret.Type = internal.OperationTypeUpgradeCluster
 	ret.OrchestrationID = storage.StringToSQLNullString(op.OrchestrationID)
 	return ret, nil
 }

@@ -12,7 +12,7 @@ Kyma Environment Broker allows you to configure operations that you can run on a
 
 ## Provisioning
 
-Each provisioning step is responsible for a separate part of preparing Runtime parameters. For example, in a step you can provide tokens, credentials, or URLs to integrate Kyma Runtime with external systems. All data collected in provisioning steps are used in the step called [`create_runtime`](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go) which transforms the data into a request input. The request is sent to the Runtime Provisioner component which provisions a Runtime.
+Each provisioning step is responsible for a separate part of preparing Runtime parameters. For example, in a step you can provide tokens, credentials, or URLs to integrate Kyma Runtime with external systems. All data collected in provisioning steps are used in the step called [`create_runtime`](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go) which transforms the data into a request input. The request is sent to the Runtime Provisioner component which provisions a Runtime.
 The provisioning process contains the following steps:
 
 | Name                                   | Domain                   | Description                                                                                                                                     | Owner            |
@@ -20,21 +20,19 @@ The provisioning process contains the following steps:
 | Initialization                         | Provisioning             | Starts the provisioning process and asks the Director for the Dashboard URL if the provisioning in Gardener is finished.                                | @jasiu001 (Team Gopher)       |
 | Resolve_Target_Secret                  | Hyperscaler Account Pool | Provides the name of a Gardener Secret that contains  Hypescaler account credentials used during cluster provisioning.                                | @koala7659 (Team Framefrog)      |
 | AVS_Configuration_Step                 | AvS                      | Sets up external and internal monitoring of Kyma Runtime.                                      | @jasiu001 (Team Gopher)     |
-| Create_LMS_Tenant                      | LMS                      | Requests a tenant in the LMS system or provides a tenant ID if it was created before.                                                              | @piotrmiskiewicz (Team Gopher) |
 | IAS_Registration                       | Identity Authentication Service | Registers a new ServiceProvider on IAS, generates client ID and Secret, and inserts them to Grafana overrides. This step is not required and can be disabled. | @jasiu001 (Team Gopher) |
 | EDP_Registration                       | Event Data Platform      | Registers an SKR on Event Data Platform with the necessary parameters. This step is not required and can be disabled. | @jasiu001 (Team Gopher) |
 | Provision Azure Event Hubs             | Event Hub                | Creates the Azure Event Hub Namespace which is a managed Kafka cluster for a Kyma Runtime.                                                       | @k15r (Team SkyDivingTunas)     |
 | Provision EMS                          | EMS                      | Provisions and binds an Enterprise Messaging instance for a Kyma Runtime using the Service Manager.                                | @k15r (Team SkyDivingTunas)     |
 | Overrides_From_Secrets_And_Config_Step | Kyma overrides           | Configures default overrides for Kyma.                                                                                                          | @jasiu001 (Team Gopher)        |
 | ServiceManagerOverrides                | Service Manager          | Configures overrides with Service Manager credentials.                                                                                          | Team Gopher        |
-| Request_LMS_Certificates               | LMS                      | Checks if the LMS tenant is ready and requests certificates. The step configures Fluent Bit in a Kyma Runtime. It requires the Create_LMS_Tenant step to be completed beforehand. The step does not fail the provisioning operation. | @piotrmiskiewicz (Team Gopher) |
 | Create_Runtime                         | Provisioning             | Triggers provisioning of a Runtime in the Runtime Provisioner.                                                                                                       | @jasiu001 (Team Gopher)        |
 
 >**NOTE:** The timeout for processing this operation is set to `24h`.
 
 ## Deprovisioning
 
-Each deprovisioning step is responsible for a separate part of cleaning Runtime dependencies. To properly deprovision all Runtime dependencies, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialization](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/process/deprovisioning/initialisation.go#L46) step.
+Each deprovisioning step is responsible for a separate part of cleaning Runtime dependencies. To properly deprovision all Runtime dependencies, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialization](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/deprovisioning/initialisation.go#L46) step.
 
 Any deprovisioning step shouldn't block the entire deprovisioning operation. Use the `RetryOperationWithoutFail` function from the `DeprovisionOperationManager` struct to skip your step in case of retry timeout. Set at most 5min timeout for retries in your step.
 
@@ -54,7 +52,7 @@ The deprovisioning process contains the following steps:
 
 ## Upgrade
 
-Each upgrade step is responsible for a separate part of upgrading Runtime dependencies. To properly upgrade the Runtime, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialization](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/process/kyma_upgrade/initialisation.go) step.
+Each upgrade step is responsible for a separate part of upgrading Runtime dependencies. To properly upgrade the Runtime, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialization](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/kyma_upgrade/initialisation.go) step.
 
 The upgrade process contains the following steps:
 
@@ -78,7 +76,7 @@ You can configure Runtime operations by providing additional steps. To add a new
   Provisioning
   </summary>
 
-1. Create a new file in [this](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/process/provisioning) directory.
+1. Create a new file in [this](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/provisioning) directory.
 
 2. Implement this interface in your provisioning step:
 
@@ -115,7 +113,6 @@ You can configure Runtime operations by providing additional steps. To add a new
         Operation `json:"-"`
 
         // These fields are serialized to JSON and stored in the storage
-        LmsTenantID            string `json:"lms_tenant_id"`
         ProvisioningParameters string `json:"provisioning_parameters"`
 
         NewFieldFromCustomStep string `json:"new_field_from_custom_step"`    
@@ -214,7 +211,7 @@ You can configure Runtime operations by providing additional steps. To add a new
     }
     ```
 
-3. Add the step to the [`/cmd/broker/main.go`](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/cmd/broker/main.go) file:
+3. Add the step to the [`/cmd/broker/main.go`](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/cmd/broker/main.go) file:
 
     ```go
     provisioningSteps := []struct {
@@ -236,7 +233,7 @@ You can configure Runtime operations by providing additional steps. To add a new
   Deprovisioning
   </summary>
 
-  1. Create a new file in [this](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/process/deprovisioning) directory.
+  1. Create a new file in [this](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/deprovisioning) directory.
 
 2. Implement this interface in your deprovisioning step:
 
@@ -351,7 +348,7 @@ You can configure Runtime operations by providing additional steps. To add a new
     }
     ```
 
-3. Add the step to the [`/cmd/broker/main.go`](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/cmd/broker/main.go) file:
+3. Add the step to the [`/cmd/broker/main.go`](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/cmd/broker/main.go) file:
 
     ```go
     deprovisioningSteps := []struct {
@@ -374,7 +371,7 @@ You can configure Runtime operations by providing additional steps. To add a new
   Upgrade
   </summary>
 
-  1. Create a new file in [this](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/internal/process/kyma_upgrade) directory.
+  1. Create a new file in [this](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/kyma_upgrade) directory.
 
 2. Implement this interface in your upgrade step:
 
@@ -489,7 +486,7 @@ You can configure Runtime operations by providing additional steps. To add a new
     }
     ```
 
-3. Add the step to the [`/cmd/broker/main.go`](https://github.com/kyma-project/control-plane/blob/master/components/kyma-environment-broker/cmd/broker/main.go) file:
+3. Add the step to the [`/cmd/broker/main.go`](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/cmd/broker/main.go) file:
 
     ```go
     upgradeSteps := []struct {

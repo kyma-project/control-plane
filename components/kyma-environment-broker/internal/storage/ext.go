@@ -32,7 +32,7 @@ type Operations interface {
 
 	GetLastOperation(instanceID string) (*internal.Operation, error)
 	GetOperationByID(operationID string) (*internal.Operation, error)
-	GetNotFinishedOperationsByType(operationType dbmodel.OperationType) ([]internal.Operation, error)
+	GetNotFinishedOperationsByType(operationType internal.OperationType) ([]internal.Operation, error)
 	GetOperationStatsByPlan() (map[string]internal.OperationStats, error)
 	GetOperationsForIDs(operationIDList []string) ([]internal.Operation, error)
 	GetOperationStatsForOrchestration(orchestrationID string) (map[string]int, error)
@@ -85,17 +85,4 @@ type UpgradeCluster interface {
 	GetUpgradeClusterOperationByID(operationID string) (*internal.UpgradeClusterOperation, error)
 	ListUpgradeClusterOperationsByInstanceID(instanceID string) ([]internal.UpgradeClusterOperation, error)
 	ListUpgradeClusterOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeClusterOperation, int, int, error)
-}
-
-type LMSTenants interface {
-	FindTenantByName(name, region string) (internal.LMSTenant, bool, error)
-	InsertTenant(tenant internal.LMSTenant) error
-}
-
-type CLSInstances interface {
-	FindActiveByGlobalAccountID(name string) (*internal.CLSInstance, bool, error)
-	FindByID(clsInstanceID string) (*internal.CLSInstance, bool, error)
-	Insert(instance internal.CLSInstance) error
-	Update(instance internal.CLSInstance) error
-	Delete(clsInstanceID string) error
 }

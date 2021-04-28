@@ -13,35 +13,6 @@
   version = "v0.10.2"
 
 [[projects]]
-  digest = "1:8921b2e5746ce9f26f5e43a7624b15290342af3864759d80ba080aa8d7f746d5"
-  name = "github.com/Azure/azure-sdk-for-go"
-  packages = [
-    "services/eventhub/mgmt/2017-04-01/eventhub",
-    "services/resources/mgmt/2019-05-01/resources",
-    "version",
-  ]
-  pruneopts = "UT"
-  revision = "c222f285c0f9d595c7ee186f24d4dfbf4cd8a6ad"
-  version = "v42.0.0"
-
-[[projects]]
-  digest = "1:0c774aa3f3f3ba0a2562b9aa24400dfe12c425efc28b65ebf12d97188f455b8a"
-  name = "github.com/Azure/go-autorest"
-  packages = [
-    "autorest",
-    "autorest/adal",
-    "autorest/azure",
-    "autorest/date",
-    "autorest/to",
-    "autorest/validation",
-    "logger",
-    "tracing",
-  ]
-  pruneopts = "UT"
-  revision = "e727cfcfc902307f3a34d6f6ce50748ca944786a"
-  version = "v14.0.1"
-
-[[projects]]
   digest = "1:3eb77aef9ca7828bd0f81166688176a411d0ef87b89a66c43d49b06b9eb48101"
   name = "github.com/Masterminds/semver"
   packages = ["."]
@@ -72,14 +43,6 @@
   pruneopts = "UT"
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
   version = "v1.1.1"
-
-[[projects]]
-  digest = "1:76dc72490af7174349349838f2fe118996381b31ea83243812a97e5a0fd5ed55"
-  name = "github.com/dgrijalva/jwt-go"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
-  version = "v3.2.0"
 
 [[projects]]
   digest = "1:2b5f431fa18891a2ac0e02353c83fb3bf458fced6ccecd664b429054e0c4ce3b"
@@ -236,7 +199,7 @@
   revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
 
 [[projects]]
-  digest = "1:144d8ccde7ad0a3957a3f3ae6415f6a13e1f725f319558f38166181962365c79"
+  digest = "1:852748989840e99120832cc760944c4a18def8c7322248f7c22960318eb38582"
   name = "github.com/kyma-project/control-plane"
   packages = [
     "components/kyma-environment-broker/common/director",
@@ -245,7 +208,7 @@
     "components/provisioner/pkg/gqlschema",
   ]
   pruneopts = "UT"
-  revision = "c5a01b1a0147891184075378477713cab222e81b"
+  revision = "83c2707efc14d99b07334fd2fa734f03ca4a9e76"
 
 [[projects]]
   digest = "1:d86c8eb7189141c0e902fd8dcf6e79b8feea523978018e20f2ac794626ad0f63"
@@ -722,11 +685,8 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub",
-    "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources",
-    "github.com/Azure/go-autorest/autorest",
-    "github.com/Azure/go-autorest/autorest/adal",
-    "github.com/Azure/go-autorest/autorest/azure",
+    "github.com/gardener/gardener/pkg/apis/core/v1beta1",
+    "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1",
     "github.com/google/uuid",
     "github.com/kyma-incubator/compass/tests/director/pkg/ptr",
     "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director",
@@ -746,8 +706,8 @@
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/util/wait",
+    "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/scheme",
-    "k8s.io/client-go/kubernetes/typed/core/v1",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/config",
   ]

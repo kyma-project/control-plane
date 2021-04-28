@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -201,7 +202,7 @@ func (r readSession) ListOrchestrations(filter dbmodel.OrchestrationFilter) ([]d
 		nil
 }
 
-func (r readSession) GetNotFinishedOperationsByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
+func (r readSession) GetNotFinishedOperationsByType(operationType internal.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
 	stateInProgress := dbr.Eq("state", domain.InProgress)
 	statePending := dbr.Eq("state", orchestration.Pending)
 	stateCondition := dbr.Or(statePending, stateInProgress)
@@ -220,7 +221,7 @@ func (r readSession) GetNotFinishedOperationsByType(operationType dbmodel.Operat
 	return operations, nil
 }
 
-func (r readSession) GetOperationByTypeAndInstanceID(inID string, opType dbmodel.OperationType) (dbmodel.OperationDTO, dberr.Error) {
+func (r readSession) GetOperationByTypeAndInstanceID(inID string, opType internal.OperationType) (dbmodel.OperationDTO, dberr.Error) {
 	idCondition := dbr.Eq("instance_id", inID)
 	typeCondition := dbr.Eq("type", string(opType))
 	var operation dbmodel.OperationDTO
@@ -242,7 +243,7 @@ func (r readSession) GetOperationByTypeAndInstanceID(inID string, opType dbmodel
 	return operation, nil
 }
 
-func (r readSession) GetOperationsByTypeAndInstanceID(inID string, opType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
+func (r readSession) GetOperationsByTypeAndInstanceID(inID string, opType internal.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
 	idCondition := dbr.Eq("instance_id", inID)
 	typeCondition := dbr.Eq("type", string(opType))
 	var operations []dbmodel.OperationDTO
@@ -275,7 +276,7 @@ func (r readSession) GetOperationsForIDs(opIDlist []string) ([]dbmodel.Operation
 	return operations, nil
 }
 
-func (r readSession) ListOperationsByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
+func (r readSession) ListOperationsByType(operationType internal.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
 	typeCondition := dbr.Eq("type", operationType)
 	var operations []dbmodel.OperationDTO
 
@@ -416,61 +417,6 @@ func (r readSession) getOrchestration(condition dbr.Builder) (dbmodel.Orchestrat
 	return operation, nil
 }
 
-func (r readSession) GetLMSTenant(name, region string) (dbmodel.LMSTenantDTO, dberr.Error) {
-	var dto dbmodel.LMSTenantDTO
-	err := r.session.
-		Select("*").
-		From(LMSTenantTableName).
-		Where(dbr.Eq("name", name)).
-		Where(dbr.Eq("region", region)).
-		LoadOne(&dto)
-
-	if err != nil {
-		if err == dbr.ErrNotFound {
-			return dbmodel.LMSTenantDTO{}, dberr.NotFound("Cannot find lms tenant for name/region: '%s/%s'", name, region)
-		}
-		return dbmodel.LMSTenantDTO{}, dberr.Internal("Failed to get operation: %s", err)
-	}
-	return dto, nil
-}
-
-func (r readSession) GetCLSInstanceByGlobalAccountID(globalAccountID string) ([]dbmodel.CLSInstanceDTO, dberr.Error) {
-	var dtos []dbmodel.CLSInstanceDTO
-	_, err := r.session.
-		Select("a.id, a.version, a.global_account_id, a.region, a.created_at, a.removed_by_skr_instance_id, b.skr_instance_id").
-		From(dbr.I(CLSInstanceTableName).As("a")).
-		Where(dbr.Eq("global_account_id", globalAccountID)).
-		Where(dbr.Eq("removed_by_skr_instance_id", nil)).
-		LeftJoin(dbr.I(CLSInstanceReferenceTableName).As("b"), "b.cls_instance_id = a.id").
-		Load(&dtos)
-
-	if err != nil {
-		if err == dbr.ErrNotFound {
-			return nil, dberr.NotFound("unable to find a cls instance for global account id %s", globalAccountID)
-		}
-		return nil, dberr.Internal("unable to find a record in table %s: %s", CLSInstanceTableName, err)
-	}
-	return dtos, nil
-}
-
-func (r readSession) GetCLSInstanceByID(clsInstanceID string) ([]dbmodel.CLSInstanceDTO, dberr.Error) {
-	var dtos []dbmodel.CLSInstanceDTO
-	_, err := r.session.
-		Select("a.id, a.version, a.global_account_id, a.region, a.created_at, a.removed_by_skr_instance_id, b.skr_instance_id").
-		From(dbr.I(CLSInstanceTableName).As("a")).
-		Where(dbr.Eq("a.id", clsInstanceID)).
-		LeftJoin(dbr.I(CLSInstanceReferenceTableName).As("b"), "b.cls_instance_id = a.id").
-		Load(&dtos)
-
-	if err != nil {
-		if err == dbr.ErrNotFound {
-			return nil, dberr.NotFound("unable find a cls instance with id %s", clsInstanceID)
-		}
-		return nil, dberr.Internal("unable to find a record in table %s: %s", CLSInstanceTableName, err)
-	}
-	return dtos, nil
-}
-
 func (r readSession) GetOperationStats() ([]dbmodel.OperationStatEntry, error) {
 	var rows []dbmodel.OperationStatEntry
 	_, err := r.session.SelectBySql(fmt.Sprintf("select type, state, provisioning_parameters ->> 'plan_id' AS plan_id from %s",
@@ -508,10 +454,27 @@ func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]dbmodel.Ins
 	var instances []dbmodel.InstanceDTO
 
 	// Base select and order by created at
-	stmt := r.session.
-		Select("*").
-		From(InstancesTableName).
-		OrderBy(CreatedAtField)
+	var stmt *dbr.SelectStmt
+	if len(filter.States) == 0 {
+		stmt = r.session.
+			Select("*").
+			From(InstancesTableName).
+			OrderBy(CreatedAtField)
+	} else {
+		// Find and join the last operation for each instance matching the state filter(s).
+		// Last operation is found with the greatest-n-per-group problem solved with OUTER JOIN, followed by a (INNER) JOIN to get instance columns.
+		stmt = r.session.
+			Select(fmt.Sprintf("%s.*", InstancesTableName)).
+			From(InstancesTableName).
+			Join(dbr.I(OperationTableName).As("o1"), fmt.Sprintf("%s.instance_id = o1.instance_id", InstancesTableName)).
+			LeftJoin(dbr.I(OperationTableName).As("o2"), fmt.Sprintf("%s.instance_id = o2.instance_id AND o1.created_at < o2.created_at AND o2.state <> '%s'", InstancesTableName, orchestration.Pending)).
+			Where("o2.created_at IS NULL").
+			Where(fmt.Sprintf("o1.state <> '%s'", orchestration.Pending)).
+			OrderBy(fmt.Sprintf("%s.%s", InstancesTableName, CreatedAtField))
+
+		stateFilters := buildInstanceStateFilters("o1", filter)
+		stmt.Where(stateFilters)
+	}
 
 	// Add pagination
 	if filter.Page > 0 && filter.PageSize > 0 {
@@ -540,38 +503,95 @@ func (r readSession) getInstanceCount(filter dbmodel.InstanceFilter) (int, error
 	var res struct {
 		Total int
 	}
-	stmt := r.session.Select("count(*) as total").From(InstancesTableName)
+	var stmt *dbr.SelectStmt
+	if len(filter.States) == 0 {
+		stmt = r.session.Select("count(*) as total").From(InstancesTableName)
+	} else {
+		stmt = r.session.
+			Select("count(*) as total").
+			From(InstancesTableName).
+			Join(dbr.I(OperationTableName).As("o1"), fmt.Sprintf("%s.instance_id = o1.instance_id", InstancesTableName)).
+			LeftJoin(dbr.I(OperationTableName).As("o2"), fmt.Sprintf("%s.instance_id = o2.instance_id AND o1.created_at < o2.created_at AND o2.state <> '%s'", InstancesTableName, orchestration.Pending)).
+			Where("o2.created_at IS NULL").
+			Where(fmt.Sprintf("o1.state <> '%s'", orchestration.Pending))
+
+		stateFilters := buildInstanceStateFilters("o1", filter)
+		stmt.Where(stateFilters)
+	}
+
 	addInstanceFilters(stmt, filter)
 	err := stmt.LoadOne(&res)
 
 	return res.Total, err
 }
 
+func buildInstanceStateFilters(table string, filter dbmodel.InstanceFilter) dbr.Builder {
+	var exprs []dbr.Builder
+	for _, s := range filter.States {
+		switch s {
+		case dbmodel.InstanceSucceeded:
+			exprs = append(exprs, dbr.And(
+				dbr.Eq(fmt.Sprintf("%s.state", table), domain.Succeeded),
+				dbr.Neq(fmt.Sprintf("%s.type", table), internal.OperationTypeDeprovision),
+			))
+		case dbmodel.InstanceFailed:
+			exprs = append(exprs, dbr.Eq(fmt.Sprintf("%s.state", table), domain.Failed))
+		case dbmodel.InstanceProvisioning:
+			exprs = append(exprs, dbr.And(
+				dbr.Eq(fmt.Sprintf("%s.type", table), internal.OperationTypeProvision),
+				dbr.Eq(fmt.Sprintf("%s.state", table), domain.InProgress),
+			))
+		case dbmodel.InstanceDeprovisioning:
+			exprs = append(exprs, dbr.And(
+				dbr.Eq(fmt.Sprintf("%s.type", table), internal.OperationTypeDeprovision),
+				dbr.Eq(fmt.Sprintf("%s.state", table), domain.InProgress),
+			))
+		case dbmodel.InstanceUpgrading:
+			exprs = append(exprs, dbr.And(
+				dbr.Like(fmt.Sprintf("%s.type", table), "upgrade%"),
+				dbr.Eq(fmt.Sprintf("%s.state", table), domain.InProgress),
+			))
+		case dbmodel.InstanceDeprovisioned:
+			exprs = append(exprs, dbr.And(
+				dbr.Eq(fmt.Sprintf("%s.type", table), internal.OperationTypeDeprovision),
+				dbr.Eq(fmt.Sprintf("%s.state", table), domain.Succeeded),
+			))
+		case dbmodel.InstanceNotDeprovisioned:
+			exprs = append(exprs, dbr.Or(
+				dbr.Neq(fmt.Sprintf("%s.type", table), internal.OperationTypeDeprovision),
+				dbr.Neq(fmt.Sprintf("%s.state", table), domain.Succeeded),
+			))
+		}
+	}
+
+	return dbr.Or(exprs...)
+}
+
 func addInstanceFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
 	if len(filter.GlobalAccountIDs) > 0 {
-		stmt.Where("global_account_id IN ?", filter.GlobalAccountIDs)
+		stmt.Where("instances.global_account_id IN ?", filter.GlobalAccountIDs)
 	}
 	if len(filter.SubAccountIDs) > 0 {
-		stmt.Where("sub_account_id IN ?", filter.SubAccountIDs)
+		stmt.Where("instances.sub_account_id IN ?", filter.SubAccountIDs)
 	}
 	if len(filter.InstanceIDs) > 0 {
-		stmt.Where("instance_id IN ?", filter.InstanceIDs)
+		stmt.Where("instances.instance_id IN ?", filter.InstanceIDs)
 	}
 	if len(filter.RuntimeIDs) > 0 {
-		stmt.Where("runtime_id IN ?", filter.RuntimeIDs)
+		stmt.Where("instances.runtime_id IN ?", filter.RuntimeIDs)
 	}
 	if len(filter.Regions) > 0 {
-		stmt.Where("provider_region IN ?", filter.Regions)
+		stmt.Where("instances.provider_region IN ?", filter.Regions)
 	}
 	if len(filter.Plans) > 0 {
-		stmt.Where("service_plan_name IN ?", filter.Plans)
+		stmt.Where("instances.service_plan_name IN ?", filter.Plans)
 	}
 	if len(filter.Domains) > 0 {
 		// Preceeding character is either a . or / (after protocol://)
 		// match subdomain inputs
 		// match any .upperdomain zero or more times
 		domainMatch := fmt.Sprintf(`[./](%s)(\.[0-9A-Za-z-]+)*$`, strings.Join(filter.Domains, "|"))
-		stmt.Where("dashboard_url ~ ?", domainMatch)
+		stmt.Where("instances.dashboard_url ~ ?", domainMatch)
 	}
 }
 

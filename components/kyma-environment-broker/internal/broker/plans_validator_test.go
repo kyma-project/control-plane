@@ -60,7 +60,7 @@ func TestNewPlansSchemaValidatorSuccess(t *testing.T) {
 	validator, err := NewPlansSchemaValidator(PlansConfig{})
 	require.NoError(t, err)
 
-	for _, id := range []string{GCPPlanID, AzurePlanID, TrialPlanID} {
+	for _, id := range []string{GCPPlanID, AzurePlanID, AzureHAPlanID, TrialPlanID} {
 		// when
 		result, err := validator[id].ValidateString(validJSON)
 		require.NoError(t, err)

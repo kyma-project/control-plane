@@ -101,6 +101,11 @@ func (om *ProvisionOperationManager) RetryOperation(operation internal.Provision
 	return om.OperationFailed(operation, errorMessage, log)
 }
 
+func (om *ProvisionOperationManager) HandleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
+	log.Errorf("%s: %s", msg, err)
+	return om.OperationFailed(operation, msg, log)
+}
+
 func (om *ProvisionOperationManager) update(operation internal.ProvisioningOperation, state domain.LastOperationState, description string, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration) {
 	return om.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 		operation.State = state

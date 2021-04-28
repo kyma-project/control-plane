@@ -18,6 +18,8 @@ const (
 	AzurePlanName     = "azure"
 	AzureLitePlanID   = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
 	AzureLitePlanName = "azure_lite"
+	AzureHAPlanID     = "f2951649-02ca-43a5-9188-9c07fb612491"
+	AzureHAPlanName   = "azure_ha"
 	TrialPlanID       = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
 	TrialPlanName     = "trial"
 	OpenStackPlanID   = "03b812ac-c991-4528-b5bd-08b303523a63"
@@ -29,6 +31,7 @@ var PlanNamesMapping = map[string]string{
 	AWSPlanID:       AWSPlanName,
 	AzurePlanID:     AzurePlanName,
 	AzureLitePlanID: AzureLitePlanName,
+	AzureHAPlanID:   AzureHAPlanName,
 	TrialPlanID:     TrialPlanName,
 	OpenStackPlanID: OpenStackPlanName,
 }
@@ -37,6 +40,7 @@ var PlanIDsMapping = map[string]string{
 	AzurePlanName:     AzurePlanID,
 	AWSPlanName:       AWSPlanID,
 	AzureLitePlanName: AzureLitePlanID,
+	AzureHAPlanName:   AzureHAPlanID,
 	GCPPlanName:       GCPPlanID,
 	TrialPlanName:     TrialPlanID,
 	OpenStackPlanName: OpenStackPlanID,
@@ -131,6 +135,32 @@ func AzureSchema(machineTypes []string) []byte {
 	return bytes
 }
 
+func AzureHASchema(machineTypes []string) []byte {
+	properties := NewProvisioningProperties(machineTypes, AzureRegions())
+	properties.ZonesCount = &Type{
+		Type:        "integer",
+		Minimum:     2,
+		Maximum:     3,
+		Default:     2,
+		Description: "Specifies the number of availability zones for HA cluster",
+	}
+	azureHaControlsOrder := DefaultControlsOrder()
+	azureHaControlsOrder = append(azureHaControlsOrder, "zonesCount")
+	schema := NewSchema(properties, azureHaControlsOrder)
+
+	properties.AutoScalerMin.Default = 4
+	properties.AutoScalerMin.Minimum = 4
+
+	properties.AutoScalerMax.Default = 10
+	properties.AutoScalerMax.Maximum = 10
+
+	bytes, err := json.Marshal(schema)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
+}
+
 func TrialSchema() []byte {
 	schema := NewSchema(
 		ProvisioningProperties{
@@ -166,7 +196,7 @@ func Plans(plans PlansConfig) map[string]Plan {
 					},
 				},
 			},
-			provisioningRawSchema: AWSSchema([]string{"m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m4.16xlarge"}),
+			provisioningRawSchema: AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m4.16xlarge"}),
 		},
 		GCPPlanID: {
 			PlanDefinition: domain.ServicePlan{
@@ -231,6 +261,22 @@ func Plans(plans PlansConfig) map[string]Plan {
 				},
 			},
 			provisioningRawSchema: AzureSchema([]string{"Standard_D4_v3"}),
+		},
+		AzureHAPlanID: {
+			PlanDefinition: domain.ServicePlan{
+				ID:          AzureHAPlanID,
+				Name:        AzureHAPlanName,
+				Description: defaultDescription(AzureHAPlanName, plans),
+				Metadata:    defaultMetadata(AzureHAPlanName, plans),
+				Schemas: &domain.ServiceSchemas{
+					Instance: domain.ServiceInstanceSchema{
+						Create: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
+					},
+				},
+			},
+			provisioningRawSchema: AzureHASchema([]string{"Standard_D4_v3"}),
 		},
 		TrialPlanID: {
 			PlanDefinition: domain.ServicePlan{

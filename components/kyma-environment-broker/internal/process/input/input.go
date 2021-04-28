@@ -3,6 +3,8 @@ package input
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -32,6 +34,7 @@ type Config struct {
 type RuntimeInput struct {
 	provisionRuntimeInput gqlschema.ProvisionRuntimeInput
 	upgradeRuntimeInput   gqlschema.UpgradeRuntimeInput
+	upgradeShootInput     gqlschema.UpgradeShootInput
 	mutex                 *nsync.NamedMutex
 	overrides             map[string][]*gqlschema.ConfigEntryInput
 	labels                map[string]string
@@ -86,7 +89,7 @@ func (r *RuntimeInput) AppendOverrides(component string, overrides []*gqlschema.
 	return r
 }
 
-// AppendAppendGlobalOverrides appends overrides, the existing overrides are preserved.
+// AppendGlobalOverrides appends overrides, the existing overrides are preserved.
 func (r *RuntimeInput) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	r.mutex.Lock("AppendGlobalOverrides")
 	defer r.mutex.Unlock("AppendGlobalOverrides")
@@ -114,7 +117,7 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 	}{
 		{
 			name:    "applying provisioning parameters customization",
-			execute: r.applyProvisioningParameters,
+			execute: r.applyProvisioningParametersForProvisionRuntime,
 		},
 		{
 			name:    "disabling components",
@@ -133,12 +136,16 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 			execute: r.applyGlobalOverridesForProvisionRuntime,
 		},
 		{
-			name:    "adding random string to runtime name",
-			execute: r.addRandomStringToRuntimeName,
+			name:    "applying global configuration",
+			execute: r.applyGlobalConfigurationForProvisionRuntime,
+		},
+		{
+			name:    "removing forbidden chars and adding random string to runtime name",
+			execute: r.adjustRuntimeName,
 		},
 		{
 			name:    "set number of nodes from configuration",
-			execute: r.setNodesForTrial,
+			execute: r.setNodesForTrialProvision,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -171,8 +178,12 @@ func (r *RuntimeInput) CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInpu
 			execute: r.applyGlobalOverridesForUpgradeRuntime,
 		},
 		{
+			name:    "applying global configuration",
+			execute: r.applyGlobalConfigurationForUpgradeRuntime,
+		},
+		{
 			name:    "set number of nodes from configuration",
-			execute: r.setNodesForTrial,
+			execute: r.setNodesForTrialProvision,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -183,7 +194,29 @@ func (r *RuntimeInput) CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInpu
 	return r.upgradeRuntimeInput, nil
 }
 
-func (r *RuntimeInput) applyProvisioningParameters() error {
+func (r *RuntimeInput) CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, error) {
+
+	for _, step := range []struct {
+		name    string
+		execute func() error
+	}{
+		{
+			name:    "applying provisioning parameters customization",
+			execute: r.applyProvisioningParametersForUpgradeShoot,
+		},
+		{
+			name:    "setting number of trial nodes from configuration",
+			execute: r.setNodesForTrialUpgrade,
+		},
+	} {
+		if err := step.execute(); err != nil {
+			return gqlschema.UpgradeShootInput{}, errors.Wrapf(err, "while %s", step.name)
+		}
+	}
+	return r.upgradeShootInput, nil
+}
+
+func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 	params := r.provisioningParameters.Parameters
 	updateString(&r.provisionRuntimeInput.RuntimeInput.Name, &params.Name)
 
@@ -203,6 +236,11 @@ func (r *RuntimeInput) applyProvisioningParameters() error {
 
 	r.hyperscalerInputProvider.ApplyParameters(r.provisionRuntimeInput.ClusterConfig, r.provisioningParameters)
 
+	return nil
+}
+
+func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
+	// As of now cluster upgrade doesn't support upgrading parameters which could also be specified as provisioning parameters
 	return nil
 }
 
@@ -300,18 +338,37 @@ func (r *RuntimeInput) applyGlobalOverridesForUpgradeRuntime() error {
 	return nil
 }
 
-func (r *RuntimeInput) addRandomStringToRuntimeName() error {
-	rand.Seed(time.Now().UnixNano())
-	modifiedLength := len(r.provisionRuntimeInput.RuntimeInput.Name) + trialSuffixLength + 1
-	if modifiedLength > maxRuntimeNameLength {
-		r.provisionRuntimeInput.RuntimeInput.Name = trimLastCharacters(r.provisionRuntimeInput.RuntimeInput.Name, modifiedLength-maxRuntimeNameLength)
-	}
-	r.provisionRuntimeInput.RuntimeInput.Name =
-		fmt.Sprintf("%s-%s", r.provisionRuntimeInput.RuntimeInput.Name, randomString(trialSuffixLength))
+func (r *RuntimeInput) applyGlobalConfigurationForProvisionRuntime() error {
+	strategy := gqlschema.ConflictStrategyReplace
+	r.provisionRuntimeInput.KymaConfig.ConflictStrategy = &strategy
 	return nil
 }
 
-func (r *RuntimeInput) setNodesForTrial() error {
+func (r *RuntimeInput) applyGlobalConfigurationForUpgradeRuntime() error {
+	strategy := gqlschema.ConflictStrategyReplace
+	r.upgradeRuntimeInput.KymaConfig.ConflictStrategy = &strategy
+	return nil
+}
+
+func (r *RuntimeInput) adjustRuntimeName() error {
+	rand.Seed(time.Now().UnixNano())
+
+	reg, err := regexp.Compile("[^a-zA-Z0-9\\-\\.]+")
+	if err != nil {
+		return errors.Wrap(err, "while compiling regexp")
+	}
+
+	name := strings.ToLower(reg.ReplaceAllString(r.provisionRuntimeInput.RuntimeInput.Name, ""))
+	modifiedLength := len(name) + trialSuffixLength + 1
+	if modifiedLength > maxRuntimeNameLength {
+		name = trimLastCharacters(name, modifiedLength-maxRuntimeNameLength)
+	}
+
+	r.provisionRuntimeInput.RuntimeInput.Name = fmt.Sprintf("%s-%s", name, randomString(trialSuffixLength))
+	return nil
+}
+
+func (r *RuntimeInput) setNodesForTrialProvision() error {
 	// parameter with number of notes for trial plan is optional; if parameter is not set value is equal to 0
 	if r.trialNodesNumber == 0 {
 		return nil
@@ -319,6 +376,18 @@ func (r *RuntimeInput) setNodesForTrial() error {
 	if broker.IsTrialPlan(r.provisioningParameters.PlanID) {
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMin = r.trialNodesNumber
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax = r.trialNodesNumber
+	}
+	return nil
+}
+
+func (r *RuntimeInput) setNodesForTrialUpgrade() error {
+	// parameter with number of nodes for trial plan is optional; if parameter is not set value is equal to 0
+	if r.trialNodesNumber == 0 {
+		return nil
+	}
+	if broker.IsTrialPlan(r.provisioningParameters.PlanID) {
+		r.upgradeShootInput.GardenerConfig.AutoScalerMin = &r.trialNodesNumber
+		r.upgradeShootInput.GardenerConfig.AutoScalerMax = &r.trialNodesNumber
 	}
 	return nil
 }

@@ -95,16 +95,9 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 	var (
 		runtimeId    = fmt.Sprintf("Runtime-%s", id)
 		subAccountId = fmt.Sprintf("SA-%s", id)
-		tenantId     = fmt.Sprintf("Tenant-%s", id)
 		bindingId    = fmt.Sprintf("Binding-%s", id)
 		brokerId     = fmt.Sprintf("Broker-%s", id)
 	)
-
-	lms := internal.LMS{
-		TenantID:    tenantId,
-		Failed:      false,
-		RequestedAt: time.Time{},
-	}
 
 	serviceManagerInstanceInfo := internal.ServiceManagerInstanceInfo{
 		BrokerID:                brokerId,
@@ -128,18 +121,7 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 		Overrides: "Overrides",
 	}
 
-	cls := internal.ClsData{
-		Instance: serviceManagerInstanceInfo,
-		Region:   Region,
-		Binding: internal.BindingInfo{
-			Bound:     false,
-			BindingID: bindingId,
-		},
-		Overrides: "Overrides",
-	}
-
 	return internal.InstanceDetails{
-		Lms:          lms,
 		Avs:          internal.AvsLifecycleData{},
 		EventHub:     internal.EventHub{Deleted: false},
 		SubAccountID: subAccountId,
@@ -148,7 +130,6 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 		ShootDomain:  "ShootDomain",
 		XSUAA:        xsuaaData,
 		Ems:          emsData,
-		Cls:          cls,
 	}
 }
 
@@ -178,7 +159,7 @@ func FixInstance(id string) internal.Instance {
 	}
 }
 
-func FixOperation(id, instanceId string) internal.Operation {
+func FixOperation(id, instanceId string, opType internal.OperationType) internal.Operation {
 	var (
 		description     = fmt.Sprintf("Description for operation %s", id)
 		orchestrationId = fmt.Sprintf("Orchestration-%s", id)
@@ -187,6 +168,7 @@ func FixOperation(id, instanceId string) internal.Operation {
 	return internal.Operation{
 		InstanceDetails:        FixInstanceDetails(instanceId),
 		ID:                     id,
+		Type:                   opType,
 		Version:                0,
 		CreatedAt:              time.Now(),
 		UpdatedAt:              time.Now().Add(time.Hour * 48),
@@ -196,6 +178,8 @@ func FixOperation(id, instanceId string) internal.Operation {
 		Description:            description,
 		ProvisioningParameters: FixProvisioningParameters(id),
 		OrchestrationID:        orchestrationId,
+		FinishedStages:         map[string]struct{}{"prepare": struct{}{}, "check_provisioning": struct{}{}},
+		FinishedSteps:          make(map[string]struct{}, 0),
 	}
 }
 
@@ -210,7 +194,7 @@ func FixInputCreator() *SimpleInputCreator {
 
 func FixProvisioningOperation(operationId, instanceId string) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
-		Operation: FixOperation(operationId, instanceId),
+		Operation: FixOperation(operationId, instanceId, internal.OperationTypeProvision),
 		RuntimeVersion: internal.RuntimeVersionData{
 			Version: KymaVersion,
 			Origin:  internal.Defaults,
@@ -222,7 +206,7 @@ func FixProvisioningOperation(operationId, instanceId string) internal.Provision
 
 func FixDeprovisioningOperation(operationId, instanceId string) internal.DeprovisioningOperation {
 	return internal.DeprovisioningOperation{
-		Operation:       FixOperation(operationId, instanceId),
+		Operation:       FixOperation(operationId, instanceId, internal.OperationTypeDeprovision),
 		SMClientFactory: nil,
 		Temporary:       false,
 	}
@@ -247,7 +231,7 @@ func FixRuntime(id string) orchestration.Runtime {
 
 func FixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
 	return orchestration.RuntimeOperation{
-		Runtime: orchestration.Runtime{},
+		Runtime: FixRuntime(operationId),
 		ID:      operationId,
 		DryRun:  false,
 	}
@@ -255,7 +239,7 @@ func FixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
 
 func FixUpgradeKymaOperation(operationId, instanceId string) internal.UpgradeKymaOperation {
 	return internal.UpgradeKymaOperation{
-		Operation:        FixOperation(operationId, instanceId),
+		Operation:        FixOperation(operationId, instanceId, internal.OperationTypeUpgradeKyma),
 		RuntimeOperation: FixRuntimeOperation(operationId),
 		InputCreator:     FixInputCreator(),
 		RuntimeVersion: internal.RuntimeVersionData{
@@ -263,6 +247,14 @@ func FixUpgradeKymaOperation(operationId, instanceId string) internal.UpgradeKym
 			Origin:  internal.Defaults,
 		},
 		SMClientFactory: nil,
+	}
+}
+
+func FixUpgradeClusterOperation(operationId, instanceId string) internal.UpgradeClusterOperation {
+	return internal.UpgradeClusterOperation{
+		Operation:        FixOperation(operationId, instanceId, internal.OperationTypeUpgradeCluster),
+		RuntimeOperation: FixRuntimeOperation(operationId),
+		InputCreator:     FixInputCreator(),
 	}
 }
 
@@ -311,6 +303,10 @@ func (c *SimpleInputCreator) CreateProvisionRuntimeInput() (gqlschema.ProvisionR
 
 func (c *SimpleInputCreator) CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInput, error) {
 	return gqlschema.UpgradeRuntimeInput{}, nil
+}
+
+func (c *SimpleInputCreator) CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, error) {
+	return gqlschema.UpgradeShootInput{}, nil
 }
 
 func (c *SimpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionerInputCreator {

@@ -2,6 +2,7 @@ package postsql
 
 import (
 	dbr "github.com/gocraft/dbr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
@@ -22,15 +23,12 @@ type ReadSession interface {
 	GetInstanceByID(instanceID string) (dbmodel.InstanceDTO, dberr.Error)
 	GetLastOperation(instanceID string) (dbmodel.OperationDTO, dberr.Error)
 	GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.Error)
-	GetNotFinishedOperationsByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
-	GetOperationByTypeAndInstanceID(inID string, opType dbmodel.OperationType) (dbmodel.OperationDTO, dberr.Error)
-	GetOperationsByTypeAndInstanceID(inID string, opType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
+	GetNotFinishedOperationsByType(operationType internal.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
+	GetOperationByTypeAndInstanceID(inID string, opType internal.OperationType) (dbmodel.OperationDTO, dberr.Error)
+	GetOperationsByTypeAndInstanceID(inID string, opType internal.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
 	GetOperationsForIDs(opIdList []string) ([]dbmodel.OperationDTO, dberr.Error)
 	ListOperations(filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error)
-	ListOperationsByType(operationType dbmodel.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
-	GetLMSTenant(name, region string) (dbmodel.LMSTenantDTO, dberr.Error)
-	GetCLSInstanceByGlobalAccountID(globalAccountID string) ([]dbmodel.CLSInstanceDTO, dberr.Error)
-	GetCLSInstanceByID(clsInstanceID string) ([]dbmodel.CLSInstanceDTO, dberr.Error)
+	ListOperationsByType(operationType internal.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
 	GetOperationStats() ([]dbmodel.OperationStatEntry, error)
 	GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
@@ -53,12 +51,6 @@ type WriteSession interface {
 	InsertOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
 	UpdateOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
 	InsertRuntimeState(state dbmodel.RuntimeStateDTO) dberr.Error
-	InsertLMSTenant(dto dbmodel.LMSTenantDTO) dberr.Error
-	InsertCLSInstance(dto dbmodel.CLSInstanceDTO) dberr.Error
-	UpdateCLSInstance(dto dbmodel.CLSInstanceDTO) dberr.Error
-	DeleteCLSInstance(clsInstanceID string) dberr.Error
-	InsertCLSInstanceReference(dto dbmodel.CLSInstanceReferenceDTO) dberr.Error
-	DeleteCLSInstanceReference(dto dbmodel.CLSInstanceReferenceDTO) dberr.Error
 }
 
 type Transaction interface {

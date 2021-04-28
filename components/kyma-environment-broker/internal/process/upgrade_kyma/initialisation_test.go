@@ -85,7 +85,7 @@ func createMonitors(t *testing.T, client *avs.Client, internalStatus string, ext
 	return avsData
 }
 
-func createEvalManagerWithValidity(t *testing.T, storage storage.BrokerStorage, log *logrus.Logger, valid bool) (*EvaluationManager, *avs.Client) {
+func createEvalManagerWithValidity(t *testing.T, storage storage.BrokerStorage, log *logrus.Logger, valid bool) (*avs.EvaluationManager, *avs.Client) {
 	server := avs.NewMockAvsServer(t)
 	mockServer := avs.FixMockAvsServer(server)
 	client, err := avs.NewClient(context.TODO(), avs.Config{
@@ -100,12 +100,12 @@ func createEvalManagerWithValidity(t *testing.T, storage storage.BrokerStorage, 
 	require.NoError(t, err)
 
 	avsDel := avs.NewDelegator(client, avs.Config{}, storage.Operations())
-	upgradeEvalManager := NewEvaluationManager(avsDel, avs.Config{})
+	upgradeEvalManager := avs.NewEvaluationManager(avsDel, avs.Config{})
 
 	return upgradeEvalManager, client
 }
 
-func createEvalManager(t *testing.T, storage storage.BrokerStorage, log *logrus.Logger) (*EvaluationManager, *avs.Client) {
+func createEvalManager(t *testing.T, storage storage.BrokerStorage, log *logrus.Logger) (*avs.EvaluationManager, *avs.Client) {
 	return createEvalManagerWithValidity(t, storage, log, true)
 }
 
@@ -601,10 +601,10 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		// then
 		assert.NoError(t, err)
-		assert.Equal(t, 30*time.Second, repeat)
+		assert.Equal(t, 10*time.Second, repeat)
 		assert.Equal(t, domain.InProgress, upgradeOperation.State)
-		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: internalStatus, Original: ""})
-		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: externalStatus, Original: ""})
+		assert.Equal(t, internal.AvsEvaluationStatus{Current: internalStatus, Original: internalStatus}, upgradeOperation.Avs.AvsInternalEvaluationStatus)
+		assert.Equal(t, internal.AvsEvaluationStatus{Current: externalStatus, Original: ""}, upgradeOperation.Avs.AvsExternalEvaluationStatus)
 	})
 
 	t.Run("should go through init and finish steps (both monitors)", func(t *testing.T) {
@@ -667,10 +667,10 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		// then
 		assert.NoError(t, err)
-		assert.Equal(t, 30*time.Second, repeat)
+		assert.Equal(t, 10*time.Second, repeat)
 		assert.Equal(t, domain.InProgress, upgradeOperation.State)
-		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: internalStatus, Original: ""})
-		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: externalStatus, Original: ""})
+		assert.Equal(t, internal.AvsEvaluationStatus{Current: internalStatus, Original: internalStatus}, upgradeOperation.Avs.AvsInternalEvaluationStatus)
+		assert.Equal(t, internal.AvsEvaluationStatus{Current: externalStatus, Original: ""}, upgradeOperation.Avs.AvsExternalEvaluationStatus)
 
 		// when valid client request and InProgress state from RuntimeOperationStatus, this should do init tasks
 		step.evaluationManager = evalManager
@@ -714,7 +714,8 @@ func fixUpgradeKymaOperationWithAvs(avsData internal.AvsLifecycleData) internal.
 	upgradeOperation.RuntimeVersion = internal.RuntimeVersionData{}
 	upgradeOperation.InstanceDetails.Avs = avsData
 	upgradeOperation.ProvisioningParameters = fixProvisioningParameters()
-	upgradeOperation.RuntimeOperation.Runtime = fixture.FixRuntime(fixUpgradeOperationID)
+	upgradeOperation.RuntimeOperation.GlobalAccountID = fixGlobalAccountID
+	upgradeOperation.RuntimeOperation.SubAccountID = fixSubAccountID
 
 	return upgradeOperation
 }

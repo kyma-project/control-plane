@@ -51,7 +51,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure"}, OnlySingleTrialPerGA: true},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_ha"}, OnlySingleTrialPerGA: true},
 			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
@@ -108,7 +108,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}, OnlySingleTrialPerGA: true},
+			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite", "azure_ha"}, OnlySingleTrialPerGA: true},
 			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
@@ -363,7 +363,7 @@ func TestProvision_Provision(t *testing.T) {
 			PlanID:    planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{
 								"name": "%s",
-								"kymaVersion": "master-00e83e99"
+								"kymaVersion": "main-00e83e99"
 								}`, clusterName)),
 			RawContext: json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
 		}, true)
@@ -373,7 +373,7 @@ func TestProvision_Provision(t *testing.T) {
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)
 
-		assert.Equal(t, "master-00e83e99", operation.ProvisioningParameters.Parameters.KymaVersion)
+		assert.Equal(t, "main-00e83e99", operation.ProvisioningParameters.Parameters.KymaVersion)
 	})
 
 	t.Run("should return error when region is not specified", func(t *testing.T) {
@@ -441,7 +441,7 @@ func TestProvision_Provision(t *testing.T) {
 			PlanID:    planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{
 								"name": "%s",
-								"kymaVersion": "master-00e83e99"
+								"kymaVersion": "main-00e83e99"
 								}`, clusterName)),
 			RawContext: json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
 		}, true)

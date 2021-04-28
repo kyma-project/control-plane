@@ -12,18 +12,21 @@ import (
 func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 	// given
 	profile := gqlschema.KymaProfileProduction
+	strategy := gqlschema.ConflictStrategyReplace
 	fixInput := gqlschema.KymaConfigInput{
-		Version: "966",
-		Profile: &profile,
+		Version:          "966",
+		Profile:          &profile,
+		ConflictStrategy: &strategy,
 		Components: []*gqlschema.ComponentConfigurationInput{
 			{
 				Component: "pico",
 				Namespace: "bello",
 			},
 			{
-				Component: "custom-component",
-				Namespace: "bello",
-				SourceURL: ptr.String("github.com/kyma-incubator/custom-component"),
+				Component:        "custom-component",
+				Namespace:        "bello",
+				ConflictStrategy: &strategy,
+				SourceURL:        ptr.String("github.com/kyma-incubator/custom-component"),
 			},
 			{
 				Component: "hakuna",
@@ -56,15 +59,17 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 	expRender := `{
 		version: "966",
 		profile: Production,
+		conflictStrategy: Replace,
         components: [
           {
             component: "pico",
-            namespace: "bello", 
+            namespace: "bello",
           }
           {
             component: "custom-component",
             namespace: "bello",
-            sourceURL: "github.com/kyma-incubator/custom-component", 
+            sourceURL: "github.com/kyma-incubator/custom-component",
+			conflictStrategy: Replace,
           }
           {
             component: "hakuna",
@@ -78,9 +83,9 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
               {
                 key: "testing-public-key",
                 value: "testing-public-value\nmultiline",
-              } 
-            ] 
-          } 
+              }
+            ]
+          }
         ]
 		configuration: [
 		  {
@@ -308,6 +313,35 @@ func TestGCPProviderConfigInputToGraphQL(t *testing.T) {
 	assert.Equal(t, expected, got)
 }
 
+func Test_UpgradeShootInputToGraphQL(t *testing.T) {
+	// given
+	sut := Graphqlizer{}
+	exp := `{
+    gardenerConfig: {
+      kubernetesVersion: "1.18.0",
+      machineImage: "gardenlinux",
+      machineImageVersion: "184.0.0",
+      enableKubernetesVersionAutoUpdate: true,
+      enableMachineImageVersionAutoUpdate: false,
+    }
+  }`
+
+	// when
+	got, err := sut.UpgradeShootInputToGraphQL(gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			KubernetesVersion:                   strPrt("1.18.0"),
+			MachineImage:                        strPrt("gardenlinux"),
+			MachineImageVersion:                 strPrt("184.0.0"),
+			EnableKubernetesVersionAutoUpdate:   boolPtr(true),
+			EnableMachineImageVersionAutoUpdate: boolPtr(false),
+		},
+	})
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, exp, got)
+}
+
 func TestOpenstack(t *testing.T) {
 	// given
 	input := gqlschema.ProviderSpecificInput{
@@ -338,7 +372,7 @@ func TestOpenstack(t *testing.T) {
         autoScalerMin: 0,
         autoScalerMax: 0,
         maxSurge: 0,
-		maxUnavailable: 0,	
+		maxUnavailable: 0,
 		providerSpecificConfig: {
 			openStackConfig: {
 		zones: ["z1"],
@@ -353,4 +387,8 @@ func TestOpenstack(t *testing.T) {
 
 func strPrt(s string) *string {
 	return &s
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }

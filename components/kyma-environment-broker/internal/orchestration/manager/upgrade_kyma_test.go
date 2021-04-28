@@ -215,3 +215,7 @@ type testExecutor struct{}
 func (t *testExecutor) Execute(opID string) (time.Duration, error) {
 	return 0, nil
 }
+
+func (t *testExecutor) Reschedule(operationID string, maintenanceWindowBegin, maintenanceWindowEnd time.Time) error {
+	return nil
+}

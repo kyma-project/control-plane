@@ -1,0 +1,90 @@
+{
+    "count": 2,
+    "totalCount": 4,
+    "data": [
+        {
+            "instanceID": "fooinstanceid1",
+            "runtimeID": "ca412f0d-19c3-47cb-8220-44ff69d1b14c",
+            "globalAccountID": "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae",
+            "subAccountID": "",
+            "region": "",
+            "subAccountRegion": "cf-eu10",
+            "shootName": "foo1",
+            "serviceClassID": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+            "serviceClassName": "",
+            "servicePlanID": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+            "servicePlanName": "",
+            "status": {
+                "createdAt": "2020-03-06T01:52:21.155932Z",
+                "modifiedAt": "2020-03-06T02:50:53.540835Z",
+                "provisioning": {
+                    "state": "succeeded",
+                    "description": "Operation created : Operation succeeded.",
+                    "createdAt": "2020-03-06T01:52:12.544657Z",
+                    "operationID": "98a47ace-9b1b-4c49-a6d1-8cd39a407df4"
+                },
+                "upgradingKyma": {
+                    "data": [],
+                    "totalCount": 0,
+                    "count": 0
+                },
+                "suspension": {
+                    "data": [],
+                    "totalCount": 0,
+                    "count": 0
+                },
+                "unsuspension": {
+                    "data": [],
+                    "totalCount": 0,
+                    "count": 0
+                }
+            },
+            "userID": ""
+        },
+        {
+            "instanceID": "instance",
+            "runtimeID": "ef422029-03a7-47cf-84b0-b0e5ff2f36a2",
+            "globalAccountID": "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae",
+            "subAccountID": "",
+            "region": "",
+            "subAccountRegion": "cf-eu10",
+            "shootName": "foo2",
+            "serviceClassID": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+            "serviceClassName": "",
+            "servicePlanID": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+            "servicePlanName": "",
+            "status": {
+                "createdAt": "2020-03-30T08:05:11.90855Z",
+                "modifiedAt": "2020-03-30T08:58:29.302774Z",
+                "provisioning": {
+                    "state": "succeeded",
+                    "description": "Operation created : URL dashboard already exist",
+                    "createdAt": "2020-03-30T07:26:09.926441Z",
+                    "operationID": "74f6d6b1-dba2-4435-9f0d-e7c81a3682d4"
+                },
+                "deprovisioning": {
+                    "state": "failed",
+                    "description": "Operation created : operation has reached the time limit: 1h0m0s : operation has reached the time limit: 1h0m0s : operation has reached the time limit: 2160h0m0s",
+                    "createdAt": "2020-04-07T09:30:14.254169Z",
+                    "operationID": "04e7f925-ae19-4958-b595-2b14baeee828"
+                },
+                "upgradingKyma": {
+                    "data": [],
+                    "totalCount": 0,
+                    "count": 0
+                },
+                "suspension": {
+                    "data": [],
+                    "totalCount": 0,
+                    "count": 0
+                },
+                "unsuspension": {
+                    "data": [],
+                    "totalCount": 0,
+                    "count": 0
+                }
+            },
+            "userID": ""
+        }
+    ]
+}
