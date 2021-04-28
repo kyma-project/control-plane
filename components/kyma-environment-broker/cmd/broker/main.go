@@ -579,6 +579,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		{
 			weight: 3,
 			step:   provisioning.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
+			disabled: cfg.AuditLog.Disabled,
 		},
 		{
 			weight:   6,
@@ -743,6 +744,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 3,
 			step:   upgrade_kyma.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
+			disabled: cfg.AuditLog.Disabled,
 		},
 		{
 			weight:   4,
