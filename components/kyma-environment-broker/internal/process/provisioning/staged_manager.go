@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
@@ -23,6 +24,9 @@ type StagedManager struct {
 
 	stages           []*stage
 	operationTimeout time.Duration
+
+	mu sync.RWMutex
+	finishedSteps    map[string]struct{}
 }
 
 type Step interface {
@@ -102,7 +106,7 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 		}
 
 		for _, step := range stage.steps {
-			if operation.IsStepDone(step.Name()) {
+			if m.IsStepDone(operation, step) {
 				continue
 			}
 			logStep := logOperation.WithField("step", step.Name()).
@@ -125,7 +129,7 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 			}
 
 			// mark step processed
-			operation.FinishStep(step.Name())
+			m.finishStep(operation, step)
 		}
 
 		processedOperation, err = m.saveFinishedStage(processedOperation, stage, logOperation)
@@ -169,4 +173,23 @@ func (m *StagedManager) runStep(step Step, operation internal.ProvisioningOperat
 		},
 	})
 	return processedOperation, when, err
+}
+
+// TODO: input builder is not cached!!!!
+
+func (m *StagedManager) IsStepDone(operation *internal.ProvisioningOperation, step Step) bool {
+	///return operation.IsStepDone(step.Name()
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	key := fmt.Sprintf("%s/%s", operation.ID, step.Name())
+	_, found := m.finishedSteps[key]
+	return found
+}
+
+func (m *StagedManager) finishStep(operation *internal.ProvisioningOperation, step Step) {
+	//return operation.FinishStep(step.Name())
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	key := fmt.Sprintf("%s/%s", operation.ID, step.Name())
+	m.finishedSteps[key] = struct{}{}
 }
