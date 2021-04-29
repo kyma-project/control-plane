@@ -315,7 +315,7 @@ spec:
             - name: APP_AUDITLOG_ENABLE_SEQ_HTTP
               value: "{{ .Values.global.auditlog.enableSeqHttp }}"
             - name: APP_AUDITLOG_DISABLED
-              value: value: "{{ .Values.global.auditlog.disabled }}"
+              value: "{{ .Values.global.auditlog.disabled }}"
             - name: APP_AUDITLOG_URL
               valueFrom:
                 configMapKeyRef:
