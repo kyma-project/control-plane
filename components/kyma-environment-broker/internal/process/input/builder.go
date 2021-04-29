@@ -79,7 +79,7 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	switch planID {
-	case broker.AWSPlanID, broker.GCPPlanID, broker.AzurePlanID, broker.AzureLitePlanID, broker.TrialPlanID, broker.OpenStackPlanID:
+	case broker.AWSPlanID, broker.GCPPlanID, broker.AzurePlanID, broker.AzureLitePlanID, broker.AzureHAPlanID, broker.TrialPlanID, broker.OpenStackPlanID:
 		return true
 	default:
 		return false
@@ -97,6 +97,8 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, par
 		provider = &cloudProvider.AzureInput{}
 	case broker.AzureLitePlanID:
 		provider = &cloudProvider.AzureLiteInput{}
+	case broker.AzureHAPlanID:
+		provider = &cloudProvider.AzureHAInput{}
 	case broker.TrialPlanID:
 		provider = f.forTrialPlan(parametersProvider)
 	case broker.AWSPlanID:

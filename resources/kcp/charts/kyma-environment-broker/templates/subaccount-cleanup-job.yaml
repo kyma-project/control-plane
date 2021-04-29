@@ -49,6 +49,12 @@ spec:
                   value: {{ .Values.cis.v1.authURL }}
                 - name: APP_CIS_EVENT_SERVICE_URL
                   value: {{ .Values.cis.v1.eventServiceURL }}
+                - name: APP_DATABASE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: "{{ .Values.global.database.managedGCP.encryptionSecretName }}"
+                      key: secretKey
+                      optional: true
                 - name: APP_DATABASE_USER
                   valueFrom:
                     secretKeyRef:
@@ -178,6 +184,12 @@ spec:
                   value: {{ .Values.cis.v2.authURL }}
                 - name: APP_CIS_EVENT_SERVICE_URL
                   value: {{ .Values.cis.v2.eventServiceURL }}
+                - name: APP_DATABASE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: "{{ .Values.global.database.managedGCP.encryptionSecretName }}"
+                      key: secretKey
+                      optional: true
                 - name: APP_DATABASE_USER
                   valueFrom:
                     secretKeyRef:

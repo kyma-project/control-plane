@@ -2,7 +2,12 @@ package internal
 
 import (
 	"database/sql"
+	"fmt"
+	"net/url"
+	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/sirupsen/logrus"
@@ -108,6 +113,34 @@ type Instance struct {
 	DeletedAt time.Time
 
 	Version int
+}
+
+func (i *Instance) GetInstanceDetails() (InstanceDetails, error) {
+	result := i.InstanceDetails
+	if result.ShootName == "" {
+		logrus.Infof("extracting shoot name/domain from dashboard_url %s for instance %s", i.DashboardURL, i.InstanceID)
+		shoot, domain, e := i.extractShootNameAndDomain()
+		if e != nil {
+			logrus.Errorf("unable to extract shoot name: %s (instance %s)", e.Error(), i.InstanceID)
+			return result, e
+		}
+		result.ShootName = shoot
+		result.ShootDomain = domain
+	}
+	return result, nil
+}
+
+func (i *Instance) extractShootNameAndDomain() (string, string, error) {
+	parsed, err := url.Parse(i.DashboardURL)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "while parsing dashboard url %s", i.DashboardURL)
+	}
+
+	parts := strings.Split(parsed.Host, ".")
+	if len(parts) <= 1 {
+		return "", "", fmt.Errorf("host is too short: %s", parsed.Host)
+	}
+	return parts[1], parsed.Host[len(parts[0])+1:], nil
 }
 
 // OperationType defines the possible types of an asynchronous operation to a broker.
@@ -357,6 +390,10 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 
 // NewDeprovisioningOperationWithID creates a fresh (just starting) instance of the DeprovisioningOperation with provided ID
 func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (DeprovisioningOperation, error) {
+	details, err := instance.GetInstanceDetails()
+	if err != nil {
+		return DeprovisioningOperation{}, err
+	}
 	return DeprovisioningOperation{
 		Operation: Operation{
 			ID:              operationID,
@@ -367,7 +404,7 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
 			Type:            OperationTypeDeprovision,
-			InstanceDetails: instance.InstanceDetails,
+			InstanceDetails: details,
 			FinishedSteps:   make(map[string]struct{}, 0),
 		},
 	}, nil

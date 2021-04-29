@@ -9,10 +9,10 @@ global:
       version: "PR-639"
     provisioner:
       dir:
-      version: "PR-646"
+      version: "PR-697"
     kyma_environment_broker:
       dir:
-      version: "PR-612"
+      version: "PR-706"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-627"
@@ -27,7 +27,7 @@ global:
       version: "PR-376"
     kyma_metrics_collector:
       dir:
-      version: "d1fc83cc"
+      version: "26c3f6a3"
     tests:
       provisioner:
         dir:

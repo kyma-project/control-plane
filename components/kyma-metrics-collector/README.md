@@ -9,35 +9,35 @@ Kyma Metrics Collector scrapes all Kyma clusters and uses Shoot information to g
 
 Kyma Metrics Collector comes with the following command line argument flags:
 
-    | Flag | Description | Default Value   |
-    | ----- | ------------ | --------------- |
-    | `gardener-secret-path` | The path to the secret which contains the kubeconfig of the Gardener MPS cluster. | `/gardener/kubeconfig` |
-    | `gardener-namespace` | The namespace in the Gardener cluster where information on Kyma clusters is. | `garden-kyma-dev`    |
-    | `scrape-interval` | The time interval to wait between 2 executions of metrics generation. | `3m`         |
-    | `worker-pool-size` | The number of workers in the pool. | `5` |
-    | `log-level` | The log-level of the Application. For example, `fatal`, `error`, `info`, `debug`. | `info` |
-    | `listen-addr` | The Application starts the server in this port to cater to the metrics and health endpoints. | `8080` |
-    | `debug-port` | The custom port to debug when needed. `0` will disable the debugging server. | `0` |
+| Flag | Description | Default Value   |
+| ----- | ------------ | ------------- |
+| `gardener-secret-path` | The path to the secret which contains the kubeconfig of the Gardener MPS cluster. | `/gardener/kubeconfig` |
+| `gardener-namespace` | The namespace in the Gardener cluster where information on Kyma clusters is. | `garden-kyma-dev`    |
+| `scrape-interval` | The time interval to wait between 2 executions of metrics generation. | `3m`         |
+| `worker-pool-size` | The number of workers in the pool. | `5` |
+| `log-level` | The log-level of the Application. For example, `fatal`, `error`, `info`, `debug`. | `info` |
+| `listen-addr` | The Application starts the server in this port to cater to the metrics and health endpoints. | `8080` |
+| `debug-port` | The custom port to debug when needed. `0` will disable the debugging server. | `0` |
 
 ### Environment variables
 
 Kyma Metrics Collector comes with the following environment variables:
      
-     | Variable | Description | Default Value   |
-     | ----- | ------------ | ------------- |
-     | `PUBLIC_CLOUD_SPECS` | This specification contains the CPU, Network and Disk information for all machine types from a public cloud provider.  | `-` |
-     | `KEB_URL` | The KEB URL where Kyma Metrics Collector fetches runtime information. | `-` |
-     | `KEB_TIMEOUT` | This timeout governs the connections from Kyma Metrics Collector to KEB | `30s` |
-     | `KEB_RETRY_COUNT` | The number of retries Kyma Metrics Collector will do when connecting to KEB fails. | 5 |
-     | `KEB_POLL_WAIT_DURATION` | The time interval for Kyma Metrics Collector to wait between each execution of polling KEB for runtime information. | `10m` |
-     | `EDP_URL` | The EDP base URL where Kyma Metrics Collector will ingest the event-stream to. | `-` |
-     | `EDP_TOKEN` | The token used to connect to EDP. | `-` |
-     | `EDP_NAMESPACE` | The namespace in EDP where Kyma Metrics Collector will ingest the event-stream to.| `kyma-dev` |
-     | `EDP_DATASTREAM_NAME` | The datastream in EDP where Kyma Metrics Collector will ingest the event-stream to. | `consumption-metrics` |
-     | `EDP_DATASTREAM_VERSION` | The datastream version which Kyma Metrics Collector will use. | `1` |
-     | `EDP_DATASTREAM_ENV` | The datastream environment which Kyma Metrics Collector will use.  | `dev` |
-     | `EDP_TIMEOUT` | The timeout for Kyma Metrics Collector connections to EDP. | `30s` |
-     | `EDP_RETRY` | The number of retries for Kyma Metrics Collector connections to EDP. | `3` |
+ | Variable | Description | Default Value   |
+ | ----- | ------------ | ------------- |
+ | `PUBLIC_CLOUD_SPECS` | This specification contains the CPU, Network and Disk information for all machine types from a public cloud provider.  | `-` |
+ | `KEB_URL` | The KEB URL where Kyma Metrics Collector fetches runtime information. | `-` |
+ | `KEB_TIMEOUT` | This timeout governs the connections from Kyma Metrics Collector to KEB | `30s` |
+ | `KEB_RETRY_COUNT` | The number of retries Kyma Metrics Collector will do when connecting to KEB fails. | 5 |
+ | `KEB_POLL_WAIT_DURATION` | The time interval for Kyma Metrics Collector to wait between each execution of polling KEB for runtime information. | `10m` |
+ | `EDP_URL` | The EDP base URL where Kyma Metrics Collector will ingest the event-stream to. | `-` |
+ | `EDP_TOKEN` | The token used to connect to EDP. | `-` |
+ | `EDP_NAMESPACE` | The namespace in EDP where Kyma Metrics Collector will ingest the event-stream to.| `kyma-dev` |
+ | `EDP_DATASTREAM_NAME` | The datastream in EDP where Kyma Metrics Collector will ingest the event-stream to. | `consumption-metrics` |
+ | `EDP_DATASTREAM_VERSION` | The datastream version which Kyma Metrics Collector will use. | `1` |
+ | `EDP_DATASTREAM_ENV` | The datastream environment which Kyma Metrics Collector will use.  | `dev` |
+ | `EDP_TIMEOUT` | The timeout for Kyma Metrics Collector connections to EDP. | `30s` |
+ | `EDP_RETRY` | The number of retries for Kyma Metrics Collector connections to EDP. | `3` |
 
 ## Development
 - Run a deployment in a currently configured k8s cluster:
@@ -73,7 +73,7 @@ Kyma Metrics Collector collects information about billable hyperscaler usage and
 
 ```json
 {
-  "name": "consumption-metrics",
+  "name": "kmc-consumption-metrics",
   "jsonSchema": {
     "type": "object",
     "title": "SKR Metering Schema",

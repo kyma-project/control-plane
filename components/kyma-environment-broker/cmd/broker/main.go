@@ -10,6 +10,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/swagger"
+
 	"github.com/spf13/afero"
 
 	"code.cloudfoundry.org/lager"
@@ -137,7 +139,8 @@ type Config struct {
 	TrialRegionMappingFilePath string
 	MaxPaginationPage          int `envconfig:"default=100"`
 
-	LogLevel string `envconfig:"default=info"`
+	LogLevel   string `envconfig:"default=info"`
+	DomainName string
 }
 
 func main() {
@@ -337,6 +340,13 @@ func main() {
 	} else {
 		logger.Info("Skipping processing operation in progress on start")
 	}
+
+	// configure templates e.g. {{.domain}} to replace it with the domain name
+	swaggerTemplates := map[string]string{
+		"domain": cfg.DomainName,
+	}
+	err = swagger.NewTemplate("/swagger", swaggerTemplates).Execute()
+	fatalOnError(err)
 
 	// create OSB API endpoints
 	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))

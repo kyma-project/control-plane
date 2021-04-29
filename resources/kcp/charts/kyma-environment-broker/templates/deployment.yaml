@@ -338,6 +338,8 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: APP_VERSION_CONFIG_NAME
               value: "kyma-versions"
+            - name: APP_DOMAIN_NAME
+              value: "{{ .Values.global.ingress.domainName }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

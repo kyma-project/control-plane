@@ -128,7 +128,11 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 				return operation, time.Second, nil
 			}
 			log.Infof("Setting the newest InstanceDetails")
-			operation.InstanceDetails = inst.InstanceDetails
+			operation.InstanceDetails, err = inst.GetInstanceDetails()
+			if err != nil {
+				log.Errorf("Unable to provide Instance details: %s", err.Error())
+				return s.operationManager.OperationFailed(operation, "Unable to provide Instance details.", log)
+			}
 		}
 		log.Infof("Setting the operation to 'InProgress'")
 		operation.State = domain.InProgress
@@ -204,8 +208,15 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.ProvisioningO
 		return operation, 10 * time.Second, nil
 	}
 
+	if operation.ProvisionerOperationID == "" {
+		msg := "Operation dos not contain Provisioner Operation ID"
+		log.Error(msg)
+		return s.operationManager.OperationFailed(operation, msg, log)
+	}
+
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
 	if err != nil {
+		log.Errorf("call to provisioner RuntimeOperationStatus failed: %s", err.Error())
 		return operation, 1 * time.Minute, nil
 	}
 	log.Infof("call to provisioner returned %s status", status.State.String())
