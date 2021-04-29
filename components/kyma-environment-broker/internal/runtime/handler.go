@@ -90,6 +90,14 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 		ukOprs, totalCount := h.takeLastNonDryRunOperations(ukOprs)
 		h.converter.ApplyUpgradingKymaOperations(&dto, ukOprs, totalCount)
 
+		ucOprs, err := h.operationsDb.ListUpgradeClusterOperationsByInstanceID(instance.InstanceID)
+		if err != nil && !dberr.IsNotFound(err) {
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching upgrade cluster operation for instance"))
+			return
+		}
+		ucOprs, totalCount = h.takeLastNonDryRunClusterOperations(ucOprs)
+		h.converter.ApplyUpgradingClusterOperations(&dto, ucOprs, totalCount)
+
 		deprovOprs, err := h.operationsDb.ListDeprovisioningOperationsByInstanceID(instance.InstanceID)
 		if err != nil && !dberr.IsNotFound(err) {
 			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching deprovisioning operations list for instance"))
@@ -110,6 +118,21 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 
 func (h *Handler) takeLastNonDryRunOperations(oprs []internal.UpgradeKymaOperation) ([]internal.UpgradeKymaOperation, int) {
 	toReturn := make([]internal.UpgradeKymaOperation, 0)
+	totalCount := 0
+	for _, op := range oprs {
+		if op.DryRun {
+			continue
+		}
+		if len(toReturn) < numberOfUpgradeOperationsToReturn {
+			toReturn = append(toReturn, op)
+		}
+		totalCount = totalCount + 1
+	}
+	return toReturn, totalCount
+}
+
+func (h *Handler) takeLastNonDryRunClusterOperations(oprs []internal.UpgradeClusterOperation) ([]internal.UpgradeClusterOperation, int) {
+	toReturn := make([]internal.UpgradeClusterOperation, 0)
 	totalCount := 0
 	for _, op := range oprs {
 		if op.DryRun {

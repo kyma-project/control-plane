@@ -86,7 +86,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 				logStep.Errorf("Process operation failed: %s", err)
 				return 0, err
 			}
-			if processedOperation.State != domain.InProgress {
+			if processedOperation.State == domain.Failed || processedOperation.State == domain.Succeeded {
 				logStep.Infof("Operation %q got status %s. Process finished.", operation.ID, processedOperation.State)
 				return 0, nil
 			}
