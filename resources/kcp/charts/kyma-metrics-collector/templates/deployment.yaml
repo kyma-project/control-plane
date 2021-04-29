@@ -81,7 +81,7 @@ spec:
               port: http
             initialDelaySeconds: 10
           ports:
-            - name: http
+            - name: {{ .Values.config.portName }}
               containerPort: {{ .Values.config.port }}
               protocol: TCP
           {{- with .Values.resources }}
