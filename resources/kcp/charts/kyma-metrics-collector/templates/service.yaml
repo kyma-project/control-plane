@@ -1,0 +1,17 @@
+{{- if .Values.global.kyma_metrics_collector.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ .Chart.Name }}
+{{ include "kyma-metrics-collector.labels" . | indent 4 }}
+  name: {{ template "kyma-metrics-collector.fullname" . }}
+spec:
+  ports:
+  - name: {{ .Values.service.name }}
+    port: {{ .Values.service.port }}
+    protocol: {{ .Values.service.protocol }}
+    targetPort: {{ .Values.config.portName }}
+  selector:
+    app: {{ .Chart.Name }}
+{{- end -}}
