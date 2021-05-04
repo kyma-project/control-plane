@@ -141,7 +141,7 @@ type Config struct {
 
 	LogLevel string `envconfig:"default=info"`
 
-	// FreemiumProviders is a comma separated list of providers for freemium
+	// FreemiumProviders is a list of providers for freemium
 	FreemiumProviders []string `envconfig:"default=aws"`
 
 	DomainName string
