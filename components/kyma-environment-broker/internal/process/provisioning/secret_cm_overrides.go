@@ -49,19 +49,22 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters", log)
 	}
 
-	versionNumber := s.getOverridesVersion(operation)
-	if versionNumber == "" { // if no version number specified explicitly we read the RuntimeVersion
-		version, err := s.getRuntimeVersion(operation)
+	overridesVersion := s.getOverridesVersion(operation)
+
+	if overridesVersion == "" { // if no overrides version number specified explicitly we read the RuntimeVersion
+		runtimeVersion, err := s.getRuntimeVersion(operation)
 		if err != nil {
 			errMsg := fmt.Sprintf("error while getting the runtime version for operation %s", operation.ID)
 			log.Error(errMsg)
 			return s.operationManager.RetryOperation(operation, errMsg, 10*time.Second, 30*time.Minute, log)
 		}
 
-		versionNumber = version.Version
+		overridesVersion = runtimeVersion.Version
 	}
 
-	if err := s.runtimeOverrides.Append(operation.InputCreator, planName, versionNumber); err != nil {
+	log.Infof("runtime overrides version: %s", overridesVersion)
+
+	if err := s.runtimeOverrides.Append(operation.InputCreator, planName, overridesVersion); err != nil {
 		errMsg := fmt.Sprintf("error when appending overrides for operation %s: %s", operation.ID, err.Error())
 		log.Error(errMsg)
 		return s.operationManager.RetryOperation(operation, errMsg, 10*time.Second, 30*time.Minute, log)

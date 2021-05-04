@@ -212,9 +212,10 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 		return ersContext, parameters, errors.Wrapf(result.Error, "while validating input parameters")
 	}
 
-	if !b.kymaVerOnDemand && parameters.KymaVersion != "" {
+	if !b.kymaVerOnDemand {
 		logger.Infof("Kyma on demand functionality is disabled. Default Kyma version will be used instead %s", parameters.KymaVersion)
 		parameters.KymaVersion = ""
+		parameters.OverridesVersion = ""
 	}
 	parameters.LicenceType = b.determineLicenceType(details.PlanID)
 
