@@ -139,7 +139,11 @@ type Config struct {
 	TrialRegionMappingFilePath string
 	MaxPaginationPage          int `envconfig:"default=100"`
 
-	LogLevel   string `envconfig:"default=info"`
+	LogLevel string `envconfig:"default=info"`
+
+	// FreemiumProviders is a list of providers for freemium
+	FreemiumProviders []string `envconfig:"default=aws"`
+
 	DomainName string
 }
 
@@ -227,7 +231,8 @@ func main() {
 	regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)
 	fatalOnError(err)
 	logs.Infof("Platform region mapping for trial: %v", regions)
-	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider, cfg.Provisioning, cfg.KymaVersion, regions)
+	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider,
+		cfg.Provisioning, cfg.KymaVersion, regions, cfg.FreemiumProviders)
 	fatalOnError(err)
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
@@ -288,13 +293,10 @@ func main() {
 	defaultPlansConfig, err := servicesConfig.DefaultPlansConfig()
 	fatalOnError(err)
 
-	plansValidator, err := broker.NewPlansSchemaValidator(defaultPlansConfig)
-	fatalOnError(err)
-
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
 		broker.NewServices(cfg.Broker, servicesConfig, logs),
-		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, plansValidator, defaultPlansConfig, cfg.EnableOnDemandVersion, logs),
+		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, defaultPlansConfig, cfg.EnableOnDemandVersion, logs),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
 		broker.NewUpdate(db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, logs),
 		broker.NewGetInstance(db.Instances(), logs),
@@ -350,6 +352,7 @@ func main() {
 
 	// create OSB API endpoints
 	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
+	router.Use(middleware.AddProviderToContext())
 	for _, prefix := range []string{
 		"/oauth/",          // oauth2 handled by Ory
 		"/oauth/{region}/", // oauth2 handled by Ory with region

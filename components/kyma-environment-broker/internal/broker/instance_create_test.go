@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
+	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -57,15 +57,13 @@ func TestProvision_Provision(t *testing.T) {
 			memoryStorage.Instances(),
 			queue,
 			factoryBuilder,
-			fixAlwaysPassJSONValidator(),
 			broker.PlansConfig{},
-
 			false,
 			logrus.StandardLogger(),
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "req-region"), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixRequestContext(t, "req-region"), instanceID, domain.ProvisionDetails{
 			ServiceID:     serviceID,
 			PlanID:        planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
@@ -114,14 +112,13 @@ func TestProvision_Provision(t *testing.T) {
 			memoryStorage.Instances(),
 			nil,
 			factoryBuilder,
-			fixAlwaysPassJSONValidator(),
 			broker.PlansConfig{},
 			false,
 			logrus.StandardLogger(),
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, region), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixRequestContext(t, region), instanceID, domain.ProvisionDetails{
 			ServiceID:     serviceID,
 			PlanID:        planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
@@ -157,14 +154,13 @@ func TestProvision_Provision(t *testing.T) {
 			memoryStorage.Instances(),
 			nil,
 			factoryBuilder,
-			fixAlwaysPassJSONValidator(),
 			broker.PlansConfig{},
 			false,
 			logrus.StandardLogger(),
 		)
 
 		// when
-		_, err = provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), "new-instance-id", domain.ProvisionDetails{
+		_, err = provisionEndpoint.Provision(fixRequestContext(t, "dummy"), "new-instance-id", domain.ProvisionDetails{
 			ServiceID:     serviceID,
 			PlanID:        broker.TrialPlanID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
@@ -201,14 +197,13 @@ func TestProvision_Provision(t *testing.T) {
 			memoryStorage.Instances(),
 			queue,
 			factoryBuilder,
-			fixAlwaysPassJSONValidator(),
 			broker.PlansConfig{},
 			false,
 			logrus.StandardLogger(),
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "req-region"), otherInstanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixRequestContext(t, "req-region"), otherInstanceID, domain.ProvisionDetails{
 			ServiceID:     serviceID,
 			PlanID:        broker.TrialPlanID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
@@ -258,14 +253,13 @@ func TestProvision_Provision(t *testing.T) {
 			memoryStorage.Instances(),
 			queue,
 			factoryBuilder,
-			fixAlwaysPassJSONValidator(),
 			broker.PlansConfig{},
 			false,
 			logrus.StandardLogger(),
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "req-region"), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixRequestContext(t, "req-region"), instanceID, domain.ProvisionDetails{
 			ServiceID:     serviceID,
 			PlanID:        broker.TrialPlanID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
@@ -312,14 +306,13 @@ func TestProvision_Provision(t *testing.T) {
 			memoryStorage.Instances(),
 			nil,
 			factoryBuilder,
-			fixAlwaysPassJSONValidator(),
 			broker.PlansConfig{},
 			false,
 			logrus.StandardLogger(),
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixRequestContext(t, "dummy"), instanceID, domain.ProvisionDetails{
 			ServiceID:     serviceID,
 			PlanID:        planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
@@ -338,9 +331,6 @@ func TestProvision_Provision(t *testing.T) {
 		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", planID).Return(true)
 
-		fixValidator, err := broker.NewPlansSchemaValidator(broker.PlansConfig{})
-		require.NoError(t, err)
-
 		queue := &automock.Queue{}
 		queue.On("Add", mock.AnythingOfType("string"))
 
@@ -351,14 +341,13 @@ func TestProvision_Provision(t *testing.T) {
 			memoryStorage.Instances(),
 			queue,
 			factoryBuilder,
-			fixValidator,
 			broker.PlansConfig{},
 			true,
 			logrus.StandardLogger(),
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixRequestContext(t, "dummy"), instanceID, domain.ProvisionDetails{
 			ServiceID: serviceID,
 			PlanID:    planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{
@@ -381,9 +370,6 @@ func TestProvision_Provision(t *testing.T) {
 		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", planID).Return(true)
 
-		fixValidator, err := broker.NewPlansSchemaValidator(broker.PlansConfig{})
-		require.NoError(t, err)
-
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}, OnlySingleTrialPerGA: true},
 			gardener.Config{Project: "test", ShootDomain: "example.com"},
@@ -391,7 +377,6 @@ func TestProvision_Provision(t *testing.T) {
 			nil,
 			nil,
 			factoryBuilder,
-			fixValidator,
 			broker.PlansConfig{},
 			true,
 			logrus.StandardLogger(),
@@ -416,9 +401,6 @@ func TestProvision_Provision(t *testing.T) {
 		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", planID).Return(true)
 
-		fixValidator, err := broker.NewPlansSchemaValidator(broker.PlansConfig{})
-		require.NoError(t, err)
-
 		queue := &automock.Queue{}
 		queue.On("Add", mock.AnythingOfType("string"))
 
@@ -429,14 +411,13 @@ func TestProvision_Provision(t *testing.T) {
 			memoryStorage.Instances(),
 			queue,
 			factoryBuilder,
-			fixValidator,
 			broker.PlansConfig{},
 			false,
 			logrus.StandardLogger(),
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixRequestContext(t, "dummy"), instanceID, domain.ProvisionDetails{
 			ServiceID: serviceID,
 			PlanID:    planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{
@@ -461,9 +442,6 @@ func TestProvision_Provision(t *testing.T) {
 		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", broker.AzureLitePlanID).Return(true)
 
-		fixValidator, err := broker.NewPlansSchemaValidator(broker.PlansConfig{})
-		require.NoError(t, err)
-
 		queue := &automock.Queue{}
 		queue.On("Add", mock.AnythingOfType("string"))
 
@@ -474,14 +452,13 @@ func TestProvision_Provision(t *testing.T) {
 			memoryStorage.Instances(),
 			queue,
 			factoryBuilder,
-			fixValidator,
 			broker.PlansConfig{},
 			false,
 			logrus.StandardLogger(),
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixRequestContext(t, "dummy"), instanceID, domain.ProvisionDetails{
 			ServiceID:     serviceID,
 			PlanID:        broker.AzureLitePlanID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
@@ -503,9 +480,6 @@ func TestProvision_Provision(t *testing.T) {
 		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", broker.TrialPlanID).Return(true)
 
-		fixValidator, err := broker.NewPlansSchemaValidator(broker.PlansConfig{})
-		require.NoError(t, err)
-
 		queue := &automock.Queue{}
 		queue.On("Add", mock.AnythingOfType("string"))
 
@@ -516,14 +490,13 @@ func TestProvision_Provision(t *testing.T) {
 			memoryStorage.Instances(),
 			queue,
 			factoryBuilder,
-			fixValidator,
 			broker.PlansConfig{},
 			false,
 			logrus.StandardLogger(),
 		)
 
 		// when
-		response, err := provisionEndpoint.Provision(fixReqCtxWithRegion(t, "dummy"), instanceID, domain.ProvisionDetails{
+		response, err := provisionEndpoint.Provision(fixRequestContext(t, "dummy"), instanceID, domain.ProvisionDetails{
 			ServiceID:     serviceID,
 			PlanID:        broker.TrialPlanID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
@@ -537,6 +510,101 @@ func TestProvision_Provision(t *testing.T) {
 
 		assert.Equal(t, ptr.String(internal.LicenceTypeLite), operation.ProvisioningParameters.Parameters.LicenceType)
 	})
+}
+
+func TestRegionValidation(t *testing.T) {
+
+	for tn, tc := range map[string]struct {
+		planID           string
+		parameters       string
+		platformProvider internal.CloudProvider
+
+		expectedErrorStatusCode int
+		expectedError           bool
+	}{
+		"invalid region": {
+			planID:           broker.AzurePlanID,
+			platformProvider: internal.Azure,
+			parameters:       `{"name": "cluster-name", "region":"not-valid"}`,
+
+			expectedErrorStatusCode: http.StatusBadRequest,
+			expectedError:           true,
+		},
+		"Azure region for AWS freemium": {
+			planID:           broker.FreemiumPlanID,
+			platformProvider: internal.AWS,
+			parameters:       `{"name": "cluster-name", "region": "eastus"}`,
+
+			expectedErrorStatusCode: http.StatusBadRequest,
+			expectedError:           true,
+		},
+		"Azure region for Azure freemium": {
+			planID:           broker.FreemiumPlanID,
+			platformProvider: internal.Azure,
+			parameters:       `{"name": "cluster-name", "region": "eastus"}`,
+
+			expectedError: false,
+		},
+		"AWS region for AWS freemium": {
+			planID:           broker.FreemiumPlanID,
+			platformProvider: internal.AWS,
+			parameters:       `{"name": "cluster-name", "region": "eu-central-1"}`,
+
+			expectedError: false,
+		},
+		"AWS region for Azure freemium": {
+			planID:           broker.FreemiumPlanID,
+			platformProvider: internal.Azure,
+			parameters:       `{"name": "cluster-name", "region": "eu-central-1"}`,
+
+			expectedErrorStatusCode: http.StatusBadRequest,
+			expectedError:           true,
+		},
+	} {
+		t.Run(tn, func(t *testing.T) {
+			// given
+			// #setup memory storage
+			memoryStorage := storage.NewMemoryStorage()
+
+			queue := &automock.Queue{}
+			queue.On("Add", mock.AnythingOfType("string"))
+
+			factoryBuilder := &automock.PlanValidator{}
+			factoryBuilder.On("IsPlanSupport", tc.planID).Return(true)
+
+			// #create provisioner endpoint
+			provisionEndpoint := broker.NewProvision(
+				broker.Config{EnablePlans: []string{"gcp", "azure", "free"}, OnlySingleTrialPerGA: true},
+				gardener.Config{Project: "test", ShootDomain: "example.com"},
+				memoryStorage.Operations(),
+				memoryStorage.Instances(),
+				queue,
+				factoryBuilder,
+				broker.PlansConfig{},
+				false,
+				logrus.StandardLogger(),
+			)
+
+			// when
+			_, err := provisionEndpoint.Provision(fixRequestContextWithProvider(t, "cf-eu10", tc.platformProvider), instanceID,
+				domain.ProvisionDetails{
+					ServiceID:     serviceID,
+					PlanID:        tc.planID,
+					RawParameters: json.RawMessage(tc.parameters),
+					RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, globalAccountID, subAccountID)),
+				}, true)
+
+			// then
+			if tc.expectedError {
+				require.Error(t, err)
+				assert.Equal(t, tc.expectedErrorStatusCode, err.(*apiresponses.FailureResponse).ValidatedStatusCode(nil))
+			} else {
+				assert.NoError(t, err)
+			}
+
+		})
+	}
+
 }
 
 func fixExistOperation() internal.ProvisioningOperation {
@@ -557,33 +625,20 @@ func fixExistOperation() internal.ProvisioningOperation {
 	return provisioningOperation
 }
 
-func fixAlwaysPassJSONValidator() broker.PlansSchemaValidator {
-	validatorMock := &automock.JSONSchemaValidator{}
-	validatorMock.On("ValidateString", mock.Anything).Return(jsonschema.ValidationResult{Valid: true}, nil)
-
-	fixValidator := broker.PlansSchemaValidator{
-		broker.GCPPlanID:   validatorMock,
-		broker.AzurePlanID: validatorMock,
-		broker.TrialPlanID: validatorMock,
-	}
-
-	return fixValidator
-}
-
 func fixInstance() internal.Instance {
 	return fixture.FixInstance(instanceID)
 }
 
-func fixReqCtxWithRegion(t *testing.T, region string) context.Context {
+func fixRequestContext(t *testing.T, region string) context.Context {
+	t.Helper()
+	return fixRequestContextWithProvider(t, region, internal.Azure)
+}
+
+func fixRequestContextWithProvider(t *testing.T, region string, provider internal.CloudProvider) context.Context {
 	t.Helper()
 
-	req, err := http.NewRequest("GET", "http://url.io", nil)
-	require.NoError(t, err)
 	var ctx context.Context
-	spyHandler := http.HandlerFunc(func(_ http.ResponseWriter, req *http.Request) {
-		ctx = req.Context()
-	})
-
-	middleware.AddRegionToContext(region).Middleware(spyHandler).ServeHTTP(httptest.NewRecorder(), req)
+	ctx = middleware.AddRegionToCtx(ctx, region)
+	ctx = middleware.AddProviderToCtx(ctx, provider)
 	return ctx
 }

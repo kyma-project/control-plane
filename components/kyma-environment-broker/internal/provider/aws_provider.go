@@ -30,6 +30,7 @@ type (
 	AWSTrialInput struct {
 		PlatformRegionMapping map[string]string
 	}
+	AWSFreemiumInput struct{}
 )
 
 func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
@@ -93,6 +94,10 @@ func (p *AWSInput) Profile() gqlschema.KymaProfile {
 }
 
 func (p *AWSTrialInput) Defaults() *gqlschema.ClusterConfigInput {
+	return awsTrialDefaults()
+}
+
+func awsTrialDefaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("gp2"),
@@ -136,5 +141,17 @@ func (p *AWSTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp 
 }
 
 func (p *AWSTrialInput) Profile() gqlschema.KymaProfile {
+	return gqlschema.KymaProfileEvaluation
+}
+
+func (p *AWSFreemiumInput) Defaults() *gqlschema.ClusterConfigInput {
+	return awsTrialDefaults()
+}
+
+func (p *AWSFreemiumInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParameters) {
+	// todo: consider regions
+}
+
+func (p *AWSFreemiumInput) Profile() gqlschema.KymaProfile {
 	return gqlschema.KymaProfileEvaluation
 }

@@ -4,6 +4,7 @@ package main
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -38,8 +39,10 @@ func TestProvisioning_HappyPath(t *testing.T) {
 
 func TestProvisioning_ClusterParameters(t *testing.T) {
 	for tn, tc := range map[string]struct {
-		planID     string
-		zonesCount *int
+		planID           string
+		platformRegion   string
+		platformProvider internal.CloudProvider
+		zonesCount       *int
 
 		expectedProfile              gqlschema.KymaProfile
 		expectedProvider             string
@@ -57,6 +60,28 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			expectedProfile:              gqlschema.KymaProfileEvaluation,
 			expectedProvider:             "azure",
 			expectedSharedSubscription:   true,
+		},
+		"Freemium aws": {
+			planID:           broker.FreemiumPlanID,
+			platformProvider: internal.AWS,
+
+			expectedMinimalNumberOfNodes: 1,
+			expectedMaximumNumberOfNodes: 1,
+			expectedProfile:              gqlschema.KymaProfileEvaluation,
+			expectedProvider:             "aws",
+			expectedSharedSubscription:   false,
+			expectedMachineType:          "m5.xlarge",
+		},
+		"Freemium azure": {
+			planID:           broker.FreemiumPlanID,
+			platformProvider: internal.Azure,
+
+			expectedMinimalNumberOfNodes: 1,
+			expectedMaximumNumberOfNodes: 1,
+			expectedProfile:              gqlschema.KymaProfileEvaluation,
+			expectedProvider:             "azure",
+			expectedSharedSubscription:   false,
+			expectedMachineType:          "Standard_D4_v3",
 		},
 		"Production Azure": {
 			planID: broker.AzurePlanID,
@@ -106,8 +131,10 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 
 			// when
 			provisioningOperationID := suite.CreateProvisioning(RuntimeOptions{
-				PlanID:     tc.planID,
-				ZonesCount: tc.zonesCount,
+				PlanID:           tc.planID,
+				ZonesCount:       tc.zonesCount,
+				PlatformRegion:   tc.platformRegion,
+				PlatformProvider: tc.platformProvider,
 			})
 
 			// then

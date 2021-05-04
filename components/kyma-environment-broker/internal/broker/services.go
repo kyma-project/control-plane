@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
+
 	"github.com/pkg/errors"
 
 	"github.com/pivotal-cf/brokerapi/v7/domain"
@@ -43,7 +45,8 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 		return nil, errors.Errorf("while getting %s class data", KymaServiceName)
 	}
 
-	for _, plan := range Plans(class.Plans) {
+	provider, ok := middleware.ProviderFromContext(ctx)
+	for _, plan := range Plans(class.Plans, provider) {
 		// filter out not enabled plans
 		if _, exists := b.enabledPlanIDs[plan.PlanDefinition.ID]; !exists {
 			continue
