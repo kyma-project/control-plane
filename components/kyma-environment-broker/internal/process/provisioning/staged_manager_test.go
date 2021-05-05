@@ -12,14 +12,12 @@ import (
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
 
 func TestHappyPath(t *testing.T) {
@@ -40,10 +38,6 @@ func TestHappyPath(t *testing.T) {
 	op, _ := operationStorage.GetProvisioningOperationByID(operation.ID)
 	assert.True(t, op.IsStageFinished("stage-1"))
 	assert.True(t, op.IsStageFinished("stage-2"))
-	steps := mgr.GetAllSteps()
-	for _, s := range steps {
-		assert.True(t, operation.IsStepDone(s.Name()))
-	}
 }
 
 func TestWithRetry(t *testing.T) {
@@ -61,11 +55,11 @@ func TestWithRetry(t *testing.T) {
 	retry, _ := mgr.Execute(operation.ID)
 
 	// then
-	assert.NotZero(t, retry)
-	eventCollector.AssertProcessedSteps(t, []string{"first", "second", "third", "first-2"})
+	assert.Zero(t, retry)
+	eventCollector.AssertProcessedSteps(t, []string{"first", "second", "third", "first-2", "first-2", "second-2"})
 	op, _ := operationStorage.GetProvisioningOperationByID(operation.ID)
 	assert.True(t, op.IsStageFinished("stage-1"))
-	assert.False(t, op.IsStageFinished("stage-2"))
+	assert.True(t, op.IsStageFinished("stage-2"))
 }
 
 func TestSkipFinishedStage(t *testing.T) {
@@ -90,26 +84,6 @@ func TestSkipFinishedStage(t *testing.T) {
 	assert.True(t, op.IsStageFinished("stage-2"))
 }
 
-func TestSkipSucceededSteps(t *testing.T) {
-	// given
-	operation := FixProvisionOperation("op-0001234")
-
-	mgr, _, eventCollector := SetupStagedManager(operation)
-	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector})
-	mgr.AddStep("stage-1", &onceRetryingStep{name: "second", eventPublisher: eventCollector})
-	retry, _ := mgr.Execute(operation.ID)
-	require.NotZero(t, retry)
-	eventCollector.AssertProcessedSteps(t, []string{"first", "second"})
-
-	// when
-	retry, _ = mgr.Execute(operation.ID)
-	assert.Zero(t, retry)
-
-	// then
-	// we expect only one more event as the second round runs only the step which failed before
-	eventCollector.AssertProcessedSteps(t, []string{"first", "second", "second"})
-}
-
 func SetupStagedManager(op internal.ProvisioningOperation) (*provisioning.StagedManager, storage.Operations, *CollectingEventHandler) {
 	memoryStorage := storage.NewMemoryStorage()
 	memoryStorage.Operations().InsertProvisioningOperation(op)
@@ -118,6 +92,7 @@ func SetupStagedManager(op internal.ProvisioningOperation) (*provisioning.Staged
 	l := logrus.New()
 	l.SetLevel(logrus.DebugLevel)
 	mgr := provisioning.NewStagedManager(memoryStorage.Operations(), eventCollector, 3*time.Second, l)
+	mgr.SpeedUp(100000)
 	mgr.DefineStages([]string{"stage-1", "stage-2"})
 
 	return mgr, memoryStorage.Operations(), eventCollector
@@ -196,7 +171,7 @@ func (h *CollectingEventHandler) Publish(ctx context.Context, ev interface{}) {
 }
 
 func (h *CollectingEventHandler) WaitForEvents(t *testing.T, count int) {
-	assert.NoError(t, wait.PollImmediate(20*time.Millisecond, 3*time.Second, func() (bool, error) {
+	assert.NoError(t, wait.PollImmediate(time.Millisecond, time.Second, func() (bool, error) {
 		return len(h.StepsProcessed) == count, nil
 	}))
 }

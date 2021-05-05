@@ -25,8 +25,10 @@ type StagedManager struct {
 	stages           []*stage
 	operationTimeout time.Duration
 
-	mu sync.RWMutex
-	finishedSteps    map[string]struct{}
+	mu            sync.RWMutex
+	finishedSteps map[string]map[string]struct{}
+
+	speedFactor int64
 }
 
 type Step interface {
@@ -52,6 +54,12 @@ func NewStagedManager(storage storage.Operations, pub event.Publisher, operation
 	}
 }
 
+// SpeedUp changes speedFactor parameter to reduce the sleep time if a step needs a retry.
+// This method should only be used for testing purposes
+func (m *StagedManager) SpeedUp(speedFactor int64) {
+	m.speedFactor = speedFactor
+}
+
 func (m *StagedManager) DefineStages(names []string) {
 	m.stages = make([]*stage, len(names))
 	for i, n := range names {
@@ -69,12 +77,12 @@ func (m *StagedManager) AddStep(stageName string, step Step) error {
 	return fmt.Errorf("Stage %s not defined", stageName)
 }
 
-func (m *StagedManager) GetAllSteps() []Step {
-	var allSteps []Step
+func (m *StagedManager) GetAllStages() []string {
+	var all []string
 	for _, s := range m.stages {
-		allSteps = append(allSteps, s.steps...)
+		all = append(all, s.name)
 	}
-	return allSteps
+	return all
 }
 
 func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
@@ -106,9 +114,7 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 		}
 
 		for _, step := range stage.steps {
-			if m.IsStepDone(operation, step) {
-				continue
-			}
+
 			logStep := logOperation.WithField("step", step.Name()).
 				WithField("stage", stage.name)
 			logStep.Infof("Start step")
@@ -118,7 +124,7 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 				logStep.Errorf("Process operation failed: %s", err)
 				return 0, err
 			}
-			if processedOperation.State != domain.InProgress {
+			if processedOperation.State == domain.Failed || processedOperation.State == domain.Succeeded {
 				logStep.Infof("Operation %q got status %s. Process finished.", operation.ID, processedOperation.State)
 				return 0, nil
 			}
@@ -127,9 +133,6 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 			if when > 0 {
 				return when, nil
 			}
-
-			// mark step processed
-			m.finishStep(operation, step)
 		}
 
 		processedOperation, err = m.saveFinishedStage(processedOperation, stage, logOperation)
@@ -160,36 +163,28 @@ func (m *StagedManager) saveFinishedStage(operation internal.ProvisioningOperati
 }
 
 func (m *StagedManager) runStep(step Step, operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	start := time.Now()
-	processedOperation, when, err := step.Run(operation, logger)
-	m.publisher.Publish(context.TODO(), process.ProvisioningStepProcessed{
-		OldOperation: operation,
-		Operation:    processedOperation,
-		StepProcessed: process.StepProcessed{
-			StepName: step.Name(),
-			Duration: time.Since(start),
-			When:     when,
-			Error:    err,
-		},
-	})
-	return processedOperation, when, err
-}
+	begin := time.Now()
+	for {
+		start := time.Now()
+		processedOperation, when, err := step.Run(operation, logger)
+		m.publisher.Publish(context.TODO(), process.ProvisioningStepProcessed{
+			OldOperation: operation,
+			Operation:    processedOperation,
+			StepProcessed: process.StepProcessed{
+				StepName: step.Name(),
+				Duration: time.Since(start),
+				When:     when,
+				Error:    err,
+			},
+		})
 
-// TODO: input builder is not cached!!!!
-
-func (m *StagedManager) IsStepDone(operation *internal.ProvisioningOperation, step Step) bool {
-	///return operation.IsStepDone(step.Name()
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	key := fmt.Sprintf("%s/%s", operation.ID, step.Name())
-	_, found := m.finishedSteps[key]
-	return found
-}
-
-func (m *StagedManager) finishStep(operation *internal.ProvisioningOperation, step Step) {
-	//return operation.FinishStep(step.Name())
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	key := fmt.Sprintf("%s/%s", operation.ID, step.Name())
-	m.finishedSteps[key] = struct{}{}
+		// break the loop if:
+		// - the step does not need a retry
+		// - step returns an error
+		// - the loop takes too much time (to not block the worker too long)
+		if when == 0 || err != nil || time.Since(begin) > 15*time.Minute {
+			return processedOperation, when, err
+		}
+		time.Sleep(when / time.Duration(m.speedFactor))
+	}
 }

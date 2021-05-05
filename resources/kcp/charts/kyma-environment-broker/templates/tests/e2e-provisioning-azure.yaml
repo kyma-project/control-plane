@@ -41,7 +41,7 @@ spec:
             - name: APP_CLEANUP_PHASE
               value: "false"
             - name: APP_BROKER_URL
-              value: 'https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}'
+              value: 'https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}/oauth/cf-eu10/'
             - name: APP_BROKER_PLAN_ID
               value: "{{ .Values.e2e.azure.planID }}"
             - name: APP_BROKER_CLIENT_NAME

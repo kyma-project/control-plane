@@ -69,7 +69,7 @@ func NewClient(ctx context.Context, config Config, globalAccountID, instanceID, 
 const (
 	kymaClassID = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
 
-	instancesURL = "/oauth/v2/service_instances"
+	instancesURL = "v2/service_instances"
 )
 
 type inputContext struct {
@@ -396,4 +396,8 @@ func (c *Client) warnOnError(do func() error) {
 	if err := do(); err != nil {
 		c.log.Warn(err.Error())
 	}
+}
+
+func (c *Client) BaseOsbUrl() string {
+	return fmt.Sprintf("%s/oauth/%s/v2/", c.brokerConfig.URL)
 }

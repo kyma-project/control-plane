@@ -34,7 +34,7 @@ func TestProvisioning_HappyPath(t *testing.T) {
 
 	// then
 	suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
-	suite.AssertAllStepsFinished(provisioningOperationID)
+	suite.AssertAllStagesFinished(provisioningOperationID)
 	suite.AssertProvisioningRequest()
 }
 
@@ -149,7 +149,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 
 			// then
 			suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
-			suite.AssertAllStepsFinished(provisioningOperationID)
+			suite.AssertAllStagesFinished(provisioningOperationID)
 
 			suite.AssertKymaProfile(tc.expectedProfile)
 			suite.AssertProvider(tc.expectedProvider)
@@ -182,6 +182,6 @@ func TestUnsuspensionWithoutShootName(t *testing.T) {
 
 	// then
 	suite.WaitForProvisioningState(unsuspensionOperationID, domain.Succeeded)
-	suite.AssertAllStepsFinished(unsuspensionOperationID)
+	suite.AssertAllStagesFinished(unsuspensionOperationID)
 	suite.AssertProvisioningRequest()
 }

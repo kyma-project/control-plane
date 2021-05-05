@@ -490,6 +490,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 		runtimeOverrides, smcf, bundleBuilder, edpClient, accountProvider, inMemoryFs, logs)
 
 	provisioningQueue.SpeedUp(10000)
+	provisionManager.SpeedUp(10000)
 
 	return &ProvisioningSuite{
 		provisionerClient:   provisionerClient,
@@ -656,11 +657,11 @@ func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID str
 	assert.Equal(s.t, gqlschema.OperationStateInProgress, status.State)
 }
 
-func (s *ProvisioningSuite) AssertAllStepsFinished(operationID string) {
+func (s *ProvisioningSuite) AssertAllStagesFinished(operationID string) {
 	operation, _ := s.storage.Operations().GetProvisioningOperationByID(operationID)
-	steps := s.provisioningManager.GetAllSteps()
-	for _, step := range steps {
-		assert.True(s.t, operation.IsStepDone(step.Name()))
+	steps := s.provisioningManager.GetAllStages()
+	for _, stage := range steps {
+		assert.True(s.t, operation.IsStageFinished(stage))
 	}
 }
 
