@@ -613,6 +613,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1
 github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b/go.mod h1:mXQbZvsoQH+zJB8ywkFIqtG2Rp8Lt7bhwIzKPRRnlNA=
 github.com/kyma-incubator/hydroform/install v0.0.0-20210218125820-f7a76ec2075a h1:pBFrUyRtOjD1JlGdhF83VwQVeVtVho6HNqUobKkR3mw=
 github.com/kyma-incubator/hydroform/install v0.0.0-20210218125820-f7a76ec2075a/go.mod h1:/qouJL+g8Tsllh/VcxK1Li6NCyuqyXSlq1i9InKSZJk=
+github.com/kyma-incubator/hydroform/install v0.0.0-20210423204324-77f0d2c745ab h1:S99b/U+K+sqnCAa3HcRsstwDEJay9fezeI6nKPMkI38=
+github.com/kyma-incubator/hydroform/install v0.0.0-20210423204324-77f0d2c745ab/go.mod h1:/qouJL+g8Tsllh/VcxK1Li6NCyuqyXSlq1i9InKSZJk=
 github.com/kyma-project/kyma/components/application-operator v0.0.0-20200818080816-8c81ea09adc7/go.mod h1:LUlTpeBF6hz7DyOtROez1IjluZOrFFgJH9vx8/me5p8=
 github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200902131640-31c29c8feb0c h1:ojgMJoX7H9KVe9KM5IrSE3uPQxsihL5eeC9iVeUF7e0=
 github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200902131640-31c29c8feb0c/go.mod h1:aR7hDBCzR0sN0tEF6+RnwsvAM/FYlBR+tYxZs0BmmvA=
