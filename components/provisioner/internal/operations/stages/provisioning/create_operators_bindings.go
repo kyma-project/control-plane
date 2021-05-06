@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"github.com/sirupsen/logrus"
 	v12 "k8s.io/api/rbac/v1"
@@ -21,6 +23,9 @@ const (
 
 	l2OperatorClusterRoleBindingRoleRefName = "view"
 	l3OperatorClusterRoleBindingRoleRefName = "cluster-admin"
+
+	retryNumber        = 3
+	retrySleepInterval = 5 * time.Second
 )
 
 type OperatorRoleBinding struct {
@@ -64,7 +69,7 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 
 	k8sClient, err := s.k8sClientProvider.CreateK8SClient(*cluster.Kubeconfig)
 	if err != nil {
-		return operations.StageResult{}, fmt.Errorf("failed to create k8s client: %v", err)
+		return operations.StageResult{}, fmt.Errorf("creating k8s client: %v", err)
 	}
 
 	l2OperatorView := buildClusterRoleBinding(
@@ -76,7 +81,7 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 		s.operatorRoleBindingConfig.L3SubjectName,
 		l3OperatorClusterRoleBindingRoleRefName)
 	if err := createClusterRoleBindings(k8sClient.RbacV1().ClusterRoleBindings(), l2OperatorView, l3OperatorAdmin); err != nil {
-		return operations.StageResult{}, fmt.Errorf("failed to create cluster role bindings: %v", err)
+		return operations.StageResult{}, fmt.Errorf("creating cluster role bindings for operators: %v", err)
 	}
 
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
@@ -103,10 +108,20 @@ func buildClusterRoleBinding(metaName, subjectName, roleRefName string) v12.Clus
 
 func createClusterRoleBindings(crbClient v1.ClusterRoleBindingInterface, clusterRoleBindings ...v12.ClusterRoleBinding) error {
 	for _, crb := range clusterRoleBindings {
-		if _, err := crbClient.Create(context.Background(), &crb, metav1.CreateOptions{}); err != nil {
-			if !errors.IsAlreadyExists(err) {
-				return fmt.Errorf("failed to create %s ClusterRoleBinding: %v", crb.Name, err)
-			}
+		err := util.RetryOnError(
+			retrySleepInterval,
+			retryNumber,
+			"Failed to create ClusterRoleBinding: %v",
+			func() apperrors.AppError {
+				if _, err := crbClient.Create(context.Background(), &crb, metav1.CreateOptions{}); err != nil {
+					if !errors.IsAlreadyExists(err) {
+						return apperrors.Internal("creating %s ClusterRoleBinding: %v", crb.Name, err)
+					}
+				}
+				return nil
+			})
+		if err != nil {
+			return fmt.Errorf("creating %s ClusterRoleBinding: %v", crb.Name, err)
 		}
 	}
 	return nil

@@ -121,4 +121,33 @@ func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 		// then
 		require.Error(t, err)
 	})
+
+	t.Run("should not fail if there is no error after a retry", func(t *testing.T) {
+		// given
+		k8sClient := fake.NewSimpleClientset()
+		failCounter := 1
+		k8sClient.Fake.PrependReactor(
+			"*",
+			"*",
+			func(action clientgotesting.Action) (handled bool, ret runtime.Object, err error) {
+				if failCounter > 0 {
+					failCounter--
+					return true, nil, fmt.Errorf("error")
+				}
+				return true, nil, nil
+			})
+
+		k8sClientProvider := &mocks.K8sClientProvider{}
+		k8sClientProvider.On("CreateK8SClient", kubeconfigRaw).Return(k8sClient, nil)
+
+		step := NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorBindingConfig, nextStageName, time.Minute)
+
+		// when
+		result, err := step.Run(cluster, model.Operation{}, &logrus.Entry{})
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, nextStageName, result.Stage)
+		assert.Equal(t, time.Duration(0), result.Delay)
+	})
 }
