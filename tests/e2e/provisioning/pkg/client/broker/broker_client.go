@@ -397,7 +397,3 @@ func (c *Client) warnOnError(do func() error) {
 		c.log.Warn(err.Error())
 	}
 }
-
-func (c *Client) BaseOsbUrl() string {
-	return fmt.Sprintf("%s/oauth/%s/v2/", c.brokerConfig.URL)
-}
