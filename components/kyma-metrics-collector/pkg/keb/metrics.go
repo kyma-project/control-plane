@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	Namespace = "metris"
+	Namespace = "kmc"
 	Subsystem = "keb"
 )
 

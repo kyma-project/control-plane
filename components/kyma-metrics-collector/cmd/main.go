@@ -85,6 +85,7 @@ func main() {
 		log.Fatalf("failed to load EDP config: %s", err)
 	}
 	edpClient := edp.NewClient(edpConfig, log)
+	log.Debugf("edp config: %v", edpConfig)
 
 	queue := workqueue.NewDelayingQueue()
 
