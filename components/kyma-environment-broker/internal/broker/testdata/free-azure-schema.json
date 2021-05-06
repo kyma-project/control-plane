@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Cluster Name",
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9-]*$"
+    },
+    "region": {
+      "type": "string",
+      "enum": [ "eastus", "centralus", "westus2", "uksouth", "northeurope", "westeurope", "japaneast", "southeastasia" ]
+    }},
+  "required": [
+    "name"
+  ],
+  "_show_form_view": true,
+  "_controlsOrder": [
+    "name",
+    "region"
+  ]
+}

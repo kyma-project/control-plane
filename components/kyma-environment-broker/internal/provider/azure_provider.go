@@ -30,7 +30,8 @@ type (
 	AzureTrialInput struct {
 		PlatformRegionMapping map[string]string
 	}
-	AzureHAInput struct{}
+	AzureFreemiumInput struct{}
+	AzureHAInput       struct{}
 )
 
 func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
@@ -96,6 +97,10 @@ func (p *AzureLiteInput) Profile() gqlschema.KymaProfile {
 }
 
 func (p *AzureTrialInput) Defaults() *gqlschema.ClusterConfigInput {
+	return azureTrialDefaults()
+}
+
+func azureTrialDefaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("Standard_LRS"),
@@ -174,5 +179,17 @@ func (p *AzureHAInput) Profile() gqlschema.KymaProfile {
 }
 
 func (p *AzureTrialInput) Profile() gqlschema.KymaProfile {
+	return gqlschema.KymaProfileEvaluation
+}
+
+func (p *AzureFreemiumInput) Defaults() *gqlschema.ClusterConfigInput {
+	return azureTrialDefaults()
+}
+
+func (p *AzureFreemiumInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParameters) {
+	// todo: consider regions
+}
+
+func (p *AzureFreemiumInput) Profile() gqlschema.KymaProfile {
 	return gqlschema.KymaProfileEvaluation
 }

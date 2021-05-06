@@ -10,10 +10,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/swagger"
-
-	"github.com/spf13/afero"
-
 	"code.cloudfoundry.org/lager"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/handlers"
@@ -55,10 +51,12 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/swagger"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -139,7 +137,11 @@ type Config struct {
 	TrialRegionMappingFilePath string
 	MaxPaginationPage          int `envconfig:"default=100"`
 
-	LogLevel   string `envconfig:"default=info"`
+	LogLevel string `envconfig:"default=info"`
+
+	// FreemiumProviders is a list of providers for freemium
+	FreemiumProviders []string `envconfig:"default=aws"`
+
 	DomainName string
 }
 
@@ -220,6 +222,8 @@ func main() {
 	gardenerShoots, err := gardener.NewGardenerShootInterface(gardenerClusterConfig, cfg.Gardener.Project)
 	fatalOnError(err)
 
+	hyperscalerProvider := azure.NewAzureProvider()
+
 	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecretBindings, gardenerShoots)
 	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecretBindings, gardenerShoots)
 	accountProvider := hyperscaler.NewAccountProvider(kubernetesClient, gardenerAccountPool, gardenerSharedPool)
@@ -227,7 +231,8 @@ func main() {
 	regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)
 	fatalOnError(err)
 	logs.Infof("Platform region mapping for trial: %v", regions)
-	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider, cfg.Provisioning, cfg.KymaVersion, regions)
+	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider,
+		cfg.Provisioning, cfg.KymaVersion, regions, cfg.FreemiumProviders)
 	fatalOnError(err)
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
@@ -278,7 +283,9 @@ func main() {
 		edpClient, accountProvider, fileSystem, logs)
 
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
-	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, &cfg, db, eventBroker, provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient, accountProvider, logs)
+	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, &cfg, db, eventBroker, provisionerClient,
+		avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient,
+		hyperscalerProvider, accountProvider, logs)
 
 	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
 
@@ -288,13 +295,10 @@ func main() {
 	defaultPlansConfig, err := servicesConfig.DefaultPlansConfig()
 	fatalOnError(err)
 
-	plansValidator, err := broker.NewPlansSchemaValidator(defaultPlansConfig)
-	fatalOnError(err)
-
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
 		broker.NewServices(cfg.Broker, servicesConfig, logs),
-		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, plansValidator, defaultPlansConfig, cfg.EnableOnDemandVersion, logs),
+		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, defaultPlansConfig, cfg.EnableOnDemandVersion, logs),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
 		broker.NewUpdate(db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, logs),
 		broker.NewGetInstance(db.Instances(), logs),
@@ -350,6 +354,7 @@ func main() {
 
 	// create OSB API endpoints
 	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
+	router.Use(middleware.AddProviderToContext())
 	for _, prefix := range []string{
 		"/oauth/",          // oauth2 handled by Ory
 		"/oauth/{region}/", // oauth2 handled by Ory with region
@@ -619,8 +624,9 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 
 func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, deprovisionManager *deprovisioning.Manager, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
 	provisionerClient provisioner.Client, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
-	externalEvalAssistant *avs.ExternalEvalAssistant, smcf *servicemanager.ClientFactory, bundleBuilder ias.BundleBuilder,
-	edpClient deprovisioning.EDPClient, accountProvider hyperscaler.AccountProvider, logs logrus.FieldLogger) *process.Queue {
+	externalEvalAssistant *avs.ExternalEvalAssistant, smcf deprovisioning.SMClientFactory, bundleBuilder ias.BundleBuilder,
+	edpClient deprovisioning.EDPClient, hyperscalerProvider azure.HyperscalerProvider, accountProvider hyperscaler.AccountProvider,
+	logs logrus.FieldLogger) *process.Queue {
 
 	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, smcf, cfg.OperationTimeout)
 	deprovisionManager.InitStep(deprovisioningInit)
@@ -638,7 +644,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			weight: 1,
 			step: deprovisioning.NewSkipForTrialPlanStep(
 				deprovisioning.NewAzureEventHubActivationStep(
-					deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx))),
+					deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), hyperscalerProvider, accountProvider, ctx))),
 		},
 		{
 			weight:   1,

@@ -177,9 +177,9 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 	case gqlschema.OperationStateSucceeded:
 		{
 			if !broker.IsTrialPlan(planID) {
-				hypType, err := hyperscaler.HyperscalerTypeForPlanID(planID)
+				hypType, err := hyperscaler.HyperscalerTypeForPlanID(operation.ProvisioningParameters)
 				if err != nil {
-					log.Errorf("after successful deprovisioning failing to hyperscaler release subscription - determine the type of Hyperscaler to use for planID: %s", planID)
+					log.Errorf("after successful deprovisioning failing to hyperscaler release subscription - determine the type of Hyperscaler to use for planID [%s]: %s", planID, err.Error())
 					return operation, 0, nil
 				}
 

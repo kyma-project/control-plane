@@ -92,6 +92,7 @@ gardener:
   # if empty, the Gardener default value is used
   machineImageVersion: ""
   trialNodesNumber: "1"
+  freemiumProviders: "azure,aws"
 
 # It is used to provide own creds for Service Manager instead of using the one provided by external system
 # who execute provision call on Kyma Environment Broker. You can define `overrideMode` to be one of: Always, WhenNotSentInRequest, Never

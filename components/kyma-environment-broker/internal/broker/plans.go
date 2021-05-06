@@ -4,7 +4,11 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
+
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
 
 const (
@@ -24,6 +28,8 @@ const (
 	TrialPlanName     = "trial"
 	OpenStackPlanID   = "03b812ac-c991-4528-b5bd-08b303523a63"
 	OpenStackPlanName = "openstack"
+	FreemiumPlanID    = "b1a5764e-2ea1-4f95-94c0-2b4538b37b55"
+	FreemiumPlanName  = "free"
 )
 
 var PlanNamesMapping = map[string]string{
@@ -34,6 +40,7 @@ var PlanNamesMapping = map[string]string{
 	AzureHAPlanID:   AzureHAPlanName,
 	TrialPlanID:     TrialPlanName,
 	OpenStackPlanID: OpenStackPlanName,
+	FreemiumPlanID:  FreemiumPlanName,
 }
 
 var PlanIDsMapping = map[string]string{
@@ -44,6 +51,7 @@ var PlanIDsMapping = map[string]string{
 	GCPPlanName:       GCPPlanID,
 	TrialPlanName:     TrialPlanID,
 	OpenStackPlanName: OpenStackPlanID,
+	FreemiumPlanName:  FreemiumPlanID,
 }
 
 type TrialCloudRegion string
@@ -53,6 +61,10 @@ const (
 	Us     TrialCloudRegion = "us"
 	Asia   TrialCloudRegion = "asia"
 )
+
+type JSONSchemaValidator interface {
+	ValidateString(json string) (jsonschema.ValidationResult, error)
+}
 
 func AzureRegions() []string {
 	return []string{
@@ -135,6 +147,32 @@ func AzureSchema(machineTypes []string) []byte {
 	return bytes
 }
 
+func FreemiumSchema(provider internal.CloudProvider) []byte {
+	var regions []string
+	switch provider {
+	case internal.AWS:
+		regions = AWSRegions()
+	case internal.Azure:
+		regions = AzureRegions()
+	default:
+		regions = AWSRegions()
+	}
+	schema := NewSchema(
+		ProvisioningProperties{
+			Name: NameProperty(),
+			Region: &Type{
+				Type: "string",
+				Enum: ToInterfaceSlice(regions),
+			},
+		}, []string{"name", "region"})
+
+	bytes, err := json.Marshal(schema)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
+}
+
 func AzureHASchema(machineTypes []string) []byte {
 	properties := NewProvisioningProperties(machineTypes, AzureRegions())
 	properties.ZonesCount = &Type{
@@ -181,7 +219,7 @@ type Plan struct {
 
 // plans is designed to hold plan defaulting logic
 // keep internal/hyperscaler/azure/config.go in sync with any changes to available zones
-func Plans(plans PlansConfig) map[string]Plan {
+func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 	return map[string]Plan{
 		AWSPlanID: {
 			PlanDefinition: domain.ServicePlan{
@@ -261,6 +299,22 @@ func Plans(plans PlansConfig) map[string]Plan {
 				},
 			},
 			provisioningRawSchema: AzureSchema([]string{"Standard_D4_v3"}),
+		},
+		FreemiumPlanID: {
+			PlanDefinition: domain.ServicePlan{
+				ID:          FreemiumPlanID,
+				Name:        FreemiumPlanName,
+				Description: defaultDescription(FreemiumPlanName, plans),
+				Metadata:    defaultMetadata(FreemiumPlanName, plans),
+				Schemas: &domain.ServiceSchemas{
+					Instance: domain.ServiceInstanceSchema{
+						Create: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
+					},
+				},
+			},
+			provisioningRawSchema: FreemiumSchema(provider),
 		},
 		AzureHAPlanID: {
 			PlanDefinition: domain.ServicePlan{

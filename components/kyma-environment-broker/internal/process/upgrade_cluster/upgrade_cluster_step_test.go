@@ -104,7 +104,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 		MachineImage:        fixMachineImage,
 		MachineImageVersion: fixMachineImageVersion,
 		TrialNodesNumber:    1,
-	}, fixKymaVersion, nil)
+	}, fixKymaVersion, nil, nil)
 	require.NoError(t, err, "Input factory creation error")
 
 	creator, err := ibf.CreateUpgradeShootInput(fixProvisioningParameters())

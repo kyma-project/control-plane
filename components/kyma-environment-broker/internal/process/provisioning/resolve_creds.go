@@ -33,17 +33,27 @@ func getHyperscalerType(pp internal.ProvisioningParameters) (hyperscaler.Type, e
 		return hyperscaler.Openstack, nil
 	case broker.TrialPlanID:
 		return forTrialProvider(pp.Parameters.Provider)
+	case broker.FreemiumPlanID:
+		return forFreemiumProvider(pp)
 	default:
 		return "", errors.Errorf("Cannot determine the type of Hyperscaler to use for planID: %s", pp.PlanID)
 	}
 }
 
-func forTrialProvider(provider *internal.TrialCloudProvider) (hyperscaler.Type, error) {
-	if provider == nil {
+func forTrialProvider(cp *internal.CloudProvider) (hyperscaler.Type, error) {
+	if cp == nil {
 		return hyperscaler.Azure, nil
 	}
 
-	switch *provider {
+	return provider(*cp)
+}
+
+func forFreemiumProvider(pp internal.ProvisioningParameters) (hyperscaler.Type, error) {
+	return provider(pp.PlatformProvider)
+}
+
+func provider(cp internal.CloudProvider) (hyperscaler.Type, error) {
+	switch cp {
 	case internal.Azure:
 		return hyperscaler.Azure, nil
 	case internal.AWS:
@@ -51,9 +61,8 @@ func forTrialProvider(provider *internal.TrialCloudProvider) (hyperscaler.Type, 
 	case internal.Gcp:
 		return hyperscaler.GCP, nil
 	default:
-		return "", errors.Errorf("Cannot determine the type of Hyperscaler to use for provider: %s", string(*provider))
+		return "", errors.Errorf("Cannot determine the type of Hyperscaler to use for provider: %s", string(cp))
 	}
-
 }
 
 func NewResolveCredentialsStep(os storage.Operations, accountProvider hyperscaler.AccountProvider) *ResolveCredentialsStep {
@@ -75,7 +84,7 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 
 	hypType, err := getHyperscalerType(operation.ProvisioningParameters)
 	if err != nil {
-		log.Error("Aborting after failing to determine the type of Hyperscaler to use for planID: %s", operation.ProvisioningParameters.PlanID)
+		log.Errorf("Aborting after failing to determine the type of Hyperscaler to use for planID: %s", operation.ProvisioningParameters.PlanID)
 		return s.operationManager.OperationFailed(operation, err.Error(), log)
 	}
 

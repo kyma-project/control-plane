@@ -64,6 +64,7 @@ const (
 	brokerID               = "fake-broker-id"
 	emsOfferingID          = "ems-fake-id"
 	operationID            = "provisioning-op-id"
+	deprovisioningOpID     = "deprovisioning-op-id"
 	instanceID             = "instance-id"
 	smRegion               = "eu"
 	dbSecretKey            = "1234567890123456"
@@ -121,7 +122,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		Timeout:                     time.Minute,
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"})
+	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders)
 	require.NoError(t, err)
 
 	ctx, _ := context.WithTimeout(context.Background(), 20*time.Minute)
@@ -176,21 +177,13 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 }
 
 type RuntimeOptions struct {
-	GlobalAccountID string
-	SubAccountID    string
-	PlatformRegion  string
-	Region          string
-	PlanID          string
-	ZonesCount      *int
-}
-
-func (o *RuntimeOptions) ProvideRegion() *string {
-	if o.Region != "" {
-		return &o.Region
-	} else {
-		r := "westeurope"
-		return &r
-	}
+	GlobalAccountID  string
+	SubAccountID     string
+	PlatformProvider internal.CloudProvider
+	PlatformRegion   string
+	Region           string
+	PlanID           string
+	ZonesCount       *int
 }
 
 func (o *RuntimeOptions) ProvideGlobalAccountID() string {
@@ -210,10 +203,19 @@ func (o *RuntimeOptions) ProvideSubAccountID() string {
 }
 
 func (o *RuntimeOptions) ProvidePlatformRegion() string {
-	if o.PlatformRegion != "" {
+	if o.PlatformProvider != "" {
 		return o.PlatformRegion
 	} else {
 		return "cf-eu10"
+	}
+}
+
+func (o *RuntimeOptions) ProvideRegion() *string {
+	if o.Region != "" {
+		return &o.Region
+	} else {
+		r := "westeurope"
+		return &r
 	}
 }
 
@@ -256,7 +258,7 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 		GlobalAccountID: globalAccountID,
 		SubAccountID:    subAccountID,
 		Parameters:      provisioningParameters,
-		ProviderRegion:  *options.ProvideRegion(),
+		ProviderRegion:  options.ProvidePlatformRegion(),
 		InstanceDetails: internal.InstanceDetails{
 			RuntimeID: runtimeID,
 		},
@@ -286,7 +288,7 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 			},
 		},
 		Spec: gardenerapi.ShootSpec{
-			Region: *options.ProvideRegion(),
+			Region: options.ProvidePlatformRegion(),
 			Maintenance: &gardenerapi.Maintenance{
 				TimeWindow: &gardenerapi.MaintenanceTimeWindow{
 					Begin: "030000+0000",
@@ -384,6 +386,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-azure":    "true",
 				"overrides-plan-trial":    "true",
 				"overrides-plan-aws":      "true",
+				"overrides-plan-free":     "true",
 				"overrides-plan-azure_ha": "true",
 			},
 		},
@@ -439,7 +442,8 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 		Timeout:                     time.Minute,
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"})
+	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders)
+
 	require.NoError(t, err)
 
 	sch := runtime.NewScheme()
@@ -516,7 +520,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 				},
 			},
 		},
-		PlatformRegion: options.ProvidePlatformRegion(),
+		PlatformProvider: options.PlatformProvider,
 		Parameters: internal.ProvisioningParametersDTO{
 			Region:     options.ProvideRegion(),
 			ZonesCount: options.ProvideZonesCount(),
@@ -774,6 +778,7 @@ func fixConfig() *Config {
 		IAS: ias.Config{
 			IdentityProvider: ias.FakeIdentityProviderName,
 		},
+		FreemiumProviders: []string{"aws", "azure"},
 	}
 }
 
@@ -831,6 +836,7 @@ func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 		},
 		Name: subscriptionNameShared,
 	}, nil)
+	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.Azure, mock.Anything).Return(nil)
 	return &accountProvider
 }
 
