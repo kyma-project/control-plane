@@ -34,7 +34,7 @@ func TestSchemaGenerator(t *testing.T) {
 		},
 		{
 			name:         "AzureLite schema is correct",
-			generator:    AzureSchema,
+			generator:    AzureLiteSchema,
 			machineTypes: []string{"Standard_D4_v3"},
 			file:         "azure-lite-schema.json",
 		},
