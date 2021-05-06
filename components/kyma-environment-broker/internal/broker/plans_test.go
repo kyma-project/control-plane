@@ -8,9 +8,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSchemaGenerator(t *testing.T) {
@@ -34,7 +33,7 @@ func TestSchemaGenerator(t *testing.T) {
 		},
 		{
 			name:         "AzureLite schema is correct",
-			generator:    AzureLiteSchema,
+			generator:    AzureSchema,
 			machineTypes: []string{"Standard_D4_v3"},
 			file:         "azure-lite-schema.json",
 		},

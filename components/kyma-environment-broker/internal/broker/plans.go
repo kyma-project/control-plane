@@ -5,10 +5,8 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
-
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
 const (
@@ -138,20 +136,6 @@ func AWSSchema(machineTypes []string) []byte {
 
 func AzureSchema(machineTypes []string) []byte {
 	properties := NewProvisioningProperties(machineTypes, AzureRegions())
-	schema := NewSchema(properties, DefaultControlsOrder())
-
-	bytes, err := json.Marshal(schema)
-	if err != nil {
-		panic(err)
-	}
-	return bytes
-}
-
-func AzureLiteSchema(machineTypes []string) []byte {
-	properties := NewProvisioningProperties(machineTypes, AzureRegions())
-	properties.AutoScalerMax.Maximum = 4
-	properties.AutoScalerMax.Default = 2
-
 	schema := NewSchema(properties, DefaultControlsOrder())
 
 	bytes, err := json.Marshal(schema)
@@ -312,7 +296,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 					},
 				},
 			},
-			provisioningRawSchema: AzureLiteSchema([]string{"Standard_D4_v3"}),
+			provisioningRawSchema: AzureSchema([]string{"Standard_D4_v3"}),
 		},
 		FreemiumPlanID: {
 			PlanDefinition: domain.ServicePlan{
