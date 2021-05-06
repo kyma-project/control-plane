@@ -147,6 +147,20 @@ func AzureSchema(machineTypes []string) []byte {
 	return bytes
 }
 
+func AzureLiteSchema(machineTypes []string) []byte {
+	properties := NewProvisioningProperties(machineTypes, AzureRegions())
+	properties.AutoScalerMax.Maximum = 4
+	properties.AutoScalerMax.Default = 2
+
+	schema := NewSchema(properties, DefaultControlsOrder())
+
+	bytes, err := json.Marshal(schema)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
+}
+
 func FreemiumSchema(provider internal.CloudProvider) []byte {
 	var regions []string
 	switch provider {
@@ -298,7 +312,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 					},
 				},
 			},
-			provisioningRawSchema: AzureSchema([]string{"Standard_D4_v3"}),
+			provisioningRawSchema: AzureLiteSchema([]string{"Standard_D4_v3"}),
 		},
 		FreemiumPlanID: {
 			PlanDefinition: domain.ServicePlan{
