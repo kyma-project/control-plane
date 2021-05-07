@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pivotal-cf/brokerapi/v7/domain"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -27,12 +29,7 @@ func TestResolveCredentialsStepHappyPath_Run(t *testing.T) {
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
-	instance := fixInstanceRuntimeStatus()
-	err = memoryStorage.Instances().Insert(instance)
-	assert.NoError(t, err)
-
 	accountProviderMock := &hyperscalerMocks.AccountProvider{}
-
 	accountProviderMock.On("GardenerCredentials", hyperscaler.GCP, statusGlobalAccountID).Return(hyperscaler.Credentials{
 		Name:            "gardener-secret-gcp",
 		HyperscalerType: "gcp",
@@ -49,7 +46,7 @@ func TestResolveCredentialsStepHappyPath_Run(t *testing.T) {
 	// then
 	assert.NoError(t, err)
 	assert.Equal(t, time.Duration(0), repeat)
-	assert.Empty(t, operation.State)
+	assert.Equal(t, domain.InProgress, operation.State)
 	require.NotNil(t, operation.ProvisioningParameters.Parameters.TargetSecret)
 	assert.Equal(t, "gardener-secret-gcp", *operation.ProvisioningParameters.Parameters.TargetSecret)
 }
@@ -63,12 +60,7 @@ func TestResolveCredentialsStepHappyPathTrialDefaultProvider_Run(t *testing.T) {
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
-	instance := fixInstanceRuntimeStatus()
-	err = memoryStorage.Instances().Insert(instance)
-	assert.NoError(t, err)
-
 	accountProviderMock := &hyperscalerMocks.AccountProvider{}
-
 	accountProviderMock.On("GardenerSharedCredentials", hyperscaler.Azure).Return(hyperscaler.Credentials{
 		Name:            "gardener-secret-azure",
 		HyperscalerType: "azure",
@@ -85,7 +77,7 @@ func TestResolveCredentialsStepHappyPathTrialDefaultProvider_Run(t *testing.T) {
 	// then
 	assert.NoError(t, err)
 	assert.Equal(t, time.Duration(0), repeat)
-	assert.Empty(t, operation.State)
+	assert.Equal(t, domain.InProgress, operation.State)
 	require.NotNil(t, operation.ProvisioningParameters.Parameters.TargetSecret)
 	assert.Equal(t, "gardener-secret-azure", *operation.ProvisioningParameters.Parameters.TargetSecret)
 }
@@ -100,12 +92,7 @@ func TestResolveCredentialsStepHappyPathTrialGivenProvider_Run(t *testing.T) {
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
-	instance := fixInstanceRuntimeStatus()
-	err = memoryStorage.Instances().Insert(instance)
-	assert.NoError(t, err)
-
 	accountProviderMock := &hyperscalerMocks.AccountProvider{}
-
 	accountProviderMock.On("GardenerSharedCredentials", hyperscaler.GCP).Return(hyperscaler.Credentials{
 		Name:            "gardener-secret-gcp",
 		HyperscalerType: "gcp",
@@ -136,12 +123,7 @@ func TestResolveCredentialsStepRetry_Run(t *testing.T) {
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
-	instance := fixInstanceRuntimeStatus()
-	err = memoryStorage.Instances().Insert(instance)
-	assert.NoError(t, err)
-
 	accountProviderMock := &hyperscalerMocks.AccountProvider{}
-
 	accountProviderMock.On("GardenerCredentials", hyperscaler.GCP, statusGlobalAccountID).Return(hyperscaler.Credentials{}, errors.New("Failed!"))
 
 	step := NewResolveCredentialsStep(memoryStorage.Operations(), accountProviderMock)
@@ -157,13 +139,12 @@ func TestResolveCredentialsStepRetry_Run(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 10*time.Second, repeat)
 	assert.Nil(t, operation.ProvisioningParameters.Parameters.TargetSecret)
-	assert.Empty(t, operation.State)
+	assert.Equal(t, domain.InProgress, operation.State)
 
-	time.Sleep(repeat)
 	operation, repeat, err = step.Run(operation, log)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 10*time.Second, repeat)
-	assert.Empty(t, operation.State)
+	assert.Equal(t, domain.InProgress, operation.State)
 	assert.Nil(t, operation.ProvisioningParameters.Parameters.TargetSecret)
 }

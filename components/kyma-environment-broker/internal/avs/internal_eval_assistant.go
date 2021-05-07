@@ -130,8 +130,8 @@ func (iec *InternalEvalAssistant) GetEvaluationId(lifecycleData internal.AvsLife
 	return lifecycleData.AvsEvaluationInternalId
 }
 
-func (iec *InternalEvalAssistant) markDeleted(lifecycleData *internal.AvsLifecycleData) {
-	lifecycleData.AVSInternalEvaluationDeleted = true
+func (iec *InternalEvalAssistant) SetDeleted(lifecycleData *internal.AvsLifecycleData, deleted bool) {
+	lifecycleData.AVSInternalEvaluationDeleted = deleted
 }
 
 func (iec *InternalEvalAssistant) provideRetryConfig() *RetryConfig {

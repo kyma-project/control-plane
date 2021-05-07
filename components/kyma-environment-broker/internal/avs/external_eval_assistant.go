@@ -99,8 +99,8 @@ func (eea *ExternalEvalAssistant) GetEvaluationId(lifecycleData internal.AvsLife
 	return lifecycleData.AVSEvaluationExternalId
 }
 
-func (eea *ExternalEvalAssistant) markDeleted(lifecycleData *internal.AvsLifecycleData) {
-	lifecycleData.AVSExternalEvaluationDeleted = true
+func (eea *ExternalEvalAssistant) SetDeleted(lifecycleData *internal.AvsLifecycleData, deleted bool) {
+	lifecycleData.AVSExternalEvaluationDeleted = deleted
 }
 
 func (eea *ExternalEvalAssistant) provideRetryConfig() *RetryConfig {

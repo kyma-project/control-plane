@@ -141,6 +141,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}
 	operation.ShootName = shootName
 	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, b.shootProject, strings.Trim(b.shootDomain, "."))
+	operation.DashboardURL = dashboardURL
 
 	err = b.operationsStorage.InsertProvisioningOperation(operation)
 	if err != nil {

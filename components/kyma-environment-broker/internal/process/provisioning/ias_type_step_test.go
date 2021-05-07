@@ -31,14 +31,24 @@ func TestIASType_ConfigureType(t *testing.T) {
 		bundleBuilder.On("NewBundle", iasTypeInstanceID, inputID).Return(bundle, nil).Once()
 	}
 
-	step := NewIASType(bundleBuilder, false)
+	step := NewIASTypeStep(bundleBuilder)
 
 	// when
-	repeat, err := step.ConfigureType(internal.ProvisioningOperation{
+	_, repeat, err := step.Run(internal.ProvisioningOperation{
 		Operation: internal.Operation{
+			InstanceDetails: internal.InstanceDetails{
+				ShootDomain: "kyma.org",
+				RuntimeID:   statusRuntimeID,
+			},
+			ProvisioningParameters: internal.ProvisioningParameters{
+				ErsContext: internal.ERSContext{
+					GlobalAccountID: statusGlobalAccountID,
+				},
+			},
 			InstanceID: iasTypeInstanceID,
 		},
-	}, iasTypeURLDashboard, logger.NewLogDummy())
+		DashboardURL: iasTypeURLDashboard,
+	}, logger.NewLogDummy())
 
 	// then
 	assert.Equal(t, time.Duration(0), repeat)

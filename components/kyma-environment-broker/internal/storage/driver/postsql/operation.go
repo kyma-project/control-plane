@@ -856,7 +856,6 @@ func (s *operations) toOperation(op *dbmodel.OperationDTO, instanceDetails inter
 		ProvisioningParameters: pp,
 		InstanceDetails:        instanceDetails,
 		FinishedStages:         stages,
-		FinishedSteps:          make(map[string]struct{}, 0),
 	}, nil
 }
 

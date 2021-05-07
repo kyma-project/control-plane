@@ -472,29 +472,29 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	iasFakeClient := ias.NewFakeClient()
 	bundleBuilder := ias.NewBundleBuilder(iasFakeClient, cfg.IAS)
 
-	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
-
 	edpClient := edp.NewFakeClient()
 
 	accountProvider := fixAccountProvider()
 
 	smcf := fixServiceManagerFactory()
 
-	directorClient := director.NewFakeClient(dashboardURL)
+	directorClient := director.NewFakeClient()
 
 	eventBroker := event.NewPubSub(logs)
 
 	// switch to StagedManager when the feature is enabled
-	provisionStagedManager := provisioning.NewStagedManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
 
-	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
-	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, smcf, bundleBuilder, iasTypeSetter, edpClient, accountProvider, inMemoryFs, logs)
+	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
+	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
+		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
+		runtimeOverrides, smcf, bundleBuilder, edpClient, accountProvider, inMemoryFs, logs)
 
 	provisioningQueue.SpeedUp(10000)
+	provisionManager.SpeedUp(10000)
 
 	return &ProvisioningSuite{
 		provisionerClient:   provisionerClient,
-		provisioningManager: provisionStagedManager,
+		provisioningManager: provisionManager,
 		provisioningQueue:   provisioningQueue,
 		storage:             db,
 		directorClient:      directorClient,
@@ -533,6 +533,8 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 	require.NoError(s.t, err)
 	operation.ShootName = shootName
 	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, "garden-dummy", strings.Trim("kyma.io", "."))
+	operation.DashboardURL = dashboardURL
+	operation.State = orchestration.Pending
 
 	err = s.storage.Operations().InsertProvisioningOperation(operation)
 	require.NoError(s.t, err)
@@ -577,6 +579,8 @@ func (s *ProvisioningSuite) CreateUnsuspension(options RuntimeOptions) string {
 
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
 	operation.State = orchestration.Pending
+	// in the real processing the URL is set in the handler
+	operation.DashboardURL = dashboardURL
 	require.NoError(s.t, err)
 
 	err = s.storage.Operations().InsertProvisioningOperation(operation)
@@ -653,11 +657,11 @@ func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID str
 	assert.Equal(s.t, gqlschema.OperationStateInProgress, status.State)
 }
 
-func (s *ProvisioningSuite) AssertAllStepsFinished(operationID string) {
+func (s *ProvisioningSuite) AssertAllStagesFinished(operationID string) {
 	operation, _ := s.storage.Operations().GetProvisioningOperationByID(operationID)
-	steps := s.provisioningManager.GetAllSteps()
-	for _, step := range steps {
-		assert.True(s.t, operation.IsStepDone(step.Name()))
+	steps := s.provisioningManager.GetAllStages()
+	for _, stage := range steps {
+		assert.True(s.t, operation.IsStageFinished(stage))
 	}
 }
 
@@ -671,14 +675,6 @@ func (s *ProvisioningSuite) finishOperationByProvisioner(operationType gqlschema
 		return false, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for provisioner operation to exist")
-}
-
-func (s *ProvisioningSuite) AssertDirectorGrafanaTag(operationID string) {
-	op, err := s.storage.Operations().GetOperationByID(operationID)
-	assert.NoError(s.t, err)
-	val, exists := s.directorClient.GetLabel(globalAccountID, op.RuntimeID, "operator_grafanaUrl")
-	assert.True(s.t, exists)
-	assert.Equal(s.t, "http://grafana.garden-dummy.kyma.io", val)
 }
 
 func (s *ProvisioningSuite) AssertProvisioningRequest() {
@@ -749,6 +745,12 @@ func (s *ProvisioningSuite) AssertSharedSubscription(shared bool) {
 	} else {
 		assert.Equal(s.t, secretName, subscriptionNameRegular)
 	}
+}
+
+func (s *ProvisioningSuite) MarkDirectorWithConsoleURL(operationID string) {
+	op, err := s.storage.Operations().GetProvisioningOperationByID(operationID)
+	assert.NoError(s.t, err)
+	s.directorClient.SetConsoleURL(op.RuntimeID, op.DashboardURL)
 }
 
 func fixConfig() *Config {
