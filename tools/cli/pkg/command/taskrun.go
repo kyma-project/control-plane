@@ -174,11 +174,10 @@ func (cmd *TaskRunCommand) Validate(args []string) error {
 	// Validate task command
 	if cmd.shell {
 		shellvalue := GlobalOpts.Shell()
-		fmt.Println("Geting the value from Viper in shell var", shellvalue)
 		splitSh := strings.Split(shellvalue, " ")
 		fmt.Println("shellname: ", splitSh[0], "\n Arg of shell", splitSh[1])
-		if shellvalue != "" { // Validating if  shell string is not empty in config file
-			if _, err := exec.LookPath(splitSh[0]); err != nil { // Validating if the user's defined shell is there in the filesystem
+		if shellvalue != "" {
+			if _, err := exec.LookPath(splitSh[0]); err != nil {
 				return err
 			}
 		} else {
