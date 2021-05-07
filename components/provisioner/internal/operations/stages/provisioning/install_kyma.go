@@ -57,20 +57,12 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 		return operations.StageResult{}, fmt.Errorf("error: failed to check installation state: %s", err.Error())
 	}
 
-	if installationState.State == string(v1alpha1.StateEmpty) {
-		// TODO: Test it.
-		//       Check if it could be a case, if Installer is applied with an empty state.
-		//       Check if retriggering Installation won't break anything including itself.
-		return operations.StageResult{}, fmt.Errorf("installation state is empty")
+	// TODO: Check if running installationClient.TriggerInstallation() when it was already triggered
+	//       won't break anything. Previously, it failed while running kymaInstaller.PrepareInstallation()
+	if installationState.State != installationSDK.NoInstallationState && installationState.State != string(v1alpha1.StateEmpty) {
+		logger.Warnf("Installation already in progress, proceeding to next step...")
+		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 	}
-
-	// TODO: It suggests that if there is Installer already,
-	//       we should not trigger installation again. Check it!
-
-	//if installationState.State != installationSDK.NoInstallationState {
-	//	logger.Warnf("Installation already in progress, proceeding to next step...")
-	//	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
-	//}
 
 	err = s.installationClient.TriggerInstallation(
 		k8sConfig,
