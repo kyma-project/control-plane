@@ -14,62 +14,59 @@ const (
 	setIASTypeTimeout = 10 * time.Minute
 )
 
-type IASType struct {
+type IASTypeStep struct {
 	bundleBuilder ias.BundleBuilder
-	disabled      bool
 }
 
-func NewIASType(builder ias.BundleBuilder, disabled bool) *IASType {
-	return &IASType{
+// ensure the interface is implemented
+var _ Step = (*IASTypeStep)(nil)
+
+func NewIASTypeStep(builder ias.BundleBuilder) *IASTypeStep {
+	return &IASTypeStep{
 		bundleBuilder: builder,
-		disabled:      disabled,
 	}
 }
 
-func (s *IASType) Disabled() bool {
-	return s.disabled
+func (s *IASTypeStep) Name() string {
+	return "IAS_Type"
 }
 
-func (s *IASType) ConfigureType(operation internal.ProvisioningOperation, runtimeURL string, log logrus.FieldLogger) (time.Duration, error) {
-	if s.disabled {
-		return 0, nil
-	}
-
+func (s *IASTypeStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	for spID := range ias.ServiceProviderInputs {
 		spb, err := s.bundleBuilder.NewBundle(operation.InstanceID, spID)
 		if err != nil {
 			log.Errorf("%s: %s", "Failed to create ServiceProvider Bundle", err)
-			return 0, nil
+			return operation, 0, nil
 		}
 		err = spb.FetchServiceProviderData()
 		if err != nil {
 			return s.handleError(operation, err, log, "fetching ServiceProvider data failed")
 		}
 
-		log.Infof("Configure SSO Type for ServiceProvider %q with RuntimeURL: %s", spb.ServiceProviderName(), runtimeURL)
-		err = spb.ConfigureServiceProviderType(runtimeURL)
+		log.Infof("Configure SSO Type for ServiceProvider %q with RuntimeURL: %s", spb.ServiceProviderName(), operation.DashboardURL)
+		err = spb.ConfigureServiceProviderType(operation.DashboardURL)
 		if err != nil {
 			return s.handleError(operation, err, log, "setting SSO Type failed")
 		}
 	}
 
-	return 0, nil
+	return operation, 0, nil
 }
 
-func (s *IASType) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (time.Duration, error) {
+func (s *IASTypeStep) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
 	switch {
 	case kebError.IsTemporaryError(err):
 		if time.Since(operation.UpdatedAt) > setIASTypeTimeout {
 			log.Errorf("setting IAS type has reached timeout: %s", err)
 			// operation will be marked as a success, RuntimeURL will not be set in IAS ServiceProvider application
-			return 0, nil
+			return operation, 0, nil
 		}
 		log.Errorf("setting IAS type cannot be realized", err)
-		return 10 * time.Second, nil
+		return operation, 10 * time.Second, nil
 	default:
 		log.Errorf("setting IAS type failed: %s", err)
 		// operation will be marked as a success, RuntimeURL will not be set in IAS ServiceProvider application
-		return 0, nil
+		return operation, 0, nil
 	}
 }

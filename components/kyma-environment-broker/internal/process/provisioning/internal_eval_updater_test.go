@@ -31,7 +31,7 @@ func TestInternalEvalUpdater_AddTagsToEval(t *testing.T) {
 				InstanceID:             instanceID,
 				UpdatedAt:              time.Now(),
 				State:                  domain.InProgress,
-				ProvisioningParameters: fixProvisioningParameters(broker.AzurePlanID, "westeurope"),
+				ProvisioningParameters: FixProvisioningParameters(broker.AzurePlanID, "westeurope"),
 				InstanceDetails: internal.InstanceDetails{Avs: internal.AvsLifecycleData{
 					AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
 					AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
@@ -98,7 +98,7 @@ func TestInternalEvalUpdater_AddTagsToEval(t *testing.T) {
 				InstanceID:             instanceID,
 				UpdatedAt:              time.Now(),
 				State:                  domain.InProgress,
-				ProvisioningParameters: fixProvisioningParameters(broker.AzurePlanID, "westeurope"),
+				ProvisioningParameters: FixProvisioningParameters(broker.AzurePlanID, "westeurope"),
 				InstanceDetails: internal.InstanceDetails{Avs: internal.AvsLifecycleData{
 					AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
 					AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
