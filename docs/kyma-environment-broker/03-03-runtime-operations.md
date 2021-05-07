@@ -27,10 +27,10 @@ The provisioning process contains the following steps:
 | create_runtime | Overrides_From_Secrets_And_Config_Step | Kyma overrides           | Configures default overrides for Kyma.                                                                                                          | @jasiu001 (Team Gopher)        |
 | create_runtime | ServiceManagerOverrides                | Service Manager          | Configures overrides with Service Manager credentials.                                                                                          | Team Gopher        |
 | create_runtime | Create_Runtime                         | Provisioning             | Triggers provisioning of a Runtime in the Runtime Provisioner.                                                                                                       | @jasiu001 (Team Gopher)        |
-| check_runtime  | Check_Runtime                          | Provisioning             | Checks the status of Provisioner process and asks the Director for the Dashboard URL if the provisioning in Gardener is finished. |  @piotrmiskiewicz (Team Gopher) | 
+| check_runtime  | Check_Runtime                          | Provisioning             | Checks the status of the Provisioner process and asks the Director for the Dashboard URL if the provisioning in Gardener is finished. |  @piotrmiskiewicz (Team Gopher) | 
 | post_actions   | AVS_Create_External_Eval_Step          | AvS                      | Sets up external monitoring of Kyma Runtime.                                                                                      | @piotrmiskiewicz (Team Gopher) |
 | post_actions   | AVS_Tags                               | AvS                      | Sets up proper tags in the internal monitoring system.                                                                            | @piotrmiskiewicz (Team Gopher) |
-| post_actions   | IAS_Type                               | Identity Authentication Service | Configures OIDC authentication.                                                                                            | @piotrmiskiewicz (Team Gopher) |
+| post_actions   | IAS_Type                               | Identity Authentication Service | Configures OpenID Connect (OIDC) authentication.                                                                                            | @piotrmiskiewicz (Team Gopher) |
 
 
 
@@ -231,7 +231,7 @@ You can configure Runtime operations by providing additional steps. To add a new
     }
     ```
 
-    Once the stage is finished (all steps in the stage has succeeded) it won't be retried (even if the application is restarted).
+    Once all steps in the stage have finished succeeded, the stage won't be retried even if the application is restarted.
 
   </details>
   <details>
