@@ -26,7 +26,6 @@ type StagedManager struct {
 	operationTimeout time.Duration
 
 	mu            sync.RWMutex
-	finishedSteps map[string]map[string]struct{}
 
 	speedFactor int64
 }
