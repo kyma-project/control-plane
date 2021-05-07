@@ -237,6 +237,7 @@ func main() {
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
 
+	logs.Warnf("AVS external service: %s", cfg.Avs.ExternalTesterService)
 	avsClient, err := avs.NewClient(ctx, cfg.Avs, logs)
 	fatalOnError(err)
 	avsDel := avs.NewDelegator(avsClient, cfg.Avs, db.Operations())
