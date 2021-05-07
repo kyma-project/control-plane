@@ -25,7 +25,7 @@ type StagedManager struct {
 	stages           []*stage
 	operationTimeout time.Duration
 
-	mu            sync.RWMutex
+	mu sync.RWMutex
 
 	speedFactor int64
 }
