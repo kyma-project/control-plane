@@ -77,7 +77,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		log.Errorf("call to Provisioner failed: %s", err)
 		return s.operationManager.OperationFailed(operation, "call to the provisioner service failed", log)
 	}
-	log.Infof("Provisioning runtime in the Provisioner started, RuntimeID=%s", provisionerResponse.RuntimeID)
+	log.Infof("Provisioning runtime in the Provisioner started, RuntimeID=%s", *provisionerResponse.RuntimeID)
 
 	repeat := time.Duration(0)
 	operation, repeat = s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
