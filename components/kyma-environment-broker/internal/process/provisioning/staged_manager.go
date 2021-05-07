@@ -50,6 +50,7 @@ func NewStagedManager(storage storage.Operations, pub event.Publisher, operation
 		operationStorage: storage,
 		publisher:        pub,
 		operationTimeout: operationTimeout,
+		speedFactor: 1,
 	}
 }
 
