@@ -282,7 +282,7 @@ func main() {
 	// run queues
 	const workersAmount = 5
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
-	provisionQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, &cfg, db, provisionerClient, directorClient, inputFactory,
+	provisionQueue := NewProvisioningProcessingQueue(ctx, provisionManager, 60, &cfg, db, provisionerClient, directorClient, inputFactory,
 		avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
 		runtimeOverrides, serviceManagerClientFactory, bundleBuilder,
 		edpClient, accountProvider, fileSystem, logs)
