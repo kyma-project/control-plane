@@ -175,7 +175,6 @@ func (cmd *TaskRunCommand) Validate(args []string) error {
 	if cmd.shell {
 		shellvalue := GlobalOpts.Shell()
 		splitSh := strings.Split(shellvalue, " ")
-		fmt.Println("shellname: ", splitSh[0], "\n Arg of shell", splitSh[1])
 		if shellvalue != "" {
 			if _, err := exec.LookPath(splitSh[0]); err != nil {
 				return err
