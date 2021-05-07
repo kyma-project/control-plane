@@ -292,6 +292,8 @@ spec:
               value: /config/additionalRuntimeComponents.yaml
             - name: APP_TRIAL_REGION_MAPPING_FILE_PATH
               value: /config/trialRegionMapping.yaml
+            - name: APP_FREEMIUM_PROVIDERS
+              value: "{{ .Values.gardener.freemiumProviders }}"
             - name: APP_CATALOG_FILE_PATH
               value: /config/catalog.yaml
             - name: APP_GARDENER_PROJECT

@@ -179,7 +179,6 @@ func FixOperation(id, instanceId string, opType internal.OperationType) internal
 		ProvisioningParameters: FixProvisioningParameters(id),
 		OrchestrationID:        orchestrationId,
 		FinishedStages:         map[string]struct{}{"prepare": struct{}{}, "check_provisioning": struct{}{}},
-		FinishedSteps:          make(map[string]struct{}, 0),
 	}
 }
 
@@ -201,6 +200,7 @@ func FixProvisioningOperation(operationId, instanceId string) internal.Provision
 		},
 		InputCreator:    FixInputCreator(),
 		SMClientFactory: nil,
+		DashboardURL:    "https://console.kyma.org",
 	}
 }
 

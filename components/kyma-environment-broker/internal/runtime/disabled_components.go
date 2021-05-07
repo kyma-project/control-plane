@@ -47,6 +47,9 @@ func NewDisabledComponentsProvider() DisabledComponentsProvider {
 		broker.TrialPlanID: {
 			components.KnativeEventingKafka: {},
 		},
+		broker.FreemiumPlanID: {
+			components.KnativeEventingKafka: {},
+		},
 	}
 }
 

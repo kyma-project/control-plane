@@ -1,6 +1,9 @@
 package input
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	cloudProvider "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
@@ -56,14 +59,20 @@ type InputBuilderFactory struct {
 	componentsProvider         ComponentListProvider
 	disabledComponentsProvider DisabledComponentsProvider
 	trialPlatformRegionMapping map[string]string
+	enabledFreemiumProviders   map[string]struct{}
 }
 
 func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledComponentsProvider DisabledComponentsProvider, componentsListProvider ComponentListProvider, config Config,
-	defaultKymaVersion string, trialPlatformRegionMapping map[string]string) (CreatorForPlan, error) {
+	defaultKymaVersion string, trialPlatformRegionMapping map[string]string, enabledFreemiumProviders []string) (CreatorForPlan, error) {
 
 	components, err := componentsListProvider.AllComponents(defaultKymaVersion)
 	if err != nil {
 		return &InputBuilderFactory{}, errors.Wrap(err, "while creating components list for default Kyma version")
+	}
+
+	freemiumProviders := map[string]struct{}{}
+	for _, p := range enabledFreemiumProviders {
+		freemiumProviders[strings.ToLower(p)] = struct{}{}
 	}
 
 	return &InputBuilderFactory{
@@ -74,23 +83,27 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 		componentsProvider:         componentsListProvider,
 		disabledComponentsProvider: disabledComponentsProvider,
 		trialPlatformRegionMapping: trialPlatformRegionMapping,
+		enabledFreemiumProviders:   freemiumProviders,
 	}, nil
 }
 
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	switch planID {
-	case broker.AWSPlanID, broker.GCPPlanID, broker.AzurePlanID, broker.AzureLitePlanID, broker.AzureHAPlanID, broker.TrialPlanID, broker.OpenStackPlanID:
+	case broker.AWSPlanID, broker.GCPPlanID, broker.AzurePlanID, broker.FreemiumPlanID,
+		broker.AzureLitePlanID, broker.TrialPlanID, broker.OpenStackPlanID, broker.AzureHAPlanID:
 		return true
 	default:
 		return false
 	}
 }
 
-func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, parametersProvider *internal.TrialCloudProvider) (HyperscalerInputProvider, error) {
+func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pp internal.ProvisioningParameters) (HyperscalerInputProvider, error) {
 	var provider HyperscalerInputProvider
 	switch planID {
 	case broker.GCPPlanID:
 		provider = &cloudProvider.GcpInput{}
+	case broker.FreemiumPlanID:
+		return f.forFreemiumPlan(pp)
 	case broker.OpenStackPlanID:
 		provider = &cloudProvider.OpenStackInput{}
 	case broker.AzurePlanID:
@@ -100,7 +113,7 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, par
 	case broker.AzureHAPlanID:
 		provider = &cloudProvider.AzureHAInput{}
 	case broker.TrialPlanID:
-		provider = f.forTrialPlan(parametersProvider)
+		provider = f.forTrialPlan(pp.Parameters.Provider)
 	case broker.AWSPlanID:
 		provider = &cloudProvider.AWSInput{}
 		// insert cases for other providers like AWS or GCP
@@ -115,7 +128,7 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}
 
-	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.Parameters.Provider)
+	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp)
 	if err != nil {
 		return nil, errors.Wrap(err, "during createing provision input")
 	}
@@ -145,8 +158,8 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 	}, nil
 }
 
-func (f *InputBuilderFactory) forTrialPlan(provider *internal.TrialCloudProvider) HyperscalerInputProvider {
-	var trialProvider internal.TrialCloudProvider
+func (f *InputBuilderFactory) forTrialPlan(provider *internal.CloudProvider) HyperscalerInputProvider {
+	var trialProvider internal.CloudProvider
 	if provider == nil {
 		trialProvider = f.config.DefaultTrialProvider
 	} else {
@@ -220,7 +233,7 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}
 
-	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.Parameters.Provider)
+	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp)
 	if err != nil {
 		return nil, errors.Wrap(err, "during createing provision input")
 	}
@@ -300,7 +313,7 @@ func (f *InputBuilderFactory) CreateUpgradeShootInput(pp internal.ProvisioningPa
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}
 
-	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.Parameters.Provider)
+	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp)
 	if err != nil {
 		return nil, errors.Wrap(err, "during createing provision input")
 	}
@@ -329,4 +342,25 @@ func (f *InputBuilderFactory) initUpgradeShootInput(provider HyperscalerInputPro
 	}
 
 	return input
+}
+
+func (f *InputBuilderFactory) forFreemiumPlan(pp internal.ProvisioningParameters) (HyperscalerInputProvider, error) {
+	provider := pp.PlatformProvider
+
+	if !f.IsFreemiumProviderEnabled(provider) {
+		return nil, fmt.Errorf("freemium provider %s is not enabled", provider)
+	}
+	switch provider {
+	case internal.AWS:
+		return &cloudProvider.AWSFreemiumInput{}, nil
+	case internal.Azure:
+		return &cloudProvider.AzureFreemiumInput{}, nil
+	default:
+		return nil, fmt.Errorf("provider %s is not supported", provider)
+	}
+}
+
+func (f *InputBuilderFactory) IsFreemiumProviderEnabled(provider internal.CloudProvider) bool {
+	_, found := f.enabledFreemiumProviders[strings.ToLower(string(provider))]
+	return found
 }

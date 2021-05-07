@@ -64,12 +64,19 @@ publicCloudInfo:
   configMap:
     key: providers
 
+## kyma-metrics-collector service
+service:
+  port: 80
+  name: http
+  protocol: TCP
+
 ## kyma-metrics-collector general configurations
 config:
   scrapeInterval: 5m
   workerPoolSize: 5
   logLevel: info
   port: 8080
+  portName: http
 
 ## KEB configurations
 keb:

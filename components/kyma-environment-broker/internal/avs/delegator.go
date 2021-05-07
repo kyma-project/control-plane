@@ -39,7 +39,7 @@ func (del *Delegator) CreateEvaluation(log logrus.FieldLogger, operation interna
 	var updatedOperation internal.ProvisioningOperation
 	d := 0 * time.Second
 
-	if evalAssistant.IsAlreadyCreated(operation.Avs) {
+	if evalAssistant.IsValid(operation.Avs) {
 		log.Infof("step has already been finished previously")
 		updatedOperation = operation
 	} else {
@@ -65,6 +65,7 @@ func (del *Delegator) CreateEvaluation(log logrus.FieldLogger, operation interna
 		}
 		updatedOperation, d = del.provisionManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 			evalAssistant.SetEvalId(&operation.Avs, evalResp.Id)
+			evalAssistant.SetDeleted(&operation.Avs, false)
 		}, log)
 	}
 
@@ -190,7 +191,7 @@ func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.Depro
 		return deProvisioningOperation, err
 	}
 
-	assistant.markDeleted(&deProvisioningOperation.Avs)
+	assistant.SetDeleted(&deProvisioningOperation.Avs, true)
 
 	updatedDeProvisioningOp, err := del.operationsStorage.UpdateDeprovisioningOperation(deProvisioningOperation)
 	if err != nil {

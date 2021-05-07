@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
@@ -42,7 +44,6 @@ type ProvisionEndpoint struct {
 	enabledPlanIDs       map[string]struct{}
 	onlySingleTrialPerGA bool
 	plansConfig          PlansConfig
-	plansSchemaValidator PlansSchemaValidator
 	kymaVerOnDemand      bool
 
 	shootDomain  string
@@ -57,7 +58,6 @@ func NewProvision(cfg Config,
 	instanceStorage storage.Instances,
 	queue Queue,
 	builderFactory PlanValidator,
-	validator PlansSchemaValidator,
 	plansConfig PlansConfig,
 	kvod bool,
 	log logrus.FieldLogger) *ProvisionEndpoint {
@@ -68,7 +68,6 @@ func NewProvision(cfg Config,
 	}
 
 	return &ProvisionEndpoint{
-		plansSchemaValidator: validator,
 		operationsStorage:    operationsStorage,
 		instanceStorage:      instanceStorage,
 		queue:                queue,
@@ -89,25 +88,32 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	operationID := uuid.New().String()
 	logger := b.log.WithFields(logrus.Fields{"instanceID": instanceID, "operationID": operationID, "planID": details.PlanID})
 	logger.Info("Provision called")
-	// validation of incoming input
-	ersContext, parameters, err := b.validateAndExtract(details, logger)
-	if err != nil {
-		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
-		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
-	}
 
 	region, found := middleware.RegionFromContext(ctx)
 	if !found {
 		err := errors.New("No region specified in request.")
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusInternalServerError, "provisioning")
 	}
+	platformProvider, found := middleware.ProviderFromContext(ctx)
+	if !found {
+		err := errors.New("No region specified in request.")
+		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusInternalServerError, "provisioning")
+	}
+
+	// validation of incoming input
+	ersContext, parameters, err := b.validateAndExtract(details, platformProvider, logger)
+	if err != nil {
+		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
+		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
+	}
 
 	provisioningParameters := internal.ProvisioningParameters{
-		PlanID:         details.PlanID,
-		ServiceID:      details.ServiceID,
-		ErsContext:     ersContext,
-		Parameters:     parameters,
-		PlatformRegion: region,
+		PlanID:           details.PlanID,
+		ServiceID:        details.ServiceID,
+		ErsContext:       ersContext,
+		Parameters:       parameters,
+		PlatformRegion:   region,
+		PlatformProvider: platformProvider,
 	}
 
 	logger.Infof("Starting provisioning runtime: Name=%s, GlobalAccountID=%s, SubAccountID=%s PlatformRegion=%s", parameters.Name, ersContext.GlobalAccountID, ersContext.SubAccountID, region)
@@ -135,6 +141,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}
 	operation.ShootName = shootName
 	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, b.shootProject, strings.Trim(b.shootDomain, "."))
+	operation.DashboardURL = dashboardURL
 
 	err = b.operationsStorage.InsertProvisioningOperation(operation)
 	if err != nil {
@@ -149,7 +156,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		ServiceID:       provisioningParameters.ServiceID,
 		ServiceName:     KymaServiceName,
 		ServicePlanID:   provisioningParameters.PlanID,
-		ServicePlanName: Plans(b.plansConfig)[provisioningParameters.PlanID].PlanDefinition.Name,
+		ServicePlanName: Plans(b.plansConfig, provisioningParameters.PlatformProvider)[provisioningParameters.PlanID].PlanDefinition.Name,
 		DashboardURL:    dashboardURL,
 		Parameters:      operation.ProvisioningParameters,
 	})
@@ -171,7 +178,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}, nil
 }
 
-func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, l logrus.FieldLogger) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
+func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, provider internal.CloudProvider, l logrus.FieldLogger) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
 	var ersContext internal.ERSContext
 	var parameters internal.ProvisioningParametersDTO
 
@@ -182,16 +189,7 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 		return ersContext, parameters, errors.Errorf("plan ID %q is not recognized", details.PlanID)
 	}
 
-	result, err := b.plansSchemaValidator[details.PlanID].ValidateString(string(details.RawParameters))
-	if err != nil {
-		return ersContext, parameters, errors.Wrap(err, "while executing JSON schema validator")
-	}
-
-	if !result.Valid {
-		return ersContext, parameters, errors.Wrapf(result.Error, "while validating input parameters")
-	}
-
-	ersContext, err = b.extractERSContext(details)
+	ersContext, err := b.extractERSContext(details)
 	logger := l.WithField("globalAccountID", ersContext.GlobalAccountID)
 	if err != nil {
 		return ersContext, parameters, errors.Wrap(err, "while extracting ers context")
@@ -200,6 +198,18 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	parameters, err = b.extractInputParameters(details)
 	if err != nil {
 		return ersContext, parameters, errors.Wrap(err, "while extracting input parameters")
+	}
+
+	planValidator, err := b.validator(&details, provider)
+	if err != nil {
+		return ersContext, parameters, errors.Wrap(err, "while creating plan validator")
+	}
+	result, err := planValidator.ValidateString(string(details.RawParameters))
+	if err != nil {
+		return ersContext, parameters, errors.Wrap(err, "while executing JSON schema validator")
+	}
+	if !result.Valid {
+		return ersContext, parameters, errors.Wrapf(result.Error, "while validating input parameters")
 	}
 
 	if !b.kymaVerOnDemand && parameters.KymaVersion != "" {
@@ -283,4 +293,11 @@ func (b *ProvisionEndpoint) responseLabels(parameters internal.ProvisioningParam
 	responseLabels["GrafanaURL"] = strings.Replace(dashboardURL, "console.", "grafana.", 1)
 
 	return responseLabels
+}
+
+func (b *ProvisionEndpoint) validator(details *domain.ProvisionDetails, provider internal.CloudProvider) (JSONSchemaValidator, error) {
+	plans := Plans(b.plansConfig, provider)
+	plan := plans[details.PlanID]
+	schema := string(plan.provisioningRawSchema)
+	return jsonschema.NewValidatorFromStringSchema(schema)
 }

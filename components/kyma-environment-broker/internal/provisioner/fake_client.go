@@ -90,7 +90,19 @@ func (c *FakeClient) ProvisionRuntime(accountID, subAccountID string, config sch
 }
 
 func (c *FakeClient) DeprovisionRuntime(accountID, runtimeID string) (string, error) {
-	return uuid.New().String(), nil
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	opId := uuid.New().String()
+
+	c.operations[opId] = schema.OperationStatus{
+		ID:        &opId,
+		Operation: schema.OperationTypeDeprovision,
+		State:     schema.OperationStateInProgress,
+		RuntimeID: &runtimeID,
+	}
+
+	return opId, nil
 }
 
 func (c *FakeClient) ReconnectRuntimeAgent(accountID, runtimeID string) (string, error) {

@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
 
 func TestSchemaGenerator(t *testing.T) {
@@ -32,7 +34,7 @@ func TestSchemaGenerator(t *testing.T) {
 		},
 		{
 			name:         "AzureLite schema is correct",
-			generator:    AzureSchema,
+			generator:    AzureLiteSchema,
 			machineTypes: []string{"Standard_D4_v3"},
 			file:         "azure-lite-schema.json",
 		},
@@ -65,6 +67,14 @@ func TestSchemaGenerator(t *testing.T) {
 
 func TestTrialSchemaGenerator(t *testing.T) {
 	validateSchema(t, TrialSchema(), "azure-trial-schema.json")
+}
+
+func TestFreemiumAzureSchemaGenerator(t *testing.T) {
+	validateSchema(t, FreemiumSchema(internal.Azure), "free-azure-schema.json")
+}
+
+func TestFreemiumAWSSchemaGenerator(t *testing.T) {
+	validateSchema(t, FreemiumSchema(internal.AWS), "free-aws-schema.json")
 }
 
 func validateSchema(t *testing.T, got []byte, file string) {
