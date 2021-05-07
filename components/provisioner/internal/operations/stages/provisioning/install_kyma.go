@@ -57,8 +57,6 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 		return operations.StageResult{}, fmt.Errorf("error: failed to check installation state: %s", err.Error())
 	}
 
-	// TODO: Check if running installationClient.TriggerInstallation() when it was already triggered
-	//       won't break anything. Previously, it failed while running kymaInstaller.PrepareInstallation()
 	if installationState.State != installationSDK.NoInstallationState && installationState.State != string(v1alpha1.StateEmpty) {
 		logger.Warnf("Installation already in progress, proceeding to next step...")
 		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
