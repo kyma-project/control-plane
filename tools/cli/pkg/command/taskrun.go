@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 
@@ -37,6 +38,7 @@ type TaskRunCommand struct {
 	noKubeconfig        bool
 	noPrefixOutput      bool
 	taskCommand         *exec.Cmd
+	shell               bool
 }
 
 // RuntimeLister implements the interface to obtains runtimes info from KEB for resolver
@@ -104,6 +106,7 @@ For each subprocess, the following Runtime-specific data are passed as environme
 	cobraCmd.Flags().BoolVar(&cmd.keepKubeconfigs, "keep-kubeconfig", false, "Option that allows you to keep downloaded kubeconfig files after execution for caching purposes.")
 	cobraCmd.Flags().BoolVar(&cmd.noKubeconfig, "no-kubeconfig", false, "Option that turns off the downloading and exposure of the kubeconfig file for each Runtime.")
 	cobraCmd.Flags().BoolVar(&cmd.noPrefixOutput, "no-prefix-output", false, "Option that omits the prefixing of each output line with the Runtime name. By default, all output lines are prepended for better traceability.")
+	cobraCmd.Flags().BoolVar(&cmd.shell, "shell", false, "Option that turns on the user's shell in case users want to use alias defined in their shell.")
 	return cobraCmd
 }
 
@@ -169,11 +172,26 @@ func (cmd *TaskRunCommand) Validate(args []string) error {
 	}
 
 	// Validate task command
-	if _, err := exec.LookPath(args[0]); err != nil {
-		return err
+	if cmd.shell {
+		shellvalue := GlobalOpts.Shell()
+		fmt.Println("Geting the value from Viper in shell var", shellvalue)
+		splitSh := strings.Split(shellvalue, " ")
+		fmt.Println("shellname: ", splitSh[0], "\n Arg of shell", splitSh[1])
+		if shellvalue != "" { // Validating if  shell string is not empty in config file
+			if _, err := exec.LookPath(splitSh[0]); err != nil { // Validating if the user's defined shell is there in the filesystem
+				return err
+			}
+		} else {
+			return errors.New("Shell is not defined. Please define your shell in kcp config")
+		}
+		allArgs := append(splitSh[1:], args...)
+		cmd.taskCommand = exec.CommandContext(cmd.cobraCmd.Context(), splitSh[0], allArgs...)
+	} else {
+		if _, err := exec.LookPath(args[0]); err != nil {
+			return err
+		}
+		cmd.taskCommand = exec.CommandContext(cmd.cobraCmd.Context(), args[0], args[1:]...)
 	}
-	cmd.taskCommand = exec.CommandContext(cmd.cobraCmd.Context(), args[0], args[1:]...)
-
 	return nil
 }
 

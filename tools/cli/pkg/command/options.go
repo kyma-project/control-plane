@@ -49,6 +49,7 @@ type GlobalOptionsKey struct {
 	gardenerKubeconfig string
 	gardenerNamespace  string
 	username           string
+	shell              string // New shell introduced
 }
 
 // GlobalOpts is the convenience object for storing the fixed global conifguration (parameter) keys
@@ -61,6 +62,7 @@ var GlobalOpts = GlobalOptionsKey{
 	gardenerKubeconfig: "gardener-kubeconfig",
 	gardenerNamespace:  "gardener-namespace",
 	username:           "username",
+	shell:              "shell", // New flag introduced
 }
 
 // SetGlobalOpts configures the global parameters on the given root command
@@ -87,6 +89,11 @@ func SetGlobalOpts(cmd *cobra.Command) {
 	viper.BindPFlag(GlobalOpts.gardenerNamespace, cmd.PersistentFlags().Lookup(GlobalOpts.gardenerNamespace))
 
 	viper.BindEnv(GlobalOpts.username)
+
+	// New shell flag adding to spawn a new sub-shell
+	cmd.PersistentFlags().String(GlobalOpts.shell, "", "Shell is a string where user will pass its shell's name")
+	viper.BindPFlag(GlobalOpts.shell, cmd.PersistentFlags().Lookup(GlobalOpts.shell))
+
 }
 
 // ValidateGlobalOpts checks the presence of the required global configuration parameters
@@ -143,6 +150,11 @@ func (keys *GlobalOptionsKey) GardenerNamespace() string {
 // Username gets the username to use for auth
 func (keys *GlobalOptionsKey) Username() string {
 	return viper.GetString(keys.username)
+}
+
+func (keys *GlobalOptionsKey) Shell() string {
+	fmt.Println("Viper got the value from config", viper.GetString(keys.shell)) // Printing the shell value
+	return viper.GetString(keys.shell)
 }
 
 // SetOutputOpt configures the optput type option on the given command
