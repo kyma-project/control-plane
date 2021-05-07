@@ -69,7 +69,7 @@ func NewClient(ctx context.Context, config Config, globalAccountID, instanceID, 
 const (
 	kymaClassID = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
 
-	instancesURL = "v2/service_instances"
+	instancesURL = "/oauth/v2/service_instances"
 )
 
 type inputContext struct {
