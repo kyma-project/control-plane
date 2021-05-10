@@ -90,8 +90,7 @@ func (s *installationService) triggerAction(
 		Configuration: NewInstallationConfiguration(globalConfig, componentsConfig),
 	}
 
-	err := prepareFunction(installationConfig)
-	if err != nil {
+	if err := prepareFunction(installationConfig); err != nil {
 		return pkgErrors.Wrap(err, fmt.Sprintf("Failed to prepare %s", actionName))
 	}
 
@@ -99,8 +98,7 @@ func (s *installationService) triggerAction(
 	defer cancel()
 
 	// We are not waiting for events, just triggering installation
-	_, _, err = installer.StartInstallation(installationCtx)
-	if err != nil {
+	if _, _, err := installer.StartInstallation(installationCtx); err != nil {
 		return pkgErrors.Wrap(err, fmt.Sprintf("Failed to start Kyma %s", actionName))
 	}
 
