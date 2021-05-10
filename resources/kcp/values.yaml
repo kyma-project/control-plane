@@ -12,7 +12,7 @@ global:
       version: "PR-697"
     kyma_environment_broker:
       dir:
-      version: "PR-663"
+      version: "PR-701"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-627"
@@ -50,6 +50,7 @@ global:
     script:
       configMapName: "kcp-auditlog-script"
     enableSeqHttp: false
+    disabled: false
 
   provisioning:
     enabled: false
