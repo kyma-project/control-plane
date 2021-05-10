@@ -210,6 +210,9 @@ e2e:
     timeout: "90m"
   tenant:
     id: "d9994f8f-7e46-42a8-b2c1-1bfff8d2fe05"
+  aws:
+    configName: "e2e-runtime-config-aws"
+    planID: "361c511f-f939-4621-b228-d0fb79a1fe15"
   azure:
     configName: "e2e-runtime-config-azure"
     planID: "4deee563-e5ec-4731-b9b1-53b42d855f0c"
