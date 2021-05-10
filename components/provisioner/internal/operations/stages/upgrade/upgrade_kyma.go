@@ -50,18 +50,17 @@ func (s *UpgradeKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 	if err != nil {
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {
-			logger.Warnf("Upgrade already in progress, proceeding to next step...")
-			return operations.StageResult{Stage: s.nextStep, Delay: 30 * time.Second}, nil
+			logger.Warnf("Installation is in error state, still triggering the upgrade ...")
+		} else {
+			return operations.StageResult{}, fmt.Errorf("error: failed to check installation CR state: %s", err.Error())
 		}
-
-		return operations.StageResult{}, fmt.Errorf("error: failed to check installation CR state: %s", err.Error())
 	}
 
 	if installationState.State == installationSDK.NoInstallationState {
 		return operations.StageResult{}, operations.NewNonRecoverableError(fmt.Errorf("error: Installation CR not found in the cluster, cannot trigger upgrade"))
 	}
 
-	if installationState.State == "Installed" {
+	if installationState.State == "Installed" || installationState.State == "Error" {
 		err = s.installationClient.TriggerUpgrade(
 			k8sConfig,
 			cluster.KymaConfig.Profile,
