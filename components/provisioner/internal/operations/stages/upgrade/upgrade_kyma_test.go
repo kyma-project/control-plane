@@ -96,10 +96,11 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("should return next step when upgrade already in progress", func(t *testing.T) {
+	t.Run("should trigger upgrade when installation is in error state", func(t *testing.T) {
 		//given
 		installationClient := &installationMocks.Service{}
-		installationClient.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "upgrade in progress"})
+		installationClient.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "error"})
+		installationClient.On("TriggerUpgrade", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		upgradeStep := NewUpgradeKymaStep(installationClient, nextStageName, 0)
 
