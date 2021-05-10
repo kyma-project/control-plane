@@ -51,6 +51,7 @@ func (s *UpgradeKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {
 			logger.Warnf("Installation is in error state, still triggering the upgrade ...")
+			installationState.State = "Error"
 		} else {
 			return operations.StageResult{}, fmt.Errorf("error: failed to check installation CR state: %s", err.Error())
 		}
