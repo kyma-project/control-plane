@@ -593,11 +593,12 @@
   revision = "baf11bc035cbfd893baf6b0ad2a5ca7483bf12c9"
 
 [[projects]]
-  digest = "1:680d5b165349d47a0642574fe2479cbe47ffa06f89d0db8981ebeeab96e16842"
+  digest = "1:d1d60b16eb7ed9ee8772b5ea4ccf8fc98549614a78828b5baf9465df5f85dad4"
   name = "github.com/kyma-project/control-plane"
   packages = ["components/provisioner/pkg/gqlschema"]
   pruneopts = "NUT"
-  revision = "dbd90902ce293f594793d54020287c138859f2eb"
+  revision = "8cd8653d5ac144284edc4eac962c5eb2e2dfd288"
+  source = "https://github.com/rJankowski93/control-plane.git"
 
 [[projects]]
   digest = "1:5e4103e7b074ebc86f88f8fd93e4b7863744b86d9a8d53c442eab6d99d6ed6c7"
