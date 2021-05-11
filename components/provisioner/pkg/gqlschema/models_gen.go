@@ -134,6 +134,7 @@ type GardenerConfigInput struct {
 	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
 	Seed                                *string                `json:"seed"`
+	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
 }
 
 type GardenerUpgradeInput struct {
