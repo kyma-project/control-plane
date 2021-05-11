@@ -54,6 +54,7 @@ func (g *Graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (s
 	return g.genericToGraphQL(in, `{
 		{{- if .GardenerConfig }}
 		gardenerConfig: {{ GardenerConfigInputToGraphQL .GardenerConfig }},
+		administrators: "{{.Administrators}}"
 		{{- end }}
 		{{- if .Administrators }}
 		administrators: {{.Administrators | marshal }},
@@ -110,6 +111,28 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 			{{- end}}
         }
 		{{- end}}
+	    {{- if .OIDCConfigInput }}
+		  oidcConfig: {
+			{{- if .OIDCConfigInput.ClientID }}
+			clientID: {{.OIDCConfigInput.ClientID }},
+			{{- end}}
+			{{- if .OIDCConfigInput.GroupsClaim }}
+			groupsClaim: {{.OIDCConfigInput.GroupsClaim }},
+			{{- end}}
+			{{- if .OIDCConfigInput.IssuerURL }}
+			issuerURL: {{.OIDCConfigInput.IssuerURL }},
+			{{- end}}
+			{{- if .OIDCConfigInput.SigningAlgs }}
+			signingAlgs: {{.OIDCConfigInput.SigningAlgs }},
+			{{- end}}
+			{{- if .OIDCConfigInput.UsernameClaim }}
+			usernameClaim: {{.OIDCConfigInput.UsernameClaim }},
+			{{- end}}
+			{{- if .OIDCConfigInput.UsernamePrefix }}
+			usernamePrefix: {{.OIDCConfigInput.UsernamePrefix }},
+			{{- end}}
+		  }
+        {{- end}}
 	}`)
 }
 
