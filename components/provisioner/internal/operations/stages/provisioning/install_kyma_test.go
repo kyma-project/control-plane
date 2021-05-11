@@ -79,6 +79,15 @@ func TestInstallKymaStep_Run(t *testing.T) {
 			},
 		},
 		{
+			description: "should proceed to the next step after starting the installation when installer has an empty state",
+			mockFunc: func(installationSvc *installationMocks.Service) {
+				installationSvc.On("CheckInstallationState", k8sConfig).
+					Return(installation.InstallationState{State: ""}, nil)
+				installationSvc.On("TriggerInstallation", k8sConfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), release, globalConfig, components).
+					Return(nil)
+			},
+		},
+		{
 			description: "should proceed to the next step after starting the installation",
 			mockFunc: func(installationSvc *installationMocks.Service) {
 				installationSvc.On("CheckInstallationState", k8sConfig).
