@@ -29,10 +29,9 @@ type GardenerConfig {
     enableMachineImageVersionAutoUpdate: Boolean
     allowPrivilegedContainers: Boolean
     providerSpecificConfig: ProviderSpecificConfig
-    oidcConfig: OIDCConfigInput
 }
 
-type OIDCConfigInput {
+input OIDCConfigInput {
     clientID: String!
     groupsClaim: String!
     issuerURL: String!
@@ -193,6 +192,7 @@ input GardenerConfigInput {
     allowPrivilegedContainers: Boolean              # Allow Privileged Containers indicates whether privileged containers are allowed in the Shoot
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
+    oidcConfig: OIDCConfigInput
 }
 
 input ProviderSpecificInput {
