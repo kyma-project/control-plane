@@ -15,13 +15,13 @@ global:
       version: "PR-701"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-627"
+      version: "PR-723"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-627"
+      version: "PR-723"
     subscription_cleanup_job:
       dir:
-      version: "PR-723"
+      version: "PR-568"
     kyma_metrics_collector:
       dir:
       version: "26c3f6a3"
@@ -31,7 +31,7 @@ global:
         version: "PR-650"
       e2e_provisioning:
         dir:
-        version: "PR-723"
+        version: "PR-724"
   isLocalEnv: false
   oauth2:
     host: oauth2
