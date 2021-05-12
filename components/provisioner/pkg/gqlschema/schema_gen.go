@@ -820,15 +820,6 @@ type GardenerConfig {
     providerSpecificConfig: ProviderSpecificConfig
 }
 
-input OIDCConfigInput {
-    clientID: String!
-    groupsClaim: String!
-    issuerURL: String!
-    signingAlgs: [String!]!
-    usernameClaim: String!
-    usernamePrefix: String!
-}
-
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
 
 type GCPProviderConfig {
@@ -955,7 +946,7 @@ input ProvisionRuntimeInput {
 
 input ClusterConfigInput {
     gardenerConfig: GardenerConfigInput!     # Gardener-specific configuration for the cluster to be provisioned
-    administrators: [String!]                # List of administrators
+    administrators: [String]                # List of administrators
 }
 
 input GardenerConfigInput {
@@ -981,7 +972,6 @@ input GardenerConfigInput {
     allowPrivilegedContainers: Boolean              # Allow Privileged Containers indicates whether privileged containers are allowed in the Shoot
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
-    oidcConfig: OIDCConfigInput
 }
 
 input ProviderSpecificInput {
@@ -5071,7 +5061,7 @@ func (ec *executionContext) unmarshalInputClusterConfigInput(ctx context.Context
 			}
 		case "administrators":
 			var err error
-			it.Administrators, err = ec.unmarshalOString2ᚕstring(ctx, v)
+			it.Administrators, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5309,12 +5299,6 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-		case "oidcConfig":
-			var err error
-			it.OidcConfig, err = ec.unmarshalOOIDCConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfigInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -5450,54 +5434,6 @@ func (ec *executionContext) unmarshalInputKymaConfigInput(ctx context.Context, o
 		case "conflictStrategy":
 			var err error
 			it.ConflictStrategy, err = ec.unmarshalOConflictStrategy2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConflictStrategy(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputOIDCConfigInput(ctx context.Context, obj interface{}) (OIDCConfigInput, error) {
-	var it OIDCConfigInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "clientID":
-			var err error
-			it.ClientID, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "groupsClaim":
-			var err error
-			it.GroupsClaim, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "issuerURL":
-			var err error
-			it.IssuerURL, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "signingAlgs":
-			var err error
-			it.SigningAlgs, err = ec.unmarshalNString2ᚕstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "usernameClaim":
-			var err error
-			it.UsernameClaim, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "usernamePrefix":
-			var err error
-			it.UsernamePrefix, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7332,18 +7268,6 @@ func (ec *executionContext) marshalOLabels2ᚖgithubᚗcomᚋkymaᚑprojectᚋco
 	return v
 }
 
-func (ec *executionContext) unmarshalOOIDCConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfigInput(ctx context.Context, v interface{}) (OIDCConfigInput, error) {
-	return ec.unmarshalInputOIDCConfigInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOOIDCConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfigInput(ctx context.Context, v interface{}) (*OIDCConfigInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOOIDCConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfigInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) unmarshalOOpenStackProviderConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOpenStackProviderConfigInput(ctx context.Context, v interface{}) (OpenStackProviderConfigInput, error) {
 	return ec.unmarshalInputOpenStackProviderConfigInput(ctx, v)
 }
@@ -7451,6 +7375,38 @@ func (ec *executionContext) marshalOString2ᚕstring(ctx context.Context, sel as
 	ret := make(graphql.Array, len(v))
 	for i := range v {
 		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
 	}
 
 	return ret
