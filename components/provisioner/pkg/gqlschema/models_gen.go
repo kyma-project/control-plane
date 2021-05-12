@@ -42,7 +42,7 @@ type AzureProviderConfigInput struct {
 
 type ClusterConfigInput struct {
 	GardenerConfig *GardenerConfigInput `json:"gardenerConfig"`
-	Administrators []string             `json:"administrators"`
+	Administrators []*string            `json:"administrators"`
 }
 
 type ComponentConfiguration struct {
@@ -134,7 +134,6 @@ type GardenerConfigInput struct {
 	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
 	Seed                                *string                `json:"seed"`
-	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
 }
 
 type GardenerUpgradeInput struct {
@@ -172,15 +171,6 @@ type KymaConfigInput struct {
 	Components       []*ComponentConfigurationInput `json:"components"`
 	Configuration    []*ConfigEntryInput            `json:"configuration"`
 	ConflictStrategy *ConflictStrategy              `json:"conflictStrategy"`
-}
-
-type OIDCConfigInput struct {
-	ClientID       string   `json:"clientID"`
-	GroupsClaim    string   `json:"groupsClaim"`
-	IssuerURL      string   `json:"issuerURL"`
-	SigningAlgs    []string `json:"signingAlgs"`
-	UsernameClaim  string   `json:"usernameClaim"`
-	UsernamePrefix string   `json:"usernamePrefix"`
 }
 
 type OpenStackProviderConfig struct {

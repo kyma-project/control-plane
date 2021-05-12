@@ -31,15 +31,6 @@ type GardenerConfig {
     providerSpecificConfig: ProviderSpecificConfig
 }
 
-input OIDCConfigInput {
-    clientID: String!
-    groupsClaim: String!
-    issuerURL: String!
-    signingAlgs: [String!]!
-    usernameClaim: String!
-    usernamePrefix: String!
-}
-
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
 
 type GCPProviderConfig {
@@ -166,7 +157,7 @@ input ProvisionRuntimeInput {
 
 input ClusterConfigInput {
     gardenerConfig: GardenerConfigInput!     # Gardener-specific configuration for the cluster to be provisioned
-    administrators: [String!]                # List of administrators
+    administrators: [String]                # List of administrators
 }
 
 input GardenerConfigInput {
@@ -192,7 +183,6 @@ input GardenerConfigInput {
     allowPrivilegedContainers: Boolean              # Allow Privileged Containers indicates whether privileged containers are allowed in the Shoot
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
-    oidcConfig: OIDCConfigInput
 }
 
 input ProviderSpecificInput {
