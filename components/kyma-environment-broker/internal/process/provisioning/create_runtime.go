@@ -60,6 +60,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		log.Errorf("Unable to create provisioning input: %s", err.Error())
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create provisioning input", log)
 	}
+	requestInput.ClusterConfig.Administrators = []string{operation.ProvisioningParameters.ErsContext.UserID}
 
 	log.Infof("call ProvisionRuntime: kymaVersion=%s, kubernetesVersion=%s, region=%s, kymaProfile=%s, provider=%s, name=%s",
 		requestInput.KymaConfig.Version,
