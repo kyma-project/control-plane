@@ -90,7 +90,7 @@ var operationColumns = []printer.Column{
 }
 
 var orchestrationDetailsTpl = `Orchestration ID: {{.OrchestrationID}}
-Type:             kyma upgrade
+Type:             {{.Type}}
 Created At:       {{.CreatedAt}}
 Updated At:       {{.UpdatedAt}}
 Dry Run:          {{.Parameters.DryRun}}
@@ -395,7 +395,15 @@ func (cmd *OrchestrationCommand) cancelOrchestration(orchestrationID string) err
 // Currently only orchestrations of type "kyma upgrade" are supported,
 // and the type is not reflected in the StatusResponse object
 func orchestrationType(obj interface{}) string {
-	return "kyma upgrade"
+	sr := obj.(orchestration.StatusResponse)
+
+	if sr.Type == orchestration.UpgradeKymaOrchestration {
+		return "kyma upgrade"
+	}
+	if sr.Type == orchestration.UpgradeClusterOrchestration {
+		return "cluster upgrade"
+	}
+	return string(sr.Type)
 }
 
 func orchestrationCreatedAt(obj interface{}) string {
