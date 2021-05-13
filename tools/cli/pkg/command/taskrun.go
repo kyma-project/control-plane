@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // TaskRunCommand represents an execution of the kcp taskrun command
@@ -38,7 +39,7 @@ type TaskRunCommand struct {
 	noKubeconfig        bool
 	noPrefixOutput      bool
 	taskCommand         *exec.Cmd
-	shell               bool
+	shell               string
 }
 
 // RuntimeLister implements the interface to obtains runtimes info from KEB for resolver
@@ -93,7 +94,9 @@ For each subprocess, the following Runtime-specific data are passed as environme
   kcp taskrun --target account=CA4836781TID000000000123456789 /usr/local/bin/awesome-script.sh
     Run a maintenance script for all Runtimes of a given global account.
   kcp taskrun --target all -- helm upgrade -i -n kyma-system my-kyma-addon --values overrides.yaml
-    Deploy a Helm chart on all Runtimes.`,
+    Deploy a Helm chart on all Runtimes.
+  kcp taskrun -t all -s "/bin/bash -i -c" -- kc get ns
+    Run an alias command (kc for kubectl) defined in user's .bashrc invocation script`,
 		Args:    cobra.MinimumNArgs(1),
 		PreRunE: func(_ *cobra.Command, args []string) error { return cmd.Validate(args) },
 		RunE:    func(_ *cobra.Command, args []string) error { return cmd.Run(args) },
@@ -106,7 +109,8 @@ For each subprocess, the following Runtime-specific data are passed as environme
 	cobraCmd.Flags().BoolVar(&cmd.keepKubeconfigs, "keep-kubeconfig", false, "Option that allows you to keep downloaded kubeconfig files after execution for caching purposes.")
 	cobraCmd.Flags().BoolVar(&cmd.noKubeconfig, "no-kubeconfig", false, "Option that turns off the downloading and exposure of the kubeconfig file for each Runtime.")
 	cobraCmd.Flags().BoolVar(&cmd.noPrefixOutput, "no-prefix-output", false, "Option that omits the prefixing of each output line with the Runtime name. By default, all output lines are prepended for better traceability.")
-	cobraCmd.Flags().BoolVar(&cmd.shell, "shell", false, "Option that turns on the user's shell in case users want to use alias defined in their shell.")
+	cobraCmd.Flags().StringP("shell", "s", "", "Invoke the task command using the given shell and it's options. Useful when the task command uses alias(es) defined in the shell's invocation scripts. Can also be set in the KCP configuration file or with the KCP_SHELL environment variable.")
+	viper.BindPFlag("shell", cobraCmd.Flags().Lookup("shell"))
 	return cobraCmd
 }
 
@@ -171,18 +175,15 @@ func (cmd *TaskRunCommand) Validate(args []string) error {
 		cmd.kubeconfingDirTemp = true
 	}
 
-	// Validate task command
-	if cmd.shell {
-		shellvalue := GlobalOpts.Shell()
-		splitSh := strings.Split(shellvalue, " ")
-		if shellvalue != "" {
-			if _, err := exec.LookPath(splitSh[0]); err != nil {
-				return err
-			}
-		} else {
-			return errors.New("Shell is not defined. Please define your shell in kcp config")
+	// Validate task command and shell wrapper
+	// Construct task command object
+	cmd.shell = viper.GetString("shell")
+	if cmd.shell != "" {
+		splitSh := strings.Split(cmd.shell, " ")
+		if _, err := exec.LookPath(splitSh[0]); err != nil {
+			return err
 		}
-		allArgs := append(splitSh[1:], args...)
+		allArgs := append(splitSh[1:], strings.Join(args, " "))
 		cmd.taskCommand = exec.CommandContext(cmd.cobraCmd.Context(), splitSh[0], allArgs...)
 	} else {
 		if _, err := exec.LookPath(args[0]); err != nil {
