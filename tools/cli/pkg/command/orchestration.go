@@ -396,6 +396,13 @@ func (cmd *OrchestrationCommand) cancelOrchestration(orchestrationID string) err
 // and the type is not reflected in the StatusResponse object
 func orchestrationType(obj interface{}) string {
 	sr := obj.(orchestration.StatusResponse)
+
+	if sr.Type == orchestration.UpgradeKymaOrchestration {
+		return "kyma upgrade"
+	}
+	if sr.Type == orchestration.UpgradeClusterOrchestration {
+		return "cluster upgrade"
+	}
 	return string(sr.Type)
 }
 
