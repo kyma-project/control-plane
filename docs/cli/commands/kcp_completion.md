@@ -1,4 +1,5 @@
 # kcp completion
+
 Generates completion script
 
 ## Synopsis

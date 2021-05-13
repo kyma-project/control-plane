@@ -12,4 +12,5 @@ const (
 	BackupInit              = "backup-init"
 	AvSBridge               = "avs-bridge"
 	Eventing                = "eventing"
+	Connectivity            = "connectivity"
 )

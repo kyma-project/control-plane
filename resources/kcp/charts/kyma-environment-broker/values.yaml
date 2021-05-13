@@ -75,7 +75,7 @@ kymaVersion: "1.13.0"
 kymaVersionOnDemand: "false"
 
 disableProcessOperationsInProgress: "false"
-enablePlans: "azure,gcp,azure_lite,trial"
+enablePlans: "azure,gcp,azure_lite,azure_ha,trial"
 onlySingleTrialPerGA: "true"
 
 osbUpdateProcessingEnabled: "false"
@@ -92,6 +92,7 @@ gardener:
   # if empty, the Gardener default value is used
   machineImageVersion: ""
   trialNodesNumber: "1"
+  freemiumProviders: "azure,aws"
 
 # It is used to provide own creds for Service Manager instead of using the one provided by external system
 # who execute provision call on Kyma Environment Broker. You can define `overrideMode` to be one of: Always, WhenNotSentInRequest, Never
@@ -140,19 +141,6 @@ avs:
   trialGroupId: "0"
   trialParentId: "0"
 
-lms:
-  secretName: "lms-creds"
-  token: "TBD"
-  url: "TBD"
-  clusterType: "single-node"
-  environment: "dev"
-  samlTenant: "TBD"
-  enabledForGlobalAccounts: "all" # possible values: "all", "none", "{global-account-ID-1}, {global-account-ID-2}, .."
-  # if set - always use this region, if empty - region is mapped from the OSB API request
-  region: ""
-  # if false - failing LMS step does not break provisioning
-  mandatory: true
-
 ias:
   secretName: "ias-creds"
   url: "TBD"
@@ -176,6 +164,9 @@ edp:
 ems:
   disabled: true
   skipDeprovisionAzureEventingAtUpgrade: false
+
+connectivity:
+  disabled: true
 
 cis:
   v1:
@@ -219,6 +210,9 @@ e2e:
     timeout: "90m"
   tenant:
     id: "d9994f8f-7e46-42a8-b2c1-1bfff8d2fe05"
+  aws:
+    configName: "e2e-runtime-config-aws"
+    planID: "361c511f-f939-4621-b228-d0fb79a1fe15"
   azure:
     configName: "e2e-runtime-config-azure"
     planID: "4deee563-e5ec-4731-b9b1-53b42d855f0c"

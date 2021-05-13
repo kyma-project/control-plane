@@ -13,7 +13,6 @@ type BrokerStorage interface {
 	Operations() Operations
 	Provisioning() Provisioning
 	Deprovisioning() Deprovisioning
-	LMSTenants() LMSTenants
 	Orchestrations() Orchestrations
 	RuntimeStates() RuntimeStates
 }
@@ -41,7 +40,6 @@ func NewFromConfig(cfg Config, cipher postgres.Cipher, log logrus.FieldLogger) (
 	return storage{
 		instance:       postgres.NewInstance(fact, operation, cipher),
 		operation:      operation,
-		lmsTenants:     postgres.NewLMSTenants(fact),
 		orchestrations: postgres.NewOrchestrations(fact),
 		runtimeStates:  postgres.NewRuntimeStates(fact, cipher),
 	}, connection, nil
@@ -52,7 +50,6 @@ func NewMemoryStorage() BrokerStorage {
 	return storage{
 		operation:      op,
 		instance:       memory.NewInstance(op),
-		lmsTenants:     memory.NewLMSTenants(),
 		orchestrations: memory.NewOrchestrations(),
 		runtimeStates:  memory.NewRuntimeStates(),
 	}
@@ -61,7 +58,6 @@ func NewMemoryStorage() BrokerStorage {
 type storage struct {
 	instance       Instances
 	operation      Operations
-	lmsTenants     LMSTenants
 	orchestrations Orchestrations
 	runtimeStates  RuntimeStates
 }
@@ -80,10 +76,6 @@ func (s storage) Provisioning() Provisioning {
 
 func (s storage) Deprovisioning() Deprovisioning {
 	return s.operation
-}
-
-func (s storage) LMSTenants() LMSTenants {
-	return s.lmsTenants
 }
 
 func (s storage) Orchestrations() Orchestrations {

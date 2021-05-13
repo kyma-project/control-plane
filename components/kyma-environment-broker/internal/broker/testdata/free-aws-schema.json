@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Cluster Name",
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9-]*$"
+    },
+    "region": {
+      "type": "string",
+      "enum": ["eu-central-1", "eu-west-2", "ca-central-1", "sa-east-1", "us-east-1", "us-west-1",
+        "ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2"]
+    }},
+  "required": [
+    "name"
+  ],
+  "_show_form_view": true,
+  "_controlsOrder": [
+    "name",
+    "region"
+  ]
+}

@@ -19,7 +19,7 @@ type EvalAssistant interface {
 	IsAlreadyDeleted(lifecycleData internal.AvsLifecycleData) bool
 	GetEvaluationId(lifecycleData internal.AvsLifecycleData) int64
 	ProvideParentId(pp internal.ProvisioningParameters) int64
-	markDeleted(lifecycleData *internal.AvsLifecycleData)
+	SetDeleted(lifecycleData *internal.AvsLifecycleData, deleted bool)
 	provideRetryConfig() *RetryConfig
 }
 

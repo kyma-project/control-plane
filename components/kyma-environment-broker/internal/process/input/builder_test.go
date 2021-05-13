@@ -24,12 +24,13 @@ func TestInputBuilderFactory_IsPlanSupport(t *testing.T) {
 	defer componentsProvider.AssertExpectations(t)
 
 	ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-		Config{}, "1.10", fixTrialRegionMapping())
+		Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders())
 	assert.NoError(t, err)
 
 	// when/then
 	assert.True(t, ibf.IsPlanSupport(broker.GCPPlanID))
 	assert.True(t, ibf.IsPlanSupport(broker.AzurePlanID))
+	assert.True(t, ibf.IsPlanSupport(broker.AzureHAPlanID))
 	assert.True(t, ibf.IsPlanSupport(broker.TrialPlanID))
 }
 
@@ -41,7 +42,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		defer componentsProvider.AssertExpectations(t)
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-			Config{}, "1.10", fixTrialRegionMapping())
+			Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 
@@ -68,7 +69,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		defer componentsProvider.AssertExpectations(t)
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-			Config{}, "1.10", fixTrialRegionMapping())
+			Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 
@@ -94,7 +95,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		defer componentsProvider.AssertExpectations(t)
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-			Config{}, "1.10", fixTrialRegionMapping())
+			Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 
@@ -119,7 +120,8 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		componentsProvider.On("AllComponents", "PR-1").Return([]v1alpha1.KymaComponent{}, nil).Once()
 		defer componentsProvider.AssertExpectations(t)
 
-		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider, Config{}, "1.10", fixTrialRegionMapping())
+		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(),
+			componentsProvider, Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "PR-1")
 
@@ -138,7 +140,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		defer componentsProvider.AssertExpectations(t)
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-			Config{}, "1.10", fixTrialRegionMapping())
+			Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 
@@ -174,7 +176,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		defer componentsProvider.AssertExpectations(t)
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-			Config{}, "1.10", fixTrialRegionMapping())
+			Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 

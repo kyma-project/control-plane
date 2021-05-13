@@ -46,10 +46,18 @@ services:
         description: "Azure Lite"
         metadata:
           displayName: "Azure Lite"
+      azure_ha:
+        description: "Azure HA"
+        metadata:
+          displayName: "Azure HA"
       trial:
         description: "Trial"
         metadata:
           displayName: "Trial"
+      free:
+        description: "Free"
+        metadata:
+          displayName: "Free"
       openstack:
         description: "Openstack"
         metadata:

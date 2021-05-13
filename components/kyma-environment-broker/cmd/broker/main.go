@@ -10,8 +10,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/spf13/afero"
-
 	"code.cloudfoundry.org/lager"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/handlers"
@@ -31,7 +29,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/health"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/metrics"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
@@ -54,10 +51,12 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/swagger"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -113,7 +112,6 @@ type Config struct {
 	CatalogFilePath string
 
 	Avs avs.Config
-	LMS lms.Config
 	IAS ias.Config
 	EDP edp.Config
 
@@ -124,6 +122,9 @@ type Config struct {
 	Ems struct {
 		Disabled                              bool `envconfig:"default=true"`
 		SkipDeprovisionAzureEventingAtUpgrade bool `envconfig:"default=false"`
+	}
+	Connectivity struct {
+		Disabled bool `envconfig:"default=true"`
 	}
 
 	AuditLog auditlog.Config
@@ -137,7 +138,18 @@ type Config struct {
 	MaxPaginationPage          int `envconfig:"default=100"`
 
 	LogLevel string `envconfig:"default=info"`
+
+	// FreemiumProviders is a list of providers for freemium
+	FreemiumProviders []string `envconfig:"default=aws"`
+
+	DomainName string
 }
+
+const (
+	createRuntimeStageName = "create_runtime"
+	checkRuntimeStageName  = "check_runtime"
+	startStageName         = "start"
+)
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -193,11 +205,6 @@ func main() {
 	// Auditlog
 	fileSystem := afero.NewOsFs()
 
-	// LMS
-	fatalOnError(cfg.LMS.Validate())
-	lmsClient := lms.NewClient(cfg.LMS, logs.WithField("service", "lmsClient"))
-	lmsTenantManager := lms.NewTenantManager(db.LMSTenants(), lmsClient, logs.WithField("service", "lmsTenantManager"))
-
 	// Register disabler. Convention:
 	// {component-name} : {component-disabler-service}
 	//
@@ -221,6 +228,8 @@ func main() {
 	gardenerShoots, err := gardener.NewGardenerShootInterface(gardenerClusterConfig, cfg.Gardener.Project)
 	fatalOnError(err)
 
+	hyperscalerProvider := azure.NewAzureProvider()
+
 	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecretBindings, gardenerShoots)
 	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecretBindings, gardenerShoots)
 	accountProvider := hyperscaler.NewAccountProvider(kubernetesClient, gardenerAccountPool, gardenerSharedPool)
@@ -228,7 +237,8 @@ func main() {
 	regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)
 	fatalOnError(err)
 	logs.Infof("Platform region mapping for trial: %v", regions)
-	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider, cfg.Provisioning, cfg.KymaVersion, regions)
+	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider,
+		cfg.Provisioning, cfg.KymaVersion, regions, cfg.FreemiumProviders)
 	fatalOnError(err)
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
@@ -253,7 +263,6 @@ func main() {
 		Secret: cfg.IAS.UserSecret,
 	})
 	bundleBuilder := ias.NewBundleBuilder(iasClient, cfg.IAS)
-	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
 
 	// application event broker
 	eventBroker := event.NewPubSub(logs)
@@ -272,14 +281,16 @@ func main() {
 
 	// run queues
 	const workersAmount = 5
-	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
-	provisionQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, &cfg, db, provisionerClient, directorClient, inputFactory,
+	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
+	provisionQueue := NewProvisioningProcessingQueue(ctx, provisionManager, 60, &cfg, db, provisionerClient, directorClient, inputFactory,
 		avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, serviceManagerClientFactory, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager,
+		runtimeOverrides, serviceManagerClientFactory, bundleBuilder,
 		edpClient, accountProvider, fileSystem, logs)
 
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
-	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, &cfg, db, eventBroker, provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient, accountProvider, logs)
+	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, &cfg, db, eventBroker, provisionerClient,
+		avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient,
+		hyperscalerProvider, accountProvider, logs)
 
 	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
 
@@ -289,13 +300,10 @@ func main() {
 	defaultPlansConfig, err := servicesConfig.DefaultPlansConfig()
 	fatalOnError(err)
 
-	plansValidator, err := broker.NewPlansSchemaValidator(defaultPlansConfig)
-	fatalOnError(err)
-
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
 		broker.NewServices(cfg.Broker, servicesConfig, logs),
-		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, plansValidator, defaultPlansConfig, cfg.EnableOnDemandVersion, logs),
+		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, defaultPlansConfig, cfg.EnableOnDemandVersion, logs),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
 		broker.NewUpdate(db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, logs),
 		broker.NewGetInstance(db.Instances(), logs),
@@ -342,8 +350,16 @@ func main() {
 		logger.Info("Skipping processing operation in progress on start")
 	}
 
+	// configure templates e.g. {{.domain}} to replace it with the domain name
+	swaggerTemplates := map[string]string{
+		"domain": cfg.DomainName,
+	}
+	err = swagger.NewTemplate("/swagger", swaggerTemplates).Execute()
+	fatalOnError(err)
+
 	// create OSB API endpoints
 	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
+	router.Use(middleware.AddProviderToContext())
 	for _, prefix := range []string{
 		"/oauth/",          // oauth2 handled by Ory
 		"/oauth/{region}/", // oauth2 handled by Ory with region
@@ -476,27 +492,42 @@ func fatalOnError(err error) {
 	}
 }
 
-func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provisioning.Manager, workersAmount int,
+func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provisioning.StagedManager, workersAmount int,
 	cfg *Config, db storage.BrokerStorage, provisionerClient provisioner.Client, directorClient provisioning.DirectorClient,
 	inputFactory input.CreatorForPlan, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
 	externalEvalCreator *provisioning.ExternalEvalCreator, internalEvalUpdater *provisioning.InternalEvalUpdater,
 	runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeOverrides provisioning.RuntimeOverridesAppender,
-	smcf provisioning.SMClientFactory, bundleBuilder ias.BundleBuilder, iasTypeSetter *provisioning.IASType,
-	lmsClient lms.Client, lmsTenantManager provisioning.LmsTenantProvider, edpClient provisioning.EDPClient,
+	smcf provisioning.SMClientFactory, bundleBuilder ias.BundleBuilder, edpClient provisioning.EDPClient,
 	accountProvider hyperscaler.AccountProvider, fileSystem afero.Fs, logs logrus.FieldLogger) *process.Queue {
 
-	provisioningInit := provisioning.NewInitialisationStep(db.Operations(), db.Instances(),
-		provisionerClient, directorClient, inputFactory, externalEvalCreator, internalEvalUpdater, iasTypeSetter,
-		cfg.Provisioning.Timeout, cfg.OperationTimeout, runtimeVerConfigurator, smcf)
-	provisionManager.InitStep(provisioningInit)
+	const postActionsStageName = "post_actions"
+	provisionManager.DefineStages([]string{startStageName, createRuntimeStageName, checkRuntimeStageName, postActionsStageName})
+	/*
+		The provisioning process contains the following stages:
+		1. "start" - changes the state from pending to in progress if no deprovisioning is ongoing.
+		2. "create_runtime" - collects all information needed to make an input for the Provisioner request as overrides and labels.
+		Those data is collected using an InputCreator which is not persisted. That's why all steps which prepares such data must be in the same stage as "create runtime step".
+		3. "check_runtime_status" - checks the runtime provisioning and retries if in progress
+		4. "post_actions" - all steps which must be executed after the runtime is provisioned
+
+		Once the stage is done it will never be retried.
+	*/
 
 	provisioningSteps := []struct {
 		disabled bool
-		weight   int
+		stage    string
 		step     provisioning.Step
 	}{
 		{
-			weight: 1,
+			stage: startStageName,
+			step:  provisioning.NewStartStep(db.Operations(), db.Instances()),
+		},
+		{
+			stage: createRuntimeStageName,
+			step:  provisioning.NewInitialisationStep(db.Operations(), inputFactory, cfg.Provisioning.Timeout, cfg.OperationTimeout, runtimeVerConfigurator, smcf),
+		},
+		{
+			stage: createRuntimeStageName,
 			step: provisioning.NewServiceManagerOfferingStep("XSUAA_Offering",
 				"xsuaa", "application", func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
 					return &op.XSUAA.Instance
@@ -504,7 +535,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			disabled: cfg.XSUAA.Disabled,
 		},
 		{
-			weight: 1,
+			stage: createRuntimeStageName,
 			step: provisioning.NewServiceManagerOfferingStep("EMS_Offering",
 				provisioning.EmsOfferingName, provisioning.EmsPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
 					return &op.Ems.Instance
@@ -512,11 +543,11 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			disabled: cfg.Ems.Disabled,
 		},
 		{
-			weight: 2,
-			step:   provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
+			stage: createRuntimeStageName,
+			step:  provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
 		},
 		{
-			weight: 2,
+			stage: createRuntimeStageName,
 			step: provisioning.NewXSUAAProvisioningStep(db.Operations(), uaa.Config{
 				// todo: set correct values from env variables
 				DeveloperGroup:      "devGroup",
@@ -527,71 +558,99 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			disabled: cfg.XSUAA.Disabled,
 		},
 		{
-			weight:   2,
+			stage:    createRuntimeStageName,
 			step:     provisioning.NewEmsProvisionStep(db.Operations()),
 			disabled: cfg.Ems.Disabled,
 		},
 		{
-			weight:   2,
+			stage:    createRuntimeStageName,
+			step:     provisioning.NewConnectivityProvisionStep(db.Operations()),
+			disabled: cfg.Connectivity.Disabled,
+		},
+		{
+			stage:    createRuntimeStageName,
 			step:     provisioning.NewInternalEvaluationStep(avsDel, internalEvalAssistant),
 			disabled: cfg.Avs.Disabled,
 		},
 		{
-			weight: 2,
-			step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewProvideLmsTenantStep(lmsTenantManager, db.Operations(), cfg.LMS.Region, cfg.LMS.Mandatory)),
-		},
-		{
-			weight:   2,
+			stage:    createRuntimeStageName,
 			step:     provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
 			disabled: cfg.EDP.Disabled,
 		},
 		{
-			weight: 3,
-			step:   provisioning.NewAzureEventHubActivationStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
+			stage: createRuntimeStageName,
+			step:  provisioning.NewAzureEventHubActivationStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
 		},
 		{
-			weight: 3,
-			step:   provisioning.NewNatsActivationStep(provisioning.NewNatsStreamingOverridesStep()),
+			stage: createRuntimeStageName,
+			step:  provisioning.NewNatsActivationStep(provisioning.NewNatsStreamingOverridesStep()),
 		},
 		{
-			weight: 3,
-			step:   provisioning.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
+			stage: createRuntimeStageName,
+			step:  provisioning.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
 		{
-			weight: 3,
-			step:   provisioning.NewServiceManagerOverridesStep(db.Operations()),
+			stage: createRuntimeStageName,
+			step:  provisioning.NewServiceManagerOverridesStep(db.Operations()),
 		},
 		{
-			weight: 3,
-			step:   provisioning.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
+			stage: createRuntimeStageName,
+			step:  provisioning.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
 		},
 		{
-			weight: 5,
-			step:   provisioning.NewLmsActivationStep(cfg.LMS, provisioning.NewLmsCertificatesStep(lmsClient, db.Operations(), cfg.LMS.Mandatory)),
-		},
-		{
-			weight:   6,
+			stage:    createRuntimeStageName,
 			step:     provisioning.NewIASRegistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
 		},
 		{
-			weight:   7,
+			stage:    createRuntimeStageName,
 			step:     provisioning.NewXSUAABindingStep(db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
 		},
 		{
-			weight:   7,
+			stage:    createRuntimeStageName,
 			step:     provisioning.NewEmsBindStep(db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Ems.Disabled,
 		},
 		{
-			weight: 10,
-			step:   provisioning.NewCreateRuntimeStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
+			stage:    createRuntimeStageName,
+			step:     provisioning.NewConnectivityBindStep(db.Operations(), cfg.Database.SecretKey),
+			disabled: cfg.Connectivity.Disabled,
+		},
+		{
+			stage: createRuntimeStageName,
+			step:  provisioning.NewCreateRuntimeStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
+		},
+		// check the runtime status
+		{
+			stage: checkRuntimeStageName,
+			step:  provisioning.NewCheckRuntimeStep(db.Operations(), provisionerClient, cfg.Provisioning.Timeout),
+		},
+		{
+			stage: checkRuntimeStageName,
+			step:  provisioning.NewCheckDashboardURLStep(db.Operations(), directorClient, cfg.Provisioning.Timeout),
+		},
+		// post actions
+		{
+			stage: postActionsStageName,
+			step:  provisioning.NewExternalEvalStep(externalEvalCreator),
+		},
+		{
+			stage: postActionsStageName,
+			step:  provisioning.NewRuntimeTagsStep(internalEvalUpdater, provisionerClient),
+		},
+		{
+			stage:    postActionsStageName,
+			step:     provisioning.NewIASTypeStep(bundleBuilder),
+			disabled: cfg.IAS.Disabled,
 		},
 	}
 	for _, step := range provisioningSteps {
 		if !step.disabled {
-			provisionManager.AddStep(step.weight, step.step)
+			err := provisionManager.AddStep(step.stage, step.step)
+			if err != nil {
+				fatalOnError(err)
+			}
 		}
 	}
 
@@ -603,8 +662,9 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 
 func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, deprovisionManager *deprovisioning.Manager, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
 	provisionerClient provisioner.Client, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
-	externalEvalAssistant *avs.ExternalEvalAssistant, smcf *servicemanager.ClientFactory, bundleBuilder ias.BundleBuilder,
-	edpClient deprovisioning.EDPClient, accountProvider hyperscaler.AccountProvider, logs logrus.FieldLogger) *process.Queue {
+	externalEvalAssistant *avs.ExternalEvalAssistant, smcf deprovisioning.SMClientFactory, bundleBuilder ias.BundleBuilder,
+	edpClient deprovisioning.EDPClient, hyperscalerProvider azure.HyperscalerProvider, accountProvider hyperscaler.AccountProvider,
+	logs logrus.FieldLogger) *process.Queue {
 
 	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, smcf, cfg.OperationTimeout)
 	deprovisionManager.InitStep(deprovisioningInit)
@@ -622,7 +682,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			weight: 1,
 			step: deprovisioning.NewSkipForTrialPlanStep(
 				deprovisioning.NewAzureEventHubActivationStep(
-					deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx))),
+					deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), hyperscalerProvider, accountProvider, ctx))),
 		},
 		{
 			weight:   1,
@@ -645,6 +705,11 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight:   1,
+			step:     deprovisioning.NewConnectivityUnbindStep(db.Operations()),
+			disabled: cfg.Connectivity.Disabled,
+		},
+		{
 			weight:   2,
 			step:     deprovisioning.NewXSUAADeprovisionStep(db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
@@ -653,6 +718,10 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			weight:   2,
 			step:     deprovisioning.NewEmsDeprovisionStep(db.Operations()),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight: 2,
+			step:   deprovisioning.NewConnectivityDeprovisionStep(db.Operations()),
 		},
 		{
 			weight: 10,
@@ -698,6 +767,15 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight: 1,
+			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
+			step: upgrade_kyma.NewServiceManagerOfferingStep("Connectivity_Offering",
+				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.UpgradeKymaOperation) *internal.ServiceManagerInstanceInfo {
+					return &op.Connectivity.Instance
+				}, db.Operations()),
+			disabled: cfg.Connectivity.Disabled,
+		},
+		{
 			weight: 2,
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
@@ -716,9 +794,19 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			disabled: cfg.Ems.Disabled,
 		},
 		{
+			weight:   4,
+			step:     upgrade_kyma.NewConnectivityUpgradeProvisionStep(db.Operations()),
+			disabled: cfg.Connectivity.Disabled,
+		},
+		{
 			weight:   7,
 			step:     upgrade_kyma.NewEmsUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Ems.Disabled,
+		},
+		{
+			weight:   7,
+			step:     upgrade_kyma.NewConnectivityUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
+			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			weight: 10,

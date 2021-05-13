@@ -88,25 +88,6 @@ spec:
                   optional: true
             - name: APP_DIRECTOR_OAUTH_SCOPE
               value: "{{ .Values.director.scope }}"
-            - name: APP_LMS_URL
-              value: "{{ .Values.lms.url }}"
-            - name: APP_LMS_CLUSTER_TYPE
-              value: "{{ .Values.lms.clusterType }}"
-            - name: APP_LMS_ENVIRONMENT
-              value: "{{ .Values.lms.environment }}"
-            - name: APP_LMS_SAML_TENANT
-              value: "{{ .Values.lms.samlTenant }}"
-            - name: APP_LMS_ENABLED_FOR_GLOBAL_ACCOUNTS
-              value: "{{ .Values.lms.enabledForGlobalAccounts }}"
-            - name: APP_LMS_MANDATORY
-              value: "{{ .Values.lms.mandatory }}"
-            - name: APP_LMS_REGION
-              value: "{{ .Values.lms.region }}"
-            - name: APP_LMS_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Values.lms.secretName}}"
-                  key: token
             - name: APP_XSUAA_DISABLED
               value: "{{ .Values.xsuaa.disabled }}"
             - name: APP_IAS_URL
@@ -148,6 +129,8 @@ spec:
                   key: secret
             - name: APP_EMS_DISABLED
               value: "{{ .Values.ems.disabled }}"
+            - name: APP_CONNECTIVITY_DISABLED
+              value: "{{ .Values.connectivity.disabled }}"
             - name: APP_EMS_SKIP_DEPROVISION_AZURE_EVENTING_AT_UPGRADE
               value: "{{ .Values.ems.skipDeprovisionAzureEventingAtUpgrade }}"
             - name: APP_DATABASE_SECRET_KEY
@@ -309,6 +292,8 @@ spec:
               value: /config/additionalRuntimeComponents.yaml
             - name: APP_TRIAL_REGION_MAPPING_FILE_PATH
               value: /config/trialRegionMapping.yaml
+            - name: APP_FREEMIUM_PROVIDERS
+              value: "{{ .Values.gardener.freemiumProviders }}"
             - name: APP_CATALOG_FILE_PATH
               value: /config/catalog.yaml
             - name: APP_GARDENER_PROJECT
@@ -331,6 +316,8 @@ spec:
               value: "{{ .Values.osbUpdateProcessingEnabled }}"
             - name: APP_AUDITLOG_ENABLE_SEQ_HTTP
               value: "{{ .Values.global.auditlog.enableSeqHttp }}"
+            - name: APP_AUDITLOG_DISABLED
+              value: "{{ .Values.global.auditlog.disabled }}"
             - name: APP_AUDITLOG_URL
               valueFrom:
                 configMapKeyRef:
@@ -355,6 +342,8 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: APP_VERSION_CONFIG_NAME
               value: "kyma-versions"
+            - name: APP_DOMAIN_NAME
+              value: "{{ .Values.global.ingress.domainName }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

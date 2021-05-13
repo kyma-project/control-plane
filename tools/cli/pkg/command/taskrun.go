@@ -122,7 +122,7 @@ func (cmd *TaskRunCommand) Run(args []string) error {
 	}
 
 	mgr := NewRuntimeTaskMakager(cmd, operations)
-	strategy := strategies.NewParallelOrchestrationStrategy(mgr, cmd.log)
+	strategy := strategies.NewParallelOrchestrationStrategy(mgr, cmd.log, 0)
 	execID, err := strategy.Execute(operations, orchestration.StrategySpec{
 		Type:     orchestration.ParallelStrategy,
 		Schedule: orchestration.Immediate,
@@ -334,6 +334,10 @@ func (mgr *RuntimeTaskMakager) Execute(operationID string) (time.Duration, error
 	task.result = err
 
 	return 0, err
+}
+
+func (mgr *RuntimeTaskMakager) Reschedule(operationID string, maintenanceWindowBegin, maintenanceWindowEnd time.Time) error {
+	return nil
 }
 
 func (mgr *RuntimeTaskMakager) getKubeconfig(task *RuntimeTask) (string, error) {

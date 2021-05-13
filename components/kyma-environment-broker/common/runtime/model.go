@@ -21,11 +21,12 @@ type RuntimeDTO struct {
 }
 
 type RuntimeStatus struct {
-	CreatedAt      time.Time      `json:"createdAt"`
-	ModifiedAt     time.Time      `json:"modifiedAt"`
-	Provisioning   *Operation     `json:"provisioning"`
-	Deprovisioning *Operation     `json:"deprovisioning,omitempty"`
-	UpgradingKyma  OperationsData `json:"upgradingKyma,omitempty"`
+	CreatedAt       time.Time      `json:"createdAt"`
+	ModifiedAt      time.Time      `json:"modifiedAt"`
+	Provisioning    *Operation     `json:"provisioning"`
+	Deprovisioning  *Operation     `json:"deprovisioning,omitempty"`
+	UpgradingKyma   OperationsData `json:"upgradingKyma,omitempty"`
+	UpgradingCluser OperationsData `json:"upgradingCluster,omitempty"`
 
 	Suspension   OperationsData `json:"suspension,omitempty"`
 	Unsuspension OperationsData `json:"unsuspension,omitempty"`
@@ -90,18 +91,24 @@ type ListParameters struct {
 type OperationType string
 
 const (
-	Provision    OperationType = "provision"
-	Deprovision  OperationType = "deprovision"
-	UpgradeKyma  OperationType = "kyma upgrade"
-	Suspension   OperationType = "suspension"
-	Unsuspension OperationType = "unsuspension"
+	Provision      OperationType = "provision"
+	Deprovision    OperationType = "deprovision"
+	UpgradeKyma    OperationType = "kyma upgrade"
+	UpgradeCluster OperationType = "cluster upgrade"
+	Suspension     OperationType = "suspension"
+	Unsuspension   OperationType = "unsuspension"
 )
 
 func FindLastOperation(rt RuntimeDTO) (Operation, OperationType) {
 	op := *rt.Status.Provisioning
 	opType := Provision
+	// Take the first cluster upgrade operation, assuming that Data is sorted by CreatedAt DESC.
+	if rt.Status.UpgradingCluser.Count > 0 {
+		op = rt.Status.UpgradingCluser.Data[0]
+		opType = UpgradeCluster
+	}
 	// Take the first upgrade operation, assuming that Data is sorted by CreatedAt DESC.
-	if rt.Status.UpgradingKyma.Count > 0 {
+	if rt.Status.UpgradingKyma.Count > 0 && rt.Status.UpgradingKyma.Data[0].CreatedAt.After(op.CreatedAt) {
 		op = rt.Status.UpgradingKyma.Data[0]
 		opType = UpgradeKyma
 	}

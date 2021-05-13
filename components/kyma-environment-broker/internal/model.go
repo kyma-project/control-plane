@@ -2,7 +2,12 @@ package internal
 
 import (
 	"database/sql"
+	"fmt"
+	"net/url"
+	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/sirupsen/logrus"
@@ -34,19 +39,6 @@ const (
 	GitKymaProject = "kyma-project"
 	GitKymaRepo    = "kyma"
 )
-
-type LMSTenant struct {
-	ID        string
-	Name      string
-	Region    string
-	CreatedAt time.Time
-}
-
-type LMS struct {
-	TenantID    string    `json:"tenant_id"`
-	Failed      bool      `json:"failed"`
-	RequestedAt time.Time `json:"requested_at"`
-}
 
 type AvsEvaluationStatus struct {
 	Current  string `json:"current_value"`
@@ -123,6 +115,34 @@ type Instance struct {
 	Version int
 }
 
+func (i *Instance) GetInstanceDetails() (InstanceDetails, error) {
+	result := i.InstanceDetails
+	if result.ShootName == "" {
+		logrus.Infof("extracting shoot name/domain from dashboard_url %s for instance %s", i.DashboardURL, i.InstanceID)
+		shoot, domain, e := i.extractShootNameAndDomain()
+		if e != nil {
+			logrus.Errorf("unable to extract shoot name: %s (instance %s)", e.Error(), i.InstanceID)
+			return result, e
+		}
+		result.ShootName = shoot
+		result.ShootDomain = domain
+	}
+	return result, nil
+}
+
+func (i *Instance) extractShootNameAndDomain() (string, string, error) {
+	parsed, err := url.Parse(i.DashboardURL)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "while parsing dashboard url %s", i.DashboardURL)
+	}
+
+	parts := strings.Split(parsed.Host, ".")
+	if len(parts) <= 1 {
+		return "", "", fmt.Errorf("host is too short: %s", parsed.Host)
+	}
+	return parts[1], parsed.Host[len(parts[0])+1:], nil
+}
+
 // OperationType defines the possible types of an asynchronous operation to a broker.
 type OperationType string
 
@@ -158,7 +178,6 @@ type Operation struct {
 	// OrchestrationID specifies the origin orchestration which triggers the operation, empty for OSB operations (provisioning/deprovisioning)
 	OrchestrationID string              `json:"-"`
 	FinishedStages  map[string]struct{} `json:"-"`
-	FinishedSteps   map[string]struct{} `json:"-"`
 }
 
 func (o *Operation) IsFinished() bool {
@@ -202,17 +221,16 @@ type SMClientFactory interface {
 }
 
 type InstanceDetails struct {
-	Lms LMS `json:"lms"`
-
 	Avs      AvsLifecycleData `json:"avs"`
 	EventHub EventHub         `json:"eh"`
 
-	SubAccountID string    `json:"sub_account_id"`
-	RuntimeID    string    `json:"runtime_id"`
-	ShootName    string    `json:"shoot_name"`
-	ShootDomain  string    `json:"shoot_domain"`
-	XSUAA        XSUAAData `json:"xsuaa"`
-	Ems          EmsData   `json:"ems"`
+	SubAccountID string           `json:"sub_account_id"`
+	RuntimeID    string           `json:"runtime_id"`
+	ShootName    string           `json:"shoot_name"`
+	ShootDomain  string           `json:"shoot_domain"`
+	XSUAA        XSUAAData        `json:"xsuaa"`
+	Ems          EmsData          `json:"ems"`
+	Connectivity ConnectivityData `json:"connectivity"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -220,6 +238,7 @@ type ProvisioningOperation struct {
 	Operation
 
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
+	DashboardURL   string             `json:"dashboardURL"`
 
 	// following fields are not stored in the storage
 	InputCreator ProvisionerInputCreator `json:"-"`
@@ -245,6 +264,13 @@ type XSUAAData struct {
 }
 
 type EmsData struct {
+	Instance ServiceManagerInstanceInfo `json:"instance"`
+
+	BindingID string `json:"bindingId"`
+	Overrides string `json:"overrides"`
+}
+
+type ConnectivityData struct {
 	Instance ServiceManagerInstanceInfo `json:"instance"`
 
 	BindingID string `json:"bindingId"`
@@ -357,13 +383,17 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			InstanceDetails: InstanceDetails{
 				SubAccountID: parameters.ErsContext.SubAccountID,
 			},
-			FinishedSteps: make(map[string]struct{}, 0),
+			FinishedStages: make(map[string]struct{}, 0),
 		},
 	}, nil
 }
 
 // NewDeprovisioningOperationWithID creates a fresh (just starting) instance of the DeprovisioningOperation with provided ID
 func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (DeprovisioningOperation, error) {
+	details, err := instance.GetInstanceDetails()
+	if err != nil {
+		return DeprovisioningOperation{}, err
+	}
 	return DeprovisioningOperation{
 		Operation: Operation{
 			ID:              operationID,
@@ -374,8 +404,8 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
 			Type:            OperationTypeDeprovision,
-			InstanceDetails: instance.InstanceDetails,
-			FinishedSteps:   make(map[string]struct{}, 0),
+			InstanceDetails: details,
+			FinishedStages:  make(map[string]struct{}, 0),
 		},
 	}, nil
 }
@@ -393,7 +423,7 @@ func NewSuspensionOperationWithID(operationID string, instance *Instance) Deprov
 			UpdatedAt:       time.Now(),
 			Type:            OperationTypeDeprovision,
 			InstanceDetails: instance.InstanceDetails,
-			FinishedSteps:   make(map[string]struct{}, 0),
+			FinishedStages:  make(map[string]struct{}, 0),
 		},
 		Temporary: true,
 	}
@@ -405,15 +435,6 @@ func (po *ProvisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (s
 
 func (po *ProvisioningOperation) ProvideServiceManagerCredentials(log logrus.FieldLogger) (*servicemanager.Credentials, error) {
 	return po.SMClientFactory.ProvideCredentials(serviceManagerRequestCreds(po.ProvisioningParameters), log)
-}
-
-func (o *Operation) FinishStep(stepName string) {
-	o.FinishedSteps[stepName] = struct{}{}
-}
-
-func (o *Operation) IsStepDone(stepName string) bool {
-	_, found := o.FinishedSteps[stepName]
-	return found
 }
 
 func (o *Operation) FinishStage(stageName string) {
@@ -471,4 +492,21 @@ func serviceManagerRequestCreds(parameters ProvisioningParameters) *servicemanag
 		}
 	}
 	return creds
+}
+
+func (i *ServiceManagerInstanceInfo) ToProvisioningInput() *servicemanager.ProvisioningInput {
+	var input servicemanager.ProvisioningInput
+
+	input.ID = i.InstanceID
+	input.ServiceID = i.ServiceID
+	input.PlanID = i.PlanID
+	input.SpaceGUID = uuid.New().String()
+	input.OrganizationGUID = uuid.New().String()
+
+	input.Context = map[string]interface{}{
+		"platform": "kubernetes",
+	}
+	input.Parameters = map[string]interface{}{}
+
+	return &input
 }

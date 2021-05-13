@@ -9,32 +9,29 @@ global:
       version: "PR-639"
     provisioner:
       dir:
-      version: "PR-646"
+      version: "PR-715"
     kyma_environment_broker:
       dir:
-      version: "PR-655"
+      version: "PR-701"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-627"
+      version: "PR-723"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-627"
+      version: "PR-723"
     subscription_cleanup_job:
       dir:
       version: "PR-568"
-    metris:
-      dir:
-      version: "PR-376"
     kyma_metrics_collector:
       dir:
-      version: "PR-583"
+      version: "26c3f6a3"
     tests:
       provisioner:
         dir:
         version: "PR-650"
       e2e_provisioning:
         dir:
-        version: "PR-654"
+        version: "PR-724"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -53,6 +50,7 @@ global:
     script:
       configMapName: "kcp-auditlog-script"
     enableSeqHttp: false
+    disabled: false
 
   provisioning:
     enabled: false
@@ -125,9 +123,6 @@ global:
       dbPassword: ""
       provisionerDBName: ""
       brokerDBName: ""
-
-  metris:
-    enabled: false
 
   kyma_metrics_collector:
     enabled: false

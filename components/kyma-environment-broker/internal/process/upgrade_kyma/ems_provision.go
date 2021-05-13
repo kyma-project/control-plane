@@ -73,7 +73,7 @@ func (s *EmsUpgradeProvisionStep) Run(operation internal.UpgradeKymaOperation, l
 }
 
 func (s *EmsUpgradeProvisionStep) provision(smCli servicemanager.Client, operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	input := provisioning.GetEventingProvisioningData(operation.Ems)
+	input := provisioning.GetEventingProvisioningData(operation.Ems.Instance)
 	resp, err := smCli.Provision(operation.Ems.Instance.BrokerID, *input, true)
 	if err != nil {
 		return s.handleError(operation, err, log, fmt.Sprintf("Provision() call failed for brokerID: %s; input: %#v", operation.Ems.Instance.BrokerID, input))

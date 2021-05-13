@@ -12,6 +12,7 @@ type Converter interface {
 	ApplyProvisioningOperation(dto *pkg.RuntimeDTO, pOpr *internal.ProvisioningOperation)
 	ApplyDeprovisioningOperation(dto *pkg.RuntimeDTO, dOpr *internal.DeprovisioningOperation)
 	ApplyUpgradingKymaOperations(dto *pkg.RuntimeDTO, oprs []internal.UpgradeKymaOperation, totalCount int)
+	ApplyUpgradingClusterOperations(dto *pkg.RuntimeDTO, oprs []internal.UpgradeClusterOperation, totalCount int)
 	ApplySuspensionOperations(dto *pkg.RuntimeDTO, oprs []internal.DeprovisioningOperation)
 	ApplyUnsuspensionOperations(dto *pkg.RuntimeDTO, oprs []internal.ProvisioningOperation)
 }
@@ -95,6 +96,19 @@ func (c *converter) ApplyUpgradingKymaOperations(dto *pkg.RuntimeDTO, oprs []int
 		c.applyOperation(&o.Operation, &op)
 		dto.Status.UpgradingKyma.Data = append(dto.Status.UpgradingKyma.Data, op)
 	}
+}
+
+func (c *converter) ApplyUpgradingClusterOperations(dto *pkg.RuntimeDTO, oprs []internal.UpgradeClusterOperation, totalCount int) {
+	dto.Status.UpgradingCluser.Data = make([]pkg.Operation, 0)
+
+	for _, o := range oprs {
+		op := pkg.Operation{}
+		c.applyOperation(&o.Operation, &op)
+		dto.Status.UpgradingCluser.Data = append(dto.Status.UpgradingCluser.Data, op)
+	}
+
+	dto.Status.UpgradingCluser.TotalCount = totalCount
+	dto.Status.UpgradingCluser.Count = len(dto.Status.UpgradingCluser.Data)
 }
 
 func (c *converter) ApplySuspensionOperations(dto *pkg.RuntimeDTO, oprs []internal.DeprovisioningOperation) {

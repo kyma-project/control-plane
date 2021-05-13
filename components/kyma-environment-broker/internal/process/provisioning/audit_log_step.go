@@ -37,6 +37,11 @@ func NewAuditLogOverridesStep(fileSystem afero.Fs, os storage.Operations, cfg au
 }
 
 func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	if alo.auditLogConfig.Disabled {
+		logger.Infof("Skipping appending auditlog overrides")
+		operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{})
+		return operation, 0, nil
+	}
 	luaScript, err := alo.readFile("/auditlog-script/script")
 	if err != nil {
 		logger.Errorf("Unable to read audit config script: %v", err)
@@ -70,44 +75,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
 	}
 
 	operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{
-		{Key: "fluent-bit.conf.script", Value: replaceTenantID},
 		{Key: "fluent-bit.config.script", Value: replaceTenantID},
-		{Key: "fluent-bit.conf.extra", Value: fmt.Sprintf(`
-[INPUT]
-		Name              tail
-		Tag               dex.*
-		Path              /var/log/containers/*_dex-*.log
-		DB                /var/log/flb_kube_dex.db
-		parser            docker
-		Mem_Buf_Limit     5MB
-		Skip_Long_Lines   On
-		Refresh_Interval  10
-[FILTER]
-		Name    lua
-		Match   dex.*
-		script  script.lua
-		call    reformat
-[FILTER]
-		Name    grep
-		Match   dex.*
-		Regex   time .*
-[FILTER]
-		Name    grep
-		Match   dex.*
-		Regex   data .*\"xsuaa
-[OUTPUT]
-		Name             %s
-		Match            dex.*
-		Retry_Limit      False
-		Host             %s
-		Port             %s
-		URI              %ssecurity-events
-		Header           Content-Type application/json
-		HTTP_User        %s
-		HTTP_Passwd      %s
-		Format           json_stream
-		tls              on
-`, fluentbitPlugin, auditLogHost, auditLogPort, u.Path, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
 		{Key: "fluent-bit.config.extra", Value: fmt.Sprintf(`
 [INPUT]
     Name              tail
@@ -139,11 +107,13 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
     Port             %s
     URI              %ssecurity-events
     Header           Content-Type application/json
-    HTTP_User        %s
-    HTTP_Passwd      %s
+    HTTP_User        ${AUDITLOG_USER}
+    HTTP_Passwd      ${AUDITLOG_PASSWD}
     Format           json_stream
     tls              on
-`, fluentbitPlugin, auditLogHost, auditLogPort, u.Path, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
+`, fluentbitPlugin, auditLogHost, auditLogPort, u.Path)},
+		{Key: "fluent-bit.config.secrets.AUDITLOG_USER", Value: fmt.Sprintf(`%s`, alo.auditLogConfig.User)},
+		{Key: "fluent-bit.config.secrets.AUDITLOG_PASSWD", Value: fmt.Sprintf(`%s`, alo.auditLogConfig.Password)},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},
 		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf(`- %s`, auditLogHost)},
 		{Key: "fluent-bit.externalServiceEntry.ports", Value: fmt.Sprintf(`- number: %s

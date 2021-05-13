@@ -115,10 +115,14 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 	switch {
 	case err == nil:
 		if operation.State == orchestration.Pending {
+			details, err := instance.GetInstanceDetails()
+			if err != nil {
+				return s.operationManager.OperationFailed(operation, "unable to provide instance details", log)
+			}
 			log.Info("Setting state 'in progress' and refreshing instance details")
 			operation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
 				operation.State = domain.InProgress
-				operation.InstanceDetails = instance.InstanceDetails
+				operation.InstanceDetails = details
 			}, log)
 			if retry > 0 {
 				return operation, retry, nil
@@ -157,6 +161,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
 	if err != nil {
+		log.Errorf("call to provisioner RuntimeOperationStatus failed: %s", err.Error())
 		return operation, 1 * time.Minute, nil
 	}
 	log.Infof("call to provisioner returned %s status", status.State.String())
@@ -172,9 +177,9 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 	case gqlschema.OperationStateSucceeded:
 		{
 			if !broker.IsTrialPlan(planID) {
-				hypType, err := hyperscaler.HyperscalerTypeForPlanID(planID)
+				hypType, err := hyperscaler.HyperscalerTypeForPlanID(operation.ProvisioningParameters)
 				if err != nil {
-					log.Errorf("after successful deprovisioning failing to hyperscaler release subscription - determine the type of Hyperscaler to use for planID: %s", planID)
+					log.Errorf("after successful deprovisioning failing to hyperscaler release subscription - determine the type of Hyperscaler to use for planID [%s]: %s", planID, err.Error())
 					return operation, 0, nil
 				}
 

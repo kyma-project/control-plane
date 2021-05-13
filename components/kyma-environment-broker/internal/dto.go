@@ -18,6 +18,8 @@ type ProvisioningParameters struct {
 	//  - `Platform` is a place where KEB is registered and which later sends request to KEB.
 	//  - `Region` value is use e.g. for billing integration such as EDP.
 	PlatformRegion string `json:"platform_region"`
+
+	PlatformProvider CloudProvider `json:"platform_provider"`
 }
 
 func (p ProvisioningParameters) IsEqual(input ProvisioningParameters) bool {
@@ -41,12 +43,13 @@ func (p ProvisioningParameters) IsEqual(input ProvisioningParameters) bool {
 	return true
 }
 
-type TrialCloudProvider string
+type CloudProvider string
 
 const (
-	Azure TrialCloudProvider = "Azure"
-	AWS   TrialCloudProvider = "AWS"
-	Gcp   TrialCloudProvider = "GCP"
+	Azure           CloudProvider = "Azure"
+	AWS             CloudProvider = "AWS"
+	Gcp             CloudProvider = "GCP"
+	UnknownProvider CloudProvider = "unknown"
 )
 
 type ProvisioningParametersDTO struct {
@@ -61,6 +64,7 @@ type ProvisioningParametersDTO struct {
 	// with "provisioning-runtime-override" label when LicenceType is "TestDevelopmentAndDemo"
 	LicenceType                 *string  `json:"licence_type"`
 	Zones                       []string `json:"zones"`
+	ZonesCount                  *int     `json:"zonesCount"`
 	AutoScalerMin               *int     `json:"autoScalerMin"`
 	AutoScalerMax               *int     `json:"autoScalerMax"`
 	MaxSurge                    *int     `json:"maxSurge"`
@@ -68,7 +72,7 @@ type ProvisioningParametersDTO struct {
 	OptionalComponentsToInstall []string `json:"components"`
 	KymaVersion                 string   `json:"kymaVersion"`
 	//Provider - used in Trial plan to determine which cloud provider to use during provisioning
-	Provider *TrialCloudProvider `json:"provider"`
+	Provider *CloudProvider `json:"provider"`
 }
 
 type ERSContext struct {

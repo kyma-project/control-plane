@@ -23,7 +23,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/lms"
 	kebOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
@@ -31,6 +30,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_cluster"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	kebRuntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeoverrides"
@@ -64,9 +64,15 @@ const (
 	brokerID               = "fake-broker-id"
 	emsOfferingID          = "ems-fake-id"
 	operationID            = "provisioning-op-id"
+	deprovisioningOpID     = "deprovisioning-op-id"
 	instanceID             = "instance-id"
 	smRegion               = "eu"
 	dbSecretKey            = "1234567890123456"
+
+	subscriptionNameRegular = "regular"
+	subscriptionNameShared  = "shared"
+
+	pollingInterval = 3 * time.Millisecond
 )
 
 type OrchestrationSuite struct {
@@ -87,6 +93,8 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	var cfg Config
 	cfg.Ems.Disabled = true
 	cfg.Ems.SkipDeprovisionAzureEventingAtUpgrade = true
+	cfg.Connectivity.Disabled = true
+	cfg.AuditLog.Disabled = false
 	cfg.AuditLog = auditlog.Config{
 		URL:           "https://host1:8080/aaa/v2/",
 		User:          "fooUser",
@@ -115,7 +123,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		Timeout:                     time.Minute,
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"})
+	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders)
 	require.NoError(t, err)
 
 	ctx, _ := context.WithTimeout(context.Background(), 20*time.Minute)
@@ -170,19 +178,13 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 }
 
 type RuntimeOptions struct {
-	GlobalAccountID string
-	SubAccountID    string
-	PlatformRegion  string
-	Region          string
-}
-
-func (o *RuntimeOptions) ProvideRegion() *string {
-	if o.Region != "" {
-		return &o.Region
-	} else {
-		r := "westeurope"
-		return &r
-	}
+	GlobalAccountID  string
+	SubAccountID     string
+	PlatformProvider internal.CloudProvider
+	PlatformRegion   string
+	Region           string
+	PlanID           string
+	ZonesCount       *int
 }
 
 func (o *RuntimeOptions) ProvideGlobalAccountID() string {
@@ -202,17 +204,38 @@ func (o *RuntimeOptions) ProvideSubAccountID() string {
 }
 
 func (o *RuntimeOptions) ProvidePlatformRegion() string {
-	if o.PlatformRegion != "" {
+	if o.PlatformProvider != "" {
 		return o.PlatformRegion
 	} else {
 		return "cf-eu10"
 	}
 }
 
+func (o *RuntimeOptions) ProvideRegion() *string {
+	if o.Region != "" {
+		return &o.Region
+	} else {
+		r := "westeurope"
+		return &r
+	}
+}
+
+func (o *RuntimeOptions) ProvidePlanID() string {
+	if o.PlanID == "" {
+		return broker.AzurePlanID
+	} else {
+		return o.PlanID
+	}
+}
+
+func (o *RuntimeOptions) ProvideZonesCount() *int {
+	return o.ZonesCount
+}
+
 func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) string {
-	planID := broker.AzurePlanID
-	planName := broker.AzurePlanName
 	runtimeID := uuid.New().String()
+	planID := options.ProvidePlanID()
+	planName := broker.AzurePlanName
 	globalAccountID := options.ProvideGlobalAccountID()
 	subAccountID := options.ProvideSubAccountID()
 	instanceID := uuid.New().String()
@@ -236,7 +259,7 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 		GlobalAccountID: globalAccountID,
 		SubAccountID:    subAccountID,
 		Parameters:      provisioningParameters,
-		ProviderRegion:  *options.ProvideRegion(),
+		ProviderRegion:  options.ProvidePlatformRegion(),
 		InstanceDetails: internal.InstanceDetails{
 			RuntimeID: runtimeID,
 		},
@@ -266,7 +289,7 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 			},
 		},
 		Spec: gardenerapi.ShootSpec{
-			Region: *options.ProvideRegion(),
+			Region: options.ProvidePlatformRegion(),
 			Maintenance: &gardenerapi.Maintenance{
 				TimeWindow: &gardenerapi.MaintenanceTimeWindow{
 					Begin: "030000+0000",
@@ -361,7 +384,11 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 			Namespace: "kcp-system",
 			Labels: map[string]string{
 				fmt.Sprintf("overrides-version-%s", defaultKymaVersion): "true",
-				"overrides-plan-azure": "true",
+				"overrides-plan-azure":    "true",
+				"overrides-plan-trial":    "true",
+				"overrides-plan-aws":      "true",
+				"overrides-plan-free":     "true",
+				"overrides-plan-azure_ha": "true",
 			},
 		},
 		Data: map[string]string{
@@ -416,7 +443,8 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 		Timeout:                     time.Minute,
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"})
+	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders)
+
 	require.NoError(t, err)
 
 	sch := runtime.NewScheme()
@@ -445,32 +473,29 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	iasFakeClient := ias.NewFakeClient()
 	bundleBuilder := ias.NewBundleBuilder(iasFakeClient, cfg.IAS)
 
-	iasTypeSetter := provisioning.NewIASType(bundleBuilder, cfg.IAS.Disabled)
-
-	lmsClient := lms.NewFakeClient(1 * time.Second)
-	lmsTenantManager := lms.NewTenantManager(db.LMSTenants(), lmsClient, logs)
-
 	edpClient := edp.NewFakeClient()
 
 	accountProvider := fixAccountProvider()
 
 	smcf := fixServiceManagerFactory()
 
-	directorClient := director.NewFakeClient(dashboardURL)
+	directorClient := director.NewFakeClient()
 
 	eventBroker := event.NewPubSub(logs)
 
 	// switch to StagedManager when the feature is enabled
-	provisionStagedManager := provisioning.NewStagedManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
 
-	provisionManager := provisioning.NewManager(db.Operations(), eventBroker, logs.WithField("provisioning", "manager"))
-	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, smcf, bundleBuilder, iasTypeSetter, lmsClient, lmsTenantManager, edpClient, accountProvider, inMemoryFs, logs)
+	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
+	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
+		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
+		runtimeOverrides, smcf, bundleBuilder, edpClient, accountProvider, inMemoryFs, logs)
 
-	provisioningQueue.SpeedUp(1000)
+	provisioningQueue.SpeedUp(10000)
+	provisionManager.SpeedUp(10000)
 
 	return &ProvisioningSuite{
 		provisionerClient:   provisionerClient,
-		provisioningManager: provisionStagedManager,
+		provisioningManager: provisionManager,
 		provisioningQueue:   provisioningQueue,
 		storage:             db,
 		directorClient:      directorClient,
@@ -482,7 +507,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 	provisioningParameters := internal.ProvisioningParameters{
-		PlanID: broker.AzurePlanID,
+		PlanID: options.ProvidePlanID(),
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,
 			SubAccountID:    options.ProvideSubAccountID(),
@@ -496,9 +521,10 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 				},
 			},
 		},
-		PlatformRegion: options.ProvidePlatformRegion(),
+		PlatformProvider: options.PlatformProvider,
 		Parameters: internal.ProvisioningParametersDTO{
-			Region: options.ProvideRegion(),
+			Region:     options.ProvideRegion(),
+			ZonesCount: options.ProvideZonesCount(),
 		},
 	}
 
@@ -508,6 +534,8 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 	require.NoError(s.t, err)
 	operation.ShootName = shootName
 	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, "garden-dummy", strings.Trim("kyma.io", "."))
+	operation.DashboardURL = dashboardURL
+	operation.State = orchestration.Pending
 
 	err = s.storage.Operations().InsertProvisioningOperation(operation)
 	require.NoError(s.t, err)
@@ -528,9 +556,62 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 	return operation.ID
 }
 
+func (s *ProvisioningSuite) CreateUnsuspension(options RuntimeOptions) string {
+	provisioningParameters := internal.ProvisioningParameters{
+		PlanID: options.ProvidePlanID(),
+		ErsContext: internal.ERSContext{
+			GlobalAccountID: globalAccountID,
+			SubAccountID:    options.ProvideSubAccountID(),
+			ServiceManager: &internal.ServiceManagerEntryDTO{
+				URL: "sm_url",
+				Credentials: internal.ServiceManagerCredentials{
+					BasicAuth: internal.ServiceManagerBasicAuth{
+						Username: "sm_username",
+						Password: "sm_password",
+					},
+				},
+			},
+		},
+		PlatformRegion: options.ProvidePlatformRegion(),
+		Parameters: internal.ProvisioningParametersDTO{
+			Region: options.ProvideRegion(),
+		},
+	}
+
+	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
+	operation.State = orchestration.Pending
+	// in the real processing the URL is set in the handler
+	operation.DashboardURL = dashboardURL
+	require.NoError(s.t, err)
+
+	err = s.storage.Operations().InsertProvisioningOperation(operation)
+	require.NoError(s.t, err)
+
+	instance := &internal.Instance{
+		InstanceID:      instanceID,
+		GlobalAccountID: globalAccountID,
+		SubAccountID:    "dummy-sa",
+		ServiceID:       provisioningParameters.ServiceID,
+		ServiceName:     broker.KymaServiceName,
+		ServicePlanID:   provisioningParameters.PlanID,
+		ServicePlanName: broker.AzurePlanName,
+		DashboardURL:    dashboardURL,
+		Parameters:      operation.ProvisioningParameters,
+	}
+	err = s.storage.Instances().Insert(*instance)
+
+	suspensionOp := internal.NewSuspensionOperationWithID("susp-id", instance)
+	suspensionOp.CreatedAt = time.Now().AddDate(0, 0, -10)
+	suspensionOp.State = domain.Succeeded
+	s.storage.Operations().InsertDeprovisioningOperation(suspensionOp)
+
+	s.provisioningQueue.Add(operation.ID)
+	return operation.ID
+}
+
 func (s *ProvisioningSuite) WaitForProvisioningState(operationID string, state domain.LastOperationState) {
 	var op *internal.ProvisioningOperation
-	err := wait.PollImmediate(100*time.Millisecond, 2*time.Second, func() (done bool, err error) {
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
 		return op.State == state, nil
 	})
@@ -539,7 +620,7 @@ func (s *ProvisioningSuite) WaitForProvisioningState(operationID string, state d
 
 func (s *ProvisioningSuite) FinishProvisioningOperationByProvisioner(operationID string) {
 	var op *internal.ProvisioningOperation
-	err := wait.PollImmediate(100*time.Millisecond, 2*time.Second, func() (done bool, err error) {
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
 		if op.RuntimeID != "" {
 			return true, nil
@@ -554,7 +635,7 @@ func (s *ProvisioningSuite) FinishProvisioningOperationByProvisioner(operationID
 func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID string) {
 	// wait until ProvisioningOperation reaches CreateRuntime step
 	var provisioningOp *internal.ProvisioningOperation
-	err := wait.Poll(100*time.Millisecond, 2*time.Second, func() (bool, error) {
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		op, err := s.storage.Operations().GetProvisioningOperationByID(operationID)
 		assert.NoError(s.t, err)
 		if op.ProvisionerOperationID != "" {
@@ -566,7 +647,7 @@ func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID str
 	assert.NoError(s.t, err)
 
 	var status gqlschema.OperationStatus
-	err = wait.Poll(100*time.Millisecond, 2*time.Second, func() (bool, error) {
+	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status = s.provisionerClient.FindOperationByRuntimeIDAndType(provisioningOp.RuntimeID, gqlschema.OperationTypeProvision)
 		if status.ID != nil {
 			return true, nil
@@ -577,16 +658,16 @@ func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID str
 	assert.Equal(s.t, gqlschema.OperationStateInProgress, status.State)
 }
 
-func (s *ProvisioningSuite) AssertAllStepsFinished(operationID string) {
+func (s *ProvisioningSuite) AssertAllStagesFinished(operationID string) {
 	operation, _ := s.storage.Operations().GetProvisioningOperationByID(operationID)
-	steps := s.provisioningManager.GetAllSteps()
-	for _, step := range steps {
-		assert.True(s.t, operation.IsStepDone(step.Name()))
+	steps := s.provisioningManager.GetAllStages()
+	for _, stage := range steps {
+		assert.True(s.t, operation.IsStageFinished(stage))
 	}
 }
 
 func (s *ProvisioningSuite) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
-	err := wait.Poll(100*time.Millisecond, 2*time.Second, func() (bool, error) {
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
 			s.provisionerClient.FinishProvisionerOperation(*status.ID)
@@ -597,20 +678,80 @@ func (s *ProvisioningSuite) finishOperationByProvisioner(operationType gqlschema
 	assert.NoError(s.t, err, "timeout waiting for provisioner operation to exist")
 }
 
-func (s *ProvisioningSuite) AssertDirectorGrafanaTag(operationID string) {
-	op, err := s.storage.Operations().GetOperationByID(operationID)
-	assert.NoError(s.t, err)
-	val, exists := s.directorClient.GetLabel(globalAccountID, op.RuntimeID, "operator_grafanaUrl")
-	assert.True(s.t, exists)
-	assert.Equal(s.t, "http://grafana.garden-dummy.kyma.io", val)
-}
-
 func (s *ProvisioningSuite) AssertProvisioningRequest() {
-	input := s.provisionerClient.GetProvisionRuntimeInput(0)
+	input := s.fetchProvisionInput()
 
 	labels := *input.RuntimeInput.Labels
 	assert.Equal(s.t, instanceID, labels["broker_instance_id"])
 	assert.Contains(s.t, labels, "global_subaccount_id")
+	assert.NotEmpty(s.t, input.ClusterConfig.GardenerConfig.Name)
+}
+
+func (s *ProvisioningSuite) AssertKymaProfile(expectedProfile gqlschema.KymaProfile) {
+	input := s.fetchProvisionInput()
+
+	assert.Equal(s.t, expectedProfile, *input.KymaConfig.Profile)
+}
+
+func (s *ProvisioningSuite) AssertProvider(provider string) {
+	input := s.fetchProvisionInput()
+
+	assert.Equal(s.t, provider, input.ClusterConfig.GardenerConfig.Provider)
+}
+
+func (s *ProvisioningSuite) fetchProvisionInput() gqlschema.ProvisionRuntimeInput {
+	input := s.provisionerClient.GetProvisionRuntimeInput(0)
+	return input
+}
+
+func (s *ProvisioningSuite) AssertMinimalNumberOfNodes(nodes int) {
+	input := s.fetchProvisionInput()
+
+	assert.Equal(s.t, nodes, input.ClusterConfig.GardenerConfig.AutoScalerMin)
+}
+
+func (s *ProvisioningSuite) AssertMaximumNumberOfNodes(nodes int) {
+	input := s.fetchProvisionInput()
+
+	assert.Equal(s.t, nodes, input.ClusterConfig.GardenerConfig.AutoScalerMax)
+}
+
+func (s *ProvisioningSuite) AssertMachineType(machineType string) {
+	input := s.fetchProvisionInput()
+
+	assert.Equal(s.t, machineType, input.ClusterConfig.GardenerConfig.MachineType)
+}
+
+func (s *ProvisioningSuite) AssertZonesCount(zonesCount *int, planID string) {
+	input := s.fetchProvisionInput()
+
+	switch planID {
+	case broker.AzureHAPlanID:
+		if zonesCount != nil {
+			// zonesCount was provided in provisioning request
+			assert.Equal(s.t, *zonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
+			break
+		}
+		// zonesCount was not provided, should use default value
+		assert.Equal(s.t, provider.DefaultAzureHAZonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
+	default:
+	}
+}
+
+func (s *ProvisioningSuite) AssertSharedSubscription(shared bool) {
+	input := s.fetchProvisionInput()
+	secretName := input.ClusterConfig.GardenerConfig.TargetSecret
+	if shared {
+		assert.Equal(s.t, secretName, subscriptionNameShared)
+	} else {
+		assert.Equal(s.t, secretName, subscriptionNameRegular)
+	}
+}
+
+func (s *ProvisioningSuite) MarkDirectorWithConsoleURL(operationID string) {
+	op, err := s.storage.Operations().GetProvisioningOperationByID(operationID)
+	assert.NoError(s.t, err)
+	s.directorClient.SetConsoleURL(op.RuntimeID, op.DashboardURL)
 }
 
 func fixConfig() *Config {
@@ -637,15 +778,16 @@ func fixConfig() *Config {
 		KymaVersion: "1.21",
 		Broker:      broker.Config{},
 		Avs:         avs.Config{},
-		LMS:         lms.Config{},
 		IAS: ias.Config{
 			IdentityProvider: ias.FakeIdentityProviderName,
 		},
+		FreemiumProviders: []string{"aws", "azure"},
 	}
 }
 
 func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 	accountProvider := hyperscalerautomock.AccountProvider{}
+
 	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
 		HyperscalerType: hyperscaler.Azure,
 		CredentialData: map[string][]byte{
@@ -654,7 +796,50 @@ func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 			"clientSecret":   []byte("clientSecret"),
 			"tenantID":       []byte("tenantID"),
 		},
+		Name: subscriptionNameRegular,
 	}, nil)
+
+	accountProvider.On("GardenerCredentials", hyperscaler.GCP, mock.Anything).Return(hyperscaler.Credentials{
+		HyperscalerType: hyperscaler.GCP,
+		CredentialData: map[string][]byte{
+			"subscriptionID": []byte("subscriptionID"),
+			"clientID":       []byte("clientID"),
+			"clientSecret":   []byte("clientSecret"),
+			"tenantID":       []byte("tenantID"),
+		},
+		Name: subscriptionNameRegular,
+	}, nil)
+	accountProvider.On("GardenerCredentials", hyperscaler.Openstack, mock.Anything).Return(hyperscaler.Credentials{
+		HyperscalerType: hyperscaler.Openstack,
+		CredentialData: map[string][]byte{
+			"subscriptionID": []byte("subscriptionID"),
+			"clientID":       []byte("clientID"),
+			"clientSecret":   []byte("clientSecret"),
+			"tenantID":       []byte("tenantID"),
+		},
+		Name: subscriptionNameRegular,
+	}, nil)
+	accountProvider.On("GardenerCredentials", hyperscaler.AWS, mock.Anything).Return(hyperscaler.Credentials{
+		HyperscalerType: hyperscaler.AWS,
+		CredentialData: map[string][]byte{
+			"subscriptionID": []byte("subscriptionID"),
+			"clientID":       []byte("clientID"),
+			"clientSecret":   []byte("clientSecret"),
+			"tenantID":       []byte("tenantID"),
+		},
+		Name: subscriptionNameRegular,
+	}, nil)
+	accountProvider.On("GardenerSharedCredentials", hyperscaler.Azure).Return(hyperscaler.Credentials{
+		HyperscalerType: hyperscaler.Azure,
+		CredentialData: map[string][]byte{
+			"subscriptionID": []byte("subscriptionID"),
+			"clientID":       []byte("clientID"),
+			"clientSecret":   []byte("clientSecret"),
+			"tenantID":       []byte("tenantID"),
+		},
+		Name: subscriptionNameShared,
+	}, nil)
+	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.Azure, mock.Anything).Return(nil)
 	return &accountProvider
 }
 
@@ -671,6 +856,12 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 			CatalogID: servicemanager.FakeEmsServiceID,
 			BrokerID:  brokerID,
 		},
+		{
+			ID:        "connectivity-oferring-id",
+			Name:      provisioning.ConnectivityOfferingName,
+			CatalogID: "connectivity-service-id",
+			BrokerID:  brokerID,
+		},
 	}, []types.ServicePlan{{
 		ID:        "xsuaa-plan-id",
 		Name:      "application",
@@ -680,6 +871,11 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 			ID:        "ems-plan-id",
 			Name:      provisioning.EmsPlanName,
 			CatalogID: provisioning.EmsPlanName,
+		},
+		{
+			ID:        "connectivity-plan-id",
+			Name:      provisioning.ConnectivityPlanName,
+			CatalogID: provisioning.ConnectivityPlanName,
 		},
 	})
 	smcf.SynchronousProvisioning()
