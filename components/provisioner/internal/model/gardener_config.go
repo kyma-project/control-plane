@@ -300,24 +300,37 @@ func NewAWSGardenerConfig(input *gqlschema.AWSProviderConfigInput) (*AWSGardener
 }
 
 func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
+	zones := make([]*gqlschema.AWSZone, 0)
+
+	for _, inputZone := range c.input.Zones {
+		zone := &gqlschema.AWSZone{
+			Name:         &inputZone.Name,
+			PublicCidr:   &inputZone.PublicCidr,
+			InternalCidr: &inputZone.InternalCidr,
+			WorkerCidr:   &inputZone.WorkerCidr,
+		}
+		zones = append(zones, zone)
+	}
+
 	return gqlschema.AWSProviderConfig{
-		Zones:        c.input.Zones,
-		VpcCidr:      &c.input.VpcCidr,
-		PublicCidr:   &c.input.PublicCidr,
-		InternalCidr: &c.input.InternalCidr,
+		Zones:   zones,
+		VpcCidr: &c.input.VpcCidr,
 	}
 }
 
 func (c AWSGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-	return updateShootConfig(gardenerConfig, shoot, c.input.Zones)
+	zoneNames := getAWSZonesNames(c.input.Zones)
+	return updateShootConfig(gardenerConfig, shoot, zoneNames)
 }
 
 func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 	shoot.Spec.CloudProfileName = "aws"
 
-	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, c.input.Zones)}
+	zoneNames := getAWSZonesNames(c.input.Zones)
 
-	awsInfra := NewAWSInfrastructure(gardenerConfig.WorkerCidr, c)
+	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, zoneNames)}
+
+	awsInfra := NewAWSInfrastructure(c)
 	jsonData, err := json.Marshal(awsInfra)
 	if err != nil {
 		return apperrors.Internal("error encoding infrastructure config: %s", err.Error())
@@ -485,4 +498,14 @@ func getMachineConfig(config GardenerConfig) gardener_types.Machine {
 		}
 	}
 	return machine
+
+}
+
+func getAWSZonesNames(zones []*gqlschema.AWSZoneInput) []string {
+	zoneNames := make([]string, 0)
+
+	for _, zone := range zones {
+		zoneNames = append(zoneNames, zone.Name)
+	}
+	return zoneNames
 }

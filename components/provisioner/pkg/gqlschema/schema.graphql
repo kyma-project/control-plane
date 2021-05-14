@@ -44,10 +44,8 @@ type AzureProviderConfig {
 }
 
 type AWSProviderConfig {
-    zones: [String!]!
+    zones: [AWSZone]!
     vpcCidr: String
-    publicCidr: String
-    internalCidr: String
 }
 
 type OpenStackProviderConfig {
@@ -55,6 +53,13 @@ type OpenStackProviderConfig {
     floatingPoolName: String!
     cloudProfileName: String!
     loadBalancerProvider: String!
+}
+
+type AWSZone {
+    name: String
+    publicCidr: String
+    internalCidr: String
+    workerCidr: String
 }
 
 type OIDCConfig {
@@ -222,10 +227,8 @@ input AzureProviderConfigInput {
 }
 
 input AWSProviderConfigInput {
-    zones: [String!]!        # Zones in which to create the cluster
     vpcCidr: String!        # Classless Inter-Domain Routing for the virtual public cloud
-    publicCidr: String!     # Classless Inter-Domain Routing for the public subnet
-    internalCidr: String!   # Classless Inter-Domain Routing for the private subnet
+    zones: [AWSZoneInput]! # Zones, in which to create the cluster, configuration
 }
 
 input OpenStackProviderConfigInput {
@@ -233,6 +236,13 @@ input OpenStackProviderConfigInput {
     floatingPoolName: String!     # FloatingPoolName name in which LoadBalancer FIPs should be created.
     cloudProfileName: String!     # Name of the target Cloud Profile
     loadBalancerProvider: String! # Name of load balancer provider, e.g. f5
+}
+
+input AWSZoneInput {
+    name: String!           # Zone name
+    publicCidr: String!     # Classless Inter-Domain Routing for the public subnet
+    internalCidr: String!   # Classless Inter-Domain Routing for the private subnet
+    workerCidr: String!     # Classless Inter-Domain Routing range for the nodes
 }
 
 input KymaConfigInput {
