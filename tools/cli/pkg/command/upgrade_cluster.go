@@ -34,6 +34,7 @@ Additional Kyma configurations to use for the upgrade are taken from Kyma Contro
 	}
 
 	cmd.cobraCmd = cobraCmd
+	cmd.UpgradeCommand.SetUpgradeOpts(cobraCmd)
 
 	return cobraCmd
 }
