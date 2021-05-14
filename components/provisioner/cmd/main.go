@@ -205,12 +205,12 @@ func main() {
 	hibernationQueue := queue.CreateHibernationQueue(cfg.HibernationTimeout, dbsFactory, directorClient, shootClient)
 
 	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
-	shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
-	exitOnError(err, "Failed to create Shoot controller.")
-	go func() {
-		err := shootController.StartShootController()
-		exitOnError(err, "Failed to start Shoot Controller")
-	}()
+	//shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
+	//exitOnError(err, "Failed to create Shoot controller.")
+	//go func() {
+	//	err := shootController.StartShootController()
+	//	exitOnError(err, "Failed to start Shoot Controller")
+	//}()
 
 	httpClient := newHTTPClient(false)
 	fileDownloader := release.NewFileDownloader(httpClient)
