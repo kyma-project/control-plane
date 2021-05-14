@@ -182,13 +182,13 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	shootHibernationQueue := queue.CreateHibernationQueue(testHibernationTimeouts(), dbsFactory, directorServiceMock, shootInterface)
 	shootHibernationQueue.Run(queueCtx.Done())
 
-	controler, err := gardener.NewShootController(mgr, dbsFactory, auditLogsConfigPath)
-	require.NoError(t, err)
-
-	go func() {
-		err := controler.StartShootController()
-		require.NoError(t, err)
-	}()
+	//controler, err := gardener.NewShootController(mgr, dbsFactory, auditLogsConfigPath)
+	//require.NoError(t, err)
+	//
+	//go func() {
+	//	err := controler.StartShootController()
+	//	require.NoError(t, err)
+	//}()
 
 	kymaConfig := fixKymaGraphQLConfigInput()
 	clusterConfigurations := newTestProvisioningConfigs()
