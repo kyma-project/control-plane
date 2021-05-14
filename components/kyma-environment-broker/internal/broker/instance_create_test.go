@@ -637,7 +637,7 @@ func fixRequestContext(t *testing.T, region string) context.Context {
 func fixRequestContextWithProvider(t *testing.T, region string, provider internal.CloudProvider) context.Context {
 	t.Helper()
 
-	var ctx context.Context
+	ctx := context.TODO()
 	ctx = middleware.AddRegionToCtx(ctx, region)
 	ctx = middleware.AddProviderToCtx(ctx, provider)
 	return ctx
