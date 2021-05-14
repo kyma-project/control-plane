@@ -99,7 +99,25 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	t.Run("should return next step when upgrade already in progress", func(t *testing.T) {
 		//given
 		installationClient := &installationMocks.Service{}
-		installationClient.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "upgrade in progress"})
+		installationClient.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "upgrade in progress", Recoverable: true})
+
+		upgradeStep := NewUpgradeKymaStep(installationClient, nextStageName, 0)
+
+		cluster := model.Cluster{Kubeconfig: util.StringPtr(kubeconfig)}
+
+		//when
+		result, err := upgradeStep.Run(cluster, model.Operation{}, logrus.New())
+
+		//then
+		require.NoError(t, err)
+		assert.Equal(t, nextStageName, result.Stage)
+	})
+
+	t.Run("should trigger upgrade when installation is in unrecoverable error state", func(t *testing.T) {
+		//given
+		installationClient := &installationMocks.Service{}
+		installationClient.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "error", Recoverable: false})
+		installationClient.On("TriggerUpgrade", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		upgradeStep := NewUpgradeKymaStep(installationClient, nextStageName, 0)
 

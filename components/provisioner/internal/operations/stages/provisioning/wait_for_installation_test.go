@@ -1,9 +1,11 @@
 package provisioning
 
 import (
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 
 	"github.com/kyma-incubator/hydroform/install/installation"
@@ -34,10 +36,10 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 		expectedDelay        time.Duration
 	}{
 		{
-			description: "should continue installation if Installation error occurred",
+			description: "should continue installation if recoverable Installation error occurred",
 			installationMockFunc: func(installationSvc *installationMocks.Service) {
 				installationSvc.On("CheckInstallationState", mock.AnythingOfType("*rest.Config")).
-					Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "error"})
+					Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "error", Recoverable: true})
 			},
 			expectedStage: model.WaitingForInstallation,
 			expectedDelay: 30 * time.Second,
@@ -101,6 +103,28 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 		// then
 		require.Error(t, err)
 		installationSvc.AssertExpectations(t)
+	})
+
+	t.Run("should return error if installation is in unrecoverable error state", func(t *testing.T) {
+		// given
+		installationSvc := &installationMocks.Service{}
+		installationSvc.On("CheckInstallationState", mock.AnythingOfType("*rest.Config")).
+			Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "error", Recoverable: false})
+
+		session := &mocks.WriteSession{}
+		session.On("UpdateOperationState", operation.ID, mock.AnythingOfType("string"),
+			operation.State, mock.AnythingOfType("time.Time")).Return(nil).Once()
+
+		waitForInstallationStep := NewWaitForInstallationStep(installationSvc, nextStageName, 10*time.Minute, session)
+
+		// when
+		_, err := waitForInstallationStep.Run(cluster, operation, logrus.New())
+
+		// then
+		require.Error(t, err)
+		assert.True(t, errors.As(err, &operations.NonRecoverableError{}))
+		installationSvc.AssertExpectations(t)
+		session.AssertExpectations(t)
 	})
 
 }
