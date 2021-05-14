@@ -13,19 +13,29 @@ type ProviderSpecificConfig interface {
 }
 
 type AWSProviderConfig struct {
-	Zones        []string `json:"zones"`
-	VpcCidr      *string  `json:"vpcCidr"`
-	PublicCidr   *string  `json:"publicCidr"`
-	InternalCidr *string  `json:"internalCidr"`
+	Zones   []*AWSZone `json:"zones"`
+	VpcCidr *string    `json:"vpcCidr"`
 }
 
 func (AWSProviderConfig) IsProviderSpecificConfig() {}
 
 type AWSProviderConfigInput struct {
-	Zones        []string `json:"zones"`
-	VpcCidr      string   `json:"vpcCidr"`
-	PublicCidr   string   `json:"publicCidr"`
-	InternalCidr string   `json:"internalCidr"`
+	VpcCidr string          `json:"vpcCidr"`
+	Zones   []*AWSZoneInput `json:"zones"`
+}
+
+type AWSZone struct {
+	Name         *string `json:"name"`
+	PublicCidr   *string `json:"publicCidr"`
+	InternalCidr *string `json:"internalCidr"`
+	WorkerCidr   *string `json:"workerCidr"`
+}
+
+type AWSZoneInput struct {
+	Name         string `json:"name"`
+	PublicCidr   string `json:"publicCidr"`
+	InternalCidr string `json:"internalCidr"`
+	WorkerCidr   string `json:"workerCidr"`
 }
 
 type AzureProviderConfig struct {
