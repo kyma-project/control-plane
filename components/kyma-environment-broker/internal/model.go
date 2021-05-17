@@ -127,6 +127,7 @@ func (i *Instance) GetInstanceDetails() (InstanceDetails, error) {
 		result.ShootName = shoot
 		result.ShootDomain = domain
 	}
+	result.RuntimeID = i.RuntimeID
 	return result, nil
 }
 
