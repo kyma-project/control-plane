@@ -272,3 +272,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 func fixTrialRegionMapping() map[string]string {
 	return map[string]string{}
 }
+
+func fixFreemiumProviders() []string {
+	return []string{"azure", "aws"}
+}
