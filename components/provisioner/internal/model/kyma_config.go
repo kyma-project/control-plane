@@ -76,3 +76,9 @@ const (
 	EvaluationProfile KymaProfile = "EVALUATION"
 	ProductionProfile KymaProfile = "PRODUCTION"
 )
+
+type ClusterAdministrator struct {
+	ID            string
+	ClusterId     *string
+	Administrator string
+}
