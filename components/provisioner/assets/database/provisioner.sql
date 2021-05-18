@@ -144,3 +144,12 @@ CREATE TABLE runtime_upgrade
     foreign key (pre_upgrade_kyma_config_id) REFERENCES kyma_config (id) ON DELETE CASCADE,
     foreign key (post_upgrade_kyma_config_id) REFERENCES kyma_config (id) ON DELETE CASCADE
 );
+
+-- Cluster administrators
+
+CREATE TABLE cluster_administrator
+(
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    cluster_id uuid NOT NULL,
+    administrator text NOT NULL
+);
