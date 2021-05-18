@@ -43,7 +43,7 @@ spec:
             - name: APP_BROKER_URL
               value: 'https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}'
             - name: APP_BROKER_PLAN_ID
-              value: "{{ .Values.e2e.free-aws.planID }}"
+              value: "{{ .Values.e2e.free_aws.planID }}"
             - name: APP_BROKER_CLIENT_NAME
               value: {{ include "kyma-env-broker.fullname" . | quote }}
             - name: APP_BROKER_TOKEN_URL
