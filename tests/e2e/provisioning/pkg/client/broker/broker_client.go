@@ -397,10 +397,10 @@ func (c *Client) warnOnError(do func() error) {
 	}
 }
 
-func (c *Client) baseURL() interface{} {
+func (c *Client) baseURL() string {
 	base := fmt.Sprintf("%s/oauth/", c.brokerConfig.URL)
 	if c.brokerConfig.Region == "" {
-		return fmt.Sprintf("%s/v2/", base)
+		return fmt.Sprintf("%s/v2", base)
 	}
-	return fmt.Sprintf("%s/%s/v2/", base, c.brokerConfig.Region)
+	return fmt.Sprintf("%s/%s/v2", base, c.brokerConfig.Region)
 }
