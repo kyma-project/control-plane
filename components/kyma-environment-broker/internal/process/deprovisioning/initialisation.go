@@ -65,7 +65,7 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 	if op.State == domain.Succeeded {
 		if op.Temporary {
 			log.Info("Removing RuntimeID from the instance")
-			err := s.removeRuntimeID(operation.InstanceID)
+			err := s.removeRuntimeID(operation)
 			if err != nil {
 				return operation, time.Second, err
 			}
@@ -218,15 +218,21 @@ func (s *InitialisationStep) removeUserID(operation internal.DeprovisioningOpera
 	}, log)
 }
 
-func (s *InitialisationStep) removeRuntimeID(instanceID string) error {
-	inst, err := s.instanceStorage.GetByID(instanceID)
+func (s *InitialisationStep) removeRuntimeID(op internal.DeprovisioningOperation) error {
+	inst, err := s.instanceStorage.GetByID(op.InstanceID)
 	if err != nil {
 		return err
 	}
 
 	// empty RuntimeID means there is no runtime in the Provisioner Domain
 	inst.RuntimeID = ""
-
 	_, err = s.instanceStorage.Update(*inst)
+	if err != nil {
+		return err
+	}
+
+	op.RuntimeID = ""
+	_, err = s.operationStorage.UpdateDeprovisioningOperation(op)
+
 	return err
 }
