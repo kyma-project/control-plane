@@ -57,7 +57,11 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, operation model.Ope
 			message := fmt.Sprintf("Installation error occurred: %s", installErr.Error())
 			logger.Warn(message)
 			s.saveInstallationState(message, logger, operation)
-			return operations.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
+			if installErr.Recoverable {
+				return operations.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
+			}
+
+			return operations.StageResult{}, operations.NewNonRecoverableError(err)
 		}
 
 		return operations.StageResult{}, fmt.Errorf("error: failed to check installation state: %s", err.Error())
