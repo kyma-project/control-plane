@@ -385,6 +385,36 @@ func TestOpenstack(t *testing.T) {
 
 }
 
+func Test_ClusterConfigToGraphQL(t *testing.T) {
+	tests := []struct {
+		name       string
+		givenInput gqlschema.ClusterConfigInput
+		expected   string
+	}{
+		{
+			name: "Cluster config with administrators",
+			givenInput: gqlschema.ClusterConfigInput{
+				Administrators: []*string{strPrt("test@test.pl")},
+			},
+			expected: `{
+		administrators: ["test@test.pl"],
+	}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := &Graphqlizer{}
+
+			// when
+			got, err := g.ClusterConfigToGraphQL(tt.givenInput)
+
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}
+
 func strPrt(s string) *string {
 	return &s
 }
