@@ -98,9 +98,12 @@ func (s *operations) ListProvisioningOperationsByInstanceID(instanceID string) (
 		}
 	}
 
-	s.sortProvisioningByCreatedAtDesc(operations)
+	if len(operations) != 0 {
+		s.sortProvisioningByCreatedAtDesc(operations)
+		return operations, nil
+	}
 
-	return operations, nil
+	return nil, dberr.NotFound("instance provisioning operations with instanceID %s not found", instanceID)
 }
 
 func (s *operations) InsertDeprovisioningOperation(operation internal.DeprovisioningOperation) error {
@@ -168,9 +171,12 @@ func (s *operations) ListDeprovisioningOperationsByInstanceID(instanceID string)
 		}
 	}
 
-	s.sortDeprovisioningByCreatedAtDesc(operations)
+	if len(operations) != 0 {
+		s.sortDeprovisioningByCreatedAtDesc(operations)
+		return operations, nil
+	}
 
-	return operations, nil
+	return nil, dberr.NotFound("instance deprovisioning operations with instanceID %s not found", instanceID)
 }
 
 func (s *operations) ListDeprovisioningOperations() ([]internal.DeprovisioningOperation, error) {
@@ -517,10 +523,14 @@ func (s *operations) ListUpgradeKymaOperationsByInstanceID(instanceID string) ([
 	defer s.mu.Unlock()
 
 	// Empty filter means get all
-	operations := s.filterUpgradeKyma("", dbmodel.OperationFilter{})
-	s.sortUpgradeKymaByCreatedAt(operations)
+	operations := s.filterUpgradeKymaByInstanceID(instanceID, dbmodel.OperationFilter{})
 
-	return operations, nil
+	if len(operations) != 0 {
+		s.sortUpgradeKymaByCreatedAt(operations)
+		return operations, nil
+	}
+
+	return nil, dberr.NotFound("instance upgrade operations with instanceID %s not found", instanceID)
 }
 
 func (s *operations) ListUpgradeClusterOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeClusterOperation, int, int, error) {
@@ -624,6 +634,22 @@ func (s *operations) filterUpgradeKyma(orchestrationID string, filter dbmodel.Op
 	operations := make([]internal.UpgradeKymaOperation, 0, len(s.upgradeKymaOperations))
 	for _, v := range s.upgradeKymaOperations {
 		if orchestrationID != "" && orchestrationID != v.OrchestrationID {
+			continue
+		}
+		if ok := matchFilter(string(v.State), filter.States, s.equalFilter); !ok {
+			continue
+		}
+
+		operations = append(operations, v)
+	}
+
+	return operations
+}
+
+func (s *operations) filterUpgradeKymaByInstanceID(instanceID string, filter dbmodel.OperationFilter) []internal.UpgradeKymaOperation {
+	operations := make([]internal.UpgradeKymaOperation, 0)
+	for _, v := range s.upgradeKymaOperations {
+		if instanceID != "" && instanceID != v.InstanceID {
 			continue
 		}
 		if ok := matchFilter(string(v.State), filter.States, s.equalFilter); !ok {
