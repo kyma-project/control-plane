@@ -29,8 +29,9 @@ const (
 )
 
 type OperatorRoleBinding struct {
-	L2SubjectName string `envconfig:"default=runtimeOperator"`
-	L3SubjectName string `envconfig:"default=runtimeAdmin"`
+	L2SubjectName                           string `envconfig:"default=runtimeOperator"`
+	L3SubjectName                           string `envconfig:"default=runtimeAdmin"`
+	CreationAdministratorClusterRoleBinding bool   `envconfig:"default=false"`
 }
 
 type CreateBindingsForOperatorsStep struct {
@@ -87,13 +88,15 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 			l3OperatorClusterRoleBindingRoleRefName,
 			groupKingSubject))
 
-	for i, administrator := range cluster.Administrators {
-		clusterRoleBindings = append(clusterRoleBindings,
-			buildClusterRoleBinding(
-				fmt.Sprintf("%s%d", administratorOperatorClusterRoleBindingName, i),
-				administrator,
-				administratorOperatorClusterRoleBindingRoleRefName,
-				userKingSubject))
+	if s.operatorRoleBindingConfig.CreationAdministratorClusterRoleBinding {
+		for i, administrator := range cluster.Administrators {
+			clusterRoleBindings = append(clusterRoleBindings,
+				buildClusterRoleBinding(
+					fmt.Sprintf("%s%d", administratorOperatorClusterRoleBindingName, i),
+					*administrator,
+					administratorOperatorClusterRoleBindingRoleRefName,
+					userKingSubject))
+		}
 	}
 
 	if err := createClusterRoleBindings(k8sClient.RbacV1().ClusterRoleBindings(), clusterRoleBindings...); err != nil {
