@@ -4,12 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 	"github.com/sirupsen/logrus"
 )
 
@@ -45,7 +48,10 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 	logger.Infof("Update asyncAllowed: %v", asyncAllowed)
 
 	instance, err := b.instanceStorage.GetByID(instanceID)
-	if err != nil {
+	if err != nil && dberr.IsNotFound(err) {
+		logger.Errorf("unable to get instance: %s", err.Error())
+		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusNotFound, fmt.Sprintf("could not execute update for instanceID %s", instanceID))
+	} else if err != nil {
 		logger.Errorf("unable to get instance: %s", err.Error())
 		return domain.UpdateServiceSpec{}, errors.New("unable to get instance")
 	}

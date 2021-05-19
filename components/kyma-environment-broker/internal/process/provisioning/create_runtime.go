@@ -47,6 +47,7 @@ func (s *CreateRuntimeStep) Name() string {
 
 func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if operation.RuntimeID != "" {
+		log.Infof("RuntimeID already set %s, skipping", operation.RuntimeID)
 		return operation, 0, nil
 	}
 	if time.Since(operation.UpdatedAt) > CreateRuntimeTimeout {

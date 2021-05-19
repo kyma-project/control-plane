@@ -1,7 +1,7 @@
 global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
-    cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.19.1-alpine-1de56388
+    cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.19.1-alpine-925b9ea9
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
@@ -9,16 +9,16 @@ global:
       version: "PR-639"
     provisioner:
       dir:
-      version: "PR-697"
+      version: "PR-730"
     kyma_environment_broker:
       dir:
-      version: "PR-663"
+      version: "PR-736"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-627"
+      version: "PR-723"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-627"
+      version: "PR-723"
     subscription_cleanup_job:
       dir:
       version: "PR-568"
@@ -31,7 +31,7 @@ global:
         version: "PR-650"
       e2e_provisioning:
         dir:
-        version: "PR-654"
+        version: "PR-724"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -50,6 +50,7 @@ global:
     script:
       configMapName: "kcp-auditlog-script"
     enableSeqHttp: false
+    disabled: false
 
   provisioning:
     enabled: false

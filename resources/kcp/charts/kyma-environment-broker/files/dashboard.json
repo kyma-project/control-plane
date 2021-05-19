@@ -50,6 +50,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "mappings": [
             {
@@ -60,7 +63,6 @@
               "value": "null"
             }
           ],
-          "nullValueMode": "connected",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -109,9 +111,10 @@
           "fields": "",
           "values": false
         },
+        "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": "SUM(compass_keb_instances_total{service=\"kcp-kyma-environment-broker\"})",
@@ -129,6 +132,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "mappings": [],
           "thresholds": {
@@ -172,9 +178,10 @@
           "fields": "",
           "values": false
         },
-        "showUnfilled": true
+        "showUnfilled": true,
+        "text": {}
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": "topk(16, compass_keb_global_account_id_instances_total{service=\"kcp-kyma-environment-broker\"})",
@@ -195,6 +202,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "mappings": [
             {
@@ -205,7 +215,6 @@
               "value": "null"
             }
           ],
-          "nullValueMode": "connected",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -254,9 +263,10 @@
           "fields": "",
           "values": false
         },
+        "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": "count(compass_keb_global_account_id_instances_total{service=\"kcp-kyma-environment-broker\"})",
@@ -283,6 +293,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "mappings": [],
           "thresholds": {
@@ -344,9 +357,10 @@
           "fields": "",
           "values": false
         },
+        "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -402,6 +416,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "mappings": [],
           "thresholds": {
@@ -463,9 +480,10 @@
           "fields": "",
           "values": false
         },
+        "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -523,19 +541,9 @@
         "defaults": {
           "custom": {},
           "links": [],
-          "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
+            "steps": []
           }
         },
         "overrides": []
@@ -570,7 +578,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -683,7 +691,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "pointradius": 1,
       "points": true,
       "renderer": "flot",
@@ -779,7 +787,7 @@
         "y": 21
       },
       "hiddenSeries": false,
-      "id": 83,
+      "id": 117,
       "legend": {
         "avg": false,
         "current": false,
@@ -796,7 +804,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -806,9 +814,9 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg_over_time((sum(compass_keb_provisioning_duration_minutes_sum{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"})/ sum(compass_keb_provisioning_duration_minutes_count{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"}))[1h:5m])",
+          "expr": "avg_over_time((sum(compass_keb_provisioning_duration_minutes_sum{plan_id=\"361c511f-f939-4621-b228-d0fb79a1fe15\"})/ sum(compass_keb_provisioning_duration_minutes_count{plan_id=\"361c511f-f939-4621-b228-d0fb79a1fe15\"}))[1h:5m])",
           "interval": "",
-          "legendFormat": "azure",
+          "legendFormat": "aws",
           "refId": "A"
         }
       ],
@@ -816,7 +824,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "[azure] avg provisioning time over time",
+      "title": "[aws] avg provisioning time over time",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -894,7 +902,632 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "delta(compass_keb_operations_aws_provisioning_failed_total[1h])",
+          "interval": "",
+          "legendFormat": "azure",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "[aws] provisioning failure count",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:116",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:117",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 4,
+        "w": 9,
+        "x": 15,
+        "y": 21
+      },
+      "hiddenSeries": false,
+      "id": 118,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.4.0",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "delta(compass_keb_operations_aws_provisioning_failed_total[1h])",
+          "interval": "",
+          "legendFormat": "azure",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "[aws] provisioning failure count",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:116",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:117",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 25
+      },
+      "id": 120,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
+      },
+      "pluginVersion": "7.4.0",
+      "targets": [
+        {
+          "expr": "sum(increase(compass_keb_operations_aws_provisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_aws_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_aws_provisioning_failed_total[1h]))) > 0) *100",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(increase(compass_keb_operations_aws_deprovisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_aws_deprovisioning_succeeded_total[1h]) + increase(compass_keb_operations_aws_deprovisioning_failed_total[1h]))) >0) *100",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[aws] provisioning/deprovisioning failure rate",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 18,
+        "x": 6,
+        "y": 25
+      },
+      "id": 108,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
+      },
+      "pluginVersion": "7.4.0",
+      "targets": [
+        {
+          "expr": "sum(increase(compass_keb_operations_aws_provisioning_succeeded_total[1h])) / (sum((increase(compass_keb_operations_aws_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_aws_provisioning_failed_total[1h]))) > 0) *100",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(increase(compass_keb_operations_aws_deprovisioning_succeeded_total[1h])) / (sum((increase(compass_keb_operations_aws_deprovisioning_succeeded_total[1h]) + increase(compass_keb_operations_aws_deprovisioning_failed_total[1h]))) >0) *100",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[aws] provisioning/deprovisioning success rate",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "m"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 29
+      },
+      "id": 122,
+      "options": {
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "min"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
+      },
+      "pluginVersion": "7.4.0",
+      "targets": [
+        {
+          "expr": "min(compass_keb_provisioning_duration_minutes_sum{plan_id=\"361c511f-f939-4621-b228-d0fb79a1fe15\"})",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "min(compass_keb_deprovisioning_duration_minutes_sum{plan_id=\"361c511f-f939-4621-b228-d0fb79a1fe15\"})",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[aws] min provisioning / deprovisioning time",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "m"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 9,
+        "x": 6,
+        "y": 29
+      },
+      "id": 130,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
+      },
+      "pluginVersion": "7.4.0",
+      "targets": [
+        {
+          "expr": "avg(compass_keb_provisioning_duration_minutes_sum{plan_id=\"361c511f-f939-4621-b228-d0fb79a1fe15\"})",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "avg(compass_keb_deprovisioning_duration_minutes_sum{plan_id=\"361c511f-f939-4621-b228-d0fb79a1fe15\"})",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[aws] avg provisioning / deprovisioning time",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "m"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 9,
+        "x": 15,
+        "y": 29
+      },
+      "id": 129,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "max"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
+      },
+      "pluginVersion": "7.4.0",
+      "targets": [
+        {
+          "expr": "max(compass_keb_provisioning_duration_minutes_sum{plan_id=\"361c511f-f939-4621-b228-d0fb79a1fe15\"})",
+          "interval": "",
+          "legendFormat": "provisioning",
+          "refId": "A"
+        },
+        {
+          "expr": "max(compass_keb_deprovisioning_duration_minutes_sum{plan_id=\"361c511f-f939-4621-b228-d0fb79a1fe15\"})",
+          "interval": "",
+          "legendFormat": "deprovisioning",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "[aws] max provisioning / deprovisioning time",
+      "type": "gauge"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 33
+      },
+      "hiddenSeries": false,
+      "id": 83,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.4.0",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "avg_over_time((sum(compass_keb_provisioning_duration_minutes_sum{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"})/ sum(compass_keb_provisioning_duration_minutes_count{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"}))[1h:5m])",
+          "interval": "",
+          "legendFormat": "azure",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "[azure] avg provisioning time over time",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:262",
+          "format": "m",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:263",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 4,
+        "w": 9,
+        "x": 6,
+        "y": 33
+      },
+      "hiddenSeries": false,
+      "id": 119,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.4.0",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -972,7 +1605,7 @@
         "h": 4,
         "w": 9,
         "x": 15,
-        "y": 21
+        "y": 33
       },
       "hiddenSeries": false,
       "id": 87,
@@ -992,7 +1625,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1055,6 +1688,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "decimals": 2,
           "mappings": [],
@@ -1079,7 +1715,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 25
+        "y": 37
       },
       "id": 81,
       "options": {
@@ -1092,9 +1728,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": "sum(increase(compass_keb_operations_azure_provisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_azure_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_azure_provisioning_failed_total[1h]))) > 0) *100",
@@ -1118,6 +1755,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "decimals": 2,
           "mappings": [],
@@ -1142,9 +1782,9 @@
         "h": 4,
         "w": 18,
         "x": 6,
-        "y": 25
+        "y": 37
       },
-      "id": 108,
+      "id": 121,
       "options": {
         "reduceOptions": {
           "calcs": [
@@ -1154,9 +1794,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": "sum(increase(compass_keb_operations_azure_provisioning_succeeded_total[1h])) / (sum((increase(compass_keb_operations_azure_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_azure_provisioning_failed_total[1h]))) > 0) *100",
@@ -1180,6 +1821,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "mappings": [],
           "thresholds": {
@@ -1203,7 +1847,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 29
+        "y": 41
       },
       "id": 75,
       "options": {
@@ -1216,9 +1860,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": "min(compass_keb_provisioning_duration_minutes_sum{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"})",
@@ -1242,6 +1887,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "mappings": [],
           "thresholds": {
@@ -1265,9 +1913,9 @@
         "h": 4,
         "w": 9,
         "x": 6,
-        "y": 29
+        "y": 41
       },
-      "id": 77,
+      "id": 123,
       "options": {
         "orientation": "auto",
         "reduceOptions": {
@@ -1278,9 +1926,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": "avg(compass_keb_provisioning_duration_minutes_sum{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"})",
@@ -1304,6 +1953,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "mappings": [],
           "thresholds": {
@@ -1327,7 +1979,7 @@
         "h": 4,
         "w": 9,
         "x": 15,
-        "y": 29
+        "y": 41
       },
       "id": 79,
       "options": {
@@ -1340,9 +1992,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": "max(compass_keb_provisioning_duration_minutes_sum{plan_id=\"4deee563-e5ec-4731-b9b1-53b42d855f0c\"})",
@@ -1381,7 +2034,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 33
+        "y": 45
       },
       "hiddenSeries": false,
       "id": 91,
@@ -1401,7 +2054,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1479,7 +2132,7 @@
         "h": 4,
         "w": 9,
         "x": 6,
-        "y": 33
+        "y": 45
       },
       "hiddenSeries": false,
       "id": 94,
@@ -1499,7 +2152,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1577,7 +2230,7 @@
         "h": 4,
         "w": 9,
         "x": 15,
-        "y": 33
+        "y": 45
       },
       "hiddenSeries": false,
       "id": 95,
@@ -1597,7 +2250,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1660,6 +2313,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "decimals": 2,
           "mappings": [],
@@ -1684,7 +2340,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 37
+        "y": 49
       },
       "id": 96,
       "options": {
@@ -1697,9 +2353,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": "sum(increase(compass_keb_operations_trial_provisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_trial_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_trial_provisioning_failed_total[1h]))) > 0) *100",
@@ -1723,6 +2380,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "decimals": 2,
           "mappings": [],
@@ -1747,7 +2407,7 @@
         "h": 4,
         "w": 18,
         "x": 6,
-        "y": 37
+        "y": 49
       },
       "id": 109,
       "options": {
@@ -1759,9 +2419,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": "sum(increase(compass_keb_operations_trial_provisioning_succeeded_total[1h])) / (sum((increase(compass_keb_operations_trial_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_trial_provisioning_failed_total[1h]))) > 0) *100",
@@ -1785,6 +2446,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "mappings": [],
           "thresholds": {
@@ -1808,7 +2472,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 41
+        "y": 53
       },
       "id": 97,
       "options": {
@@ -1821,9 +2485,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": "min(compass_keb_provisioning_duration_minutes_sum{plan_id=\"7d55d31d-35ae-4438-bf13-6ffdfa107d9f\"})",
@@ -1847,6 +2512,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "mappings": [],
           "thresholds": {
@@ -1870,7 +2538,7 @@
         "h": 4,
         "w": 9,
         "x": 6,
-        "y": 41
+        "y": 53
       },
       "id": 98,
       "options": {
@@ -1883,9 +2551,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": "avg(compass_keb_provisioning_duration_minutes_sum{plan_id=\"7d55d31d-35ae-4438-bf13-6ffdfa107d9f\"})",
@@ -1909,6 +2578,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "mappings": [],
           "thresholds": {
@@ -1932,7 +2604,7 @@
         "h": 4,
         "w": 9,
         "x": 15,
-        "y": 41
+        "y": 53
       },
       "id": 99,
       "options": {
@@ -1945,9 +2617,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": "max(compass_keb_provisioning_duration_minutes_sum{plan_id=\"7d55d31d-35ae-4438-bf13-6ffdfa107d9f\"})",
@@ -1986,7 +2659,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 45
+        "y": 57
       },
       "hiddenSeries": false,
       "id": 100,
@@ -2006,7 +2679,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2084,7 +2757,7 @@
         "h": 4,
         "w": 9,
         "x": 6,
-        "y": 45
+        "y": 57
       },
       "hiddenSeries": false,
       "id": 101,
@@ -2104,7 +2777,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2182,7 +2855,7 @@
         "h": 4,
         "w": 9,
         "x": 15,
-        "y": 45
+        "y": 57
       },
       "hiddenSeries": false,
       "id": 102,
@@ -2202,7 +2875,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2265,6 +2938,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "decimals": 2,
           "mappings": [],
@@ -2289,7 +2965,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 49
+        "y": 61
       },
       "id": 103,
       "options": {
@@ -2302,9 +2978,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": " sum(increase(compass_keb_operations_azure_lite_provisioning_failed_total[1h])) / (sum((increase(compass_keb_operations_azure_lite_provisioning_succeeded_total[1h]) + increase(compass_keb_operations_azure_lite_provisioning_failed_total[1h]))+0.0000001) > 0) *100",
@@ -2328,6 +3005,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "decimals": 2,
           "mappings": [],
@@ -2352,7 +3032,7 @@
         "h": 4,
         "w": 18,
         "x": 6,
-        "y": 49
+        "y": 61
       },
       "id": 110,
       "options": {
@@ -2364,9 +3044,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": " sum(increase(compass_keb_operations_azure_lite_provisioning_succeeded_total[15d])) / (sum((increase(compass_keb_operations_azure_lite_provisioning_succeeded_total[15d]) + increase(compass_keb_operations_azure_lite_provisioning_failed_total[15d]))+0.0000001) > 0) *100",
@@ -2390,6 +3071,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "mappings": [],
           "thresholds": {
@@ -2413,7 +3097,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 53
+        "y": 65
       },
       "id": 104,
       "options": {
@@ -2426,9 +3110,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": "min(compass_keb_provisioning_duration_minutes_sum{plan_id=\"8cb22518-aa26-44c5-91a0-e669ec9bf443\"})",
@@ -2452,6 +3137,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "mappings": [],
           "thresholds": {
@@ -2475,7 +3163,7 @@
         "h": 4,
         "w": 9,
         "x": 6,
-        "y": 53
+        "y": 65
       },
       "id": 105,
       "options": {
@@ -2488,9 +3176,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": "avg(compass_keb_provisioning_duration_minutes_sum{plan_id=\"8cb22518-aa26-44c5-91a0-e669ec9bf443\"})",
@@ -2514,6 +3203,9 @@
       "datasource": null,
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {},
           "mappings": [],
           "thresholds": {
@@ -2537,7 +3229,7 @@
         "h": 4,
         "w": 9,
         "x": 15,
-        "y": 53
+        "y": 65
       },
       "id": 106,
       "options": {
@@ -2550,9 +3242,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "7.3.3",
+      "pluginVersion": "7.4.0",
       "targets": [
         {
           "expr": "max(compass_keb_provisioning_duration_minutes_sum{plan_id=\"8cb22518-aa26-44c5-91a0-e669ec9bf443\"})",
@@ -2573,1358 +3266,1078 @@
       "type": "gauge"
     },
     {
-      "collapsed": false,
+      "collapsed": true,
       "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 57
+        "y": 69
       },
       "id": 42,
-      "panels": [],
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 0,
+            "y": 3
+          },
+          "hiddenSeries": false,
+          "id": 16,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "paceLength": 10,
+          "percentage": false,
+          "pluginVersion": "7.4.0",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum by (service) (go_gc_duration_seconds{service=\"kcp-kyma-environment-broker\"})",
+              "format": "time_series",
+              "instant": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{quantile}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "GC duration [s]",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 8,
+            "y": 3
+          },
+          "hiddenSeries": false,
+          "id": 17,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "paceLength": 10,
+          "percentage": false,
+          "pluginVersion": "7.4.0",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum by (service) (go_goroutines{service=\"kcp-kyma-environment-broker\"})",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Goroutines",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 16,
+            "y": 3
+          },
+          "hiddenSeries": false,
+          "id": 18,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "paceLength": 10,
+          "percentage": false,
+          "pluginVersion": "7.4.0",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum by (service) (go_threads{service=\"kcp-kyma-environment-broker\"})",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{service}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Gothreads",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "grid": {},
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 0,
+            "y": 10
+          },
+          "hiddenSeries": false,
+          "id": 22,
+          "isNew": true,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "connected",
+          "options": {
+            "alertThreshold": true
+          },
+          "paceLength": 10,
+          "percentage": false,
+          "pluginVersion": "7.4.0",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [
+            {
+              "alias": "alloc rate",
+              "yaxis": 2
+            }
+          ],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum by (service) (go_memstats_alloc_bytes{service=\"kcp-kyma-environment-broker\"})",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "bytes allocated",
+              "metric": "go_memstats_alloc_bytes",
+              "refId": "A",
+              "step": 4
+            },
+            {
+              "expr": "avg by (service) (rate(go_memstats_alloc_bytes_total{service=\"kcp-kyma-environment-broker\"}[1m]))",
+              "format": "time_series",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "intervalFactor": 3,
+              "legendFormat": "alloc rate",
+              "metric": "go_memstats_alloc_bytes_total",
+              "refId": "B",
+              "step": 4
+            },
+            {
+              "expr": "sum by (service) (go_memstats_stack_inuse_bytes{service=\"kcp-kyma-environment-broker\"})",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "stack inuse",
+              "metric": "go_memstats_stack_inuse_bytes",
+              "refId": "C",
+              "step": 4
+            },
+            {
+              "expr": "sum by (service) (go_memstats_heap_inuse_bytes{service=\"kcp-kyma-environment-broker\"})",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "heap inuse",
+              "metric": "go_memstats_heap_inuse_bytes",
+              "refId": "D",
+              "step": 4
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "go memstats",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "cumulative"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "bytes",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "Bps",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "grid": {},
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 8,
+            "y": 10
+          },
+          "hiddenSeries": false,
+          "id": 24,
+          "isNew": true,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "connected",
+          "options": {
+            "alertThreshold": true
+          },
+          "paceLength": 10,
+          "percentage": false,
+          "pluginVersion": "7.4.0",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum by (service) (process_open_fds{service=\"kcp-kyma-environment-broker\"})",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "{{service}}",
+              "metric": "process_open_fds",
+              "refId": "A",
+              "step": 4
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "open fds",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "cumulative"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 16,
+            "y": 10
+          },
+          "hiddenSeries": false,
+          "id": 52,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.4.0",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "avg by (service) (go_sql_stats_connections_idle{service=\"kcp-kyma-environment-broker\"})",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Idle",
+              "refId": "A"
+            },
+            {
+              "expr": "avg by (service) (go_sql_stats_connections_max_open{service=\"kcp-kyma-environment-broker\"})",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Max open",
+              "refId": "B"
+            },
+            {
+              "expr": "avg by (service) (go_sql_stats_connections_in_use{service=\"kcp-kyma-environment-broker\"})",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "In use",
+              "refId": "C"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "DB connections",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        }
+      ],
       "title": "Broker Metrics",
       "type": "row"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 0,
-        "y": 58
-      },
-      "hiddenSeries": false,
-      "id": 16,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.3.3",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "sum by (service) (go_gc_duration_seconds{service=\"kcp-kyma-environment-broker\"})",
-          "format": "time_series",
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "{{quantile}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "GC duration [s]",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 8,
-        "y": 58
-      },
-      "hiddenSeries": false,
-      "id": 17,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.3.3",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "sum by (service) (go_goroutines{service=\"kcp-kyma-environment-broker\"})",
-          "format": "time_series",
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "{{pod}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Goroutines",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 16,
-        "y": 58
-      },
-      "hiddenSeries": false,
-      "id": 18,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.3.3",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "sum by (service) (go_threads{service=\"kcp-kyma-environment-broker\"})",
-          "format": "time_series",
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "{{service}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Gothreads",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "editable": true,
-      "error": false,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "grid": {},
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 0,
-        "y": 65
-      },
-      "hiddenSeries": false,
-      "id": 22,
-      "isNew": true,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 2,
-      "links": [],
-      "nullPointMode": "connected",
-      "options": {
-        "alertThreshold": true
-      },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.3.3",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [
-        {
-          "alias": "alloc rate",
-          "yaxis": 2
-        }
-      ],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "sum by (service) (go_memstats_alloc_bytes{service=\"kcp-kyma-environment-broker\"})",
-          "format": "time_series",
-          "hide": false,
-          "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "bytes allocated",
-          "metric": "go_memstats_alloc_bytes",
-          "refId": "A",
-          "step": 4
-        },
-        {
-          "expr": "avg by (service) (rate(go_memstats_alloc_bytes_total{service=\"kcp-kyma-environment-broker\"}[1m]))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 3,
-          "legendFormat": "alloc rate",
-          "metric": "go_memstats_alloc_bytes_total",
-          "refId": "B",
-          "step": 4
-        },
-        {
-          "expr": "sum by (service) (go_memstats_stack_inuse_bytes{service=\"kcp-kyma-environment-broker\"})",
-          "format": "time_series",
-          "hide": false,
-          "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "stack inuse",
-          "metric": "go_memstats_stack_inuse_bytes",
-          "refId": "C",
-          "step": 4
-        },
-        {
-          "expr": "sum by (service) (go_memstats_heap_inuse_bytes{service=\"kcp-kyma-environment-broker\"})",
-          "format": "time_series",
-          "hide": false,
-          "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "heap inuse",
-          "metric": "go_memstats_heap_inuse_bytes",
-          "refId": "D",
-          "step": 4
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "go memstats",
-      "tooltip": {
-        "msResolution": false,
-        "shared": true,
-        "sort": 0,
-        "value_type": "cumulative"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "bytes",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "Bps",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "editable": true,
-      "error": false,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "grid": {},
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 8,
-        "y": 65
-      },
-      "hiddenSeries": false,
-      "id": 24,
-      "isNew": true,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 2,
-      "links": [],
-      "nullPointMode": "connected",
-      "options": {
-        "alertThreshold": true
-      },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.3.3",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "sum by (service) (process_open_fds{service=\"kcp-kyma-environment-broker\"})",
-          "format": "time_series",
-          "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "{{service}}",
-          "metric": "process_open_fds",
-          "refId": "A",
-          "step": 4
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "open fds",
-      "tooltip": {
-        "msResolution": false,
-        "shared": true,
-        "sort": 0,
-        "value_type": "cumulative"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 16,
-        "y": 65
-      },
-      "hiddenSeries": false,
-      "id": 52,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.3.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "avg by (service) (go_sql_stats_connections_idle{service=\"kcp-kyma-environment-broker\"})",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Idle",
-          "refId": "A"
-        },
-        {
-          "expr": "avg by (service) (go_sql_stats_connections_max_open{service=\"kcp-kyma-environment-broker\"})",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Max open",
-          "refId": "B"
-        },
-        {
-          "expr": "avg by (service) (go_sql_stats_connections_in_use{service=\"kcp-kyma-environment-broker\"})",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "In use",
-          "refId": "C"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "DB connections",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "collapsed": false,
+      "collapsed": true,
       "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 72
+        "y": 70
       },
       "id": 38,
-      "panels": [],
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "grid": {
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 4
+          },
+          "hiddenSeries": false,
+          "id": 10,
+          "isNew": false,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "hideEmpty": false,
+            "hideZero": false,
+            "max": false,
+            "min": false,
+            "rightSide": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "connected",
+          "options": {
+            "alertThreshold": true
+          },
+          "paceLength": 10,
+          "percentage": false,
+          "pluginVersion": "7.4.0",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum by (container) (container_memory_usage_bytes{job=\"kubelet\",pod=~\"kcp-kyma-environment-broker.*\",container!=\"POD\",container!=\"\"})",
+              "format": "time_series",
+              "hide": false,
+              "instant": false,
+              "interval": "10s",
+              "intervalFactor": 1,
+              "legendFormat": "{{container}}",
+              "metric": "container_memory_usage_bytes",
+              "refId": "A",
+              "step": 15
+            },
+            {
+              "expr": "avg by (container) (kube_pod_container_resource_requests_memory_bytes{pod=~\"kcp-kyma-environment-broker.*\"})",
+              "format": "time_series",
+              "hide": false,
+              "instant": false,
+              "interval": "10s",
+              "intervalFactor": 2,
+              "legendFormat": "{{container}} - Requests",
+              "metric": "kube_pod_container_resource_requests_memory_bytes",
+              "refId": "B",
+              "step": 20
+            },
+            {
+              "expr": "avg by (container) (kube_pod_container_resource_limits_memory_bytes{pod=~\"kcp-kyma-environment-broker.*\"})",
+              "format": "time_series",
+              "instant": false,
+              "interval": "10s",
+              "intervalFactor": 2,
+              "legendFormat": "{{container}} - Limit",
+              "metric": "kube_pod_container_resource_limits_memory_bytes",
+              "refId": "C",
+              "step": 20
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Memory Usage",
+          "tooltip": {
+            "msResolution": true,
+            "shared": true,
+            "sort": 0,
+            "value_type": "cumulative"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "bytes",
+              "logBase": 1,
+              "show": true
+            },
+            {
+              "format": "short",
+              "logBase": 1,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "grid": {
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 4
+          },
+          "hiddenSeries": false,
+          "id": 8,
+          "isNew": false,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "hideEmpty": false,
+            "hideZero": false,
+            "max": false,
+            "min": false,
+            "rightSide": true,
+            "show": true,
+            "sort": "avg",
+            "sortDesc": false,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "connected",
+          "options": {
+            "alertThreshold": true
+          },
+          "paceLength": 10,
+          "percentage": false,
+          "pluginVersion": "7.4.0",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum by(container) (irate(container_cpu_usage_seconds_total{job=\"kubelet\",pod=~\"kcp-kyma-environment-broker.*\",container!=\"POD\",container!=\"\"}[1m]))",
+              "format": "time_series",
+              "instant": false,
+              "interval": "10s",
+              "intervalFactor": 1,
+              "legendFormat": "{{container}}",
+              "metric": "container_cpu_usage_seconds",
+              "refId": "A",
+              "step": 15
+            },
+            {
+              "expr": "avg by (container) (kube_pod_container_resource_requests_cpu_cores{pod=~\"kcp-kyma-environment-broker.*\"})",
+              "format": "time_series",
+              "hide": false,
+              "instant": false,
+              "interval": "10s",
+              "intervalFactor": 2,
+              "legendFormat": "{{container}} - Requests",
+              "metric": "kube_pod_container_resource_requests_cpu_cores",
+              "refId": "B",
+              "step": 20
+            },
+            {
+              "expr": "avg by (container) (kube_pod_container_resource_limits_cpu_cores{pod=~\"kcp-kyma-environment-broker.*\"})",
+              "format": "time_series",
+              "hide": false,
+              "instant": false,
+              "interval": "10s",
+              "intervalFactor": 2,
+              "legendFormat": "{{container}} - Limit",
+              "metric": "kube_pod_container_resource_limits_cpu_cores",
+              "refId": "C",
+              "step": 20
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "CPU Usage",
+          "tooltip": {
+            "msResolution": true,
+            "shared": true,
+            "sort": 0,
+            "value_type": "cumulative"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "logBase": 1,
+              "show": true
+            },
+            {
+              "format": "short",
+              "logBase": 1,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "decimals": null,
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "grid": {
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 11
+          },
+          "hiddenSeries": false,
+          "id": 12,
+          "isNew": false,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "hideEmpty": false,
+            "hideZero": false,
+            "max": true,
+            "min": false,
+            "rightSide": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "connected",
+          "options": {
+            "alertThreshold": true
+          },
+          "paceLength": 10,
+          "percentage": false,
+          "pluginVersion": "7.4.0",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sort_desc(sum by (namespace) (rate(container_network_receive_bytes_total{pod=~\"kcp-kyma-environment-broker.*\"}[1m])))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "kcp-kyma-environment-broker",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Network I/O",
+          "tooltip": {
+            "msResolution": true,
+            "shared": true,
+            "sort": 0,
+            "value_type": "cumulative"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "bytes",
+              "logBase": 1,
+              "show": true
+            },
+            {
+              "format": "short",
+              "logBase": 1,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        }
+      ],
       "title": "Kubernetes Metrics",
       "type": "row"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "editable": true,
-      "error": false,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "grid": {
-        "threshold1Color": "rgba(216, 200, 27, 0.27)",
-        "threshold2Color": "rgba(234, 112, 112, 0.22)"
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 73
-      },
-      "hiddenSeries": false,
-      "id": 10,
-      "isNew": false,
-      "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": true,
-        "hideEmpty": false,
-        "hideZero": false,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 2,
-      "links": [],
-      "nullPointMode": "connected",
-      "options": {
-        "alertThreshold": true
-      },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.3.3",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "sum by (container) (container_memory_usage_bytes{job=\"kubelet\",pod=~\"kcp-kyma-environment-broker.*\",container!=\"POD\",container!=\"\"})",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "10s",
-          "intervalFactor": 1,
-          "legendFormat": "{{container}}",
-          "metric": "container_memory_usage_bytes",
-          "refId": "A",
-          "step": 15
-        },
-        {
-          "expr": "avg by (container) (kube_pod_container_resource_requests_memory_bytes{pod=~\"kcp-kyma-environment-broker.*\"})",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "10s",
-          "intervalFactor": 2,
-          "legendFormat": "{{container}} - Requests",
-          "metric": "kube_pod_container_resource_requests_memory_bytes",
-          "refId": "B",
-          "step": 20
-        },
-        {
-          "expr": "avg by (container) (kube_pod_container_resource_limits_memory_bytes{pod=~\"kcp-kyma-environment-broker.*\"})",
-          "format": "time_series",
-          "instant": false,
-          "interval": "10s",
-          "intervalFactor": 2,
-          "legendFormat": "{{container}} - Limit",
-          "metric": "kube_pod_container_resource_limits_memory_bytes",
-          "refId": "C",
-          "step": 20
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Memory Usage",
-      "tooltip": {
-        "msResolution": true,
-        "shared": true,
-        "sort": 0,
-        "value_type": "cumulative"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "bytes",
-          "logBase": 1,
-          "show": true
-        },
-        {
-          "format": "short",
-          "logBase": 1,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "editable": true,
-      "error": false,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "grid": {
-        "threshold1Color": "rgba(216, 200, 27, 0.27)",
-        "threshold2Color": "rgba(234, 112, 112, 0.22)"
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 73
-      },
-      "hiddenSeries": false,
-      "id": 8,
-      "isNew": false,
-      "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": true,
-        "hideEmpty": false,
-        "hideZero": false,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "sort": "avg",
-        "sortDesc": false,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 2,
-      "links": [],
-      "nullPointMode": "connected",
-      "options": {
-        "alertThreshold": true
-      },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.3.3",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "sum by(container) (irate(container_cpu_usage_seconds_total{job=\"kubelet\",pod=~\"kcp-kyma-environment-broker.*\",container!=\"POD\",container!=\"\"}[1m]))",
-          "format": "time_series",
-          "instant": false,
-          "interval": "10s",
-          "intervalFactor": 1,
-          "legendFormat": "{{container}}",
-          "metric": "container_cpu_usage_seconds",
-          "refId": "A",
-          "step": 15
-        },
-        {
-          "expr": "avg by (container) (kube_pod_container_resource_requests_cpu_cores{pod=~\"kcp-kyma-environment-broker.*\"})",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "10s",
-          "intervalFactor": 2,
-          "legendFormat": "{{container}} - Requests",
-          "metric": "kube_pod_container_resource_requests_cpu_cores",
-          "refId": "B",
-          "step": 20
-        },
-        {
-          "expr": "avg by (container) (kube_pod_container_resource_limits_cpu_cores{pod=~\"kcp-kyma-environment-broker.*\"})",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "10s",
-          "intervalFactor": 2,
-          "legendFormat": "{{container}} - Limit",
-          "metric": "kube_pod_container_resource_limits_cpu_cores",
-          "refId": "C",
-          "step": 20
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "CPU Usage",
-      "tooltip": {
-        "msResolution": true,
-        "shared": true,
-        "sort": 0,
-        "value_type": "cumulative"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "logBase": 1,
-          "show": true
-        },
-        {
-          "format": "short",
-          "logBase": 1,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "decimals": null,
-      "editable": true,
-      "error": false,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "grid": {
-        "threshold1Color": "rgba(216, 200, 27, 0.27)",
-        "threshold2Color": "rgba(234, 112, 112, 0.22)"
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 24,
-        "x": 0,
-        "y": 80
-      },
-      "hiddenSeries": false,
-      "id": 12,
-      "isNew": false,
-      "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": true,
-        "hideEmpty": false,
-        "hideZero": false,
-        "max": true,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 2,
-      "links": [],
-      "nullPointMode": "connected",
-      "options": {
-        "alertThreshold": true
-      },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.3.3",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "sort_desc(sum by (namespace) (rate(container_network_receive_bytes_total{pod=~\"kcp-kyma-environment-broker.*\"}[1m])))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "kcp-kyma-environment-broker",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Network I/O",
-      "tooltip": {
-        "msResolution": true,
-        "shared": true,
-        "sort": 0,
-        "value_type": "cumulative"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "bytes",
-          "logBase": 1,
-          "show": true
-        },
-        {
-          "format": "short",
-          "logBase": 1,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "collapsed": false,
-      "datasource": null,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 87
-      },
-      "id": 93,
-      "panels": [],
-      "title": "Gardener Metrics",
-      "type": "row"
-    },
-    {
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": null,
-            "filterable": false
-          },
-          "mappings": [
-            {
-              "from": "",
-              "id": 1,
-              "text": "",
-              "to": "",
-              "type": 1,
-              "value": ""
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "resourceName"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 285
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "used"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 194
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "__name__"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 218
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 0,
-        "y": 88
-      },
-      "id": 116,
-      "options": {
-        "frameIndex": 0,
-        "showHeader": true,
-        "sortBy": []
-      },
-      "pluginVersion": "7.3.3",
-      "targets": [
-        {
-          "expr": "sum by (__name__, service)(gardener_secrets_azure_used)",
-          "format": "table",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "A"
-        },
-        {
-          "expr": "sum by (__name__, service)(gardener_secrets_azure_total)",
-          "format": "table",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "B"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Gardener Azure Secret Usage",
-      "transformations": [
-        {
-          "id": "seriesToColumns",
-          "options": {
-            "byField": "service"
-          }
-        },
-        {
-          "id": "filterFieldsByName",
-          "options": {
-            "include": {
-              "names": [
-                "service",
-                "Value #A",
-                "Value #B"
-              ]
-            }
-          }
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "indexByName": {},
-            "renameByName": {
-              "Value #A": "gardener_secrets_azure_usage",
-              "Value #B": "gardener_secrets_azure_total",
-              "__name__ 1": "gardener_secrets_azure_total",
-              "__name__ 2": "gardener_secrets_azure_usage"
-            }
-          }
-        }
-      ],
-      "type": "table"
-    },
-    {
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": null,
-            "filterable": false
-          },
-          "mappings": [
-            {
-              "from": "",
-              "id": 1,
-              "text": "",
-              "to": "",
-              "type": 1,
-              "value": ""
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "resourceName"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 276
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "used"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 194
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 12,
-        "y": 88
-      },
-      "id": 115,
-      "options": {
-        "frameIndex": 1,
-        "showHeader": true,
-        "sortBy": []
-      },
-      "pluginVersion": "7.3.3",
-      "targets": [
-        {
-          "expr": "sum by (instance, resourceName) (gardener_quota_used)",
-          "format": "table",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "A"
-        },
-        {
-          "expr": "sum by (instance, resourceName) (gardener_quota_limit)",
-          "format": "table",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "B"
-        },
-        {
-          "expr": "",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "C"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Gardener Quota Usage",
-      "transformations": [
-        {
-          "id": "seriesToColumns",
-          "options": {
-            "byField": "resourceName"
-          }
-        },
-        {
-          "id": "filterFieldsByName",
-          "options": {
-            "include": {
-              "names": [
-                "resourceName",
-                "Value #A",
-                "Value #B"
-              ]
-            }
-          }
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "indexByName": {},
-            "renameByName": {
-              "Value #A": "used",
-              "Value #B": "limited"
-            }
-          }
-        }
-      ],
-      "type": "table"
     }
   ],
   "refresh": "10s",
-  "schemaVersion": 26,
+  "schemaVersion": 27,
   "style": "dark",
   "tags": [
     "kyma-environment-broker",
@@ -3934,7 +4347,7 @@
     "list": []
   },
   "time": {
-    "from": "now-7d",
+    "from": "now-30d",
     "to": "now"
   },
   "timepicker": {

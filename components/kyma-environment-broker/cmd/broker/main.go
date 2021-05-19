@@ -579,14 +579,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		},
 		{
 			stage: createRuntimeStageName,
-			step:  provisioning.NewAzureEventHubActivationStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
-		},
-		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewNatsActivationStep(provisioning.NewNatsStreamingOverridesStep()),
-		},
-		{
-			stage: createRuntimeStageName,
 			step:  provisioning.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
 		{
@@ -677,12 +669,6 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 		{
 			weight: 1,
 			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
-		},
-		{
-			weight: 1,
-			step: deprovisioning.NewSkipForTrialPlanStep(
-				deprovisioning.NewAzureEventHubActivationStep(
-					deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), hyperscalerProvider, accountProvider, ctx))),
 		},
 		{
 			weight:   1,
@@ -778,11 +764,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 2,
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
-		},
-		{
-			weight:   3,
-			step:     upgrade_kyma.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
-			disabled: cfg.Ems.SkipDeprovisionAzureEventingAtUpgrade,
 		},
 		{
 			weight: 3,

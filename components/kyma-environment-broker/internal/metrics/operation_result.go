@@ -44,7 +44,8 @@ const (
 type OperationResultCollector struct {
 	provisioningResultGauge   *prometheus.GaugeVec
 	deprovisioningResultGauge *prometheus.GaugeVec
-	upgradeResultGauge        *prometheus.GaugeVec
+	upgradeKymaResultGauge    *prometheus.GaugeVec
+	upgradeClusterResultGauge *prometheus.GaugeVec
 }
 
 func NewOperationResultCollector() *OperationResultCollector {
@@ -61,11 +62,17 @@ func NewOperationResultCollector() *OperationResultCollector {
 			Name:      "deprovisioning_result",
 			Help:      "Result of the deprovisioning",
 		}, []string{"operation_id", "runtime_id", "instance_id", "global_account_id", "plan_id"}),
-		upgradeResultGauge: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		upgradeKymaResultGauge: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: prometheusNamespace,
 			Subsystem: prometheusSubsystem,
-			Name:      "upgrade_result",
-			Help:      "Result of the upgrade",
+			Name:      "upgrade_kyma_result",
+			Help:      "Result of the kyma upgrade",
+		}, []string{"operation_id", "runtime_id", "instance_id", "global_account_id", "plan_id"}),
+		upgradeClusterResultGauge: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: prometheusNamespace,
+			Subsystem: prometheusSubsystem,
+			Name:      "upgrade_cluster_result",
+			Help:      "Result of the cluster upgrade",
 		}, []string{"operation_id", "runtime_id", "instance_id", "global_account_id", "plan_id"}),
 	}
 }
@@ -73,19 +80,21 @@ func NewOperationResultCollector() *OperationResultCollector {
 func (c *OperationResultCollector) Describe(ch chan<- *prometheus.Desc) {
 	c.provisioningResultGauge.Describe(ch)
 	c.deprovisioningResultGauge.Describe(ch)
-	c.upgradeResultGauge.Describe(ch)
+	c.upgradeKymaResultGauge.Describe(ch)
+	c.upgradeClusterResultGauge.Describe(ch)
 }
 
 func (c *OperationResultCollector) Collect(ch chan<- prometheus.Metric) {
 	c.provisioningResultGauge.Collect(ch)
 	c.deprovisioningResultGauge.Collect(ch)
-	c.upgradeResultGauge.Collect(ch)
+	c.upgradeKymaResultGauge.Collect(ch)
+	c.upgradeClusterResultGauge.Collect(ch)
 }
 
-func (c *OperationResultCollector) OnUpgradeStepProcessed(ctx context.Context, ev interface{}) error {
+func (c *OperationResultCollector) OnUpgradeKymaStepProcessed(ctx context.Context, ev interface{}) error {
 	stepProcessed, ok := ev.(process.UpgradeKymaStepProcessed)
 	if !ok {
-		return fmt.Errorf("expected UpgradeStepProcessed but got %+v", ev)
+		return fmt.Errorf("expected UpgradeKymaStepProcessed but got %+v", ev)
 	}
 
 	var resultValue float64
@@ -105,7 +114,37 @@ func (c *OperationResultCollector) OnUpgradeStepProcessed(ctx context.Context, e
 	}
 	op := stepProcessed.Operation
 	pp := op.ProvisioningParameters
-	c.upgradeResultGauge.
+	c.upgradeKymaResultGauge.
+		WithLabelValues(op.Operation.ID, op.Operation.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).
+		Set(resultValue)
+
+	return nil
+}
+
+func (c *OperationResultCollector) OnUpgradeClusterStepProcessed(ctx context.Context, ev interface{}) error {
+	stepProcessed, ok := ev.(process.UpgradeClusterStepProcessed)
+	if !ok {
+		return fmt.Errorf("expected UpgradeClusterStepProcessed but got %+v", ev)
+	}
+
+	var resultValue float64
+	switch stepProcessed.Operation.State {
+	case domain.InProgress:
+		resultValue = resultInProgress
+	case domain.Succeeded:
+		resultValue = resultSucceeded
+	case domain.Failed:
+		resultValue = resultFailed
+	case Pending:
+		resultValue = resultPending
+	case Canceling:
+		resultValue = resultCanceling
+	case Canceled:
+		resultValue = resultCanceled
+	}
+	op := stepProcessed.Operation
+	pp := op.ProvisioningParameters
+	c.upgradeKymaResultGauge.
 		WithLabelValues(op.Operation.ID, op.Operation.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).
 		Set(resultValue)
 
