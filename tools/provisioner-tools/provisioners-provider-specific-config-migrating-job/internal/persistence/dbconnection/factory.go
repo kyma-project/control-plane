@@ -1,9 +1,8 @@
-package dbsession
+package dbconnection
 
 import (
-	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/persistence/dberrors"
-
 	"github.com/gocraft/dbr/v2"
+	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/persistence/dberrors"
 )
 
 //go:generate mockery -name=Factory
@@ -14,7 +13,7 @@ type Factory interface {
 
 //go:generate mockery -name=ReadSession
 type ReadSession interface {
-	GetProviderSpecificConfigsByProvider(provider string) ([]ProviderConfig, dberrors.Error)
+	GetProviderSpecificConfigsByProvider(provider string) ([]ProviderData, dberrors.Error)
 }
 
 //go:generate mockery -name=WriteSession

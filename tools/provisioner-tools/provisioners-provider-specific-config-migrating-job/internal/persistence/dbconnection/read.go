@@ -1,4 +1,4 @@
-package dbsession
+package dbconnection
 
 import (
 	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/persistence/dberrors"
@@ -10,16 +10,18 @@ type readSession struct {
 	session *dbr.Session
 }
 
-type ProviderConfig struct {
-	Id     string
-	Config string
+type ProviderData struct {
+	Id         string
+	ClusterId  string
+	WorkerCidr string
+	Config     string
 }
 
-func (r readSession) GetProviderSpecificConfigsByProvider(provider string) ([]ProviderConfig, dberrors.Error) {
-	providerConfigs := make([]ProviderConfig, 0)
+func (r readSession) GetProviderSpecificConfigsByProvider(provider string) ([]ProviderData, dberrors.Error) {
+	providerConfigs := make([]ProviderData, 0)
 
 	m, err := r.session.
-		Select("Id", "provider_specific_config").
+		Select("id", "cluster_id", "worker_cidr", "provider_specific_config").
 		From("gardener_config").
 		Where(dbr.Eq("provider", provider)).
 		Load(&providerConfigs)

@@ -1,4 +1,4 @@
-package dbsession
+package dbconnection
 
 import (
 	"database/sql"
