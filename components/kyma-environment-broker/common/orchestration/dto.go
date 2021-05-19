@@ -138,8 +138,8 @@ type OperationResponseList struct {
 type OperationDetailResponse struct {
 	OperationResponse
 
-	KymaConfig    gqlschema.KymaConfigInput     `json:"kymaConfig"`
-	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
+	KymaConfig    *gqlschema.KymaConfigInput     `json:"kymaConfig,omitempty"`
+	ClusterConfig *gqlschema.GardenerConfigInput `json:"clusterConfig,omitempty"`
 }
 
 type StatusResponseList struct {
