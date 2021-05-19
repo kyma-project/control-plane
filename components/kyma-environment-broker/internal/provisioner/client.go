@@ -55,7 +55,7 @@ func NewProvisionerClient(endpoint string, queryDumping bool) Client {
 func (c *client) ProvisionRuntime(accountID, subAccountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
 	provisionRuntimeIptGQL, err := c.graphqlizer.ProvisionRuntimeInputToGraphQL(config)
 	// Remove before merge
-	fmt.Print(provisionRuntimeIptGQL)
+	//fmt.Print(provisionRuntimeIptGQL)
 	if err != nil {
 		return schema.OperationStatus{}, errors.Wrap(err, "Failed to convert Provision Runtime Input to query")
 	}

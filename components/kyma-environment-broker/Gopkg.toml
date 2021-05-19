@@ -30,7 +30,7 @@
 [[override]]
   name = "github.com/kyma-project/control-plane"
   source = "https://github.com/rJankowski93/control-plane.git"
-  revision = "a842ac357a798c0306ae9a885a949a7d996332fb"
+  revision = "601776da8999708d22a62093cea2a3533723dbdb"
 
 [[constraint]]
   name = "github.com/kyma-project/kyma"
