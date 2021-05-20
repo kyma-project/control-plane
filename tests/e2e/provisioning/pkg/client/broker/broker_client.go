@@ -398,7 +398,7 @@ func (c *Client) warnOnError(do func() error) {
 }
 
 func (c *Client) baseURL() string {
-	base := fmt.Sprintf("%s/oauth/", c.brokerConfig.URL)
+	base := fmt.Sprintf("%s/oauth", c.brokerConfig.URL)
 	if c.brokerConfig.Region == "" {
 		return fmt.Sprintf("%s/v2", base)
 	}
