@@ -177,6 +177,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 	case gqlschema.OperationStateSucceeded:
 		{
 			if !broker.IsTrialPlan(planID) {
+				// todo: use "hyperscaler.FromCloudProvider(instance.Provider)" after all instances are migrated with saved Provider
 				hypType, err := hyperscaler.HyperscalerTypeForPlanID(operation.ProvisioningParameters)
 				if err != nil {
 					log.Errorf("after successful deprovisioning failing to hyperscaler release subscription - determine the type of Hyperscaler to use for planID [%s]: %s", planID, err.Error())

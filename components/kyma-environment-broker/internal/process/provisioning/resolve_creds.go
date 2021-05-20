@@ -10,7 +10,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,50 +18,6 @@ type ResolveCredentialsStep struct {
 	accountProvider  hyperscaler.AccountProvider
 	opStorage        storage.Operations
 	tenant           string
-}
-
-func getHyperscalerType(pp internal.ProvisioningParameters) (hyperscaler.Type, error) {
-	switch pp.PlanID {
-	case broker.GCPPlanID:
-		return hyperscaler.GCP, nil
-	case broker.AWSPlanID:
-		return hyperscaler.AWS, nil
-	case broker.AzurePlanID, broker.AzureLitePlanID, broker.AzureHAPlanID:
-		return hyperscaler.Azure, nil
-	case broker.OpenStackPlanID:
-		return hyperscaler.Openstack, nil
-	case broker.TrialPlanID:
-		return forTrialProvider(pp.Parameters.Provider)
-	case broker.FreemiumPlanID:
-		return forFreemiumProvider(pp)
-	default:
-		return "", errors.Errorf("Cannot determine the type of Hyperscaler to use for planID: %s", pp.PlanID)
-	}
-}
-
-func forTrialProvider(cp *internal.CloudProvider) (hyperscaler.Type, error) {
-	if cp == nil {
-		return hyperscaler.Azure, nil
-	}
-
-	return provider(*cp)
-}
-
-func forFreemiumProvider(pp internal.ProvisioningParameters) (hyperscaler.Type, error) {
-	return provider(pp.PlatformProvider)
-}
-
-func provider(cp internal.CloudProvider) (hyperscaler.Type, error) {
-	switch cp {
-	case internal.Azure:
-		return hyperscaler.Azure, nil
-	case internal.AWS:
-		return hyperscaler.AWS, nil
-	case internal.Gcp:
-		return hyperscaler.GCP, nil
-	default:
-		return "", errors.Errorf("Cannot determine the type of Hyperscaler to use for provider: %s", string(cp))
-	}
 }
 
 func NewResolveCredentialsStep(os storage.Operations, accountProvider hyperscaler.AccountProvider) *ResolveCredentialsStep {
@@ -82,7 +37,7 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 		return operation, 0, nil
 	}
 
-	hypType, err := getHyperscalerType(operation.ProvisioningParameters)
+	hypType, err := hyperscaler.FromCloudProvider(operation.InputCreator.Provider())
 	if err != nil {
 		log.Errorf("Aborting after failing to determine the type of Hyperscaler to use for planID: %s", operation.ProvisioningParameters.PlanID)
 		return s.operationManager.OperationFailed(operation, err.Error(), log)

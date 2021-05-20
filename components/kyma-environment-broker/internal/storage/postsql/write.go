@@ -32,6 +32,7 @@ func (ws writeSession) InsertInstance(instance dbmodel.InstanceDTO) dberr.Error 
 		Pair("dashboard_url", instance.DashboardURL).
 		Pair("provisioning_parameters", instance.ProvisioningParameters).
 		Pair("provider_region", instance.ProviderRegion).
+		Pair("provider", instance.Provider).
 		// in postgres database it will be equal to "0001-01-01 00:00:00+00"
 		Pair("deleted_at", time.Time{}).
 		Pair("version", instance.Version).
