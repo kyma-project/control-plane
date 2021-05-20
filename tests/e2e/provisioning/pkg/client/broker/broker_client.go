@@ -380,7 +380,7 @@ func (c *Client) executeRequest(method, url string, expectedStatus int, body io.
 		}
 		bodyString := string(bodyBytes)
 		c.log.Warnf("%s", bodyString)
-		return errors.Errorf("got unexpected status code while calling Kyma Environment Broker: want: %d, got: %d", expectedStatus, resp.StatusCode)
+		return errors.Errorf("got unexpected status code while calling Kyma Environment Broker: want: %d, got: %d (url=%s)", expectedStatus, resp.StatusCode, url)
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(responseBody)
