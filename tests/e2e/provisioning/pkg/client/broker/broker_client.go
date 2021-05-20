@@ -75,6 +75,7 @@ const (
 type inputContext struct {
 	TenantID        string `json:"tenant_id"`
 	SubAccountID    string `json:"subaccount_id"`
+	UserID          string `json:"user_id"`
 	GlobalAccountID string `json:"globalaccount_id"`
 	Active          *bool  `json:"active,omitempty"`
 }
