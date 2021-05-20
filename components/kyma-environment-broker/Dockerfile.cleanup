@@ -1,11 +1,13 @@
 # Build image
-FROM golang:1.14.4-alpine3.12 AS build
+FROM golang:1.16.4-alpine3.12 AS build
 
 WORKDIR /go/src/github.com/kyma-project/control-plane/components/kyma-environment-broker
 
 COPY cmd cmd
 COPY common common
 COPY internal internal
+COPY go.mod go.mod
+COPY go.sum go.sum
 COPY vendor vendor
 
 RUN CGO_ENABLED=0 go build -o /bin/environments-cleanup ./cmd/environmentscleanup/main.go
