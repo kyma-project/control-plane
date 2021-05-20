@@ -1,0 +1,100 @@
+{{- if .Values.global.kyma_metrics_collector.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+{{ include "kyma-metrics-collector.labels" . | indent 4 }}
+  name: {{ include "kyma-metrics-collector.fullname" . }}
+  namespace: kcp-system
+spec:
+  groups:
+    - name: prometheus.rules.kmc
+      rules:
+      - alert: KmcDown
+        expr: up{job="kyma-metrics-collector", namespace="kcp-system"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          description: KMC has disappeared from Prometheus target discovery for the last 5 minutes.
+      - alert: ClustersRateChanged
+        expr: (deriv(kmc_keb_number_clusters_scraped[5m])) < -0.033
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          description: Within 5 minutes the numbers of clusters scraped decreased by at least 10 clusters.
+    - name: prometheus.rules.edp
+      rules:
+      - alert: EdpFailures
+        expr: sum by (status) (increase(kmc_edp_request_total{status!~"2.."}[5m])) > 20
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          description: KMC has failed to call EDP with status "2xx successful" in the last 5 minutes.
+      - alert: EdpErrors
+        expr: sum by (job) (increase(kmc_edp_error_count[5m])) > 30
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          description: KMC has reported an increase in errors in the last 10 minutes for EDP.
+      - alert: EdpRequestDuration
+        expr: sum by (job) (rate(kmc_edp_request_duration_seconds_sum[30m])/rate(kmc_edp_request_duration_seconds_count[30m])) > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          description: Average request duration to EDP during the last 30 minutes took longer than 2 seconds.
+    - name: prometheus.rules.keb
+      rules:
+      - alert: KebFailures
+        expr: sum by (status) (increase(kmc_keb_request_total{status!~"2.."}[5m])) > 20
+        for: 10m
+        labels:
+         severity: critical
+        annotations:
+          description: KMC has failed to call KEB with status "2xx successful" in the last 5 minutes.
+      - alert: KebErrors
+        expr: sum by (job) (increase(kmc_keb_error_count[5m])) > 30
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          description: KMC has reported an increase in errors in the last 10 minutes for KEB.
+      - alert: KebRequestDuration
+        expr: sum by (job) (rate(kmc_keb_request_duration_seconds_sum[30m])/rate(kmc_keb_request_duration_seconds_count[30m])) > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          description: Average request duration to KEB during the last 30 minutes took longer than 2 seconds.
+    - name: prometheus.rules.skr
+      rules:
+      - alert: SkrErrors
+        expr: sum by (job) (increase(kmc_skr_error_count[5m])) > 30
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          description: KMC has reported an increase in errors in the last 10 minutes for SKR.
+    - name: prometheus.rules.gardener
+      rules:
+      - alert: GardenerErrors
+        expr: sum by (job) (increase(kmc_gardener_error_count[5m])) > 30
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          description: KMC has reported an increase in errors in the last 10 minutes for Gardener.
+    - name: prometheus.rules.cache
+      rules:
+      - alert: CacheErrors
+        expr: sum by (job) (increase(kmc_cache_error_count[5m])) > 30
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          description: KMC has reported an increase in errors in the last 10 minutes for the Cache.
+{{- end -}}

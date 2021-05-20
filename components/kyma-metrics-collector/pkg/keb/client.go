@@ -43,7 +43,6 @@ func NewClient(config *Config, logger *logrus.Logger) *Client {
 func (c Client) NewRequest() (*http.Request, error) {
 	kebURL, err := url.ParseRequestURI(c.Config.URL)
 	if err != nil {
-		failedRequest.WithLabelValues(fmt.Sprintf("%d", http.StatusBadRequest)).Inc()
 		totalRequest.WithLabelValues(fmt.Sprintf("%d", http.StatusBadRequest)).Inc()
 
 		return nil, err
@@ -104,24 +103,17 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 	}, func() (err error) {
 		resp, err = c.HTTPClient.Do(req)
 		if err != nil {
-			//failedRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
-			//totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
-
 			c.Logger.Warnf("will be retried: failed while getting runtimes from KEB: %v", err)
 		}
 		return
 	})
 
 	if err != nil {
-		//failedRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
-		//totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
-
 		c.Logger.Errorf("failed to get runtimes from KEB: %v", err)
 		return nil, errors.Wrapf(err, "failed to get runtimes from KEB")
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		failedRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
 		totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
 
 		failedErr := fmt.Errorf("KEB returned status code: %d", resp.StatusCode)
@@ -131,7 +123,6 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		failedRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
 		totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
 
 		c.Logger.Errorf("failed to read body: %v", err)
@@ -146,7 +137,6 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 	}()
 	runtimesPage := new(kebruntime.RuntimesPage)
 	if err := json.Unmarshal(body, runtimesPage); err != nil {
-		failedRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
 		totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
 
 		return nil, errors.Wrapf(err, "failed to unmarshal runtimes response")

@@ -28,7 +28,7 @@ var (
 			Name:      ErrorCountName,
 			Help:      "Number of continuous errors of adding the subaccount to the cache since last success.",
 		},
-		[]string{"error_rate"},
+		[]string{"error_count"},
 	)
 
 	skrErrorCount = promauto.NewCounterVec(
@@ -69,15 +69,5 @@ var (
 			Help:      "Number of clusters scraped.",
 		},
 		[]string{"number_clusters_scraped"},
-	)
-
-	runtimesRateChanged = promauto.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Namespace: Namespace,
-			Subsystem: "keb",
-			Name:      "rate_changed",
-			Help:      "Ratio between number of current clusters scraped to previous number of clusters scraped.",
-		},
-		[]string{"rate_changed"},
 	)
 )

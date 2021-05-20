@@ -11,17 +11,6 @@ const (
 )
 
 var (
-	failedRequest = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace:   Namespace,
-			Subsystem:   Subsystem,
-			Name:        "failed_request_total",
-			Help:        "Total number of failed requests.",
-			ConstLabels: map[string]string{},
-		},
-		[]string{"status"},
-	)
-
 	totalRequest = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: Namespace,

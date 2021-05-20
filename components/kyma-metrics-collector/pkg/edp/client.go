@@ -54,7 +54,6 @@ func (eClient Client) NewRequest(dataTenant string) (*http.Request, error) {
 
 	req, err := http.NewRequest(http.MethodPost, edpURL, bytes.NewBuffer([]byte{}))
 	if err != nil {
-		failedRequest.WithLabelValues(fmt.Sprintf("%d", http.StatusBadRequest)).Inc()
 		totalRequest.WithLabelValues(fmt.Sprintf("%d", http.StatusBadRequest)).Inc()
 
 		return nil, fmt.Errorf("failed generate request for EDP, %d: %v", http.StatusBadRequest, err)
@@ -88,7 +87,6 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 		req.Body = ioutil.NopCloser(bytes.NewReader(payload))
 		resp, err = eClient.HttpClient.Do(req)
 		if err != nil {
-			failedRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
 			totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
 
 			eClient.Logger.Debugf("req: %v", req)
@@ -97,7 +95,6 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 		}
 
 		if resp.StatusCode != http.StatusCreated {
-			failedRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
 			totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
 
 			non2xxErr := fmt.Errorf("failed to send event stream as EDP returned HTTP: %d", resp.StatusCode)
@@ -108,7 +105,6 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 	})
 
 	if err != nil {
-		failedRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
 		totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
 
 		return nil, errors.Wrapf(err, "failed to POST event to EDP")
