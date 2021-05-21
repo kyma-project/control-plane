@@ -36,6 +36,13 @@ release: {{ .Release.Name | quote }}
 heritage: {{ .Release.Service | quote }}
 {{- end }}
 
+{{- define "kyma-metrics-collector.prometheusrule.labels" -}}
+chart: {{ template "kyma-metrics-collector.chartref" . }}
+release: {{ .Values.prometheus.labels.release }}
+app: {{ .Values.prometheus.labels.app }}
+heritage: {{ .Release.Service | quote }}
+{{- end }}
+
 {{- define "kyma-metrics-collector.publicCloud.configMap.labels" -}}
 {{ template "kyma-metrics-collector.labels" . }}
 user-by: {{ template "kyma-metrics-collector.name" . }}

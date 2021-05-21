@@ -86,3 +86,11 @@ keb:
   retryCount: "5"
   pollWaitDuration: "10m"
   runtimesPath: "runtimes"
+
+  ## Prometheusrule configurations
+prometheus:
+  namespace: kyma-system
+  job: kyma-metrics-collector
+  labels:
+    app: monitoring
+    release: monitoring
