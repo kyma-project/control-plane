@@ -30,7 +30,7 @@ require (
 	github.com/pivotal-cf/brokerapi/v7 v7.5.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.10.0
-	github.com/sebdah/goldie v1.0.0
+	github.com/sebdah/goldie/v2 v2.5.3
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.5.1
 	github.com/stretchr/testify v1.7.0
