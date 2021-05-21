@@ -78,7 +78,7 @@ const (
 )
 
 type ClusterAdministrator struct {
-	ID            string
-	ClusterId     *string
-	Administrator string
+	ID        string
+	ClusterId *string
+	Email     string
 }
