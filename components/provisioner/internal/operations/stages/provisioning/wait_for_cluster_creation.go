@@ -8,6 +8,7 @@ import (
 
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
@@ -61,6 +62,10 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, operation model.
 		}
 
 		if lastOperation.State == gardencorev1beta1.LastOperationStateFailed {
+			if gardencorev1beta1helper.HasErrorCode(shoot.Status.LastErrors, gardencorev1beta1.ErrorInfraRateLimitsExceeded) {
+				return operations.StageResult{}, errors.New("error during cluster provisioning: rate limits exceeded")
+			}
+
 			logger.Warningf("Provisioning failed! Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
 
 			err := errors.New(fmt.Sprintf("cluster provisioning failed. Last Shoot state: %s, Shoot description: %s", lastOperation.State, lastOperation.Description))
@@ -72,7 +77,7 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, operation model.
 	return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
 }
 
-func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster, shoot *gardener_types.Shoot, operationId string) (operations.StageResult, error) {
+func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster, shoot *gardener_types.Shoot, _ string) (operations.StageResult, error) {
 
 	if cluster.ClusterConfig.Seed == "" && shoot.Spec.SeedName != nil && *shoot.Spec.SeedName != "" {
 
