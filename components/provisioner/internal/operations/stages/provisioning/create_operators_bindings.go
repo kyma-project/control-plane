@@ -24,8 +24,8 @@ const (
 	l3OperatorClusterRoleBindingRoleRefName            = "cluster-admin"
 	administratorOperatorClusterRoleBindingRoleRefName = "kyma-admin"
 
-	groupKingSubject = "Group"
-	userKingSubject  = "User"
+	groupKindSubject = "Group"
+	userKindSubject  = "User"
 )
 
 type OperatorRoleBinding struct {
@@ -80,13 +80,13 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 			l2OperatorClusterRoleBindingName,
 			s.operatorRoleBindingConfig.L2SubjectName,
 			l2OperatorClusterRoleBindingRoleRefName,
-			groupKingSubject))
+			groupKindSubject))
 	clusterRoleBindings = append(clusterRoleBindings,
 		buildClusterRoleBinding(
 			l3OperatorClusterRoleBindingName,
 			s.operatorRoleBindingConfig.L3SubjectName,
 			l3OperatorClusterRoleBindingRoleRefName,
-			groupKingSubject))
+			groupKindSubject))
 
 	if s.operatorRoleBindingConfig.CreatingForAdmin {
 		for i, administrator := range cluster.Administrators {
@@ -95,7 +95,7 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 					fmt.Sprintf("%s%d", administratorOperatorClusterRoleBindingName, i),
 					*administrator,
 					administratorOperatorClusterRoleBindingRoleRefName,
-					userKingSubject))
+					userKindSubject))
 		}
 	}
 

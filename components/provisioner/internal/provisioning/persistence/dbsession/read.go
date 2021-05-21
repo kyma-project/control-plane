@@ -91,7 +91,7 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	}
 	cluster.Administrators = make([]*string, 0)
 	for _, clusterAdministrator := range clusterAdministrators {
-		cluster.Administrators = append(cluster.Administrators, &clusterAdministrator.Administrator)
+		cluster.Administrators = append(cluster.Administrators, &clusterAdministrator.Email)
 	}
 
 	return cluster, nil
