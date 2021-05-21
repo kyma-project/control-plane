@@ -112,12 +112,12 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 		assert.Equal(t, 1, dto.OperationStats[orchestration.Succeeded])
 	})
 
-	t.Run("operations", func(t *testing.T) {
+	t.Run("kyma upgrade operations", func(t *testing.T) {
 		// given
 		db := storage.NewMemoryStorage()
 		secondID := "id-2"
 
-		err := db.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixID})
+		err := db.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixID, Type: orchestration.UpgradeKymaOrchestration})
 		require.NoError(t, err)
 		err = db.Operations().InsertUpgradeKymaOperation(internal.UpgradeKymaOperation{
 			Operation: internal.Operation{
@@ -142,6 +142,75 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 
 		err = db.RuntimeStates().Insert(internal.RuntimeState{ID: secondID, OperationID: secondID})
 		require.NoError(t, err)
+		err = db.RuntimeStates().Insert(internal.RuntimeState{ID: fixID, OperationID: fixID})
+		require.NoError(t, err)
+
+		logs := logrus.New()
+		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), 100, logs)
+
+		urlPath := fmt.Sprintf("/orchestrations/%s/operations", fixID)
+		req, err := http.NewRequest("GET", urlPath, nil)
+		require.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		kymaHandler.AttachRoutes(router)
+
+		// when
+		router.ServeHTTP(rr, req)
+
+		// then
+		require.Equal(t, http.StatusOK, rr.Code)
+
+		var out orchestration.OperationResponseList
+
+		err = json.Unmarshal(rr.Body.Bytes(), &out)
+		require.NoError(t, err)
+		assert.Len(t, out.Data, 1)
+		assert.Equal(t, 1, out.TotalCount)
+		assert.Equal(t, 1, out.Count)
+
+		// given
+		urlPath = fmt.Sprintf("/orchestrations/%s/operations/%s", fixID, fixID)
+		req, err = http.NewRequest(http.MethodGet, urlPath, nil)
+		require.NoError(t, err)
+		rr = httptest.NewRecorder()
+
+		dto := orchestration.OperationDetailResponse{}
+
+		// when
+		router.ServeHTTP(rr, req)
+
+		// then
+		require.Equal(t, http.StatusOK, rr.Code)
+
+		err = json.Unmarshal(rr.Body.Bytes(), &dto)
+		require.NoError(t, err)
+		assert.Equal(t, dto.OrchestrationID, fixID)
+		assert.Equal(t, dto.OperationID, fixID)
+	})
+
+	t.Run("cluster upgrade operations", func(t *testing.T) {
+		// given
+		db := storage.NewMemoryStorage()
+
+		err := db.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixID, Type: orchestration.UpgradeClusterOrchestration})
+		require.NoError(t, err)
+		err = db.Operations().InsertUpgradeClusterOperation(internal.UpgradeClusterOperation{
+			Operation: internal.Operation{
+				ID:              fixID,
+				InstanceID:      fixID,
+				OrchestrationID: fixID,
+				ProvisioningParameters: internal.ProvisioningParameters{
+					PlanID: "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+				},
+			},
+			RuntimeOperation: orchestration.RuntimeOperation{
+				ID: fixID,
+			},
+		})
+		require.NoError(t, err)
+
 		err = db.RuntimeStates().Insert(internal.RuntimeState{ID: fixID, OperationID: fixID})
 		require.NoError(t, err)
 

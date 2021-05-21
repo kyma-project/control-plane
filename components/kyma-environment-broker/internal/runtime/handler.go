@@ -3,6 +3,7 @@ package runtime
 import (
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	pkg "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -10,8 +11,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
-
-	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
 
@@ -75,12 +74,22 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 		h.converter.ApplyProvisioningOperation(&dto, &firstProvOp)
 		h.converter.ApplyUnsuspensionOperations(&dto, provOprs)
 
-		dOpr, err := h.operationsDb.GetDeprovisioningOperationByInstanceID(instance.InstanceID)
+		deprovOprs, err := h.operationsDb.ListDeprovisioningOperationsByInstanceID(instance.InstanceID)
 		if err != nil && !dberr.IsNotFound(err) {
-			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching deprovisioning operation for instance"))
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching deprovisioning operations list for instance"))
 			return
 		}
-		h.converter.ApplyDeprovisioningOperation(&dto, dOpr)
+		var deprovOp internal.DeprovisioningOperation
+		if len(deprovOprs) != 0 {
+			for _, op := range deprovOprs {
+				if !op.Temporary {
+					deprovOp = op
+					break
+				}
+			}
+		}
+		h.converter.ApplyDeprovisioningOperation(&dto, &deprovOp)
+		h.converter.ApplySuspensionOperations(&dto, deprovOprs)
 
 		ukOprs, err := h.operationsDb.ListUpgradeKymaOperationsByInstanceID(instance.InstanceID)
 		if err != nil && !dberr.IsNotFound(err) {
@@ -97,13 +106,6 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 		}
 		ucOprs, totalCount = h.takeLastNonDryRunClusterOperations(ucOprs)
 		h.converter.ApplyUpgradingClusterOperations(&dto, ucOprs, totalCount)
-
-		deprovOprs, err := h.operationsDb.ListDeprovisioningOperationsByInstanceID(instance.InstanceID)
-		if err != nil && !dberr.IsNotFound(err) {
-			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching deprovisioning operations list for instance"))
-			return
-		}
-		h.converter.ApplySuspensionOperations(&dto, deprovOprs)
 
 		toReturn = append(toReturn, dto)
 	}
