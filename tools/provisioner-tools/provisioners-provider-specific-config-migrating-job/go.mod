@@ -1,6 +1,6 @@
 module github.com/kyma-project/control-plane/components/provisioners-model-migrating-job
 
-go 1.13
+go 1.16
 
 require (
 	github.com/avast/retry-go v2.6.0+incompatible
