@@ -48,7 +48,7 @@ func (s *WaitForClusterCreationStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, operation model.Operation, logger log.FieldLogger) (operations.StageResult, error) {
+func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operation, logger log.FieldLogger) (operations.StageResult, error) {
 	shoot, err := s.gardenerClient.Get(context.Background(), cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err
@@ -58,7 +58,7 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, operation model.
 
 	if lastOperation != nil {
 		if lastOperation.State == gardencorev1beta1.LastOperationStateSucceeded {
-			return s.proceedToInstallation(cluster, shoot, operation.ID)
+			return s.proceedToInstallation(cluster, shoot)
 		}
 
 		if lastOperation.State == gardencorev1beta1.LastOperationStateFailed {
@@ -77,7 +77,7 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, operation model.
 	return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
 }
 
-func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster, shoot *gardener_types.Shoot, _ string) (operations.StageResult, error) {
+func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster, shoot *gardener_types.Shoot) (operations.StageResult, error) {
 
 	if cluster.ClusterConfig.Seed == "" && shoot.Spec.SeedName != nil && *shoot.Spec.SeedName != "" {
 
