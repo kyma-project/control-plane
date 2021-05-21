@@ -5,13 +5,13 @@ go 1.16
 require (
 	github.com/99designs/gqlgen v0.9.3
 	github.com/avast/retry-go v2.6.0+incompatible
-	github.com/gardener/gardener v1.10.1-0.20200903060046-8bed4ed6c257
+	github.com/gardener/gardener v1.23.0
 	github.com/gocraft/dbr/v2 v2.6.3
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.7.4
 	github.com/kubernetes-sigs/service-catalog v0.3.0
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b
-	github.com/kyma-incubator/hydroform/install v0.0.0-20210423204324-77f0d2c745ab
+	github.com/kyma-incubator/hydroform/install v0.0.0-20210514061348-c71b69cb362e
 	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200902131640-31c29c8feb0c
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5
 	github.com/lib/pq v1.7.0
@@ -27,9 +27,9 @@ require (
 	github.com/vektah/gqlparser v1.2.0
 	github.com/vrischmann/envconfig v1.3.0
 	gotest.tools v2.2.0+incompatible
-	k8s.io/api v0.20.5
-	k8s.io/apiextensions-apiserver v0.20.5
-	k8s.io/apimachinery v0.20.5
+	k8s.io/api v0.20.6
+	k8s.io/apiextensions-apiserver v0.20.6
+	k8s.io/apimachinery v0.20.6
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	sigs.k8s.io/controller-runtime v0.8.3
 )

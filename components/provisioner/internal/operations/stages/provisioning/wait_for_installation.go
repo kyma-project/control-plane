@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
-
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
+	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/sirupsen/logrus"
 )
 
@@ -57,13 +57,17 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, operation model.Ope
 			message := fmt.Sprintf("Installation error occurred: %s", installErr.Error())
 			logger.Warn(message)
 			s.saveInstallationState(message, logger, operation)
-			return operations.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
+			if installErr.Recoverable {
+				return operations.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
+			}
+
+			return operations.StageResult{}, operations.NewNonRecoverableError(err)
 		}
 
 		return operations.StageResult{}, fmt.Errorf("error: failed to check installation state: %s", err.Error())
 	}
 
-	if installationState.State == "Installed" {
+	if installationState.State == string(v1alpha1.StateInstalled) {
 		message := fmt.Sprintf("Installation completed: %s", installationState.Description)
 		logger.Info(message)
 		s.saveInstallationState(message, logger, operation)

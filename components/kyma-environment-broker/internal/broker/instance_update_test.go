@@ -3,6 +3,7 @@ package broker
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -10,6 +11,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -180,6 +182,28 @@ func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 	}, handler.ersContext)
 
 	assert.True(t, *handler.Instance.Parameters.ErsContext.Active)
+}
+
+func TestUpdateEndpoint_UpdateNonExistingInstance(t *testing.T) {
+	// given
+	st := storage.NewMemoryStorage()
+	handler := &handler{}
+	svc := NewUpdate(st.Instances(), st.Operations(), handler, true, logrus.New())
+
+	// when
+	_, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
+		ServiceID:       "",
+		PlanID:          TrialPlanID,
+		RawParameters:   nil,
+		PreviousValues:  domain.PreviousValues{},
+		RawContext:      json.RawMessage("{\"active\":false}"),
+		MaintenanceInfo: nil,
+	}, true)
+
+	// then
+	assert.IsType(t, err, &apiresponses.FailureResponse{}, "Update returned error of unexpected type")
+	apierr := err.(*apiresponses.FailureResponse)
+	assert.Equal(t, apierr.ValidatedStatusCode(nil), http.StatusNotFound, "Update status code not matching")
 }
 
 func fixProvisioningOperation(id string) internal.ProvisioningOperation {

@@ -77,7 +77,7 @@ func (c *Converter) UpgradeKymaOperationListToDTO(ops []internal.UpgradeKymaOper
 	}, nil
 }
 
-func (c *Converter) UpgradeKymaOperationToDetailDTO(op internal.UpgradeKymaOperation, kymaConfig gqlschema.KymaConfigInput, clusterConfig gqlschema.GardenerConfigInput) (orchestration.OperationDetailResponse, error) {
+func (c *Converter) UpgradeKymaOperationToDetailDTO(op internal.UpgradeKymaOperation, kymaConfig *gqlschema.KymaConfigInput) (orchestration.OperationDetailResponse, error) {
 	resp, err := c.UpgradeKymaOperationToDTO(op)
 	if err != nil {
 		return orchestration.OperationDetailResponse{}, errors.Wrap(err, "while converting operation to DTO")
@@ -85,6 +85,52 @@ func (c *Converter) UpgradeKymaOperationToDetailDTO(op internal.UpgradeKymaOpera
 	return orchestration.OperationDetailResponse{
 		OperationResponse: resp,
 		KymaConfig:        kymaConfig,
+	}, nil
+}
+
+func (c *Converter) UpgradeClusterOperationToDTO(op internal.UpgradeClusterOperation) (orchestration.OperationResponse, error) {
+	return orchestration.OperationResponse{
+		OperationID:            op.Operation.ID,
+		RuntimeID:              op.RuntimeOperation.RuntimeID,
+		GlobalAccountID:        op.GlobalAccountID,
+		SubAccountID:           op.RuntimeOperation.SubAccountID,
+		OrchestrationID:        op.OrchestrationID,
+		ServicePlanID:          op.ProvisioningParameters.PlanID,
+		ServicePlanName:        broker.PlanNamesMapping[op.ProvisioningParameters.PlanID],
+		DryRun:                 op.DryRun,
+		ShootName:              op.RuntimeOperation.ShootName,
+		MaintenanceWindowBegin: op.MaintenanceWindowBegin,
+		MaintenanceWindowEnd:   op.MaintenanceWindowEnd,
+		State:                  string(op.Operation.State),
+		Description:            op.Operation.Description,
+	}, nil
+}
+
+func (c *Converter) UpgradeClusterOperationListToDTO(ops []internal.UpgradeClusterOperation, count, totalCount int) (orchestration.OperationResponseList, error) {
+	data := make([]orchestration.OperationResponse, 0, len(ops))
+
+	for _, op := range ops {
+		o, err := c.UpgradeClusterOperationToDTO(op)
+		if err != nil {
+			return orchestration.OperationResponseList{}, errors.Wrap(err, "while converting operation to DTO")
+		}
+		data = append(data, o)
+	}
+
+	return orchestration.OperationResponseList{
+		Data:       data,
+		Count:      count,
+		TotalCount: totalCount,
+	}, nil
+}
+
+func (c *Converter) UpgradeClusterOperationToDetailDTO(op internal.UpgradeClusterOperation, clusterConfig *gqlschema.GardenerConfigInput) (orchestration.OperationDetailResponse, error) {
+	resp, err := c.UpgradeClusterOperationToDTO(op)
+	if err != nil {
+		return orchestration.OperationDetailResponse{}, errors.Wrap(err, "while converting operation to DTO")
+	}
+	return orchestration.OperationDetailResponse{
+		OperationResponse: resp,
 		ClusterConfig:     clusterConfig,
 	}, nil
 }

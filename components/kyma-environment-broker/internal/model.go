@@ -127,6 +127,9 @@ func (i *Instance) GetInstanceDetails() (InstanceDetails, error) {
 		result.ShootName = shoot
 		result.ShootDomain = domain
 	}
+	//overwrite RuntimeID in InstanceDetails with Instance.RuntimeID
+	//needed for runtimes suspended without clearing RuntimeID in deprovisioning operation
+	result.RuntimeID = i.RuntimeID
 	return result, nil
 }
 

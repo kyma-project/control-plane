@@ -37,6 +37,11 @@ func NewAuditLogOverridesStep(fileSystem afero.Fs, os storage.Operations, cfg au
 }
 
 func (alo *AuditLogOverrides) Run(operation internal.UpgradeKymaOperation, logger logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	if alo.auditLogConfig.Disabled {
+		logger.Infof("Skipping appending auditlog overrides")
+		operation.InputCreator.AppendOverrides("logging", []*gqlschema.ConfigEntryInput{})
+		return operation, 0, nil
+	}
 	luaScript, err := alo.readFile("/auditlog-script/script")
 	if err != nil {
 		logger.Errorf("Unable to read audit config script: %v", err)
@@ -102,11 +107,13 @@ func (alo *AuditLogOverrides) Run(operation internal.UpgradeKymaOperation, logge
     Port             %s
     URI              %ssecurity-events
     Header           Content-Type application/json
-    HTTP_User        %s
-    HTTP_Passwd      %s
+    HTTP_User        ${AUDITLOG_USER}
+    HTTP_Passwd      ${AUDITLOG_PASSWD}
     Format           json_stream
     tls              on
-`, fluentbitPlugin, auditLogHost, auditLogPort, u.Path, alo.auditLogConfig.User, alo.auditLogConfig.Password)},
+`, fluentbitPlugin, auditLogHost, auditLogPort, u.Path)},
+		{Key: "fluent-bit.config.secrets.AUDITLOG_USER", Value: fmt.Sprintf(`%s`, alo.auditLogConfig.User)},
+		{Key: "fluent-bit.config.secrets.AUDITLOG_PASSWD", Value: fmt.Sprintf(`%s`, alo.auditLogConfig.Password)},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},
 		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf(`- %s`, auditLogHost)},
 		{Key: "fluent-bit.externalServiceEntry.ports", Value: fmt.Sprintf(`- number: %s

@@ -26,6 +26,7 @@ type Config struct {
 	TokenURL   string
 	URL        string
 	PlanID     string
+	Region     string `envconfig:"optional"`
 }
 
 type BrokerOAuthConfig struct {
@@ -68,8 +69,6 @@ func NewClient(ctx context.Context, config Config, globalAccountID, instanceID, 
 
 const (
 	kymaClassID = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
-
-	instancesURL = "/oauth/v2/service_instances"
 )
 
 type inputContext struct {
@@ -107,7 +106,7 @@ func (c *Client) ProvisionRuntime(kymaVersion string) (string, error) {
 	}
 	c.log.Infof("Provisioning parameters: %v", string(requestByte))
 
-	provisionURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.instanceID)
+	provisionURL := fmt.Sprintf("%s/service_instances/%s", c.baseURL(), c.instanceID)
 	response := provisionResponse{}
 	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
 		err := c.executeRequest(http.MethodPut, provisionURL, http.StatusAccepted, bytes.NewReader(requestByte), &response)
@@ -130,8 +129,8 @@ func (c *Client) ProvisionRuntime(kymaVersion string) (string, error) {
 }
 
 func (c *Client) DeprovisionRuntime() (string, error) {
-	format := "%s%s/%s?service_id=%s&plan_id=%s"
-	deprovisionURL := fmt.Sprintf(format, c.brokerConfig.URL, instancesURL, c.instanceID, kymaClassID, c.brokerConfig.PlanID)
+	format := "%s/service_instances/%s?service_id=%s&plan_id=%s"
+	deprovisionURL := fmt.Sprintf(format, c.baseURL(), c.instanceID, kymaClassID, c.brokerConfig.PlanID)
 
 	response := provisionResponse{}
 	c.log.Infof("Deprovisioning Runtime [ID: %s, NAME: %s]", c.instanceID, c.clusterName)
@@ -158,8 +157,8 @@ func (c *Client) SuspendRuntime() error {
 	}
 	c.log.Infof("Suspension parameters: %v", string(requestByte))
 
-	format := "%s%s/%s"
-	suspensionURL := fmt.Sprintf(format, c.brokerConfig.URL, instancesURL, c.instanceID)
+	format := "%s/service_instances/%s"
+	suspensionURL := fmt.Sprintf(format, c.baseURL(), c.instanceID)
 
 	suspensionResponse := instanceDetailsResponse{}
 	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
@@ -185,8 +184,8 @@ func (c *Client) UnsuspendRuntime() error {
 	}
 	c.log.Infof("Unuspension parameters: %v", string(requestByte))
 
-	format := "%s%s/%s?service_id=%s&plan_id=%s"
-	suspensionURL := fmt.Sprintf(format, c.brokerConfig.URL, instancesURL, c.instanceID, kymaClassID, c.brokerConfig.PlanID)
+	format := "%s/service_instances/%s?service_id=%s&plan_id=%s"
+	suspensionURL := fmt.Sprintf(format, c.baseURL(), c.instanceID, kymaClassID, c.brokerConfig.PlanID)
 
 	unsuspensionResponse := instanceDetailsResponse{}
 	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
@@ -225,9 +224,9 @@ func (c *Client) ClusterName() string {
 }
 
 func (c *Client) AwaitOperationSucceeded(operationID string, timeout time.Duration) error {
-	lastOperationURL := fmt.Sprintf("%s%s/%s/last_operation?operation=%s", c.brokerConfig.URL, instancesURL, c.instanceID, operationID)
+	lastOperationURL := fmt.Sprintf("%s/service_instances/%s/last_operation?operation=%s", c.baseURL(), c.instanceID, operationID)
 	if operationID == "" {
-		lastOperationURL = fmt.Sprintf("%s%s/%s/last_operation", c.brokerConfig.URL, instancesURL, c.instanceID)
+		lastOperationURL = fmt.Sprintf("%s/service_instances/%s/last_operation", c.baseURL(), c.instanceID)
 	}
 
 	c.log.Infof("Waiting for operation at most %s", timeout.String())
@@ -264,7 +263,7 @@ func (c *Client) AwaitOperationSucceeded(operationID string, timeout time.Durati
 }
 
 func (c *Client) FetchDashboardURL() (string, error) {
-	instanceDetailsURL := fmt.Sprintf("%s%s/%s", c.brokerConfig.URL, instancesURL, c.instanceID)
+	instanceDetailsURL := fmt.Sprintf("%s/service_instances/%s", c.baseURL(), c.instanceID)
 
 	c.log.Info("Fetching the Runtime's dashboard URL")
 	response := instanceDetailsResponse{}
@@ -381,7 +380,7 @@ func (c *Client) executeRequest(method, url string, expectedStatus int, body io.
 		}
 		bodyString := string(bodyBytes)
 		c.log.Warnf("%s", bodyString)
-		return errors.Errorf("got unexpected status code while calling Kyma Environment Broker: want: %d, got: %d", expectedStatus, resp.StatusCode)
+		return errors.Errorf("got unexpected status code while calling Kyma Environment Broker: want: %d, got: %d (url=%s)", expectedStatus, resp.StatusCode, url)
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(responseBody)
@@ -396,4 +395,12 @@ func (c *Client) warnOnError(do func() error) {
 	if err := do(); err != nil {
 		c.log.Warn(err.Error())
 	}
+}
+
+func (c *Client) baseURL() string {
+	base := fmt.Sprintf("%s/oauth", c.brokerConfig.URL)
+	if c.brokerConfig.Region == "" {
+		return fmt.Sprintf("%s/v2", base)
+	}
+	return fmt.Sprintf("%s/%s/v2", base, c.brokerConfig.Region)
 }

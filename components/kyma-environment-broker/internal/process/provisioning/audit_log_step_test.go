@@ -104,8 +104,8 @@ return "fooBar"
     Port             8080
     URI              /aaa/v2/security-events
     Header           Content-Type application/json
-    HTTP_User        aaaa
-    HTTP_Passwd      aaaa
+    HTTP_User        ${AUDITLOG_USER}
+    HTTP_Passwd      ${AUDITLOG_PASSWD}
     Format           json_stream
     tls              on
 `
@@ -128,6 +128,14 @@ return "fooBar"
 		{
 			Key:   "fluent-bit.config.extra",
 			Value: expectedOverride_config,
+		},
+		{
+			Key:   "fluent-bit.config.secrets.AUDITLOG_USER",
+			Value: "aaaa",
+		},
+		{
+			Key:   "fluent-bit.config.secrets.AUDITLOG_PASSWD",
+			Value: "aaaa",
 		},
 		{
 			Key:   "fluent-bit.externalServiceEntry.resolution",
@@ -217,8 +225,8 @@ return "fooBar"
     Port             8080
     URI              /aaa/v2/security-events
     Header           Content-Type application/json
-    HTTP_User        aaaa
-    HTTP_Passwd      aaaa
+    HTTP_User        ${AUDITLOG_USER}
+    HTTP_Passwd      ${AUDITLOG_PASSWD}
     Format           json_stream
     tls              on
 `
@@ -241,6 +249,14 @@ return "fooBar"
 		{
 			Key:   "fluent-bit.config.extra",
 			Value: expectedOverride_config,
+		},
+		{
+			Key:   "fluent-bit.config.secrets.AUDITLOG_USER",
+			Value: "aaaa",
+		},
+		{
+			Key:   "fluent-bit.config.secrets.AUDITLOG_PASSWD",
+			Value: "aaaa",
 		},
 		{
 			Key:   "fluent-bit.externalServiceEntry.resolution",
