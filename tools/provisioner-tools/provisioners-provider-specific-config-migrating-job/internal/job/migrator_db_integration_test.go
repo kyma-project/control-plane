@@ -27,4 +27,17 @@ func TestProviderConfigMigrator(t *testing.T) {
 	err = testutils.SetupSchema(connection, testutils.SchemaFilePath)
 	require.NoError(t, err)
 
+	factory := dbconnection.NewFactory(connection)
+
+	prepareTestRecords(factory)
+
+	migrationJob := NewProviderConfigMigrator(factory, 1)
+
+	err = migrationJob.Do()
+
+	require.NoError(t, err)
+}
+
+func prepareTestRecords(factory dbconnection.Factory) {
+
 }

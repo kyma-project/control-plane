@@ -12,21 +12,21 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const maxErrors = 10
-
 type ProviderConfigMigrator interface {
 	Do() error
 }
 
 type providerConfigMigrator struct {
-	dbsFactory dbconnection.Factory
-	errors     []string
+	dbsFactory      dbconnection.Factory
+	errorsThreshold int
+	errors          []string
 }
 
-func NewProviderConfigMigrator(dbsFactory dbconnection.Factory) ProviderConfigMigrator {
+func NewProviderConfigMigrator(dbsFactory dbconnection.Factory, errorsThreshold int) ProviderConfigMigrator {
 	return &providerConfigMigrator{
-		dbsFactory: dbsFactory,
-		errors:     make([]string, 0),
+		dbsFactory:      dbsFactory,
+		errorsThreshold: errorsThreshold,
+		errors:          make([]string, 0),
 	}
 }
 
@@ -44,8 +44,8 @@ func (p *providerConfigMigrator) Do() error {
 		oldConfig := p.decodeAWSConfig(d)
 		newConfig := mapAWSToNewModel(oldConfig, d.WorkerCidr)
 		jsonConfig := p.marshalToJson(newConfig)
-		p.updateConfig(session, d.ClusterId, jsonConfig)
-		if len(p.errors) > maxErrors {
+		p.updateConfig(session, d.Id, d.ClusterId, jsonConfig)
+		if len(p.errors) > p.errorsThreshold {
 			log.Error("Too many errors!")
 			return fmt.Errorf(strings.Join(p.errors, "\n"))
 		}
@@ -90,9 +90,9 @@ func (p *providerConfigMigrator) marshalToJson(obj interface{}) string {
 	return string(marshal)
 }
 
-func (p *providerConfigMigrator) updateConfig(session dbconnection.ReadWriteSession, clusterID, config string) {
+func (p *providerConfigMigrator) updateConfig(session dbconnection.ReadWriteSession, id, clusterID, config string) {
 	err := retry.Do(func() error {
-		err := session.UpdateProviderSpecificConfig(clusterID, config)
+		err := session.UpdateProviderSpecificConfig(id, config)
 		return err
 	}, retry.Attempts(5))
 	if err != nil {

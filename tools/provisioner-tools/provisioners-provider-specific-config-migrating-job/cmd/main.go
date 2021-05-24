@@ -12,6 +12,8 @@ import (
 const (
 	databaseConnectionRetries        = 20
 	connStringFormat          string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
+
+	maxErrors = 10
 )
 
 type config struct {
@@ -42,7 +44,7 @@ func main() {
 
 	factory := dbconnection.NewFactory(connection)
 
-	migrator := job.NewProviderConfigMigrator(factory)
+	migrator := job.NewProviderConfigMigrator(factory, maxErrors)
 
 	log.Info("Starting provider config migration job")
 	err = migrator.Do()
