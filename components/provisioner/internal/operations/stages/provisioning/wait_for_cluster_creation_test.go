@@ -143,6 +143,14 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 			cluster:            cluster,
 		},
 		{
+			description: "should return error if Shoot is in failed state due to rate limits exceeded",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInFailedStateWithLimitRatingError(clusterName), nil)
+			},
+			unrecoverableError: false,
+			cluster:            cluster,
+		},
+		{
 			description: "should return unrecoverable error if Shoot is in failed state",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInFailedState(clusterName), nil)
@@ -213,6 +221,23 @@ func fixShootInFailedState(name string) *gardener_types.Shoot {
 	return fixShoot(name, &gardener_types.LastOperation{
 		State: gardencorev1beta1.LastOperationStateFailed,
 	})
+}
+
+func fixShootInFailedStateWithLimitRatingError(name string) *gardener_types.Shoot {
+	shoot := fixShoot(name, &gardener_types.LastOperation{
+		State: gardencorev1beta1.LastOperationStateFailed,
+	})
+
+	codes := make([]gardener_types.ErrorCode, 1)
+	codes[0] = gardener_types.ErrorInfraRateLimitsExceeded
+
+	lastError := gardener_types.LastError{Codes: codes}
+
+	lastErrors := make([]gardener_types.LastError, 1)
+	lastErrors[0] = lastError
+	shoot.Status.LastErrors = lastErrors
+
+	return shoot
 }
 
 func fixShootInProcessingState(name string) *gardener_types.Shoot {
