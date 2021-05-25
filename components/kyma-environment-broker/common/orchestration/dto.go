@@ -62,6 +62,8 @@ type RuntimeTarget struct {
 	PlanName string `json:"planName,omitempty"`
 	// Shoot is used to indicate a sepcific runtime by shoot name
 	Shoot string `json:"shoot,omitempty"`
+	// InstanceID is used to identify an instance by it's instance ID
+	InstanceID string `json:"instanceID,omitempty"`
 }
 
 type Type string
