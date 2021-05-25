@@ -26,7 +26,7 @@ require (
 	github.com/lib/pq v1.10.2
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.4.0
-	github.com/pivotal-cf/brokerapi/v7 v7.5.0
+	github.com/pivotal-cf/brokerapi/v8 v8.0.1-0.20210524135831-3563fe51db34
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.10.0
 	github.com/sebdah/goldie/v2 v2.5.3

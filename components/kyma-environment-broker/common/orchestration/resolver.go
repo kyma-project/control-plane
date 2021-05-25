@@ -12,7 +12,7 @@ import (
 
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerclient "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
-	brokerapi "github.com/pivotal-cf/brokerapi/v7/domain"
+	brokerapi "github.com/pivotal-cf/brokerapi/v8/domain"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
