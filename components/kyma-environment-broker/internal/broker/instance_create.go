@@ -251,6 +251,9 @@ func (b *ProvisionEndpoint) extractERSContext(details domain.ProvisionDetails) (
 	if ersContext.SubAccountID == "" {
 		return ersContext, errors.New("subAccountID parameter cannot be empty")
 	}
+	if ersContext.UserID == "" {
+		return ersContext, errors.New("UserID parameter cannot be empty")
+	}
 
 	return ersContext, nil
 }

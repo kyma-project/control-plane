@@ -55,6 +55,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	err = memoryStorage.Instances().Insert(fixInstance())
 	assert.NoError(t, err)
 
+	administrator := ""
 	profile := gqlschema.KymaProfileProduction
 	strategy := gqlschema.ConflictStrategyReplace
 	provisionerInput := gqlschema.ProvisionRuntimeInput{
@@ -91,6 +92,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				},
 				Seed: nil,
 			},
+			Administrators: []*string{&administrator},
 		},
 		KymaConfig: &gqlschema.KymaConfigInput{
 			Version: kymaVersion,

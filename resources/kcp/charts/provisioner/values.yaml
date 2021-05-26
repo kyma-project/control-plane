@@ -35,6 +35,7 @@ gardener:
 support:
   l2OperatorRoleBindingSubject: "runtimeOperator"
   l3OperatorRoleBindingSubject: "runtimeAdmin"
+  enabledCreatingRoleBindingForAdmin: false
   bindingsCreationTimeout: 5m
 
 kymaRelease:

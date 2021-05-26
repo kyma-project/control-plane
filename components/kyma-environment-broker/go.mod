@@ -13,7 +13,7 @@ require (
 	github.com/Peripli/service-manager v0.19.4
 	github.com/Peripli/service-manager-cli v1.11.8
 	github.com/dlmiddlecote/sqlstats v1.0.2
-	github.com/gardener/gardener v1.10.1-0.20200903060046-8bed4ed6c257
+	github.com/gardener/gardener v1.23.0
 	github.com/go-logr/logr v0.2.1 // indirect
 	github.com/gocraft/dbr v0.0.0-20190714181702-8114670a83bd
 	github.com/google/go-github v17.0.0+incompatible
@@ -40,13 +40,14 @@ require (
 	golang.org/x/mod v0.4.2
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.20.5
-	k8s.io/apimachinery v0.20.5
+	k8s.io/api v0.20.6
+	k8s.io/apimachinery v0.20.6
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	sigs.k8s.io/controller-runtime v0.8.3
 )
 
 replace (
+
 	// NOTE: currently needs replace because of helm v3.5.2 deps
 	// https://github.com/helm/helm/blob/167aac70832d3a384f65f9745335e9fb40169dc2/go.mod#L51-L54
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
@@ -63,6 +64,8 @@ replace (
 	github.com/kyma-incubator/compass/components/director => github.com/kyma-incubator/compass/components/director v0.0.0-20210329081251-209fb6d91e72
 	github.com/kyma-incubator/compass/components/operations-controller => github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210329081251-209fb6d91e72
 	github.com/kyma-incubator/compass/components/system-broker => github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210329081251-209fb6d91e72
+	// remove after merge PR-722
+	github.com/kyma-project/control-plane/components/provisioner => github.com/rJankowski93/control-plane/components/provisioner v0.0.0-20210526053106-d39c3b50c552
 
 	// NOTE: some dependencies require old style client-go version k8s.io/client-go@v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	// github.com/gardener/hvpa-controller, github.com/kyma-project/kyma/components/compass-runtime-agent, github.com/kyma-project/control-plane/components/provisioner, github.com/gardener/gardener
