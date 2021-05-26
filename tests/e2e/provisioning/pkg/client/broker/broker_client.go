@@ -340,6 +340,7 @@ func (c *Client) prepareUpdateDetails(active *bool) ([]byte, error) {
 	}
 	ctx := inputContext{
 		TenantID:        "1eba80dd-8ff6-54ee-be4d-77944d17b10b",
+		SubAccountID:    c.subAccountID,
 		GlobalAccountID: c.globalAccountID,
 		Active:          active,
 	}
