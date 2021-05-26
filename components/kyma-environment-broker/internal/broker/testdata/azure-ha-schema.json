@@ -25,8 +25,8 @@
     "autoScalerMax": {
       "type": "integer",
       "description": "Specifies the maximum number of virtual machines to create",
-      "minimum": 2,
-      "maximum": 10,
+      "minimum": 4,
+      "maximum": 40,
       "default": 10
     },
     "zonesCount": {
