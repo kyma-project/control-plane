@@ -125,6 +125,7 @@ Global Account ID:  {{.GlobalAccountID}}
 Subaccount ID:      {{.SubAccountID}}
 Runtime ID:         {{.RuntimeID}}
 Shoot Name:         {{.ShootName}}
+Instance ID:        {{.InstanceID}}
 Service Plan:       {{.ServicePlanName}}
 Maintenance Window: {{.MaintenanceWindowBegin}} - {{.MaintenanceWindowEnd}}
 State:              {{.State}}
@@ -425,6 +426,9 @@ func orchestrationTarget(t orchestration.RuntimeTarget) string {
 	}
 	if t.RuntimeID != "" {
 		targets = append(targets, fmt.Sprintf("runtime-id = %s", t.RuntimeID))
+	}
+	if t.InstanceID != "" {
+		targets = append(targets, fmt.Sprintf("instance-id = %s", t.InstanceID))
 	}
 	if t.Region != "" {
 		targets = append(targets, fmt.Sprintf("region = %s", t.Region))
