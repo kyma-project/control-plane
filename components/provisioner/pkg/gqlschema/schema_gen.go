@@ -998,9 +998,9 @@ input AWSProviderConfigInput {
 }
 
 input OpenStackProviderConfigInput {
-    zones:           [String!]!   # Zones in which to create the cluster
-    floatingPoolName: String!     # FloatingPoolName name in which LoadBalancer FIPs should be created.
-    cloudProfileName: String!     # Name of the target Cloud Profile
+    zones:           [String!]! # Zones in which to create the cluster
+    floatingPoolName: String!  # FloatingPoolName name in which LoadBalancer FIPs should be created.
+    cloudProfileName: String!  # Name of the target Cloud Profile
     loadBalancerProvider: String! # Name of load balancer provider, e.g. f5
 }
 
@@ -1076,8 +1076,7 @@ type Query {
 
     # Provides status of specified operation
     runtimeOperationStatus(id: String!): OperationStatus
-}
-`},
+}`},
 )
 
 // endregion ************************** generated!.gotpl **************************
