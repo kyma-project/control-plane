@@ -58,9 +58,6 @@ func (g *Graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (s
 		{{- if .Administrators }}
 		administrators: {{.Administrators | marshal }},
 		{{- end }}
-		{{- if .Administrators }}
-		administrators: {{.Administrators | marshal }},
-		{{- end }}
 	}`)
 }
 
