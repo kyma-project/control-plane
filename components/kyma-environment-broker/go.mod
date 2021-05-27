@@ -47,6 +47,7 @@ require (
 )
 
 replace (
+
 	// NOTE: currently needs replace because of helm v3.5.2 deps
 	// https://github.com/helm/helm/blob/167aac70832d3a384f65f9745335e9fb40169dc2/go.mod#L51-L54
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
