@@ -120,7 +120,8 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 				return s.operationManager.OperationFailed(operation, "unable to provide instance details", log)
 			}
 			log.Info("Setting state 'in progress' and refreshing instance details")
-			operation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
+			var retry time.Duration
+			operation, retry = s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
 				operation.State = domain.InProgress
 				operation.InstanceDetails = details
 			}, log)
