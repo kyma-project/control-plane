@@ -529,6 +529,7 @@ func testProvisioningTimeouts() queue.ProvisioningTimeouts {
 		InstallationTriggering: 5 * time.Minute,
 		Installation:           5 * time.Minute,
 		Upgrade:                5 * time.Minute,
+		UpgradeTriggering:      5 * time.Minute,
 		ShootUpgrade:           5 * time.Minute,
 		ShootRefresh:           5 * time.Minute,
 		AgentConfiguration:     5 * time.Minute,

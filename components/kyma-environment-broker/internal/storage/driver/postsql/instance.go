@@ -52,6 +52,7 @@ func (s *Instance) InsertWithoutEncryption(instance internal.Instance) error {
 		UpdatedAt:              instance.UpdatedAt,
 		DeletedAt:              instance.DeletedAt,
 		Version:                instance.Version,
+		Provider:               string(instance.Provider),
 	}
 
 	sess := s.NewWriteSession()
@@ -93,6 +94,7 @@ func (s *Instance) ListWithoutDecryption(filter dbmodel.InstanceFilter) ([]inter
 			UpdatedAt:       dto.UpdatedAt,
 			DeletedAt:       dto.DeletedAt,
 			Version:         dto.Version,
+			Provider:        internal.CloudProvider(dto.Provider),
 		}
 		instances = append(instances, instance)
 	}
@@ -121,6 +123,7 @@ func (s *Instance) UpdateWithoutEncryption(instance internal.Instance) (*interna
 		UpdatedAt:              instance.UpdatedAt,
 		DeletedAt:              instance.DeletedAt,
 		Version:                instance.Version,
+		Provider:               string(instance.Provider),
 	}
 	var lastErr dberr.Error
 	err = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
@@ -322,6 +325,7 @@ func (s *Instance) toInstance(dto dbmodel.InstanceDTO) (internal.Instance, error
 		UpdatedAt:       dto.UpdatedAt,
 		DeletedAt:       dto.DeletedAt,
 		Version:         dto.Version,
+		Provider:        internal.CloudProvider(dto.Provider),
 	}, nil
 }
 
@@ -409,6 +413,7 @@ func (s *Instance) toInstanceDTO(instance internal.Instance) (dbmodel.InstanceDT
 		UpdatedAt:              instance.UpdatedAt,
 		DeletedAt:              instance.DeletedAt,
 		Version:                instance.Version,
+		Provider:               string(instance.Provider),
 	}, nil
 }
 

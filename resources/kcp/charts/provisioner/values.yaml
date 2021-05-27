@@ -47,6 +47,9 @@ kymaRelease:
 installation:
   timeout: 22h
 
+upgrade:
+  triggeringTimeout: 20m
+
 runtimeAgent:
   configurationTimeout: 1h
   connectionTimeout: 1h

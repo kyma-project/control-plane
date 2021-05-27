@@ -26,7 +26,7 @@ func (r readSession) getInstancesJoinedWithOperationStatement() *dbr.SelectStmt 
 		Select("instances.instance_id, instances.runtime_id, instances.global_account_id, instances.service_id,"+
 			" instances.service_plan_id, instances.dashboard_url, instances.provisioning_parameters, instances.created_at,"+
 			" instances.updated_at, instances.deleted_at, instances.sub_account_id, instances.service_name, instances.service_plan_name,"+
-			" instances.provider_region, operations.state, operations.description, operations.type").
+			" instances.provider_region, instances.provider, operations.state, operations.description, operations.type").
 		From(InstancesTableName).
 		LeftJoin(OperationTableName, join)
 	return stmt
