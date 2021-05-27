@@ -14,15 +14,17 @@ import (
 )
 
 type GetInstanceEndpoint struct {
-	instancesStorage storage.Instances
+	instancesStorage  storage.Instances
+	operationsStorage storage.Provisioning
 
 	log logrus.FieldLogger
 }
 
-func NewGetInstance(instancesStorage storage.Instances, log logrus.FieldLogger) *GetInstanceEndpoint {
+func NewGetInstance(instancesStorage storage.Instances, operationsStorage storage.Provisioning, log logrus.FieldLogger) *GetInstanceEndpoint {
 	return &GetInstanceEndpoint{
-		instancesStorage: instancesStorage,
-		log:              log.WithField("service", "GetInstanceEndpoint"),
+		instancesStorage:  instancesStorage,
+		operationsStorage: operationsStorage,
+		log:               log.WithField("service", "GetInstanceEndpoint"),
 	}
 }
 
@@ -39,6 +41,14 @@ func (b *GetInstanceEndpoint) GetInstance(ctx context.Context, instanceID string
 			statusCode = http.StatusInternalServerError
 		}
 		return domain.GetInstanceDetailsSpec{}, apiresponses.NewFailureResponse(err, statusCode, fmt.Sprintf("failed to get instanceID %s", instanceID))
+	}
+
+	// check if provisioning still in progress
+	if op, err := b.operationsStorage.GetProvisioningOperationByInstanceID(instanceID); err != nil {
+		return domain.GetInstanceDetailsSpec{}, apiresponses.NewFailureResponse(err, http.StatusNotFound, fmt.Sprintf("failed to get operation for instanceID %s", instanceID))
+	} else if op.State == domain.InProgress || op.State == domain.Failed {
+		err = fmt.Errorf("provisioning of instanceID %s %s", instanceID, op.State)
+		return domain.GetInstanceDetailsSpec{}, apiresponses.NewFailureResponse(err, http.StatusNotFound, err.Error())
 	}
 
 	spec := domain.GetInstanceDetailsSpec{
