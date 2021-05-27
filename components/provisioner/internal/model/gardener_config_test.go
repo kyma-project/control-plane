@@ -322,7 +322,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1"}`),
 						},
 						InfrastructureConfig: &apimachineryRuntime.RawExtension{
-							Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1","networks":{"vpc":{"cidr":"10.10.11.11/255"},"zones":[{"name":"zone","internal":"10.10.11.13/255","public":"10.10.11.12/255","workers":"10.10.10.10/255"}]}}`),
+							Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1","networks":{"vpc":{"cidr":"10.10.11.11/255"},"zones":[{"name":"zone","internal":"10.10.11.13/255","public":"10.10.11.12/255","workers":"10.10.11.12/255"}]}}`),
 						},
 						Workers: []gardener_types.Worker{
 							fixWorker([]string{"zone"}),

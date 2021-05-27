@@ -147,7 +147,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	runtimeConfigurator := runtimeConfig.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
 
-	auditLogsConfigPath := filepath.Join("testdata", "config.json")
+	//auditLogsConfigPath := filepath.Join("testdata", "config.json")
 	maintenanceWindowConfigPath := filepath.Join("testdata", "maintwindow.json")
 
 	shootInterface := shoots.NewFakeShootsInterface(t, cfg)
