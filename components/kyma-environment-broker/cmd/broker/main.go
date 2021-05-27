@@ -524,7 +524,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		},
 		{
 			stage: createRuntimeStageName,
-			step:  provisioning.NewInitialisationStep(db.Operations(), inputFactory, cfg.Provisioning.Timeout, cfg.OperationTimeout, runtimeVerConfigurator, smcf),
+			step:  provisioning.NewInitialisationStep(db.Operations(), db.Instances(), inputFactory, cfg.Provisioning.Timeout, cfg.OperationTimeout, runtimeVerConfigurator, smcf),
 		},
 		{
 			stage: createRuntimeStageName,

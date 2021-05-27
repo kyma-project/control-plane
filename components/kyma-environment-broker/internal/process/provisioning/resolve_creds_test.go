@@ -25,7 +25,7 @@ func TestResolveCredentialsStepHappyPath_Run(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationRuntimeStatus(broker.GCPPlanID)
+	operation := fixOperationRuntimeStatus(broker.GCPPlanID, internal.GCP)
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
@@ -56,7 +56,7 @@ func TestResolveCredentialsStepHappyPathTrialDefaultProvider_Run(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationRuntimeStatus(broker.TrialPlanID)
+	operation := fixOperationRuntimeStatus(broker.TrialPlanID, internal.Azure)
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 
@@ -87,7 +87,7 @@ func TestResolveCredentialsStepHappyPathTrialGivenProvider_Run(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationRuntimeStatusWithProvider(broker.TrialPlanID, internal.Gcp)
+	operation := fixOperationRuntimeStatusWithProvider(broker.TrialPlanID, internal.GCP)
 
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
@@ -119,7 +119,7 @@ func TestResolveCredentialsStepRetry_Run(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationRuntimeStatus(broker.GCPPlanID)
+	operation := fixOperationRuntimeStatus(broker.GCPPlanID, internal.GCP)
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
 

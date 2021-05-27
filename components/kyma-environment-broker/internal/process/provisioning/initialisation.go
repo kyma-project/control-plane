@@ -44,9 +44,10 @@ type InitialisationStep struct {
 	provisioningTimeout         time.Duration
 	runtimeVerConfigurator      RuntimeVersionConfiguratorForProvisioning
 	serviceManagerClientFactory SMClientFactory
+	instanceStorage             storage.Instances
 }
 
-func NewInitialisationStep(os storage.Operations,
+func NewInitialisationStep(os storage.Operations, is storage.Instances,
 	b input.CreatorForPlan,
 	provisioningTimeout time.Duration,
 	operationTimeout time.Duration,
@@ -59,6 +60,7 @@ func NewInitialisationStep(os storage.Operations,
 		provisioningTimeout:         provisioningTimeout,
 		runtimeVerConfigurator:      rvc,
 		serviceManagerClientFactory: smcf,
+		instanceStorage:             is,
 	}
 }
 
@@ -82,6 +84,12 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 	switch {
 	case err == nil:
 		operation.InputCreator = creator
+
+		err := s.updateInstance(operation.InstanceID, creator.Provider())
+		if err != nil {
+			return s.operationManager.RetryOperation(operation, err.Error(), 1*time.Second, 5*time.Second, log)
+		}
+
 		return operation, 0, nil
 	case kebError.IsTemporaryError(err):
 		log.Errorf("cannot create input creator at the moment for plan %s and version %s: %s", operation.ProvisioningParameters.PlanID, operation.ProvisioningParameters.Parameters.KymaVersion, err)
@@ -107,5 +115,19 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.Provisioni
 	}, log); repeat != 0 {
 		return errors.New("unable to update operation with RuntimeVersion property")
 	}
+	return nil
+}
+
+func (s *InitialisationStep) updateInstance(id string, provider internal.CloudProvider) error {
+	instance, err := s.instanceStorage.GetByID(id)
+	if err != nil {
+		return errors.Wrap(err, "while getting instance")
+	}
+	instance.Provider = provider
+	_, err = s.instanceStorage.Update(*instance)
+	if err != nil {
+		return errors.Wrap(err, "while updating instance")
+	}
+
 	return nil
 }

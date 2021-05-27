@@ -37,6 +37,7 @@ type (
 		Defaults() *gqlschema.ClusterConfigInput
 		ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParameters)
 		Profile() gqlschema.KymaProfile
+		Provider() internal.CloudProvider
 	}
 
 	CreatorForPlan interface {
@@ -167,7 +168,7 @@ func (f *InputBuilderFactory) forTrialPlan(provider *internal.CloudProvider) Hyp
 	}
 
 	switch trialProvider {
-	case internal.Gcp:
+	case internal.GCP:
 		return &cloudProvider.GcpTrialInput{
 			PlatformRegionMapping: f.trialPlatformRegionMapping,
 		}
