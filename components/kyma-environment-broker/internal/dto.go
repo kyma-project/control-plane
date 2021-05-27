@@ -50,7 +50,7 @@ const (
 	AWS             CloudProvider = "AWS"
 	GCP             CloudProvider = "GCP"
 	UnknownProvider CloudProvider = "unknown"
-	Openstack       CloudProvider = "openstack"
+	Openstack       CloudProvider = "OpenStack"
 )
 
 type ProvisioningParametersDTO struct {
