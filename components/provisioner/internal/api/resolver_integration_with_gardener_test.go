@@ -328,7 +328,7 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 	assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
 	assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["kcp.provisioner.kyma-project.io/operation-id"])
 	assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
-	assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
+	//assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
 	assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
 
 	// when checking Runtime Status
