@@ -120,6 +120,8 @@ spec:
               value: {{ .Values.support.l2OperatorRoleBindingSubject | quote }}
             - name: APP_OPERATOR_ROLE_BINDING_L3SUBJECT_NAME
               value: {{ .Values.support.l3OperatorRoleBindingSubject | quote }}
+            - name: APP_OPERATOR_ROLE_BINDING_CREATING_FOR_ADMIN
+              value: {{ .Values.support.enabledCreatingRoleBindingForAdmin | quote }}
             - name: APP_GARDENER_PROJECT
               value: {{ .Values.gardener.project }}
             - name: APP_GARDENER_KUBECONFIG_PATH

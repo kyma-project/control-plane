@@ -204,7 +204,8 @@ func AzureHASchema(machineTypes []string) []byte {
 	properties.AutoScalerMin.Minimum = 4
 
 	properties.AutoScalerMax.Default = 10
-	properties.AutoScalerMax.Maximum = 10
+	properties.AutoScalerMax.Minimum = 4
+	properties.AutoScalerMax.Maximum = 40
 
 	bytes, err := json.Marshal(schema)
 	if err != nil {

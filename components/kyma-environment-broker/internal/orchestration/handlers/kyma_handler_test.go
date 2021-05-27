@@ -201,8 +201,8 @@ func (s *mockServer) getDiff(w http.ResponseWriter, r *http.Request) {
 	// check if commit exists
 	_, exists = branchCommits[commit]
 	if !exists {
-		response.Commits = []*github.RepositoryCommit{
-			&github.RepositoryCommit{SHA: &commit},
+		response.Commits = []github.RepositoryCommit{
+			{SHA: &commit},
 		}
 	}
 
