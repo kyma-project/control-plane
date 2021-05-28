@@ -33,8 +33,9 @@ const (
 	operationID = "223949ed-e6b6-4ab2-ab3e-8e19cd456dd40"
 	runtimeName = "test runtime"
 
-	tenant       = "tenant"
-	subAccountId = "sub-account"
+	tenant        = "tenant"
+	subAccountId  = "sub-account"
+	administrator = "test@test.pl"
 )
 
 var (

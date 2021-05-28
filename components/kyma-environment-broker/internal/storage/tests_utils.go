@@ -396,6 +396,7 @@ func FixTables() map[string]string {
 			dashboard_url varchar(255) NOT NULL,
 			provisioning_parameters text NOT NULL,
 			provider_region varchar(32) NOT NULL,
+			provider varchar(32) NOT NULL DEFAULT '',
             version integer NOT NULL DEFAULT 0,
 			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

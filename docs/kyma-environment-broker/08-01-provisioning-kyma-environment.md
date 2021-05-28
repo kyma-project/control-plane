@@ -20,6 +20,7 @@ This tutorial shows how to provision Kyma Runtime on Azure using Kyma Environmen
    export INSTANCE_ID={INSTANCE_ID}
    export GLOBAL_ACCOUNT_ID={GLOBAL_ACCOUNT_ID}
    export NAME={RUNTIME_NAME}
+   export USER_ID={USER_ID}
    ```
 
    > **NOTE:** INSTANCE_ID and NAME must be unique. It is recommended to use UUID as an INSTANCE_ID.
@@ -42,6 +43,7 @@ This tutorial shows how to provision Kyma Runtime on Azure using Kyma Environmen
        \"plan_id\": \"4deee563-e5ec-4731-b9b1-53b42d855f0c\",
        \"context\": {
            \"globalaccount_id\": \"$GLOBAL_ACCOUNT_ID\"
+           \"user_id\": \"$USER_ID\"
        },
        \"parameters\": {
            \"name\": \"$NAME\"

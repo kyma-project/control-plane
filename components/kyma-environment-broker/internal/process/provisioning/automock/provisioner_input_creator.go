@@ -125,6 +125,21 @@ func (_m *ProvisionerInputCreator) EnableOptionalComponent(componentName string)
 	return r0
 }
 
+// Provider provides a mock function Provider
+func (_m *ProvisionerInputCreator) Provider() internal.CloudProvider {
+	ret := _m.Called()
+	var r0 internal.CloudProvider
+	if rf, ok := ret.Get(0).(func() internal.CloudProvider); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(internal.CloudProvider)
+		}
+	}
+
+	return r0
+}
+
 // SetLabel provides a mock function with given fields: key, value
 func (_m *ProvisionerInputCreator) SetLabel(key string, value string) internal.ProvisionerInputCreator {
 	ret := _m.Called(key, value)

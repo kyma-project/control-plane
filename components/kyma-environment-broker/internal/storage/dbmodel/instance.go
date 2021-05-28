@@ -44,6 +44,7 @@ type InstanceDTO struct {
 	DashboardURL           string
 	ProvisioningParameters string
 	ProviderRegion         string
+	Provider               string
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

@@ -65,7 +65,7 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 	if op.State == domain.Succeeded {
 		if op.Temporary {
 			log.Info("Removing RuntimeID from the instance")
-			err := s.removeRuntimeID(operation)
+			err := s.removeRuntimeID(operation, log)
 			if err != nil {
 				return operation, time.Second, err
 			}
@@ -177,6 +177,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 	case gqlschema.OperationStateSucceeded:
 		{
 			if !broker.IsTrialPlan(planID) {
+				// todo: use "hyperscaler.FromCloudProvider(instance.Provider)" after all instances are migrated with saved Provider
 				hypType, err := hyperscaler.HyperscalerTypeForPlanID(operation.ProvisioningParameters)
 				if err != nil {
 					log.Errorf("after successful deprovisioning failing to hyperscaler release subscription - determine the type of Hyperscaler to use for planID [%s]: %s", planID, err.Error())
@@ -218,9 +219,10 @@ func (s *InitialisationStep) removeUserID(operation internal.DeprovisioningOpera
 	}, log)
 }
 
-func (s *InitialisationStep) removeRuntimeID(op internal.DeprovisioningOperation) error {
+func (s *InitialisationStep) removeRuntimeID(op internal.DeprovisioningOperation, log logrus.FieldLogger) error {
 	inst, err := s.instanceStorage.GetByID(op.InstanceID)
 	if err != nil {
+		log.Errorf("cannot fetch instance with ID: %s from storage", op.InstanceID)
 		return err
 	}
 
@@ -228,11 +230,22 @@ func (s *InitialisationStep) removeRuntimeID(op internal.DeprovisioningOperation
 	inst.RuntimeID = ""
 	_, err = s.instanceStorage.Update(*inst)
 	if err != nil {
+		log.Errorf("cannot update instance with ID: %s", inst.InstanceID)
 		return err
 	}
 
-	op.RuntimeID = ""
-	_, err = s.operationStorage.UpdateDeprovisioningOperation(op)
+	operation, err := s.operationStorage.GetDeprovisioningOperationByID(op.ID)
+	if err != nil {
+		log.Errorf("cannot get deprovisioning operation with ID: %s from storage", op.ID)
+		return err
+	}
 
-	return err
+	operation.RuntimeID = ""
+	_, err = s.operationStorage.UpdateDeprovisioningOperation(*operation)
+	if err != nil {
+		log.Errorf("cannot update deprovisioning operation with ID: %s", operation.ID)
+		return err
+	}
+
+	return nil
 }

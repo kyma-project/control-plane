@@ -66,6 +66,10 @@ func (p *GcpInput) Profile() gqlschema.KymaProfile {
 	return gqlschema.KymaProfileProduction
 }
 
+func (p *GcpInput) Provider() internal.CloudProvider {
+	return internal.GCP
+}
+
 func (p *GcpTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -117,6 +121,10 @@ func (p *GcpTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp 
 
 func (p *GcpTrialInput) Profile() gqlschema.KymaProfile {
 	return gqlschema.KymaProfileEvaluation
+}
+
+func (p *GcpTrialInput) Provider() internal.CloudProvider {
+	return internal.GCP
 }
 
 func ZonesForGCPRegion(region string) []string {

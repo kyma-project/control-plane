@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	error2 "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
@@ -19,7 +20,7 @@ func TestCheckDashboardURLStep_Run(t *testing.T) {
 	directorClient.On("GetConsoleURL", statusGlobalAccountID, statusRuntimeID).Return(dashboardURL, nil)
 
 	st := storage.NewMemoryStorage()
-	operation := fixOperationRuntimeStatus(broker.GCPPlanID)
+	operation := fixOperationRuntimeStatus(broker.GCPPlanID, internal.GCP)
 	operation.RuntimeID = statusRuntimeID
 	operation.DashboardURL = dashboardURL
 	err := st.Operations().InsertProvisioningOperation(operation)
@@ -41,7 +42,7 @@ func TestCheckDashboardURLStep_RunRetry(t *testing.T) {
 	directorClient.On("GetConsoleURL", statusGlobalAccountID, statusRuntimeID).Return("", error2.NewTemporaryError("temporary error"))
 
 	st := storage.NewMemoryStorage()
-	operation := fixOperationRuntimeStatus(broker.GCPPlanID)
+	operation := fixOperationRuntimeStatus(broker.GCPPlanID, internal.GCP)
 	operation.RuntimeID = statusRuntimeID
 	operation.DashboardURL = dashboardURL
 	err := st.Operations().InsertProvisioningOperation(operation)

@@ -48,8 +48,9 @@ type CloudProvider string
 const (
 	Azure           CloudProvider = "Azure"
 	AWS             CloudProvider = "AWS"
-	Gcp             CloudProvider = "GCP"
+	GCP             CloudProvider = "GCP"
 	UnknownProvider CloudProvider = "unknown"
+	Openstack       CloudProvider = "OpenStack"
 )
 
 type ProvisioningParametersDTO struct {
