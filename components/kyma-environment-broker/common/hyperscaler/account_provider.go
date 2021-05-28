@@ -36,8 +36,23 @@ func NewAccountProvider(kubernetesInterface kubernetes.Interface, gardenerPool A
 	}
 }
 
-func HyperscalerTypeForPlanID(pp internal.ProvisioningParameters) (Type, error) {
+func FromCloudProvider(cp internal.CloudProvider) (Type, error) {
+	switch cp {
+	case internal.Azure:
+		return Azure, nil
+	case internal.AWS:
+		return AWS, nil
+	case internal.GCP:
+		return GCP, nil
+	case internal.Openstack:
+		return Openstack, nil
+	default:
+		return "", errors.Errorf("cannot determine the type of Hyperscaler to use for cloud provider %s", cp)
+	}
+}
 
+// HyperscalerTypeForPlanID returns the hyperscaler type, Deprecated (use FromCloudProvider)
+func HyperscalerTypeForPlanID(pp internal.ProvisioningParameters) (Type, error) {
 	planID := pp.PlanID
 	switch planID {
 	case broker.GCPPlanID:
@@ -54,7 +69,7 @@ func HyperscalerTypeForPlanID(pp internal.ProvisioningParameters) (Type, error) 
 			return AWS, nil
 		case internal.Azure:
 			return Azure, nil
-		case internal.Gcp:
+		case internal.GCP:
 			return GCP, nil
 		default:
 			return "", errors.Errorf("cannot determine the type of hyperscaler for free plan with provider: %s", pp.PlatformProvider)

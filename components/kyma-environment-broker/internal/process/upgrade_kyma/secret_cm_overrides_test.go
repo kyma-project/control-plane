@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -20,8 +22,7 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionComputed(t *testing.T)
 
 		memoryStorage := storage.NewMemoryStorage()
 
-		inputCreatorMock := &automock.ProvisionerInputCreator{}
-		defer inputCreatorMock.AssertExpectations(t)
+		inputCreatorMock := fixture.FixInputCreator(internal.GCP)
 
 		runtimeOverridesMock := &automock.RuntimeOverridesAppender{}
 		defer runtimeOverridesMock.AssertExpectations(t)
@@ -57,8 +58,7 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionFromOperation(t *testi
 
 		memoryStorage := storage.NewMemoryStorage()
 
-		inputCreatorMock := &automock.ProvisionerInputCreator{}
-		defer inputCreatorMock.AssertExpectations(t)
+		inputCreatorMock := fixture.FixInputCreator(internal.GCP)
 
 		runtimeOverridesMock := &automock.RuntimeOverridesAppender{}
 		defer runtimeOverridesMock.AssertExpectations(t)

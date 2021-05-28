@@ -216,6 +216,10 @@ func (r *RuntimeInput) CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, e
 	return r.upgradeShootInput, nil
 }
 
+func (r *RuntimeInput) Provider() internal.CloudProvider {
+	return r.hyperscalerInputProvider.Provider()
+}
+
 func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 	params := r.provisioningParameters.Parameters
 	updateString(&r.provisionRuntimeInput.RuntimeInput.Name, &params.Name)

@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	automock2 "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
@@ -33,19 +32,22 @@ const (
 func TestInitialisationStep_Run(t *testing.T) {
 	// given
 	st := storage.NewMemoryStorage()
-	operation := fixOperationRuntimeStatus(broker.GCPPlanID)
+	operation := fixOperationRuntimeStatus(broker.GCPPlanID, internal.GCP)
 	st.Operations().InsertProvisioningOperation(operation)
+	st.Instances().Insert(fixture.FixInstance(operation.InstanceID))
 	rvc := &automock.RuntimeVersionConfiguratorForProvisioning{}
 	v := &internal.RuntimeVersionData{
 		Version: "1.21.0",
 		Origin:  internal.Defaults,
 	}
 	rvc.On("ForProvisioning", mock.Anything).Return(v, nil)
-	ri := &input.RuntimeInput{}
+	ri := &simpleInputCreator{
+		provider: internal.GCP,
+	}
 	builder := &automock2.CreatorForPlan{}
 	builder.On("CreateProvisionInput", operation.ProvisioningParameters, *v).Return(ri, nil)
 
-	step := NewInitialisationStep(st.Operations(), builder, time.Second, time.Second, rvc, nil)
+	step := NewInitialisationStep(st.Operations(), st.Instances(), builder, time.Second, time.Second, rvc, nil)
 
 	// when
 	op, retry, err := step.Run(operation, logrus.New())
@@ -55,10 +57,14 @@ func TestInitialisationStep_Run(t *testing.T) {
 	assert.Zero(t, retry)
 	assert.Equal(t, *v, op.RuntimeVersion)
 	assert.Equal(t, ri, op.InputCreator)
+
+	inst, _ := st.Instances().GetByID(operation.InstanceID)
+	// make sure the provider is saved into the instance
+	assert.Equal(t, internal.GCP, inst.Provider)
 }
 
-func fixOperationRuntimeStatus(planId string) internal.ProvisioningOperation {
-	provisioningOperation := fixture.FixProvisioningOperation(statusOperationID, statusInstanceID)
+func fixOperationRuntimeStatus(planId string, provider internal.CloudProvider) internal.ProvisioningOperation {
+	provisioningOperation := fixture.FixProvisioningOperationWithProvider(statusOperationID, statusInstanceID, provider)
 	provisioningOperation.State = domain.InProgress
 	provisioningOperation.ProvisionerOperationID = statusProvisionerOperationID
 	provisioningOperation.InstanceDetails.RuntimeID = runtimeID
@@ -70,7 +76,7 @@ func fixOperationRuntimeStatus(planId string) internal.ProvisioningOperation {
 }
 
 func fixOperationRuntimeStatusWithProvider(planId string, provider internal.CloudProvider) internal.ProvisioningOperation {
-	provisioningOperation := fixture.FixProvisioningOperation(statusOperationID, statusInstanceID)
+	provisioningOperation := fixture.FixProvisioningOperationWithProvider(statusOperationID, statusInstanceID, provider)
 	provisioningOperation.State = ""
 	provisioningOperation.ProvisionerOperationID = statusProvisionerOperationID
 	provisioningOperation.ProvisioningParameters.PlanID = planId

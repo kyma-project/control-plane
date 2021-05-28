@@ -53,6 +53,10 @@ func (p *OpenStackInput) Profile() gqlschema.KymaProfile {
 	return gqlschema.KymaProfileProduction
 }
 
+func (p *OpenStackInput) Provider() internal.CloudProvider {
+	return internal.Openstack
+}
+
 // openstackZones defines a possible suffixes for given OpenStack regions
 // The table is tested in a unit test to check if all necessary regions are covered
 var openstackZones = map[string]string{
