@@ -27,7 +27,7 @@ spec:
         annotations:
           description: KMC has failed to call EDP with status "2xx successful" in the last 5 minutes.
       - alert: EdpErrors
-        expr: sum by (job) (increase(kmc_edp_error_count[5m])) > 30
+        expr: sum by (subaccount) (increase(kmc_edp_error_count[5m])) > 30
         for: 10m
         labels:
           severity: critical
@@ -73,7 +73,7 @@ spec:
     - name: kmc.rules.skr
       rules:
       - alert: SkrErrors
-        expr: sum by (job) (increase(kmc_skr_error_count[5m])) > 30
+        expr: sum by (subaccount) (increase(kmc_skr_error_count[5m])) > 30
         for: 10m
         labels:
           severity: critical
@@ -82,7 +82,7 @@ spec:
     - name: kmc.rules.gardener
       rules:
       - alert: GardenerErrors
-        expr: sum by (job) (increase(kmc_gardener_error_count[5m])) > 30
+        expr: sum by (subaccount) (increase(kmc_gardener_error_count[5m])) > 30
         for: 10m
         labels:
           severity: critical
@@ -91,10 +91,19 @@ spec:
     - name: kmc.rules.cache
       rules:
       - alert: CacheErrors
-        expr: sum by (job) (increase(kmc_cache_error_count[5m])) > 30
+        expr: sum by (subaccount) (increase(kmc_cache_error_count[5m])) > 30
         for: 10m
         labels:
           severity: critical
         annotations:
           description: KMC has reported an increase in errors in the last 10 minutes for the Cache.
+    - name: kmc.rules.publiccloud
+      rules:
+      - alert: ProviderErrors
+        expr: sum by (job) (increase(kmc_public_cloud_error_count[5m])) > 30
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          description: KMC has reported an increase in errors in the last 10 minutes for loading the public cloud specs.
 {{- end -}}

@@ -18,7 +18,7 @@ var (
 			Name:      ErrorCountName,
 			Help:      "Number of continuous errors of getting the list with runtimes from KEB since last success.",
 		},
-		[]string{"error_count"},
+		[]string{"reason"},
 	)
 
 	cacheErrorCount = promauto.NewCounterVec(
@@ -28,7 +28,7 @@ var (
 			Name:      ErrorCountName,
 			Help:      "Number of continuous errors of adding the subaccount to the cache since last success.",
 		},
-		[]string{"error_count"},
+		[]string{"reason", "subaccount"},
 	)
 
 	skrErrorCount = promauto.NewCounterVec(
@@ -38,7 +38,7 @@ var (
 			Name:      ErrorCountName,
 			Help:      "Number of continuous errors of getting the metrics of the cluster since last success.",
 		},
-		[]string{"error_count"},
+		[]string{"reason", "subaccount"},
 	)
 
 	gardenerErrorCount = promauto.NewCounterVec(
@@ -48,7 +48,7 @@ var (
 			Name:      ErrorCountName,
 			Help:      "Number of continuous errors of getting the config of the cluster since last success.",
 		},
-		[]string{"error_count"},
+		[]string{"reason", "shoot", "subaccount"},
 	)
 
 	edpErrorCount = promauto.NewCounterVec(
@@ -58,7 +58,7 @@ var (
 			Name:      ErrorCountName,
 			Help:      "Number of continuous errors of sending the metrics to EDP since last success.",
 		},
-		[]string{"error_count"},
+		[]string{"reason", "subaccount"},
 	)
 
 	clustersScraped = promauto.NewGaugeVec(
@@ -68,6 +68,16 @@ var (
 			Name:      "number_clusters_scraped",
 			Help:      "Number of clusters scraped.",
 		},
-		[]string{"number_clusters_scraped"},
+		[]string{"requestURI"},
+	)
+
+	providerErrorCount = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: Namespace,
+			Subsystem: "public_cloud",
+			Name:      ErrorCountName,
+			Help:      "Number of continuous errors of sth sth.",
+		},
+		[]string{"reason"},
 	)
 )
