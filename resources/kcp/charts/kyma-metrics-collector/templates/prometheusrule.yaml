@@ -57,12 +57,12 @@ spec:
         annotations:
           description: KMC has reported an increase in errors in the last 10 minutes for KEB.
       - alert: KebRequestDuration
-        expr: sum by (job) (rate(kmc_keb_request_duration_seconds_sum[30m])/rate(kmc_keb_request_duration_seconds_count[30m])) > 3
+        expr: sum by (job) (rate(kmc_keb_request_duration_seconds_sum[30m])/rate(kmc_keb_request_duration_seconds_count[30m])) > 5
         for: 10m
         labels:
           severity: warning
         annotations:
-          description: Average request duration to KEB during the last 30 minutes took longer than 3 seconds.
+          description: Average request duration to KEB during the last 30 minutes took longer than 5 seconds.
       - alert: ClustersRateChanged
         expr: (deriv(kmc_keb_number_clusters_scraped[5m])) < -0.033
         for: 10m
