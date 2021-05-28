@@ -134,6 +134,7 @@ type GardenerConfigInput struct {
 	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
 	Seed                                *string                `json:"seed"`
+	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
 }
 
 type GardenerUpgradeInput struct {
@@ -151,6 +152,7 @@ type GardenerUpgradeInput struct {
 	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate"`
 	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
+	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
 }
 
 type HibernationStatus struct {
@@ -171,6 +173,15 @@ type KymaConfigInput struct {
 	Components       []*ComponentConfigurationInput `json:"components"`
 	Configuration    []*ConfigEntryInput            `json:"configuration"`
 	ConflictStrategy *ConflictStrategy              `json:"conflictStrategy"`
+}
+
+type OIDCConfigInput struct {
+	ClientID       string   `json:"clientID"`
+	GroupsClaim    string   `json:"groupsClaim"`
+	IssuerURL      string   `json:"issuerURL"`
+	SigningAlgs    []string `json:"signingAlgs"`
+	UsernameClaim  string   `json:"usernameClaim"`
+	UsernamePrefix string   `json:"usernamePrefix"`
 }
 
 type OpenStackProviderConfig struct {
