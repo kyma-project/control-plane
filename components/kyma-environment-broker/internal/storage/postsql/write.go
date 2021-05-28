@@ -73,6 +73,7 @@ func (ws writeSession) UpdateInstance(instance dbmodel.InstanceDTO) dberr.Error 
 		Set("dashboard_url", instance.DashboardURL).
 		Set("provisioning_parameters", instance.ProvisioningParameters).
 		Set("provider_region", instance.ProviderRegion).
+		Set("provider", instance.Provider).
 		Set("updated_at", time.Now()).
 		Set("version", instance.Version+1).
 		Exec()
