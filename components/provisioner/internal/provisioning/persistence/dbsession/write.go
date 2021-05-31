@@ -77,6 +77,22 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		return dberrors.Internal("Failed to insert record to GardenerConfig table: %s", err)
 	}
 
+	if config.OIDCConfig != nil {
+		_, err = ws.insertInto("oidc_config").
+			Pair("id", config.ID).
+			Pair("gardener_config_id", config.ID).
+			Pair("client_id", config.OIDCConfig.ClientID).
+			Pair("groups_claim", config.OIDCConfig.GroupsClaim).
+			Pair("issuer_url", config.OIDCConfig.IssuerURL).
+			//TODO oidc signingAlgs
+			Pair("username_claim", config.OIDCConfig.UsernameClaim).
+			Pair("username_prefix", config.OIDCConfig.UsernamePrefix).
+			Exec()
+
+		if err != nil {
+			return dberrors.Internal("Failed to insert record to OIDCConfig table: %s", err)
+		}
+	}
 	return nil
 }
 

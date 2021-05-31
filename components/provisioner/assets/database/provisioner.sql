@@ -153,3 +153,17 @@ CREATE TABLE cluster_administrator
     cluster_id uuid NOT NULL,
     email text NOT NULL
 );
+
+-- OIDC config
+
+CREATE TABLE oidc_config
+(
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    gardener_config_id uuid NOT NULL,
+    clientID text NOT NULL,
+    groupsClaim text NOT NULL,
+    issuerURL text NOT NULL,
+    signingAlgs text NOT NULL,
+    usernameClaim text NOT NULL,
+    usernamePrefix text NOT NULL
+);
