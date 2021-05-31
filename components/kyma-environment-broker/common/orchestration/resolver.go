@@ -172,6 +172,13 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 			continue
 		}
 
+		// Match exact shoot by instanceID
+		if rt.InstanceID != "" {
+			if rt.InstanceID != r.InstanceID {
+				continue
+			}
+		}
+
 		// Match exact shoot by name
 		if rt.Shoot != "" && rt.Shoot != shoot.Name {
 			continue
