@@ -101,6 +101,21 @@ func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) 
 		Set("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Exec()
 
+	if config.OIDCConfig != nil {
+		_, err := ws.update("oidc_config").
+			Where(dbr.Eq("gardener_config_id", config.ID)).
+			Set("client_id", config.OIDCConfig.ClientID).
+			Set("groups_claim", config.OIDCConfig.GroupsClaim).
+			Set("issuer_url", config.OIDCConfig.IssuerURL).
+			Set("username_claim", config.OIDCConfig.UsernameClaim).
+			Set("username_prefix", config.OIDCConfig.UsernamePrefix).
+			Exec()
+
+		if err != nil {
+			return dberrors.Internal("Failed to update record to OIDCConfig table: %s", err)
+		}
+	}
+
 	if err != nil {
 		return dberrors.Internal("Failed to update record of configuration for gardener shoot cluster '%s': %s", config.Name, err)
 	}

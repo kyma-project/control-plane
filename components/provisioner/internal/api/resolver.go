@@ -39,30 +39,52 @@ func NewResolver(provisioningService provisioning.Service, validator Validator) 
 }
 
 func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.ProvisionRuntimeInput) (*gqlschema.OperationStatus, error) {
-	err := r.validator.ValidateProvisioningInput(config)
-	if err != nil {
-		log.Errorf("Failed to provision Runtime %s", err)
-		return nil, err
+	//TODO remove before merge
+	//config.ClusterConfig.GardenerConfig.OidcConfig = &gqlschema.OIDCConfigInput{
+	//	ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb1237",
+	//	GroupsClaim:    "groups",
+	//	IssuerURL:      "https://kymatest.accounts400.ondemand.com",
+	//	UsernameClaim:  "sub",
+	//	UsernamePrefix: "-",
+	//}
+	//
+	//err := r.validator.ValidateProvisioningInput(config)
+	//if err != nil {
+	//	log.Errorf("Failed to provision Runtime %s", err)
+	//	return nil, err
+	//}
+	//
+	//tenant, err := getTenant(ctx)
+	//if err != nil {
+	//	log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
+	//	return nil, err
+	//}
+	//
+	//subAccount := getSubAccount(ctx)
+	//
+	//log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
+	//
+	//operationStatus, err := r.provisioning.ProvisionRuntime(config, tenant, subAccount)
+	//if err != nil {
+	//	log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
+	//	return nil, err
+	//}
+	//log.Infof("Provisioning started for Runtime %s. Operation id %s", config.RuntimeInput.Name, *operationStatus.ID)
+	//
+	//return operationStatus, nil
+
+	test := gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			OidcConfig: &gqlschema.OIDCConfigInput{
+				ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb1238",
+				GroupsClaim:    "groups",
+				IssuerURL:      "https://kymatest.accounts400.ondemand.com",
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
+			},
+		},
 	}
-
-	tenant, err := getTenant(ctx)
-	if err != nil {
-		log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
-		return nil, err
-	}
-
-	subAccount := getSubAccount(ctx)
-
-	log.Infof("Requested provisioning of Runtime %s.", config.RuntimeInput.Name)
-
-	operationStatus, err := r.provisioning.ProvisionRuntime(config, tenant, subAccount)
-	if err != nil {
-		log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
-		return nil, err
-	}
-	log.Infof("Provisioning started for Runtime %s. Operation id %s", config.RuntimeInput.Name, *operationStatus.ID)
-
-	return operationStatus, nil
+	return r.UpgradeShoot(ctx, "fbd6eee3-4ddb-4c7f-b5ba-b9f89c7cd628", test)
 }
 
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
@@ -107,7 +129,6 @@ func (r *Resolver) UpgradeRuntime(ctx context.Context, runtimeId string, input g
 
 	return operationStatus, nil
 }
-
 func (r *Resolver) RollBackUpgradeOperation(ctx context.Context, runtimeID string) (*gqlschema.RuntimeStatus, error) {
 	_, err := r.getAndValidateTenant(ctx, runtimeID)
 	if err != nil {

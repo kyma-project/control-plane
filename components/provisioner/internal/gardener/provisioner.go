@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"time"
 
@@ -99,7 +100,24 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 		return appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, upgradeConfig.Name)
 	}
 
+	log.Infof("********************4**************")
+	log.Info(upgradeConfig.OIDCConfig)
+	log.Infof("********************4**************")
+	log.Info(shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig)
+	log.Infof("********************4**************")
 	appErr := upgradeConfig.GardenerProviderConfig.EditShootConfig(upgradeConfig, shoot)
+
+	log.Infof("********************5**************")
+	log.Info(upgradeConfig.OIDCConfig)
+	log.Infof("********************5**************")
+	log.Info(shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig)
+	log.Infof("********************5**************")
+	shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig = gardenerOidcConfig(upgradeConfig.OIDCConfig)
+	log.Infof("********************6**************")
+	log.Info(upgradeConfig.OIDCConfig)
+	log.Infof("********************6**************")
+	log.Info(shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig)
+	log.Infof("********************6**************")
 
 	if appErr != nil {
 		return appErr.Append("error while updating Gardener shoot configuration")
@@ -297,4 +315,18 @@ func getDataFromFile(filepath, region string) (interface{}, apperrors.AppError) 
 		return "", apperrors.Internal("failed to decode json: %s", err.Error())
 	}
 	return data[region], nil
+}
+
+func gardenerOidcConfig(oidcConfig *model.OIDCConfig) *gardener_types.OIDCConfig {
+	if oidcConfig != nil {
+		return &gardener_types.OIDCConfig{
+			ClientID:       &oidcConfig.ClientID,
+			GroupsClaim:    &oidcConfig.GroupsClaim,
+			IssuerURL:      &oidcConfig.IssuerURL,
+			SigningAlgs:    oidcConfig.SigningAlgs,
+			UsernameClaim:  &oidcConfig.UsernameClaim,
+			UsernamePrefix: &oidcConfig.UsernamePrefix,
+		}
+	}
+	return nil
 }
