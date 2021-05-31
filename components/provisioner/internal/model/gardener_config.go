@@ -22,6 +22,15 @@ const (
 	LicenceTypeAnnotation = "kcp.provisioner.kyma-project.io/licence-type"
 )
 
+type OIDCConfig struct {
+	ClientID       string   `json:"clientID"`
+	GroupsClaim    string   `json:"groupsClaim"`
+	IssuerURL      string   `json:"issuerURL"`
+	SigningAlgs    []string `json:"signingAlgs"`
+	UsernameClaim  string   `json:"usernameClaim"`
+	UsernamePrefix string   `json:"usernamePrefix"`
+}
+
 type GardenerConfig struct {
 	ID                                  string
 	ClusterID                           string
@@ -48,9 +57,10 @@ type GardenerConfig struct {
 	EnableMachineImageVersionAutoUpdate bool
 	AllowPrivilegedContainers           bool
 	GardenerProviderConfig              GardenerProviderConfig
+	OIDCConfig                          *OIDCConfig
 }
 
-func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string) (*gardener_types.Shoot, apperrors.AppError) {
+func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string, oidcConfig *OIDCConfig) (*gardener_types.Shoot, apperrors.AppError) {
 	enableBasicAuthentication := false
 
 	var seed *string = nil
@@ -101,6 +111,17 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				},
 			},
 		},
+	}
+
+	if oidcConfig != nil {
+		shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig = &gardener_types.OIDCConfig{
+			ClientID:       &oidcConfig.ClientID,
+			GroupsClaim:    &oidcConfig.GroupsClaim,
+			IssuerURL:      &oidcConfig.IssuerURL,
+			SigningAlgs:    oidcConfig.SigningAlgs,
+			UsernameClaim:  &oidcConfig.UsernameClaim,
+			UsernamePrefix: &oidcConfig.UsernamePrefix,
+		}
 	}
 
 	err := c.GardenerProviderConfig.ExtendShootConfig(c, shoot)

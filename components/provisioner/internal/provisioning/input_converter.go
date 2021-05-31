@@ -87,7 +87,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		return model.GardenerConfig{}, err
 	}
 
-	return model.GardenerConfig{
+	config := model.GardenerConfig{
 		ID:                                  c.uuidGenerator.New(),
 		Name:                                input.Name,
 		ProjectName:                         c.gardenerProject,
@@ -113,7 +113,20 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		AllowPrivilegedContainers:           allowPrivilegedContainers,
 		ClusterID:                           runtimeID,
 		GardenerProviderConfig:              providerSpecificConfig,
-	}, nil
+	}
+
+	if input.OidcConfig != nil {
+		config.OIDCConfig = &model.OIDCConfig{
+			ClientID:       input.OidcConfig.ClientID,
+			GroupsClaim:    input.OidcConfig.GroupsClaim,
+			IssuerURL:      input.OidcConfig.IssuerURL,
+			SigningAlgs:    input.OidcConfig.SigningAlgs,
+			UsernameClaim:  input.OidcConfig.UsernameClaim,
+			UsernamePrefix: input.OidcConfig.UsernamePrefix,
+		}
+	}
+
+	return config, nil
 }
 
 func (c converter) shouldAllowPrivilegedContainers(inputAllowPrivilegedContainers *bool, tillerYaml string) bool {

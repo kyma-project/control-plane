@@ -58,7 +58,7 @@ type GardenerProvisioner struct {
 }
 
 func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationId string) apperrors.AppError {
-	shootTemplate, err := cluster.ClusterConfig.ToShootTemplate(g.namespace, cluster.Tenant, util.UnwrapStr(cluster.SubAccountId))
+	shootTemplate, err := cluster.ClusterConfig.ToShootTemplate(g.namespace, cluster.Tenant, util.UnwrapStr(cluster.SubAccountId), cluster.ClusterConfig.OIDCConfig)
 	if err != nil {
 		return err.Append("failed to convert cluster config to Shoot template")
 	}
