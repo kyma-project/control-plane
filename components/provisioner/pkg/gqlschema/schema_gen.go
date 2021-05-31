@@ -972,6 +972,16 @@ input GardenerConfigInput {
     allowPrivilegedContainers: Boolean              # Allow Privileged Containers indicates whether privileged containers are allowed in the Shoot
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
+    oidcConfig: OIDCConfigInput
+}
+
+input OIDCConfigInput {
+    clientID: String!
+    groupsClaim: String!
+    issuerURL: String!
+    signingAlgs: [String!]!
+    usernameClaim: String!
+    usernamePrefix: String!
 }
 
 input ProviderSpecificInput {
@@ -998,9 +1008,9 @@ input AWSProviderConfigInput {
 }
 
 input OpenStackProviderConfigInput {
-    zones:           [String!]! # Zones in which to create the cluster
-    floatingPoolName: String!  # FloatingPoolName name in which LoadBalancer FIPs should be created.
-    cloudProfileName: String!  # Name of the target Cloud Profile
+    zones:           [String!]!   # Zones in which to create the cluster
+    floatingPoolName: String!     # FloatingPoolName name in which LoadBalancer FIPs should be created.
+    cloudProfileName: String!     # Name of the target Cloud Profile
     loadBalancerProvider: String! # Name of load balancer provider, e.g. f5
 }
 
@@ -1051,6 +1061,7 @@ input GardenerUpgradeInput {
     enableKubernetesVersionAutoUpdate: Boolean    # Enable KubernetesVersion AutoUpdate indicates whether the patch Kubernetes version may be automatically updated
     enableMachineImageVersionAutoUpdate: Boolean  # Enable MachineImageVersion AutoUpdate indicates whether the machine image version may be automatically updated
     providerSpecificConfig: ProviderSpecificInput # Additional parameters, vary depending on the target provider
+    oidcConfig: OIDCConfigInput
 }
 
 type Mutation {
@@ -1076,7 +1087,8 @@ type Query {
 
     # Provides status of specified operation
     runtimeOperationStatus(id: String!): OperationStatus
-}`},
+}
+`},
 )
 
 // endregion ************************** generated!.gotpl **************************
@@ -5298,6 +5310,12 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "oidcConfig":
+			var err error
+			it.OidcConfig, err = ec.unmarshalOOIDCConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfigInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -5394,6 +5412,12 @@ func (ec *executionContext) unmarshalInputGardenerUpgradeInput(ctx context.Conte
 			if err != nil {
 				return it, err
 			}
+		case "oidcConfig":
+			var err error
+			it.OidcConfig, err = ec.unmarshalOOIDCConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfigInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -5433,6 +5457,54 @@ func (ec *executionContext) unmarshalInputKymaConfigInput(ctx context.Context, o
 		case "conflictStrategy":
 			var err error
 			it.ConflictStrategy, err = ec.unmarshalOConflictStrategy2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConflictStrategy(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputOIDCConfigInput(ctx context.Context, obj interface{}) (OIDCConfigInput, error) {
+	var it OIDCConfigInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "clientID":
+			var err error
+			it.ClientID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "groupsClaim":
+			var err error
+			it.GroupsClaim, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "issuerURL":
+			var err error
+			it.IssuerURL, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "signingAlgs":
+			var err error
+			it.SigningAlgs, err = ec.unmarshalNString2ᚕstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "usernameClaim":
+			var err error
+			it.UsernameClaim, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "usernamePrefix":
+			var err error
+			it.UsernamePrefix, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7265,6 +7337,18 @@ func (ec *executionContext) marshalOLabels2ᚖgithubᚗcomᚋkymaᚑprojectᚋco
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) unmarshalOOIDCConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfigInput(ctx context.Context, v interface{}) (OIDCConfigInput, error) {
+	return ec.unmarshalInputOIDCConfigInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOOIDCConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfigInput(ctx context.Context, v interface{}) (*OIDCConfigInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOOIDCConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfigInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalOOpenStackProviderConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOpenStackProviderConfigInput(ctx context.Context, v interface{}) (OpenStackProviderConfigInput, error) {
