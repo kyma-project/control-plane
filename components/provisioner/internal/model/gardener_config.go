@@ -97,6 +97,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				Version:                   c.KubernetesVersion,
 				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 					EnableBasicAuthentication: &enableBasicAuthentication,
+					OIDCConfig:                gardenerOidcConfig(oidcConfig),
 				},
 			},
 			Networking: gardener_types.Networking{
@@ -113,8 +114,17 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 		},
 	}
 
+	err := c.GardenerProviderConfig.ExtendShootConfig(c, shoot)
+	if err != nil {
+		return nil, err.Append("error extending shoot config with Provider")
+	}
+
+	return shoot, nil
+}
+
+func gardenerOidcConfig(oidcConfig *OIDCConfig) *gardener_types.OIDCConfig {
 	if oidcConfig != nil {
-		shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig = &gardener_types.OIDCConfig{
+		return &gardener_types.OIDCConfig{
 			ClientID:       &oidcConfig.ClientID,
 			GroupsClaim:    &oidcConfig.GroupsClaim,
 			IssuerURL:      &oidcConfig.IssuerURL,
@@ -123,13 +133,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			UsernamePrefix: &oidcConfig.UsernamePrefix,
 		}
 	}
-
-	err := c.GardenerProviderConfig.ExtendShootConfig(c, shoot)
-	if err != nil {
-		return nil, err.Append("error extending shoot config with Provider")
-	}
-
-	return shoot, nil
+	return nil
 }
 
 type ProviderSpecificConfig string
