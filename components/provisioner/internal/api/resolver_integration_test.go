@@ -234,7 +234,6 @@ func NewUpgradeShootInput() gqlschema.UpgradeShootInput {
 			AutoScalerMax:     util.IntPtr(6),
 			MaxSurge:          util.IntPtr(2),
 			MaxUnavailable:    util.IntPtr(1),
-			OidcConfig:        oidcInput(),
 		},
 	}
 }
@@ -249,7 +248,6 @@ func NewUpgradeOpenStackShootInput() gqlschema.UpgradeShootInput {
 			AutoScalerMax:     util.IntPtr(6),
 			MaxSurge:          util.IntPtr(2),
 			MaxUnavailable:    util.IntPtr(1),
-			OidcConfig:        oidcInput(),
 		},
 	}
 }
