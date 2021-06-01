@@ -2,7 +2,6 @@ package provisioning
 
 import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-	"github.com/prometheus/common/log"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
@@ -152,11 +151,6 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 	} else {
 		providerSpecificConfig = config.GardenerProviderConfig
 	}
-	log.Infof("********************3**************")
-	log.Info(input.OidcConfig)
-	log.Infof("********************3**************")
-	log.Info(config.OIDCConfig)
-	log.Infof("********************3**************")
 
 	return model.GardenerConfig{
 		ID:                        config.ID,
