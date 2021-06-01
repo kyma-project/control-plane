@@ -723,11 +723,11 @@ func TestResolver_HibernateCluster(t *testing.T) {
 
 func oidcInput() *gqlschema.OIDCConfigInput {
 	return &gqlschema.OIDCConfigInput{
-		ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb1111",
+		ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb2222",
 		GroupsClaim:    "groups",
 		IssuerURL:      "https://kymatest.accounts400.ondemand.com",
-		SigningAlgs:    []string{"RS256"},
-		UsernameClaim:  "sub",
+		SigningAlgs:    []string{"RS257"},
+		UsernameClaim:  "sup",
 		UsernamePrefix: "-",
 	}
 }
