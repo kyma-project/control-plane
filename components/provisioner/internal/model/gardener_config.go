@@ -457,6 +457,9 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 		shoot.Spec.Provider.Workers[0].Machine.Image.Version = upgradeConfig.MachineImageVersion
 	}
 	if upgradeConfig.OIDCConfig != nil {
+		if shoot.Spec.Kubernetes.KubeAPIServer == nil {
+			shoot.Spec.Kubernetes.KubeAPIServer = &gardener_types.KubeAPIServerConfig{}
+		}
 		shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig = &gardener_types.OIDCConfig{
 			ClientID:       &upgradeConfig.OIDCConfig.ClientID,
 			GroupsClaim:    &upgradeConfig.OIDCConfig.GroupsClaim,
