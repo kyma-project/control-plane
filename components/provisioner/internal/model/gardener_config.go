@@ -456,6 +456,16 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	if util.NotNilOrEmpty(upgradeConfig.MachineImageVersion) {
 		shoot.Spec.Provider.Workers[0].Machine.Image.Version = upgradeConfig.MachineImageVersion
 	}
+	if upgradeConfig.OIDCConfig != nil {
+		shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig = &gardener_types.OIDCConfig{
+			ClientID:       &upgradeConfig.OIDCConfig.ClientID,
+			GroupsClaim:    &upgradeConfig.OIDCConfig.GroupsClaim,
+			IssuerURL:      &upgradeConfig.OIDCConfig.IssuerURL,
+			SigningAlgs:    upgradeConfig.OIDCConfig.SigningAlgs,
+			UsernameClaim:  &upgradeConfig.OIDCConfig.UsernameClaim,
+			UsernamePrefix: &upgradeConfig.OIDCConfig.UsernamePrefix,
+		}
+	}
 	return nil
 }
 
