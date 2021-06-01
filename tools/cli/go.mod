@@ -22,6 +22,7 @@ replace (
 	github.com/99designs/gqlgen => github.com/99designs/gqlgen v0.9.3
 	github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
 	github.com/gardener/gardener => github.com/gardener/gardener v1.2.3
+	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.1
 	github.com/kyma-incubator/compass/components/director => github.com/kyma-incubator/compass/components/director v0.0.0-20210329081251-209fb6d91e72
 	k8s.io/api => k8s.io/api v0.17.17
 	k8s.io/apimachinery => k8s.io/apimachinery v0.17.17
