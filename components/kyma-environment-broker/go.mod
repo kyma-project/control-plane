@@ -46,6 +46,24 @@ require (
 )
 
 replace (
+	// NOTE: currently needs replace because of helm v3.5.2 deps
+	// https://github.com/helm/helm/blob/167aac70832d3a384f65f9745335e9fb40169dc2/go.mod#L51-L54
+	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
+	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
+
+	// NOTE: github.com/kyma-project/control-plane/components/provisioner already depends on 1.10 but KEB is not ready yet
+	github.com/gardener/gardener => github.com/gardener/gardener v1.0.4
+
+	// NOTE: currently compass references no longer existing versions of some components and don't have valid go modules tag
+	// go: github.com/kyma-incubator/compass/components/director@v0.0.0-20210517162920-9017d63d1185 requires
+	//      github.com/kyma-incubator/compass/components/operations-controller@v0.0.0-20210416142045-25b90bbc9ee6 requires
+	//      github.com/kyma-incubator/compass/components/system-broker@v0.0.0-20210301181003-c1c76083a015: invalid version: unknown revision c1c76083a015
+	github.com/kyma-incubator/compass/components/connector => github.com/kyma-incubator/compass/components/connector v0.0.0-20210329081251-209fb6d91e72
+	github.com/kyma-incubator/compass/components/director => github.com/kyma-incubator/compass/components/director v0.0.0-20210329081251-209fb6d91e72
+	github.com/kyma-incubator/compass/components/operations-controller => github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210329081251-209fb6d91e72
+	github.com/kyma-incubator/compass/components/system-broker => github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210329081251-209fb6d91e72
+	github.com/kyma-project/control-plane/components/provisioner => github.com/ksputo/control-plane/components/provisioner v0.0.0-20210601002206-ab01e6e1f494
+
 	// NOTE: some dependencies require old style client-go version k8s.io/client-go@v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	// github.com/gardener/hvpa-controller, github.com/kyma-project/kyma/components/compass-runtime-agent, github.com/kyma-project/control-plane/components/provisioner, github.com/gardener/gardener
 	k8s.io/api => k8s.io/api v0.19.0
