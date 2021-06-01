@@ -3,11 +3,10 @@ package memory
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"regexp"
 	"sort"
 	"sync"
-
-	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -45,43 +44,56 @@ func (s *instances) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]
 
 	// simulate left join without grouping on column
 	for id, v := range s.instances {
-		dOp, dErr := s.operationsStorage.GetDeprovisioningOperationByInstanceID(id)
+		dOps, dErr := s.operationsStorage.ListDeprovisioningOperationsByInstanceID(id)
 		if dErr != nil && !dberr.IsNotFound(dErr) {
 			return nil, dErr
 		}
-		pOp, pErr := s.operationsStorage.GetProvisioningOperationByInstanceID(id)
+		pOps, pErr := s.operationsStorage.ListProvisioningOperationsByInstanceID(id)
 		if pErr != nil && !dberr.IsNotFound(pErr) {
 			return nil, pErr
 		}
-		uOp, uErr := s.operationsStorage.GetUpgradeKymaOperationByInstanceID(id)
+		uOps, uErr := s.operationsStorage.ListUpgradeKymaOperationsByInstanceID(id)
 		if uErr != nil && !dberr.IsNotFound(uErr) {
 			return nil, uErr
 		}
 
 		if !dberr.IsNotFound(dErr) {
-			instances = append(instances, internal.InstanceWithOperation{
-				Instance:    v,
-				Type:        sql.NullString{String: string(internal.OperationTypeDeprovision), Valid: true},
-				State:       sql.NullString{String: string(dOp.State), Valid: true},
-				Description: sql.NullString{String: dOp.Description, Valid: true},
-			})
+			for _, op := range dOps {
+				instances = append(instances, internal.InstanceWithOperation{
+					Instance:       v,
+					Type:           sql.NullString{String: string(internal.OperationTypeDeprovision), Valid: true},
+					State:          sql.NullString{String: string(op.State), Valid: true},
+					Description:    sql.NullString{String: op.Description, Valid: true},
+					OpCreatedAt:    op.CreatedAt,
+					IsSuspensionOp: op.Temporary,
+				})
+			}
 		}
+
 		if !dberr.IsNotFound(pErr) {
-			instances = append(instances, internal.InstanceWithOperation{
-				Instance:    v,
-				Type:        sql.NullString{String: string(internal.OperationTypeProvision), Valid: true},
-				State:       sql.NullString{String: string(pOp.State), Valid: true},
-				Description: sql.NullString{String: pOp.Description, Valid: true},
-			})
+			for _, op := range pOps {
+				instances = append(instances, internal.InstanceWithOperation{
+					Instance:       v,
+					Type:           sql.NullString{String: string(internal.OperationTypeProvision), Valid: true},
+					State:          sql.NullString{String: string(op.State), Valid: true},
+					Description:    sql.NullString{String: op.Description, Valid: true},
+					OpCreatedAt:    op.CreatedAt,
+					IsSuspensionOp: false,
+				})
+			}
 		}
+
 		if !dberr.IsNotFound(uErr) {
-			instances = append(instances, internal.InstanceWithOperation{
-				Instance:    v,
-				Type:        sql.NullString{String: string(internal.OperationTypeUpgradeKyma), Valid: true},
-				State:       sql.NullString{String: string(uOp.State), Valid: true},
-				Description: sql.NullString{String: uOp.Description, Valid: true},
-			})
+			for _, op := range uOps {
+				instances = append(instances, internal.InstanceWithOperation{
+					Instance:    v,
+					Type:        sql.NullString{String: string(internal.OperationTypeUpgradeKyma), Valid: true},
+					State:       sql.NullString{String: string(op.State), Valid: true},
+					Description: sql.NullString{String: op.Description, Valid: true},
+				})
+			}
 		}
+
 		if dberr.IsNotFound(dErr) && dberr.IsNotFound(pErr) {
 			instances = append(instances, internal.InstanceWithOperation{Instance: v})
 		}

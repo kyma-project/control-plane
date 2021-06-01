@@ -306,7 +306,7 @@ func main() {
 		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, defaultPlansConfig, cfg.EnableOnDemandVersion, logs),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
 		broker.NewUpdate(db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, logs),
-		broker.NewGetInstance(db.Instances(), logs),
+		broker.NewGetInstance(db.Instances(), db.Operations(), logs),
 		broker.NewLastOperation(db.Operations(), logs),
 		broker.NewBind(logs),
 		broker.NewUnbind(logs),
