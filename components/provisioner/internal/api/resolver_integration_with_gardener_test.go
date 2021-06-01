@@ -147,7 +147,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	runtimeConfigurator := runtimeConfig.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
 
-	//auditLogsConfigPath := filepath.Join("testdata", "config.json")
+	auditLogsConfigPath := filepath.Join("testdata", "config.json")
 	maintenanceWindowConfigPath := filepath.Join("testdata", "maintwindow.json")
 
 	shootInterface := shoots.NewFakeShootsInterface(t, cfg)
@@ -182,13 +182,13 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	shootHibernationQueue := queue.CreateHibernationQueue(testHibernationTimeouts(), dbsFactory, directorServiceMock, shootInterface)
 	shootHibernationQueue.Run(queueCtx.Done())
 
-	//controler, err := gardener.NewShootController(mgr, dbsFactory, auditLogsConfigPath)
-	//require.NoError(t, err)
-	//
-	//go func() {
-	//	err := controler.StartShootController()
-	//	require.NoError(t, err)
-	//}()
+	controler, err := gardener.NewShootController(mgr, dbsFactory, auditLogsConfigPath)
+	require.NoError(t, err)
+
+	go func() {
+		err := controler.StartShootController()
+		require.NoError(t, err)
+	}()
 
 	kymaConfig := fixKymaGraphQLConfigInput()
 	clusterConfigurations := newTestProvisioningConfigs()
@@ -328,7 +328,7 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 	assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
 	assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["kcp.provisioner.kyma-project.io/operation-id"])
 	assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
-	//assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
+	assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
 	assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
 
 	// when checking Runtime Status
