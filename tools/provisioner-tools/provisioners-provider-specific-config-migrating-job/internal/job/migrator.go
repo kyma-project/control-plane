@@ -3,6 +3,7 @@ package job
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/persistence/dberrors"
 	"strings"
 
 	"github.com/avast/retry-go"
@@ -36,6 +37,10 @@ func (p *providerConfigMigrator) Do() error {
 	data, dberr := session.GetProviderSpecificConfigsByProvider(model.AWS)
 
 	if dberr != nil {
+		if dberr.Code() == dberrors.CodeNotFound {
+			log.Info("Could not find Gardener configs for aws. Skipping")
+			return nil
+		}
 		return dberr
 	}
 
@@ -56,10 +61,10 @@ func (p *providerConfigMigrator) Do() error {
 func (p *providerConfigMigrator) decodeAWSConfig(data dbconnection.ProviderData) model.OldAWSProviderConfigInput {
 	var oldConfigInput model.OldAWSProviderConfigInput
 
-	err := util.DecodeJson(data.Config, &oldConfigInput)
+	err := util.DecodeJson(data.ProviderSpecificConfig, &oldConfigInput)
 	//It is expected that some of configs may be already provided by updated mutation, thus it is not treated as a real error
 	if err != nil {
-		log.Debugf("Cannot decode config for runtime %s: %s. Json to decode: %s", data.ClusterId, err.Error(), data.Config)
+		log.Debugf("Cannot decode config for runtime %s: %s. Json to decode: %s", data.ClusterId, err.Error(), data.ProviderSpecificConfig)
 	}
 
 	return oldConfigInput

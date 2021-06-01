@@ -118,9 +118,9 @@ func testProviderData(t *testing.T, id, clusterId string, config model.OldAWSPro
 	require.NoError(t, err)
 
 	return dbconnection.ProviderData{
-		Id:         id,
-		ClusterId:  clusterId,
-		WorkerCidr: "cidr",
-		Config:     string(jsonConfig),
+		Id:                     id,
+		ClusterId:              clusterId,
+		WorkerCidr:             "cidr",
+		ProviderSpecificConfig: string(jsonConfig),
 	}
 }

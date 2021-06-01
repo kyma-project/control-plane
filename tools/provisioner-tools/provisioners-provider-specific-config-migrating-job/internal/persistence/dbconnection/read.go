@@ -11,10 +11,10 @@ type readSession struct {
 }
 
 type ProviderData struct {
-	Id         string
-	ClusterId  string
-	WorkerCidr string
-	Config     string
+	Id                     string
+	ClusterId              string
+	WorkerCidr             string
+	ProviderSpecificConfig string
 }
 
 func (r readSession) GetProviderSpecificConfigsByProvider(provider string) ([]ProviderData, dberrors.Error) {
@@ -35,4 +35,20 @@ func (r readSession) GetProviderSpecificConfigsByProvider(provider string) ([]Pr
 	}
 
 	return providerConfigs, nil
+}
+
+func (r readSession) GetUpdatedProviderSpecificConfigByID(id string) (string, dberrors.Error) {
+	var configJson string
+
+	err := r.session.
+		Select("provider_specific_config").
+		From("gardener_config").
+		Where(dbr.Eq("id", id)).
+		LoadOne(&configJson)
+
+	if err != nil {
+		return configJson, dberrors.Internal("Failed to get config for id: %s", id)
+	}
+
+	return configJson, nil
 }

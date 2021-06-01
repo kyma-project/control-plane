@@ -27,6 +27,22 @@ func (ws writeSession) UpdateProviderSpecificConfig(id string, providerSpecificC
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update provider_specific_config for gardener shoot cluster '%s' state: %s", id, err))
 }
 
+func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
+	_, err := ws.insertInto("cluster").
+		Pair("id", cluster.ID).
+		Pair("creation_timestamp", cluster.CreationTimestamp).
+		Pair("tenant", cluster.Tenant).
+		Pair("sub_account_id", cluster.SubAccountId).
+		Pair("active_kyma_config_id", cluster.KymaConfigID). // Possible due to deferred constrain
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to insert record to Cluster table: %s", err)
+	}
+
+	return nil
+}
+
 func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberrors.Error {
 	_, err := ws.insertInto("gardener_config").
 		Pair("id", config.ID).
@@ -58,6 +74,33 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 
 	if err != nil {
 		return dberrors.Internal("Failed to insert record to GardenerConfig table: %s", err)
+	}
+
+	return nil
+}
+
+func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error {
+	_, err := ws.insertInto("kyma_config").
+		Pair("id", kymaConfig.ID).
+		Pair("release_id", kymaConfig.Release.Id).
+		Pair("profile", kymaConfig.Profile).
+		Pair("cluster_id", kymaConfig.ClusterID).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to insert record to KymaConfig table: %s", err)
+	}
+	return nil
+}
+
+func (ws writeSession) InsertRelease(artifacts model.Release) dberrors.Error {
+	_, err := ws.insertInto("kyma_release").
+		Columns("id", "version", "tiller_yaml", "installer_yaml").
+		Record(artifacts).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to insert record to Release table: %s", err)
 	}
 
 	return nil

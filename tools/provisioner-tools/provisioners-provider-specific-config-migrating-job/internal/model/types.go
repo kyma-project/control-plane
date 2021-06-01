@@ -1,8 +1,16 @@
 package model
 
+import "time"
+
 const (
 	AWS = "aws"
 )
+
+const (
+	ProductionProfile KymaProfile = "PRODUCTION"
+)
+
+type KymaProfile string
 
 type AWSProviderConfigInput struct {
 	VpcCidr string          `json:"vpcCidr"`
@@ -21,6 +29,14 @@ type OldAWSProviderConfigInput struct {
 	VpcCidr      string `json:"vpcCidr"`
 	PublicCidr   string `json:"publicCidr"`
 	InternalCidr string `json:"internalCidr"`
+}
+
+type Cluster struct {
+	ID                string
+	CreationTimestamp time.Time
+	Tenant            string
+	SubAccountId      *string
+	KymaConfigID      string
 }
 
 type GardenerConfig struct {
@@ -49,4 +65,19 @@ type GardenerConfig struct {
 	EnableMachineImageVersionAutoUpdate bool
 	AllowPrivilegedContainers           bool
 	GardenerProviderConfig              string
+}
+
+type KymaConfig struct {
+	ID        string
+	Release   Release
+	Profile   KymaProfile
+	ClusterID string
+	Active    bool
+}
+
+type Release struct {
+	Id            string
+	Version       string
+	TillerYAML    string
+	InstallerYAML string
 }
