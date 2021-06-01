@@ -125,7 +125,6 @@ Global Account ID:  {{.GlobalAccountID}}
 Subaccount ID:      {{.SubAccountID}}
 Runtime ID:         {{.RuntimeID}}
 Shoot Name:         {{.ShootName}}
-Instance ID:        {{.InstanceID}}
 Service Plan:       {{.ServicePlanName}}
 Maintenance Window: {{.MaintenanceWindowBegin}} - {{.MaintenanceWindowEnd}}
 State:              {{.State}}
