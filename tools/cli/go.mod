@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/int128/kubelogin v1.22.0
-	github.com/kyma-project/control-plane v0.0.0-20210422063135-dcde668f340b
+	github.com/kyma-project/control-plane v0.0.0-20210531140557-ea68c96c2786
 	github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20201211152036-9bdabffd55fb
 	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20201211152036-9bdabffd55fb // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
