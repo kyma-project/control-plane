@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
+
 	"github.com/Peripli/service-manager-cli/pkg/types"
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
@@ -35,7 +37,6 @@ import (
 	kebRuntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeoverrides"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
@@ -185,6 +186,7 @@ type RuntimeOptions struct {
 	Region           string
 	PlanID           string
 	ZonesCount       *int
+	Provider         internal.CloudProvider
 }
 
 func (o *RuntimeOptions) ProvideGlobalAccountID() string {
@@ -738,14 +740,22 @@ func (s *ProvisioningSuite) AssertZonesCount(zonesCount *int, planID string) {
 	}
 }
 
-func (s *ProvisioningSuite) AssertSharedSubscription(shared bool) {
+func (s *ProvisioningSuite) AssertSubscription(shared bool, ht hyperscaler.Type) {
 	input := s.fetchProvisionInput()
 	secretName := input.ClusterConfig.GardenerConfig.TargetSecret
 	if shared {
-		assert.Equal(s.t, secretName, subscriptionNameShared)
+		assert.Equal(s.t, sharedSubscription(ht), secretName)
 	} else {
-		assert.Equal(s.t, secretName, subscriptionNameRegular)
+		assert.Equal(s.t, regularSubscription(ht), secretName)
 	}
+}
+
+func regularSubscription(ht hyperscaler.Type) string {
+	return fmt.Sprintf("regular-%s", ht)
+}
+
+func sharedSubscription(ht hyperscaler.Type) string {
+	return fmt.Sprintf("shared-%s", ht)
 }
 
 func (s *ProvisioningSuite) MarkDirectorWithConsoleURL(operationID string) {
@@ -788,57 +798,32 @@ func fixConfig() *Config {
 func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 	accountProvider := hyperscalerautomock.AccountProvider{}
 
-	accountProvider.On("GardenerCredentials", hyperscaler.Azure, mock.Anything).Return(hyperscaler.Credentials{
-		HyperscalerType: hyperscaler.Azure,
-		CredentialData: map[string][]byte{
-			"subscriptionID": []byte("subscriptionID"),
-			"clientID":       []byte("clientID"),
-			"clientSecret":   []byte("clientSecret"),
-			"tenantID":       []byte("tenantID"),
-		},
-		Name: subscriptionNameRegular,
+	accountProvider.On("GardenerCredentials", mock.Anything, mock.Anything).Return(func(ht hyperscaler.Type, tn string) hyperscaler.Credentials {
+		return hyperscaler.Credentials{
+			HyperscalerType: hyperscaler.Azure,
+			CredentialData: map[string][]byte{
+				"subscriptionID": []byte("subscriptionID"),
+				"clientID":       []byte("clientID"),
+				"clientSecret":   []byte("clientSecret"),
+				"tenantID":       []byte("tenantID"),
+			},
+			Name: regularSubscription(ht),
+		}
 	}, nil)
 
-	accountProvider.On("GardenerCredentials", hyperscaler.GCP, mock.Anything).Return(hyperscaler.Credentials{
-		HyperscalerType: hyperscaler.GCP,
-		CredentialData: map[string][]byte{
-			"subscriptionID": []byte("subscriptionID"),
-			"clientID":       []byte("clientID"),
-			"clientSecret":   []byte("clientSecret"),
-			"tenantID":       []byte("tenantID"),
-		},
-		Name: subscriptionNameRegular,
+	accountProvider.On("GardenerSharedCredentials", hyperscaler.Azure).Return(func(ht hyperscaler.Type) hyperscaler.Credentials {
+		return hyperscaler.Credentials{
+			HyperscalerType: hyperscaler.Azure,
+			CredentialData: map[string][]byte{
+				"subscriptionID": []byte("subscriptionID"),
+				"clientID":       []byte("clientID"),
+				"clientSecret":   []byte("clientSecret"),
+				"tenantID":       []byte("tenantID"),
+			},
+			Name: sharedSubscription(ht),
+		}
 	}, nil)
-	accountProvider.On("GardenerCredentials", hyperscaler.Openstack, mock.Anything).Return(hyperscaler.Credentials{
-		HyperscalerType: hyperscaler.Openstack,
-		CredentialData: map[string][]byte{
-			"subscriptionID": []byte("subscriptionID"),
-			"clientID":       []byte("clientID"),
-			"clientSecret":   []byte("clientSecret"),
-			"tenantID":       []byte("tenantID"),
-		},
-		Name: subscriptionNameRegular,
-	}, nil)
-	accountProvider.On("GardenerCredentials", hyperscaler.AWS, mock.Anything).Return(hyperscaler.Credentials{
-		HyperscalerType: hyperscaler.AWS,
-		CredentialData: map[string][]byte{
-			"subscriptionID": []byte("subscriptionID"),
-			"clientID":       []byte("clientID"),
-			"clientSecret":   []byte("clientSecret"),
-			"tenantID":       []byte("tenantID"),
-		},
-		Name: subscriptionNameRegular,
-	}, nil)
-	accountProvider.On("GardenerSharedCredentials", hyperscaler.Azure).Return(hyperscaler.Credentials{
-		HyperscalerType: hyperscaler.Azure,
-		CredentialData: map[string][]byte{
-			"subscriptionID": []byte("subscriptionID"),
-			"clientID":       []byte("clientID"),
-			"clientSecret":   []byte("clientSecret"),
-			"tenantID":       []byte("tenantID"),
-		},
-		Name: subscriptionNameShared,
-	}, nil)
+
 	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.Azure, mock.Anything).Return(nil)
 	return &accountProvider
 }

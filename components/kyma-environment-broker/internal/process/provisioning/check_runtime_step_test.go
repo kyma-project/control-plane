@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -42,7 +43,7 @@ func TestCheckRuntimeStep_RunProvisioningSucceeded(t *testing.T) {
 				RuntimeID: ptr.String(statusRuntimeID),
 			})
 			st := storage.NewMemoryStorage()
-			operation := fixOperationRuntimeStatus(broker.GCPPlanID)
+			operation := fixOperationRuntimeStatus(broker.GCPPlanID, internal.GCP)
 			operation.RuntimeID = statusRuntimeID
 			operation.DashboardURL = dashboardURL
 			err := st.Operations().InsertProvisioningOperation(operation)

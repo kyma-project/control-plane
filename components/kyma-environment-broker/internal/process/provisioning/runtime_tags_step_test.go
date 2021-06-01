@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -23,7 +24,7 @@ func TestRuntimeTagsStep_Run(t *testing.T) {
 	defer mockAvsSvc.server.Close()
 	defer mockOauthServer.Close()
 
-	operation := fixOperationRuntimeStatus(broker.GCPPlanID)
+	operation := fixOperationRuntimeStatus(broker.GCPPlanID, internal.GCP)
 	operation.Avs.AvsEvaluationInternalId = fixAvsEvaluationInternalId
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)

@@ -9,16 +9,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/appinfo"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/appinfo/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/memory"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
-	"github.com/sebdah/goldie"
+	"github.com/sebdah/goldie/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -136,6 +138,361 @@ func TestRuntimeInfoHandlerFailures(t *testing.T) {
 	assert.Equal(t, "application/json", respSpy.Result().Header.Get("Content-Type"))
 
 	assert.JSONEq(t, expBody, respSpy.Body.String())
+}
+
+func TestRuntimeInfoHandlerOperationRecognition(t *testing.T) {
+	t.Run("should distinguish between provisioning & unsuspension operations", func(t *testing.T) {
+		// given
+		operations := memory.NewOperation()
+		instances := memory.NewInstance(operations)
+
+		testInstance1 := fixture.FixInstance("instance-1")
+		testInstance2 := fixture.FixInstance("instance-2")
+
+		err := instances.Insert(testInstance1)
+		require.NoError(t, err)
+		err = instances.Insert(testInstance2)
+		require.NoError(t, err)
+
+		provisioningOpId1 := "provisioning-op-1"
+		provisioningOpId2 := "provisioning-op-2"
+		unsuspensionOpId1 := "unsuspension-op-1"
+		unsuspensionOpId2 := "unsuspension-op-2"
+		provisioningOpDesc1 := "succeeded provisioning operation 1"
+		provisioningOpDesc2 := "succeeded provisioning operation 2"
+		unsuspensionOpDesc1 := "succeeded unsuspension operation 1"
+		unsuspensionOpDesc2 := "succeeded unsuspension operation 2"
+
+		err = operations.InsertProvisioningOperation(internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ID:          provisioningOpId1,
+				Version:     0,
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now().Add(5 * time.Minute),
+				Type:        internal.OperationTypeProvision,
+				InstanceID:  testInstance1.InstanceID,
+				State:       domain.Succeeded,
+				Description: provisioningOpDesc1,
+			},
+		})
+		require.NoError(t, err)
+
+		err = operations.InsertProvisioningOperation(internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ID:          unsuspensionOpId1,
+				Version:     0,
+				CreatedAt:   time.Now().Add(1 * time.Hour),
+				UpdatedAt:   time.Now().Add(1 * time.Hour).Add(5 * time.Minute),
+				Type:        internal.OperationTypeProvision,
+				InstanceID:  testInstance1.InstanceID,
+				State:       domain.Succeeded,
+				Description: unsuspensionOpDesc1,
+			},
+		})
+		require.NoError(t, err)
+
+		err = operations.InsertProvisioningOperation(internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ID:          unsuspensionOpId2,
+				Version:     0,
+				CreatedAt:   time.Now().Add(1 * time.Hour),
+				UpdatedAt:   time.Now().Add(1 * time.Hour).Add(5 * time.Minute),
+				Type:        internal.OperationTypeProvision,
+				InstanceID:  testInstance2.InstanceID,
+				State:       domain.Succeeded,
+				Description: unsuspensionOpDesc2,
+			},
+		})
+		require.NoError(t, err)
+
+		err = operations.InsertProvisioningOperation(internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ID:          provisioningOpId2,
+				Version:     0,
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now().Add(5 * time.Minute),
+				Type:        internal.OperationTypeProvision,
+				InstanceID:  testInstance2.InstanceID,
+				State:       domain.Succeeded,
+				Description: provisioningOpDesc2,
+			},
+		})
+		require.NoError(t, err)
+
+		req, err := http.NewRequest("GET", "/info/runtimes", nil)
+		require.NoError(t, err)
+
+		responseWriter := httputil.NewResponseWriter(logger.NewLogDummy(), true)
+		runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(instances, broker.PlansConfig{}, "", responseWriter)
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		router.Handle("/info/runtimes", runtimesInfoHandler)
+
+		// when
+		runtimesInfoHandler.ServeHTTP(rr, req)
+
+		// then
+		require.Equal(t, http.StatusOK, rr.Code)
+
+		var out []*appinfo.RuntimeDTO
+
+		err = json.Unmarshal(rr.Body.Bytes(), &out)
+		require.NoError(t, err)
+
+		assert.Equal(t, 2, len(out))
+		assert.Equal(t, testInstance1.InstanceID, out[0].ServiceInstanceID)
+		assert.Equal(t, testInstance2.InstanceID, out[1].ServiceInstanceID)
+		assert.Equal(t, provisioningOpDesc1, out[0].Status.Provisioning.Description)
+		assert.Equal(t, provisioningOpDesc2, out[1].Status.Provisioning.Description)
+
+	})
+
+	t.Run("should distinguish between deprovisioning & suspension operations", func(t *testing.T) {
+		// given
+		operations := memory.NewOperation()
+		instances := memory.NewInstance(operations)
+
+		testInstance1 := fixture.FixInstance("instance-1")
+		testInstance2 := fixture.FixInstance("instance-2")
+
+		err := instances.Insert(testInstance1)
+		require.NoError(t, err)
+		err = instances.Insert(testInstance2)
+		require.NoError(t, err)
+
+		deprovisioningOpId1 := "deprovisioning-op-1"
+		deprovisioningOpId2 := "deprovisioning-op-2"
+		suspensionOpId1 := "suspension-op-1"
+		suspensionOpId2 := "suspension-op-2"
+		deprovisioningOpDesc1 := "succeeded deprovisioning operation 1"
+		deprovisioningOpDesc2 := "succeeded deprovisioning operation 2"
+		suspensionOpDesc1 := "succeeded suspension operation 1"
+		suspensionOpDesc2 := "succeeded suspension operation 2"
+
+		err = operations.InsertDeprovisioningOperation(internal.DeprovisioningOperation{
+			Operation: internal.Operation{
+				ID:          suspensionOpId1,
+				Version:     0,
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now().Add(5 * time.Minute),
+				Type:        internal.OperationTypeDeprovision,
+				InstanceID:  testInstance1.InstanceID,
+				State:       domain.Succeeded,
+				Description: suspensionOpDesc1,
+			},
+			Temporary: true,
+		})
+		require.NoError(t, err)
+
+		err = operations.InsertDeprovisioningOperation(internal.DeprovisioningOperation{
+			Operation: internal.Operation{
+				ID:          deprovisioningOpId1,
+				Version:     0,
+				CreatedAt:   time.Now().Add(1 * time.Hour),
+				UpdatedAt:   time.Now().Add(1 * time.Hour).Add(5 * time.Minute),
+				Type:        internal.OperationTypeDeprovision,
+				InstanceID:  testInstance1.InstanceID,
+				State:       domain.Succeeded,
+				Description: deprovisioningOpDesc1,
+			},
+		})
+		require.NoError(t, err)
+
+		err = operations.InsertDeprovisioningOperation(internal.DeprovisioningOperation{
+			Operation: internal.Operation{
+				ID:          deprovisioningOpId2,
+				Version:     0,
+				CreatedAt:   time.Now().Add(1 * time.Hour),
+				UpdatedAt:   time.Now().Add(1 * time.Hour).Add(5 * time.Minute),
+				Type:        internal.OperationTypeDeprovision,
+				InstanceID:  testInstance2.InstanceID,
+				State:       domain.Succeeded,
+				Description: deprovisioningOpDesc2,
+			},
+		})
+		require.NoError(t, err)
+
+		err = operations.InsertDeprovisioningOperation(internal.DeprovisioningOperation{
+			Operation: internal.Operation{
+				ID:          suspensionOpId2,
+				Version:     0,
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now().Add(5 * time.Minute),
+				Type:        internal.OperationTypeProvision,
+				InstanceID:  testInstance2.InstanceID,
+				State:       domain.Succeeded,
+				Description: suspensionOpDesc2,
+			},
+			Temporary: true,
+		})
+		require.NoError(t, err)
+
+		req, err := http.NewRequest("GET", "/info/runtimes", nil)
+		require.NoError(t, err)
+
+		responseWriter := httputil.NewResponseWriter(logger.NewLogDummy(), true)
+		runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(instances, broker.PlansConfig{}, "", responseWriter)
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		router.Handle("/info/runtimes", runtimesInfoHandler)
+
+		// when
+		runtimesInfoHandler.ServeHTTP(rr, req)
+
+		// then
+		require.Equal(t, http.StatusOK, rr.Code)
+
+		var out []*appinfo.RuntimeDTO
+
+		err = json.Unmarshal(rr.Body.Bytes(), &out)
+		require.NoError(t, err)
+
+		assert.Equal(t, 2, len(out))
+		assert.Equal(t, testInstance1.InstanceID, out[0].ServiceInstanceID)
+		assert.Equal(t, testInstance2.InstanceID, out[1].ServiceInstanceID)
+		assert.Equal(t, deprovisioningOpDesc1, out[0].Status.Deprovisioning.Description)
+		assert.Equal(t, deprovisioningOpDesc2, out[1].Status.Deprovisioning.Description)
+
+	})
+
+	t.Run("should recognize prov & deprov ops among suspend/unsuspend operations", func(t *testing.T) {
+		// given
+		operations := memory.NewOperation()
+		instances := memory.NewInstance(operations)
+
+		testInstance1 := fixture.FixInstance("instance-1")
+
+		err := instances.Insert(testInstance1)
+		require.NoError(t, err)
+
+		provisioningOpId := "provisioning-op"
+		deprovisioningOpId := "deprovisioning-op"
+		suspensionOpId1 := "suspension-op-1"
+		suspensionOpId2 := "suspension-op-2"
+		unsuspensionOpId1 := "unsuspension-op-1"
+		unsuspensionOpId2 := "unsuspension-op-2"
+		provisioningOpDesc := "succeeded provisioning operation"
+		deprovisioningOpDesc := "succeeded deprovisioning operation"
+		suspensionOpDesc1 := "failed suspension operation 1"
+		suspensionOpDesc2 := "succeeded suspension operation 2"
+		unsuspensionOpDesc1 := "failed unsuspension operation 1"
+		unsuspensionOpDesc2 := "succeeded unsuspension operation 2"
+
+		err = operations.InsertProvisioningOperation(internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ID:          provisioningOpId,
+				Version:     0,
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now().Add(5 * time.Minute),
+				Type:        internal.OperationTypeProvision,
+				InstanceID:  testInstance1.InstanceID,
+				State:       domain.Succeeded,
+				Description: provisioningOpDesc,
+			},
+		})
+		require.NoError(t, err)
+
+		err = operations.InsertDeprovisioningOperation(internal.DeprovisioningOperation{
+			Operation: internal.Operation{
+				ID:          suspensionOpId1,
+				Version:     0,
+				CreatedAt:   time.Now().Add(1 * time.Hour),
+				UpdatedAt:   time.Now().Add(1 * time.Hour).Add(5 * time.Minute),
+				Type:        internal.OperationTypeDeprovision,
+				InstanceID:  testInstance1.InstanceID,
+				State:       domain.Failed,
+				Description: suspensionOpDesc1,
+			},
+			Temporary: true,
+		})
+		require.NoError(t, err)
+
+		err = operations.InsertDeprovisioningOperation(internal.DeprovisioningOperation{
+			Operation: internal.Operation{
+				ID:          suspensionOpId2,
+				Version:     0,
+				CreatedAt:   time.Now().Add(2 * time.Hour),
+				UpdatedAt:   time.Now().Add(2 * time.Hour).Add(5 * time.Minute),
+				Type:        internal.OperationTypeDeprovision,
+				InstanceID:  testInstance1.InstanceID,
+				State:       domain.Succeeded,
+				Description: suspensionOpDesc2,
+			},
+			Temporary: true,
+		})
+		require.NoError(t, err)
+
+		err = operations.InsertProvisioningOperation(internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ID:          unsuspensionOpId1,
+				Version:     0,
+				CreatedAt:   time.Now().Add(3 * time.Hour),
+				UpdatedAt:   time.Now().Add(3 * time.Hour).Add(5 * time.Minute),
+				Type:        internal.OperationTypeProvision,
+				InstanceID:  testInstance1.InstanceID,
+				State:       domain.Failed,
+				Description: unsuspensionOpDesc1,
+			},
+		})
+		require.NoError(t, err)
+
+		err = operations.InsertProvisioningOperation(internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ID:          unsuspensionOpId2,
+				Version:     0,
+				CreatedAt:   time.Now().Add(4 * time.Hour),
+				UpdatedAt:   time.Now().Add(4 * time.Hour).Add(5 * time.Minute),
+				Type:        internal.OperationTypeProvision,
+				InstanceID:  testInstance1.InstanceID,
+				State:       domain.Succeeded,
+				Description: unsuspensionOpDesc2,
+			},
+		})
+		require.NoError(t, err)
+
+		err = operations.InsertDeprovisioningOperation(internal.DeprovisioningOperation{
+			Operation: internal.Operation{
+				ID:          deprovisioningOpId,
+				Version:     0,
+				CreatedAt:   time.Now().Add(5 * time.Hour),
+				UpdatedAt:   time.Now().Add(5 * time.Hour).Add(5 * time.Minute),
+				Type:        internal.OperationTypeDeprovision,
+				InstanceID:  testInstance1.InstanceID,
+				State:       domain.Succeeded,
+				Description: deprovisioningOpDesc,
+			},
+		})
+		require.NoError(t, err)
+
+		req, err := http.NewRequest("GET", "/info/runtimes", nil)
+		require.NoError(t, err)
+
+		responseWriter := httputil.NewResponseWriter(logger.NewLogDummy(), true)
+		runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(instances, broker.PlansConfig{}, "", responseWriter)
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		router.Handle("/info/runtimes", runtimesInfoHandler)
+
+		// when
+		runtimesInfoHandler.ServeHTTP(rr, req)
+
+		// then
+		require.Equal(t, http.StatusOK, rr.Code)
+
+		var out []*appinfo.RuntimeDTO
+
+		err = json.Unmarshal(rr.Body.Bytes(), &out)
+		require.NoError(t, err)
+
+		assert.Equal(t, 1, len(out))
+		assert.Equal(t, testInstance1.InstanceID, out[0].ServiceInstanceID)
+		assert.Equal(t, provisioningOpDesc, out[0].Status.Provisioning.Description)
+		assert.Equal(t, deprovisioningOpDesc, out[0].Status.Deprovisioning.Description)
+
+	})
 }
 
 func assertJSONWithGoldenFile(t *testing.T, gotRawJSON []byte) {

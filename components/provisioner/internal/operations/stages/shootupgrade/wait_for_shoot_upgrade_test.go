@@ -126,6 +126,18 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 			cluster:            cluster,
 		},
 		{
+			description: "should return error if Shoot is in failed state with rate limit exceeded error",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(
+					testkit.NewTestShoot(clusterName).
+						WithOperationFailed().
+						WithRateLimitExceededError().
+						ToShoot(), nil)
+			},
+			unrecoverableError: false,
+			cluster:            cluster,
+		},
+		{
 			description: "should return unrecoverable error if Shoot is in failed state",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(

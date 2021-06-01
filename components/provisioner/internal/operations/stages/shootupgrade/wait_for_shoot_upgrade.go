@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
+
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -40,7 +42,7 @@ func (s *WaitForShootUpgradeStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *WaitForShootUpgradeStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
+func (s *WaitForShootUpgradeStep) Run(cluster model.Cluster, _ model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
 
 	gardenerConfig := cluster.ClusterConfig
 
@@ -57,6 +59,9 @@ func (s *WaitForShootUpgradeStep) Run(cluster model.Cluster, operation model.Ope
 		}
 
 		if lastOperation.State == gardencorev1beta1.LastOperationStateFailed {
+			if gardencorev1beta1helper.HasErrorCode(shoot.Status.LastErrors, gardencorev1beta1.ErrorInfraRateLimitsExceeded) {
+				return operations.StageResult{}, errors.New("error during shoot cluster upgrade: rate limits exceeded")
+			}
 			logger.Warningf("Gardener Shoot cluster upgrade operation failed! Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
 
 			err := errors.New(fmt.Sprintf("Gardener Shoot cluster upgrade failed. Last Shoot state: %s, Shoot description: %s", lastOperation.State, lastOperation.Description))

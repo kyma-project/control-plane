@@ -29,6 +29,7 @@ type ProvisioningTimeouts struct {
 	InstallationTriggering time.Duration `envconfig:"default=20m"`
 	Installation           time.Duration `envconfig:"default=60m"`
 	Upgrade                time.Duration `envconfig:"default=60m"`
+	UpgradeTriggering      time.Duration `envconfig:"default=20m"`
 	ShootUpgrade           time.Duration `envconfig:"default=30m"`
 	ShootRefresh           time.Duration `envconfig:"default=5m"`
 	AgentConfiguration     time.Duration `envconfig:"default=15m"`
@@ -87,14 +88,14 @@ func CreateProvisioningQueue(
 }
 
 func CreateUpgradeQueue(
-	timeouts ProvisioningTimeouts,
+	provisioningTimeouts ProvisioningTimeouts,
 	factory dbsession.Factory,
 	directorClient director.DirectorClient,
 	installationClient installation.Service) OperationQueue {
 
 	updatingUpgradeStep := upgrade.NewUpdateUpgradeStateStep(factory.NewWriteSession(), model.FinishedStage, 5*time.Minute)
-	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClient, updatingUpgradeStep.Name(), timeouts.Installation, factory.NewWriteSession())
-	upgradeStep := upgrade.NewUpgradeKymaStep(installationClient, waitForInstallStep.Name(), 10*time.Minute)
+	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClient, updatingUpgradeStep.Name(), provisioningTimeouts.Installation, factory.NewWriteSession())
+	upgradeStep := upgrade.NewUpgradeKymaStep(installationClient, waitForInstallStep.Name(), provisioningTimeouts.UpgradeTriggering)
 
 	upgradeSteps := map[model.OperationStage]operations.Step{
 		model.UpdatingUpgradeState:   updatingUpgradeStep,

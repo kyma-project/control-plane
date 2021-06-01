@@ -41,12 +41,13 @@ type Client struct {
 	instanceID      string
 	globalAccountID string
 	subAccountID    string
+	userID          string
 
 	client *http.Client
 	log    logrus.FieldLogger
 }
 
-func NewClient(ctx context.Context, config Config, globalAccountID, instanceID, subAccountID string, oAuthCfg BrokerOAuthConfig, log logrus.FieldLogger) *Client {
+func NewClient(ctx context.Context, config Config, globalAccountID, instanceID, subAccountID, userID string, oAuthCfg BrokerOAuthConfig, log logrus.FieldLogger) *Client {
 	cfg := clientcredentials.Config{
 		ClientID:     oAuthCfg.ClientID,
 		ClientSecret: oAuthCfg.ClientSecret,
@@ -64,6 +65,7 @@ func NewClient(ctx context.Context, config Config, globalAccountID, instanceID, 
 		client:          httpClientOAuth,
 		log:             log,
 		subAccountID:    subAccountID,
+		userID:          userID,
 	}
 }
 
@@ -74,6 +76,7 @@ const (
 type inputContext struct {
 	TenantID        string `json:"tenant_id"`
 	SubAccountID    string `json:"subaccount_id"`
+	UserID          string `json:"user_id"`
 	GlobalAccountID string `json:"globalaccount_id"`
 	Active          *bool  `json:"active,omitempty"`
 }
@@ -219,6 +222,10 @@ func (c *Client) SubAccountID() string {
 	return c.subAccountID
 }
 
+func (c *Client) UserID() string {
+	return c.userID
+}
+
 func (c *Client) ClusterName() string {
 	return c.clusterName
 }
@@ -296,6 +303,7 @@ func (c *Client) prepareProvisionDetails(customVersion string) ([]byte, error) {
 	ctx := inputContext{
 		TenantID:        "1eba80dd-8ff6-54ee-be4d-77944d17b10b",
 		SubAccountID:    c.subAccountID,
+		UserID:          c.userID,
 		GlobalAccountID: c.globalAccountID,
 	}
 	rawParameters, err := json.Marshal(parameters)
@@ -380,7 +388,7 @@ func (c *Client) executeRequest(method, url string, expectedStatus int, body io.
 		}
 		bodyString := string(bodyBytes)
 		c.log.Warnf("%s", bodyString)
-		return errors.Errorf("got unexpected status code while calling Kyma Environment Broker: want: %d, got: %d", expectedStatus, resp.StatusCode)
+		return errors.Errorf("got unexpected status code while calling Kyma Environment Broker: want: %d, got: %d (url=%s)", expectedStatus, resp.StatusCode, url)
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(responseBody)
@@ -398,7 +406,7 @@ func (c *Client) warnOnError(do func() error) {
 }
 
 func (c *Client) baseURL() string {
-	base := fmt.Sprintf("%s/oauth/", c.brokerConfig.URL)
+	base := fmt.Sprintf("%s/oauth", c.brokerConfig.URL)
 	if c.brokerConfig.Region == "" {
 		return fmt.Sprintf("%s/v2", base)
 	}

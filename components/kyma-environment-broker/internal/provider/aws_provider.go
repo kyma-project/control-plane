@@ -93,6 +93,10 @@ func (p *AWSInput) Profile() gqlschema.KymaProfile {
 	return gqlschema.KymaProfileProduction
 }
 
+func (p *AWSInput) Provider() internal.CloudProvider {
+	return internal.AWS
+}
+
 func (p *AWSTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 	return awsTrialDefaults()
 }
@@ -144,6 +148,10 @@ func (p *AWSTrialInput) Profile() gqlschema.KymaProfile {
 	return gqlschema.KymaProfileEvaluation
 }
 
+func (p *AWSTrialInput) Provider() internal.CloudProvider {
+	return internal.AWS
+}
+
 func (p *AWSFreemiumInput) Defaults() *gqlschema.ClusterConfigInput {
 	return awsTrialDefaults()
 }
@@ -154,4 +162,8 @@ func (p *AWSFreemiumInput) ApplyParameters(input *gqlschema.ClusterConfigInput, 
 
 func (p *AWSFreemiumInput) Profile() gqlschema.KymaProfile {
 	return gqlschema.KymaProfileEvaluation
+}
+
+func (p *AWSFreemiumInput) Provider() internal.CloudProvider {
+	return internal.AWS
 }

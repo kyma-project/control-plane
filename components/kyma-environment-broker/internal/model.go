@@ -31,6 +31,7 @@ type ProvisionerInputCreator interface {
 	CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInput, error)
 	CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, error)
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
+	Provider() CloudProvider
 }
 
 // GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for
@@ -112,7 +113,8 @@ type Instance struct {
 	UpdatedAt time.Time
 	DeletedAt time.Time
 
-	Version int
+	Version  int
+	Provider CloudProvider
 }
 
 func (i *Instance) GetInstanceDetails() (InstanceDetails, error) {
@@ -212,9 +214,11 @@ func (o *Orchestration) IsCanceled() bool {
 type InstanceWithOperation struct {
 	Instance
 
-	Type        sql.NullString
-	State       sql.NullString
-	Description sql.NullString
+	Type           sql.NullString
+	State          sql.NullString
+	Description    sql.NullString
+	OpCreatedAt    time.Time
+	IsSuspensionOp bool
 }
 
 type SMClientFactory interface {

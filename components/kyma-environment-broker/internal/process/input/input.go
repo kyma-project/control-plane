@@ -216,6 +216,10 @@ func (r *RuntimeInput) CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, e
 	return r.upgradeShootInput, nil
 }
 
+func (r *RuntimeInput) Provider() internal.CloudProvider {
+	return r.hyperscalerInputProvider.Provider()
+}
+
 func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 	params := r.provisioningParameters.Parameters
 	updateString(&r.provisionRuntimeInput.RuntimeInput.Name, &params.Name)
@@ -233,6 +237,7 @@ func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 	if params.LicenceType != nil {
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.LicenceType = params.LicenceType
 	}
+	r.provisionRuntimeInput.ClusterConfig.Administrators = []*string{&r.provisioningParameters.ErsContext.UserID}
 
 	r.hyperscalerInputProvider.ApplyParameters(r.provisionRuntimeInput.ClusterConfig, r.provisioningParameters)
 

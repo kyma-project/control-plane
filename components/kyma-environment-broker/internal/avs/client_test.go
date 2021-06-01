@@ -288,7 +288,7 @@ func TestClient_RemoveReferenceFromParentEval(t *testing.T) {
 		// then
 		assert.Error(t, err)
 	})
-	t.Run("should return error when parent evaluation does not contain subevaluation", func(t *testing.T) {
+	t.Run("should ignore error when parent evaluation does not contain subevaluation", func(t *testing.T) {
 		// Given
 		server := NewMockAvsServer(t)
 		mockServer := FixMockAvsServer(server)
@@ -303,8 +303,7 @@ func TestClient_RemoveReferenceFromParentEval(t *testing.T) {
 		err = client.RemoveReferenceFromParentEval(int64(9999), 111)
 
 		// then
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "400")
+		assert.NoError(t, err)
 	})
 
 }
