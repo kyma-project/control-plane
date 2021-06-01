@@ -193,17 +193,10 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 		return &gqlschema.OperationStatus{}, err
 	}
 
-	log.Infof("********************1**************")
-	log.Info(input.GardenerConfig.OidcConfig)
-	log.Infof("********************1**************")
 	cluster, dberr := session.GetCluster(runtimeID)
-
 	if dberr != nil {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to find shoot cluster to upgrade in database: %s", dberr.Error())
 	}
-	log.Infof("********************2**************")
-	log.Info(cluster.ClusterConfig.OIDCConfig)
-	log.Infof("********************2**************")
 
 	gardenerConfig, err := r.inputConverter.UpgradeShootInputToGardenerConfig(*input.GardenerConfig, cluster.ClusterConfig)
 	if err != nil {

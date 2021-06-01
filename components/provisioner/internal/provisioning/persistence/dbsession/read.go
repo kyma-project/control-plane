@@ -79,7 +79,7 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	}
 	cluster.ClusterConfig = providerConfig
 
-	oidcConfig, dberr := r.getOidcConfig(providerConfig.ID)
+	oidcConfig, dberr := r.getOidcConfig(runtimeID)
 	if dberr != nil {
 		return model.Cluster{}, dberr.Append("Cannot get Oidc config for runtimeID: %s", runtimeID)
 	}
@@ -433,18 +433,31 @@ func (r readSession) InProgressOperationsCount() (model.OperationsCount, dberror
 	return operationsCount, nil
 }
 
-func (r readSession) getOidcConfig(id string) (model.OIDCConfig, dberrors.Error) {
+func (r readSession) getOidcConfig(runtimeID string) (model.OIDCConfig, dberrors.Error) {
 	var oidc model.OIDCConfig
+	var algorithms []string
 
 	_, err := r.session.
 		Select("*").
 		From("oidc_config").
-		Where(dbr.Eq("gardener_config_id", id)).
+		Where(dbr.Eq("cluster_id", runtimeID)).
 		Load(&oidc)
 
 	if err != nil {
 		return model.OIDCConfig{}, dberrors.Internal("Failed to get oidc: %s", err)
 	}
+
+	_, err = r.session.
+		Select("algorithm").
+		From("signing_algorithms").
+		Where(dbr.Eq("cluster_id", runtimeID)).
+		Load(&algorithms)
+
+	if err != nil {
+		return model.OIDCConfig{}, dberrors.Internal("Failed to get algorithm: %s", err)
+	}
+
+	oidc.SigningAlgs = algorithms
 
 	return oidc, nil
 }
