@@ -195,3 +195,63 @@ func TestUnsuspensionWithoutShootName(t *testing.T) {
 	suite.AssertAllStagesFinished(unsuspensionOperationID)
 	suite.AssertProvisioningRequest()
 }
+
+func TestProvisioning_RuntimeOverrides(t *testing.T) {
+
+	t.Run("should apply overrides to default runtime version", func(t *testing.T) {
+		// given
+		suite := NewProvisioningSuite(t)
+
+		// when
+		provisioningOperationID := suite.CreateProvisioning(RuntimeOptions{
+			OverridesVersion: "1.19",
+		})
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.InProgress)
+		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
+
+		// when
+		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+		// simulate the installed fresh Kyma sets the proper label in the Director
+		suite.MarkDirectorWithConsoleURL(provisioningOperationID)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
+		suite.AssertAllStagesFinished(provisioningOperationID)
+		suite.AssertProvisioningRequest()
+		suite.AssertOverrides(gqlschema.ConfigEntryInput{
+			Key:   "foo",
+			Value: "bar",
+		})
+	})
+
+	t.Run("should apply overrides to custom runtime version", func(t *testing.T) {
+		// given
+		suite := NewProvisioningSuite(t)
+
+		// when
+		provisioningOperationID := suite.CreateProvisioning(RuntimeOptions{
+			KymaVersion:      "1.22",
+			OverridesVersion: "1.19",
+		})
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.InProgress)
+		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
+
+		// when
+		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+		// simulate the installed fresh Kyma sets the proper label in the Director
+		suite.MarkDirectorWithConsoleURL(provisioningOperationID)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
+		suite.AssertAllStagesFinished(provisioningOperationID)
+		suite.AssertProvisioningRequest()
+		suite.AssertOverrides(gqlschema.ConfigEntryInput{
+			Key:   "foo",
+			Value: "bar",
+		})
+	})
+}
