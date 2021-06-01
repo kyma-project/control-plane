@@ -395,7 +395,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-aws":      "true",
 				"overrides-plan-free":     "true",
 				"overrides-plan-azure_ha": "true",
-				"overrides-plan-aws_ha": "true",
+				"overrides-plan-aws_ha":   "true",
 			},
 		},
 		Data: map[string]string{
@@ -750,6 +750,12 @@ func (s *ProvisioningSuite) AssertZonesCount(zonesCount *int, planID string) {
 		}
 		// zonesCount was not provided, should use default value
 		assert.Equal(s.t, provider.DefaultAzureHAZonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
+	case broker.AWSHAPlanID:
+		if zonesCount != nil {
+			assert.Equal(s.t, *zonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.Zones))
+			break
+		}
+		assert.Equal(s.t, provider.DefaultAWSHAZonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.Zones))
 	default:
 	}
 }

@@ -137,12 +137,21 @@ func (g *Graphqlizer) GCPProviderConfigInputToGraphQL(in gqlschema.GCPProviderCo
 }
 
 func (g *Graphqlizer) AWSProviderConfigInputToGraphQL(in gqlschema.AWSProviderConfigInput) (string, error) {
-	return fmt.Sprintf(`{
-		zone: "%s" ,
-		publicCidr: "%s",
-		vpcCidr: "%s",
-        internalCidr: "%s",
-}`, in.Zone, in.PublicCidr, in.VpcCidr, in.InternalCidr), nil
+	return g.genericToGraphQL(in, `{
+		vpcCidr: "{{.VpcCidr}}",
+		{{- with .Zones }}
+		zones: [
+		  {{- range . }}
+		  {
+			name: "{{ .Name }}",
+			workerCidr: "{{ .WorkerCidr }}",
+			publicCidr: "{{ .PublicCidr }}",
+			internalCidr: "{{ .InternalCidr }}",
+		  }
+		  {{- end }}
+		]
+		{{- end }}
+	}`)
 }
 
 func (g *Graphqlizer) OpenStackProviderConfigInputToGraphQL(in gqlschema.OpenStackProviderConfigInput) (string, error) {
