@@ -426,6 +426,9 @@ func orchestrationTarget(t orchestration.RuntimeTarget) string {
 	if t.RuntimeID != "" {
 		targets = append(targets, fmt.Sprintf("runtime-id = %s", t.RuntimeID))
 	}
+	if t.InstanceID != "" {
+		targets = append(targets, fmt.Sprintf("instance-id = %s", t.InstanceID))
+	}
 	if t.Region != "" {
 		targets = append(targets, fmt.Sprintf("region = %s", t.Region))
 	}
