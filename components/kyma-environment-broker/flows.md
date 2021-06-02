@@ -30,7 +30,10 @@ Second update:
 ```json
 {
   "name": "my-cluster",
-  "region": "eu-central-1"
+  "region": "eu-central-1",
+   "oidc": {
+   "default": true
+   }
 }
 ```
 OIDC override is empty, then the defaault one is taken into account.
