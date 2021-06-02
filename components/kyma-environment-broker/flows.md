@@ -35,9 +35,8 @@ Second update:
 ```
 OIDC override is empty, then the defaault one is taken into account.
 
-Pros:
- - simple contract
- - cons (small) KEB is aware of default OIDC values
+Pros: simple contract
+Cons: KEB is aware of default OIDC values
  
 ### Scenario 2
 KEB is not aware of defaults.
@@ -74,8 +73,9 @@ second update:
 }
 ```
 KEB does not send oidc, provisioner use defaults
-Pros:
- - simple KEB
- - cons Provisioner works different way with oidc than other fields
+
+Pros: simple KEB
+
+Cons Provisioner works different way with oidc than other fields
  
  
