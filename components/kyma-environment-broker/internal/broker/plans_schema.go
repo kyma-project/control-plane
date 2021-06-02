@@ -19,6 +19,23 @@ type ProvisioningProperties struct {
 	AutoScalerMin *Type `json:"autoScalerMin,omitempty"`
 	AutoScalerMax *Type `json:"autoScalerMax,omitempty"`
 	ZonesCount    *Type `json:"zonesCount,omitempty"`
+
+	//OIDC OIDCType `json:"oidc,omitempty"`
+}
+
+type OIDCProperties struct {
+	ClientID       Type `json:"clientID"`
+	GroupsClaim    Type `json:"groupsClaim"`
+	IssuerURL      Type `json:"issuerURL"`
+	SigningAlgs    Type `json:"signingAlgs"`
+	UsernameClaim  Type `json:"usernameClaim"`
+	UsernamePrefix Type `json:"usernamePrefix"`
+}
+
+type OIDCType struct {
+	Type
+	Properties OIDCProperties `json:"properties"`
+	Required   []string       `json:"required"`
 }
 
 type Type struct {
@@ -77,6 +94,29 @@ func NewProvisioningProperties(machineTypes []string, regions []string) Provisio
 			Default:     10,
 			Description: "Specifies the maximum number of virtual machines to create",
 		},
+		//OIDC: NewOIDCSchema(),
+	}
+}
+
+func NewOIDCSchema() OIDCType {
+	return OIDCType{
+		Type: Type{Type: "object", Description: "OIDC configuration"},
+		Properties: OIDCProperties{
+			ClientID:       Type{Type: "string", Description: "The client ID for the OpenID Connect client."},
+			IssuerURL:      Type{Type: "string", Description: "The URL of the OpenID issuer, only HTTPS scheme will be accepted."},
+			GroupsClaim:    Type{Type: "string", Default: "groups", Description: "If provided, the name of a custom OpenID Connect claim for specifying user groups."},
+			UsernameClaim:  Type{Type: "string", Default: "sub", Description: "The OpenID claim to use as the user name."},
+			UsernamePrefix: Type{Type: "string", Default: "-", Description: "If provided, all usernames will be prefixed with this value. If not provided, username claims other than 'email' are prefixed by the issuer URL to avoid clashes. To skip any prefixing, provide the value '-'."},
+			SigningAlgs: Type{
+				Type: "array",
+				Items: []Type{{
+					Type: "string",
+				}},
+				Default:     []string{"RS256"},
+				Description: "List of allowed JOSE asymmetric signing algorithms.",
+			},
+		},
+		Required: []string{"clientID", "issuerURL"},
 	}
 }
 
