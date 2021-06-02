@@ -100,10 +100,14 @@ func providerSpecificConfig() string {
 			vnetCidr
 		}
 		... on AWSProviderConfig {
-			zone
-			internalCidr
+			zones {
+                  ... on AWSZone {
+                    name
+                    publicCidr
+                    workerCidr
+                    internalCidr
+                  }
 			vpcCidr
-			publicCidr
 		}
 	`)
 }
