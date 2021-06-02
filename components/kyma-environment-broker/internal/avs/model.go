@@ -119,11 +119,12 @@ func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, e
 func generateNameAndDescription(operation internal.ProvisioningOperation, beType string) (string, string) {
 	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
 	subAccountID := operation.ProvisioningParameters.ErsContext.SubAccountID
+	instanceID := operation.InstanceID
 	name := operation.ProvisioningParameters.Parameters.Name
 	shootName := operation.InstanceDetails.ShootName
-	beName := fmt.Sprintf("K8S-%s-Kyma-%s-%s-%s", providerCodeByPlan(operation.ProvisioningParameters.PlanID), beType, subAccountID, name)
-	beDescription := fmt.Sprintf("SKR instance Name: %s, Global Account: %s, Subaccount: %s, Shoot: %s",
-		name, globalAccountID, subAccountID, shootName)
+	beName := fmt.Sprintf("K8S-%s-Kyma-%s-%s-%s", providerCodeByPlan(operation.ProvisioningParameters.PlanID), beType, instanceID, name)
+	beDescription := fmt.Sprintf("{\"instanceName\": \"%s\", \"globalAccountID\": \"%s\", \"subAccountID\": \"%s\", \"instanceID\": \"%s\", \"shootName\": \"%s\"}",
+		name, globalAccountID, subAccountID, instanceID, shootName)
 
 	return truncateString(beName, 80), truncateString(beDescription, 255)
 }
