@@ -168,28 +168,3 @@ func (ts *TestShoot) WithHibernationState(hibernationPossible bool, hibernated b
 
 	return ts
 }
-
-//func gardenerOidcConfig(oidcConfig *model.OIDCConfig) *gardener_types.OIDCConfig {
-//	if oidcConfig != nil {
-//		return &gardener_types.OIDCConfig{
-//			ClientID:       &oidcConfig.ClientID,
-//			GroupsClaim:    &oidcConfig.GroupsClaim,
-//			IssuerURL:      &oidcConfig.IssuerURL,
-//			SigningAlgs:    oidcConfig.SigningAlgs,
-//			UsernameClaim:  &oidcConfig.UsernameClaim,
-//			UsernamePrefix: &oidcConfig.UsernamePrefix,
-//		}
-//	}
-//	return nil
-//}
-//
-//func oidcConfig() *model.OIDCConfig {
-//	return &model.OIDCConfig{
-//		ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb1111",
-//		GroupsClaim:    "groups",
-//		IssuerURL:      "https://kymatest.accounts400.ondemand.com",
-//		SigningAlgs:    []string{"RS256"},
-//		UsernameClaim:  "sub",
-//		UsernamePrefix: "-",
-//	}
-//}
