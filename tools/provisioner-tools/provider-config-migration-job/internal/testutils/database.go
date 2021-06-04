@@ -23,14 +23,6 @@ const (
 	DbName = "provisioner"
 	DbPort = "5432"
 
-	TableCluster             = "cluster"
-	TableGardenerConfig      = "gardener_config"
-	TableOperation           = "kyma_config"
-	TableKymaComponentConfig = "kyma_component_config"
-	TableRuntimeUpgrade      = "runtime_upgrade"
-
-	ClusterTableName  = "cluster"
-	SchemaName        = "public"
 	DockerUserNetwork = "test_network"
 	EnvPipelineBuild  = "PIPELINE_BUILD"
 
