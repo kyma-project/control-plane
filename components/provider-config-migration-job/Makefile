@@ -1,5 +1,5 @@
-APP_NAME = provisioners-provider-specific-config-migrating-job
-APP_PATH = tools/provisioner-tools/provisioners-provider-specific-config-migrating-job
+APP_NAME = provider-config-migration-job
+APP_PATH = components/provider-config-migration-job
 ENTRYPOINT = cmd/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-kubebuilder2:v20210407-70afe459
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts

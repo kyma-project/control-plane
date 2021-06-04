@@ -3,14 +3,15 @@ package job
 import (
 	"context"
 	"encoding/json"
+	"testing"
+	"time"
+
 	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/persistence/dbconnection"
 	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/testutils"
 	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 var uuid = testutils.NewUUIDGenerator()

@@ -3,6 +3,7 @@ package dbconnection
 import (
 	"database/sql"
 	"fmt"
+
 	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/persistence/dberrors"
 

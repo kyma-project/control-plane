@@ -2,12 +2,13 @@ package job
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/persistence/dbconnection"
 	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/persistence/dbconnection/mocks"
 	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/persistence/dberrors"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestProviderConfigMigrator_Do(t *testing.T) {

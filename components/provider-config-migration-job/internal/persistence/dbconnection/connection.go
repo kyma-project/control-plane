@@ -1,10 +1,11 @@
 package dbconnection
 
 import (
+	"time"
+
 	"github.com/gocraft/dbr/v2"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 func InitializeDatabaseConnection(connectionString string, retryCount int) (*dbr.Connection, error) {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/job"
 	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/persistence/dbconnection"
 	"github.com/pkg/errors"

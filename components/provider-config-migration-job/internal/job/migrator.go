@@ -3,8 +3,9 @@ package job
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/persistence/dberrors"
 	"strings"
+
+	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/persistence/dberrors"
 
 	"github.com/avast/retry-go"
 	"github.com/kyma-project/control-plane/components/provisioners-model-migrating-job/internal/model"

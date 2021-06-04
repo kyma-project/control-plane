@@ -3,11 +3,12 @@ package testutils
 import (
 	"context"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/gocraft/dbr/v2"
 	"github.com/lib/pq"
