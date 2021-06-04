@@ -52,4 +52,8 @@ replace (
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.19.0
 	k8s.io/apimachinery => k8s.io/apimachinery v0.19.0
 	k8s.io/client-go => k8s.io/client-go v0.19.0
+
+    // just until the PR-769 is merged
+	github.com/kyma-project/control-plane/components/provisioner => github.com/rJankowski93/control-plane/components/provisioner v0.0.0-20210602050226-56094e2b2111
+
 )

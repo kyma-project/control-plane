@@ -112,11 +112,11 @@ func NewOIDCSchema() OIDCType {
 				Items: []Type{{
 					Type: "string",
 				}},
-				Default: []string{"RS256"},
+				Default:     []string{"RS256"},
 				Description: "List of allowed JOSE asymmetric signing algorithms.",
 			},
 		},
-		Required: []string{"clientID","issuerURL"},
+		Required: []string{"clientID", "issuerURL"},
 	}
 }
 
