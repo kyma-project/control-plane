@@ -29,8 +29,8 @@ const (
 	planID            = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
 	globalAccountID   = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
 	subAccountID      = "3cb65e5b-e455-4799-bf35-be46e8f5a533"
-	userID            = "test@test.pl"
-	userIDToUpperCase = "TEST@TEST.PL"
+	userID            = "Test@Test.pl"
+	userIDToLowerCase = "test@test.pl"
 
 	instanceID       = "d3d5dca4-5dc8-44ee-a825-755c2a3fb839"
 	otherInstanceID  = "87bfaeaa-48eb-40d6-84f3-3d5368eed3eb"
@@ -617,7 +617,7 @@ func fixExistOperation() internal.ProvisioningOperation {
 		ErsContext: internal.ERSContext{
 			SubAccountID:    subAccountID,
 			GlobalAccountID: globalAccountID,
-			UserID:          userIDToUpperCase,
+			UserID:          userIDToLowerCase,
 		},
 		Parameters: internal.ProvisioningParametersDTO{
 			Name: clusterName,
