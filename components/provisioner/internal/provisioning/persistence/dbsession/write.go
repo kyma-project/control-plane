@@ -151,13 +151,18 @@ func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) 
 }
 
 func (ws writeSession) updateOidcConfig(config model.GardenerConfig) dberrors.Error {
-	_, err := ws.update("oidc_config").
+	_, err := ws.deleteFrom("oidc_config").
 		Where(dbr.Eq("cluster_id", config.ClusterID)).
-		Set("client_id", config.OIDCConfig.ClientID).
-		Set("groups_claim", config.OIDCConfig.GroupsClaim).
-		Set("issuer_url", config.OIDCConfig.IssuerURL).
-		Set("username_claim", config.OIDCConfig.UsernameClaim).
-		Set("username_prefix", config.OIDCConfig.UsernamePrefix).
+		Exec()
+
+	_, err = ws.insertInto("oidc_config").
+		Pair("id", config.ID).
+		Pair("cluster_id", config.ClusterID).
+		Pair("client_id", config.OIDCConfig.ClientID).
+		Pair("groups_claim", config.OIDCConfig.GroupsClaim).
+		Pair("issuer_url", config.OIDCConfig.IssuerURL).
+		Pair("username_claim", config.OIDCConfig.UsernameClaim).
+		Pair("username_prefix", config.OIDCConfig.UsernamePrefix).
 		Exec()
 
 	if err != nil {

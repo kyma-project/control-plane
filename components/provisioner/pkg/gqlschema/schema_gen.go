@@ -90,6 +90,7 @@ type ComplexityRoot struct {
 		MaxSurge                            func(childComplexity int) int
 		MaxUnavailable                      func(childComplexity int) int
 		Name                                func(childComplexity int) int
+		OidcConfig                          func(childComplexity int) int
 		Provider                            func(childComplexity int) int
 		ProviderSpecificConfig              func(childComplexity int) int
 		Purpose                             func(childComplexity int) int
@@ -120,6 +121,15 @@ type ComplexityRoot struct {
 		RollBackUpgradeOperation func(childComplexity int, id string) int
 		UpgradeRuntime           func(childComplexity int, id string, config UpgradeRuntimeInput) int
 		UpgradeShoot             func(childComplexity int, id string, config UpgradeShootInput) int
+	}
+
+	OIDCConfig struct {
+		ClientID       func(childComplexity int) int
+		GroupsClaim    func(childComplexity int) int
+		IssuerURL      func(childComplexity int) int
+		SigningAlgs    func(childComplexity int) int
+		UsernameClaim  func(childComplexity int) int
+		UsernamePrefix func(childComplexity int) int
 	}
 
 	OpenStackProviderConfig struct {
@@ -393,6 +403,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GardenerConfig.Name(childComplexity), true
 
+	case "GardenerConfig.oidcConfig":
+		if e.complexity.GardenerConfig.OidcConfig == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.OidcConfig(childComplexity), true
+
 	case "GardenerConfig.provider":
 		if e.complexity.GardenerConfig.Provider == nil {
 			break
@@ -574,6 +591,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpgradeShoot(childComplexity, args["id"].(string), args["config"].(UpgradeShootInput)), true
+
+	case "OIDCConfig.clientID":
+		if e.complexity.OIDCConfig.ClientID == nil {
+			break
+		}
+
+		return e.complexity.OIDCConfig.ClientID(childComplexity), true
+
+	case "OIDCConfig.groupsClaim":
+		if e.complexity.OIDCConfig.GroupsClaim == nil {
+			break
+		}
+
+		return e.complexity.OIDCConfig.GroupsClaim(childComplexity), true
+
+	case "OIDCConfig.issuerURL":
+		if e.complexity.OIDCConfig.IssuerURL == nil {
+			break
+		}
+
+		return e.complexity.OIDCConfig.IssuerURL(childComplexity), true
+
+	case "OIDCConfig.signingAlgs":
+		if e.complexity.OIDCConfig.SigningAlgs == nil {
+			break
+		}
+
+		return e.complexity.OIDCConfig.SigningAlgs(childComplexity), true
+
+	case "OIDCConfig.usernameClaim":
+		if e.complexity.OIDCConfig.UsernameClaim == nil {
+			break
+		}
+
+		return e.complexity.OIDCConfig.UsernameClaim(childComplexity), true
+
+	case "OIDCConfig.usernamePrefix":
+		if e.complexity.OIDCConfig.UsernamePrefix == nil {
+			break
+		}
+
+		return e.complexity.OIDCConfig.UsernamePrefix(childComplexity), true
 
 	case "OpenStackProviderConfig.cloudProfileName":
 		if e.complexity.OpenStackProviderConfig.CloudProfileName == nil {
@@ -818,6 +877,7 @@ type GardenerConfig {
     enableMachineImageVersionAutoUpdate: Boolean
     allowPrivilegedContainers: Boolean
     providerSpecificConfig: ProviderSpecificConfig
+    oidcConfig: OIDCConfig
 }
 
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
@@ -843,6 +903,15 @@ type OpenStackProviderConfig {
     floatingPoolName: String!
     cloudProfileName: String!
     loadBalancerProvider: String!
+}
+
+type OIDCConfig {
+    clientID: String!
+    groupsClaim: String!
+    issuerURL: String!
+    signingAlgs: [String!]!
+    usernameClaim: String!
+    usernamePrefix: String!
 }
 
 type ConfigEntry {
@@ -2560,6 +2629,40 @@ func (ec *executionContext) _GardenerConfig_providerSpecificConfig(ctx context.C
 	return ec.marshalOProviderSpecificConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificConfig(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _GardenerConfig_oidcConfig(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OidcConfig, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*OIDCConfig)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOOIDCConfig2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfig(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _HibernationStatus_hibernated(ctx context.Context, field graphql.CollectedField, obj *HibernationStatus) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -3040,6 +3143,228 @@ func (ec *executionContext) _Mutation_reconnectRuntimeAgent(ctx context.Context,
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().ReconnectRuntimeAgent(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OIDCConfig_clientID(ctx context.Context, field graphql.CollectedField, obj *OIDCConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OIDCConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClientID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OIDCConfig_groupsClaim(ctx context.Context, field graphql.CollectedField, obj *OIDCConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OIDCConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.GroupsClaim, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OIDCConfig_issuerURL(ctx context.Context, field graphql.CollectedField, obj *OIDCConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OIDCConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IssuerURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OIDCConfig_signingAlgs(ctx context.Context, field graphql.CollectedField, obj *OIDCConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OIDCConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SigningAlgs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2ᚕstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OIDCConfig_usernameClaim(ctx context.Context, field graphql.CollectedField, obj *OIDCConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OIDCConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UsernameClaim, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OIDCConfig_usernamePrefix(ctx context.Context, field graphql.CollectedField, obj *OIDCConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OIDCConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UsernamePrefix, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5947,6 +6272,8 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_allowPrivilegedContainers(ctx, field, obj)
 		case "providerSpecificConfig":
 			out.Values[i] = ec._GardenerConfig_providerSpecificConfig(ctx, field, obj)
+		case "oidcConfig":
+			out.Values[i] = ec._GardenerConfig_oidcConfig(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6046,6 +6373,58 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_rollBackUpgradeOperation(ctx, field)
 		case "reconnectRuntimeAgent":
 			out.Values[i] = ec._Mutation_reconnectRuntimeAgent(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var oIDCConfigImplementors = []string{"OIDCConfig"}
+
+func (ec *executionContext) _OIDCConfig(ctx context.Context, sel ast.SelectionSet, obj *OIDCConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, oIDCConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OIDCConfig")
+		case "clientID":
+			out.Values[i] = ec._OIDCConfig_clientID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "groupsClaim":
+			out.Values[i] = ec._OIDCConfig_groupsClaim(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "issuerURL":
+			out.Values[i] = ec._OIDCConfig_issuerURL(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "signingAlgs":
+			out.Values[i] = ec._OIDCConfig_signingAlgs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "usernameClaim":
+			out.Values[i] = ec._OIDCConfig_usernameClaim(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "usernamePrefix":
+			out.Values[i] = ec._OIDCConfig_usernamePrefix(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -7337,6 +7716,17 @@ func (ec *executionContext) marshalOLabels2ᚖgithubᚗcomᚋkymaᚑprojectᚋco
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOOIDCConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfig(ctx context.Context, sel ast.SelectionSet, v OIDCConfig) graphql.Marshaler {
+	return ec._OIDCConfig(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOOIDCConfig2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfig(ctx context.Context, sel ast.SelectionSet, v *OIDCConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._OIDCConfig(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOOIDCConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfigInput(ctx context.Context, v interface{}) (OIDCConfigInput, error) {

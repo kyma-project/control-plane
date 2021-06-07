@@ -109,6 +109,7 @@ type GardenerConfig struct {
 	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
 	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
 	ProviderSpecificConfig              ProviderSpecificConfig `json:"providerSpecificConfig"`
+	OidcConfig                          *OIDCConfig            `json:"oidcConfig"`
 }
 
 type GardenerConfigInput struct {
@@ -173,6 +174,15 @@ type KymaConfigInput struct {
 	Components       []*ComponentConfigurationInput `json:"components"`
 	Configuration    []*ConfigEntryInput            `json:"configuration"`
 	ConflictStrategy *ConflictStrategy              `json:"conflictStrategy"`
+}
+
+type OIDCConfig struct {
+	ClientID       string   `json:"clientID"`
+	GroupsClaim    string   `json:"groupsClaim"`
+	IssuerURL      string   `json:"issuerURL"`
+	SigningAlgs    []string `json:"signingAlgs"`
+	UsernameClaim  string   `json:"usernameClaim"`
+	UsernamePrefix string   `json:"usernamePrefix"`
 }
 
 type OIDCConfigInput struct {

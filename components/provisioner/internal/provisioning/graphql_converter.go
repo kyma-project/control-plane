@@ -93,6 +93,21 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 		EnableMachineImageVersionAutoUpdate: &config.EnableMachineImageVersionAutoUpdate,
 		AllowPrivilegedContainers:           &config.AllowPrivilegedContainers,
 		ProviderSpecificConfig:              providerSpecificConfig,
+		OidcConfig:                          c.oidcConfigToGraphQLConfig(config.OIDCConfig),
+	}
+}
+
+func (c graphQLConverter) oidcConfigToGraphQLConfig(config *model.OIDCConfig) *gqlschema.OIDCConfig {
+	if config == nil {
+		return nil
+	}
+	return &gqlschema.OIDCConfig{
+		ClientID:       config.ClientID,
+		GroupsClaim:    config.GroupsClaim,
+		IssuerURL:      config.IssuerURL,
+		SigningAlgs:    config.SigningAlgs,
+		UsernameClaim:  config.UsernameClaim,
+		UsernamePrefix: config.UsernamePrefix,
 	}
 }
 

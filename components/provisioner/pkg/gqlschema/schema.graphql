@@ -29,6 +29,7 @@ type GardenerConfig {
     enableMachineImageVersionAutoUpdate: Boolean
     allowPrivilegedContainers: Boolean
     providerSpecificConfig: ProviderSpecificConfig
+    oidcConfig: OIDCConfig
 }
 
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
@@ -54,6 +55,15 @@ type OpenStackProviderConfig {
     floatingPoolName: String!
     cloudProfileName: String!
     loadBalancerProvider: String!
+}
+
+type OIDCConfig {
+    clientID: String!
+    groupsClaim: String!
+    issuerURL: String!
+    signingAlgs: [String!]!
+    usernameClaim: String!
+    usernamePrefix: String!
 }
 
 type ConfigEntry {
