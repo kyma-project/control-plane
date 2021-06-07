@@ -9,6 +9,9 @@ deployment:
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
 
+providerConfigMigration:
+  enabled: false
+
 security:
   skipTLSCertificateVeryfication: false
 
