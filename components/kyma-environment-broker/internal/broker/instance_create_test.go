@@ -29,6 +29,7 @@ const (
 	planID          = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
 	globalAccountID = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
 	subAccountID    = "3cb65e5b-e455-4799-bf35-be46e8f5a533"
+	userID          = "test@test.pl"
 
 	instanceID       = "d3d5dca4-5dc8-44ee-a825-755c2a3fb839"
 	otherInstanceID  = "87bfaeaa-48eb-40d6-84f3-3d5368eed3eb"
@@ -67,7 +68,7 @@ func TestProvision_Provision(t *testing.T) {
 			ServiceID:     serviceID,
 			PlanID:        planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
-			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, globalAccountID, subAccountID)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, userID)),
 		}, true)
 
 		// then
@@ -122,7 +123,7 @@ func TestProvision_Provision(t *testing.T) {
 			ServiceID:     serviceID,
 			PlanID:        planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
-			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, globalAccountID, subAccountID)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, userID)),
 		}, true)
 
 		// then
@@ -164,7 +165,7 @@ func TestProvision_Provision(t *testing.T) {
 			ServiceID:     serviceID,
 			PlanID:        broker.TrialPlanID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
-			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, globalAccountID, subAccountID)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, userID)),
 		}, true)
 
 		// then
@@ -207,7 +208,7 @@ func TestProvision_Provision(t *testing.T) {
 			ServiceID:     serviceID,
 			PlanID:        broker.TrialPlanID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
-			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, globalAccountID, subAccountID)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, userID)),
 		}, true)
 
 		// then
@@ -263,7 +264,7 @@ func TestProvision_Provision(t *testing.T) {
 			ServiceID:     serviceID,
 			PlanID:        broker.TrialPlanID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
-			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, globalAccountID, subAccountID)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, userID)),
 		}, true)
 
 		// then
@@ -316,7 +317,7 @@ func TestProvision_Provision(t *testing.T) {
 			ServiceID:     serviceID,
 			PlanID:        planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
-			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID, userID)),
 		}, true)
 
 		// then
@@ -354,7 +355,7 @@ func TestProvision_Provision(t *testing.T) {
 								"name": "%s",
 								"kymaVersion": "main-00e83e99"
 								}`, clusterName)),
-			RawContext: json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
+			RawContext: json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID, userID)),
 		}, true)
 		assert.NoError(t, err)
 
@@ -387,7 +388,7 @@ func TestProvision_Provision(t *testing.T) {
 			ServiceID:     serviceID,
 			PlanID:        planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
-			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID, userID)),
 		}, true)
 
 		// then
@@ -424,7 +425,7 @@ func TestProvision_Provision(t *testing.T) {
 								"name": "%s",
 								"kymaVersion": "main-00e83e99"
 								}`, clusterName)),
-			RawContext: json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
+			RawContext: json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID, userID)),
 		}, true)
 		assert.NoError(t, err)
 
@@ -462,7 +463,7 @@ func TestProvision_Provision(t *testing.T) {
 			ServiceID:     serviceID,
 			PlanID:        broker.AzureLitePlanID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
-			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID, userID)),
 		}, true)
 		assert.NoError(t, err)
 
@@ -500,7 +501,7 @@ func TestProvision_Provision(t *testing.T) {
 			ServiceID:     serviceID,
 			PlanID:        broker.TrialPlanID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
-			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, "1cafb9c8-c8f8-478a-948a-9cb53bb76aa4", subAccountID, userID)),
 		}, true)
 		assert.NoError(t, err)
 
@@ -591,7 +592,7 @@ func TestRegionValidation(t *testing.T) {
 					ServiceID:     serviceID,
 					PlanID:        tc.planID,
 					RawParameters: json.RawMessage(tc.parameters),
-					RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s"}`, globalAccountID, subAccountID)),
+					RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, userID)),
 				}, true)
 
 			// then
@@ -615,6 +616,7 @@ func fixExistOperation() internal.ProvisioningOperation {
 		ErsContext: internal.ERSContext{
 			SubAccountID:    subAccountID,
 			GlobalAccountID: globalAccountID,
+			UserID:          userID,
 		},
 		Parameters: internal.ProvisioningParametersDTO{
 			Name: clusterName,

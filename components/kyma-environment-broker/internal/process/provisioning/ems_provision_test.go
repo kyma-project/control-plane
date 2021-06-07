@@ -77,11 +77,19 @@ type simpleInputCreator struct {
 	labels            map[string]string
 	enabledComponents []string
 	shootName         *string
+	provider          internal.CloudProvider
 }
 
 func (c *simpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionerInputCreator {
 	c.enabledComponents = append(c.enabledComponents, name)
 	return c
+}
+
+func (c *simpleInputCreator) Provider() internal.CloudProvider {
+	if c.provider != "" {
+		return c.provider
+	}
+	return internal.Azure
 }
 
 func (c *simpleInputCreator) SetLabel(key, val string) internal.ProvisionerInputCreator {

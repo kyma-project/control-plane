@@ -7,6 +7,7 @@ import (
 	"time"
 
 	dbr "github.com/gocraft/dbr/v2"
+	uuid "github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 )
@@ -27,6 +28,17 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 
 	if err != nil {
 		return dberrors.Internal("Failed to insert record to Cluster table: %s", err)
+	}
+
+	for _, admin := range cluster.Administrators {
+		_, err := ws.insertInto("cluster_administrator").
+			Pair("id", uuid.New().String()).
+			Pair("cluster_id", cluster.ID).
+			Pair("email", admin).Exec()
+
+		if err != nil {
+			return dberrors.Internal("Failed to insert record to cluster_administrator table: %s", err)
+		}
 	}
 
 	return nil

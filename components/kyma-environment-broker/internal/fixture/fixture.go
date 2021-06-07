@@ -31,6 +31,7 @@ type SimpleInputCreator struct {
 	Labels            map[string]string
 	EnabledComponents []string
 	ShootName         *string
+	CloudProvider     internal.CloudProvider
 }
 
 func FixServiceManagerEntryDTO() *internal.ServiceManagerEntryDTO {
@@ -151,6 +152,7 @@ func FixInstance(id string) internal.Instance {
 		DashboardURL:    InstanceDashboardURL,
 		Parameters:      FixProvisioningParameters(id),
 		ProviderRegion:  Region,
+		Provider:        internal.Azure,
 		InstanceDetails: FixInstanceDetails(id),
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now().Add(time.Minute * 5),
@@ -182,12 +184,13 @@ func FixOperation(id, instanceId string, opType internal.OperationType) internal
 	}
 }
 
-func FixInputCreator() *SimpleInputCreator {
+func FixInputCreator(provider internal.CloudProvider) *SimpleInputCreator {
 	return &SimpleInputCreator{
 		Overrides:         make(map[string][]*gqlschema.ConfigEntryInput, 0),
 		Labels:            make(map[string]string),
 		EnabledComponents: []string{},
 		ShootName:         ptr.String("ShootName"),
+		CloudProvider:     provider,
 	}
 }
 
@@ -198,7 +201,20 @@ func FixProvisioningOperation(operationId, instanceId string) internal.Provision
 			Version: KymaVersion,
 			Origin:  internal.Defaults,
 		},
-		InputCreator:    FixInputCreator(),
+		InputCreator:    FixInputCreator(internal.Azure),
+		SMClientFactory: nil,
+		DashboardURL:    "https://console.kyma.org",
+	}
+}
+
+func FixProvisioningOperationWithProvider(operationId, instanceId string, provider internal.CloudProvider) internal.ProvisioningOperation {
+	return internal.ProvisioningOperation{
+		Operation: FixOperation(operationId, instanceId, internal.OperationTypeProvision),
+		RuntimeVersion: internal.RuntimeVersionData{
+			Version: KymaVersion,
+			Origin:  internal.Defaults,
+		},
+		InputCreator:    FixInputCreator(provider),
 		SMClientFactory: nil,
 		DashboardURL:    "https://console.kyma.org",
 	}
@@ -241,7 +257,7 @@ func FixUpgradeKymaOperation(operationId, instanceId string) internal.UpgradeKym
 	return internal.UpgradeKymaOperation{
 		Operation:        FixOperation(operationId, instanceId, internal.OperationTypeUpgradeKyma),
 		RuntimeOperation: FixRuntimeOperation(operationId),
-		InputCreator:     FixInputCreator(),
+		InputCreator:     FixInputCreator(internal.Azure),
 		RuntimeVersion: internal.RuntimeVersionData{
 			Version: KymaVersion,
 			Origin:  internal.Defaults,
@@ -254,7 +270,7 @@ func FixUpgradeClusterOperation(operationId, instanceId string) internal.Upgrade
 	return internal.UpgradeClusterOperation{
 		Operation:        FixOperation(operationId, instanceId, internal.OperationTypeUpgradeCluster),
 		RuntimeOperation: FixRuntimeOperation(operationId),
-		InputCreator:     FixInputCreator(),
+		InputCreator:     FixInputCreator(internal.Azure),
 	}
 }
 
@@ -312,4 +328,8 @@ func (c *SimpleInputCreator) CreateUpgradeShootInput() (gqlschema.UpgradeShootIn
 func (c *SimpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionerInputCreator {
 	c.EnabledComponents = append(c.EnabledComponents, name)
 	return c
+}
+
+func (c *SimpleInputCreator) Provider() internal.CloudProvider {
+	return c.CloudProvider
 }

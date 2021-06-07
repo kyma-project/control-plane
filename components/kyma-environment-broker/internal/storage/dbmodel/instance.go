@@ -44,6 +44,7 @@ type InstanceDTO struct {
 	DashboardURL           string
 	ProvisioningParameters string
 	ProviderRegion         string
+	Provider               string
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -55,7 +56,9 @@ type InstanceDTO struct {
 type InstanceWithOperationDTO struct {
 	InstanceDTO
 
-	Type        sql.NullString
-	State       sql.NullString
-	Description sql.NullString
+	Type               sql.NullString
+	State              sql.NullString
+	OperationCreatedAt sql.NullTime
+	Data               sql.NullString
+	Description        sql.NullString
 }

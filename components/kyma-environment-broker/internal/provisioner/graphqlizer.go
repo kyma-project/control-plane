@@ -55,6 +55,9 @@ func (g *Graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (s
 		{{- if .GardenerConfig }}
 		gardenerConfig: {{ GardenerConfigInputToGraphQL .GardenerConfig }},
 		{{- end }}
+		{{- if .Administrators }}
+		administrators: {{.Administrators | marshal }},
+		{{- end }}
 	}`)
 }
 

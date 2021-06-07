@@ -52,6 +52,7 @@ func (s *Instance) InsertWithoutEncryption(instance internal.Instance) error {
 		UpdatedAt:              instance.UpdatedAt,
 		DeletedAt:              instance.DeletedAt,
 		Version:                instance.Version,
+		Provider:               string(instance.Provider),
 	}
 
 	sess := s.NewWriteSession()
@@ -93,6 +94,7 @@ func (s *Instance) ListWithoutDecryption(filter dbmodel.InstanceFilter) ([]inter
 			UpdatedAt:       dto.UpdatedAt,
 			DeletedAt:       dto.DeletedAt,
 			Version:         dto.Version,
+			Provider:        internal.CloudProvider(dto.Provider),
 		}
 		instances = append(instances, instance)
 	}
@@ -121,6 +123,7 @@ func (s *Instance) UpdateWithoutEncryption(instance internal.Instance) (*interna
 		UpdatedAt:              instance.UpdatedAt,
 		DeletedAt:              instance.DeletedAt,
 		Version:                instance.Version,
+		Provider:               string(instance.Provider),
 	}
 	var lastErr dberr.Error
 	err = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
@@ -177,15 +180,51 @@ func (s *Instance) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]i
 		if err != nil {
 			return nil, err
 		}
+
+		var isSuspensionOp bool
+
+		switch internal.OperationType(dto.Type.String) {
+		case internal.OperationTypeProvision:
+			isSuspensionOp = false
+		case internal.OperationTypeDeprovision:
+			deprovOp, err := s.toDeprovisioningOp(&dto)
+			if err != nil {
+				log.Errorf("while unmarshalling DTO deprovisioning operation data: %v", err)
+			}
+			isSuspensionOp = deprovOp.Temporary
+		}
+
 		result = append(result, internal.InstanceWithOperation{
-			Instance:    inst,
-			Type:        dto.Type,
-			State:       dto.State,
-			Description: dto.Description,
+			Instance:       inst,
+			Type:           dto.Type,
+			State:          dto.State,
+			Description:    dto.Description,
+			OpCreatedAt:    dto.OperationCreatedAt.Time,
+			IsSuspensionOp: isSuspensionOp,
 		})
 	}
 
 	return result, nil
+}
+
+func (s *Instance) toProvisioningOp(dto *dbmodel.InstanceWithOperationDTO) (*internal.ProvisioningOperation, error) {
+	var provOp internal.ProvisioningOperation
+	err := json.Unmarshal([]byte(dto.Data.String), &provOp)
+	if err != nil {
+		return nil, errors.New("unable to unmarshall provisioning data")
+	}
+
+	return &provOp, nil
+}
+
+func (s *Instance) toDeprovisioningOp(dto *dbmodel.InstanceWithOperationDTO) (*internal.DeprovisioningOperation, error) {
+	var deprovOp internal.DeprovisioningOperation
+	err := json.Unmarshal([]byte(dto.Data.String), &deprovOp)
+	if err != nil {
+		return nil, errors.New("unable to unmarshall deprovisioning data")
+	}
+
+	return &deprovOp, nil
 }
 
 func (s *Instance) FindAllInstancesForRuntimes(runtimeIdList []string) ([]internal.Instance, error) {
@@ -322,6 +361,7 @@ func (s *Instance) toInstance(dto dbmodel.InstanceDTO) (internal.Instance, error
 		UpdatedAt:       dto.UpdatedAt,
 		DeletedAt:       dto.DeletedAt,
 		Version:         dto.Version,
+		Provider:        internal.CloudProvider(dto.Provider),
 	}, nil
 }
 
@@ -409,6 +449,7 @@ func (s *Instance) toInstanceDTO(instance internal.Instance) (dbmodel.InstanceDT
 		UpdatedAt:              instance.UpdatedAt,
 		DeletedAt:              instance.DeletedAt,
 		Version:                instance.Version,
+		Provider:               string(instance.Provider),
 	}, nil
 }
 

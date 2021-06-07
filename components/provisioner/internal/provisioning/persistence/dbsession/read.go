@@ -85,6 +85,15 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	}
 	cluster.KymaConfig = kymaConfig
 
+	clusterAdministrators, dberr := r.getClusterAdministrator(runtimeID)
+	if dberr != nil {
+		return model.Cluster{}, dberr.Append("Cannot get Cluster administrators for runtimeID: %s", runtimeID)
+	}
+	cluster.Administrators = make([]*string, 0)
+	for _, clusterAdministrator := range clusterAdministrators {
+		cluster.Administrators = append(cluster.Administrators, &clusterAdministrator.Email)
+	}
+
 	return cluster, nil
 }
 
@@ -239,6 +248,22 @@ func (r readSession) getKymaConfig(runtimeID, kymaConfigId string) (model.KymaCo
 	}
 
 	return kymaConfig.parseToKymaConfig(runtimeID)
+}
+
+func (r readSession) getClusterAdministrator(runtimeID string) ([]model.ClusterAdministrator, dberrors.Error) {
+	var clusterAdministrator []model.ClusterAdministrator
+
+	_, err := r.session.
+		Select("*").
+		From("cluster_Administrator").
+		Where(dbr.Eq("cluster_id", runtimeID)).
+		Load(&clusterAdministrator)
+
+	if err != nil {
+		return []model.ClusterAdministrator{}, dberrors.Internal("Failed to get Cluster Administrators: %s", err)
+	}
+
+	return clusterAdministrator, nil
 }
 
 type gardenerConfigRead struct {

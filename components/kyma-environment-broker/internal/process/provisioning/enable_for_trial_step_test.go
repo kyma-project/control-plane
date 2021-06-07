@@ -4,6 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
 	"github.com/sirupsen/logrus"
@@ -49,4 +52,18 @@ func TestEnableForTrialPlanStepShouldNotSkip(t *testing.T) {
 	assert.Nil(t, gotErr)
 	assert.Equal(t, wantSkipTime, gotSkipTime)
 	assert.Equal(t, wantOperation2, gotOperation)
+}
+
+func fixOperationWithPlanID(planID string) internal.ProvisioningOperation {
+	provisioningOperation := fixture.FixProvisioningOperation(operationID, instanceID)
+	provisioningOperation.ProvisioningParameters = fixProvisioningParametersWithPlanID(planID, "region")
+
+	return provisioningOperation
+}
+
+func fixOperationWithPlanIDAndKymaVersion(planID, version string) internal.ProvisioningOperation {
+	provisioningOperation := fixOperationWithPlanID(planID)
+	provisioningOperation.RuntimeVersion.Version = version
+
+	return provisioningOperation
 }

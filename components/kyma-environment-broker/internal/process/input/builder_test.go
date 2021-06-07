@@ -197,7 +197,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 
 		// given
 		pp = fixProvisioningParameters(broker.TrialPlanID, "")
-		provider := internal.Gcp
+		provider := internal.GCP
 		pp.Parameters.Provider = &provider
 		// when
 		input, err = ibf.CreateUpgradeInput(pp, internal.RuntimeVersionData{Version: "1.1.0", Origin: internal.Defaults})

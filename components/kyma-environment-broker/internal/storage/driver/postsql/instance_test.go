@@ -47,6 +47,7 @@ func TestInstance(t *testing.T) {
 		require.NoError(t, err)
 
 		fixInstance.DashboardURL = "diff"
+		fixInstance.Provider = "OpenStack"
 		_, err = brokerStorage.Instances().Update(fixInstance)
 		require.NoError(t, err)
 
@@ -85,6 +86,7 @@ func TestInstance(t *testing.T) {
 		assert.Equal(t, fixInstance.ServicePlanID, inst.ServicePlanID)
 		assert.Equal(t, fixInstance.DashboardURL, inst.DashboardURL)
 		assert.Equal(t, fixInstance.Parameters, inst.Parameters)
+		assert.Equal(t, fixInstance.Provider, inst.Provider)
 		assert.NotEmpty(t, inst.CreatedAt)
 		assert.NotEmpty(t, inst.UpdatedAt)
 		assert.Equal(t, "0001-01-01 00:00:00 +0000 UTC", inst.DeletedAt.String())
