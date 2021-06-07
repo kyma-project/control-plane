@@ -254,6 +254,7 @@ func (b *ProvisionEndpoint) extractERSContext(details domain.ProvisionDetails) (
 	if ersContext.UserID == "" {
 		return ersContext, errors.New("UserID parameter cannot be empty")
 	}
+	ersContext.UserID = strings.ToUpper(ersContext.UserID)
 
 	return ersContext, nil
 }
