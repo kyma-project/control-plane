@@ -15,7 +15,7 @@ import (
 )
 
 type RuntimeOverridesAppender interface {
-	Append(input runtimeoverrides.InputAppender, planName, kymaVersion string) error
+	Append(input runtimeoverrides.InputAppender, planName, overridesVersion string) error
 }
 
 //go:generate mockery --name=RuntimeVersionConfiguratorForProvisioning --output=automock --outpkg=automock --case=underscore
@@ -49,14 +49,22 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters", log)
 	}
 
-	version, err := s.getRuntimeVersion(operation)
-	if err != nil {
-		errMsg := fmt.Sprintf("error while getting the runtime version for operation %s", operation.ID)
-		log.Error(errMsg)
-		return s.operationManager.RetryOperation(operation, errMsg, 10*time.Second, 30*time.Minute, log)
+	overridesVersion := s.getOverridesVersion(operation)
+
+	if overridesVersion == "" { // if no overrides version number specified explicitly we read the RuntimeVersion
+		runtimeVersion, err := s.getRuntimeVersion(operation)
+		if err != nil {
+			errMsg := fmt.Sprintf("error while getting the runtime version for operation %s", operation.ID)
+			log.Error(errMsg)
+			return s.operationManager.RetryOperation(operation, errMsg, 10*time.Second, 30*time.Minute, log)
+		}
+
+		overridesVersion = runtimeVersion.Version
 	}
 
-	if err := s.runtimeOverrides.Append(operation.InputCreator, planName, version.Version); err != nil {
+	log.Infof("runtime overrides version: %s", overridesVersion)
+
+	if err := s.runtimeOverrides.Append(operation.InputCreator, planName, overridesVersion); err != nil {
 		errMsg := fmt.Sprintf("error when appending overrides for operation %s: %s", operation.ID, err.Error())
 		log.Error(errMsg)
 		return s.operationManager.RetryOperation(operation, errMsg, 10*time.Second, 30*time.Minute, log)
@@ -75,4 +83,12 @@ func (s *OverridesFromSecretsAndConfigStep) getRuntimeVersion(op internal.Provis
 	// the provisioning operation. The following code can be removed after all operations will use
 	// new approach for setting up runtime version in operation struct
 	return s.runtimeVerConfigurator.ForProvisioning(op)
+}
+
+func (s *OverridesFromSecretsAndConfigStep) getOverridesVersion(op internal.ProvisioningOperation) string {
+	if op.ProvisioningParameters.Parameters.OverridesVersion != "" {
+		return op.ProvisioningParameters.Parameters.OverridesVersion
+	}
+
+	return ""
 }
