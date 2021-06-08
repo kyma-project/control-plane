@@ -156,6 +156,10 @@ func (ws writeSession) updateOidcConfig(config model.GardenerConfig) dberrors.Er
 		Where(dbr.Eq("cluster_id", config.ClusterID)).
 		Exec()
 
+	if err != nil {
+		return dberrors.Internal("Failed to delete record to OIDCConfig table: %s", err)
+	}
+
 	_, err = ws.insertInto("oidc_config").
 		Pair("id", config.ID).
 		Pair("cluster_id", config.ClusterID).

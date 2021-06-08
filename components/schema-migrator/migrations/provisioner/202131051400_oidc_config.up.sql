@@ -17,5 +17,3 @@ CREATE TABLE signing_algorithms
 );
 
 ALTER TABLE gardener_config ADD oidc_config_id uuid;
-
-ALTER TABLE gardener_config ADD FOREIGN KEY(oidc_config_id) REFERENCES oidc_config(id) ON DELETE CASCADE;
