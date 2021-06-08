@@ -144,7 +144,7 @@ func (c *OperationResultCollector) OnUpgradeClusterStepProcessed(ctx context.Con
 	}
 	op := stepProcessed.Operation
 	pp := op.ProvisioningParameters
-	c.upgradeKymaResultGauge.
+	c.upgradeClusterResultGauge.
 		WithLabelValues(op.Operation.ID, op.Operation.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).
 		Set(resultValue)
 
