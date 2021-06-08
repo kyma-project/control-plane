@@ -45,6 +45,13 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 }
 
 func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberrors.Error {
+	if config.OIDCConfig != nil {
+		err := ws.insertOidcConfig(config)
+		if err != nil {
+			return err
+		}
+	}
+
 	_, err := ws.insertInto("gardener_config").
 		Pair("id", config.ID).
 		Pair("cluster_id", config.ClusterID).
@@ -71,18 +78,13 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		Pair("enable_machine_image_version_auto_update", config.EnableMachineImageVersionAutoUpdate).
 		Pair("allow_privileged_containers", config.AllowPrivilegedContainers).
 		Pair("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
+		Pair("oidc_config_id", config.OIDCConfigId).
 		Exec()
 
 	if err != nil {
 		return dberrors.Internal("Failed to insert record to GardenerConfig table: %s", err)
 	}
 
-	if config.OIDCConfig != nil {
-		err := ws.insertOidcConfig(config)
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }
 

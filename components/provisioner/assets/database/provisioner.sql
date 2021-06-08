@@ -12,6 +12,26 @@ CREATE TABLE cluster
     sub_account_id varchar(256)
 );
 
+-- OIDC config
+
+CREATE TABLE oidc_config
+(
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    cluster_id uuid NOT NULL,
+    client_id text NOT NULL,
+    groups_claim text NOT NULL,
+    issuer_url text NOT NULL,
+    username_claim text NOT NULL,
+    username_prefix text NOT NULL
+);
+
+CREATE TABLE signing_algorithms
+(
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    cluster_id uuid NOT NULL,
+    algorithm text NOT NULL
+);
+
 -- Cluster Config
 
 CREATE TABLE gardener_config
@@ -41,8 +61,10 @@ CREATE TABLE gardener_config
     enable_machine_image_version_auto_update boolean NOT NULL,
     allow_privileged_containers boolean NOT NULL,
     provider_specific_config jsonb,
+    oidc_config_id uuid,
     UNIQUE(cluster_id),
-    foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE
+    foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE,
+    foreign key (oidc_config_id) REFERENCES oidc_config (id) ON DELETE CASCADE
 );
 
 
@@ -154,22 +176,3 @@ CREATE TABLE cluster_administrator
     email text NOT NULL
 );
 
--- OIDC config
-
-CREATE TABLE oidc_config
-(
-    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    cluster_id uuid NOT NULL,
-    client_id text NOT NULL,
-    groups_claim text NOT NULL,
-    issuer_url text NOT NULL,
-    username_claim text NOT NULL,
-    username_prefix text NOT NULL
-);
-
-CREATE TABLE signing_algorithms
-(
-    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    cluster_id uuid NOT NULL,
-    algorithm text NOT NULL
-)
