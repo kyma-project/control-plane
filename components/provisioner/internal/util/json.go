@@ -11,3 +11,9 @@ func DecodeJson(jsonConfig string, target interface{}) error {
 
 	return decoder.Decode(target)
 }
+
+func Encode(input interface{}, target *bytes.Buffer) error {
+	encoder := json.NewEncoder(target)
+
+	return encoder.Encode(input)
+}

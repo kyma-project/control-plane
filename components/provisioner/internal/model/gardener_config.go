@@ -1,11 +1,11 @@
 package model
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
@@ -160,6 +160,30 @@ func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig,
 	err = util.DecodeJson(jsonData, &azureProviderConfig)
 	if err == nil {
 		return &AzureGardenerConfig{input: &azureProviderConfig, ProviderSpecificConfig: ProviderSpecificConfig(jsonData)}, nil
+	}
+
+	// needed for backward compatibility - originally, AWS clusters were created only with single AZ
+	// TODO: Remove after data migration
+	var singleZoneAwsProviderConfig SingleZoneAWSProviderConfigInput
+	err = util.DecodeJson(jsonData, &singleZoneAwsProviderConfig)
+	if err == nil {
+		awsProviderConfig := gqlschema.AWSProviderConfigInput{
+			VpcCidr: singleZoneAwsProviderConfig.VpcCidr,
+			Zones: []*gqlschema.AWSZoneInput{
+				{
+					Name:         singleZoneAwsProviderConfig.Zone,
+					PublicCidr:   singleZoneAwsProviderConfig.PublicCidr,
+					InternalCidr: singleZoneAwsProviderConfig.InternalCidr,
+					WorkerCidr:   "10.250.0.0/19",
+				},
+			},
+		}
+
+		var jsonData bytes.Buffer
+		err = util.Encode(awsProviderConfig, &jsonData)
+		if err == nil {
+			return &AWSGardenerConfig{input: &awsProviderConfig, ProviderSpecificConfig: ProviderSpecificConfig(jsonData.String())}, nil
+		}
 	}
 
 	var awsProviderConfig gqlschema.AWSProviderConfigInput
@@ -508,4 +532,13 @@ func getAWSZonesNames(zones []*gqlschema.AWSZoneInput) []string {
 		zoneNames = append(zoneNames, zone.Name)
 	}
 	return zoneNames
+}
+
+// SingleZoneAWSProviderConfigInput describes old schema with only single AZ available for AWS clusters
+// TODO: remove after data migration
+type SingleZoneAWSProviderConfigInput struct {
+	Zone         string `json:"zone"`
+	VpcCidr      string `json:"vpcCidr"`
+	PublicCidr   string `json:"publicCidr"`
+	InternalCidr string `json:"internalCidr"`
 }

@@ -25,17 +25,9 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 	gcpConfigJSON := `{"zones":["fix-gcp-zone-1", "fix-gcp-zone-2"]}`
 	azureConfigJSON := `{"vnetCidr":"10.10.11.11/255", "zones":["fix-az-zone-1", "fix-az-zone-2"]}`
 	azureNoZonesConfigJSON := `{"vnetCidr":"10.10.11.11/255"}`
-	awsConfigJSON := `{
-   "zones":[
-      {
-         "name": "zone",
-         "publicCidr": "10.10.11.12/255",
-         "internalCidr": "10.10.11.13/255",
-         "workerCidr":"10.10.11.12/255"
-      }
-   ],
-   "vpcCidr":"10.10.11.11/255"
-}`
+	awsConfigJSON := `{"vpcCidr":"10.10.11.11/255","zones":[{"name":"zone","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255","workerCidr":"10.250.0.0/19"}]}
+`
+	singleZoneAwsConfigJSON := `{"zone":"zone","vpcCidr":"10.10.11.11/255","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255"}`
 
 	for _, testCase := range []struct {
 		description                    string
@@ -81,7 +73,7 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 							Name:         "zone",
 							PublicCidr:   "10.10.11.12/255",
 							InternalCidr: "10.10.11.13/255",
-							WorkerCidr:   "10.10.11.12/255",
+							WorkerCidr:   "10.250.0.0/19",
 						},
 					},
 					VpcCidr: "10.10.11.11/255",
@@ -93,7 +85,36 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 						Name:         util.StringPtr("zone"),
 						PublicCidr:   util.StringPtr("10.10.11.12/255"),
 						InternalCidr: util.StringPtr("10.10.11.13/255"),
-						WorkerCidr:   util.StringPtr("10.10.11.12/255"),
+						WorkerCidr:   util.StringPtr("10.250.0.0/19"),
+					},
+				},
+				VpcCidr: util.StringPtr("10.10.11.11/255"),
+			},
+		},
+		{
+			description: "should create AWS Gardener config with single zone in old data format",
+			jsonData:    singleZoneAwsConfigJSON,
+			expectedConfig: &AWSGardenerConfig{
+				ProviderSpecificConfig: ProviderSpecificConfig(awsConfigJSON),
+				input: &gqlschema.AWSProviderConfigInput{
+					Zones: []*gqlschema.AWSZoneInput{
+						{
+							Name:         "zone",
+							PublicCidr:   "10.10.11.12/255",
+							InternalCidr: "10.10.11.13/255",
+							WorkerCidr:   "10.250.0.0/19",
+						},
+					},
+					VpcCidr: "10.10.11.11/255",
+				},
+			},
+			expectedProviderSpecificConfig: gqlschema.AWSProviderConfig{
+				Zones: []*gqlschema.AWSZone{
+					{
+						Name:         util.StringPtr("zone"),
+						PublicCidr:   util.StringPtr("10.10.11.12/255"),
+						InternalCidr: util.StringPtr("10.10.11.13/255"),
+						WorkerCidr:   util.StringPtr("10.250.0.0/19"),
 					},
 				},
 				VpcCidr: util.StringPtr("10.10.11.11/255"),
