@@ -87,8 +87,9 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		return model.GardenerConfig{}, err
 	}
 
+	id := c.uuidGenerator.New()
 	return model.GardenerConfig{
-		ID:                                  c.uuidGenerator.New(),
+		ID:                                  id,
 		Name:                                input.Name,
 		ProjectName:                         c.gardenerProject,
 		KubernetesVersion:                   input.KubernetesVersion,
@@ -114,7 +115,15 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		ClusterID:                           runtimeID,
 		GardenerProviderConfig:              providerSpecificConfig,
 		OIDCConfig:                          oidcConfigFromInput(input.OidcConfig),
+		OIDCConfigId:                        oidcConfigIdFromInput(id, input.OidcConfig),
 	}, nil
+}
+
+func oidcConfigIdFromInput(id string, config *gqlschema.OIDCConfigInput) string {
+	if config != nil {
+		return id
+	}
+	return ""
 }
 
 func oidcConfigFromInput(config *gqlschema.OIDCConfigInput) *model.OIDCConfig {
@@ -179,6 +188,7 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
 		GardenerProviderConfig:              providerSpecificConfig,
 		OIDCConfig:                          oidcConfigFromInput(input.OidcConfig),
+		OIDCConfigId:                        oidcConfigIdFromInput(config.ID, input.OidcConfig),
 	}, nil
 }
 

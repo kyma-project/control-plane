@@ -134,6 +134,7 @@ func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) 
 		Set("enable_kubernetes_version_auto_update", config.EnableKubernetesVersionAutoUpdate).
 		Set("enable_machine_image_version_auto_update", config.EnableMachineImageVersionAutoUpdate).
 		Set("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
+		Set("oidc_config_id", config.OIDCConfigId).
 		Exec()
 
 	if config.OIDCConfig != nil {
