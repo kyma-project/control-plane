@@ -65,7 +65,7 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 	if op.State == domain.Succeeded {
 		if op.Temporary {
 			log.Info("Removing RuntimeID from the instance")
-			err := s.removeRuntimeID(operation.InstanceID)
+			err := s.removeRuntimeID(operation, log)
 			if err != nil {
 				return operation, time.Second, err
 			}
@@ -120,7 +120,8 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 				return s.operationManager.OperationFailed(operation, "unable to provide instance details", log)
 			}
 			log.Info("Setting state 'in progress' and refreshing instance details")
-			operation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
+			var retry time.Duration
+			operation, retry = s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
 				operation.State = domain.InProgress
 				operation.InstanceDetails = details
 			}, log)
@@ -177,7 +178,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 	case gqlschema.OperationStateSucceeded:
 		{
 			if !broker.IsTrialPlan(planID) {
-				hypType, err := hyperscaler.HyperscalerTypeForPlanID(operation.ProvisioningParameters)
+				hypType, err := hyperscaler.FromCloudProvider(instance.Provider)
 				if err != nil {
 					log.Errorf("after successful deprovisioning failing to hyperscaler release subscription - determine the type of Hyperscaler to use for planID [%s]: %s", planID, err.Error())
 					return operation, 0, nil
@@ -218,15 +219,33 @@ func (s *InitialisationStep) removeUserID(operation internal.DeprovisioningOpera
 	}, log)
 }
 
-func (s *InitialisationStep) removeRuntimeID(instanceID string) error {
-	inst, err := s.instanceStorage.GetByID(instanceID)
+func (s *InitialisationStep) removeRuntimeID(op internal.DeprovisioningOperation, log logrus.FieldLogger) error {
+	inst, err := s.instanceStorage.GetByID(op.InstanceID)
 	if err != nil {
+		log.Errorf("cannot fetch instance with ID: %s from storage", op.InstanceID)
 		return err
 	}
 
 	// empty RuntimeID means there is no runtime in the Provisioner Domain
 	inst.RuntimeID = ""
-
 	_, err = s.instanceStorage.Update(*inst)
-	return err
+	if err != nil {
+		log.Errorf("cannot update instance with ID: %s", inst.InstanceID)
+		return err
+	}
+
+	operation, err := s.operationStorage.GetDeprovisioningOperationByID(op.ID)
+	if err != nil {
+		log.Errorf("cannot get deprovisioning operation with ID: %s from storage", op.ID)
+		return err
+	}
+
+	operation.RuntimeID = ""
+	_, err = s.operationStorage.UpdateDeprovisioningOperation(*operation)
+	if err != nil {
+		log.Errorf("cannot update deprovisioning operation with ID: %s", operation.ID)
+		return err
+	}
+
+	return nil
 }

@@ -47,6 +47,7 @@ func (s *CreateRuntimeStep) Name() string {
 
 func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if operation.RuntimeID != "" {
+		log.Infof("RuntimeID already set %s, skipping", operation.RuntimeID)
 		return operation, 0, nil
 	}
 	if time.Since(operation.UpdatedAt) > CreateRuntimeTimeout {
@@ -99,7 +100,9 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		return operation, 10 * time.Second, nil
 	}
 
-	err = s.updateInstance(operation.InstanceID, *provisionerResponse.RuntimeID, requestInput.ClusterConfig.GardenerConfig.Region)
+	err = s.updateInstance(operation.InstanceID,
+		*provisionerResponse.RuntimeID,
+		requestInput.ClusterConfig.GardenerConfig.Region)
 	switch {
 	case err == nil:
 	case dberr.IsConflict(err):

@@ -27,6 +27,7 @@ const (
 	accountTarget    = "account"
 	subaccountTarget = "subaccount"
 	runtimeIDTarget  = "runtime-id"
+	instanceIDTarget = "instance-id"
 	regionTarget     = "region"
 	planTarget       = "plan"
 	shootTarget      = "shoot"
@@ -174,7 +175,8 @@ A target specifier is a comma-separated list of the following selectors:
   region={REGEXP}     : Regex pattern to match against the Runtime's provider region field, e.g. "europe|eu-"
   runtime-id={ID}     : Specific Runtime by Runtime ID
   plan={NAME}         : Name of the Runtime's service plan. The possible values are: azure, azure_lite, aws, trial, gcp, openstack
-  shoot={NAME}        : Specific Runtime by Shoot cluster name`)
+  shoot={NAME}        : Specific Runtime by Shoot cluster name
+  instance-id={ID}    : Specific instance by Instance ID`)
 	cmd.Flags().StringArrayVarP(targetExcludeInputs, "target-exclude", "e", nil,
 		`List of Runtime target specifiers to exclude. You can specify this option multiple times.
 A target specifier is a comma-separated list of the selectors described under the --target option.`)
@@ -238,6 +240,8 @@ func parseRuntimeTarget(targetInput string, targets *[]orchestration.RuntimeTarg
 			target.Region = selectorValue
 		case runtimeIDTarget:
 			target.RuntimeID = selectorValue
+		case instanceIDTarget:
+			target.InstanceID = selectorValue
 		case planTarget:
 			switch selectorValue {
 			case azurePlan, azureLitePlan, trialPlan, gcpPlan, openstackPlan, awsPlan:

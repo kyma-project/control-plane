@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -141,17 +142,45 @@ func (h *orchestrationHandler) listOperations(w http.ResponseWriter, r *http.Req
 		States: query[commonOrchestration.StateParam],
 	}
 
-	operations, count, totalCount, err := h.operations.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, filter)
+	o, err := h.orchestrations.GetByID(orchestrationID)
 	if err != nil {
-		h.log.Errorf("while getting operations: %v", err)
-		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting operations"))
+		h.log.Errorf("while getting orchestration %s: %v", orchestrationID, err)
+		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting orchestration %s", orchestrationID))
 		return
 	}
 
-	response, err := h.converter.UpgradeKymaOperationListToDTO(operations, count, totalCount)
-	if err != nil {
-		h.log.Errorf("while converting operations: %v", err)
-		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting operations"))
+	var response commonOrchestration.OperationResponseList
+	switch o.Type {
+	case commonOrchestration.UpgradeKymaOrchestration:
+		operations, count, totalCount, err := h.operations.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, filter)
+		if err != nil {
+			h.log.Errorf("while getting operations: %v", err)
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting operations"))
+			return
+		}
+		response, err = h.converter.UpgradeKymaOperationListToDTO(operations, count, totalCount)
+		if err != nil {
+			h.log.Errorf("while converting operations: %v", err)
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting operations"))
+			return
+		}
+
+	case commonOrchestration.UpgradeClusterOrchestration:
+		operations, count, totalCount, err := h.operations.ListUpgradeClusterOperationsByOrchestrationID(orchestrationID, filter)
+		if err != nil {
+			h.log.Errorf("while getting operations: %v", err)
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting operations"))
+			return
+		}
+		response, err = h.converter.UpgradeClusterOperationListToDTO(operations, count, totalCount)
+		if err != nil {
+			h.log.Errorf("while converting operations: %v", err)
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting operations"))
+			return
+		}
+
+	default:
+		httputil.WriteErrorResponse(w, http.StatusInternalServerError, fmt.Errorf("unsupported orchestration type: %s", o.Type))
 		return
 	}
 
@@ -159,23 +188,14 @@ func (h *orchestrationHandler) listOperations(w http.ResponseWriter, r *http.Req
 }
 
 func (h *orchestrationHandler) getOperation(w http.ResponseWriter, r *http.Request) {
+	orchestrationID := mux.Vars(r)["orchestration_id"]
 	operationID := mux.Vars(r)["operation_id"]
 
-	operation, err := h.operations.GetUpgradeKymaOperationByID(operationID)
+	o, err := h.orchestrations.GetByID(orchestrationID)
 	if err != nil {
-		h.log.Errorf("while getting upgrade operation %s: %v", operationID, err)
-		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting operation %s", operationID))
+		h.log.Errorf("while getting orchestration %s: %v", orchestrationID, err)
+		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting orchestration %s", orchestrationID))
 		return
-	}
-	provisioningOp, err := h.operations.GetProvisioningOperationByInstanceID(operation.InstanceID)
-	if err != nil {
-		h.log.Errorf("while getting provisioning operation for instance %s: %v", operation.InstanceID, err)
-		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting provisioning operation for instance %s", operation.InstanceID))
-		return
-	}
-	provisioningState, err := h.runtimeStates.GetByOperationID(provisioningOp.ID)
-	if err != nil {
-		h.log.Errorf("while getting runtime state for operation %s: %v", provisioningOp.ID, err)
 	}
 
 	upgradeState, err := h.runtimeStates.GetByOperationID(operationID)
@@ -183,10 +203,40 @@ func (h *orchestrationHandler) getOperation(w http.ResponseWriter, r *http.Reque
 		h.log.Errorf("while getting runtime state for upgrade operation %s: %v", operationID, err)
 	}
 
-	response, err := h.converter.UpgradeKymaOperationToDetailDTO(*operation, upgradeState.KymaConfig, provisioningState.ClusterConfig)
-	if err != nil {
-		h.log.Errorf("while converting operation: %v", err)
-		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting operation"))
+	var response commonOrchestration.OperationDetailResponse
+	switch o.Type {
+	case commonOrchestration.UpgradeKymaOrchestration:
+		operation, err := h.operations.GetUpgradeKymaOperationByID(operationID)
+		if err != nil {
+			h.log.Errorf("while getting upgrade operation %s: %v", operationID, err)
+			httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting operation %s", operationID))
+			return
+		}
+
+		response, err = h.converter.UpgradeKymaOperationToDetailDTO(*operation, &upgradeState.KymaConfig)
+		if err != nil {
+			h.log.Errorf("while converting operation: %v", err)
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting operation"))
+			return
+		}
+
+	case commonOrchestration.UpgradeClusterOrchestration:
+		operation, err := h.operations.GetUpgradeClusterOperationByID(operationID)
+		if err != nil {
+			h.log.Errorf("while getting upgrade operation %s: %v", operationID, err)
+			httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while getting operation %s", operationID))
+			return
+		}
+
+		response, err = h.converter.UpgradeClusterOperationToDetailDTO(*operation, &upgradeState.ClusterConfig)
+		if err != nil {
+			h.log.Errorf("while converting operation: %v", err)
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting operation"))
+			return
+		}
+
+	default:
+		httputil.WriteErrorResponse(w, http.StatusInternalServerError, fmt.Errorf("unsupported orchestration type: %s", o.Type))
 		return
 	}
 

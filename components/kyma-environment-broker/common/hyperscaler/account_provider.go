@@ -3,7 +3,6 @@ package hyperscaler
 import (
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -36,31 +35,18 @@ func NewAccountProvider(kubernetesInterface kubernetes.Interface, gardenerPool A
 	}
 }
 
-func HyperscalerTypeForPlanID(pp internal.ProvisioningParameters) (Type, error) {
-
-	planID := pp.PlanID
-	switch planID {
-	case broker.GCPPlanID:
-		return GCP, nil
-	case broker.AzurePlanID, broker.AzureLitePlanID, broker.AzureHAPlanID:
+func FromCloudProvider(cp internal.CloudProvider) (Type, error) {
+	switch cp {
+	case internal.Azure:
 		return Azure, nil
-	case broker.OpenStackPlanID:
-		return Openstack, nil
-	case broker.AWSPlanID:
+	case internal.AWS:
 		return AWS, nil
-	case broker.FreemiumPlanID:
-		switch pp.PlatformProvider {
-		case internal.AWS:
-			return AWS, nil
-		case internal.Azure:
-			return Azure, nil
-		case internal.Gcp:
-			return GCP, nil
-		default:
-			return "", errors.Errorf("cannot determine the type of hyperscaler for free plan with provider: %s", pp.PlatformProvider)
-		}
+	case internal.GCP:
+		return GCP, nil
+	case internal.Openstack:
+		return Openstack, nil
 	default:
-		return "", errors.Errorf("cannot determine the type of Hyperscaler to use for planID: %s", planID)
+		return "", errors.Errorf("cannot determine the type of Hyperscaler to use for cloud provider %s", cp)
 	}
 }
 

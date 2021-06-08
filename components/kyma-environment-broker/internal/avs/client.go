@@ -165,7 +165,7 @@ func (c *Client) RemoveReferenceFromParentEval(parentID, evaluationID int64) (er
 		return nil
 	}
 
-	if response != nil && response.Body != nil {
+	if response != nil && response.StatusCode == http.StatusBadRequest && response.Body != nil {
 		defer func() {
 			if closeErr := c.closeResponseBody(response); closeErr != nil {
 				err = kebError.AsTemporaryError(closeErr, "while closing body")
@@ -216,7 +216,7 @@ func (c *Client) deleteRequest(absoluteURL string) (*http.Response, error) {
 
 	response, err := c.execute(req, true, true)
 	if err != nil {
-		return &http.Response{}, errors.Wrapf(err, "while executing delete request for path: %s", absoluteURL)
+		return response, errors.Wrapf(err, "while executing delete request for path: %s", absoluteURL)
 	}
 
 	return response, nil
@@ -249,10 +249,10 @@ func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetTo
 		if allowResetToken {
 			return c.execute(request, allowNotFound, false)
 		}
-		return response, fmt.Errorf("avs server returned %d status code twice for %s (response body: %s)", http.StatusUnauthorized, request.URL.String(), responseBody(response))
+		return response, fmt.Errorf("avs server returned %d status code twice for %s", http.StatusUnauthorized, request.URL.String())
 	}
 
-	return response, fmt.Errorf("unsupported status code: %d for %s (response body: %s)", response.StatusCode, request.URL.String(), responseBody(response))
+	return response, fmt.Errorf("unsupported status code: %d for %s", response.StatusCode, request.URL.String())
 }
 
 func (c *Client) closeResponseBody(response *http.Response) error {

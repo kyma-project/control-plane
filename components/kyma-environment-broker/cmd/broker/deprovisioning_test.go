@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 )
 
@@ -11,6 +12,7 @@ func TestKymaDeprovision(t *testing.T) {
 	runtimeOptions := RuntimeOptions{
 		GlobalAccountID: globalAccountID,
 		SubAccountID:    subAccountID,
+		Provider:        internal.AWS,
 	}
 
 	suite := NewDeprovisioningSuite(t)
@@ -28,5 +30,4 @@ func TestKymaDeprovision(t *testing.T) {
 
 	// then
 	suite.WaitForDeprovisioningState(deprovisioningOperationID, domain.Succeeded)
-	// suite.AssertAllStepsFinished(deprovisioningOperationID)
 }

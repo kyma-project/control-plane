@@ -60,6 +60,8 @@ func (h *RuntimeInfoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *RuntimeInfoHandler) mapToDTO(instances []internal.InstanceWithOperation) ([]*RuntimeDTO, error) {
 	items := make([]*RuntimeDTO, 0, len(instances))
 	indexer := map[string]int{}
+	firstProvOpCreationTimePerInstance := map[string]time.Time{}
+	lastDeprovOpCreationTimesPerInstance := map[string]time.Time{}
 
 	for _, inst := range instances {
 		region := h.getRegionOrDefault(inst)
@@ -93,9 +95,27 @@ func (h *RuntimeInfoHandler) mapToDTO(instances []internal.InstanceWithOperation
 		}
 		switch internal.OperationType(inst.Type.String) {
 		case internal.OperationTypeProvision:
-			items[idx].Status.Provisioning = opStatus
+			opCreationTime, exists := firstProvOpCreationTimePerInstance[inst.InstanceID]
+			if !exists {
+				firstProvOpCreationTimePerInstance[inst.InstanceID] = inst.OpCreatedAt
+				items[idx].Status.Provisioning = opStatus
+			}
+			if inst.OpCreatedAt.Before(opCreationTime) {
+				firstProvOpCreationTimePerInstance[inst.InstanceID] = inst.OpCreatedAt
+				items[idx].Status.Provisioning = opStatus
+			}
 		case internal.OperationTypeDeprovision:
-			items[idx].Status.Deprovisioning = opStatus
+			if !inst.IsSuspensionOp {
+				opCreationTime, exists := lastDeprovOpCreationTimesPerInstance[inst.InstanceID]
+				if !exists {
+					lastDeprovOpCreationTimesPerInstance[inst.InstanceID] = inst.OpCreatedAt
+					items[idx].Status.Deprovisioning = opStatus
+				}
+				if inst.OpCreatedAt.After(opCreationTime) {
+					lastDeprovOpCreationTimesPerInstance[inst.InstanceID] = inst.OpCreatedAt
+					items[idx].Status.Deprovisioning = opStatus
+				}
+			}
 		}
 	}
 

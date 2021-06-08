@@ -81,6 +81,7 @@ const (
 	dashboardUrlKey = "dashboardUrl"
 	kubeconfigKey   = "config"
 	subAccountID    = "39ba9a66-2c1a-4fe4-a28e-6e5db434084e"
+	userID          = "test@test.com"
 )
 
 func newTestSuite(t *testing.T) *Suite {
@@ -120,7 +121,7 @@ func newTestSuite(t *testing.T) *Suite {
 
 	httpClient := newHTTPClient(cfg.SkipCertVerification)
 
-	brokerClient := broker.NewClient(ctx, cfg.Broker, cfg.TenantID, instanceID, subAccountID, oAuth2Config, log.WithField("service", "broker_client"))
+	brokerClient := broker.NewClient(ctx, cfg.Broker, cfg.TenantID, instanceID, subAccountID, userID, oAuth2Config, log.WithField("service", "broker_client"))
 
 	directorClient := director.NewDirectorClient(ctx, cfg.Director, log.WithField("service", "director_client"))
 

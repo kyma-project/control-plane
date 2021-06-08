@@ -306,7 +306,7 @@ func main() {
 		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, defaultPlansConfig, cfg.EnableOnDemandVersion, logs),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
 		broker.NewUpdate(db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, logs),
-		broker.NewGetInstance(db.Instances(), logs),
+		broker.NewGetInstance(db.Instances(), db.Operations(), logs),
 		broker.NewLastOperation(db.Operations(), logs),
 		broker.NewBind(logs),
 		broker.NewUnbind(logs),
@@ -524,7 +524,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		},
 		{
 			stage: createRuntimeStageName,
-			step:  provisioning.NewInitialisationStep(db.Operations(), inputFactory, cfg.Provisioning.Timeout, cfg.OperationTimeout, runtimeVerConfigurator, smcf),
+			step:  provisioning.NewInitialisationStep(db.Operations(), db.Instances(), inputFactory, cfg.Provisioning.Timeout, cfg.OperationTimeout, runtimeVerConfigurator, smcf),
 		},
 		{
 			stage: createRuntimeStageName,
@@ -576,14 +576,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			stage:    createRuntimeStageName,
 			step:     provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
 			disabled: cfg.EDP.Disabled,
-		},
-		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewAzureEventHubActivationStep(provisioning.NewProvisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx)),
-		},
-		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewNatsActivationStep(provisioning.NewNatsStreamingOverridesStep()),
 		},
 		{
 			stage: createRuntimeStageName,
@@ -679,12 +671,6 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
 		},
 		{
-			weight: 1,
-			step: deprovisioning.NewSkipForTrialPlanStep(
-				deprovisioning.NewAzureEventHubActivationStep(
-					deprovisioning.NewDeprovisionAzureEventHubStep(db.Operations(), hyperscalerProvider, accountProvider, ctx))),
-		},
-		{
 			weight:   1,
 			step:     deprovisioning.NewEDPDeregistrationStep(edpClient, cfg.EDP),
 			disabled: cfg.EDP.Disabled,
@@ -778,11 +764,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 2,
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
-		},
-		{
-			weight:   3,
-			step:     upgrade_kyma.NewDeprovisionAzureEventHubStep(db.Operations(), azure.NewAzureProvider(), accountProvider, ctx),
-			disabled: cfg.Ems.SkipDeprovisionAzureEventingAtUpgrade,
 		},
 		{
 			weight: 3,

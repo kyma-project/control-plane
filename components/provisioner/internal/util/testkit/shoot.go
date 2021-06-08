@@ -2,6 +2,7 @@ package testkit
 
 import (
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -92,6 +93,18 @@ func (ts *TestShoot) WithOperationError() *TestShoot {
 // WithOperationFailed marks shoot.Status.LastOperation.State as 'Failed'
 func (ts *TestShoot) WithOperationFailed() *TestShoot {
 	ts.shoot.Status.LastOperation.State = v1beta1.LastOperationStateFailed
+	return ts
+}
+
+func (ts *TestShoot) WithRateLimitExceededError() *TestShoot {
+	codes := make([]gardener_types.ErrorCode, 1)
+	codes[0] = gardener_types.ErrorInfraRateLimitsExceeded
+
+	lastError := gardener_types.LastError{Codes: codes}
+
+	lastErrors := make([]gardener_types.LastError, 1)
+	lastErrors[0] = lastError
+	ts.shoot.Status.LastErrors = lastErrors
 	return ts
 }
 

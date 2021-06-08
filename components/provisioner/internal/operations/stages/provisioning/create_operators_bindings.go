@@ -16,16 +16,22 @@ import (
 )
 
 const (
-	l2OperatorClusterRoleBindingName = "l2-operator-view"
-	l3OperatorClusterRoleBindingName = "l3-operator-admin"
+	l2OperatorClusterRoleBindingName            = "l2-operator-view"
+	l3OperatorClusterRoleBindingName            = "l3-operator-admin"
+	administratorOperatorClusterRoleBindingName = "administrator"
 
-	l2OperatorClusterRoleBindingRoleRefName = "view"
-	l3OperatorClusterRoleBindingRoleRefName = "cluster-admin"
+	l2OperatorClusterRoleBindingRoleRefName            = "view"
+	l3OperatorClusterRoleBindingRoleRefName            = "cluster-admin"
+	administratorOperatorClusterRoleBindingRoleRefName = "kyma-admin"
+
+	groupKindSubject = "Group"
+	userKindSubject  = "User"
 )
 
 type OperatorRoleBinding struct {
-	L2SubjectName string `envconfig:"default=runtimeOperator"`
-	L3SubjectName string `envconfig:"default=runtimeAdmin"`
+	L2SubjectName    string `envconfig:"default=runtimeOperator"`
+	L3SubjectName    string `envconfig:"default=runtimeAdmin"`
+	CreatingForAdmin bool   `envconfig:"default=false"`
 }
 
 type CreateBindingsForOperatorsStep struct {
@@ -57,7 +63,7 @@ func (s *CreateBindingsForOperatorsStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Operation, _ logrus.FieldLogger) (operations.StageResult, error) {
+func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Operation, log logrus.FieldLogger) (operations.StageResult, error) {
 	if cluster.Kubeconfig == nil {
 		return operations.StageResult{}, fmt.Errorf("cluster kubeconfig is nil")
 	}
@@ -67,29 +73,47 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 		return operations.StageResult{}, fmt.Errorf("failed to create k8s client: %v", err)
 	}
 
-	l2OperatorView := buildClusterRoleBinding(
-		l2OperatorClusterRoleBindingName,
-		s.operatorRoleBindingConfig.L2SubjectName,
-		l2OperatorClusterRoleBindingRoleRefName)
-	l3OperatorAdmin := buildClusterRoleBinding(
-		l3OperatorClusterRoleBindingName,
-		s.operatorRoleBindingConfig.L3SubjectName,
-		l3OperatorClusterRoleBindingRoleRefName)
-	if err := createClusterRoleBindings(k8sClient.RbacV1().ClusterRoleBindings(), l2OperatorView, l3OperatorAdmin); err != nil {
+	clusterRoleBindings := make([]v12.ClusterRoleBinding, 0)
+
+	clusterRoleBindings = append(clusterRoleBindings,
+		buildClusterRoleBinding(
+			l2OperatorClusterRoleBindingName,
+			s.operatorRoleBindingConfig.L2SubjectName,
+			l2OperatorClusterRoleBindingRoleRefName,
+			groupKindSubject))
+	clusterRoleBindings = append(clusterRoleBindings,
+		buildClusterRoleBinding(
+			l3OperatorClusterRoleBindingName,
+			s.operatorRoleBindingConfig.L3SubjectName,
+			l3OperatorClusterRoleBindingRoleRefName,
+			groupKindSubject))
+
+	if s.operatorRoleBindingConfig.CreatingForAdmin {
+		for i, administrator := range cluster.Administrators {
+			clusterRoleBindings = append(clusterRoleBindings,
+				buildClusterRoleBinding(
+					fmt.Sprintf("%s%d", administratorOperatorClusterRoleBindingName, i),
+					*administrator,
+					administratorOperatorClusterRoleBindingRoleRefName,
+					userKindSubject))
+		}
+	}
+
+	if err := createClusterRoleBindings(k8sClient.RbacV1().ClusterRoleBindings(), clusterRoleBindings...); err != nil {
 		return operations.StageResult{}, fmt.Errorf("failed to create cluster role bindings: %v", err)
 	}
 
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 }
 
-func buildClusterRoleBinding(metaName, subjectName, roleRefName string) v12.ClusterRoleBinding {
+func buildClusterRoleBinding(metaName, subjectName, roleRefName, subjectKind string) v12.ClusterRoleBinding {
 	return v12.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   metaName,
 			Labels: map[string]string{"app": "kyma"},
 		},
 		Subjects: []v12.Subject{{
-			Kind:     "Group",
+			Kind:     subjectKind,
 			Name:     subjectName,
 			APIGroup: "rbac.authorization.k8s.io",
 		}},
