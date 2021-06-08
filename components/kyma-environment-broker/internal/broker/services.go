@@ -65,7 +65,7 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 			ID:                   KymaServiceID,
 			Name:                 KymaServiceName,
 			Description:          class.Description,
-			Bindable:             true,
+			Bindable:             false,
 			InstancesRetrievable: true,
 			Tags: []string{
 				"SAP",
