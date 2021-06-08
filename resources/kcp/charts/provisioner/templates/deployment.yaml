@@ -79,7 +79,7 @@ spec:
 {{ toYaml . | indent 12 }}
       {{- end }}
       containers:
-        - §name: {{ .Chart.Name }}
+        - name: {{ .Chart.Name }}
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.provisioner.dir }}provisioner:{{ .Values.global.images.provisioner.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
