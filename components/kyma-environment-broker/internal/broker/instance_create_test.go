@@ -86,6 +86,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		assert.Equal(t, globalAccountID, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
 		assert.Equal(t, clusterName, operation.ProvisioningParameters.Parameters.Name)
+		assert.Equal(t, userIDToLowerCase, operation.ProvisioningParameters.ErsContext.UserID)
 		assert.Equal(t, "req-region", operation.ProvisioningParameters.PlatformRegion)
 
 		instance, err := memoryStorage.Instances().GetByID(instanceID)
