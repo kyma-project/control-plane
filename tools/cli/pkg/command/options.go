@@ -58,7 +58,6 @@ type GlobalOptionsKey struct {
 var GlobalOpts = GlobalOptionsKey{
 	oidcIssuerURL:      "oidc-issuer-url",
 	oidcClientID:       "oidc-client-id",
-	oidcClientSecret:   "oidc-client-secret",
 	kebAPIURL:          "keb-api-url",
 	kubeconfigAPIURL:   "kubeconfig-api-url",
 	gardenerKubeconfig: "gardener-kubeconfig",
@@ -73,9 +72,6 @@ func SetGlobalOpts(cmd *cobra.Command) {
 
 	cmd.PersistentFlags().String(GlobalOpts.oidcClientID, "", "OIDC client ID to use for login. Can also be set using the KCP_OIDC_CLIENT_ID environment variable.")
 	viper.BindPFlag(GlobalOpts.oidcClientID, cmd.PersistentFlags().Lookup(GlobalOpts.oidcClientID))
-
-	cmd.PersistentFlags().String(GlobalOpts.oidcClientSecret, "", "OIDC client secret to use for login. Can also be set using the KCP_OIDC_CLIENT_SECRET environment variable.")
-	viper.BindPFlag(GlobalOpts.oidcClientSecret, cmd.PersistentFlags().Lookup(GlobalOpts.oidcClientSecret))
 
 	cmd.PersistentFlags().String(GlobalOpts.kebAPIURL, "", "Kyma Environment Broker API URL to use for all commands. Can also be set using the KCP_KEB_API_URL environment variable.")
 	viper.BindPFlag(GlobalOpts.kebAPIURL, cmd.PersistentFlags().Lookup(GlobalOpts.kebAPIURL))
@@ -116,11 +112,6 @@ func (keys *GlobalOptionsKey) OIDCIssuerURL() string {
 // OIDCClientID gets the oidc-client-id global parameter
 func (keys *GlobalOptionsKey) OIDCClientID() string {
 	return viper.GetString(keys.oidcClientID)
-}
-
-// OIDCClientSecret gets the oidc-client-secret global parameter
-func (keys *GlobalOptionsKey) OIDCClientSecret() string {
-	return viper.GetString(keys.oidcClientSecret)
 }
 
 // KEBAPIURL gets the keb-api-url global parameter
