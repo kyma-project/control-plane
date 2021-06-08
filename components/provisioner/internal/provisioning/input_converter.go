@@ -119,11 +119,11 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 	}, nil
 }
 
-func oidcConfigIdFromInput(id string, config *gqlschema.OIDCConfigInput) string {
+func oidcConfigIdFromInput(id string, config *gqlschema.OIDCConfigInput) *string {
 	if config != nil {
-		return id
+		return util.StringPtr(id)
 	}
-	return ""
+	return nil
 }
 
 func oidcConfigFromInput(config *gqlschema.OIDCConfigInput) *model.OIDCConfig {
