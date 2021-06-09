@@ -214,9 +214,11 @@ func (o *Orchestration) IsCanceled() bool {
 type InstanceWithOperation struct {
 	Instance
 
-	Type        sql.NullString
-	State       sql.NullString
-	Description sql.NullString
+	Type           sql.NullString
+	State          sql.NullString
+	Description    sql.NullString
+	OpCreatedAt    time.Time
+	IsSuspensionOp bool
 }
 
 type SMClientFactory interface {

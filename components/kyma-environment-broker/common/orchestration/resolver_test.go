@@ -130,6 +130,17 @@ func TestResolver_Resolve(t *testing.T) {
 			},
 			ExpectedRuntimes: []expectedRuntime{expectedRuntime1},
 		},
+		"IncludeInstance": {
+			Target: TargetSpec{
+				Include: []RuntimeTarget{
+					{
+						InstanceID: "instance-id-1",
+					},
+				},
+				Exclude: nil,
+			},
+			ExpectedRuntimes: []expectedRuntime{expectedRuntime1},
+		},
 		"IncludeTenant": {
 			Target: TargetSpec{
 				Include: []RuntimeTarget{

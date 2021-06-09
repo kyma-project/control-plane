@@ -1,9 +1,10 @@
 package hyperscaler
 
 import (
+	"context"
+
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -48,34 +49,6 @@ func FromCloudProvider(cp internal.CloudProvider) (Type, error) {
 		return Openstack, nil
 	default:
 		return "", errors.Errorf("cannot determine the type of Hyperscaler to use for cloud provider %s", cp)
-	}
-}
-
-// HyperscalerTypeForPlanID returns the hyperscaler type, Deprecated (use FromCloudProvider)
-func HyperscalerTypeForPlanID(pp internal.ProvisioningParameters) (Type, error) {
-	planID := pp.PlanID
-	switch planID {
-	case broker.GCPPlanID:
-		return GCP, nil
-	case broker.AzurePlanID, broker.AzureLitePlanID, broker.AzureHAPlanID:
-		return Azure, nil
-	case broker.OpenStackPlanID:
-		return Openstack, nil
-	case broker.AWSPlanID:
-		return AWS, nil
-	case broker.FreemiumPlanID:
-		switch pp.PlatformProvider {
-		case internal.AWS:
-			return AWS, nil
-		case internal.Azure:
-			return Azure, nil
-		case internal.GCP:
-			return GCP, nil
-		default:
-			return "", errors.Errorf("cannot determine the type of hyperscaler for free plan with provider: %s", pp.PlatformProvider)
-		}
-	default:
-		return "", errors.Errorf("cannot determine the type of Hyperscaler to use for planID: %s", planID)
 	}
 }
 
@@ -142,7 +115,7 @@ func (p *accountProvider) MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType
 func (p *accountProvider) credentialsFromBoundSecret(secretBinding *v1beta1.SecretBinding, hyperscalerType Type) (Credentials, error) {
 	secretClient := p.kubernetesInterface.CoreV1().Secrets(secretBinding.SecretRef.Namespace)
 
-	secret, err := secretClient.Get(secretBinding.SecretRef.Name, metav1.GetOptions{})
+	secret, err := secretClient.Get(context.Background(), secretBinding.SecretRef.Name, metav1.GetOptions{})
 	if err != nil {
 		return Credentials{}, errors.Wrapf(err, "getting %s/%s secret", secretBinding.SecretRef.Namespace, secretBinding.SecretRef.Name)
 	}

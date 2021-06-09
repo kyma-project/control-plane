@@ -27,6 +27,7 @@ const (
 	accountTarget    = "account"
 	subaccountTarget = "subaccount"
 	runtimeIDTarget  = "runtime-id"
+	instanceIDTarget = "instance-id"
 	regionTarget     = "region"
 	planTarget       = "plan"
 	shootTarget      = "shoot"
@@ -45,7 +46,6 @@ const (
 type GlobalOptionsKey struct {
 	oidcIssuerURL      string
 	oidcClientID       string
-	oidcClientSecret   string
 	kebAPIURL          string
 	kubeconfigAPIURL   string
 	gardenerKubeconfig string
@@ -57,7 +57,6 @@ type GlobalOptionsKey struct {
 var GlobalOpts = GlobalOptionsKey{
 	oidcIssuerURL:      "oidc-issuer-url",
 	oidcClientID:       "oidc-client-id",
-	oidcClientSecret:   "oidc-client-secret",
 	kebAPIURL:          "keb-api-url",
 	kubeconfigAPIURL:   "kubeconfig-api-url",
 	gardenerKubeconfig: "gardener-kubeconfig",
@@ -72,9 +71,6 @@ func SetGlobalOpts(cmd *cobra.Command) {
 
 	cmd.PersistentFlags().String(GlobalOpts.oidcClientID, "", "OIDC client ID to use for login. Can also be set using the KCP_OIDC_CLIENT_ID environment variable.")
 	viper.BindPFlag(GlobalOpts.oidcClientID, cmd.PersistentFlags().Lookup(GlobalOpts.oidcClientID))
-
-	cmd.PersistentFlags().String(GlobalOpts.oidcClientSecret, "", "OIDC client secret to use for login. Can also be set using the KCP_OIDC_CLIENT_SECRET environment variable.")
-	viper.BindPFlag(GlobalOpts.oidcClientSecret, cmd.PersistentFlags().Lookup(GlobalOpts.oidcClientSecret))
 
 	cmd.PersistentFlags().String(GlobalOpts.kebAPIURL, "", "Kyma Environment Broker API URL to use for all commands. Can also be set using the KCP_KEB_API_URL environment variable.")
 	viper.BindPFlag(GlobalOpts.kebAPIURL, cmd.PersistentFlags().Lookup(GlobalOpts.kebAPIURL))
@@ -93,7 +89,7 @@ func SetGlobalOpts(cmd *cobra.Command) {
 
 // ValidateGlobalOpts checks the presence of the required global configuration parameters
 func ValidateGlobalOpts() error {
-	var reqGlobalOpts = []string{GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.oidcClientSecret, GlobalOpts.kebAPIURL}
+	var reqGlobalOpts = []string{GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.kebAPIURL}
 	var missingGlobalOpts []string
 	for _, opt := range reqGlobalOpts {
 		if viper.GetString(opt) == "" {
@@ -115,11 +111,6 @@ func (keys *GlobalOptionsKey) OIDCIssuerURL() string {
 // OIDCClientID gets the oidc-client-id global parameter
 func (keys *GlobalOptionsKey) OIDCClientID() string {
 	return viper.GetString(keys.oidcClientID)
-}
-
-// OIDCClientSecret gets the oidc-client-secret global parameter
-func (keys *GlobalOptionsKey) OIDCClientSecret() string {
-	return viper.GetString(keys.oidcClientSecret)
 }
 
 // KEBAPIURL gets the keb-api-url global parameter
@@ -174,7 +165,8 @@ A target specifier is a comma-separated list of the following selectors:
   region={REGEXP}     : Regex pattern to match against the Runtime's provider region field, e.g. "europe|eu-"
   runtime-id={ID}     : Specific Runtime by Runtime ID
   plan={NAME}         : Name of the Runtime's service plan. The possible values are: azure, azure_lite, aws, trial, gcp, openstack
-  shoot={NAME}        : Specific Runtime by Shoot cluster name`)
+  shoot={NAME}        : Specific Runtime by Shoot cluster name
+  instance-id={ID}    : Specific instance by Instance ID`)
 	cmd.Flags().StringArrayVarP(targetExcludeInputs, "target-exclude", "e", nil,
 		`List of Runtime target specifiers to exclude. You can specify this option multiple times.
 A target specifier is a comma-separated list of the selectors described under the --target option.`)
@@ -238,6 +230,8 @@ func parseRuntimeTarget(targetInput string, targets *[]orchestration.RuntimeTarg
 			target.Region = selectorValue
 		case runtimeIDTarget:
 			target.RuntimeID = selectorValue
+		case instanceIDTarget:
+			target.InstanceID = selectorValue
 		case planTarget:
 			switch selectorValue {
 			case azurePlan, azureLitePlan, trialPlan, gcpPlan, openstackPlan, awsPlan:
