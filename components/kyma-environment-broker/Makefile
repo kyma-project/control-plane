@@ -35,10 +35,14 @@ mod-verify-local:
 go-mod-check: go-mod-check-local
 go-mod-check-local:
 	@echo make go-mod-check
+	@echo ========== git diff
+	git diff
+	@echo ============= go mod tidy
 	go mod tidy
+	@echo ========== git diff | wc -l
+	git diff | wc -l
 	@if [ -n "$$(git status -s go.*)" ]; then \
 		echo -e "${RED}✗ go mod tidy modified go.mod or go.sum files${NC}"; \
-		git diff; \
 		git status -s go.*; \
 		exit 1; \
 	fi;
