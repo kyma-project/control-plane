@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/memory"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sebdah/goldie/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

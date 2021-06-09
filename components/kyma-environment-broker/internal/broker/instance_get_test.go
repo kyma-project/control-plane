@@ -11,8 +11,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
+	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -21,10 +21,10 @@ import (
 func TestGetEndpoint_GetNonExistingInstance(t *testing.T) {
 	// given
 	st := storage.NewMemoryStorage()
-	svc := broker.NewGetInstance(st.Instances(), st.Operations(), logrus.New())
+	svc := broker.NewGetInstance(broker.Config{}, st.Instances(), st.Operations(), logrus.New())
 
 	// when
-	_, err := svc.GetInstance(context.Background(), instanceID)
+	_, err := svc.GetInstance(context.Background(), instanceID, domain.FetchInstanceDetails{})
 
 	// then
 	assert.IsType(t, err, &apiresponses.FailureResponse{}, "Get returned error of unexpected type")
@@ -52,7 +52,7 @@ func TestGetEndpoint_GetProvisioningInstance(t *testing.T) {
 		false,
 		logrus.StandardLogger(),
 	)
-	getSvc := broker.NewGetInstance(st.Instances(), st.Operations(), logrus.New())
+	getSvc := broker.NewGetInstance(broker.Config{EnableKubeconfigURLLabel: true}, st.Instances(), st.Operations(), logrus.New())
 
 	// when
 	createSvc.Provision(fixRequestContext(t, "req-region"), instanceID, domain.ProvisionDetails{
@@ -63,7 +63,7 @@ func TestGetEndpoint_GetProvisioningInstance(t *testing.T) {
 	}, true)
 
 	// then
-	_, err := getSvc.GetInstance(context.Background(), instanceID)
+	_, err := getSvc.GetInstance(context.Background(), instanceID, domain.FetchInstanceDetails{})
 	assert.IsType(t, err, &apiresponses.FailureResponse{}, "Get returned error of unexpected type")
 	apierr := err.(*apiresponses.FailureResponse)
 	assert.Equal(t, http.StatusNotFound, apierr.ValidatedStatusCode(nil), "Get status code not matching")
@@ -75,6 +75,7 @@ func TestGetEndpoint_GetProvisioningInstance(t *testing.T) {
 	st.Operations().UpdateProvisioningOperation(*op)
 
 	// then
-	_, err = getSvc.GetInstance(context.Background(), instanceID)
+	response, err := getSvc.GetInstance(context.Background(), instanceID, domain.FetchInstanceDetails{})
 	assert.Equal(t, nil, err, "Get returned error when expected to pass")
+	assert.Len(t, response.Metadata.Labels, 2)
 }
