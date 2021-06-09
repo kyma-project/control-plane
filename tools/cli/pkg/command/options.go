@@ -46,7 +46,6 @@ const (
 type GlobalOptionsKey struct {
 	oidcIssuerURL      string
 	oidcClientID       string
-	oidcClientSecret   string
 	kebAPIURL          string
 	kubeconfigAPIURL   string
 	gardenerKubeconfig string
@@ -90,7 +89,7 @@ func SetGlobalOpts(cmd *cobra.Command) {
 
 // ValidateGlobalOpts checks the presence of the required global configuration parameters
 func ValidateGlobalOpts() error {
-	var reqGlobalOpts = []string{GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.oidcClientSecret, GlobalOpts.kebAPIURL}
+	var reqGlobalOpts = []string{GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.kebAPIURL}
 	var missingGlobalOpts []string
 	for _, opt := range reqGlobalOpts {
 		if viper.GetString(opt) == "" {
