@@ -1,6 +1,7 @@
 package hyperscaler
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -36,7 +37,7 @@ func (sp *sharedAccountPool) SharedCredentialsSecretBinding(hyperscalerType Type
 }
 
 func (sp *sharedAccountPool) getSecretBindings(labelSelector string) ([]v1beta1.SecretBinding, error) {
-	secretBindings, err := sp.secretBindingsClient.List(metav1.ListOptions{
+	secretBindings, err := sp.secretBindingsClient.List(context.Background(), metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
@@ -56,7 +57,7 @@ func (sp *sharedAccountPool) getLeastUsed(secretBindings []v1beta1.SecretBinding
 		usageCount[s.Name] = 0
 	}
 
-	shoots, err := sp.shootsClient.List(metav1.ListOptions{})
+	shoots, err := sp.shootsClient.List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "error while listing Shoots")
 	}

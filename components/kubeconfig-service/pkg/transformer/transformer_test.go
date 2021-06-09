@@ -11,7 +11,6 @@ import (
 func TestSpec(t *testing.T) {
 
 	env.Config.OIDC.Kubeconfig.ClientID = testClientID
-	env.Config.OIDC.Kubeconfig.ClientSecret = testClientSecret
 	env.Config.OIDC.Kubeconfig.IssuerURL = testIssuerURL
 
 	// Only pass t into top-level Convey calls
@@ -26,7 +25,6 @@ func TestSpec(t *testing.T) {
 				So(c.CAData, ShouldEqual, "LS0FakeFakeQo=")
 				So(c.ServerURL, ShouldEqual, "https://api.kymatest.com")
 				So(c.OIDCClientID, ShouldEqual, testClientID)
-				So(c.OIDCClientSecret, ShouldEqual, testClientSecret)
 				So(c.OIDCIssuerURL, ShouldEqual, testIssuerURL)
 			})
 		})
@@ -96,7 +94,6 @@ users:
       - get-token
       - "--oidc-issuer-url=testIssuerURL"
       - "--oidc-client-id=testClientId"
-      - "--oidc-client-secret=testClientSecret"
       command: kubectl
 `
 )
