@@ -1,6 +1,7 @@
 package orchestration
 
 import (
+	"context"
 	"regexp"
 	"sync"
 	"time"
@@ -97,7 +98,8 @@ func (resolver *GardenerRuntimeResolver) Resolve(targets TargetSpec) ([]Runtime,
 }
 
 func (resolver *GardenerRuntimeResolver) getAllShoots() ([]gardenerapi.Shoot, error) {
-	shootList, err := resolver.gardenerClient.Shoots(resolver.gardenerNamespace).List(metav1.ListOptions{})
+	ctx := context.Background()
+	shootList, err := resolver.gardenerClient.Shoots(resolver.gardenerNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
