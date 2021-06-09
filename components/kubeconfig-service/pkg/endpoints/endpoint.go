@@ -17,10 +17,7 @@ const (
 
 //EndpointClient Wrpper for Endpoints
 type EndpointClient struct {
-	gqlURL           string
-	oidcIssuerURL    string
-	oidcClientID     string
-	oidcClientSecret string
+	gqlURL string
 }
 
 //NewEndpointClient return new instance of EndpointClient

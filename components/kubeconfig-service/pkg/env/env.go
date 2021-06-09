@@ -16,9 +16,8 @@ type EnvConfig struct {
 	GraphqlURL string `envconfig:"default=http://127.0.0.1:3000/graphql"`
 	OIDC       struct {
 		Kubeconfig struct {
-			IssuerURL    string
-			ClientID     string
-			ClientSecret string
+			IssuerURL string
+			ClientID  string
 		}
 		IssuerURL string
 		ClientID  string
