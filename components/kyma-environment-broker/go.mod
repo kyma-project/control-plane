@@ -46,7 +46,6 @@ require (
 )
 
 replace (
-
 	// just until the PR-769 is merged
 	github.com/kyma-project/control-plane/components/provisioner => github.com/rJankowski93/control-plane/components/provisioner v0.0.0-20210602050226-56094e2b2111
 	// NOTE: some dependencies require old style client-go version k8s.io/client-go@v11.0.1-0.20190409021438-1a26190bd76a+incompatible
