@@ -10,10 +10,6 @@ export PIPELINE_BUILD
 
 include $(SCRIPTS_DIR)/generic_make_go.mk
 
-.PHONY: gqlgen check-gqlgen testing-with-database-network clean-up mod-verify go-mod-check
-
-verify:: gqlgen check-gqlgen testing-with-database-network mod-verify go-mod-check
-
 resolve-local:
 	GO111MODULE=on go mod vendor -v
 
