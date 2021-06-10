@@ -10,7 +10,7 @@ global:
     provisioner:
       dir:
       version: "PR-771"
-    provider-migration-job:
+    provider_config_migration_job:
       dir:
       version: "PR-740"
     kyma_environment_broker:

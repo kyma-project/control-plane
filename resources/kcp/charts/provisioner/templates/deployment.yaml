@@ -43,7 +43,7 @@ spec:
       {{- if eq .Values.providerConfigMigration.enabled true }}
       initContainers:
         - name: provider-config-migration-job
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.provider-migration-job.dir }}provider-migration-job:{{ .Values.global.images.provider-migration-job.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.provider_config_migration_job.dir }}provider_config_migration_job:{{ .Values.global.images.provider_config_migration_job.version }}
           env:
           - name: APP_DATABASE_USER
             valueFrom:
