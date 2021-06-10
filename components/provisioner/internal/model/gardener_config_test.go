@@ -159,6 +159,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Version:                   "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
+							OIDCConfig:                gardenerOidcConfig(oidcConfig()),
 						},
 					},
 					Maintenance: &gardener_types.Maintenance{
@@ -210,6 +211,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Version:                   "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
+							OIDCConfig:                gardenerOidcConfig(oidcConfig()),
 						},
 					},
 					Maintenance: &gardener_types.Maintenance{AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
@@ -260,6 +262,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Version:                   "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
+							OIDCConfig:                gardenerOidcConfig(oidcConfig()),
 						},
 					},
 					Maintenance: &gardener_types.Maintenance{
@@ -311,6 +314,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Version:                   "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
+							OIDCConfig:                gardenerOidcConfig(oidcConfig()),
 						},
 					},
 					Maintenance: &gardener_types.Maintenance{
@@ -328,7 +332,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 			gardenerProviderConfig := fixGardenerConfig(testCase.provider, testCase.providerConfig)
 
 			// when
-			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace", "account", "sub-account")
+			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace", "account", "sub-account", oidcConfig())
 
 			// then
 			require.NoError(t, err)
@@ -464,6 +468,7 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		EnableMachineImageVersionAutoUpdate: false,
 		AllowPrivilegedContainers:           false,
 		GardenerProviderConfig:              providerCfg,
+		OIDCConfig:                          oidcConfig(),
 	}
 }
 
@@ -503,5 +508,16 @@ func fixWorker(zones []string) gardener_types.Worker {
 		Maximum: 3,
 		Minimum: 1,
 		Zones:   zones,
+	}
+}
+
+func oidcConfig() *OIDCConfig {
+	return &OIDCConfig{
+		ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb1111",
+		GroupsClaim:    "groups",
+		IssuerURL:      "https://kymatest.accounts400.ondemand.com",
+		SigningAlgs:    []string{"RS256"},
+		UsernameClaim:  "sub",
+		UsernamePrefix: "-",
 	}
 }

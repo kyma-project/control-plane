@@ -87,8 +87,9 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		return model.GardenerConfig{}, err
 	}
 
+	id := c.uuidGenerator.New()
 	return model.GardenerConfig{
-		ID:                                  c.uuidGenerator.New(),
+		ID:                                  id,
 		Name:                                input.Name,
 		ProjectName:                         c.gardenerProject,
 		KubernetesVersion:                   input.KubernetesVersion,
@@ -113,7 +114,22 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		AllowPrivilegedContainers:           allowPrivilegedContainers,
 		ClusterID:                           runtimeID,
 		GardenerProviderConfig:              providerSpecificConfig,
+		OIDCConfig:                          oidcConfigFromInput(input.OidcConfig),
 	}, nil
+}
+
+func oidcConfigFromInput(config *gqlschema.OIDCConfigInput) *model.OIDCConfig {
+	if config != nil {
+		return &model.OIDCConfig{
+			ClientID:       config.ClientID,
+			GroupsClaim:    config.GroupsClaim,
+			IssuerURL:      config.IssuerURL,
+			SigningAlgs:    config.SigningAlgs,
+			UsernameClaim:  config.UsernameClaim,
+			UsernamePrefix: config.UsernamePrefix,
+		}
+	}
+	return nil
 }
 
 func (c converter) shouldAllowPrivilegedContainers(inputAllowPrivilegedContainers *bool, tillerYaml string) bool {
@@ -163,6 +179,7 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		EnableKubernetesVersionAutoUpdate:   util.UnwrapBoolOrDefault(input.EnableKubernetesVersionAutoUpdate, config.EnableKubernetesVersionAutoUpdate),
 		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
 		GardenerProviderConfig:              providerSpecificConfig,
+		OIDCConfig:                          oidcConfigFromInput(input.OidcConfig),
 	}, nil
 }
 

@@ -43,6 +43,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			MaxSurge:               40,
 			MaxUnavailable:         1,
 			ProviderSpecificConfig: nil,
+			OidcConfig:             oidcInput(),
 		},
 	}
 
@@ -718,4 +719,15 @@ func TestResolver_HibernateCluster(t *testing.T) {
 		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 		require.Empty(t, status)
 	})
+}
+
+func oidcInput() *gqlschema.OIDCConfigInput {
+	return &gqlschema.OIDCConfigInput{
+		ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb2222",
+		GroupsClaim:    "groups",
+		IssuerURL:      "https://kymatest.accounts400.ondemand.com",
+		SigningAlgs:    []string{"RS257"},
+		UsernameClaim:  "sup",
+		UsernamePrefix: "-",
+	}
 }

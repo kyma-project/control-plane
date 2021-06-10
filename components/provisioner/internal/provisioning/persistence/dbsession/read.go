@@ -79,6 +79,12 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	}
 	cluster.ClusterConfig = providerConfig
 
+	oidcConfig, dberr := r.getOidcConfig(providerConfig.ID)
+	if dberr != nil {
+		return model.Cluster{}, dberr.Append("Cannot get Oidc config for runtimeID: %s", runtimeID)
+	}
+	cluster.ClusterConfig.OIDCConfig = &oidcConfig
+
 	kymaConfig, dberr := r.getKymaConfig(runtimeID, cluster.ActiveKymaConfigId)
 	if dberr != nil {
 		return model.Cluster{}, dberr.Append("Cannot get Kyma config for runtimeID: %s", runtimeID)
@@ -425,4 +431,33 @@ func (r readSession) InProgressOperationsCount() (model.OperationsCount, dberror
 	}
 
 	return operationsCount, nil
+}
+
+func (r readSession) getOidcConfig(gardenerConfigID string) (model.OIDCConfig, dberrors.Error) {
+	var oidc model.OIDCConfig
+	var algorithms []string
+
+	_, err := r.session.
+		Select("*").
+		From("oidc_config").
+		Where(dbr.Eq("gardener_config_id", gardenerConfigID)).
+		Load(&oidc)
+
+	if err != nil {
+		return model.OIDCConfig{}, dberrors.Internal("Failed to get oidc: %s", err)
+	}
+
+	_, err = r.session.
+		Select("algorithm").
+		From("signing_algorithms").
+		Where(dbr.Eq("oidc_config_id", gardenerConfigID)).
+		Load(&algorithms)
+
+	if err != nil {
+		return model.OIDCConfig{}, dberrors.Internal("Failed to get algorithm: %s", err)
+	}
+
+	oidc.SigningAlgs = algorithms
+
+	return oidc, nil
 }

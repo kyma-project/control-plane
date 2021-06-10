@@ -119,6 +119,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					EnableMachineImageVersionAutoUpdate: enableMachineImageVersionAutoUpdate,
 					AllowPrivilegedContainers:           allowPrivilegedContainers,
 					GardenerProviderConfig:              gardenerProviderConfig,
+					OIDCConfig:                          oidcConfig(),
 				},
 				Kubeconfig: &kubeconfig,
 				KymaConfig: fixKymaConfig(nil),
@@ -172,6 +173,14 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					AllowPrivilegedContainers:           &allowPrivilegedContainers,
 					ProviderSpecificConfig: gqlschema.GCPProviderConfig{
 						Zones: zones,
+					},
+					OidcConfig: &gqlschema.OIDCConfig{
+						ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb1111",
+						GroupsClaim:    "groups",
+						IssuerURL:      "https://kymatest.accounts400.ondemand.com",
+						SigningAlgs:    []string{"RS256"},
+						UsernameClaim:  "sub",
+						UsernamePrefix: "-",
 					},
 				},
 				KymaConfig: fixKymaGraphQLConfig(nil),
