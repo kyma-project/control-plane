@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"testing"
 	"time"
 )
@@ -11,7 +12,7 @@ func Test_convertSliceOfDaysToMap(t *testing.T) {
 		days := []time.Weekday{time.Tuesday, time.Thursday}
 
 		// when
-		m := convertSliceOfDaysToMap(days)
+		m := orchestration.ConvertSliceOfDaysToMap(days)
 
 		// then
 		for _, day := range days {
@@ -31,7 +32,7 @@ func Test_firstAvailableDay(t *testing.T) {
 		m[time.Thursday] = true
 
 		// when
-		result := firstAvailableDay(3, m)
+		result := orchestration.FirstAvailableDay(3, m)
 
 		// then
 		if result != 4 {
