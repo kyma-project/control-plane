@@ -58,7 +58,6 @@ type GardenerConfig struct {
 	AllowPrivilegedContainers           bool
 	GardenerProviderConfig              GardenerProviderConfig
 	OIDCConfig                          *OIDCConfig
-	OIDCConfigId                        *string
 }
 
 func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string, oidcConfig *OIDCConfig) (*gardener_types.Shoot, apperrors.AppError) {

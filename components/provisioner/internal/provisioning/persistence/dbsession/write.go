@@ -45,13 +45,6 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 }
 
 func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberrors.Error {
-	if config.OIDCConfig != nil {
-		err := ws.insertOidcConfig(config)
-		if err != nil {
-			return err
-		}
-	}
-
 	_, err := ws.insertInto("gardener_config").
 		Pair("id", config.ID).
 		Pair("cluster_id", config.ClusterID).
@@ -78,11 +71,17 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		Pair("enable_machine_image_version_auto_update", config.EnableMachineImageVersionAutoUpdate).
 		Pair("allow_privileged_containers", config.AllowPrivilegedContainers).
 		Pair("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
-		Pair("oidc_config_id", config.OIDCConfigId).
 		Exec()
 
 	if err != nil {
 		return dberrors.Internal("Failed to insert record to GardenerConfig table: %s", err)
+	}
+
+	if config.OIDCConfig != nil {
+		err := ws.insertOidcConfig(config)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -91,12 +90,12 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 func (ws writeSession) insertOidcConfig(config model.GardenerConfig) dberrors.Error {
 	_, err := ws.insertInto("oidc_config").
 		Pair("id", config.ID).
-		Pair("cluster_id", config.ClusterID).
 		Pair("client_id", config.OIDCConfig.ClientID).
 		Pair("groups_claim", config.OIDCConfig.GroupsClaim).
 		Pair("issuer_url", config.OIDCConfig.IssuerURL).
 		Pair("username_claim", config.OIDCConfig.UsernameClaim).
 		Pair("username_prefix", config.OIDCConfig.UsernamePrefix).
+		Pair("gardener_config_id", config.ID).
 		Exec()
 
 	if err != nil {
@@ -106,7 +105,7 @@ func (ws writeSession) insertOidcConfig(config model.GardenerConfig) dberrors.Er
 	for _, algorithm := range config.OIDCConfig.SigningAlgs {
 		_, err = ws.insertInto("signing_algorithms").
 			Pair("id", uuid.New().String()).
-			Pair("cluster_id", config.ClusterID).
+			Pair("oidc_config_id", config.ID).
 			Pair("algorithm", algorithm).
 			Exec()
 
@@ -136,7 +135,6 @@ func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) 
 		Set("enable_kubernetes_version_auto_update", config.EnableKubernetesVersionAutoUpdate).
 		Set("enable_machine_image_version_auto_update", config.EnableMachineImageVersionAutoUpdate).
 		Set("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
-		Set("oidc_config_id", config.OIDCConfigId).
 		Exec()
 
 	if config.OIDCConfig != nil {
@@ -155,7 +153,7 @@ func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) 
 
 func (ws writeSession) updateOidcConfig(config model.GardenerConfig) dberrors.Error {
 	_, err := ws.deleteFrom("oidc_config").
-		Where(dbr.Eq("cluster_id", config.ClusterID)).
+		Where(dbr.Eq("gardener_config_id", config.ID)).
 		Exec()
 
 	if err != nil {
@@ -164,12 +162,12 @@ func (ws writeSession) updateOidcConfig(config model.GardenerConfig) dberrors.Er
 
 	_, err = ws.insertInto("oidc_config").
 		Pair("id", config.ID).
-		Pair("cluster_id", config.ClusterID).
 		Pair("client_id", config.OIDCConfig.ClientID).
 		Pair("groups_claim", config.OIDCConfig.GroupsClaim).
 		Pair("issuer_url", config.OIDCConfig.IssuerURL).
 		Pair("username_claim", config.OIDCConfig.UsernameClaim).
 		Pair("username_prefix", config.OIDCConfig.UsernamePrefix).
+		Pair("gardener_config_id", config.ID).
 		Exec()
 
 	if err != nil {
@@ -177,7 +175,7 @@ func (ws writeSession) updateOidcConfig(config model.GardenerConfig) dberrors.Er
 	}
 
 	_, err = ws.deleteFrom("signing_algorithms").
-		Where(dbr.Eq("cluster_id", config.ClusterID)).
+		Where(dbr.Eq("oidc_config_id", config.ID)).
 		Exec()
 
 	if err != nil {
@@ -188,7 +186,7 @@ func (ws writeSession) updateOidcConfig(config model.GardenerConfig) dberrors.Er
 
 		_, err = ws.insertInto("signing_algorithms").
 			Pair("id", uuid.New().String()).
-			Pair("cluster_id", config.ClusterID).
+			Pair("oidc_config_id", config.ID).
 			Pair("algorithm", algorithm).
 			Exec()
 

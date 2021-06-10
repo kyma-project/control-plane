@@ -115,15 +115,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		ClusterID:                           runtimeID,
 		GardenerProviderConfig:              providerSpecificConfig,
 		OIDCConfig:                          oidcConfigFromInput(input.OidcConfig),
-		OIDCConfigId:                        oidcConfigIdFromInput(id, input.OidcConfig),
 	}, nil
-}
-
-func oidcConfigIdFromInput(id string, config *gqlschema.OIDCConfigInput) *string {
-	if config != nil {
-		return util.StringPtr(id)
-	}
-	return nil
 }
 
 func oidcConfigFromInput(config *gqlschema.OIDCConfigInput) *model.OIDCConfig {
@@ -188,7 +180,6 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
 		GardenerProviderConfig:              providerSpecificConfig,
 		OIDCConfig:                          oidcConfigFromInput(input.OidcConfig),
-		OIDCConfigId:                        oidcConfigIdFromInput(config.ID, input.OidcConfig),
 	}, nil
 }
 
