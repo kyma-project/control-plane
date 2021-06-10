@@ -11,8 +11,9 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
+
+	"github.com/pivotal-cf/brokerapi/v8/domain"
+	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,17 +22,26 @@ type ContextUpdateHandler interface {
 }
 
 type UpdateEndpoint struct {
-	log logrus.FieldLogger
+	config Config
+	log    logrus.FieldLogger
 
 	instanceStorage      storage.Instances
 	contextUpdateHandler ContextUpdateHandler
+	brokerURL            string
 	processingEnabled    bool
 
 	operationStorage storage.Operations
 }
 
-func NewUpdate(instanceStorage storage.Instances, operationStorage storage.Operations, ctxUpdateHandler ContextUpdateHandler, processingEnabled bool, log logrus.FieldLogger) *UpdateEndpoint {
+func NewUpdate(cfg Config,
+	instanceStorage storage.Instances,
+	operationStorage storage.Operations,
+	ctxUpdateHandler ContextUpdateHandler,
+	processingEnabled bool,
+	log logrus.FieldLogger,
+) *UpdateEndpoint {
 	return &UpdateEndpoint{
+		config:               cfg,
 		log:                  log.WithField("service", "UpdateEndpoint"),
 		instanceStorage:      instanceStorage,
 		operationStorage:     operationStorage,
@@ -42,7 +52,7 @@ func NewUpdate(instanceStorage storage.Instances, operationStorage storage.Opera
 
 // Update modifies an existing service instance
 //  PATCH /v2/service_instances/{instance_id}
-func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details domain.UpdateDetails, asyncAllowed bool) (domain.UpdateServiceSpec, error) {
+func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details domain.UpdateDetails, asyncAllowed bool) (domain.UpdateServiceSpec, error) {
 	logger := b.log.WithField("instanceID", instanceID)
 	logger.Infof("Update instanceID: %s", instanceID)
 	logger.Infof("Update asyncAllowed: %v", asyncAllowed)
@@ -76,36 +86,25 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 		logger.Info(k)
 	}
 
+	operation, err := b.operationStorage.GetProvisioningOperationByInstanceID(instanceID)
+	if err != nil {
+		logger.Errorf("cannot fetch provisioning operation for instance with ID: %s : %s", instanceID, err.Error())
+		return domain.UpdateServiceSpec{}, errors.New("unable to process the update")
+	}
+
 	if b.processingEnabled {
 		// todo: remove the code below when we are sure the ERSContext contains required values.
 		// This code is done because the PATCH request contains only some of fields and that requests made the ERS context empty in the past.
-		provOperation, err := b.operationStorage.GetProvisioningOperationByInstanceID(instanceID)
+		instance.Parameters.ErsContext = operation.ProvisioningParameters.ErsContext
+		instance.Parameters.ErsContext.Active, err = b.exctractActiveValue(instance.InstanceID, *operation)
 		if err != nil {
-			logger.Errorf("processing context updated failed: %s", err.Error())
-			return domain.UpdateServiceSpec{
-				IsAsync:       false,
-				DashboardURL:  instance.DashboardURL,
-				OperationData: "",
-			}, errors.New("unable to process the update")
-		}
-		instance.Parameters.ErsContext = provOperation.ProvisioningParameters.ErsContext
-		instance.Parameters.ErsContext.Active, err = b.exctractActiveValue(instance.InstanceID, *provOperation)
-		if err != nil {
-			return domain.UpdateServiceSpec{
-				IsAsync:       false,
-				DashboardURL:  instance.DashboardURL,
-				OperationData: "",
-			}, errors.New("unable to process the update")
+			return domain.UpdateServiceSpec{}, errors.New("unable to process the update")
 		}
 
 		err = b.contextUpdateHandler.Handle(instance, ersContext)
 		if err != nil {
 			logger.Errorf("processing context updated failed: %s", err.Error())
-			return domain.UpdateServiceSpec{
-				IsAsync:       false,
-				DashboardURL:  instance.DashboardURL,
-				OperationData: "",
-			}, errors.New("unable to process the update")
+			return domain.UpdateServiceSpec{}, errors.New("unable to process the update")
 		}
 
 		//  copy the Active flag if set
@@ -116,11 +115,7 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 		_, err = b.instanceStorage.Update(*instance)
 		if err != nil {
 			logger.Errorf("processing context updated failed: %s", err.Error())
-			return domain.UpdateServiceSpec{
-				IsAsync:       false,
-				DashboardURL:  instance.DashboardURL,
-				OperationData: "",
-			}, errors.New("unable to process the update")
+			return domain.UpdateServiceSpec{}, errors.New("unable to process the update")
 		}
 	}
 
@@ -128,6 +123,9 @@ func (b *UpdateEndpoint) Update(ctx context.Context, instanceID string, details 
 		IsAsync:       false,
 		DashboardURL:  instance.DashboardURL,
 		OperationData: "",
+		Metadata: domain.InstanceMetadata{
+			Labels: ResponseLabels(*operation, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
+		},
 	}, nil
 }
 

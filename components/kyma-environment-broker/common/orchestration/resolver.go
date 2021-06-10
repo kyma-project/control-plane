@@ -1,6 +1,7 @@
 package orchestration
 
 import (
+	"context"
 	"regexp"
 	"sync"
 	"time"
@@ -11,7 +12,7 @@ import (
 
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerclient "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
-	brokerapi "github.com/pivotal-cf/brokerapi/v7/domain"
+	brokerapi "github.com/pivotal-cf/brokerapi/v8/domain"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -97,7 +98,8 @@ func (resolver *GardenerRuntimeResolver) Resolve(targets TargetSpec) ([]Runtime,
 }
 
 func (resolver *GardenerRuntimeResolver) getAllShoots() ([]gardenerapi.Shoot, error) {
-	shootList, err := resolver.gardenerClient.Shoots(resolver.gardenerNamespace).List(metav1.ListOptions{})
+	ctx := context.Background()
+	shootList, err := resolver.gardenerClient.Shoots(resolver.gardenerNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}

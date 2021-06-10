@@ -3,9 +3,9 @@ package broker
 import (
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-	"github.com/pivotal-cf/brokerapi/v7/handlers"
-	"github.com/pivotal-cf/brokerapi/v7/middlewares"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
+	"github.com/pivotal-cf/brokerapi/v8/handlers"
+	"github.com/pivotal-cf/brokerapi/v8/middlewares"
 )
 
 // copied from github.com/pivotal-cf/brokerapi/api.go

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
+	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -17,7 +17,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -36,6 +36,7 @@ const (
 	existOperationID = "920cbfd9-24e9-4aa2-aa77-879e9aabe140"
 	clusterName      = "cluster-testing"
 	region           = "eu"
+	brokerURL        = "example.com"
 )
 
 func TestProvision_Provision(t *testing.T) {
@@ -52,7 +53,12 @@ func TestProvision_Provision(t *testing.T) {
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_ha"}, OnlySingleTrialPerGA: true},
+			broker.Config{
+				EnablePlans:              []string{"gcp", "azure", "azure_ha"},
+				URL:                      brokerURL,
+				OnlySingleTrialPerGA:     true,
+				EnableKubeconfigURLLabel: true,
+			},
 			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
@@ -68,7 +74,7 @@ func TestProvision_Provision(t *testing.T) {
 			ServiceID:     serviceID,
 			PlanID:        planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
-			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, userID)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, "Test@Test.pl")),
 		}, true)
 
 		// then
@@ -77,7 +83,7 @@ func TestProvision_Provision(t *testing.T) {
 		assert.NotEqual(t, instanceID, response.OperationData)
 		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.test\.example\.com`, response.DashboardURL)
 		assert.Equal(t, clusterName, response.Metadata.Labels["Name"])
-		assert.Regexp(t, `^https:\/\/grafana\.[a-z0-9\-]{7,9}\.test\.example\.com`, response.Metadata.Labels["GrafanaURL"])
+		assert.Equal(t, fmt.Sprintf("https://%s/kubeconfig/%s", brokerURL, instanceID), response.Metadata.Labels["KubeconfigURL"])
 
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)
@@ -85,6 +91,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		assert.Equal(t, globalAccountID, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
 		assert.Equal(t, clusterName, operation.ProvisioningParameters.Parameters.Name)
+		assert.Equal(t, userID, operation.ProvisioningParameters.ErsContext.UserID)
 		assert.Equal(t, "req-region", operation.ProvisioningParameters.PlatformRegion)
 
 		instance, err := memoryStorage.Instances().GetByID(instanceID)
@@ -101,13 +108,18 @@ func TestProvision_Provision(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
 		assert.NoError(t, err)
+		err = memoryStorage.Instances().Insert(fixInstance())
 
 		factoryBuilder := &automock.PlanValidator{}
 		factoryBuilder.On("IsPlanSupport", planID).Return(true)
 
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
-			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite", "azure_ha"}, OnlySingleTrialPerGA: true},
+			broker.Config{
+				EnablePlans:              []string{"gcp", "azure", "azure_lite", "azure_ha"},
+				OnlySingleTrialPerGA:     true,
+				EnableKubeconfigURLLabel: true,
+			},
 			gardener.Config{Project: "test", ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
@@ -129,6 +141,7 @@ func TestProvision_Provision(t *testing.T) {
 		// then
 		require.NoError(t, err)
 		assert.Equal(t, existOperationID, response.OperationData)
+		assert.Len(t, response.Metadata.Labels, 2)
 		assert.True(t, response.AlreadyExists)
 	})
 
