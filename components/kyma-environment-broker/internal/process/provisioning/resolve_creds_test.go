@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 

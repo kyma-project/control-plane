@@ -10,8 +10,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
+	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -51,10 +51,10 @@ func TestUpdateEndpoint_UpdateSuspension(t *testing.T) {
 	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("02"))
 
 	handler := &handler{}
-	svc := NewUpdate(st.Instances(), st.Operations(), handler, true, logrus.New())
+	svc := NewUpdate(Config{}, st.Instances(), st.Operations(), handler, true, logrus.New())
 
 	// when
-	svc.Update(context.Background(), instanceID, domain.UpdateDetails{
+	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
 		ServiceID:       "",
 		PlanID:          TrialPlanID,
 		RawParameters:   nil,
@@ -62,6 +62,7 @@ func TestUpdateEndpoint_UpdateSuspension(t *testing.T) {
 		RawContext:      json.RawMessage("{\"active\":false}"),
 		MaintenanceInfo: nil,
 	}, true)
+	require.NoError(t, err)
 
 	// then
 	inst, err := st.Instances().GetByID(instanceID)
@@ -77,6 +78,7 @@ func TestUpdateEndpoint_UpdateSuspension(t *testing.T) {
 
 	require.NotNil(t, handler.Instance.Parameters.ErsContext.Active)
 	assert.True(t, *handler.Instance.Parameters.ErsContext.Active)
+	assert.Len(t, response.Metadata.Labels, 1)
 }
 
 func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {
@@ -101,7 +103,7 @@ func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {
 	st.Operations().InsertDeprovisioningOperation(fixSuspensionOperation())
 
 	handler := &handler{}
-	svc := NewUpdate(st.Instances(), st.Operations(), handler, true, logrus.New())
+	svc := NewUpdate(Config{}, st.Instances(), st.Operations(), handler, true, logrus.New())
 
 	// when
 	svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -159,7 +161,7 @@ func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 	st.Instances().Insert(instance)
 	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("01"))
 	handler := &handler{}
-	svc := NewUpdate(st.Instances(), st.Operations(), handler, true, logrus.New())
+	svc := NewUpdate(Config{}, st.Instances(), st.Operations(), handler, true, logrus.New())
 
 	// when
 	svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -188,7 +190,7 @@ func TestUpdateEndpoint_UpdateNonExistingInstance(t *testing.T) {
 	// given
 	st := storage.NewMemoryStorage()
 	handler := &handler{}
-	svc := NewUpdate(st.Instances(), st.Operations(), handler, true, logrus.New())
+	svc := NewUpdate(Config{}, st.Instances(), st.Operations(), handler, true, logrus.New())
 
 	// when
 	_, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{

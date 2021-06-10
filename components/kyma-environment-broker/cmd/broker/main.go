@@ -29,6 +29,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/health"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/kubeconfig"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/metrics"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
@@ -99,6 +100,7 @@ type Config struct {
 	Director     director.Config
 	Database     storage.Config
 	Gardener     gardener.Config
+	Kubeconfig   kubeconfig.Config
 
 	ServiceManager servicemanager.Config
 
@@ -305,8 +307,8 @@ func main() {
 		broker.NewServices(cfg.Broker, servicesConfig, logs),
 		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, defaultPlansConfig, cfg.EnableOnDemandVersion, logs),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
-		broker.NewUpdate(db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, logs),
-		broker.NewGetInstance(db.Instances(), db.Operations(), logs),
+		broker.NewUpdate(cfg.Broker, db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, logs),
+		broker.NewGetInstance(cfg.Broker, db.Instances(), db.Operations(), logs),
 		broker.NewLastOperation(db.Operations(), logs),
 		broker.NewBind(logs),
 		broker.NewUnbind(logs),
@@ -324,6 +326,11 @@ func main() {
 
 	// create metrics endpoint
 	router.Handle("/metrics", promhttp.Handler())
+
+	// create SKR kubeconfig endpoint
+	kcBuilder := kubeconfig.NewBuilder(cfg.Kubeconfig, provisionerClient)
+	kcHandler := kubeconfig.NewHandler(db, kcBuilder, logs.WithField("service", "kubeconfigHandle"))
+	kcHandler.AttachRoutes(router)
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 

@@ -22,6 +22,15 @@ const (
 	LicenceTypeAnnotation = "kcp.provisioner.kyma-project.io/licence-type"
 )
 
+type OIDCConfig struct {
+	ClientID       string   `json:"clientID"`
+	GroupsClaim    string   `json:"groupsClaim"`
+	IssuerURL      string   `json:"issuerURL"`
+	SigningAlgs    []string `json:"signingAlgs"`
+	UsernameClaim  string   `json:"usernameClaim"`
+	UsernamePrefix string   `json:"usernamePrefix"`
+}
+
 type GardenerConfig struct {
 	ID                                  string
 	ClusterID                           string
@@ -48,9 +57,10 @@ type GardenerConfig struct {
 	EnableMachineImageVersionAutoUpdate bool
 	AllowPrivilegedContainers           bool
 	GardenerProviderConfig              GardenerProviderConfig
+	OIDCConfig                          *OIDCConfig
 }
 
-func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string) (*gardener_types.Shoot, apperrors.AppError) {
+func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string, oidcConfig *OIDCConfig) (*gardener_types.Shoot, apperrors.AppError) {
 	enableBasicAuthentication := false
 
 	var seed *string = nil
@@ -87,6 +97,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				Version:                   c.KubernetesVersion,
 				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 					EnableBasicAuthentication: &enableBasicAuthentication,
+					OIDCConfig:                gardenerOidcConfig(oidcConfig),
 				},
 			},
 			Networking: gardener_types.Networking{
@@ -109,6 +120,20 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 	}
 
 	return shoot, nil
+}
+
+func gardenerOidcConfig(oidcConfig *OIDCConfig) *gardener_types.OIDCConfig {
+	if oidcConfig != nil {
+		return &gardener_types.OIDCConfig{
+			ClientID:       &oidcConfig.ClientID,
+			GroupsClaim:    &oidcConfig.GroupsClaim,
+			IssuerURL:      &oidcConfig.IssuerURL,
+			SigningAlgs:    oidcConfig.SigningAlgs,
+			UsernameClaim:  &oidcConfig.UsernameClaim,
+			UsernamePrefix: &oidcConfig.UsernamePrefix,
+		}
+	}
+	return nil
 }
 
 type ProviderSpecificConfig string
@@ -430,6 +455,19 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	}
 	if util.NotNilOrEmpty(upgradeConfig.MachineImageVersion) {
 		shoot.Spec.Provider.Workers[0].Machine.Image.Version = upgradeConfig.MachineImageVersion
+	}
+	if upgradeConfig.OIDCConfig != nil {
+		if shoot.Spec.Kubernetes.KubeAPIServer == nil {
+			shoot.Spec.Kubernetes.KubeAPIServer = &gardener_types.KubeAPIServerConfig{}
+		}
+		shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig = &gardener_types.OIDCConfig{
+			ClientID:       &upgradeConfig.OIDCConfig.ClientID,
+			GroupsClaim:    &upgradeConfig.OIDCConfig.GroupsClaim,
+			IssuerURL:      &upgradeConfig.OIDCConfig.IssuerURL,
+			SigningAlgs:    upgradeConfig.OIDCConfig.SigningAlgs,
+			UsernameClaim:  &upgradeConfig.OIDCConfig.UsernameClaim,
+			UsernamePrefix: &upgradeConfig.OIDCConfig.UsernamePrefix,
+		}
 	}
 	return nil
 }

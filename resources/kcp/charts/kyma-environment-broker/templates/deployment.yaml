@@ -52,6 +52,10 @@ spec:
               value: "{{ .Values.enablePlans }}"
             - name: APP_BROKER_ONLY_SINGLE_TRIAL_PER_GA
               value: "{{ .Values.onlySingleTrialPerGA }}"
+            - name: APP_BROKER_URL
+              value: {{ .Values.host }}.{{ .Values.global.ingress.domainName }}
+            - name: APP_BROKER_ENABLE_KUBECONFIG_URL_LABEL
+              value: "{{ .Values.enableKubeconfigURLLabel }}"
             - name: APP_OPERATION_TIMEOUT
               value: "{{ .Values.broker.operationTimeout }}"
             - name: APP_PROVISIONING_URL
@@ -302,6 +306,10 @@ spec:
               value: "{{ .Values.gardener.shootDomain }}"
             - name: APP_GARDENER_KUBECONFIG_PATH
               value: {{ .Values.gardener.kubeconfigPath }}
+            - name: APP_KUBECONFIG_ISSUER_URL
+              value: {{ .Values.kubeconfig.issuerURL }}
+            - name: APP_KUBECONFIG_CLIENT_ID
+              value: {{ .Values.kubeconfig.clientID }}
             - name: APP_PROVISIONING_KUBERNETES_VERSION
               value: {{ .Values.gardener.kubernetesVersion }}
             - name: APP_PROVISIONING_MACHINE_IMAGE

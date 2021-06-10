@@ -317,6 +317,53 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrchestrationError'
+
+  /kubeconfig/{instance_id}:
+    get:
+      summary: download a kubeconfig for cluster
+      tags:
+        - Kubeconfig
+      parameters:
+        - name: instance_id
+          in: path
+          description: instance id of instance which points to a cluster
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Kubeconfig file will be downloaded
+        '400':
+          description: Bad request - wrong instanceID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "mismatch between operation and instance"
+        '404':
+          description: Instance doesn't exist or is not ready yet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "kubeconfig for instance <instance_id> does not exist. Provisioning could be in progress, please try again later"
+        '500':
+          description: Internal error with database or kubeconfig file generator
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "cannot fetch SKR kubeconfig: builder error"
+
   /oauth/v2/catalog:
     get:
       summary: get the catalog of services that the service broker offers

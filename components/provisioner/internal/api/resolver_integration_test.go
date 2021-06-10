@@ -146,6 +146,7 @@ func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInp
 					Zones:    zones,
 				},
 			},
+			OidcConfig: oidcInput(),
 		},
 	}
 }
@@ -173,6 +174,7 @@ func azureGardenerClusterConfigInputNoSeed(zones ...string) gqlschema.ClusterCon
 					Zones:    zones,
 				},
 			},
+			OidcConfig: oidcInput(),
 		},
 	}
 }
@@ -201,6 +203,7 @@ func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 					LoadBalancerProvider: "f5",
 				},
 			},
+			OidcConfig: oidcInput(),
 		},
 	}
 }
@@ -234,6 +237,7 @@ func NewUpgradeShootInput() gqlschema.UpgradeShootInput {
 			AutoScalerMax:     util.IntPtr(6),
 			MaxSurge:          util.IntPtr(2),
 			MaxUnavailable:    util.IntPtr(1),
+			OidcConfig:        oidcInput(),
 		},
 	}
 }
@@ -248,6 +252,7 @@ func NewUpgradeOpenStackShootInput() gqlschema.UpgradeShootInput {
 			AutoScalerMax:     util.IntPtr(6),
 			MaxSurge:          util.IntPtr(2),
 			MaxUnavailable:    util.IntPtr(1),
+			OidcConfig:        oidcInput(),
 		},
 	}
 }
