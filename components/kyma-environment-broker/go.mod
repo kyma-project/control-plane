@@ -20,7 +20,7 @@ require (
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210318113202-92270340fe2c
 	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210527140555-2d0735d391e3
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5
 	github.com/lib/pq v1.10.2
@@ -62,7 +62,7 @@ replace (
 	github.com/kyma-incubator/compass/components/director => github.com/kyma-incubator/compass/components/director v0.0.0-20210329081251-209fb6d91e72
 	github.com/kyma-incubator/compass/components/operations-controller => github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210329081251-209fb6d91e72
 	github.com/kyma-incubator/compass/components/system-broker => github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210329081251-209fb6d91e72
-	github.com/kyma-project/control-plane/components/provisioner => github.com/ksputo/control-plane/components/provisioner v0.0.0-20210601002206-ab01e6e1f494
+	github.com/kyma-project/control-plane/components/provisioner => github.com/ksputo/control-plane/components/provisioner v0.0.0-20210610075402-23f57eda4656
 
 	// NOTE: some dependencies require old style client-go version k8s.io/client-go@v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	// github.com/gardener/hvpa-controller, github.com/kyma-project/kyma/components/compass-runtime-agent, github.com/kyma-project/control-plane/components/provisioner, github.com/gardener/gardener
@@ -70,5 +70,4 @@ replace (
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.19.0
 	k8s.io/apimachinery => k8s.io/apimachinery v0.19.0
 	k8s.io/client-go => k8s.io/client-go v0.19.0
-	github.com/kyma-project/control-plane/components/provisioner => github.com/ksputo/control-plane/components/provisioner v0.0.0-20210527154619-7ee4b4f739b9
 )
