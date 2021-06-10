@@ -1,9 +1,10 @@
 package manager
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"testing"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 )
 
 func Test_convertSliceOfDaysToMap(t *testing.T) {
