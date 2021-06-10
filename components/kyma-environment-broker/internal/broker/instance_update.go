@@ -57,6 +57,8 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	logger.Infof("Update instanceID: %s", instanceID)
 	logger.Infof("Update asyncAllowed: %v", asyncAllowed)
 
+	logger.Infof("Parameters: '%s'", string(details.RawParameters))
+
 	instance, err := b.instanceStorage.GetByID(instanceID)
 	if err != nil && dberr.IsNotFound(err) {
 		logger.Errorf("unable to get instance: %s", err.Error())
