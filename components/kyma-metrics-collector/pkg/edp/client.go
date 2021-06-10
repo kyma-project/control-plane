@@ -54,7 +54,7 @@ func (eClient Client) NewRequest(dataTenant string) (*http.Request, error) {
 
 	req, err := http.NewRequest(http.MethodPost, edpURL, bytes.NewBuffer([]byte{}))
 	if err != nil {
-		totalRequest.WithLabelValues(fmt.Sprintf("%d", http.StatusBadRequest)).Inc()
+		totalRequest.WithLabelValues("failed_createRequest").Inc()
 
 		return nil, fmt.Errorf("failed generate request for EDP, %d: %v", http.StatusBadRequest, err)
 	}

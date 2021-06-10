@@ -307,7 +307,7 @@ func (p Process) getRecordWithOldOrNewMetric(identifier int, subAccountID string
 func (p Process) sendEventStreamToEDP(tenant string, payload []byte) error {
 	edpRequest, err := p.EDPClient.NewRequest(tenant)
 	if err != nil {
-		edpErrorCount.WithLabelValues("failed_request", tenant).Inc()
+		edpErrorCount.WithLabelValues("failed_createRequest", tenant).Inc()
 		return errors.Wrapf(err, "failed to create a new request for EDP")
 	}
 
