@@ -776,8 +776,8 @@ github.com/kr/text v0.0.0-20160504234017-7cafcd837844/go.mod h1:sjUstKUATFIcff4q
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
-github.com/ksputo/control-plane/components/provisioner v0.0.0-20210610075402-23f57eda4656 h1:Uh1uElrGKhlu/QjLiXAB82IOFWCvZldbpG3Asp2SfV4=
-github.com/ksputo/control-plane/components/provisioner v0.0.0-20210610075402-23f57eda4656/go.mod h1:vGd3pGH9Dwb2GkPL2ftC80cw4Lu8BS16+YuvmjW3mgQ=
+github.com/ksputo/control-plane/components/provisioner v0.0.0-20210610104741-4534e46472ef h1:YlFZqjFbMb1l3/R4AJE6YybQrZ2lRl2oVYQo2GIotSs=
+github.com/ksputo/control-plane/components/provisioner v0.0.0-20210610104741-4534e46472ef/go.mod h1:vGd3pGH9Dwb2GkPL2ftC80cw4Lu8BS16+YuvmjW3mgQ=
 github.com/kubernetes-sigs/go-open-service-broker-client v0.0.0-20180330214919-dca737037ce6/go.mod h1:s8wBC55/DEkNa3YMY1WLgpT33Ghpmw7v+waIxh15dYI=
 github.com/kubernetes-sigs/go-open-service-broker-client v0.0.0-20190909175253-906fa5f9c249 h1:nQkW5khoOU4DC5ORWqvOlVh4oGxYPT6j6134cPIVm5Q=
 github.com/kubernetes-sigs/go-open-service-broker-client v0.0.0-20190909175253-906fa5f9c249/go.mod h1:s8wBC55/DEkNa3YMY1WLgpT33Ghpmw7v+waIxh15dYI=
