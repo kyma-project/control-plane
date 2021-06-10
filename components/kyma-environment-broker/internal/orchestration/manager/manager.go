@@ -2,6 +2,7 @@ package manager
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -88,9 +89,11 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration) ([]o
 		for _, r := range runtimes {
 			windowBegin := time.Time{}
 			windowEnd := time.Time{}
+
 			if o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
-				windowBegin, windowEnd = m.resolveWindowTime(r.MaintenanceWindowBegin, r.MaintenanceWindowEnd)
+				windowBegin, windowEnd = m.resolveWindowTime(r.MaintenanceWindowBegin, r.MaintenanceWindowEnd, r.MaintenanceDays)
 			}
+			//r.MaintenanceDays
 			r.MaintenanceWindowBegin = windowBegin
 			r.MaintenanceWindowEnd = windowEnd
 
@@ -204,7 +207,7 @@ func (m *orchestrationManager) resolveOrchestration(o *internal.Orchestration, s
 }
 
 // resolves when is the next occurrence of the time window
-func (m *orchestrationManager) resolveWindowTime(beginTime, endTime time.Time) (time.Time, time.Time) {
+func (m *orchestrationManager) resolveWindowTime(beginTime, endTime time.Time, availableDays []time.Weekday) (time.Time, time.Time) {
 	n := time.Now()
 	start := time.Date(n.Year(), n.Month(), n.Day(), beginTime.Hour(), beginTime.Minute(), beginTime.Second(), beginTime.Nanosecond(), beginTime.Location())
 	end := time.Date(n.Year(), n.Month(), n.Day(), endTime.Hour(), endTime.Minute(), endTime.Second(), endTime.Nanosecond(), endTime.Location())
@@ -216,11 +219,47 @@ func (m *orchestrationManager) resolveWindowTime(beginTime, endTime time.Time) (
 
 	// if time window has already passed we wait until next day
 	if start.Before(n) && end.Before(n) {
-		start = start.AddDate(0, 0, 1)
-		end = end.AddDate(0, 0, 1)
+		day := firstAvailableDay(n.Day(), convertSliceOfDaysToMap(availableDays))
+		start = start.AddDate(0, 0, int(math.Abs(float64(day - n.Day()))))
+		end = end.AddDate(0, 0, int(math.Abs(float64(day - n.Day()))))
 	}
 
 	return start, end
+}
+
+func convertSliceOfDaysToMap(days []time.Weekday) map[time.Weekday]bool {
+	m := make(map[time.Weekday]bool)
+	for _, day := range days {
+		switch day {
+		case time.Sunday:
+			m[time.Sunday] = true
+		case time.Monday:
+			m[time.Monday] = true
+		case time.Tuesday:
+			m[time.Tuesday] = true
+		case time.Wednesday:
+			m[time.Wednesday] = true
+		case time.Thursday:
+			m[time.Thursday] = true
+		case time.Friday:
+			m[time.Friday] = true
+		case time.Saturday:
+			m[time.Saturday] = true
+		}
+	}
+	return m
+}
+
+func firstAvailableDay(currentDay int, availableDays map[time.Weekday]bool) int {
+	for i := 0; i < 7; i++ {
+
+		nextDay := (currentDay + i + 1) % 7
+		_, isAvailable := availableDays[time.Weekday(nextDay)]
+		if isAvailable {
+			return nextDay
+		}
+	}
+	return currentDay
 }
 
 func (m *orchestrationManager) failOrchestration(o *internal.Orchestration, err error) (time.Duration, error) {
