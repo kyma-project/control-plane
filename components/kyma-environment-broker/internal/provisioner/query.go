@@ -107,6 +107,7 @@ func providerSpecificConfig() string {
                     workerCidr
                     internalCidr
                   }
+			}
 			vpcCidr
 		}
 	`)
