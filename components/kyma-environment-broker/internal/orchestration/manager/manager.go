@@ -2,7 +2,6 @@ package manager
 
 import (
 	"fmt"
-	"math"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
