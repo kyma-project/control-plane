@@ -219,47 +219,12 @@ func (m *orchestrationManager) resolveWindowTime(beginTime, endTime time.Time, a
 
 	// if time window has already passed we wait until next day
 	if start.Before(n) && end.Before(n) {
-		day := firstAvailableDay(n.Day(), convertSliceOfDaysToMap(availableDays))
+		day := orchestration.FirstAvailableDay(n.Day(), orchestration.ConvertSliceOfDaysToMap(availableDays))
 		start = start.AddDate(0, 0, int(math.Abs(float64(day-n.Day()))))
 		end = end.AddDate(0, 0, int(math.Abs(float64(day-n.Day()))))
 	}
 
 	return start, end
-}
-
-func convertSliceOfDaysToMap(days []time.Weekday) map[time.Weekday]bool {
-	m := make(map[time.Weekday]bool)
-	for _, day := range days {
-		switch day {
-		case time.Sunday:
-			m[time.Sunday] = true
-		case time.Monday:
-			m[time.Monday] = true
-		case time.Tuesday:
-			m[time.Tuesday] = true
-		case time.Wednesday:
-			m[time.Wednesday] = true
-		case time.Thursday:
-			m[time.Thursday] = true
-		case time.Friday:
-			m[time.Friday] = true
-		case time.Saturday:
-			m[time.Saturday] = true
-		}
-	}
-	return m
-}
-
-func firstAvailableDay(currentDay int, availableDays map[time.Weekday]bool) int {
-	for i := 0; i < 7; i++ {
-
-		nextDay := (currentDay + i + 1) % 7
-		_, isAvailable := availableDays[time.Weekday(nextDay)]
-		if isAvailable {
-			return nextDay
-		}
-	}
-	return currentDay
 }
 
 func (m *orchestrationManager) failOrchestration(o *internal.Orchestration, err error) (time.Duration, error) {
