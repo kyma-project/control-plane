@@ -8,7 +8,7 @@ import (
 func Test_convertSliceOfDaysToMap(t *testing.T) {
 	t.Run("Empty", func(t *testing.T) {
 		// given
-		days := []time.Weekday {time.Tuesday, time.Thursday}
+		days := []time.Weekday{time.Tuesday, time.Thursday}
 
 		// when
 		m := convertSliceOfDaysToMap(days)

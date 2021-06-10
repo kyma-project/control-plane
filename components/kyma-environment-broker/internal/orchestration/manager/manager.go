@@ -220,8 +220,8 @@ func (m *orchestrationManager) resolveWindowTime(beginTime, endTime time.Time, a
 	// if time window has already passed we wait until next day
 	if start.Before(n) && end.Before(n) {
 		day := firstAvailableDay(n.Day(), convertSliceOfDaysToMap(availableDays))
-		start = start.AddDate(0, 0, int(math.Abs(float64(day - n.Day()))))
-		end = end.AddDate(0, 0, int(math.Abs(float64(day - n.Day()))))
+		start = start.AddDate(0, 0, int(math.Abs(float64(day-n.Day()))))
+		end = end.AddDate(0, 0, int(math.Abs(float64(day-n.Day()))))
 	}
 
 	return start, end
