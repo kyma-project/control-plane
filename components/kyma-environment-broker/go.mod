@@ -62,7 +62,7 @@ replace (
 	github.com/kyma-incubator/compass/components/director => github.com/kyma-incubator/compass/components/director v0.0.0-20210329081251-209fb6d91e72
 	github.com/kyma-incubator/compass/components/operations-controller => github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210329081251-209fb6d91e72
 	github.com/kyma-incubator/compass/components/system-broker => github.com/kyma-incubator/compass/components/system-broker v0.0.0-20210329081251-209fb6d91e72
-	github.com/kyma-project/control-plane/components/provisioner => github.com/ksputo/control-plane/components/provisioner v0.0.0-20210610075402-23f57eda4656
+	github.com/kyma-project/control-plane/components/provisioner => github.com/ksputo/control-plane/components/provisioner v0.0.0-20210610104741-4534e46472ef
 
 	// NOTE: some dependencies require old style client-go version k8s.io/client-go@v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	// github.com/gardener/hvpa-controller, github.com/kyma-project/kyma/components/compass-runtime-agent, github.com/kyma-project/control-plane/components/provisioner, github.com/gardener/gardener
