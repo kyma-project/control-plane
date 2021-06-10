@@ -1,6 +1,8 @@
 package hyperscaler
 
 import (
+	"context"
+
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pkg/errors"
@@ -113,7 +115,7 @@ func (p *accountProvider) MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType
 func (p *accountProvider) credentialsFromBoundSecret(secretBinding *v1beta1.SecretBinding, hyperscalerType Type) (Credentials, error) {
 	secretClient := p.kubernetesInterface.CoreV1().Secrets(secretBinding.SecretRef.Namespace)
 
-	secret, err := secretClient.Get(secretBinding.SecretRef.Name, metav1.GetOptions{})
+	secret, err := secretClient.Get(context.Background(), secretBinding.SecretRef.Name, metav1.GetOptions{})
 	if err != nil {
 		return Credentials{}, errors.Wrapf(err, "getting %s/%s secret", secretBinding.SecretRef.Namespace, secretBinding.SecretRef.Name)
 	}

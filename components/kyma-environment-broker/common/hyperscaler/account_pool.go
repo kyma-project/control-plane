@@ -1,6 +1,7 @@
 package hyperscaler
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -8,6 +9,7 @@ import (
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type Type string
@@ -78,7 +80,7 @@ func (p *secretBindingsAccountPool) MarkSecretBindingAsDirty(hyperscalerType Typ
 
 	secretBinding.Labels["dirty"] = "true"
 
-	_, err = p.secretBindingsClient.Update(secretBinding)
+	_, err = p.secretBindingsClient.Update(context.Background(), secretBinding, v1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "marking secret binding as dirty: failed to update secret binding for tenant: %s and hyperscaler: %s", tenantName, hyperscalerType)
 	}
@@ -92,7 +94,7 @@ func (p *secretBindingsAccountPool) IsSecretBindingUsed(hyperscalerType Type, te
 		return false, errors.Wrapf(err, "counting subscription usage: could not find secret binding used by the tenant %s and hyperscaler %s", tenantName, hyperscalerType)
 	}
 
-	shootlist, err := p.shootsClient.List(metav1.ListOptions{})
+	shootlist, err := p.shootsClient.List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return false, errors.Wrap(err, "listing Gardener shoots")
 	}
@@ -132,7 +134,7 @@ func (p *secretBindingsAccountPool) CredentialsSecretBinding(hyperscalerType Typ
 	}
 
 	secretBinding.Labels["tenantName"] = tenantName
-	updatedSecretBinding, err := p.secretBindingsClient.Update(secretBinding)
+	updatedSecretBinding, err := p.secretBindingsClient.Update(context.Background(), secretBinding, v1.UpdateOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "updating secret binding with tenantName: %s", tenantName)
 	}
@@ -141,7 +143,7 @@ func (p *secretBindingsAccountPool) CredentialsSecretBinding(hyperscalerType Typ
 }
 
 func (p *secretBindingsAccountPool) getSecretBinding(labelSelector string) (*v1beta1.SecretBinding, error) {
-	secretBindings, err := p.secretBindingsClient.List(metav1.ListOptions{
+	secretBindings, err := p.secretBindingsClient.List(context.Background(), metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {

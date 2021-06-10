@@ -15,7 +15,7 @@ replicaCount: 1
 
 image:
   repository: eu.gcr.io/kyma-project/control-plane/kubeconfig-service
-  tag: "73d1e8fe"
+  tag: "PR-785"
   pullPolicy: Always
 
 config:
@@ -26,7 +26,6 @@ config:
     kubeconfig:
       issuer: https://kymatest.accounts400.ondemand.com
       client: 1234-5678-qwer
-      secret: foobar
     client: compass-ui
     issuer: https://dex.{{ .Values.global.ingress.domainName }}
     # caFile: /etc/dex-tls-cert/tls.crt

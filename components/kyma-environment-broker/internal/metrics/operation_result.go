@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -144,7 +144,7 @@ func (c *OperationResultCollector) OnUpgradeClusterStepProcessed(ctx context.Con
 	}
 	op := stepProcessed.Operation
 	pp := op.ProvisioningParameters
-	c.upgradeKymaResultGauge.
+	c.upgradeClusterResultGauge.
 		WithLabelValues(op.Operation.ID, op.Operation.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).
 		Set(resultValue)
 
