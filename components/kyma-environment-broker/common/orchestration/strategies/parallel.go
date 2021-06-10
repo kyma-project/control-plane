@@ -123,7 +123,7 @@ func (p *ParallelOrchestrationStrategy) processOperation(op orchestration.Runtim
 	case orchestration.MaintenanceWindow:
 		// if time window for this operation has finished, we requeue and reprocess on next time window
 		if !op.MaintenanceWindowEnd.IsZero() && op.MaintenanceWindowEnd.Before(time.Now()) {
-			day := firstAvailableDay(time.Now().Day(), convertSliceOfDaysToMap(op.MaintenanceDays))
+			day := orchestration.FirstAvailableDay(time.Now().Day(), orchestration.ConvertSliceOfDaysToMap(op.MaintenanceDays))
 			dayDifference := int(math.Abs(float64(day - time.Now().Day())))
 			op.MaintenanceWindowBegin = op.MaintenanceWindowBegin.Add(p.rescheduleDelay * time.Duration(dayDifference))
 			op.MaintenanceWindowEnd = op.MaintenanceWindowEnd.Add(p.rescheduleDelay * time.Duration(dayDifference))
@@ -174,38 +174,4 @@ func (p *ParallelOrchestrationStrategy) processOperation(op orchestration.Runtim
 	}
 	log.Info("Finishing processing operation")
 	return nil
-}
-
-func convertSliceOfDaysToMap(days []time.Weekday) map[time.Weekday]bool {
-	m := make(map[time.Weekday]bool)
-	for _, day := range days {
-		switch day {
-		case time.Sunday:
-			m[time.Sunday] = true
-		case time.Monday:
-			m[time.Monday] = true
-		case time.Tuesday:
-			m[time.Tuesday] = true
-		case time.Wednesday:
-			m[time.Wednesday] = true
-		case time.Thursday:
-			m[time.Thursday] = true
-		case time.Friday:
-			m[time.Friday] = true
-		case time.Saturday:
-			m[time.Saturday] = true
-		}
-	}
-	return m
-}
-
-func firstAvailableDay(currentDay int, availableDays map[time.Weekday]bool) int {
-	for i := 0; i < 7; i++ {
-		nextDay := (currentDay + i + 1) % 7
-		_, isAvailable := availableDays[time.Weekday(nextDay)]
-		if isAvailable {
-			return nextDay
-		}
-	}
-	return currentDay
 }
