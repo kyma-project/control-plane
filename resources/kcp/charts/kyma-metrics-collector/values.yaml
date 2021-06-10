@@ -94,3 +94,5 @@ prometheus:
   labels:
     app: monitoring
     release: monitoring
+  rules:
+    enabled: false

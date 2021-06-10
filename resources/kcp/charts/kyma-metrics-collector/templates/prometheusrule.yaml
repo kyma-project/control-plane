@@ -1,4 +1,5 @@
 {{- if .Values.global.kyma_metrics_collector.enabled -}}
+{{- if .Values.prometheus.rules.enabled -}}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -106,4 +107,5 @@ spec:
           severity: warning
         annotations:
           description: KMC has reported an increase in errors in the last 10 minutes for loading the public cloud specs.
+{{- end -}}
 {{- end -}}
