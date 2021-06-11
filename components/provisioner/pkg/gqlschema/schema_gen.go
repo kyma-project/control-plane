@@ -43,8 +43,8 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	AWSProviderConfig struct {
-		VpcCidr func(childComplexity int) int
-		Zones   func(childComplexity int) int
+		AwsZones func(childComplexity int) int
+		VpcCidr  func(childComplexity int) int
 	}
 
 	AWSZone struct {
@@ -205,19 +205,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "AWSProviderConfig.awsZones":
+		if e.complexity.AWSProviderConfig.AwsZones == nil {
+			break
+		}
+
+		return e.complexity.AWSProviderConfig.AwsZones(childComplexity), true
+
 	case "AWSProviderConfig.vpcCidr":
 		if e.complexity.AWSProviderConfig.VpcCidr == nil {
 			break
 		}
 
 		return e.complexity.AWSProviderConfig.VpcCidr(childComplexity), true
-
-	case "AWSProviderConfig.zones":
-		if e.complexity.AWSProviderConfig.Zones == nil {
-			break
-		}
-
-		return e.complexity.AWSProviderConfig.Zones(childComplexity), true
 
 	case "AWSZone.internalCidr":
 		if e.complexity.AWSZone.InternalCidr == nil {
@@ -911,7 +911,7 @@ type AzureProviderConfig {
 }
 
 type AWSProviderConfig {
-    zones: [AWSZone]!
+    awsZones: [AWSZone]!
     vpcCidr: String
 }
 
@@ -1095,7 +1095,7 @@ input AzureProviderConfigInput {
 
 input AWSProviderConfigInput {
     vpcCidr: String!        # Classless Inter-Domain Routing for the virtual public cloud
-    zones: [AWSZoneInput]! # Zones, in which to create the cluster, configuration
+    awsZones: [AWSZoneInput]! # Zones, in which to create the cluster, configuration
 }
 
 input OpenStackProviderConfigInput {
@@ -1386,7 +1386,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _AWSProviderConfig_zones(ctx context.Context, field graphql.CollectedField, obj *AWSProviderConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _AWSProviderConfig_awsZones(ctx context.Context, field graphql.CollectedField, obj *AWSProviderConfig) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1405,7 +1405,7 @@ func (ec *executionContext) _AWSProviderConfig_zones(ctx context.Context, field 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Zones, nil
+		return obj.AwsZones, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5436,9 +5436,9 @@ func (ec *executionContext) unmarshalInputAWSProviderConfigInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
-		case "zones":
+		case "awsZones":
 			var err error
-			it.Zones, err = ec.unmarshalNAWSZoneInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAWSZoneInput(ctx, v)
+			it.AwsZones, err = ec.unmarshalNAWSZoneInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAWSZoneInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6182,8 +6182,8 @@ func (ec *executionContext) _AWSProviderConfig(ctx context.Context, sel ast.Sele
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("AWSProviderConfig")
-		case "zones":
-			out.Values[i] = ec._AWSProviderConfig_zones(ctx, field, obj)
+		case "awsZones":
+			out.Values[i] = ec._AWSProviderConfig_awsZones(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

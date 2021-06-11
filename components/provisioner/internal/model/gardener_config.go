@@ -162,14 +162,14 @@ func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig,
 		return &AzureGardenerConfig{input: &azureProviderConfig, ProviderSpecificConfig: ProviderSpecificConfig(jsonData)}, nil
 	}
 
-	// needed for backward compatibility - originally, AWS clusters were created only with single AZ
+	// needed for backward compatibility - originally, AWS clusters were created only with single AZ based on SingleZoneAWSProviderConfigInput schema
 	// TODO: Remove after data migration
 	var singleZoneAwsProviderConfig SingleZoneAWSProviderConfigInput
 	err = util.DecodeJson(jsonData, &singleZoneAwsProviderConfig)
 	if err == nil {
 		awsProviderConfig := gqlschema.AWSProviderConfigInput{
 			VpcCidr: singleZoneAwsProviderConfig.VpcCidr,
-			Zones: []*gqlschema.AWSZoneInput{
+			AwsZones: []*gqlschema.AWSZoneInput{
 				{
 					Name:         singleZoneAwsProviderConfig.Zone,
 					PublicCidr:   singleZoneAwsProviderConfig.PublicCidr,
@@ -326,7 +326,7 @@ func NewAWSGardenerConfig(input *gqlschema.AWSProviderConfigInput) (*AWSGardener
 func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
 	zones := make([]*gqlschema.AWSZone, 0)
 
-	for _, inputZone := range c.input.Zones {
+	for _, inputZone := range c.input.AwsZones {
 		zone := &gqlschema.AWSZone{
 			Name:         &inputZone.Name,
 			PublicCidr:   &inputZone.PublicCidr,
@@ -337,20 +337,20 @@ func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 	}
 
 	return gqlschema.AWSProviderConfig{
-		Zones:   zones,
-		VpcCidr: &c.input.VpcCidr,
+		AwsZones: zones,
+		VpcCidr:  &c.input.VpcCidr,
 	}
 }
 
 func (c AWSGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-	zoneNames := getAWSZonesNames(c.input.Zones)
+	zoneNames := getAWSZonesNames(c.input.AwsZones)
 	return updateShootConfig(gardenerConfig, shoot, zoneNames)
 }
 
 func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 	shoot.Spec.CloudProfileName = "aws"
 
-	zoneNames := getAWSZonesNames(c.input.Zones)
+	zoneNames := getAWSZonesNames(c.input.AwsZones)
 
 	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, zoneNames)}
 

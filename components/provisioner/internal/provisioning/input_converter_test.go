@@ -213,7 +213,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	expectedGardenerAzureRuntimeConfigWithNoTillerButAllowedPrivilegedContainers.KymaConfig.Release = fixKymaReleaseWithoutTiller()
 
 	awsGardenerProvider := &gqlschema.AWSProviderConfigInput{
-		Zones: []*gqlschema.AWSZoneInput{
+		AwsZones: []*gqlschema.AWSZoneInput{
 			{
 				Name:         "zone",
 				PublicCidr:   "10.10.11.12/255",

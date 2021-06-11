@@ -44,7 +44,7 @@ type AzureProviderConfig {
 }
 
 type AWSProviderConfig {
-    zones: [AWSZone]!
+    awsZones: [AWSZone]!
     vpcCidr: String
 }
 
@@ -228,7 +228,7 @@ input AzureProviderConfigInput {
 
 input AWSProviderConfigInput {
     vpcCidr: String!        # Classless Inter-Domain Routing for the virtual public cloud
-    zones: [AWSZoneInput]! # Zones, in which to create the cluster, configuration
+    awsZones: [AWSZoneInput]! # Zones, in which to create the cluster, configuration
 }
 
 input OpenStackProviderConfigInput {

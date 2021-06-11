@@ -76,7 +76,7 @@ func NewAWSInfrastructure(awsConfig AWSGardenerConfig) *aws.InfrastructureConfig
 			APIVersion: awsAPIVersion,
 		},
 		Networks: aws.Networks{
-			Zones: createAWSZones(awsConfig.input.Zones),
+			Zones: createAWSZones(awsConfig.input.AwsZones),
 			VPC: aws.VPC{
 				CIDR: util.StringPtr(awsConfig.input.VpcCidr),
 			},

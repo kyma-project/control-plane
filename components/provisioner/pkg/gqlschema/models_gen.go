@@ -13,15 +13,15 @@ type ProviderSpecificConfig interface {
 }
 
 type AWSProviderConfig struct {
-	Zones   []*AWSZone `json:"zones"`
-	VpcCidr *string    `json:"vpcCidr"`
+	AwsZones []*AWSZone `json:"awsZones"`
+	VpcCidr  *string    `json:"vpcCidr"`
 }
 
 func (AWSProviderConfig) IsProviderSpecificConfig() {}
 
 type AWSProviderConfigInput struct {
-	VpcCidr string          `json:"vpcCidr"`
-	Zones   []*AWSZoneInput `json:"zones"`
+	VpcCidr  string          `json:"vpcCidr"`
+	AwsZones []*AWSZoneInput `json:"awsZones"`
 }
 
 type AWSZone struct {
