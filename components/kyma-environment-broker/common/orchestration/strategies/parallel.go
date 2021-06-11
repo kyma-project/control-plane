@@ -126,8 +126,8 @@ func (p *ParallelOrchestrationStrategy) processOperation(op orchestration.Runtim
 			nextDay := orchestration.FirstAvailableDay(currentDay, orchestration.ConvertSliceOfDaysToMap(op.MaintenanceDays))
 			diff := (7 - currentDay + nextDay) % 7
 			if p.rescheduleDelay > 0 {
-				op.MaintenanceWindowBegin = op.MaintenanceWindowBegin.Add(p.rescheduleDelay * time.Duration(diff))
-				op.MaintenanceWindowEnd = op.MaintenanceWindowEnd.Add(p.rescheduleDelay * time.Duration(diff))
+				op.MaintenanceWindowBegin = op.MaintenanceWindowBegin.Add(p.rescheduleDelay)
+				op.MaintenanceWindowEnd = op.MaintenanceWindowEnd.Add(p.rescheduleDelay)
 			} else {
 				op.MaintenanceWindowBegin = op.MaintenanceWindowBegin.AddDate(0, 0, diff)
 				op.MaintenanceWindowEnd = op.MaintenanceWindowEnd.AddDate(0, 0, diff)
