@@ -394,6 +394,7 @@ func fixKymaConfig(profile *model.KymaProfile) model.KymaConfig {
 		Components:          fixKymaComponents(),
 		GlobalConfiguration: fixGlobalConfig(),
 		ClusterID:           "runtimeID",
+		Administrators:      []*string{util.StringPtr("test@test.pl")},
 	}
 }
 

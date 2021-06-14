@@ -12,6 +12,7 @@ type KymaConfig struct {
 	GlobalConfiguration Configuration
 	ClusterID           string
 	Active              bool
+	Administrators      []*string
 }
 
 func (c KymaConfig) GetComponentConfig(name string) (KymaComponentConfig, bool) {

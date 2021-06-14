@@ -42,7 +42,6 @@ type AzureProviderConfigInput struct {
 
 type ClusterConfigInput struct {
 	GardenerConfig *GardenerConfigInput `json:"gardenerConfig"`
-	Administrators []*string            `json:"administrators"`
 }
 
 type ComponentConfiguration struct {
@@ -174,6 +173,7 @@ type KymaConfigInput struct {
 	Components       []*ComponentConfigurationInput `json:"components"`
 	Configuration    []*ConfigEntryInput            `json:"configuration"`
 	ConflictStrategy *ConflictStrategy              `json:"conflictStrategy"`
+	Administrators   []*string                      `json:"administrators"`
 }
 
 type OIDCConfig struct {

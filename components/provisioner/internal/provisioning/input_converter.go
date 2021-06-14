@@ -72,12 +72,11 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 	}
 
 	return model.Cluster{
-		ID:             runtimeID,
-		KymaConfig:     kymaConfig,
-		ClusterConfig:  gardenerConfig,
-		Tenant:         tenant,
-		SubAccountId:   &subAccountId,
-		Administrators: input.ClusterConfig.Administrators,
+		ID:            runtimeID,
+		KymaConfig:    kymaConfig,
+		ClusterConfig: gardenerConfig,
+		Tenant:        tenant,
+		SubAccountId:  &subAccountId,
 	}, nil
 }
 
@@ -236,6 +235,7 @@ func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 		Components:          components,
 		ClusterID:           runtimeID,
 		GlobalConfiguration: c.configurationFromInput(input.Configuration, input.ConflictStrategy),
+		Administrators:      input.Administrators,
 	}, nil
 }
 

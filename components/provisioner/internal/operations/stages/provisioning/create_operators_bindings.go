@@ -89,7 +89,7 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 			groupKindSubject))
 
 	if s.operatorRoleBindingConfig.CreatingForAdmin {
-		for i, administrator := range cluster.Administrators {
+		for i, administrator := range cluster.KymaConfig.Administrators {
 			clusterRoleBindings = append(clusterRoleBindings,
 				buildClusterRoleBinding(
 					fmt.Sprintf("%s%d", administratorOperatorClusterRoleBindingName, i),

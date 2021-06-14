@@ -1015,7 +1015,6 @@ input ProvisionRuntimeInput {
 
 input ClusterConfigInput {
     gardenerConfig: GardenerConfigInput!     # Gardener-specific configuration for the cluster to be provisioned
-    administrators: [String]                # List of administrators
 }
 
 input GardenerConfigInput {
@@ -1089,6 +1088,7 @@ input KymaConfigInput {
     components: [ComponentConfigurationInput]!  # List of Kyma Components with specific configuration
     configuration: [ConfigEntryInput]           # Global Kyma configuration
     conflictStrategy: ConflictStrategy        # Defines merging strategy if conflicts occur for global overrides
+    administrators: [String]                # List of administrators
 }
 
 input ConfigEntryInput {
@@ -5395,12 +5395,6 @@ func (ec *executionContext) unmarshalInputClusterConfigInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
-		case "administrators":
-			var err error
-			it.Administrators, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -5782,6 +5776,12 @@ func (ec *executionContext) unmarshalInputKymaConfigInput(ctx context.Context, o
 		case "conflictStrategy":
 			var err error
 			it.ConflictStrategy, err = ec.unmarshalOConflictStrategy2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConflictStrategy(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "administrators":
+			var err error
+			it.Administrators, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

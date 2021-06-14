@@ -30,7 +30,7 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 		return dberrors.Internal("Failed to insert record to Cluster table: %s", err)
 	}
 
-	for _, admin := range cluster.Administrators {
+	for _, admin := range cluster.KymaConfig.Administrators {
 		_, err := ws.insertInto("cluster_administrator").
 			Pair("id", uuid.New().String()).
 			Pair("cluster_id", cluster.ID).

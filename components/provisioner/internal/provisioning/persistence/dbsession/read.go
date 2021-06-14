@@ -95,9 +95,9 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	if dberr != nil {
 		return model.Cluster{}, dberr.Append("Cannot get Cluster administrators for runtimeID: %s", runtimeID)
 	}
-	cluster.Administrators = make([]*string, 0)
+	cluster.KymaConfig.Administrators = make([]*string, 0)
 	for _, clusterAdministrator := range clusterAdministrators {
-		cluster.Administrators = append(cluster.Administrators, &clusterAdministrator.Email)
+		cluster.KymaConfig.Administrators = append(cluster.KymaConfig.Administrators, &clusterAdministrator.Email)
 	}
 
 	return cluster, nil

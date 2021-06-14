@@ -58,7 +58,6 @@ type Cluster struct {
 	Tenant             string
 	SubAccountId       *string
 	ActiveKymaConfigId string
-	Administrators     []*string
 
 	ClusterConfig GardenerConfig `db:"-"`
 	KymaConfig    KymaConfig     `db:"-"`
