@@ -30,17 +30,6 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 		return dberrors.Internal("Failed to insert record to Cluster table: %s", err)
 	}
 
-	for _, admin := range cluster.KymaConfig.Administrators {
-		_, err := ws.insertInto("cluster_administrator").
-			Pair("id", uuid.New().String()).
-			Pair("cluster_id", cluster.ID).
-			Pair("email", admin).Exec()
-
-		if err != nil {
-			return dberrors.Internal("Failed to insert record to cluster_administrator table: %s", err)
-		}
-	}
-
 	return nil
 }
 
@@ -222,6 +211,33 @@ func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Er
 		}
 	}
 
+	dbErr := ws.InsertClusterAdministrator(kymaConfig)
+	if dbErr != nil {
+		return dbErr
+	}
+
+	return nil
+}
+
+func (ws writeSession) InsertClusterAdministrator(kymaConfig model.KymaConfig) dberrors.Error {
+	_, err := ws.deleteFrom("cluster_administrator").
+		Where(dbr.Eq("cluster_id", kymaConfig.ClusterID)).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to delete record to cluster_administrator table: %s", err)
+	}
+
+	for _, admin := range kymaConfig.Administrators {
+		_, err := ws.insertInto("cluster_administrator").
+			Pair("id", uuid.New().String()).
+			Pair("cluster_id", kymaConfig.ClusterID).
+			Pair("email", admin).Exec()
+
+		if err != nil {
+			return dberrors.Internal("Failed to insert record to cluster_administrator table: %s", err)
+		}
+	}
 	return nil
 }
 
