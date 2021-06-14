@@ -55,9 +55,6 @@ func (g *Graphqlizer) ClusterConfigToGraphQL(in gqlschema.ClusterConfigInput) (s
 		{{- if .GardenerConfig }}
 		gardenerConfig: {{ GardenerConfigInputToGraphQL .GardenerConfig }},
 		{{- end }}
-		{{- if .Administrators }}
-		administrators: {{.Administrators | marshal }},
-		{{- end }}
 	}`)
 }
 
@@ -152,6 +149,9 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
 		{{- end }}
 		{{- if .ConflictStrategy }}
 		conflictStrategy: {{ .ConflictStrategy }},
+		{{- end }}
+		{{- if .Administrators }}
+		administrators: {{.Administrators | marshal }},
 		{{- end }}
 		{{- with .Components }}
         components: [

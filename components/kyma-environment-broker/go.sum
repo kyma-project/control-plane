@@ -850,8 +850,6 @@ github.com/kyma-incubator/compass v0.0.0-20200813093525-96b1a733a11b/go.mod h1:Q
 github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b h1:TdXnmnG+AP4viO0ZLds6pCTmR4c6sfd39J90sM9kaiM=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b/go.mod h1:mXQbZvsoQH+zJB8ywkFIqtG2Rp8Lt7bhwIzKPRRnlNA=
 github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f/go.mod h1:/qouJL+g8Tsllh/VcxK1Li6NCyuqyXSlq1i9InKSZJk=
-github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210527140555-2d0735d391e3 h1:hEqwlAF+Nv5qL33zy4ZE7jwvwv56dHa2BN9myn4jH/k=
-github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210527140555-2d0735d391e3/go.mod h1:vGd3pGH9Dwb2GkPL2ftC80cw4Lu8BS16+YuvmjW3mgQ=
 github.com/kyma-project/kyma/components/application-operator v0.0.0-20200818080816-8c81ea09adc7/go.mod h1:LUlTpeBF6hz7DyOtROez1IjluZOrFFgJH9vx8/me5p8=
 github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200902131640-31c29c8feb0c/go.mod h1:aR7hDBCzR0sN0tEF6+RnwsvAM/FYlBR+tYxZs0BmmvA=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20200817094157-8392259f5be1/go.mod h1:Svisep1qUjML69qtRee5OcDOpWVjxID2Nb6E/xyhQ5k=
@@ -1147,6 +1145,8 @@ github.com/prometheus/procfs v0.2.0/go.mod h1:lV6e/gmhEcM9IjHGsFOCxxuZ+z1YqCvr4O
 github.com/prometheus/procfs v0.6.0 h1:mxy4L2jP6qMonqmq+aTtOx1ifVWUgG/TAmntgbh3xv4=
 github.com/prometheus/procfs v0.6.0/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1xBZuNvfVA=
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
+github.com/rJankowski93/control-plane/components/provisioner v0.0.0-20210614050420-23d9a6a2b66f h1:N/VpwcJn0k161Oz1i7qMC4uIQ/WDiXKXPvBBsywt3x0=
+github.com/rJankowski93/control-plane/components/provisioner v0.0.0-20210614050420-23d9a6a2b66f/go.mod h1:vGd3pGH9Dwb2GkPL2ftC80cw4Lu8BS16+YuvmjW3mgQ=
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/robfig/cron v1.2.0/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=
