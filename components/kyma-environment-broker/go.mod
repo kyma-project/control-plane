@@ -46,7 +46,7 @@ require (
 )
 
 replace (
-	github.com/kyma-project/control-plane/components/provisioner => github.com/ksputo/control-plane/components/provisioner v0.0.0-20210610104741-4534e46472ef
+	github.com/kyma-project/control-plane/components/provisioner => github.com/ksputo/control-plane/components/provisioner v0.0.0-20210611065312-8a619ab5a5e2
 	// NOTE: some dependencies require old style client-go version k8s.io/client-go@v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	// github.com/gardener/hvpa-controller, github.com/kyma-project/kyma/components/compass-runtime-agent, github.com/kyma-project/control-plane/components/provisioner, github.com/gardener/gardener
 	k8s.io/api => k8s.io/api v0.19.0

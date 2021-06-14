@@ -752,10 +752,10 @@ func (s *ProvisioningSuite) AssertZonesCount(zonesCount *int, planID string) {
 		assert.Equal(s.t, provider.DefaultAzureHAZonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
 	case broker.AWSHAPlanID:
 		if zonesCount != nil {
-			assert.Equal(s.t, *zonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.Zones))
+			assert.Equal(s.t, *zonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
 			break
 		}
-		assert.Equal(s.t, provider.DefaultAWSHAZonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.Zones))
+		assert.Equal(s.t, provider.DefaultAWSHAZonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
 	default:
 	}
 }
