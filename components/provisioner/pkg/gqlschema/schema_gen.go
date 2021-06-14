@@ -1015,6 +1015,7 @@ input ProvisionRuntimeInput {
 
 input ClusterConfigInput {
     gardenerConfig: GardenerConfigInput!     # Gardener-specific configuration for the cluster to be provisioned
+    administrators: [String]                # List of administrators
 }
 
 input GardenerConfigInput {
@@ -5392,6 +5393,12 @@ func (ec *executionContext) unmarshalInputClusterConfigInput(ctx context.Context
 		case "gardenerConfig":
 			var err error
 			it.GardenerConfig, err = ec.unmarshalNGardenerConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerConfigInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "administrators":
+			var err error
+			it.Administrators, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

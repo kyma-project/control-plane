@@ -42,6 +42,7 @@ type AzureProviderConfigInput struct {
 
 type ClusterConfigInput struct {
 	GardenerConfig *GardenerConfigInput `json:"gardenerConfig"`
+	Administrators []*string            `json:"administrators"`
 }
 
 type ComponentConfiguration struct {

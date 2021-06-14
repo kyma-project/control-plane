@@ -11,14 +11,12 @@ import (
 
 func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 	// given
-	administrator := "test@test.pl"
 	profile := gqlschema.KymaProfileProduction
 	strategy := gqlschema.ConflictStrategyReplace
 	fixInput := gqlschema.KymaConfigInput{
 		Version:          "966",
 		Profile:          &profile,
 		ConflictStrategy: &strategy,
-		Administrators:   []*string{&administrator},
 		Components: []*gqlschema.ComponentConfigurationInput{
 			{
 				Component: "pico",
@@ -62,7 +60,6 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 		version: "966",
 		profile: Production,
 		conflictStrategy: Replace,
-		administrators: ["test@test.pl"],
         components: [
           {
             component: "pico",
@@ -386,6 +383,36 @@ func TestOpenstack(t *testing.T) {
         }
 	}`, got)
 
+}
+
+func Test_ClusterConfigToGraphQL(t *testing.T) {
+	tests := []struct {
+		name       string
+		givenInput gqlschema.ClusterConfigInput
+		expected   string
+	}{
+		{
+			name: "Cluster config with administrators",
+			givenInput: gqlschema.ClusterConfigInput{
+				Administrators: []*string{strPrt("test@test.pl")},
+			},
+			expected: `{
+		administrators: ["test@test.pl"],
+	}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := &Graphqlizer{}
+
+			// when
+			got, err := g.ClusterConfigToGraphQL(tt.givenInput)
+
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, got)
+		})
+	}
 }
 
 func strPrt(s string) *string {

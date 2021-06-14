@@ -92,6 +92,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				},
 				Seed: nil,
 			},
+			Administrators: []*string{&administrator},
 		},
 		KymaConfig: &gqlschema.KymaConfigInput{
 			Version: kymaVersion,
@@ -105,7 +106,6 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 			Configuration:    []*gqlschema.ConfigEntryInput{},
 			Profile:          &profile,
 			ConflictStrategy: &strategy,
-			Administrators:   []*string{&administrator},
 		},
 	}
 

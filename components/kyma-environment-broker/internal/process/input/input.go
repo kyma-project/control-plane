@@ -237,7 +237,7 @@ func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 	if params.LicenceType != nil {
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.LicenceType = params.LicenceType
 	}
-	r.provisionRuntimeInput.KymaConfig.Administrators = []*string{&r.provisioningParameters.ErsContext.UserID}
+	r.provisionRuntimeInput.ClusterConfig.Administrators = []*string{&r.provisioningParameters.ErsContext.UserID}
 
 	r.hyperscalerInputProvider.ApplyParameters(r.provisionRuntimeInput.ClusterConfig, r.provisioningParameters)
 
