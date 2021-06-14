@@ -97,7 +97,7 @@ func TestProviderConfigMigrator_Do(t *testing.T) {
 func toExpectedConfig(t *testing.T, data dbconnection.ProviderData, config model.OldAWSProviderConfigInput) string {
 	expConfig := model.AWSProviderConfigInput{
 		VpcCidr: config.VpcCidr,
-		Zones: []*model.AWSZoneInput{
+		AwsZones: []*model.AWSZoneInput{
 			{
 				Name:         config.Zone,
 				PublicCidr:   config.PublicCidr,

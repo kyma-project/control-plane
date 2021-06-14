@@ -61,10 +61,10 @@ func TestProviderConfigMigrator(t *testing.T) {
 
 func checkIfConfigIsProperlyMigrated(t *testing.T, config model.AWSProviderConfigInput, gardenerConfig model.GardenerConfig, oldConfig model.OldAWSProviderConfigInput) {
 	assert.Equal(t, oldConfig.VpcCidr, config.VpcCidr)
-	assert.Equal(t, gardenerConfig.WorkerCidr, config.Zones[0].WorkerCidr)
-	assert.Equal(t, oldConfig.PublicCidr, config.Zones[0].PublicCidr)
-	assert.Equal(t, oldConfig.InternalCidr, config.Zones[0].InternalCidr)
-	assert.Equal(t, oldConfig.Zone, config.Zones[0].Name)
+	assert.Equal(t, gardenerConfig.WorkerCidr, config.AwsZones[0].WorkerCidr)
+	assert.Equal(t, oldConfig.PublicCidr, config.AwsZones[0].PublicCidr)
+	assert.Equal(t, oldConfig.InternalCidr, config.AwsZones[0].InternalCidr)
+	assert.Equal(t, oldConfig.Zone, config.AwsZones[0].Name)
 }
 
 func getUpdatedConfig(t *testing.T, factory dbconnection.Factory, id string) model.AWSProviderConfigInput {

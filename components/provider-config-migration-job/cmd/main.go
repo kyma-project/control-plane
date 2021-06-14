@@ -18,12 +18,14 @@ const (
 )
 
 type config struct {
-	User     string `envconfig:"default=postgres"`
-	Password string `envconfig:"default=password"`
-	Host     string `envconfig:"default=localhost"`
-	Port     string `envconfig:"default=5432"`
-	Name     string `envconfig:"default=provisioner"`
-	SSLMode  string `envconfig:"default=disable"`
+	Database struct {
+		User     string `envconfig:"default=postgres"`
+		Password string `envconfig:"default=password"`
+		Host     string `envconfig:"default=localhost"`
+		Port     string `envconfig:"default=5432"`
+		Name     string `envconfig:"default=provisioner"`
+		SSLMode  string `envconfig:"default=disable"`
+	}
 }
 
 func main() {
@@ -36,8 +38,8 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Failed to load application config")
 
-	connString := fmt.Sprintf(connStringFormat, cfg.Host, cfg.Port, cfg.User,
-		cfg.Password, cfg.Name, cfg.SSLMode)
+	connString := fmt.Sprintf(connStringFormat, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
+		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode)
 
 	connection, err := dbconnection.InitializeDatabaseConnection(connString, databaseConnectionRetries)
 

@@ -74,7 +74,7 @@ func (p *providerConfigMigrator) decodeAWSConfig(data dbconnection.ProviderData)
 func mapAWSToNewModel(old model.OldAWSProviderConfigInput, workerCidr string) model.AWSProviderConfigInput {
 	return model.AWSProviderConfigInput{
 		VpcCidr: old.VpcCidr,
-		Zones: []*model.AWSZoneInput{
+		AwsZones: []*model.AWSZoneInput{
 			{
 				Name:         old.Zone,
 				PublicCidr:   old.PublicCidr,

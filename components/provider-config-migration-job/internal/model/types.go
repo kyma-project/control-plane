@@ -13,8 +13,8 @@ const (
 type KymaProfile string
 
 type AWSProviderConfigInput struct {
-	VpcCidr string          `json:"vpcCidr"`
-	Zones   []*AWSZoneInput `json:"zones"`
+	VpcCidr  string          `json:"vpcCidr"`
+	AwsZones []*AWSZoneInput `json:"zones"`
 }
 
 type AWSZoneInput struct {

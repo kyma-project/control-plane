@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/gocraft/dbr/v2"
+	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -30,7 +31,6 @@ func waitForDatabaseAccess(connString string, retryCount int) (*dbr.Connection, 
 		if err == nil {
 			return connection, nil
 		}
-
 		err = connection.Close()
 		if err != nil {
 			log.Info("Failed to close database ...")
