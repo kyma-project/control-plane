@@ -377,7 +377,7 @@ func TestAWSProviderConfigInputToGraphQL(t *testing.T) {
 			name: "AWS will all parameters",
 			givenInput: gqlschema.AWSProviderConfigInput{
 				VpcCidr: "10.250.0.0/16",
-				Zones: []*gqlschema.AWSZoneInput{
+				AwsZones: []*gqlschema.AWSZoneInput{
 					{
 						Name:         "eu-central-1a",
 						WorkerCidr:   "10.250.0.0/22",
@@ -394,7 +394,7 @@ func TestAWSProviderConfigInputToGraphQL(t *testing.T) {
 			},
 			expected: `{
 		vpcCidr: "10.250.0.0/16",
-		zones: [
+		awsZones: [
 		  {
 			name: "eu-central-1a",
 			workerCidr: "10.250.0.0/22",

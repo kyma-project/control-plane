@@ -48,7 +48,7 @@ func TestAWSHAInput_ApplyParametersWithRegion(t *testing.T) {
 
 		//then
 		assert.Equal(t, DefaultAWSRegion, input.GardenerConfig.Region)
-		assert.Equal(t, DefaultAzureHAZonesCount, len(input.GardenerConfig.ProviderSpecificConfig.AwsConfig.Zones))
+		assert.Equal(t, DefaultAzureHAZonesCount, len(input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
 	})
 
 	// when
@@ -67,9 +67,9 @@ func TestAWSHAInput_ApplyParametersWithRegion(t *testing.T) {
 		})
 
 		//then
-		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.Zones, zonesCount)
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, zonesCount)
 
-		for _, zone := range input.GardenerConfig.ProviderSpecificConfig.AwsConfig.Zones {
+		for _, zone := range input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones {
 			regionFromZone := zone.Name[:len(zone.Name)-1]
 			assert.Equal(t, inputRegion, regionFromZone)
 		}
@@ -86,5 +86,5 @@ func TestAWSHAInput_Defaults(t *testing.T) {
 	// then
 	assert.Equal(t, 4, input.GardenerConfig.AutoScalerMin)
 	assert.Equal(t, 10, input.GardenerConfig.AutoScalerMax)
-	assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.Zones, 2)
+	assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, 2)
 }

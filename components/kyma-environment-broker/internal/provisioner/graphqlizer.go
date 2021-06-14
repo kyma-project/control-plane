@@ -139,8 +139,8 @@ func (g *Graphqlizer) GCPProviderConfigInputToGraphQL(in gqlschema.GCPProviderCo
 func (g *Graphqlizer) AWSProviderConfigInputToGraphQL(in gqlschema.AWSProviderConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		vpcCidr: "{{.VpcCidr}}",
-		{{- with .Zones }}
-		zones: [
+		{{- with .AwsZones }}
+		awsZones: [
 		  {{- range . }}
 		  {
 			name: "{{ .Name }}",

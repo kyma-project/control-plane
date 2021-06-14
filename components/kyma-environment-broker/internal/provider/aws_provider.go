@@ -53,7 +53,7 @@ func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AwsConfig: &gqlschema.AWSProviderConfigInput{
 					VpcCidr: "10.250.0.0/16",
-					Zones: []*gqlschema.AWSZoneInput{
+					AwsZones: []*gqlschema.AWSZoneInput{
 						{
 							Name:         ZoneForAWSRegion(DefaultAWSRegion),
 							PublicCidr:   "10.250.32.0/20",
@@ -147,7 +147,7 @@ func generateMultipleAWSZones(region string, zonesCount int) []*gqlschema.AWSZon
 
 func (p *AWSInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
 	if pp.Parameters.Region != nil && pp.Parameters.Zones == nil {
-		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.Zones[0].Name = ZoneForAWSRegion(*pp.Parameters.Region)
+		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name = ZoneForAWSRegion(*pp.Parameters.Region)
 	}
 }
 
@@ -174,8 +174,8 @@ func (p *AWSHAInput) Defaults() *gqlschema.ClusterConfigInput {
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AwsConfig: &gqlschema.AWSProviderConfigInput{
-					VpcCidr: "10.250.0.0/16",
-					Zones:   generateMultipleAWSZones(DefaultAWSRegion, DefaultAWSHAZonesCount),
+					VpcCidr:  "10.250.0.0/16",
+					AwsZones: generateMultipleAWSZones(DefaultAWSRegion, DefaultAWSHAZonesCount),
 				},
 			},
 		},
@@ -185,10 +185,10 @@ func (p *AWSHAInput) Defaults() *gqlschema.ClusterConfigInput {
 func (p *AWSHAInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
 	if pp.Parameters.Region != nil && pp.Parameters.Zones == nil {
 		if pp.Parameters.ZonesCount != nil {
-			input.GardenerConfig.ProviderSpecificConfig.AwsConfig.Zones = generateMultipleAWSZones(*pp.Parameters.Region, *pp.Parameters.ZonesCount)
+			input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(*pp.Parameters.Region, *pp.Parameters.ZonesCount)
 			return
 		}
-		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.Zones = generateMultipleAWSZones(*pp.Parameters.Region, DefaultAzureHAZonesCount)
+		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(*pp.Parameters.Region, DefaultAzureHAZonesCount)
 	}
 }
 
@@ -221,7 +221,7 @@ func awsTrialDefaults() *gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AwsConfig: &gqlschema.AWSProviderConfigInput{
 					VpcCidr: "10.250.0.0/16",
-					Zones: []*gqlschema.AWSZoneInput{
+					AwsZones: []*gqlschema.AWSZoneInput{
 						{
 							Name:         ZoneForAWSRegion(DefaultAWSRegion),
 							PublicCidr:   "10.250.32.0/20",
