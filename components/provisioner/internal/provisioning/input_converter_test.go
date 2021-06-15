@@ -331,7 +331,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			},
 			Administrators: []string{administrator},
 		},
-		KymaConfig: fixKymaGraphQLConfigInput(&gqlEvaluationProfile),
+		KymaConfig: fixKymaGraphQLConfigInputWithParallelInstall(&gqlEvaluationProfile),
 	}
 
 	expectedOpenStackProviderCfg, err := model.NewOpenStackGardenerConfig(openstackGardenerProvider)
@@ -363,7 +363,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			OIDCConfig:                          oidcConfig(),
 		},
 		Kubeconfig:     nil,
-		KymaConfig:     fixKymaConfig(&modelEvaluationProfile),
+		KymaConfig:     fixKymaConfigWithParallelInstall(&modelEvaluationProfile),
 		Tenant:         tenant,
 		SubAccountId:   util.StringPtr(subAccountId),
 		Administrators: []string{administrator},
@@ -976,8 +976,9 @@ func fixKymaGraphQLConfigInput(profile *gqlschema.KymaProfile) *gqlschema.KymaCo
 		Profile: profile,
 		Components: []*gqlschema.ComponentConfigurationInput{
 			{
-				Component: clusterEssentialsComponent,
-				Namespace: kymaSystemNamespace,
+				Component:    clusterEssentialsComponent,
+				Namespace:    kymaSystemNamespace,
+				Prerequisite: util.BoolPtr(true),
 			},
 			{
 				Component: coreComponent,
@@ -1007,6 +1008,15 @@ func fixKymaGraphQLConfigInput(profile *gqlschema.KymaProfile) *gqlschema.KymaCo
 			fixGQLConfigEntryInput("global.secret.key", "globalSecretValue", util.BoolPtr(true)),
 		},
 	}
+}
+
+func fixKymaGraphQLConfigInputWithParallelInstall(profile *gqlschema.KymaProfile) *gqlschema.KymaConfigInput {
+	kymaConfigInput := fixKymaGraphQLConfigInput(profile)
+
+	installer := gqlschema.KymaInstallationMethodParallelInstall
+	kymaConfigInput.KymaInstaller = &installer
+
+	return kymaConfigInput
 }
 
 func fixGQLConfigEntryInput(key, val string, secret *bool) *gqlschema.ConfigEntryInput {

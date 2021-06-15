@@ -80,6 +80,7 @@ type ConfigEntry {
 type ComponentConfiguration {
     component: String!
     namespace: String!
+    prerequisite: Boolean
     configuration: [ConfigEntry]
     sourceURL: String
 }
@@ -87,6 +88,7 @@ type ComponentConfiguration {
 type KymaConfig {
     version: String
     profile: KymaProfile
+    kymaInstaller: KymaInstallationMethod
     components: [ComponentConfiguration]
     configuration: [ConfigEntry]
 }
@@ -245,12 +247,18 @@ input AWSZoneInput {
     workerCidr: String!     # Classless Inter-Domain Routing range for the nodes
 }
 
+enum KymaInstallationMethod {
+    KymaOperator
+    ParallelInstall
+}
+
 input KymaConfigInput {
     version: String!                            # Kyma version to install on the cluster
     profile: KymaProfile                        # Optional resources profile
+    kymaInstaller: KymaInstallationMethod       # Optional installation method (KymaOperator is default)
     components: [ComponentConfigurationInput]!  # List of Kyma Components with specific configuration
     configuration: [ConfigEntryInput]           # Global Kyma configuration
-    conflictStrategy: ConflictStrategy        # Defines merging strategy if conflicts occur for global overrides
+    conflictStrategy: ConflictStrategy          # Defines merging strategy if conflicts occur for global overrides
 }
 
 input ConfigEntryInput {
@@ -262,9 +270,10 @@ input ConfigEntryInput {
 input ComponentConfigurationInput {
     component: String!                    # Kyma component name
     namespace: String!                    # Namespace to which component should be installed
+    prerequisite: Boolean                 # Specifies if component is prerequisite or it is optional
     configuration: [ConfigEntryInput]     # Component specific configuration
     sourceURL: String                     # Custom URL for the source files of the given component
-    conflictStrategy: ConflictStrategy  # Defines merging strategy if conflicts occur for component overrides
+    conflictStrategy: ConflictStrategy    # Defines merging strategy if conflicts occur for component overrides
 }
 
 input UpgradeRuntimeInput {

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/hydroform/install/installation"
+	kymaInstallation "github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
@@ -67,11 +68,17 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	t.Run("should return error when failed to check installation CR state", func(t *testing.T) {
 		//given
 		installationClient := &installationMocks.Service{}
-		installationClient.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{}, errors.New("some error"))
+		installationClient.On("CheckInstallationState", mock.Anything, mock.Anything).Return(installation.InstallationState{}, errors.New("some error"))
+		installationClients := map[model.KymaInstaller]kymaInstallation.Service{
+			model.KymaOperatorInstaller: installationClient,
+		}
 
-		upgradeStep := NewUpgradeKymaStep(installationClient, nextStageName, 0)
+		upgradeStep := NewUpgradeKymaStep(installationClients, nextStageName, 0)
 
-		cluster := model.Cluster{Kubeconfig: util.StringPtr(kubeconfig)}
+		cluster := model.Cluster{
+			Kubeconfig: util.StringPtr(kubeconfig),
+			KymaConfig: model.KymaConfig{Installer: model.KymaOperatorInstaller},
+		}
 
 		//when
 		_, err := upgradeStep.Run(cluster, model.Operation{}, logrus.New())
@@ -83,11 +90,17 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	t.Run("should return error when installation CR is not present on the cluster", func(t *testing.T) {
 		//given
 		installationClient := &installationMocks.Service{}
-		installationClient.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "NoInstallation"}, nil)
+		installationClient.On("CheckInstallationState", mock.Anything, mock.Anything).Return(installation.InstallationState{State: "NoInstallation"}, nil)
+		installationClients := map[model.KymaInstaller]kymaInstallation.Service{
+			model.KymaOperatorInstaller: installationClient,
+		}
 
-		upgradeStep := NewUpgradeKymaStep(installationClient, nextStageName, 0)
+		upgradeStep := NewUpgradeKymaStep(installationClients, nextStageName, 0)
 
-		cluster := model.Cluster{Kubeconfig: util.StringPtr(kubeconfig)}
+		cluster := model.Cluster{
+			Kubeconfig: util.StringPtr(kubeconfig),
+			KymaConfig: model.KymaConfig{Installer: model.KymaOperatorInstaller},
+		}
 
 		//when
 		_, err := upgradeStep.Run(cluster, model.Operation{}, logrus.New())
@@ -99,11 +112,17 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	t.Run("should return next step when upgrade already in progress", func(t *testing.T) {
 		//given
 		installationClient := &installationMocks.Service{}
-		installationClient.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "upgrade in progress", Recoverable: true})
+		installationClient.On("CheckInstallationState", mock.Anything, mock.Anything).Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "upgrade in progress", Recoverable: true})
+		installationClients := map[model.KymaInstaller]kymaInstallation.Service{
+			model.KymaOperatorInstaller: installationClient,
+		}
 
-		upgradeStep := NewUpgradeKymaStep(installationClient, nextStageName, 0)
+		upgradeStep := NewUpgradeKymaStep(installationClients, nextStageName, 0)
 
-		cluster := model.Cluster{Kubeconfig: util.StringPtr(kubeconfig)}
+		cluster := model.Cluster{
+			Kubeconfig: util.StringPtr(kubeconfig),
+			KymaConfig: model.KymaConfig{Installer: model.KymaOperatorInstaller},
+		}
 
 		//when
 		result, err := upgradeStep.Run(cluster, model.Operation{}, logrus.New())
@@ -116,12 +135,18 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	t.Run("should trigger upgrade when installation is in unrecoverable error state", func(t *testing.T) {
 		//given
 		installationClient := &installationMocks.Service{}
-		installationClient.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "error", Recoverable: false})
+		installationClient.On("CheckInstallationState", mock.Anything, mock.Anything).Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "error", Recoverable: false})
 		installationClient.On("TriggerUpgrade", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		installationClients := map[model.KymaInstaller]kymaInstallation.Service{
+			model.KymaOperatorInstaller: installationClient,
+		}
 
-		upgradeStep := NewUpgradeKymaStep(installationClient, nextStageName, 0)
+		upgradeStep := NewUpgradeKymaStep(installationClients, nextStageName, 0)
 
-		cluster := model.Cluster{Kubeconfig: util.StringPtr(kubeconfig)}
+		cluster := model.Cluster{
+			Kubeconfig: util.StringPtr(kubeconfig),
+			KymaConfig: model.KymaConfig{Installer: model.KymaOperatorInstaller},
+		}
 
 		//when
 		result, err := upgradeStep.Run(cluster, model.Operation{}, logrus.New())
@@ -134,12 +159,18 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	t.Run("should return error when fail to trigger update", func(t *testing.T) {
 		//given
 		installationClient := &installationMocks.Service{}
-		installationClient.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
+		installationClient.On("CheckInstallationState", mock.Anything, mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
 		installationClient.On("TriggerUpgrade", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New("bad error"))
+		installationClients := map[model.KymaInstaller]kymaInstallation.Service{
+			model.KymaOperatorInstaller: installationClient,
+		}
 
-		upgradeStep := NewUpgradeKymaStep(installationClient, nextStageName, 0)
+		upgradeStep := NewUpgradeKymaStep(installationClients, nextStageName, 0)
 
-		cluster := model.Cluster{Kubeconfig: util.StringPtr(kubeconfig)}
+		cluster := model.Cluster{
+			Kubeconfig: util.StringPtr(kubeconfig),
+			KymaConfig: model.KymaConfig{Installer: model.KymaOperatorInstaller},
+		}
 
 		//when
 		_, err := upgradeStep.Run(cluster, model.Operation{}, logrus.New())
@@ -151,12 +182,18 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	t.Run("should return next step when upgrade successfully triggered", func(t *testing.T) {
 		//given
 		installationClient := &installationMocks.Service{}
-		installationClient.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
+		installationClient.On("CheckInstallationState", mock.Anything, mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
 		installationClient.On("TriggerUpgrade", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		installationClients := map[model.KymaInstaller]kymaInstallation.Service{
+			model.KymaOperatorInstaller: installationClient,
+		}
 
-		upgradeStep := NewUpgradeKymaStep(installationClient, nextStageName, 0)
+		upgradeStep := NewUpgradeKymaStep(installationClients, nextStageName, 0)
 
-		cluster := model.Cluster{Kubeconfig: util.StringPtr(kubeconfig)}
+		cluster := model.Cluster{
+			Kubeconfig: util.StringPtr(kubeconfig),
+			KymaConfig: model.KymaConfig{Installer: model.KymaOperatorInstaller},
+		}
 
 		//when
 		result, err := upgradeStep.Run(cluster, model.Operation{}, logrus.New())
@@ -169,11 +206,17 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	t.Run("should return next step when installation state in progress", func(t *testing.T) {
 		//given
 		installationClient := &installationMocks.Service{}
-		installationClient.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "In Progress"}, nil)
+		installationClient.On("CheckInstallationState", mock.Anything, mock.Anything).Return(installation.InstallationState{State: "In Progress"}, nil)
+		installationClients := map[model.KymaInstaller]kymaInstallation.Service{
+			model.KymaOperatorInstaller: installationClient,
+		}
 
-		upgradeStep := NewUpgradeKymaStep(installationClient, nextStageName, 0)
+		upgradeStep := NewUpgradeKymaStep(installationClients, nextStageName, 0)
 
-		cluster := model.Cluster{Kubeconfig: util.StringPtr(kubeconfig)}
+		cluster := model.Cluster{
+			Kubeconfig: util.StringPtr(kubeconfig),
+			KymaConfig: model.KymaConfig{Installer: model.KymaOperatorInstaller},
+		}
 
 		//when
 		result, err := upgradeStep.Run(cluster, model.Operation{}, logrus.New())

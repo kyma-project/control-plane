@@ -118,6 +118,7 @@ func (c graphQLConverter) kymaConfigToGraphQLConfig(config model.KymaConfig) *gq
 		component := gqlschema.ComponentConfiguration{
 			Component:     string(cmp.Component),
 			Namespace:     cmp.Namespace,
+			Prerequisite:  &cmp.Prerequisite,
 			Configuration: c.configurationToGraphQLConfig(cmp.Configuration),
 			SourceURL:     cmp.SourceURL,
 		}
@@ -128,6 +129,7 @@ func (c graphQLConverter) kymaConfigToGraphQLConfig(config model.KymaConfig) *gq
 	return &gqlschema.KymaConfig{
 		Version:       &config.Release.Version,
 		Profile:       c.profileToGraphQLProfile(config.Profile),
+		KymaInstaller: c.installerTypeToGraphQLInstaller(config.Installer),
 		Components:    components,
 		Configuration: c.configurationToGraphQLConfig(config.GlobalConfiguration),
 	}
@@ -166,6 +168,21 @@ func (c graphQLConverter) operationTypeToGraphQLType(operationType model.Operati
 	default:
 		return ""
 	}
+}
+
+func (c graphQLConverter) installerTypeToGraphQLInstaller(installer model.KymaInstaller) *gqlschema.KymaInstallationMethod {
+	var result gqlschema.KymaInstallationMethod
+
+	switch installer {
+	case model.KymaOperatorInstaller:
+		result = gqlschema.KymaInstallationMethodKymaOperator
+	case model.ParallelInstaller:
+		result = gqlschema.KymaInstallationMethodParallelInstall
+	default:
+		result = ""
+	}
+
+	return &result
 }
 
 func (c graphQLConverter) operationStateToGraphQLState(state model.OperationState) gqlschema.OperationState {

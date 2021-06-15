@@ -16,18 +16,23 @@ import (
 )
 
 type WaitForInstallationStep struct {
-	installationClient installation.Service
-	nextStep           model.OperationStage
-	timeLimit          time.Duration
-	dbSession          dbsession.WriteSession
+	installationClients map[model.KymaInstaller]installation.Service
+	nextStep            model.OperationStage
+	timeLimit           time.Duration
+	dbSession           dbsession.WriteSession
 }
 
-func NewWaitForInstallationStep(installationClient installation.Service, nextStep model.OperationStage, timeLimit time.Duration, dbSession dbsession.WriteSession) *WaitForInstallationStep {
+func NewWaitForInstallationStep(
+	installationClients map[model.KymaInstaller]installation.Service,
+	nextStep model.OperationStage,
+	timeLimit time.Duration,
+	dbSession dbsession.WriteSession,
+) *WaitForInstallationStep {
 	return &WaitForInstallationStep{
-		installationClient: installationClient,
-		nextStep:           nextStep,
-		timeLimit:          timeLimit,
-		dbSession:          dbSession,
+		installationClients: installationClients,
+		nextStep:            nextStep,
+		timeLimit:           timeLimit,
+		dbSession:           dbSession,
 	}
 }
 
@@ -50,7 +55,12 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, operation model.Ope
 		return operations.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
 	}
 
-	installationState, err := s.installationClient.CheckInstallationState(k8sConfig)
+	client, ok := s.installationClients[cluster.KymaConfig.Installer]
+	if !ok {
+		return operations.StageResult{}, fmt.Errorf("error: installation client for installation %s does not exist", cluster.KymaConfig.Installer)
+	}
+
+	installationState, err := client.CheckInstallationState(cluster.ID, k8sConfig)
 	if err != nil {
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {

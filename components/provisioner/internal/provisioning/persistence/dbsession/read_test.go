@@ -18,13 +18,16 @@ func Test_parseToKymaConfig(t *testing.T) {
 	installerYaml := "installer"
 	profileProduction := string(model.ProductionProfile)
 	expectedProfileProduction := model.ProductionProfile
+	kymaOperatorInstaller := string(model.KymaOperatorInstaller)
+	parallelInstaller := string(model.ParallelInstaller)
 
-	newComponentDTO := func(id, name, namespace string, profile *string, order int) kymaComponentConfigDTO {
+	newComponentDTO := func(id, name, namespace, installer string, profile *string, order int, prerequisite bool) kymaComponentConfigDTO {
 		return kymaComponentConfigDTO{
 			ID:                  id,
 			KymaConfigID:        kymaConfigId,
 			ReleaseID:           releaseId,
 			Profile:             profile,
+			Installer:           installer,
 			Version:             version,
 			TillerYAML:          tillerYaml,
 			InstallerYAML:       installerYaml,
@@ -34,6 +37,7 @@ func Test_parseToKymaConfig(t *testing.T) {
 			ClusterID:           runtimeId,
 			GlobalConfiguration: []byte("{}"),
 			Configuration:       []byte("{}"),
+			Prerequisite:        prerequisite,
 		}
 	}
 
@@ -45,9 +49,9 @@ func Test_parseToKymaConfig(t *testing.T) {
 		{
 			description: "should parse using component order",
 			kymaConfigDTO: kymaConfigDTO{
-				newComponentDTO("comp-3", "even-less-essential", "core", &profileProduction, 3),
-				newComponentDTO("comp-1", "essential", "core", &profileProduction, 1),
-				newComponentDTO("comp-2", "less-essential", "other", &profileProduction, 2),
+				newComponentDTO("comp-3", "even-less-essential", "core", kymaOperatorInstaller, &profileProduction, 3, false),
+				newComponentDTO("comp-1", "essential", "core", kymaOperatorInstaller, &profileProduction, 1, true),
+				newComponentDTO("comp-2", "less-essential", "other", kymaOperatorInstaller, &profileProduction, 2, false),
 			},
 			expectedConfig: model.KymaConfig{
 				ID: kymaConfigId,
@@ -67,6 +71,7 @@ func Test_parseToKymaConfig(t *testing.T) {
 						Configuration:  model.Configuration{},
 						ComponentOrder: 1,
 						KymaConfigID:   kymaConfigId,
+						Prerequisite:   true,
 					},
 					{
 						ID:             "comp-2",
@@ -76,6 +81,7 @@ func Test_parseToKymaConfig(t *testing.T) {
 						Configuration:  model.Configuration{},
 						ComponentOrder: 2,
 						KymaConfigID:   kymaConfigId,
+						Prerequisite:   false,
 					},
 					{
 						ID:             "comp-3",
@@ -85,18 +91,20 @@ func Test_parseToKymaConfig(t *testing.T) {
 						Configuration:  model.Configuration{},
 						ComponentOrder: 3,
 						KymaConfigID:   kymaConfigId,
+						Prerequisite:   false,
 					},
 				},
 				GlobalConfiguration: model.Configuration{},
 				ClusterID:           runtimeId,
+				Installer:           model.KymaOperatorInstaller,
 			},
 		},
 		{
 			description: "should parse in order of reed if component order is equal",
 			kymaConfigDTO: kymaConfigDTO{
-				newComponentDTO("comp-3", "even-less-essential", "core", nil, 0),
-				newComponentDTO("comp-1", "essential", "core", nil, 0),
-				newComponentDTO("comp-2", "less-essential", "other", nil, 0),
+				newComponentDTO("comp-3", "even-less-essential", "core", parallelInstaller, nil, 0, false),
+				newComponentDTO("comp-1", "essential", "core", parallelInstaller, nil, 0, true),
+				newComponentDTO("comp-2", "less-essential", "other", parallelInstaller, nil, 0, false),
 			},
 			expectedConfig: model.KymaConfig{
 				ID: kymaConfigId,
@@ -115,6 +123,7 @@ func Test_parseToKymaConfig(t *testing.T) {
 						Configuration:  model.Configuration{},
 						ComponentOrder: 0,
 						KymaConfigID:   kymaConfigId,
+						Prerequisite:   false,
 					},
 					{
 						ID:             "comp-1",
@@ -124,6 +133,7 @@ func Test_parseToKymaConfig(t *testing.T) {
 						Configuration:  model.Configuration{},
 						ComponentOrder: 0,
 						KymaConfigID:   kymaConfigId,
+						Prerequisite:   true,
 					},
 					{
 						ID:             "comp-2",
@@ -133,10 +143,12 @@ func Test_parseToKymaConfig(t *testing.T) {
 						Configuration:  model.Configuration{},
 						ComponentOrder: 0,
 						KymaConfigID:   kymaConfigId,
+						Prerequisite:   false,
 					},
 				},
 				GlobalConfiguration: model.Configuration{},
 				ClusterID:           runtimeId,
+				Installer:           model.ParallelInstaller,
 			},
 		},
 	} {

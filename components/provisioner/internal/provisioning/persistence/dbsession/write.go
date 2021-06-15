@@ -254,6 +254,7 @@ func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Er
 		Pair("profile", kymaConfig.Profile).
 		Pair("cluster_id", kymaConfig.ClusterID).
 		Pair("global_configuration", jsonConfig).
+		Pair("installer", kymaConfig.Installer).
 		Exec()
 
 	if err != nil {
@@ -280,6 +281,7 @@ func (ws writeSession) insertKymaComponentConfig(kymaConfigModule model.KymaComp
 		Pair("id", kymaConfigModule.ID).
 		Pair("component", kymaConfigModule.Component).
 		Pair("namespace", kymaConfigModule.Namespace).
+		Pair("prerequisite", kymaConfigModule.Prerequisite).
 		Pair("source_url", kymaConfigModule.SourceURL).
 		Pair("kyma_config_id", kymaConfigModule.KymaConfigID).
 		Pair("configuration", jsonConfig).

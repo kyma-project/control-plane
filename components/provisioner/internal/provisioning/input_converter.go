@@ -220,6 +220,7 @@ func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 			ID:             id,
 			Component:      model.KymaComponent(component.Component),
 			Namespace:      component.Namespace,
+			Prerequisite:   util.UnwrapBoolOrDefault(component.Prerequisite, false),
 			SourceURL:      component.SourceURL,
 			Configuration:  c.configurationFromInput(component.Configuration, component.ConflictStrategy),
 			ComponentOrder: i + 1,
@@ -236,6 +237,7 @@ func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 		Components:          components,
 		ClusterID:           runtimeID,
 		GlobalConfiguration: c.configurationFromInput(input.Configuration, input.ConflictStrategy),
+		Installer:           c.graphQLInstallerToInstaller(input.KymaInstaller),
 	}, nil
 }
 
@@ -257,6 +259,19 @@ func (c converter) graphQLProfileToProfile(profile *gqlschema.KymaProfile) *mode
 
 	return &result
 
+}
+
+func (c converter) graphQLInstallerToInstaller(installer *gqlschema.KymaInstallationMethod) model.KymaInstaller {
+	if installer == nil {
+		return model.KymaOperatorInstaller
+	}
+
+	switch *installer {
+	case gqlschema.KymaInstallationMethodParallelInstall:
+		return model.ParallelInstaller
+	default:
+		return model.KymaOperatorInstaller
+	}
 }
 
 func (c converter) configurationFromInput(input []*gqlschema.ConfigEntryInput, conflict *gqlschema.ConflictStrategy) model.Configuration {

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	kymaInstallation "github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 
@@ -21,7 +22,9 @@ import (
 func TestWaitForInstallationStep_Run(t *testing.T) {
 
 	cluster := model.Cluster{
+		ID:         clusterID,
 		Kubeconfig: util.StringPtr(kubeconfig),
+		KymaConfig: model.KymaConfig{Installer: model.KymaOperatorInstaller},
 	}
 
 	operation := model.Operation{
@@ -38,7 +41,7 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 		{
 			description: "should continue installation if recoverable Installation error occurred",
 			installationMockFunc: func(installationSvc *installationMocks.Service) {
-				installationSvc.On("CheckInstallationState", mock.AnythingOfType("*rest.Config")).
+				installationSvc.On("CheckInstallationState", clusterID, mock.AnythingOfType("*rest.Config")).
 					Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "error", Recoverable: true})
 			},
 			expectedStage: model.WaitingForInstallation,
@@ -47,7 +50,7 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 		{
 			description: "should continue installation if still in progress",
 			installationMockFunc: func(installationSvc *installationMocks.Service) {
-				installationSvc.On("CheckInstallationState", mock.AnythingOfType("*rest.Config")).
+				installationSvc.On("CheckInstallationState", clusterID, mock.AnythingOfType("*rest.Config")).
 					Return(installation.InstallationState{State: "InProgress"}, nil)
 			},
 			expectedStage: model.WaitingForInstallation,
@@ -56,7 +59,7 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 		{
 			description: "should go to the next stage if Kyma installed",
 			installationMockFunc: func(installationSvc *installationMocks.Service) {
-				installationSvc.On("CheckInstallationState", mock.AnythingOfType("*rest.Config")).
+				installationSvc.On("CheckInstallationState", clusterID, mock.AnythingOfType("*rest.Config")).
 					Return(installation.InstallationState{State: "Installed"}, nil)
 			},
 			expectedStage: nextStageName,
@@ -72,8 +75,11 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 				operation.State, mock.AnythingOfType("time.Time")).Return(nil).Once()
 
 			testCase.installationMockFunc(installationSvc)
+			installationSvcs := map[model.KymaInstaller]kymaInstallation.Service{
+				model.KymaOperatorInstaller: installationSvc,
+			}
 
-			waitForInstallationStep := NewWaitForInstallationStep(installationSvc, nextStageName, 10*time.Minute, session)
+			waitForInstallationStep := NewWaitForInstallationStep(installationSvcs, nextStageName, 10*time.Minute, session)
 
 			// when
 			result, err := waitForInstallationStep.Run(cluster, operation, logrus.New())
@@ -90,12 +96,15 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 	t.Run("should return error if installation not started", func(t *testing.T) {
 		// given
 		installationSvc := &installationMocks.Service{}
-		installationSvc.On("CheckInstallationState", mock.AnythingOfType("*rest.Config")).
+		installationSvc.On("CheckInstallationState", clusterID, mock.AnythingOfType("*rest.Config")).
 			Return(installation.InstallationState{State: installation.NoInstallationState}, nil)
 
 		session := &mocks.WriteSession{}
+		installationSvcs := map[model.KymaInstaller]kymaInstallation.Service{
+			model.KymaOperatorInstaller: installationSvc,
+		}
 
-		waitForInstallationStep := NewWaitForInstallationStep(installationSvc, nextStageName, 10*time.Minute, session)
+		waitForInstallationStep := NewWaitForInstallationStep(installationSvcs, nextStageName, 10*time.Minute, session)
 
 		// when
 		_, err := waitForInstallationStep.Run(cluster, model.Operation{}, logrus.New())
@@ -105,17 +114,21 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 		installationSvc.AssertExpectations(t)
 	})
 
-	t.Run("should return error if installation is in unrecoverable error state", func(t *testing.T) {
+	t.Run("should return error if parallel installation is in unrecoverable error state", func(t *testing.T) {
 		// given
+		cluster.KymaConfig.Installer = model.ParallelInstaller
 		installationSvc := &installationMocks.Service{}
-		installationSvc.On("CheckInstallationState", mock.AnythingOfType("*rest.Config")).
+		installationSvc.On("CheckInstallationState", clusterID, mock.AnythingOfType("*rest.Config")).
 			Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "error", Recoverable: false})
 
 		session := &mocks.WriteSession{}
 		session.On("UpdateOperationState", operation.ID, mock.AnythingOfType("string"),
 			operation.State, mock.AnythingOfType("time.Time")).Return(nil).Once()
+		installationSvcs := map[model.KymaInstaller]kymaInstallation.Service{
+			model.ParallelInstaller: installationSvc,
+		}
 
-		waitForInstallationStep := NewWaitForInstallationStep(installationSvc, nextStageName, 10*time.Minute, session)
+		waitForInstallationStep := NewWaitForInstallationStep(installationSvcs, nextStageName, 10*time.Minute, session)
 
 		// when
 		_, err := waitForInstallationStep.Run(cluster, operation, logrus.New())
@@ -126,5 +139,4 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 		installationSvc.AssertExpectations(t)
 		session.AssertExpectations(t)
 	})
-
 }

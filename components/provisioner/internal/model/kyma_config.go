@@ -4,12 +4,15 @@ type KymaComponent string
 
 type KymaProfile string
 
+type KymaInstaller string
+
 type KymaConfig struct {
 	ID                  string
 	Release             Release
 	Profile             *KymaProfile
 	Components          []KymaComponentConfig
 	GlobalConfiguration Configuration
+	Installer           KymaInstaller
 	ClusterID           string
 	Active              bool
 }
@@ -47,6 +50,7 @@ type KymaComponentConfig struct {
 	ID             string
 	Component      KymaComponent
 	Namespace      string
+	Prerequisite   bool
 	SourceURL      *string
 	Configuration  Configuration
 	ComponentOrder int
@@ -75,6 +79,9 @@ func NewConfigEntry(key, val string, secret bool) ConfigEntry {
 const (
 	EvaluationProfile KymaProfile = "EVALUATION"
 	ProductionProfile KymaProfile = "PRODUCTION"
+
+	KymaOperatorInstaller KymaInstaller = "KymaOperator"
+	ParallelInstaller     KymaInstaller = "ParallelInstall"
 )
 
 type ClusterAdministrator struct {

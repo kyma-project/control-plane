@@ -29,8 +29,12 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
+	installationConfig "github.com/kyma-incubator/hydroform/parallel-install/pkg/config"
+	"github.com/kyma-incubator/hydroform/parallel-install/pkg/deployment"
+	"github.com/kyma-incubator/hydroform/parallel-install/pkg/overrides"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/download"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
@@ -199,6 +203,26 @@ func main() {
 
 	installationService := installation.NewInstallationService(cfg.ProvisioningTimeout.Installation, installationHandlerConstructor, cfg.Gardener.ClusterCleanupResourceSelector)
 
+	downloadManager := download.NewManager(&sync.Mutex{}, download.Config{
+		KymaURL:              "https://github.com/kyma-project/kyma",
+		ResourcesPathTmp:     "/app/downloads/%s",
+		KymaResourcesPathTmp: "/app/downloads/kyma/%s",
+		ComponentsPathTmp:    "/app/downloads/components/%s",
+	})
+	createDeployer := func(rID string, cfg *installationConfig.Config, ob *overrides.Builder, callback func(string) func(deployment.ProcessUpdate)) installation.KymaDeployer {
+		return &installation.Deployer{
+			RuntimeID: rID,
+			Cfg:       cfg,
+			Builder:   ob,
+			Callback:  callback,
+		}
+	}
+	parallelInstallationService := installation.NewParallelInstallationService(downloadManager, createDeployer, log.WithField("process", "installer"))
+	installationClients := map[model.KymaInstaller]installation.Service{
+		model.KymaOperatorInstaller: installationService,
+		model.ParallelInstaller:     parallelInstallationService,
+	}
+
 	directorClient, err := newDirectorClient(cfg)
 	exitOnError(err, "Failed to initialize Director client")
 
@@ -209,7 +233,7 @@ func main() {
 	provisioningQueue := queue.CreateProvisioningQueue(
 		cfg.ProvisioningTimeout,
 		dbsFactory,
-		installationService,
+		installationClients,
 		runtimeConfigurator,
 		provisioningStages.NewCompassConnectionClient,
 		directorClient,
@@ -218,7 +242,7 @@ func main() {
 		cfg.OperatorRoleBinding,
 		k8sClientProvider)
 
-	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
+	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationClients)
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, installationService, directorClient, shootClient, 5*time.Minute)
 

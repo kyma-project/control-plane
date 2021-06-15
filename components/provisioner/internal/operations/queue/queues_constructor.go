@@ -49,7 +49,7 @@ type HibernationTimeouts struct {
 func CreateProvisioningQueue(
 	timeouts ProvisioningTimeouts,
 	factory dbsession.Factory,
-	installationClient installation.Service,
+	installationClients map[model.KymaInstaller]installation.Service,
 	configurator runtime.Configurator,
 	ccClientConstructor provisioning.CompassConnectionClientConstructor,
 	directorClient director.DirectorClient,
@@ -60,8 +60,8 @@ func CreateProvisioningQueue(
 
 	waitForAgentToConnectStep := provisioning.NewWaitForAgentToConnectStep(ccClientConstructor, model.FinishedStage, timeouts.AgentConnection, directorClient)
 	configureAgentStep := provisioning.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Name(), timeouts.AgentConfiguration)
-	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), timeouts.Installation, factory.NewWriteSession())
-	installStep := provisioning.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), timeouts.InstallationTriggering)
+	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClients, configureAgentStep.Name(), timeouts.Installation, factory.NewWriteSession())
+	installStep := provisioning.NewInstallKymaStep(installationClients, waitForInstallStep.Name(), timeouts.InstallationTriggering)
 	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, installStep.Name(), timeouts.BindingsCreation)
 	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
 	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), timeouts.ClusterDomains)
@@ -91,11 +91,11 @@ func CreateUpgradeQueue(
 	provisioningTimeouts ProvisioningTimeouts,
 	factory dbsession.Factory,
 	directorClient director.DirectorClient,
-	installationClient installation.Service) OperationQueue {
+	installationClients map[model.KymaInstaller]installation.Service) OperationQueue {
 
 	updatingUpgradeStep := upgrade.NewUpdateUpgradeStateStep(factory.NewWriteSession(), model.FinishedStage, 5*time.Minute)
-	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClient, updatingUpgradeStep.Name(), provisioningTimeouts.Installation, factory.NewWriteSession())
-	upgradeStep := upgrade.NewUpgradeKymaStep(installationClient, waitForInstallStep.Name(), provisioningTimeouts.UpgradeTriggering)
+	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClients, updatingUpgradeStep.Name(), provisioningTimeouts.Installation, factory.NewWriteSession())
+	upgradeStep := upgrade.NewUpgradeKymaStep(installationClients, waitForInstallStep.Name(), provisioningTimeouts.UpgradeTriggering)
 
 	upgradeSteps := map[model.OperationStage]operations.Step{
 		model.UpdatingUpgradeState:   updatingUpgradeStep,

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/hydroform/install/installation"
+	kymaInstallation "github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
@@ -18,6 +19,7 @@ import (
 )
 
 const (
+	clusterID  = "ae027437-b1c3-41e1-b729-56e03dfb9e56"
 	kubeconfig = `apiVersion: v1
 clusters:
 - cluster:
@@ -48,12 +50,14 @@ func TestInstallKymaStep_Run(t *testing.T) {
 	productionProfile := model.ProductionProfile
 
 	cluster := model.Cluster{
+		ID:         clusterID,
 		Kubeconfig: util.StringPtr(kubeconfig),
 		KymaConfig: model.KymaConfig{
 			Profile:             &productionProfile,
 			Release:             release,
 			Components:          components,
 			GlobalConfiguration: globalConfig,
+			Installer:           model.KymaOperatorInstaller,
 		},
 	}
 
@@ -67,32 +71,32 @@ func TestInstallKymaStep_Run(t *testing.T) {
 		{
 			description: "should proceed to the next step when installation already in progress and installation error occurred",
 			mockFunc: func(installationSvc *installationMocks.Service) {
-				installationSvc.On("CheckInstallationState", k8sConfig).
+				installationSvc.On("CheckInstallationState", clusterID, k8sConfig).
 					Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "error"})
 			},
 		},
 		{
 			description: "should proceed to the next step when installation already in progress",
 			mockFunc: func(installationSvc *installationMocks.Service) {
-				installationSvc.On("CheckInstallationState", k8sConfig).
+				installationSvc.On("CheckInstallationState", clusterID, k8sConfig).
 					Return(installation.InstallationState{State: "InProgress"}, nil)
 			},
 		},
 		{
 			description: "should proceed to the next step after starting the installation when installer has an empty state",
 			mockFunc: func(installationSvc *installationMocks.Service) {
-				installationSvc.On("CheckInstallationState", k8sConfig).
+				installationSvc.On("CheckInstallationState", clusterID, k8sConfig).
 					Return(installation.InstallationState{State: ""}, nil)
-				installationSvc.On("TriggerInstallation", k8sConfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), release, globalConfig, components).
+				installationSvc.On("TriggerInstallation", clusterID, kubeconfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), release, globalConfig, components).
 					Return(nil)
 			},
 		},
 		{
 			description: "should proceed to the next step after starting the installation",
 			mockFunc: func(installationSvc *installationMocks.Service) {
-				installationSvc.On("CheckInstallationState", k8sConfig).
+				installationSvc.On("CheckInstallationState", clusterID, k8sConfig).
 					Return(installation.InstallationState{State: installation.NoInstallationState}, nil)
-				installationSvc.On("TriggerInstallation", k8sConfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), release, globalConfig, components).
+				installationSvc.On("TriggerInstallation", clusterID, kubeconfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), release, globalConfig, components).
 					Return(nil)
 			},
 		},
@@ -100,10 +104,13 @@ func TestInstallKymaStep_Run(t *testing.T) {
 		t.Run(testCase.description, func(t *testing.T) {
 			// given
 			installationSvc := &installationMocks.Service{}
+			installationSvcs := map[model.KymaInstaller]kymaInstallation.Service{
+				model.KymaOperatorInstaller: installationSvc,
+			}
 
 			testCase.mockFunc(installationSvc)
 
-			installStep := NewInstallKymaStep(installationSvc, nextStageName, 10*time.Minute)
+			installStep := NewInstallKymaStep(installationSvcs, nextStageName, 10*time.Minute)
 
 			// when
 			result, err := installStep.Run(cluster, model.Operation{}, logrus.New())
@@ -118,12 +125,56 @@ func TestInstallKymaStep_Run(t *testing.T) {
 	t.Run("should return error when failed to start installation", func(t *testing.T) {
 		// given
 		installationSvc := &installationMocks.Service{}
-		installationSvc.On("CheckInstallationState", k8sConfig).
+		installationSvc.On("CheckInstallationState", clusterID, k8sConfig).
 			Return(installation.InstallationState{State: installation.NoInstallationState}, nil)
-		installationSvc.On("TriggerInstallation", k8sConfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), release, globalConfig, components).
+		installationSvc.On("TriggerInstallation", clusterID, kubeconfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), release, globalConfig, components).
 			Return(fmt.Errorf("error"))
+		installationSvcs := map[model.KymaInstaller]kymaInstallation.Service{
+			model.KymaOperatorInstaller: installationSvc,
+		}
 
-		installStep := NewInstallKymaStep(installationSvc, nextStageName, 10*time.Minute)
+		installStep := NewInstallKymaStep(installationSvcs, nextStageName, 10*time.Minute)
+
+		// when
+		_, err := installStep.Run(cluster, model.Operation{}, logrus.New())
+
+		// then
+		require.Error(t, err)
+		installationSvc.AssertExpectations(t)
+	})
+
+	t.Run("should proceed to the next step after starting the parallel installation", func(t *testing.T) {
+		// given
+		installationSvc := &installationMocks.Service{}
+		cluster.KymaConfig.Installer = model.ParallelInstaller
+		installationSvc.On("TriggerInstallation", clusterID, kubeconfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), release, globalConfig, components).
+			Return(nil)
+		installationSvcs := map[model.KymaInstaller]kymaInstallation.Service{
+			model.ParallelInstaller: installationSvc,
+		}
+
+		installStep := NewInstallKymaStep(installationSvcs, nextStageName, 10*time.Minute)
+
+		// when
+		result, err := installStep.Run(cluster, model.Operation{}, logrus.New())
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, nextStageName, result.Stage)
+		installationSvc.AssertExpectations(t)
+	})
+
+	t.Run("should return error when failed to start parallel installation", func(t *testing.T) {
+		// given
+		installationSvc := &installationMocks.Service{}
+		cluster.KymaConfig.Installer = model.ParallelInstaller
+		installationSvc.On("TriggerInstallation", clusterID, kubeconfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), release, globalConfig, components).
+			Return(fmt.Errorf("error"))
+		installationSvcs := map[model.KymaInstaller]kymaInstallation.Service{
+			model.ParallelInstaller: installationSvc,
+		}
+
+		installStep := NewInstallKymaStep(installationSvcs, nextStageName, 10*time.Minute)
 
 		// when
 		_, err := installStep.Run(cluster, model.Operation{}, logrus.New())

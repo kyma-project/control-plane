@@ -33,6 +33,7 @@ import (
 	"github.com/kyma-incubator/hydroform/install/installation"
 	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
+	kymaInstallation "github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
@@ -109,16 +110,19 @@ users:
 func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	//given
 	installationServiceMock := &installationMocks.Service{}
-	installationServiceMock.On("TriggerInstallation", mock.Anything, mock.AnythingOfType("model.Release"),
+	installationServiceMock.On("TriggerInstallation", mock.Anything, mock.Anything, mock.AnythingOfType("model.Release"),
 		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
 
-	installationServiceMock.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
+	installationServiceMock.On("CheckInstallationState", mock.Anything, mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
 
 	installationServiceMock.On("TriggerUpgrade", mock.Anything, mock.Anything, mock.AnythingOfType("model.Release"),
 		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
 
 	installationServiceMock.On("PerformCleanup", mock.Anything).Return(nil)
 	installationServiceMock.On("TriggerUninstall", mock.Anything).Return(nil)
+	installationServiceMocks := map[model.KymaInstaller]kymaInstallation.Service{
+		model.KymaOperatorInstaller: installationServiceMock,
+	}
 
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 	ctx = context.WithValue(ctx, middlewares.SubAccountID, subAccountId)
@@ -160,7 +164,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	provisioningQueue := queue.CreateProvisioningQueue(
 		testProvisioningTimeouts(),
 		dbsFactory,
-		installationServiceMock,
+		installationServiceMocks,
 		runtimeConfigurator,
 		fakeCompassConnectionClientConstructor,
 		directorServiceMock,
@@ -173,7 +177,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
 	deprovisioningQueue.Run(queueCtx.Done())
 
-	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
+	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMocks)
 	upgradeQueue.Run(queueCtx.Done())
 
 	shootUpgradeQueue := queue.CreateShootUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface, testOperatorRoleBinding(), mockK8sClientProvider)

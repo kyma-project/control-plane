@@ -14,16 +14,20 @@ import (
 )
 
 type UpgradeKymaStep struct {
-	installationClient installation.Service
-	nextStep           model.OperationStage
-	timeLimit          time.Duration
+	installationClients map[model.KymaInstaller]installation.Service
+	nextStep            model.OperationStage
+	timeLimit           time.Duration
 }
 
-func NewUpgradeKymaStep(installationClient installation.Service, nextStep model.OperationStage, timeLimit time.Duration) *UpgradeKymaStep {
+func NewUpgradeKymaStep(
+	installationClients map[model.KymaInstaller]installation.Service,
+	nextStep model.OperationStage,
+	timeLimit time.Duration,
+) *UpgradeKymaStep {
 	return &UpgradeKymaStep{
-		installationClient: installationClient,
-		nextStep:           nextStep,
-		timeLimit:          timeLimit,
+		installationClients: installationClients,
+		nextStep:            nextStep,
+		timeLimit:           timeLimit,
 	}
 }
 
@@ -46,7 +50,12 @@ func (s *UpgradeKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 		return operations.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
 	}
 
-	installationState, err := s.installationClient.CheckInstallationState(k8sConfig)
+	client, ok := s.installationClients[cluster.KymaConfig.Installer]
+	if !ok {
+		return operations.StageResult{}, fmt.Errorf("error: installation client for installation %s does not exist", cluster.KymaConfig.Installer)
+	}
+
+	installationState, err := client.CheckInstallationState(cluster.ID, k8sConfig)
 	if err != nil {
 		installErr := installationSDK.InstallationError{}
 		if errors.As(err, &installErr) {
@@ -67,7 +76,7 @@ func (s *UpgradeKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 	}
 
 	if installationState.State == "Installed" || installationState.State == "Error" {
-		err = s.installationClient.TriggerUpgrade(
+		err = client.TriggerUpgrade(
 			k8sConfig,
 			cluster.KymaConfig.Profile,
 			cluster.KymaConfig.Release,

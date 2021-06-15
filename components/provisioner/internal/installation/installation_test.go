@@ -78,15 +78,12 @@ func TestInstallationService_TriggerInstallation(t *testing.T) {
 		Configuration: fixInstallationConfig(),
 	}
 
-	k8sConfig, err := k8s.ParseToK8sConfig([]byte(kubeconfig))
-	require.NoError(t, err)
-
 	t.Run("should trigger installation", func(t *testing.T) {
 		installationHandlerConstructor := newMockInstallerHandler(t, expectedInstallation, nil, nil)
 		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, resourceCleanupSelector)
 
 		// when
-		err := installationSvc.TriggerInstallation(k8sConfig, nil, kymaRelease, globalConfig, componentsConfig)
+		err := installationSvc.TriggerInstallation(runtimeId, kubeconfig, nil, kymaRelease, globalConfig, componentsConfig)
 
 		// then
 		require.NoError(t, err)

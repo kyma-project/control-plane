@@ -199,6 +199,7 @@ type kymaComponentConfigDTO struct {
 	GlobalConfiguration []byte
 	ReleaseID           string
 	Profile             *string
+	Installer           string
 	Version             string
 	TillerYAML          string
 	InstallerYAML       string
@@ -206,6 +207,7 @@ type kymaComponentConfigDTO struct {
 	Namespace           string
 	SourceURL           *string
 	Configuration       []byte
+	Prerequisite        bool
 	ComponentOrder      *int
 	ClusterID           string
 }
@@ -230,6 +232,7 @@ func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, db
 			Configuration:  configuration,
 			KymaConfigID:   componentCfg.KymaConfigID,
 			ComponentOrder: util.UnwrapInt(componentCfg.ComponentOrder),
+			Prerequisite:   componentCfg.Prerequisite,
 		}
 
 		// In case order is 0 for all components map stores slice (it is the case for Runtimes created before migration)
@@ -259,6 +262,8 @@ func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, db
 		kymaProfile = &profile
 	}
 
+	kymaInstaller := model.KymaInstaller(c[0].Installer)
+
 	return model.KymaConfig{
 		ID: c[0].KymaConfigID,
 		Release: model.Release{
@@ -271,6 +276,7 @@ func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, db
 		Components:          orderedComponents,
 		GlobalConfiguration: globalConfiguration,
 		ClusterID:           runtimeID,
+		Installer:           kymaInstaller,
 	}, nil
 }
 
@@ -278,11 +284,10 @@ func (r readSession) getKymaConfig(runtimeID, kymaConfigId string) (model.KymaCo
 	var kymaConfig kymaConfigDTO
 
 	rowsCount, err := r.session.
-		Select("kyma_config_id", "kyma_config.release_id", "kyma_config.profile", "kyma_config.global_configuration",
-			"kyma_component_config.id", "kyma_component_config.component", "kyma_component_config.namespace",
-			"kyma_component_config.source_url", "kyma_component_config.configuration",
-			"kyma_component_config.component_order",
-			"cluster_id",
+		Select("kyma_config_id", "kyma_config.release_id", "kyma_config.profile", "kyma_config.installer",
+			"kyma_config.global_configuration", "kyma_component_config.id", "kyma_component_config.component",
+			"kyma_component_config.namespace", "kyma_component_config.prerequisite", "kyma_component_config.source_url",
+			"kyma_component_config.configuration", "kyma_component_config.component_order", "cluster_id",
 			"kyma_release.version", "kyma_release.tiller_yaml", "kyma_release.installer_yaml").
 		From("cluster").
 		Join("kyma_config", "cluster.id=kyma_config.cluster_id").

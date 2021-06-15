@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 
@@ -31,8 +32,8 @@ type InstallationHandler func(*rest.Config, ...installation.InstallationOption) 
 
 //go:generate mockery -name=Service
 type Service interface {
-	CheckInstallationState(kubeconfig *rest.Config) (installation.InstallationState, error)
-	TriggerInstallation(kubeconfigRaw *rest.Config, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
+	CheckInstallationState(runtimeID string, kubeconfig *rest.Config) (installation.InstallationState, error)
+	TriggerInstallation(runtimeID string, kubeconfigRaw string, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
 	TriggerUpgrade(kubeconfigRaw *rest.Config, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
 	TriggerUninstall(kubeconfig *rest.Config) error
 	PerformCleanup(kubeconfig *rest.Config) error
@@ -60,7 +61,12 @@ func (s *installationService) PerformCleanup(kubeconfig *rest.Config) error {
 	return cli.PerformCleanup(s.clusterCleanupResourceSelector)
 }
 
-func (s *installationService) TriggerInstallation(kubeconfig *rest.Config, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
+func (s *installationService) TriggerInstallation(_, kubeconfigRaw string, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
+	kubeconfig, err := k8s.ParseToK8sConfig([]byte(kubeconfigRaw))
+	if err != nil {
+		return fmt.Errorf("failed to create kubernetes config from raw: %s", err.Error())
+	}
+
 	kymaInstaller, err := s.createKymaInstaller(kubeconfig, kymaProfile, componentsConfig)
 	if err != nil {
 		return fmt.Errorf("failed to trigger installation: %s", err.Error())
@@ -118,7 +124,7 @@ func (s *installationService) createKymaInstaller(kubeconfig *rest.Config, kymaP
 	return kymaInstaller, nil
 }
 
-func (s *installationService) CheckInstallationState(kubeconfig *rest.Config) (installation.InstallationState, error) {
+func (s *installationService) CheckInstallationState(runtimeID string, kubeconfig *rest.Config) (installation.InstallationState, error) {
 	return installation.CheckInstallationState(kubeconfig)
 }
 

@@ -58,6 +58,7 @@ type ClusterConfigInput struct {
 type ComponentConfiguration struct {
 	Component     string         `json:"component"`
 	Namespace     string         `json:"namespace"`
+	Prerequisite  *bool          `json:"prerequisite"`
 	Configuration []*ConfigEntry `json:"configuration"`
 	SourceURL     *string        `json:"sourceURL"`
 }
@@ -65,6 +66,7 @@ type ComponentConfiguration struct {
 type ComponentConfigurationInput struct {
 	Component        string              `json:"component"`
 	Namespace        string              `json:"namespace"`
+	Prerequisite     *bool               `json:"prerequisite"`
 	Configuration    []*ConfigEntryInput `json:"configuration"`
 	SourceURL        *string             `json:"sourceURL"`
 	ConflictStrategy *ConflictStrategy   `json:"conflictStrategy"`
@@ -174,6 +176,7 @@ type HibernationStatus struct {
 type KymaConfig struct {
 	Version       *string                   `json:"version"`
 	Profile       *KymaProfile              `json:"profile"`
+	KymaInstaller *KymaInstallationMethod   `json:"kymaInstaller"`
 	Components    []*ComponentConfiguration `json:"components"`
 	Configuration []*ConfigEntry            `json:"configuration"`
 }
@@ -181,6 +184,7 @@ type KymaConfig struct {
 type KymaConfigInput struct {
 	Version          string                         `json:"version"`
 	Profile          *KymaProfile                   `json:"profile"`
+	KymaInstaller    *KymaInstallationMethod        `json:"kymaInstaller"`
 	Components       []*ComponentConfigurationInput `json:"components"`
 	Configuration    []*ConfigEntryInput            `json:"configuration"`
 	ConflictStrategy *ConflictStrategy              `json:"conflictStrategy"`
@@ -312,6 +316,47 @@ func (e *ConflictStrategy) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ConflictStrategy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type KymaInstallationMethod string
+
+const (
+	KymaInstallationMethodKymaOperator    KymaInstallationMethod = "KymaOperator"
+	KymaInstallationMethodParallelInstall KymaInstallationMethod = "ParallelInstall"
+)
+
+var AllKymaInstallationMethod = []KymaInstallationMethod{
+	KymaInstallationMethodKymaOperator,
+	KymaInstallationMethodParallelInstall,
+}
+
+func (e KymaInstallationMethod) IsValid() bool {
+	switch e {
+	case KymaInstallationMethodKymaOperator, KymaInstallationMethodParallelInstall:
+		return true
+	}
+	return false
+}
+
+func (e KymaInstallationMethod) String() string {
+	return string(e)
+}
+
+func (e *KymaInstallationMethod) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = KymaInstallationMethod(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid KymaInstallationMethod", str)
+	}
+	return nil
+}
+
+func (e KymaInstallationMethod) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

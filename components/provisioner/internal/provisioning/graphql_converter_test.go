@@ -393,8 +393,16 @@ func fixKymaConfig(profile *model.KymaProfile) model.KymaConfig {
 		Profile:             profile,
 		Components:          fixKymaComponents(),
 		GlobalConfiguration: fixGlobalConfig(),
+		Installer:           model.KymaOperatorInstaller,
 		ClusterID:           "runtimeID",
 	}
+}
+
+func fixKymaConfigWithParallelInstall(profile *model.KymaProfile) model.KymaConfig {
+	kymaConfig := fixKymaConfig(profile)
+	kymaConfig.Installer = model.ParallelInstaller
+
+	return kymaConfig
 }
 
 func fixGlobalConfig() model.Configuration {
@@ -416,6 +424,7 @@ func fixKymaComponents() []model.KymaComponentConfig {
 			Namespace:      kymaSystemNamespace,
 			Configuration:  model.Configuration{ConfigEntries: make([]model.ConfigEntry, 0, 0)},
 			ComponentOrder: 1,
+			Prerequisite:   true,
 		},
 		{
 			ID:           "id",

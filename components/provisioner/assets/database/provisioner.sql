@@ -101,6 +101,7 @@ CREATE TABLE kyma_config
     cluster_id uuid NOT NULL,
     profile kyma_profile,
     global_configuration jsonb,
+    installer varchar(256) NOT NULL DEFAULT 'KymaOperator',
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE,
     foreign key (release_id) REFERENCES kyma_release (id) ON DELETE RESTRICT
 );
@@ -113,6 +114,7 @@ CREATE TABLE kyma_component_config
     source_url varchar(256),
     configuration jsonb,
     component_order integer,
+    prerequisite boolean NOT NULL DEFAULT false,
     kyma_config_id uuid NOT NULL,
     foreign key (kyma_config_id) REFERENCES kyma_config (id) ON DELETE CASCADE
 );
