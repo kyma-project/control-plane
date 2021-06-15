@@ -3,6 +3,7 @@ package provisioning
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -64,16 +65,23 @@ func (s *CreateBindingsForOperatorsStep) TimeLimit() time.Duration {
 }
 
 func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Operation, log logrus.FieldLogger) (operations.StageResult, error) {
+
+	log.Print("********************1***************")
+	log.Print(cluster.Administrators[0])
+	log.Print("********************1***************")
 	if cluster.Kubeconfig == nil {
 		return operations.StageResult{}, fmt.Errorf("cluster kubeconfig is nil")
 	}
+	log.Print("################1####################")
 
 	k8sClient, err := s.k8sClientProvider.CreateK8SClient(*cluster.Kubeconfig)
 	if err != nil {
 		return operations.StageResult{}, fmt.Errorf("failed to create k8s client: %v", err)
 	}
+	log.Print("################2####################")
 
 	clusterRoleBindings := make([]v12.ClusterRoleBinding, 0)
+	log.Print("################3####################")
 
 	clusterRoleBindings = append(clusterRoleBindings,
 		buildClusterRoleBinding(
@@ -87,17 +95,19 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 			s.operatorRoleBindingConfig.L3SubjectName,
 			l3OperatorClusterRoleBindingRoleRefName,
 			groupKindSubject))
+	log.Print("################4####################")
 
 	if s.operatorRoleBindingConfig.CreatingForAdmin {
 		for i, administrator := range cluster.Administrators {
 			clusterRoleBindings = append(clusterRoleBindings,
 				buildClusterRoleBinding(
-					fmt.Sprintf("%s%d", administratorOperatorClusterRoleBindingName, i),
+					fmt.Sprintf("%s%d", administratorOperatorClusterRoleBindingName, i+5),
 					*administrator,
 					administratorOperatorClusterRoleBindingRoleRefName,
 					userKindSubject))
 		}
 	}
+	log.Print("################5####################")
 
 	if err := createClusterRoleBindings(k8sClient.RbacV1().ClusterRoleBindings(), clusterRoleBindings...); err != nil {
 		return operations.StageResult{}, fmt.Errorf("failed to create cluster role bindings: %v", err)
@@ -127,8 +137,16 @@ func buildClusterRoleBinding(metaName, subjectName, roleRefName, subjectKind str
 
 func createClusterRoleBindings(crbClient v1.ClusterRoleBindingInterface, clusterRoleBindings ...v12.ClusterRoleBinding) error {
 	for _, crb := range clusterRoleBindings {
+		log.Print("################7####################")
+		log.Print(crb.Name)
+		log.Print(crb.Subjects[0].Name)
+
 		if _, err := crbClient.Create(context.Background(), &crb, metav1.CreateOptions{}); err != nil {
+			log.Print("################8####################")
+
 			if !errors.IsAlreadyExists(err) {
+				log.Print("################9####################")
+
 				return fmt.Errorf("failed to create %s ClusterRoleBinding: %v", crb.Name, err)
 			}
 		}

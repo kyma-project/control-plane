@@ -1113,6 +1113,7 @@ input UpgradeRuntimeInput {
 
 input UpgradeShootInput {
     gardenerConfig: GardenerUpgradeInput! # Gardener-specific configuration for the cluster to be upgraded
+    administrators: [String]                # List of administrators
 }
 
 input GardenerUpgradeInput {
@@ -5998,6 +5999,12 @@ func (ec *executionContext) unmarshalInputUpgradeShootInput(ctx context.Context,
 		case "gardenerConfig":
 			var err error
 			it.GardenerConfig, err = ec.unmarshalNGardenerUpgradeInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐGardenerUpgradeInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "administrators":
+			var err error
+			it.Administrators, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

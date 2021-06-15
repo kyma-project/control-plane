@@ -209,7 +209,7 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 	}
 	defer txSession.RollbackUnlessCommitted()
 
-	operation, gardError := r.setGardenerShootUpgradeStarted(txSession, cluster, gardenerConfig)
+	operation, gardError := r.setGardenerShootUpgradeStarted(txSession, cluster, gardenerConfig, input.Administrators)
 	if gardError != nil {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to set shoot upgrade started: %s", gardError.Error())
 	}
@@ -445,10 +445,15 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 	return operation, nil
 }
 
-func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig) (model.Operation, error) {
+func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig, administrators []*string) (model.Operation, error) {
 	log.Infof("Starting Upgrade of Gardener Shoot operation")
 
 	dberr := txSession.UpdateGardenerClusterConfig(gardenerConfig)
+	if dberr != nil {
+		return model.Operation{}, dberrors.Internal("Failed to set Shoot Upgrade started: %s", dberr.Error())
+	}
+
+	dberr = txSession.InsertAdministrators(currentCluster.ID, administrators)
 	if dberr != nil {
 		return model.Operation{}, dberrors.Internal("Failed to set Shoot Upgrade started: %s", dberr.Error())
 	}
