@@ -57,6 +57,7 @@ func (ws writeSession) InsertAdministrators(clusterId string, administrators []*
 			return dberrors.Internal("Failed to insert record to cluster_administrator table: %s", err)
 		}
 	}
+
 	return nil
 }
 

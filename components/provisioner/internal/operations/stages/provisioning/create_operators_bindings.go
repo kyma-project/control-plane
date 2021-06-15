@@ -3,7 +3,6 @@ package provisioning
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -65,37 +64,31 @@ func (s *CreateBindingsForOperatorsStep) TimeLimit() time.Duration {
 }
 
 func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Operation, log logrus.FieldLogger) (operations.StageResult, error) {
-
-	log.Print("********************1***************")
-	log.Print(cluster.Administrators[0])
-	log.Print("********************1***************")
 	if cluster.Kubeconfig == nil {
 		return operations.StageResult{}, fmt.Errorf("cluster kubeconfig is nil")
 	}
-	log.Print("################1####################")
 
 	k8sClient, err := s.k8sClientProvider.CreateK8SClient(*cluster.Kubeconfig)
 	if err != nil {
 		return operations.StageResult{}, fmt.Errorf("failed to create k8s client: %v", err)
 	}
-	log.Print("################2####################")
 
 	clusterRoleBindings := make([]v12.ClusterRoleBinding, 0)
-	log.Print("################3####################")
 
 	clusterRoleBindings = append(clusterRoleBindings,
 		buildClusterRoleBinding(
 			l2OperatorClusterRoleBindingName,
 			s.operatorRoleBindingConfig.L2SubjectName,
 			l2OperatorClusterRoleBindingRoleRefName,
-			groupKindSubject))
+			groupKindSubject,
+			map[string]string{"app": "kyma"}))
 	clusterRoleBindings = append(clusterRoleBindings,
 		buildClusterRoleBinding(
 			l3OperatorClusterRoleBindingName,
 			s.operatorRoleBindingConfig.L3SubjectName,
 			l3OperatorClusterRoleBindingRoleRefName,
-			groupKindSubject))
-	log.Print("################4####################")
+			groupKindSubject,
+			map[string]string{"app": "kyma"}))
 
 	if s.operatorRoleBindingConfig.CreatingForAdmin {
 		for i, administrator := range cluster.Administrators {
@@ -104,10 +97,13 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 					fmt.Sprintf("%s%d", administratorOperatorClusterRoleBindingName, i+5),
 					*administrator,
 					administratorOperatorClusterRoleBindingRoleRefName,
-					userKindSubject))
+					userKindSubject,
+					map[string]string{"app": "kyma", "type": "admin"}))
 		}
 	}
-	log.Print("################5####################")
+	if err := k8sClient.RbacV1().ClusterRoleBindings().DeleteCollection(context.Background(), metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: "type=admin"}); err != nil {
+		return operations.StageResult{}, fmt.Errorf("failed to delete cluster role bindings: %v", err)
+	}
 
 	if err := createClusterRoleBindings(k8sClient.RbacV1().ClusterRoleBindings(), clusterRoleBindings...); err != nil {
 		return operations.StageResult{}, fmt.Errorf("failed to create cluster role bindings: %v", err)
@@ -116,11 +112,11 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 }
 
-func buildClusterRoleBinding(metaName, subjectName, roleRefName, subjectKind string) v12.ClusterRoleBinding {
+func buildClusterRoleBinding(metaName, subjectName, roleRefName, subjectKind string, labels map[string]string) v12.ClusterRoleBinding {
 	return v12.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   metaName,
-			Labels: map[string]string{"app": "kyma"},
+			Labels: labels,
 		},
 		Subjects: []v12.Subject{{
 			Kind:     subjectKind,
@@ -137,16 +133,8 @@ func buildClusterRoleBinding(metaName, subjectName, roleRefName, subjectKind str
 
 func createClusterRoleBindings(crbClient v1.ClusterRoleBindingInterface, clusterRoleBindings ...v12.ClusterRoleBinding) error {
 	for _, crb := range clusterRoleBindings {
-		log.Print("################7####################")
-		log.Print(crb.Name)
-		log.Print(crb.Subjects[0].Name)
-
 		if _, err := crbClient.Create(context.Background(), &crb, metav1.CreateOptions{}); err != nil {
-			log.Print("################8####################")
-
 			if !errors.IsAlreadyExists(err) {
-				log.Print("################9####################")
-
 				return fmt.Errorf("failed to create %s ClusterRoleBinding: %v", crb.Name, err)
 			}
 		}

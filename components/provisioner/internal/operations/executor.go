@@ -3,7 +3,6 @@ package operations
 import (
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -99,20 +98,13 @@ func (e *Executor) Execute(operationID string) ProcessingResult {
 }
 
 func (e *Executor) process(operation model.Operation, cluster model.Cluster, logger logrus.FieldLogger) (bool, time.Duration, error) {
-	log.Print("*************2**********")
-	step, found := e.stages[operation.Stage]
-	log.Print("*************3**********")
-	log.Print(step)
 
+	step, found := e.stages[operation.Stage]
 	if !found {
 		return false, 0, NewNonRecoverableError(fmt.Errorf("error: step %s not found in installation stages", operation.Stage))
 	}
-	log.Print("*************4**********")
 
 	for operation.Stage != model.FinishedStage {
-		log.Print("*************5**********")
-		log.Print(operation.Stage)
-
 		log := logger.WithField("Stage", step.Name())
 		log.Infof("Starting processing")
 
@@ -134,8 +126,6 @@ func (e *Executor) process(operation model.Operation, cluster model.Cluster, log
 		}
 
 		if result.Stage != step.Name() {
-			log.Print("*************6**********")
-
 			transitionTime := time.Now()
 			e.updateOperationStage(log, operation.ID, fmt.Sprintf("Operation in progress. Stage %s", result.Stage), result.Stage, transitionTime)
 			step = e.stages[result.Stage]
