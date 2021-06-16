@@ -333,39 +333,46 @@ func fixGQLConfigEntryInput(key, val string, secret *bool) *gqlschema.ConfigEntr
 
 func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
 
+	installer := gqlschema.KymaInstallationMethodKymaOperator
 	return &gqlschema.KymaConfig{
-		Version: util.StringPtr(kymaVersion),
+		Version:       util.StringPtr(kymaVersion),
+		KymaInstaller: &installer,
 		Components: []*gqlschema.ComponentConfiguration{
 			{
 				Component:     clusterEssentialsComponent,
 				Namespace:     kymaSystemNamespace,
+				Prerequisite:  util.BoolPtr(false),
 				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
 			},
 			{
 				Component:     rafterComponent,
 				Namespace:     kymaSystemNamespace,
+				Prerequisite:  util.BoolPtr(false),
 				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
 				SourceURL:     util.StringPtr(rafterSourceURL),
 			},
 			{
-				Component: coreComponent,
-				Namespace: kymaSystemNamespace,
+				Component:    coreComponent,
+				Namespace:    kymaSystemNamespace,
+				Prerequisite: util.BoolPtr(false),
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.config.key2", "value2", util.BoolPtr(false)),
 				},
 			},
 			{
-				Component: applicationConnectorComponent,
-				Namespace: kymaIntegrationNamespace,
+				Component:    applicationConnectorComponent,
+				Namespace:    kymaIntegrationNamespace,
+				Prerequisite: util.BoolPtr(false),
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
 				},
 			},
 			{
-				Component: runtimeAgentComponent,
-				Namespace: compassSystemNamespace,
+				Component:    runtimeAgentComponent,
+				Namespace:    compassSystemNamespace,
+				Prerequisite: util.BoolPtr(false),
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
