@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	migrator "github.com/kyma-project/control-plane/components/provisioner/internal/provider-config-migrator"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/metrics"
@@ -51,6 +53,9 @@ import (
 )
 
 const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
+
+//TODO: Remove after data migration
+const migrationErrThreshold = 10
 
 type config struct {
 	Address                      string `envconfig:"default=127.0.0.1:3000"`
@@ -152,6 +157,20 @@ func main() {
 	connString := fmt.Sprintf(connStringFormat, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
 		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode)
 
+	connection, err := database.InitializeDatabaseConnection(connString, databaseConnectionRetries)
+	exitOnError(err, "Failed to initialize persistence")
+
+	dbsFactory := dbsession.NewFactory(connection)
+
+	log.Infof("Starting AWS Config Migration")
+
+	providerMigration := migrator.NewProviderConfigMigrator(dbsFactory, migrationErrThreshold)
+	err = providerMigration.Do()
+
+	exitOnError(err, "Failed to perform AWS config migration")
+
+	log.Infof("AWS Config Migration finished!")
+
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 
 	gardenerClusterConfig, err := newGardenerClusterConfig(cfg)
@@ -167,14 +186,10 @@ func main() {
 
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
-	connection, err := database.InitializeDatabaseConnection(connString, databaseConnectionRetries)
-	exitOnError(err, "Failed to initialize persistence")
-
 	installationHandlerConstructor := func(c *rest.Config, o ...installationSDK.InstallationOption) (installationSDK.Installer, error) {
 		return installationSDK.NewKymaInstaller(c, o...)
 	}
 
-	dbsFactory := dbsession.NewFactory(connection)
 	installationService := installation.NewInstallationService(cfg.ProvisioningTimeout.Installation, installationHandlerConstructor, cfg.Gardener.ClusterCleanupResourceSelector)
 
 	directorClient, err := newDirectorClient(cfg)
