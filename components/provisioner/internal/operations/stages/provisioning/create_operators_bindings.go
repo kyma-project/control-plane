@@ -94,7 +94,7 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 		for i, administrator := range cluster.Administrators {
 			clusterRoleBindings = append(clusterRoleBindings,
 				buildClusterRoleBinding(
-					fmt.Sprintf("%s%d", administratorOperatorClusterRoleBindingName, i+5),
+					fmt.Sprintf("%s%d", administratorOperatorClusterRoleBindingName, i),
 					*administrator,
 					administratorOperatorClusterRoleBindingRoleRefName,
 					userKindSubject,
