@@ -338,18 +338,22 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 }
 
 func fixKymaGraphQLConfig(profile *gqlschema.KymaProfile) *gqlschema.KymaConfig {
+	installer := gqlschema.KymaInstallationMethodKymaOperator
 	return &gqlschema.KymaConfig{
-		Version: util.StringPtr(kymaVersion),
-		Profile: profile,
+		Version:       util.StringPtr(kymaVersion),
+		Profile:       profile,
+		KymaInstaller: &installer,
 		Components: []*gqlschema.ComponentConfiguration{
 			{
 				Component:     clusterEssentialsComponent,
 				Namespace:     kymaSystemNamespace,
+				Prerequisite:  util.BoolPtr(false),
 				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
 			},
 			{
-				Component: coreComponent,
-				Namespace: kymaSystemNamespace,
+				Component:    coreComponent,
+				Namespace:    kymaSystemNamespace,
+				Prerequisite: util.BoolPtr(false),
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.config.key2", "value2", util.BoolPtr(false)),
@@ -358,12 +362,14 @@ func fixKymaGraphQLConfig(profile *gqlschema.KymaProfile) *gqlschema.KymaConfig 
 			{
 				Component:     rafterComponent,
 				Namespace:     kymaSystemNamespace,
+				Prerequisite:  util.BoolPtr(false),
 				SourceURL:     util.StringPtr(rafterSourceURL),
 				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
 			},
 			{
-				Component: applicationConnectorComponent,
-				Namespace: kymaIntegrationNamespace,
+				Component:    applicationConnectorComponent,
+				Namespace:    kymaIntegrationNamespace,
+				Prerequisite: util.BoolPtr(false),
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
