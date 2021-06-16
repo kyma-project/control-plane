@@ -101,6 +101,9 @@ type config struct {
 	MetricsAddress string `envconfig:"default=127.0.0.1:9000"`
 
 	LogLevel string `envconfig:"default=info"`
+
+	//TODO: Remove after data migration
+	RunAwsConfigMigration bool `envconfig:"default=false"`
 }
 
 func (c *config) String() string {
@@ -117,7 +120,8 @@ func (c *config) String() string {
 		"ForceAllowPrivilegedContainers: %t, "+
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
-		"LogLevel: %s",
+		"LogLevel: %s"+
+		"RunAwsConfigMigration: %v",
 		c.Address, c.APIEndpoint, c.DirectorURL,
 		c.SkipDirectorCertVerification, c.OauthCredentialsNamespace, c.OauthCredentialsSecretName,
 		c.Database.User, c.Database.Host, c.Database.Port,
@@ -131,7 +135,7 @@ func (c *config) String() string {
 		c.Gardener.ForceAllowPrivilegedContainers,
 		c.LatestDownloadedReleases, c.DownloadPreReleases,
 		c.EnqueueInProgressOperations,
-		c.LogLevel)
+		c.LogLevel, c.RunAwsConfigMigration)
 }
 
 func main() {
@@ -162,14 +166,17 @@ func main() {
 
 	dbsFactory := dbsession.NewFactory(connection)
 
-	log.Infof("Starting AWS Config Migration")
+	//TODO: Remove after data migration
+	if cfg.RunAwsConfigMigration {
+		log.Infof("Starting AWS Config Migration")
 
-	providerMigration := migrator.NewProviderConfigMigrator(dbsFactory, migrationErrThreshold)
-	err = providerMigration.Do()
+		providerMigration := migrator.NewProviderConfigMigrator(dbsFactory, migrationErrThreshold)
+		err = providerMigration.Do()
 
-	exitOnError(err, "Failed to perform AWS config migration")
+		exitOnError(err, "Failed to perform AWS config migration")
 
-	log.Infof("AWS Config Migration finished!")
+		log.Infof("AWS Config Migration finished!")
+	}
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 
