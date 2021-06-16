@@ -149,7 +149,7 @@ spec:
             - name: APP_ENQUEUE_IN_PROGRESS_OPERATIONS
               value: "true"
             - name: APP_RUN_AWS_CONFIG_MIGRATION
-              value: {{ .Values.deployment.runAwsConfigMigration }}
+              value: {{ .Values.deployment.runAwsConfigMigration | quote }}
           volumeMounts:
         {{if .Values.gardener.auditLogTenantConfigMapName }}
             - mountPath: /gardener/tenant
