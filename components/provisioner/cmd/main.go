@@ -34,7 +34,7 @@ import (
 	"github.com/kyma-incubator/hydroform/parallel-install/pkg/overrides"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/parallel-installation"
+	parallelInstallation "github.com/kyma-project/control-plane/components/provisioner/internal/parallel-installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/parallel-installation/download"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
@@ -210,15 +210,15 @@ func main() {
 		KymaResourcesPathTmp: "/app/downloads/kyma/%s",
 		ComponentsPathTmp:    "/app/downloads/components/%s",
 	})
-	createDeployer := func(rID string, cfg *installationConfig.Config, ob *overrides.Builder, callback func(string) func(deployment.ProcessUpdate)) parallel_installation.KymaDeployer {
-		return &parallel_installation.Deployer{
+	createDeployer := func(rID string, cfg *installationConfig.Config, ob *overrides.Builder, callback func(string) func(deployment.ProcessUpdate)) parallelInstallation.KymaDeployer {
+		return &parallelInstallation.Deployer{
 			RuntimeID: rID,
 			Cfg:       cfg,
 			Builder:   ob,
 			Callback:  callback,
 		}
 	}
-	parallelInstallationService := parallel_installation.NewParallelInstallationService(downloadManager, createDeployer, log.WithField("process", "installer"))
+	parallelInstallationService := parallelInstallation.NewParallelInstallationService(downloadManager, createDeployer, log.WithField("process", "installer"))
 	installationClients := map[model.KymaInstaller]installation.Service{
 		model.KymaOperatorInstaller: installationService,
 		model.ParallelInstaller:     parallelInstallationService,
