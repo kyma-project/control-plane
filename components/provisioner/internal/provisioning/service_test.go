@@ -742,6 +742,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 		sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
 		writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(nil)
 		writeSession.On("RollbackUnlessCommitted").Return()
+		writeSession.On("InsertAdministrators", runtimeID, mock.Anything).Return(nil)
 		provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
 		writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 		provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(nil)
@@ -776,6 +777,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				writeSession.On("RollbackUnlessCommitted").Return()
 				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(nil)
 				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+				writeSession.On("InsertAdministrators", runtimeID, mock.Anything).Return(nil)
 				provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
 				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(nil)
 				writeSession.On("Commit").Return(dberrors.Internal("error"))
@@ -790,6 +792,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				writeSession.On("RollbackUnlessCommitted").Return()
 				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(nil)
 				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+				writeSession.On("InsertAdministrators", runtimeID, mock.Anything).Return(nil)
 				provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
 				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(apperrors.Internal("error"))
 			},
