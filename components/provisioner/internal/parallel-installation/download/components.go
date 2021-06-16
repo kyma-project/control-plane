@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	cmp "github.com/kyma-project/control-plane/components/provisioner/internal/installation/download/components"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	cmp "github.com/kyma-project/control-plane/components/provisioner/internal/parallel-installation/download/components"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"

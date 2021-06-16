@@ -1,4 +1,4 @@
-package installation
+package parallel_installation
 
 import (
 	"testing"

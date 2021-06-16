@@ -1,4 +1,4 @@
-package installation
+package parallel_installation
 
 import (
 	"github.com/kyma-incubator/hydroform/parallel-install/pkg/config"

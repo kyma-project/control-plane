@@ -1,4 +1,4 @@
-package installation
+package parallel_installation
 
 import (
 	"errors"
@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/parallel-installation/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 

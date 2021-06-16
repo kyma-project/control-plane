@@ -1,4 +1,4 @@
-package installation
+package parallel_installation
 
 import (
 	"sync"
@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/hydroform/parallel-install/pkg/config"
 	"github.com/kyma-incubator/hydroform/parallel-install/pkg/deployment"
 	"github.com/kyma-incubator/hydroform/parallel-install/pkg/overrides"
+	provisionerInstallation "github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 
@@ -60,7 +61,7 @@ type parallelInstallationService struct {
 	mux                *sync.Mutex
 }
 
-func NewParallelInstallationService(downloader ResourceDownloader, creator deployerCreator, log log.FieldLogger) Service {
+func NewParallelInstallationService(downloader ResourceDownloader, creator deployerCreator, log log.FieldLogger) provisionerInstallation.Service {
 	return &parallelInstallationService{
 		log:                log,
 		downloader:         downloader,
