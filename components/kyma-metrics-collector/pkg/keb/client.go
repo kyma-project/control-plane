@@ -43,7 +43,7 @@ func NewClient(config *Config, logger *logrus.Logger) *Client {
 func (c Client) NewRequest() (*http.Request, error) {
 	kebURL, err := url.ParseRequestURI(c.Config.URL)
 	if err != nil {
-		totalRequest.WithLabelValues("failed_createRequest").Inc()
+		totalRequest.WithLabelValues("failed_create_request").Inc()
 
 		return nil, err
 	}

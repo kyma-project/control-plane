@@ -16,7 +16,7 @@ var (
 			Namespace: Namespace,
 			Subsystem: Subsystem,
 			Name:      "request_total",
-			Help:      "Total number of requests.",
+			Help:      "Total number of requests to KEB.",
 		},
 		[]string{"status"},
 	)
@@ -26,7 +26,7 @@ var (
 			Namespace: Namespace,
 			Subsystem: Subsystem,
 			Name:      "request_duration_seconds",
-			Help:      "Duration of HTTP request to EDP in seconds.",
+			Help:      "Duration of HTTP request to KEB in seconds.",
 			Buckets:   []float64{0.1, 0.25, 0.5, 1, 2.5, 5, 10},
 		},
 	)

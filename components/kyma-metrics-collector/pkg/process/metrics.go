@@ -70,14 +70,4 @@ var (
 		},
 		[]string{"requestURI"},
 	)
-
-	providerErrorCount = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: Namespace,
-			Subsystem: "public_cloud",
-			Name:      ErrorCountName,
-			Help:      "Number of continuous errors of sth sth.",
-		},
-		[]string{"reason"},
-	)
 )

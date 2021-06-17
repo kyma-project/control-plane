@@ -44,36 +44,30 @@ func (p Providers) GetFeature(cloudProvider, vmType string) (f *Feature) {
 // LoadPublicCloudSpecs loads string data to Providers object from an env var
 func LoadPublicCloudSpecs(cfg *env.Config) (*Providers, error) {
 	if cfg.PublicCloudSpecs == "" {
-		providerErrorCount.WithLabelValues("spec_missing").Inc()
 		return nil, fmt.Errorf("public cloud specification is not configured")
 	}
 
 	var machineInfo MachineInfo
 	err := json.Unmarshal([]byte(cfg.PublicCloudSpecs), &machineInfo)
 	if err != nil {
-		providerErrorCount.WithLabelValues("unmarshal_error").Inc()
 		return nil, errors.Wrapf(err, "failed to unmarshal machine info")
 	}
 	awsMachinesData, err := machineInfo[AWS].MarshalJSON()
 	if err != nil {
-		providerErrorCount.WithLabelValues("AWS_error").Inc()
 		return nil, errors.Wrapf(err, "failed to marshal AWS info")
 	}
 	awsMachines := &AWSMachines{}
 	err = json.Unmarshal(awsMachinesData, &awsMachines)
 	if err != nil {
-		providerErrorCount.WithLabelValues("AWS_error").Inc()
 		return nil, errors.Wrapf(err, "failed to unmarshal AWS machines data")
 	}
 	azureMachinesData, err := machineInfo[Azure].MarshalJSON()
 	if err != nil {
-		providerErrorCount.WithLabelValues("Azure_error").Inc()
 		return nil, errors.Wrapf(err, "failed to marshal Azure info")
 	}
 	azureMachines := &AzureMachines{}
 	err = json.Unmarshal(azureMachinesData, azureMachines)
 	if err != nil {
-		providerErrorCount.WithLabelValues("Azure_error").Inc()
 		return nil, errors.Wrapf(err, "failed to uunmarshal Azure machines data")
 	}
 

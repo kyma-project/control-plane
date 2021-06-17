@@ -11,7 +11,7 @@ spec:
   groups:
     - name: kmc.rules
       rules:
-      - alert: KmcDown
+      - alert: KMCDown
         expr: up{job={{ .Values.prometheus.job | quote }}, namespace={{ .Values.prometheus.namespace | quote }}} == 0
         for: 5m
         labels:
@@ -20,21 +20,21 @@ spec:
           description: KMC has disappeared from Prometheus target discovery for the last 5 minutes.
     - name: kmc.rules.edp
       rules:
-      - alert: EdpRequestFailures
+      - alert: EDPRequestFailures
         expr: sum by (status) (increase(kmc_edp_request_total{status!~"2.."}[5m])) > 20
         for: 10m
         labels:
           severity: critical
         annotations:
           description: KMC has failed to call EDP with status "2xx successful" in the last 5 minutes.
-      - alert: EdpErrors
+      - alert: EDPErrors
         expr: sum by (subaccount) (increase(kmc_edp_error_count[5m])) > 30
         for: 10m
         labels:
           severity: critical
         annotations:
           description: KMC has reported an increase in errors in the last 10 minutes for EDP.
-      - alert: EdpRequestDuration
+      - alert: EDPRequestDuration
         expr: sum by (job) (rate(kmc_edp_request_duration_seconds_sum[30m])/rate(kmc_edp_request_duration_seconds_count[30m])) > 3
         for: 10m
         labels:
@@ -43,21 +43,21 @@ spec:
           description: Average request duration to EDP during the last 30 minutes took longer than 3 seconds.
     - name: kmc.rules.keb
       rules:
-      - alert: KebRequestFailures
+      - alert: KEBRequestFailures
         expr: sum by (status) (increase(kmc_keb_request_total{status!~"2.."}[5m])) > 20
         for: 10m
         labels:
          severity: critical
         annotations:
           description: KMC has failed to call KEB with status "2xx successful" in the last 5 minutes.
-      - alert: KebErrors
+      - alert: KEBErrors
         expr: sum by (job) (increase(kmc_keb_error_count[5m])) > 30
         for: 10m
         labels:
           severity: critical
         annotations:
           description: KMC has reported an increase in errors in the last 10 minutes for KEB.
-      - alert: KebRequestDuration
+      - alert: KEBRequestDuration
         expr: sum by (job) (rate(kmc_keb_request_duration_seconds_sum[30m])/rate(kmc_keb_request_duration_seconds_count[30m])) > 5
         for: 10m
         labels:
@@ -73,7 +73,7 @@ spec:
           description: Within 5 minutes the numbers of clusters scraped decreased by at least 10 clusters.
     - name: kmc.rules.skr
       rules:
-      - alert: SkrErrors
+      - alert: SKRErrors
         expr: sum by (subaccount) (increase(kmc_skr_error_count[5m])) > 30
         for: 10m
         labels:

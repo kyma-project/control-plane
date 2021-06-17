@@ -4,13 +4,13 @@ metadata:
   labels:
 {{ include "kyma-metrics-collector.labels" . | indent 4 }}
   name: {{ include "kyma-metrics-collector.fullname" . }}
-  namespace: kcp-system
+  namespace: {{ .Release.Namespace }}
 spec:
   endpoints:
    - port: http
   namespaceSelector:
     matchNames:
-    - kcp-system
+    - {{ .Release.Namespace }}
   selector:
     matchLabels:
 {{ include "kyma-metrics-collector.labels" . | indent 8 }}

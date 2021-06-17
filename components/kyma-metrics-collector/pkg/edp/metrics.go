@@ -16,7 +16,7 @@ var (
 			Namespace: Namespace,
 			Subsystem: Subsystem,
 			Name:      "request_total",
-			Help:      "Total number of requests.",
+			Help:      "Total number of requests to EDP.",
 		},
 		[]string{"status"},
 	)
