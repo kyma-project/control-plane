@@ -35,38 +35,25 @@ func NewManager(mutex sync.Locker, cfg Config) *Manager {
 	}
 }
 
-// Download loads all Kyma resources, installation resources base on revision
-// and all external components based on their source URL
-// it returns path to resources and installation resources
-func (m *Manager) Download(kymaRevision string, kymaComponents []model.KymaComponentConfig) (string, string, error) {
-	// lock for goroutines to not download the same packages at the same time
-	m.mutex.Lock()
-
-	// download Kyma resources and component from external sources
-	resourcesPath, installationResourcesPath, err := m.kymaDownloader.DownloadKyma(m.prepareRevision(kymaRevision))
+// GetResourcePaths fetches paths to all necessary components from cache (or download if not exist)
+// and returns path to resources and installation resources
+func (m *Manager) GetResourcePaths(kymaRevision string, kymaComponents []model.KymaComponentConfig) (string, string, error) {
+	// fetch paths to Kyma resources and component from external sources (or download if not exist)
+	path, installPath, componentsPath, err := m.download(kymaRevision, kymaComponents)
 	if err != nil {
-		m.mutex.Unlock()
-		return "", "", errors.Wrap(err, "while downloading Kyma resources")
+		return "", "", errors.Wrap(err, "while downloading resources")
 	}
-
-	componentsPath, err := m.componentsDownloader.DownloadExternalComponents(kymaComponents)
-	if err != nil {
-		m.mutex.Unlock()
-		return "", "", errors.Wrap(err, "while downloading components")
-	}
-
-	m.mutex.Unlock()
 
 	// copy all downloaded resources to the destination paths
 	p := fmt.Sprintf(m.kymaPathTmp, uuid.New().String())
 	dstResourcesPath := fmt.Sprintf("%s/resources", p)
 	dstInstallPath := fmt.Sprintf("%s/installation-resources", p)
 
-	err = copy.Copy(resourcesPath, dstResourcesPath)
+	err = copy.Copy(path, dstResourcesPath)
 	if err != nil {
 		return "", "", errors.Wrap(err, "while copying Kyma resources")
 	}
-	err = copy.Copy(installationResourcesPath, dstInstallPath)
+	err = copy.Copy(installPath, dstInstallPath)
 	if err != nil {
 		return "", "", errors.Wrap(err, "while copying Kyma installation resources")
 	}
@@ -76,6 +63,38 @@ func (m *Manager) Download(kymaRevision string, kymaComponents []model.KymaCompo
 	}
 
 	return dstResourcesPath, dstInstallPath, nil
+}
+
+// Download loads all Kyma resources, installation resources base on revision
+// and all external components based on their source URL
+func (m *Manager) Download(kymaRevision string, kymaComponents []model.KymaComponentConfig) error {
+	_, _, _, err := m.download(kymaRevision, kymaComponents)
+	if err != nil {
+		return errors.Wrap(err, "while downloading resources")
+	}
+
+	return nil
+}
+
+func (m *Manager) download(revision string, components []model.KymaComponentConfig) (string, string, map[string]string, error) {
+	// lock for goroutines to not download the same packages at the same time
+	m.mutex.Lock()
+
+	// download Kyma resources and component from external sources
+	path, installPath, err := m.kymaDownloader.DownloadKyma(m.prepareRevision(revision))
+	if err != nil {
+		m.mutex.Unlock()
+		return "", "", map[string]string{}, errors.Wrap(err, "while downloading Kyma resources")
+	}
+
+	componentsPath, err := m.componentsDownloader.DownloadExternalComponents(components)
+	if err != nil {
+		m.mutex.Unlock()
+		return "", "", map[string]string{}, errors.Wrap(err, "while downloading components")
+	}
+
+	m.mutex.Unlock()
+	return path, installPath, componentsPath, nil
 }
 
 func (m *Manager) copyComponentsToResources(dst string, cPaths map[string]string, components []model.KymaComponentConfig) error {

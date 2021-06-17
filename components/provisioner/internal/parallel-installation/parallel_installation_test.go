@@ -36,9 +36,9 @@ func TestParallelInstallationService_TriggerInstallation(t *testing.T) {
 		kymaRelease := model.Release{Version: "1.20.0"}
 		profile := model.KymaProfile("test")
 
-		downloader := &mocks.ResourceDownloader{}
-		downloader.On("Download", kymaRelease.Version, componentsConfig("test#1")).Return(resourcePath, installResourcePath, nil)
-		downloader.On("Download", kymaRelease.Version, componentsConfig("test#2")).Return(resourcePath, installResourcePath, nil)
+		downloader := &mocks.PathFetcher{}
+		downloader.On("GetResourcePaths", kymaRelease.Version, componentsConfig("test#1")).Return(resourcePath, installResourcePath, nil)
+		downloader.On("GetResourcePaths", kymaRelease.Version, componentsConfig("test#2")).Return(resourcePath, installResourcePath, nil)
 
 		createDeployer := func(rID string, cfg *installationConfig.Config, ob *overrides.Builder, callback func(string) func(deployment.ProcessUpdate)) KymaDeployer {
 			return &fakeDeployer{ID: rID, cfg: cfg, callback: callback}
@@ -68,8 +68,8 @@ func TestParallelInstallationService_TriggerInstallation(t *testing.T) {
 		kymaRelease := model.Release{Version: "1.20.0"}
 		profile := model.KymaProfile("test")
 
-		downloader := &mocks.ResourceDownloader{}
-		downloader.On("Download", kymaRelease.Version, componentsConfig("test")).Return(resourcePath, installResourcePath, nil)
+		downloader := &mocks.PathFetcher{}
+		downloader.On("GetResourcePaths", kymaRelease.Version, componentsConfig("test")).Return(resourcePath, installResourcePath, nil)
 
 		createDeployer := func(rID string, cfg *installationConfig.Config, ob *overrides.Builder, callback func(string) func(deployment.ProcessUpdate)) KymaDeployer {
 			return &fakeDeployer{ID: rID, cfg: cfg, callback: callback, shouldFail: true}

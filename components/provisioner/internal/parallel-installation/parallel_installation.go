@@ -18,9 +18,9 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-//go:generate mockery -name=ResourceDownloader
-type ResourceDownloader interface {
-	Download(string, []model.KymaComponentConfig) (string, string, error)
+//go:generate mockery -name=PathFetcher
+type PathFetcher interface {
+	GetResourcePaths(string, []model.KymaComponentConfig) (string, string, error)
 }
 
 type (
@@ -55,16 +55,16 @@ func callbackSuccess() {
 
 type parallelInstallationService struct {
 	createDeployer     deployerCreator
-	downloader         ResourceDownloader
+	pathFetcher        PathFetcher
 	log                log.FieldLogger
 	installationStatus map[string]*ComponentsStatus
 	mux                *sync.Mutex
 }
 
-func NewParallelInstallationService(downloader ResourceDownloader, creator deployerCreator, log log.FieldLogger) provisionerInstallation.Service {
+func NewParallelInstallationService(pathFetcher PathFetcher, creator deployerCreator, log log.FieldLogger) provisionerInstallation.Service {
 	return &parallelInstallationService{
 		log:                log,
-		downloader:         downloader,
+		pathFetcher:        pathFetcher,
 		createDeployer:     creator,
 		mux:                &sync.Mutex{},
 		installationStatus: make(map[string]*ComponentsStatus),
@@ -155,11 +155,11 @@ func (p parallelInstallationService) CheckInstallationState(runtimeID string, _ 
 func (p parallelInstallationService) TriggerInstallation(runtimeID, kubeconfigRaw string, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
 	p.log.Info("Installation triggered")
 
-	// download all resources
+	// collect all necessary resources
 	p.log.Info("Collect all require components")
-	resourcePath, installationResourcePath, err := p.downloader.Download(release.Version, componentsConfig)
+	resourcePath, installationResourcePath, err := p.pathFetcher.GetResourcePaths(release.Version, componentsConfig)
 	if err != nil {
-		return errors.Wrap(err, "while downloading components")
+		return errors.Wrap(err, "while collecting all components")
 	}
 
 	// prepare installation

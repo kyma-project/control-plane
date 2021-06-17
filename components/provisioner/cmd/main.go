@@ -241,7 +241,8 @@ func main() {
 		shootClient,
 		secretsInterface,
 		cfg.OperatorRoleBinding,
-		k8sClientProvider)
+		k8sClientProvider,
+		downloadManager)
 
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationClients)
 

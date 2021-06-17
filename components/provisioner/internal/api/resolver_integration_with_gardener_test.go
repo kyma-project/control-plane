@@ -36,6 +36,7 @@ import (
 	kymaInstallation "github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
+	provisioningMocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
@@ -149,6 +150,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	fakeK8sClient := fake.NewSimpleClientset()
 	mockK8sClientProvider.On("CreateK8SClient", mockedKubeconfig).Return(fakeK8sClient, nil)
 
+	downloader := &provisioningMocks.ResourceDownloader{}
+	downloader.On("Download", kymaVersion, mock.Anything).Return(nil)
+
 	runtimeConfigurator := runtimeConfig.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
 
 	auditLogsConfigPath := filepath.Join("testdata", "config.json")
@@ -171,7 +175,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		shootInterface,
 		secretsInterface,
 		testOperatorRoleBinding(),
-		mockK8sClientProvider)
+		mockK8sClientProvider,
+		downloader)
 	provisioningQueue.Run(queueCtx.Done())
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
@@ -527,6 +532,7 @@ func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.Op
 
 func testProvisioningTimeouts() queue.ProvisioningTimeouts {
 	return queue.ProvisioningTimeouts{
+		DownloadArtifacts:      5 * time.Minute,
 		ClusterCreation:        5 * time.Minute,
 		ClusterDomains:         5 * time.Minute,
 		BindingsCreation:       5 * time.Minute,

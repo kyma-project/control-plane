@@ -23,6 +23,7 @@ import (
 )
 
 type ProvisioningTimeouts struct {
+	DownloadArtifacts      time.Duration `envconfig:"default=10m"`
 	ClusterCreation        time.Duration `envconfig:"default=60m"`
 	ClusterDomains         time.Duration `envconfig:"default=10m"`
 	BindingsCreation       time.Duration `envconfig:"default=5m"`
@@ -56,7 +57,8 @@ func CreateProvisioningQueue(
 	shootClient gardener_apis.ShootInterface,
 	secretsClient v1core.SecretInterface,
 	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
-	k8sClientProvider k8s.K8sClientProvider) OperationQueue {
+	k8sClientProvider k8s.K8sClientProvider,
+	artifactsDownloader provisioning.ResourceDownloader) OperationQueue {
 
 	waitForAgentToConnectStep := provisioning.NewWaitForAgentToConnectStep(ccClientConstructor, model.FinishedStage, timeouts.AgentConnection, directorClient)
 	configureAgentStep := provisioning.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Name(), timeouts.AgentConfiguration)
@@ -65,6 +67,7 @@ func CreateProvisioningQueue(
 	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, installStep.Name(), timeouts.BindingsCreation)
 	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
 	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), timeouts.ClusterDomains)
+	waitForArtifactsStep := provisioning.NewWaitForArtifactsStep(artifactsDownloader, waitForClusterDomainStep.Name(), timeouts.DownloadArtifacts)
 
 	provisionSteps := map[model.OperationStage]operations.Step{
 		model.WaitForAgentToConnect:        waitForAgentToConnectStep,
@@ -74,6 +77,7 @@ func CreateProvisioningQueue(
 		model.CreatingBindingsForOperators: createBindingsForOperatorsStep,
 		model.WaitingForClusterDomain:      waitForClusterDomainStep,
 		model.WaitingForClusterCreation:    waitForClusterCreationStep,
+		model.DownloadingArtifacts:         waitForArtifactsStep,
 	}
 
 	provisioningExecutor := operations.NewExecutor(
