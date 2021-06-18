@@ -40,17 +40,18 @@ func (a AsyncDeployment) StartKymaDeployment(success func(), error func(error)) 
 		err := a.deployer.StartKymaDeployment()
 		if err != nil {
 			error(err)
+			return
 		}
 		success()
 	}()
 }
 
 func callbackErrors(err error) {
-	log.Error("Error during installation startup", err.Error())
+	log.Errorf("Installation failed: %s", err.Error())
 }
 
 func callbackSuccess() {
-	log.Info("Installation complete")
+	log.Info("Installation completed successfully")
 }
 
 type parallelInstallationService struct {
