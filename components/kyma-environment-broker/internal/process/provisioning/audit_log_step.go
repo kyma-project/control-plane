@@ -3,11 +3,12 @@ package provisioning
 import (
 	"errors"
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"net"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 
@@ -113,7 +114,7 @@ func (alo *AuditLogOverrides) Run(operation internal.ProvisioningOperation, logg
     Format           json_stream
     tls              on
 `, fluentbitPlugin, auditLogHost, auditLogPort, u.Path)},
-		{Key: "fluent-bit.config.secrets.AUDITLOG_USER", Value: fmt.Sprintf(`%s`, alo.auditLogConfig.User),Secret: ptr.Bool(true)},
+		{Key: "fluent-bit.config.secrets.AUDITLOG_USER", Value: fmt.Sprintf(`%s`, alo.auditLogConfig.User), Secret: ptr.Bool(true)},
 		{Key: "fluent-bit.config.secrets.AUDITLOG_PASSWD", Value: fmt.Sprintf(`%s`, alo.auditLogConfig.Password), Secret: ptr.Bool(true)},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},
 		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf(`- %s`, auditLogHost)},
