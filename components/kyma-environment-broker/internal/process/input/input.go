@@ -379,6 +379,7 @@ func (r *RuntimeInput) adjustRuntimeName() error {
 
 func (r *RuntimeInput) configureOIDC() error {
 	if r.provisioningParameters.Parameters.OIDC == nil {
+		// TODO: read and use default values
 		return nil
 	}
 	params := r.provisioningParameters.Parameters.OIDC
