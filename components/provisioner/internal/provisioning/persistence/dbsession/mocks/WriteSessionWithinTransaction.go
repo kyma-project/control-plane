@@ -66,11 +66,11 @@ func (_m *WriteSessionWithinTransaction) FixShootProvisioningStage(message strin
 }
 
 // InsertAdministrators provides a mock function with given fields: clusterId, administrators
-func (_m *WriteSessionWithinTransaction) InsertAdministrators(clusterId string, administrators []*string) dberrors.Error {
+func (_m *WriteSessionWithinTransaction) InsertAdministrators(clusterId string, administrators []string) dberrors.Error {
 	ret := _m.Called(clusterId, administrators)
 
 	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, []*string) dberrors.Error); ok {
+	if rf, ok := ret.Get(0).(func(string, []string) dberrors.Error); ok {
 		r0 = rf(clusterId, administrators)
 	} else {
 		if ret.Get(0) != nil {
