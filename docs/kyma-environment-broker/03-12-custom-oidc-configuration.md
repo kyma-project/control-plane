@@ -3,7 +3,7 @@ title: Custom OIDC configuration
 type: Details
 ---
 
-To create an SKR with custom OIDC (Open ID Connect) configuration you need to specify additional `oidc` provisioning parameters, for example:
+To create an SKR with a custom OIDC (Open ID Connect) configuration, specify the additional `oidc` provisioning parameters. See the example:
 
 ```bash
    export VERSION=1.15.0
