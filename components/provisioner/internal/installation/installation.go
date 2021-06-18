@@ -23,8 +23,9 @@ import (
 const (
 	tillerWaitTime = 10 * time.Minute
 
-	installAction = "installation"
-	upgradeAction = "upgrade"
+	installAction   = "installation"
+	upgradeAction   = "upgrade"
+	replaceStrategy = "Replace"
 )
 
 type InstallationHandler func(*rest.Config, ...installation.InstallationOption) (installation.Installer, error)
@@ -197,9 +198,7 @@ func NewInstallationConfiguration(globalConfg model.Configuration, componentsCon
 	}
 
 	installationConfig.Configuration = toInstallationConfigEntries(globalConfg.ConfigEntries)
-	if globalConfg.ConflictStrategy != "" {
-		installationConfig.ConflictStrategy = globalConfg.ConflictStrategy
-	}
+	installationConfig.ConflictStrategy = replaceStrategy
 
 	for _, componentCfg := range componentsConfig {
 		installationComponentConfig := installation.ComponentConfiguration{
@@ -207,9 +206,7 @@ func NewInstallationConfiguration(globalConfg model.Configuration, componentsCon
 			Configuration: toInstallationConfigEntries(componentCfg.Configuration.ConfigEntries),
 		}
 
-		if componentCfg.Configuration.ConflictStrategy != "" {
-			installationComponentConfig.ConflictStrategy = componentCfg.Configuration.ConflictStrategy
-		}
+		installationComponentConfig.ConflictStrategy = replaceStrategy
 
 		installationConfig.ComponentConfiguration = append(installationConfig.ComponentConfiguration, installationComponentConfig)
 	}
