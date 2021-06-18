@@ -1,6 +1,7 @@
 package upgrade_kyma
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"testing"
 	"time"
 
@@ -133,10 +134,12 @@ return "fooBar"
 		{
 			Key:   "fluent-bit.config.secrets.AUDITLOG_USER",
 			Value: "aaaa",
+			Secret: ptr.Bool(true),
 		},
 		{
 			Key:   "fluent-bit.config.secrets.AUDITLOG_PASSWD",
 			Value: "aaaa",
+			Secret: ptr.Bool(true),
 		},
 		{
 			Key:   "fluent-bit.externalServiceEntry.resolution",
@@ -255,10 +258,12 @@ return "fooBar"
 		{
 			Key:   "fluent-bit.config.secrets.AUDITLOG_USER",
 			Value: "aaaa",
+			Secret: ptr.Bool(true),
 		},
 		{
 			Key:   "fluent-bit.config.secrets.AUDITLOG_PASSWD",
 			Value: "aaaa",
+			Secret: ptr.Bool(true),
 		},
 		{
 			Key:   "fluent-bit.externalServiceEntry.resolution",
