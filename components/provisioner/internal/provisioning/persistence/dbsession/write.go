@@ -38,7 +38,7 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	return nil
 }
 
-func (ws writeSession) InsertAdministrators(clusterId string, administrators []*string) dberrors.Error {
+func (ws writeSession) InsertAdministrators(clusterId string, administrators []string) dberrors.Error {
 	_, err := ws.deleteFrom("cluster_administrator").
 		Where(dbr.Eq("cluster_id", clusterId)).
 		Exec()

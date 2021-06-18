@@ -897,7 +897,7 @@ func newUpgradeShootInputAwsAzureGCP(newPurpose string) gqlschema.UpgradeShootIn
 			ProviderSpecificConfig: nil,
 			OidcConfig:             upgradedOidcInput(),
 		},
-		Administrators: []*string{util.StringPtr("test@test.pl")},
+		Administrators: []string{"test@test.pl"},
 	}
 }
 
