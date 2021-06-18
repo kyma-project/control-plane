@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -130,12 +132,14 @@ return "fooBar"
 			Value: expectedOverride_config,
 		},
 		{
-			Key:   "fluent-bit.config.secrets.AUDITLOG_USER",
-			Value: "aaaa",
+			Key:    "fluent-bit.config.secrets.AUDITLOG_USER",
+			Value:  "aaaa",
+			Secret: ptr.Bool(true),
 		},
 		{
-			Key:   "fluent-bit.config.secrets.AUDITLOG_PASSWD",
-			Value: "aaaa",
+			Key:    "fluent-bit.config.secrets.AUDITLOG_PASSWD",
+			Value:  "aaaa",
+			Secret: ptr.Bool(true),
 		},
 		{
 			Key:   "fluent-bit.externalServiceEntry.resolution",
@@ -251,12 +255,14 @@ return "fooBar"
 			Value: expectedOverride_config,
 		},
 		{
-			Key:   "fluent-bit.config.secrets.AUDITLOG_USER",
-			Value: "aaaa",
+			Key:    "fluent-bit.config.secrets.AUDITLOG_USER",
+			Value:  "aaaa",
+			Secret: ptr.Bool(true),
 		},
 		{
-			Key:   "fluent-bit.config.secrets.AUDITLOG_PASSWD",
-			Value: "aaaa",
+			Key:    "fluent-bit.config.secrets.AUDITLOG_PASSWD",
+			Value:  "aaaa",
+			Secret: ptr.Bool(true),
 		},
 		{
 			Key:   "fluent-bit.externalServiceEntry.resolution",
