@@ -120,7 +120,7 @@ func azureTrialDefaults() *gqlschema.ClusterConfigInput {
 			AutoScalerMin:  1,
 			AutoScalerMax:  1,
 			MaxSurge:       1,
-			MaxUnavailable: 1,
+			MaxUnavailable: 0,
 			Purpose:        &trialPurpose,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
