@@ -95,7 +95,7 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 			clusterRoleBindings = append(clusterRoleBindings,
 				buildClusterRoleBinding(
 					fmt.Sprintf("%s%d", administratorOperatorClusterRoleBindingName, i),
-					*administrator,
+					administrator,
 					administratorOperatorClusterRoleBindingRoleRefName,
 					userKindSubject,
 					map[string]string{"app": "kyma", "type": "admin"}))
