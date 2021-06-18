@@ -24,6 +24,9 @@ func SetOverrides(ob OverrideBuilder, components []model.KymaComponentConfig, gl
 		if pair[0] == "" {
 			return errors.Errorf("key for override %q not exist/is empty", override)
 		}
+		if err := validateKey(pair[0]); err != nil {
+			return errors.Errorf("key for override %q is incorrect: %s", override, err)
+		}
 		if pair[1] == "" {
 			return errors.Errorf("value for key %q not exist/is empty", pair[0])
 		}
@@ -33,11 +36,22 @@ func SetOverrides(ob OverrideBuilder, components []model.KymaComponentConfig, gl
 			return errors.Wrap(err, "while converting key/value to override map")
 		}
 
-		if err := ob.AddOverrides(comp, overridesMap); err != nil {
+		if err = ob.AddOverrides(comp, overridesMap); err != nil {
 			return errors.Wrapf(err, "while adding override for %s component", comp)
 		}
-
 	}
+
+	return nil
+}
+
+func validateKey(key string) error {
+	keys := strings.Split(key, ".")
+	for _, k := range keys {
+		if k == "" {
+			return errors.New("no key segment can be empty")
+		}
+	}
+
 	return nil
 }
 
