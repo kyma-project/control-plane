@@ -302,35 +302,29 @@ func main() {
 		avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient,
 		hyperscalerProvider, accountProvider, logs)
 
-	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
+	/****/
+	//suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
 
+	/***/
 	servicesConfig, err := broker.NewServicesConfigFromFile(cfg.CatalogFilePath)
 	fatalOnError(err)
 
-	defaultPlansConfig, err := servicesConfig.DefaultPlansConfig()
-	fatalOnError(err)
+	/***/
+	//defaultPlansConfig, err := servicesConfig.DefaultPlansConfig()
+	//fatalOnError(err)
 
+	/****/
 	// create KymaEnvironmentBroker endpoints
-	kymaEnvBroker := &broker.KymaEnvironmentBroker{
-		broker.NewServices(cfg.Broker, servicesConfig, logs),
-		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, inputFactory, defaultPlansConfig, cfg.EnableOnDemandVersion, logs),
-		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
-		broker.NewUpdate(cfg.Broker, db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, logs),
-		broker.NewGetInstance(cfg.Broker, db.Instances(), db.Operations(), logs),
-		broker.NewLastOperation(db.Operations(), logs),
-		broker.NewBind(logs),
-		broker.NewUnbind(logs),
-		broker.NewGetBinding(logs),
-		broker.NewLastBindingOperation(logs),
-	}
 
 	// create server
 	router := mux.NewRouter()
 
+	createAPI(router, servicesConfig, inputFactory, &cfg, db, provisionQueue, deprovisionQueue, logger, logs)
+
 	// create info endpoints
-	respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)
-	runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), defaultPlansConfig, cfg.DefaultRequestRegion, respWriter)
-	router.Handle("/info/runtimes", runtimesInfoHandler)
+	//respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)
+	//runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), defaultPlansConfig, cfg.DefaultRequestRegion, respWriter)
+	//router.Handle("/info/runtimes", runtimesInfoHandler)
 
 	// create metrics endpoint
 	router.Handle("/metrics", promhttp.Handler())
@@ -373,15 +367,16 @@ func main() {
 	fatalOnError(err)
 
 	// create OSB API endpoints
-	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
-	router.Use(middleware.AddProviderToContext())
-	for _, prefix := range []string{
-		"/oauth/",          // oauth2 handled by Ory
-		"/oauth/{region}/", // oauth2 handled by Ory with region
-	} {
-		route := router.PathPrefix(prefix).Subrouter()
-		broker.AttachRoutes(route, kymaEnvBroker, logger)
-	}
+	/***/
+	//router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
+	//router.Use(middleware.AddProviderToContext())
+	//for _, prefix := range []string{
+	//	"/oauth/",          // oauth2 handled by Ory
+	//	"/oauth/{region}/", // oauth2 handled by Ory with region
+	//} {
+	//	route := router.PathPrefix(prefix).Subrouter()
+	//	broker.AttachRoutes(route, kymaEnvBroker, logger)
+	//}
 
 	// create /orchestration
 	orchestrationHandler.AttachRoutes(router)
@@ -396,6 +391,41 @@ func main() {
 	})
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
+}
+
+func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planValidator broker.PlanValidator, cfg *Config, db storage.BrokerStorage, provisionQueue, deprovisionQueue *process.Queue, logger lager.Logger, logs logrus.FieldLogger) {
+	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
+
+	defaultPlansConfig, err := servicesConfig.DefaultPlansConfig()
+	fatalOnError(err)
+
+	// create KymaEnvironmentBroker endpoints
+	kymaEnvBroker := &broker.KymaEnvironmentBroker{
+		broker.NewServices(cfg.Broker, servicesConfig, logs),
+		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, planValidator, defaultPlansConfig, cfg.EnableOnDemandVersion, logs),
+		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
+		broker.NewUpdate(cfg.Broker, db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, logs),
+		broker.NewGetInstance(cfg.Broker, db.Instances(), db.Operations(), logs),
+		broker.NewLastOperation(db.Operations(), logs),
+		broker.NewBind(logs),
+		broker.NewUnbind(logs),
+		broker.NewGetBinding(logs),
+		broker.NewLastBindingOperation(logs),
+	}
+
+	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
+	router.Use(middleware.AddProviderToContext())
+	for _, prefix := range []string{
+		"/oauth/",          // oauth2 handled by Ory
+		"/oauth/{region}/", // oauth2 handled by Ory with region
+	} {
+		route := router.PathPrefix(prefix).Subrouter()
+		broker.AttachRoutes(route, kymaEnvBroker, logger)
+	}
+
+	respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)
+	runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), defaultPlansConfig, cfg.DefaultRequestRegion, respWriter)
+	router.Handle("/info/runtimes", runtimesInfoHandler)
 }
 
 // queues all in progress operations by type

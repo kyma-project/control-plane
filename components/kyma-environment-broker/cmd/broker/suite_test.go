@@ -1,8 +1,10 @@
 package main
 
 import (
+	"code.cloudfoundry.org/lager"
 	"context"
 	"fmt"
+	"github.com/gorilla/mux"
 	"strings"
 	"testing"
 	"time"
@@ -504,8 +506,6 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	eventBroker := event.NewPubSub(logs)
 
-	// switch to StagedManager when the feature is enabled
-
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
@@ -513,6 +513,9 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
+
+	router := mux.NewRouter()
+	createAPI(router, inputFactory, cfg, db, provisioningQueue, nil, lager.NewLogger("api"), logs)
 
 	return &ProvisioningSuite{
 		provisionerClient:   provisionerClient,
