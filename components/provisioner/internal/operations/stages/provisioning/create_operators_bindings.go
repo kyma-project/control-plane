@@ -80,23 +80,29 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 			l2OperatorClusterRoleBindingName,
 			s.operatorRoleBindingConfig.L2SubjectName,
 			l2OperatorClusterRoleBindingRoleRefName,
-			groupKindSubject))
+			groupKindSubject,
+			map[string]string{"app": "kyma"}))
 	clusterRoleBindings = append(clusterRoleBindings,
 		buildClusterRoleBinding(
 			l3OperatorClusterRoleBindingName,
 			s.operatorRoleBindingConfig.L3SubjectName,
 			l3OperatorClusterRoleBindingRoleRefName,
-			groupKindSubject))
+			groupKindSubject,
+			map[string]string{"app": "kyma"}))
 
 	if s.operatorRoleBindingConfig.CreatingForAdmin {
 		for i, administrator := range cluster.Administrators {
 			clusterRoleBindings = append(clusterRoleBindings,
 				buildClusterRoleBinding(
 					fmt.Sprintf("%s%d", administratorOperatorClusterRoleBindingName, i),
-					*administrator,
+					administrator,
 					administratorOperatorClusterRoleBindingRoleRefName,
-					userKindSubject))
+					userKindSubject,
+					map[string]string{"app": "kyma", "type": "admin"}))
 		}
+	}
+	if err := k8sClient.RbacV1().ClusterRoleBindings().DeleteCollection(context.Background(), metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: "type=admin"}); err != nil {
+		return operations.StageResult{}, fmt.Errorf("failed to delete cluster role bindings: %v", err)
 	}
 
 	if err := createClusterRoleBindings(k8sClient.RbacV1().ClusterRoleBindings(), clusterRoleBindings...); err != nil {
@@ -106,11 +112,11 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 }
 
-func buildClusterRoleBinding(metaName, subjectName, roleRefName, subjectKind string) v12.ClusterRoleBinding {
+func buildClusterRoleBinding(metaName, subjectName, roleRefName, subjectKind string, labels map[string]string) v12.ClusterRoleBinding {
 	return v12.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   metaName,
-			Labels: map[string]string{"app": "kyma"},
+			Labels: labels,
 		},
 		Subjects: []v12.Subject{{
 			Kind:     subjectKind,

@@ -75,7 +75,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				},
 				OidcConfig: oidcInput(),
 			},
-			Administrators: []*string{util.StringPtr(administrator)},
+			Administrators: []string{administrator},
 		},
 		KymaConfig: fixKymaGraphQLConfigInput(&gqlProductionProfile),
 	}
@@ -114,7 +114,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		KymaConfig:     fixKymaConfig(&modelProductionProfile),
 		Tenant:         tenant,
 		SubAccountId:   util.StringPtr(subAccountId),
-		Administrators: []*string{util.StringPtr(administrator)},
+		Administrators: []string{administrator},
 	}
 
 	createGQLRuntimeInputAzure := func(zones []string) gqlschema.ProvisionRuntimeInput {
@@ -151,7 +151,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 					},
 					OidcConfig: oidcInput(),
 				},
-				Administrators: []*string{util.StringPtr(administrator)},
+				Administrators: []string{administrator},
 			},
 			KymaConfig: fixKymaGraphQLConfigInput(&gqlProductionProfile),
 		}
@@ -195,7 +195,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			KymaConfig:     fixKymaConfig(&modelProductionProfile),
 			Tenant:         tenant,
 			SubAccountId:   util.StringPtr(subAccountId),
-			Administrators: []*string{util.StringPtr(administrator)},
+			Administrators: []string{administrator},
 		}
 	}
 
@@ -248,7 +248,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				},
 				OidcConfig: oidcInput(),
 			},
-			Administrators: []*string{util.StringPtr(administrator)},
+			Administrators: []string{administrator},
 		},
 		KymaConfig: fixKymaGraphQLConfigInput(&gqlEvaluationProfile),
 	}
@@ -287,7 +287,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		KymaConfig:     fixKymaConfig(&modelEvaluationProfile),
 		Tenant:         tenant,
 		SubAccountId:   util.StringPtr(subAccountId),
-		Administrators: []*string{util.StringPtr(administrator)},
+		Administrators: []string{administrator},
 	}
 
 	openstackGardenerProvider := &gqlschema.OpenStackProviderConfigInput{
@@ -324,7 +324,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				},
 				OidcConfig: oidcInput(),
 			},
-			Administrators: []*string{util.StringPtr(administrator)},
+			Administrators: []string{administrator},
 		},
 		KymaConfig: fixKymaGraphQLConfigInput(&gqlEvaluationProfile),
 	}
@@ -361,7 +361,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		KymaConfig:     fixKymaConfig(&modelEvaluationProfile),
 		Tenant:         tenant,
 		SubAccountId:   util.StringPtr(subAccountId),
-		Administrators: []*string{util.StringPtr(administrator)},
+		Administrators: []string{administrator},
 	}
 
 	gardenerZones := []string{"fix-az-zone-1", "fix-az-zone-2"}
@@ -560,7 +560,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		input := gqlschema.ProvisionRuntimeInput{
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: &gqlschema.GardenerConfigInput{},
-				Administrators: []*string{util.StringPtr(administrator)},
+				Administrators: []string{administrator},
 			},
 			KymaConfig: &gqlschema.KymaConfigInput{
 				Version: kymaVersion,
@@ -608,7 +608,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		input := gqlschema.ProvisionRuntimeInput{
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: nil,
-				Administrators: []*string{util.StringPtr(administrator)},
+				Administrators: []string{administrator},
 			},
 		}
 
@@ -636,7 +636,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		input := gqlschema.ProvisionRuntimeInput{
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: &gqlschema.GardenerConfigInput{},
-				Administrators: []*string{util.StringPtr(administrator)},
+				Administrators: []string{administrator},
 			},
 		}
 
@@ -897,6 +897,7 @@ func newUpgradeShootInputAwsAzureGCP(newPurpose string) gqlschema.UpgradeShootIn
 			ProviderSpecificConfig: nil,
 			OidcConfig:             upgradedOidcInput(),
 		},
+		Administrators: []string{"test@test.pl"},
 	}
 }
 

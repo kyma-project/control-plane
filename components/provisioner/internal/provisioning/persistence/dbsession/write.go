@@ -30,10 +30,27 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 		return dberrors.Internal("Failed to insert record to Cluster table: %s", err)
 	}
 
-	for _, admin := range cluster.Administrators {
+	dbErr := ws.InsertAdministrators(cluster.ID, cluster.Administrators)
+	if dbErr != nil {
+		return dbErr
+	}
+
+	return nil
+}
+
+func (ws writeSession) InsertAdministrators(clusterId string, administrators []string) dberrors.Error {
+	_, err := ws.deleteFrom("cluster_administrator").
+		Where(dbr.Eq("cluster_id", clusterId)).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to delete record to cluster_administrator table: %s", err)
+	}
+
+	for _, admin := range administrators {
 		_, err := ws.insertInto("cluster_administrator").
 			Pair("id", uuid.New().String()).
-			Pair("cluster_id", cluster.ID).
+			Pair("cluster_id", clusterId).
 			Pair("email", admin).Exec()
 
 		if err != nil {
