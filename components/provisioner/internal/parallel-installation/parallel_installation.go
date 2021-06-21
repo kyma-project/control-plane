@@ -82,7 +82,11 @@ func (p parallelInstallationService) getCallbackUpdate(runtimeID string) func(de
 
 	consumeEvent := func(event deployment.ProcessUpdate) {
 		p.mux.Lock()
-		p.installationStatus[runtimeID].ConsumeEvent(event)
+		if _, ok := p.installationStatus[runtimeID]; ok {
+			p.installationStatus[runtimeID].ConsumeEvent(event)
+		} else {
+			p.log.Warnf("status checker for runtime: %s not exist anymore", runtimeID)
+		}
 		p.mux.Unlock()
 	}
 

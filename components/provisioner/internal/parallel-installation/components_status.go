@@ -31,6 +31,7 @@ func (cs *ComponentsStatus) ConsumeEvent(event deployment.ProcessUpdate) {
 		event.Event == deployment.ProcessForceQuitFailure ||
 		event.Event == deployment.ProcessTimeoutFailure {
 		cs.installationFailed = fmt.Errorf("status: %s, error: %v", event.Event, event.Error)
+		return
 	}
 
 	// check if component installation process succeeded
