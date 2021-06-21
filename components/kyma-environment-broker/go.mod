@@ -21,7 +21,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b
-	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210527140555-2d0735d391e3
+	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210610092804-b73cef914bb9
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5
 	github.com/lib/pq v1.10.2
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
@@ -52,4 +52,5 @@ replace (
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.19.0
 	k8s.io/apimachinery => k8s.io/apimachinery v0.19.0
 	k8s.io/client-go => k8s.io/client-go v0.19.0
+
 )

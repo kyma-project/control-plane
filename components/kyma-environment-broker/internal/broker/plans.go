@@ -178,6 +178,7 @@ func FreemiumSchema(provider internal.CloudProvider) []byte {
 				Type: "string",
 				Enum: ToInterfaceSlice(regions),
 			},
+			//OIDC: NewOIDCSchema(),
 		}, []string{"name", "region"})
 
 	bytes, err := json.Marshal(schema)
@@ -218,6 +219,7 @@ func TrialSchema() []byte {
 	schema := NewSchema(
 		ProvisioningProperties{
 			Name: NameProperty(),
+			//OIDC: NewOIDCSchema(),
 		}, []string{"name"})
 
 	bytes, err := json.Marshal(schema)

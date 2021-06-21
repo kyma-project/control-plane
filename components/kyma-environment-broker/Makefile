@@ -38,7 +38,7 @@ go-mod-check-local:
 	go mod tidy
 	@if [ -n "$$(git status -s go.*)" ]; then \
 		echo -e "${RED}✗ go mod tidy modified go.mod or go.sum files${NC}"; \
-		git status -s git status -s go.*; \
+		git status -s go.*; \
 		exit 1; \
 	fi;
 
