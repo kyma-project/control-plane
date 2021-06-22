@@ -20,18 +20,37 @@ func TestAWSZones(t *testing.T) {
 }
 
 func TestMultipleZonesForAWSRegion(t *testing.T) {
-	// given
-	region := "us-east-1"
+	t.Run("for default zonesCount", func(t *testing.T) {
+		// given
+		region := "us-east-1"
 
-	// when
-	generatedZones := MultipleZonesForAWSRegion(region, DefaultAWSHAZonesCount)
+		// when
+		generatedZones := MultipleZonesForAWSRegion(region, DefaultAWSHAZonesCount)
 
-	// then
-	for _, zone := range generatedZones {
-		regionFromZone := zone[:len(zone)-1]
-		assert.Equal(t, region, regionFromZone)
-	}
-	assert.Equal(t, DefaultAWSHAZonesCount, len(generatedZones))
+		// then
+		for _, zone := range generatedZones {
+			regionFromZone := zone[:len(zone)-1]
+			assert.Equal(t, region, regionFromZone)
+		}
+		assert.Equal(t, DefaultAWSHAZonesCount, len(generatedZones))
+	})
+	t.Run("for zonesCount exceeding maximum zones for region", func(t *testing.T) {
+		// given
+		region := "us-east-1"
+		zonesCountExceedingMaximum := 20
+		maximumZonesForRegion := len(awsZones[region])
+		// "us-east-1" region has maximum 6 zones, user request 20
+
+		// when
+		generatedZones := MultipleZonesForAWSRegion(region, zonesCountExceedingMaximum)
+
+		// then
+		for _, zone := range generatedZones {
+			regionFromZone := zone[:len(zone)-1]
+			assert.Equal(t, region, regionFromZone)
+		}
+		assert.Equal(t, maximumZonesForRegion, len(generatedZones))
+	})
 }
 
 func TestAWSHAInput_ApplyParametersWithRegion(t *testing.T) {

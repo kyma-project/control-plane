@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
-	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
@@ -88,7 +87,7 @@ func ZoneForAWSRegion(region string) string {
 	if !found {
 		zones = "a"
 	}
-	rand.Seed(time.Now().UnixNano())
+
 	zone := string(zones[rand.Intn(len(zones))])
 	return fmt.Sprintf("%s%s", region, zone)
 }
@@ -99,10 +98,14 @@ func MultipleZonesForAWSRegion(region string, zonesCount int) []string {
 		zones = "a"
 		zonesCount = 1
 	}
-	rand.Seed(time.Now().UnixNano())
 
 	availableZones := strings.Split(zones, "")
 	rand.Shuffle(len(availableZones), func(i, j int) { availableZones[i], availableZones[j] = availableZones[j], availableZones[i] })
+	if zonesCount > len(availableZones) {
+		// get maximum number of zones for region
+		zonesCount = len(availableZones)
+	}
+
 	availableZones = availableZones[:zonesCount]
 
 	var generatedZones []string
