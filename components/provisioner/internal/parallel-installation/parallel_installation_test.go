@@ -44,7 +44,7 @@ func TestParallelInstallationService_TriggerInstallation(t *testing.T) {
 			return &fakeDeployer{ID: rID, cfg: cfg, callback: callback}
 		}
 
-		svc := NewParallelInstallationService(downloader, createDeployer, logrus.New())
+		svc := NewParallelInstallationService(downloader, createDeployer, 1*time.Minute, logrus.New())
 
 		// when
 		for rID, namespace := range map[string]string{runtimeIDOne: "test#1", runtimeIDTwo: "test#2"} {
@@ -75,7 +75,7 @@ func TestParallelInstallationService_TriggerInstallation(t *testing.T) {
 			return &fakeDeployer{ID: rID, cfg: cfg, callback: callback, shouldFail: true}
 		}
 
-		svc := NewParallelInstallationService(downloader, createDeployer, logrus.New())
+		svc := NewParallelInstallationService(downloader, createDeployer, 1*time.Minute, logrus.New())
 
 		// when
 		err := svc.TriggerInstallation(runtimeIDOne, "", &profile, kymaRelease, globalConfig(), componentsConfig("test"))

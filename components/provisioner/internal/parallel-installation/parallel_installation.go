@@ -60,15 +60,21 @@ type parallelInstallationService struct {
 	log                log.FieldLogger
 	installationStatus map[string]*ComponentsStatus
 	mux                *sync.Mutex
+
+	// timeout for provisioning/update process
+	// should be greater than or equal to timeout for
+	// "WaitingForInstallation" step
+	cancelTimeout time.Duration
 }
 
-func NewParallelInstallationService(pathFetcher PathFetcher, creator deployerCreator, log log.FieldLogger) provisionerInstallation.Service {
+func NewParallelInstallationService(pathFetcher PathFetcher, creator deployerCreator, timeout time.Duration, log log.FieldLogger) provisionerInstallation.Service {
 	return &parallelInstallationService{
 		log:                log,
 		pathFetcher:        pathFetcher,
 		createDeployer:     creator,
 		mux:                &sync.Mutex{},
 		installationStatus: make(map[string]*ComponentsStatus),
+		cancelTimeout:      timeout,
 	}
 }
 
@@ -177,8 +183,8 @@ func (p parallelInstallationService) TriggerInstallation(runtimeID, kubeconfigRa
 
 	installationCfg := &config.Config{
 		WorkersCount:                  4,
-		CancelTimeout:                 20 * time.Minute,
-		QuitTimeout:                   25 * time.Minute,
+		CancelTimeout:                 p.cancelTimeout,
+		QuitTimeout:                   p.cancelTimeout + 5*time.Minute,
 		HelmTimeoutSeconds:            60 * 8,
 		BackoffInitialIntervalSeconds: 3,
 		BackoffMaxElapsedTimeSeconds:  60 * 5,

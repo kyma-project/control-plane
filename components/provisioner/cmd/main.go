@@ -218,7 +218,11 @@ func main() {
 			Callback:  callback,
 		}
 	}
-	parallelInstallationService := parallelInstallation.NewParallelInstallationService(downloadManager, createDeployer, log.WithField("process", "installer"))
+	parallelInstallationService := parallelInstallation.NewParallelInstallationService(
+		downloadManager,
+		createDeployer,
+		cfg.ProvisioningTimeout.Installation,
+		log.WithField("process", "installer"))
 	installationClients := map[model.KymaInstaller]installation.Service{
 		model.KymaOperatorInstaller: installationService,
 		model.ParallelInstaller:     parallelInstallationService,
