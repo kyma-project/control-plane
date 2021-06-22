@@ -360,7 +360,6 @@ func (r *RuntimeInput) applyGlobalConfigurationForUpgradeRuntime() error {
 }
 
 func (r *RuntimeInput) adjustRuntimeName() error {
-	rand.Seed(time.Now().UnixNano())
 
 	reg, err := regexp.Compile("[^a-zA-Z0-9\\-\\.]+")
 	if err != nil {
