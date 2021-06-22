@@ -142,12 +142,22 @@ func AWSSchema(machineTypes []string) []byte {
 
 func AWSHASchema(machineTypes []string) []byte {
 	properties := NewProvisioningProperties(machineTypes, AWSRegions())
-	schema := NewSchema(properties, DefaultControlsOrder())
+	properties.ZonesCount = &Type{
+		Type:        "integer",
+		Minimum:     2,
+		Maximum:     3,
+		Default:     2,
+		Description: "Specifies the number of availability zones for HA cluster",
+	}
+	awsHaControlsOrder := DefaultControlsOrder()
+	awsHaControlsOrder = append(awsHaControlsOrder, "zonesCount")
+	schema := NewSchema(properties, awsHaControlsOrder)
 
 	properties.AutoScalerMin.Default = 4
 	properties.AutoScalerMin.Minimum = 4
 
 	properties.AutoScalerMax.Default = 10
+	properties.AutoScalerMax.Minimum = 4
 	properties.AutoScalerMax.Maximum = 10
 
 	bytes, err := json.Marshal(schema)
