@@ -128,7 +128,18 @@ func generateNameAndDescription(operation internal.ProvisioningOperation, beType
 }
 
 func providerCodeByPlan(operation internal.ProvisioningOperation) string {
-	return string(operation.InputCreator.Provider())
+	switch operation.InputCreator.Provider() {
+	case internal.AWS:
+		return "AWS"
+	case internal.GCP:
+		return "GCP"
+	case internal.Azure:
+		return "AZR"
+	case internal.Openstack:
+		return "CC"
+	default:
+		return "AZR"
+	}
 }
 
 func truncateString(input string, num int) string {
