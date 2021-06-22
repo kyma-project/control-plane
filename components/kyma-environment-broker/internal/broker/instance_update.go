@@ -56,8 +56,8 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	logger := b.log.WithField("instanceID", instanceID)
 	logger.Infof("Update instanceID: %s", instanceID)
 	logger.Infof("Update asyncAllowed: %v", asyncAllowed)
-
 	logger.Infof("Parameters: '%s'", string(details.RawParameters))
+
 
 	instance, err := b.instanceStorage.GetByID(instanceID)
 	if err != nil && dberr.IsNotFound(err) {
@@ -87,6 +87,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	for k, _ := range contextData {
 		logger.Info(k)
 	}
+	logger.Infof("OIDC: `%s`",)
 
 	operation, err := b.operationStorage.GetProvisioningOperationByInstanceID(instanceID)
 	if err != nil {

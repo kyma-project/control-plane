@@ -1,10 +1,10 @@
 package main
 
 import (
-	"code.cloudfoundry.org/lager"
+	"bytes"
 	"context"
 	"fmt"
-	"github.com/gorilla/mux"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -425,14 +425,17 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 }
 
 type ProvisioningSuite struct {
+	HttpSuite
+
 	provisionerClient   *provisioner.FakeClient
 	provisioningManager *provisioning.StagedManager
 	provisioningQueue   *process.Queue
 	storage             storage.BrokerStorage
 	directorClient      *director.FakeClient
 
-	t         *testing.T
-	avsServer *avs.MockAvsServer
+	t          *testing.T
+	avsServer  *avs.MockAvsServer
+
 }
 
 func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
@@ -514,10 +517,11 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
 
-	router := mux.NewRouter()
-	createAPI(router, inputFactory, cfg, db, provisioningQueue, nil, lager.NewLogger("api"), logs)
+	httpSuite := NewHttpSuite(t)
+	httpSuite.CreateAPI(inputFactory, cfg, db, provisioningQueue, nil, logs)
 
 	return &ProvisioningSuite{
+		HttpSuite: httpSuite,
 		provisionerClient:   provisionerClient,
 		provisioningManager: provisionManager,
 		provisioningQueue:   provisioningQueue,
@@ -527,6 +531,10 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 		t: t,
 	}
+}
+
+func (s *ProvisioningSuite) TearDown() {
+	s.httpServer.Close()
 }
 
 func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
@@ -806,6 +814,17 @@ func (s *ProvisioningSuite) MarkDirectorWithConsoleURL(operationID string) {
 	op, err := s.storage.Operations().GetProvisioningOperationByID(operationID)
 	assert.NoError(s.t, err)
 	s.directorClient.SetConsoleURL(op.RuntimeID, op.DashboardURL)
+}
+
+func (s *HttpSuite) CallAPI(method string, path string, body string) *http.Response {
+	cli := s.httpServer.Client()
+	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s", s.httpServer.URL, path), bytes.NewBuffer([]byte(body)))
+	req.Header.Set("X-Broker-API-Version",  "2.15")
+	require.NoError(s.t, err)
+
+	resp, err := cli.Do(req)
+	require.NoError(s.t, err)
+	return resp
 }
 
 func fixConfig() *Config {
