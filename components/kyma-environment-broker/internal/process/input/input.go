@@ -17,6 +17,8 @@ import (
 const (
 	trialSuffixLength    = 5
 	maxRuntimeNameLength = 36
+	oidcClientIDField    = "clientID"
+	oidcIssuerURLField   = "issuerURL"
 )
 
 type Config struct {
@@ -379,7 +381,10 @@ func (r *RuntimeInput) adjustRuntimeName() error {
 
 func (r *RuntimeInput) configureOIDC() error {
 	if r.provisioningParameters.Parameters.OIDC == nil {
-		// TODO: read and use default values
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.OidcConfig = &gqlschema.OIDCConfigInput{
+			ClientID:  r.oidcDefaultValues[oidcClientIDField],
+			IssuerURL: r.oidcDefaultValues[oidcIssuerURLField],
+		}
 		return nil
 	}
 	params := r.provisioningParameters.Parameters.OIDC

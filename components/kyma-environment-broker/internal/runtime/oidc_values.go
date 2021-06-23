@@ -9,7 +9,7 @@ import (
 
 type OIDCInputProvider struct {
 	oidcDefaultValuesYAMLPath string
-	values map[string]string
+	values                    map[string]string
 }
 
 func NewOIDCInputProvider(oidcDefaultValuesYAMLPath string) *OIDCInputProvider {
