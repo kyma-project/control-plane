@@ -448,7 +448,7 @@ func Test_ClusterConfigToGraphQL(t *testing.T) {
 		{
 			name: "Cluster config with administrators",
 			givenInput: gqlschema.ClusterConfigInput{
-				Administrators: []*string{strPrt("test@test.pl")},
+				Administrators: []string{"test@test.pl"},
 			},
 			expected: `{
 		administrators: ["test@test.pl"],

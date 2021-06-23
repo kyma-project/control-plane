@@ -92,7 +92,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				},
 				Seed: nil,
 			},
-			Administrators: []*string{&administrator},
+			Administrators: []string{administrator},
 		},
 		KymaConfig: &gqlschema.KymaConfigInput{
 			Version: kymaVersion,
