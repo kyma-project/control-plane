@@ -70,3 +70,7 @@ services:
         description: "AWS"
         metadata:
           displayName: "AWS"
+      aws_ha:
+        description: "AWS HA"
+        metadata:
+          displayName: "AWS HA"

@@ -145,6 +145,22 @@ func (_m *WriteSessionWithinTransaction) InsertOperation(operation model.Operati
 	return r0
 }
 
+// InsertRelease provides a mock function with given fields: artifacts
+func (_m *WriteSessionWithinTransaction) InsertRelease(artifacts model.Release) dberrors.Error {
+	ret := _m.Called(artifacts)
+
+	var r0 dberrors.Error
+	if rf, ok := ret.Get(0).(func(model.Release) dberrors.Error); ok {
+		r0 = rf(artifacts)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(dberrors.Error)
+		}
+	}
+
+	return r0
+}
+
 // InsertRuntimeUpgrade provides a mock function with given fields: runtimeUpgrade
 func (_m *WriteSessionWithinTransaction) InsertRuntimeUpgrade(runtimeUpgrade model.RuntimeUpgrade) dberrors.Error {
 	ret := _m.Called(runtimeUpgrade)
@@ -253,6 +269,22 @@ func (_m *WriteSessionWithinTransaction) UpdateOperationState(operationID string
 	var r0 dberrors.Error
 	if rf, ok := ret.Get(0).(func(string, string, model.OperationState, time.Time) dberrors.Error); ok {
 		r0 = rf(operationID, message, state, endTime)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(dberrors.Error)
+		}
+	}
+
+	return r0
+}
+
+// UpdateProviderSpecificConfig provides a mock function with given fields: id, providerSpecificConfig
+func (_m *WriteSessionWithinTransaction) UpdateProviderSpecificConfig(id string, providerSpecificConfig string) dberrors.Error {
+	ret := _m.Called(id, providerSpecificConfig)
+
+	var r0 dberrors.Error
+	if rf, ok := ret.Get(0).(func(string, string) dberrors.Error); ok {
+		r0 = rf(id, providerSpecificConfig)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dberrors.Error)

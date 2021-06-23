@@ -17,6 +17,34 @@ type writeSession struct {
 	transaction *dbr.Tx
 }
 
+//TODO: Remove after schema migration
+func (ws writeSession) UpdateProviderSpecificConfig(id string, providerSpecificConfig string) dberrors.Error {
+	res, err := ws.update("gardener_config").
+		Where(dbr.Eq("id", id)).
+		Set("provider_specific_config", providerSpecificConfig).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update provider_specific_config for gardener shoot cluster '%s': %s", id, err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update provider_specific_config for gardener shoot cluster '%s' state: %s", id, err))
+}
+
+//TODO: Remove after schema migration
+func (ws writeSession) InsertRelease(artifacts model.Release) dberrors.Error {
+	_, err := ws.insertInto("kyma_release").
+		Columns("id", "version", "tiller_yaml", "installer_yaml").
+		Record(artifacts).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to insert record to Release table: %s", err)
+	}
+
+	return nil
+}
+
 func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	_, err := ws.insertInto("cluster").
 		Pair("id", cluster.ID).

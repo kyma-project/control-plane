@@ -4,6 +4,7 @@ package mocks
 
 import (
 	dberrors "github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
+	dbsession "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -141,6 +142,31 @@ func (_m *ReadWriteSession) GetOperation(operationID string) (model.Operation, d
 	return r0, r1
 }
 
+// GetProviderSpecificConfigsByProvider provides a mock function with given fields: provider
+func (_m *ReadWriteSession) GetProviderSpecificConfigsByProvider(provider string) ([]dbsession.ProviderData, dberrors.Error) {
+	ret := _m.Called(provider)
+
+	var r0 []dbsession.ProviderData
+	if rf, ok := ret.Get(0).(func(string) []dbsession.ProviderData); ok {
+		r0 = rf(provider)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]dbsession.ProviderData)
+		}
+	}
+
+	var r1 dberrors.Error
+	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+		r1 = rf(provider)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(dberrors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
 // GetRuntimeUpgrade provides a mock function with given fields: operationId
 func (_m *ReadWriteSession) GetRuntimeUpgrade(operationId string) (model.RuntimeUpgrade, dberrors.Error) {
 	ret := _m.Called(operationId)
@@ -201,6 +227,29 @@ func (_m *ReadWriteSession) GetTenantForOperation(operationID string) (string, d
 	var r1 dberrors.Error
 	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
 		r1 = rf(operationID)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(dberrors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
+// GetUpdatedProviderSpecificConfigByID provides a mock function with given fields: id
+func (_m *ReadWriteSession) GetUpdatedProviderSpecificConfigByID(id string) (string, dberrors.Error) {
+	ret := _m.Called(id)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(id)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 dberrors.Error
+	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+		r1 = rf(id)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(dberrors.Error)
@@ -304,6 +353,22 @@ func (_m *ReadWriteSession) InsertOperation(operation model.Operation) dberrors.
 	var r0 dberrors.Error
 	if rf, ok := ret.Get(0).(func(model.Operation) dberrors.Error); ok {
 		r0 = rf(operation)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(dberrors.Error)
+		}
+	}
+
+	return r0
+}
+
+// InsertRelease provides a mock function with given fields: artifacts
+func (_m *ReadWriteSession) InsertRelease(artifacts model.Release) dberrors.Error {
+	ret := _m.Called(artifacts)
+
+	var r0 dberrors.Error
+	if rf, ok := ret.Get(0).(func(model.Release) dberrors.Error); ok {
+		r0 = rf(artifacts)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dberrors.Error)
@@ -441,6 +506,22 @@ func (_m *ReadWriteSession) UpdateOperationState(operationID string, message str
 	var r0 dberrors.Error
 	if rf, ok := ret.Get(0).(func(string, string, model.OperationState, time.Time) dberrors.Error); ok {
 		r0 = rf(operationID, message, state, endTime)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(dberrors.Error)
+		}
+	}
+
+	return r0
+}
+
+// UpdateProviderSpecificConfig provides a mock function with given fields: id, providerSpecificConfig
+func (_m *ReadWriteSession) UpdateProviderSpecificConfig(id string, providerSpecificConfig string) dberrors.Error {
+	ret := _m.Called(id, providerSpecificConfig)
+
+	var r0 dberrors.Error
+	if rf, ok := ret.Get(0).(func(string, string) dberrors.Error); ok {
+		r0 = rf(id, providerSpecificConfig)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dberrors.Error)
