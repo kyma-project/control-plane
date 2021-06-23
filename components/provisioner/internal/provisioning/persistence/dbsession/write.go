@@ -51,7 +51,7 @@ func (ws writeSession) InsertAdministrators(clusterId string, administrators []s
 		_, err := ws.insertInto("cluster_administrator").
 			Pair("id", uuid.New().String()).
 			Pair("cluster_id", clusterId).
-			Pair("email", admin).Exec()
+			Pair("user_id", admin).Exec()
 
 		if err != nil {
 			return dberrors.Internal("Failed to insert record to cluster_administrator table: %s", err)
