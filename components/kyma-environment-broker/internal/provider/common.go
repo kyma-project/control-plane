@@ -3,7 +3,6 @@ package provider
 import (
 	"math/rand"
 	"strconv"
-	"time"
 )
 
 func updateString(toUpdate *string, value *string) {
@@ -23,8 +22,6 @@ func generateDefaultAzureZones() []string {
 }
 
 func generateRandomAzureZone() string {
-	rand.Seed(time.Now().UnixNano())
-
 	const (
 		min = 1
 		max = 3
@@ -40,7 +37,7 @@ func generateRandomAzureZone() string {
 
 func generateMultipleAzureZones(zoneCount int) []string {
 	zones := []string{"1", "2", "3"}
-	rand.Seed(time.Now().UnixNano())
+
 	rand.Shuffle(len(zones), func(i, j int) { zones[i], zones[j] = zones[j], zones[i] })
 	return zones[:zoneCount]
 }

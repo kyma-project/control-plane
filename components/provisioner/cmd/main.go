@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	migrator "github.com/kyma-project/control-plane/components/provisioner/internal/provider-config-migrator"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/metrics"
@@ -52,6 +54,9 @@ import (
 
 const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
 
+//TODO: Remove after data migration
+const migrationErrThreshold = 10
+
 type config struct {
 	Address                      string `envconfig:"default=127.0.0.1:3000"`
 	APIEndpoint                  string `envconfig:"default=/graphql"`
@@ -96,6 +101,9 @@ type config struct {
 	MetricsAddress string `envconfig:"default=127.0.0.1:9000"`
 
 	LogLevel string `envconfig:"default=info"`
+
+	//TODO: Remove after data migration
+	RunAwsConfigMigration bool `envconfig:"default=false"`
 }
 
 func (c *config) String() string {
@@ -112,7 +120,8 @@ func (c *config) String() string {
 		"ForceAllowPrivilegedContainers: %t, "+
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
-		"LogLevel: %s",
+		"LogLevel: %s"+
+		"RunAwsConfigMigration: %v",
 		c.Address, c.APIEndpoint, c.DirectorURL,
 		c.SkipDirectorCertVerification, c.OauthCredentialsNamespace, c.OauthCredentialsSecretName,
 		c.Database.User, c.Database.Host, c.Database.Port,
@@ -126,7 +135,7 @@ func (c *config) String() string {
 		c.Gardener.ForceAllowPrivilegedContainers,
 		c.LatestDownloadedReleases, c.DownloadPreReleases,
 		c.EnqueueInProgressOperations,
-		c.LogLevel)
+		c.LogLevel, c.RunAwsConfigMigration)
 }
 
 func main() {
@@ -152,6 +161,23 @@ func main() {
 	connString := fmt.Sprintf(connStringFormat, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
 		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode)
 
+	connection, err := database.InitializeDatabaseConnection(connString, databaseConnectionRetries)
+	exitOnError(err, "Failed to initialize persistence")
+
+	dbsFactory := dbsession.NewFactory(connection)
+
+	//TODO: Remove after data migration
+	if cfg.RunAwsConfigMigration {
+		log.Infof("Starting AWS Config Migration")
+
+		providerMigration := migrator.NewProviderConfigMigrator(dbsFactory, migrationErrThreshold)
+		err = providerMigration.Do()
+
+		exitOnError(err, "Failed to perform AWS config migration")
+
+		log.Infof("AWS Config Migration finished!")
+	}
+
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 
 	gardenerClusterConfig, err := newGardenerClusterConfig(cfg)
@@ -167,14 +193,10 @@ func main() {
 
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
-	connection, err := database.InitializeDatabaseConnection(connString, databaseConnectionRetries)
-	exitOnError(err, "Failed to initialize persistence")
-
 	installationHandlerConstructor := func(c *rest.Config, o ...installationSDK.InstallationOption) (installationSDK.Installer, error) {
 		return installationSDK.NewKymaInstaller(c, o...)
 	}
 
-	dbsFactory := dbsession.NewFactory(connection)
 	installationService := installation.NewInstallationService(cfg.ProvisioningTimeout.Installation, installationHandlerConstructor, cfg.Gardener.ClusterCleanupResourceSelector)
 
 	directorClient, err := newDirectorClient(cfg)
