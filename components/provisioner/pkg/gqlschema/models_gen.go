@@ -261,6 +261,7 @@ type UpgradeRuntimeInput struct {
 
 type UpgradeShootInput struct {
 	GardenerConfig *GardenerUpgradeInput `json:"gardenerConfig"`
+	Administrators []string              `json:"administrators"`
 }
 
 type ConflictStrategy string

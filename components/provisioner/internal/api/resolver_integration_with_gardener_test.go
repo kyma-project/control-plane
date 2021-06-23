@@ -176,7 +176,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
 
-	shootUpgradeQueue := queue.CreateShootUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface)
+	shootUpgradeQueue := queue.CreateShootUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface, testOperatorRoleBinding(), mockK8sClientProvider)
 	shootUpgradeQueue.Run(queueCtx.Done())
 
 	shootHibernationQueue := queue.CreateHibernationQueue(testHibernationTimeouts(), dbsFactory, directorServiceMock, shootInterface)

@@ -147,6 +147,10 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 			name:    "set number of nodes from configuration",
 			execute: r.setNodesForTrialProvision,
 		},
+		{
+			name:    "configure OIDC",
+			execute: r.configureOIDC,
+		},
 	} {
 		if err := step.execute(); err != nil {
 			return gqlschema.ProvisionRuntimeInput{}, errors.Wrapf(err, "while %s", step.name)
@@ -370,6 +374,23 @@ func (r *RuntimeInput) adjustRuntimeName() error {
 	}
 
 	r.provisionRuntimeInput.RuntimeInput.Name = fmt.Sprintf("%s-%s", name, randomString(trialSuffixLength))
+	return nil
+}
+
+func (r *RuntimeInput) configureOIDC() error {
+	if r.provisioningParameters.Parameters.OIDC == nil {
+		// TODO: read and use default values
+		return nil
+	}
+	params := r.provisioningParameters.Parameters.OIDC
+	r.provisionRuntimeInput.ClusterConfig.GardenerConfig.OidcConfig = &gqlschema.OIDCConfigInput{
+		ClientID:       params.ClientID,
+		GroupsClaim:    params.GroupsClaim,
+		IssuerURL:      params.IssuerURL,
+		SigningAlgs:    params.SigningAlgs,
+		UsernameClaim:  params.UsernameClaim,
+		UsernamePrefix: params.UsernamePrefix,
+	}
 	return nil
 }
 
