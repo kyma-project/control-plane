@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
@@ -21,12 +22,20 @@ const (
 	kebRuntimeResponseFilePath      = "../testing/fixtures/runtimes_response.json"
 	kebRuntimePage1ResponseFilePath = "../testing/fixtures/runtimes_response_page1.json"
 	kebRuntimePage2ResponseFilePath = "../testing/fixtures/runtimes_response_page2.json"
+
+	//Metrics related variables
+	metricsName   = "kmc_keb_request_total"
+	histogramName = "kmc_keb_request_duration_seconds"
 )
 
 func TestGetAllRuntimes(t *testing.T) {
 
 	t.Run("when 2 pages are returned for all runtimes on matching path and HTTP 404 for non matched ones", func(t *testing.T) {
 		g := gomega.NewGomegaWithT(t)
+		expectedMetricsCount := 1
+		expectedMetricsCountAfter404 := 2
+		var expectedMetricsValueOf200Label float64 = 2
+		var expectedMetricsValueOf404Label float64 = 1
 
 		runtimesResponse, err := kmctesting.LoadFixtureFromFile(kebRuntimeResponseFilePath)
 		g.Expect(err).Should(gomega.BeNil())
@@ -104,6 +113,17 @@ func TestGetAllRuntimes(t *testing.T) {
 		g.Expect(gotRuntimes.TotalCount).To(gomega.Equal(expectedRuntimes.TotalCount))
 		g.Expect(len(gotRuntimes.Data)).To(gomega.Equal(4))
 
+		// Ensure metric exists
+		count := testutil.CollectAndCount(totalRequest, metricsName)
+		g.Expect(count).Should(gomega.Equal(expectedMetricsCount))
+		histogramCount := testutil.CollectAndCount(sentRequestDuration, histogramName)
+		g.Expect(histogramCount).Should(gomega.Equal(1))
+		// Ensure metric has expected value
+		counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusOK))
+		g.Expect(err).Should(gomega.BeNil())
+		value := testutil.ToFloat64(counter)
+		g.Expect(value).Should(gomega.Equal(expectedMetricsValueOf200Label))
+
 		// Testing http 404 for non existent path
 		config.URL = fmt.Sprintf("%s/nopaging", kebClient.Config.URL)
 		req, err = kebClient.NewRequest()
@@ -111,10 +131,24 @@ func TestGetAllRuntimes(t *testing.T) {
 		_, err = kebClient.GetAllRuntimes(req)
 		g.Expect(err).ShouldNot(gomega.BeNil())
 		g.Expect(err.Error()).To(gomega.Equal("failed to get runtimes from KEB: KEB returned status code: 404"))
+
+		// Ensure metric exists
+		count = testutil.CollectAndCount(totalRequest, metricsName)
+		g.Expect(count).Should(gomega.Equal(expectedMetricsCountAfter404))
+		histogramCount = testutil.CollectAndCount(sentRequestDuration, histogramName)
+		g.Expect(histogramCount).Should(gomega.Equal(1))
+		// Ensure metric has expected value
+		counter, err = totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusNotFound))
+		g.Expect(err).Should(gomega.BeNil())
+		value = testutil.ToFloat64(counter)
+		g.Expect(value).Should(gomega.Equal(expectedMetricsValueOf404Label))
+
 	})
 
 	t.Run("when all runtimes are returned in 1 page", func(t *testing.T) {
 		g := gomega.NewGomegaWithT(t)
+		expectedMetricsCount := 2
+		var expectedMetricsValueOf200Label float64 = 3
 
 		runtimesResponse, err := kmctesting.LoadFixtureFromFile(kebRuntimeResponseFilePath)
 		g.Expect(err).Should(gomega.BeNil())
@@ -167,5 +201,16 @@ func TestGetAllRuntimes(t *testing.T) {
 		g.Expect(*gotRuntimes).To(gomega.Equal(*expectedRuntimes))
 		g.Expect(gotRuntimes.TotalCount).To(gomega.Equal(expectedRuntimes.TotalCount))
 		g.Expect(len(gotRuntimes.Data)).To(gomega.Equal(4))
+
+		// Ensure metric exists
+		count := testutil.CollectAndCount(totalRequest, metricsName)
+		g.Expect(count).Should(gomega.Equal(expectedMetricsCount))
+		histogramCount := testutil.CollectAndCount(sentRequestDuration, histogramName)
+		g.Expect(histogramCount).Should(gomega.Equal(1))
+		// Ensure metric has expected value
+		counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusOK))
+		g.Expect(err).Should(gomega.BeNil())
+		value := testutil.ToFloat64(counter)
+		g.Expect(value).Should(gomega.Equal(expectedMetricsValueOf200Label))
 	})
 }

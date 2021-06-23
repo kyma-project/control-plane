@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/sirupsen/logrus"
 
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
-
 	"github.com/onsi/gomega"
 )
 
@@ -22,11 +22,18 @@ const (
 	testDataStreamVersion = "v1"
 	testToken             = "token"
 	testEnv               = "env"
+
+	//Metrics related variable
+	metricsName   = "kmc_edp_request_total"
+	histogramName = "kmc_edp_request_duration_seconds"
 )
 
 func TestClient(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	dataTenant := "testTenant"
+	expectedRequestMetricCount := 1
+	expectedDurationMetricCount := 1
+	var expectedMetricsValue float64 = 1
 	expectedPath := fmt.Sprintf("/namespaces/%s/dataStreams/%s/%s/dataTenants/%s/%s/events", testNamespace, testDataStreamName, testDataStreamVersion, testTenant, testEnv)
 	expectedHeaders := http.Header{
 		"Authorization":   []string{fmt.Sprintf("Bearer %s", testToken)},
@@ -59,11 +66,24 @@ func TestClient(t *testing.T) {
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(resp.StatusCode).Should(gomega.Equal(http.StatusCreated))
 
+	// Ensure metrics exists
+	count := testutil.CollectAndCount(totalRequest, metricsName)
+	g.Expect(count).Should(gomega.Equal(expectedRequestMetricCount))
+	histogramCount := testutil.CollectAndCount(sentRequestDuration, histogramName)
+	g.Expect(histogramCount).Should(gomega.Equal(expectedDurationMetricCount))
+	// Ensure metric has expected value
+	counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusCreated))
+	g.Expect(err).Should(gomega.BeNil())
+	value := testutil.ToFloat64(counter)
+	g.Expect(value).Should(gomega.Equal(expectedMetricsValue))
 }
 
 func TestClientRetry(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	dataTenant := "testTenant"
+	expectedRequestMetricCount := 2
+	expectedDurationMetricCount := 1
+	var expectedMetricsValue float64 = 1
 	expectedPath := fmt.Sprintf("/namespaces/%s/dataStreams/%s/%s/dataTenants/%s/%s/events", testNamespace, testDataStreamName, testDataStreamVersion, testTenant, testEnv)
 
 	countRetry := 0
@@ -94,6 +114,22 @@ func TestClientRetry(t *testing.T) {
 	g.Expect(err).ShouldNot(gomega.BeNil())
 	g.Expect(err.Error()).Should(gomega.Equal("failed to POST event to EDP: failed to send event stream as EDP returned HTTP: 500"))
 	g.Expect(countRetry).Should(gomega.Equal(expectedCountRetry))
+
+	// Ensure metric exists
+	requestMetricCount := testutil.CollectAndCount(totalRequest, metricsName)
+	g.Expect(requestMetricCount).Should(gomega.Equal(expectedRequestMetricCount))
+	durationMetricCount := testutil.CollectAndCount(sentRequestDuration, histogramName)
+	g.Expect(durationMetricCount).Should(gomega.Equal(expectedDurationMetricCount))
+	// Ensure metric has expected value
+	status500Counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusInternalServerError))
+	g.Expect(err).Should(gomega.BeNil())
+	value := testutil.ToFloat64(status500Counter)
+	g.Expect(value).Should(gomega.Equal(expectedMetricsValue))
+
+	status201Counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusCreated))
+	g.Expect(err).Should(gomega.BeNil())
+	value = testutil.ToFloat64(status201Counter)
+	g.Expect(value).Should(gomega.Equal(expectedMetricsValue))
 }
 
 func NewTestConfig(url string) *Config {

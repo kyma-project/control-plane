@@ -176,6 +176,7 @@ func (p *Process) pollKEBForRuntimes() {
 	kebReq, err := p.KEBClient.NewRequest()
 
 	if err != nil {
+		kebErrorCount.WithLabelValues("failed_create_request").Inc()
 		p.Logger.Fatalf("failed to create a new request for KEB: %v", err)
 	}
 	for {
@@ -186,7 +187,6 @@ func (p *Process) pollKEBForRuntimes() {
 			time.Sleep(p.KEBClient.Config.PollWaitDuration)
 			continue
 		}
-		kebErrorCount.Reset()
 		clustersScraped.WithLabelValues(kebReq.RequestURI).Set(float64(runtimesPage.Count))
 
 		p.Logger.Debugf("num of runtimes are: %d", runtimesPage.Count)
@@ -273,7 +273,6 @@ func (p *Process) execute(identifier int) {
 			// Nothing to do further hence continue
 			continue
 		}
-		edpErrorCount.Reset()
 		p.Logger.Infof("[worker: %d] successfully sent event stream for subaccountID: %s, shoot: %s", identifier, subAccountID, record.ShootName)
 
 		if !isOldMetricValid {
@@ -299,8 +298,6 @@ func (p Process) getRecordWithOldOrNewMetric(identifier int, subAccountID string
 		}
 		return oldRecord, true, nil
 	}
-	gardenerErrorCount.Reset()
-	skrErrorCount.Reset()
 	return &record, false, nil
 }
 
@@ -362,7 +359,6 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 					p.Logger.Errorf("failed to add subAccountID: %v to cache hence skipping queueing it", err)
 					continue
 				}
-				cacheErrorCount.Reset()
 				p.Queue.Add(runtime.SubAccountID)
 				p.Logger.Debugf("Queued and added to cache: %v", runtime.SubAccountID)
 				continue
