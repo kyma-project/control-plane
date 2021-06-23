@@ -9,10 +9,10 @@ global:
       version: "PR-769"
     provisioner:
       dir:
-      version: "PR-769"
+      version: "PR-799"
     kyma_environment_broker:
       dir:
-      version: "PR-556"
+      version: "PR-806"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-723"

@@ -110,6 +110,16 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 			{{- end}}
         }
 		{{- end}}
+        {{- if .OidcConfig }}
+        oidcConfig: {
+            clientID: "{{ .OidcConfig.ClientID }}",
+            issuerURL: "{{ .OidcConfig.IssuerURL }}",
+            groupsClaim: "{{ .OidcConfig.GroupsClaim }}",
+            signingAlgs: {{ marshal .OidcConfig.SigningAlgs }},
+            usernameClaim: "{{ .OidcConfig.UsernameClaim }}",
+            usernamePrefix: "{{ .OidcConfig.UsernamePrefix }}",
+        }
+        {{- end }}
 	}`)
 }
 

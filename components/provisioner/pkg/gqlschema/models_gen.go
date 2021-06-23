@@ -42,7 +42,7 @@ type AzureProviderConfigInput struct {
 
 type ClusterConfigInput struct {
 	GardenerConfig *GardenerConfigInput `json:"gardenerConfig"`
-	Administrators []*string            `json:"administrators"`
+	Administrators []string             `json:"administrators"`
 }
 
 type ComponentConfiguration struct {
@@ -261,7 +261,7 @@ type UpgradeRuntimeInput struct {
 
 type UpgradeShootInput struct {
 	GardenerConfig *GardenerUpgradeInput `json:"gardenerConfig"`
-	Administrators []*string             `json:"administrators"`
+	Administrators []string              `json:"administrators"`
 }
 
 type ConflictStrategy string

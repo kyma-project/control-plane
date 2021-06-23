@@ -84,6 +84,22 @@ spec:
           host: {{ .Values.global.oathkeeper.host }}
           port:
             number: {{ .Values.global.oathkeeper.port }}
+  # kubeconfig endpoint exposed without authorization
+  - corsPolicy:
+      allowHeaders:
+        - Authorization
+        - Content-Type
+      allowMethods: ["GET"]
+      allowOrigins:
+      - regex: ".*"
+    match:
+      - uri:
+          regex: /kubeconfig/.*
+    route:
+      - destination:
+          host: {{ include "kyma-env-broker.fullname" . }}
+          port:
+            number: 80
   {{- if .Values.swagger.virtualService.enabled }}
   # swagger exposed without authorization on root endpoint also needs access to static resources placed under /swagger folder
   - corsPolicy:

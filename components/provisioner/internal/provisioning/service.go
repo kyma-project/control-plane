@@ -445,7 +445,7 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 	return operation, nil
 }
 
-func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig, administrators []*string) (model.Operation, error) {
+func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig, administrators []string) (model.Operation, error) {
 	log.Infof("Starting Upgrade of Gardener Shoot operation")
 
 	dberr := txSession.UpdateGardenerClusterConfig(gardenerConfig)

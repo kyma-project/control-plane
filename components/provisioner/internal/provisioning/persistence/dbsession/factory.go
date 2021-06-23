@@ -34,7 +34,7 @@ type WriteSession interface {
 	InsertCluster(cluster model.Cluster) dberrors.Error
 	InsertGardenerConfig(config model.GardenerConfig) dberrors.Error
 	UpdateGardenerClusterConfig(config model.GardenerConfig) dberrors.Error
-	InsertAdministrators(clusterId string, administrators []*string) dberrors.Error
+	InsertAdministrators(clusterId string, administrators []string) dberrors.Error
 	InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error
 	InsertOperation(operation model.Operation) dberrors.Error
 	UpdateOperationState(operationID string, message string, state model.OperationState, endTime time.Time) dberrors.Error
