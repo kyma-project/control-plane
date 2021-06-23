@@ -32,9 +32,27 @@ These are the provisioning parameters that you can configure:
 | Parameter name | Type | Description | Required | Default value |
 |----------------|-------|-------------|:----------:|---------------|
 | **name** | string | Specifies the name of the cluster. | Yes | None |
-| **nodeCount** | int | Specifies the number of Nodes in a cluster. | No | `3` |
 | **components** | array | Defines optional components that are installed in a Kyma Runtime. The possible values are `kiali` and `tracing`. | No | [] |
 | **kymaVersion** | string | Provides a Kyma version on demand. | No | None |
+| **overridesVersion** | string | Provides overrides version for a specific Kyma version. | No | None |
+| **purpose** | string | Provides purpose for a SKR. | No | None |
+| **targetSecret** | string | Provides the Secret's name containing hyperscaler credentials for a SKR. | No | None |
+| **platform_region** | string | Defines the Platform region send in the request path. | No | None |
+| **platform_provider** | string | Defines the Platform provider for a SKR. | No | None |
+| **context.tenant_id** | string | Provides a Tenant ID for a SKR. | No | None |
+| **context.subaccount_id** | string | Provides a Subaccount ID for a SKR. | No | None |
+| **context.globalaccount_id** | string | Provides a Global Account ID for a SKR. | No | None |
+| **context.tenant_id** | string | Provides a Tenant ID for a SKR. | No | None |
+| **context.sm_platform_credentials.credentials.basic.username** | string | Provides the Service Manager username for a SKR. | No | None |
+| **context.sm_platform_credentials.credentials.basic.password** | string | Provides the Service Manager password for a SKR. | No | None |
+| **context.sm_platform_credentials.url** | string | Provides the Service Manager URL for a SKR. | No | None |
+| **context.user_id** | string | Provides a User ID for a SKR. | No | None |
+| **oidc.clientID** | string | Provides a OIDC Client ID for a SKR. | No | None |
+| **oidc.groupsClaim** | string | Provides a OIDC Groups Claim for a SKR. | No | `groups` |
+| **oidc.issuerURL** | string | Provides a OIDC issuer URL for a SKR. | No | None |
+| **oidc.signingAlgs** | string | Provides the OIDC signing algorithms for a SKR. | No | `RS256` |
+| **oidc.usernameClaim** | string | Provides a OIDC username claim for a SKR. | No | `email` |
+| **oidc.usernamePrefix** | string | Provides a OIDC username prefix for a SKR. | No | None |
 
 ### Provider-specific parameters
 
@@ -52,11 +70,10 @@ These are the provisioning parameters for Azure that you can configure:
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
 | **region** | string | Defines the cluster region. | No | `westeurope` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
-| **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
+| **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `2` |
 | **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `10` |
 | **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
 | **maxUnavailable** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
-| **providerSpecificConfig.AzureConfig.VnetCidr** | string | Provides configuration variables specific for Azure. | No | `10.250.0.0/19` |
 
   </details>
   <details>
@@ -74,6 +91,25 @@ These are the provisioning parameters for Azure that you can configure:
 | **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `4` |
 | **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
 | **maxUnavailable** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
+
+ </details>
+
+  <details>
+  <summary label="azure-lite-plan">
+  Azure HA
+  </summary>
+
+| Parameter name | Type | Description | Required | Default value |
+| ---------------|-------|-------------|:----------:|---------------|
+| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D4_v3` |
+| **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
+| **region** | string | Defines the cluster region. | No | `westeurope` |
+| **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
+| **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
+| **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `4` |
+| **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
+| **maxUnavailable** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
+| **zonesCount** | int | Specifies the number of availability zones for a SKR. | No | `2` |
 
  </details>
  </div>
@@ -104,15 +140,16 @@ These are the provisioning parameters for AWS that you can configure:
 
 | Parameter name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
-| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D4_v3` |
+| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `m5d.xlarge` |
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
 | **region** | string | Defines the cluster region. | No | `westeurope` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
-| **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
-| **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `4` |
+| **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `4` |
+| **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `10` |
 | **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
 | **maxUnavailable** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
-| **providerSpecificConfig.AzureConfig.VnetCidr** | string | Provides configuration variables specific for Azure. | No | `10.250.0.0/19` |
+| **zonesCount** | int | Specifies the number of availability zones for a SKR. | No | `2` |
+
 
  </details>
  </div>
@@ -136,6 +173,28 @@ These are the provisioning parameters for GCP that you can configure:
 | **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
 | **maxUnavailable** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
  
+ </details>
+ </div>
+
+These are the provisioning parameters for Openstack that you can configure:
+
+<div tabs name="openstack-plans" group="openstack-plans">
+  <details>
+  <summary label="openstack-plan">
+  Openstack
+  </summary>
+
+| Parameter name | Type | Description | Required | Default value |
+| ---------------|-------|-------------|:----------:|---------------|
+| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `m2.xlarge` |
+| **volumeSizeGb** | int | Specifies the size of the root volume. | No | `30` |
+| **region** | string | Defines the cluster region. | No | `europe-west4` |
+| **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["a"]` |
+| **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `2` |
+| **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `10` |
+| **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
+| **maxUnavailable** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
+
  </details>
  </div>
 
@@ -165,7 +224,8 @@ These are the provisioning parameters for the Trial plan that you can configure:
 | **name** | string | Specifies the name of the Kyma Runtime. | Yes | Any string| None |  
 | **region** | string | Defines the cluster region. | No | `europe`,`us`, `asia` | Calculated from the platform region |  
 | **provider** | string | Specifies the cloud provider used during provisioning. | No | `Azure`, `AWS`, `GCP` | `Azure` |
- 
+| **context.active** | string | Specifies if the SKR should be suspended or unsuspended. | `true`, `false` | None | 
+
 The **region** parameter is optional. If not specified, the region is calculated from platform region specified in this path:
 ```shell
 /oauth/{platform-region}/v2/service_instances/{instance_id}
