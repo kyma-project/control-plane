@@ -29,7 +29,6 @@ const (
 type OperationStage string
 
 const (
-	DownloadingArtifacts         OperationStage = "WaitForArtifacts"
 	WaitingForClusterDomain      OperationStage = "WaitingForClusterDomain"
 	WaitingForClusterCreation    OperationStage = "WaitingForClusterCreation"
 	CreatingBindingsForOperators OperationStage = "CreatingBindingsForOperators"

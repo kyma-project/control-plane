@@ -5,7 +5,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	"github.com/google/uuid"
 	"github.com/otiai10/copy"
@@ -26,6 +28,11 @@ type Manager struct {
 	componentsDownloader *Components
 }
 
+type Component struct {
+	Name      string
+	SourceURL *string
+}
+
 func NewManager(mutex sync.Locker, cfg Config) *Manager {
 	return &Manager{
 		mutex:                mutex,
@@ -39,7 +46,7 @@ func NewManager(mutex sync.Locker, cfg Config) *Manager {
 // and returns path to resources and installation resources
 func (m *Manager) GetResourcePaths(kymaRevision string, kymaComponents []model.KymaComponentConfig) (string, string, error) {
 	// fetch paths to Kyma resources and component from external sources (or download if not exist)
-	path, installPath, componentsPath, err := m.download(kymaRevision, kymaComponents)
+	path, installPath, componentsPath, err := m.download(kymaRevision, m.kymaComponentConfigToComponents(kymaComponents))
 	if err != nil {
 		return "", "", errors.Wrap(err, "while downloading resources")
 	}
@@ -67,16 +74,16 @@ func (m *Manager) GetResourcePaths(kymaRevision string, kymaComponents []model.K
 
 // Download loads all Kyma resources, installation resources base on revision
 // and all external components based on their source URL
-func (m *Manager) Download(kymaRevision string, kymaComponents []model.KymaComponentConfig) error {
-	_, _, _, err := m.download(kymaRevision, kymaComponents)
+func (m *Manager) Download(kymaRevision string, kymaComponents []*gqlschema.ComponentConfigurationInput) apperrors.AppError {
+	_, _, _, err := m.download(kymaRevision, m.componentConfigurationInputToComponents(kymaComponents))
 	if err != nil {
-		return errors.Wrap(err, "while downloading resources")
+		return apperrors.Internal(err.Error())
 	}
 
 	return nil
 }
 
-func (m *Manager) download(revision string, components []model.KymaComponentConfig) (string, string, map[string]string, error) {
+func (m *Manager) download(revision string, components []Component) (string, string, map[string]string, error) {
 	// lock for goroutines to not download the same packages at the same time
 	m.mutex.Lock()
 
@@ -123,4 +130,30 @@ func (m *Manager) prepareRevision(version string) string {
 		return strings.TrimLeft(version, "main-")
 	}
 	return version
+}
+
+func (m *Manager) kymaComponentConfigToComponents(kymaComponents []model.KymaComponentConfig) []Component {
+	cmps := make([]Component, 0)
+
+	for _, component := range kymaComponents {
+		cmps = append(cmps, Component{
+			Name:      string(component.Component),
+			SourceURL: component.SourceURL,
+		})
+	}
+
+	return cmps
+}
+
+func (m *Manager) componentConfigurationInputToComponents(kymaComponents []*gqlschema.ComponentConfigurationInput) []Component {
+	cmps := make([]Component, 0)
+
+	for _, component := range kymaComponents {
+		cmps = append(cmps, Component{
+			Name:      component.Component,
+			SourceURL: component.SourceURL,
+		})
+	}
+
+	return cmps
 }

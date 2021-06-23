@@ -45,6 +45,11 @@ type Provisioner interface {
 	GetHibernationStatus(clusterID string, gardenerConfig model.GardenerConfig) (model.HibernationStatus, apperrors.AppError)
 }
 
+//go:generate mockery -name=ResourceDownloader
+type ResourceDownloader interface {
+	Download(string, []*gqlschema.ComponentConfigurationInput) apperrors.AppError
+}
+
 type service struct {
 	inputConverter   InputConverter
 	graphQLConverter GraphQLConverter
@@ -53,6 +58,7 @@ type service struct {
 	dbSessionFactory dbsession.Factory
 	provisioner      Provisioner
 	uuidGenerator    uuid.UUIDGenerator
+	downloader       ResourceDownloader
 
 	provisioningQueue   queue.OperationQueue
 	deprovisioningQueue queue.OperationQueue
@@ -73,6 +79,7 @@ func NewProvisioningService(
 	upgradeQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
 	hibernationQueue queue.OperationQueue,
+	downloader ResourceDownloader,
 
 ) Service {
 	return &service{
@@ -87,6 +94,7 @@ func NewProvisioningService(
 		upgradeQueue:        upgradeQueue,
 		shootUpgradeQueue:   shootUpgradeQueue,
 		hibernationQueue:    hibernationQueue,
+		downloader:          downloader,
 	}
 }
 
@@ -95,7 +103,12 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 
 	var runtimeID string
 
-	err := util.RetryOnError(5*time.Second, 3, "Error while registering runtime in Director: %s", func() (err apperrors.AppError) {
+	err := r.downloader.Download(config.KymaConfig.Version, config.KymaConfig.Components)
+	if err != nil {
+		return nil, err.Append("Failed to download resources")
+	}
+
+	err = util.RetryOnError(5*time.Second, 3, "Error while registering runtime in Director: %s", func() (err apperrors.AppError) {
 		runtimeID, err = r.directorService.CreateRuntime(runtimeInput, tenant)
 		return
 	})
@@ -437,7 +450,7 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	operation, err := r.setOperationStarted(dbSession, runtimeID, model.Provision, model.DownloadingArtifacts, timestamp, "Provisioning started")
+	operation, err := r.setOperationStarted(dbSession, runtimeID, model.Provision, model.WaitingForClusterDomain, timestamp, "Provisioning started")
 	if err != nil {
 		return model.Operation{}, err.Append("Failed to set provisioning started: %s")
 	}

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	cmp "github.com/kyma-project/control-plane/components/provisioner/internal/parallel-installation/download/components"
 
 	"github.com/google/uuid"
@@ -31,7 +30,7 @@ func NewComponents(destinationPathTmp string) *Components {
 
 // DownloadExternalComponents downloads components based on component.SourceURL value
 // and returns list of components with path to the files: map[sourceURL] = path_to_files
-func (c *Components) DownloadExternalComponents(components []model.KymaComponentConfig) (map[string]string, error) {
+func (c *Components) DownloadExternalComponents(components []Component) (map[string]string, error) {
 	list := make(map[string]string, 0)
 	for _, component := range components {
 		if component.SourceURL == nil {
@@ -44,7 +43,7 @@ func (c *Components) DownloadExternalComponents(components []model.KymaComponent
 		}
 		path, err := c.downloadComponent(sourceURL)
 		if err != nil {
-			return list, errors.Wrapf(err, "while downloading component: %s", component.Component)
+			return list, errors.Wrapf(err, "while downloading component: %s", component.Name)
 		}
 
 		c.cacheList[sourceURL] = path

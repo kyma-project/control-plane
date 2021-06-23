@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
-
 	"github.com/otiai10/copy"
 	"github.com/stretchr/testify/require"
 )
@@ -26,13 +24,13 @@ func TestComponents_DownloadExternalComponents(t *testing.T) {
 
 	// When
 	cmp := NewComponents(testDir + "/%s")
-	paths, err := cmp.DownloadExternalComponents([]model.KymaComponentConfig{
+	paths, err := cmp.DownloadExternalComponents([]Component{
 		{
-			Component: "test-zip",
+			Name:      "test-zip",
 			SourceURL: stringPtr(fmt.Sprintf("%s/simple-chart.zip", testDir)),
 		},
 		{
-			Component: "test-tgz",
+			Name:      "test-tgz",
 			SourceURL: stringPtr(fmt.Sprintf("%s/simple-chart.tgz", testDir)),
 		},
 	})

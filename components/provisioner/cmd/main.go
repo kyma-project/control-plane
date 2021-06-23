@@ -245,8 +245,7 @@ func main() {
 		shootClient,
 		secretsInterface,
 		cfg.OperatorRoleBinding,
-		k8sClientProvider,
-		downloadManager)
+		k8sClientProvider)
 
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationClients)
 
@@ -285,7 +284,8 @@ func main() {
 		hibernationQueue,
 		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
 		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate,
-		cfg.Gardener.ForceAllowPrivilegedContainers)
+		cfg.Gardener.ForceAllowPrivilegedContainers,
+		downloadManager)
 
 	validator := api.NewValidator(dbsFactory.NewReadSession())
 	resolver := api.NewResolver(provisioningSVC, validator)

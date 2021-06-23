@@ -36,10 +36,10 @@ import (
 	kymaInstallation "github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
-	provisioningMocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
+	provisioningMocks "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	runtimeConfig "github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
@@ -150,10 +150,10 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	fakeK8sClient := fake.NewSimpleClientset()
 	mockK8sClientProvider.On("CreateK8SClient", mockedKubeconfig).Return(fakeK8sClient, nil)
 
+	runtimeConfigurator := runtimeConfig.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
+
 	downloader := &provisioningMocks.ResourceDownloader{}
 	downloader.On("Download", kymaVersion, mock.Anything).Return(nil)
-
-	runtimeConfigurator := runtimeConfig.NewRuntimeConfigurator(mockK8sClientProvider, directorServiceMock)
 
 	auditLogsConfigPath := filepath.Join("testdata", "config.json")
 	maintenanceWindowConfigPath := filepath.Join("testdata", "maintwindow.json")
@@ -175,8 +175,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		shootInterface,
 		secretsInterface,
 		testOperatorRoleBinding(),
-		mockK8sClientProvider,
-		downloader)
+		mockK8sClientProvider)
 	provisioningQueue.Run(queueCtx.Done())
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
@@ -243,7 +242,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, provider, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue, downloader)
 
 			validator := api.NewValidator(dbsFactory.NewReadSession())
 
@@ -532,7 +531,6 @@ func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.Op
 
 func testProvisioningTimeouts() queue.ProvisioningTimeouts {
 	return queue.ProvisioningTimeouts{
-		DownloadArtifacts:      5 * time.Minute,
 		ClusterCreation:        5 * time.Minute,
 		ClusterDomains:         5 * time.Minute,
 		BindingsCreation:       5 * time.Minute,
