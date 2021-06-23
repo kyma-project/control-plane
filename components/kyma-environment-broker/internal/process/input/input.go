@@ -47,6 +47,7 @@ type RuntimeInput struct {
 
 	componentsDisabler        ComponentsDisabler
 	enabledOptionalComponents map[string]struct{}
+	oidcDefaultValues         map[string]string
 
 	trialNodesNumber int
 }

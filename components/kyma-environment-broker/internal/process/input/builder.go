@@ -50,6 +50,10 @@ type (
 	ComponentListProvider interface {
 		AllComponents(kymaVersion string) ([]v1alpha1.KymaComponent, error)
 	}
+
+	OIDCInputProvider interface {
+		Defaults() (map[string]string, error)
+	}
 )
 
 type InputBuilderFactory struct {
@@ -59,12 +63,14 @@ type InputBuilderFactory struct {
 	fullComponentsList         internal.ComponentConfigurationInputList
 	componentsProvider         ComponentListProvider
 	disabledComponentsProvider DisabledComponentsProvider
+	oidcInputProvider          OIDCInputProvider
 	trialPlatformRegionMapping map[string]string
 	enabledFreemiumProviders   map[string]struct{}
+	oidcDefaultValues          map[string]string
 }
 
 func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledComponentsProvider DisabledComponentsProvider, componentsListProvider ComponentListProvider, config Config,
-	defaultKymaVersion string, trialPlatformRegionMapping map[string]string, enabledFreemiumProviders []string) (CreatorForPlan, error) {
+	defaultKymaVersion string, trialPlatformRegionMapping map[string]string, enabledFreemiumProviders []string, oidcInputProvider OIDCInputProvider) (CreatorForPlan, error) {
 
 	components, err := componentsListProvider.AllComponents(defaultKymaVersion)
 	if err != nil {
@@ -76,15 +82,22 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 		freemiumProviders[strings.ToLower(p)] = struct{}{}
 	}
 
+	oidcValues, err := oidcInputProvider.Defaults()
+	if err != nil {
+		return &InputBuilderFactory{}, errors.Wrap(err, "while creating OIDC default values")
+	}
+
 	return &InputBuilderFactory{
-		config:                     config,
 		kymaVersion:                defaultKymaVersion,
+		config:                     config,
 		optComponentsSvc:           optComponentsSvc,
 		fullComponentsList:         mapToGQLComponentConfigurationInput(components),
 		componentsProvider:         componentsListProvider,
 		disabledComponentsProvider: disabledComponentsProvider,
+		oidcInputProvider:          oidcInputProvider,
 		trialPlatformRegionMapping: trialPlatformRegionMapping,
 		enabledFreemiumProviders:   freemiumProviders,
+		oidcDefaultValues:          oidcValues,
 	}, nil
 }
 
@@ -149,14 +162,15 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 
 	return &RuntimeInput{
 		provisionRuntimeInput:     initInput,
-		overrides:                 make(map[string][]*gqlschema.ConfigEntryInput, 0),
-		globalOverrides:           make([]*gqlschema.ConfigEntryInput, 0),
-		labels:                    make(map[string]string),
 		mutex:                     nsync.NewNamedMutex(),
+		overrides:                 make(map[string][]*gqlschema.ConfigEntryInput, 0),
+		labels:                    make(map[string]string),
+		globalOverrides:           make([]*gqlschema.ConfigEntryInput, 0),
 		hyperscalerInputProvider:  provider,
 		optionalComponentsService: f.optComponentsSvc,
 		componentsDisabler:        runtime.NewDisabledComponentsService(disabledComponents),
 		enabledOptionalComponents: map[string]struct{}{},
+		oidcDefaultValues:         f.oidcDefaultValues,
 		trialNodesNumber:          f.config.TrialNodesNumber,
 	}, nil
 }

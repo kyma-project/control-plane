@@ -358,6 +358,8 @@ spec:
               value: "kyma-versions"
             - name: APP_DOMAIN_NAME
               value: "{{ .Values.global.ingress.domainName }}"
+            - name: APP_SKR_OIDC_DEFAULT_VALUES_YAML_FILE_PATH
+              value: /config/skrOIDCDefaultValues.yaml
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

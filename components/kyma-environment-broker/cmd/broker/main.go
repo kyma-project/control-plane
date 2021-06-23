@@ -112,6 +112,7 @@ type Config struct {
 	KymaVersion                          string
 	EnableOnDemandVersion                bool `envconfig:"default=false"`
 	ManagedRuntimeComponentsYAMLFilePath string
+	SKROIDCDefaultValuesYAMLFilePath     string
 	DefaultRequestRegion                 string `envconfig:"default=cf-eu10"`
 	UpdateProcessingEnabled              bool   `envconfig:"default=false"`
 
@@ -225,6 +226,7 @@ func main() {
 	disabledComponentsProvider := runtime.NewDisabledComponentsProvider()
 
 	runtimeProvider := runtime.NewComponentsListProvider(cfg.ManagedRuntimeComponentsYAMLFilePath)
+	oidcProvider := runtime.NewOIDCInputProvider(cfg.SKROIDCDefaultValuesYAMLFilePath)
 	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
 	fatalOnError(err)
 	gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
@@ -245,7 +247,7 @@ func main() {
 	fatalOnError(err)
 	logs.Infof("Platform region mapping for trial: %v", regions)
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider,
-		cfg.Provisioner, cfg.KymaVersion, regions, cfg.FreemiumProviders)
+		cfg.Provisioner, cfg.KymaVersion, regions, cfg.FreemiumProviders, oidcProvider)
 	fatalOnError(err)
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
