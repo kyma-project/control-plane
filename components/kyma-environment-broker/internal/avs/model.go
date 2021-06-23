@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 )
 
 const (
@@ -121,24 +120,22 @@ func generateNameAndDescription(operation internal.ProvisioningOperation, beType
 	subAccountID := operation.ProvisioningParameters.ErsContext.SubAccountID
 	name := operation.ProvisioningParameters.Parameters.Name
 	shootName := operation.InstanceDetails.ShootName
-	beName := fmt.Sprintf("K8S-%s-Kyma-%s-%s-%s", providerCodeByPlan(operation.ProvisioningParameters.PlanID), beType, subAccountID, name)
+	beName := fmt.Sprintf("K8S-%s-Kyma-%s-%s-%s", providerCodeByPlan(operation), beType, subAccountID, name)
 	beDescription := fmt.Sprintf("SKR instance Name: %s, Global Account: %s, Subaccount: %s, Shoot: %s",
 		name, globalAccountID, subAccountID, shootName)
 
 	return truncateString(beName, 80), truncateString(beDescription, 255)
 }
 
-func providerCodeByPlan(planID string) string {
-	switch planID {
-	case broker.AWSPlanID:
+func providerCodeByPlan(operation internal.ProvisioningOperation) string {
+	switch operation.InputCreator.Provider() {
+	case internal.AWS:
 		return "AWS"
-	case broker.GCPPlanID:
+	case internal.GCP:
 		return "GCP"
-	case broker.AzurePlanID, broker.AzureLitePlanID, broker.AzureHAPlanID:
+	case internal.Azure:
 		return "AZR"
-	case broker.TrialPlanID, broker.FreemiumPlanID:
-		return "AZR"
-	case broker.OpenStackPlanID:
+	case internal.Openstack:
 		return "CC"
 	default:
 		return "AZR"

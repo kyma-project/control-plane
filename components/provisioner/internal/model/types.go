@@ -6,6 +6,9 @@ import (
 
 type OperationState string
 
+//TODO: Remove after schema migration
+const AWS = "aws"
+
 const (
 	InProgress OperationState = "IN_PROGRESS"
 	Succeeded  OperationState = "SUCCEEDED"

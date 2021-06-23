@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
-	"time"
 )
 
 type ParametersFactory struct {
@@ -138,7 +137,6 @@ func XSAppname(domain string) string {
 }
 
 func randomString(n int) string {
-	rand.Seed(time.Now().UnixNano())
 	letterRunes := []rune("abcdefghijklmnopqrstuvwxyz")
 
 	b := make([]rune, n)
