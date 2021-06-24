@@ -11,6 +11,7 @@ import (
 	skrnode "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/node"
 	skrpvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/pvc"
 	skrsvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/svc"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -117,6 +118,48 @@ func TestGetOldRecordIfMetricExists(t *testing.T) {
 	})
 }
 
+func TestGenerateRecordWithMetrics(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	identifier := 1
+	subAccID := uuid.New().String()
+	shootName := fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5))
+	kubeconfig := ""
+	secret := kmctesting.NewSecret(shootName, kubeconfig)
+	cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
+	queue := workqueue.NewDelayingQueue()
+	secretClient, _ := NewFakeSecretClient(secret)
+
+	p := Process{
+		Queue:        queue,
+		Cache:        cache,
+		SecretClient: secretClient,
+		Logger:       logrus.New(),
+	}
+
+	t.Run("no kubeconfig configured", func(t *testing.T) {
+		record := kmccache.Record{
+			SubAccountID: subAccID,
+			ShootName:    shootName,
+			KubeConfig:   "",
+			Metric:       NewMetric(),
+		}
+
+		err := p.Cache.Add(subAccID, record, gocache.NoExpiration)
+		g.Expect(err).Should(gomega.BeNil())
+
+		_, err = p.generateRecordWithMetrics(identifier, subAccID)
+		g.Expect(err).ShouldNot(gomega.BeNil())
+
+		metricName := "kmc_gardener_error_count"
+		expectedCount := 1
+		var expectedValue float64 = 1
+		count := testutil.CollectAndCount(gardenerErrorCount, metricName)
+		g.Expect(count).Should(gomega.Equal(expectedCount))
+		value := testutil.ToFloat64(gardenerErrorCount)
+		g.Expect(value).Should(gomega.Equal(expectedValue))
+	})
+}
+
 func TestPollKEBForRuntimes(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
@@ -182,6 +225,15 @@ func TestPollKEBForRuntimes(t *testing.T) {
 		g.Eventually(func() int {
 			return timesVisited
 		}, 10*time.Second).Should(gomega.Equal(expectedTimesVisited))
+
+		// Ensure metric exists
+		metricName := "kmc_keb_number_clusters_scraped"
+		numberOfRuntimes := 4
+		g.Eventually(testutil.CollectAndCount(clustersScraped, metricName)).Should(gomega.Equal(1))
+		g.Eventually(func() int {
+			counter, _ := clustersScraped.GetMetricWithLabelValues("")
+			return int(testutil.ToFloat64(counter))
+		}).Should(gomega.Equal(numberOfRuntimes))
 	})
 }
 
