@@ -6,6 +6,9 @@ import (
 
 type OperationState string
 
+//TODO: Remove after schema migration
+const AWS = "aws"
+
 const (
 	InProgress OperationState = "IN_PROGRESS"
 	Succeeded  OperationState = "SUCCEEDED"
@@ -58,7 +61,7 @@ type Cluster struct {
 	Tenant             string
 	SubAccountId       *string
 	ActiveKymaConfigId string
-	Administrators     []*string
+	Administrators     []string
 
 	ClusterConfig GardenerConfig `db:"-"`
 	KymaConfig    KymaConfig     `db:"-"`

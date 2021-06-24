@@ -26,7 +26,7 @@ func (p *OpenStackInput) Defaults() *gqlschema.ClusterConfigInput {
 			AutoScalerMin:  2,
 			AutoScalerMax:  4,
 			MaxSurge:       4,
-			MaxUnavailable: 1,
+			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				OpenStackConfig: &gqlschema.OpenStackProviderConfigInput{
 					Zones:                ZonesForOpenStack(DefaultOpenStackRegion),

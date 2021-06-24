@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -112,8 +114,8 @@ func (alo *AuditLogOverrides) Run(operation internal.UpgradeKymaOperation, logge
     Format           json_stream
     tls              on
 `, fluentbitPlugin, auditLogHost, auditLogPort, u.Path)},
-		{Key: "fluent-bit.config.secrets.AUDITLOG_USER", Value: fmt.Sprintf(`%s`, alo.auditLogConfig.User)},
-		{Key: "fluent-bit.config.secrets.AUDITLOG_PASSWD", Value: fmt.Sprintf(`%s`, alo.auditLogConfig.Password)},
+		{Key: "fluent-bit.config.secrets.AUDITLOG_USER", Value: fmt.Sprintf(`%s`, alo.auditLogConfig.User), Secret: ptr.Bool(true)},
+		{Key: "fluent-bit.config.secrets.AUDITLOG_PASSWD", Value: fmt.Sprintf(`%s`, alo.auditLogConfig.Password), Secret: ptr.Bool(true)},
 		{Key: "fluent-bit.externalServiceEntry.resolution", Value: "DNS"},
 		{Key: "fluent-bit.externalServiceEntry.hosts", Value: fmt.Sprintf(`- %s`, auditLogHost)},
 		{Key: "fluent-bit.externalServiceEntry.ports", Value: fmt.Sprintf(`- number: %s

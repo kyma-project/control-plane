@@ -148,14 +148,18 @@ func CreateShootUpgradeQueue(
 	timeouts ProvisioningTimeouts,
 	factory dbsession.Factory,
 	directorClient director.DirectorClient,
-	shootClient gardener_apis.ShootInterface) OperationQueue {
+	shootClient gardener_apis.ShootInterface,
+	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
+	k8sClientProvider k8s.K8sClientProvider) OperationQueue {
 
-	waitForShootUpgrade := shootupgrade.NewWaitForShootUpgradeStep(shootClient, model.FinishedStage, timeouts.ShootUpgrade)
+	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, model.FinishedStage, timeouts.BindingsCreation)
+	waitForShootUpgrade := shootupgrade.NewWaitForShootUpgradeStep(shootClient, createBindingsForOperatorsStep.Name(), timeouts.ShootUpgrade)
 	waitForShootNewVersion := shootupgrade.NewWaitForShootNewVersionStep(shootClient, waitForShootUpgrade.Name(), timeouts.ShootRefresh)
 
 	upgradeSteps := map[model.OperationStage]operations.Step{
-		model.WaitingForShootUpgrade:    waitForShootUpgrade,
-		model.WaitingForShootNewVersion: waitForShootNewVersion,
+		model.CreatingBindingsForOperators: createBindingsForOperatorsStep,
+		model.WaitingForShootUpgrade:       waitForShootUpgrade,
+		model.WaitingForShootNewVersion:    waitForShootNewVersion,
 	}
 
 	upgradeClusterExecutor := operations.NewExecutor(

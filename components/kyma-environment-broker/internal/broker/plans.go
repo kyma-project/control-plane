@@ -18,6 +18,8 @@ const (
 	GCPPlanName       = "gcp"
 	AWSPlanID         = "361c511f-f939-4621-b228-d0fb79a1fe15"
 	AWSPlanName       = "aws"
+	AWSHAPlanID       = "aecef2e6-49f1-4094-8433-eba0e135eb6a"
+	AWSHAPlanName     = "aws_ha"
 	AzurePlanID       = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
 	AzurePlanName     = "azure"
 	AzureLitePlanID   = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
@@ -35,6 +37,7 @@ const (
 var PlanNamesMapping = map[string]string{
 	GCPPlanID:       GCPPlanName,
 	AWSPlanID:       AWSPlanName,
+	AWSHAPlanID:     AWSHAPlanName,
 	AzurePlanID:     AzurePlanName,
 	AzureLitePlanID: AzureLitePlanName,
 	AzureHAPlanID:   AzureHAPlanName,
@@ -46,6 +49,7 @@ var PlanNamesMapping = map[string]string{
 var PlanIDsMapping = map[string]string{
 	AzurePlanName:     AzurePlanID,
 	AWSPlanName:       AWSPlanID,
+	AWSHAPlanName:     AWSHAPlanID,
 	AzureLitePlanName: AzureLitePlanID,
 	AzureHAPlanName:   AzureHAPlanID,
 	GCPPlanName:       GCPPlanID,
@@ -136,6 +140,33 @@ func AWSSchema(machineTypes []string) []byte {
 	return bytes
 }
 
+func AWSHASchema(machineTypes []string) []byte {
+	properties := NewProvisioningProperties(machineTypes, AWSRegions())
+	properties.ZonesCount = &Type{
+		Type:        "integer",
+		Minimum:     2,
+		Maximum:     3,
+		Default:     2,
+		Description: "Specifies the number of availability zones for HA cluster",
+	}
+	awsHaControlsOrder := DefaultControlsOrder()
+	awsHaControlsOrder = append(awsHaControlsOrder, "zonesCount")
+	schema := NewSchema(properties, awsHaControlsOrder)
+
+	properties.AutoScalerMin.Default = 4
+	properties.AutoScalerMin.Minimum = 4
+
+	properties.AutoScalerMax.Default = 10
+	properties.AutoScalerMax.Minimum = 4
+	properties.AutoScalerMax.Maximum = 10
+
+	bytes, err := json.Marshal(schema)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
+}
+
 func AzureSchema(machineTypes []string) []byte {
 	properties := NewProvisioningProperties(machineTypes, AzureRegions())
 	schema := NewSchema(properties, DefaultControlsOrder())
@@ -178,6 +209,7 @@ func FreemiumSchema(provider internal.CloudProvider) []byte {
 				Type: "string",
 				Enum: ToInterfaceSlice(regions),
 			},
+			//OIDC: NewOIDCSchema(),
 		}, []string{"name", "region"})
 
 	bytes, err := json.Marshal(schema)
@@ -218,6 +250,7 @@ func TrialSchema() []byte {
 	schema := NewSchema(
 		ProvisioningProperties{
 			Name: NameProperty(),
+			//OIDC: NewOIDCSchema(),
 		}, []string{"name"})
 
 	bytes, err := json.Marshal(schema)
@@ -250,6 +283,21 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 				},
 			},
 			provisioningRawSchema: AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m4.16xlarge"}),
+		},
+		AWSHAPlanID: {
+			PlanDefinition: domain.ServicePlan{
+				ID:          AWSHAPlanID,
+				Name:        AWSHAPlanName,
+				Description: defaultDescription(AWSHAPlanName, plans),
+				Metadata:    defaultMetadata(AWSHAPlanName, plans), Schemas: &domain.ServiceSchemas{
+					Instance: domain.ServiceInstanceSchema{
+						Create: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
+					},
+				},
+			},
+			provisioningRawSchema: AWSHASchema([]string{"m5d.xlarge"}),
 		},
 		GCPPlanID: {
 			PlanDefinition: domain.ServicePlan{

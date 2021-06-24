@@ -51,7 +51,7 @@ func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 	t.Run("should not fail if cluster role binding already exists", func(t *testing.T) {
 		// given
 		k8sClient := fake.NewSimpleClientset()
-		clusterRoleBinding := buildClusterRoleBinding(l2OperatorClusterRoleBindingName, operatorBindingConfig.L2SubjectName, l2OperatorClusterRoleBindingRoleRefName, groupKindSubject)
+		clusterRoleBinding := buildClusterRoleBinding(l2OperatorClusterRoleBindingName, operatorBindingConfig.L2SubjectName, l2OperatorClusterRoleBindingRoleRefName, groupKindSubject, map[string]string{"app": "kyma"})
 		_, err := k8sClient.RbacV1().ClusterRoleBindings().Create(context.Background(), &clusterRoleBinding, metav1.CreateOptions{})
 		require.NoError(t, err)
 

@@ -13,19 +13,29 @@ type ProviderSpecificConfig interface {
 }
 
 type AWSProviderConfig struct {
-	Zone         *string `json:"zone"`
-	VpcCidr      *string `json:"vpcCidr"`
-	PublicCidr   *string `json:"publicCidr"`
-	InternalCidr *string `json:"internalCidr"`
+	AwsZones []*AWSZone `json:"awsZones"`
+	VpcCidr  *string    `json:"vpcCidr"`
 }
 
 func (AWSProviderConfig) IsProviderSpecificConfig() {}
 
 type AWSProviderConfigInput struct {
-	Zone         string `json:"zone"`
-	VpcCidr      string `json:"vpcCidr"`
+	VpcCidr  string          `json:"vpcCidr"`
+	AwsZones []*AWSZoneInput `json:"awsZones"`
+}
+
+type AWSZone struct {
+	Name         *string `json:"name"`
+	PublicCidr   *string `json:"publicCidr"`
+	InternalCidr *string `json:"internalCidr"`
+	WorkerCidr   *string `json:"workerCidr"`
+}
+
+type AWSZoneInput struct {
+	Name         string `json:"name"`
 	PublicCidr   string `json:"publicCidr"`
 	InternalCidr string `json:"internalCidr"`
+	WorkerCidr   string `json:"workerCidr"`
 }
 
 type AzureProviderConfig struct {
@@ -42,7 +52,7 @@ type AzureProviderConfigInput struct {
 
 type ClusterConfigInput struct {
 	GardenerConfig *GardenerConfigInput `json:"gardenerConfig"`
-	Administrators []*string            `json:"administrators"`
+	Administrators []string             `json:"administrators"`
 }
 
 type ComponentConfiguration struct {
@@ -261,6 +271,7 @@ type UpgradeRuntimeInput struct {
 
 type UpgradeShootInput struct {
 	GardenerConfig *GardenerUpgradeInput `json:"gardenerConfig"`
+	Administrators []string              `json:"administrators"`
 }
 
 type ConflictStrategy string
