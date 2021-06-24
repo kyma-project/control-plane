@@ -121,7 +121,6 @@ func TestGetOldRecordIfMetricExists(t *testing.T) {
 func TestGenerateRecordWithMetrics(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	identifier := 1
-	subAccID := uuid.New().String()
 	shootName := fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5))
 	kubeconfig := ""
 	secret := kmctesting.NewSecret(shootName, kubeconfig)
@@ -129,14 +128,16 @@ func TestGenerateRecordWithMetrics(t *testing.T) {
 	queue := workqueue.NewDelayingQueue()
 	secretClient, _ := NewFakeSecretClient(secret)
 
-	p := Process{
-		Queue:        queue,
-		Cache:        cache,
-		SecretClient: secretClient,
-		Logger:       logrus.New(),
-	}
-
 	t.Run("no kubeconfig configured", func(t *testing.T) {
+		subAccID := uuid.New().String()
+
+		p := Process{
+			Queue:        queue,
+			Cache:        cache,
+			SecretClient: secretClient,
+			Logger:       logrus.New(),
+		}
+
 		record := kmccache.Record{
 			SubAccountID: subAccID,
 			ShootName:    shootName,
@@ -153,10 +154,44 @@ func TestGenerateRecordWithMetrics(t *testing.T) {
 		metricName := "kmc_gardener_error_count"
 		expectedCount := 1
 		var expectedValue float64 = 1
-		count := testutil.CollectAndCount(gardenerErrorCount, metricName)
-		g.Expect(count).Should(gomega.Equal(expectedCount))
-		value := testutil.ToFloat64(gardenerErrorCount)
-		g.Expect(value).Should(gomega.Equal(expectedValue))
+		g.Expect(testutil.CollectAndCount(gardenerErrorCount, metricName)).Should(gomega.Equal(expectedCount))
+		g.Expect(testutil.ToFloat64(gardenerErrorCount)).Should(gomega.Equal(expectedValue))
+	})
+
+	t.Run("no nodes to process", func(t *testing.T) {
+		subAccID := uuid.New().String()
+
+		shoot := kmctesting.GetShoot(shootName, kmctesting.WithAzureProviderAndStandardD8V3VMs)
+		shootClient, _ := NewFakeShootClient(shoot)
+		fakeNodeClient := skrnode.FakeEmptyNodeClient{}
+
+		p := Process{
+			Queue:        queue,
+			Cache:        cache,
+			SecretClient: secretClient,
+			ShootClient:  shootClient,
+			NodeConfig:   fakeNodeClient,
+			Logger:       logrus.New(),
+		}
+
+		record := kmccache.Record{
+			SubAccountID: subAccID,
+			ShootName:    shootName,
+			KubeConfig:   "foo",
+			Metric:       NewMetric(),
+		}
+
+		err := p.Cache.Add(subAccID, record, gocache.NoExpiration)
+		g.Expect(err).Should(gomega.BeNil())
+
+		_, err = p.generateRecordWithMetrics(identifier, subAccID)
+		g.Expect(err).ShouldNot(gomega.BeNil())
+
+		metricName := "kmc_skr_error_count"
+		expectedCount := 1
+		var expectedValue float64 = 1
+		g.Expect(testutil.CollectAndCount(skrErrorCount, metricName)).Should(gomega.Equal(expectedCount))
+		g.Expect(testutil.ToFloat64(skrErrorCount)).Should(gomega.Equal(expectedValue))
 	})
 }
 
@@ -267,6 +302,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p.populateCacheAndQueue(runtimesPage)
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
 		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
+		g.Expect(testutil.CollectAndCount(cacheErrorCount)).Should(gomega.Equal(0))
 	})
 
 	t.Run("runtimes with both provisioned and deprovisioned status", func(t *testing.T) {
@@ -295,6 +331,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p.populateCacheAndQueue(runtimesPage)
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
 		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
+		g.Expect(testutil.CollectAndCount(cacheErrorCount)).Should(gomega.Equal(0))
 	})
 
 	t.Run("with loaded cache but shoot name changed", func(t *testing.T) {
@@ -327,6 +364,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p.populateCacheAndQueue(runtimesPage)
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
 		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
+		g.Expect(testutil.CollectAndCount(cacheErrorCount)).Should(gomega.Equal(0))
 	})
 
 	t.Run("with loaded cache but then shoot is deprovisioned", func(t *testing.T) {
@@ -356,6 +394,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p.populateCacheAndQueue(runtimesPage)
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
 		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
+		g.Expect(testutil.CollectAndCount(cacheErrorCount)).Should(gomega.Equal(0))
 	})
 }
 

@@ -114,15 +114,12 @@ func TestGetAllRuntimes(t *testing.T) {
 		g.Expect(len(gotRuntimes.Data)).To(gomega.Equal(4))
 
 		// Ensure metric exists
-		count := testutil.CollectAndCount(totalRequest, metricsName)
-		g.Expect(count).Should(gomega.Equal(expectedMetricsCount))
-		histogramCount := testutil.CollectAndCount(sentRequestDuration, histogramName)
-		g.Expect(histogramCount).Should(gomega.Equal(1))
+		g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(expectedMetricsCount))
+		g.Expect(testutil.CollectAndCount(sentRequestDuration, histogramName)).Should(gomega.Equal(1))
 		// Ensure metric has expected value
 		counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusOK))
 		g.Expect(err).Should(gomega.BeNil())
-		value := testutil.ToFloat64(counter)
-		g.Expect(value).Should(gomega.Equal(expectedMetricsValueOf200Label))
+		g.Expect(testutil.ToFloat64(counter)).Should(gomega.Equal(expectedMetricsValueOf200Label))
 
 		// Testing http 404 for non existent path
 		config.URL = fmt.Sprintf("%s/nopaging", kebClient.Config.URL)
@@ -133,15 +130,12 @@ func TestGetAllRuntimes(t *testing.T) {
 		g.Expect(err.Error()).To(gomega.Equal("failed to get runtimes from KEB: KEB returned status code: 404"))
 
 		// Ensure metric exists
-		count = testutil.CollectAndCount(totalRequest, metricsName)
-		g.Expect(count).Should(gomega.Equal(expectedMetricsCountAfter404))
-		histogramCount = testutil.CollectAndCount(sentRequestDuration, histogramName)
-		g.Expect(histogramCount).Should(gomega.Equal(1))
+		g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(expectedMetricsCountAfter404))
+		g.Expect(testutil.CollectAndCount(sentRequestDuration, histogramName)).Should(gomega.Equal(1))
 		// Ensure metric has expected value
 		counter, err = totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusNotFound))
 		g.Expect(err).Should(gomega.BeNil())
-		value = testutil.ToFloat64(counter)
-		g.Expect(value).Should(gomega.Equal(expectedMetricsValueOf404Label))
+		g.Expect(testutil.ToFloat64(counter)).Should(gomega.Equal(expectedMetricsValueOf404Label))
 
 	})
 
@@ -203,14 +197,11 @@ func TestGetAllRuntimes(t *testing.T) {
 		g.Expect(len(gotRuntimes.Data)).To(gomega.Equal(4))
 
 		// Ensure metric exists
-		count := testutil.CollectAndCount(totalRequest, metricsName)
-		g.Expect(count).Should(gomega.Equal(expectedMetricsCount))
-		histogramCount := testutil.CollectAndCount(sentRequestDuration, histogramName)
-		g.Expect(histogramCount).Should(gomega.Equal(1))
+		g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(expectedMetricsCount))
+		g.Expect(testutil.CollectAndCount(sentRequestDuration, histogramName)).Should(gomega.Equal(1))
 		// Ensure metric has expected value
 		counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusOK))
 		g.Expect(err).Should(gomega.BeNil())
-		value := testutil.ToFloat64(counter)
-		g.Expect(value).Should(gomega.Equal(expectedMetricsValueOf200Label))
+		g.Expect(testutil.ToFloat64(counter)).Should(gomega.Equal(expectedMetricsValueOf200Label))
 	})
 }
