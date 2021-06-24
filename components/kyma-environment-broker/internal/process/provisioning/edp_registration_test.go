@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -16,6 +17,7 @@ const (
 	edpName        = "cd4b333c-97fb-4894-bb20-7874f5833e8d"
 	edpEnvironment = "test"
 	edpRegion      = "cf-eu10"
+	edpPlan        = "standard"
 )
 
 func TestEDPRegistration_Run(t *testing.T) {
@@ -32,6 +34,7 @@ func TestEDPRegistration_Run(t *testing.T) {
 	_, repeat, err := step.Run(internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{
+				PlanID:         broker.AzureLitePlanID,
 				PlatformRegion: edpRegion,
 				ErsContext: internal.ERSContext{
 					SubAccountID: edpName,
@@ -55,6 +58,7 @@ func TestEDPRegistration_Run(t *testing.T) {
 		edp.MaasConsumerEnvironmentKey: step.selectEnvironmentKey(edpRegion, logger.NewLogDummy()),
 		edp.MaasConsumerRegionKey:      edpRegion,
 		edp.MaasConsumerSubAccountKey:  edpName,
+		edp.MaasConsumerServicePlan:    edpPlan,
 	} {
 		metadataTenant, metadataTenantExists := client.GetMetadataItem(edpName, edpEnvironment, key)
 		assert.True(t, metadataTenantExists)
@@ -102,6 +106,61 @@ func TestEDPRegistrationStep_selectEnvironmentKey(t *testing.T) {
 
 			// when
 			envKey := step.selectEnvironmentKey(tc.region, logger.NewLogDummy())
+
+			// then
+			assert.Equal(t, tc.expected, envKey)
+		})
+	}
+}
+
+func TestEDPRegistrationStep_selectServicePlan(t *testing.T) {
+	for name, tc := range map[string]struct {
+		planID   string
+		expected string
+	}{
+		"GCP": {
+			planID:   broker.GCPPlanID,
+			expected: "standard",
+		},
+		"AWS": {
+			planID:   broker.AWSPlanID,
+			expected: "standard",
+		},
+		"AWS-HA": {
+			planID:   broker.AWSHAPlanID,
+			expected: "standard",
+		},
+		"Azure": {
+			planID:   broker.AzurePlanID,
+			expected: "standard",
+		},
+		"Azure Lite": {
+			planID:   broker.AzureLitePlanID,
+			expected: "standard",
+		},
+		"Azure-HA": {
+			planID:   broker.AzureHAPlanID,
+			expected: "standard",
+		},
+		"Trial": {
+			planID:   broker.TrialPlanID,
+			expected: "standard",
+		},
+		"OpenStack": {
+			planID:   broker.OpenStackPlanID,
+			expected: "standard",
+		},
+		"Freemium": {
+			planID:   broker.FreemiumPlanID,
+			expected: "free",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			// given
+			step := NewEDPRegistrationStep(nil, nil, edp.Config{})
+
+			// when
+			envKey := step.selectServicePlan(tc.planID)
 
 			// then
 			assert.Equal(t, tc.expected, envKey)

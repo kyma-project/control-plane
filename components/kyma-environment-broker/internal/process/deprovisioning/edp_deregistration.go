@@ -39,6 +39,7 @@ func (s *EDPDeregistrationStep) Run(operation internal.DeprovisioningOperation, 
 		edp.MaasConsumerEnvironmentKey,
 		edp.MaasConsumerRegionKey,
 		edp.MaasConsumerSubAccountKey,
+		edp.MaasConsumerServicePlan,
 	} {
 		err := s.client.DeleteMetadataTenant(operation.SubAccountID, s.config.Environment, key)
 		if err != nil {
