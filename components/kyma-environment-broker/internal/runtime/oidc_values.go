@@ -3,30 +3,21 @@ package runtime
 import (
 	"io/ioutil"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
 
-type OIDCInputProvider struct {
-	oidcDefaultValuesYAMLPath string
-	values                    map[string]string
-}
-
-func NewOIDCInputProvider(oidcDefaultValuesYAMLPath string) *OIDCInputProvider {
-	return &OIDCInputProvider{
-		oidcDefaultValuesYAMLPath: oidcDefaultValuesYAMLPath,
-		values:                    make(map[string]string, 0),
-	}
-}
-
-func (p *OIDCInputProvider) Defaults() (map[string]string, error) {
-	yamlFile, err := ioutil.ReadFile(p.oidcDefaultValuesYAMLPath)
+func ReadOIDCDefaultValuesFromYAML(yamlFilePath string) (internal.OIDCConfigDTO, error) {
+	var values internal.OIDCConfigDTO
+	yamlFile, err := ioutil.ReadFile(yamlFilePath)
 	if err != nil {
-		return nil, errors.Wrap(err, "while reading YAML file with OIDC default values")
+		return internal.OIDCConfigDTO{}, errors.Wrap(err, "while reading YAML file with OIDC default values")
 	}
-	err = yaml.Unmarshal(yamlFile, p.values)
+
+	err = yaml.Unmarshal(yamlFile, &values)
 	if err != nil {
-		return nil, errors.Wrap(err, "while unmarshaling YAML file with OIDC default values")
+		return internal.OIDCConfigDTO{}, errors.Wrap(err, "while unmarshaling YAML file with OIDC default values")
 	}
-	return p.values, nil
+	return values, nil
 }

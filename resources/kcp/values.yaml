@@ -12,7 +12,11 @@ global:
       version: "PR-805"
     kyma_environment_broker:
       dir:
+<<<<<<< HEAD
       version: "PR-828"
+=======
+      version: "PR-813"
+>>>>>>> 9d4c350a (Change OIDC default values type from map to OIDCConfigDTO)
     kyma_environments_cleanup_job:
       dir:
       version: "PR-723"

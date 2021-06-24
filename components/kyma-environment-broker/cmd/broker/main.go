@@ -226,7 +226,6 @@ func main() {
 	disabledComponentsProvider := runtime.NewDisabledComponentsProvider()
 
 	runtimeProvider := runtime.NewComponentsListProvider(cfg.ManagedRuntimeComponentsYAMLFilePath)
-	oidcProvider := runtime.NewOIDCInputProvider(cfg.SKROIDCDefaultValuesYAMLFilePath)
 	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
 	fatalOnError(err)
 	gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
@@ -246,8 +245,10 @@ func main() {
 	regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)
 	fatalOnError(err)
 	logs.Infof("Platform region mapping for trial: %v", regions)
+	oidcDefaultValues, err := runtime.ReadOIDCDefaultValuesFromYAML(cfg.SKROIDCDefaultValuesYAMLFilePath)
+	fatalOnError(err)
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider,
-		cfg.Provisioner, cfg.KymaVersion, regions, cfg.FreemiumProviders, oidcProvider)
+		cfg.Provisioner, cfg.KymaVersion, regions, cfg.FreemiumProviders, oidcDefaultValues)
 	fatalOnError(err)
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))

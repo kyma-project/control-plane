@@ -50,10 +50,6 @@ type (
 	ComponentListProvider interface {
 		AllComponents(kymaVersion string) ([]v1alpha1.KymaComponent, error)
 	}
-
-	OIDCInputProvider interface {
-		Defaults() (map[string]string, error)
-	}
 )
 
 type InputBuilderFactory struct {
@@ -63,14 +59,13 @@ type InputBuilderFactory struct {
 	fullComponentsList         internal.ComponentConfigurationInputList
 	componentsProvider         ComponentListProvider
 	disabledComponentsProvider DisabledComponentsProvider
-	oidcInputProvider          OIDCInputProvider
 	trialPlatformRegionMapping map[string]string
 	enabledFreemiumProviders   map[string]struct{}
-	oidcDefaultValues          map[string]string
+	oidcDefaultValues          internal.OIDCConfigDTO
 }
 
 func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledComponentsProvider DisabledComponentsProvider, componentsListProvider ComponentListProvider, config Config,
-	defaultKymaVersion string, trialPlatformRegionMapping map[string]string, enabledFreemiumProviders []string, oidcInputProvider OIDCInputProvider) (CreatorForPlan, error) {
+	defaultKymaVersion string, trialPlatformRegionMapping map[string]string, enabledFreemiumProviders []string, oidcValues internal.OIDCConfigDTO) (CreatorForPlan, error) {
 
 	components, err := componentsListProvider.AllComponents(defaultKymaVersion)
 	if err != nil {
@@ -82,11 +77,6 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 		freemiumProviders[strings.ToLower(p)] = struct{}{}
 	}
 
-	oidcValues, err := oidcInputProvider.Defaults()
-	if err != nil {
-		return &InputBuilderFactory{}, errors.Wrap(err, "while creating OIDC default values")
-	}
-
 	return &InputBuilderFactory{
 		kymaVersion:                defaultKymaVersion,
 		config:                     config,
@@ -94,7 +84,6 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 		fullComponentsList:         mapToGQLComponentConfigurationInput(components),
 		componentsProvider:         componentsListProvider,
 		disabledComponentsProvider: disabledComponentsProvider,
-		oidcInputProvider:          oidcInputProvider,
 		trialPlatformRegionMapping: trialPlatformRegionMapping,
 		enabledFreemiumProviders:   freemiumProviders,
 		oidcDefaultValues:          oidcValues,
