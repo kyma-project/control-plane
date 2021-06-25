@@ -80,5 +80,5 @@ const (
 type ClusterAdministrator struct {
 	ID        string
 	ClusterId *string
-	Email     string
+	UserId    string
 }

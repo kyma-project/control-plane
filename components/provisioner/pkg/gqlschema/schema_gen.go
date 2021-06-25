@@ -1039,7 +1039,7 @@ input ProvisionRuntimeInput {
 
 input ClusterConfigInput {
     gardenerConfig: GardenerConfigInput!     # Gardener-specific configuration for the cluster to be provisioned
-    administrators: [String!]                # List of administrators
+    administrators: [String!]                # List of cluster administrators' ids
 }
 
 input GardenerConfigInput {
@@ -1142,7 +1142,7 @@ input UpgradeRuntimeInput {
 
 input UpgradeShootInput {
     gardenerConfig: GardenerUpgradeInput! # Gardener-specific configuration for the cluster to be upgraded
-    administrators: [String!]                # List of administrators
+    administrators: [String!]                # List of cluster administrators' ids
 }
 
 input GardenerUpgradeInput {
