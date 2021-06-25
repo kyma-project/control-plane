@@ -27,6 +27,9 @@ type ReadSession interface {
 	GetRuntimeUpgrade(operationId string) (model.RuntimeUpgrade, dberrors.Error)
 	GetTenantForOperation(operationID string) (string, dberrors.Error)
 	InProgressOperationsCount() (model.OperationsCount, dberrors.Error)
+	//TODO:Remove after schema migration
+	GetProviderSpecificConfigsByProvider(provider string) ([]ProviderData, dberrors.Error)
+	GetUpdatedProviderSpecificConfigByID(id string) (string, dberrors.Error)
 }
 
 //go:generate mockery -name=WriteSession
@@ -34,6 +37,7 @@ type WriteSession interface {
 	InsertCluster(cluster model.Cluster) dberrors.Error
 	InsertGardenerConfig(config model.GardenerConfig) dberrors.Error
 	UpdateGardenerClusterConfig(config model.GardenerConfig) dberrors.Error
+	InsertAdministrators(clusterId string, administrators []string) dberrors.Error
 	InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error
 	InsertOperation(operation model.Operation) dberrors.Error
 	UpdateOperationState(operationID string, message string, state model.OperationState, endTime time.Time) dberrors.Error
@@ -45,6 +49,9 @@ type WriteSession interface {
 	MarkClusterAsDeleted(runtimeID string) dberrors.Error
 	InsertRuntimeUpgrade(runtimeUpgrade model.RuntimeUpgrade) dberrors.Error
 	FixShootProvisioningStage(message string, newStage model.OperationStage, transitionTime time.Time) dberrors.Error
+	//TODO:Remove after schema migration
+	UpdateProviderSpecificConfig(id string, providerSpecificConfig string) dberrors.Error
+	InsertRelease(artifacts model.Release) dberrors.Error
 }
 
 //go:generate mockery -name=ReadWriteSession

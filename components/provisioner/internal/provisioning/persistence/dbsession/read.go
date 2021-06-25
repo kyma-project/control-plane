@@ -16,6 +16,52 @@ type readSession struct {
 	session *dbr.Session
 }
 
+//TODO: Remove after schema migration
+type ProviderData struct {
+	Id                     string
+	ClusterId              string
+	WorkerCidr             string
+	ProviderSpecificConfig string
+}
+
+//TODO: Remove after schema migration
+func (r readSession) GetProviderSpecificConfigsByProvider(provider string) ([]ProviderData, dberrors.Error) {
+	providerConfigs := make([]ProviderData, 0)
+
+	m, err := r.session.
+		Select("id", "cluster_id", "worker_cidr", "provider_specific_config").
+		From("gardener_config").
+		Where(dbr.Eq("provider", provider)).
+		Load(&providerConfigs)
+
+	if err != nil {
+		return nil, dberrors.Internal("Failed to get configs for provider: %s", provider)
+	}
+
+	if m == 0 {
+		return nil, dberrors.NotFound("Clusters with provider: %s, not found", provider)
+	}
+
+	return providerConfigs, nil
+}
+
+//TODO: Remove after schema migration
+func (r readSession) GetUpdatedProviderSpecificConfigByID(id string) (string, dberrors.Error) {
+	var configJson string
+
+	err := r.session.
+		Select("provider_specific_config").
+		From("gardener_config").
+		Where(dbr.Eq("id", id)).
+		LoadOne(&configJson)
+
+	if err != nil {
+		return configJson, dberrors.Internal("Failed to get config for id: %s", id)
+	}
+
+	return configJson, nil
+}
+
 func (r readSession) GetTenant(runtimeID string) (string, dberrors.Error) {
 	var tenant string
 
@@ -79,6 +125,12 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	}
 	cluster.ClusterConfig = providerConfig
 
+	oidcConfig, dberr := r.getOidcConfig(providerConfig.ID)
+	if dberr != nil {
+		return model.Cluster{}, dberr.Append("Cannot get Oidc config for runtimeID: %s", runtimeID)
+	}
+	cluster.ClusterConfig.OIDCConfig = &oidcConfig
+
 	kymaConfig, dberr := r.getKymaConfig(runtimeID, cluster.ActiveKymaConfigId)
 	if dberr != nil {
 		return model.Cluster{}, dberr.Append("Cannot get Kyma config for runtimeID: %s", runtimeID)
@@ -89,9 +141,9 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	if dberr != nil {
 		return model.Cluster{}, dberr.Append("Cannot get Cluster administrators for runtimeID: %s", runtimeID)
 	}
-	cluster.Administrators = make([]*string, 0)
-	for _, clusterAdministrator := range clusterAdministrators {
-		cluster.Administrators = append(cluster.Administrators, &clusterAdministrator.Email)
+	cluster.Administrators = make([]string, len(clusterAdministrators))
+	for i := range clusterAdministrators {
+		cluster.Administrators[i] = clusterAdministrators[i].UserId
 	}
 
 	return cluster, nil
@@ -425,4 +477,33 @@ func (r readSession) InProgressOperationsCount() (model.OperationsCount, dberror
 	}
 
 	return operationsCount, nil
+}
+
+func (r readSession) getOidcConfig(gardenerConfigID string) (model.OIDCConfig, dberrors.Error) {
+	var oidc model.OIDCConfig
+	var algorithms []string
+
+	_, err := r.session.
+		Select("*").
+		From("oidc_config").
+		Where(dbr.Eq("gardener_config_id", gardenerConfigID)).
+		Load(&oidc)
+
+	if err != nil {
+		return model.OIDCConfig{}, dberrors.Internal("Failed to get oidc: %s", err)
+	}
+
+	_, err = r.session.
+		Select("algorithm").
+		From("signing_algorithms").
+		Where(dbr.Eq("oidc_config_id", gardenerConfigID)).
+		Load(&algorithms)
+
+	if err != nil {
+		return model.OIDCConfig{}, dberrors.Internal("Failed to get algorithm: %s", err)
+	}
+
+	oidc.SigningAlgs = algorithms
+
+	return oidc, nil
 }

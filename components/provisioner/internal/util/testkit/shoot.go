@@ -13,6 +13,11 @@ type TestShoot struct {
 
 // NewTestShoot creates TestShoot and returns pointer to it, allowing to pipe the constraints
 func NewTestShoot(name string) *TestShoot {
+	clientID := "9bd05ed7-a930-44e6-8c79-e6defeb1111"
+	groupsClaim := "groups"
+	issuerURL := "https://kymatest.accounts400.ondemand.com"
+	usernameClaim := "sub"
+	usernamePrefix := "-"
 	return &TestShoot{
 		shoot: &v1beta1.Shoot{
 			TypeMeta: metav1.TypeMeta{},
@@ -25,6 +30,18 @@ func NewTestShoot(name string) *TestShoot {
 				},
 				Provider: v1beta1.Provider{
 					Workers: []v1beta1.Worker{},
+				},
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							ClientID:       &clientID,
+							GroupsClaim:    &groupsClaim,
+							IssuerURL:      &issuerURL,
+							SigningAlgs:    []string{"RS256"},
+							UsernameClaim:  &usernameClaim,
+							UsernamePrefix: &usernamePrefix,
+						},
+					},
 				},
 			},
 			Status: v1beta1.ShootStatus{

@@ -1,6 +1,7 @@
 package hyperscaler
 
 import (
+	"context"
 	"testing"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -174,7 +175,7 @@ func TestSecretsAccountPool_MarkSecretBindingAsDirty(t *testing.T) {
 
 		//then
 		require.NoError(t, err)
-		secretBinding, err := mockSecretBindings.Get("secretBinding1", machineryv1.GetOptions{})
+		secretBinding, err := mockSecretBindings.Get(context.Background(), "secretBinding1", machineryv1.GetOptions{})
 		require.NoError(t, err)
 		assert.Equal(t, secretBinding.Labels["dirty"], "true")
 	})

@@ -1,11 +1,11 @@
 package model
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
@@ -21,6 +21,15 @@ const (
 
 	LicenceTypeAnnotation = "kcp.provisioner.kyma-project.io/licence-type"
 )
+
+type OIDCConfig struct {
+	ClientID       string   `json:"clientID"`
+	GroupsClaim    string   `json:"groupsClaim"`
+	IssuerURL      string   `json:"issuerURL"`
+	SigningAlgs    []string `json:"signingAlgs"`
+	UsernameClaim  string   `json:"usernameClaim"`
+	UsernamePrefix string   `json:"usernamePrefix"`
+}
 
 type GardenerConfig struct {
 	ID                                  string
@@ -48,9 +57,10 @@ type GardenerConfig struct {
 	EnableMachineImageVersionAutoUpdate bool
 	AllowPrivilegedContainers           bool
 	GardenerProviderConfig              GardenerProviderConfig
+	OIDCConfig                          *OIDCConfig
 }
 
-func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string) (*gardener_types.Shoot, apperrors.AppError) {
+func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string, oidcConfig *OIDCConfig) (*gardener_types.Shoot, apperrors.AppError) {
 	enableBasicAuthentication := false
 
 	var seed *string = nil
@@ -87,6 +97,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				Version:                   c.KubernetesVersion,
 				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 					EnableBasicAuthentication: &enableBasicAuthentication,
+					OIDCConfig:                gardenerOidcConfig(oidcConfig),
 				},
 			},
 			Networking: gardener_types.Networking{
@@ -109,6 +120,20 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 	}
 
 	return shoot, nil
+}
+
+func gardenerOidcConfig(oidcConfig *OIDCConfig) *gardener_types.OIDCConfig {
+	if oidcConfig != nil {
+		return &gardener_types.OIDCConfig{
+			ClientID:       &oidcConfig.ClientID,
+			GroupsClaim:    &oidcConfig.GroupsClaim,
+			IssuerURL:      &oidcConfig.IssuerURL,
+			SigningAlgs:    oidcConfig.SigningAlgs,
+			UsernameClaim:  &oidcConfig.UsernameClaim,
+			UsernamePrefix: &oidcConfig.UsernamePrefix,
+		}
+	}
+	return nil
 }
 
 type ProviderSpecificConfig string
@@ -135,6 +160,30 @@ func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig,
 	err = util.DecodeJson(jsonData, &azureProviderConfig)
 	if err == nil {
 		return &AzureGardenerConfig{input: &azureProviderConfig, ProviderSpecificConfig: ProviderSpecificConfig(jsonData)}, nil
+	}
+
+	// needed for backward compatibility - originally, AWS clusters were created only with single AZ based on SingleZoneAWSProviderConfigInput schema
+	// TODO: Remove after data migration
+	var singleZoneAwsProviderConfig SingleZoneAWSProviderConfigInput
+	err = util.DecodeJson(jsonData, &singleZoneAwsProviderConfig)
+	if err == nil {
+		awsProviderConfig := gqlschema.AWSProviderConfigInput{
+			VpcCidr: singleZoneAwsProviderConfig.VpcCidr,
+			AwsZones: []*gqlschema.AWSZoneInput{
+				{
+					Name:         singleZoneAwsProviderConfig.Zone,
+					PublicCidr:   singleZoneAwsProviderConfig.PublicCidr,
+					InternalCidr: singleZoneAwsProviderConfig.InternalCidr,
+					WorkerCidr:   "10.250.0.0/19",
+				},
+			},
+		}
+
+		var jsonData bytes.Buffer
+		err = util.Encode(awsProviderConfig, &jsonData)
+		if err == nil {
+			return &AWSGardenerConfig{input: &awsProviderConfig, ProviderSpecificConfig: ProviderSpecificConfig(jsonData.String())}, nil
+		}
 	}
 
 	var awsProviderConfig gqlschema.AWSProviderConfigInput
@@ -275,24 +324,37 @@ func NewAWSGardenerConfig(input *gqlschema.AWSProviderConfigInput) (*AWSGardener
 }
 
 func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
+	zones := make([]*gqlschema.AWSZone, 0)
+
+	for _, inputZone := range c.input.AwsZones {
+		zone := &gqlschema.AWSZone{
+			Name:         &inputZone.Name,
+			PublicCidr:   &inputZone.PublicCidr,
+			InternalCidr: &inputZone.InternalCidr,
+			WorkerCidr:   &inputZone.WorkerCidr,
+		}
+		zones = append(zones, zone)
+	}
+
 	return gqlschema.AWSProviderConfig{
-		Zone:         &c.input.Zone,
-		VpcCidr:      &c.input.VpcCidr,
-		PublicCidr:   &c.input.PublicCidr,
-		InternalCidr: &c.input.InternalCidr,
+		AwsZones: zones,
+		VpcCidr:  &c.input.VpcCidr,
 	}
 }
 
 func (c AWSGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-	return updateShootConfig(gardenerConfig, shoot, []string{c.input.Zone})
+	zoneNames := getAWSZonesNames(c.input.AwsZones)
+	return updateShootConfig(gardenerConfig, shoot, zoneNames)
 }
 
 func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 	shoot.Spec.CloudProfileName = "aws"
 
-	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, []string{c.input.Zone})}
+	zoneNames := getAWSZonesNames(c.input.AwsZones)
 
-	awsInfra := NewAWSInfrastructure(gardenerConfig.WorkerCidr, c)
+	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, zoneNames)}
+
+	awsInfra := NewAWSInfrastructure(c)
 	jsonData, err := json.Marshal(awsInfra)
 	if err != nil {
 		return apperrors.Internal("error encoding infrastructure config: %s", err.Error())
@@ -431,6 +493,19 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	if util.NotNilOrEmpty(upgradeConfig.MachineImageVersion) {
 		shoot.Spec.Provider.Workers[0].Machine.Image.Version = upgradeConfig.MachineImageVersion
 	}
+	if upgradeConfig.OIDCConfig != nil {
+		if shoot.Spec.Kubernetes.KubeAPIServer == nil {
+			shoot.Spec.Kubernetes.KubeAPIServer = &gardener_types.KubeAPIServerConfig{}
+		}
+		shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig = &gardener_types.OIDCConfig{
+			ClientID:       &upgradeConfig.OIDCConfig.ClientID,
+			GroupsClaim:    &upgradeConfig.OIDCConfig.GroupsClaim,
+			IssuerURL:      &upgradeConfig.OIDCConfig.IssuerURL,
+			SigningAlgs:    upgradeConfig.OIDCConfig.SigningAlgs,
+			UsernameClaim:  &upgradeConfig.OIDCConfig.UsernameClaim,
+			UsernamePrefix: &upgradeConfig.OIDCConfig.UsernamePrefix,
+		}
+	}
 	return nil
 }
 
@@ -447,4 +522,23 @@ func getMachineConfig(config GardenerConfig) gardener_types.Machine {
 		}
 	}
 	return machine
+
+}
+
+func getAWSZonesNames(zones []*gqlschema.AWSZoneInput) []string {
+	zoneNames := make([]string, 0)
+
+	for _, zone := range zones {
+		zoneNames = append(zoneNames, zone.Name)
+	}
+	return zoneNames
+}
+
+// SingleZoneAWSProviderConfigInput describes old schema with only single AZ available for AWS clusters
+// TODO: remove after data migration
+type SingleZoneAWSProviderConfigInput struct {
+	Zone         string `json:"zone"`
+	VpcCidr      string `json:"vpcCidr"`
+	PublicCidr   string `json:"publicCidr"`
+	InternalCidr string `json:"internalCidr"`
 }

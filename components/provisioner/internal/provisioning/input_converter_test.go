@@ -73,8 +73,9 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 					GcpConfig: gcpGardenerProvider,
 				},
+				OidcConfig: oidcInput(),
 			},
-			Administrators: []*string{util.StringPtr(administrator)},
+			Administrators: []string{administrator},
 		},
 		KymaConfig: fixKymaGraphQLConfigInput(&gqlProductionProfile),
 	}
@@ -107,12 +108,13 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			EnableMachineImageVersionAutoUpdate: false,
 			AllowPrivilegedContainers:           true,
 			GardenerProviderConfig:              expectedGCPProviderCfg,
+			OIDCConfig:                          oidcConfig(),
 		},
 		Kubeconfig:     nil,
 		KymaConfig:     fixKymaConfig(&modelProductionProfile),
 		Tenant:         tenant,
 		SubAccountId:   util.StringPtr(subAccountId),
-		Administrators: []*string{util.StringPtr(administrator)},
+		Administrators: []string{administrator},
 	}
 
 	createGQLRuntimeInputAzure := func(zones []string) gqlschema.ProvisionRuntimeInput {
@@ -147,8 +149,9 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 							Zones:    zones,
 						},
 					},
+					OidcConfig: oidcInput(),
 				},
-				Administrators: []*string{util.StringPtr(administrator)},
+				Administrators: []string{administrator},
 			},
 			KymaConfig: fixKymaGraphQLConfigInput(&gqlProductionProfile),
 		}
@@ -186,12 +189,13 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				EnableMachineImageVersionAutoUpdate: false,
 				AllowPrivilegedContainers:           true,
 				GardenerProviderConfig:              expectedAzureProviderCfg,
+				OIDCConfig:                          oidcConfig(),
 			},
 			Kubeconfig:     nil,
 			KymaConfig:     fixKymaConfig(&modelProductionProfile),
 			Tenant:         tenant,
 			SubAccountId:   util.StringPtr(subAccountId),
-			Administrators: []*string{util.StringPtr(administrator)},
+			Administrators: []string{administrator},
 		}
 	}
 
@@ -209,10 +213,15 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	expectedGardenerAzureRuntimeConfigWithNoTillerButAllowedPrivilegedContainers.KymaConfig.Release = fixKymaReleaseWithoutTiller()
 
 	awsGardenerProvider := &gqlschema.AWSProviderConfigInput{
-		Zone:         "zone",
-		InternalCidr: "cidr",
-		VpcCidr:      "cidr",
-		PublicCidr:   "cidr",
+		AwsZones: []*gqlschema.AWSZoneInput{
+			{
+				Name:         "zone",
+				PublicCidr:   "10.10.11.12/255",
+				InternalCidr: "10.10.11.13/255",
+				WorkerCidr:   "10.10.11.12/255",
+			},
+		},
+		VpcCidr: "10.10.11.11/255",
 	}
 
 	gardenerAWSGQLInput := gqlschema.ProvisionRuntimeInput{
@@ -242,8 +251,9 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 					AwsConfig: awsGardenerProvider,
 				},
+				OidcConfig: oidcInput(),
 			},
-			Administrators: []*string{util.StringPtr(administrator)},
+			Administrators: []string{administrator},
 		},
 		KymaConfig: fixKymaGraphQLConfigInput(&gqlEvaluationProfile),
 	}
@@ -276,12 +286,13 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			EnableMachineImageVersionAutoUpdate: false,
 			AllowPrivilegedContainers:           true,
 			GardenerProviderConfig:              expectedAWSProviderCfg,
+			OIDCConfig:                          oidcConfig(),
 		},
 		Kubeconfig:     nil,
 		KymaConfig:     fixKymaConfig(&modelEvaluationProfile),
 		Tenant:         tenant,
 		SubAccountId:   util.StringPtr(subAccountId),
-		Administrators: []*string{util.StringPtr(administrator)},
+		Administrators: []string{administrator},
 	}
 
 	openstackGardenerProvider := &gqlschema.OpenStackProviderConfigInput{
@@ -316,8 +327,9 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 					OpenStackConfig: openstackGardenerProvider,
 				},
+				OidcConfig: oidcInput(),
 			},
-			Administrators: []*string{util.StringPtr(administrator)},
+			Administrators: []string{administrator},
 		},
 		KymaConfig: fixKymaGraphQLConfigInput(&gqlEvaluationProfile),
 	}
@@ -348,12 +360,13 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			EnableMachineImageVersionAutoUpdate: false,
 			AllowPrivilegedContainers:           true,
 			GardenerProviderConfig:              expectedOpenStackProviderCfg,
+			OIDCConfig:                          oidcConfig(),
 		},
 		Kubeconfig:     nil,
 		KymaConfig:     fixKymaConfig(&modelEvaluationProfile),
 		Tenant:         tenant,
 		SubAccountId:   util.StringPtr(subAccountId),
-		Administrators: []*string{util.StringPtr(administrator)},
+		Administrators: []string{administrator},
 	}
 
 	gardenerZones := []string{"fix-az-zone-1", "fix-az-zone-2"}
@@ -459,6 +472,50 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	})
 }
 
+func oidcInput() *gqlschema.OIDCConfigInput {
+	return &gqlschema.OIDCConfigInput{
+		ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb1111",
+		GroupsClaim:    "groups",
+		IssuerURL:      "https://kymatest.accounts400.ondemand.com",
+		SigningAlgs:    []string{"RS256"},
+		UsernameClaim:  "sub",
+		UsernamePrefix: "-",
+	}
+}
+
+func upgradedOidcInput() *gqlschema.OIDCConfigInput {
+	return &gqlschema.OIDCConfigInput{
+		ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb2222",
+		GroupsClaim:    "groups",
+		IssuerURL:      "https://kymatest.accounts400.ondemand.com",
+		SigningAlgs:    []string{"RS257"},
+		UsernameClaim:  "sup",
+		UsernamePrefix: "-",
+	}
+}
+
+func oidcConfig() *model.OIDCConfig {
+	return &model.OIDCConfig{
+		ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb1111",
+		GroupsClaim:    "groups",
+		IssuerURL:      "https://kymatest.accounts400.ondemand.com",
+		SigningAlgs:    []string{"RS256"},
+		UsernameClaim:  "sub",
+		UsernamePrefix: "-",
+	}
+}
+
+func upgradedOidcConfig() *model.OIDCConfig {
+	return &model.OIDCConfig{
+		ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb2222",
+		GroupsClaim:    "groups",
+		IssuerURL:      "https://kymatest.accounts400.ondemand.com",
+		SigningAlgs:    []string{"RS257"},
+		UsernameClaim:  "sup",
+		UsernamePrefix: "-",
+	}
+}
+
 func TestConverter_ParseInput(t *testing.T) {
 	t.Run("should parse KymaConfig input", func(t *testing.T) {
 
@@ -508,7 +565,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		input := gqlschema.ProvisionRuntimeInput{
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: &gqlschema.GardenerConfigInput{},
-				Administrators: []*string{util.StringPtr(administrator)},
+				Administrators: []string{administrator},
 			},
 			KymaConfig: &gqlschema.KymaConfigInput{
 				Version: kymaVersion,
@@ -556,7 +613,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		input := gqlschema.ProvisionRuntimeInput{
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: nil,
-				Administrators: []*string{util.StringPtr(administrator)},
+				Administrators: []string{administrator},
 			},
 		}
 
@@ -584,7 +641,7 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		input := gqlschema.ProvisionRuntimeInput{
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: &gqlschema.GardenerConfigInput{},
-				Administrators: []*string{util.StringPtr(administrator)},
+				Administrators: []string{administrator},
 			},
 		}
 
@@ -638,6 +695,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				MaxSurge:               1,
 				MaxUnavailable:         1,
 				GardenerProviderConfig: initialGCPProviderConfig,
+				OIDCConfig:             oidcConfig(),
 			},
 			upgradedConfig: model.GardenerConfig{
 				KubernetesVersion:      "version2",
@@ -650,6 +708,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				MaxSurge:               2,
 				MaxUnavailable:         1,
 				GardenerProviderConfig: upgradedGCPProviderConfig,
+				OIDCConfig:             upgradedOidcConfig(),
 			},
 		},
 		{description: "regular Azure shoot upgrade",
@@ -665,6 +724,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				MaxSurge:               1,
 				MaxUnavailable:         1,
 				GardenerProviderConfig: initialAzureProviderConfig,
+				OIDCConfig:             oidcConfig(),
 			},
 			upgradedConfig: model.GardenerConfig{
 				KubernetesVersion:      "version2",
@@ -677,6 +737,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				MaxSurge:               2,
 				MaxUnavailable:         1,
 				GardenerProviderConfig: upgradedAzureProviderConfig,
+				OIDCConfig:             upgradedOidcConfig(),
 			},
 		},
 		{description: "regular AWS shoot upgrade",
@@ -691,6 +752,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				AutoScalerMax:     2,
 				MaxSurge:          1,
 				MaxUnavailable:    1,
+				OIDCConfig:        oidcConfig(),
 			},
 			upgradedConfig: model.GardenerConfig{
 				KubernetesVersion: "version2",
@@ -702,6 +764,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				AutoScalerMax:     6,
 				MaxSurge:          2,
 				MaxUnavailable:    1,
+				OIDCConfig:        upgradedOidcConfig(),
 			},
 		},
 		{description: "regular OpenStack shoot upgrade",
@@ -714,6 +777,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				AutoScalerMax:     2,
 				MaxSurge:          1,
 				MaxUnavailable:    1,
+				OIDCConfig:        oidcConfig(),
 			},
 			upgradedConfig: model.GardenerConfig{
 				KubernetesVersion: "version2",
@@ -723,6 +787,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				AutoScalerMax:     6,
 				MaxSurge:          2,
 				MaxUnavailable:    1,
+				OIDCConfig:        upgradedOidcConfig(),
 			},
 		},
 		{description: "shoot upgrade with nil values",
@@ -737,6 +802,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				AutoScalerMax:     2,
 				MaxSurge:          1,
 				MaxUnavailable:    1,
+				OIDCConfig:        oidcConfig(),
 			},
 			upgradedConfig: model.GardenerConfig{
 				KubernetesVersion: "version",
@@ -748,6 +814,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				AutoScalerMax:     2,
 				MaxSurge:          1,
 				MaxUnavailable:    1,
+				OIDCConfig:        upgradedOidcConfig(),
 			},
 		},
 	}
@@ -833,7 +900,9 @@ func newUpgradeShootInputAwsAzureGCP(newPurpose string) gqlschema.UpgradeShootIn
 			MaxSurge:               util.IntPtr(2),
 			MaxUnavailable:         util.IntPtr(1),
 			ProviderSpecificConfig: nil,
+			OidcConfig:             upgradedOidcInput(),
 		},
+		Administrators: []string{"test@test.pl"},
 	}
 }
 
@@ -848,6 +917,7 @@ func newUpgradeOpenStackShootInput(newPurpose string) gqlschema.UpgradeShootInpu
 			MaxSurge:               util.IntPtr(2),
 			MaxUnavailable:         util.IntPtr(1),
 			ProviderSpecificConfig: nil,
+			OidcConfig:             upgradedOidcInput(),
 		},
 	}
 }
@@ -865,6 +935,7 @@ func newUpgradeShootInputWithNilValues() gqlschema.UpgradeShootInput {
 			MaxSurge:               nil,
 			MaxUnavailable:         nil,
 			ProviderSpecificConfig: nil,
+			OidcConfig:             upgradedOidcInput(),
 		},
 	}
 }

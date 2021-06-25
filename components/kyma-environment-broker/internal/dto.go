@@ -8,6 +8,15 @@ const (
 	LicenceTypeLite = "TestDevelopmentAndDemo"
 )
 
+type OIDCConfigDTO struct {
+	ClientID       string   `json:"clientID"`
+	GroupsClaim    string   `json:"groupsClaim"`
+	IssuerURL      string   `json:"issuerURL"`
+	SigningAlgs    []string `json:"signingAlgs"`
+	UsernameClaim  string   `json:"usernameClaim"`
+	UsernamePrefix string   `json:"usernamePrefix"`
+}
+
 type ProvisioningParameters struct {
 	PlanID     string                    `json:"plan_id"`
 	ServiceID  string                    `json:"service_id"`
@@ -72,8 +81,11 @@ type ProvisioningParametersDTO struct {
 	MaxUnavailable              *int     `json:"maxUnavailable"`
 	OptionalComponentsToInstall []string `json:"components"`
 	KymaVersion                 string   `json:"kymaVersion"`
+	OverridesVersion            string   `json:"overridesVersion"`
 	//Provider - used in Trial plan to determine which cloud provider to use during provisioning
 	Provider *CloudProvider `json:"provider"`
+
+	OIDC *OIDCConfigDTO `json:"oidc,omitempty"`
 }
 
 type ERSContext struct {

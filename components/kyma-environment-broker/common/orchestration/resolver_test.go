@@ -14,7 +14,7 @@ import (
 
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerclient_fake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1/fake"
-	brokerapi "github.com/pivotal-cf/brokerapi/v7/domain"
+	brokerapi "github.com/pivotal-cf/brokerapi/v8/domain"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8s "k8s.io/apimachinery/pkg/runtime"
 	k8stesting "k8s.io/client-go/testing"

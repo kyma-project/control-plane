@@ -17,8 +17,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
 	"github.com/google/uuid"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
-	"github.com/pivotal-cf/brokerapi/v7/domain/apiresponses"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
+	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -37,14 +37,14 @@ type (
 )
 
 type ProvisionEndpoint struct {
-	operationsStorage    storage.Provisioning
-	instanceStorage      storage.Instances
-	queue                Queue
-	builderFactory       PlanValidator
-	enabledPlanIDs       map[string]struct{}
-	onlySingleTrialPerGA bool
-	plansConfig          PlansConfig
-	kymaVerOnDemand      bool
+	config            Config
+	operationsStorage storage.Provisioning
+	instanceStorage   storage.Instances
+	queue             Queue
+	builderFactory    PlanValidator
+	enabledPlanIDs    map[string]struct{}
+	plansConfig       PlansConfig
+	kymaVerOnDemand   bool
 
 	shootDomain  string
 	shootProject string
@@ -60,7 +60,8 @@ func NewProvision(cfg Config,
 	builderFactory PlanValidator,
 	plansConfig PlansConfig,
 	kvod bool,
-	log logrus.FieldLogger) *ProvisionEndpoint {
+	log logrus.FieldLogger,
+) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
 		id := PlanIDsMapping[planName]
@@ -68,17 +69,17 @@ func NewProvision(cfg Config,
 	}
 
 	return &ProvisionEndpoint{
-		operationsStorage:    operationsStorage,
-		instanceStorage:      instanceStorage,
-		queue:                queue,
-		builderFactory:       builderFactory,
-		log:                  log.WithField("service", "ProvisionEndpoint"),
-		enabledPlanIDs:       enabledPlanIDs,
-		onlySingleTrialPerGA: cfg.OnlySingleTrialPerGA,
-		plansConfig:          plansConfig,
-		kymaVerOnDemand:      kvod,
-		shootDomain:          gardenerConfig.ShootDomain,
-		shootProject:         gardenerConfig.Project,
+		config:            cfg,
+		operationsStorage: operationsStorage,
+		instanceStorage:   instanceStorage,
+		queue:             queue,
+		builderFactory:    builderFactory,
+		log:               log.WithField("service", "ProvisionEndpoint"),
+		enabledPlanIDs:    enabledPlanIDs,
+		plansConfig:       plansConfig,
+		kymaVerOnDemand:   kvod,
+		shootDomain:       gardenerConfig.ShootDomain,
+		shootProject:      gardenerConfig.Project,
 	}
 }
 
@@ -126,7 +127,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		logger.Errorf("cannot get existing operation from storage %s", errStorage)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot get existing operation from storage")
 	case existingOperation != nil && !dberr.IsNotFound(errStorage):
-		return b.handleExistingOperation(existingOperation, provisioningParameters, logger)
+		return b.handleExistingOperation(existingOperation, provisioningParameters)
 	}
 
 	// create SKR shoot name
@@ -149,7 +150,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot save operation")
 	}
 
-	err = b.instanceStorage.Insert(internal.Instance{
+	instance := internal.Instance{
 		InstanceID:      instanceID,
 		GlobalAccountID: ersContext.GlobalAccountID,
 		SubAccountID:    ersContext.SubAccountID,
@@ -159,7 +160,8 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		ServicePlanName: Plans(b.plansConfig, provisioningParameters.PlatformProvider)[provisioningParameters.PlanID].PlanDefinition.Name,
 		DashboardURL:    dashboardURL,
 		Parameters:      operation.ProvisioningParameters,
-	})
+	}
+	err = b.instanceStorage.Insert(instance)
 	if err != nil {
 		logger.Errorf("cannot save instance in storage: %s", err)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot save instance")
@@ -173,7 +175,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		OperationData: operation.ID,
 		DashboardURL:  dashboardURL,
 		Metadata: domain.InstanceMetadata{
-			Labels: b.responseLabels(provisioningParameters, dashboardURL),
+			Labels: ResponseLabels(operation, instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
 		},
 	}, nil
 }
@@ -212,9 +214,10 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 		return ersContext, parameters, errors.Wrapf(result.Error, "while validating input parameters")
 	}
 
-	if !b.kymaVerOnDemand && parameters.KymaVersion != "" {
+	if !b.kymaVerOnDemand {
 		logger.Infof("Kyma on demand functionality is disabled. Default Kyma version will be used instead %s", parameters.KymaVersion)
 		parameters.KymaVersion = ""
+		parameters.OverridesVersion = ""
 	}
 	parameters.LicenceType = b.determineLicenceType(details.PlanID)
 
@@ -223,7 +226,7 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 		return ersContext, parameters, errors.Errorf("the plan ID not known, planID: %s", details.PlanID)
 	}
 
-	if IsTrialPlan(details.PlanID) && b.onlySingleTrialPerGA {
+	if IsTrialPlan(details.PlanID) && b.config.OnlySingleTrialPerGA {
 		count, err := b.instanceStorage.GetNumberOfInstancesForGlobalAccountID(ersContext.GlobalAccountID)
 		if err != nil {
 			return ersContext, parameters, errors.Wrap(err, "while checking if a trial Kyma instance exists for given global account")
@@ -254,6 +257,7 @@ func (b *ProvisionEndpoint) extractERSContext(details domain.ProvisionDetails) (
 	if ersContext.UserID == "" {
 		return ersContext, errors.New("UserID parameter cannot be empty")
 	}
+	ersContext.UserID = strings.ToLower(ersContext.UserID)
 
 	return ersContext, nil
 }
@@ -268,18 +272,28 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 	return parameters, nil
 }
 
-func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.ProvisioningOperation, input internal.ProvisioningParameters, log logrus.FieldLogger) (domain.ProvisionedServiceSpec, error) {
-	if operation.ProvisioningParameters.IsEqual(input) {
-		return domain.ProvisionedServiceSpec{
-			IsAsync:       true,
-			AlreadyExists: true,
-			OperationData: operation.ID,
-		}, nil
+func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.ProvisioningOperation, input internal.ProvisioningParameters) (domain.ProvisionedServiceSpec, error) {
+	if !operation.ProvisioningParameters.IsEqual(input) {
+		err := errors.New("provisioning operation already exist")
+		msg := fmt.Sprintf("provisioning operation with InstanceID %s already exist", operation.InstanceID)
+		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusConflict, msg)
 	}
 
-	err := errors.New("provisioning operation already exist")
-	msg := fmt.Sprintf("provisioning operation with InstanceID %s already exist", operation.InstanceID)
-	return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusConflict, msg)
+	instance, err := b.instanceStorage.GetByID(operation.InstanceID)
+	if err != nil {
+		err := errors.New("cannot fetch instance for operation")
+		msg := fmt.Sprintf("cannot fetch instance with ID: %s for operation woth ID: %s", operation.InstanceID, operation.ID)
+		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusConflict, msg)
+	}
+
+	return domain.ProvisionedServiceSpec{
+		IsAsync:       true,
+		AlreadyExists: true,
+		OperationData: operation.ID,
+		Metadata: domain.InstanceMetadata{
+			Labels: ResponseLabels(*operation, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
+		},
+	}, nil
 }
 
 func (b *ProvisionEndpoint) determineLicenceType(planId string) *string {
@@ -288,14 +302,6 @@ func (b *ProvisionEndpoint) determineLicenceType(planId string) *string {
 	}
 
 	return nil
-}
-
-func (b *ProvisionEndpoint) responseLabels(parameters internal.ProvisioningParameters, dashboardURL string) map[string]string {
-	responseLabels := make(map[string]string, 0)
-	responseLabels["Name"] = parameters.Parameters.Name
-	responseLabels["GrafanaURL"] = strings.Replace(dashboardURL, "console.", "grafana.", 1)
-
-	return responseLabels
 }
 
 func (b *ProvisionEndpoint) validator(details *domain.ProvisionDetails, provider internal.CloudProvider) (JSONSchemaValidator, error) {

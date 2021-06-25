@@ -40,7 +40,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -48,6 +48,7 @@ import (
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -58,6 +59,7 @@ const (
 	subAccountLabel        = "subaccount"
 	runtimeIDAnnotation    = "kcp.provisioner.kyma-project.io/runtime-id"
 	defaultNamespace       = "kcp-system"
+	defaultKymaVer         = "1.21"
 	kymaVersionsConfigName = "kyma-versions"
 	defaultRegion          = "cf-eu10"
 	globalAccountID        = "dummy-ga-id"
@@ -116,7 +118,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	componentListProvider := &automock.ComponentListProvider{}
 	componentListProvider.On("AllComponents", mock.Anything).Return([]v1alpha1.KymaComponent{}, nil)
 
-	defaultKymaVer := "1.15.1"
+	kymaVer := "1.15.1"
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
 		MachineImageVersion:         "coreos",
 		KubernetesVersion:           "1.18",
@@ -124,14 +126,14 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		Timeout:                     time.Minute,
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders)
+	}, kymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders)
 	require.NoError(t, err)
 
 	ctx, _ := context.WithTimeout(context.Background(), 20*time.Minute)
 	db := storage.NewMemoryStorage()
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
-	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources(defaultKymaVer, additionalKymaVersions)...)
+	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources(kymaVer, additionalKymaVersions)...)
 
 	gardenerClient := gardenerFake.NewSimpleClientset()
 	provisionerClient := provisioner.NewFakeClient()
@@ -142,7 +144,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(defaultKymaVer, runtimeversion.NewAccountVersionMapping(ctx, cli, defaultNamespace, kymaVersionsConfigName, logs))
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(kymaVer, runtimeversion.NewAccountVersionMapping(ctx, cli, defaultNamespace, kymaVersionsConfigName, logs))
 
 	avsClient, _ := avs.NewClient(ctx, avs.Config{}, logs)
 	avsDel := avs.NewDelegator(avsClient, avs.Config{}, db.Operations())
@@ -187,6 +189,8 @@ type RuntimeOptions struct {
 	PlanID           string
 	ZonesCount       *int
 	Provider         internal.CloudProvider
+	KymaVersion      string
+	OverridesVersion string
 }
 
 func (o *RuntimeOptions) ProvideGlobalAccountID() string {
@@ -303,7 +307,7 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 
 	require.NoError(s.t, s.storage.Instances().Insert(instance))
 	require.NoError(s.t, s.storage.Operations().InsertProvisioningOperation(provisioningOperation))
-	_, err := s.gardenerClient.CoreV1beta1().Shoots(s.gardenerNamespace).Create(shoot)
+	_, err := s.gardenerClient.CoreV1beta1().Shoots(s.gardenerNamespace).Create(context.Background(), shoot, v1.CreateOptions{})
 	require.NoError(s.t, err)
 	return runtimeID
 }
@@ -391,6 +395,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-aws":      "true",
 				"overrides-plan-free":     "true",
 				"overrides-plan-azure_ha": "true",
+				"overrides-plan-aws_ha":   "true",
 			},
 		},
 		Data: map[string]string{
@@ -437,7 +442,6 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	componentListProvider := &automock.ComponentListProvider{}
 	componentListProvider.On("AllComponents", mock.Anything).Return([]v1alpha1.KymaComponent{}, nil)
 
-	defaultKymaVer := "1.21"
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
 		MachineImageVersion:         "coreos",
 		KubernetesVersion:           "1.18",
@@ -451,7 +455,8 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
-	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources(defaultKymaVer, nil)...)
+	additionalKymaVersions := []string{"1.19", "1.20", "main"}
+	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources(defaultKymaVer, additionalKymaVersions)...)
 
 	server := avs.NewMockAvsServer(t)
 	mockServer := avs.FixMockAvsServer(server)
@@ -525,8 +530,10 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 		},
 		PlatformProvider: options.PlatformProvider,
 		Parameters: internal.ProvisioningParametersDTO{
-			Region:     options.ProvideRegion(),
-			ZonesCount: options.ProvideZonesCount(),
+			Region:           options.ProvideRegion(),
+			ZonesCount:       options.ProvideZonesCount(),
+			KymaVersion:      options.KymaVersion,
+			OverridesVersion: options.OverridesVersion,
 		},
 	}
 
@@ -724,6 +731,13 @@ func (s *ProvisioningSuite) AssertMachineType(machineType string) {
 	assert.Equal(s.t, machineType, input.ClusterConfig.GardenerConfig.MachineType)
 }
 
+func (s *ProvisioningSuite) AssertOverrides(overrides gqlschema.ConfigEntryInput) {
+	input := s.fetchProvisionInput()
+
+	assert.Equal(s.t, overrides.Key, input.KymaConfig.Configuration[0].Key)
+	assert.Equal(s.t, overrides.Value, input.KymaConfig.Configuration[0].Value)
+}
+
 func (s *ProvisioningSuite) AssertZonesCount(zonesCount *int, planID string) {
 	input := s.fetchProvisionInput()
 
@@ -736,6 +750,12 @@ func (s *ProvisioningSuite) AssertZonesCount(zonesCount *int, planID string) {
 		}
 		// zonesCount was not provided, should use default value
 		assert.Equal(s.t, provider.DefaultAzureHAZonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
+	case broker.AWSHAPlanID:
+		if zonesCount != nil {
+			assert.Equal(s.t, *zonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
+			break
+		}
+		assert.Equal(s.t, provider.DefaultAWSHAZonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
 	default:
 	}
 }
@@ -766,13 +786,6 @@ func (s *ProvisioningSuite) MarkDirectorWithConsoleURL(operationID string) {
 
 func fixConfig() *Config {
 	return &Config{
-		AuditLog: auditlog.Config{
-			URL:           "https://host1:8080/aaa/v2/",
-			User:          "fooUser",
-			Password:      "barPass",
-			Tenant:        "fooTen",
-			EnableSeqHttp: true,
-		},
 		DbInMemory:                         true,
 		DisableProcessOperationsInProgress: false,
 		DevelopmentMode:                    true,
@@ -785,11 +798,19 @@ func fixConfig() *Config {
 		Database: storage.Config{
 			SecretKey: dbSecretKey,
 		},
-		KymaVersion: "1.21",
-		Broker:      broker.Config{},
-		Avs:         avs.Config{},
+		KymaVersion:           "1.21",
+		EnableOnDemandVersion: true,
+		Broker:                broker.Config{},
+		Avs:                   avs.Config{},
 		IAS: ias.Config{
 			IdentityProvider: ias.FakeIdentityProviderName,
+		},
+		AuditLog: auditlog.Config{
+			URL:           "https://host1:8080/aaa/v2/",
+			User:          "fooUser",
+			Password:      "barPass",
+			Tenant:        "fooTen",
+			EnableSeqHttp: true,
 		},
 		FreemiumProviders: []string{"aws", "azure"},
 	}

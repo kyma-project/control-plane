@@ -17,6 +17,34 @@ type writeSession struct {
 	transaction *dbr.Tx
 }
 
+//TODO: Remove after schema migration
+func (ws writeSession) UpdateProviderSpecificConfig(id string, providerSpecificConfig string) dberrors.Error {
+	res, err := ws.update("gardener_config").
+		Where(dbr.Eq("id", id)).
+		Set("provider_specific_config", providerSpecificConfig).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update provider_specific_config for gardener shoot cluster '%s': %s", id, err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update provider_specific_config for gardener shoot cluster '%s' state: %s", id, err))
+}
+
+//TODO: Remove after schema migration
+func (ws writeSession) InsertRelease(artifacts model.Release) dberrors.Error {
+	_, err := ws.insertInto("kyma_release").
+		Columns("id", "version", "tiller_yaml", "installer_yaml").
+		Record(artifacts).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to insert record to Release table: %s", err)
+	}
+
+	return nil
+}
+
 func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	_, err := ws.insertInto("cluster").
 		Pair("id", cluster.ID).
@@ -30,11 +58,28 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 		return dberrors.Internal("Failed to insert record to Cluster table: %s", err)
 	}
 
-	for _, admin := range cluster.Administrators {
+	dbErr := ws.InsertAdministrators(cluster.ID, cluster.Administrators)
+	if dbErr != nil {
+		return dbErr
+	}
+
+	return nil
+}
+
+func (ws writeSession) InsertAdministrators(clusterId string, administrators []string) dberrors.Error {
+	_, err := ws.deleteFrom("cluster_administrator").
+		Where(dbr.Eq("cluster_id", clusterId)).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to delete record to cluster_administrator table: %s", err)
+	}
+
+	for _, admin := range administrators {
 		_, err := ws.insertInto("cluster_administrator").
 			Pair("id", uuid.New().String()).
-			Pair("cluster_id", cluster.ID).
-			Pair("email", admin).Exec()
+			Pair("cluster_id", clusterId).
+			Pair("user_id", admin).Exec()
 
 		if err != nil {
 			return dberrors.Internal("Failed to insert record to cluster_administrator table: %s", err)
@@ -77,6 +122,42 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		return dberrors.Internal("Failed to insert record to GardenerConfig table: %s", err)
 	}
 
+	if config.OIDCConfig != nil {
+		err := ws.insertOidcConfig(config)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (ws writeSession) insertOidcConfig(config model.GardenerConfig) dberrors.Error {
+	_, err := ws.insertInto("oidc_config").
+		Pair("id", config.ID).
+		Pair("client_id", config.OIDCConfig.ClientID).
+		Pair("groups_claim", config.OIDCConfig.GroupsClaim).
+		Pair("issuer_url", config.OIDCConfig.IssuerURL).
+		Pair("username_claim", config.OIDCConfig.UsernameClaim).
+		Pair("username_prefix", config.OIDCConfig.UsernamePrefix).
+		Pair("gardener_config_id", config.ID).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to insert record to OIDCConfig table: %s", err)
+	}
+
+	for _, algorithm := range config.OIDCConfig.SigningAlgs {
+		_, err = ws.insertInto("signing_algorithms").
+			Pair("id", uuid.New().String()).
+			Pair("oidc_config_id", config.ID).
+			Pair("algorithm", algorithm).
+			Exec()
+
+		if err != nil {
+			return dberrors.Internal("Failed to insert record to SigningAlgorithms table: %s", err)
+		}
+	}
 	return nil
 }
 
@@ -101,11 +182,64 @@ func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) 
 		Set("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Exec()
 
+	if config.OIDCConfig != nil {
+		err = ws.updateOidcConfig(config)
+		if err != nil {
+			return dberrors.Internal("Failed to update record for oidc config %s", err)
+		}
+	}
+
 	if err != nil {
 		return dberrors.Internal("Failed to update record of configuration for gardener shoot cluster '%s': %s", config.Name, err)
 	}
 
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update record of configuration for gardener shoot cluster '%s' state: %s", config.Name, err))
+}
+
+func (ws writeSession) updateOidcConfig(config model.GardenerConfig) dberrors.Error {
+	_, err := ws.deleteFrom("oidc_config").
+		Where(dbr.Eq("gardener_config_id", config.ID)).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to delete record to OIDCConfig table: %s", err)
+	}
+
+	_, err = ws.insertInto("oidc_config").
+		Pair("id", config.ID).
+		Pair("client_id", config.OIDCConfig.ClientID).
+		Pair("groups_claim", config.OIDCConfig.GroupsClaim).
+		Pair("issuer_url", config.OIDCConfig.IssuerURL).
+		Pair("username_claim", config.OIDCConfig.UsernameClaim).
+		Pair("username_prefix", config.OIDCConfig.UsernamePrefix).
+		Pair("gardener_config_id", config.ID).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update record to OIDCConfig table: %s", err)
+	}
+
+	_, err = ws.deleteFrom("signing_algorithms").
+		Where(dbr.Eq("oidc_config_id", config.ID)).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to delete records from SigningAlgorithms table: %s", err)
+	}
+
+	for _, algorithm := range config.OIDCConfig.SigningAlgs {
+
+		_, err = ws.insertInto("signing_algorithms").
+			Pair("id", uuid.New().String()).
+			Pair("oidc_config_id", config.ID).
+			Pair("algorithm", algorithm).
+			Exec()
+
+		if err != nil {
+			return dberrors.Internal("Failed to insert record to SigningAlgorithms table: %s", err)
+		}
+	}
+	return nil
 }
 
 func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error {

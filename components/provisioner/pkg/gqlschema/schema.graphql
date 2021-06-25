@@ -29,6 +29,7 @@ type GardenerConfig {
     enableMachineImageVersionAutoUpdate: Boolean
     allowPrivilegedContainers: Boolean
     providerSpecificConfig: ProviderSpecificConfig
+    oidcConfig: OIDCConfig
 }
 
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
@@ -43,10 +44,8 @@ type AzureProviderConfig {
 }
 
 type AWSProviderConfig {
-    zone: String
+    awsZones: [AWSZone]!
     vpcCidr: String
-    publicCidr: String
-    internalCidr: String
 }
 
 type OpenStackProviderConfig {
@@ -54,6 +53,22 @@ type OpenStackProviderConfig {
     floatingPoolName: String!
     cloudProfileName: String!
     loadBalancerProvider: String!
+}
+
+type AWSZone {
+    name: String
+    publicCidr: String
+    internalCidr: String
+    workerCidr: String
+}
+
+type OIDCConfig {
+    clientID: String!
+    groupsClaim: String!
+    issuerURL: String!
+    signingAlgs: [String!]!
+    usernameClaim: String!
+    usernamePrefix: String!
 }
 
 type ConfigEntry {
@@ -157,7 +172,7 @@ input ProvisionRuntimeInput {
 
 input ClusterConfigInput {
     gardenerConfig: GardenerConfigInput!     # Gardener-specific configuration for the cluster to be provisioned
-    administrators: [String]                # List of administrators
+    administrators: [String!]                # List of cluster administrators' ids
 }
 
 input GardenerConfigInput {
@@ -183,6 +198,16 @@ input GardenerConfigInput {
     allowPrivilegedContainers: Boolean              # Allow Privileged Containers indicates whether privileged containers are allowed in the Shoot
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
+    oidcConfig: OIDCConfigInput
+}
+
+input OIDCConfigInput {
+    clientID: String!
+    groupsClaim: String!
+    issuerURL: String!
+    signingAlgs: [String!]!
+    usernameClaim: String!
+    usernamePrefix: String!
 }
 
 input ProviderSpecificInput {
@@ -202,10 +227,8 @@ input AzureProviderConfigInput {
 }
 
 input AWSProviderConfigInput {
-    zone: String!           # Zone in which to create the cluster
     vpcCidr: String!        # Classless Inter-Domain Routing for the virtual public cloud
-    publicCidr: String!     # Classless Inter-Domain Routing for the public subnet
-    internalCidr: String!   # Classless Inter-Domain Routing for the private subnet
+    awsZones: [AWSZoneInput]! # Zones, in which to create the cluster, configuration
 }
 
 input OpenStackProviderConfigInput {
@@ -213,6 +236,13 @@ input OpenStackProviderConfigInput {
     floatingPoolName: String!     # FloatingPoolName name in which LoadBalancer FIPs should be created.
     cloudProfileName: String!     # Name of the target Cloud Profile
     loadBalancerProvider: String! # Name of load balancer provider, e.g. f5
+}
+
+input AWSZoneInput {
+    name: String!           # Zone name
+    publicCidr: String!     # Classless Inter-Domain Routing for the public subnet
+    internalCidr: String!   # Classless Inter-Domain Routing for the private subnet
+    workerCidr: String!     # Classless Inter-Domain Routing range for the nodes
 }
 
 input KymaConfigInput {
@@ -245,6 +275,7 @@ input UpgradeRuntimeInput {
 
 input UpgradeShootInput {
     gardenerConfig: GardenerUpgradeInput! # Gardener-specific configuration for the cluster to be upgraded
+    administrators: [String!]                # List of cluster administrators' ids
 }
 
 input GardenerUpgradeInput {
@@ -262,6 +293,7 @@ input GardenerUpgradeInput {
     enableKubernetesVersionAutoUpdate: Boolean    # Enable KubernetesVersion AutoUpdate indicates whether the patch Kubernetes version may be automatically updated
     enableMachineImageVersionAutoUpdate: Boolean  # Enable MachineImageVersion AutoUpdate indicates whether the machine image version may be automatically updated
     providerSpecificConfig: ProviderSpecificInput # Additional parameters, vary depending on the target provider
+    oidcConfig: OIDCConfigInput
 }
 
 type Mutation {

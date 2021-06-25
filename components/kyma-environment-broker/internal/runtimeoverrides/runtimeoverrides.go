@@ -39,7 +39,7 @@ func NewRuntimeOverrides(ctx context.Context, cli client.Client) *runtimeOverrid
 	}
 }
 
-func (ro *runtimeOverrides) Append(input InputAppender, planName, kymaVersion string) error {
+func (ro *runtimeOverrides) Append(input InputAppender, planName, overridesVersion string) error {
 	{
 		componentsOverrides, globalOverrides, err := ro.collectFromSecrets()
 		if err != nil {
@@ -50,13 +50,13 @@ func (ro *runtimeOverrides) Append(input InputAppender, planName, kymaVersion st
 	}
 
 	{
-		componentsOverrides, globalOverrides, err := ro.collectFromConfigMaps(planName, kymaVersion)
+		componentsOverrides, globalOverrides, err := ro.collectFromConfigMaps(planName, overridesVersion)
 		if err != nil {
 			return err
 		}
 
 		if len(globalOverrides) == 0 {
-			return fmt.Errorf("no global overrides for plan '%s' and Kyma version '%s'", planName, kymaVersion)
+			return fmt.Errorf("no global overrides for plan '%s' and version '%s'", planName, overridesVersion)
 		}
 
 		appendOverrides(input, componentsOverrides, globalOverrides)
@@ -99,12 +99,12 @@ func (ro *runtimeOverrides) collectFromSecrets() (map[string][]*gqlschema.Config
 	return componentsOverrides, globalOverrides, nil
 }
 
-func (ro *runtimeOverrides) collectFromConfigMaps(planName, kymaVersion string) (map[string][]*gqlschema.ConfigEntryInput, []*gqlschema.ConfigEntryInput, error) {
+func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion string) (map[string][]*gqlschema.ConfigEntryInput, []*gqlschema.ConfigEntryInput, error) {
 	componentsOverrides := make(map[string][]*gqlschema.ConfigEntryInput, 0)
 	globalOverrides := make([]*gqlschema.ConfigEntryInput, 0)
 
 	configMaps := &coreV1.ConfigMapList{}
-	listOpts := configMapListOptions(planName, kymaVersion)
+	listOpts := configMapListOptions(planName, overridesVersion)
 
 	if err := ro.k8sClient.List(ro.ctx, configMaps, listOpts...); err != nil {
 		errMsg := fmt.Sprintf("cannot fetch list of config maps: %s", err)

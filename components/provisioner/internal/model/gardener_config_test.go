@@ -25,7 +25,9 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 	gcpConfigJSON := `{"zones":["fix-gcp-zone-1", "fix-gcp-zone-2"]}`
 	azureConfigJSON := `{"vnetCidr":"10.10.11.11/255", "zones":["fix-az-zone-1", "fix-az-zone-2"]}`
 	azureNoZonesConfigJSON := `{"vnetCidr":"10.10.11.11/255"}`
-	awsConfigJSON := `{"zone":"zone","vpcCidr":"10.10.11.11/255","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255"}`
+	awsConfigJSON := `{"vpcCidr":"10.10.11.11/255","awsZones":[{"name":"zone","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255","workerCidr":"10.250.0.0/19"}]}
+`
+	singleZoneAwsConfigJSON := `{"zone":"zone","vpcCidr":"10.10.11.11/255","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255"}`
 
 	for _, testCase := range []struct {
 		description                    string
@@ -66,17 +68,56 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 			expectedConfig: &AWSGardenerConfig{
 				ProviderSpecificConfig: ProviderSpecificConfig(awsConfigJSON),
 				input: &gqlschema.AWSProviderConfigInput{
-					Zone:         "zone",
-					VpcCidr:      "10.10.11.11/255",
-					PublicCidr:   "10.10.11.12/255",
-					InternalCidr: "10.10.11.13/255",
+					AwsZones: []*gqlschema.AWSZoneInput{
+						{
+							Name:         "zone",
+							PublicCidr:   "10.10.11.12/255",
+							InternalCidr: "10.10.11.13/255",
+							WorkerCidr:   "10.250.0.0/19",
+						},
+					},
+					VpcCidr: "10.10.11.11/255",
 				},
 			},
 			expectedProviderSpecificConfig: gqlschema.AWSProviderConfig{
-				Zone:         util.StringPtr("zone"),
-				VpcCidr:      util.StringPtr("10.10.11.11/255"),
-				PublicCidr:   util.StringPtr("10.10.11.12/255"),
-				InternalCidr: util.StringPtr("10.10.11.13/255"),
+				AwsZones: []*gqlschema.AWSZone{
+					{
+						Name:         util.StringPtr("zone"),
+						PublicCidr:   util.StringPtr("10.10.11.12/255"),
+						InternalCidr: util.StringPtr("10.10.11.13/255"),
+						WorkerCidr:   util.StringPtr("10.250.0.0/19"),
+					},
+				},
+				VpcCidr: util.StringPtr("10.10.11.11/255"),
+			},
+		},
+		{
+			description: "should create AWS Gardener config with single zone from old schema format",
+			jsonData:    singleZoneAwsConfigJSON,
+			expectedConfig: &AWSGardenerConfig{
+				ProviderSpecificConfig: ProviderSpecificConfig(awsConfigJSON),
+				input: &gqlschema.AWSProviderConfigInput{
+					AwsZones: []*gqlschema.AWSZoneInput{
+						{
+							Name:         "zone",
+							PublicCidr:   "10.10.11.12/255",
+							InternalCidr: "10.10.11.13/255",
+							WorkerCidr:   "10.250.0.0/19",
+						},
+					},
+					VpcCidr: "10.10.11.11/255",
+				},
+			},
+			expectedProviderSpecificConfig: gqlschema.AWSProviderConfig{
+				AwsZones: []*gqlschema.AWSZone{
+					{
+						Name:         util.StringPtr("zone"),
+						PublicCidr:   util.StringPtr("10.10.11.12/255"),
+						InternalCidr: util.StringPtr("10.10.11.13/255"),
+						WorkerCidr:   util.StringPtr("10.250.0.0/19"),
+					},
+				},
+				VpcCidr: util.StringPtr("10.10.11.11/255"),
 			},
 		},
 	} {
@@ -159,6 +200,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Version:                   "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
+							OIDCConfig:                gardenerOidcConfig(oidcConfig()),
 						},
 					},
 					Maintenance: &gardener_types.Maintenance{
@@ -210,6 +252,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Version:                   "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
+							OIDCConfig:                gardenerOidcConfig(oidcConfig()),
 						},
 					},
 					Maintenance: &gardener_types.Maintenance{AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
@@ -260,6 +303,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Version:                   "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
+							OIDCConfig:                gardenerOidcConfig(oidcConfig()),
 						},
 					},
 					Maintenance: &gardener_types.Maintenance{
@@ -299,7 +343,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1"}`),
 						},
 						InfrastructureConfig: &apimachineryRuntime.RawExtension{
-							Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1","networks":{"vpc":{"cidr":"10.10.11.11/255"},"zones":[{"name":"zone","internal":"10.10.11.13/255","public":"10.10.11.12/255","workers":"10.10.10.10/255"}]}}`),
+							Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"aws.provider.extensions.gardener.cloud/v1alpha1","networks":{"vpc":{"cidr":"10.10.11.11/255"},"zones":[{"name":"zone","internal":"10.10.11.13/255","public":"10.10.11.12/255","workers":"10.10.11.12/255"}]}}`),
 						},
 						Workers: []gardener_types.Worker{
 							fixWorker([]string{"zone"}),
@@ -311,6 +355,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						Version:                   "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
+							OIDCConfig:                gardenerOidcConfig(oidcConfig()),
 						},
 					},
 					Maintenance: &gardener_types.Maintenance{
@@ -328,7 +373,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 			gardenerProviderConfig := fixGardenerConfig(testCase.provider, testCase.providerConfig)
 
 			// when
-			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace", "account", "sub-account")
+			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace", "account", "sub-account", oidcConfig())
 
 			// then
 			require.NoError(t, err)
@@ -464,15 +509,21 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		EnableMachineImageVersionAutoUpdate: false,
 		AllowPrivilegedContainers:           false,
 		GardenerProviderConfig:              providerCfg,
+		OIDCConfig:                          oidcConfig(),
 	}
 }
 
 func fixAWSGardenerInput() *gqlschema.AWSProviderConfigInput {
 	return &gqlschema.AWSProviderConfigInput{
-		Zone:         "zone",
-		VpcCidr:      "10.10.11.11/255",
-		PublicCidr:   "10.10.11.12/255",
-		InternalCidr: "10.10.11.13/255",
+		AwsZones: []*gqlschema.AWSZoneInput{
+			{
+				Name:         "zone",
+				PublicCidr:   "10.10.11.12/255",
+				InternalCidr: "10.10.11.13/255",
+				WorkerCidr:   "10.10.11.12/255",
+			},
+		},
+		VpcCidr: "10.10.11.11/255",
 	}
 }
 
@@ -503,5 +554,16 @@ func fixWorker(zones []string) gardener_types.Worker {
 		Maximum: 3,
 		Minimum: 1,
 		Zones:   zones,
+	}
+}
+
+func oidcConfig() *OIDCConfig {
+	return &OIDCConfig{
+		ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb1111",
+		GroupsClaim:    "groups",
+		IssuerURL:      "https://kymatest.accounts400.ondemand.com",
+		SigningAlgs:    []string{"RS256"},
+		UsernameClaim:  "sub",
+		UsernamePrefix: "-",
 	}
 }

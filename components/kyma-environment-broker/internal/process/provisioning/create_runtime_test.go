@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
-	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -92,7 +92,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				},
 				Seed: nil,
 			},
-			Administrators: []*string{&administrator},
+			Administrators: []string{administrator},
 		},
 		KymaConfig: &gqlschema.KymaConfigInput{
 			Version: kymaVersion,

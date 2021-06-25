@@ -1,6 +1,7 @@
 package environmentscleanup
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -21,7 +22,7 @@ const (
 
 //go:generate mockery -name=GardenerClient -output=automock
 type GardenerClient interface {
-	List(opts v1.ListOptions) (*v1beta1.ShootList, error)
+	List(context context.Context, opts v1.ListOptions) (*v1beta1.ShootList, error)
 }
 
 //go:generate mockery -name=BrokerClient -output=automock
@@ -84,7 +85,7 @@ func (s *Service) getStaleShoots(labelSelector string) ([]v1beta1.Shoot, error) 
 	opts := v1.ListOptions{
 		LabelSelector: labelSelector,
 	}
-	shootList, err := s.gardenerService.List(opts)
+	shootList, err := s.gardenerService.List(context.Background(), opts)
 	if err != nil {
 		return []v1beta1.Shoot{}, errors.Wrap(err, "while listing Gardener shoots")
 	}

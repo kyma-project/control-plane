@@ -77,6 +77,7 @@ kymaVersionOnDemand: "false"
 disableProcessOperationsInProgress: "false"
 enablePlans: "azure,gcp,azure_lite,azure_ha,trial"
 onlySingleTrialPerGA: "true"
+enableKubeconfigURLLabel: "false"
 
 osbUpdateProcessingEnabled: "false"
 
@@ -93,6 +94,10 @@ gardener:
   machineImageVersion: ""
   trialNodesNumber: "1"
   freemiumProviders: "azure,aws"
+
+kubeconfig:
+  issuerURL: "TBD"
+  clientID: "TBD"
 
 # It is used to provide own creds for Service Manager instead of using the one provided by external system
 # who execute provision call on Kyma Environment Broker. You can define `overrideMode` to be one of: Always, WhenNotSentInRequest, Never
@@ -185,7 +190,6 @@ cis:
 oidc:
   issuer: https://dex.{{ .Values.global.ingress.domainName }}
   keysURL: http://dex-service.kyma-system.svc.cluster.local:5556/keys
-  client: "kyma-env-broker"
   groups:
     admin: runtimeAdmin
     operator: runtimeOperator

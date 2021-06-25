@@ -13,19 +13,29 @@ type ProviderSpecificConfig interface {
 }
 
 type AWSProviderConfig struct {
-	Zone         *string `json:"zone"`
-	VpcCidr      *string `json:"vpcCidr"`
-	PublicCidr   *string `json:"publicCidr"`
-	InternalCidr *string `json:"internalCidr"`
+	AwsZones []*AWSZone `json:"awsZones"`
+	VpcCidr  *string    `json:"vpcCidr"`
 }
 
 func (AWSProviderConfig) IsProviderSpecificConfig() {}
 
 type AWSProviderConfigInput struct {
-	Zone         string `json:"zone"`
-	VpcCidr      string `json:"vpcCidr"`
+	VpcCidr  string          `json:"vpcCidr"`
+	AwsZones []*AWSZoneInput `json:"awsZones"`
+}
+
+type AWSZone struct {
+	Name         *string `json:"name"`
+	PublicCidr   *string `json:"publicCidr"`
+	InternalCidr *string `json:"internalCidr"`
+	WorkerCidr   *string `json:"workerCidr"`
+}
+
+type AWSZoneInput struct {
+	Name         string `json:"name"`
 	PublicCidr   string `json:"publicCidr"`
 	InternalCidr string `json:"internalCidr"`
+	WorkerCidr   string `json:"workerCidr"`
 }
 
 type AzureProviderConfig struct {
@@ -42,7 +52,7 @@ type AzureProviderConfigInput struct {
 
 type ClusterConfigInput struct {
 	GardenerConfig *GardenerConfigInput `json:"gardenerConfig"`
-	Administrators []*string            `json:"administrators"`
+	Administrators []string             `json:"administrators"`
 }
 
 type ComponentConfiguration struct {
@@ -109,6 +119,7 @@ type GardenerConfig struct {
 	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
 	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
 	ProviderSpecificConfig              ProviderSpecificConfig `json:"providerSpecificConfig"`
+	OidcConfig                          *OIDCConfig            `json:"oidcConfig"`
 }
 
 type GardenerConfigInput struct {
@@ -134,6 +145,7 @@ type GardenerConfigInput struct {
 	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
 	Seed                                *string                `json:"seed"`
+	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
 }
 
 type GardenerUpgradeInput struct {
@@ -151,6 +163,7 @@ type GardenerUpgradeInput struct {
 	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate"`
 	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
+	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
 }
 
 type HibernationStatus struct {
@@ -171,6 +184,24 @@ type KymaConfigInput struct {
 	Components       []*ComponentConfigurationInput `json:"components"`
 	Configuration    []*ConfigEntryInput            `json:"configuration"`
 	ConflictStrategy *ConflictStrategy              `json:"conflictStrategy"`
+}
+
+type OIDCConfig struct {
+	ClientID       string   `json:"clientID"`
+	GroupsClaim    string   `json:"groupsClaim"`
+	IssuerURL      string   `json:"issuerURL"`
+	SigningAlgs    []string `json:"signingAlgs"`
+	UsernameClaim  string   `json:"usernameClaim"`
+	UsernamePrefix string   `json:"usernamePrefix"`
+}
+
+type OIDCConfigInput struct {
+	ClientID       string   `json:"clientID"`
+	GroupsClaim    string   `json:"groupsClaim"`
+	IssuerURL      string   `json:"issuerURL"`
+	SigningAlgs    []string `json:"signingAlgs"`
+	UsernameClaim  string   `json:"usernameClaim"`
+	UsernamePrefix string   `json:"usernamePrefix"`
 }
 
 type OpenStackProviderConfig struct {
@@ -240,6 +271,7 @@ type UpgradeRuntimeInput struct {
 
 type UpgradeShootInput struct {
 	GardenerConfig *GardenerUpgradeInput `json:"gardenerConfig"`
+	Administrators []string              `json:"administrators"`
 }
 
 type ConflictStrategy string

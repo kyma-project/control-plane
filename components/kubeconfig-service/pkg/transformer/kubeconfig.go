@@ -49,6 +49,5 @@ users:
       - get-token
       - "--oidc-issuer-url={{ .OIDCIssuerURL }}"
       - "--oidc-client-id={{ .OIDCClientID }}"
-      - "--oidc-client-secret={{ .OIDCClientSecret }}"
       command: kubectl
 `

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/pivotal-cf/brokerapi/v7/domain"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,7 +18,7 @@ func NewGetBinding(log logrus.FieldLogger) *GetBindingEndpoint {
 
 // GetBinding fetches an existing service binding
 //   GET /v2/service_instances/{instance_id}/service_bindings/{binding_id}
-func (b *GetBindingEndpoint) GetBinding(ctx context.Context, instanceID, bindingID string) (domain.GetBindingSpec, error) {
+func (b *GetBindingEndpoint) GetBinding(_ context.Context, instanceID, bindingID string, _ domain.FetchBindingDetails) (domain.GetBindingSpec, error) {
 	b.log.Infof("GetBinding instanceID: %s", instanceID)
 	b.log.Infof("GetBinding bindingID: %s", bindingID)
 

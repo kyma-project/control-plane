@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -57,6 +58,7 @@ func (s *EDPRegistrationStep) Run(operation internal.ProvisioningOperation, log 
 		edp.MaasConsumerEnvironmentKey: s.selectEnvironmentKey(operation.ProvisioningParameters.PlatformRegion, log),
 		edp.MaasConsumerRegionKey:      operation.ProvisioningParameters.PlatformRegion,
 		edp.MaasConsumerSubAccountKey:  subAccountID,
+		edp.MaasConsumerServicePlan:    s.selectServicePlan(operation.ProvisioningParameters.PlanID),
 	} {
 		err = s.client.CreateMetadataTenant(subAccountID, s.config.Environment, edp.MetadataTenantPayload{
 			Key:   key,
@@ -101,6 +103,15 @@ func (s *EDPRegistrationStep) selectEnvironmentKey(region string, log logrus.Fie
 	default:
 		log.Warnf("region %s does not fit any of the options, default CF is used", region)
 		return "CF"
+	}
+}
+
+func (s *EDPRegistrationStep) selectServicePlan(planID string) string {
+	switch planID {
+	case broker.FreemiumPlanID:
+		return "free"
+	default:
+		return "standard"
 	}
 }
 

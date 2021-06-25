@@ -45,8 +45,6 @@ spec:
               value: {{ .Values.config.oidc.kubeconfig.issuer | quote }}
             - name: OIDC_KUBECONFIG_CLIENT_ID
               value: {{ .Values.config.oidc.kubeconfig.client | quote }}
-            - name: OIDC_KUBECONFIG_CLIENT_SECRET
-              value: {{ .Values.config.oidc.kubeconfig.secret | quote }}
             - name: OIDC_ISSUER_URL
               value: {{ tpl .Values.config.oidc.issuer $ | quote }}
             - name: OIDC_CLIENT_ID

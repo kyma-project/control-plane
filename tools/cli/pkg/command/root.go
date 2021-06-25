@@ -26,8 +26,8 @@ The CLI supports configuration file for common (global) options needed for all c
   - KCPCONFIG environment variable which contains the path
   - $HOME/.kcp/config.yaml (default path).
 
-The configuration file is in YAML format and supports the following global options: %s, %s, %s, %s, %s, %s.
-See the **Global Options** section of each command for the description of these options.`, GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.oidcClientSecret, GlobalOpts.kebAPIURL, GlobalOpts.kubeconfigAPIURL, GlobalOpts.gardenerKubeconfig)
+The configuration file is in YAML format and supports the following global options: %s, %s, %s, %s, %s.
+See the **Global Options** section of each command for the description of these options.`, GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.kebAPIURL, GlobalOpts.kubeconfigAPIURL, GlobalOpts.gardenerKubeconfig)
 
 	cmd := &cobra.Command{
 		Use:     "kcp",
