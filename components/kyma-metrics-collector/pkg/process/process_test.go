@@ -126,7 +126,8 @@ func TestGenerateRecordWithMetrics(t *testing.T) {
 	secret := kmctesting.NewSecret(shootName, kubeconfig)
 	cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
 	queue := workqueue.NewDelayingQueue()
-	secretClient, _ := NewFakeSecretClient(secret)
+	secretClient, err := NewFakeSecretClient(secret)
+	g.Expect(err).Should(gomega.BeNil())
 
 	t.Run("no kubeconfig configured", func(t *testing.T) {
 		subAccID := uuid.New().String()
@@ -162,7 +163,8 @@ func TestGenerateRecordWithMetrics(t *testing.T) {
 		subAccID := uuid.New().String()
 
 		shoot := kmctesting.GetShoot(shootName, kmctesting.WithAzureProviderAndStandardD8V3VMs)
-		shootClient, _ := NewFakeShootClient(shoot)
+		shootClient, err := NewFakeShootClient(shoot)
+		g.Expect(err).Should(gomega.BeNil())
 		fakeNodeClient := skrnode.FakeEmptyNodeClient{}
 
 		p := Process{
@@ -181,7 +183,7 @@ func TestGenerateRecordWithMetrics(t *testing.T) {
 			Metric:       NewMetric(),
 		}
 
-		err := p.Cache.Add(subAccID, record, gocache.NoExpiration)
+		err = p.Cache.Add(subAccID, record, gocache.NoExpiration)
 		g.Expect(err).Should(gomega.BeNil())
 
 		_, err = p.generateRecordWithMetrics(identifier, subAccID)
@@ -266,7 +268,8 @@ func TestPollKEBForRuntimes(t *testing.T) {
 		numberOfRuntimes := 4
 		g.Eventually(testutil.CollectAndCount(clustersScraped, metricName)).Should(gomega.Equal(1))
 		g.Eventually(func() int {
-			counter, _ := clustersScraped.GetMetricWithLabelValues("")
+			counter, err := clustersScraped.GetMetricWithLabelValues("")
+			g.Expect(err).Should(gomega.BeNil())
 			return int(testutil.ToFloat64(counter))
 		}).Should(gomega.Equal(numberOfRuntimes))
 	})
