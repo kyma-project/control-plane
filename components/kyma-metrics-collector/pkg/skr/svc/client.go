@@ -10,6 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
+
+	skrcommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/commons"
 )
 
 type Client struct {
@@ -33,8 +35,10 @@ func (c Client) List(ctx context.Context) (*corev1.ServiceList, error) {
 
 	unstructuredSvcList, err := c.Resource.Namespace(corev1.NamespaceAll).List(ctx, metaV1.ListOptions{})
 	if err != nil {
+		skrcommons.SkrCalls.WithLabelValues("failure", "failed_listing_svc").Inc()
 		return nil, err
 	}
+	skrcommons.SkrCalls.WithLabelValues("success", "success_listing_svc").Inc()
 	return convertUnstructuredListToSVCList(unstructuredSvcList)
 }
 

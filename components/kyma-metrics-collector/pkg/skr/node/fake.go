@@ -8,22 +8,8 @@ import (
 
 type FakeNodeClient struct{}
 
-type FakeEmptyNodeClient struct{}
-
 func (fakeNodeClient FakeNodeClient) NewClient(string) (*Client, error) {
 	nodeList := kmctesting.Get3NodesWithStandardD8v3VMType()
-	scheme, err := commons.SetupSchemeOrDie()
-	if err != nil {
-		return nil, err
-	}
-
-	dynamicClient := dynamicfake.NewSimpleDynamicClient(scheme, nodeList)
-	nsResourceClient := dynamicClient.Resource(GroupVersionResource())
-	return &Client{Resource: nsResourceClient}, nil
-}
-
-func (fakeNodeClient FakeEmptyNodeClient) NewClient(string) (*Client, error) {
-	nodeList := kmctesting.GetEmptyNodesList()
 	scheme, err := commons.SetupSchemeOrDie()
 	if err != nil {
 		return nil, err

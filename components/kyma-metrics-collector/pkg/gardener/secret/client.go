@@ -36,8 +36,10 @@ func (c Client) Get(ctx context.Context, shootName string) (*corev1.Secret, erro
 	shootKubeconfigName := fmt.Sprintf("%s.kubeconfig", shootName)
 	unstructuredSecret, err := c.ResourceClient.Get(ctx, shootKubeconfigName, metaV1.GetOptions{})
 	if err != nil {
+		gardenercommons.GardenerCalls.WithLabelValues("failure", shootName, "failed_getting_secret").Inc()
 		return nil, err
 	}
+	gardenercommons.GardenerCalls.WithLabelValues("success", shootName, "success_getting_secret").Inc()
 	return convertRuntimeObjToSecret(unstructuredSecret)
 }
 

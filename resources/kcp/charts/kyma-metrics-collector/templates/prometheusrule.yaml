@@ -27,13 +27,6 @@ spec:
           severity: critical
         annotations:
           description: KMC has failed to call EDP with status "2xx successful" in the last 5 minutes.
-      - alert: EDPErrors
-        expr: sum by (subaccount) (increase(kmc_edp_error_count[5m])) > 30
-        for: 10m
-        labels:
-          severity: critical
-        annotations:
-          description: KMC has reported an increase in errors in the last 10 minutes for EDP.
       - alert: EDPRequestDuration
         expr: sum by (job) (rate(kmc_edp_request_duration_seconds_sum[30m])/rate(kmc_edp_request_duration_seconds_count[30m])) > 3
         for: 10m
@@ -50,13 +43,6 @@ spec:
          severity: critical
         annotations:
           description: KMC has failed to call KEB with status "2xx successful" in the last 5 minutes.
-      - alert: KEBErrors
-        expr: sum by (job) (increase(kmc_keb_error_count[5m])) > 30
-        for: 10m
-        labels:
-          severity: critical
-        annotations:
-          description: KMC has reported an increase in errors in the last 10 minutes for KEB.
       - alert: KEBRequestDuration
         expr: sum by (job) (rate(kmc_keb_request_duration_seconds_sum[30m])/rate(kmc_keb_request_duration_seconds_count[30m])) > 5
         for: 10m
@@ -74,7 +60,7 @@ spec:
     - name: kmc.rules.skr
       rules:
       - alert: SKRErrors
-        expr: sum by (subaccount) (increase(kmc_skr_error_count[5m])) > 30
+        expr: sum by (reason) (increase(kmc_skr_calls_total{status="failure"}[5m])) > 30
         for: 10m
         labels:
           severity: critical
@@ -83,29 +69,11 @@ spec:
     - name: kmc.rules.gardener
       rules:
       - alert: GardenerErrors
-        expr: sum by (subaccount) (increase(kmc_gardener_error_count[5m])) > 30
+        expr: sum by (reason) (increase(kmc_gardener_calls_total{status="failure"}[5m])) > 30
         for: 10m
         labels:
           severity: critical
         annotations:
           description: KMC has reported an increase in errors in the last 10 minutes for Gardener.
-    - name: kmc.rules.cache
-      rules:
-      - alert: CacheErrors
-        expr: sum by (subaccount) (increase(kmc_cache_error_count[5m])) > 30
-        for: 10m
-        labels:
-          severity: critical
-        annotations:
-          description: KMC has reported an increase in errors in the last 10 minutes for the Cache.
-    - name: kmc.rules.publiccloud
-      rules:
-      - alert: ProviderErrors
-        expr: sum by (job) (increase(kmc_public_cloud_error_count[5m])) > 30
-        for: 10m
-        labels:
-          severity: warning
-        annotations:
-          description: KMC has reported an increase in errors in the last 10 minutes for loading the public cloud specs.
 {{- end -}}
 {{- end -}}

@@ -73,14 +73,12 @@ func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) 
 		var secret *corev1.Secret
 		secret, err = p.SecretClient.Get(ctx, shootName)
 		if err != nil {
-			gardenerErrorCount.WithLabelValues("failed_to_get_secret", shootName, subAccountID).Inc()
 			return
 		}
 
 		record.KubeConfig = string(secret.Data[shootKubeconfigKey])
 		if record.KubeConfig == "" {
 			err = fmt.Errorf("kubeconfig for shoot not found")
-			gardenerErrorCount.WithLabelValues("failed_to_get_kubeconfig", shootName, subAccountID).Inc()
 			return
 		}
 	}
@@ -89,14 +87,12 @@ func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) 
 	var shoot *gardenerv1beta1.Shoot
 	shoot, err = p.ShootClient.Get(ctx, shootName)
 	if err != nil {
-		gardenerErrorCount.WithLabelValues("failed_to_get_shoot", shootName, subAccountID).Inc()
 		return
 	}
 
 	// Get nodes dynamic client
 	nodesClient, err := p.NodeConfig.NewClient(record.KubeConfig)
 	if err != nil {
-		skrErrorCount.WithLabelValues("failed_to_get_nodes_client", subAccountID).Inc()
 		return
 	}
 
@@ -104,26 +100,22 @@ func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) 
 	var nodes *corev1.NodeList
 	nodes, err = nodesClient.List(ctx)
 	if err != nil {
-		skrErrorCount.WithLabelValues("failed_to_list_nodes", subAccountID).Inc()
 		return
 	}
 
 	if len(nodes.Items) == 0 {
 		err = fmt.Errorf("no nodes to process")
-		skrErrorCount.WithLabelValues("failed_to_get_nodes_items", subAccountID).Inc()
 		return
 	}
 
 	// Get PVCs
 	pvcClient, err := p.PVCConfig.NewClient(record.KubeConfig)
 	if err != nil {
-		skrErrorCount.WithLabelValues("failed_to_get_pvc_client", subAccountID).Inc()
 		return
 	}
 	var pvcList *corev1.PersistentVolumeClaimList
 	pvcList, err = pvcClient.List(ctx)
 	if err != nil {
-		skrErrorCount.WithLabelValues("failed_to_list_pvc", subAccountID).Inc()
 		return
 	}
 
@@ -131,12 +123,10 @@ func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) 
 	var svcList *corev1.ServiceList
 	svcClient, err := p.SvcConfig.NewClient(record.KubeConfig)
 	if err != nil {
-		skrErrorCount.WithLabelValues("failed_to_get_svc_client", subAccountID).Inc()
 		return
 	}
 	svcList, err = svcClient.List(ctx)
 	if err != nil {
-		skrErrorCount.WithLabelValues("failed_to_list_svc", subAccountID).Inc()
 		return
 	}
 
@@ -176,13 +166,11 @@ func (p *Process) pollKEBForRuntimes() {
 	kebReq, err := p.KEBClient.NewRequest()
 
 	if err != nil {
-		kebErrorCount.WithLabelValues("failed_create_request").Inc()
 		p.Logger.Fatalf("failed to create a new request for KEB: %v", err)
 	}
 	for {
 		runtimesPage, err := p.KEBClient.GetAllRuntimes(kebReq)
 		if err != nil {
-			kebErrorCount.WithLabelValues("failed_get_runtimes").Inc()
 			p.Logger.Errorf("failed to get runtimes from KEB: %v", err)
 			time.Sleep(p.KEBClient.Config.PollWaitDuration)
 			continue
@@ -304,18 +292,15 @@ func (p Process) getRecordWithOldOrNewMetric(identifier int, subAccountID string
 func (p Process) sendEventStreamToEDP(tenant string, payload []byte) error {
 	edpRequest, err := p.EDPClient.NewRequest(tenant)
 	if err != nil {
-		edpErrorCount.WithLabelValues("failed_create_request", tenant).Inc()
 		return errors.Wrapf(err, "failed to create a new request for EDP")
 	}
 
 	resp, err := p.EDPClient.Send(edpRequest, payload)
 	if err != nil {
-		edpErrorCount.WithLabelValues("failed_send", tenant).Inc()
 		return errors.Wrapf(err, "failed to send event-stream to EDP")
 	}
 
 	if !isSuccess(resp.StatusCode) {
-		edpErrorCount.WithLabelValues(fmt.Sprintf("http_%d", resp.StatusCode), tenant)
 		return fmt.Errorf("failed to send event-stream to EDP as it returned HTTP: %d", resp.StatusCode)
 	}
 	return nil
@@ -355,7 +340,6 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 			if !isFound {
 				err := p.Cache.Add(runtime.SubAccountID, newRecord, cache.NoExpiration)
 				if err != nil {
-					cacheErrorCount.WithLabelValues("failed_add", runtime.SubAccountID).Inc()
 					p.Logger.Errorf("failed to add subAccountID: %v to cache hence skipping queueing it", err)
 					continue
 				}

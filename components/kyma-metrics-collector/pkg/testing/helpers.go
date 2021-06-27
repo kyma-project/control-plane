@@ -222,16 +222,6 @@ func Get3NodesWithFooVMType() *corev1.NodeList {
 	}
 }
 
-func GetEmptyNodesList() *corev1.NodeList {
-	return &corev1.NodeList{
-		TypeMeta: metaV1.TypeMeta{
-			Kind:       "NodeList",
-			APIVersion: "v1",
-		},
-		Items: []corev1.Node{},
-	}
-}
-
 func GetNode(name, vmType string) corev1.Node {
 	return corev1.Node{
 		TypeMeta: metaV1.TypeMeta{

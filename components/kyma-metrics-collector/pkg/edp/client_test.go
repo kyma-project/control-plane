@@ -31,9 +31,6 @@ const (
 func TestClient(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	dataTenant := "testTenant"
-	expectedRequestMetricCount := 1
-	expectedDurationMetricCount := 1
-	var expectedMetricsValue float64 = 1
 	expectedPath := fmt.Sprintf("/namespaces/%s/dataStreams/%s/%s/dataTenants/%s/%s/events", testNamespace, testDataStreamName, testDataStreamVersion, testTenant, testEnv)
 	expectedHeaders := http.Header{
 		"Authorization":   []string{fmt.Sprintf("Bearer %s", testToken)},
@@ -67,21 +64,17 @@ func TestClient(t *testing.T) {
 	g.Expect(resp.StatusCode).Should(gomega.Equal(http.StatusCreated))
 
 	// Ensure metrics exists
-	g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(expectedRequestMetricCount))
-	g.Expect(testutil.CollectAndCount(sentRequestDuration, histogramName)).Should(gomega.Equal(expectedDurationMetricCount))
+	g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(1))
+	g.Expect(testutil.CollectAndCount(sentRequestDuration, histogramName)).Should(gomega.Equal(1))
 	// Ensure metric has expected value
 	counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusCreated))
 	g.Expect(err).Should(gomega.BeNil())
-	g.Expect(testutil.ToFloat64(counter)).Should(gomega.Equal(expectedMetricsValue))
+	g.Expect(testutil.ToFloat64(counter)).Should(gomega.Equal(float64(1)))
 }
 
 func TestClientRetry(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	dataTenant := "testTenant"
-	expectedRequestMetricCount := 2
-	expectedDurationMetricCount := 1
-	var expectedNumberOfMetricsWithLabel500 float64 = 1
-	var expectedNumberOfMetricsWithLabel201 float64 = 1
 	expectedPath := fmt.Sprintf("/namespaces/%s/dataStreams/%s/%s/dataTenants/%s/%s/events", testNamespace, testDataStreamName, testDataStreamVersion, testTenant, testEnv)
 
 	countRetry := 0
@@ -114,16 +107,16 @@ func TestClientRetry(t *testing.T) {
 	g.Expect(countRetry).Should(gomega.Equal(expectedCountRetry))
 
 	// Ensure metric exists
-	g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(expectedRequestMetricCount))
-	g.Expect(testutil.CollectAndCount(sentRequestDuration, histogramName)).Should(gomega.Equal(expectedDurationMetricCount))
+	g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(2))
+	g.Expect(testutil.CollectAndCount(sentRequestDuration, histogramName)).Should(gomega.Equal(1))
 	// Ensure metric has expected value
 	status500Counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusInternalServerError))
 	g.Expect(err).Should(gomega.BeNil())
-	g.Expect(testutil.ToFloat64(status500Counter)).Should(gomega.Equal(expectedNumberOfMetricsWithLabel500))
+	g.Expect(testutil.ToFloat64(status500Counter)).Should(gomega.Equal(float64(1)))
 
 	status201Counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusCreated))
 	g.Expect(err).Should(gomega.BeNil())
-	g.Expect(testutil.ToFloat64(status201Counter)).Should(gomega.Equal(expectedNumberOfMetricsWithLabel201))
+	g.Expect(testutil.ToFloat64(status201Counter)).Should(gomega.Equal(float64(1)))
 }
 
 func NewTestConfig(url string) *Config {

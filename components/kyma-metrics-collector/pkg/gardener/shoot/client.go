@@ -33,8 +33,10 @@ func NewClient(opts *options.Options) (*Client, error) {
 func (c Client) Get(ctx context.Context, shootName string) (*gardenerv1beta1.Shoot, error) {
 	unstructuredShoot, err := c.ResourceClient.Get(ctx, shootName, metaV1.GetOptions{})
 	if err != nil {
+		gardenercommons.GardenerCalls.WithLabelValues("failure", shootName, "failed_getting_shoot").Inc()
 		return nil, err
 	}
+	gardenercommons.GardenerCalls.WithLabelValues("success", shootName, "success_getting_shoot").Inc()
 	return convertRuntimeObjToShoot(unstructuredShoot)
 }
 

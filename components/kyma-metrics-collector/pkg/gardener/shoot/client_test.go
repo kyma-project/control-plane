@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 
 	"github.com/onsi/gomega"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,18 +22,31 @@ func TestGet(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	ctx := context.Background()
 
-	shoot := kmctesting.GetShoot("foo-shoot", kmctesting.WithVMSpecs)
+	existingShoot := "foo-shoot"
+	shoot := kmctesting.GetShoot(existingShoot, kmctesting.WithVMSpecs)
 	nsResourceClient, err := NewFakeClient(shoot)
 	g.Expect(err).Should(gomega.BeNil())
 	client := Client{ResourceClient: nsResourceClient}
 
-	gotShoot, err := client.Get(ctx, "foo-shoot")
+	gotShoot, err := client.Get(ctx, existingShoot)
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(*gotShoot).To(gomega.Equal(*shoot))
+	// Tests metric
+	metricName := "kmc_gardener_calls_total"
+	g.Expect(testutil.CollectAndCount(commons.GardenerCalls, metricName)).Should(gomega.Equal(1))
+	callsSuccess, err := commons.GardenerCalls.GetMetricWithLabelValues("success", existingShoot, "success_getting_shoot")
+	g.Expect(err).Should(gomega.BeNil())
+	g.Expect(testutil.ToFloat64(callsSuccess)).Should(gomega.Equal(float64(1)))
 
-	gotShoot, err = client.Get(ctx, "doesnotexist-shoot")
+	nonexistentShoot := "doesnotexist-shoot"
+	_, err = client.Get(ctx, nonexistentShoot)
 	g.Expect(err).ShouldNot(gomega.BeNil())
 	g.Expect(k8sErrors.IsNotFound(err)).To(gomega.BeTrue())
+	// Test metric
+	g.Expect(testutil.CollectAndCount(commons.GardenerCalls, metricName)).Should(gomega.Equal(2))
+	callsFailure, err := commons.GardenerCalls.GetMetricWithLabelValues("failure", nonexistentShoot, "failed_getting_shoot")
+	g.Expect(err).Should(gomega.BeNil())
+	g.Expect(testutil.ToFloat64(callsFailure)).Should(gomega.Equal(float64(1)))
 }
 
 func NewFakeClient(shoot *gardenerv1beta1.Shoot) (dynamic.ResourceInterface, error) {

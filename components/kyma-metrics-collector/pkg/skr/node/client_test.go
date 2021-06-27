@@ -7,9 +7,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
+	gardenercommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
+	skrcommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/commons"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 	"github.com/onsi/gomega"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 )
 
@@ -25,6 +27,12 @@ func TestList(t *testing.T) {
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(len(gotNodeList.Items)).To(gomega.Equal(len(nodeList.Items)))
 	g.Expect(*gotNodeList).To(gomega.Equal(*nodeList))
+	// Tests metric
+	metricName := "kmc_skr_calls_total"
+	g.Expect(testutil.CollectAndCount(skrcommons.SkrCalls, metricName)).Should(gomega.Equal(1))
+	callsSuccess, err := skrcommons.SkrCalls.GetMetricWithLabelValues("success", "success_listing_nodes")
+	g.Expect(err).Should(gomega.BeNil())
+	g.Expect(testutil.ToFloat64(callsSuccess)).Should(gomega.Equal(float64(1)))
 
 	// Delete all the nodes
 	for _, node := range nodeList.Items {
@@ -35,10 +43,15 @@ func TestList(t *testing.T) {
 	gotNodeList, err = client.List(ctx)
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(len(gotNodeList.Items)).To(gomega.Equal(0))
+	// Tests metric
+	g.Expect(testutil.CollectAndCount(skrcommons.SkrCalls, metricName)).Should(gomega.Equal(1))
+	callsSuccess, err = skrcommons.SkrCalls.GetMetricWithLabelValues("success", "success_listing_nodes")
+	g.Expect(err).Should(gomega.BeNil())
+	g.Expect(testutil.ToFloat64(callsSuccess)).Should(gomega.Equal(float64(2)))
 }
 
 func NewFakeClient(nodeList *corev1.NodeList) (*Client, error) {
-	scheme, err := commons.SetupSchemeOrDie()
+	scheme, err := gardenercommons.SetupSchemeOrDie()
 	if err != nil {
 		return nil, err
 	}
