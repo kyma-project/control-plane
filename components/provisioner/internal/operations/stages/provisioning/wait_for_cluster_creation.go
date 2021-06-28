@@ -66,6 +66,10 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operatio
 				return operations.StageResult{}, errors.New("error during cluster provisioning: rate limits exceeded")
 			}
 
+			if lastOperation.Type == gardencorev1beta1.LastOperationTypeReconcile {
+				return operations.StageResult{}, errors.New("error during cluster provisioning: reconcilation error")
+			}
+
 			logger.Warningf("Provisioning failed! Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
 
 			err := errors.New(fmt.Sprintf("cluster provisioning failed. Last Shoot state: %s, Shoot description: %s", lastOperation.State, lastOperation.Description))
