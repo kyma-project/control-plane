@@ -46,6 +46,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		platformRegion   string
 		platformProvider internal.CloudProvider
 		zonesCount       *int
+		region           string
 
 		expectedProfile                    gqlschema.KymaProfile
 		expectedProvider                   string
@@ -135,6 +136,31 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			expectedSharedSubscription:         false,
 			expectedSubsciptionHyperscalerType: hyperscaler.AWS,
 		},
+		"HA AWS - provided zonesCount": {
+			planID:     broker.AWSHAPlanID,
+			zonesCount: ptr.Integer(3),
+			region:     "ap-northeast-2",
+
+			expectedMinimalNumberOfNodes:       4,
+			expectedMaximumNumberOfNodes:       10,
+			expectedMachineType:                "m5d.xlarge",
+			expectedProfile:                    gqlschema.KymaProfileProduction,
+			expectedProvider:                   "aws",
+			expectedSharedSubscription:         false,
+			expectedSubsciptionHyperscalerType: hyperscaler.AWS,
+		},
+		"HA AWS - default zonesCount": {
+			planID: broker.AWSHAPlanID,
+			region: "us-west-1",
+
+			expectedMinimalNumberOfNodes:       4,
+			expectedMaximumNumberOfNodes:       10,
+			expectedMachineType:                "m5d.xlarge",
+			expectedProfile:                    gqlschema.KymaProfileProduction,
+			expectedProvider:                   "aws",
+			expectedSharedSubscription:         false,
+			expectedSubsciptionHyperscalerType: hyperscaler.AWS,
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			// given
@@ -146,6 +172,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 				ZonesCount:       tc.zonesCount,
 				PlatformRegion:   tc.platformRegion,
 				PlatformProvider: tc.platformProvider,
+				Region:           tc.region,
 			})
 
 			// then

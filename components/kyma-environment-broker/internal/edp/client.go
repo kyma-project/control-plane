@@ -20,6 +20,7 @@ const (
 	MaasConsumerEnvironmentKey = "maasConsumerEnvironment"
 	MaasConsumerRegionKey      = "maasConsumerRegion"
 	MaasConsumerSubAccountKey  = "maasConsumerSubAccount"
+	MaasConsumerServicePlan    = "maasConsumerServicePlan"
 
 	dataTenantTmpl     = "%s/namespaces/%s/dataTenants"
 	metadataTenantTmpl = "%s/namespaces/%s/dataTenants/%s/%s/metadata"

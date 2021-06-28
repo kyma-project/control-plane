@@ -7,9 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/vburenin/nsync"
@@ -241,7 +240,7 @@ func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 	if params.LicenceType != nil {
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.LicenceType = params.LicenceType
 	}
-	r.provisionRuntimeInput.ClusterConfig.Administrators = []*string{&r.provisioningParameters.ErsContext.UserID}
+	r.provisionRuntimeInput.ClusterConfig.Administrators = []string{r.provisioningParameters.ErsContext.UserID}
 
 	r.hyperscalerInputProvider.ApplyParameters(r.provisionRuntimeInput.ClusterConfig, r.provisioningParameters)
 
@@ -360,7 +359,6 @@ func (r *RuntimeInput) applyGlobalConfigurationForUpgradeRuntime() error {
 }
 
 func (r *RuntimeInput) adjustRuntimeName() error {
-	rand.Seed(time.Now().UnixNano())
 
 	reg, err := regexp.Compile("[^a-zA-Z0-9\\-\\.]+")
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/gcp"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/openstack"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -68,26 +69,34 @@ func NewAzureControlPlane(zones []string) *azure.ControlPlaneConfig {
 	}
 }
 
-func NewAWSInfrastructure(workerCIDR string, awsConfig AWSGardenerConfig) *aws.InfrastructureConfig {
+func NewAWSInfrastructure(awsConfig AWSGardenerConfig) *aws.InfrastructureConfig {
 	return &aws.InfrastructureConfig{
 		TypeMeta: v1.TypeMeta{
 			Kind:       infrastructureConfigKind,
 			APIVersion: awsAPIVersion,
 		},
 		Networks: aws.Networks{
-			Zones: []aws.Zone{
-				{
-					Name:     awsConfig.input.Zone,
-					Internal: awsConfig.input.InternalCidr,
-					Public:   awsConfig.input.PublicCidr,
-					Workers:  workerCIDR,
-				},
-			},
+			Zones: createAWSZones(awsConfig.input.AwsZones),
 			VPC: aws.VPC{
 				CIDR: util.StringPtr(awsConfig.input.VpcCidr),
 			},
 		},
 	}
+}
+
+func createAWSZones(inputZones []*gqlschema.AWSZoneInput) []aws.Zone {
+	zones := make([]aws.Zone, 0)
+
+	for _, inputZone := range inputZones {
+		zone := aws.Zone{
+			Name:     inputZone.Name,
+			Internal: inputZone.InternalCidr,
+			Public:   inputZone.PublicCidr,
+			Workers:  inputZone.WorkerCidr,
+		}
+		zones = append(zones, zone)
+	}
+	return zones
 }
 
 func NewAWSControlPlane() *aws.ControlPlaneConfig {

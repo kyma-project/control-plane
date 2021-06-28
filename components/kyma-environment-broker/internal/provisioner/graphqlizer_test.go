@@ -367,6 +367,73 @@ func TestGCPProviderConfigInputToGraphQL(t *testing.T) {
 	assert.Equal(t, expected, got)
 }
 
+func TestAWSProviderConfigInputToGraphQL(t *testing.T) {
+	tests := []struct {
+		name       string
+		givenInput gqlschema.AWSProviderConfigInput
+		expected   string
+	}{
+		{
+			name: "AWS will all parameters",
+			givenInput: gqlschema.AWSProviderConfigInput{
+				VpcCidr: "10.250.0.0/16",
+				AwsZones: []*gqlschema.AWSZoneInput{
+					{
+						Name:         "eu-central-1a",
+						WorkerCidr:   "10.250.0.0/22",
+						PublicCidr:   "10.250.20.0/22",
+						InternalCidr: "10.250.40.0/22",
+					},
+					{
+						Name:         "eu-central-1b",
+						WorkerCidr:   "10.250.4.0/22",
+						PublicCidr:   "10.250.24.0/22",
+						InternalCidr: "10.250.44.0/22",
+					},
+				},
+			},
+			expected: `{
+		vpcCidr: "10.250.0.0/16",
+		awsZones: [
+		  {
+			name: "eu-central-1a",
+			workerCidr: "10.250.0.0/22",
+			publicCidr: "10.250.20.0/22",
+			internalCidr: "10.250.40.0/22",
+		  }
+		  {
+			name: "eu-central-1b",
+			workerCidr: "10.250.4.0/22",
+			publicCidr: "10.250.24.0/22",
+			internalCidr: "10.250.44.0/22",
+		  }
+		]
+	}`,
+		},
+		{
+			name: "AWS with no zones passed",
+			givenInput: gqlschema.AWSProviderConfigInput{
+				VpcCidr: "8.8.8.8",
+			},
+			expected: `{
+		vpcCidr: "8.8.8.8",
+	}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := &Graphqlizer{}
+
+			// when
+			got, err := g.AWSProviderConfigInputToGraphQL(tt.givenInput)
+
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}
+
 func Test_UpgradeShootInputToGraphQL(t *testing.T) {
 	// given
 	sut := Graphqlizer{}
@@ -448,7 +515,7 @@ func Test_ClusterConfigToGraphQL(t *testing.T) {
 		{
 			name: "Cluster config with administrators",
 			givenInput: gqlschema.ClusterConfigInput{
-				Administrators: []*string{strPrt("test@test.pl")},
+				Administrators: []string{"test@test.pl"},
 			},
 			expected: `{
 		administrators: ["test@test.pl"],

@@ -44,7 +44,6 @@ spec:
       jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
       scope_strategy: exact
       required_scope: ["{{ .Values.oidc.groups.operator }}"]
-      target_audience: ["{{ .Values.oidc.client }}"]
       trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
   authorizer:
     handler: allow
@@ -67,7 +66,6 @@ spec:
       jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
       scope_strategy: exact
       required_scope: ["{{ .Values.oidc.groups.admin }}"]
-      target_audience: ["{{ .Values.oidc.client }}"]
       trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
   authorizer:
     handler: allow
@@ -91,7 +89,6 @@ spec:
       jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
       scope_strategy: exact
       required_scope: ["{{ .Values.oidc.groups.admin }}"]
-      target_audience: ["{{ .Values.oidc.client }}"]
       trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
   authorizer:
     handler: allow

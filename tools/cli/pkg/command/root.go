@@ -91,5 +91,5 @@ func initConfig() {
 
 // CLICredentialManager returns a credential.Manager configured using the CLI global options
 func CLICredentialManager(logger logger.Logger) credential.Manager {
-	return credential.NewManager(GlobalOpts.OIDCIssuerURL(), GlobalOpts.OIDCClientID(), GlobalOpts.Username(), logger)
+	return credential.NewManager(GlobalOpts.OIDCIssuerURL(), GlobalOpts.OIDCClientID(), GlobalOpts.OIDCClientSecret(), GlobalOpts.Username(), logger)
 }
