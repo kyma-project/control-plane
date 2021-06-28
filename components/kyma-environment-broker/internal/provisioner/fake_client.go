@@ -15,6 +15,8 @@ type runtime struct {
 
 type FakeClient struct {
 	mu            sync.Mutex
+	graphqlizer   Graphqlizer
+
 	runtimes      []runtime
 	upgrades      map[string]schema.UpgradeRuntimeInput
 	shootUpgrades map[string]schema.UpgradeShootInput
@@ -23,6 +25,7 @@ type FakeClient struct {
 
 func NewFakeClient() *FakeClient {
 	return &FakeClient{
+		graphqlizer: Graphqlizer{},
 		runtimes:      []runtime{},
 		operations:    make(map[string]schema.OperationStatus),
 		upgrades:      make(map[string]schema.UpgradeRuntimeInput),
@@ -51,6 +54,11 @@ func (c *FakeClient) FindOperationByRuntimeIDAndType(runtimeID string, operation
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	for _, status := range c.operations {
+		if *status.RuntimeID == runtimeID && status.Operation == operationType {
+			return status
+		}
+	}
 	for _, status := range c.operations {
 		if *status.RuntimeID == runtimeID && status.Operation == operationType {
 			return status
@@ -157,6 +165,9 @@ func (c *FakeClient) UpgradeShoot(accountID, runtimeID string, config schema.Upg
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	upgradeShootIptGQL, _ := c.graphqlizer.UpgradeShootInputToGraphQL(config)
+	fmt.Println(upgradeShootIptGQL)
+
 	opId := uuid.New().String()
 	c.operations[opId] = schema.OperationStatus{
 		ID:        &opId,
@@ -183,4 +194,9 @@ func (c *FakeClient) IsRuntimeUpgraded(runtimeID string, version string) bool {
 func (c *FakeClient) IsShootUpgraded(runtimeID string) bool {
 	_, found := c.shootUpgrades[runtimeID]
 	return found
+}
+
+func (c *FakeClient) LastShootUpgrade(runtimeID string) (schema.UpgradeShootInput, bool) {
+	input, found := c.shootUpgrades[runtimeID]
+	return input, found
 }

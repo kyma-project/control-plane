@@ -433,9 +433,8 @@ type ProvisioningSuite struct {
 	storage             storage.BrokerStorage
 	directorClient      *director.FakeClient
 
-	t          *testing.T
-	avsServer  *avs.MockAvsServer
-
+	t         *testing.T
+	avsServer *avs.MockAvsServer
 }
 
 func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
@@ -518,10 +517,10 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	provisionManager.SpeedUp(10000)
 
 	httpSuite := NewHttpSuite(t)
-	httpSuite.CreateAPI(inputFactory, cfg, db, provisioningQueue, nil, logs)
+	httpSuite.CreateAPI(inputFactory, cfg, db, provisioningQueue, nil, nil, logs)
 
 	return &ProvisioningSuite{
-		HttpSuite: httpSuite,
+		HttpSuite:           httpSuite,
 		provisionerClient:   provisionerClient,
 		provisioningManager: provisionManager,
 		provisioningQueue:   provisioningQueue,
@@ -819,7 +818,7 @@ func (s *ProvisioningSuite) MarkDirectorWithConsoleURL(operationID string) {
 func (s *HttpSuite) CallAPI(method string, path string, body string) *http.Response {
 	cli := s.httpServer.Client()
 	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s", s.httpServer.URL, path), bytes.NewBuffer([]byte(body)))
-	req.Header.Set("X-Broker-API-Version",  "2.15")
+	req.Header.Set("X-Broker-API-Version", "2.15")
 	require.NoError(s.t, err)
 
 	resp, err := cli.Do(req)
@@ -844,8 +843,10 @@ func fixConfig() *Config {
 		},
 		KymaVersion:           "1.21",
 		EnableOnDemandVersion: true,
-		Broker:                broker.Config{},
-		Avs:                   avs.Config{},
+		Broker: broker.Config{
+			EnablePlans: []string{"azure"},
+		},
+		Avs: avs.Config{},
 		IAS: ias.Config{
 			IdentityProvider: ias.FakeIdentityProviderName,
 		},
@@ -856,7 +857,8 @@ func fixConfig() *Config {
 			Tenant:        "fooTen",
 			EnableSeqHttp: true,
 		},
-		FreemiumProviders: []string{"aws", "azure"},
+		FreemiumProviders:       []string{"aws", "azure"},
+		UpdateProcessingEnabled: true,
 	}
 }
 

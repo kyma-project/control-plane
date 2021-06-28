@@ -213,6 +213,10 @@ func (r *RuntimeInput) CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, e
 			name:    "setting number of trial nodes from configuration",
 			execute: r.setNodesForTrialUpgrade,
 		},
+		{
+			name:    "configure OIDC",
+			execute: r.configureOIDC,
+		},
 	} {
 		if err := step.execute(); err != nil {
 			return gqlschema.UpgradeShootInput{}, errors.Wrapf(err, "while %s", step.name)
@@ -390,13 +394,26 @@ func (r *RuntimeInput) configureOIDC() error {
 		return nil
 	}
 	params := r.provisioningParameters.Parameters.OIDC
-	r.provisionRuntimeInput.ClusterConfig.GardenerConfig.OidcConfig = &gqlschema.OIDCConfigInput{
-		ClientID:       params.ClientID,
-		GroupsClaim:    params.GroupsClaim,
-		IssuerURL:      params.IssuerURL,
-		SigningAlgs:    params.SigningAlgs,
-		UsernameClaim:  params.UsernameClaim,
-		UsernamePrefix: params.UsernamePrefix,
+	if r.provisionRuntimeInput.ClusterConfig != nil {
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.OidcConfig = &gqlschema.OIDCConfigInput{
+			ClientID:       params.ClientID,
+			GroupsClaim:    params.GroupsClaim,
+			IssuerURL:      params.IssuerURL,
+			SigningAlgs:    params.SigningAlgs,
+			UsernameClaim:  params.UsernameClaim,
+			UsernamePrefix: params.UsernamePrefix,
+		}
+	}
+
+	if r.upgradeShootInput.GardenerConfig != nil {
+		r.upgradeShootInput.GardenerConfig.OidcConfig = &gqlschema.OIDCConfigInput{
+			ClientID:       params.ClientID,
+			GroupsClaim:    params.GroupsClaim,
+			IssuerURL:      params.IssuerURL,
+			SigningAlgs:    params.SigningAlgs,
+			UsernameClaim:  params.UsernameClaim,
+			UsernamePrefix: params.UsernamePrefix,
+		}
 	}
 	return nil
 }

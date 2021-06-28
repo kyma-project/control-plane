@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"net/http"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -31,6 +33,8 @@ type UpdateEndpoint struct {
 	processingEnabled    bool
 
 	operationStorage storage.Operations
+
+	updatingQueue *process.Queue
 }
 
 func NewUpdate(cfg Config,
@@ -38,6 +42,7 @@ func NewUpdate(cfg Config,
 	operationStorage storage.Operations,
 	ctxUpdateHandler ContextUpdateHandler,
 	processingEnabled bool,
+	queue *process.Queue,
 	log logrus.FieldLogger,
 ) *UpdateEndpoint {
 	return &UpdateEndpoint{
@@ -47,6 +52,7 @@ func NewUpdate(cfg Config,
 		operationStorage:     operationStorage,
 		contextUpdateHandler: ctxUpdateHandler,
 		processingEnabled:    processingEnabled,
+		updatingQueue: queue,
 	}
 }
 
@@ -54,8 +60,8 @@ func NewUpdate(cfg Config,
 //  PATCH /v2/service_instances/{instance_id}
 func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details domain.UpdateDetails, asyncAllowed bool) (domain.UpdateServiceSpec, error) {
 	logger := b.log.WithField("instanceID", instanceID)
-	logger.Infof("Update instanceID: %s", instanceID)
-	logger.Infof("Update asyncAllowed: %v", asyncAllowed)
+	logger.Infof("Updateing instanceID: %s", instanceID)
+	logger.Infof("Updateing asyncAllowed: %v", asyncAllowed)
 	logger.Infof("Parameters: '%s'", string(details.RawParameters))
 
 
@@ -87,39 +93,21 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	for k, _ := range contextData {
 		logger.Info(k)
 	}
-	logger.Infof("OIDC: `%s`",)
 
-	operation, err := b.operationStorage.GetProvisioningOperationByInstanceID(instanceID)
+	lastProvisioningOperation, err := b.operationStorage.GetProvisioningOperationByInstanceID(instance.InstanceID)
 	if err != nil {
-		logger.Errorf("cannot fetch provisioning operation for instance with ID: %s : %s", instanceID, err.Error())
+		logger.Errorf("cannot fetch provisioning lastProvisioningOperation for instance with ID: %s : %s", instance.InstanceID, err.Error())
 		return domain.UpdateServiceSpec{}, errors.New("unable to process the update")
 	}
 
+
 	if b.processingEnabled {
-		// todo: remove the code below when we are sure the ERSContext contains required values.
-		// This code is done because the PATCH request contains only some of fields and that requests made the ERS context empty in the past.
-		instance.Parameters.ErsContext = operation.ProvisioningParameters.ErsContext
-		instance.Parameters.ErsContext.Active, err = b.exctractActiveValue(instance.InstanceID, *operation)
+		instance, err := b.processContext(instance, details, lastProvisioningOperation, logger)
 		if err != nil {
-			return domain.UpdateServiceSpec{}, errors.New("unable to process the update")
+			return domain.UpdateServiceSpec{}, err
 		}
 
-		err = b.contextUpdateHandler.Handle(instance, ersContext)
-		if err != nil {
-			logger.Errorf("processing context updated failed: %s", err.Error())
-			return domain.UpdateServiceSpec{}, errors.New("unable to process the update")
-		}
-
-		//  copy the Active flag if set
-		if ersContext.Active != nil {
-			instance.Parameters.ErsContext.Active = ersContext.Active
-		}
-
-		_, err = b.instanceStorage.Update(*instance)
-		if err != nil {
-			logger.Errorf("processing context updated failed: %s", err.Error())
-			return domain.UpdateServiceSpec{}, errors.New("unable to process the update")
-		}
+		return b.processUpdateParameters(instance, details, lastProvisioningOperation, logger)
 	}
 
 	return domain.UpdateServiceSpec{
@@ -127,9 +115,88 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		DashboardURL:  instance.DashboardURL,
 		OperationData: "",
 		Metadata: domain.InstanceMetadata{
-			Labels: ResponseLabels(*operation, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
+			Labels: ResponseLabels(*lastProvisioningOperation, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
 		},
 	}, nil
+}
+
+func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, logger logrus.FieldLogger) (domain.UpdateServiceSpec, error) {
+	if len(details.RawParameters) == 0 {
+		logger.Debugf("Parameters not provided, skipping processing update parameters")
+		return domain.UpdateServiceSpec{
+			IsAsync:       false,
+			DashboardURL:  instance.DashboardURL,
+			OperationData: "",
+			Metadata: domain.InstanceMetadata{
+				Labels: ResponseLabels(*lastProvisioningOperation, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
+			},
+		}, nil
+	}
+	var params internal.UpdatingParametersDTO
+	err := json.Unmarshal(details.RawParameters, &params)
+	if err != nil {
+		logger.Errorf("unable to unmarshal parameters: %s", err.Error())
+		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal parametera")
+	}
+	logger.Debugf("Updating with params: %+v", params)
+
+	operationID := uuid.New().String()
+	logger = logger.WithField("operationID", operationID)
+
+	logger.Debugf("creating update operation", params)
+	operation := internal.NewUpdateOperation(operationID, instance, params)
+	err = b.operationStorage.InsertUpdatingOperation(operation)
+	if err != nil {
+		return domain.UpdateServiceSpec{}, err
+	}
+
+	logger.Debugf("Adding update operation to the processing queue")
+	b.updatingQueue.Add(operationID)
+
+	return domain.UpdateServiceSpec{
+		IsAsync:       true,
+		DashboardURL:  instance.DashboardURL,
+		OperationData: operation.ID,
+		Metadata: domain.InstanceMetadata{
+			Labels: ResponseLabels(*lastProvisioningOperation, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
+		},
+	}, nil
+}
+
+func (b *UpdateEndpoint) processContext(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, logger logrus.FieldLogger) (*internal.Instance, error) {
+	var ersContext internal.ERSContext
+	err := json.Unmarshal(details.RawContext, &ersContext)
+	if err != nil {
+		logger.Errorf("unable to decode context: %s", err.Error())
+		return nil, errors.New("unable to unmarshal context")
+	}
+	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
+
+	// todo: remove the code below when we are sure the ERSContext contains required values.
+	// This code is done because the PATCH request contains only some of fields and that requests made the ERS context empty in the past.
+	instance.Parameters.ErsContext = lastProvisioningOperation.ProvisioningParameters.ErsContext
+	instance.Parameters.ErsContext.Active, err = b.exctractActiveValue(instance.InstanceID, *lastProvisioningOperation)
+	if err != nil {
+		return nil, errors.New("unable to process the update")
+	}
+
+	err = b.contextUpdateHandler.Handle(instance, ersContext)
+	if err != nil {
+		logger.Errorf("processing context updated failed: %s", err.Error())
+		return nil, errors.New("unable to process the update")
+	}
+
+	//  copy the Active flag if set
+	if ersContext.Active != nil {
+		instance.Parameters.ErsContext.Active = ersContext.Active
+	}
+
+	newInstance, err := b.instanceStorage.Update(*instance)
+	if err != nil {
+		logger.Errorf("processing context updated failed: %s", err.Error())
+		return nil, errors.New("unable to process the update")
+	}
+	return newInstance, nil
 }
 
 func (b *UpdateEndpoint) exctractActiveValue(id string, provisioning internal.ProvisioningOperation) (*bool, error) {

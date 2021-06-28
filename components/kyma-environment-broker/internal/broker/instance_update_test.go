@@ -203,9 +203,9 @@ func TestUpdateEndpoint_UpdateNonExistingInstance(t *testing.T) {
 	}, true)
 
 	// then
-	assert.IsType(t, err, &apiresponses.FailureResponse{}, "Update returned error of unexpected type")
+	assert.IsType(t, err, &apiresponses.FailureResponse{}, "Updateing returned error of unexpected type")
 	apierr := err.(*apiresponses.FailureResponse)
-	assert.Equal(t, apierr.ValidatedStatusCode(nil), http.StatusNotFound, "Update status code not matching")
+	assert.Equal(t, apierr.ValidatedStatusCode(nil), http.StatusNotFound, "Updateing status code not matching")
 }
 
 func fixProvisioningOperation(id string) internal.ProvisioningOperation {

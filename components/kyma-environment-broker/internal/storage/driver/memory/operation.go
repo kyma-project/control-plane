@@ -21,6 +21,7 @@ type operations struct {
 	deprovisioningOperations map[string]internal.DeprovisioningOperation
 	upgradeKymaOperations    map[string]internal.UpgradeKymaOperation
 	upgradeClusterOperations map[string]internal.UpgradeClusterOperation
+	updateOperations         map[string]internal.UpdatingOperation
 }
 
 // NewOperation creates in-memory storage for OSB operations.
@@ -30,6 +31,7 @@ func NewOperation() *operations {
 		deprovisioningOperations: make(map[string]internal.DeprovisioningOperation, 0),
 		upgradeKymaOperations:    make(map[string]internal.UpgradeKymaOperation, 0),
 		upgradeClusterOperations: make(map[string]internal.UpgradeClusterOperation, 0),
+		updateOperations:         make(map[string]internal.UpdatingOperation, 0),
 	}
 }
 
@@ -301,6 +303,12 @@ func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, e
 			rows = append(rows, op.Operation)
 		}
 	}
+	for _, op := range s.updateOperations {
+		if op.InstanceID == instanceID && op.State != orchestration.Pending {
+			rows = append(rows, op.Operation)
+		}
+	}
+
 
 	if len(rows) == 0 {
 		return nil, dberr.NotFound("instance operation with instance_id %s not found", instanceID)
@@ -331,6 +339,10 @@ func (s *operations) GetOperationByID(operationID string) (*internal.Operation, 
 	upgradeClusterOp, exists := s.upgradeClusterOperations[operationID]
 	if exists {
 		res = &upgradeClusterOp.Operation
+	}
+	updateOp, exists := s.updateOperations[operationID]
+	if exists {
+		res = &updateOp.Operation
 	}
 	if res == nil {
 		return nil, dberr.NotFound("instance operation with id %s not found", operationID)
@@ -562,6 +574,49 @@ func (s *operations) ListUpgradeClusterOperationsByInstanceID(instanceID string)
 	s.sortUpgradeClusterByCreatedAt(operations)
 
 	return operations, nil
+}
+
+func (s *operations) InsertUpdatingOperation(operation internal.UpdatingOperation) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	id := operation.ID
+	if _, exists := s.updateOperations[id]; exists {
+		return dberr.AlreadyExists("instance operation with id %s already exist", id)
+	}
+
+	s.updateOperations[id] = operation
+	return nil
+}
+
+func (s *operations) GetUpdatingOperationByID(operationID string) (*internal.UpdatingOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, op := range s.updateOperations {
+		if op.ID == operationID {
+			return &op, nil
+		}
+	}
+
+	return nil, dberr.NotFound("instance update operation with ID %s not found", operationID)
+}
+
+func (s *operations) UpdateUpdatingOperation(op internal.UpdatingOperation) (*internal.UpdatingOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	oldOp, exists := s.updateOperations[op.ID]
+	if !exists {
+		return nil, dberr.NotFound("instance operation with id %s not found", op.ID)
+	}
+	if oldOp.Version != op.Version {
+		return nil, dberr.Conflict("unable to update updating operation with id %s (for instance id %s) - conflict", op.ID, op.InstanceID)
+	}
+	op.Version = op.Version + 1
+	s.updateOperations[op.ID] = op
+
+	return &op, nil
 }
 
 func (s *operations) sortUpgradeKymaByCreatedAt(operations []internal.UpgradeKymaOperation) {

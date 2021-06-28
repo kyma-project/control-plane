@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/update"
 	"io"
 	"log"
 	"math/rand"
@@ -302,6 +303,9 @@ func main() {
 		avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient,
 		hyperscalerProvider, accountProvider, logs)
 
+	updateManager := update.NewManager(db.Operations(), eventBroker, time.Hour, logs)
+	updateQueue := NewUpdateProcessingQueue(ctx, updateManager,3, db, inputFactory, provisionerClient, eventBroker, logs)
+
 	/****/
 	//suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
 
@@ -319,7 +323,7 @@ func main() {
 	// create server
 	router := mux.NewRouter()
 
-	createAPI(router, servicesConfig, inputFactory, &cfg, db, provisionQueue, deprovisionQueue, logger, logs)
+	createAPI(router, servicesConfig, inputFactory, &cfg, db, provisionQueue, deprovisionQueue, updateQueue, logger, logs)
 
 	// create info endpoints
 	//respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)
@@ -393,7 +397,7 @@ func main() {
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
 }
 
-func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planValidator broker.PlanValidator, cfg *Config, db storage.BrokerStorage, provisionQueue, deprovisionQueue *process.Queue, logger lager.Logger, logs logrus.FieldLogger) {
+func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planValidator broker.PlanValidator, cfg *Config, db storage.BrokerStorage, provisionQueue, deprovisionQueue, updateQueue *process.Queue, logger lager.Logger, logs logrus.FieldLogger) {
 	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
 
 	defaultPlansConfig, err := servicesConfig.DefaultPlansConfig()
@@ -404,7 +408,7 @@ func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planVal
 		broker.NewServices(cfg.Broker, servicesConfig, logs),
 		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, planValidator, defaultPlansConfig, cfg.EnableOnDemandVersion, logs),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
-		broker.NewUpdate(cfg.Broker, db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, logs),
+		broker.NewUpdate(cfg.Broker, db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, updateQueue, logs),
 		broker.NewGetInstance(cfg.Broker, db.Instances(), db.Operations(), logs),
 		broker.NewLastOperation(db.Operations(), logs),
 		broker.NewBind(logs),
@@ -692,6 +696,21 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 	}
 
 	queue := process.NewQueue(provisionManager, logs)
+	queue.Run(ctx.Done(), workersAmount)
+
+	return queue
+}
+
+func NewUpdateProcessingQueue(ctx context.Context,  manager *update.Manager, workersAmount int, db storage.BrokerStorage, inputFactory input.CreatorForPlan,
+	provisionerClient provisioner.Client, publisher event.Publisher, logs logrus.FieldLogger) *process.Queue {
+
+
+	manager.DefineStages([]string{"cluster", "check"})
+	manager.AddStep("cluster", update.NewInitialisationStep(db.Operations(), inputFactory))
+	manager.AddStep("cluster", update.NewUpgradeClusterStep(db.Operations(), db.RuntimeStates(), provisionerClient))
+	manager.AddStep("check", update.NewCheckStep(db.Operations(), provisionerClient, 40 * time.Minute))
+
+	queue := process.NewQueue(manager, logs)
 	queue.Run(ctx.Done(), workersAmount)
 
 	return queue
