@@ -190,7 +190,10 @@ func (s *BrokerSuiteTest) WaitForProvisioningState(operationID string, state dom
 func (s *BrokerSuiteTest) WaitForOperationState(operationID string, state domain.LastOperationState) {
 	var op *internal.Operation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
-		op, _ = s.db.Operations().GetOperationByID(operationID)
+		op, err = s.db.Operations().GetOperationByID(operationID)
+		if err != nil {
+			return false, nil
+		}
 		return op.State == state, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation expected state %s. The existing operation %+v", state, op)
@@ -338,4 +341,8 @@ func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschem
 
 func (s *BrokerSuiteTest) Log(msg string) {
 	s.t.Log(msg)
+}
+
+func (s *BrokerSuiteTest) EnableDumpingProvisionerRequests() {
+	s.provisionerClient.EnableRequestDumping()
 }

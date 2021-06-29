@@ -21,6 +21,7 @@ type FakeClient struct {
 	upgrades      map[string]schema.UpgradeRuntimeInput
 	shootUpgrades map[string]schema.UpgradeShootInput
 	operations    map[string]schema.OperationStatus
+	dumpRequest   bool
 }
 
 func NewFakeClient() *FakeClient {
@@ -31,6 +32,10 @@ func NewFakeClient() *FakeClient {
 		upgrades:      make(map[string]schema.UpgradeRuntimeInput),
 		shootUpgrades: make(map[string]schema.UpgradeShootInput),
 	}
+}
+
+func (c *FakeClient) EnableRequestDumping() {
+	c.dumpRequest = true
 }
 
 func (c *FakeClient) GetProvisionRuntimeInput(index int) schema.ProvisionRuntimeInput {
@@ -80,8 +85,10 @@ func (c *FakeClient) ProvisionRuntime(accountID, subAccountID string, config sch
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	gql, _ := c.graphqlizer.ProvisionRuntimeInputToGraphQL(config)
-	fmt.Println(gql)
+	if c.dumpRequest {
+		gql, _ := c.graphqlizer.ProvisionRuntimeInputToGraphQL(config)
+		fmt.Println(gql)
+	}
 
 	rid := uuid.New().String()
 	opId := uuid.New().String()
@@ -150,6 +157,11 @@ func (c *FakeClient) UpgradeRuntime(accountID, runtimeID string, config schema.U
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	if c.dumpRequest {
+		gql, _ := c.graphqlizer.UpgradeRuntimeInputToGraphQL(config)
+		fmt.Println(gql)
+	}
+
 	opId := uuid.New().String()
 	c.operations[opId] = schema.OperationStatus{
 		ID:        &opId,
@@ -168,8 +180,10 @@ func (c *FakeClient) UpgradeShoot(accountID, runtimeID string, config schema.Upg
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	upgradeShootIptGQL, _ := c.graphqlizer.UpgradeShootInputToGraphQL(config)
-	fmt.Println(upgradeShootIptGQL)
+	if c.dumpRequest {
+		upgradeShootIptGQL, _ := c.graphqlizer.UpgradeShootInputToGraphQL(config)
+		fmt.Println(upgradeShootIptGQL)
+	}
 
 	opId := uuid.New().String()
 	c.operations[opId] = schema.OperationStatus{
@@ -202,4 +216,9 @@ func (c *FakeClient) IsShootUpgraded(runtimeID string) bool {
 func (c *FakeClient) LastShootUpgrade(runtimeID string) (schema.UpgradeShootInput, bool) {
 	input, found := c.shootUpgrades[runtimeID]
 	return input, found
+}
+
+func (c *FakeClient) LastProvisioning() schema.ProvisionRuntimeInput {
+	r := c.runtimes[len(c.runtimes)-1]
+	return r.runtimeInput
 }

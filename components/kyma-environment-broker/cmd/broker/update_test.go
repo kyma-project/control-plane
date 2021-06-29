@@ -17,10 +17,9 @@ func TestUpdate(t *testing.T) {
 	iid := uuid.New().String()
 
 	resp := procressProvisioning(suite, iid)
-	// provisioning done, let's start an update
 
 	// when
-	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s", iid),
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
 		`{
        "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
        "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
@@ -79,6 +78,8 @@ func TestUpdateContext(t *testing.T) {
 
 func TestUpdateOidcForSuspendedInstance(t *testing.T) {
 	suite := NewBrokerSuiteTest(t)
+	// uncomment to see graphql queries
+	//suite.EnableDumpingProvisionerRequests()
 	defer suite.TearDown()
 	iid := uuid.New().String()
 
@@ -87,7 +88,7 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
 	suite.Log("*** Suspension ***")
 
 	// Process Suspension
-	resp := suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s", iid),
+	resp := suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
 		`{
        "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
        "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
@@ -106,7 +107,7 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
 
 	// WHEN
 	suite.Log("*** Update ***")
-	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s", iid),
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
 		`{
        "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
        "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
@@ -179,7 +180,7 @@ func TestUpdateNotExistingInstance(t *testing.T) {
 
 func procressProvisioning(suite *BrokerSuiteTest, iid string) *http.Response {
 	suite.Log("*** Provisioning ***")
-	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
 		`{
 				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
 				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
