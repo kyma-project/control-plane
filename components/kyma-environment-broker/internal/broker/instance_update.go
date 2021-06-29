@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"net/http"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -52,7 +55,7 @@ func NewUpdate(cfg Config,
 		operationStorage:     operationStorage,
 		contextUpdateHandler: ctxUpdateHandler,
 		processingEnabled:    processingEnabled,
-		updatingQueue: queue,
+		updatingQueue:        queue,
 	}
 }
 
@@ -63,7 +66,6 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	logger.Infof("Updateing instanceID: %s", instanceID)
 	logger.Infof("Updateing asyncAllowed: %v", asyncAllowed)
 	logger.Infof("Parameters: '%s'", string(details.RawParameters))
-
 
 	instance, err := b.instanceStorage.GetByID(instanceID)
 	if err != nil && dberr.IsNotFound(err) {
@@ -100,14 +102,13 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		return domain.UpdateServiceSpec{}, errors.New("unable to process the update")
 	}
 
-
 	if b.processingEnabled {
 		instance, err := b.processContext(instance, details, lastProvisioningOperation, logger)
 		if err != nil {
 			return domain.UpdateServiceSpec{}, err
 		}
 
-		return b.processUpdateParameters(instance, details, lastProvisioningOperation, logger)
+		return b.processUpdateParameters(instance, details, lastProvisioningOperation, asyncAllowed, logger)
 	}
 
 	return domain.UpdateServiceSpec{
@@ -120,7 +121,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	}, nil
 }
 
-func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, logger logrus.FieldLogger) (domain.UpdateServiceSpec, error) {
+func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, asyncAllowed bool, logger logrus.FieldLogger) (domain.UpdateServiceSpec, error) {
 	if len(details.RawParameters) == 0 {
 		logger.Debugf("Parameters not provided, skipping processing update parameters")
 		return domain.UpdateServiceSpec{
@@ -131,6 +132,11 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 				Labels: ResponseLabels(*lastProvisioningOperation, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
 			},
 		}, nil
+	}
+
+	// asyncAllowed needed, see https://github.com/openservicebrokerapi/servicebroker/blob/v2.16/spec.md#updating-a-service-instance
+	if !asyncAllowed {
+		return domain.UpdateServiceSpec{}, apiresponses.ErrAsyncRequired
 	}
 	var params internal.UpdatingParametersDTO
 	err := json.Unmarshal(details.RawParameters, &params)
@@ -143,12 +149,23 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 	operationID := uuid.New().String()
 	logger = logger.WithField("operationID", operationID)
 
-	logger.Debugf("creating update operation", params)
+	logger.Debugf("creating update operation %v", params)
 	operation := internal.NewUpdateOperation(operationID, instance, params)
 	err = b.operationStorage.InsertUpdatingOperation(operation)
 	if err != nil {
 		return domain.UpdateServiceSpec{}, err
 	}
+
+	// update provisioning parameters in the instance
+	err = wait.Poll(500*time.Millisecond, 2*time.Second, func() (bool, error) {
+		instance.Parameters.Parameters.OIDC = params.OIDC
+		instance, err = b.instanceStorage.Update(*instance)
+		if err != nil {
+			logger.Warnf("unable to update instance with new parameters (%s), retrying", err.Error())
+			return false, nil
+		}
+		return false, nil
+	})
 
 	logger.Debugf("Adding update operation to the processing queue")
 	b.updatingQueue.Add(operationID)

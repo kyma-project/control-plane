@@ -844,7 +844,7 @@ func fixConfig() *Config {
 		KymaVersion:           "1.21",
 		EnableOnDemandVersion: true,
 		Broker: broker.Config{
-			EnablePlans: []string{"azure"},
+			EnablePlans: []string{"azure", "trial"},
 		},
 		Avs: avs.Config{},
 		IAS: ias.Config{

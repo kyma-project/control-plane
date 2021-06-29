@@ -4,6 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -12,6 +17,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
@@ -28,28 +34,24 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
 	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
-	"time"
 )
 
-type UpdateSuite struct {
+type BrokerSuiteTest struct {
 	HttpSuite
 	db                storage.BrokerStorage
 	provisionerClient *provisioner.FakeClient
 	directorClient    *director.FakeClient
 }
 
-func (s *UpdateSuite) TearDown() {
+func (s *BrokerSuiteTest) TearDown() {
 	s.httpServer.Close()
 }
 
-func NewUpdateSuite(t *testing.T) *UpdateSuite {
+func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	ctx := context.Background()
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
@@ -89,7 +91,7 @@ func NewUpdateSuite(t *testing.T) *UpdateSuite {
 	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, accountVersionMapping)
 
 	directorClient := director.NewFakeClient()
-	avsDel, externalEvalCreator, internalEvalUpdater, internalEvalAssistant := createFakeAvsDelegator(t, db, cfg)
+	avsDel, externalEvalCreator, internalEvalUpdater, internalEvalAssistant, externalEvalAssistant := createFakeAvsDelegator(t, db, cfg)
 
 	smcf := fixServiceManagerFactory()
 	iasFakeClient := ias.NewFakeClient()
@@ -108,16 +110,22 @@ func NewUpdateSuite(t *testing.T) *UpdateSuite {
 	provisionManager.SpeedUp(10000)
 
 	updateManager := update.NewManager(db.Operations(), eventBroker, time.Hour, logs)
-	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager,1, db, inputFactory, provisionerClient, eventBroker, logs)
+	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager, 1, db, inputFactory, provisionerClient, eventBroker, logs)
 	updateQueue.SpeedUp(10000)
 	updateManager.SpeedUp(10000)
 
+	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
+	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
+		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, smcf,
+		bundleBuilder, edpClient, accountProvider, logs,
+	)
 
+	deprovisioningQueue.SpeedUp(10000)
 
 	httpSuite := NewHttpSuite(t)
-	httpSuite.CreateAPI(inputFactory, cfg, db, provisioningQueue, nil, updateQueue, logs)
+	httpSuite.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
 
-	return &UpdateSuite{
+	return &BrokerSuiteTest{
 		HttpSuite:         httpSuite,
 		db:                db,
 		provisionerClient: provisionerClient,
@@ -125,7 +133,7 @@ func NewUpdateSuite(t *testing.T) *UpdateSuite {
 	}
 }
 
-func createFakeAvsDelegator(t *testing.T, db storage.BrokerStorage, cfg *Config) (*avs.Delegator, *provisioning.ExternalEvalCreator, *provisioning.InternalEvalUpdater, *avs.InternalEvalAssistant) {
+func createFakeAvsDelegator(t *testing.T, db storage.BrokerStorage, cfg *Config) (*avs.Delegator, *provisioning.ExternalEvalCreator, *provisioning.InternalEvalUpdater, *avs.InternalEvalAssistant, *avs.ExternalEvalAssistant) {
 	server := avs.NewMockAvsServer(t)
 	mockServer := avs.FixMockAvsServer(server)
 	avsConfig := avs.Config{
@@ -140,10 +148,10 @@ func createFakeAvsDelegator(t *testing.T, db storage.BrokerStorage, cfg *Config)
 	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 	internalEvalUpdater := provisioning.NewInternalEvalUpdater(avsDel, internalEvalAssistant, cfg.Avs)
 
-	return avsDel, externalEvalCreator, internalEvalUpdater, internalEvalAssistant
+	return avsDel, externalEvalCreator, internalEvalUpdater, internalEvalAssistant, externalEvalAssistant
 }
 
-func (s *UpdateSuite) CreateProvisionedRuntime(options RuntimeOptions) string {
+func (s *BrokerSuiteTest) CreateProvisionedRuntime(options RuntimeOptions) string {
 	randomInstanceId := uuid.New().String()
 
 	instance := fixture.FixInstance(randomInstanceId)
@@ -167,25 +175,39 @@ func (s *UpdateSuite) CreateProvisionedRuntime(options RuntimeOptions) string {
 	return instance.InstanceID
 }
 
-func (s *UpdateSuite) WaitForProvisioningState(operationID string, state domain.LastOperationState) {
+func (s *BrokerSuiteTest) WaitForProvisioningState(operationID string, state domain.LastOperationState) {
 	var op *internal.ProvisioningOperation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
-		op, _ = s.db.Operations().GetProvisioningOperationByID(operationID)
+		op, err = s.db.Operations().GetProvisioningOperationByID(operationID)
+		if err != nil {
+			return false, nil
+		}
 		return op.State == state, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation expected state %s. The existing operation %+v", state, op)
 }
 
-func (s *UpdateSuite) WaitForOperationState(operationID string, state domain.LastOperationState) {
+func (s *BrokerSuiteTest) WaitForOperationState(operationID string, state domain.LastOperationState) {
 	var op *internal.Operation
-	err := wait.PollImmediate(pollingInterval, 20*time.Second, func() (done bool, err error) {
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.db.Operations().GetOperationByID(operationID)
 		return op.State == state, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation expected state %s. The existing operation %+v", state, op)
 }
 
-func (s *UpdateSuite) FinishProvisioningOperationByProvisioner(operationID string) {
+func (s *BrokerSuiteTest) WaitForLastOperation(iid string, state domain.LastOperationState) string {
+	var op *internal.Operation
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+		op, _ = s.db.Operations().GetLastOperation(iid)
+		return op.State == state, nil
+	})
+	assert.NoError(s.t, err, "timeout waiting for the operation expected state %s. The existing operation %+v", state, op)
+
+	return op.ID
+}
+
+func (s *BrokerSuiteTest) FinishProvisioningOperationByProvisioner(operationID string) {
 	var op *internal.ProvisioningOperation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.db.Operations().GetProvisioningOperationByID(operationID)
@@ -199,7 +221,24 @@ func (s *UpdateSuite) FinishProvisioningOperationByProvisioner(operationID strin
 	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, op.RuntimeID)
 }
 
-func (s *UpdateSuite) FinishUpdatingOperationByProvisioner(operationID string) {
+func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID string) {
+	var op *internal.DeprovisioningOperation
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+		op, err = s.db.Operations().GetDeprovisioningOperationByID(operationID)
+		if err != nil {
+			return false, nil
+		}
+		if op.RuntimeID != "" {
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
+
+	s.finishOperationByProvisioner(gqlschema.OperationTypeDeprovision, op.RuntimeID)
+}
+
+func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID string) {
 	var op *internal.UpdatingOperation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.db.Operations().GetUpdatingOperationByID(operationID)
@@ -212,7 +251,7 @@ func (s *UpdateSuite) FinishUpdatingOperationByProvisioner(operationID string) {
 	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgradeShoot, op.RuntimeID)
 }
 
-func (s *UpdateSuite) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
+func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
@@ -224,12 +263,14 @@ func (s *UpdateSuite) finishOperationByProvisioner(operationType gqlschema.Opera
 	assert.NoError(s.t, err, "timeout waiting for provisioner operation to exist")
 }
 
-func (s *UpdateSuite) AssertProvisionerStartedProvisioning(operationID string) {
+func (s *BrokerSuiteTest) AssertProvisionerStartedProvisioning(operationID string) {
 	// wait until ProvisioningOperation reaches CreateRuntime step
 	var provisioningOp *internal.ProvisioningOperation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
-		assert.NoError(s.t, err)
+		if err != nil {
+			return false, nil
+		}
 		if op.ProvisionerOperationID != "" {
 			provisioningOp = op
 			return true, nil
@@ -250,13 +291,13 @@ func (s *UpdateSuite) AssertProvisionerStartedProvisioning(operationID string) {
 	assert.Equal(s.t, gqlschema.OperationStateInProgress, status.State)
 }
 
-func (s *UpdateSuite) MarkDirectorWithConsoleURL(operationID string) {
+func (s *BrokerSuiteTest) MarkDirectorWithConsoleURL(operationID string) {
 	op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
 	assert.NoError(s.t, err)
 	s.directorClient.SetConsoleURL(op.RuntimeID, op.DashboardURL)
 }
 
-func (s *UpdateSuite) DecodeOperationID(resp *http.Response) string {
+func (s *BrokerSuiteTest) DecodeOperationID(resp *http.Response) string {
 	m, err := ioutil.ReadAll(resp.Body)
 	fmt.Println(string(m))
 	require.NoError(s.t, err)
@@ -267,7 +308,7 @@ func (s *UpdateSuite) DecodeOperationID(resp *http.Response) string {
 	return provisioningResp.Operation
 }
 
-func (s *UpdateSuite) AssertShootUpgrade(operationID string, config gqlschema.UpgradeShootInput) {
+func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschema.UpgradeShootInput) {
 	// wait until ProvisioningOperation reaches CreateRuntime step
 	var provisioningOp *internal.UpdatingOperation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
@@ -293,5 +334,8 @@ func (s *UpdateSuite) AssertShootUpgrade(operationID string, config gqlschema.Up
 	assert.NoError(s.t, err)
 
 	assert.Equal(s.t, config, shootUpgrade)
+}
 
+func (s *BrokerSuiteTest) Log(msg string) {
+	s.t.Log(msg)
 }

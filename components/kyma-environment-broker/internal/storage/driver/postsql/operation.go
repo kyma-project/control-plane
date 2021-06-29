@@ -567,7 +567,6 @@ func (s *operations) IsAnyOperationNotFinishedForInstance(instanceID string) (bo
 	return count > 0, nil
 }
 
-
 func (s *operations) GetOperationStatsByPlan() (map[string]internal.OperationStats, error) {
 	entries, err := s.NewReadSession().GetOperationStats()
 	if err != nil {
@@ -1182,7 +1181,6 @@ func (s *operations) updateOperationToDTO(op *internal.UpdatingOperation) (dbmod
 	ret.OrchestrationID = storage.StringToSQLNullString(op.OrchestrationID)
 	return ret, nil
 }
-
 
 func (s *operations) toUpdateOperation(op *dbmodel.OperationDTO) (*internal.UpdatingOperation, error) {
 	if op.Type != internal.OperationTypeUpdate {

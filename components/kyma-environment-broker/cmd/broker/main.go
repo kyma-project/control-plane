@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/update"
 	"io"
 	"log"
 	"math/rand"
@@ -12,6 +11,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/update"
+
 	"code.cloudfoundry.org/lager"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/handlers"
@@ -19,7 +20,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
 	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/appinfo"
@@ -237,8 +237,6 @@ func main() {
 	gardenerShoots, err := gardener.NewGardenerShootInterface(gardenerClusterConfig, cfg.Gardener.Project)
 	fatalOnError(err)
 
-	hyperscalerProvider := azure.NewAzureProvider()
-
 	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecretBindings, gardenerShoots)
 	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecretBindings, gardenerShoots)
 	accountProvider := hyperscaler.NewAccountProvider(kubernetesClient, gardenerAccountPool, gardenerSharedPool)
@@ -301,34 +299,19 @@ func main() {
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, &cfg, db, eventBroker, provisionerClient,
 		avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient,
-		hyperscalerProvider, accountProvider, logs)
+		accountProvider, logs)
 
-	updateManager := update.NewManager(db.Operations(), eventBroker, time.Hour, logs)
-	updateQueue := NewUpdateProcessingQueue(ctx, updateManager,3, db, inputFactory, provisionerClient, eventBroker, logs)
-
-	/****/
-	//suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
+	updateManager := update.NewManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs)
+	updateQueue := NewUpdateProcessingQueue(ctx, updateManager, 3, db, inputFactory, provisionerClient, eventBroker, logs)
 
 	/***/
 	servicesConfig, err := broker.NewServicesConfigFromFile(cfg.CatalogFilePath)
 	fatalOnError(err)
 
-	/***/
-	//defaultPlansConfig, err := servicesConfig.DefaultPlansConfig()
-	//fatalOnError(err)
-
-	/****/
-	// create KymaEnvironmentBroker endpoints
-
 	// create server
 	router := mux.NewRouter()
 
 	createAPI(router, servicesConfig, inputFactory, &cfg, db, provisionQueue, deprovisionQueue, updateQueue, logger, logs)
-
-	// create info endpoints
-	//respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)
-	//runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), defaultPlansConfig, cfg.DefaultRequestRegion, respWriter)
-	//router.Handle("/info/runtimes", runtimesInfoHandler)
 
 	// create metrics endpoint
 	router.Handle("/metrics", promhttp.Handler())
@@ -701,14 +684,13 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 	return queue
 }
 
-func NewUpdateProcessingQueue(ctx context.Context,  manager *update.Manager, workersAmount int, db storage.BrokerStorage, inputFactory input.CreatorForPlan,
+func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, workersAmount int, db storage.BrokerStorage, inputFactory input.CreatorForPlan,
 	provisionerClient provisioner.Client, publisher event.Publisher, logs logrus.FieldLogger) *process.Queue {
-
 
 	manager.DefineStages([]string{"cluster", "check"})
 	manager.AddStep("cluster", update.NewInitialisationStep(db.Operations(), inputFactory))
 	manager.AddStep("cluster", update.NewUpgradeClusterStep(db.Operations(), db.RuntimeStates(), provisionerClient))
-	manager.AddStep("check", update.NewCheckStep(db.Operations(), provisionerClient, 40 * time.Minute))
+	manager.AddStep("check", update.NewCheckStep(db.Operations(), provisionerClient, 40*time.Minute))
 
 	queue := process.NewQueue(manager, logs)
 	queue.Run(ctx.Done(), workersAmount)
@@ -719,7 +701,7 @@ func NewUpdateProcessingQueue(ctx context.Context,  manager *update.Manager, wor
 func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, deprovisionManager *deprovisioning.Manager, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
 	provisionerClient provisioner.Client, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
 	externalEvalAssistant *avs.ExternalEvalAssistant, smcf deprovisioning.SMClientFactory, bundleBuilder ias.BundleBuilder,
-	edpClient deprovisioning.EDPClient, hyperscalerProvider azure.HyperscalerProvider, accountProvider hyperscaler.AccountProvider,
+	edpClient deprovisioning.EDPClient, accountProvider hyperscaler.AccountProvider,
 	logs logrus.FieldLogger) *process.Queue {
 
 	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, smcf, cfg.OperationTimeout)

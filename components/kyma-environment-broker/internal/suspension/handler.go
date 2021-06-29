@@ -67,7 +67,7 @@ func (h *ContextUpdateHandler) handleContextChange(newCtx internal.ERSContext, i
 	}
 
 	if newCtx.Active == nil || isActivated == *newCtx.Active {
-		l.Debugf("Context.Active flag was not changed, the current value: %v", *newCtx.Active)
+		l.Debugf("Context.Active flag was not changed, the current value: %v", isActivated)
 		if isActivated {
 			// instance is marked as Active and incoming context update is unsuspension
 			// TODO: consider retriggering failed unsuspension here

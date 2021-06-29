@@ -309,7 +309,6 @@ func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, e
 		}
 	}
 
-
 	if len(rows) == 0 {
 		return nil, dberr.NotFound("instance operation with instance_id %s not found", instanceID)
 	}

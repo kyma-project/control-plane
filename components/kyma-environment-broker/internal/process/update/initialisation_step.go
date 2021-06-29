@@ -27,16 +27,16 @@ const (
 const postUpgradeDescription = "Performing post-upgrade tasks"
 
 type InitialisationStep struct {
-	operationManager     *process.UpdateOperationManager
-	operationStorage     storage.Operations
-	inputBuilder         input.CreatorForPlan
+	operationManager *process.UpdateOperationManager
+	operationStorage storage.Operations
+	inputBuilder     input.CreatorForPlan
 }
 
 func NewInitialisationStep(os storage.Operations, b input.CreatorForPlan) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:     process.NewUpdateOperationManager(os),
-		operationStorage:     os,
-		inputBuilder:         b,
+		operationManager: process.NewUpdateOperationManager(os),
+		operationStorage: os,
+		inputBuilder:     b,
 	}
 }
 
@@ -56,7 +56,6 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 	}
 
 	if operation.State == orchestration.Pending {
-
 
 		// Check concurrent operations and wait to finish before proceeding
 		// - unsuspension provisioning launched after suspension
@@ -118,4 +117,3 @@ func (s *InitialisationStep) initializeUpgradeShootRequest(operation internal.Up
 		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", log)
 	}
 }
-

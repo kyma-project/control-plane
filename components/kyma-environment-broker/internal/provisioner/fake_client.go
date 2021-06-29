@@ -14,8 +14,8 @@ type runtime struct {
 }
 
 type FakeClient struct {
-	mu            sync.Mutex
-	graphqlizer   Graphqlizer
+	mu          sync.Mutex
+	graphqlizer Graphqlizer
 
 	runtimes      []runtime
 	upgrades      map[string]schema.UpgradeRuntimeInput
@@ -25,7 +25,7 @@ type FakeClient struct {
 
 func NewFakeClient() *FakeClient {
 	return &FakeClient{
-		graphqlizer: Graphqlizer{},
+		graphqlizer:   Graphqlizer{},
 		runtimes:      []runtime{},
 		operations:    make(map[string]schema.OperationStatus),
 		upgrades:      make(map[string]schema.UpgradeRuntimeInput),
@@ -79,6 +79,9 @@ func (c *FakeClient) SetOperation(id string, operation schema.OperationStatus) {
 func (c *FakeClient) ProvisionRuntime(accountID, subAccountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	gql, _ := c.graphqlizer.ProvisionRuntimeInputToGraphQL(config)
+	fmt.Println(gql)
 
 	rid := uuid.New().String()
 	opId := uuid.New().String()
