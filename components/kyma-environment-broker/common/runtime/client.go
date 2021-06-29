@@ -104,6 +104,15 @@ func setQuery(url *url.URL, params ListParameters) {
 	query := url.Query()
 	query.Add(pagination.PageParam, strconv.Itoa(params.Page))
 	query.Add(pagination.PageSizeParam, strconv.Itoa(params.PageSize))
+	if params.OperationDetail != "" {
+		query.Add(OperationDetailParam, string(params.OperationDetail))
+	}
+	if params.KymaConfig {
+		query.Add(KymaConfigParam, "true")
+	}
+	if params.ClusterConfig {
+		query.Add(ClusterConfigParam, "true")
+	}
 	setParamList(query, GlobalAccountIDParam, params.GlobalAccountIDs)
 	setParamList(query, SubAccountIDParam, params.SubAccountIDs)
 	setParamList(query, InstanceIDParam, params.InstanceIDs)

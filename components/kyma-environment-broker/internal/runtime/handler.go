@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pkg/errors"
 )
 
@@ -48,6 +49,7 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 	filter := h.getFilters(req)
 	filter.PageSize = pageSize
 	filter.Page = page
+	opDetail := getOpDetail(req)
 
 	instances, count, totalCount, err := h.instancesDb.List(filter)
 	if err != nil {
@@ -62,51 +64,19 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		provOprs, err := h.operationsDb.ListProvisioningOperationsByInstanceID(instance.InstanceID)
-		if err != nil && !dberr.IsNotFound(err) {
-			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching provisioning operations list for instance"))
+		switch opDetail {
+		case pkg.AllOperation:
+			err = h.handleRuntimeAllOperations(w, instance, &dto)
+		case pkg.LastOperation:
+			err = h.handleRuntimeLastOperation(w, instance, &dto)
+		}
+
+		if err != nil {
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, err)
 			return
 		}
-		var firstProvOp *internal.ProvisioningOperation
-		if len(provOprs) != 0 {
-			firstProvOp = &provOprs[len(provOprs)-1]
-		}
-		h.converter.ApplyProvisioningOperation(&dto, firstProvOp)
-		h.converter.ApplyUnsuspensionOperations(&dto, provOprs)
 
-		deprovOprs, err := h.operationsDb.ListDeprovisioningOperationsByInstanceID(instance.InstanceID)
-		if err != nil && !dberr.IsNotFound(err) {
-			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching deprovisioning operations list for instance"))
-			return
-		}
-		var deprovOp *internal.DeprovisioningOperation
-		if len(deprovOprs) != 0 {
-			for _, op := range deprovOprs {
-				if !op.Temporary {
-					deprovOp = &op
-					break
-				}
-			}
-		}
-		h.converter.ApplyDeprovisioningOperation(&dto, deprovOp)
-		h.converter.ApplySuspensionOperations(&dto, deprovOprs)
-
-		ukOprs, err := h.operationsDb.ListUpgradeKymaOperationsByInstanceID(instance.InstanceID)
-		if err != nil && !dberr.IsNotFound(err) {
-			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching upgrade kyma operation for instance"))
-			return
-		}
-		ukOprs, totalCount := h.takeLastNonDryRunOperations(ukOprs)
-		h.converter.ApplyUpgradingKymaOperations(&dto, ukOprs, totalCount)
-
-		ucOprs, err := h.operationsDb.ListUpgradeClusterOperationsByInstanceID(instance.InstanceID)
-		if err != nil && !dberr.IsNotFound(err) {
-			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching upgrade cluster operation for instance"))
-			return
-		}
-		ucOprs, totalCount = h.takeLastNonDryRunClusterOperations(ucOprs)
-		h.converter.ApplyUpgradingClusterOperations(&dto, ucOprs, totalCount)
-
+		setRuntimeStateByOperationState(&dto)
 		toReturn = append(toReturn, dto)
 	}
 
@@ -146,6 +116,133 @@ func (h *Handler) takeLastNonDryRunClusterOperations(oprs []internal.UpgradeClus
 		totalCount = totalCount + 1
 	}
 	return toReturn, totalCount
+}
+
+func setRuntimeStateByOperationState(dto *pkg.RuntimeDTO) {
+	// Determine runtime state based on the last operation of the runtime
+	lastOp := dto.LastOperation()
+	switch lastOp.State {
+	case string(domain.Succeeded):
+		dto.Status.State = pkg.StateSucceeded
+		if lastOp.Type == pkg.Suspension {
+			dto.Status.State = pkg.StateSuspended
+		}
+	case string(domain.Failed):
+		dto.Status.State = pkg.StateFailed
+		if lastOp.Type == pkg.UpgradeKyma || lastOp.Type == pkg.UpgradeCluster {
+			dto.Status.State = pkg.StateError
+		}
+	case string(domain.InProgress):
+		switch lastOp.Type {
+		case pkg.Provision, pkg.Unsuspension:
+			dto.Status.State = pkg.StateProvisioning
+		case pkg.Deprovision, pkg.Suspension:
+			dto.Status.State = pkg.StateDeprovisioning
+		case pkg.UpgradeKyma, pkg.UpgradeCluster:
+			dto.Status.State = pkg.StateUpgrading
+		}
+	}
+}
+
+func (h *Handler) handleRuntimeAllOperations(w http.ResponseWriter, instance internal.Instance, dto *pkg.RuntimeDTO) error {
+	provOprs, err := h.operationsDb.ListProvisioningOperationsByInstanceID(instance.InstanceID)
+	if err != nil && !dberr.IsNotFound(err) {
+		return errors.Wrap(err, "while fetching provisioning operations list for instance")
+	}
+	var firstProvOp *internal.ProvisioningOperation
+	if len(provOprs) != 0 {
+		firstProvOp = &provOprs[len(provOprs)-1]
+		// Set AVS evaluation ID based on the data in the initial provisioning operation
+		dto.AVSInternalEvaluationID = firstProvOp.InstanceDetails.Avs.AvsEvaluationInternalId
+	}
+	h.converter.ApplyProvisioningOperation(dto, firstProvOp)
+	h.converter.ApplyUnsuspensionOperations(dto, provOprs)
+
+	deprovOprs, err := h.operationsDb.ListDeprovisioningOperationsByInstanceID(instance.InstanceID)
+	if err != nil && !dberr.IsNotFound(err) {
+		return errors.Wrap(err, "while fetching deprovisioning operations list for instance")
+	}
+	var deprovOp *internal.DeprovisioningOperation
+	if len(deprovOprs) != 0 {
+		for _, op := range deprovOprs {
+			if !op.Temporary {
+				deprovOp = &op
+				break
+			}
+		}
+	}
+	h.converter.ApplyDeprovisioningOperation(dto, deprovOp)
+	h.converter.ApplySuspensionOperations(dto, deprovOprs)
+
+	ukOprs, err := h.operationsDb.ListUpgradeKymaOperationsByInstanceID(instance.InstanceID)
+	if err != nil && !dberr.IsNotFound(err) {
+		return errors.Wrap(err, "while fetching upgrade kyma operation for instance")
+	}
+	ukOprs, totalCount := h.takeLastNonDryRunOperations(ukOprs)
+	h.converter.ApplyUpgradingKymaOperations(dto, ukOprs, totalCount)
+
+	ucOprs, err := h.operationsDb.ListUpgradeClusterOperationsByInstanceID(instance.InstanceID)
+	if err != nil && !dberr.IsNotFound(err) {
+		return errors.Wrap(err, "while fetching upgrade cluster operation for instance")
+	}
+	ucOprs, totalCount = h.takeLastNonDryRunClusterOperations(ucOprs)
+	h.converter.ApplyUpgradingClusterOperations(dto, ucOprs, totalCount)
+
+	return nil
+}
+
+func (h *Handler) handleRuntimeLastOperation(w http.ResponseWriter, instance internal.Instance, dto *pkg.RuntimeDTO) error {
+	lastOp, err := h.operationsDb.GetLastOperation(instance.InstanceID)
+	if err != nil {
+		return errors.Wrap(err, "while fetching last operation instance")
+	}
+
+	// Set AVS evaluation ID based on the data in the last operation
+	dto.AVSInternalEvaluationID = lastOp.InstanceDetails.Avs.AvsEvaluationInternalId
+
+	switch lastOp.Type {
+	case internal.OperationTypeProvision:
+		provOps, err := h.operationsDb.ListProvisioningOperationsByInstanceID(instance.InstanceID)
+		if err != nil {
+			return errors.Wrap(err, "while fetching provisioning operations for instance")
+		}
+		lastProvOp := &provOps[0]
+		if len(provOps) > 1 {
+			h.converter.ApplyUnsuspensionOperations(dto, []internal.ProvisioningOperation{*lastProvOp})
+		} else {
+			h.converter.ApplyProvisioningOperation(dto, lastProvOp)
+		}
+
+	case internal.OperationTypeDeprovision:
+		deprovOp, err := h.operationsDb.GetDeprovisioningOperationByID(lastOp.ID)
+		if err != nil {
+			return errors.Wrap(err, "while fetching deprovisioning operation for instance")
+		}
+		if deprovOp.Temporary {
+			h.converter.ApplySuspensionOperations(dto, []internal.DeprovisioningOperation{*deprovOp})
+		} else {
+			h.converter.ApplyDeprovisioningOperation(dto, deprovOp)
+		}
+
+	case internal.OperationTypeUpgradeKyma:
+		upgKymaOp, err := h.operationsDb.GetUpgradeKymaOperationByID(lastOp.ID)
+		if err != nil {
+			return errors.Wrap(err, "while fetching upgrade kyma operation for instance")
+		}
+		h.converter.ApplyUpgradingKymaOperations(dto, []internal.UpgradeKymaOperation{*upgKymaOp}, 1)
+
+	case internal.OperationTypeUpgradeCluster:
+		upgClusterOp, err := h.operationsDb.GetUpgradeClusterOperationByID(lastOp.ID)
+		if err != nil {
+			return errors.Wrap(err, "while fetching upgrade cluster operation for instance")
+		}
+		h.converter.ApplyUpgradingClusterOperations(dto, []internal.UpgradeClusterOperation{*upgClusterOp}, 1)
+
+	default:
+		return errors.Errorf("unsupported operation type: %s", lastOp.Type)
+	}
+
+	return nil
 }
 
 func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {
@@ -189,4 +286,18 @@ func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {
 	}
 
 	return filter
+}
+
+func getOpDetail(req *http.Request) pkg.OperationDetail {
+	opDetail := pkg.AllOperation
+	opDetailParams := req.URL.Query()[pkg.OperationDetailParam]
+	for _, p := range opDetailParams {
+		opDetailParam := pkg.OperationDetail(p)
+		switch opDetailParam {
+		case pkg.AllOperation, pkg.LastOperation:
+			opDetail = opDetailParam
+		}
+	}
+
+	return opDetail
 }
