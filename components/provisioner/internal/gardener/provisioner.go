@@ -64,8 +64,12 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 	}
 
 	region := cluster.ClusterConfig.Region
+	purpose := ""
+	if cluster.ClusterConfig.Purpose != nil {
+		purpose = *cluster.ClusterConfig.Purpose
+	}
 
-	if g.shouldSetMaintenanceWindow() {
+	if g.shouldSetMaintenanceWindow(purpose) {
 		err := g.setMaintenanceWindow(shootTemplate, region)
 
 		if err != nil {
@@ -209,8 +213,8 @@ func annotateWithConfirmDeletion(shoot *gardener_types.Shoot) {
 	shoot.Annotations["confirmation.gardener.cloud/deletion"] = "true"
 }
 
-func (g *GardenerProvisioner) shouldSetMaintenanceWindow() bool {
-	return g.maintenanceWindowConfigPath != ""
+func (g *GardenerProvisioner) shouldSetMaintenanceWindow(purpose string) bool {
+	return g.maintenanceWindowConfigPath != "" && purpose == "production"
 }
 
 func newDeprovisionOperation(id, runtimeId, message string, state model.OperationState, stage model.OperationStage, startTime time.Time) model.Operation {
