@@ -3,7 +3,6 @@ package broker
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 
 	"github.com/pkg/errors"
@@ -52,7 +51,6 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 			continue
 		}
 		p := plan.PlanDefinition
-		p.PlanUpdatable = true
 		err := json.Unmarshal(plan.provisioningRawSchema, &p.Schemas.Instance.Create.Parameters)
 		if err != nil {
 			b.log.Errorf("while unmarshal schema: %s", err)
