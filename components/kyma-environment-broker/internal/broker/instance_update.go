@@ -157,15 +157,17 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 	}
 
 	// update provisioning parameters in the instance
-	err = wait.Poll(500*time.Millisecond, 2*time.Second, func() (bool, error) {
-		instance.Parameters.Parameters.OIDC = params.OIDC
-		instance, err = b.instanceStorage.Update(*instance)
-		if err != nil {
-			logger.Warnf("unable to update instance with new parameters (%s), retrying", err.Error())
+	if params.OIDC.IsProvided() {
+		err = wait.Poll(500*time.Millisecond, 2*time.Second, func() (bool, error) {
+			instance.Parameters.Parameters.OIDC = params.OIDC
+			instance, err = b.instanceStorage.Update(*instance)
+			if err != nil {
+				logger.Warnf("unable to update instance with new parameters (%s), retrying", err.Error())
+				return false, nil
+			}
 			return false, nil
-		}
-		return false, nil
-	})
+		})
+	}
 
 	logger.Debugf("Adding update operation to the processing queue")
 	b.updatingQueue.Add(operationID)

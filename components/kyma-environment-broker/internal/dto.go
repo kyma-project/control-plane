@@ -102,6 +102,16 @@ type UpdatingParametersDTO struct {
 	OIDC *OIDCConfigDTO `json:"oidc,omitempty"`
 }
 
+func (o *OIDCConfigDTO) IsProvided() bool {
+	if o == nil {
+		return false
+	}
+	if o.ClientID == "" && o.IssuerURL == "" && o.GroupsClaim == "" && o.UsernamePrefix == "" {
+		return false
+	}
+	return true
+}
+
 type ERSContext struct {
 	TenantID        string                  `json:"tenant_id"`
 	SubAccountID    string                  `json:"subaccount_id"`

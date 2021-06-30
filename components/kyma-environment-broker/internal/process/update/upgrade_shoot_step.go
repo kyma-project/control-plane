@@ -15,38 +15,34 @@ import (
 const DryRunPrefix = "dry_run-"
 const retryDuration = 10 * time.Second
 
-type UpgradeClusterStep struct {
+type UpgradeShootStep struct {
 	operationManager    *process.UpdateOperationManager
 	provisionerClient   provisioner.Client
 	runtimeStateStorage storage.RuntimeStates
 }
 
-func NewUpgradeClusterStep(
+func NewUpgradeShootStep(
 	os storage.Operations,
 	runtimeStorage storage.RuntimeStates,
-	cli provisioner.Client) *UpgradeClusterStep {
+	cli provisioner.Client) *UpgradeShootStep {
 
-	return &UpgradeClusterStep{
+	return &UpgradeShootStep{
 		operationManager:    process.NewUpdateOperationManager(os),
 		provisionerClient:   cli,
 		runtimeStateStorage: runtimeStorage,
 	}
 }
 
-func (s *UpgradeClusterStep) Name() string {
-	return "Upgrade_Cluster"
+func (s *UpgradeShootStep) Name() string {
+	return "Upgrade_Shoot"
 }
 
-func (s *UpgradeClusterStep) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
-	//if time.Since(operation.UpdatedAt) > s.timeSchedule.UpgradeClusterTimeout {
-	//	log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-	//	return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeClusterTimeout), log)
-	//}
-
+func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
 	if operation.RuntimeID == "" {
 		log.Infof("Runtime does not exists, skipping a call to Provisioner")
 		return operation, 0, nil
 	}
+	log = log.WithField("runtimeID", operation.RuntimeID)
 
 	input, err := s.createUpgradeShootInput(operation)
 	if err != nil {
@@ -73,9 +69,7 @@ func (s *UpgradeClusterStep) Run(operation internal.UpdatingOperation, log logru
 		}
 	}
 
-	log = log.WithField("runtimeID", *provisionerResponse.RuntimeID)
 	log.Infof("call to provisioner succeeded, got operation ID %q", *provisionerResponse.ID)
-
 	err = s.runtimeStateStorage.Insert(
 		internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.Operation.ID, nil, gardenerUpgradeInputToConfigInput(input)),
 	)
@@ -83,7 +77,6 @@ func (s *UpgradeClusterStep) Run(operation internal.UpdatingOperation, log logru
 		log.Errorf("cannot insert runtimeState: %s", err)
 		return operation, 10 * time.Second, nil
 	}
-
 	log.Infof("cluster upgrade process initiated successfully")
 
 	// return repeat mode to start the initialization step which will now check the runtime status
@@ -91,7 +84,7 @@ func (s *UpgradeClusterStep) Run(operation internal.UpdatingOperation, log logru
 
 }
 
-func (s *UpgradeClusterStep) createUpgradeShootInput(operation internal.UpdatingOperation) (gqlschema.UpgradeShootInput, error) {
+func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.UpdatingOperation) (gqlschema.UpgradeShootInput, error) {
 	operation.InputCreator.SetProvisioningParameters(operation.ProvisioningParameters)
 	fullInput, err := operation.InputCreator.CreateUpgradeShootInput()
 	if err != nil {

@@ -207,6 +207,23 @@ func FixProvisioningOperation(operationId, instanceId string) internal.Provision
 	}
 }
 
+func FixUpdatingOperation(operationId, instanceId string) internal.UpdatingOperation {
+	return internal.UpdatingOperation{
+		Operation:    FixOperation(operationId, instanceId, internal.OperationTypeUpdate),
+		InputCreator: FixInputCreator(internal.Azure),
+		UpdatingParameters: internal.UpdatingParametersDTO{
+			OIDC: &internal.OIDCConfigDTO{
+				ClientID:       "clinet-id-oidc",
+				GroupsClaim:    "groups",
+				IssuerURL:      "issuer-url",
+				SigningAlgs:    []string{"signingAlgs"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "",
+			},
+		},
+	}
+}
+
 func FixProvisioningOperationWithProvider(operationId, instanceId string, provider internal.CloudProvider) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: FixOperation(operationId, instanceId, internal.OperationTypeProvision),

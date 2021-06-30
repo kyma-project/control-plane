@@ -153,9 +153,11 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
 	// provisioner finishes the operation
 	suite.WaitForOperationState(unsuspensionOpID, domain.Succeeded)
 
-	// todo: verify the new oidc is stopred in the instance/operation ???
+	// todo: verify the new oidc is stored in the instance/operation ???
 
 }
+
+// todo: Update with empty OIDC does not change provisioning OIDC parameters
 
 func TestUpdateNotExistingInstance(t *testing.T) {
 	suite := NewBrokerSuiteTest(t)

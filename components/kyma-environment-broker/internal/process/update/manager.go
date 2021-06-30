@@ -1,9 +1,12 @@
 package update
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
@@ -163,18 +166,18 @@ func (m *Manager) saveFinishedStage(operation internal.UpdatingOperation, s *sta
 func (m *Manager) runStep(step Step, operation internal.UpdatingOperation, logger logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
 	begin := time.Now()
 	for {
-		//start := time.Now()
+		start := time.Now()
 		processedOperation, when, err := step.Run(operation, logger)
-		//m.publisher.Publish(context.TODO(), process.UpdateStepProcessed{
-		//	OldOperation: operation,
-		//	Operation:    processedOperation,
-		//	StepProcessed: process.StepProcessed{
-		//		StepName: step.Name(),
-		//		Duration: time.Since(start),
-		//		When:     when,
-		//		Error:    err,
-		//	},
-		//})
+		m.publisher.Publish(context.TODO(), process.UpdatingStepProcessed{
+			OldOperation: operation,
+			Operation:    processedOperation,
+			StepProcessed: process.StepProcessed{
+				StepName: step.Name(),
+				Duration: time.Since(start),
+				When:     when,
+				Error:    err,
+			},
+		})
 
 		// break the loop if:
 		// - the step does not need a retry
