@@ -549,24 +549,6 @@ func (s *operations) GetNotFinishedOperationsByType(operationType internal.Opera
 	return s.toOperations(operations)
 }
 
-func (s *operations) IsAnyOperationNotFinishedForInstance(instanceID string) (bool, error) {
-	session := s.NewReadSession()
-	count := 0
-	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		c, err := session.CountNotFinishedOperationsByInstanceID(instanceID)
-		if err != nil {
-			log.Errorf("while getting operations from the storage: %v", err)
-			return false, nil
-		}
-		count = c
-		return true, nil
-	})
-	if err != nil {
-		return false, err
-	}
-	return count > 0, nil
-}
-
 func (s *operations) GetOperationStatsByPlan() (map[string]internal.OperationStats, error) {
 	entries, err := s.NewReadSession().GetOperationStats()
 	if err != nil {

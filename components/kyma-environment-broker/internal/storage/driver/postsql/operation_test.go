@@ -82,9 +82,6 @@ func TestOperation(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, ops, 3)
 		assertOperation(t, givenOperation.Operation, ops[0])
-		exists, err := svc.IsAnyOperationNotFinishedForInstance(givenOperation.InstanceID)
-		require.NoError(t, err)
-		assert.True(t, exists)
 
 		gotOperation, err := svc.GetProvisioningOperationByID("operation-id")
 		require.NoError(t, err)
