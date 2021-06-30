@@ -551,6 +551,13 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		},
 		{
 			stage: createRuntimeStageName,
+			step: provisioning.NewServiceManagerOfferingStep("SM_Offering",
+				"service-manager", "service-operator-access", func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
+					return &op.BTPOperator.Instance
+				}, db.Operations()),
+		},
+		{
+			stage: createRuntimeStageName,
 			step: provisioning.NewServiceManagerOfferingStep("EMS_Offering",
 				provisioning.EmsOfferingName, provisioning.EmsPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
 					return &op.Ems.Instance
@@ -571,6 +578,10 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 				NamespaceAdminRole:  "nar",
 			}),
 			disabled: cfg.XSUAA.Disabled,
+		},
+		{
+			stage: createRuntimeStageName,
+			step:  provisioning.NewSMProvisioningStep(db.Operations()),
 		},
 		{
 			stage:    createRuntimeStageName,
@@ -602,6 +613,10 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		},
 		{
 			stage: createRuntimeStageName,
+			step:  provisioning.NewBTPOperatorOverridesStep(db.Operations()),
+		},
+		{
+			stage: createRuntimeStageName,
 			step:  provisioning.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
 		},
 		{
@@ -613,6 +628,10 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			stage:    createRuntimeStageName,
 			step:     provisioning.NewXSUAABindingStep(db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
+		},
+		{
+			stage: createRuntimeStageName,
+			step:  provisioning.NewSMBindingStep(db.Operations()),
 		},
 		{
 			stage:    createRuntimeStageName,

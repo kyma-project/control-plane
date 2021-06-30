@@ -236,6 +236,7 @@ type InstanceDetails struct {
 	ShootName    string           `json:"shoot_name"`
 	ShootDomain  string           `json:"shoot_domain"`
 	XSUAA        XSUAAData        `json:"xsuaa"`
+	BTPOperator  BTPOperatorData  `json:"btp_operator"`
 	Ems          EmsData          `json:"ems"`
 	Connectivity ConnectivityData `json:"connectivity"`
 }
@@ -267,6 +268,12 @@ type XSUAAData struct {
 	Instance ServiceManagerInstanceInfo `json:"instance"`
 
 	XSAppname string `json:"xsappname"`
+	BindingID string `json:"bindingId"`
+}
+
+type BTPOperatorData struct {
+	Instance ServiceManagerInstanceInfo `json:"instance"`
+
 	BindingID string `json:"bindingId"`
 }
 

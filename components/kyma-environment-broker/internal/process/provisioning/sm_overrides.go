@@ -29,6 +29,7 @@ func (s *ServiceManagerOverridesStep) Name() string {
 	return "ServiceManagerOverrides"
 }
 
+// NOTE: similar overrides for the btp-operator
 func (s *ServiceManagerOverridesStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	creds, err := operation.ProvideServiceManagerCredentials(log)
 	if err != nil {
