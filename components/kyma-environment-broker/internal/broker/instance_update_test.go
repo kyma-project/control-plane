@@ -3,9 +3,10 @@ package broker
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
