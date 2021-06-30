@@ -688,7 +688,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 	provisionerClient provisioner.Client, publisher event.Publisher, logs logrus.FieldLogger) *process.Queue {
 
 	manager.DefineStages([]string{"cluster", "check"})
-	manager.AddStep("cluster", update.NewInitialisationStep(db.Operations(), inputFactory))
+	manager.AddStep("cluster", update.NewInitialisationStep(db.Instances(), db.Operations(), inputFactory))
 	manager.AddStep("cluster", update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient))
 	manager.AddStep("check", update.NewCheckStep(db.Operations(), provisionerClient, 40*time.Minute))
 
