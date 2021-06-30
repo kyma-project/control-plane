@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -26,16 +27,18 @@ type KcBuilder interface {
 
 type Handler struct {
 	kubeconfigBuilder KcBuilder
+	allowOrigins      string
 	instanceStorage   storage.Instances
 	operationStorage  storage.Operations
 	log               logrus.FieldLogger
 }
 
-func NewHandler(storage storage.BrokerStorage, b KcBuilder, log logrus.FieldLogger) *Handler {
+func NewHandler(storage storage.BrokerStorage, b KcBuilder, origins string, log logrus.FieldLogger) *Handler {
 	return &Handler{
 		instanceStorage:   storage.Instances(),
 		operationStorage:  storage.Operations(),
 		kubeconfigBuilder: b,
+		allowOrigins:      origins,
 		log:               log,
 	}
 }
@@ -54,6 +57,8 @@ type ErrorResponse struct {
 func (h *Handler) GetKubeconfig(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	instanceID := vars["instance_id"]
+
+	h.specifyAllowOriginHeader(r, w)
 
 	instance, err := h.instanceStorage.GetByID(instanceID)
 	switch {
@@ -114,5 +119,24 @@ func (h *Handler) handleResponse(w http.ResponseWriter, code int, err error) {
 	errEncode := httputil.JSONEncodeWithCode(w, &ErrorResponse{Error: err.Error()}, code)
 	if errEncode != nil {
 		h.log.Errorf("cannot encode error response: %s", errEncode)
+	}
+}
+
+func (h *Handler) specifyAllowOriginHeader(r *http.Request, w http.ResponseWriter) {
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		return
+	}
+
+	if h.allowOrigins == "*" {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		return
+	}
+
+	for _, o := range strings.Split(h.allowOrigins, ",") {
+		if o == origin {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			return
+		}
 	}
 }
