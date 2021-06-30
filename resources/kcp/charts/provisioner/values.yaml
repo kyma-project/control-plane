@@ -8,6 +8,7 @@ deployment:
     allowPrivilegeEscalation: false
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
+  runAwsConfigMigration: false
 
 security:
   skipTLSCertificateVeryfication: false

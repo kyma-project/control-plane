@@ -151,6 +151,14 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 			cluster:            cluster,
 		},
 		{
+			description: "should return error if Shoot is in failed state during reconcile operation",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootDuringReconcileInFailedState(clusterName), nil)
+			},
+			unrecoverableError: false,
+			cluster:            cluster,
+		},
+		{
 			description: "should return unrecoverable error if Shoot is in failed state",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSession *dbMocks.ReadWriteSession, kubeconfigProvider *provisioning_mocks.KubeconfigProvider) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(fixShootInFailedState(clusterName), nil)
@@ -220,6 +228,13 @@ func fixShootInSucceededStateWithSeed(name string, seed string) *gardener_types.
 func fixShootInFailedState(name string) *gardener_types.Shoot {
 	return fixShoot(name, &gardener_types.LastOperation{
 		State: gardencorev1beta1.LastOperationStateFailed,
+	})
+}
+
+func fixShootDuringReconcileInFailedState(name string) *gardener_types.Shoot {
+	return fixShoot(name, &gardener_types.LastOperation{
+		State: gardencorev1beta1.LastOperationStateFailed,
+		Type:  gardencorev1beta1.LastOperationTypeReconcile,
 	})
 }
 

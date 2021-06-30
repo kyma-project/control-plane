@@ -41,4 +41,5 @@ data:
   global.externalServicesMock.enabled: "true"
   gateway.gateway.auditlog.enabled: "true"
   gateway.gateway.auditlog.authMode: "oauth"
+  global.externalServicesMock.auditlog: "true"
   director.deployment.allowJWTSigningNone: "true"

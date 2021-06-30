@@ -28,7 +28,7 @@ then
    exit 1
 fi
 
-# match all tests
+# match all tests besides compass one
 
 cat <<EOF | ${kc} apply -f -
 apiVersion: testing.kyma-project.io/v1alpha1
@@ -40,6 +40,9 @@ metadata:
 spec:
   maxRetries: 1
   concurrency: 1
+  selectors:
+    matchLabelExpressions:
+      - "release != compass"
 EOF
 
 startTime=$(date +%s)

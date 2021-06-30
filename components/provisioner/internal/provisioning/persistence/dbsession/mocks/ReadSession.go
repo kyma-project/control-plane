@@ -4,6 +4,7 @@ package mocks
 
 import (
 	dberrors "github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
+	dbsession "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -107,6 +108,31 @@ func (_m *ReadSession) GetOperation(operationID string) (model.Operation, dberro
 	return r0, r1
 }
 
+// GetProviderSpecificConfigsByProvider provides a mock function with given fields: provider
+func (_m *ReadSession) GetProviderSpecificConfigsByProvider(provider string) ([]dbsession.ProviderData, dberrors.Error) {
+	ret := _m.Called(provider)
+
+	var r0 []dbsession.ProviderData
+	if rf, ok := ret.Get(0).(func(string) []dbsession.ProviderData); ok {
+		r0 = rf(provider)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]dbsession.ProviderData)
+		}
+	}
+
+	var r1 dberrors.Error
+	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+		r1 = rf(provider)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(dberrors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
 // GetRuntimeUpgrade provides a mock function with given fields: operationId
 func (_m *ReadSession) GetRuntimeUpgrade(operationId string) (model.RuntimeUpgrade, dberrors.Error) {
 	ret := _m.Called(operationId)
@@ -167,6 +193,29 @@ func (_m *ReadSession) GetTenantForOperation(operationID string) (string, dberro
 	var r1 dberrors.Error
 	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
 		r1 = rf(operationID)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(dberrors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
+// GetUpdatedProviderSpecificConfigByID provides a mock function with given fields: id
+func (_m *ReadSession) GetUpdatedProviderSpecificConfigByID(id string) (string, dberrors.Error) {
+	ret := _m.Called(id)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(id)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 dberrors.Error
+	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+		r1 = rf(id)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(dberrors.Error)

@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Cluster Name",
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9-]*$"
+    },
+    "region": {
+      "type": "string",
+      "enum": ["eu-central-1", "eu-west-2", "ca-central-1", "sa-east-1", "us-east-1", "us-west-1",
+        "ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2"]
+    },
+    "machineType": {
+      "type": "string",
+      "enum": ["m5d.xlarge"]
+    },
+    "autoScalerMin": {
+      "type": "integer",
+      "description": "Specifies the minimum number of virtual machines to create",
+      "minimum": 4,
+      "default": 4
+    },
+    "autoScalerMax": {
+      "type": "integer",
+      "description": "Specifies the maximum number of virtual machines to create",
+      "minimum": 4,
+      "maximum": 10,
+      "default": 10
+    },
+    "zonesCount": {
+      "type": "integer",
+      "description": "Specifies the number of availability zones for HA cluster",
+      "minimum": 2,
+      "maximum": 3,
+      "default": 2
+    }},
+  "required": [
+    "name"
+  ],
+  "_show_form_view": true,
+  "_controlsOrder": [
+    "name",
+    "region",
+    "machineType",
+    "autoScalerMin",
+    "autoScalerMax",
+    "zonesCount"
+  ]
+}

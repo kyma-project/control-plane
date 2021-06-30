@@ -20,23 +20,26 @@ const (
 func TestEDPDeregistration_Run(t *testing.T) {
 	// given
 	client := edp.NewFakeClient()
-	client.CreateDataTenant(edp.DataTenantPayload{
+	err := client.CreateDataTenant(edp.DataTenantPayload{
 		Name:        edpName,
 		Environment: edpEnvironment,
 		Secret:      base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s%s", edpName, edpEnvironment))),
 	})
+	assert.NoError(t, err)
 
 	metadataTenantKeys := []string{
 		edp.MaasConsumerEnvironmentKey,
 		edp.MaasConsumerRegionKey,
 		edp.MaasConsumerSubAccountKey,
+		edp.MaasConsumerServicePlan,
 	}
 
 	for _, key := range metadataTenantKeys {
-		client.CreateMetadataTenant(edpName, edpEnvironment, edp.MetadataTenantPayload{
+		err = client.CreateMetadataTenant(edpName, edpEnvironment, edp.MetadataTenantPayload{
 			Key:   key,
 			Value: "-",
 		})
+		assert.NoError(t, err)
 	}
 
 	step := NewEDPDeregistrationStep(client, edp.Config{

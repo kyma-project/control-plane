@@ -1,0 +1,1 @@
+ALTER TABLE cluster_administrator RENAME COLUMN user_id TO email;

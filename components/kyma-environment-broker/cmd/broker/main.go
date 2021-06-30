@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"sort"
@@ -66,6 +67,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
+
+func init() {
+	rand.Seed(time.Now().UTC().UnixNano())
+}
 
 // Config holds configuration for the whole application
 type Config struct {
@@ -329,7 +334,7 @@ func main() {
 
 	// create SKR kubeconfig endpoint
 	kcBuilder := kubeconfig.NewBuilder(cfg.Kubeconfig, provisionerClient)
-	kcHandler := kubeconfig.NewHandler(db, kcBuilder, logs.WithField("service", "kubeconfigHandle"))
+	kcHandler := kubeconfig.NewHandler(db, kcBuilder, cfg.Kubeconfig.AllowOrigins, logs.WithField("service", "kubeconfigHandle"))
 	kcHandler.AttachRoutes(router)
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)

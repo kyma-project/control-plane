@@ -21,7 +21,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b
-	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210527140555-2d0735d391e3
+	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210623022245-65a13bea0ac1
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5
 	github.com/lib/pq v1.10.2
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
@@ -46,6 +46,7 @@ require (
 )
 
 replace (
+	github.com/kyma-project/control-plane/components/provisioner => github.com/ksputo/control-plane/components/provisioner v0.0.0-20210622110400-8faf1515e200
 	// NOTE: some dependencies require old style client-go version k8s.io/client-go@v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	// github.com/gardener/hvpa-controller, github.com/kyma-project/kyma/components/compass-runtime-agent, github.com/kyma-project/control-plane/components/provisioner, github.com/gardener/gardener
 	k8s.io/api => k8s.io/api v0.19.0

@@ -131,7 +131,7 @@ func generateNameAndDescription(operation internal.ProvisioningOperation, beType
 
 func providerCodeByPlan(planID string) string {
 	switch planID {
-	case broker.AWSPlanID:
+	case broker.AWSPlanID, broker.AWSHAPlanID:
 		return "AWS"
 	case broker.GCPPlanID:
 		return "GCP"

@@ -56,7 +56,7 @@ func (w *tokenWriter) Write(out credentialpluginwriter.Output) error {
 }
 
 // NewManager Constructs a new credential.Manager using the given OIDC provider and client credentials
-func NewManager(oidcIssuerURL, oidcClientID, username string, log logger.Logger) Manager {
+func NewManager(oidcIssuerURL, oidcClientID, oidcClientSecret, username string, log logger.Logger) Manager {
 	clock := &clock.Real{}
 	reader := &reader.Reader{}
 	auth := &authentication.Authentication{
@@ -85,6 +85,7 @@ func NewManager(oidcIssuerURL, oidcClientID, username string, log logger.Logger)
 		input: credentialplugin.Input{
 			IssuerURL:     oidcIssuerURL,
 			ClientID:      oidcClientID,
+			ClientSecret:  oidcClientSecret,
 			TokenCacheDir: defaultTokenCacheDir,
 		},
 	}

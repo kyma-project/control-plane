@@ -5,6 +5,7 @@ import (
 
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // LoginCommand represents an execution of the kcp login command
@@ -45,11 +46,14 @@ func (cmd *LoginCommand) Run() error {
 	} else {
 		_, err = cred.GetTokenByROPC(cmd.cobraCmd.Context(), cmd.username, cmd.password)
 	}
-
 	if err != nil {
 		return err
 	}
-	return nil
+
+	viper.Set(GlobalOpts.username, cmd.username)
+	err = viper.WriteConfig()
+
+	return err
 }
 
 // Validate checks the input parameters of the login command
