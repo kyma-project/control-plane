@@ -28,35 +28,35 @@ const (
 )
 
 type RuntimeDTO struct {
-	InstanceID              string        `json:"instanceID"`
-	RuntimeID               string        `json:"runtimeID"`
-	GlobalAccountID         string        `json:"globalAccountID"`
-	SubAccountID            string        `json:"subAccountID"`
-	ProviderRegion          string        `json:"region"`
-	SubAccountRegion        string        `json:"subAccountRegion"`
-	ShootName               string        `json:"shootName"`
-	ServiceClassID          string        `json:"serviceClassID"`
-	ServiceClassName        string        `json:"serviceClassName"`
-	ServicePlanID           string        `json:"servicePlanID"`
-	ServicePlanName         string        `json:"servicePlanName"`
-	Provider                string        `json:"provider"`
-	Status                  RuntimeStatus `json:"status"`
-	UserID                  string        `json:"userID"`
-	AVSInternalEvaluationID int64         `json:"avsInternalEvaluationID"`
+	InstanceID              string                         `json:"instanceID"`
+	RuntimeID               string                         `json:"runtimeID"`
+	GlobalAccountID         string                         `json:"globalAccountID"`
+	SubAccountID            string                         `json:"subAccountID"`
+	ProviderRegion          string                         `json:"region"`
+	SubAccountRegion        string                         `json:"subAccountRegion"`
+	ShootName               string                         `json:"shootName"`
+	ServiceClassID          string                         `json:"serviceClassID"`
+	ServiceClassName        string                         `json:"serviceClassName"`
+	ServicePlanID           string                         `json:"servicePlanID"`
+	ServicePlanName         string                         `json:"servicePlanName"`
+	Provider                string                         `json:"provider"`
+	Status                  RuntimeStatus                  `json:"status"`
+	UserID                  string                         `json:"userID"`
+	AVSInternalEvaluationID int64                          `json:"avsInternalEvaluationID"`
+	KymaConfig              *gqlschema.KymaConfigInput     `json:"kymaConfig,omitempty"`
+	ClusterConfig           *gqlschema.GardenerConfigInput `json:"clusterConfig,omitempty"`
 }
 
 type RuntimeStatus struct {
-	CreatedAt        time.Time                      `json:"createdAt"`
-	ModifiedAt       time.Time                      `json:"modifiedAt"`
-	State            State                          `json:"state"`
-	Provisioning     *Operation                     `json:"provisioning,omitempty"`
-	Deprovisioning   *Operation                     `json:"deprovisioning,omitempty"`
-	UpgradingKyma    *OperationsData                `json:"upgradingKyma,omitempty"`
-	UpgradingCluster *OperationsData                `json:"upgradingCluster,omitempty"`
-	Suspension       *OperationsData                `json:"suspension,omitempty"`
-	Unsuspension     *OperationsData                `json:"unsuspension,omitempty"`
-	KymaConfig       *gqlschema.KymaConfigInput     `json:"kymaConfig,omitempty"`
-	ClusterConfig    *gqlschema.GardenerConfigInput `json:"clusterConfig,omitempty"`
+	CreatedAt        time.Time       `json:"createdAt"`
+	ModifiedAt       time.Time       `json:"modifiedAt"`
+	State            State           `json:"state"`
+	Provisioning     *Operation      `json:"provisioning,omitempty"`
+	Deprovisioning   *Operation      `json:"deprovisioning,omitempty"`
+	UpgradingKyma    *OperationsData `json:"upgradingKyma,omitempty"`
+	UpgradingCluster *OperationsData `json:"upgradingCluster,omitempty"`
+	Suspension       *OperationsData `json:"suspension,omitempty"`
+	Unsuspension     *OperationsData `json:"unsuspension,omitempty"`
 }
 
 type OperationType string
