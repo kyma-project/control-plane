@@ -157,7 +157,7 @@ func TestHandler_specifyAllowOriginHeader(t *testing.T) {
 		corsHeaderExist    bool
 		corsExpectedHeader string
 	}{
-		"one origin witch exist": {
+		"one origin which exist": {
 			requestHeader:      map[string][]string{"Origin": {"https://example.com"}},
 			origins:            "https://example.com",
 			corsHeaderExist:    true,
