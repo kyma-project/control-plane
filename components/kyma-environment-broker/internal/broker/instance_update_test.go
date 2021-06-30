@@ -3,6 +3,7 @@ package broker
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"net/http"
 	"testing"
 
@@ -51,7 +52,8 @@ func TestUpdateEndpoint_UpdateSuspension(t *testing.T) {
 	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("02"))
 
 	handler := &handler{}
-	svc := NewUpdate(Config{}, st.Instances(), st.Operations(), handler, true, logrus.New())
+	q := process.Queue{}
+	svc := NewUpdate(Config{}, st.Instances(), st.Operations(), handler, true, &q, logrus.New())
 
 	// when
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -103,7 +105,8 @@ func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {
 	st.Operations().InsertDeprovisioningOperation(fixSuspensionOperation())
 
 	handler := &handler{}
-	svc := NewUpdate(Config{}, st.Instances(), st.Operations(), handler, true, logrus.New())
+	q := &process.Queue{}
+	svc := NewUpdate(Config{}, st.Instances(), st.Operations(), handler, true, q, logrus.New())
 
 	// when
 	svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -161,7 +164,8 @@ func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 	st.Instances().Insert(instance)
 	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("01"))
 	handler := &handler{}
-	svc := NewUpdate(Config{}, st.Instances(), st.Operations(), handler, true, logrus.New())
+	q := &process.Queue{}
+	svc := NewUpdate(Config{}, st.Instances(), st.Operations(), handler, true, q, logrus.New())
 
 	// when
 	svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -190,7 +194,8 @@ func TestUpdateEndpoint_UpdateNonExistingInstance(t *testing.T) {
 	// given
 	st := storage.NewMemoryStorage()
 	handler := &handler{}
-	svc := NewUpdate(Config{}, st.Instances(), st.Operations(), handler, true, logrus.New())
+	q := &process.Queue{}
+	svc := NewUpdate(Config{}, st.Instances(), st.Operations(), handler, true, q, logrus.New())
 
 	// when
 	_, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
