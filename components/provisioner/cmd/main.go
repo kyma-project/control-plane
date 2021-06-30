@@ -259,13 +259,9 @@ func main() {
 
 	validator := api.NewValidator(dbsFactory.NewReadSession())
 	resolver := api.NewResolver(provisioningSVC, validator)
-	logger := log.WithField("Component", "Artifact Downloader")
-	downloader := release.NewArtifactsDownloader(releaseRepository, cfg.LatestDownloadedReleases, cfg.DownloadPreReleases, httpClient, fileDownloader, logger)
 
-	// Run release downloader
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	go downloader.FetchPeriodically(ctx, release.ShortInterval, release.LongInterval)
 
 	provisioningQueue.Run(ctx.Done())
 

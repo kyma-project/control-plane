@@ -334,7 +334,7 @@ func main() {
 
 	// create SKR kubeconfig endpoint
 	kcBuilder := kubeconfig.NewBuilder(cfg.Kubeconfig, provisionerClient)
-	kcHandler := kubeconfig.NewHandler(db, kcBuilder, logs.WithField("service", "kubeconfigHandle"))
+	kcHandler := kubeconfig.NewHandler(db, kcBuilder, cfg.Kubeconfig.AllowOrigins, logs.WithField("service", "kubeconfigHandle"))
 	kcHandler.AttachRoutes(router)
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)

@@ -310,6 +310,8 @@ spec:
               value: {{ .Values.kubeconfig.issuerURL }}
             - name: APP_KUBECONFIG_CLIENT_ID
               value: {{ .Values.kubeconfig.clientID }}
+            - name: APP_KUBECONFIG_ALLOW_ORIGINS
+              value: "{{ .Values.kubeconfig.allowOrigins }}"
             - name: APP_PROVISIONING_KUBERNETES_VERSION
               value: {{ .Values.gardener.kubernetesVersion }}
             - name: APP_PROVISIONING_MACHINE_IMAGE

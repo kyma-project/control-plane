@@ -117,7 +117,7 @@ func TestHandler_GetKubeconfig(t *testing.T) {
 
 			router := mux.NewRouter()
 
-			handler := NewHandler(db, builder, logger.NewLogDummy())
+			handler := NewHandler(db, builder, "", logger.NewLogDummy())
 			handler.AttachRoutes(router)
 
 			server := httptest.NewServer(router)
@@ -145,6 +145,70 @@ func TestHandler_GetKubeconfig(t *testing.T) {
 				err := json.Unmarshal(body, &errorResponse)
 				require.NoError(t, err)
 				require.Equal(t, d.expectedErrorMessage, errorResponse.Error)
+			}
+		})
+	}
+}
+
+func TestHandler_specifyAllowOriginHeader(t *testing.T) {
+	cases := map[string]struct {
+		requestHeader      http.Header
+		origins            string
+		corsHeaderExist    bool
+		corsExpectedHeader string
+	}{
+		"one origin which exist": {
+			requestHeader:      map[string][]string{"Origin": {"https://example.com"}},
+			origins:            "https://example.com",
+			corsHeaderExist:    true,
+			corsExpectedHeader: "https://example.com",
+		},
+		"many origins which one exist": {
+			requestHeader:      map[string][]string{"Origin": {"https://example.com"}},
+			origins:            "https://acme.com,https://example.com,https://eggplant.io",
+			corsHeaderExist:    true,
+			corsExpectedHeader: "https://example.com",
+		},
+		"many origins non one exist": {
+			requestHeader:   map[string][]string{"Origin": {"https://example.com"}},
+			origins:         "https://acme.com,https://gopher.com,https://eggplant.io",
+			corsHeaderExist: false,
+		},
+		"accept all origins": {
+			requestHeader:      map[string][]string{"Origin": {"https://example.com"}},
+			origins:            "*",
+			corsHeaderExist:    true,
+			corsExpectedHeader: "*",
+		},
+		"no origin header in request": {
+			requestHeader:   map[string][]string{},
+			origins:         "https://acme.com,https://example.com,https://eggplant.io",
+			corsHeaderExist: false,
+		},
+		"wrong origin configuration": {
+			requestHeader:   map[string][]string{"Origin": {"https://example.com"}},
+			origins:         "https://acme.com;https://example.com;https://eggplant.io",
+			corsHeaderExist: false,
+		},
+	}
+
+	for name, d := range cases {
+		t.Run(name, func(t *testing.T) {
+			// given
+			request := &http.Request{Header: d.requestHeader}
+			response := &httptest.ResponseRecorder{}
+
+			handler := NewHandler(storage.NewMemoryStorage(), nil, d.origins, nil)
+
+			// when
+			handler.specifyAllowOriginHeader(request, response)
+
+			// then
+			if d.corsHeaderExist {
+				t.Log(response.Header())
+				require.Equal(t, d.corsExpectedHeader, response.Header().Get("Access-Control-Allow-Origin"))
+			} else {
+				require.NotContains(t, "Access-Control-Allow-Origin", response.Header())
 			}
 		})
 	}
