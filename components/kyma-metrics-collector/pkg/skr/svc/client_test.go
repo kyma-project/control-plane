@@ -36,10 +36,13 @@ func TestList(t *testing.T) {
 	g.Expect(*gotSvcList).To(gomega.Equal(*svcList))
 	// Tests metric
 	metricName := "kmc_skr_calls_total"
-	g.Expect(testutil.CollectAndCount(skrcommons.SkrCalls, metricName)).Should(gomega.Equal(1))
-	callsSuccess, err := skrcommons.SkrCalls.GetMetricWithLabelValues("success", "success_listing_svc")
+	g.Expect(testutil.CollectAndCount(skrcommons.TotalCalls, metricName)).Should(gomega.Equal(2))
+	callsSuccess, err := skrcommons.TotalCalls.GetMetricWithLabelValues("success", "success_listing_svc")
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(testutil.ToFloat64(callsSuccess)).Should(gomega.Equal(float64(1)))
+	callsTotal, err := skrcommons.TotalCalls.GetMetricWithLabelValues("calls_total", "listing_svc")
+	g.Expect(err).Should(gomega.BeNil())
+	g.Expect(testutil.ToFloat64(callsTotal)).Should(gomega.Equal(float64(1)))
 
 	// Delete all the svcs
 	for _, svc := range svcList.Items {
@@ -51,10 +54,13 @@ func TestList(t *testing.T) {
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(len(gotSvcList.Items)).To(gomega.Equal(0))
 	// Tests metric
-	g.Expect(testutil.CollectAndCount(skrcommons.SkrCalls, metricName)).Should(gomega.Equal(1))
-	callsSuccess, err = skrcommons.SkrCalls.GetMetricWithLabelValues("success", "success_listing_svc")
+	g.Expect(testutil.CollectAndCount(skrcommons.TotalCalls, metricName)).Should(gomega.Equal(2))
+	callsSuccess, err = skrcommons.TotalCalls.GetMetricWithLabelValues("success", "success_listing_svc")
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(testutil.ToFloat64(callsSuccess)).Should(gomega.Equal(float64(2)))
+	callsTotal, err = skrcommons.TotalCalls.GetMetricWithLabelValues("calls_total", "listing_svc")
+	g.Expect(err).Should(gomega.BeNil())
+	g.Expect(testutil.ToFloat64(callsTotal)).Should(gomega.Equal(float64(2)))
 }
 
 func NewFakeClient(svcList *corev1.ServiceList) (*Client, error) {

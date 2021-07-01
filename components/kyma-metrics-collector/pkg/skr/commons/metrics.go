@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	SkrCalls = promauto.NewCounterVec(
+	TotalCalls = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: "kmc",
 			Subsystem: "skr",

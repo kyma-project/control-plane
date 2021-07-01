@@ -1,0 +1,164 @@
+rule_files:
+    - alerts.yaml
+
+# How often the rules will be evaluated
+evaluation_interval: 1m
+
+group_eval_order:
+    - kmc.rules
+    - kmc.rules.edp
+    - kmc.rules.keb
+
+tests:
+## kmc.rules
+    - interval: 1m
+      input_series:
+          - series: 'up{job="kyma-metrics-collector", namespace="kyma-system"}'
+            values: '0+0x10'
+          - series: 'up{job="kyma-metrics-collector", namespace="foo"}'
+            values: '1+0x10'
+          - series: 'up{job="foo", namespace="kyma-system"}'
+            values: '1+0x10'
+
+      alert_rule_test:
+        - eval_time: 5m
+          alertname: KMCDown
+          exp_alerts:
+            - exp_labels:
+                severity: critical
+                job: kyma-metrics-collector
+                namespace: kyma-system
+              exp_annotations:
+                description: KMC has disappeared from Prometheus target discovery for the last 5 minutes.
+
+## kmc.rules.edp
+    - interval: 1m
+      input_series:
+          - series: 'kmc_edp_request_total{status="500"}'
+            values: '1+1x10 10+5x20'
+          - series: 'kmc_edp_request_total{status="201"}'
+            values: '0+5x10 50+5x20'
+
+      alert_rule_test:
+        - eval_time: 8m
+          alertname: EDPRequestFailures
+          exp_alerts:
+        - eval_time: 28m
+          alertname: EDPRequestFailures
+          exp_alerts:
+            - exp_labels:
+                severity: critical
+                status: "500"
+              exp_annotations:
+                description: KMC has failed to call EDP with status "2xx successful" in the last 5 minutes.
+
+    - interval: 1m
+      input_series:
+        - series: 'kmc_edp_request_duration_seconds_sum'
+          values: '0+2x30 60+4x30'
+        - series: 'kmc_edp_request_duration_seconds_count'
+          values: '0+1x60'
+      
+      alert_rule_test:
+        - eval_time: 30m
+          alertname: EDPRequestDuration
+          exp_alerts:
+        - eval_time: 60m
+          alertname: EDPRequestDuration
+          exp_alerts:
+            - exp_labels:
+                severity: warning
+              exp_annotations:
+                description: Average request duration to EDP during the last 30 minutes took longer than 3 seconds.      
+
+## kmc.rules.keb
+    - interval: 1m
+      input_series:
+          - series: 'kmc_keb_request_total{status="500"}'
+            values: '1+1x10 10+5x20'
+          - series: 'kmc_keb_request_total{status="201"}'
+            values: '0+5x10 50+5x20'
+
+      alert_rule_test:
+        - eval_time: 8m
+          alertname: KEBRequestFailures
+          exp_alerts:
+        - eval_time: 28m
+          alertname: KEBRequestFailures
+          exp_alerts:
+            - exp_labels:
+                severity: critical
+                status: "500"
+              exp_annotations:
+                description: KMC has failed to call KEB with status "2xx successful" in the last 5 minutes.
+    
+    - interval: 1m
+      input_series:
+        - series: 'kmc_keb_request_duration_seconds_sum'
+          values: '0+4x30 120+6x30'
+        - series: 'kmc_keb_request_duration_seconds_count'
+          values: '0+1x60'
+      
+      alert_rule_test:
+        - eval_time: 30m
+          alertname: KEBRequestDuration
+          exp_alerts:
+        - eval_time: 60m
+          alertname: KEBRequestDuration
+          exp_alerts:
+            - exp_labels:
+                severity: warning
+              exp_annotations:
+                description: Average request duration to KEB during the last 30 minutes took longer than 5 seconds.
+
+    - interval: 1m
+      input_series:
+        - series: 'kmc_keb_number_clusters_scraped'
+          values: '100-4x5 150-10x30'
+      
+      alert_rule_test:
+        - eval_time: 6m
+          alertname: ClustersRateChanged
+          exp_alerts:
+        - eval_time: 16m
+          alertname: ClustersRateChanged
+          exp_alerts:
+            - exp_labels:
+                severity: critical
+              exp_annotations:
+                description: Within 5 minutes the numbers of clusters scraped decreased by at least 10 clusters.
+
+## kmc.rules.skr
+    - interval: 1m
+      input_series:
+          - series: 'kmc_skr_calls_total{status="success"}'
+            values: '1+1x20 20+1x20'
+          - series: 'kmc_skr_calls_total{status="calls_total"}'
+            values: '1+1x20 20+5x20'
+
+      alert_rule_test:
+        - eval_time: 18m
+          alertname: SKRErrors
+          exp_alerts:
+        - eval_time: 38m
+          alertname: SKRErrors
+          exp_alerts:
+            - exp_labels:
+                severity: critical
+              exp_annotations:
+                description: KMC has reported an increase in errors in the last 10 minutes for SKR.
+
+## kmc.rules.gardener
+    - interval: 1m
+      input_series:
+        - series: 'kmc_gardener_calls_total{status="failure"}'
+          values: '1+7x30'
+      
+      alert_rule_test:
+        - eval_time: 16m
+          alertname: GardenerErrors
+          exp_alerts:
+            - exp_labels:
+                severity: critical
+              exp_annotations:
+                description: KMC has reported an increase in errors in the last 10 minutes for Gardener.

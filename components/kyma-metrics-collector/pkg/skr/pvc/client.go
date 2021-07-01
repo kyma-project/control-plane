@@ -33,12 +33,12 @@ func (c Config) NewClient(kubeconfig string) (*Client, error) {
 
 func (c Client) List(ctx context.Context) (*corev1.PersistentVolumeClaimList, error) {
 
+	skrcommons.TotalCalls.WithLabelValues("calls_total", "listing_pvc").Inc()
 	unstructuredPVCList, err := c.Resource.Namespace(corev1.NamespaceAll).List(ctx, metaV1.ListOptions{})
 	if err != nil {
-		skrcommons.SkrCalls.WithLabelValues("failure", "failed_listing_pvc").Inc()
 		return nil, err
 	}
-	skrcommons.SkrCalls.WithLabelValues("success", "success_listing_pvc").Inc()
+	skrcommons.TotalCalls.WithLabelValues("success", "success_listing_pvc").Inc()
 	return convertUnstructuredListToPVCList(unstructuredPVCList)
 }
 

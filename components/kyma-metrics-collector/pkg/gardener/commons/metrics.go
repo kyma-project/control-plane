@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	GardenerCalls = promauto.NewCounterVec(
+	TotalCalls = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: "kmc",
 			Subsystem: "gardener",
