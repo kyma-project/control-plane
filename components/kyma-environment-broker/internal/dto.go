@@ -17,6 +17,16 @@ type OIDCConfigDTO struct {
 	UsernamePrefix string   `json:"usernamePrefix"`
 }
 
+func (o *OIDCConfigDTO) IsProvided() bool {
+	if o == nil {
+		return false
+	}
+	if o.ClientID == "" && o.IssuerURL == "" && o.GroupsClaim == "" && o.UsernamePrefix == "" && o.UsernameClaim == "" && len(o.SigningAlgs) == 0 {
+		return false
+	}
+	return true
+}
+
 type ProvisioningParameters struct {
 	PlanID     string                    `json:"plan_id"`
 	ServiceID  string                    `json:"service_id"`

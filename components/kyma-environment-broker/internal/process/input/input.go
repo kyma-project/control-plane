@@ -378,13 +378,17 @@ func (r *RuntimeInput) adjustRuntimeName() error {
 }
 
 func (r *RuntimeInput) configureOIDC() error {
-	if r.provisioningParameters.Parameters.OIDC == nil {
+	if !r.provisioningParameters.Parameters.OIDC.IsProvided() {
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.OidcConfig = &gqlschema.OIDCConfigInput{
-			ClientID:  r.oidcDefaultValues.ClientID,
-			IssuerURL: r.oidcDefaultValues.IssuerURL,
+			ClientID:       r.oidcDefaultValues.ClientID,
+			GroupsClaim:    r.oidcDefaultValues.GroupsClaim,
+			IssuerURL:      r.oidcDefaultValues.IssuerURL,
+			SigningAlgs:    r.oidcDefaultValues.SigningAlgs,
+			UsernameClaim:  r.oidcDefaultValues.UsernameClaim,
+			UsernamePrefix: r.oidcDefaultValues.UsernamePrefix,
 		}
 		return nil
-	} // else if for fields
+	}
 	params := r.provisioningParameters.Parameters.OIDC
 	r.provisionRuntimeInput.ClusterConfig.GardenerConfig.OidcConfig = &gqlschema.OIDCConfigInput{
 		ClientID:       params.ClientID,
