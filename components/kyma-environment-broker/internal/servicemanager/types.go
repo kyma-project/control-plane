@@ -14,7 +14,6 @@ type (
 		Provision(brokerID string, request ProvisioningInput, acceptsIncomplete bool) (*ProvisionResponse, error)
 		Deprovision(instanceKey InstanceKey, acceptsIncomplete bool) (*DeprovisionResponse, error)
 		Bind(instanceKey InstanceKey, bindingID string, parameters interface{}, acceptsIncomplete bool) (*BindingResponse, error)
-		GetBinding(instanceKey InstanceKey, bindingID string) (*types.ServiceBinding, error)
 		Unbind(instanceKey InstanceKey, bindingID string, acceptsIncomplete bool) (*DeprovisionResponse, error)
 		LastInstanceOperation(key InstanceKey, operationID string) (LastOperationResponse, error)
 	}

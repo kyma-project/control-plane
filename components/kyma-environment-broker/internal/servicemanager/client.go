@@ -184,14 +184,6 @@ func (c *client) Bind(instanceKey InstanceKey, bindingID string, parameters inte
 	}, err
 }
 
-func (c *client) GetBinding(instanceKey InstanceKey, bindingID string) (*types.ServiceBinding, error) {
-	path := fmt.Sprintf("%s/%s/v2/service_bindings/%s", web.OSBURL, instanceKey.BrokerID, bindingID)
-	resp := types.ServiceBinding{}
-	//TODO: check status code too?
-	_, err := c.call(http.MethodGet, path, &resp, nil, bytes.NewBuffer([]byte{}))
-	return &resp, err
-}
-
 func (c *client) LastInstanceOperation(key InstanceKey, operationID string) (LastOperationResponse, error) {
 	resp := LastOperationResponse{}
 	path := fmt.Sprintf("%s/%s/v2/service_instances/%s/last_operation", web.OSBURL, key.BrokerID, key.InstanceID)

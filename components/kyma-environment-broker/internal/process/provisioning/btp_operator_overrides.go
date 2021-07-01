@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -14,17 +13,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const BTPOperatorComponentName = "sap-btp-operator"
+const BTPOperatorComponentName = "btp-operator"
 
 type BTPOperatorOverridesStep struct {
 	operationManager *process.ProvisionOperationManager
-}
-
-type creds struct {
-	ClientID          string `json:"clientid"`
-	ClientSecret      string `json:"clientsecret"`
-	ServiceManagerURL string `json:"sm_url"`
-	URL               string `json:"url"`
 }
 
 func NewBTPOperatorOverridesStep(os storage.Operations) *BTPOperatorOverridesStep {
@@ -38,19 +30,8 @@ func (s *BTPOperatorOverridesStep) Name() string {
 }
 
 func (s *BTPOperatorOverridesStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	smCli, err := operation.ServiceManagerClient(log)
-	if err != nil {
-		return operation, 0, err
-	}
-	resp, err := smCli.GetBinding(operation.BTPOperator.Instance.InstanceKey(), operation.BTPOperator.BindingID)
-	if err != nil {
-		return operation, 0, err
-	}
-	creds := creds{}
-	if err := json.Unmarshal(resp.Credentials, &creds); err != nil {
-		return operation, 0, err
-	}
-
+	sm := operation.ProvisioningParameters.ErsContext.ServiceManager
+	creds := sm.BTPOperatorCredentials
 	overrides := []*gqlschema.ConfigEntryInput{
 		{
 			Key:    "manager.secret.clientid",
@@ -64,19 +45,16 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.ProvisioningOperation,
 		},
 		{
 			Key:   "manager.secret.url",
-			Value: creds.ServiceManagerURL,
+			Value: sm.URL,
 		},
 		{
 			Key:   "manager.secret.tokenurl",
-			Value: creds.URL,
+			Value: creds.TokenURL,
 		},
-		// TODO: figure out where to get cluster ID
-		/*
-			{
-				Key:   "cluster.id",
-				Value: smctl.clusterid,
-			},
-		*/
+		{
+			Key:   "cluster.id",
+			Value: creds.ClusterID,
+		},
 	}
 	operation.InputCreator.AppendOverrides(BTPOperatorComponentName, overrides)
 	return operation, 0, nil

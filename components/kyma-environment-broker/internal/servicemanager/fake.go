@@ -136,9 +136,6 @@ func (f *fakeServiceManagerClient) Unbind(instanceKey InstanceKey, bindingID str
 		HTTPResponse:      HTTPResponse{StatusCode: http.StatusOK},
 	}, nil
 }
-func (f *fakeServiceManagerClient) GetBinding(instanceKey InstanceKey, bindingID string) (*types.ServiceBinding, error) {
-	return nil, nil
-}
 
 func (f *fakeServiceManagerClient) LastInstanceOperation(key InstanceKey, operationID string) (LastOperationResponse, error) {
 	return LastOperationResponse{
