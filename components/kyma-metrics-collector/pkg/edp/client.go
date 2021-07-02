@@ -66,7 +66,6 @@ func (eClient Client) NewRequest(dataTenant string) (*http.Request, error) {
 
 func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, error) {
 	metricTimer := prometheus.NewTimer(sentRequestDuration)
-	defer metricTimer.ObserveDuration()
 
 	var resp *http.Response
 	var err error
@@ -97,6 +96,7 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 		}
 		return
 	})
+	metricTimer.ObserveDuration()
 	totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
 
 	if err != nil {

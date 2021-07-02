@@ -30,10 +30,10 @@ func TestList(t *testing.T) {
 	// Tests metric
 	metricName := "kmc_skr_calls_total"
 	g.Expect(testutil.CollectAndCount(skrcommons.TotalCalls, metricName)).Should(gomega.Equal(2))
-	callsSuccess, err := skrcommons.TotalCalls.GetMetricWithLabelValues("success", "success_listing_nodes")
+	callsSuccess, err := skrcommons.TotalCalls.GetMetricWithLabelValues(skrcommons.SuccessStatusLabel, skrcommons.SuccessListingNodesLabel)
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(testutil.ToFloat64(callsSuccess)).Should(gomega.Equal(float64(1)))
-	callsTotal, err := skrcommons.TotalCalls.GetMetricWithLabelValues("calls_total", "listing_nodes")
+	callsTotal, err := skrcommons.TotalCalls.GetMetricWithLabelValues(skrcommons.CallsTotalLabel, skrcommons.ListingNodesLabel)
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(testutil.ToFloat64(callsTotal)).Should(gomega.Equal(float64(1)))
 
@@ -48,10 +48,10 @@ func TestList(t *testing.T) {
 	g.Expect(len(gotNodeList.Items)).To(gomega.Equal(0))
 	// Tests metric
 	g.Expect(testutil.CollectAndCount(skrcommons.TotalCalls, metricName)).Should(gomega.Equal(2))
-	callsSuccess, err = skrcommons.TotalCalls.GetMetricWithLabelValues("success", "success_listing_nodes")
+	callsSuccess, err = skrcommons.TotalCalls.GetMetricWithLabelValues(skrcommons.SuccessStatusLabel, skrcommons.SuccessListingNodesLabel)
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(testutil.ToFloat64(callsSuccess)).Should(gomega.Equal(float64(2)))
-	callsTotal, err = skrcommons.TotalCalls.GetMetricWithLabelValues("calls_total", "listing_nodes")
+	callsTotal, err = skrcommons.TotalCalls.GetMetricWithLabelValues(skrcommons.CallsTotalLabel, skrcommons.ListingNodesLabel)
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(testutil.ToFloat64(callsTotal)).Should(gomega.Equal(float64(2)))
 }

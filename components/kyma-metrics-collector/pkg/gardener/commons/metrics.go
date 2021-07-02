@@ -5,6 +5,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+const (
+	SuccessGettingSecretLabel = "success_getting_secret"
+	SuccessGettingShootLabel  = "success_getting_shoot"
+	FailedGettingShootLabel   = "failed_getting_shoot"
+	FailedGettingSecretLabel  = "failed_getting_secret"
+	SuccessStatusLabel        = "success"
+	FailureStatusLabel        = "failure"
+)
+
 var (
 	TotalCalls = promauto.NewCounterVec(
 		prometheus.CounterOpts{
