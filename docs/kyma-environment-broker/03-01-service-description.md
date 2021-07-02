@@ -42,7 +42,6 @@ These are the provisioning parameters that you can configure:
 | **context.tenant_id** | string | Provides a tenant ID for an SKR. | No | None |
 | **context.subaccount_id** | string | Provides a subaccount ID for an SKR. | No | None |
 | **context.globalaccount_id** | string | Provides a global account ID for an SKR. | No | None |
-| **context.tenant_id** | string | Provides a Tenant ID for a SKR. | No | None |
 | **context.sm_platform_credentials.credentials.basic.username** | string | Provides the Service Manager username for an SKR. | No | None |
 | **context.sm_platform_credentials.credentials.basic.password** | string | Provides the Service Manager password for an SKR. | No | None |
 | **context.sm_platform_credentials.url** | string | Provides the Service Manager URL for an SKR. | No | None |
@@ -237,4 +236,4 @@ The mapping between the platform region and the provider region (Azure, AWS or G
 
 ## Free plan
 
-Free plan allows you to install Kyma on Azure or AWS. The configuration and assumptions are the same as for the trial plan.
+Free plan allows you to install Kyma on Azure or AWS. The configuration is the same as for the trial plan, but Kyma is not uninstalled after 30 days.
