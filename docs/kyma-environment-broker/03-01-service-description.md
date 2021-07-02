@@ -37,7 +37,7 @@ These are the provisioning parameters that you can configure:
 | **overridesVersion** | string | Provides an overrides version for a specific Kyma version. | No | None |
 | **purpose** | string | Provides a purpose for an SKR. | No | None |
 | **targetSecret** | string | Provides the name of the Secret that contains hyperscaler's credentials for an SKR. | No | None |
-| **platform_region** | string | Defines the Platform region send in the request path. | No | None |
+| **platform_region** | string | Defines the platform region that is sent in the request path. | No | None |
 | **platform_provider** | string | Defines the platform provider for an SKR. | No | None |
 | **context.tenant_id** | string | Provides a tenant ID for an SKR. | No | None |
 | **context.subaccount_id** | string | Provides a subaccount ID for an SKR. | No | None |
