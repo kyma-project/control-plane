@@ -236,4 +236,4 @@ The mapping between the platform region and the provider region (Azure, AWS or G
 
 ## Free plan
 
-Free plan allows you to install Kyma on Azure or AWS. The configuration is the same as for the trial plan, but Kyma is not uninstalled after 30 days.
+Free plan allows you to install Kyma on Azure or AWS. The configurable provisioning parameters are the same as for the trial plan.
