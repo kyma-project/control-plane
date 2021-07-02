@@ -609,6 +609,10 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:  provisioning.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
 		},
 		{
+			stage: createRuntimeStageName,
+			step:  provisioning.NewBusolaMigratorOverridesStep(db.Operations()),
+		},
+		{
 			stage:    createRuntimeStageName,
 			step:     provisioning.NewIASRegistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
@@ -801,6 +805,10 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 3,
 			step:   upgrade_kyma.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
+		},
+		{
+			weight: 3,
+			step:   upgrade_kyma.NewBusolaMigratorOverridesStep(db.Operations()),
 		},
 		{
 			weight:   4,
