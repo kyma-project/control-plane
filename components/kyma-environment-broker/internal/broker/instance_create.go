@@ -5,18 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-
-	"github.com/google/uuid"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 	"github.com/pkg/errors"
@@ -267,6 +266,21 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 	err := json.Unmarshal(details.RawParameters, &parameters)
 	if err != nil {
 		return parameters, errors.Wrap(err, "while unmarshaling raw parameters")
+	}
+
+	if parameters.OIDC.IsProvided() {
+		if parameters.OIDC.ClientID == "" || parameters.OIDC.IssuerURL == "" {
+			return parameters, errors.Wrap(err, "OIDC parameters ClientID & IssuerURL cannot be empty")
+		}
+
+		validURL, err := regexp.Compile(`^(https://|https://www\.)[a-z0-9]+([\-.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(/{1})?$`)
+		if err != nil {
+			return parameters, errors.Wrap(err, "wrong regex pattern for validating OIDC IssuerURL")
+		}
+
+		if !validURL.MatchString(parameters.OIDC.IssuerURL) {
+			return parameters, errors.Wrap(err, "wrong OIDC IssuerURL")
+		}
 	}
 
 	return parameters, nil
