@@ -13,13 +13,13 @@ The supported plans are as follows:
 |-----------|-------------|
 | `azure` | Installs Kyma Runtime on the Azure cluster. |
 | `azure_lite` | Installs Kyma Lite on the Azure cluster. |
-| `azure_ha` | Installs Kyma Runtime on the Azure cluster with multiple Availability Zones. |
+| `azure_ha` | Installs Kyma Runtime on the Azure cluster with multiple availability zones. |
 | `aws` | Installs Kyma Runtime on the AWS cluster. |
-| `aws_ha` | Installs Kyma Runtime on the AWS cluster with multiple Availability Zones. |
+| `aws_ha` | Installs Kyma Runtime on the AWS cluster with multiple availability zones. |
 | `openstack` | Installs Kyma Runtime on the Openstack cluster. |
 | `gcp` | Installs Kyma Runtime on the GCP cluster. |
-| `trial` | Installs Kyma Trial on Azure, AWS or GCP. |
-| `freemium` | Installs Kyma Freemium on Azure or AWS. |
+| `trial` | Installs Kyma trial plan on Azure, AWS or GCP. |
+| `free` | Installs Kyma free plan on Azure or AWS. |
 
 ## Provisioning parameters
 
@@ -34,25 +34,25 @@ These are the provisioning parameters that you can configure:
 | **name** | string | Specifies the name of the cluster. | Yes | None |
 | **components** | array | Defines optional components that are installed in a Kyma Runtime. The possible values are `kiali` and `tracing`. | No | [] |
 | **kymaVersion** | string | Provides a Kyma version on demand. | No | None |
-| **overridesVersion** | string | Provides overrides version for a specific Kyma version. | No | None |
-| **purpose** | string | Provides purpose for a SKR. | No | None |
-| **targetSecret** | string | Provides the Secret's name containing hyperscaler credentials for a SKR. | No | None |
+| **overridesVersion** | string | Provides an overrides version for a specific Kyma version. | No | None |
+| **purpose** | string | Provides a purpose for an SKR. | No | None |
+| **targetSecret** | string | Provides the name of the Secret that contains hyperscaler's credentials for an SKR. | No | None |
 | **platform_region** | string | Defines the Platform region send in the request path. | No | None |
-| **platform_provider** | string | Defines the Platform provider for a SKR. | No | None |
+| **platform_provider** | string | Defines the platform provider for an SKR. | No | None |
+| **context.tenant_id** | string | Provides a tenant ID for an SKR. | No | None |
+| **context.subaccount_id** | string | Provides a subaccount ID for an SKR. | No | None |
+| **context.globalaccount_id** | string | Provides a global account ID for an SKR. | No | None |
 | **context.tenant_id** | string | Provides a Tenant ID for a SKR. | No | None |
-| **context.subaccount_id** | string | Provides a Subaccount ID for a SKR. | No | None |
-| **context.globalaccount_id** | string | Provides a Global Account ID for a SKR. | No | None |
-| **context.tenant_id** | string | Provides a Tenant ID for a SKR. | No | None |
-| **context.sm_platform_credentials.credentials.basic.username** | string | Provides the Service Manager username for a SKR. | No | None |
-| **context.sm_platform_credentials.credentials.basic.password** | string | Provides the Service Manager password for a SKR. | No | None |
-| **context.sm_platform_credentials.url** | string | Provides the Service Manager URL for a SKR. | No | None |
-| **context.user_id** | string | Provides a User ID for a SKR. | No | None |
-| **oidc.clientID** | string | Provides a OIDC Client ID for a SKR. | No | None |
-| **oidc.groupsClaim** | string | Provides a OIDC Groups Claim for a SKR. | No | `groups` |
-| **oidc.issuerURL** | string | Provides a OIDC issuer URL for a SKR. | No | None |
-| **oidc.signingAlgs** | string | Provides the OIDC signing algorithms for a SKR. | No | `RS256` |
-| **oidc.usernameClaim** | string | Provides a OIDC username claim for a SKR. | No | `email` |
-| **oidc.usernamePrefix** | string | Provides a OIDC username prefix for a SKR. | No | None |
+| **context.sm_platform_credentials.credentials.basic.username** | string | Provides the Service Manager username for an SKR. | No | None |
+| **context.sm_platform_credentials.credentials.basic.password** | string | Provides the Service Manager password for an SKR. | No | None |
+| **context.sm_platform_credentials.url** | string | Provides the Service Manager URL for an SKR. | No | None |
+| **context.user_id** | string | Provides a user ID for an SKR. | No | None |
+| **oidc.clientID** | string | Provides an OIDC client ID for an SKR. | No | None |
+| **oidc.groupsClaim** | string | Provides an OIDC groups claim for an SKR. | No | `groups` |
+| **oidc.issuerURL** | string | Provides an OIDC issuer URL for an SKR. | No | None |
+| **oidc.signingAlgs** | string | Provides the OIDC signing algorithms for an SKR. | No | `RS256` |
+| **oidc.usernameClaim** | string | Provides an OIDC username claim for an SKR. | No | `email` |
+| **oidc.usernamePrefix** | string | Provides an OIDC username prefix for an SKR. | No | None |
 
 ### Provider-specific parameters
 
@@ -108,8 +108,8 @@ These are the provisioning parameters for Azure that you can configure:
 | **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
 | **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `4` |
 | **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
-| **maxUnavailable** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
-| **zonesCount** | int | Specifies the number of availability zones for a SKR. | No | `2` |
+| **maxUnavailable** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
+| **zonesCount** | int | Specifies the number of availability zones for an SKR. | No | `2` |
 
  </details>
  </div>
@@ -130,7 +130,7 @@ These are the provisioning parameters for AWS that you can configure:
 | **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
 | **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `10` |
 | **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
-| **maxUnavailable** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
+| **maxUnavailable** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
 
   </details>
   <details>
@@ -147,8 +147,8 @@ These are the provisioning parameters for AWS that you can configure:
 | **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `4` |
 | **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `10` |
 | **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
-| **maxUnavailable** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
-| **zonesCount** | int | Specifies the number of availability zones for a SKR. | No | `2` |
+| **maxUnavailable** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
+| **zonesCount** | int | Specifies the number of availability zones for an SKR. | No | `2` |
 
 
  </details>
@@ -193,7 +193,7 @@ These are the provisioning parameters for Openstack that you can configure:
 | **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `2` |
 | **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `10` |
 | **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
-| **maxUnavailable** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
+| **maxUnavailable** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
 
  </details>
  </div>
@@ -201,7 +201,7 @@ These are the provisioning parameters for Openstack that you can configure:
      
 ## Trial plan
 
-Trial plan allows you to install Kyma on Azure, AWS or GCP. The Trial plan assumptions are as follows:
+Trial plan allows you to install Kyma on Azure, AWS, or GCP. The trial plan assumptions are as follows:
 - Kyma is uninstalled after 30 days and the Kyma cluster is deprovisioned after this time.
 - It's possible to provision only one Kyma Runtime per global account.
 
@@ -237,5 +237,4 @@ The mapping between the platform region and the provider region (Azure, AWS or G
 
 ## Free plan
 
-Free plan allows you to install Kyma on Azure or AWS. The configuration and assumptions are the same as for the Trial plan.
-
+Free plan allows you to install Kyma on Azure or AWS. The configuration and assumptions are the same as for the trial plan.
