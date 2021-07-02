@@ -90,8 +90,8 @@ keb:
   ## Prometheusrule configurations
 prometheus:
   namespace: kyma-system
-  job: kyma-metrics-collector
   labels:
+    ## Prometheus expects the following labels in the PrometheusRules to consider it
     app: monitoring
     release: monitoring
   rules:
