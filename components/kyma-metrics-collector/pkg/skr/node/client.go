@@ -33,12 +33,12 @@ func (c Config) NewClient(kubeconfig string) (*Client, error) {
 
 func (c Client) List(ctx context.Context) (*corev1.NodeList, error) {
 
-	skrcommons.TotalCalls.WithLabelValues("calls_total", "listing_nodes").Inc()
+	skrcommons.TotalCalls.WithLabelValues(skrcommons.CallsTotalLabel, skrcommons.ListingNodesLabel).Inc()
 	nodesUnstructured, err := c.Resource.Namespace(corev1.NamespaceAll).List(ctx, metaV1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-	skrcommons.TotalCalls.WithLabelValues("success", "success_listing_nodes").Inc()
+	skrcommons.TotalCalls.WithLabelValues(skrcommons.SuccessStatusLabel, skrcommons.SuccessListingNodesLabel).Inc()
 	return convertRuntimeListToNodeList(nodesUnstructured)
 }
 

@@ -44,7 +44,7 @@ func TestGet(t *testing.T) {
 	// Tests metric
 	metricName := "kmc_gardener_calls_total"
 	g.Expect(testutil.CollectAndCount(gardenercommons.TotalCalls, metricName)).Should(gomega.Equal(1))
-	callsSuccess, err := gardenercommons.TotalCalls.GetMetricWithLabelValues("success", existingShoot, "success_getting_secret")
+	callsSuccess, err := gardenercommons.TotalCalls.GetMetricWithLabelValues(gardenercommons.SuccessStatusLabel, existingShoot, gardenercommons.SuccessGettingSecretLabel)
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(testutil.ToFloat64(callsSuccess)).Should(gomega.Equal(float64(1)))
 
@@ -54,7 +54,7 @@ func TestGet(t *testing.T) {
 	g.Expect(k8sErrors.IsNotFound(err)).To(gomega.BeTrue())
 	// Test metric
 	g.Expect(testutil.CollectAndCount(gardenercommons.TotalCalls, metricName)).Should(gomega.Equal(2))
-	callsFailure, err := gardenercommons.TotalCalls.GetMetricWithLabelValues("failure", nonexistentShoot, "failed_getting_secret")
+	callsFailure, err := gardenercommons.TotalCalls.GetMetricWithLabelValues(gardenercommons.FailureStatusLabel, nonexistentShoot, gardenercommons.FailedGettingSecretLabel)
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(testutil.ToFloat64(callsFailure)).Should(gomega.Equal(float64(1)))
 }
