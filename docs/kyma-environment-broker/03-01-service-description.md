@@ -105,7 +105,7 @@ These are the provisioning parameters for Azure that you can configure:
 | **region** | string | Defines the cluster region. | No | `westeurope` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
 | **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
-| **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `4` |
+| **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `10` |
 | **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
 | **maxUnavailable** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
 | **zonesCount** | int | Specifies the number of availability zones for an SKR. | No | `2` |
