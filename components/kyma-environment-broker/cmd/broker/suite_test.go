@@ -123,7 +123,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		MachineImageVersion:         "coreos",
 		KubernetesVersion:           "1.18",
 		MachineImage:                "253",
-		Timeout:                     time.Minute,
+		ProvisioningTimeout:         time.Minute,
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
 	}, kymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders)
@@ -446,7 +446,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 		MachineImageVersion:         "coreos",
 		KubernetesVersion:           "1.18",
 		MachineImage:                "253",
-		Timeout:                     time.Minute,
+		ProvisioningTimeout:         time.Minute,
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
 	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders)
@@ -791,8 +791,8 @@ func fixConfig() *Config {
 		DevelopmentMode:                    true,
 		DumpProvisionerRequests:            true,
 		OperationTimeout:                   2 * time.Minute,
-		Provisioning: input.Config{
-			Timeout: 2 * time.Minute,
+		Provisioner: input.Config{
+			ProvisioningTimeout: 2 * time.Minute,
 		},
 		Director: director.Config{},
 		Database: storage.Config{

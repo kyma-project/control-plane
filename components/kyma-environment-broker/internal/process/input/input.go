@@ -21,7 +21,8 @@ const (
 
 type Config struct {
 	URL                         string
-	Timeout                     time.Duration          `envconfig:"default=12h"`
+	ProvisioningTimeout         time.Duration          `envconfig:"default=6h"`
+	DeprovisioningTimeout       time.Duration          `envconfig:"default=5h"`
 	KubernetesVersion           string                 `envconfig:"default=1.16.9"`
 	DefaultGardenerShootPurpose string                 `envconfig:"default=development"`
 	MachineImage                string                 `envconfig:"optional"`
