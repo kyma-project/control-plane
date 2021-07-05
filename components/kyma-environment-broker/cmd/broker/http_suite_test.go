@@ -12,6 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// HttpSuite allows to
 type HttpSuite struct {
 	t          *testing.T
 	httpServer *httptest.Server

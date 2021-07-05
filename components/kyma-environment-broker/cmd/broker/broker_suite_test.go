@@ -1,13 +1,20 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
+
+	"code.cloudfoundry.org/lager"
+	"github.com/gorilla/mux"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
@@ -40,11 +47,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+// BrokerSuiteTest is a helper which allows to write simple tests of any KEB processes (provisioning, deprovisioning, update).
+// The starting point of a test could be an HTTP call to Broker API.
 type BrokerSuiteTest struct {
-	HttpSuite
 	db                storage.BrokerStorage
 	provisionerClient *provisioner.FakeClient
 	directorClient    *director.FakeClient
+
+	httpServer *httptest.Server
+	router     *mux.Router
+
+	t *testing.T
 }
 
 func (s *BrokerSuiteTest) TearDown() {
@@ -122,15 +135,48 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 
 	deprovisioningQueue.SpeedUp(10000)
 
-	httpSuite := NewHttpSuite(t)
-	httpSuite.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
-
-	return &BrokerSuiteTest{
-		HttpSuite:         httpSuite,
+	ts := &BrokerSuiteTest{
 		db:                db,
 		provisionerClient: provisionerClient,
 		directorClient:    directorClient,
+		t:                 t,
+		router:            mux.NewRouter(),
 	}
+
+	ts.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
+	ts.httpServer = httptest.NewServer(ts.router)
+	return ts
+}
+
+func (s *BrokerSuiteTest) CallAPI(method string, path string, body string) *http.Response {
+	cli := s.httpServer.Client()
+	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s", s.httpServer.URL, path), bytes.NewBuffer([]byte(body)))
+	req.Header.Set("X-Broker-API-Version", "2.15")
+	require.NoError(s.t, err)
+
+	resp, err := cli.Do(req)
+	require.NoError(s.t, err)
+	return resp
+}
+
+func (s *BrokerSuiteTest) CreateAPI(inputFactory broker.PlanValidator, cfg *Config, db storage.BrokerStorage, provisioningQueue *process.Queue, deprovisionQueue *process.Queue, updateQueue *process.Queue, logs logrus.FieldLogger) {
+	servicesConfig := map[string]broker.Service{
+		broker.KymaServiceName: {
+			Description: "",
+			Metadata: broker.ServiceMetadata{
+				DisplayName: "kyma",
+				SupportUrl:  "https://kyma-project.io",
+			},
+			Plans: map[string]broker.PlanData{
+				"4deee563-e5ec-4731-b9b1-53b42d855f0c": {
+					Description: "azure",
+					Metadata:    broker.PlanMetadata{},
+				},
+			},
+		},
+	}
+	createAPI(s.router, servicesConfig, inputFactory, cfg, db, provisioningQueue, deprovisionQueue, updateQueue, lager.NewLogger("api"), logs)
+	s.httpServer = httptest.NewServer(s.router)
 }
 
 func createFakeAvsDelegator(t *testing.T, db storage.BrokerStorage, cfg *Config) (*avs.Delegator, *provisioning.ExternalEvalCreator, *provisioning.InternalEvalUpdater, *avs.InternalEvalAssistant, *avs.ExternalEvalAssistant) {
@@ -166,11 +212,6 @@ func (s *BrokerSuiteTest) CreateProvisionedRuntime(options RuntimeOptions) strin
 
 	require.NoError(s.t, s.db.Instances().Insert(instance))
 	require.NoError(s.t, s.db.Operations().InsertProvisioningOperation(provisioningOperation))
-
-	//state, err := s.provisionerClient.ProvisionRuntime(options.ProvideGlobalAccountID(), options.ProvideSubAccountID(), gqlschema.ProvisionRuntimeInput{})
-	//require.NoError(s.t, err)
-	//
-	//s.finishProvisioningOperationByProvisioner(gqlschema.OperationTypeProvision, *state.RuntimeID)
 
 	return instance.InstanceID
 }
@@ -312,7 +353,7 @@ func (s *BrokerSuiteTest) DecodeOperationID(resp *http.Response) string {
 }
 
 func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschema.UpgradeShootInput) {
-	// wait until ProvisioningOperation reaches CreateRuntime step
+	// wait until the operation reaches the call to a Provisioner (provisioner operation ID is stored)
 	var provisioningOp *internal.UpdatingOperation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		op, err := s.db.Operations().GetUpdatingOperationByID(operationID)

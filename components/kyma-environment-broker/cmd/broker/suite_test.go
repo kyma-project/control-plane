@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -813,17 +811,6 @@ func (s *ProvisioningSuite) MarkDirectorWithConsoleURL(operationID string) {
 	op, err := s.storage.Operations().GetProvisioningOperationByID(operationID)
 	assert.NoError(s.t, err)
 	s.directorClient.SetConsoleURL(op.RuntimeID, op.DashboardURL)
-}
-
-func (s *HttpSuite) CallAPI(method string, path string, body string) *http.Response {
-	cli := s.httpServer.Client()
-	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s", s.httpServer.URL, path), bytes.NewBuffer([]byte(body)))
-	req.Header.Set("X-Broker-API-Version", "2.15")
-	require.NoError(s.t, err)
-
-	resp, err := cli.Do(req)
-	require.NoError(s.t, err)
-	return resp
 }
 
 func fixConfig() *Config {
