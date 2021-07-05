@@ -2,66 +2,66 @@ groups:
   - name: kmc.rules
     rules:
     - alert: KMCDown
-      expr: up{job="kyma-metrics-collector", namespace="kyma-system"} == 0
-      for: 5m
+      expr: up{job="kcp-kyma-metrics-collector", namespace="kcp-system"} == 0
+      for: 10m
       labels:
         severity: critical
       annotations:
-        description: KMC has disappeared from Prometheus target discovery for the last 5 minutes.
+        description: KMC has disappeared from Prometheus target discovery.
   - name: kmc.rules.edp
     rules:
     - alert: EDPRequestFailures
-      expr: sum by (status) (increase(kmc_edp_request_total{status!~"2.."}[5m])) > 20
+      expr: sum by (status) (increase(kmc_edp_request_total{status!~"2.."}[10m])) > 20
       for: 10m
       labels:
         severity: critical
       annotations:
-        description: KMC has failed to call EDP with status "2xx successful" in the last 5 minutes.
+        description: Increase in failed requests from KMC to EDP.
     - alert: EDPRequestDuration
-      expr: sum by (job) (rate(kmc_edp_request_duration_seconds_sum[30m])/rate(kmc_edp_request_duration_seconds_count[30m])) > 3
+      expr: sum by (job) (rate(kmc_edp_request_duration_seconds_sum[10m])/rate(kmc_edp_request_duration_seconds_count[10m])) > 3
       for: 10m
       labels:
         severity: warning
       annotations:
-        description: Average request duration to EDP during the last 30 minutes took longer than 3 seconds.
+        description: Average request duration from KMC to EDP.
   - name: kmc.rules.keb
     rules:
     - alert: KEBRequestFailures
-      expr: sum by (status) (increase(kmc_keb_request_total{status!~"2.."}[5m])) > 20
+      expr: sum by (status) (increase(kmc_keb_request_total{status!~"2.."}[10m])) > 20
       for: 10m
       labels:
         severity: critical
       annotations:
-        description: KMC has failed to call KEB with status "2xx successful" in the last 5 minutes.
+        description: Increase in failed requests from KMC to KEB.
     - alert: KEBRequestDuration
-      expr: sum by (job) (rate(kmc_keb_request_duration_seconds_sum[30m])/rate(kmc_keb_request_duration_seconds_count[30m])) > 5
+      expr: sum by (job) (rate(kmc_keb_request_duration_seconds_sum[10m])/rate(kmc_keb_request_duration_seconds_count[10m])) > 5
       for: 10m
       labels:
         severity: warning
       annotations:
-        description: Average request duration to KEB during the last 30 minutes took longer than 5 seconds.
+        description: Average request duration from KMC to KEB.
     - alert: ClustersRateChanged
-      expr: (deriv(kmc_keb_number_clusters_scraped[5m])) < -0.033
-      for: 5m
+      expr: (deriv(kmc_keb_number_clusters_scraped[10m])) < -0.033
+      for: 10m
       labels:
         severity: critical
       annotations:
-        description: Within 5 minutes the numbers of clusters scraped decreased by at least 10 clusters.
+        description: Rate of change of the number of clusters obtained by KMC from KEB for each poll.
   - name: kmc.rules.skr
     rules:
     - alert: SKRErrors
-      expr: sum without (reason) (kmc_skr_calls_total{status="success"}) / ignoring (status) sum without (reason, status) (kmc_skr_calls_total) < 0.4
+      expr: sum(rate(kmc_skr_calls_total{status="success"}[10m]))/ sum (rate(kmc_skr_calls_total{status="calls_total"}[10m])) * 100  < 90
       for: 10m
       labels:
         severity: critical
       annotations:
-        description: KMC has reported an increase in errors in the last 10 minutes for SKR.
+        description: Success rate of KMC in listing PVCs, SVCs and Nodes for SKRs.
   - name: kmc.rules.gardener
     rules:
     - alert: GardenerErrors
-      expr: sum by (reason) (increase(kmc_gardener_calls_total{status="failure"}[5m])) > 30
+      expr: sum by (reason) (increase(kmc_gardener_calls_total{status="failure"}[10m])) > 30
       for: 10m
       labels:
         severity: critical
       annotations:
-        description: KMC has reported an increase in errors in the last 10 minutes for Gardener.
+        description: Rate of increase in errors for the requests from KMC to Gardener.

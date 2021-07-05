@@ -31,6 +31,8 @@ const (
 func TestClient(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	dataTenant := "testTenant"
+	// Resetting any old state
+	totalRequest.Reset()
 	expectedPath := fmt.Sprintf("/namespaces/%s/dataStreams/%s/%s/dataTenants/%s/%s/events", testNamespace, testDataStreamName, testDataStreamVersion, testTenant, testEnv)
 	expectedHeaders := http.Header{
 		"Authorization":   []string{fmt.Sprintf("Bearer %s", testToken)},
@@ -75,6 +77,8 @@ func TestClient(t *testing.T) {
 func TestClientRetry(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	dataTenant := "testTenant"
+	// Resetting any old state
+	totalRequest.Reset()
 	expectedPath := fmt.Sprintf("/namespaces/%s/dataStreams/%s/%s/dataTenants/%s/%s/events", testNamespace, testDataStreamName, testDataStreamVersion, testTenant, testEnv)
 
 	countRetry := 0
@@ -86,7 +90,6 @@ func TestClientRetry(t *testing.T) {
 		*counter += 1
 		rw.WriteHeader(http.StatusInternalServerError)
 	})
-
 	srv := kmctesting.StartTestServer(expectedPath, edpTestHandler, g)
 	// Close the server when test finishes
 	defer srv.Close()
@@ -107,16 +110,13 @@ func TestClientRetry(t *testing.T) {
 	g.Expect(countRetry).Should(gomega.Equal(expectedCountRetry))
 
 	// Ensure metric exists
-	g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(2))
+	g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(1))
 	g.Expect(testutil.CollectAndCount(sentRequestDuration, histogramName)).Should(gomega.Equal(1))
+
 	// Ensure metric has expected value
 	status500Counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusInternalServerError))
 	g.Expect(err).Should(gomega.BeNil())
 	g.Expect(testutil.ToFloat64(status500Counter)).Should(gomega.Equal(float64(1)))
-
-	status201Counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusCreated))
-	g.Expect(err).Should(gomega.BeNil())
-	g.Expect(testutil.ToFloat64(status201Counter)).Should(gomega.Equal(float64(1)))
 }
 
 func NewTestConfig(url string) *Config {
