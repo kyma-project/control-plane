@@ -17,7 +17,7 @@ func ReadOIDCDefaultValuesFromYAML(yamlFilePath string) (internal.OIDCConfigDTO,
 
 	err = yaml.Unmarshal(yamlFile, &values)
 	if err != nil {
-		return internal.OIDCConfigDTO{}, errors.Wrap(err, "while unmarshaling YAML file with OIDC default values")
+		return internal.OIDCConfigDTO{}, errors.Wrap(err, "while unmarshalling YAML file with OIDC default values")
 	}
 	return values, nil
 }
