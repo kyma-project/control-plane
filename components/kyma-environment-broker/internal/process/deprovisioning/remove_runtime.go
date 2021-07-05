@@ -13,22 +13,19 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 )
 
-const (
-	// the time after which the operation is marked as expired
-	RemoveRuntimeTimeout = 1 * time.Hour
-)
-
 type RemoveRuntimeStep struct {
-	operationManager  *process.DeprovisionOperationManager
-	instanceStorage   storage.Instances
-	provisionerClient provisioner.Client
+	operationManager   *process.DeprovisionOperationManager
+	instanceStorage    storage.Instances
+	provisionerClient  provisioner.Client
+	provisionerTimeout time.Duration
 }
 
-func NewRemoveRuntimeStep(os storage.Operations, is storage.Instances, cli provisioner.Client) *RemoveRuntimeStep {
+func NewRemoveRuntimeStep(os storage.Operations, is storage.Instances, cli provisioner.Client, provisionerTimeout time.Duration) *RemoveRuntimeStep {
 	return &RemoveRuntimeStep{
-		operationManager:  process.NewDeprovisionOperationManager(os),
-		instanceStorage:   is,
-		provisionerClient: cli,
+		operationManager:   process.NewDeprovisionOperationManager(os),
+		instanceStorage:    is,
+		provisionerClient:  cli,
+		provisionerTimeout: provisionerTimeout,
 	}
 }
 
@@ -37,9 +34,9 @@ func (s *RemoveRuntimeStep) Name() string {
 }
 
 func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
-	if time.Since(operation.UpdatedAt) > RemoveRuntimeTimeout {
+	if time.Since(operation.UpdatedAt) > s.provisionerTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", RemoveRuntimeTimeout), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisionerTimeout), log)
 	}
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
