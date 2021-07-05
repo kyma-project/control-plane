@@ -13,12 +13,12 @@ type RootSchema struct {
 }
 
 type ProvisioningProperties struct {
-	Name          Type  `json:"name"`
-	Region        *Type `json:"region,omitempty"`
-	MachineType   *Type `json:"machineType,omitempty"`
-	AutoScalerMin *Type `json:"autoScalerMin,omitempty"`
-	AutoScalerMax *Type `json:"autoScalerMax,omitempty"`
-	ZonesCount    *Type `json:"zonesCount,omitempty"`
+	Name          NameType `json:"name"`
+	Region        *Type    `json:"region,omitempty"`
+	MachineType   *Type    `json:"machineType,omitempty"`
+	AutoScalerMin *Type    `json:"autoScalerMin,omitempty"`
+	AutoScalerMax *Type    `json:"autoScalerMax,omitempty"`
+	ZonesCount    *Type    `json:"zonesCount,omitempty"`
 
 	//OIDC OIDCType `json:"oidc,omitempty"`
 }
@@ -58,13 +58,28 @@ type Type struct {
 	UniqueItems     *bool         `json:"uniqueItems,omitempty"`
 }
 
-func NameProperty() Type {
-	return Type{
-		Type:  "string",
-		Title: "Cluster Name",
-		// Allows for all alphanumeric characters, '_', and '-'
-		Pattern:   "^[a-zA-Z0-9-]*$",
-		MinLength: 1,
+type NameType struct {
+	Type
+	BTPdefaultTemplate BTPdefaultTemplate `json:"_BTPdefaultTemplate,omitempty"`
+}
+
+type BTPdefaultTemplate struct {
+	Elements  []string `json:"elements,omitempty"`
+	Separator string   `json:"separator,omitempty"`
+}
+
+func NameProperty() NameType {
+	return NameType{
+		Type: Type{
+			Type:  "string",
+			Title: "Cluster Name",
+			// Allows for all alphanumeric characters, '_', and '-'
+			Pattern:   "^[a-zA-Z0-9-]*$",
+			MinLength: 1,
+		},
+		BTPdefaultTemplate: BTPdefaultTemplate{
+			Elements: []string{"saSubdomain"},
+		},
 	}
 }
 
