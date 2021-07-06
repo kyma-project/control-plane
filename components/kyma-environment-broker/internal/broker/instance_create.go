@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/google/uuid"
@@ -271,15 +270,6 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 	if parameters.OIDC.IsProvided() {
 		if parameters.OIDC.ClientID == "" || parameters.OIDC.IssuerURL == "" {
 			return parameters, errors.Wrap(err, "OIDC parameters ClientID & IssuerURL cannot be empty")
-		}
-
-		validURL, err := regexp.Compile(`^(https://|https://www\.)[a-z0-9]+([\-.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(/{1})?$`)
-		if err != nil {
-			return parameters, errors.Wrap(err, "wrong regex pattern for validating OIDC IssuerURL")
-		}
-
-		if !validURL.MatchString(parameters.OIDC.IssuerURL) {
-			return parameters, errors.Wrap(err, "wrong OIDC IssuerURL")
 		}
 	}
 
