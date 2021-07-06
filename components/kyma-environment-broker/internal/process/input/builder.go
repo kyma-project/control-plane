@@ -157,6 +157,7 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 		globalOverrides:           make([]*gqlschema.ConfigEntryInput, 0),
 		hyperscalerInputProvider:  provider,
 		optionalComponentsService: f.optComponentsSvc,
+		provisioningParameters:    pp,
 		componentsDisabler:        runtime.NewDisabledComponentsService(disabledComponents),
 		enabledOptionalComponents: map[string]struct{}{},
 		oidcDefaultValues:         f.oidcDefaultValues,
