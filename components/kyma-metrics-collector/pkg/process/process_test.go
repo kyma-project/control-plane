@@ -11,6 +11,7 @@ import (
 	skrnode "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/node"
 	skrpvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/pvc"
 	skrsvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/svc"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -182,6 +183,16 @@ func TestPollKEBForRuntimes(t *testing.T) {
 		g.Eventually(func() int {
 			return timesVisited
 		}, 10*time.Second).Should(gomega.Equal(expectedTimesVisited))
+
+		// Ensure metric exists
+		metricName := "kmc_keb_number_clusters_scraped"
+		numberOfRuntimes := 4
+		g.Eventually(testutil.CollectAndCount(clustersScraped, metricName)).Should(gomega.Equal(1))
+		g.Eventually(func() int {
+			counter, err := clustersScraped.GetMetricWithLabelValues("")
+			g.Expect(err).Should(gomega.BeNil())
+			return int(testutil.ToFloat64(counter))
+		}).Should(gomega.Equal(numberOfRuntimes))
 	})
 }
 

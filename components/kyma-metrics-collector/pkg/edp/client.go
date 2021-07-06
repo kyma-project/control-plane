@@ -10,6 +10,8 @@ import (
 	"k8s.io/client-go/util/retry"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -63,6 +65,8 @@ func (eClient Client) NewRequest(dataTenant string) (*http.Request, error) {
 }
 
 func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, error) {
+	metricTimer := prometheus.NewTimer(sentRequestDuration)
+
 	var resp *http.Response
 	var err error
 	customBackoff := wait.Backoff{
@@ -92,6 +96,8 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 		}
 		return
 	})
+	metricTimer.ObserveDuration()
+	totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to POST event to EDP")
@@ -103,6 +109,7 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 			eClient.Logger.Warn(err)
 		}
 	}()
+
 	eClient.Logger.Debugf("sent an event to '%s' with eventstream: '%s'", req.URL.String(), string(payload))
 	return resp, nil
 }

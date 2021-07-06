@@ -3,6 +3,7 @@ APP_PATH = components/kyma-metrics-collector
 ENTRYPOINT = cmd/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20200423-1d9d6590
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
+PROMETHEUSRULES_PATH = ../../resources/kcp/charts/kyma-metrics-collector/prometheus
 
 export GO111MODULE=on
 export CGO_ENABLED=0
@@ -30,3 +31,6 @@ go-mod-check-local:
 		git status -s git status -s go.*; \
 		exit 1; \
 	fi;
+
+test-alerts:
+	promtool test rules ${PROMETHEUSRULES_PATH}/alerts_test.yaml

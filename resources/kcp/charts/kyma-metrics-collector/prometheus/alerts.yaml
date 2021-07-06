@@ -1,0 +1,67 @@
+groups:
+  - name: kmc.rules
+    rules:
+    - alert: KMCDown
+      expr: up{job="kcp-kyma-metrics-collector", namespace="kcp-system"} == 0
+      for: 10m
+      labels:
+        severity: critical
+      annotations:
+        description: KMC has disappeared from Prometheus target discovery.
+  - name: kmc.rules.edp
+    rules:
+    - alert: EDPRequestFailures
+      expr: sum by (status) (increase(kmc_edp_request_total{status!~"2.."}[10m])) > 20
+      for: 10m
+      labels:
+        severity: critical
+      annotations:
+        description: Increase in failed requests from KMC to EDP.
+    - alert: EDPRequestDuration
+      expr: sum by (job) (rate(kmc_edp_request_duration_seconds_sum[10m])/rate(kmc_edp_request_duration_seconds_count[10m])) > 3
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        description: Average request duration from KMC to EDP.
+  - name: kmc.rules.keb
+    rules:
+    - alert: KEBRequestFailures
+      expr: sum by (status) (increase(kmc_keb_request_total{status!~"2.."}[10m])) > 20
+      for: 10m
+      labels:
+        severity: critical
+      annotations:
+        description: Increase in failed requests from KMC to KEB.
+    - alert: KEBRequestDuration
+      expr: sum by (job) (rate(kmc_keb_request_duration_seconds_sum[10m])/rate(kmc_keb_request_duration_seconds_count[10m])) > 5
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        description: Average request duration from KMC to KEB.
+    - alert: ClustersRateChanged
+      expr: (deriv(kmc_keb_number_clusters_scraped[10m])) < -0.033
+      for: 10m
+      labels:
+        severity: critical
+      annotations:
+        description: Rate of change of the number of clusters obtained by KMC from KEB for each poll.
+  - name: kmc.rules.skr
+    rules:
+    - alert: SKRErrors
+      expr: sum(rate(kmc_skr_calls_total{status="success"}[10m]))/ sum (rate(kmc_skr_calls_total{status="calls_total"}[10m])) * 100  < 90
+      for: 10m
+      labels:
+        severity: critical
+      annotations:
+        description: Success rate of KMC in listing PVCs, SVCs and Nodes for SKRs.
+  - name: kmc.rules.gardener
+    rules:
+    - alert: GardenerErrors
+      expr: sum by (reason) (increase(kmc_gardener_calls_total{status="failure"}[10m])) > 30
+      for: 10m
+      labels:
+        severity: critical
+      annotations:
+        description: Rate of increase in errors for the requests from KMC to Gardener.
