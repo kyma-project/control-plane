@@ -75,7 +75,6 @@ func ConvertSliceOfDaysToMap(days []time.Weekday) map[time.Weekday]bool {
 
 func FirstAvailableDay(currentDay int, availableDays map[time.Weekday]bool) int {
 	for i := 0; i < 7; i++ {
-
 		nextDay := (currentDay + i + 1) % 7
 		_, isAvailable := availableDays[time.Weekday(nextDay)]
 		if isAvailable {

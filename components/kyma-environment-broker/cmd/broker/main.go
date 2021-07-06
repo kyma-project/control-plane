@@ -141,6 +141,11 @@ type Config struct {
 		Name      string
 	}
 
+	PolicyConfig struct {
+		Namespace string
+		Name string
+	}
+
 	TrialRegionMappingFilePath string
 	MaxPaginationPage          int `envconfig:"default=100"`
 
@@ -344,7 +349,7 @@ func main() {
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
 		&cfg, accountProvider, serviceManagerClientFactory, fileSystem, logs)
-	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeResolver, upgradeEvalManager, logs)
+	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeResolver, upgradeEvalManager, logs, cli, cfg)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
 	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, clusterQueue, cfg.MaxPaginationPage, logs)
@@ -823,7 +828,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 
 func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStorage, provisionerClient provisioner.Client,
 	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_cluster.TimeSchedule, pollingInterval time.Duration,
-	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager, logs logrus.FieldLogger) *process.Queue {
+	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager, logs logrus.FieldLogger,
+	cli client.Client, cfg Config) *process.Queue {
 
 	upgradeClusterManager := upgrade_cluster.NewManager(db.Operations(), pub, logs.WithField("upgradeCluster", "manager"))
 	upgradeClusterInit := upgrade_cluster.NewInitialisationStep(db.Operations(), db.Orchestrations(), provisionerClient, inputFactory, upgradeEvalManager, icfg)
@@ -846,7 +852,8 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 	}
 
 	orchestrateClusterManager := manager.NewUpgradeClusterManager(db.Orchestrations(), db.Operations(), db.Instances(),
-		upgradeClusterManager, runtimeResolver, pollingInterval, logs.WithField("upgradeCluster", "orchestration"))
+		upgradeClusterManager, runtimeResolver, pollingInterval, logs.WithField("upgradeCluster", "orchestration"),
+		cli, ctx, cfg.PolicyConfig.Namespace, cfg.PolicyConfig.Name)
 	queue := process.NewQueue(orchestrateClusterManager, logs)
 
 	queue.Run(ctx.Done(), 3)
