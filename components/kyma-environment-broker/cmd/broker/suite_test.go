@@ -194,6 +194,7 @@ type RuntimeOptions struct {
 	Provider         internal.CloudProvider
 	KymaVersion      string
 	OverridesVersion string
+	OIDC             *internal.OIDCConfigDTO
 }
 
 func (o *RuntimeOptions) ProvideGlobalAccountID() string {
@@ -239,6 +240,14 @@ func (o *RuntimeOptions) ProvidePlanID() string {
 
 func (o *RuntimeOptions) ProvideZonesCount() *int {
 	return o.ZonesCount
+}
+
+func (o *RuntimeOptions) ProvideOIDC() *internal.OIDCConfigDTO {
+	if o.OIDC != nil {
+		return o.OIDC
+	} else {
+		return nil
+	}
 }
 
 func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) string {
@@ -539,6 +548,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 			ZonesCount:       options.ProvideZonesCount(),
 			KymaVersion:      options.KymaVersion,
 			OverridesVersion: options.OverridesVersion,
+			OIDC:             options.ProvideOIDC(),
 		},
 	}
 
@@ -773,6 +783,12 @@ func (s *ProvisioningSuite) AssertSubscription(shared bool, ht hyperscaler.Type)
 	} else {
 		assert.Equal(s.t, regularSubscription(ht), secretName)
 	}
+}
+
+func (s *ProvisioningSuite) AssertOIDC(oidcConfig gqlschema.OIDCConfigInput) {
+	input := s.fetchProvisionInput()
+
+	assert.Equal(s.t, &oidcConfig, input.ClusterConfig.GardenerConfig.OidcConfig)
 }
 
 func regularSubscription(ht hyperscaler.Type) string {

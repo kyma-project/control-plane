@@ -15,9 +15,9 @@ func TestReadOIDCDefaultValuesFromYAML(t *testing.T) {
 	t.Run("should read default OIDC values", func(t *testing.T) {
 		// given
 		expectedOidcValues := internal.OIDCConfigDTO{
-			ClientID:    "9bd05ed7-a930-44e6-8c79-e6defeb7dec9",
-			GroupsClaim: "groups",
-			IssuerURL:   "https://kymatest.accounts400.ondemand.com",
+			ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb7dec9",
+			GroupsClaim:    "groups",
+			IssuerURL:      "https://kymatest.accounts400.ondemand.com",
 			SigningAlgs:    []string{"RS256"},
 			UsernameClaim:  "sub",
 			UsernamePrefix: "-",
