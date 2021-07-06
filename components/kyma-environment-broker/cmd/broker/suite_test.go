@@ -166,7 +166,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		Retry:                 10 * time.Millisecond,
 		StatusCheck:           100 * time.Millisecond,
 		UpgradeClusterTimeout: 4 * time.Second,
-	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, logs)
+	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, logs,cli, cfg)
 
 	kymaQueue.SpeedUp(1000)
 	clusterQueue.SpeedUp(1000)

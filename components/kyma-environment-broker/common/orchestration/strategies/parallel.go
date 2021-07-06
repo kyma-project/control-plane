@@ -122,8 +122,17 @@ func (p *ParallelOrchestrationStrategy) processOperation(op orchestration.Runtim
 	case orchestration.MaintenanceWindow:
 		// if time window for this operation has finished, we requeue and reprocess on next time window
 		if !op.MaintenanceWindowEnd.IsZero() && op.MaintenanceWindowEnd.Before(time.Now()) {
-			op.MaintenanceWindowBegin = op.MaintenanceWindowBegin.Add(p.rescheduleDelay)
-			op.MaintenanceWindowEnd = op.MaintenanceWindowEnd.Add(p.rescheduleDelay)
+			currentDay := time.Now().Day()
+			nextDay := orchestration.FirstAvailableDay(currentDay, orchestration.ConvertSliceOfDaysToMap(op.MaintenanceDays))
+			diff := (7 - currentDay + nextDay) % 7
+			if p.rescheduleDelay > 0 {
+				op.MaintenanceWindowBegin = op.MaintenanceWindowBegin.Add(p.rescheduleDelay)
+				op.MaintenanceWindowEnd = op.MaintenanceWindowEnd.Add(p.rescheduleDelay)
+			} else {
+				op.MaintenanceWindowBegin = op.MaintenanceWindowBegin.Add(time.Duration(diff))
+				op.MaintenanceWindowEnd = op.MaintenanceWindowEnd.Add(time.Duration(diff))
+			}
+
 			err := p.executor.Reschedule(id, op.MaintenanceWindowBegin, op.MaintenanceWindowEnd)
 			if err != nil {
 				errors.Wrap(err, "while rescheduling operation by executor (still continuing with new schedule)")

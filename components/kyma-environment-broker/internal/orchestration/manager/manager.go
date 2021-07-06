@@ -1,9 +1,10 @@
 package manager
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
-	"time"
-
+	log "github.com/InVisionApp/go-logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration/strategies"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -11,7 +12,10 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 )
 
 type OperationFactory interface {
@@ -29,6 +33,10 @@ type orchestrationManager struct {
 	executor             orchestration.OperationExecutor
 	log                  logrus.FieldLogger
 	pollingInterval      time.Duration
+	k8sClient            client.Client
+	ctx                  context.Context
+	policyNamespace      string
+	policyName           string
 }
 
 func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, error) {
@@ -39,7 +47,18 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 		return m.failOrchestration(o, errors.Wrap(err, "while getting orchestration"))
 	}
 
-	operations, err := m.resolveOperations(o)
+	// TODO: Read & unmarshal the config map here
+
+	config := &coreV1.ConfigMap{}
+	key := client.ObjectKey{Namespace: m.policyNamespace, Name: m.policyName}
+	if err := m.k8sClient.Get(m.ctx, key, config); err != nil {
+		// Inform that Gardener defaults are being chosen.
+	}
+
+	var policies []orchestration.Policy
+	json.Unmarshal([]byte(config.String()), &policies)
+
+	operations, err := m.resolveOperations(o, policies)
 	if err != nil {
 		return m.failOrchestration(o, errors.Wrap(err, "while resolving operations"))
 	}
@@ -77,19 +96,33 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 	return 0, nil
 }
 
-func (m *orchestrationManager) resolveOperations(o *internal.Orchestration) ([]orchestration.RuntimeOperation, error) {
+func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, policies []orchestration.Policy) ([]orchestration.RuntimeOperation, error) {
 	result := []orchestration.RuntimeOperation{}
 	if o.State == orchestration.Pending {
 		runtimes, err := m.resolver.Resolve(o.Parameters.Targets)
 		if err != nil {
 			return result, errors.Wrap(err, "while resolving targets")
 		}
+		// maintenanceDays := []time.Weekday{time.Monday, time.Tuesday, time.Wednesday, time.Thursday, time.Friday, time.Saturday, time.Sunday}
 
 		for _, r := range runtimes {
 			windowBegin := time.Time{}
 			windowEnd := time.Time{}
+
+			maintenanceDays := r.MaintenanceDays
+			maintenanceWindowBegin := r.MaintenanceWindowBegin
+			maintenanceWindowEnd := r.MaintenanceWindowEnd
+
+			for _, p := range policies {
+				if p.GlobalAccountID == r.GlobalAccountID { // TODO: with what should I compare p.Plan?
+					maintenanceDays = p.Days
+					maintenanceWindowBegin = p.TimeBegin
+					maintenanceWindowEnd = p.TimeEnd
+				}
+			}
+
 			if o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
-				windowBegin, windowEnd = m.resolveWindowTime(r.MaintenanceWindowBegin, r.MaintenanceWindowEnd)
+				windowBegin, windowEnd = m.resolveWindowTime(maintenanceWindowBegin, maintenanceWindowEnd, maintenanceDays)
 			}
 			r.MaintenanceWindowBegin = windowBegin
 			r.MaintenanceWindowEnd = windowEnd

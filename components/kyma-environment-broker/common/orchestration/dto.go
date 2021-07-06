@@ -153,3 +153,11 @@ type StatusResponseList struct {
 type UpgradeResponse struct {
 	OrchestrationID string `json:"orchestrationID"`
 }
+
+type Policy struct {
+	GlobalAccountID string         `json:"globalAccountID"`
+	Plan            string         `json:"plan"`
+	Days            []time.Weekday `json:"days"`
+	TimeBegin       time.Time      `json:"timeBegin"`
+	TimeEnd         time.Time      `json:"timeEnd"`
+}

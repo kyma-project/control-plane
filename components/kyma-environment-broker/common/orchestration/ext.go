@@ -48,3 +48,38 @@ type Strategy interface {
 	// Cancel shutdowns a given execution.
 	Cancel(executionID string)
 }
+
+func ConvertSliceOfDaysToMap(days []time.Weekday) map[time.Weekday]bool {
+	m := make(map[time.Weekday]bool)
+	for _, day := range days {
+		switch day {
+		case time.Sunday:
+			m[time.Sunday] = true
+		case time.Monday:
+			m[time.Monday] = true
+		case time.Tuesday:
+			m[time.Tuesday] = true
+		case time.Wednesday:
+			m[time.Wednesday] = true
+		case time.Thursday:
+			m[time.Thursday] = true
+		case time.Friday:
+			m[time.Friday] = true
+		case time.Saturday:
+			m[time.Saturday] = true
+		}
+	}
+	return m
+}
+
+func FirstAvailableDay(currentDay int, availableDays map[time.Weekday]bool) int {
+	for i := 0; i < 7; i++ {
+		nextDay := (currentDay + i + 1) % 7
+		_, isAvailable := availableDays[time.Weekday(nextDay)]
+		if isAvailable {
+			return nextDay
+		}
+	}
+	return currentDay
+}
+
