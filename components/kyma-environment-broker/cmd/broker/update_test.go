@@ -12,13 +12,37 @@ import (
 )
 
 func TestUpdate(t *testing.T) {
+	// given
 	suite := NewBrokerSuiteTest(t)
 	defer suite.TearDown()
 	iid := uuid.New().String()
 
-	resp := procressProvisioning(suite, iid)
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster",
+						"oidc": {
+							"clientID": "id-initial",
+							"signingAlgs": ["xxx"]
+						}
+			}
+   }`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
 
 	// when
+	// OSB update:
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
 		`{
        "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
@@ -55,15 +79,103 @@ func TestUpdate(t *testing.T) {
 	})
 }
 
-func TestUpdateContext(t *testing.T) {
+func TestUpdateWithNoOidc(t *testing.T) {
+	// given
 	suite := NewBrokerSuiteTest(t)
 	defer suite.TearDown()
 	iid := uuid.New().String()
 
-	resp := procressProvisioning(suite, iid)
-	// provisioning done, let's start an update
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster",
+						"oidc": {
+							"clientID": "id-ooo",
+							"signingAlgs": ["RSA256"]
+						}
+			}
+   }`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
 
 	// when
+	// OSB update:
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com"
+       },
+		"parameters": {
+			
+		}
+   }`)
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	upgradeOperationID := suite.DecodeOperationID(resp)
+
+	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
+
+	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+
+	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			OidcConfig: &gqlschema.OIDCConfigInput{
+				ClientID:       "id-ooo",
+				GroupsClaim:    "",
+				IssuerURL:      "",
+				SigningAlgs:    []string{"RSA256"},
+				UsernameClaim:  "",
+				UsernamePrefix: "",
+			},
+		},
+	})
+}
+
+func TestUpdateContext(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster",
+						"oidc": {
+							"clientID": "id-ooo",
+							"signingAlgs": ["RSA256"]
+						}
+			}
+   }`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
+
+	// when
+	// OSB update
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s", iid),
 		`{
        "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
@@ -77,18 +189,42 @@ func TestUpdateContext(t *testing.T) {
 }
 
 func TestUpdateOidcForSuspendedInstance(t *testing.T) {
+	// given
 	suite := NewBrokerSuiteTest(t)
 	// uncomment to see graphql queries
 	//suite.EnableDumpingProvisionerRequests()
 	defer suite.TearDown()
 	iid := uuid.New().String()
 
-	procressProvisioning(suite, iid)
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster",
+						"oidc": {
+							"clientID": "id-ooo",
+							"signingAlgs": ["RSA256"]
+						}
+			}
+   }`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
 
 	suite.Log("*** Suspension ***")
 
 	// Process Suspension
-	resp := suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+	// OSB context update (suspension)
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
 		`{
        "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
        "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
@@ -99,13 +235,13 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
        }
    }`)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
 	suspensionOpID := suite.WaitForLastOperation(iid, domain.InProgress)
 
 	suite.FinishDeprovisioningOperationByProvisioner(suspensionOpID)
 	suite.WaitForOperationState(suspensionOpID, domain.Succeeded)
 
 	// WHEN
+	// OSB update
 	suite.Log("*** Update ***")
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
 		`{
@@ -126,8 +262,12 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
 	updateOpID := suite.DecodeOperationID(resp)
 	suite.WaitForOperationState(updateOpID, domain.Succeeded)
 
+	// THEN
+	instance := suite.GetInstance(iid)
+	assert.Equal(t, "id-oooxx", instance.Parameters.Parameters.OIDC.ClientID)
+
 	// Start unsuspension
-	// process Update
+	// OSB update (unsuspension)
 	suite.Log("*** Update (unsuspension) ***")
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s", iid),
 		`{
@@ -139,32 +279,47 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
            "active": true
        }
    }`)
+
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	// WHEN
+	suite.processProvisioningByInstanceID(iid)
 
-	unsuspensionOpID := suite.WaitForLastOperation(iid, domain.InProgress)
-
-	suite.WaitForProvisioningState(unsuspensionOpID, domain.InProgress)
-	suite.AssertProvisionerStartedProvisioning(unsuspensionOpID)
-
-	suite.FinishProvisioningOperationByProvisioner(unsuspensionOpID)
-	// simulate the installed fresh Kyma sets the proper label in the Director
-	suite.MarkDirectorWithConsoleURL(unsuspensionOpID)
-
-	// provisioner finishes the operation
-	suite.WaitForOperationState(unsuspensionOpID, domain.Succeeded)
-
-	// todo: verify the new oidc is stored in the instance/operation ???
-
+	// THEN
+	instance = suite.GetInstance(iid)
+	assert.Equal(t, "id-oooxx", instance.Parameters.Parameters.OIDC.ClientID)
+	input := suite.LastProvisionInput(iid)
+	assert.Equal(t, "id-oooxx", input.ClusterConfig.GardenerConfig.OidcConfig.ClientID)
 }
 
-// todo: Update with empty OIDC does not change provisioning OIDC parameters
-
 func TestUpdateNotExistingInstance(t *testing.T) {
+	// given
 	suite := NewBrokerSuiteTest(t)
 	defer suite.TearDown()
 	iid := uuid.New().String()
 
-	resp := procressProvisioning(suite, iid)
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster",
+						"oidc": {
+							"clientID": "id-ooo",
+							"signingAlgs": ["RSA256"]
+						}
+			}
+   }`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
 	// provisioning done, let's start an update
 
 	// when

@@ -380,10 +380,48 @@ func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschem
 	assert.Equal(s.t, config, shootUpgrade)
 }
 
+func (s *BrokerSuiteTest) LastProvisionInput(iid string) gqlschema.ProvisionRuntimeInput {
+	// wait until the operation reaches the call to a Provisioner (provisioner operation ID is stored)
+	err := wait.Poll(pollingInterval, 4*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetProvisioningOperationByInstanceID(iid)
+		assert.NoError(s.t, err)
+		if op.ProvisionerOperationID != "" {
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+	return s.provisionerClient.LastProvisioning()
+}
+
 func (s *BrokerSuiteTest) Log(msg string) {
 	s.t.Log(msg)
 }
 
 func (s *BrokerSuiteTest) EnableDumpingProvisionerRequests() {
 	s.provisionerClient.EnableRequestDumping()
+}
+
+func (s *BrokerSuiteTest) GetInstance(iid string) *internal.Instance {
+	inst, err := s.db.Instances().GetByID(iid)
+	require.NoError(s.t, err)
+	return inst
+}
+
+func (s *BrokerSuiteTest) processProvisioningByOperationID(opID string) {
+	s.WaitForProvisioningState(opID, domain.InProgress)
+	s.AssertProvisionerStartedProvisioning(opID)
+
+	s.FinishProvisioningOperationByProvisioner(opID)
+	// simulate the installed fresh Kyma sets the proper label in the Director
+	s.MarkDirectorWithConsoleURL(opID)
+
+	// provisioner finishes the operation
+	s.WaitForOperationState(opID, domain.Succeeded)
+}
+
+func (s *BrokerSuiteTest) processProvisioningByInstanceID(iid string) {
+	opID := s.WaitForLastOperation(iid, domain.InProgress)
+
+	s.processProvisioningByOperationID(opID)
 }

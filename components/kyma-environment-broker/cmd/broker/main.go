@@ -353,18 +353,6 @@ func main() {
 	err = swagger.NewTemplate("/swagger", swaggerTemplates).Execute()
 	fatalOnError(err)
 
-	// create OSB API endpoints
-	/***/
-	//router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
-	//router.Use(middleware.AddProviderToContext())
-	//for _, prefix := range []string{
-	//	"/oauth/",          // oauth2 handled by Ory
-	//	"/oauth/{region}/", // oauth2 handled by Ory with region
-	//} {
-	//	route := router.PathPrefix(prefix).Subrouter()
-	//	broker.AttachRoutes(route, kymaEnvBroker, logger)
-	//}
-
 	// create /orchestration
 	orchestrationHandler.AttachRoutes(router)
 
