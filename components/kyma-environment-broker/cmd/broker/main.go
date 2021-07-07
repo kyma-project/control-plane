@@ -112,7 +112,7 @@ type Config struct {
 	KymaVersion                          string
 	EnableOnDemandVersion                bool `envconfig:"default=false"`
 	ManagedRuntimeComponentsYAMLFilePath string
-	SKROIDCDefaultValuesYAMLFilePath     string
+	SkrOidcDefaultValuesYAMLFilePath     string
 	DefaultRequestRegion                 string `envconfig:"default=cf-eu10"`
 	UpdateProcessingEnabled              bool   `envconfig:"default=false"`
 
@@ -245,7 +245,7 @@ func main() {
 	regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)
 	fatalOnError(err)
 	logs.Infof("Platform region mapping for trial: %v", regions)
-	oidcDefaultValues, err := runtime.ReadOIDCDefaultValuesFromYAML(cfg.SKROIDCDefaultValuesYAMLFilePath)
+	oidcDefaultValues, err := runtime.ReadOIDCDefaultValuesFromYAML(cfg.SkrOidcDefaultValuesYAMLFilePath)
 	fatalOnError(err)
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider,
 		cfg.Provisioner, cfg.KymaVersion, regions, cfg.FreemiumProviders, oidcDefaultValues)
