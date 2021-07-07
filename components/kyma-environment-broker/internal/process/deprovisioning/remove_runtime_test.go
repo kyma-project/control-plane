@@ -28,7 +28,7 @@ func TestRemoveRuntimeStep_Run(t *testing.T) {
 		provisionerClient := &provisionerAutomock.Client{}
 		provisionerClient.On("DeprovisionRuntime", fixGlobalAccountID, fixRuntimeID).Return(fixProvisionerOperationID, nil)
 
-		step := NewRemoveRuntimeStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
+		step := NewRemoveRuntimeStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, time.Minute)
 
 		// when
 		entry := log.WithFields(logrus.Fields{"step": "TEST"})
@@ -65,7 +65,7 @@ func TestRemoveRuntimeStep_Run(t *testing.T) {
 		provisionerClient := &provisionerAutomock.Client{}
 		provisionerClient.On("DeprovisionRuntime", fixGlobalAccountID, fixRuntimeID).Return(fixProvisionerOperationID, nil)
 
-		step := NewRemoveRuntimeStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
+		step := NewRemoveRuntimeStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, time.Minute)
 
 		// when
 		entry := log.WithFields(logrus.Fields{"step": "TEST"})
