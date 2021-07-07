@@ -34,7 +34,7 @@ func (iec *InternalEvalAssistant) CreateBasicEvaluationRequest(operations intern
 
 func (iec *InternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionerInputCreator, evaluationId int64, pp internal.ProvisioningParameters) {
 	apiKey := iec.avsConfig.ApiKey
-	if broker.IsTrialPlan(pp.PlanID) && iec.avsConfig.IsTrialConfigured() {
+	if (broker.IsTrialPlan(pp.PlanID) || broker.IsFreemiumPlan(pp.PlanID)) && iec.avsConfig.IsTrialConfigured() {
 		apiKey = iec.avsConfig.TrialApiKey
 	}
 	inputCreator.AppendOverrides(ComponentName, []*gqlschema.ConfigEntryInput{
@@ -63,21 +63,21 @@ func (iec *InternalEvalAssistant) ProvideSuffix() string {
 }
 
 func (iec *InternalEvalAssistant) ProvideTesterAccessId(pp internal.ProvisioningParameters) int64 {
-	if broker.IsTrialPlan(pp.PlanID) && iec.avsConfig.IsTrialConfigured() {
+	if (broker.IsTrialPlan(pp.PlanID) || broker.IsFreemiumPlan(pp.PlanID)) && iec.avsConfig.IsTrialConfigured() {
 		return iec.avsConfig.TrialInternalTesterAccessId
 	}
 	return iec.avsConfig.InternalTesterAccessId
 }
 
 func (iec *InternalEvalAssistant) ProvideGroupId(pp internal.ProvisioningParameters) int64 {
-	if broker.IsTrialPlan(pp.PlanID) && iec.avsConfig.IsTrialConfigured() {
+	if (broker.IsTrialPlan(pp.PlanID) || broker.IsFreemiumPlan(pp.PlanID)) && iec.avsConfig.IsTrialConfigured() {
 		return iec.avsConfig.TrialGroupId
 	}
 	return iec.avsConfig.GroupId
 }
 
 func (iec *InternalEvalAssistant) ProvideParentId(pp internal.ProvisioningParameters) int64 {
-	if broker.IsTrialPlan(pp.PlanID) && iec.avsConfig.IsTrialConfigured() {
+	if (broker.IsTrialPlan(pp.PlanID) || broker.IsFreemiumPlan(pp.PlanID)) && iec.avsConfig.IsTrialConfigured() {
 		return iec.avsConfig.TrialParentId
 	}
 	return iec.avsConfig.ParentId

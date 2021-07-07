@@ -447,3 +447,12 @@ func IsAzurePlan(planID string) bool {
 		return false
 	}
 }
+
+func IsFreemiumPlan(planID string) bool {
+	switch planID {
+	case FreemiumPlanID:
+		return true
+	default:
+		return false
+	}
+}
