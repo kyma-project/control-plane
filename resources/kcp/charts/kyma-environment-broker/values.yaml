@@ -47,6 +47,9 @@ provisioner:
   # Defines how long should the Kyma Environment Broker checks the status of the provisioning in the Provisioner.
   # The Provisioner timeout is defined in resources/kcp/charts/provisioner/values.yaml
   timeout: "12h"
+  provisioningTimeout: "6h"
+  deprovisioningTimeout: "5h"
+
   gardener:
     # name of the secret with kubeconfig to the gardener cluster
     secretName: "gardener"
@@ -98,6 +101,7 @@ gardener:
 kubeconfig:
   issuerURL: "TBD"
   clientID: "TBD"
+  allowOrigins: "*"
 
 # It is used to provide own creds for Service Manager instead of using the one provided by external system
 # who execute provision call on Kyma Environment Broker. You can define `overrideMode` to be one of: Always, WhenNotSentInRequest, Never

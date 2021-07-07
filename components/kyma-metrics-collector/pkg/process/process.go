@@ -175,6 +175,8 @@ func (p *Process) pollKEBForRuntimes() {
 			time.Sleep(p.KEBClient.Config.PollWaitDuration)
 			continue
 		}
+		clustersScraped.WithLabelValues(kebReq.RequestURI).Set(float64(runtimesPage.Count))
+
 		p.Logger.Debugf("num of runtimes are: %d", runtimesPage.Count)
 		p.populateCacheAndQueue(runtimesPage)
 		p.Logger.Debugf("length of the cache after KEB is done populating: %d", p.Cache.ItemCount())

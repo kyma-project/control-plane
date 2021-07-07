@@ -61,6 +61,11 @@ make tests
 make publish-test-results
 ```
 
+- Run tests on the Prometheus alerting rules:
+```
+make test-alerts
+```
+
 ### Troubleshooting
 - Check logs:
 ```

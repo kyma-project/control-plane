@@ -1,0 +1,13 @@
+{{- if .Values.global.kyma_metrics_collector.enabled -}}
+{{- if .Values.prometheus.rules.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+{{ include "kyma-metrics-collector.prometheusrule.labels" . | indent 4 }}
+  name: {{ include "kyma-metrics-collector.fullname" . }}
+  namespace: {{ .Values.prometheus.namespace }}
+spec: 
+{{ .Files.Get "prometheus/alerts.yaml" | indent 2 }}
+{{- end -}}
+{{- end -}}
