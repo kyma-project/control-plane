@@ -1,7 +1,9 @@
 package internal
 
 import (
+	"fmt"
 	"reflect"
+	"strings"
 )
 
 const (
@@ -127,4 +129,27 @@ type BTPOperatorCredentials struct {
 	ClientSecret string `json:"client_secret"`
 	TokenURL     string `json:"token_url"`
 	ClusterID    string `json:"cluster_id"`
+}
+
+func (c BTPOperatorCredentials) Provided() (bool, error) {
+	var missing []string
+	if c.ClientID == "" {
+		missing = append(missing, "client_id")
+	}
+	if c.ClientSecret == "" {
+		missing = append(missing, "client_secret")
+	}
+	if c.TokenURL == "" {
+		missing = append(missing, "token_url")
+	}
+	if c.ClusterID == "" {
+		missing = append(missing, "cluster_id")
+	}
+	if len(missing) == 4 {
+		return false, nil
+	}
+	if len(missing) == 0 {
+		return true, nil
+	}
+	return false, fmt.Errorf("Incomplete 'btp_operator' credentials provided, missing required field: %v", strings.Join(missing, ", "))
 }

@@ -111,6 +111,19 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		if ersContext.Active != nil {
 			instance.Parameters.ErsContext.Active = ersContext.Active
 		}
+		// copy BTP Operator credentials if set
+		if ersContext.ServiceManager != nil {
+			if provided, err := ersContext.ServiceManager.BTPOperatorCredentials.Provided(); err != nil {
+				logger.Errorf("processing context updated failed: %s", err.Error())
+				return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, err)
+			} else if provided {
+				if instance.Parameters.ErsContext.ServiceManager == nil {
+					instance.Parameters.ErsContext.ServiceManager = ersContext.ServiceManager
+				} else {
+					instance.Parameters.ErsContext.ServiceManager.BTPOperatorCredentials = ersContext.ServiceManager.BTPOperatorCredentials
+				}
+			}
+		}
 
 		_, err = b.instanceStorage.Update(*instance)
 		if err != nil {
