@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -280,5 +281,115 @@ func TestProvisioning_RuntimeOverrides(t *testing.T) {
 			Key:   "foo",
 			Value: "bar",
 		})
+	})
+}
+
+func TestProvisioning_OIDCValues(t *testing.T) {
+
+	t.Run("should apply default OIDC values when OIDC object is nil", func(t *testing.T) {
+		// given
+		suite := NewProvisioningSuite(t)
+		defaultOIDC := fixture.FixOIDCConfigDTO()
+		expectedOIDC := gqlschema.OIDCConfigInput{
+			ClientID:       defaultOIDC.ClientID,
+			GroupsClaim:    defaultOIDC.GroupsClaim,
+			IssuerURL:      defaultOIDC.IssuerURL,
+			SigningAlgs:    defaultOIDC.SigningAlgs,
+			UsernameClaim:  defaultOIDC.UsernameClaim,
+			UsernamePrefix: defaultOIDC.UsernamePrefix,
+		}
+
+		// when
+		provisioningOperationID := suite.CreateProvisioning(RuntimeOptions{})
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.InProgress)
+		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
+
+		// when
+		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+		// simulate the installed fresh Kyma sets the proper label in the Director
+		suite.MarkDirectorWithConsoleURL(provisioningOperationID)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
+		suite.AssertAllStagesFinished(provisioningOperationID)
+		suite.AssertProvisioningRequest()
+		suite.AssertOIDC(expectedOIDC)
+	})
+
+	t.Run("should apply default OIDC values when all OIDC object's fields are empty", func(t *testing.T) {
+		// given
+		suite := NewProvisioningSuite(t)
+		defaultOIDC := fixture.FixOIDCConfigDTO()
+		expectedOIDC := gqlschema.OIDCConfigInput{
+			ClientID:       defaultOIDC.ClientID,
+			GroupsClaim:    defaultOIDC.GroupsClaim,
+			IssuerURL:      defaultOIDC.IssuerURL,
+			SigningAlgs:    defaultOIDC.SigningAlgs,
+			UsernameClaim:  defaultOIDC.UsernameClaim,
+			UsernamePrefix: defaultOIDC.UsernamePrefix,
+		}
+		options := RuntimeOptions{
+			OIDC: &internal.OIDCConfigDTO{},
+		}
+
+		// when
+		provisioningOperationID := suite.CreateProvisioning(options)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.InProgress)
+		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
+
+		// when
+		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+		// simulate the installed fresh Kyma sets the proper label in the Director
+		suite.MarkDirectorWithConsoleURL(provisioningOperationID)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
+		suite.AssertAllStagesFinished(provisioningOperationID)
+		suite.AssertProvisioningRequest()
+		suite.AssertOIDC(expectedOIDC)
+	})
+
+	t.Run("should apply provided OIDC configuration", func(t *testing.T) {
+		// given
+		suite := NewProvisioningSuite(t)
+		providedOIDC := internal.OIDCConfigDTO{
+			ClientID:       "fake-client-id-1",
+			GroupsClaim:    "fakeGroups",
+			IssuerURL:      "https://testurl.local",
+			SigningAlgs:    []string{"RS256", "HS256"},
+			UsernameClaim:  "fakeUsernameClaim",
+			UsernamePrefix: "::",
+		}
+		expectedOIDC := gqlschema.OIDCConfigInput{
+			ClientID:       providedOIDC.ClientID,
+			GroupsClaim:    providedOIDC.GroupsClaim,
+			IssuerURL:      providedOIDC.IssuerURL,
+			SigningAlgs:    providedOIDC.SigningAlgs,
+			UsernameClaim:  providedOIDC.UsernameClaim,
+			UsernamePrefix: providedOIDC.UsernamePrefix,
+		}
+		options := RuntimeOptions{OIDC: &providedOIDC}
+
+		// when
+		provisioningOperationID := suite.CreateProvisioning(options)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.InProgress)
+		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
+
+		// when
+		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+		// simulate the installed fresh Kyma sets the proper label in the Director
+		suite.MarkDirectorWithConsoleURL(provisioningOperationID)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
+		suite.AssertAllStagesFinished(provisioningOperationID)
+		suite.AssertProvisioningRequest()
+		suite.AssertOIDC(expectedOIDC)
 	})
 }

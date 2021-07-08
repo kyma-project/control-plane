@@ -119,15 +119,14 @@ func NewOIDCSchema() OIDCType {
 		Properties: OIDCProperties{
 			ClientID:       Type{Type: "string", Description: "The client ID for the OpenID Connect client."},
 			IssuerURL:      Type{Type: "string", Description: "The URL of the OpenID issuer, only HTTPS scheme will be accepted."},
-			GroupsClaim:    Type{Type: "string", Default: "groups", Description: "If provided, the name of a custom OpenID Connect claim for specifying user groups."},
-			UsernameClaim:  Type{Type: "string", Default: "sub", Description: "The OpenID claim to use as the user name."},
-			UsernamePrefix: Type{Type: "string", Default: "-", Description: "If provided, all usernames will be prefixed with this value. If not provided, username claims other than 'email' are prefixed by the issuer URL to avoid clashes. To skip any prefixing, provide the value '-'."},
+			GroupsClaim:    Type{Type: "string", Description: "If provided, the name of a custom OpenID Connect claim for specifying user groups."},
+			UsernameClaim:  Type{Type: "string", Description: "The OpenID claim to use as the user name."},
+			UsernamePrefix: Type{Type: "string", Description: "If provided, all usernames will be prefixed with this value. If not provided, username claims other than 'email' are prefixed by the issuer URL to avoid clashes. To skip any prefixing, provide the value '-'."},
 			SigningAlgs: Type{
 				Type: "array",
 				Items: []Type{{
 					Type: "string",
 				}},
-				Default:     []string{"RS256"},
 				Description: "List of allowed JOSE asymmetric signing algorithms.",
 			},
 		},
