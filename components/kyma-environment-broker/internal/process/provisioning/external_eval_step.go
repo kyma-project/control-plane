@@ -27,8 +27,8 @@ func (e ExternalEvalStep) Name() string {
 }
 
 func (s *ExternalEvalStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	if broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) {
-		log.Debug("skipping AVS external evaluation creation for trial plan")
+	if broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) || broker.IsFreemiumPlan(operation.ProvisioningParameters.PlanID) {
+		log.Debug("skipping AVS external evaluation creation for trial/freemium plan")
 		return operation, 0, nil
 	}
 
