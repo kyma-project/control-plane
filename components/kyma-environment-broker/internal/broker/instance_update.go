@@ -63,8 +63,8 @@ func NewUpdate(cfg Config,
 //  PATCH /v2/service_instances/{instance_id}
 func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details domain.UpdateDetails, asyncAllowed bool) (domain.UpdateServiceSpec, error) {
 	logger := b.log.WithField("instanceID", instanceID)
-	logger.Infof("Updateing instanceID: %s", instanceID)
-	logger.Infof("Updateing asyncAllowed: %v", asyncAllowed)
+	logger.Infof("Updating instanceID: %s", instanceID)
+	logger.Infof("Updating asyncAllowed: %v", asyncAllowed)
 	logger.Infof("Parameters: '%s'", string(details.RawParameters))
 
 	instance, err := b.instanceStorage.GetByID(instanceID)
