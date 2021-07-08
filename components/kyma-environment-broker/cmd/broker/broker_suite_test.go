@@ -84,10 +84,16 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 		MachineImageVersion:         "coreos",
 		KubernetesVersion:           "1.18",
 		MachineImage:                "253",
-		Timeout:                     time.Minute,
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders)
+	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, internal.OIDCConfigDTO{
+		ClientID:       "clinet-id-oidc",
+		GroupsClaim:    "gropups",
+		IssuerURL:      "https://issuer.url",
+		SigningAlgs:    []string{"RSA256"},
+		UsernameClaim:  "sub",
+		UsernamePrefix: "-",
+	})
 
 	db := storage.NewMemoryStorage()
 
