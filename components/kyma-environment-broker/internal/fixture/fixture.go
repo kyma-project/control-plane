@@ -285,6 +285,17 @@ func FixOrchestration(id string) internal.Orchestration {
 	}
 }
 
+func FixOIDCConfigDTO() internal.OIDCConfigDTO {
+	return internal.OIDCConfigDTO{
+		ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb7dec9",
+		GroupsClaim:    "groups",
+		IssuerURL:      "https://kymatest.accounts400.ondemand.com",
+		SigningAlgs:    []string{"RS256"},
+		UsernameClaim:  "sub",
+		UsernamePrefix: "-",
+	}
+}
+
 // SimpleInputCreator implements ProvisionerInputCreator interface
 func (c *SimpleInputCreator) SetProvisioningParameters(params internal.ProvisioningParameters) internal.ProvisionerInputCreator {
 	return c
