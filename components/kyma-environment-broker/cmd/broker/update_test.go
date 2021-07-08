@@ -34,7 +34,8 @@ func TestUpdate(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-initial",
-							"signingAlgs": ["xxx"]
+							"signingAlgs": ["xxx"],
+                            "issuerURL": "https://issuer.url.com"
 						}
 			}
    }`)
@@ -54,7 +55,8 @@ func TestUpdate(t *testing.T) {
 		"parameters": {
 			"oidc": {
 				"clientID": "id-ooo",
-				"signingAlgs": ["RSA256"]
+				"signingAlgs": ["RSA256"],
+                "issuerURL": "https://issuer.url.com"
 			}
 		}
    }`)
@@ -70,7 +72,7 @@ func TestUpdate(t *testing.T) {
 			OidcConfig: &gqlschema.OIDCConfigInput{
 				ClientID:       "id-ooo",
 				GroupsClaim:    "",
-				IssuerURL:      "",
+				IssuerURL:      "https://issuer.url.com",
 				SigningAlgs:    []string{"RSA256"},
 				UsernameClaim:  "",
 				UsernamePrefix: "",
@@ -102,7 +104,8 @@ func TestUpdateWithNoOidc(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-ooo",
-							"signingAlgs": ["RSA256"]
+							"signingAlgs": ["RSA256"],
+                            "issuerURL": "https://issuer.url.com"
 						}
 			}
    }`)
@@ -135,7 +138,7 @@ func TestUpdateWithNoOidc(t *testing.T) {
 			OidcConfig: &gqlschema.OIDCConfigInput{
 				ClientID:       "id-ooo",
 				GroupsClaim:    "",
-				IssuerURL:      "",
+				IssuerURL:      "https://issuer.url.com",
 				SigningAlgs:    []string{"RSA256"},
 				UsernameClaim:  "",
 				UsernamePrefix: "",
@@ -167,7 +170,8 @@ func TestUpdateContext(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-ooo",
-							"signingAlgs": ["RSA256"]
+							"signingAlgs": ["RSA256"],
+                            "issuerURL": "https://issuer.url.com"
 						}
 			}
    }`)
@@ -213,7 +217,8 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-ooo",
-							"signingAlgs": ["RSA256"]
+							"signingAlgs": ["RSA256"],
+                            "issuerURL": "https://issuer.url.com"
 						}
 			}
    }`)
@@ -254,7 +259,8 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
        "parameters": {
        		"oidc": {
 				"clientID": "id-oooxx",
-				"signingAlgs": ["RSA256"]
+				"signingAlgs": ["RSA256"],
+                "issuerURL": "https://issuer.url.com"
 			}
        }
    }`)
@@ -314,7 +320,8 @@ func TestUpdateNotExistingInstance(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-ooo",
-							"signingAlgs": ["RSA256"]
+							"signingAlgs": ["RSA256"],
+                            "issuerURL": "https://issuer.url.com"
 						}
 			}
    }`)
