@@ -2,8 +2,9 @@ package manager
 
 import (
 	"context"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
@@ -38,10 +39,10 @@ func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operatio
 		executor:        kymaUpgradeExecutor,
 		pollingInterval: pollingInterval,
 		log:             log,
-		k8sClient: cli,
-		ctx: ctx,
+		k8sClient:       cli,
+		ctx:             ctx,
 		policyNamespace: policyNamespace,
-		policyName: policyName,
+		policyName:      policyName,
 	}
 }
 

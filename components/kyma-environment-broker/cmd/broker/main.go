@@ -144,7 +144,7 @@ type Config struct {
 
 	PolicyConfig struct {
 		Namespace string
-		Name string
+		Name      string
 	}
 
 	TrialRegionMappingFilePath string
