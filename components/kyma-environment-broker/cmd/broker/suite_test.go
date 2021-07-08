@@ -423,7 +423,6 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 }
 
 type ProvisioningSuite struct {
-	HttpSuite
 
 	provisionerClient   *provisioner.FakeClient
 	provisioningManager *provisioning.StagedManager
@@ -514,11 +513,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
 
-	httpSuite := NewHttpSuite(t)
-	httpSuite.CreateAPI(inputFactory, cfg, db, provisioningQueue, nil, nil, logs)
-
 	return &ProvisioningSuite{
-		HttpSuite:           httpSuite,
 		provisionerClient:   provisionerClient,
 		provisioningManager: provisionManager,
 		provisioningQueue:   provisioningQueue,
@@ -528,10 +523,6 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 		t: t,
 	}
-}
-
-func (s *ProvisioningSuite) TearDown() {
-	s.httpServer.Close()
 }
 
 func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {

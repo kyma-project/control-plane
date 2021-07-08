@@ -69,7 +69,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
 	additionalKymaVersions := []string{"1.19", "1.20", "main"}
-	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources(defaultKymaVer, additionalKymaVersions)...)
+	cli := fake.NewClientBuilder().WithScheme(sch).WithRuntimeObjects(fixK8sResources(defaultKymaVer, additionalKymaVersions)...).Build()
 	cfg := fixConfig()
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}

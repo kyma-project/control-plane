@@ -475,7 +475,6 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
 			},
 		},
 	})
-	fmt.Println(got)
 
 	// then
 	require.NoError(t, err)
