@@ -1,6 +1,8 @@
 package manager
 
 import (
+	"context"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
@@ -21,8 +23,9 @@ type upgradeKymaFactory struct {
 }
 
 func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
-	kymaUpgradeExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver,
-	pollingInterval time.Duration, smcf *servicemanager.ClientFactory, log logrus.FieldLogger) process.Executor {
+	kymaUpgradeExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver, pollingInterval time.Duration,
+	smcf *servicemanager.ClientFactory, log logrus.FieldLogger, cli client.Client, ctx context.Context, policyNamespace string,
+	policyName string) process.Executor {
 	return &orchestrationManager{
 		orchestrationStorage: orchestrationStorage,
 		operationStorage:     operationStorage,
@@ -35,6 +38,10 @@ func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operatio
 		executor:        kymaUpgradeExecutor,
 		pollingInterval: pollingInterval,
 		log:             log,
+		k8sClient: cli,
+		ctx: ctx,
+		policyNamespace: policyNamespace,
+		policyName: policyName,
 	}
 }
 

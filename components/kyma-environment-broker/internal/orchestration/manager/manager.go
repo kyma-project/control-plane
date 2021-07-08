@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	log "github.com/InVisionApp/go-logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration/strategies"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -237,7 +236,7 @@ func (m *orchestrationManager) resolveOrchestration(o *internal.Orchestration, s
 }
 
 // resolves when is the next occurrence of the time window
-func (m *orchestrationManager) resolveWindowTime(beginTime, endTime time.Time) (time.Time, time.Time) {
+func (m *orchestrationManager) resolveWindowTime(beginTime, endTime time.Time, availableDays []time.Weekday) (time.Time, time.Time) {
 	n := time.Now()
 	start := time.Date(n.Year(), n.Month(), n.Day(), beginTime.Hour(), beginTime.Minute(), beginTime.Second(), beginTime.Nanosecond(), beginTime.Location())
 	end := time.Date(n.Year(), n.Month(), n.Day(), endTime.Hour(), endTime.Minute(), endTime.Second(), endTime.Nanosecond(), endTime.Location())
@@ -249,8 +248,11 @@ func (m *orchestrationManager) resolveWindowTime(beginTime, endTime time.Time) (
 
 	// if time window has already passed we wait until next day
 	if start.Before(n) && end.Before(n) {
-		start = start.AddDate(0, 0, 1)
-		end = end.AddDate(0, 0, 1)
+		currentDay := n.Day()
+		nextDay := orchestration.FirstAvailableDay(currentDay, orchestration.ConvertSliceOfDaysToMap(availableDays))
+		diff := (7 - currentDay + nextDay) % 7
+		start = start.AddDate(0, 0, diff)
+		end = end.AddDate(0, 0, diff)
 	}
 
 	return start, end

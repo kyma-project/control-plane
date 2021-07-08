@@ -351,7 +351,7 @@ func main() {
 	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
-		&cfg, accountProvider, serviceManagerClientFactory, fileSystem, logs)
+		&cfg, accountProvider, serviceManagerClientFactory, fileSystem, logs, cli)
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeResolver, upgradeEvalManager, logs, cli, cfg)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
@@ -752,7 +752,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
 	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager,
 	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory,
-	fileSystem afero.Fs, logs logrus.FieldLogger) *process.Queue {
+	fileSystem afero.Fs, logs logrus.FieldLogger, cli client.Client) *process.Queue {
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Orchestrations(), db.Instances(),
@@ -821,7 +821,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	}
 
 	orchestrateKymaManager := manager.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(), db.Instances(),
-		upgradeKymaManager, runtimeResolver, pollingInterval, smcf, logs.WithField("upgradeKyma", "orchestration"))
+		upgradeKymaManager, runtimeResolver, pollingInterval, smcf, logs.WithField("upgradeKyma", "orchestration"),
+		cli, ctx, cfg.PolicyConfig.Namespace, cfg.PolicyConfig.Name)
 	queue := process.NewQueue(orchestrateKymaManager, logs)
 
 	queue.Run(ctx.Done(), 3)
