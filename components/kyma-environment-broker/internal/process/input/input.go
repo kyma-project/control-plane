@@ -382,38 +382,36 @@ func (r *RuntimeInput) adjustRuntimeName() error {
 }
 
 func (r *RuntimeInput) configureOIDC() error {
-	if !r.provisioningParameters.Parameters.OIDC.IsProvided() {
-		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.OidcConfig = &gqlschema.OIDCConfigInput{
-			ClientID:       r.oidcDefaultValues.ClientID,
-			GroupsClaim:    r.oidcDefaultValues.GroupsClaim,
-			IssuerURL:      r.oidcDefaultValues.IssuerURL,
-			SigningAlgs:    r.oidcDefaultValues.SigningAlgs,
-			UsernameClaim:  r.oidcDefaultValues.UsernameClaim,
-			UsernamePrefix: r.oidcDefaultValues.UsernamePrefix,
-		}
-		return nil
+	// set default or provided params to provisioning/update inpuit (if exists)
+	// This method could be used for:
+	// provisioning (upgradeShootInput.GardenerConfig is nil)
+	// or upgrade (provisionRuntimeInput.ClusterConfig is nil)
+
+	oidcParamsToSet := &gqlschema.OIDCConfigInput{
+		ClientID:       r.oidcDefaultValues.ClientID,
+		GroupsClaim:    r.oidcDefaultValues.GroupsClaim,
+		IssuerURL:      r.oidcDefaultValues.IssuerURL,
+		SigningAlgs:    r.oidcDefaultValues.SigningAlgs,
+		UsernameClaim:  r.oidcDefaultValues.UsernameClaim,
+		UsernamePrefix: r.oidcDefaultValues.UsernamePrefix,
 	}
-	params := r.provisioningParameters.Parameters.OIDC
-	if r.provisionRuntimeInput.ClusterConfig != nil {
-		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.OidcConfig = &gqlschema.OIDCConfigInput{
-			ClientID:       params.ClientID,
-			GroupsClaim:    params.GroupsClaim,
-			IssuerURL:      params.IssuerURL,
-			SigningAlgs:    params.SigningAlgs,
-			UsernameClaim:  params.UsernameClaim,
-			UsernamePrefix: params.UsernamePrefix,
+	if r.provisioningParameters.Parameters.OIDC.IsProvided() {
+		oidc := r.provisioningParameters.Parameters.OIDC
+		oidcParamsToSet = &gqlschema.OIDCConfigInput{
+			ClientID:       oidc.ClientID,
+			GroupsClaim:    oidc.GroupsClaim,
+			IssuerURL:      oidc.IssuerURL,
+			SigningAlgs:    oidc.SigningAlgs,
+			UsernameClaim:  oidc.UsernameClaim,
+			UsernamePrefix: oidc.UsernamePrefix,
 		}
 	}
 
+	if r.provisionRuntimeInput.ClusterConfig != nil {
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.OidcConfig = oidcParamsToSet
+	}
 	if r.upgradeShootInput.GardenerConfig != nil {
-		r.upgradeShootInput.GardenerConfig.OidcConfig = &gqlschema.OIDCConfigInput{
-			ClientID:       params.ClientID,
-			GroupsClaim:    params.GroupsClaim,
-			IssuerURL:      params.IssuerURL,
-			SigningAlgs:    params.SigningAlgs,
-			UsernameClaim:  params.UsernameClaim,
-			UsernamePrefix: params.UsernamePrefix,
-		}
+		r.upgradeShootInput.GardenerConfig.OidcConfig = oidcParamsToSet
 	}
 	return nil
 }

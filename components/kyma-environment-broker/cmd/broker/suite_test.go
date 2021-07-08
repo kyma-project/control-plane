@@ -423,7 +423,6 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 }
 
 type ProvisioningSuite struct {
-
 	provisionerClient   *provisioner.FakeClient
 	provisioningManager *provisioning.StagedManager
 	provisioningQueue   *process.Queue

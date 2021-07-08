@@ -11,7 +11,6 @@ import (
 	"sort"
 	"time"
 
-
 	"code.cloudfoundry.org/lager"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/handlers"
