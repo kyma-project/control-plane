@@ -9,12 +9,22 @@ const (
 )
 
 type OIDCConfigDTO struct {
-	ClientID       string   `json:"clientID"`
-	GroupsClaim    string   `json:"groupsClaim"`
-	IssuerURL      string   `json:"issuerURL"`
-	SigningAlgs    []string `json:"signingAlgs"`
-	UsernameClaim  string   `json:"usernameClaim"`
-	UsernamePrefix string   `json:"usernamePrefix"`
+	ClientID       string   `json:"clientID" yaml:"clientID"`
+	GroupsClaim    string   `json:"groupsClaim" yaml:"groupsClaim"`
+	IssuerURL      string   `json:"issuerURL" yaml:"issuerURL"`
+	SigningAlgs    []string `json:"signingAlgs" yaml:"signingAlgs"`
+	UsernameClaim  string   `json:"usernameClaim" yaml:"usernameClaim"`
+	UsernamePrefix string   `json:"usernamePrefix" yaml:"usernamePrefix"`
+}
+
+func (o *OIDCConfigDTO) IsProvided() bool {
+	if o == nil {
+		return false
+	}
+	if o.ClientID == "" && o.IssuerURL == "" && o.GroupsClaim == "" && o.UsernamePrefix == "" && o.UsernameClaim == "" && len(o.SigningAlgs) == 0 {
+		return false
+	}
+	return true
 }
 
 type ProvisioningParameters struct {

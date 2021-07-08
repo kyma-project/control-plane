@@ -91,6 +91,14 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 					},
 				},
 				Seed: nil,
+				OidcConfig: &gqlschema.OIDCConfigInput{
+					ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb7dec9",
+					GroupsClaim:    "groups",
+					IssuerURL:      "https://kymatest.accounts400.ondemand.com",
+					SigningAlgs:    []string{"RS256"},
+					UsernameClaim:  "sub",
+					UsernamePrefix: "-",
+				},
 			},
 			Administrators: []string{administrator},
 		},
@@ -253,7 +261,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{
 		KubernetesVersion:           k8sVersion,
 		DefaultGardenerShootPurpose: shootPurpose,
-	}, kymaVersion, fixTrialRegionMapping(), fixFreemiumProviders())
+	}, kymaVersion, fixTrialRegionMapping(), fixFreemiumProviders(), fixture.FixOIDCConfigDTO())
 	assert.NoError(t, err)
 
 	pp := internal.ProvisioningParameters{

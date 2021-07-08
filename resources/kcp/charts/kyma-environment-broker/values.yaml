@@ -74,6 +74,14 @@ trialRegionsMapping: |-
   cf-us10: us
   cf-apj21: asia
 
+skrOIDCDefaultValues: |-
+  clientID: "9bd05ed7-a930-44e6-8c79-e6defeb7dec9"
+  issuerURL: "https://kymatest.accounts400.ondemand.com"
+  groupsClaim: "groups"
+  signingAlgs: [ "RS256" ]
+  usernamePrefix: "-"
+  usernameClaim: "sub"
+
 kymaVersion: "1.13.0"
 kymaVersionOnDemand: "false"
 
@@ -97,6 +105,7 @@ gardener:
   machineImageVersion: ""
   trialNodesNumber: "1"
   freemiumProviders: "azure,aws"
+  defaultTrialProvider: "Azure" # Azure, AWS
 
 kubeconfig:
   issuerURL: "TBD"
