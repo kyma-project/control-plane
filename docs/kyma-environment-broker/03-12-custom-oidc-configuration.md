@@ -35,7 +35,7 @@ To create an SKR with a custom OIDC (Open ID Connect) configuration, specify the
 
 If you do not provide the `oidc` object in the provisioning request or leave all object's properties empty, the default OIDC configuration is used.
 However, if you do not provide the `oidc` object in the update request or leave all object’s properties empty, the saved OIDC configuration stays untouched.
-See the following JSON example without the `oidc` object and with the `oidc` object whose properties are empty:
+See the following JSON example without the `oidc` object:
 ```json
 {
   "service_id" : "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
@@ -48,7 +48,7 @@ See the following JSON example without the `oidc` object and with the `oidc` obj
   }
 }
 ```
-OR
+See the following JSON example with the `oidc` object whose properties are empty:
 ```json
 {
   "service_id" : "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
