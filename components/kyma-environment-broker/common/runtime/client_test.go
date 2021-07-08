@@ -77,7 +77,7 @@ func TestClient_ListRuntimes(t *testing.T) {
 			require.NoError(t, err)
 		}))
 		defer ts.Close()
-		client := NewClient(context.TODO(), ts.URL, fixToken)
+		client := NewClient(ts.URL, oauth2.NewClient(context.Background(), fixToken))
 
 		//when
 		rp, err := client.ListRuntimes(params)
@@ -104,7 +104,7 @@ func TestClient_ListRuntimes(t *testing.T) {
 			require.NoError(t, err)
 		}))
 		defer ts.Close()
-		client := NewClient(context.TODO(), ts.URL, fixToken)
+		client := NewClient(ts.URL, oauth2.NewClient(context.Background(), fixToken))
 
 		//when
 		rp, err := client.ListRuntimes(params)

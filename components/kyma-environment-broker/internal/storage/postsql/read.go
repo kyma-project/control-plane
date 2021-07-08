@@ -351,6 +351,7 @@ func (r readSession) ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.Ru
 		Select("*").
 		From(RuntimeStateTableName).
 		Where(stateCondition).
+		OrderDesc(CreatedAtField).
 		Load(&states)
 	if err != nil {
 		return nil, dberr.Internal("Failed to get states: %s", err)

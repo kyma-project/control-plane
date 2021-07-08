@@ -18,19 +18,21 @@ import (
 const numberOfUpgradeOperationsToReturn = 2
 
 type Handler struct {
-	instancesDb  storage.Instances
-	operationsDb storage.Operations
-	converter    Converter
+	instancesDb     storage.Instances
+	operationsDb    storage.Operations
+	runtimeStatesDb storage.RuntimeStates
+	converter       Converter
 
 	defaultMaxPage int
 }
 
-func NewHandler(instanceDb storage.Instances, operationDb storage.Operations, defaultMaxPage int, defaultRequestRegion string) *Handler {
+func NewHandler(instanceDb storage.Instances, operationDb storage.Operations, runtimeStatesDb storage.RuntimeStates, defaultMaxPage int, defaultRequestRegion string) *Handler {
 	return &Handler{
-		instancesDb:    instanceDb,
-		operationsDb:   operationDb,
-		converter:      NewConverter(defaultRequestRegion),
-		defaultMaxPage: defaultMaxPage,
+		instancesDb:     instanceDb,
+		operationsDb:    operationDb,
+		runtimeStatesDb: runtimeStatesDb,
+		converter:       NewConverter(defaultRequestRegion),
+		defaultMaxPage:  defaultMaxPage,
 	}
 }
 
@@ -50,6 +52,8 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 	filter.PageSize = pageSize
 	filter.Page = page
 	opDetail := getOpDetail(req)
+	kymaConfig := getBoolParam(pkg.KymaConfigParam, req)
+	clusterConfig := getBoolParam(pkg.ClusterConfigParam, req)
 
 	instances, count, totalCount, err := h.instancesDb.List(filter)
 	if err != nil {
@@ -66,9 +70,9 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 
 		switch opDetail {
 		case pkg.AllOperation:
-			err = h.handleRuntimeAllOperations(w, instance, &dto)
+			err = h.setRuntimeAllOperations(instance, &dto)
 		case pkg.LastOperation:
-			err = h.handleRuntimeLastOperation(w, instance, &dto)
+			err = h.setRuntimeLastOperation(instance, &dto)
 		}
 
 		if err != nil {
@@ -77,6 +81,7 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 		}
 
 		setRuntimeStateByOperationState(&dto)
+		h.setRuntimeOptionalAttributes(instance, &dto, kymaConfig, clusterConfig)
 		toReturn = append(toReturn, dto)
 	}
 
@@ -144,7 +149,7 @@ func setRuntimeStateByOperationState(dto *pkg.RuntimeDTO) {
 	}
 }
 
-func (h *Handler) handleRuntimeAllOperations(w http.ResponseWriter, instance internal.Instance, dto *pkg.RuntimeDTO) error {
+func (h *Handler) setRuntimeAllOperations(instance internal.Instance, dto *pkg.RuntimeDTO) error {
 	provOprs, err := h.operationsDb.ListProvisioningOperationsByInstanceID(instance.InstanceID)
 	if err != nil && !dberr.IsNotFound(err) {
 		return errors.Wrap(err, "while fetching provisioning operations list for instance")
@@ -191,7 +196,7 @@ func (h *Handler) handleRuntimeAllOperations(w http.ResponseWriter, instance int
 	return nil
 }
 
-func (h *Handler) handleRuntimeLastOperation(w http.ResponseWriter, instance internal.Instance, dto *pkg.RuntimeDTO) error {
+func (h *Handler) setRuntimeLastOperation(instance internal.Instance, dto *pkg.RuntimeDTO) error {
 	lastOp, err := h.operationsDb.GetLastOperation(instance.InstanceID)
 	if err != nil {
 		return errors.Wrap(err, "while fetching last operation instance")
@@ -240,6 +245,30 @@ func (h *Handler) handleRuntimeLastOperation(w http.ResponseWriter, instance int
 
 	default:
 		return errors.Errorf("unsupported operation type: %s", lastOp.Type)
+	}
+
+	return nil
+}
+
+func (h *Handler) setRuntimeOptionalAttributes(instance internal.Instance, dto *pkg.RuntimeDTO, kymaConfig, clusterConfig bool) error {
+	if kymaConfig || clusterConfig {
+		states, err := h.runtimeStatesDb.ListByRuntimeID(instance.RuntimeID)
+		if err != nil && !dberr.IsNotFound(err) {
+			return errors.Wrap(err, "while fetching runtime states for instance")
+		}
+		for _, state := range states {
+			if kymaConfig && dto.KymaConfig == nil && state.KymaConfig.Version != "" {
+				config := state.KymaConfig
+				dto.KymaConfig = &config
+			}
+			if clusterConfig && dto.ClusterConfig == nil && state.ClusterConfig.Provider != "" {
+				config := state.ClusterConfig
+				dto.ClusterConfig = &config
+			}
+			if dto.KymaConfig != nil && dto.ClusterConfig != nil {
+				break
+			}
+		}
 	}
 
 	return nil
@@ -300,4 +329,17 @@ func getOpDetail(req *http.Request) pkg.OperationDetail {
 	}
 
 	return opDetail
+}
+
+func getBoolParam(param string, req *http.Request) bool {
+	requested := false
+	params := req.URL.Query()[param]
+	for _, p := range params {
+		if p == "true" {
+			requested = true
+			break
+		}
+	}
+
+	return requested
 }
