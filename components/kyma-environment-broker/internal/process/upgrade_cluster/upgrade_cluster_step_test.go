@@ -43,6 +43,14 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 			KubernetesVersion:   ptr.String(fixKubernetesVersion),
 			MachineImage:        ptr.String(fixMachineImage),
 			MachineImageVersion: ptr.String(fixMachineImageVersion),
+			OidcConfig: &gqlschema.OIDCConfigInput{
+				ClientID:       "",
+				GroupsClaim:    "",
+				IssuerURL:      "",
+				SigningAlgs:    nil,
+				UsernameClaim:  "",
+				UsernamePrefix: "",
+			},
 		},
 	}).Return(gqlschema.OperationStatus{
 		ID:        StringPtr(fixProvisionerOperationID),
