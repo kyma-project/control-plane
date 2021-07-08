@@ -103,7 +103,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{
 		KubernetesVersion:           k8sVersion,
 		DefaultGardenerShootPurpose: "test",
-	}, kymaVersion, fixTrialRegionMapping(), fixFreemiumProviders())
+	}, kymaVersion, fixTrialRegionMapping(), fixFreemiumProviders(), fixture.FixOIDCConfigDTO())
 	assert.NoError(t, err)
 
 	pp := internal.ProvisioningParameters{
