@@ -14,6 +14,8 @@ import (
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
 type ContextUpdateHandler struct {
@@ -46,12 +48,25 @@ func (h *ContextUpdateHandler) Handle(instance *internal.Instance, newCtx intern
 		"globalAccountID": instance.GlobalAccountID,
 	})
 
+	var errors []error
+	if newCtx.ServiceManager != nil {
+		if provided, err := newCtx.ServiceManager.BTPOperatorCredentials.Provided(); err != nil {
+			errors = append(errors, err)
+		} else if provided {
+			errors = append(errors, h.handleBTPOperatorCredentials(newCtx, instance, l))
+		}
+	}
 	if !broker.IsTrialPlan(instance.ServicePlanID) {
 		l.Info("Context update for non-trial instance, skipping")
-		return nil
+		return kerrors.NewAggregate(errors)
 	}
 
-	return h.handleContextChange(newCtx, instance, l)
+	errors = append(errors, h.handleContextChange(newCtx, instance, l))
+	return kerrors.NewAggregate(errors)
+}
+
+func (h *ContextUpdateHandler) handleBTPOperatorCredentials(newCtx internal.ERSContext, instance *internal.Instance, l logrus.FieldLogger) error {
+	return nil
 }
 
 func (h *ContextUpdateHandler) handleContextChange(newCtx internal.ERSContext, instance *internal.Instance, l logrus.FieldLogger) error {
