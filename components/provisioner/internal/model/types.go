@@ -24,6 +24,7 @@ const (
 	Deprovision      OperationType = "DEPROVISION"
 	ReconnectRuntime OperationType = "RECONNECT_RUNTIME"
 	Hibernate        OperationType = "HIBERNATE"
+	AddComponent     OperationType = "ADD_COMPONENT"
 )
 
 type OperationStage string

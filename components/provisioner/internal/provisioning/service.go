@@ -27,6 +27,7 @@ import (
 type Service interface {
 	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, apperrors.AppError)
 	UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, apperrors.AppError)
+	AddRuntimeComponent(id string, components []*gqlschema.ComponentConfigurationInput) (*gqlschema.OperationStatus, apperrors.AppError)
 	DeprovisionRuntime(id, tenant string) (string, apperrors.AppError)
 	UpgradeGardenerShoot(id string, input gqlschema.UpgradeShootInput) (*gqlschema.OperationStatus, apperrors.AppError)
 	ReconnectRuntimeAgent(id string) (string, apperrors.AppError)
@@ -326,6 +327,40 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
+func (r *service) AddRuntimeComponent(runtimeId string, components []*gqlschema.ComponentConfigurationInput) (*gqlschema.OperationStatus, apperrors.AppError) {
+	session := r.dbSessionFactory.NewReadSession()
+
+	err := r.verifyLastOperationFinished(session, runtimeId)
+	if err != nil {
+		return &gqlschema.OperationStatus{}, err
+	}
+
+	cluster, dberr := session.GetCluster(runtimeId)
+	if dberr != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to read cluster from database: %s", dberr.Error())
+	}
+
+	txSession, dberr := r.dbSessionFactory.NewSessionWithinTransaction()
+	if dberr != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to start database transaction: %s", dberr.Error())
+	}
+	defer txSession.RollbackUnlessCommitted()
+
+	operation, dberr := r.setRuntimeComponentInstallationStarted(txSession, cluster /*, components*/)
+	if dberr != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set upgrade started: %s", dberr.Error())
+	}
+
+	dberr = txSession.Commit()
+	if dberr != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to commit upgrade transaction: %s", dberr.Error())
+	}
+	// TODO: introduce new queue for this?
+	//r.upgradeQueue.Add(operation.ID)
+
+	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
+}
+
 func (r *service) ReconnectRuntimeAgent(id string) (string, apperrors.AppError) {
 	return "", nil
 }
@@ -496,6 +531,30 @@ func (r *service) setUpgradeStarted(txSession dbsession.WriteSession, cluster mo
 	if err != nil {
 		return model.Operation{}, err.Append("Failed to update Kyma config in cluster")
 	}
+
+	return operation, nil
+}
+
+func (r *service) setRuntimeComponentInstallationStarted(txSession dbsession.WriteSession, cluster model.Cluster /*TODO: add components*/) (model.Operation, dberrors.Error) {
+
+	operation, err := r.setOperationStarted(txSession, cluster.ID, model.AddComponent, model.StartingInstallation, time.Now(), "Starting runtime component installation")
+	if err != nil {
+		return model.Operation{}, err.Append("Failed to set operation started")
+	}
+
+	/* TODO: do I need a new table for this?
+	runtimeUpgrade := model.RuntimeUpgrade{
+		Id:                      r.uuidGenerator.New(),
+		State:                   model.UpgradeInProgress,
+		OperationId:             operation.ID,
+		PreUpgradeKymaConfigId:  cluster.KymaConfig.ID,
+		PostUpgradeKymaConfigId: kymaConfig.ID,
+	}
+
+	err = txSession.InsertRuntimeUpgrade(runtimeUpgrade)
+	if err != nil {
+		return model.Operation{}, err.Append("Failed to insert Runtime Upgrade")
+	}*/
 
 	return operation, nil
 }

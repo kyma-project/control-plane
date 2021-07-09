@@ -108,6 +108,25 @@ func (r *Resolver) UpgradeRuntime(ctx context.Context, runtimeId string, input g
 	return operationStatus, nil
 }
 
+func (r *Resolver) AddRuntimeComponent(ctx context.Context, runtimeId string, components []*gqlschema.ComponentConfigurationInput) (*gqlschema.OperationStatus, error) {
+	log.Infof("Requested to add components to Runtime %s.", runtimeId)
+	_, err := r.getAndValidateTenant(ctx, runtimeId)
+	if err != nil {
+		log.Errorf("Failed to install components to Runtime %s: %s", runtimeId, err)
+		return &gqlschema.OperationStatus{}, err
+	}
+
+	//TODO: validate input
+
+	operationStatus, err := r.provisioning.AddRuntimeComponent(runtimeId, components)
+	if err != nil {
+		log.Errorf("Failed to add component to Runtime %s: %s", runtimeId, err)
+		return nil, err
+	}
+
+	return operationStatus, nil
+}
+
 func (r *Resolver) RollBackUpgradeOperation(ctx context.Context, runtimeID string) (*gqlschema.RuntimeStatus, error) {
 	_, err := r.getAndValidateTenant(ctx, runtimeID)
 	if err != nil {
