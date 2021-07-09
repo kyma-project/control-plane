@@ -119,6 +119,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		AddRuntimeComponent      func(childComplexity int, id string, components []*ComponentConfigurationInput) int
 		DeprovisionRuntime       func(childComplexity int, id string) int
 		HibernateRuntime         func(childComplexity int, id string) int
 		ProvisionRuntime         func(childComplexity int, config ProvisionRuntimeInput) int
@@ -182,6 +183,7 @@ type MutationResolver interface {
 	DeprovisionRuntime(ctx context.Context, id string) (string, error)
 	UpgradeShoot(ctx context.Context, id string, config UpgradeShootInput) (*OperationStatus, error)
 	HibernateRuntime(ctx context.Context, id string) (*OperationStatus, error)
+	AddRuntimeComponent(ctx context.Context, id string, components []*ComponentConfigurationInput) (*OperationStatus, error)
 	RollBackUpgradeOperation(ctx context.Context, id string) (*RuntimeStatus, error)
 	ReconnectRuntimeAgent(ctx context.Context, id string) (string, error)
 }
@@ -526,6 +528,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.KymaConfig.Version(childComplexity), true
+
+	case "Mutation.addRuntimeComponent":
+		if e.complexity.Mutation.AddRuntimeComponent == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addRuntimeComponent_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddRuntimeComponent(childComplexity, args["id"].(string), args["components"].([]*ComponentConfigurationInput)), true
 
 	case "Mutation.deprovisionRuntime":
 		if e.complexity.Mutation.DeprovisionRuntime == nil {
@@ -1170,6 +1184,7 @@ type Mutation {
     deprovisionRuntime(id: String!): String!
     upgradeShoot(id: String!, config: UpgradeShootInput!): OperationStatus
     hibernateRuntime(id: String!): OperationStatus
+    addRuntimeComponent(id: String!, components: [ComponentConfigurationInput]!): OperationStatus
 
     # rollbackUpgradeOperation rolls back last upgrade operation for the Runtime but does not affect cluster in any way
     # can be used in case upgrade failed and the cluster was restored from the backup to align data stored in Provisioner database
@@ -1193,6 +1208,28 @@ type Query {
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_addRuntimeComponent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 []*ComponentConfigurationInput
+	if tmp, ok := rawArgs["components"]; ok {
+		arg1, err = ec.unmarshalNComponentConfigurationInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐComponentConfigurationInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["components"] = arg1
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_deprovisionRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -3162,6 +3199,47 @@ func (ec *executionContext) _Mutation_hibernateRuntime(ctx context.Context, fiel
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().HibernateRuntime(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*OperationStatus)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOOperationStatus2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOperationStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_addRuntimeComponent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_addRuntimeComponent_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AddRuntimeComponent(rctx, args["id"].(string), args["components"].([]*ComponentConfigurationInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6529,6 +6607,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_upgradeShoot(ctx, field)
 		case "hibernateRuntime":
 			out.Values[i] = ec._Mutation_hibernateRuntime(ctx, field)
+		case "addRuntimeComponent":
+			out.Values[i] = ec._Mutation_addRuntimeComponent(ctx, field)
 		case "rollBackUpgradeOperation":
 			out.Values[i] = ec._Mutation_rollBackUpgradeOperation(ctx, field)
 		case "reconnectRuntimeAgent":
