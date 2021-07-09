@@ -303,6 +303,7 @@ type Mutation {
     deprovisionRuntime(id: String!): String!
     upgradeShoot(id: String!, config: UpgradeShootInput!): OperationStatus
     hibernateRuntime(id: String!): OperationStatus
+    addRuntimeComponent(id: String!, components: [ComponentConfigurationInput]!): OperationStatus
 
     # rollbackUpgradeOperation rolls back last upgrade operation for the Runtime but does not affect cluster in any way
     # can be used in case upgrade failed and the cluster was restored from the backup to align data stored in Provisioner database
