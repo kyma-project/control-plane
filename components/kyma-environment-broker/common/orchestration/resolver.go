@@ -89,6 +89,7 @@ func (resolver *GardenerRuntimeResolver) Resolve(targets TargetSpec) ([]Runtime,
 		for _, r := range runtimesToAdd {
 			if !runtimeExcluded[r.RuntimeID] && !runtimeIncluded[r.RuntimeID] {
 				runtimeIncluded[r.RuntimeID] = true
+				r.Plan = resolver.runtimes[r.RuntimeID].ServicePlanName
 				runtimes = append(runtimes, r)
 			}
 		}

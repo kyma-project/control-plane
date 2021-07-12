@@ -103,7 +103,6 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 		if err != nil {
 			return result, errors.Wrap(err, "while resolving targets")
 		}
-		// maintenanceDays := []time.Weekday{time.Monday, time.Tuesday, time.Wednesday, time.Thursday, time.Friday, time.Saturday, time.Sunday}
 
 		for _, r := range runtimes {
 			windowBegin := time.Time{}
@@ -114,7 +113,7 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 			maintenanceWindowEnd := r.MaintenanceWindowEnd
 
 			for _, p := range policies {
-				if p.GlobalAccountID == r.GlobalAccountID { // TODO: with what should I compare p.Plan?
+				if p.GlobalAccountID == r.GlobalAccountID && p.Plan == r.Plan { // TODO: with what should I compare p.Plan?
 					maintenanceDays = p.Days
 					maintenanceWindowBegin = p.TimeBegin
 					maintenanceWindowEnd = p.TimeEnd

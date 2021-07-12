@@ -17,6 +17,7 @@ type Runtime struct {
 	// The corresponding shoot cluster's .spec.maintenance.timeWindow.End value, which is in "HHMMSS+[HHMM TZ]" format, e.g. "040000+0000"
 	MaintenanceWindowEnd time.Time      `json:"maintenanceWindowEnd"`
 	MaintenanceDays      []time.Weekday `json:"maintenanceDays"`
+	Plan                 string         `json:"plan"`
 }
 
 // RuntimeOperation holds information about operation performed on a runtime
