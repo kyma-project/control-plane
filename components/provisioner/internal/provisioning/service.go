@@ -1,9 +1,12 @@
 package provisioning
 
 import (
+	"context"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
@@ -21,6 +24,9 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+
+	installationv1alpha1 "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
+	installationClientset "github.com/kyma-project/kyma/components/kyma-operator/pkg/client/clientset/versioned"
 )
 
 //go:generate mockery -name=Service
@@ -327,6 +333,38 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
+func mergeNewComponents(installation *installationv1alpha1.Installation, components []*gqlschema.ComponentConfigurationInput) (modified bool) {
+	existingComponents := make(map[string]bool)
+	for _, c := range installation.Spec.Components {
+		existingComponents[c.Name] = true
+	}
+	var newComponents []*gqlschema.ComponentConfigurationInput
+	for _, c := range components {
+		if !existingComponents[c.Component] {
+			newComponents = append(newComponents, c)
+		}
+	}
+	for _, c := range newComponents {
+		modified = true
+		nc := installationv1alpha1.KymaComponent{
+			Name:        c.Component,
+			Namespace:   c.Namespace,
+			ReleaseName: c.Component,
+		}
+		if c.SourceURL != nil {
+			nc.Source = &installationv1alpha1.ComponentSource{URL: *c.SourceURL}
+		}
+		installation.Spec.Components = append(installation.Spec.Components, nc)
+	}
+	if modified {
+		if installation.Labels == nil {
+			installation.Labels = make(map[string]string)
+		}
+		installation.Labels["action"] = installationv1alpha1.ActionInstall
+	}
+	return
+}
+
 func (r *service) AddRuntimeComponent(runtimeId string, components []*gqlschema.ComponentConfigurationInput) (*gqlschema.OperationStatus, apperrors.AppError) {
 	session := r.dbSessionFactory.NewReadSession()
 
@@ -340,25 +378,59 @@ func (r *service) AddRuntimeComponent(runtimeId string, components []*gqlschema.
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to read cluster from database: %s", dberr.Error())
 	}
 
-	txSession, dberr := r.dbSessionFactory.NewSessionWithinTransaction()
-	if dberr != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to start database transaction: %s", dberr.Error())
+	// + makeshift implementation for testing
+	// get cluster kubeconfig
+	// get installation CR
+	// update if necessary
+	kubeconfig, kerr := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
+	if kerr != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to create kubernetes config from raw: %s", kerr.Error())
 	}
-	defer txSession.RollbackUnlessCommitted()
+	installationClientSet, kerr := installationClientset.NewForConfig(kubeconfig)
+	if kerr != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to create installation clientset: %s", kerr.Error())
+	}
 
-	operation, dberr := r.setRuntimeComponentInstallationStarted(txSession, cluster /*, components*/)
-	if dberr != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set upgrade started: %s", dberr.Error())
+	icl := installationClientSet.InstallerV1alpha1().Installations("default")
+	installation, kerr := icl.Get(context.Background(), "kyma-installation", v1.GetOptions{})
+	if kerr != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to get installation: %s", kerr.Error())
 	}
+	if mergeNewComponents(installation, components) {
+		if _, kerr := icl.Update(context.Background(), installation, v1.UpdateOptions{}); kerr != nil {
+			return &gqlschema.OperationStatus{}, apperrors.Internal("failed to update the installation: %s", kerr.Error())
+		}
+	}
+	// + end of makeshift implementation for testing
 
-	dberr = txSession.Commit()
-	if dberr != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to commit upgrade transaction: %s", dberr.Error())
-	}
+	// TODO: store state of the operation in the DB
+	//	txSession, dberr := r.dbSessionFactory.NewSessionWithinTransaction()
+	//	if dberr != nil {
+	//		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to start database transaction: %s", dberr.Error())
+	//	}
+	//	defer txSession.RollbackUnlessCommitted()
+	//
+	//	operation, dberr := r.setRuntimeComponentInstallationStarted(txSession, cluster /*, components*/)
+	//	if dberr != nil {
+	//		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set upgrade started: %s", dberr.Error())
+	//	}
+	//
+	//	dberr = txSession.Commit()
+	//	if dberr != nil {
+	//		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to commit upgrade transaction: %s", dberr.Error())
+	//	}
 	// TODO: introduce new queue for this?
 	//r.upgradeQueue.Add(operation.ID)
 
-	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
+	op := gqlschema.OperationStatus{}
+	id := "mock-id"
+	op.ID = &id
+	msg := "mock-msg"
+	op.Message = &msg
+	op.RuntimeID = &runtimeId
+	op.Operation = gqlschema.OperationType("mock-type")
+	op.State = gqlschema.OperationState("mock-state")
+	return &op, nil
 }
 
 func (r *service) ReconnectRuntimeAgent(id string) (string, apperrors.AppError) {

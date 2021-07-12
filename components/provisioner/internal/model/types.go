@@ -46,6 +46,8 @@ const (
 	StartingUpgrade      OperationStage = "StartingUpgrade"
 	UpdatingUpgradeState OperationStage = "UpdatingUpgradeState"
 
+	InstallingComponent OperationStage = "InstallingComponent"
+
 	WaitingForShootUpgrade    OperationStage = "WaitingForShootUpgrade"
 	WaitingForShootNewVersion OperationStage = "WaitingForShootNewVersion"
 

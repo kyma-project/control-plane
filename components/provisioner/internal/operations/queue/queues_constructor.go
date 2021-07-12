@@ -195,3 +195,27 @@ func CreateHibernationQueue(
 
 	return NewQueue(hibernateClusterExecutor)
 }
+
+/*
+func CreateInstallComponentQueue(
+	provisioningTimeouts ProvisioningTimeouts,
+	factory dbsession.Factory,
+	directorClient director.DirectorClient,
+	installationClient installation.Service) OperationQueue {
+
+	step := upgrade.NewInstallComponentKymaStep(installationClient, provisioningTimeouts.UpgradeTriggering)
+
+	steps := map[model.OperationStage]operations.Step{
+		model.InstallingComponent: step,
+	}
+
+	executor := operations.NewExecutor(factory.NewReadWriteSession(),
+		model.InstallingComponent,
+		steps,
+		failure.NewNoopFailureHandler(),
+		directorClient,
+	)
+
+	return NewQueue(executor)
+}
+*/
