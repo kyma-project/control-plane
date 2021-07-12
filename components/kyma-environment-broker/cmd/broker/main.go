@@ -19,6 +19,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure"
+	o "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/appinfo"
@@ -196,7 +197,8 @@ func main() {
 	// create kubernetes client
 	k8sCfg, err := config.GetConfig()
 	fatalOnError(err)
-	cli, err := initClient(k8sCfg)
+	k8sClientProvider := o.NewK8sClientProvider()
+	cli, err := k8sClientProvider.InitClient(k8sCfg)
 	fatalOnError(err)
 
 	// create director client
@@ -485,7 +487,7 @@ func processCancelingOrchestrations(orchestrationType orchestrationExt.Type, orc
 	return nil
 }
 
-func initClient(cfg *rest.Config) (client.Client, error) {
+func (c *k8sClientBuilder) InitClient(cfg *rest.Config) (client.Client, error) {
 	mapper, err := apiutil.NewDiscoveryRESTMapper(cfg)
 	if err != nil {
 		err = wait.Poll(time.Second, time.Minute, func() (bool, error) {
