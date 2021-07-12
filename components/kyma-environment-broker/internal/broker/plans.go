@@ -278,7 +278,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 					},
 				},
 			},
-			provisioningRawSchema: AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m4.16xlarge"}),
+			provisioningRawSchema: AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"}),
 		},
 		AWSHAPlanID: {
 			PlanDefinition: domain.ServicePlan{
@@ -442,6 +442,15 @@ func IsTrialPlan(planID string) bool {
 func IsAzurePlan(planID string) bool {
 	switch planID {
 	case AzurePlanID, AzureLitePlanID:
+		return true
+	default:
+		return false
+	}
+}
+
+func IsFreemiumPlan(planID string) bool {
+	switch planID {
+	case FreemiumPlanID:
 		return true
 	default:
 		return false

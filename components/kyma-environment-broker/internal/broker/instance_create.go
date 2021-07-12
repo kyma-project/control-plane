@@ -269,7 +269,7 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 
 	if parameters.OIDC.IsProvided() {
 		if parameters.OIDC.ClientID == "" || parameters.OIDC.IssuerURL == "" {
-			return parameters, errors.Wrap(err, "OIDC parameters ClientID & IssuerURL cannot be empty")
+			return parameters, errors.New("OIDC parameters ClientID & IssuerURL cannot be empty")
 		}
 	}
 
