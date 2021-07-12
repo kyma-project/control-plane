@@ -5,16 +5,16 @@
 # For more details, read the following article on GitHub: https://help.github.com/articles/about-codeowners/.
 
 # These are the default owners for the whole content of the `control-plane` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
-* @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa @piotrmiskiewicz @ksputo @jasiu001
+* @PK85 @crabtree @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa @piotrmiskiewicz @ksputo @jasiu001
 
 # All developers working on this repository are able to edit main values.yaml file.
-/resources/kcp/values.yaml @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @piotrmiskiewicz @ksputo @jasiu001 @koala7659 @rafalpotempa @k15r @marcobebway @nachtmaar @radufa @sayanh @themue
+/resources/kcp/values.yaml @PK85 @crabtree @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @piotrmiskiewicz @ksputo @jasiu001 @koala7659 @rafalpotempa @k15r @marcobebway @nachtmaar @radufa @sayanh @themue
 
 # All developers working on this repository are able to edit scripts directory.
-/scripts @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @piotrmiskiewicz @ksputo @jasiu001 @koala7659 @rafalpotempa
+/scripts @PK85 @crabtree @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @piotrmiskiewicz @ksputo @jasiu001 @koala7659 @rafalpotempa
 
 # Registration job is used by provisioner and kyma-environment-broker
-/resources/kcp/templates/registration-job.yaml @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @piotrmiskiewicz @ksputo @jasiu001 @koala7659 @rafalpotempa
+/resources/kcp/templates/registration-job.yaml @PK85 @crabtree @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @piotrmiskiewicz @ksputo @jasiu001 @koala7659 @rafalpotempa
 
 # Kyma Environment Broker
 /resources/kcp/charts/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @jasiu001 @crabtree
@@ -45,7 +45,7 @@
 /tools/cli @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @PK85 @piotrmiskiewicz @ksputo @jasiu001 @crabtree
 
 # All .md files
-*.md @klaudiagrz @kazydek @mmitoraj @majakurcius @alexandra-simeonova @NHingerl
+*.md @klaudiagrz @mmitoraj @majakurcius @alexandra-simeonova @NHingerl
 
 # Owners of the .kyma-project-io folder
-/.kyma-project-io/ @m00g3n @aerfio @pPrecel @magicmatatjahu
+/.kyma-project-io/ @m00g3n @pPrecel @tgorgol @dbadura @rJankowski93
