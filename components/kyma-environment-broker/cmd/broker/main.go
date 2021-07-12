@@ -610,7 +610,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		},
 		{
 			stage: createRuntimeStageName,
-			step:  provisioning.NewBusolaMigratorOverridesStep(db.Operations()),
+			step:  provisioning.NewBusolaMigratorOverridesStep(),
 		},
 		{
 			stage:    createRuntimeStageName,
@@ -808,7 +808,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight: 3,
-			step:   upgrade_kyma.NewBusolaMigratorOverridesStep(db.Operations()),
+			step:   upgrade_kyma.NewBusolaMigratorOverridesStep(),
 		},
 		{
 			weight:   4,
