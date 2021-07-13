@@ -203,7 +203,7 @@ func (p *AzureFreemiumInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *AzureFreemiumInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParameters) {
-	// todo: consider regions
+	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, params.Parameters.Zones)
 }
 
 func (p *AzureFreemiumInput) Profile() gqlschema.KymaProfile {
