@@ -2,9 +2,10 @@ package runtime
 
 import (
 	"context"
+	"time"
+
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 

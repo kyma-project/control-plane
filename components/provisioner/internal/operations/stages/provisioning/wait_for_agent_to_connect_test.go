@@ -2,10 +2,11 @@ package provisioning
 
 import (
 	"fmt"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime/mocks"
-	"github.com/stretchr/testify/mock"
 	"testing"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime/mocks"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
