@@ -2,6 +2,9 @@ package runtime
 
 import (
 	"context"
+	core "k8s.io/api/core/v1"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
@@ -77,7 +80,43 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 
 		assertData(secret.StringData)
 	})
+	t.Run("Should reconfigure Runtime Agent", func(t *testing.T) {
+		//given
+		k8sClientProvider := newMockClientProvider(t)
+		oldSecret := &core.Secret{
+			ObjectMeta: meta.ObjectMeta{
+				Name:      AgentConfigurationSecretName,
+				Namespace: namespace,
+			},
+			StringData: map[string]string{
+				"key": "value",
+			},
+		}
+		secret, k8serr := k8sClientProvider.fakeClient.CoreV1().Secrets(namespace).Create(context.Background(), oldSecret, v1.CreateOptions{})
+		require.NoError(t, k8serr)
 
+		directorClient := &mocks2.DirectorClient{}
+		directorClient.On("GetConnectionToken", runtimeID, tenant).Return(oneTimeToken, nil)
+
+		configProvider := NewRuntimeConfigurator(k8sClientProvider, directorClient)
+
+		//when
+		err := configProvider.ConfigureRuntime(cluster, kubeconfig)
+
+		//then
+		require.NoError(t, err)
+		secret, k8serr = k8sClientProvider.fakeClient.CoreV1().Secrets(namespace).Get(context.Background(), AgentConfigurationSecretName, v1.GetOptions{})
+		require.NoError(t, k8serr)
+
+		assertData := func(data map[string]string) {
+			assert.Equal(t, connectorURL, data["CONNECTOR_URL"])
+			assert.Equal(t, runtimeID, data["RUNTIME_ID"])
+			assert.Equal(t, tenant, data["TENANT"])
+			assert.Equal(t, token, data["TOKEN"])
+		}
+
+		assertData(secret.StringData)
+	})
 	t.Run("Should skip Runtime Agent configuration if component not provided", func(t *testing.T) {
 		//given
 		clusterWithoutAgent := model.Cluster{

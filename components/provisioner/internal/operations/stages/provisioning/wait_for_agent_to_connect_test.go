@@ -2,6 +2,8 @@ package provisioning
 
 import (
 	"fmt"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime/mocks"
+	"github.com/stretchr/testify/mock"
 	"testing"
 	"time"
 
@@ -51,10 +53,12 @@ func TestWaitForAgentToConnect(t *testing.T) {
 				},
 			})
 
+			configurator := &mocks.Configurator{}
+
 			directorClient := &directorMocks.DirectorClient{}
 			directorClient.On("SetRuntimeStatusCondition", cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant).Return(nil)
 
-			waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
+			waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, configurator, nextStageName, 10*time.Minute, directorClient)
 
 			// when
 			result, err := waitForAgentToConnectStep.Run(cluster, model.Operation{}, logrus.New())
@@ -74,11 +78,13 @@ func TestWaitForAgentToConnect(t *testing.T) {
 				},
 			})
 
+			configurator := &mocks.Configurator{}
+
 			directorClient := &directorMocks.DirectorClient{}
 			directorClient.On("SetRuntimeStatusCondition", cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant).Once().Return(apperrors.Internal("runtime status error"))
 			directorClient.On("SetRuntimeStatusCondition", cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant).Once().Return(nil)
 
-			waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
+			waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, configurator, nextStageName, 10*time.Minute, directorClient)
 
 			// when
 			result, err := waitForAgentToConnectStep.Run(cluster, model.Operation{}, logrus.New())
@@ -98,10 +104,12 @@ func TestWaitForAgentToConnect(t *testing.T) {
 				},
 			})
 
+			configurator := &mocks.Configurator{}
+
 			directorClient := &directorMocks.DirectorClient{}
 			directorClient.On("SetRuntimeStatusCondition", cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant).Return(apperrors.Internal("some error"))
 
-			waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
+			waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, configurator, nextStageName, 10*time.Minute, directorClient)
 
 			// when
 			result, err := waitForAgentToConnectStep.Run(cluster, model.Operation{}, logrus.New())
@@ -122,10 +130,12 @@ func TestWaitForAgentToConnect(t *testing.T) {
 			},
 		})
 
+		configurator := &mocks.Configurator{}
+
 		directorClient := &directorMocks.DirectorClient{}
 		directorClient.On("SetRuntimeStatusCondition", cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant).Return(nil)
 
-		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
+		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, configurator, nextStageName, 10*time.Minute, directorClient)
 
 		// when
 		result, err := waitForAgentToConnectStep.Run(cluster, model.Operation{}, logrus.New())
@@ -145,10 +155,12 @@ func TestWaitForAgentToConnect(t *testing.T) {
 			},
 		})
 
+		configurator := &mocks.Configurator{}
+
 		directorClient := &directorMocks.DirectorClient{}
 		directorClient.On("SetRuntimeStatusCondition", cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant).Return(nil)
 
-		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
+		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, configurator, nextStageName, 10*time.Minute, directorClient)
 
 		// when
 		result, err := waitForAgentToConnectStep.Run(cluster, model.Operation{}, logrus.New())
@@ -162,10 +174,11 @@ func TestWaitForAgentToConnect(t *testing.T) {
 	t.Run("should rerun step if Compass connection not found", func(t *testing.T) {
 		// given
 		clientProvider := newMockClientProvider(&v1alpha12.CompassConnection{})
+		configurator := &mocks.Configurator{}
 		directorClient := &directorMocks.DirectorClient{}
 		directorClient.On("SetRuntimeStatusCondition", cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant).Return(nil)
 
-		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
+		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, configurator, nextStageName, 10*time.Minute, directorClient)
 
 		// when
 		result, err := waitForAgentToConnectStep.Run(cluster, model.Operation{}, logrus.New())
@@ -176,7 +189,7 @@ func TestWaitForAgentToConnect(t *testing.T) {
 		require.Equal(t, 5*time.Second, result.Delay)
 	})
 
-	t.Run("should return error if Compass Connection in Connection Failed state", func(t *testing.T) {
+	t.Run("should return error if Compass Connection in Connection Failed state and runtime reconfigure fails", func(t *testing.T) {
 		// given
 		clientProvider := newMockClientProvider(&v1alpha12.CompassConnection{
 			ObjectMeta: v1.ObjectMeta{Name: defaultCompassConnectionName},
@@ -184,17 +197,44 @@ func TestWaitForAgentToConnect(t *testing.T) {
 				State: v1alpha12.ConnectionFailed,
 			},
 		})
+		configurator := &mocks.Configurator{}
+		configurator.On("ConfigureRuntime", cluster, mock.AnythingOfType("string")).Return(apperrors.Internal("test: runtime reconfigure failure"))
 
 		directorClient := &directorMocks.DirectorClient{}
 		directorClient.On("SetRuntimeStatusCondition", cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant).Return(nil)
 
-		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, nextStageName, 10*time.Minute, directorClient)
+		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, configurator, nextStageName, 10*time.Minute, directorClient)
 
 		// when
 		_, err := waitForAgentToConnectStep.Run(cluster, model.Operation{}, logrus.New())
 
 		// then
 		require.Error(t, err)
+	})
+
+	t.Run("should should rerun step if Compass Connection in Connection Failed state and runtime reconfigure is successful", func(t *testing.T) {
+		// given
+		clientProvider := newMockClientProvider(&v1alpha12.CompassConnection{
+			ObjectMeta: v1.ObjectMeta{Name: defaultCompassConnectionName},
+			Status: v1alpha12.CompassConnectionStatus{
+				State: v1alpha12.ConnectionFailed,
+			},
+		})
+		configurator := &mocks.Configurator{}
+		configurator.On("ConfigureRuntime", cluster, mock.AnythingOfType("string")).Return(nil)
+
+		directorClient := &directorMocks.DirectorClient{}
+		directorClient.On("SetRuntimeStatusCondition", cluster.ID, graphql.RuntimeStatusConditionConnected, cluster.Tenant).Return(nil)
+
+		waitForAgentToConnectStep := NewWaitForAgentToConnectStep(clientProvider.NewCompassConnectionClient, configurator, nextStageName, 10*time.Minute, directorClient)
+
+		// when
+		result, err := waitForAgentToConnectStep.Run(cluster, model.Operation{}, logrus.New())
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, model.WaitForAgentToConnect, result.Stage)
+		require.Equal(t, 2*time.Minute, result.Delay)
 	})
 }
 

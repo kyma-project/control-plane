@@ -2,6 +2,8 @@ package runtime
 
 import (
 	"context"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -83,11 +85,20 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 		},
 		StringData: configurationData,
 	}
+	return c.upsertSecret(k8sClient.CoreV1().Secrets(namespace), secret)
+}
 
-	_, k8serr := k8sClient.CoreV1().Secrets(namespace).Create(context.Background(), secret, meta.CreateOptions{})
-	if k8serr != nil {
-		return util.K8SErrorToAppError(k8serr).Append("error creating Secret on Runtime")
+func (c *configurator) upsertSecret(secretInterface v1.SecretInterface, secret *core.Secret) apperrors.AppError {
+	_, err := secretInterface.Create(context.Background(), secret, meta.CreateOptions{})
+	if err == nil {
+		return nil
 	}
-
+	if !k8serrors.IsAlreadyExists(err) {
+		return util.K8SErrorToAppError(err).Append("error creating Secret on Runtime")
+	}
+	_, err = secretInterface.Update(context.Background(), secret, meta.UpdateOptions{})
+	if err != nil {
+		return util.K8SErrorToAppError(err).Append("error updating Secret on Runtime")
+	}
 	return nil
 }
