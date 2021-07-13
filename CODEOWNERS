@@ -8,7 +8,7 @@
 * @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa @piotrmiskiewicz @ksputo @jasiu001
 
 # All developers working on this repository are able to edit main values.yaml file.
-/resources/kcp/values.yaml @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @piotrmiskiewicz @ksputo @jasiu001 @koala7659 @rafalpotempa @k15r @marcobebway @nachtmaar @radufa @sayanh @themue
+/resources/kcp/values.yaml @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @piotrmiskiewicz @ksputo @jasiu001 @koala7659 @rafalpotempa @k15r @marcobebway @nachtmaar @radufa @sayanh @themue @mfaizanse
 
 # All developers working on this repository are able to edit scripts directory.
 /scripts @PK85 @crabtree @kfurgol @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @piotrmiskiewicz @ksputo @jasiu001 @koala7659 @rafalpotempa
@@ -34,8 +34,8 @@
 /tests/e2e/provisioning @PK85 @piotrmiskiewicz @ksputo @jasiu001 @crabtree
 
 # Kyma metrics collector
-/resources/kcp/charts/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @themue
-/components/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @themue
+/resources/kcp/charts/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @themue @mfaizanse
+/components/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @themue @mfaizanse
 
 # OIDC-Kubeconfig-Service
 /components/kubeconfig-service @piotrmsc @kubadz @strekm @jakkab @Tomasz-Smelcerz-SAP @Demonsthere @colunira
