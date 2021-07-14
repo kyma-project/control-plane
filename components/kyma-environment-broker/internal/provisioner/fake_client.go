@@ -14,20 +14,28 @@ type runtime struct {
 }
 
 type FakeClient struct {
-	mu            sync.Mutex
+	mu          sync.Mutex
+	graphqlizer Graphqlizer
+
 	runtimes      []runtime
 	upgrades      map[string]schema.UpgradeRuntimeInput
 	shootUpgrades map[string]schema.UpgradeShootInput
 	operations    map[string]schema.OperationStatus
+	dumpRequest   bool
 }
 
 func NewFakeClient() *FakeClient {
 	return &FakeClient{
+		graphqlizer:   Graphqlizer{},
 		runtimes:      []runtime{},
 		operations:    make(map[string]schema.OperationStatus),
 		upgrades:      make(map[string]schema.UpgradeRuntimeInput),
 		shootUpgrades: make(map[string]schema.UpgradeShootInput),
 	}
+}
+
+func (c *FakeClient) EnableRequestDumping() {
+	c.dumpRequest = true
 }
 
 func (c *FakeClient) GetProvisionRuntimeInput(index int) schema.ProvisionRuntimeInput {
@@ -56,6 +64,11 @@ func (c *FakeClient) FindOperationByRuntimeIDAndType(runtimeID string, operation
 			return status
 		}
 	}
+	for _, status := range c.operations {
+		if *status.RuntimeID == runtimeID && status.Operation == operationType {
+			return status
+		}
+	}
 	return schema.OperationStatus{}
 }
 
@@ -71,6 +84,11 @@ func (c *FakeClient) SetOperation(id string, operation schema.OperationStatus) {
 func (c *FakeClient) ProvisionRuntime(accountID, subAccountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	if c.dumpRequest {
+		gql, _ := c.graphqlizer.ProvisionRuntimeInputToGraphQL(config)
+		fmt.Println(gql)
+	}
 
 	rid := uuid.New().String()
 	opId := uuid.New().String()
@@ -139,6 +157,11 @@ func (c *FakeClient) UpgradeRuntime(accountID, runtimeID string, config schema.U
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	if c.dumpRequest {
+		gql, _ := c.graphqlizer.UpgradeRuntimeInputToGraphQL(config)
+		fmt.Println(gql)
+	}
+
 	opId := uuid.New().String()
 	c.operations[opId] = schema.OperationStatus{
 		ID:        &opId,
@@ -156,6 +179,11 @@ func (c *FakeClient) UpgradeRuntime(accountID, runtimeID string, config schema.U
 func (c *FakeClient) UpgradeShoot(accountID, runtimeID string, config schema.UpgradeShootInput) (schema.OperationStatus, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	if c.dumpRequest {
+		upgradeShootIptGQL, _ := c.graphqlizer.UpgradeShootInputToGraphQL(config)
+		fmt.Println(upgradeShootIptGQL)
+	}
 
 	opId := uuid.New().String()
 	c.operations[opId] = schema.OperationStatus{
@@ -183,4 +211,14 @@ func (c *FakeClient) IsRuntimeUpgraded(runtimeID string, version string) bool {
 func (c *FakeClient) IsShootUpgraded(runtimeID string) bool {
 	_, found := c.shootUpgrades[runtimeID]
 	return found
+}
+
+func (c *FakeClient) LastShootUpgrade(runtimeID string) (schema.UpgradeShootInput, bool) {
+	input, found := c.shootUpgrades[runtimeID]
+	return input, found
+}
+
+func (c *FakeClient) LastProvisioning() schema.ProvisionRuntimeInput {
+	r := c.runtimes[len(c.runtimes)-1]
+	return r.runtimeInput
 }
