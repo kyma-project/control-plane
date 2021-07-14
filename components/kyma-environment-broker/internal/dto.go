@@ -92,6 +92,7 @@ type ProvisioningParametersDTO struct {
 	OptionalComponentsToInstall []string `json:"components"`
 	KymaVersion                 string   `json:"kymaVersion"`
 	OverridesVersion            string   `json:"overridesVersion"`
+	RuntimeAdministrators       []string `json:"administrators"`
 	//Provider - used in Trial plan to determine which cloud provider to use during provisioning
 	Provider *CloudProvider `json:"provider"`
 
