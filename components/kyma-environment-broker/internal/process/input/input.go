@@ -246,7 +246,18 @@ func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 	if params.LicenceType != nil {
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.LicenceType = params.LicenceType
 	}
-	r.provisionRuntimeInput.ClusterConfig.Administrators = []string{r.provisioningParameters.ErsContext.UserID}
+
+	// admins parameter check
+	if len(r.provisioningParameters.Parameters.RuntimeAdministrators) == 0 {
+		// default admin set from UserID in ERSContext
+		r.provisionRuntimeInput.ClusterConfig.Administrators = []string{r.provisioningParameters.ErsContext.UserID}
+	} else {
+		// set admins for new runtime
+		r.provisionRuntimeInput.ClusterConfig.Administrators = append(
+			r.provisionRuntimeInput.ClusterConfig.Administrators,
+			r.provisioningParameters.Parameters.RuntimeAdministrators...
+		)
+	}
 
 	r.hyperscalerInputProvider.ApplyParameters(r.provisionRuntimeInput.ClusterConfig, r.provisioningParameters)
 
