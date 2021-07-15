@@ -58,7 +58,7 @@ func CreateProvisioningQueue(
 	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
 	k8sClientProvider k8s.K8sClientProvider) OperationQueue {
 
-	waitForAgentToConnectStep := provisioning.NewWaitForAgentToConnectStep(ccClientConstructor, model.FinishedStage, timeouts.AgentConnection, directorClient)
+	waitForAgentToConnectStep := provisioning.NewWaitForAgentToConnectStep(ccClientConstructor, configurator, model.FinishedStage, timeouts.AgentConnection, directorClient)
 	configureAgentStep := provisioning.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Name(), timeouts.AgentConfiguration)
 	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), timeouts.Installation, factory.NewWriteSession())
 	installStep := provisioning.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), timeouts.InstallationTriggering)
