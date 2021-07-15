@@ -160,7 +160,7 @@ func (c *Client) SuspendRuntime() error {
 	}
 	c.log.Infof("Suspension parameters: %v", string(requestByte))
 
-	format := "%s/service_instances/%s"
+	format := "%s/service_instances/%s?accepts_incomplete=true"
 	suspensionURL := fmt.Sprintf(format, c.baseURL(), c.instanceID)
 
 	suspensionResponse := instanceDetailsResponse{}
@@ -187,7 +187,7 @@ func (c *Client) UnsuspendRuntime() error {
 	}
 	c.log.Infof("Unuspension parameters: %v", string(requestByte))
 
-	format := "%s/service_instances/%s?service_id=%s&plan_id=%s"
+	format := "%s/service_instances/%s?service_id=%s&plan_id=%s?accepts_incomplete=true"
 	suspensionURL := fmt.Sprintf(format, c.baseURL(), c.instanceID, kymaClassID, c.brokerConfig.PlanID)
 
 	unsuspensionResponse := instanceDetailsResponse{}
