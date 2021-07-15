@@ -168,6 +168,21 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 		})
 	}
 
+	if len(params.RuntimeAdministrators) != 0 {
+		err = wait.Poll(500*time.Millisecond, 2*time.Second, func() (bool, error) {
+			instance.Parameters.Parameters.RuntimeAdministrators = append(
+				instance.Parameters.Parameters.RuntimeAdministrators,
+				params.RuntimeAdministrators...
+			)
+			instance, err = b.instanceStorage.Update(*instance)
+			if err != nil {
+				logger.Warnf("unable to update instance with new runtime administrators (%s), retrying", err.Error())
+				return false, nil
+			}
+			return true, nil
+		})
+	}
+
 	logger.Debugf("Adding update operation to the processing queue")
 	b.updatingQueue.Add(operationID)
 

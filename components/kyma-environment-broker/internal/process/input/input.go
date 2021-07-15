@@ -265,7 +265,14 @@ func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 }
 
 func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
-	// As of now cluster upgrade doesn't support upgrading parameters which could also be specified as provisioning parameters
+	if len(r.provisioningParameters.Parameters.RuntimeAdministrators) != 0 {
+		// replace runtime admins list
+		r.provisionRuntimeInput.ClusterConfig.Administrators = append(
+			r.provisionRuntimeInput.ClusterConfig.Administrators,
+			r.provisioningParameters.Parameters.RuntimeAdministrators...
+		)
+	}
+
 	return nil
 }
 
