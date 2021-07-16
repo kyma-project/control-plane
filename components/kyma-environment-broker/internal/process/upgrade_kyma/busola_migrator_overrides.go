@@ -23,7 +23,7 @@ func (s *BusolaMigratorOverridesStep) Name() string {
 func (s *BusolaMigratorOverridesStep) Run(operation internal.UpgradeKymaOperation, logger logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	KubeconfigIDOverride := []*gqlschema.ConfigEntryInput{
 		{
-			Key:   "deployment.env.instanceID",
+			Key:   "deployment.env.kubeconfigID",
 			Value: operation.InstanceID,
 		},
 		{
