@@ -10,7 +10,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma/automock"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -60,7 +59,7 @@ func TestEmsUpgradeProvisioningSteps(t *testing.T) {
 		Operation:       internal.Operation{ProvisioningParameters: pp},
 		SMClientFactory: cliFactory,
 	}
-	simpleInputCreator := automock.NewInputCreator()
+	simpleInputCreator := newInputCreator()
 	operation.InputCreator = simpleInputCreator
 
 	repo.InsertUpgradeKymaOperation(operation)
