@@ -22,10 +22,9 @@ type Runtime struct {
 
 // RuntimeOperation holds information about operation performed on a runtime
 type RuntimeOperation struct {
-	Runtime         `json:""`
-	ID              string         `json:"-"`
-	DryRun          bool           `json:"dryRun"`
-	MaintenanceDays []time.Weekday `json:"maintenanceDays"`
+	Runtime `json:""`
+	ID      string `json:"-"`
+	DryRun  bool   `json:"dryRun"`
 }
 
 //go:generate mockery --name=RuntimeResolver --output=automock --outpkg=automock --case=underscore

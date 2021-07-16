@@ -89,7 +89,6 @@ func (resolver *GardenerRuntimeResolver) Resolve(targets TargetSpec) ([]Runtime,
 		for _, r := range runtimesToAdd {
 			if !runtimeExcluded[r.RuntimeID] && !runtimeIncluded[r.RuntimeID] {
 				runtimeIncluded[r.RuntimeID] = true
-				r.Plan = resolver.runtimes[r.RuntimeID].ServicePlanName
 				runtimes = append(runtimes, r)
 			}
 		}
@@ -133,7 +132,7 @@ func (resolver *GardenerRuntimeResolver) getRuntime(runtimeID string) (runtime.R
 
 func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, shoots []gardenerapi.Shoot) ([]Runtime, error) {
 	runtimes := []Runtime{}
-
+	// r.Plan = resolver.runtimes[r.RuntimeID].ServicePlanName
 	// Iterate over all shoots. Evaluate target specs. If multiple are specified, all must match for a given shoot.
 	for _, shoot := range shoots {
 		runtimeID := shoot.Annotations[runtimeIDAnnotation]
@@ -235,8 +234,11 @@ func (*GardenerRuntimeResolver) runtimeFromDTO(runtime runtime.RuntimeDTO, shoot
 		RuntimeID:              runtime.RuntimeID,
 		GlobalAccountID:        runtime.GlobalAccountID,
 		SubAccountID:           runtime.SubAccountID,
+		Plan:                   runtime.ServicePlanName,
 		ShootName:              shootName,
 		MaintenanceWindowBegin: windowBegin,
 		MaintenanceWindowEnd:   windowEnd,
+		MaintenanceDays: []time.Weekday{time.Monday, time.Tuesday, time.Wednesday, time.Thursday, time.Friday,
+			time.Saturday, time.Sunday},
 	}
 }

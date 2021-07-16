@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -39,6 +40,8 @@ type orchestrationManager struct {
 	policyName           string
 }
 
+const maintenancePolicyKeyName = "maintenancePolicy"
+
 func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, error) {
 	logger := m.log.WithField("orchestrationID", orchestrationID)
 	m.log.Infof("Processing orchestration %s", orchestrationID)
@@ -47,17 +50,17 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 		return m.failOrchestration(o, errors.Wrap(err, "while getting orchestration"))
 	}
 
-	// TODO: Read & unmarshal the config map here
-
 	config := &coreV1.ConfigMap{}
 	key := client.ObjectKey{Namespace: m.policyNamespace, Name: m.policyName}
 	if err := m.k8sClient.Get(m.ctx, key, config); err != nil {
-		// Inform that Gardener defaults are being chosen.
+		m.log.Info("Orchestration Config is absent")
+	}
+	if config.Data[maintenancePolicyKeyName] == "" {
+		m.log.Info("Maintenance policy is set to Gardener defaults")
 	}
 
-	var policies []orchestration.Policy
+	var policies []orchestration.MaintenancePolicyEntry
 	json.Unmarshal([]byte(config.String()), &policies)
-
 	operations, err := m.resolveOperations(o, policies)
 	if err != nil {
 		return m.failOrchestration(o, errors.Wrap(err, "while resolving operations"))
@@ -96,7 +99,7 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 	return 0, nil
 }
 
-func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, policies []orchestration.Policy) ([]orchestration.RuntimeOperation, error) {
+func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, policies []orchestration.MaintenancePolicyEntry) ([]orchestration.RuntimeOperation, error) {
 	result := []orchestration.RuntimeOperation{}
 	if o.State == orchestration.Pending {
 		runtimes, err := m.resolver.Resolve(o.Parameters.Targets)
@@ -113,9 +116,24 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 			maintenanceWindowEnd := r.MaintenanceWindowEnd
 
 			for _, p := range policies {
-				if p.GlobalAccountID == r.GlobalAccountID && p.Plan == r.Plan { // TODO: with what should I compare p.Plan?
+				if p.Plan != "" && p.Plan != r.Plan {
+					continue
+				}
+				if p.GlobalAccountID != "" {
+					matched, err := regexp.MatchString(p.GlobalAccountID, r.GlobalAccountID)
+					if err != nil || !matched {
+						continue
+					}
+				}
+
+				// We have a rule match here, either be one or all of the rule match options. Let's override maintenance attributes.
+				if len(p.Days) > 0 {
 					maintenanceDays = p.Days
+				}
+				if !p.TimeBegin.IsZero() {
 					maintenanceWindowBegin = p.TimeBegin
+				}
+				if !p.TimeEnd.IsZero() {
 					maintenanceWindowEnd = p.TimeEnd
 				}
 			}
