@@ -115,7 +115,7 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
             clientID: "{{ .OidcConfig.ClientID }}",
             issuerURL: "{{ .OidcConfig.IssuerURL }}",
             groupsClaim: "{{ .OidcConfig.GroupsClaim }}",
-            signingAlgs: {{ marshal .OidcConfig.SigningAlgs }},
+            signingAlgs: {{ .OidcConfig.SigningAlgs | marshal }},
             usernameClaim: "{{ .OidcConfig.UsernameClaim }}",
             usernamePrefix: "{{ .OidcConfig.UsernamePrefix }}",
         }
@@ -272,6 +272,16 @@ func (g Graphqlizer) UpgradeShootInputToGraphQL(in gqlschema.UpgradeShootInput) 
       {{- end }}
       {{- if .EnableMachineImageVersionAutoUpdate }}
       enableMachineImageVersionAutoUpdate: {{.EnableMachineImageVersionAutoUpdate}},
+      {{- end }}
+      {{ if .OidcConfig }}
+      oidcConfig: {
+        clientID: "{{.OidcConfig.ClientID }}",
+        issuerURL: "{{ .OidcConfig.IssuerURL }}",
+        groupsClaim: "{{ .OidcConfig.IssuerURL }}",
+        signingAlgs: {{ .OidcConfig.SigningAlgs | marshal }},
+        usernameClaim: "{{ .OidcConfig.UsernameClaim }}",
+        usernamePrefix: "{{ .OidcConfig.UsernamePrefix }}",
+      }
       {{- end }}
     }
   }`)

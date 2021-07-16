@@ -267,8 +267,10 @@ func (p *AWSFreemiumInput) Defaults() *gqlschema.ClusterConfigInput {
 	return awsTrialDefaults()
 }
 
-func (p *AWSFreemiumInput) ApplyParameters(input *gqlschema.ClusterConfigInput, params internal.ProvisioningParameters) {
-	// todo: consider regions
+func (p *AWSFreemiumInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
+	if pp.Parameters.Region != nil && pp.Parameters.Zones == nil {
+		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name = ZoneForAWSRegion(*pp.Parameters.Region)
+	}
 }
 
 func (p *AWSFreemiumInput) Profile() gqlschema.KymaProfile {

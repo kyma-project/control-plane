@@ -202,6 +202,27 @@ func (r readSession) ListOrchestrations(filter dbmodel.OrchestrationFilter) ([]d
 		nil
 }
 
+func (r readSession) CountNotFinishedOperationsByInstanceID(instanceID string) (int, dberr.Error) {
+	stateInProgress := dbr.Eq("state", domain.InProgress)
+	statePending := dbr.Eq("state", orchestration.Pending)
+	stateCondition := dbr.Or(statePending, stateInProgress)
+	instanceIDCondition := dbr.Eq("instance_id", instanceID)
+
+	var res struct {
+		Total int
+	}
+	err := r.session.Select("count(*) as total").
+		From(OperationTableName).
+		Where(stateCondition).
+		Where(instanceIDCondition).
+		LoadOne(&res)
+
+	if err != nil {
+		return 0, dberr.Internal("Failed to count operations: %s", err)
+	}
+	return res.Total, nil
+}
+
 func (r readSession) GetNotFinishedOperationsByType(operationType internal.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
 	stateInProgress := dbr.Eq("state", domain.InProgress)
 	statePending := dbr.Eq("state", orchestration.Pending)

@@ -98,6 +98,10 @@ type ProvisioningParametersDTO struct {
 	OIDC *OIDCConfigDTO `json:"oidc,omitempty"`
 }
 
+type UpdatingParametersDTO struct {
+	OIDC *OIDCConfigDTO `json:"oidc,omitempty"`
+}
+
 type ERSContext struct {
 	TenantID        string                  `json:"tenant_id"`
 	SubAccountID    string                  `json:"subaccount_id"`

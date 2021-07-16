@@ -87,6 +87,6 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, operation model.Ope
 func (s *WaitForInstallationStep) saveInstallationState(message string, logger logrus.FieldLogger, operation model.Operation) {
 	dberr := s.dbSession.UpdateOperationState(operation.ID, message, operation.State, time.Now())
 	if dberr != nil {
-		logger.Errorf("error updating installation state: %s", dberr.Error())
+		logger.Warnf("error updating installation state: %s", dberr.Error())
 	}
 }

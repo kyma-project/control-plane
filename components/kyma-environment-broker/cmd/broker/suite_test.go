@@ -504,8 +504,6 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	eventBroker := event.NewPubSub(logs)
 
-	// switch to StagedManager when the feature is enabled
-
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
@@ -822,8 +820,10 @@ func fixConfig() *Config {
 		},
 		KymaVersion:           "1.21",
 		EnableOnDemandVersion: true,
-		Broker:                broker.Config{},
-		Avs:                   avs.Config{},
+		Broker: broker.Config{
+			EnablePlans: []string{"azure", "trial"},
+		},
+		Avs: avs.Config{},
 		IAS: ias.Config{
 			IdentityProvider: ias.FakeIdentityProviderName,
 		},
@@ -834,7 +834,8 @@ func fixConfig() *Config {
 			Tenant:        "fooTen",
 			EnableSeqHttp: true,
 		},
-		FreemiumProviders: []string{"aws", "azure"},
+		FreemiumProviders:       []string{"aws", "azure"},
+		UpdateProcessingEnabled: true,
 	}
 }
 
