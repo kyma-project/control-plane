@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
+	"github.com/prometheus/common/log"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
@@ -38,6 +41,7 @@ func NewCompassConnectionClient(k8sConfig *rest.Config) (compass_conn_clientset.
 
 type WaitForAgentToConnectStep struct {
 	newCompassConnectionClient CompassConnectionClientConstructor
+	runtimeConfigurator        runtime.Configurator
 	directorClient             director.DirectorClient
 	nextStep                   model.OperationStage
 	timeLimit                  time.Duration
@@ -45,12 +49,14 @@ type WaitForAgentToConnectStep struct {
 
 func NewWaitForAgentToConnectStep(
 	ccClientProvider CompassConnectionClientConstructor,
+	runtimeConfigurator runtime.Configurator,
 	nextStep model.OperationStage,
 	timeLimit time.Duration,
 	directorClient director.DirectorClient) *WaitForAgentToConnectStep {
 
 	return &WaitForAgentToConnectStep{
 		newCompassConnectionClient: ccClientProvider,
+		runtimeConfigurator:        runtimeConfigurator,
 		directorClient:             directorClient,
 		nextStep:                   nextStep,
 		timeLimit:                  timeLimit,
@@ -92,7 +98,12 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 	}
 
 	if compassConnCR.Status.State == v1alpha1.ConnectionFailed {
-		return operations.StageResult{}, fmt.Errorf("error: Compass Connection is in Failed state")
+		log.Warn("Compass Connection is in Failed state, trying to reconfigure runtime")
+		err := s.runtimeConfigurator.ConfigureRuntime(cluster, *cluster.Kubeconfig)
+		if err != nil {
+			return operations.StageResult{}, fmt.Errorf("error: Compass Connection is in Failed state: reconfigure runtime faiure: %s", err.Error())
+		}
+		return operations.StageResult{Stage: s.Name(), Delay: 2 * time.Minute}, nil
 	}
 
 	if compassConnCR.Status.State != v1alpha1.Synchronized {

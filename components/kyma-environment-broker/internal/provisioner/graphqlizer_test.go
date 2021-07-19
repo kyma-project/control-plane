@@ -444,6 +444,15 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
       machineImageVersion: "184.0.0",
       enableKubernetesVersionAutoUpdate: true,
       enableMachineImageVersionAutoUpdate: false,
+      
+      oidcConfig: {
+        clientID: "cid",
+        issuerURL: "issuer.url",
+        groupsClaim: "issuer.url",
+        signingAlgs: ["RSA256"],
+        usernameClaim: "sub",
+        usernamePrefix: "-",
+      }
     }
   }`
 
@@ -455,6 +464,14 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
 			MachineImageVersion:                 strPrt("184.0.0"),
 			EnableKubernetesVersionAutoUpdate:   boolPtr(true),
 			EnableMachineImageVersionAutoUpdate: boolPtr(false),
+			OidcConfig: &gqlschema.OIDCConfigInput{
+				ClientID:       "cid",
+				GroupsClaim:    "groups",
+				IssuerURL:      "issuer.url",
+				SigningAlgs:    []string{"RSA256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
+			},
 		},
 	})
 

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	azuretesting "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/azure/testing"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
@@ -78,15 +77,13 @@ func NewDeprovisioningSuite(t *testing.T) *DeprovisioningSuite {
 
 	edpClient := fixEDPClient()
 
-	namespaceClientResourceGroupDoesNotExist := azuretesting.NewFakeNamespaceClientResourceGroupDoesNotExist()
-	hyperscalerProvider := azuretesting.NewFakeHyperscalerProvider(namespaceClientResourceGroupDoesNotExist)
 	accountProvider := fixAccountProvider()
 
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 
 	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
 		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, smcf,
-		bundleBuilder, edpClient, hyperscalerProvider, accountProvider, logs,
+		bundleBuilder, edpClient, accountProvider, logs,
 	)
 
 	deprovisioningQueue.SpeedUp(10000)

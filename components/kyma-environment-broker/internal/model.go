@@ -160,6 +160,8 @@ const (
 	OperationTypeUndefined OperationType = ""
 	// OperationTypeUpgradeKyma means upgrade Kyma OperationType
 	OperationTypeUpgradeKyma OperationType = "upgradeKyma"
+	// OperationTypeUpdate means update
+	OperationTypeUpdate OperationType = "update"
 	// OperationTypeUpgradeCluster means upgrade cluster (shoot) OperationType
 	OperationTypeUpgradeCluster OperationType = "upgradeCluster"
 )
@@ -303,6 +305,15 @@ type DeprovisioningOperation struct {
 	Temporary bool `json:"temporary"`
 }
 
+type UpdatingOperation struct {
+	Operation
+
+	UpdatingParameters UpdatingParametersDTO `json:"updating_parameters"`
+
+	// following fields are not stored in the storage
+	InputCreator ProvisionerInputCreator `json:"-"`
+}
+
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
 type UpgradeKymaOperation struct {
 	Operation
@@ -415,6 +426,32 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 			FinishedStages:  make(map[string]struct{}, 0),
 		},
 	}, nil
+}
+
+func NewUpdateOperation(operationID string, instance *Instance, updatingParams UpdatingParametersDTO) UpdatingOperation {
+
+	op := UpdatingOperation{
+		Operation: Operation{
+			ID:                     operationID,
+			Version:                0,
+			Description:            "Operation created",
+			InstanceID:             instance.InstanceID,
+			State:                  orchestration.Pending,
+			CreatedAt:              time.Now(),
+			UpdatedAt:              time.Now(),
+			Type:                   OperationTypeUpdate,
+			InstanceDetails:        instance.InstanceDetails,
+			FinishedStages:         make(map[string]struct{}, 0),
+			ProvisioningParameters: instance.Parameters,
+		},
+		UpdatingParameters: updatingParams,
+	}
+
+	if updatingParams.OIDC != nil {
+		op.ProvisioningParameters.Parameters.OIDC = updatingParams.OIDC
+	}
+
+	return op
 }
 
 // NewSuspensionOperationWithID creates a fresh (just starting) instance of the DeprovisioningOperation which does not remove the instance.
