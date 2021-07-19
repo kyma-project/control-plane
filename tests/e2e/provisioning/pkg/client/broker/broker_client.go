@@ -346,9 +346,9 @@ func (c *Client) prepareUpdateDetails(active *bool) ([]byte, error) {
 		return nil, errors.Wrap(err, "while marshalling context body")
 	}
 	requestBody := domain.UpdateDetails{
-		ServiceID:     kymaClassID,
-		PlanID:        c.brokerConfig.PlanID,
-		RawContext:    rawContext,
+		ServiceID:  kymaClassID,
+		PlanID:     c.brokerConfig.PlanID,
+		RawContext: rawContext,
 		MaintenanceInfo: &domain.MaintenanceInfo{
 			Version:     "0.1.0",
 			Description: "Kyma environment broker e2e-provisioning test",
