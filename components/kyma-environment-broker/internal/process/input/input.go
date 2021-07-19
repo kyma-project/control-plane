@@ -267,8 +267,8 @@ func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
 	if len(r.provisioningParameters.Parameters.RuntimeAdministrators) != 0 {
 		// replace runtime admins list
-		r.provisionRuntimeInput.ClusterConfig.Administrators = append(
-			r.provisionRuntimeInput.ClusterConfig.Administrators,
+		r.upgradeShootInput.Administrators = append(
+			r.upgradeShootInput.Administrators,
 			r.provisioningParameters.Parameters.RuntimeAdministrators...
 		)
 	}
