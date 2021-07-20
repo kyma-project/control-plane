@@ -230,15 +230,13 @@ func main() {
 	fatalOnError(err)
 	gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
 	fatalOnError(err)
-	kubernetesClient, err := kubernetes.NewForConfig(gardenerClusterConfig)
-	fatalOnError(err)
 	gardenerSecretBindings := gardener.NewGardenerSecretBindingsInterface(gardenerClient, cfg.Gardener.Project)
 	gardenerShoots, err := gardener.NewGardenerShootInterface(gardenerClusterConfig, cfg.Gardener.Project)
 	fatalOnError(err)
 
 	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecretBindings, gardenerShoots)
 	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecretBindings, gardenerShoots)
-	accountProvider := hyperscaler.NewAccountProvider(kubernetesClient, gardenerAccountPool, gardenerSharedPool)
+	accountProvider := hyperscaler.NewAccountProvider(gardenerAccountPool, gardenerSharedPool)
 
 	regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)
 	fatalOnError(err)

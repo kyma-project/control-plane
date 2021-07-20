@@ -3,7 +3,6 @@ package hyperscaler
 import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pkg/errors"
-	"k8s.io/client-go/kubernetes"
 )
 
 //go:generate mockery -name=AccountProvider -output=automock -outpkg=automock -case=underscore
@@ -20,14 +19,12 @@ type Credentials struct {
 }
 
 type accountProvider struct {
-	kubernetesInterface kubernetes.Interface
 	gardenerPool        AccountPool
 	sharedGardenerPool  SharedPool
 }
 
-func NewAccountProvider(kubernetesInterface kubernetes.Interface, gardenerPool AccountPool, sharedGardenerPool SharedPool) AccountProvider {
+func NewAccountProvider(gardenerPool AccountPool, sharedGardenerPool SharedPool) AccountProvider {
 	return &accountProvider{
-		kubernetesInterface: kubernetesInterface,
 		gardenerPool:        gardenerPool,
 		sharedGardenerPool:  sharedGardenerPool,
 	}
@@ -70,7 +67,7 @@ func (p *accountProvider) GardenerSharedSecretName(hyperscalerType Type) (string
 
 	secretBinding, err := p.sharedGardenerPool.SharedCredentialsSecretBinding(hyperscalerType)
 	if err != nil {
-		return "", errors.Wrap(err, "getting shared secret")
+		return "", errors.Wrap(err, "getting shared secret binding")
 	}
 
 	return secretBinding.SecretRef.Name, nil
@@ -81,27 +78,27 @@ func (p *accountProvider) MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType
 		return errors.New("failed to release subscription for tenant. Gardener Account pool is not configured")
 	}
 
-	internal, err := p.gardenerPool.IsSecretBindingInternal(hyperscalerType, tenantName)
+	isInternal, err := p.gardenerPool.IsSecretBindingInternal(hyperscalerType, tenantName)
 	if err != nil {
 		return errors.Wrap(err, "checking if secret binding is internal")
 	}
-	if internal {
+	if isInternal {
 		return nil
 	}
 
-	dirty, err := p.gardenerPool.IsSecretBindingDirty(hyperscalerType, tenantName)
+	isDirty, err := p.gardenerPool.IsSecretBindingDirty(hyperscalerType, tenantName)
 	if err != nil {
 		return errors.Wrap(err, "checking if secret binding is dirty")
 	}
-	if dirty {
+	if isDirty {
 		return nil
 	}
 
-	secretBindingUsed, err := p.gardenerPool.IsSecretBindingUsed(hyperscalerType, tenantName)
+	isUsed, err := p.gardenerPool.IsSecretBindingUsed(hyperscalerType, tenantName)
 	if err != nil {
 		return errors.Wrapf(err, "cannot determine whether %s secret binding is used for tenant: %s", hyperscalerType, tenantName)
 	}
-	if !secretBindingUsed {
+	if !isUsed {
 		return p.gardenerPool.MarkSecretBindingAsDirty(hyperscalerType, tenantName)
 	}
 

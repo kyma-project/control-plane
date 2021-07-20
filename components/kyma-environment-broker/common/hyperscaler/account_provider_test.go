@@ -10,13 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	machineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestGardenerCredentials(t *testing.T) {
 	t.Run("should return error if account pool is not configured", func(t *testing.T) {
 		//given
-		accountProvider := NewAccountProvider(nil, nil, nil)
+		accountProvider := NewAccountProvider(nil, nil)
 
 		//when
 		_, err := accountProvider.GardenerSecretName(GCP, "tenantname")
@@ -26,34 +25,25 @@ func TestGardenerCredentials(t *testing.T) {
 		assert.Contains(t, err.Error(), "Gardener Account pool is not configured")
 	})
 
-	t.Run("should return correct credentials", func(t *testing.T) {
+	t.Run("should return correct secret name", func(t *testing.T) {
 		//given
-		mockClient := fake.NewSimpleClientset(newSecret("secret1"))
 		gardenerFake := gardener_fake.NewSimpleClientset(newSecretBinding("secretBinding1", "secret1", "azure", false))
 		mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
 		mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 		accountPool := NewAccountPool(mockSecretBindings, mockShoots)
 
-		accountProvider := NewAccountProvider(mockClient, accountPool, nil)
+		accountProvider := NewAccountProvider(accountPool, nil)
 
 		//when
-		secret, err := accountProvider.GardenerSecretName(Azure, "tenantname")
+		secretName, err := accountProvider.GardenerSecretName(Azure, "tenantname")
 
 		//then
 		require.NoError(t, err)
-		assert.Equal(t, secret, "secret1")
+		assert.Equal(t, secretName, "secret1")
 	})
 
-	t.Run("should return correct shared credentials when secret is in another namespace", func(t *testing.T) {
+	t.Run("should return correct shared secret name when secret is in another namespace", func(t *testing.T) {
 		//given
-		mockClient := fake.NewSimpleClientset(&corev1.Secret{
-			ObjectMeta: machineryv1.ObjectMeta{
-				Name: "secret1", Namespace: "anothernamespace",
-			},
-			Data: map[string][]byte{
-				"credentials": []byte("secret1"),
-			},
-		})
 		gardenerFake := gardener_fake.NewSimpleClientset(&gardener_types.SecretBinding{
 			ObjectMeta: machineryv1.ObjectMeta{
 				Name: "secretBinding1", Namespace: testNamespace,
@@ -70,25 +60,24 @@ func TestGardenerCredentials(t *testing.T) {
 		mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 		accountPool := NewAccountPool(mockSecretBindings, mockShoots)
 
-		accountProvider := NewAccountProvider(mockClient, accountPool, nil)
+		accountProvider := NewAccountProvider(accountPool, nil)
 
 		//when
-		secret, err := accountProvider.GardenerSecretName(Azure, "tenantname")
+		secretName, err := accountProvider.GardenerSecretName(Azure, "tenantname")
 
 		//then
 		require.NoError(t, err)
-		assert.Equal(t, secret, "secret1")
+		assert.Equal(t, secretName, "secret1")
 	})
 
 	t.Run("should return error when failed to find secret binding", func(t *testing.T) {
 		//given
-		mockClient := fake.NewSimpleClientset(newSecret("secret1"))
 		gardenerFake := gardener_fake.NewSimpleClientset()
 		mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
 		mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 		accountPool := NewAccountPool(mockSecretBindings, mockShoots)
 
-		accountProvider := NewAccountProvider(mockClient, accountPool, nil)
+		accountProvider := NewAccountProvider(accountPool, nil)
 
 		//when
 		_, err := accountProvider.GardenerSecretName(Azure, "tenantname")
@@ -101,7 +90,7 @@ func TestGardenerCredentials(t *testing.T) {
 func TestGardenerSharedCredentials(t *testing.T) {
 	t.Run("should return error if shared account pool is not configured", func(t *testing.T) {
 		//given
-		accountProvider := NewAccountProvider(nil, nil, nil)
+		accountProvider := NewAccountProvider(nil, nil)
 
 		//when
 		_, err := accountProvider.GardenerSharedSecretName(GCP)
@@ -111,34 +100,25 @@ func TestGardenerSharedCredentials(t *testing.T) {
 		assert.Contains(t, err.Error(), "Gardener Shared Account pool is not configured")
 	})
 
-	t.Run("should return correct shared credentials", func(t *testing.T) {
+	t.Run("should return correct shared secret name", func(t *testing.T) {
 		//given
-		mockClient := fake.NewSimpleClientset(newSecret("secret1"))
 		gardenerFake := gardener_fake.NewSimpleClientset(newSecretBinding("secretBinding1", "secret1", "azure", true))
 		mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
 		mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 		sharedAccountPool := NewSharedGardenerAccountPool(mockSecretBindings, mockShoots)
 
-		accountProvider := NewAccountProvider(mockClient, nil, sharedAccountPool)
+		accountProvider := NewAccountProvider(nil, sharedAccountPool)
 
 		//when
-		secret, err := accountProvider.GardenerSharedSecretName(Azure)
+		secretName, err := accountProvider.GardenerSharedSecretName(Azure)
 
 		//then
 		require.NoError(t, err)
-		assert.Equal(t, secret, "secret1")
+		assert.Equal(t, secretName, "secret1")
 	})
 
-	t.Run("should return correct shared credentials when secret is in another namespace", func(t *testing.T) {
+	t.Run("should return correct shared secret name when secret is in another namespace", func(t *testing.T) {
 		//given
-		mockClient := fake.NewSimpleClientset(&corev1.Secret{
-			ObjectMeta: machineryv1.ObjectMeta{
-				Name: "secret1", Namespace: "anothernamespace",
-			},
-			Data: map[string][]byte{
-				"credentials": []byte("secret1"),
-			},
-		})
 		gardenerFake := gardener_fake.NewSimpleClientset(&gardener_types.SecretBinding{
 			ObjectMeta: machineryv1.ObjectMeta{
 				Name: "secretBinding1", Namespace: testNamespace,
@@ -156,25 +136,24 @@ func TestGardenerSharedCredentials(t *testing.T) {
 		mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 		sharedAccountPool := NewSharedGardenerAccountPool(mockSecretBindings, mockShoots)
 
-		accountProvider := NewAccountProvider(mockClient, nil, sharedAccountPool)
+		accountProvider := NewAccountProvider(nil, sharedAccountPool)
 
 		//when
-		secret, err := accountProvider.GardenerSharedSecretName(Azure)
+		secretName, err := accountProvider.GardenerSharedSecretName(Azure)
 
 		//then
 		require.NoError(t, err)
-		assert.Equal(t, secret, "secret1")
+		assert.Equal(t, secretName, "secret1")
 	})
 
 	t.Run("should return error when failed to find secret binding", func(t *testing.T) {
 		//given
-		mockClient := fake.NewSimpleClientset(newSecret("secret1"))
 		gardenerFake := gardener_fake.NewSimpleClientset()
 		mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
 		mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
 		sharedAccountPool := NewSharedGardenerAccountPool(mockSecretBindings, mockShoots)
 
-		accountProvider := NewAccountProvider(mockClient, nil, sharedAccountPool)
+		accountProvider := NewAccountProvider(nil, sharedAccountPool)
 
 		//when
 		_, err := accountProvider.GardenerSharedSecretName(Azure)
@@ -189,7 +168,7 @@ func TestMarkUnusedGardenerSecretBindingAsDirty(t *testing.T) {
 		//given
 		pool, secretBindingMock := newTestAccountPoolWithoutShoots()
 
-		accountProvider := NewAccountProvider(nil, pool, nil)
+		accountProvider := NewAccountProvider(pool, nil)
 
 		//when
 		err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("azure"), "tenant1")
@@ -205,7 +184,7 @@ func TestMarkUnusedGardenerSecretBindingAsDirty(t *testing.T) {
 		//given
 		pool, secretBindingMock := newTestAccountPoolWithSecretBindingInternal()
 
-		accountProvider := NewAccountProvider(nil, pool, nil)
+		accountProvider := NewAccountProvider(pool, nil)
 
 		//when
 		err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("azure"), "tenant1")
@@ -221,7 +200,7 @@ func TestMarkUnusedGardenerSecretBindingAsDirty(t *testing.T) {
 		//given
 		pool, secretBindingMock := newTestAccountPoolWithSingleShoot()
 
-		accountProvider := NewAccountProvider(nil, pool, nil)
+		accountProvider := NewAccountProvider(pool, nil)
 
 		//when
 		err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("azure"), "tenant1")
@@ -237,7 +216,7 @@ func TestMarkUnusedGardenerSecretBindingAsDirty(t *testing.T) {
 		//given
 		pool, secretBindingMock := newTestAccountPoolWithSecretBindingDirty()
 
-		accountProvider := NewAccountProvider(nil, pool, nil)
+		accountProvider := NewAccountProvider(pool, nil)
 
 		//when
 		err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("azure"), "tenant1")
@@ -253,7 +232,7 @@ func TestMarkUnusedGardenerSecretBindingAsDirty(t *testing.T) {
 		//given
 		pool, secretBindingMock := newTestAccountPoolWithShootsUsingSecretBinding()
 
-		accountProvider := NewAccountProvider(nil, pool, nil)
+		accountProvider := NewAccountProvider(pool, nil)
 
 		//when
 		err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("azure"), "tenant1")
@@ -267,7 +246,7 @@ func TestMarkUnusedGardenerSecretBindingAsDirty(t *testing.T) {
 
 	t.Run("should return error if failed to read secrets for particular hyperscaler type", func(t *testing.T) {
 		//given
-		accountProvider := NewAccountProvider(nil, nil, nil)
+		accountProvider := NewAccountProvider(nil, nil)
 
 		//when
 		err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("gcp"), "tenant1")
