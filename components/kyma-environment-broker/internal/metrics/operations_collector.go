@@ -60,34 +60,34 @@ func NewOperationsCollector(statsGetter OperationsStatsGetter) *OperationsCollec
 	for _, p := range supportedPlansIDs {
 		opStats[p] = OperationStat{
 			inProgressProvisioning: prometheus.NewDesc(
-				fqName(broker.PlanNamesMapping[p], internal.OperationTypeProvision, domain.InProgress),
+				fqName(internal.OperationTypeProvision, domain.InProgress),
 				"The number of provisioning operations in progress",
-				[]string{},
+				[]string{"plan_id"},
 				nil),
 			succeededProvisioning: prometheus.NewDesc(
-				fqName(broker.PlanNamesMapping[p], internal.OperationTypeProvision, domain.Succeeded),
+				fqName(internal.OperationTypeProvision, domain.Succeeded),
 				"The number of succeeded provisioning operations",
-				[]string{},
+				[]string{"plan_id"},
 				nil),
 			failedProvisioning: prometheus.NewDesc(
-				fqName(broker.PlanNamesMapping[p], internal.OperationTypeProvision, domain.Failed),
+				fqName(internal.OperationTypeProvision, domain.Failed),
 				"The number of failed provisioning operations",
-				[]string{},
+				[]string{"plan_id"},
 				nil),
 			inProgressDeprovisioning: prometheus.NewDesc(
-				fqName(broker.PlanNamesMapping[p], internal.OperationTypeDeprovision, domain.InProgress),
+				fqName(internal.OperationTypeDeprovision, domain.InProgress),
 				"The number of deprovisioning operations in progress",
-				[]string{},
+				[]string{"plan_id"},
 				nil),
 			succeededDeprovisioning: prometheus.NewDesc(
-				fqName(broker.PlanNamesMapping[p], internal.OperationTypeDeprovision, domain.Succeeded),
+				fqName(internal.OperationTypeDeprovision, domain.Succeeded),
 				"The number of succeeded deprovisioning operations",
-				[]string{},
+				[]string{"plan_id"},
 				nil),
 			failedDeprovisioning: prometheus.NewDesc(
-				fqName(broker.PlanNamesMapping[p], internal.OperationTypeDeprovision, domain.Failed),
+				fqName(internal.OperationTypeDeprovision, domain.Failed),
 				"The number of failed deprovisioning operations",
-				[]string{},
+				[]string{"plan_id"},
 				nil),
 		}
 	}
@@ -98,7 +98,7 @@ func NewOperationsCollector(statsGetter OperationsStatsGetter) *OperationsCollec
 	}
 }
 
-func fqName(planName string, operationType internal.OperationType, state domain.LastOperationState) string {
+func fqName(operationType internal.OperationType, state domain.LastOperationState) string {
 	var opType string
 	switch operationType {
 	case internal.OperationTypeProvision:
@@ -116,7 +116,7 @@ func fqName(planName string, operationType internal.OperationType, state domain.
 	case domain.InProgress:
 		st = "in_progress"
 	}
-	name := fmt.Sprintf("operations_%s_%s_%s_total", planName, opType, st)
+	name := fmt.Sprintf("operations_%s_%s_total", opType, st)
 	return prometheus.BuildFQName(prometheusNamespace, prometheusSubsystem, name)
 }
 
@@ -137,26 +137,32 @@ func (c *OperationsCollector) Collect(ch chan<- prometheus.Metric) {
 		collect(ch,
 			ops.inProgressProvisioning,
 			stats[planID].Provisioning[domain.InProgress],
+			planID,
 		)
 		collect(ch,
 			ops.succeededProvisioning,
 			stats[planID].Provisioning[domain.Succeeded],
+			planID,
 		)
 		collect(ch,
 			ops.failedProvisioning,
 			stats[planID].Provisioning[domain.Failed],
+			planID,
 		)
 		collect(ch,
 			ops.inProgressDeprovisioning,
 			stats[planID].Deprovisioning[domain.InProgress],
+			planID,
 		)
 		collect(ch,
 			ops.succeededDeprovisioning,
 			stats[planID].Deprovisioning[domain.Succeeded],
+			planID,
 		)
 		collect(ch,
 			ops.failedDeprovisioning,
 			stats[planID].Deprovisioning[domain.Failed],
+			planID,
 		)
 	}
 
