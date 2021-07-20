@@ -288,7 +288,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
 	})
 
-	t.Run("with loaded cache followed by deprovisioning completely(with empty runtimes for KEB response)", func(t *testing.T) {
+	t.Run("with loaded cache followed by deprovisioning completely(with empty runtimes in KEB response)", func(t *testing.T) {
 		subAccID := uuid.New().String()
 		cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
 		queue := workqueue.NewDelayingQueue()
@@ -305,14 +305,14 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		g.Expect(err).Should(gomega.BeNil())
 
 		runtimesPageWithNoRuntimes := new(kebruntime.RuntimesPage)
-		expectedQueue := workqueue.NewDelayingQueue()
-		expectedCache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
+		expectedEmptyQueue := workqueue.NewDelayingQueue()
+		expectedEmptyCache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
 
 		runtimesPageWithNoRuntimes.Data = []kebruntime.RuntimeDTO{}
 
 		p.populateCacheAndQueue(runtimesPageWithNoRuntimes)
-		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
-		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
+		g.Expect(*p.Cache).To(gomega.Equal(*expectedEmptyCache))
+		g.Expect(areQueuesEqual(p.Queue, expectedEmptyQueue)).To(gomega.BeTrue())
 	})
 
 	t.Run("with loaded cache, then shoot is deprovisioned and provisioned again", func(t *testing.T) {
@@ -339,20 +339,22 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		skrRuntime := kmctesting.NewRuntimesDTO(subAccID, oldShootName, kmctesting.WithProvisionedAndDeprovisionedState)
 		runtimesPage.Data = append(runtimesPage.Data, skrRuntime)
 
+		// expected cache changes after deprovisioning
 		p.populateCacheAndQueue(runtimesPage)
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
 		g.Expect(areQueuesEqual(p.Queue, expectedQueue)).To(gomega.BeTrue())
-
-		// expected cache changes after deprovisioning
-		newRecord := NewRecord(subAccID, newShootName, "")
-		err = expectedCache.Add(subAccID, newRecord, gocache.NoExpiration)
-		g.Expect(err).Should(gomega.BeNil())
 
 		// provision a new SKR again with a new name
 		skrRuntimesPageWithProvisioning := new(kebruntime.RuntimesPage)
 		skrRuntimesPageWithProvisioning.Data = []kebruntime.RuntimeDTO{
 			kmctesting.NewRuntimesDTO(subAccID, newShootName, kmctesting.WithSucceededState),
 		}
+
+		// expected cache changes after provisioning
+		newRecord := NewRecord(subAccID, newShootName, "")
+		err = expectedCache.Add(subAccID, newRecord, gocache.NoExpiration)
+		g.Expect(err).Should(gomega.BeNil())
+
 		runtimesPage.Data = []kebruntime.RuntimeDTO{skrRuntime}
 		p.populateCacheAndQueue(skrRuntimesPageWithProvisioning)
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
@@ -442,7 +444,7 @@ func TestExecute(t *testing.T) {
 
 	// Test scrape interval
 	g.Eventually(func() bool {
-		// With a scrape interval of 3 secs(ScrapeInterval) in 10 seconds(bigTimeout), expected timesVisited is atleast 2
+		// With a ScrapeInterval of 3 secs in an interval of 10 seconds, expected timesVisited is atleast 2.
 		return timesVisited >= 2
 	}, bigTimeout).Should(gomega.BeTrue())
 
@@ -481,8 +483,7 @@ func TestExecute(t *testing.T) {
 	go func() {
 		newProcess.execute(1)
 	}()
-	gotQueueLen := newProcess.Queue.Len()
-	g.Eventually(gotQueueLen).Should(gomega.Equal(0))
+	g.Eventually(newProcess.Queue.Len()).Should(gomega.Equal(0))
 }
 
 func NewFakeShootClient(shoot *gardenerv1beta1.Shoot) (*gardenershoot.Client, error) {

@@ -291,7 +291,6 @@ func (p Process) getRecordWithOldOrNewMetric(identifier int, subAccountID string
 	record, err := p.generateRecordWithNewMetrics(identifier, subAccountID)
 	if err != nil {
 		if errors.Is(err, errorSubAccountIDNotTrackable) {
-			// Return if subAccountID is not trackable
 			p.Logger.Infof("[worker: %d] subAccountID: %s is not trackable anymore, skipping the fetch of old metric", identifier, subAccountID)
 			return nil, false, err
 		}
@@ -380,15 +379,14 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 		} else {
 			if isFound {
 				p.Cache.Delete(runtime.SubAccountID)
-				p.Logger.Debugf("Deleted subAccountID: %v", runtime.SubAccountID)
+				p.Logger.Debugf("Deleted subAccountID: %v from cache", runtime.SubAccountID)
 				continue
 			}
-			// Debug logs as it was filtered out
-			p.Logger.Debugf("Ignoring SubAccountID: %v, as is not trackable anymore", runtime.SubAccountID)
+			p.Logger.Debugf("Ignoring SubAccountID: %v, as it is not trackable", runtime.SubAccountID)
 		}
 	}
 
-	// Cleaning up subAccounts from the cache which are not returned by KEB
+	// Cleaning up subAccounts from the cache which are not returned by KEB anymore
 	for sAccID := range p.Cache.Items() {
 		if _, ok := validSubAccounts[sAccID]; !ok {
 			p.Cache.Delete(sAccID)
