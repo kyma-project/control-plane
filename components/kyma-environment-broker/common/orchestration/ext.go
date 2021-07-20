@@ -15,9 +15,9 @@ type Runtime struct {
 	// The corresponding shoot cluster's .spec.maintenance.timeWindow.Begin value, which is in in "HHMMSS+[HHMM TZ]" format, e.g. "040000+0000"
 	MaintenanceWindowBegin time.Time `json:"maintenanceWindowBegin"`
 	// The corresponding shoot cluster's .spec.maintenance.timeWindow.End value, which is in "HHMMSS+[HHMM TZ]" format, e.g. "040000+0000"
-	MaintenanceWindowEnd time.Time      `json:"maintenanceWindowEnd"`
-	MaintenanceDays      []time.Weekday `json:"maintenanceDays"`
-	Plan                 string         `json:"plan"`
+	MaintenanceWindowEnd time.Time `json:"maintenanceWindowEnd"`
+	MaintenanceDays      []string  `json:"maintenanceDays"`
+	Plan                 string    `json:"plan"`
 }
 
 // RuntimeOperation holds information about operation performed on a runtime
@@ -51,23 +51,23 @@ type Strategy interface {
 	Cancel(executionID string)
 }
 
-func ConvertSliceOfDaysToMap(days []time.Weekday) map[time.Weekday]bool {
+func ConvertSliceOfDaysToMap(days []string) map[time.Weekday]bool {
 	m := make(map[time.Weekday]bool)
 	for _, day := range days {
 		switch day {
-		case time.Sunday:
+		case "Sun":
 			m[time.Sunday] = true
-		case time.Monday:
+		case "Mon":
 			m[time.Monday] = true
-		case time.Tuesday:
+		case "Tue":
 			m[time.Tuesday] = true
-		case time.Wednesday:
+		case "Wed":
 			m[time.Wednesday] = true
-		case time.Thursday:
+		case "Thu":
 			m[time.Thursday] = true
-		case time.Friday:
+		case "Fri":
 			m[time.Friday] = true
-		case time.Saturday:
+		case "Sat":
 			m[time.Saturday] = true
 		}
 	}

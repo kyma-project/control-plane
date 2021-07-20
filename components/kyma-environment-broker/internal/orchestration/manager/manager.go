@@ -257,7 +257,7 @@ func (m *orchestrationManager) resolveOrchestration(o *internal.Orchestration, s
 }
 
 // resolves when is the next occurrence of the time window
-func (m *orchestrationManager) resolveWindowTime(beginTime, endTime time.Time, availableDays []time.Weekday) (time.Time, time.Time) {
+func (m *orchestrationManager) resolveWindowTime(beginTime, endTime time.Time, availableDays []string) (time.Time, time.Time) {
 	n := time.Now()
 	start := time.Date(n.Year(), n.Month(), n.Day(), beginTime.Hour(), beginTime.Minute(), beginTime.Second(), beginTime.Nanosecond(), beginTime.Location())
 	end := time.Date(n.Year(), n.Month(), n.Day(), endTime.Hour(), endTime.Minute(), endTime.Second(), endTime.Nanosecond(), endTime.Location())

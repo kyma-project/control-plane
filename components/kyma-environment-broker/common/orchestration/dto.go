@@ -161,7 +161,7 @@ type MaintenancePolicyMatch struct {
 
 type MaintenancePolicyEntry struct {
 	Match     MaintenancePolicyMatch `json:"match"`
-	Days      []time.Weekday         `json:"days"`
+	Days      []string               `json:"days"`
 	TimeBegin time.Time              `json:"timeBegin"`
 	TimeEnd   time.Time              `json:"timeEnd"`
 }
