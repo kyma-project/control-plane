@@ -154,14 +154,18 @@ type UpgradeResponse struct {
 	OrchestrationID string `json:"orchestrationID"`
 }
 
+type MaintenancePolicyMatch struct {
+	GlobalAccountID string `json:"globalAccountID"`
+	Plan            string `json:"plan"`
+}
+
 type MaintenancePolicyEntry struct {
-	GlobalAccountID string         `json:"globalAccountID"`
-	Plan            string         `json:"plan"`
-	Days            []time.Weekday `json:"days"`
-	TimeBegin       time.Time      `json:"timeBegin"`
-	TimeEnd         time.Time      `json:"timeEnd"`
+	Match     MaintenancePolicyMatch `json:"match"`
+	Days      []time.Weekday         `json:"days"`
+	TimeBegin time.Time              `json:"timeBegin"`
+	TimeEnd   time.Time              `json:"timeEnd"`
 }
 
 type MaintenancePolicy struct {
-	Rules []MaintenancePolicyEntry `json:"rules"`
+	Default []MaintenancePolicyEntry `json:"rules"`
 }

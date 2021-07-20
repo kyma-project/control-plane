@@ -60,7 +60,10 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 	}
 
 	var policies []orchestration.MaintenancePolicyEntry
-	json.Unmarshal([]byte(config.String()), &policies)
+	err = json.Unmarshal([]byte(config.String()), &policies)
+	if err != nil {
+		m.log.Info("Unable to unmarshal the policies config")
+	}
 	operations, err := m.resolveOperations(o, policies)
 	if err != nil {
 		return m.failOrchestration(o, errors.Wrap(err, "while resolving operations"))
@@ -116,11 +119,11 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 			maintenanceWindowEnd := r.MaintenanceWindowEnd
 
 			for _, p := range policies {
-				if p.Plan != "" && p.Plan != r.Plan {
+				if p.Match.Plan != "" && p.Match.Plan != r.Plan {
 					continue
 				}
-				if p.GlobalAccountID != "" {
-					matched, err := regexp.MatchString(p.GlobalAccountID, r.GlobalAccountID)
+				if p.Match.GlobalAccountID != "" {
+					matched, err := regexp.MatchString(p.Match.GlobalAccountID, r.GlobalAccountID)
 					if err != nil || !matched {
 						continue
 					}
