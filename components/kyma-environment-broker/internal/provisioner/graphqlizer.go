@@ -256,8 +256,8 @@ func (g *Graphqlizer) UpgradeRuntimeInputToGraphQL(in gqlschema.UpgradeRuntimeIn
 }
 
 func (g Graphqlizer) UpgradeShootInputToGraphQL(in gqlschema.UpgradeShootInput) (string, error) {
-	return g.genericToGraphQL(in.GardenerConfig, `{
-    gardenerConfig: {
+	return g.genericToGraphQL(in, `{
+	gardenerConfig: {
       {{- if .KubernetesVersion }}
       kubernetesVersion: "{{.KubernetesVersion}}",
       {{- end }}
@@ -284,6 +284,9 @@ func (g Graphqlizer) UpgradeShootInputToGraphQL(in gqlschema.UpgradeShootInput) 
       }
       {{- end }}
     }
+	{{- if .Administrators }}
+	administrators: {{.Administrators | marshal }},
+	{{- end }}
   }`)
 }
 
