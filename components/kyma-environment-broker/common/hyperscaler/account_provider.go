@@ -19,14 +19,14 @@ type Credentials struct {
 }
 
 type accountProvider struct {
-	gardenerPool        AccountPool
-	sharedGardenerPool  SharedPool
+	gardenerPool       AccountPool
+	sharedGardenerPool SharedPool
 }
 
 func NewAccountProvider(gardenerPool AccountPool, sharedGardenerPool SharedPool) AccountProvider {
 	return &accountProvider{
-		gardenerPool:        gardenerPool,
-		sharedGardenerPool:  sharedGardenerPool,
+		gardenerPool:       gardenerPool,
+		sharedGardenerPool: sharedGardenerPool,
 	}
 }
 
