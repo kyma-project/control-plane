@@ -47,19 +47,24 @@ type Process struct {
 	Logger          *logrus.Logger
 }
 
-const shootKubeconfigKey = "kubeconfig"
+const (
+	shootKubeconfigKey = "kubeconfig"
+)
 
-func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) (record kmccache.Record, err error) {
+var (
+	errorSubAccountIDNotTrackable = errors.New("subAccountID is not trackable")
+)
+
+func (p Process) generateRecordWithNewMetrics(identifier int, subAccountID string) (record kmccache.Record, err error) {
 	ctx := context.Background()
 	var ok bool
 
 	obj, isFound := p.Cache.Get(subAccountID)
 	if !isFound {
-		err = fmt.Errorf("subAccountID was not found in cache")
+		err = errorSubAccountIDNotTrackable
 		return
 	}
 
-	defer p.Queue.Done(subAccountID)
 	if record, ok = obj.(kmccache.Record); !ok {
 		err = fmt.Errorf("bad item from cache, could not cast to a record obj")
 		return
@@ -209,8 +214,10 @@ func (p *Process) execute(identifier int) {
 
 	for {
 		var payload []byte
-		// Pick up a subAccountID to process from queue
+		// Pick up a subAccountID to process from queue and mark a Done()
 		subAccountIDObj, _ := p.Queue.Get()
+		p.Queue.Done(subAccountIDObj)
+
 		// TODO Implement cleanup holistically in #kyma-project/control-plane/issues/512
 		//if isShuttingDown {
 		//	//p.Cleanup()
@@ -228,7 +235,11 @@ func (p *Process) execute(identifier int) {
 		record, isOldMetricValid, err := p.getRecordWithOldOrNewMetric(identifier, subAccountID)
 		if err != nil {
 			p.Logger.Errorf("[worker: %d] no metric found/generated for subaccount id: %v", identifier, err)
-
+			// SubAccountID is not trackable anymore as there is no runtime
+			if errors.Is(err, errorSubAccountIDNotTrackable) {
+				p.Logger.Infof("[worker: %d] is not requed subAccountID %s", identifier, subAccountID)
+				continue
+			}
 			p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
 			p.Logger.Debugf("[worker: %d] successfully requed after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
 
@@ -274,9 +285,16 @@ func (p *Process) execute(identifier int) {
 	}
 }
 
+// getRecordWithOldOrNewMetric generates new metric or fetches the old metric along with a bool flag which
+// indicates whether it is an old metric or not(true, when it is old and false when it is new)
 func (p Process) getRecordWithOldOrNewMetric(identifier int, subAccountID string) (*kmccache.Record, bool, error) {
-	record, err := p.generateRecordWithMetrics(identifier, subAccountID)
+	record, err := p.generateRecordWithNewMetrics(identifier, subAccountID)
 	if err != nil {
+		if errors.Is(err, errorSubAccountIDNotTrackable) {
+			// Return if subAccountID is not trackable
+			p.Logger.Infof("[worker: %d] subAccountID: %s is not trackable anymore, skipping the fetch of old metric", identifier, subAccountID)
+			return nil, false, err
+		}
 		p.Logger.Errorf("failed to generate new metric for subaccountID: %v, err: %v", subAccountID, err)
 		// Get old data
 		oldRecord, err := p.getOldRecordIfMetricExists(subAccountID)
@@ -325,10 +343,12 @@ func isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 // populateCacheAndQueue populates Cache and Queue with new runtimes and deletes the runtimes which should not be tracked
 func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 
+	validSubAccounts := make(map[string]bool)
 	for _, runtime := range runtimes.Data {
 		if runtime.SubAccountID == "" {
 			continue
 		}
+		validSubAccounts[runtime.SubAccountID] = true
 		recordObj, isFound := p.Cache.Get(runtime.SubAccountID)
 		if isClusterTrackable(&runtime) {
 			newRecord := kmccache.Record{
@@ -361,7 +381,18 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 			if isFound {
 				p.Cache.Delete(runtime.SubAccountID)
 				p.Logger.Debugf("Deleted subAccountID: %v", runtime.SubAccountID)
+				continue
 			}
+			// Debug logs as it was filtered out
+			p.Logger.Debugf("Ignoring SubAccountID: %v, as is not trackable anymore", runtime.SubAccountID)
+		}
+	}
+
+	// Cleaning up subAccounts from the cache which are not returned by KEB
+	for sAccID := range p.Cache.Items() {
+		if _, ok := validSubAccounts[sAccID]; !ok {
+			p.Cache.Delete(sAccID)
+			p.Logger.Debugf("SubAccountID: %v is not trackable anymore hence deleting it from cache", sAccID)
 		}
 	}
 }
