@@ -36,10 +36,13 @@ const (
 const (
 	azurePlan     = "azure"
 	azureLitePlan = "azure_lite"
+	azureHAPlan   = "azure_ha"
 	trialPlan     = "trial"
 	gcpPlan       = "gcp"
 	openstackPlan = "openstack"
 	awsPlan       = "aws"
+	awsHAPlan     = "aws_ha"
+	freePlan      = "free"
 )
 
 // GlobalOptionsKey is the type for holding the configuration key for each global parameter
@@ -244,7 +247,7 @@ func parseRuntimeTarget(targetInput string, targets *[]orchestration.RuntimeTarg
 			target.InstanceID = selectorValue
 		case planTarget:
 			switch selectorValue {
-			case azurePlan, azureLitePlan, trialPlan, gcpPlan, openstackPlan, awsPlan:
+			case azurePlan, azureLitePlan, azureHAPlan, trialPlan, gcpPlan, openstackPlan, awsPlan, awsHAPlan, freePlan:
 				target.PlanName = selectorValue
 			default:
 				return fmt.Errorf("invalid value for selector: %s %s=%s", flagName, selectorKey, selectorValue)
