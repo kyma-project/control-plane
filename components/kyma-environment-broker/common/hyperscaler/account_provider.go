@@ -1,19 +1,15 @@
 package hyperscaler
 
 import (
-	"context"
-
-	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 //go:generate mockery -name=AccountProvider -output=automock -outpkg=automock -case=underscore
 type AccountProvider interface {
-	GardenerCredentials(hyperscalerType Type, tenantName string) (Credentials, error)
-	GardenerSharedCredentials(hyperscalerType Type) (Credentials, error)
+	GardenerSecretName(hyperscalerType Type, tenantName string) (string, error)
+	GardenerSharedSecretName(hyperscalerType Type) (string, error)
 	MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType Type, tenantName string) error
 }
 
@@ -52,32 +48,32 @@ func FromCloudProvider(cp internal.CloudProvider) (Type, error) {
 	}
 }
 
-func (p *accountProvider) GardenerCredentials(hyperscalerType Type, tenantName string) (Credentials, error) {
+func (p *accountProvider) GardenerSecretName(hyperscalerType Type, tenantName string) (string, error) {
 	if p.gardenerPool == nil {
-		return Credentials{},
+		return "",
 			errors.New("failed to get Gardener Credentials. Gardener Account pool is not configured")
 	}
 
 	secretBinding, err := p.gardenerPool.CredentialsSecretBinding(hyperscalerType, tenantName)
 	if err != nil {
-		return Credentials{}, errors.Wrap(err, "getting credentials secret binding")
+		return "", errors.Wrap(err, "getting secret")
 	}
 
-	return p.credentialsFromBoundSecret(secretBinding, hyperscalerType)
+	return secretBinding.SecretRef.Name, nil
 }
 
-func (p *accountProvider) GardenerSharedCredentials(hyperscalerType Type) (Credentials, error) {
+func (p *accountProvider) GardenerSharedSecretName(hyperscalerType Type) (string, error) {
 	if p.sharedGardenerPool == nil {
-		return Credentials{},
-			errors.New("failed to get shared Gardener Credentials. Gardener Shared Account pool is not configured")
+		return "",
+			errors.New("failed to get shared Secret Binding name. Gardener Shared Account pool is not configured")
 	}
 
 	secretBinding, err := p.sharedGardenerPool.SharedCredentialsSecretBinding(hyperscalerType)
 	if err != nil {
-		return Credentials{}, errors.Wrap(err, "getting shared credentials secret binding")
+		return "", errors.Wrap(err, "getting shared secret")
 	}
 
-	return p.credentialsFromBoundSecret(secretBinding, hyperscalerType)
+	return secretBinding.SecretRef.Name, nil
 }
 
 func (p *accountProvider) MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType Type, tenantName string) error {
@@ -110,19 +106,4 @@ func (p *accountProvider) MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType
 	}
 
 	return nil
-}
-
-func (p *accountProvider) credentialsFromBoundSecret(secretBinding *v1beta1.SecretBinding, hyperscalerType Type) (Credentials, error) {
-	secretClient := p.kubernetesInterface.CoreV1().Secrets(secretBinding.SecretRef.Namespace)
-
-	secret, err := secretClient.Get(context.Background(), secretBinding.SecretRef.Name, metav1.GetOptions{})
-	if err != nil {
-		return Credentials{}, errors.Wrapf(err, "getting %s/%s secret", secretBinding.SecretRef.Namespace, secretBinding.SecretRef.Name)
-	}
-
-	return Credentials{
-		Name:            secret.Name,
-		HyperscalerType: hyperscalerType,
-		CredentialData:  secret.Data,
-	}, nil
 }

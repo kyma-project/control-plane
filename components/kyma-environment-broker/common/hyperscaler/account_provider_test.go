@@ -19,7 +19,7 @@ func TestGardenerCredentials(t *testing.T) {
 		accountProvider := NewAccountProvider(nil, nil, nil)
 
 		//when
-		_, err := accountProvider.GardenerCredentials(GCP, "tenantname")
+		_, err := accountProvider.GardenerSecretName(GCP, "tenantname")
 		require.Error(t, err)
 
 		//then
@@ -37,13 +37,11 @@ func TestGardenerCredentials(t *testing.T) {
 		accountProvider := NewAccountProvider(mockClient, accountPool, nil)
 
 		//when
-		credentials, err := accountProvider.GardenerCredentials(Azure, "tenantname")
+		secret, err := accountProvider.GardenerSecretName(Azure, "tenantname")
 
 		//then
 		require.NoError(t, err)
-		assert.Equal(t, credentials.Name, "secret1")
-		assert.Equal(t, credentials.HyperscalerType, Azure)
-		assert.Equal(t, credentials.CredentialData, map[string][]byte{"credentials": []byte("secret1")})
+		assert.Equal(t, secret, "secret1")
 	})
 
 	t.Run("should return correct shared credentials when secret is in another namespace", func(t *testing.T) {
@@ -75,13 +73,11 @@ func TestGardenerCredentials(t *testing.T) {
 		accountProvider := NewAccountProvider(mockClient, accountPool, nil)
 
 		//when
-		credentials, err := accountProvider.GardenerCredentials(Azure, "tenantname")
+		secret, err := accountProvider.GardenerSecretName(Azure, "tenantname")
 
 		//then
 		require.NoError(t, err)
-		assert.Equal(t, credentials.Name, "secret1")
-		assert.Equal(t, credentials.HyperscalerType, Azure)
-		assert.Equal(t, credentials.CredentialData, map[string][]byte{"credentials": []byte("secret1")})
+		assert.Equal(t, secret, "secret1")
 	})
 
 	t.Run("should return error when failed to find secret binding", func(t *testing.T) {
@@ -95,24 +91,7 @@ func TestGardenerCredentials(t *testing.T) {
 		accountProvider := NewAccountProvider(mockClient, accountPool, nil)
 
 		//when
-		_, err := accountProvider.GardenerCredentials(Azure, "tenantname")
-
-		//then
-		require.Error(t, err)
-	})
-
-	t.Run("should return error when failed to find secret", func(t *testing.T) {
-		//given
-		mockClient := fake.NewSimpleClientset()
-		gardenerFake := gardener_fake.NewSimpleClientset(newSecretBinding("secretBinding1", "secret1", "azure", false))
-		mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
-		mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
-		accountPool := NewAccountPool(mockSecretBindings, mockShoots)
-
-		accountProvider := NewAccountProvider(mockClient, accountPool, nil)
-
-		//when
-		_, err := accountProvider.GardenerCredentials(Azure, "tenantname")
+		_, err := accountProvider.GardenerSecretName(Azure, "tenantname")
 
 		//then
 		require.Error(t, err)
@@ -125,7 +104,7 @@ func TestGardenerSharedCredentials(t *testing.T) {
 		accountProvider := NewAccountProvider(nil, nil, nil)
 
 		//when
-		_, err := accountProvider.GardenerSharedCredentials(GCP)
+		_, err := accountProvider.GardenerSharedSecretName(GCP)
 		require.Error(t, err)
 
 		//then
@@ -143,13 +122,11 @@ func TestGardenerSharedCredentials(t *testing.T) {
 		accountProvider := NewAccountProvider(mockClient, nil, sharedAccountPool)
 
 		//when
-		credentials, err := accountProvider.GardenerSharedCredentials(Azure)
+		secret, err := accountProvider.GardenerSharedSecretName(Azure)
 
 		//then
 		require.NoError(t, err)
-		assert.Equal(t, credentials.Name, "secret1")
-		assert.Equal(t, credentials.HyperscalerType, Azure)
-		assert.Equal(t, credentials.CredentialData, map[string][]byte{"credentials": []byte("secret1")})
+		assert.Equal(t, secret, "secret1")
 	})
 
 	t.Run("should return correct shared credentials when secret is in another namespace", func(t *testing.T) {
@@ -182,13 +159,11 @@ func TestGardenerSharedCredentials(t *testing.T) {
 		accountProvider := NewAccountProvider(mockClient, nil, sharedAccountPool)
 
 		//when
-		credentials, err := accountProvider.GardenerSharedCredentials(Azure)
+		secret, err := accountProvider.GardenerSharedSecretName(Azure)
 
 		//then
 		require.NoError(t, err)
-		assert.Equal(t, credentials.Name, "secret1")
-		assert.Equal(t, credentials.HyperscalerType, Azure)
-		assert.Equal(t, credentials.CredentialData, map[string][]byte{"credentials": []byte("secret1")})
+		assert.Equal(t, secret, "secret1")
 	})
 
 	t.Run("should return error when failed to find secret binding", func(t *testing.T) {
@@ -202,24 +177,7 @@ func TestGardenerSharedCredentials(t *testing.T) {
 		accountProvider := NewAccountProvider(mockClient, nil, sharedAccountPool)
 
 		//when
-		_, err := accountProvider.GardenerSharedCredentials(Azure)
-
-		//then
-		require.Error(t, err)
-	})
-
-	t.Run("should return error when failed to find secret", func(t *testing.T) {
-		//given
-		mockClient := fake.NewSimpleClientset()
-		gardenerFake := gardener_fake.NewSimpleClientset(newSecretBinding("secretBinding1", "secret1", "azure", true))
-		mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
-		mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
-		sharedAccountPool := NewSharedGardenerAccountPool(mockSecretBindings, mockShoots)
-
-		accountProvider := NewAccountProvider(mockClient, nil, sharedAccountPool)
-
-		//when
-		_, err := accountProvider.GardenerSharedCredentials(Azure)
+		_, err := accountProvider.GardenerSharedSecretName(Azure)
 
 		//then
 		require.Error(t, err)

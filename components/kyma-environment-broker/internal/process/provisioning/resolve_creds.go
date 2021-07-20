@@ -45,15 +45,15 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 
 	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
 
-	var credentials hyperscaler.Credentials
+	var secretName string
 	if !broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) {
-		credentials, err = s.accountProvider.GardenerCredentials(hypType, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
+		secretName, err = s.accountProvider.GardenerSecretName(hypType, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
 	} else {
-		log.Infof("HAP lookup for shared credentials")
-		credentials, err = s.accountProvider.GardenerSharedCredentials(hypType)
+		log.Infof("HAP lookup for shared secret")
+		secretName, err = s.accountProvider.GardenerSharedSecretName(hypType)
 	}
 	if err != nil {
-		errMsg := fmt.Sprintf("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s has failed: %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType, err)
+		errMsg := fmt.Sprintf("HAP lookup for secret to provision cluster for global account ID %s on Hyperscaler %s has failed: %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType, err)
 		log.Info(errMsg)
 
 		// if failed retry step every 10s by next 10min
@@ -63,10 +63,10 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 			return operation, 10 * time.Second, nil
 		}
 
-		log.Errorf("Aborting after 10 minutes of failing to resolve provisioning credentials for global account ID %s on Hyperscaler %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
+		log.Errorf("Aborting after 10 minutes of failing to resolve provisioning secret for global account ID %s on Hyperscaler %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
 		return s.operationManager.OperationFailed(operation, errMsg, log)
 	}
-	operation.ProvisioningParameters.Parameters.TargetSecret = &credentials.Name
+	operation.ProvisioningParameters.Parameters.TargetSecret = &secretName
 
 	updatedOperation, err := s.opStorage.UpdateProvisioningOperation(operation)
 	if err != nil {

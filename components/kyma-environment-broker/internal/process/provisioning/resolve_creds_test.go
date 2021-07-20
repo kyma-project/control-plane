@@ -30,11 +30,7 @@ func TestResolveCredentialsStepHappyPath_Run(t *testing.T) {
 	assert.NoError(t, err)
 
 	accountProviderMock := &hyperscalerMocks.AccountProvider{}
-	accountProviderMock.On("GardenerCredentials", hyperscaler.GCP, statusGlobalAccountID).Return(hyperscaler.Credentials{
-		Name:            "gardener-secret-gcp",
-		HyperscalerType: "gcp",
-		CredentialData:  map[string][]byte{},
-	}, nil)
+	accountProviderMock.On("GardenerSecretName", hyperscaler.GCP, statusGlobalAccountID).Return("gardener-secret-gcp", nil)
 
 	step := NewResolveCredentialsStep(memoryStorage.Operations(), accountProviderMock)
 
@@ -61,11 +57,7 @@ func TestResolveCredentialsStepHappyPathTrialDefaultProvider_Run(t *testing.T) {
 	assert.NoError(t, err)
 
 	accountProviderMock := &hyperscalerMocks.AccountProvider{}
-	accountProviderMock.On("GardenerSharedCredentials", hyperscaler.Azure).Return(hyperscaler.Credentials{
-		Name:            "gardener-secret-azure",
-		HyperscalerType: "azure",
-		CredentialData:  map[string][]byte{},
-	}, nil)
+	accountProviderMock.On("GardenerSharedSecretName", hyperscaler.Azure).Return("gardener-secret-azure", nil)
 
 	step := NewResolveCredentialsStep(memoryStorage.Operations(), accountProviderMock)
 
@@ -93,7 +85,7 @@ func TestResolveCredentialsStepHappyPathTrialGivenProvider_Run(t *testing.T) {
 	assert.NoError(t, err)
 
 	accountProviderMock := &hyperscalerMocks.AccountProvider{}
-	accountProviderMock.On("GardenerSharedCredentials", hyperscaler.GCP).Return(hyperscaler.Credentials{
+	accountProviderMock.On("GardenerSharedSecretName", hyperscaler.GCP).Return(hyperscaler.Credentials{
 		Name:            "gardener-secret-gcp",
 		HyperscalerType: "gcp",
 		CredentialData:  map[string][]byte{},
@@ -124,7 +116,7 @@ func TestResolveCredentialsStepRetry_Run(t *testing.T) {
 	assert.NoError(t, err)
 
 	accountProviderMock := &hyperscalerMocks.AccountProvider{}
-	accountProviderMock.On("GardenerCredentials", hyperscaler.GCP, statusGlobalAccountID).Return(hyperscaler.Credentials{}, errors.New("Failed!"))
+	accountProviderMock.On("GardenerSecretName", hyperscaler.GCP, statusGlobalAccountID).Return("", errors.New("Failed!"))
 
 	step := NewResolveCredentialsStep(memoryStorage.Operations(), accountProviderMock)
 
