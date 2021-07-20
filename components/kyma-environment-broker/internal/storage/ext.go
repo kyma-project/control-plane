@@ -91,5 +91,6 @@ type UpgradeCluster interface {
 type Updating interface {
 	InsertUpdatingOperation(operation internal.UpdatingOperation) error
 	GetUpdatingOperationByID(operationID string) (*internal.UpdatingOperation, error)
+	ListUpdatingOperationsByInstanceID(instanceID string) ([]internal.UpdatingOperation, error)
 	UpdateUpdatingOperation(operation internal.UpdatingOperation) (*internal.UpdatingOperation, error)
 }

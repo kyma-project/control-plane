@@ -13,7 +13,7 @@ const (
 	StateSucceeded State = "succeeded"
 	// StateFailed means that the last operation is one of provision, deprovivion, suspension, unsuspension, which has failed.
 	StateFailed State = "failed"
-	// StateError means the runtime is in a recoverable error state, due to the last upgrade operation has failed.
+	// StateError means the runtime is in a recoverable error state, due to the last upgrade/update operation has failed.
 	StateError State = "error"
 	// StateProvisioning means that the runtime provisioning (or unsuspension) is in progress (by the last runtime operation).
 	StateProvisioning State = "provisioning"
@@ -21,6 +21,8 @@ const (
 	StateDeprovisioning State = "deprovisioning"
 	// StateUpgrading means that kyma upgrade or cluster upgrade operation is in progress.
 	StateUpgrading State = "upgrading"
+	// StateUpdating means the runtime configuration is being updated (i.e. OIDC is reconfigured).
+	StateUpdating State = "updating"
 	// StateSuspended means that the trial runtime is suspended (i.e. deprovisioned).
 	StateSuspended State = "suspended"
 	// AllState is a virtual state only used as query parameter in ListParameters to indicate "include all runtimes, which are excluded by default without state filters".
@@ -55,6 +57,7 @@ type RuntimeStatus struct {
 	Deprovisioning   *Operation      `json:"deprovisioning,omitempty"`
 	UpgradingKyma    *OperationsData `json:"upgradingKyma,omitempty"`
 	UpgradingCluster *OperationsData `json:"upgradingCluster,omitempty"`
+	Update           *OperationsData `json:"update,omitempty"`
 	Suspension       *OperationsData `json:"suspension,omitempty"`
 	Unsuspension     *OperationsData `json:"unsuspension,omitempty"`
 }
@@ -66,6 +69,7 @@ const (
 	Deprovision    OperationType = "deprovision"
 	UpgradeKyma    OperationType = "kyma upgrade"
 	UpgradeCluster OperationType = "cluster upgrade"
+	Update         OperationType = "update"
 	Suspension     OperationType = "suspension"
 	Unsuspension   OperationType = "unsuspension"
 )
@@ -174,6 +178,12 @@ func (rt RuntimeDTO) LastOperation() Operation {
 	if rt.Status.Deprovisioning != nil && rt.Status.Deprovisioning.CreatedAt.After(op.CreatedAt) {
 		op = *rt.Status.Deprovisioning
 		op.Type = Deprovision
+	}
+
+	// Take the first update operation, assuming that Data is sorted by CreatedAt DESC.
+	if rt.Status.Update != nil && rt.Status.Update.Count > 0 && rt.Status.Update.Data[0].CreatedAt.After(op.CreatedAt) {
+		op = rt.Status.Update.Data[0]
+		op.Type = Update
 	}
 
 	return op

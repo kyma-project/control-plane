@@ -245,7 +245,7 @@ func TestRuntimeHandler(t *testing.T) {
 
 		// when
 		rr = httptest.NewRecorder()
-		req, err = http.NewRequest("GET", fmt.Sprintf("/runtimes?state=%s", pkg.StateFailed), nil)
+		req, err = http.NewRequest("GET", fmt.Sprintf("/runtimes?state=%s", pkg.StateError), nil)
 		require.NoError(t, err)
 		router.ServeHTTP(rr, req)
 
@@ -258,6 +258,21 @@ func TestRuntimeHandler(t *testing.T) {
 		assert.Equal(t, 1, out.TotalCount)
 		assert.Equal(t, 1, out.Count)
 		assert.Equal(t, testID2, out.Data[0].InstanceID)
+
+		rr = httptest.NewRecorder()
+		req, err = http.NewRequest("GET", fmt.Sprintf("/runtimes?state=%s", pkg.StateFailed), nil)
+		require.NoError(t, err)
+		router.ServeHTTP(rr, req)
+
+		// then
+		require.Equal(t, http.StatusOK, rr.Code)
+
+		err = json.Unmarshal(rr.Body.Bytes(), &out)
+		require.NoError(t, err)
+
+		assert.Equal(t, 0, out.TotalCount)
+		assert.Equal(t, 0, out.Count)
+		assert.Len(t, out.Data, 0)
 	})
 
 	t.Run("should show suspension and unsuspension operations", func(t *testing.T) {

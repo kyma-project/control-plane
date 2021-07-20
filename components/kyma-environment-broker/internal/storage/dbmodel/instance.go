@@ -10,9 +10,11 @@ type InstanceState string
 const (
 	InstanceSucceeded        InstanceState = "succeeded"
 	InstanceFailed           InstanceState = "failed"
+	InstanceError            InstanceState = "error"
 	InstanceProvisioning     InstanceState = "provisioning"
 	InstanceDeprovisioning   InstanceState = "deprovisioning"
 	InstanceUpgrading        InstanceState = "upgrading"
+	InstanceUpdating         InstanceState = "updating"
 	InstanceDeprovisioned    InstanceState = "deprovisioned"
 	InstanceNotDeprovisioned InstanceState = "notDeprovisioned"
 )

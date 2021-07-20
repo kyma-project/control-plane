@@ -304,7 +304,11 @@ func (s *instances) matchInstanceState(instanceID string, states []dbmodel.Insta
 				return true
 			}
 		case dbmodel.InstanceFailed:
-			if op.State == domain.Failed {
+			if op.State == domain.Failed && (op.Type == internal.OperationTypeProvision || op.Type == internal.OperationTypeDeprovision) {
+				return true
+			}
+		case dbmodel.InstanceError:
+			if op.State == domain.Failed && op.Type != internal.OperationTypeProvision && op.Type != internal.OperationTypeDeprovision {
 				return true
 			}
 		case dbmodel.InstanceProvisioning:
@@ -317,6 +321,10 @@ func (s *instances) matchInstanceState(instanceID string, states []dbmodel.Insta
 			}
 		case dbmodel.InstanceUpgrading:
 			if (op.Type == internal.OperationTypeUpgradeKyma || op.Type == internal.OperationTypeUpgradeCluster) && op.State == domain.InProgress {
+				return true
+			}
+		case dbmodel.InstanceUpdating:
+			if op.Type == internal.OperationTypeUpdate && op.State == domain.InProgress {
 				return true
 			}
 		case dbmodel.InstanceDeprovisioned:

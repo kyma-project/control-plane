@@ -134,7 +134,8 @@ func setRuntimeStateByOperationState(dto *pkg.RuntimeDTO) {
 		}
 	case string(domain.Failed):
 		dto.Status.State = pkg.StateFailed
-		if lastOp.Type == pkg.UpgradeKyma || lastOp.Type == pkg.UpgradeCluster {
+		switch lastOp.Type {
+		case pkg.UpgradeKyma, pkg.UpgradeCluster, pkg.Update:
 			dto.Status.State = pkg.StateError
 		}
 	case string(domain.InProgress):
@@ -145,6 +146,8 @@ func setRuntimeStateByOperationState(dto *pkg.RuntimeDTO) {
 			dto.Status.State = pkg.StateDeprovisioning
 		case pkg.UpgradeKyma, pkg.UpgradeCluster:
 			dto.Status.State = pkg.StateUpgrading
+		case pkg.Update:
+			dto.Status.State = pkg.StateUpdating
 		}
 	}
 }
@@ -192,6 +195,16 @@ func (h *Handler) setRuntimeAllOperations(instance internal.Instance, dto *pkg.R
 	}
 	ucOprs, totalCount = h.takeLastNonDryRunClusterOperations(ucOprs)
 	h.converter.ApplyUpgradingClusterOperations(dto, ucOprs, totalCount)
+
+	uOprs, err := h.operationsDb.ListUpdatingOperationsByInstanceID(instance.InstanceID)
+	if err != nil && !dberr.IsNotFound(err) {
+		return errors.Wrap(err, "while fetching update operation for instance")
+	}
+	totalCount = len(uOprs)
+	if len(uOprs) > numberOfUpgradeOperationsToReturn {
+		uOprs = uOprs[0:numberOfUpgradeOperationsToReturn]
+	}
+	h.converter.ApplyUpdateOperations(dto, uOprs, totalCount)
 
 	return nil
 }
@@ -242,6 +255,13 @@ func (h *Handler) setRuntimeLastOperation(instance internal.Instance, dto *pkg.R
 			return errors.Wrap(err, "while fetching upgrade cluster operation for instance")
 		}
 		h.converter.ApplyUpgradingClusterOperations(dto, []internal.UpgradeClusterOperation{*upgClusterOp}, 1)
+
+	case internal.OperationTypeUpdate:
+		updOp, err := h.operationsDb.GetUpdatingOperationByID(lastOp.ID)
+		if err != nil {
+			return errors.Wrap(err, "while fetching update operation for instance")
+		}
+		h.converter.ApplyUpdateOperations(dto, []internal.UpdatingOperation{*updOp}, 1)
 
 	default:
 		return errors.Errorf("unsupported operation type: %s", lastOp.Type)
@@ -297,12 +317,16 @@ func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {
 				filter.States = append(filter.States, dbmodel.InstanceSucceeded)
 			case pkg.StateFailed:
 				filter.States = append(filter.States, dbmodel.InstanceFailed)
+			case pkg.StateError:
+				filter.States = append(filter.States, dbmodel.InstanceError)
 			case pkg.StateProvisioning:
 				filter.States = append(filter.States, dbmodel.InstanceProvisioning)
 			case pkg.StateDeprovisioning:
 				filter.States = append(filter.States, dbmodel.InstanceDeprovisioning)
 			case pkg.StateUpgrading:
 				filter.States = append(filter.States, dbmodel.InstanceUpgrading)
+			case pkg.StateUpdating:
+				filter.States = append(filter.States, dbmodel.InstanceUpdating)
 			case pkg.StateSuspended:
 				filter.States = append(filter.States, dbmodel.InstanceDeprovisioned)
 			case pkg.AllState:
