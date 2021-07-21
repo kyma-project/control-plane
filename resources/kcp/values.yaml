@@ -9,16 +9,16 @@ global:
       version: "PR-808"
     provisioner:
       dir:
-      version: "PR-805"
+      version: "6c4c534b"
     kyma_environment_broker:
       dir:
-      version: "PR-795"
+      version: "PR-824"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-723"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-723"
+      version: "PR-855"
     subscription_cleanup_job:
       dir:
       version: "PR-568"
@@ -31,7 +31,7 @@ global:
         version: "PR-699"
       e2e_provisioning:
         dir:
-        version: "PR-722"
+        version: "PR-850"
   isLocalEnv: false
   oauth2:
     host: oauth2

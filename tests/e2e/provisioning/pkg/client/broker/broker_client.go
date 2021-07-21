@@ -102,14 +102,14 @@ type provisionParameters struct {
 // ProvisionRuntime requests Runtime provisioning in KEB
 // kymaVersion is optional, if it is empty, the default KEB version will be used
 func (c *Client) ProvisionRuntime(kymaVersion string) (string, error) {
-	c.log.Infof("Provisioning Runtime [instanceID: %s, NAME: %s]", c.instanceID, c.clusterName)
+	c.log.Infof("Provisioning Runtime [instanceID: %s, NAME: %s]", c.InstanceID(), c.ClusterName())
 	requestByte, err := c.prepareProvisionDetails(kymaVersion)
 	if err != nil {
 		return "", errors.Wrap(err, "while preparing provision details")
 	}
 	c.log.Infof("Provisioning parameters: %v", string(requestByte))
 
-	provisionURL := fmt.Sprintf("%s/service_instances/%s", c.baseURL(), c.instanceID)
+	provisionURL := fmt.Sprintf("%s/service_instances/%s", c.baseURL(), c.InstanceID())
 	response := provisionResponse{}
 	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
 		err := c.executeRequest(http.MethodPut, provisionURL, http.StatusAccepted, bytes.NewReader(requestByte), &response)
@@ -133,7 +133,7 @@ func (c *Client) ProvisionRuntime(kymaVersion string) (string, error) {
 
 func (c *Client) DeprovisionRuntime() (string, error) {
 	format := "%s/service_instances/%s?service_id=%s&plan_id=%s"
-	deprovisionURL := fmt.Sprintf(format, c.baseURL(), c.instanceID, kymaClassID, c.brokerConfig.PlanID)
+	deprovisionURL := fmt.Sprintf(format, c.baseURL(), c.InstanceID(), kymaClassID, c.brokerConfig.PlanID)
 
 	response := provisionResponse{}
 	c.log.Infof("Deprovisioning Runtime [ID: %s, NAME: %s]", c.instanceID, c.clusterName)
@@ -180,15 +180,15 @@ func (c *Client) SuspendRuntime() error {
 }
 
 func (c *Client) UnsuspendRuntime() error {
-	c.log.Infof("Unsuspending Runtime [instanceID: %s, NAME: %s]", c.instanceID, c.clusterName)
+	c.log.Infof("Unsuspending Runtime [instanceID: %s, NAME: %s]", c.InstanceID(), c.ClusterName())
 	requestByte, err := c.prepareUpdateDetails(ptr.Bool(true))
 	if err != nil {
 		return errors.Wrap(err, "while preparing update details")
 	}
 	c.log.Infof("Unuspension parameters: %v", string(requestByte))
 
-	format := "%s/service_instances/%s?service_id=%s&plan_id=%s"
-	suspensionURL := fmt.Sprintf(format, c.baseURL(), c.instanceID, kymaClassID, c.brokerConfig.PlanID)
+	format := "%s/service_instances/%s"
+	suspensionURL := fmt.Sprintf(format, c.baseURL(), c.InstanceID())
 
 	unsuspensionResponse := instanceDetailsResponse{}
 	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
@@ -231,9 +231,9 @@ func (c *Client) ClusterName() string {
 }
 
 func (c *Client) AwaitOperationSucceeded(operationID string, timeout time.Duration) error {
-	lastOperationURL := fmt.Sprintf("%s/service_instances/%s/last_operation?operation=%s", c.baseURL(), c.instanceID, operationID)
+	lastOperationURL := fmt.Sprintf("%s/service_instances/%s/last_operation?operation=%s", c.baseURL(), c.InstanceID(), operationID)
 	if operationID == "" {
-		lastOperationURL = fmt.Sprintf("%s/service_instances/%s/last_operation", c.baseURL(), c.instanceID)
+		lastOperationURL = fmt.Sprintf("%s/service_instances/%s/last_operation", c.baseURL(), c.InstanceID())
 	}
 
 	c.log.Infof("Waiting for operation at most %s", timeout.String())
@@ -270,7 +270,7 @@ func (c *Client) AwaitOperationSucceeded(operationID string, timeout time.Durati
 }
 
 func (c *Client) FetchDashboardURL() (string, error) {
-	instanceDetailsURL := fmt.Sprintf("%s/service_instances/%s", c.baseURL(), c.instanceID)
+	instanceDetailsURL := fmt.Sprintf("%s/service_instances/%s", c.baseURL(), c.InstanceID())
 
 	c.log.Info("Fetching the Runtime's dashboard URL")
 	response := instanceDetailsResponse{}
@@ -335,28 +335,20 @@ func (c *Client) prepareProvisionDetails(customVersion string) ([]byte, error) {
 }
 
 func (c *Client) prepareUpdateDetails(active *bool) ([]byte, error) {
-	parameters := provisionParameters{
-		Name: c.clusterName,
-	}
 	ctx := inputContext{
 		TenantID:        "1eba80dd-8ff6-54ee-be4d-77944d17b10b",
 		SubAccountID:    c.subAccountID,
 		GlobalAccountID: c.globalAccountID,
 		Active:          active,
 	}
-	rawParameters, err := json.Marshal(parameters)
-	if err != nil {
-		return nil, errors.Wrap(err, "while marshalling parameters body")
-	}
 	rawContext, err := json.Marshal(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "while marshalling context body")
 	}
 	requestBody := domain.UpdateDetails{
-		ServiceID:     kymaClassID,
-		PlanID:        c.brokerConfig.PlanID,
-		RawParameters: rawParameters,
-		RawContext:    rawContext,
+		ServiceID:  kymaClassID,
+		PlanID:     c.brokerConfig.PlanID,
+		RawContext: rawContext,
 		MaintenanceInfo: &domain.MaintenanceInfo{
 			Version:     "0.1.0",
 			Description: "Kyma environment broker e2e-provisioning test",

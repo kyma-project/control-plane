@@ -44,9 +44,9 @@ func (s *WaitForClusterDeletionStep) TimeLimit() time.Duration {
 	return s.timeLimit
 }
 
-func (s *WaitForClusterDeletionStep) Run(cluster model.Cluster, operation model.Operation, logger logrus.FieldLogger) (operations.StageResult, error) {
+func (s *WaitForClusterDeletionStep) Run(cluster model.Cluster, _ model.Operation, _ logrus.FieldLogger) (operations.StageResult, error) {
 
-	shootExists, err := s.shootExists(cluster.ClusterConfig.Name, logger)
+	shootExists, err := s.shootExists(cluster.ClusterConfig.Name)
 	if err != nil {
 		return operations.StageResult{}, err
 	}
@@ -55,7 +55,7 @@ func (s *WaitForClusterDeletionStep) Run(cluster model.Cluster, operation model.
 		return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
 	}
 
-	err = s.setDeprovisioningFinished(cluster, operation)
+	err = s.setDeprovisioningFinished(cluster)
 	if err != nil {
 		return operations.StageResult{}, err
 	}
@@ -63,7 +63,7 @@ func (s *WaitForClusterDeletionStep) Run(cluster model.Cluster, operation model.
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 }
 
-func (s *WaitForClusterDeletionStep) shootExists(gardenerClusterName string, logger logrus.FieldLogger) (bool, error) {
+func (s *WaitForClusterDeletionStep) shootExists(gardenerClusterName string) (bool, error) {
 	_, err := s.gardenerClient.Get(context.Background(), gardenerClusterName, v1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -75,7 +75,7 @@ func (s *WaitForClusterDeletionStep) shootExists(gardenerClusterName string, log
 	return true, nil
 }
 
-func (s *WaitForClusterDeletionStep) setDeprovisioningFinished(cluster model.Cluster, lastOp model.Operation) error {
+func (s *WaitForClusterDeletionStep) setDeprovisioningFinished(cluster model.Cluster) error {
 	session, dberr := s.dbsFactory.NewSessionWithinTransaction()
 	if dberr != nil {
 		return fmt.Errorf("error starting db session with transaction: %s", dberr.Error())
