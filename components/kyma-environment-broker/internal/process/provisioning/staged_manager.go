@@ -108,12 +108,12 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 	var when time.Duration
 	processedOperation := *operation
 
-	for _, stage := range m.stages {
+	for i, stage := range m.stages {
 		if processedOperation.IsStageFinished(stage.name) {
 			continue
 		}
 
-		for _, step := range stage.steps {
+		for j, step := range stage.steps {
 
 			logStep := logOperation.WithField("step", step.Name()).
 				WithField("stage", stage.name)
@@ -132,6 +132,15 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 			// the step needs a retry
 			if when > 0 {
 				return when, nil
+			}
+
+			// if last step for the last stage finished wihtout issue, set state to domain.Succeeded and publish event
+			if i+1 == len(m.stages) && j+1 == len(stage.steps) {
+				opeartion := processedOperation
+				opeartion.State = domain.Succeeded
+				m.publisher.Publish(context.TODO(), process.ProvisioningSucceeded{
+					Operation: opeartion,
+				})
 			}
 		}
 
