@@ -213,76 +213,82 @@ func (p Process) Start() {
 func (p *Process) execute(identifier int) {
 
 	for {
-		var payload []byte
-		// Pick up a subAccountID to process from queue and mark a Done()
+
+		// Pick up a subAccountID to process from queue and mark as Done()
 		subAccountIDObj, _ := p.Queue.Get()
-		p.Queue.Done(subAccountIDObj)
+		subAccountID := fmt.Sprintf("%v", subAccountIDObj)
 
 		// TODO Implement cleanup holistically in #kyma-project/control-plane/issues/512
 		//if isShuttingDown {
 		//	//p.Cleanup()
 		//	return
 		//}
-		subAccountID := fmt.Sprintf("%v", subAccountIDObj)
-		if strings.TrimSpace(subAccountID) == "" {
-			p.Logger.Warnf("[worker: %d] cannot work with empty subAccountID", identifier)
 
-			// Nothing to do further
-			continue
-		}
-		p.Logger.Debugf("[worker: %d] subaccid: %v is fetched from queue", identifier, subAccountIDObj)
-
-		record, isOldMetricValid, err := p.getRecordWithOldOrNewMetric(identifier, subAccountID)
-		if err != nil {
-			p.Logger.Errorf("[worker: %d] no metric found/generated for subaccount id: %v", identifier, err)
-			// SubAccountID is not trackable anymore as there is no runtime
-			if errors.Is(err, errorSubAccountIDNotTrackable) {
-				p.Logger.Infof("[worker: %d] is not requed subAccountID %s", identifier, subAccountID)
-				continue
-			}
-			p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
-			p.Logger.Debugf("[worker: %d] successfully requed after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
-
-			// Nothing to do further
-			continue
-		}
-
-		// Convert metric to JSON
-		payload, err = json.Marshal(*record.Metric)
-		if err != nil {
-			p.Logger.Errorf("[worker: %d] failed to json.Marshal metric for subaccount id: %v", identifier, err)
-
-			p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
-			p.Logger.Debugf("[worker: %d] successfully requed after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
-
-			// Nothing to do further
-			continue
-		}
-
-		// Send metrics to EDP
-		// Note: EDP refers SubAccountID as tenant
-		p.Logger.Debugf("[worker: %d] sending EventStreamToEDP: tenant: %s payload: %s", identifier, subAccountID, string(payload))
-		err = p.sendEventStreamToEDP(subAccountID, payload)
-		if err != nil {
-			p.Logger.Errorf("[worker: %d] failed to send metric to EDP for subAccountID: %s, event-stream: %s, with err: %v", identifier, subAccountID, string(payload), err)
-
-			p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
-			p.Logger.Debugf("[worker: %d] successfully requed after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
-
-			// Nothing to do further hence continue
-			continue
-		}
-		p.Logger.Infof("[worker: %d] successfully sent event stream for subaccountID: %s, shoot: %s", identifier, subAccountID, record.ShootName)
-
-		if !isOldMetricValid {
-			p.Cache.Set(record.SubAccountID, *record, cache.NoExpiration)
-			p.Logger.Debugf("[worker: %d] successfully saved metric for subAccountID %s", identifier, record.SubAccountID)
-		}
-
-		// Requeue the subAccountID anyway
-		p.Logger.Debugf("[worker: %d] successfully requed after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
-		p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
+		p.processSubAccountID(subAccountID, identifier)
+		p.Queue.Done(subAccountIDObj)
 	}
+}
+
+func (p Process) processSubAccountID(subAccountID string, identifier int) {
+	var payload []byte
+	if strings.TrimSpace(subAccountID) == "" {
+		p.Logger.Warnf("[worker: %d] cannot work with empty subAccountID", identifier)
+
+		// Nothing to do further
+		return
+	}
+	p.Logger.Debugf("[worker: %d] subaccid: %v is fetched from queue", identifier, subAccountID)
+
+	record, isOldMetricValid, err := p.getRecordWithOldOrNewMetric(identifier, subAccountID)
+	if err != nil {
+		p.Logger.Errorf("[worker: %d] no metric found/generated for subaccount id: %v", identifier, err)
+		// SubAccountID is not trackable anymore as there is no runtime
+		if errors.Is(err, errorSubAccountIDNotTrackable) {
+			p.Logger.Infof("[worker: %d] is not requeued subAccountID %s", identifier, subAccountID)
+			return
+		}
+		p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
+		p.Logger.Debugf("[worker: %d] successfully requeued after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
+
+		// Nothing to do further
+		return
+	}
+
+	// Convert metric to JSON
+	payload, err = json.Marshal(*record.Metric)
+	if err != nil {
+		p.Logger.Errorf("[worker: %d] failed to json.Marshal metric for subaccount id: %v", identifier, err)
+
+		p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
+		p.Logger.Debugf("[worker: %d] successfully requeued after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
+
+		// Nothing to do further
+		return
+	}
+
+	// Send metrics to EDP
+	// Note: EDP refers SubAccountID as tenant
+	p.Logger.Debugf("[worker: %d] sending EventStreamToEDP: tenant: %s payload: %s", identifier, subAccountID, string(payload))
+	err = p.sendEventStreamToEDP(subAccountID, payload)
+	if err != nil {
+		p.Logger.Errorf("[worker: %d] failed to send metric to EDP for subAccountID: %s, event-stream: %s, with err: %v", identifier, subAccountID, string(payload), err)
+
+		p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
+		p.Logger.Debugf("[worker: %d] successfully requeued after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
+
+		// Nothing to do further hence continue
+		return
+	}
+	p.Logger.Infof("[worker: %d] successfully sent event stream for subaccountID: %s, shoot: %s", identifier, subAccountID, record.ShootName)
+
+	if !isOldMetricValid {
+		p.Cache.Set(record.SubAccountID, *record, cache.NoExpiration)
+		p.Logger.Debugf("[worker: %d] successfully saved metric for subAccountID %s", identifier, record.SubAccountID)
+	}
+
+	// Requeue the subAccountID anyway
+	p.Logger.Debugf("[worker: %d] successfully requeued after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
+	p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
 }
 
 // getRecordWithOldOrNewMetric generates new metric or fetches the old metric along with a bool flag which
