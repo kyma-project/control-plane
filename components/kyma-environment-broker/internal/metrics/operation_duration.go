@@ -54,6 +54,10 @@ func (c *OperationDurationCollector) OnProvisioningStepProcessed(ctx context.Con
 
 	op := stepProcessed.Operation
 	pp := op.ProvisioningParameters
+
+	fmt.Printf("ProvisionDuration state check: stepProcessed.OldOperation.State: %s, stepProcessed.Operation.State: %s",
+		stepProcessed.OldOperation.State, stepProcessed.Operation.State)
+
 	if stepProcessed.OldOperation.State == domain.InProgress && op.State == domain.Succeeded {
 		minutes := op.UpdatedAt.Sub(op.CreatedAt).Minutes()
 		c.provisioningHistogram.
