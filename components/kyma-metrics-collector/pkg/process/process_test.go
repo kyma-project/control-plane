@@ -247,8 +247,8 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		g.Expect(err).Should(gomega.BeNil())
 
 		for _, failedID := range provisionedAndDeprovisionedSubAccIDs {
-			skrRuntime := kmctesting.NewRuntimesDTO(failedID, fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)), kmctesting.WithProvisionedAndDeprovisionedState)
-			runtimesPage.Data = append(runtimesPage.Data, skrRuntime)
+			rntme := kmctesting.NewRuntimesDTO(failedID, fmt.Sprintf("shoot-%s", kmctesting.GenerateRandomAlphaString(5)), kmctesting.WithProvisionedAndDeprovisionedState)
+			runtimesPage.Data = append(runtimesPage.Data, rntme)
 		}
 
 		p.populateCacheAndQueue(runtimesPage)
@@ -280,8 +280,8 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		err = expectedCache.Add(subAccID, newRecord, gocache.NoExpiration)
 		g.Expect(err).Should(gomega.BeNil())
 
-		skrRuntime := kmctesting.NewRuntimesDTO(subAccID, newShootName, kmctesting.WithSucceededState)
-		runtimesPage.Data = append(runtimesPage.Data, skrRuntime)
+		rntme := kmctesting.NewRuntimesDTO(subAccID, newShootName, kmctesting.WithSucceededState)
+		runtimesPage.Data = append(runtimesPage.Data, rntme)
 
 		p.populateCacheAndQueue(runtimesPage)
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
@@ -336,8 +336,8 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		expectedQueue := workqueue.NewDelayingQueue()
 		expectedCache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
 
-		skrRuntime := kmctesting.NewRuntimesDTO(subAccID, oldShootName, kmctesting.WithProvisionedAndDeprovisionedState)
-		runtimesPage.Data = append(runtimesPage.Data, skrRuntime)
+		rntme := kmctesting.NewRuntimesDTO(subAccID, oldShootName, kmctesting.WithProvisionedAndDeprovisionedState)
+		runtimesPage.Data = append(runtimesPage.Data, rntme)
 
 		// expected cache changes after deprovisioning
 		p.populateCacheAndQueue(runtimesPage)
@@ -355,7 +355,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		err = expectedCache.Add(subAccID, newRecord, gocache.NoExpiration)
 		g.Expect(err).Should(gomega.BeNil())
 
-		runtimesPage.Data = []kebruntime.RuntimeDTO{skrRuntime}
+		runtimesPage.Data = []kebruntime.RuntimeDTO{rntme}
 		p.populateCacheAndQueue(skrRuntimesPageWithProvisioning)
 		g.Expect(*p.Cache).To(gomega.Equal(*expectedCache))
 		gotSubAccID, _ := p.Queue.Get()
