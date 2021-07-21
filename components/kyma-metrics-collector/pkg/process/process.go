@@ -348,7 +348,7 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 			continue
 		}
 		validSubAccounts[runtime.SubAccountID] = true
-		recordObj, isFound := p.Cache.Get(runtime.SubAccountID)
+		recordObj, isFoundInCache := p.Cache.Get(runtime.SubAccountID)
 		if isClusterTrackable(&runtime) {
 			newRecord := kmccache.Record{
 				SubAccountID: runtime.SubAccountID,
@@ -356,7 +356,7 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 				KubeConfig:   "",
 				Metric:       nil,
 			}
-			if !isFound {
+			if !isFoundInCache {
 				err := p.Cache.Add(runtime.SubAccountID, newRecord, cache.NoExpiration)
 				if err != nil {
 					p.Logger.Errorf("failed to add subAccountID: %v to cache hence skipping queueing it", err)
@@ -376,14 +376,15 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 					p.Logger.Debugf("Resetted the values in cache: %v", runtime.SubAccountID)
 				}
 			}
-		} else {
-			if isFound {
-				p.Cache.Delete(runtime.SubAccountID)
-				p.Logger.Debugf("Deleted subAccountID: %v from cache", runtime.SubAccountID)
-				continue
-			}
-			p.Logger.Debugf("Ignoring SubAccountID: %v, as it is not trackable", runtime.SubAccountID)
+			continue
 		}
+		if isFoundInCache {
+			// Cluster is not trackable but is found in cache should be deleted
+			p.Cache.Delete(runtime.SubAccountID)
+			p.Logger.Debugf("Deleted subAccountID: %v from cache", runtime.SubAccountID)
+			continue
+		}
+		p.Logger.Debugf("Ignoring SubAccountID: %v, as it is not trackable", runtime.SubAccountID)
 	}
 
 	// Cleaning up subAccounts from the cache which are not returned by KEB anymore
