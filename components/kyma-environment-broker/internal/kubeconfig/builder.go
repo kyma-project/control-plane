@@ -12,8 +12,9 @@ import (
 )
 
 type Config struct {
-	IssuerURL string
-	ClientID  string
+	IssuerURL    string
+	ClientID     string
+	AllowOrigins string
 }
 
 type Builder struct {

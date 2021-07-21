@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+{{ include "kyma-metrics-collector.labels" . | indent 4 }}
+  name: {{ include "kyma-metrics-collector.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+   - port: http
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+{{ include "kyma-metrics-collector.labels" . | indent 8 }}

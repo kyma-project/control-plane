@@ -6,7 +6,12 @@
       "type": "string",
       "title": "Cluster Name",
       "minLength": 1,
-      "pattern": "^[a-zA-Z0-9-]*$"
+      "pattern": "^[a-zA-Z0-9-]*$",
+      "_BTPdefaultTemplate": {
+        "elements": [
+          "saSubdomain"
+        ]
+      }
     },
     "region": {
       "type": "string",
@@ -27,7 +32,7 @@
       "type": "integer",
       "description": "Specifies the maximum number of virtual machines to create",
       "minimum": 4,
-      "maximum": 10,
+      "maximum": 40,
       "default": 10
     },
     "zonesCount": {

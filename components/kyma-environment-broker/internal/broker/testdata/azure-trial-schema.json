@@ -6,7 +6,12 @@
       "type": "string",
       "title": "Cluster Name",
       "minLength": 1,
-      "pattern": "^[a-zA-Z0-9-]*$"
+      "pattern": "^[a-zA-Z0-9-]*$",
+      "_BTPdefaultTemplate": {
+        "elements": [
+          "saSubdomain"
+        ]
+      }
     }
   },
   "required": [

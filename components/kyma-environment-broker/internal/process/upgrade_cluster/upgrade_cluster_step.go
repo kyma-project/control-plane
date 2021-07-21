@@ -135,6 +135,7 @@ func gardenerUpgradeInputToConfigInput(input gqlschema.UpgradeShootInput) *gqlsc
 		DiskType:            input.GardenerConfig.DiskType,
 		VolumeSizeGb:        input.GardenerConfig.VolumeSizeGb,
 		Purpose:             input.GardenerConfig.Purpose,
+		OidcConfig:          input.GardenerConfig.OidcConfig,
 	}
 	if input.GardenerConfig.KubernetesVersion != nil {
 		result.KubernetesVersion = *input.GardenerConfig.KubernetesVersion

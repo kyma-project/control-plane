@@ -29,6 +29,7 @@ type Operations interface {
 	Deprovisioning
 	UpgradeKyma
 	UpgradeCluster
+	Updating
 
 	GetLastOperation(instanceID string) (*internal.Operation, error)
 	GetOperationByID(operationID string) (*internal.Operation, error)
@@ -85,4 +86,10 @@ type UpgradeCluster interface {
 	GetUpgradeClusterOperationByID(operationID string) (*internal.UpgradeClusterOperation, error)
 	ListUpgradeClusterOperationsByInstanceID(instanceID string) ([]internal.UpgradeClusterOperation, error)
 	ListUpgradeClusterOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeClusterOperation, int, int, error)
+}
+
+type Updating interface {
+	InsertUpdatingOperation(operation internal.UpdatingOperation) error
+	GetUpdatingOperationByID(operationID string) (*internal.UpdatingOperation, error)
+	UpdateUpdatingOperation(operation internal.UpdatingOperation) (*internal.UpdatingOperation, error)
 }

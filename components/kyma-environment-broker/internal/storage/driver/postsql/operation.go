@@ -662,6 +662,81 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 	return ret, count, totalCount, nil
 }
 
+func (s *operations) InsertUpdatingOperation(operation internal.UpdatingOperation) error {
+	session := s.NewWriteSession()
+	dto, err := s.updateOperationToDTO(&operation)
+	if err != nil {
+		return errors.Wrapf(err, "while converting update operation (id: %s)", operation.Operation.ID)
+	}
+	var lastErr error
+	_ = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		lastErr = session.InsertOperation(dto)
+		if lastErr != nil {
+			log.Errorf("while insert operation: %v", err)
+			return false, nil
+		}
+
+		return true, nil
+	})
+	return lastErr
+}
+
+func (s *operations) GetUpdatingOperationByID(operationID string) (*internal.UpdatingOperation, error) {
+	session := s.NewReadSession()
+	operation := dbmodel.OperationDTO{}
+	var lastErr error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		operation, lastErr = session.GetOperationByID(operationID)
+		if lastErr != nil {
+			if dberr.IsNotFound(lastErr) {
+				lastErr = dberr.NotFound("Operation with id %s not exist", operationID)
+				return false, lastErr
+			}
+			log.Errorf("while reading operation from the storage: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting operation by ID")
+	}
+	ret, err := s.toUpdateOperation(&operation)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting DTO to Operation")
+	}
+
+	return ret, nil
+}
+
+func (s *operations) UpdateUpdatingOperation(operation internal.UpdatingOperation) (*internal.UpdatingOperation, error) {
+	session := s.NewWriteSession()
+	operation.UpdatedAt = time.Now()
+	dto, err := s.updateOperationToDTO(&operation)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting Operation to DTO")
+	}
+
+	var lastErr error
+	_ = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		lastErr = session.UpdateOperation(dto)
+		if lastErr != nil && dberr.IsNotFound(lastErr) {
+			_, lastErr = s.NewReadSession().GetOperationByID(operation.Operation.ID)
+			if lastErr != nil {
+				log.Errorf("while getting operation: %v", lastErr)
+				return false, nil
+			}
+
+			// the operation exists but the version is different
+			lastErr = dberr.Conflict("operation update conflict, operation ID: %s", operation.Operation.ID)
+			log.Warn(lastErr.Error())
+			return false, lastErr
+		}
+		return true, nil
+	})
+	operation.Version = operation.Version + 1
+	return &operation, lastErr
+}
+
 // InsertUpgradeClusterOperation insert new UpgradeClusterOperation to storage
 func (s *operations) InsertUpgradeClusterOperation(operation internal.UpgradeClusterOperation) error {
 	session := s.NewWriteSession()
@@ -1071,4 +1146,38 @@ func (s *operations) upgradeClusterOperationToDTO(op *internal.UpgradeClusterOpe
 	ret.Type = internal.OperationTypeUpgradeCluster
 	ret.OrchestrationID = storage.StringToSQLNullString(op.OrchestrationID)
 	return ret, nil
+}
+
+func (s *operations) updateOperationToDTO(op *internal.UpdatingOperation) (dbmodel.OperationDTO, error) {
+	serialized, err := json.Marshal(op)
+	if err != nil {
+		return dbmodel.OperationDTO{}, errors.Wrapf(err, "while serializing update data %v", op)
+	}
+
+	ret, err := s.operationToDB(op.Operation)
+	if err != nil {
+		return dbmodel.OperationDTO{}, errors.Wrapf(err, "while converting to operationDB %v", op)
+	}
+	ret.Data = string(serialized)
+	ret.Type = internal.OperationTypeUpdate
+	ret.OrchestrationID = storage.StringToSQLNullString(op.OrchestrationID)
+	return ret, nil
+}
+
+func (s *operations) toUpdateOperation(op *dbmodel.OperationDTO) (*internal.UpdatingOperation, error) {
+	if op.Type != internal.OperationTypeUpdate {
+		return nil, errors.New(fmt.Sprintf("expected operation type update, but was %s", op.Type))
+	}
+	var operation internal.UpdatingOperation
+	var err error
+	err = json.Unmarshal([]byte(op.Data), &operation)
+	if err != nil {
+		return nil, errors.New("unable to unmarshall provisioning data")
+	}
+	operation.Operation, err = s.toOperation(op, operation.InstanceDetails)
+	if err != nil {
+		return nil, err
+	}
+
+	return &operation, nil
 }

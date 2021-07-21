@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"github.com/Peripli/service-manager-cli/pkg/types"
@@ -118,15 +119,17 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	componentListProvider := &automock.ComponentListProvider{}
 	componentListProvider.On("AllComponents", mock.Anything).Return([]v1alpha1.KymaComponent{}, nil)
 
+	oidcDefaults := fixture.FixOIDCConfigDTO()
+
 	kymaVer := "1.15.1"
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
 		MachineImageVersion:         "coreos",
 		KubernetesVersion:           "1.18",
 		MachineImage:                "253",
-		Timeout:                     time.Minute,
+		ProvisioningTimeout:         time.Minute,
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-	}, kymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders)
+	}, kymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, oidcDefaults)
 	require.NoError(t, err)
 
 	ctx, _ := context.WithTimeout(context.Background(), 20*time.Minute)
@@ -191,6 +194,7 @@ type RuntimeOptions struct {
 	Provider         internal.CloudProvider
 	KymaVersion      string
 	OverridesVersion string
+	OIDC             *internal.OIDCConfigDTO
 }
 
 func (o *RuntimeOptions) ProvideGlobalAccountID() string {
@@ -236,6 +240,14 @@ func (o *RuntimeOptions) ProvidePlanID() string {
 
 func (o *RuntimeOptions) ProvideZonesCount() *int {
 	return o.ZonesCount
+}
+
+func (o *RuntimeOptions) ProvideOIDC() *internal.OIDCConfigDTO {
+	if o.OIDC != nil {
+		return o.OIDC
+	} else {
+		return nil
+	}
 }
 
 func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) string {
@@ -442,14 +454,16 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	componentListProvider := &automock.ComponentListProvider{}
 	componentListProvider.On("AllComponents", mock.Anything).Return([]v1alpha1.KymaComponent{}, nil)
 
+	oidcDefaults := fixture.FixOIDCConfigDTO()
+
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
 		MachineImageVersion:         "coreos",
 		KubernetesVersion:           "1.18",
 		MachineImage:                "253",
-		Timeout:                     time.Minute,
+		ProvisioningTimeout:         time.Minute,
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders)
+	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, oidcDefaults)
 
 	require.NoError(t, err)
 
@@ -489,8 +503,6 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	directorClient := director.NewFakeClient()
 
 	eventBroker := event.NewPubSub(logs)
-
-	// switch to StagedManager when the feature is enabled
 
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
@@ -534,6 +546,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 			ZonesCount:       options.ProvideZonesCount(),
 			KymaVersion:      options.KymaVersion,
 			OverridesVersion: options.OverridesVersion,
+			OIDC:             options.ProvideOIDC(),
 		},
 	}
 
@@ -770,6 +783,12 @@ func (s *ProvisioningSuite) AssertSubscription(shared bool, ht hyperscaler.Type)
 	}
 }
 
+func (s *ProvisioningSuite) AssertOIDC(oidcConfig gqlschema.OIDCConfigInput) {
+	input := s.fetchProvisionInput()
+
+	assert.Equal(s.t, &oidcConfig, input.ClusterConfig.GardenerConfig.OidcConfig)
+}
+
 func regularSubscription(ht hyperscaler.Type) string {
 	return fmt.Sprintf("regular-%s", ht)
 }
@@ -791,8 +810,9 @@ func fixConfig() *Config {
 		DevelopmentMode:                    true,
 		DumpProvisionerRequests:            true,
 		OperationTimeout:                   2 * time.Minute,
-		Provisioning: input.Config{
-			Timeout: 2 * time.Minute,
+		Provisioner: input.Config{
+			ProvisioningTimeout:   2 * time.Minute,
+			DeprovisioningTimeout: 2 * time.Minute,
 		},
 		Director: director.Config{},
 		Database: storage.Config{
@@ -800,8 +820,10 @@ func fixConfig() *Config {
 		},
 		KymaVersion:           "1.21",
 		EnableOnDemandVersion: true,
-		Broker:                broker.Config{},
-		Avs:                   avs.Config{},
+		Broker: broker.Config{
+			EnablePlans: []string{"azure", "trial"},
+		},
+		Avs: avs.Config{},
 		IAS: ias.Config{
 			IdentityProvider: ias.FakeIdentityProviderName,
 		},
@@ -812,7 +834,8 @@ func fixConfig() *Config {
 			Tenant:        "fooTen",
 			EnableSeqHttp: true,
 		},
-		FreemiumProviders: []string{"aws", "azure"},
+		FreemiumProviders:       []string{"aws", "azure"},
+		UpdateProcessingEnabled: true,
 	}
 }
 

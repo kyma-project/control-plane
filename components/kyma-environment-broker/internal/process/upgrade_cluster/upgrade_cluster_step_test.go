@@ -43,6 +43,14 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 			KubernetesVersion:   ptr.String(fixKubernetesVersion),
 			MachineImage:        ptr.String(fixMachineImage),
 			MachineImageVersion: ptr.String(fixMachineImageVersion),
+			OidcConfig: &gqlschema.OIDCConfigInput{
+				ClientID:       "",
+				GroupsClaim:    "",
+				IssuerURL:      "",
+				SigningAlgs:    nil,
+				UsernameClaim:  "",
+				UsernamePrefix: "",
+			},
 		},
 	}).Return(gqlschema.OperationStatus{
 		ID:        StringPtr(fixProvisionerOperationID),
@@ -104,7 +112,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 		MachineImage:        fixMachineImage,
 		MachineImageVersion: fixMachineImageVersion,
 		TrialNodesNumber:    1,
-	}, fixKymaVersion, nil, nil)
+	}, fixKymaVersion, nil, nil, fixture.FixOIDCConfigDTO())
 	require.NoError(t, err, "Input factory creation error")
 
 	creator, err := ibf.CreateUpgradeShootInput(fixProvisioningParameters())

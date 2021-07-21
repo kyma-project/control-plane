@@ -207,6 +207,23 @@ func FixProvisioningOperation(operationId, instanceId string) internal.Provision
 	}
 }
 
+func FixUpdatingOperation(operationId, instanceId string) internal.UpdatingOperation {
+	return internal.UpdatingOperation{
+		Operation:    FixOperation(operationId, instanceId, internal.OperationTypeUpdate),
+		InputCreator: FixInputCreator(internal.Azure),
+		UpdatingParameters: internal.UpdatingParametersDTO{
+			OIDC: &internal.OIDCConfigDTO{
+				ClientID:       "clinet-id-oidc",
+				GroupsClaim:    "groups",
+				IssuerURL:      "issuer-url",
+				SigningAlgs:    []string{"signingAlgs"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "",
+			},
+		},
+	}
+}
+
 func FixProvisioningOperationWithProvider(operationId, instanceId string, provider internal.CloudProvider) internal.ProvisioningOperation {
 	return internal.ProvisioningOperation{
 		Operation: FixOperation(operationId, instanceId, internal.OperationTypeProvision),
@@ -282,6 +299,17 @@ func FixOrchestration(id string) internal.Orchestration {
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now().Add(time.Hour * 1),
 		Parameters:      orchestration.Parameters{},
+	}
+}
+
+func FixOIDCConfigDTO() internal.OIDCConfigDTO {
+	return internal.OIDCConfigDTO{
+		ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb7dec9",
+		GroupsClaim:    "groups",
+		IssuerURL:      "https://kymatest.accounts400.ondemand.com",
+		SigningAlgs:    []string{"RS256"},
+		UsernameClaim:  "sub",
+		UsernamePrefix: "-",
 	}
 }
 

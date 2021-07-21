@@ -58,12 +58,16 @@ spec:
               value: "{{ .Values.enableKubeconfigURLLabel }}"
             - name: APP_OPERATION_TIMEOUT
               value: "{{ .Values.broker.operationTimeout }}"
-            - name: APP_PROVISIONING_URL
+            - name: APP_PROVISIONER_URL
               value: "{{ .Values.provisioner.URL }}"
-            - name: APP_PROVISIONING_TIMEOUT
-              value: "{{ .Values.provisioner.timeout }}"
-            - name: APP_PROVISIONING_DEFAULT_GARDENER_SHOOT_PURPOSE
+            - name: APP_PROVISIONER_PROVISIONING_TIMEOUT
+              value: "{{ .Values.provisioner.provisioningTimeout }}"
+            - name: APP_PROVISIONER_DEPROVISIONING_TIMEOUT
+              value: "{{ .Values.provisioner.deprovisioningTimeout }}"
+            - name: APP_PROVISIONER_DEFAULT_GARDENER_SHOOT_PURPOSE
               value: "{{ .Values.gardener.defaultShootPurpose }}"
+            - name: APP_PROVISIONER_DEFAULT_TRIAL_PROVIDER
+              value: "{{ .Values.gardener.defaultTrialProvider }}"
             - name: APP_PORT
               value: "{{ .Values.broker.port }}"
             - name: APP_STATUS_PORT
@@ -310,13 +314,15 @@ spec:
               value: {{ .Values.kubeconfig.issuerURL }}
             - name: APP_KUBECONFIG_CLIENT_ID
               value: {{ .Values.kubeconfig.clientID }}
-            - name: APP_PROVISIONING_KUBERNETES_VERSION
+            - name: APP_KUBECONFIG_ALLOW_ORIGINS
+              value: "{{ .Values.kubeconfig.allowOrigins }}"
+            - name: APP_PROVISIONER_KUBERNETES_VERSION
               value: {{ .Values.gardener.kubernetesVersion }}
-            - name: APP_PROVISIONING_MACHINE_IMAGE
+            - name: APP_PROVISIONER_MACHINE_IMAGE
               value: {{ .Values.gardener.machineImage }}
-            - name: APP_PROVISIONING_MACHINE_IMAGE_VERSION
+            - name: APP_PROVISIONER_MACHINE_IMAGE_VERSION
               value: {{ .Values.gardener.machineImageVersion }}
-            - name: APP_PROVISIONING_TRIAL_NODES_NUMBER
+            - name: APP_PROVISIONER_TRIAL_NODES_NUMBER
               value: "{{ .Values.gardener.trialNodesNumber }}"
             - name: APP_DEFAULT_REQUEST_REGION
               value: "{{ .Values.broker.defaultRequestRegion }}"
@@ -352,6 +358,8 @@ spec:
               value: "kyma-versions"
             - name: APP_DOMAIN_NAME
               value: "{{ .Values.global.ingress.domainName }}"
+            - name: APP_SKR_OIDC_DEFAULT_VALUES_YAML_FILE_PATH
+              value: /config/skrOIDCDefaultValues.yaml
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

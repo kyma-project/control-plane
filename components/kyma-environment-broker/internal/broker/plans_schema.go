@@ -13,12 +13,12 @@ type RootSchema struct {
 }
 
 type ProvisioningProperties struct {
-	Name          Type  `json:"name"`
-	Region        *Type `json:"region,omitempty"`
-	MachineType   *Type `json:"machineType,omitempty"`
-	AutoScalerMin *Type `json:"autoScalerMin,omitempty"`
-	AutoScalerMax *Type `json:"autoScalerMax,omitempty"`
-	ZonesCount    *Type `json:"zonesCount,omitempty"`
+	Name          NameType `json:"name"`
+	Region        *Type    `json:"region,omitempty"`
+	MachineType   *Type    `json:"machineType,omitempty"`
+	AutoScalerMin *Type    `json:"autoScalerMin,omitempty"`
+	AutoScalerMax *Type    `json:"autoScalerMax,omitempty"`
+	ZonesCount    *Type    `json:"zonesCount,omitempty"`
 
 	//OIDC OIDCType `json:"oidc,omitempty"`
 }
@@ -58,13 +58,28 @@ type Type struct {
 	UniqueItems     *bool         `json:"uniqueItems,omitempty"`
 }
 
-func NameProperty() Type {
-	return Type{
-		Type:  "string",
-		Title: "Cluster Name",
-		// Allows for all alphanumeric characters, '_', and '-'
-		Pattern:   "^[a-zA-Z0-9-]*$",
-		MinLength: 1,
+type NameType struct {
+	Type
+	BTPdefaultTemplate BTPdefaultTemplate `json:"_BTPdefaultTemplate,omitempty"`
+}
+
+type BTPdefaultTemplate struct {
+	Elements  []string `json:"elements,omitempty"`
+	Separator string   `json:"separator,omitempty"`
+}
+
+func NameProperty() NameType {
+	return NameType{
+		Type: Type{
+			Type:  "string",
+			Title: "Cluster Name",
+			// Allows for all alphanumeric characters, '_', and '-'
+			Pattern:   "^[a-zA-Z0-9-]*$",
+			MinLength: 1,
+		},
+		BTPdefaultTemplate: BTPdefaultTemplate{
+			Elements: []string{"saSubdomain"},
+		},
 	}
 }
 
@@ -104,15 +119,14 @@ func NewOIDCSchema() OIDCType {
 		Properties: OIDCProperties{
 			ClientID:       Type{Type: "string", Description: "The client ID for the OpenID Connect client."},
 			IssuerURL:      Type{Type: "string", Description: "The URL of the OpenID issuer, only HTTPS scheme will be accepted."},
-			GroupsClaim:    Type{Type: "string", Default: "groups", Description: "If provided, the name of a custom OpenID Connect claim for specifying user groups."},
-			UsernameClaim:  Type{Type: "string", Default: "sub", Description: "The OpenID claim to use as the user name."},
-			UsernamePrefix: Type{Type: "string", Default: "-", Description: "If provided, all usernames will be prefixed with this value. If not provided, username claims other than 'email' are prefixed by the issuer URL to avoid clashes. To skip any prefixing, provide the value '-'."},
+			GroupsClaim:    Type{Type: "string", Description: "If provided, the name of a custom OpenID Connect claim for specifying user groups."},
+			UsernameClaim:  Type{Type: "string", Description: "The OpenID claim to use as the user name."},
+			UsernamePrefix: Type{Type: "string", Description: "If provided, all usernames will be prefixed with this value. If not provided, username claims other than 'email' are prefixed by the issuer URL to avoid clashes. To skip any prefixing, provide the value '-'."},
 			SigningAlgs: Type{
 				Type: "array",
 				Items: []Type{{
 					Type: "string",
 				}},
-				Default:     []string{"RS256"},
 				Description: "List of allowed JOSE asymmetric signing algorithms.",
 			},
 		},

@@ -86,3 +86,13 @@ keb:
   retryCount: "5"
   pollWaitDuration: "10m"
   runtimesPath: "runtimes"
+
+  ## Prometheusrule configurations
+prometheus:
+  namespace: kyma-system
+  labels:
+    ## Prometheus expects the following labels in the PrometheusRules to consider it
+    app: monitoring
+    release: monitoring
+  rules:
+    enabled: false

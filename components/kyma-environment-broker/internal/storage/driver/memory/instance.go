@@ -154,6 +154,14 @@ func (s *instances) GetByID(instanceID string) (*internal.Instance, error) {
 		return nil, dberr.NotFound("instance with id %s not exist", instanceID)
 	}
 
+	op, err := s.operationsStorage.GetLastOperation(instanceID)
+	if err != nil {
+		if dberr.IsNotFound(err) {
+			return &inst, nil
+		}
+		return nil, err
+	}
+	inst.InstanceDetails = op.InstanceDetails
 	return &inst, nil
 }
 

@@ -156,9 +156,7 @@ func AWSHASchema(machineTypes []string) []byte {
 	properties.AutoScalerMin.Default = 4
 	properties.AutoScalerMin.Minimum = 4
 
-	properties.AutoScalerMax.Default = 10
 	properties.AutoScalerMax.Minimum = 4
-	properties.AutoScalerMax.Maximum = 10
 
 	bytes, err := json.Marshal(schema)
 	if err != nil {
@@ -235,9 +233,7 @@ func AzureHASchema(machineTypes []string) []byte {
 	properties.AutoScalerMin.Default = 4
 	properties.AutoScalerMin.Minimum = 4
 
-	properties.AutoScalerMax.Default = 10
 	properties.AutoScalerMax.Minimum = 4
-	properties.AutoScalerMax.Maximum = 40
 
 	bytes, err := json.Marshal(schema)
 	if err != nil {
@@ -282,7 +278,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 					},
 				},
 			},
-			provisioningRawSchema: AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m4.16xlarge"}),
+			provisioningRawSchema: AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"}),
 		},
 		AWSHAPlanID: {
 			PlanDefinition: domain.ServicePlan{
@@ -446,6 +442,15 @@ func IsTrialPlan(planID string) bool {
 func IsAzurePlan(planID string) bool {
 	switch planID {
 	case AzurePlanID, AzureLitePlanID:
+		return true
+	default:
+		return false
+	}
+}
+
+func IsFreemiumPlan(planID string) bool {
+	switch planID {
+	case FreemiumPlanID:
 		return true
 	default:
 		return false
