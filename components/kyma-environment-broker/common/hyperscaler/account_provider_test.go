@@ -12,7 +12,7 @@ import (
 	machineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestGardenerCredentials(t *testing.T) {
+func TestGardenerSecretName(t *testing.T) {
 	t.Run("should return error if account pool is not configured", func(t *testing.T) {
 		//given
 		accountProvider := NewAccountProvider(nil, nil)
@@ -87,7 +87,7 @@ func TestGardenerCredentials(t *testing.T) {
 	})
 }
 
-func TestGardenerSharedCredentials(t *testing.T) {
+func TestGardenerSharedSecretName(t *testing.T) {
 	t.Run("should return error if shared account pool is not configured", func(t *testing.T) {
 		//given
 		accountProvider := NewAccountProvider(nil, nil)

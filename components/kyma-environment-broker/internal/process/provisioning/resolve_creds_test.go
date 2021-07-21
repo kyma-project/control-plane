@@ -85,11 +85,7 @@ func TestResolveCredentialsStepHappyPathTrialGivenProvider_Run(t *testing.T) {
 	assert.NoError(t, err)
 
 	accountProviderMock := &hyperscalerMocks.AccountProvider{}
-	accountProviderMock.On("GardenerSharedSecretName", hyperscaler.GCP).Return(hyperscaler.Credentials{
-		Name:            "gardener-secret-gcp",
-		HyperscalerType: "gcp",
-		CredentialData:  map[string][]byte{},
-	}, nil)
+	accountProviderMock.On("GardenerSharedSecretName", hyperscaler.GCP).Return("gardener-secret-gcp", nil)
 
 	step := NewResolveCredentialsStep(memoryStorage.Operations(), accountProviderMock)
 

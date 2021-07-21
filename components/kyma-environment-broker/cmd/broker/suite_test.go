@@ -160,7 +160,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, hyperscaler.NewAccountProvider(nil, nil, nil), nil, inMemoryFs, logs)
+		&cfg, hyperscaler.NewAccountProvider(nil, nil), nil, inMemoryFs, logs)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
@@ -842,31 +842,11 @@ func fixConfig() *Config {
 func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 	accountProvider := hyperscalerautomock.AccountProvider{}
 
-	accountProvider.On("GardenerCredentials", mock.Anything, mock.Anything).Return(func(ht hyperscaler.Type, tn string) hyperscaler.Credentials {
-		return hyperscaler.Credentials{
-			HyperscalerType: hyperscaler.Azure,
-			CredentialData: map[string][]byte{
-				"subscriptionID": []byte("subscriptionID"),
-				"clientID":       []byte("clientID"),
-				"clientSecret":   []byte("clientSecret"),
-				"tenantID":       []byte("tenantID"),
-			},
-			Name: regularSubscription(ht),
-		}
-	}, nil)
+	accountProvider.On("GardenerSecretName", mock.Anything, mock.Anything).Return(
+		func(ht hyperscaler.Type, tn string) string { return regularSubscription(ht) }, nil)
 
-	accountProvider.On("GardenerSharedCredentials", hyperscaler.Azure).Return(func(ht hyperscaler.Type) hyperscaler.Credentials {
-		return hyperscaler.Credentials{
-			HyperscalerType: hyperscaler.Azure,
-			CredentialData: map[string][]byte{
-				"subscriptionID": []byte("subscriptionID"),
-				"clientID":       []byte("clientID"),
-				"clientSecret":   []byte("clientSecret"),
-				"tenantID":       []byte("tenantID"),
-			},
-			Name: sharedSubscription(ht),
-		}
-	}, nil)
+	accountProvider.On("GardenerSharedSecretName", hyperscaler.Azure).Return(
+		func(ht hyperscaler.Type) string { return sharedSubscription(ht) }, nil)
 
 	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.Azure, mock.Anything).Return(nil)
 	return &accountProvider
