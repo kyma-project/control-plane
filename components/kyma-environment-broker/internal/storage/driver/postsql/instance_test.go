@@ -424,7 +424,8 @@ func TestInstance(t *testing.T) {
 		inst1 := fixInstance(instanceData{val: "inst1"})
 		inst2 := fixInstance(instanceData{val: "inst2"})
 		inst3 := fixInstance(instanceData{val: "inst3"})
-		fixInstances := []internal.Instance{*inst1, *inst2, *inst3}
+		inst4 := fixInstance(instanceData{val: "inst4"})
+		fixInstances := []internal.Instance{*inst1, *inst2, *inst3, *inst4}
 
 		for _, i := range fixInstances {
 			err = brokerStorage.Instances().Insert(i)
@@ -437,7 +438,7 @@ func TestInstance(t *testing.T) {
 		err = brokerStorage.Operations().InsertProvisioningOperation(provOp1)
 		require.NoError(t, err)
 
-		// inst2 is in failed state
+		// inst2 is in error state
 		provOp2 := fixProvisionOperation("inst2")
 		provOp2.State = domain.Succeeded
 		err = brokerStorage.Operations().InsertProvisioningOperation(provOp2)
@@ -465,6 +466,12 @@ func TestInstance(t *testing.T) {
 		err = brokerStorage.Operations().InsertDeprovisioningOperation(deprovOp3)
 		require.NoError(t, err)
 
+		// inst4 is in failed state
+		provOp4 := fixProvisionOperation("inst4")
+		provOp4.State = domain.Failed
+		err = brokerStorage.Operations().InsertProvisioningOperation(provOp4)
+		require.NoError(t, err)
+
 		// when
 		out, count, totalCount, err := brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceSucceeded}})
 
@@ -475,7 +482,7 @@ func TestInstance(t *testing.T) {
 		require.Equal(t, inst1.InstanceID, out[0].InstanceID)
 
 		// when
-		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceFailed}})
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceError}})
 
 		// then
 		require.NoError(t, err)
@@ -497,10 +504,19 @@ func TestInstance(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		require.Equal(t, 2, count)
-		require.Equal(t, 2, totalCount)
+		require.Equal(t, 3, count)
+		require.Equal(t, 3, totalCount)
 		require.NotEqual(t, inst3.InstanceID, out[0].InstanceID)
 		require.NotEqual(t, inst3.InstanceID, out[1].InstanceID)
+		require.NotEqual(t, inst3.InstanceID, out[2].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceFailed}})
+
+		// then
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+		require.Equal(t, inst4.InstanceID, out[0].InstanceID)
 	})
 }
 

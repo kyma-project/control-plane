@@ -13,6 +13,7 @@ type Converter interface {
 	ApplyDeprovisioningOperation(dto *pkg.RuntimeDTO, dOpr *internal.DeprovisioningOperation)
 	ApplyUpgradingKymaOperations(dto *pkg.RuntimeDTO, oprs []internal.UpgradeKymaOperation, totalCount int)
 	ApplyUpgradingClusterOperations(dto *pkg.RuntimeDTO, oprs []internal.UpgradeClusterOperation, totalCount int)
+	ApplyUpdateOperations(dto *pkg.RuntimeDTO, oprs []internal.UpdatingOperation, totalCount int)
 	ApplySuspensionOperations(dto *pkg.RuntimeDTO, oprs []internal.DeprovisioningOperation)
 	ApplyUnsuspensionOperations(dto *pkg.RuntimeDTO, oprs []internal.ProvisioningOperation)
 }
@@ -37,6 +38,7 @@ func (c *converter) setRegionOrDefault(instance internal.Instance, runtime *pkg.
 
 func (c *converter) ApplyProvisioningOperation(dto *pkg.RuntimeDTO, pOpr *internal.ProvisioningOperation) {
 	if pOpr != nil {
+		dto.Status.Provisioning = &pkg.Operation{}
 		c.applyOperation(&pOpr.Operation, dto.Status.Provisioning)
 	}
 }
@@ -72,9 +74,8 @@ func (c *converter) NewDTO(instance internal.Instance) (pkg.RuntimeDTO, error) {
 		ProviderRegion:   instance.ProviderRegion,
 		UserID:           instance.Parameters.ErsContext.UserID,
 		Status: pkg.RuntimeStatus{
-			CreatedAt:    instance.CreatedAt,
-			ModifiedAt:   instance.UpdatedAt,
-			Provisioning: &pkg.Operation{},
+			CreatedAt:  instance.CreatedAt,
+			ModifiedAt: instance.UpdatedAt,
 		},
 	}
 
@@ -89,6 +90,10 @@ func (c *converter) NewDTO(instance internal.Instance) (pkg.RuntimeDTO, error) {
 }
 
 func (c *converter) ApplyUpgradingKymaOperations(dto *pkg.RuntimeDTO, oprs []internal.UpgradeKymaOperation, totalCount int) {
+	if len(oprs) <= 0 {
+		return
+	}
+	dto.Status.UpgradingKyma = &pkg.OperationsData{}
 	dto.Status.UpgradingKyma.TotalCount = totalCount
 	dto.Status.UpgradingKyma.Count = len(oprs)
 	dto.Status.UpgradingKyma.Data = make([]pkg.Operation, 0)
@@ -100,20 +105,26 @@ func (c *converter) ApplyUpgradingKymaOperations(dto *pkg.RuntimeDTO, oprs []int
 }
 
 func (c *converter) ApplyUpgradingClusterOperations(dto *pkg.RuntimeDTO, oprs []internal.UpgradeClusterOperation, totalCount int) {
-	dto.Status.UpgradingCluser.Data = make([]pkg.Operation, 0)
-
+	if len(oprs) <= 0 {
+		return
+	}
+	dto.Status.UpgradingCluster = &pkg.OperationsData{}
+	dto.Status.UpgradingCluster.Data = make([]pkg.Operation, 0)
 	for _, o := range oprs {
 		op := pkg.Operation{}
 		c.applyOperation(&o.Operation, &op)
-		dto.Status.UpgradingCluser.Data = append(dto.Status.UpgradingCluser.Data, op)
+		dto.Status.UpgradingCluster.Data = append(dto.Status.UpgradingCluster.Data, op)
 	}
-
-	dto.Status.UpgradingCluser.TotalCount = totalCount
-	dto.Status.UpgradingCluser.Count = len(dto.Status.UpgradingCluser.Data)
+	dto.Status.UpgradingCluster.TotalCount = totalCount
+	dto.Status.UpgradingCluster.Count = len(dto.Status.UpgradingCluster.Data)
 }
 
 func (c *converter) ApplySuspensionOperations(dto *pkg.RuntimeDTO, oprs []internal.DeprovisioningOperation) {
-	dto.Status.Suspension.Data = make([]pkg.Operation, 0)
+	if len(oprs) <= 0 {
+		return
+	}
+	suspension := &pkg.OperationsData{}
+	suspension.Data = make([]pkg.Operation, 0)
 
 	for _, o := range oprs {
 		if !o.Temporary {
@@ -121,17 +132,21 @@ func (c *converter) ApplySuspensionOperations(dto *pkg.RuntimeDTO, oprs []intern
 		}
 		op := pkg.Operation{}
 		c.applyOperation(&o.Operation, &op)
-		dto.Status.Suspension.Data = append(dto.Status.Suspension.Data, op)
+		suspension.Data = append(suspension.Data, op)
 	}
-	dto.Status.Suspension.TotalCount = len(dto.Status.Suspension.Data)
-	dto.Status.Suspension.Count = len(dto.Status.Suspension.Data)
+	suspension.TotalCount = len(suspension.Data)
+	suspension.Count = len(suspension.Data)
+	if suspension.Count > 0 {
+		dto.Status.Suspension = suspension
+	}
 }
 
 func (c *converter) ApplyUnsuspensionOperations(dto *pkg.RuntimeDTO, oprs []internal.ProvisioningOperation) {
-	dto.Status.Unsuspension.Data = make([]pkg.Operation, 0)
 	if len(oprs) <= 1 {
 		return
 	}
+	dto.Status.Unsuspension = &pkg.OperationsData{}
+	dto.Status.Unsuspension.Data = make([]pkg.Operation, 0)
 
 	unsuspensionOps := oprs[:len(oprs)-1]
 
@@ -142,5 +157,21 @@ func (c *converter) ApplyUnsuspensionOperations(dto *pkg.RuntimeDTO, oprs []inte
 		op := pkg.Operation{}
 		c.applyOperation(&o.Operation, &op)
 		dto.Status.Unsuspension.Data = append(dto.Status.Unsuspension.Data, op)
+	}
+}
+
+func (c *converter) ApplyUpdateOperations(dto *pkg.RuntimeDTO, oprs []internal.UpdatingOperation, totalCount int) {
+	if len(oprs) <= 0 {
+		return
+	}
+
+	dto.Status.Update = &pkg.OperationsData{}
+	dto.Status.Update.Data = make([]pkg.Operation, 0)
+	dto.Status.Update.Count = len(oprs)
+	dto.Status.Update.TotalCount = totalCount
+	for _, o := range oprs {
+		op := pkg.Operation{}
+		c.applyOperation(&o.Operation, &op)
+		dto.Status.Update.Data = append(dto.Status.Update.Data, op)
 	}
 }

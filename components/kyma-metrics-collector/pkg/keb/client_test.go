@@ -32,6 +32,7 @@ func TestGetAllRuntimes(t *testing.T) {
 
 	t.Run("when 2 pages are returned for all runtimes on matching path and HTTP 404 for non matched ones", func(t *testing.T) {
 		g := gomega.NewGomegaWithT(t)
+		totalRequest.Reset()
 
 		runtimesResponse, err := kmctesting.LoadFixtureFromFile(kebRuntimeResponseFilePath)
 		g.Expect(err).Should(gomega.BeNil())
@@ -87,18 +88,7 @@ func TestGetAllRuntimes(t *testing.T) {
 		}, timeout).Should(gomega.Equal(http.StatusOK))
 
 		kebURL := fmt.Sprintf("%s%s", srv.URL, expectedPathPrefix)
-
-		config := &Config{
-			URL:              kebURL,
-			Timeout:          3 * time.Second,
-			RetryCount:       1,
-			PollWaitDuration: 10 * time.Minute,
-		}
-		kebClient := &Client{
-			HTTPClient: http.DefaultClient,
-			Logger:     &logrus.Logger{},
-			Config:     config,
-		}
+		kebClient := getKEBClient(kebURL)
 
 		req, err := kebClient.NewRequest()
 		g.Expect(err).Should(gomega.BeNil())
@@ -118,7 +108,7 @@ func TestGetAllRuntimes(t *testing.T) {
 		g.Expect(testutil.ToFloat64(counter)).Should(gomega.Equal(float64(2)))
 
 		// Testing http 404 for non existent path
-		config.URL = fmt.Sprintf("%s/nopaging", kebClient.Config.URL)
+		kebClient.Config.URL = fmt.Sprintf("%s/nopaging", kebClient.Config.URL)
 		req, err = kebClient.NewRequest()
 		g.Expect(err).Should(gomega.BeNil())
 		_, err = kebClient.GetAllRuntimes(req)
@@ -137,7 +127,7 @@ func TestGetAllRuntimes(t *testing.T) {
 
 	t.Run("when all runtimes are returned in 1 page", func(t *testing.T) {
 		g := gomega.NewGomegaWithT(t)
-
+		totalRequest.Reset()
 		runtimesResponse, err := kmctesting.LoadFixtureFromFile(kebRuntimeResponseFilePath)
 		g.Expect(err).Should(gomega.BeNil())
 
@@ -165,18 +155,7 @@ func TestGetAllRuntimes(t *testing.T) {
 		}, timeout).Should(gomega.Equal(http.StatusOK))
 
 		kebURL := fmt.Sprintf("%s%s", srv.URL, expectedPathPrefixWith1Page)
-
-		config := &Config{
-			URL:              kebURL,
-			Timeout:          3 * time.Second,
-			RetryCount:       1,
-			PollWaitDuration: 10 * time.Minute,
-		}
-		kebClient := &Client{
-			HTTPClient: http.DefaultClient,
-			Logger:     &logrus.Logger{},
-			Config:     config,
-		}
+		kebClient := getKEBClient(kebURL)
 
 		req, err := kebClient.NewRequest()
 		g.Expect(err).Should(gomega.BeNil())
@@ -191,11 +170,68 @@ func TestGetAllRuntimes(t *testing.T) {
 		g.Expect(len(gotRuntimes.Data)).To(gomega.Equal(4))
 
 		// Ensure metric exists
-		g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(2))
+		g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(1))
 		g.Expect(testutil.CollectAndCount(sentRequestDuration, histogramName)).Should(gomega.Equal(1))
 		// Ensure metric has expected value
 		counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusOK))
 		g.Expect(err).Should(gomega.BeNil())
-		g.Expect(testutil.ToFloat64(counter)).Should(gomega.Equal(float64(3)))
+		g.Expect(testutil.ToFloat64(counter)).Should(gomega.Equal(float64(1)))
 	})
+
+	t.Run("when HTTP non 2xx is returned by KEB", func(t *testing.T) {
+		g := gomega.NewGomegaWithT(t)
+		totalRequest.Reset()
+		getRuntimesHandler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+			// Success endpoint
+			g.Expect(req.URL.Path).To(gomega.Equal(expectedPathPrefixWith1Page))
+			rw.WriteHeader(http.StatusInternalServerError)
+		})
+
+		// Start a local test HTTP server
+		srv := kmctesting.StartTestServer(expectedPathPrefixWith1Page, getRuntimesHandler, g)
+
+		// Wait until test server is ready
+		g.Eventually(func() int {
+			// Ignoring error is ok as it goes for retry for non-200 cases
+			healthResp, err := http.Get(fmt.Sprintf("%s/health", srv.URL))
+			t.Logf("retrying :%v", err)
+			return healthResp.StatusCode
+		}, timeout).Should(gomega.Equal(http.StatusOK))
+
+		kebURL := fmt.Sprintf("%s%s", srv.URL, expectedPathPrefixWith1Page)
+
+		kebClient := getKEBClient(kebURL)
+
+		req, err := kebClient.NewRequest()
+		g.Expect(err).Should(gomega.BeNil())
+
+		// Testing response which contains HTTP 500
+		req, err = kebClient.NewRequest()
+		g.Expect(err).Should(gomega.BeNil())
+		_, err = kebClient.GetAllRuntimes(req)
+		g.Expect(err.Error()).Should(gomega.Equal("failed to get runtimes from KEB: KEB returned status code: 500"))
+
+		// Ensure metric exists
+		g.Expect(testutil.CollectAndCount(totalRequest, metricsName)).Should(gomega.Equal(1))
+		g.Expect(testutil.CollectAndCount(sentRequestDuration, histogramName)).Should(gomega.Equal(1))
+
+		// Ensure metric has expected value
+		counter, err := totalRequest.GetMetricWithLabelValues(fmt.Sprint(http.StatusInternalServerError))
+		g.Expect(err).Should(gomega.BeNil())
+		g.Expect(testutil.ToFloat64(counter)).Should(gomega.Equal(float64(1)))
+	})
+}
+
+func getKEBClient(url string) *Client {
+	config := &Config{
+		URL:              url,
+		Timeout:          3 * time.Second,
+		RetryCount:       1,
+		PollWaitDuration: 10 * time.Minute,
+	}
+	return &Client{
+		HTTPClient: http.DefaultClient,
+		Logger:     &logrus.Logger{},
+		Config:     config,
+	}
 }

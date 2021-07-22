@@ -145,13 +145,13 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 			continue
 		}
 
-		lastOp, lastOpType := runtime.FindLastOperation(r)
+		lastOp := r.LastOperation()
 		// Skip runtimes for which the last operation is
 		//  - not succeeded provision or unsuspension
 		//  - suspension
 		//  - deprovision
-		if lastOpType == runtime.Deprovision || lastOpType == runtime.Suspension || (lastOpType == runtime.Provision || lastOpType == runtime.Unsuspension) && lastOp.State != string(brokerapi.Succeeded) {
-			resolver.logger.Infof("Skipping Shoot %s (runtimeID: %s, instanceID %s) due to %s state: %s", shoot.Name, runtimeID, r.InstanceID, lastOpType, lastOp.State)
+		if lastOp.Type == runtime.Deprovision || lastOp.Type == runtime.Suspension || (lastOp.Type == runtime.Provision || lastOp.Type == runtime.Unsuspension) && lastOp.State != string(brokerapi.Succeeded) {
+			resolver.logger.Infof("Skipping Shoot %s (runtimeID: %s, instanceID %s) due to %s state: %s", shoot.Name, runtimeID, r.InstanceID, lastOp.Type, lastOp.State)
 			continue
 		}
 		maintenanceWindowBegin, err := time.Parse(maintenanceWindowFormat, shoot.Spec.Maintenance.TimeWindow.Begin)

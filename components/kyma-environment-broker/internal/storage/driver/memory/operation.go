@@ -618,6 +618,26 @@ func (s *operations) UpdateUpdatingOperation(op internal.UpdatingOperation) (*in
 	return &op, nil
 }
 
+func (s *operations) ListUpdatingOperationsByInstanceID(instanceID string) ([]internal.UpdatingOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	operations := make([]internal.UpdatingOperation, 0)
+	for _, v := range s.updateOperations {
+		if instanceID != v.InstanceID {
+			continue
+		}
+
+		operations = append(operations, v)
+	}
+
+	sort.Slice(operations, func(i, j int) bool {
+		return operations[i].CreatedAt.Before(operations[j].CreatedAt)
+	})
+
+	return operations, nil
+}
+
 func (s *operations) sortUpgradeKymaByCreatedAt(operations []internal.UpgradeKymaOperation) {
 	sort.Slice(operations, func(i, j int) bool {
 		return operations[i].CreatedAt.Before(operations[j].CreatedAt)

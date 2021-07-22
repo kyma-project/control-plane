@@ -361,7 +361,7 @@ func main() {
 	orchestrationHandler.AttachRoutes(router)
 
 	// create list runtimes endpoint
-	runtimeHandler := runtime.NewHandler(db.Instances(), db.Operations(), cfg.MaxPaginationPage, cfg.DefaultRequestRegion)
+	runtimeHandler := runtime.NewHandler(db.Instances(), db.Operations(), db.RuntimeStates(), cfg.MaxPaginationPage, cfg.DefaultRequestRegion)
 	runtimeHandler.AttachRoutes(router)
 
 	router.StrictSlash(true).PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("/swagger"))))
