@@ -47,19 +47,24 @@ type Process struct {
 	Logger          *logrus.Logger
 }
 
-const shootKubeconfigKey = "kubeconfig"
+const (
+	shootKubeconfigKey = "kubeconfig"
+)
 
-func (p Process) generateRecordWithMetrics(identifier int, subAccountID string) (record kmccache.Record, err error) {
+var (
+	errorSubAccountIDNotTrackable = errors.New("subAccountID is not trackable")
+)
+
+func (p Process) generateRecordWithNewMetrics(identifier int, subAccountID string) (record kmccache.Record, err error) {
 	ctx := context.Background()
 	var ok bool
 
 	obj, isFound := p.Cache.Get(subAccountID)
 	if !isFound {
-		err = fmt.Errorf("subAccountID was not found in cache")
+		err = errorSubAccountIDNotTrackable
 		return
 	}
 
-	defer p.Queue.Done(subAccountID)
 	if record, ok = obj.(kmccache.Record); !ok {
 		err = fmt.Errorf("bad item from cache, could not cast to a record obj")
 		return
@@ -208,75 +213,93 @@ func (p Process) Start() {
 func (p *Process) execute(identifier int) {
 
 	for {
-		var payload []byte
-		// Pick up a subAccountID to process from queue
+
+		// Pick up a subAccountID to process from queue and mark as Done()
 		subAccountIDObj, _ := p.Queue.Get()
+		subAccountID := fmt.Sprintf("%v", subAccountIDObj)
+
 		// TODO Implement cleanup holistically in #kyma-project/control-plane/issues/512
 		//if isShuttingDown {
 		//	//p.Cleanup()
 		//	return
 		//}
-		subAccountID := fmt.Sprintf("%v", subAccountIDObj)
-		if strings.TrimSpace(subAccountID) == "" {
-			p.Logger.Warnf("[worker: %d] cannot work with empty subAccountID", identifier)
 
-			// Nothing to do further
-			continue
-		}
-		p.Logger.Debugf("[worker: %d] subaccid: %v is fetched from queue", identifier, subAccountIDObj)
-
-		record, isOldMetricValid, err := p.getRecordWithOldOrNewMetric(identifier, subAccountID)
-		if err != nil {
-			p.Logger.Errorf("[worker: %d] no metric found/generated for subaccount id: %v", identifier, err)
-
-			p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
-			p.Logger.Debugf("[worker: %d] successfully requed after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
-
-			// Nothing to do further
-			continue
-		}
-
-		// Convert metric to JSON
-		payload, err = json.Marshal(*record.Metric)
-		if err != nil {
-			p.Logger.Errorf("[worker: %d] failed to json.Marshal metric for subaccount id: %v", identifier, err)
-
-			p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
-			p.Logger.Debugf("[worker: %d] successfully requed after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
-
-			// Nothing to do further
-			continue
-		}
-
-		// Send metrics to EDP
-		// Note: EDP refers SubAccountID as tenant
-		p.Logger.Debugf("[worker: %d] sending EventStreamToEDP: tenant: %s payload: %s", identifier, subAccountID, string(payload))
-		err = p.sendEventStreamToEDP(subAccountID, payload)
-		if err != nil {
-			p.Logger.Errorf("[worker: %d] failed to send metric to EDP for subAccountID: %s, event-stream: %s, with err: %v", identifier, subAccountID, string(payload), err)
-
-			p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
-			p.Logger.Debugf("[worker: %d] successfully requed after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
-
-			// Nothing to do further hence continue
-			continue
-		}
-		p.Logger.Infof("[worker: %d] successfully sent event stream for subaccountID: %s, shoot: %s", identifier, subAccountID, record.ShootName)
-
-		if !isOldMetricValid {
-			p.Cache.Set(record.SubAccountID, *record, cache.NoExpiration)
-			p.Logger.Debugf("[worker: %d] successfully saved metric for subAccountID %s", identifier, record.SubAccountID)
-		}
-
-		// Requeue the subAccountID anyway
-		p.Logger.Debugf("[worker: %d] successfully requed after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
-		p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
+		p.processSubAccountID(subAccountID, identifier)
+		p.Queue.Done(subAccountIDObj)
 	}
 }
 
-func (p Process) getRecordWithOldOrNewMetric(identifier int, subAccountID string) (*kmccache.Record, bool, error) {
-	record, err := p.generateRecordWithMetrics(identifier, subAccountID)
+func (p Process) processSubAccountID(subAccountID string, identifier int) {
+	var payload []byte
+	if strings.TrimSpace(subAccountID) == "" {
+		p.Logger.Warnf("[worker: %d] cannot work with empty subAccountID", identifier)
+
+		// Nothing to do further
+		return
+	}
+	p.Logger.Debugf("[worker: %d] subaccid: %v is fetched from queue", identifier, subAccountID)
+
+	record, isOldMetricValid, err := p.getRecordWithOldOrNewMetric(identifier, subAccountID)
 	if err != nil {
+		p.Logger.Errorf("[worker: %d] no metric found/generated for subaccount id: %v", identifier, err)
+		// SubAccountID is not trackable anymore as there is no runtime
+		if errors.Is(err, errorSubAccountIDNotTrackable) {
+			p.Logger.Infof("[worker: %d] is not requeued subAccountID %s", identifier, subAccountID)
+			return
+		}
+		p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
+		p.Logger.Debugf("[worker: %d] successfully requeued after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
+
+		// Nothing to do further
+		return
+	}
+
+	// Convert metric to JSON
+	payload, err = json.Marshal(*record.Metric)
+	if err != nil {
+		p.Logger.Errorf("[worker: %d] failed to json.Marshal metric for subaccount id: %v", identifier, err)
+
+		p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
+		p.Logger.Debugf("[worker: %d] successfully requeued after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
+
+		// Nothing to do further
+		return
+	}
+
+	// Send metrics to EDP
+	// Note: EDP refers SubAccountID as tenant
+	p.Logger.Debugf("[worker: %d] sending EventStreamToEDP: tenant: %s payload: %s", identifier, subAccountID, string(payload))
+	err = p.sendEventStreamToEDP(subAccountID, payload)
+	if err != nil {
+		p.Logger.Errorf("[worker: %d] failed to send metric to EDP for subAccountID: %s, event-stream: %s, with err: %v", identifier, subAccountID, string(payload), err)
+
+		p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
+		p.Logger.Debugf("[worker: %d] successfully requeued after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
+
+		// Nothing to do further hence continue
+		return
+	}
+	p.Logger.Infof("[worker: %d] successfully sent event stream for subaccountID: %s, shoot: %s", identifier, subAccountID, record.ShootName)
+
+	if !isOldMetricValid {
+		p.Cache.Set(record.SubAccountID, *record, cache.NoExpiration)
+		p.Logger.Debugf("[worker: %d] successfully saved metric for subAccountID %s", identifier, record.SubAccountID)
+	}
+
+	// Requeue the subAccountID anyway
+	p.Logger.Debugf("[worker: %d] successfully requeued after %v for subAccountID %s", identifier, p.ScrapeInterval, subAccountID)
+	p.Queue.AddAfter(subAccountID, p.ScrapeInterval)
+}
+
+// getRecordWithOldOrNewMetric generates new metric or fetches the old metric along with a bool flag which
+// indicates whether it is an old metric or not(true, when it is old and false when it is new)
+func (p Process) getRecordWithOldOrNewMetric(identifier int, subAccountID string) (*kmccache.Record, bool, error) {
+	record, err := p.generateRecordWithNewMetrics(identifier, subAccountID)
+	if err != nil {
+		if errors.Is(err, errorSubAccountIDNotTrackable) {
+			p.Logger.Infof("[worker: %d] subAccountID: %s is not trackable anymore, skipping the fetch of old metric", identifier, subAccountID)
+			return nil, false, err
+		}
 		p.Logger.Errorf("failed to generate new metric for subaccountID: %v, err: %v", subAccountID, err)
 		// Get old data
 		oldRecord, err := p.getOldRecordIfMetricExists(subAccountID)
@@ -325,11 +348,13 @@ func isClusterTrackable(runtime *kebruntime.RuntimeDTO) bool {
 // populateCacheAndQueue populates Cache and Queue with new runtimes and deletes the runtimes which should not be tracked
 func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 
+	validSubAccounts := make(map[string]bool)
 	for _, runtime := range runtimes.Data {
 		if runtime.SubAccountID == "" {
 			continue
 		}
-		recordObj, isFound := p.Cache.Get(runtime.SubAccountID)
+		validSubAccounts[runtime.SubAccountID] = true
+		recordObj, isFoundInCache := p.Cache.Get(runtime.SubAccountID)
 		if isClusterTrackable(&runtime) {
 			newRecord := kmccache.Record{
 				SubAccountID: runtime.SubAccountID,
@@ -337,7 +362,7 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 				KubeConfig:   "",
 				Metric:       nil,
 			}
-			if !isFound {
+			if !isFoundInCache {
 				err := p.Cache.Add(runtime.SubAccountID, newRecord, cache.NoExpiration)
 				if err != nil {
 					p.Logger.Errorf("failed to add subAccountID: %v to cache hence skipping queueing it", err)
@@ -357,11 +382,22 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 					p.Logger.Debugf("Resetted the values in cache: %v", runtime.SubAccountID)
 				}
 			}
-		} else {
-			if isFound {
-				p.Cache.Delete(runtime.SubAccountID)
-				p.Logger.Debugf("Deleted subAccountID: %v", runtime.SubAccountID)
-			}
+			continue
+		}
+		if isFoundInCache {
+			// Cluster is not trackable but is found in cache should be deleted
+			p.Cache.Delete(runtime.SubAccountID)
+			p.Logger.Debugf("Deleted subAccountID: %v from cache", runtime.SubAccountID)
+			continue
+		}
+		p.Logger.Debugf("Ignoring SubAccountID: %v, as it is not trackable", runtime.SubAccountID)
+	}
+
+	// Cleaning up subAccounts from the cache which are not returned by KEB anymore
+	for sAccID := range p.Cache.Items() {
+		if _, ok := validSubAccounts[sAccID]; !ok {
+			p.Cache.Delete(sAccID)
+			p.Logger.Debugf("SubAccountID: %v is not trackable anymore hence deleting it from cache", sAccID)
 		}
 	}
 }
