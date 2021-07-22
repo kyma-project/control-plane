@@ -55,14 +55,15 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 	if err := m.k8sClient.Get(m.ctx, key, config); err != nil {
 		m.log.Info("Orchestration Config is absent")
 	}
-	if config.Data[maintenancePolicyKeyName] == "" {
-		m.log.Info("Maintenance policy is set to Gardener defaults")
-	}
 
 	var policies []orchestration.MaintenancePolicyEntry
-	err = json.Unmarshal([]byte(config.String()), &policies)
-	if err != nil {
-		m.log.Info("Unable to unmarshal the policies config")
+	if config.Data[maintenancePolicyKeyName] == "" {
+		m.log.Info("Maintenance policy is set to Gardener defaults")
+
+		err = json.Unmarshal([]byte(config.String()), &policies)
+		if err != nil {
+			m.log.Info("Unable to unmarshal the policies config")
+		}
 	}
 	operations, err := m.resolveOperations(o, policies)
 	if err != nil {

@@ -237,7 +237,6 @@ func (*GardenerRuntimeResolver) runtimeFromDTO(runtime runtime.RuntimeDTO, shoot
 		ShootName:              shootName,
 		MaintenanceWindowBegin: windowBegin,
 		MaintenanceWindowEnd:   windowEnd,
-		MaintenanceDays: []time.Weekday{time.Monday, time.Tuesday, time.Wednesday, time.Thursday, time.Friday,
-			time.Saturday, time.Sunday},
+		MaintenanceDays:        []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"},
 	}
 }
