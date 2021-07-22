@@ -74,14 +74,18 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 		case pkg.LastOperation:
 			err = h.setRuntimeLastOperation(instance, &dto)
 		}
-
 		if err != nil {
 			httputil.WriteErrorResponse(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		setRuntimeStateByOperationState(&dto)
-		h.setRuntimeOptionalAttributes(instance, &dto, kymaConfig, clusterConfig)
+		err = h.setRuntimeOptionalAttributes(instance, &dto, kymaConfig, clusterConfig)
+		if err != nil {
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, err)
+			return
+		}
+
 		toReturn = append(toReturn, dto)
 	}
 
