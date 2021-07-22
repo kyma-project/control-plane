@@ -64,6 +64,10 @@ var orchestrationColumns = []printer.Column{
 		Header:    "DRY RUN",
 		FieldSpec: "{.Parameters.DryRun}",
 	},
+	{
+		Header:    "TARGETS",
+		FieldFormatter: orchestrationTargets,
+	},
 }
 
 var operationColumns = []printer.Column{
@@ -440,4 +444,19 @@ func orchestrationTarget(t orchestration.RuntimeTarget) string {
 	}
 
 	return strings.Join(targets, ",")
+}
+
+// orchestrationTarget returns the string representation of an array of orchestration.RuntimeTarget
+func orchestrationTargets(obj interface{}) string {
+	sr := obj.(orchestration.StatusResponse)
+	var sb strings.Builder
+	nTargets := len(sr.Parameters.Targets.Include)
+	for i := 0; i < nTargets; i++ {
+		sb.WriteString(sr.Parameters.Targets.Include[i].Target)
+		if i != (nTargets - 1) {
+			sb.WriteString(", ")
+		}
+	}
+
+	return sb.String()
 }
