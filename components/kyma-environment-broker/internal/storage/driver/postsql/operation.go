@@ -737,6 +737,30 @@ func (s *operations) UpdateUpdatingOperation(operation internal.UpdatingOperatio
 	return &operation, lastErr
 }
 
+// ListUpdatingOperationsByInstanceID Lists all update operations for the given instance
+func (s *operations) ListUpdatingOperationsByInstanceID(instanceID string) ([]internal.UpdatingOperation, error) {
+	session := s.NewReadSession()
+	operations := []dbmodel.OperationDTO{}
+	var lastErr dberr.Error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		operations, lastErr = session.GetOperationsByTypeAndInstanceID(instanceID, internal.OperationTypeUpdate)
+		if lastErr != nil {
+			log.Errorf("while reading operation from the storage: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, lastErr
+	}
+	ret, err := s.toUpdateOperationList(operations)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting DTO to Operation")
+	}
+
+	return ret, nil
+}
+
 // InsertUpgradeClusterOperation insert new UpgradeClusterOperation to storage
 func (s *operations) InsertUpgradeClusterOperation(operation internal.UpgradeClusterOperation) error {
 	session := s.NewWriteSession()
@@ -1180,4 +1204,18 @@ func (s *operations) toUpdateOperation(op *dbmodel.OperationDTO) (*internal.Upda
 	}
 
 	return &operation, nil
+}
+
+func (s *operations) toUpdateOperationList(ops []dbmodel.OperationDTO) ([]internal.UpdatingOperation, error) {
+	result := make([]internal.UpdatingOperation, 0)
+
+	for _, op := range ops {
+		o, err := s.toUpdateOperation(&op)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting to upgrade cluster operation")
+		}
+		result = append(result, *o)
+	}
+
+	return result, nil
 }

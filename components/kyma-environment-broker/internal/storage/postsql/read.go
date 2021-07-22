@@ -372,6 +372,7 @@ func (r readSession) ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.Ru
 		Select("*").
 		From(RuntimeStateTableName).
 		Where(stateCondition).
+		OrderDesc(CreatedAtField).
 		Load(&states)
 	if err != nil {
 		return nil, dberr.Internal("Failed to get states: %s", err)
@@ -556,7 +557,19 @@ func buildInstanceStateFilters(table string, filter dbmodel.InstanceFilter) dbr.
 				dbr.Neq(fmt.Sprintf("%s.type", table), internal.OperationTypeDeprovision),
 			))
 		case dbmodel.InstanceFailed:
-			exprs = append(exprs, dbr.Eq(fmt.Sprintf("%s.state", table), domain.Failed))
+			exprs = append(exprs, dbr.And(
+				dbr.Or(
+					dbr.Eq(fmt.Sprintf("%s.type", table), internal.OperationTypeProvision),
+					dbr.Eq(fmt.Sprintf("%s.type", table), internal.OperationTypeDeprovision),
+				),
+				dbr.Eq(fmt.Sprintf("%s.state", table), domain.Failed),
+			))
+		case dbmodel.InstanceError:
+			exprs = append(exprs, dbr.And(
+				dbr.Neq(fmt.Sprintf("%s.type", table), internal.OperationTypeProvision),
+				dbr.Neq(fmt.Sprintf("%s.type", table), internal.OperationTypeDeprovision),
+				dbr.Eq(fmt.Sprintf("%s.state", table), domain.Failed),
+			))
 		case dbmodel.InstanceProvisioning:
 			exprs = append(exprs, dbr.And(
 				dbr.Eq(fmt.Sprintf("%s.type", table), internal.OperationTypeProvision),
@@ -570,6 +583,11 @@ func buildInstanceStateFilters(table string, filter dbmodel.InstanceFilter) dbr.
 		case dbmodel.InstanceUpgrading:
 			exprs = append(exprs, dbr.And(
 				dbr.Like(fmt.Sprintf("%s.type", table), "upgrade%"),
+				dbr.Eq(fmt.Sprintf("%s.state", table), domain.InProgress),
+			))
+		case dbmodel.InstanceUpdating:
+			exprs = append(exprs, dbr.And(
+				dbr.Eq(fmt.Sprintf("%s.type", table), internal.OperationTypeUpdate),
 				dbr.Eq(fmt.Sprintf("%s.state", table), domain.InProgress),
 			))
 		case dbmodel.InstanceDeprovisioned:
