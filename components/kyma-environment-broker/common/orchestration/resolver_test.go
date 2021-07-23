@@ -333,6 +333,7 @@ func fixRuntimeDTO(id int, globalAccountID, planName string, state runtimeOpStat
 
 	deprovTime := time.Now().Add(time.Minute)
 	if state.suspension != "" {
+		rt.Status.Suspension = &runtime.OperationsData{}
 		rt.Status.Suspension.Count = 1
 		rt.Status.Suspension.TotalCount = 1
 		rt.Status.Suspension.Data = []runtime.Operation{
@@ -352,6 +353,7 @@ func fixRuntimeDTO(id int, globalAccountID, planName string, state runtimeOpStat
 	}
 
 	if state.unsuspension != "" {
+		rt.Status.Unsuspension = &runtime.OperationsData{}
 		rt.Status.Unsuspension.Count = 1
 		rt.Status.Unsuspension.TotalCount = 1
 		rt.Status.Unsuspension.Data = []runtime.Operation{

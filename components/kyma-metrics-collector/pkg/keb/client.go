@@ -105,12 +105,13 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 		}
 		return
 	})
-
+	if resp != nil {
+		totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
+	}
 	if err != nil {
 		c.Logger.Errorf("failed to get runtimes from KEB: %v", err)
 		return nil, errors.Wrapf(err, "failed to get runtimes from KEB")
 	}
-	totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
 
 	if resp.StatusCode != http.StatusOK {
 		failedErr := fmt.Errorf("KEB returned status code: %d", resp.StatusCode)
