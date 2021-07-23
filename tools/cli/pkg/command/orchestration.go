@@ -65,8 +65,12 @@ var orchestrationColumns = []printer.Column{
 		FieldSpec: "{.Parameters.DryRun}",
 	},
 	{
-		Header:    "TARGETS",
+		Header:         "TARGETS",
 		FieldFormatter: orchestrationTargets,
+	},
+	{
+		Header:         "DETAILS",
+		FieldFormatter: orchestrationDetails,
 	},
 }
 
@@ -464,4 +468,18 @@ func orchestrationTargets(obj interface{}) string {
 		targets = targets[0:20]
 	}
 	return targets
+}
+
+func orchestrationDetails(obj interface{}) string {
+	sr := obj.(orchestration.StatusResponse)
+	var sb strings.Builder
+	if sr.KymaDetails != nil {
+		sb.WriteString("Kyma: " + sr.KymaDetails.KymaVersion)
+	} else if sr.ClusterDetails != nil {
+		sb.WriteString("K8S: " + sr.ClusterDetails.KubernetesVersion)
+	} else {
+		sb.WriteString("-")
+	}
+
+	return sb.String()
 }
