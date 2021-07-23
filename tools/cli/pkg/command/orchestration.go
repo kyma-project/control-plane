@@ -458,5 +458,10 @@ func orchestrationTargets(obj interface{}) string {
 		}
 	}
 
-	return sb.String()
+	// Limit the targets to 20 characters
+	targets := sb.String()
+	if len(targets) > 20 {
+		targets = targets[0:20]
+	}
+	return targets
 }
