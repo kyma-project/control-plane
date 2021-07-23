@@ -192,6 +192,8 @@ type RuntimeOptions struct {
 	KymaVersion      string
 	OverridesVersion string
 	OIDC             *internal.OIDCConfigDTO
+	UserID           string
+	RuntimeAdmins    []string
 }
 
 func (o *RuntimeOptions) ProvideGlobalAccountID() string {
@@ -242,6 +244,18 @@ func (o *RuntimeOptions) ProvideZonesCount() *int {
 func (o *RuntimeOptions) ProvideOIDC() *internal.OIDCConfigDTO {
 	if o.OIDC != nil {
 		return o.OIDC
+	} else {
+		return nil
+	}
+}
+
+func (o *RuntimeOptions) ProvideUserID() string {
+	return o.UserID
+}
+
+func (o *RuntimeOptions) ProvideRuntimeAdmins() []string {
+	if o.RuntimeAdmins != nil {
+		return o.RuntimeAdmins
 	} else {
 		return nil
 	}
@@ -527,6 +541,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,
 			SubAccountID:    options.ProvideSubAccountID(),
+			UserID:          options.ProvideUserID(),
 			ServiceManager: &internal.ServiceManagerEntryDTO{
 				URL: "sm_url",
 				Credentials: internal.ServiceManagerCredentials{
@@ -539,11 +554,12 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 		},
 		PlatformProvider: options.PlatformProvider,
 		Parameters: internal.ProvisioningParametersDTO{
-			Region:           options.ProvideRegion(),
-			ZonesCount:       options.ProvideZonesCount(),
-			KymaVersion:      options.KymaVersion,
-			OverridesVersion: options.OverridesVersion,
-			OIDC:             options.ProvideOIDC(),
+			Region:                options.ProvideRegion(),
+			ZonesCount:            options.ProvideZonesCount(),
+			KymaVersion:           options.KymaVersion,
+			OverridesVersion:      options.OverridesVersion,
+			OIDC:                  options.ProvideOIDC(),
+			RuntimeAdministrators: options.ProvideRuntimeAdmins(),
 		},
 	}
 
@@ -784,6 +800,13 @@ func (s *ProvisioningSuite) AssertOIDC(oidcConfig gqlschema.OIDCConfigInput) {
 	input := s.fetchProvisionInput()
 
 	assert.Equal(s.t, &oidcConfig, input.ClusterConfig.GardenerConfig.OidcConfig)
+}
+
+func (s *ProvisioningSuite) AssertRuntimeAdmins(admins []string) {
+	input := s.fetchProvisionInput()
+	currentAdmins := input.ClusterConfig.Administrators
+
+	assert.ElementsMatch(s.t, currentAdmins, admins)
 }
 
 func regularSubscription(ht hyperscaler.Type) string {
