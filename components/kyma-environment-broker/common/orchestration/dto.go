@@ -104,15 +104,27 @@ type TargetSpec struct {
 	Exclude []RuntimeTarget `json:"exclude,omitempty"`
 }
 
+type KymaDetailResponse struct {
+	KymaVersion string `json:"kymaVersion,omitempty"`
+}
+
+type ClusterDetailResponse struct {
+	KubernetesVersion   string `json:"kubernetesVersion,omitempty"`
+	MachineImage        string `json:"machineImage,omitempty"`
+	MachineImageVersion string `json:"machineImageVersion,omitempty"`
+}
+
 type StatusResponse struct {
-	OrchestrationID string         `json:"orchestrationID"`
-	Type            Type           `json:"type"`
-	State           string         `json:"state"`
-	Description     string         `json:"description"`
-	CreatedAt       time.Time      `json:"createdAt"`
-	UpdatedAt       time.Time      `json:"updatedAt"`
-	Parameters      Parameters     `json:"parameters"`
-	OperationStats  map[string]int `json:"operationStats,omitempty"`
+	OrchestrationID string                 `json:"orchestrationID"`
+	Type            Type                   `json:"type"`
+	State           string                 `json:"state"`
+	Description     string                 `json:"description"`
+	CreatedAt       time.Time              `json:"createdAt"`
+	UpdatedAt       time.Time              `json:"updatedAt"`
+	Parameters      Parameters             `json:"parameters"`
+	OperationStats  map[string]int         `json:"operationStats,omitempty"`
+	KymaDetails     *KymaDetailResponse    `json:"kymaDetails,omitempty"`
+	ClusterDetails  *ClusterDetailResponse `json:"clusterDetails,omitempty"`
 }
 
 type OperationResponse struct {
