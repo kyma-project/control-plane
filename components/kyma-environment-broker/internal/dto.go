@@ -100,8 +100,8 @@ type ProvisioningParametersDTO struct {
 }
 
 type UpdatingParametersDTO struct {
-	OIDC *OIDCConfigDTO `json:"oidc,omitempty"`
-	RuntimeAdministrators []string `json:"administrators,omitempty"`
+	OIDC                  *OIDCConfigDTO `json:"oidc,omitempty"`
+	RuntimeAdministrators []string       `json:"administrators,omitempty"`
 }
 
 type ERSContext struct {

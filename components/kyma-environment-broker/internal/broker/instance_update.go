@@ -172,7 +172,7 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 		err = wait.Poll(500*time.Millisecond, 2*time.Second, func() (bool, error) {
 			instance.Parameters.Parameters.RuntimeAdministrators = append(
 				instance.Parameters.Parameters.RuntimeAdministrators,
-				params.RuntimeAdministrators...
+				params.RuntimeAdministrators...,
 			)
 			instance, err = b.instanceStorage.Update(*instance)
 			if err != nil {

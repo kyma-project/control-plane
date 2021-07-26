@@ -255,7 +255,7 @@ func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 		// set admins for new runtime
 		r.provisionRuntimeInput.ClusterConfig.Administrators = append(
 			r.provisionRuntimeInput.ClusterConfig.Administrators,
-			r.provisioningParameters.Parameters.RuntimeAdministrators...
+			r.provisioningParameters.Parameters.RuntimeAdministrators...,
 		)
 	}
 
@@ -269,7 +269,7 @@ func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
 		// replace runtime admins list
 		r.upgradeShootInput.Administrators = append(
 			r.upgradeShootInput.Administrators,
-			r.provisioningParameters.Parameters.RuntimeAdministrators...
+			r.provisioningParameters.Parameters.RuntimeAdministrators...,
 		)
 	}
 

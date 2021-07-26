@@ -102,7 +102,7 @@ func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.UpdatingOp
 	if len(fullInput.Administrators) != 0 {
 		result.Administrators = append(
 			result.Administrators,
-			fullInput.Administrators...
+			fullInput.Administrators...,
 		)
 	}
 
