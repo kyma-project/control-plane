@@ -40,7 +40,7 @@ CREATE TABLE gardener_config
     enable_kubernetes_version_auto_update boolean NOT NULL,
     enable_machine_image_version_auto_update boolean NOT NULL,
     allow_privileged_containers boolean NOT NULL,
-    exposureClassName varchar(256),
+    exposure_class_name varchar(256),
     provider_specific_config jsonb,
     UNIQUE(cluster_id),
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE

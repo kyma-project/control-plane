@@ -255,7 +255,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 					AwsConfig: awsGardenerProvider,
 				},
-				OidcConfig: oidcInput(),
+				OidcConfig:        oidcInput(),
+				ExposureClassName: util.StringPtr("internet"),
 			},
 			Administrators: []string{administrator},
 		},
@@ -818,7 +819,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				MaxSurge:          1,
 				MaxUnavailable:    1,
 				OIDCConfig:        oidcConfig(),
-				ExposureClassName: util.StringPtr("internet"),
+				ExposureClassName: nil,
 			},
 			upgradedConfig: model.GardenerConfig{
 				KubernetesVersion: "version",
@@ -854,6 +855,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				MaxSurge:               1,
 				MaxUnavailable:         1,
 				GardenerProviderConfig: initialGCPProviderConfig,
+				ExposureClassName:      util.StringPtr("internet"),
 			},
 		},
 	}
@@ -918,6 +920,7 @@ func newUpgradeShootInputAwsAzureGCP(newPurpose string) gqlschema.UpgradeShootIn
 			MaxUnavailable:         util.IntPtr(1),
 			ProviderSpecificConfig: nil,
 			OidcConfig:             upgradedOidcInput(),
+			ExposureClassName:      util.StringPtr("internet"),
 		},
 		Administrators: []string{"test@test.pl"},
 	}
@@ -935,6 +938,7 @@ func newUpgradeOpenStackShootInput(newPurpose string) gqlschema.UpgradeShootInpu
 			MaxUnavailable:         util.IntPtr(1),
 			ProviderSpecificConfig: nil,
 			OidcConfig:             upgradedOidcInput(),
+			ExposureClassName:      util.StringPtr("internet"),
 		},
 	}
 }
@@ -953,6 +957,7 @@ func newUpgradeShootInputWithNilValues() gqlschema.UpgradeShootInput {
 			MaxUnavailable:         nil,
 			ProviderSpecificConfig: nil,
 			OidcConfig:             upgradedOidcInput(),
+			ExposureClassName:      nil,
 		},
 	}
 }
