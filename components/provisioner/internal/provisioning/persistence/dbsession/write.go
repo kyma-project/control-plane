@@ -115,7 +115,7 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		Pair("enable_kubernetes_version_auto_update", config.EnableKubernetesVersionAutoUpdate).
 		Pair("enable_machine_image_version_auto_update", config.EnableMachineImageVersionAutoUpdate).
 		Pair("allow_privileged_containers", config.AllowPrivilegedContainers).
-		Pair("exposureClassName", config.ExposureClassName).
+		Pair("exposure_class_name", config.ExposureClassName).
 		Pair("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Exec()
 
@@ -180,7 +180,7 @@ func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) 
 		Set("max_unavailable", config.MaxUnavailable).
 		Set("enable_kubernetes_version_auto_update", config.EnableKubernetesVersionAutoUpdate).
 		Set("enable_machine_image_version_auto_update", config.EnableMachineImageVersionAutoUpdate).
-		Set("exposureClassName", config.ExposureClassName).
+		Set("exposure_class_name", config.ExposureClassName).
 		Set("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Exec()
 

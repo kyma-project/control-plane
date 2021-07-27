@@ -832,7 +832,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				MaxSurge:          1,
 				MaxUnavailable:    1,
 				OIDCConfig:        upgradedOidcConfig(),
-				ExposureClassName: util.StringPtr("internet"),
+				ExposureClassName: nil,
 			},
 		},
 	}
