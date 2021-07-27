@@ -453,8 +453,9 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
         usernameClaim: "sub",
         usernamePrefix: "-",
       }
-    }
-  }`
+    },
+    administrators: ["newAdmin@kyma.cx"],
+    }`
 
 	// when
 	got, err := sut.UpgradeShootInputToGraphQL(gqlschema.UpgradeShootInput{
@@ -473,6 +474,7 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
 				UsernamePrefix: "-",
 			},
 		},
+		Administrators: []string{"newAdmin@kyma.cx"},
 	})
 
 	// then
