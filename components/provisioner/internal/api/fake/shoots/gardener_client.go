@@ -2,8 +2,9 @@ package shoots
 
 import (
 	"context"
-	"github.com/gardener/gardener/pkg/apis/authentication/v1alpha1"
 	"testing"
+
+	"github.com/gardener/gardener/pkg/apis/authentication/v1alpha1"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
