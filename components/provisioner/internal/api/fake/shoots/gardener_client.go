@@ -2,6 +2,7 @@ package shoots
 
 import (
 	"context"
+	"github.com/gardener/gardener/pkg/apis/authentication/v1alpha1"
 	"testing"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -94,6 +95,10 @@ func (f *fakeShootsInterface) Watch(_ context.Context, _ metav1.ListOptions) (wa
 	return nil, nil
 }
 func (f *fakeShootsInterface) Patch(_ context.Context, _ string, _ types.PatchType, _ []byte, _ metav1.PatchOptions, _ ...string) (result *gardener_types.Shoot, err error) {
+	return nil, nil
+}
+
+func (f *fakeShootsInterface) CreateAdminKubeconfigRequest(_ context.Context, _ string, _ *v1alpha1.AdminKubeconfigRequest, _ metav1.CreateOptions) (*v1alpha1.AdminKubeconfigRequest, error) {
 	return nil, nil
 }
 
