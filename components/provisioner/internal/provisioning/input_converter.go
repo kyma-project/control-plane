@@ -115,6 +115,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		ClusterID:                           runtimeID,
 		GardenerProviderConfig:              providerSpecificConfig,
 		OIDCConfig:                          oidcConfigFromInput(input.OidcConfig),
+		ExposureClassName:                   input.ExposureClassName,
 	}, nil
 }
 
@@ -180,6 +181,7 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
 		GardenerProviderConfig:              providerSpecificConfig,
 		OIDCConfig:                          oidcConfigFromInput(input.OidcConfig),
+		ExposureClassName:                   input.ExposureClassName,
 	}, nil
 }
 
