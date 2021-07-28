@@ -48,7 +48,6 @@ func NewDeprovisioningSuite(t *testing.T) *DeprovisioningSuite {
 
 	cfg := fixConfig()
 	cfg.EDP.Environment = edpEnvironment
-	cfg.Ems.Disabled = true
 
 	db := storage.NewMemoryStorage()
 	eventBroker := event.NewPubSub(logs)

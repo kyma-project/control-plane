@@ -127,10 +127,6 @@ type Config struct {
 	XSUAA struct {
 		Disabled bool `envconfig:"default=true"`
 	}
-	Ems struct {
-		Disabled                              bool `envconfig:"default=true"`
-		SkipDeprovisionAzureEventingAtUpgrade bool `envconfig:"default=false"`
-	}
 	Connectivity struct {
 		Disabled bool `envconfig:"default=true"`
 	}
@@ -587,11 +583,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		},
 		{
 			stage:    createRuntimeStageName,
-			step:     provisioning.NewEmsProvisionStep(db.Operations()),
-			disabled: cfg.Ems.Disabled,
-		},
-		{
-			stage:    createRuntimeStageName,
 			step:     provisioning.NewConnectivityProvisionStep(db.Operations()),
 			disabled: cfg.Connectivity.Disabled,
 		},
@@ -630,11 +621,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			stage:    createRuntimeStageName,
 			step:     provisioning.NewXSUAABindingStep(db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			stage:    createRuntimeStageName,
-			step:     provisioning.NewEmsBindStep(db.Operations(), cfg.Database.SecretKey),
-			disabled: cfg.Ems.Disabled,
 		},
 		{
 			stage:    createRuntimeStageName,
@@ -733,11 +719,6 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 		},
 		{
 			weight:   1,
-			step:     deprovisioning.NewEmsUnbindStep(db.Operations()),
-			disabled: cfg.Ems.Disabled,
-		},
-		{
-			weight:   1,
 			step:     deprovisioning.NewConnectivityUnbindStep(db.Operations()),
 			disabled: cfg.Connectivity.Disabled,
 		},
@@ -745,11 +726,6 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			weight:   2,
 			step:     deprovisioning.NewXSUAADeprovisionStep(db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			weight:   2,
-			step:     deprovisioning.NewEmsDeprovisionStep(db.Operations()),
-			disabled: cfg.Ems.Disabled,
 		},
 		{
 			weight: 2,
@@ -792,14 +768,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	}{
 		{
 			weight: 1,
-			step: upgrade_kyma.NewServiceManagerOfferingStep("EMS_Offering",
-				provisioning.EmsOfferingName, provisioning.EmsPlanName, func(op *internal.UpgradeKymaOperation) *internal.ServiceManagerInstanceInfo {
-					return &op.Ems.Instance
-				}, db.Operations()),
-			disabled: cfg.Ems.Disabled,
-		},
-		{
-			weight: 1,
 			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
 			step: upgrade_kyma.NewServiceManagerOfferingStep("Connectivity_Offering",
 				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.UpgradeKymaOperation) *internal.ServiceManagerInstanceInfo {
@@ -821,18 +789,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight:   4,
-			step:     upgrade_kyma.NewEmsUpgradeProvisionStep(db.Operations()),
-			disabled: cfg.Ems.Disabled,
-		},
-		{
-			weight:   4,
 			step:     upgrade_kyma.NewConnectivityUpgradeProvisionStep(db.Operations()),
 			disabled: cfg.Connectivity.Disabled,
-		},
-		{
-			weight:   7,
-			step:     upgrade_kyma.NewEmsUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
-			disabled: cfg.Ems.Disabled,
 		},
 		{
 			weight:   7,
