@@ -74,6 +74,12 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 		purpose = &p
 	}
 
+	var exposureClassName *string = nil
+
+	if util.NotNilOrEmpty(c.ExposureClassName) {
+		exposureClassName = c.ExposureClassName
+	}
+
 	annotations := make(map[string]string)
 	if c.LicenceType != nil {
 		annotations[LicenceTypeAnnotation] = *c.LicenceType
@@ -106,7 +112,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				Nodes: util.StringPtr("10.250.0.0/19"), // TODO: it is required - provide configuration in API (when Hydroform will support it)
 			},
 			Purpose:           purpose,
-			ExposureClassName: c.ExposureClassName,
+			ExposureClassName: exposureClassName,
 			Maintenance: &gardener_types.Maintenance{
 				AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 					KubernetesVersion:   c.EnableKubernetesVersionAutoUpdate,
