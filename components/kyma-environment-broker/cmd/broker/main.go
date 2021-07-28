@@ -61,7 +61,6 @@ import (
 	"github.com/spf13/afero"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -226,15 +225,13 @@ func main() {
 	fatalOnError(err)
 	gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
 	fatalOnError(err)
-	kubernetesClient, err := kubernetes.NewForConfig(gardenerClusterConfig)
-	fatalOnError(err)
 	gardenerSecretBindings := gardener.NewGardenerSecretBindingsInterface(gardenerClient, cfg.Gardener.Project)
 	gardenerShoots, err := gardener.NewGardenerShootInterface(gardenerClusterConfig, cfg.Gardener.Project)
 	fatalOnError(err)
 
 	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecretBindings, gardenerShoots)
 	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecretBindings, gardenerShoots)
-	accountProvider := hyperscaler.NewAccountProvider(kubernetesClient, gardenerAccountPool, gardenerSharedPool)
+	accountProvider := hyperscaler.NewAccountProvider(gardenerAccountPool, gardenerSharedPool)
 
 	regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)
 	fatalOnError(err)
