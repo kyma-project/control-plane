@@ -20,7 +20,7 @@ import (
 // - compass_keb_operations_{plan_name}_deprovisioning_succeeded_total
 
 var (
-	supportedPlansIDs = []string{broker.AzurePlanID, broker.AzureLitePlanID, broker.TrialPlanID, broker.AWSPlanID}
+	supportedPlansIDs = []string{broker.AzurePlanID, broker.AzureLitePlanID, broker.TrialPlanID, broker.AWSPlanID, broker.FreemiumPlanID}
 )
 
 type OperationsStatsGetter interface {
