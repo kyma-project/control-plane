@@ -66,7 +66,6 @@ const (
 	globalAccountID        = "dummy-ga-id"
 	dashboardURL           = "http://console.garden-dummy.kyma.io"
 	brokerID               = "fake-broker-id"
-	emsOfferingID          = "ems-fake-id"
 	operationID            = "provisioning-op-id"
 	deprovisioningOpID     = "deprovisioning-op-id"
 	instanceID             = "instance-id"
@@ -95,8 +94,6 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	logs.Formatter.(*logrus.TextFormatter).TimestampFormat = "15:04:05.000"
 
 	var cfg Config
-	cfg.Ems.Disabled = true
-	cfg.Ems.SkipDeprovisionAzureEventingAtUpgrade = true
 	cfg.Connectivity.Disabled = true
 	cfg.AuditLog.Disabled = false
 	cfg.AuditLog = auditlog.Config{
@@ -860,12 +857,6 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 		BrokerID:  brokerID,
 	},
 		{
-			ID:        emsOfferingID,
-			Name:      provisioning.EmsOfferingName,
-			CatalogID: servicemanager.FakeEmsServiceID,
-			BrokerID:  brokerID,
-		},
-		{
 			ID:        "connectivity-oferring-id",
 			Name:      provisioning.ConnectivityOfferingName,
 			CatalogID: "connectivity-service-id",
@@ -876,11 +867,6 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 		Name:      "application",
 		CatalogID: "xsuaa",
 	},
-		{
-			ID:        "ems-plan-id",
-			Name:      provisioning.EmsPlanName,
-			CatalogID: provisioning.EmsPlanName,
-		},
 		{
 			ID:        "connectivity-plan-id",
 			Name:      provisioning.ConnectivityPlanName,
