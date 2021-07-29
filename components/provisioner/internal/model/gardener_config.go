@@ -514,7 +514,7 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 			UsernamePrefix: &upgradeConfig.OIDCConfig.UsernamePrefix,
 		}
 	}
-	if upgradeConfig.ExposureClassName != nil {
+	if util.NotNilOrEmpty(upgradeConfig.ExposureClassName) {
 		shoot.Spec.ExposureClassName = upgradeConfig.ExposureClassName
 	}
 	return nil
