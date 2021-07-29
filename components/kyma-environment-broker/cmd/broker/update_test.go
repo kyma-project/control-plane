@@ -347,6 +347,7 @@ func TestUpdateAdminsNotChanged(t *testing.T) {
 	suite := NewBrokerSuiteTest(t)
 	defer suite.TearDown()
 	id := uuid.New().String()
+	expectedAdmins := []string{"admin@kyma.cx"}
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
 		`{
@@ -403,8 +404,9 @@ func TestUpdateAdminsNotChanged(t *testing.T) {
 				IssuerURL: "https://issuer.url.com",
 			},
 		},
-		Administrators: []string{"admin@kyma.cx"},
+		Administrators: expectedAdmins,
 	})
+	suite.AssertInstanceRuntimeAdmins(id, expectedAdmins)
 }
 
 func TestUpdateAdminsChanged(t *testing.T) {
@@ -412,6 +414,7 @@ func TestUpdateAdminsChanged(t *testing.T) {
 	suite := NewBrokerSuiteTest(t)
 	defer suite.TearDown()
 	id := uuid.New().String()
+	expectedAdmins := []string{"newAdmin1@kyma.cx", "newAdmin2@kyma.cx"}
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
 		`{
@@ -469,6 +472,7 @@ func TestUpdateAdminsChanged(t *testing.T) {
 				IssuerURL: "https://issuer.url.com",
 			},
 		},
-		Administrators: []string{"newAdmin1@kyma.cx", "newAdmin2@kyma.cx"},
+		Administrators: expectedAdmins,
 	})
+	suite.AssertInstanceRuntimeAdmins(id, expectedAdmins)
 }

@@ -266,11 +266,10 @@ func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 
 func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
 	if len(r.provisioningParameters.Parameters.RuntimeAdministrators) != 0 {
-		// replace runtime admins list
-		r.upgradeShootInput.Administrators = append(
-			r.upgradeShootInput.Administrators,
-			r.provisioningParameters.Parameters.RuntimeAdministrators...,
-		)
+		// prepare new admins list for existing runtime
+		newAdministrators := make([]string, 0, len(r.provisioningParameters.Parameters.RuntimeAdministrators))
+		newAdministrators = append(newAdministrators, r.provisioningParameters.Parameters.RuntimeAdministrators...)
+		r.upgradeShootInput.Administrators = newAdministrators
 	}
 
 	return nil
