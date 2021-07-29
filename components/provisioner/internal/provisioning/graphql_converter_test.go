@@ -81,6 +81,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		enableKubernetesVersionAutoUpdate := true
 		enableMachineImageVersionAutoUpdate := false
 		allowPrivilegedContainers := true
+		exposureClassName := "internet"
 
 		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"zones":["fix-gcp-zone-1","fix-gcp-zone-2"]}`)
 		require.NoError(t, err)
@@ -120,6 +121,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					AllowPrivilegedContainers:           allowPrivilegedContainers,
 					GardenerProviderConfig:              gardenerProviderConfig,
 					OIDCConfig:                          oidcConfig(),
+					ExposureClassName:                   &exposureClassName,
 				},
 				Kubeconfig: &kubeconfig,
 				KymaConfig: fixKymaConfig(nil),
@@ -182,6 +184,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						UsernameClaim:  "sub",
 						UsernamePrefix: "-",
 					},
+					ExposureClassName: &exposureClassName,
 				},
 				KymaConfig: fixKymaGraphQLConfig(nil),
 				Kubeconfig: &kubeconfig,

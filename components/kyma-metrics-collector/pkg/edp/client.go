@@ -97,7 +97,9 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 		return
 	})
 	metricTimer.ObserveDuration()
-	totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
+	if resp != nil {
+		totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
+	}
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to POST event to EDP")

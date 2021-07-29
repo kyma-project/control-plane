@@ -135,12 +135,8 @@ spec:
                 secretKeyRef:
                   name: "{{ .Values.edp.secretName }}"
                   key: secret
-            - name: APP_EMS_DISABLED
-              value: "{{ .Values.ems.disabled }}"
             - name: APP_CONNECTIVITY_DISABLED
               value: "{{ .Values.connectivity.disabled }}"
-            - name: APP_EMS_SKIP_DEPROVISION_AZURE_EVENTING_AT_UPGRADE
-              value: "{{ .Values.ems.skipDeprovisionAzureEventingAtUpgrade }}"
             - name: APP_DATABASE_SECRET_KEY
               valueFrom:
                 secretKeyRef:

@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	"github.com/pkg/errors"
-	"golang.org/x/oauth2"
 )
 
 const defaultPageSize = 100
@@ -29,13 +27,12 @@ type client struct {
 
 // NewClient constructs and returns new Client for KEB /runtimes API
 // It takes the following arguments:
-//   - ctx  : context in which the http request will be executed
-//   - url  : base url of all KEB APIs, e.g. https://kyma-env-broker.kyma.local
-//   - auth : TokenSource object which provides the ID token for the HTTP request
-func NewClient(ctx context.Context, url string, auth oauth2.TokenSource) Client {
+//   - url        : base url of all KEB APIs, e.g. https://kyma-env-broker.kyma.local
+//   - httpClient : underlying HTTP client used for API call to KEB
+func NewClient(url string, httpClient *http.Client) Client {
 	return &client{
 		url:        url,
-		httpClient: oauth2.NewClient(ctx, auth),
+		httpClient: httpClient,
 	}
 }
 
@@ -104,6 +101,15 @@ func setQuery(url *url.URL, params ListParameters) {
 	query := url.Query()
 	query.Add(pagination.PageParam, strconv.Itoa(params.Page))
 	query.Add(pagination.PageSizeParam, strconv.Itoa(params.PageSize))
+	if params.OperationDetail != "" {
+		query.Add(OperationDetailParam, string(params.OperationDetail))
+	}
+	if params.KymaConfig {
+		query.Add(KymaConfigParam, "true")
+	}
+	if params.ClusterConfig {
+		query.Add(ClusterConfigParam, "true")
+	}
 	setParamList(query, GlobalAccountIDParam, params.GlobalAccountIDs)
 	setParamList(query, SubAccountIDParam, params.SubAccountIDs)
 	setParamList(query, InstanceIDParam, params.InstanceIDs)
