@@ -30,6 +30,7 @@ mutation {
         maxUnavailable: 1
         enableKubernetesVersionAutoUpdate: false
         enableMachineImageVersionAutoUpdate: false
+        exposureClassName: ""
         providerSpecificConfig: { 
           azureConfig: {
             zones: ["1", "2"]

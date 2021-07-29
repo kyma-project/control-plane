@@ -82,6 +82,11 @@ func (ts *TestShoot) WithPurpose(purpose string) *TestShoot {
 	return ts
 }
 
+func (ts *TestShoot) WithExposureClassName(exposureClassName string) *TestShoot {
+	ts.shoot.Spec.ExposureClassName = &exposureClassName
+	return ts
+}
+
 // WithWorkers adds v1beta1 Workers to shoot.Spec.Provider.Workers.
 // See also testkit.TestWorker
 func (ts *TestShoot) WithWorkers(workers ...v1beta1.Worker) *TestShoot {
