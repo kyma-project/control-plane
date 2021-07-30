@@ -23,7 +23,8 @@ fi
 kyma provision minikube
 kyma install -c $INSTALLER_CR_PATH -o $OVERRIDES_KYMA --source $KYMA_SOURCE
 
-bash "${ROOT_PATH}"/installation/scripts/run-compass-installer.sh
+#remove the compass-installer.sh
+#bash "${ROOT_PATH}"/installation/scripts/run-compass-installer.sh
 
 bash "${ROOT_PATH}"/installation/scripts/run-kcp-installer.sh
 bash "${ROOT_PATH}"/installation/scripts/is-installed.sh
