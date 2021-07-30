@@ -34,11 +34,12 @@ type Config struct {
 	TenantID             string `default:"d9994f8f-7e46-42a8-b2c1-1bfff8d2fe05"`
 	SkipCertVerification bool   `envconfig:"default=true"`
 
-	ProvisionerURL     string        `default:"http://kcp-provisioner.kcp-system.svc.cluster.local:3000/graphql"`
-	ProvisionTimeout   time.Duration `default:"3h"`
-	DeprovisionTimeout time.Duration `default:"1h"`
-	ConfigName         string        `default:"e2e-runtime-config"`
-	DeployNamespace    string        `default:"kcp-system"`
+	ProvisionerURL        string        `default:"http://kcp-provisioner.kcp-system.svc.cluster.local:3000/graphql"`
+	ProvisionTimeout      time.Duration `default:"3h"`
+	DeprovisionTimeout    time.Duration `default:"1h"`
+	PreUpgradeKymaVersion string        `envconfig:"optional"`
+	ConfigName            string        `default:"e2e-runtime-config"`
+	DeployNamespace       string        `default:"kcp-system"`
 
 	UpgradeTest  bool `envconfig:"default=false"`
 	DummyTest    bool `default:"false"`
@@ -57,7 +58,8 @@ type Suite struct {
 	secretClient    v1_client.Secrets
 	configMapClient v1_client.ConfigMaps
 
-	dashboardChecker *runtime.DashboardChecker
+	PreUpgradeKymaVersion string
+	dashboardChecker      *runtime.DashboardChecker
 
 	directorClient *director.Client
 
@@ -139,9 +141,10 @@ func newTestSuite(t *testing.T) *Suite {
 
 		directorClient: directorClient,
 
-		InstanceID:         instanceID,
-		ProvisionTimeout:   cfg.ProvisionTimeout,
-		DeprovisionTimeout: cfg.DeprovisionTimeout,
+		InstanceID:            instanceID,
+		ProvisionTimeout:      cfg.ProvisionTimeout,
+		DeprovisionTimeout:    cfg.DeprovisionTimeout,
+		PreUpgradeKymaVersion: cfg.PreUpgradeKymaVersion,
 
 		ConfigName:      cfg.ConfigName,
 		DeployNamespace: cfg.DeployNamespace,
