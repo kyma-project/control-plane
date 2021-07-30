@@ -393,3 +393,85 @@ func TestProvisioning_OIDCValues(t *testing.T) {
 		suite.AssertOIDC(expectedOIDC)
 	})
 }
+
+func TestProvisioning_RuntimeAdministrators(t *testing.T) {
+	t.Run("should use UserID as default value for admins list", func(t *testing.T) {
+		// given
+		suite := NewProvisioningSuite(t)
+		options := RuntimeOptions{
+			UserID: "fake-user-id",
+		}
+		expectedAdmins := []string{"fake-user-id"}
+
+		// when
+		provisioningOperationID := suite.CreateProvisioning(options)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.InProgress)
+		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
+
+		// when
+		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+		suite.MarkDirectorWithConsoleURL(provisioningOperationID)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
+		suite.AssertAllStagesFinished(provisioningOperationID)
+		suite.AssertProvisioningRequest()
+		suite.AssertRuntimeAdmins(expectedAdmins)
+	})
+
+	t.Run("should apply new admins list", func(t *testing.T) {
+		// given
+		suite := NewProvisioningSuite(t)
+		options := RuntimeOptions{
+			UserID:        "fake-user-id",
+			RuntimeAdmins: []string{"admin1@test.com", "admin2@test.com"},
+		}
+		expectedAdmins := []string{"admin1@test.com", "admin2@test.com"}
+
+		// when
+		provisioningOperationID := suite.CreateProvisioning(options)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.InProgress)
+		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
+
+		// when
+		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+		suite.MarkDirectorWithConsoleURL(provisioningOperationID)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
+		suite.AssertAllStagesFinished(provisioningOperationID)
+		suite.AssertProvisioningRequest()
+		suite.AssertRuntimeAdmins(expectedAdmins)
+	})
+
+	t.Run("should apply empty admin value (list is not empty)", func(t *testing.T) {
+		// given
+		suite := NewProvisioningSuite(t)
+		options := RuntimeOptions{
+			UserID:        "fake-user-id",
+			RuntimeAdmins: []string{""},
+		}
+		expectedAdmins := []string{""}
+
+		// when
+		provisioningOperationID := suite.CreateProvisioning(options)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.InProgress)
+		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
+
+		// when
+		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+		suite.MarkDirectorWithConsoleURL(provisioningOperationID)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
+		suite.AssertAllStagesFinished(provisioningOperationID)
+		suite.AssertProvisioningRequest()
+		suite.AssertRuntimeAdmins(expectedAdmins)
+	})
+}

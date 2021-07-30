@@ -386,6 +386,19 @@ func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschem
 	assert.Equal(s.t, config, shootUpgrade)
 }
 
+func (s *BrokerSuiteTest) AssertInstanceRuntimeAdmins(instanceId string, expectedAdmins []string) {
+	var instance *internal.Instance
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		instance = s.GetInstance(instanceId)
+		if instance != nil {
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+	assert.Equal(s.t, expectedAdmins, instance.Parameters.Parameters.RuntimeAdministrators)
+}
+
 func (s *BrokerSuiteTest) LastProvisionInput(iid string) gqlschema.ProvisionRuntimeInput {
 	// wait until the operation reaches the call to a Provisioner (provisioner operation ID is stored)
 	err := wait.Poll(pollingInterval, 4*time.Second, func() (bool, error) {
