@@ -30,4 +30,4 @@ bash "${ROOT_PATH}"/installation/scripts/run-kcp-installer.sh
 bash "${ROOT_PATH}"/installation/scripts/is-installed.sh
 
 echo "Adding entries to /etc/hosts..."
-sudo sh -c 'echo "\n$(minikube ip) adapter-gateway.kyma.local adapter-gateway-mtls.kyma.local compass-gateway-mtls.kyma.local compass-gateway-auth-oauth.kyma.local compass-gateway.kyma.local compass.kyma.local compass-mf.kyma.local kyma-env-broker.kyma.local" >> /etc/hosts'
+sudo sh -c 'echo "\n$(minikube ip) kyma-env-broker.kyma.local" >> /etc/hosts'
