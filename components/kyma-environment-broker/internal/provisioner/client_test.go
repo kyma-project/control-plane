@@ -31,6 +31,10 @@ var (
 	testKubernetesVersion   = "1.17.16"
 	testMachineImage        = "gardenlinux"
 	testMachineImageVersion = "184.0.0"
+	testAutoScalerMin       = 2
+	testAutoScalerMax       = 4
+	testMaxSurge            = 4
+	testMaxUnavailable      = 1
 )
 
 func TestClient_ProvisionRuntime(t *testing.T) {
@@ -607,6 +611,10 @@ func fixUpgradeShootInput() schema.UpgradeShootInput {
 			KubernetesVersion:   &testKubernetesVersion,
 			MachineImage:        &testMachineImage,
 			MachineImageVersion: &testMachineImageVersion,
+			AutoScalerMin:       &testAutoScalerMin,
+			AutoScalerMax:       &testAutoScalerMax,
+			MaxSurge:            &testMaxSurge,
+			MaxUnavailable:      &testMaxUnavailable,
 		},
 	}
 }
