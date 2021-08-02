@@ -547,6 +547,15 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			disabled: cfg.XSUAA.Disabled,
 		},
 		{
+			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
+			stage: createRuntimeStageName,
+			step: provisioning.NewServiceManagerOfferingStep("Connectivity_Offering",
+				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
+					return &op.Connectivity.Instance
+				}, db.Operations()),
+			disabled: cfg.Connectivity.Disabled,
+		},
+		{
 			stage: createRuntimeStageName,
 			step:  provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
 		},
