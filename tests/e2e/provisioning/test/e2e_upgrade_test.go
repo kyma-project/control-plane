@@ -20,7 +20,7 @@ func Test_E2E_Upgrade(t *testing.T) {
 	}
 	configMap := ts.testConfigMap()
 
-	operationID, err := ts.brokerClient.ProvisionRuntime("")
+	operationID, err := ts.brokerClient.ProvisionRuntime(ts.PreUpgradeKymaVersion)
 	require.NoError(t, err)
 
 	ts.log.Infof("Creating config map %s with test data", ts.ConfigName)
@@ -37,18 +37,4 @@ func Test_E2E_Upgrade(t *testing.T) {
 	ts.log.Infof("Creating a secret %s with test data", ts.ConfigName)
 	err = ts.secretClient.Create(ts.testSecret(config))
 	require.NoError(t, err)
-
-	ts.log.Infof("Fetch runtimeID from CLD endpoint based on instanceID: %s", ts.InstanceID)
-	runtimeID, err := ts.upgradeSuite.upgradeClient.FetchRuntimeID(ts.InstanceID)
-	require.NoError(t, err)
-
-	ts.log.Infof("Starting upgrade runtime with ID: %s", runtimeID)
-	orchestrationID, err := ts.upgradeSuite.upgradeClient.UpgradeRuntime(runtimeID)
-	require.NoError(t, err, "failed to upgrade Runtime")
-
-	ts.log.Infof("Waiting for upgrade to finish for orchestrationID: %s", orchestrationID)
-	err = ts.upgradeSuite.upgradeClient.AwaitOperationFinished(orchestrationID, ts.upgradeSuite.UpgradeTimeout)
-	require.NoError(t, err, "error waiting for upgrade to finish")
-
-	ts.log.Info("Test completed successfully")
 }

@@ -58,6 +58,7 @@ type GardenerConfig struct {
 	AllowPrivilegedContainers           bool
 	GardenerProviderConfig              GardenerProviderConfig
 	OIDCConfig                          *OIDCConfig
+	ExposureClassName                   *string
 }
 
 func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string, oidcConfig *OIDCConfig) (*gardener_types.Shoot, apperrors.AppError) {
@@ -71,6 +72,12 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 	if util.NotNilOrEmpty(c.Purpose) {
 		p := gardener_types.ShootPurpose(*c.Purpose)
 		purpose = &p
+	}
+
+	var exposureClassName *string = nil
+
+	if util.NotNilOrEmpty(c.ExposureClassName) {
+		exposureClassName = c.ExposureClassName
 	}
 
 	annotations := make(map[string]string)
@@ -104,7 +111,8 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				Type:  "calico",                        // Default value - we may consider adding it to API (if Hydroform will support it)
 				Nodes: util.StringPtr("10.250.0.0/19"), // TODO: it is required - provide configuration in API (when Hydroform will support it)
 			},
-			Purpose: purpose,
+			Purpose:           purpose,
+			ExposureClassName: exposureClassName,
 			Maintenance: &gardener_types.Maintenance{
 				AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 					KubernetesVersion:   c.EnableKubernetesVersionAutoUpdate,
@@ -505,6 +513,9 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 			UsernameClaim:  &upgradeConfig.OIDCConfig.UsernameClaim,
 			UsernamePrefix: &upgradeConfig.OIDCConfig.UsernamePrefix,
 		}
+	}
+	if util.NotNilOrEmpty(upgradeConfig.ExposureClassName) {
+		shoot.Spec.ExposureClassName = upgradeConfig.ExposureClassName
 	}
 	return nil
 }

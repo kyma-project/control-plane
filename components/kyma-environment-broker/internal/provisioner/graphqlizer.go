@@ -217,6 +217,36 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
 	}`)
 }
 
+func (g *Graphqlizer) GardenerUpgradeInputToGraphQL(in gqlschema.GardenerUpgradeInput) (string, error) {
+	return g.genericToGraphQL(in, `{
+      {{- if .KubernetesVersion }}
+      kubernetesVersion: "{{.KubernetesVersion}}",
+      {{- end }}
+      {{- if .MachineImage }}
+      machineImage: "{{.MachineImage}}",
+      {{- end}}
+      {{- if .MachineImageVersion }}
+      machineImageVersion: "{{.MachineImageVersion}}",
+      {{- end }}
+      {{- if .EnableKubernetesVersionAutoUpdate }}
+      enableKubernetesVersionAutoUpdate: {{.EnableKubernetesVersionAutoUpdate}},
+      {{- end }}
+      {{- if .EnableMachineImageVersionAutoUpdate }}
+      enableMachineImageVersionAutoUpdate: {{.EnableMachineImageVersionAutoUpdate}},
+      {{- end }}
+      {{ if .OidcConfig }}
+      oidcConfig: {
+        clientID: "{{.OidcConfig.ClientID }}",
+        issuerURL: "{{ .OidcConfig.IssuerURL }}",
+        groupsClaim: "{{ .OidcConfig.IssuerURL }}",
+        signingAlgs: {{ .OidcConfig.SigningAlgs | marshal }},
+        usernameClaim: "{{ .OidcConfig.UsernameClaim }}",
+        usernamePrefix: "{{ .OidcConfig.UsernamePrefix }}",
+      }
+      {{- end }}
+    }`)
+}
+
 func (g *Graphqlizer) marshal(obj interface{}) string {
 	var out string
 
@@ -256,35 +286,12 @@ func (g *Graphqlizer) UpgradeRuntimeInputToGraphQL(in gqlschema.UpgradeRuntimeIn
 }
 
 func (g Graphqlizer) UpgradeShootInputToGraphQL(in gqlschema.UpgradeShootInput) (string, error) {
-	return g.genericToGraphQL(in.GardenerConfig, `{
-    gardenerConfig: {
-      {{- if .KubernetesVersion }}
-      kubernetesVersion: "{{.KubernetesVersion}}",
-      {{- end }}
-      {{- if .MachineImage }}
-      machineImage: "{{.MachineImage}}",
-      {{- end}}
-      {{- if .MachineImageVersion }}
-      machineImageVersion: "{{.MachineImageVersion}}",
-      {{- end }}
-      {{- if .EnableKubernetesVersionAutoUpdate }}
-      enableKubernetesVersionAutoUpdate: {{.EnableKubernetesVersionAutoUpdate}},
-      {{- end }}
-      {{- if .EnableMachineImageVersionAutoUpdate }}
-      enableMachineImageVersionAutoUpdate: {{.EnableMachineImageVersionAutoUpdate}},
-      {{- end }}
-      {{ if .OidcConfig }}
-      oidcConfig: {
-        clientID: "{{.OidcConfig.ClientID }}",
-        issuerURL: "{{ .OidcConfig.IssuerURL }}",
-        groupsClaim: "{{ .OidcConfig.IssuerURL }}",
-        signingAlgs: {{ .OidcConfig.SigningAlgs | marshal }},
-        usernameClaim: "{{ .OidcConfig.UsernameClaim }}",
-        usernamePrefix: "{{ .OidcConfig.UsernamePrefix }}",
-      }
-      {{- end }}
-    }
-  }`)
+	return g.genericToGraphQL(in, `{
+    gardenerConfig: {{ GardenerUpgradeInputToGraphQL .GardenerConfig }},
+    {{- if .Administrators }}
+    administrators: {{.Administrators | marshal }},
+    {{- end }}
+    }`)
 }
 
 func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, error) {
@@ -294,6 +301,7 @@ func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, er
 	fm["ClusterConfigToGraphQL"] = g.ClusterConfigToGraphQL
 	fm["KymaConfigToGraphQL"] = g.KymaConfigToGraphQL
 	fm["GardenerConfigInputToGraphQL"] = g.GardenerConfigInputToGraphQL
+	fm["GardenerUpgradeInputToGraphQL"] = g.GardenerUpgradeInputToGraphQL
 	fm["AzureProviderConfigInputToGraphQL"] = g.AzureProviderConfigInputToGraphQL
 	fm["GCPProviderConfigInputToGraphQL"] = g.GCPProviderConfigInputToGraphQL
 	fm["AWSProviderConfigInputToGraphQL"] = g.AWSProviderConfigInputToGraphQL

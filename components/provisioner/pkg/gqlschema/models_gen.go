@@ -120,6 +120,7 @@ type GardenerConfig struct {
 	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
 	ProviderSpecificConfig              ProviderSpecificConfig `json:"providerSpecificConfig"`
 	OidcConfig                          *OIDCConfig            `json:"oidcConfig"`
+	ExposureClassName                   *string                `json:"exposureClassName"`
 }
 
 type GardenerConfigInput struct {
@@ -146,6 +147,7 @@ type GardenerConfigInput struct {
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
 	Seed                                *string                `json:"seed"`
 	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
+	ExposureClassName                   *string                `json:"exposureClassName"`
 }
 
 type GardenerUpgradeInput struct {
@@ -164,6 +166,7 @@ type GardenerUpgradeInput struct {
 	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
 	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
+	ExposureClassName                   *string                `json:"exposureClassName"`
 }
 
 type HibernationStatus struct {

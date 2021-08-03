@@ -43,17 +43,17 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 		return s.operationManager.OperationFailed(operation, err.Error(), log)
 	}
 
-	log.Infof("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
+	log.Infof("HAP lookup for credentials secret binding to provision cluster for global account ID %s on Hyperscaler %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
 
-	var credentials hyperscaler.Credentials
+	var secretName string
 	if !broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) {
-		credentials, err = s.accountProvider.GardenerCredentials(hypType, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
+		secretName, err = s.accountProvider.GardenerSecretName(hypType, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
 	} else {
-		log.Infof("HAP lookup for shared credentials")
-		credentials, err = s.accountProvider.GardenerSharedCredentials(hypType)
+		log.Infof("HAP lookup for shared secret binding")
+		secretName, err = s.accountProvider.GardenerSharedSecretName(hypType)
 	}
 	if err != nil {
-		errMsg := fmt.Sprintf("HAP lookup for credentials to provision cluster for global account ID %s on Hyperscaler %s has failed: %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType, err)
+		errMsg := fmt.Sprintf("HAP lookup for secret binding to provision cluster for global account ID %s on Hyperscaler %s has failed: %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType, err)
 		log.Info(errMsg)
 
 		// if failed retry step every 10s by next 10min
@@ -63,10 +63,10 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 			return operation, 10 * time.Second, nil
 		}
 
-		log.Errorf("Aborting after 10 minutes of failing to resolve provisioning credentials for global account ID %s on Hyperscaler %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
+		log.Errorf("Aborting after 10 minutes of failing to resolve provisioning secret binding for global account ID %s on Hyperscaler %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
 		return s.operationManager.OperationFailed(operation, errMsg, log)
 	}
-	operation.ProvisioningParameters.Parameters.TargetSecret = &credentials.Name
+	operation.ProvisioningParameters.Parameters.TargetSecret = &secretName
 
 	updatedOperation, err := s.opStorage.UpdateProvisioningOperation(operation)
 	if err != nil {
