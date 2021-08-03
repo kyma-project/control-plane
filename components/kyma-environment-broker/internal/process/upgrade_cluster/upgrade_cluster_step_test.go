@@ -37,12 +37,20 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	provisioningOperation := fixProvisioningOperation()
 	err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 	assert.NoError(t, err)
+
+	provider := fixGetHyperscalerProviderForPlanID(operation.ProvisioningParameters.PlanID)
+	assert.NotNil(t, provider)
+	//t.Logf("%v, %v, %v, %v", provider.Defaults().GardenerConfig.AutoScalerMin, provider.Defaults().GardenerConfig.AutoScalerMax, provider.Defaults().GardenerConfig.MaxSurge, provider.Defaults().GardenerConfig.MaxUnavailable)
 	provisionerClient := &provisionerAutomock.Client{}
 	provisionerClient.On("UpgradeShoot", fixGlobalAccountID, fixRuntimeID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion:   ptr.String(fixKubernetesVersion),
 			MachineImage:        ptr.String(fixMachineImage),
 			MachineImageVersion: ptr.String(fixMachineImageVersion),
+			AutoScalerMin:       ptr.Integer(provider.Defaults().GardenerConfig.AutoScalerMin),
+			AutoScalerMax:       ptr.Integer(provider.Defaults().GardenerConfig.AutoScalerMax),
+			MaxSurge:            ptr.Integer(provider.Defaults().GardenerConfig.MaxSurge),
+			MaxUnavailable:      ptr.Integer(provider.Defaults().GardenerConfig.MaxUnavailable),
 			OidcConfig: &gqlschema.OIDCConfigInput{
 				ClientID:       "",
 				GroupsClaim:    "",

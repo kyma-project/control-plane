@@ -247,7 +247,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		assert.Equal(t, autoscalerMin, provider.Defaults().GardenerConfig.AutoScalerMin)
 		assert.Equal(t, maxSurge, provider.Defaults().GardenerConfig.MaxSurge)
 		assert.Equal(t, maxUnavailable, provider.Defaults().GardenerConfig.MaxUnavailable)
-		//t.Logf("%v, %v, %v, %v", autoscalerMax, autoscalerMin, maxSurge, maxUnavailable)
+		t.Logf("%v, %v, %v, %v", autoscalerMax, autoscalerMin, maxSurge, maxUnavailable)
 
 		// given
 		pp = fixProvisioningParameters(broker.TrialPlanID, "")
@@ -277,7 +277,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		assert.Equal(t, autoscalerMin, provider.Defaults().GardenerConfig.AutoScalerMin)
 		assert.Equal(t, maxSurge, provider.Defaults().GardenerConfig.MaxSurge)
 		assert.Equal(t, maxUnavailable, provider.Defaults().GardenerConfig.MaxUnavailable)
-		//t.Logf("%v, %v, %v, %v", autoscalerMax, autoscalerMin, maxSurge, maxUnavailable)
+		t.Logf("%v, %v, %v, %v", autoscalerMax, autoscalerMin, maxSurge, maxUnavailable)
 	})
 
 }
