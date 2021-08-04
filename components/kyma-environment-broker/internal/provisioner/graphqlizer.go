@@ -234,15 +234,15 @@ func (g *Graphqlizer) GardenerUpgradeInputToGraphQL(in gqlschema.GardenerUpgrade
       {{- if .EnableMachineImageVersionAutoUpdate }}
       enableMachineImageVersionAutoUpdate: {{.EnableMachineImageVersionAutoUpdate}},
       {{- end }}
-      {{ if .OidcConfig }}
+      {{- if .OidcConfig }}
       oidcConfig: {
-        clientID: "{{.OidcConfig.ClientID }}",
+        clientID: "{{ .OidcConfig.ClientID }}",
         issuerURL: "{{ .OidcConfig.IssuerURL }}",
-        groupsClaim: "{{ .OidcConfig.IssuerURL }}",
+        groupsClaim: "{{ .OidcConfig.GroupsClaim }}",
         signingAlgs: {{ .OidcConfig.SigningAlgs | marshal }},
         usernameClaim: "{{ .OidcConfig.UsernameClaim }}",
         usernamePrefix: "{{ .OidcConfig.UsernamePrefix }}",
-      }
+      },
       {{- end }}
     }`)
 }
@@ -291,7 +291,7 @@ func (g Graphqlizer) UpgradeShootInputToGraphQL(in gqlschema.UpgradeShootInput) 
     {{- if .Administrators }}
     administrators: {{.Administrators | marshal }},
     {{- end }}
-    }`)
+}`)
 }
 
 func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, error) {
