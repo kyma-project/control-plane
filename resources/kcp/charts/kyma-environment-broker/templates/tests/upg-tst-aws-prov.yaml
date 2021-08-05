@@ -38,7 +38,7 @@ spec:
             - name: APP_PRE_UPGRADE_KYMA_VERSION
               valueFrom:
                 configMapKeyRef:
-                  name: aws_upgrade_config
+                  name: upg-tst-config
                   key: BASE_VERSION
             - name: APP_BROKER_TOKEN_URL
               value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
