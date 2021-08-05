@@ -27,6 +27,7 @@ const (
 
 func TestUpgradeKymaStep_Run(t *testing.T) {
 	// given
+	expectedOIDC := fixture.FixOIDCConfigDTO()
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
@@ -52,12 +53,12 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 			MaxSurge:            ptr.Integer(provider.Defaults().GardenerConfig.MaxSurge),
 			MaxUnavailable:      ptr.Integer(provider.Defaults().GardenerConfig.MaxUnavailable),
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "",
-				GroupsClaim:    "",
-				IssuerURL:      "",
-				SigningAlgs:    nil,
-				UsernameClaim:  "",
-				UsernamePrefix: "",
+				ClientID:       expectedOIDC.ClientID,
+				GroupsClaim:    expectedOIDC.GroupsClaim,
+				IssuerURL:      expectedOIDC.IssuerURL,
+				SigningAlgs:    expectedOIDC.SigningAlgs,
+				UsernameClaim:  expectedOIDC.UsernameClaim,
+				UsernamePrefix: expectedOIDC.UsernamePrefix,
 			},
 		},
 	}).Return(gqlschema.OperationStatus{

@@ -448,18 +448,17 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
       machineImageVersion: "184.0.0",
       enableKubernetesVersionAutoUpdate: true,
       enableMachineImageVersionAutoUpdate: false,
-      
       oidcConfig: {
         clientID: "cid",
         issuerURL: "issuer.url",
-        groupsClaim: "issuer.url",
+        groupsClaim: "groups",
         signingAlgs: ["RSA256"],
         usernameClaim: "sub",
         usernamePrefix: "-",
-      }
+      },
     },
     administrators: ["newAdmin@kyma.cx"],
-    }`
+}`
 
 	// when
 	got, err := sut.UpgradeShootInputToGraphQL(gqlschema.UpgradeShootInput{
