@@ -224,9 +224,9 @@ type InstanceWithOperation struct {
 }
 
 type SMClientFactory interface {
-	ForCredentials(credentials servicemanager.RequestContext) servicemanager.Client
-	ForCustomerCredentials(reqCredentials servicemanager.RequestContext, log logrus.FieldLogger) (servicemanager.Client, error)
-	ProvideCredentials(reqCredentials servicemanager.RequestContext, log logrus.FieldLogger) (*servicemanager.Credentials, error)
+	ForCredentials(credentials *servicemanager.Credentials) servicemanager.Client
+	ForCustomerCredentials(request servicemanager.RequestContext, log logrus.FieldLogger) (servicemanager.Client, error)
+	ProvideCredentials(request servicemanager.RequestContext, log logrus.FieldLogger) (*servicemanager.Credentials, error)
 }
 
 type InstanceDetails struct {

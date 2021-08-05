@@ -34,7 +34,7 @@ type KymaVersionConfigurator interface {
 type SMClientFactory interface {
 	ForCredentials(credentials *servicemanager.Credentials) servicemanager.Client
 	ForCustomerCredentials(reqCredentials servicemanager.RequestContext, log logrus.FieldLogger) (servicemanager.Client, error)
-	ProvideCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (*servicemanager.Credentials, error)
+	ProvideCredentials(reqCredentials servicemanager.RequestContext, log logrus.FieldLogger) (*servicemanager.Credentials, error)
 }
 
 type InitialisationStep struct {
