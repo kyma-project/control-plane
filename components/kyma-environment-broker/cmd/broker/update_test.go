@@ -134,7 +134,7 @@ func TestUpdateWithNoOIDCParams(t *testing.T) {
 	})
 }
 
-func TestUpdateWithNoOidc(t *testing.T) {
+func TestUpdateWithNoOidcOnUpdate(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)
 	defer suite.TearDown()
