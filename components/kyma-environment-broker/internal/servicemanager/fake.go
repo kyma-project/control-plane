@@ -71,12 +71,12 @@ func (f *fakeServiceManagerClientFactory) ForCredentials(credentials *Credential
 	return f.cli
 }
 
-func (f *fakeServiceManagerClientFactory) ForCustomerCredentials(reqCredentials *Credentials, log logrus.FieldLogger) (Client, error) {
+func (f *fakeServiceManagerClientFactory) ForCustomerCredentials(req *RequestContext, log logrus.FieldLogger) (Client, error) {
 	return f.cli, nil
 }
 
-func (f *fakeServiceManagerClientFactory) ProvideCredentials(reqCredentials *Credentials, log logrus.FieldLogger) (*Credentials, error) {
-	return reqCredentials, nil
+func (f *fakeServiceManagerClientFactory) ProvideCredentials(req *RequestContext, log logrus.FieldLogger) (*Credentials, error) {
+	return req.Credentials, nil
 }
 
 func (f *fakeServiceManagerClient) ListOfferings() (*types.ServiceOfferings, error) {
