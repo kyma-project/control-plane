@@ -265,6 +265,7 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 		componentsDisabler:        runtime.NewDisabledComponentsService(disabledComponents),
 		enabledOptionalComponents: map[string]struct{}{},
 		trialNodesNumber:          f.config.TrialNodesNumber,
+		oidcDefaultValues:         f.oidcDefaultValues,
 	}, nil
 }
 
@@ -331,6 +332,7 @@ func (f *InputBuilderFactory) CreateUpgradeShootInput(pp internal.ProvisioningPa
 		mutex:                    nsync.NewNamedMutex(),
 		hyperscalerInputProvider: provider,
 		trialNodesNumber:         f.config.TrialNodesNumber,
+		oidcDefaultValues:        f.oidcDefaultValues,
 	}, nil
 }
 
