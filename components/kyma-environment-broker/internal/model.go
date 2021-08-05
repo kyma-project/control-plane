@@ -225,8 +225,8 @@ type InstanceWithOperation struct {
 
 type SMClientFactory interface {
 	ForCredentials(credentials *servicemanager.Credentials) servicemanager.Client
-	ForCustomerCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (servicemanager.Client, error)
-	ProvideCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (*servicemanager.Credentials, error)
+	ForCustomerCredentials(request servicemanager.RequestContext, log logrus.FieldLogger) (servicemanager.Client, error)
+	ProvideCredentials(request servicemanager.RequestContext, log logrus.FieldLogger) (*servicemanager.Credentials, error)
 }
 
 type InstanceDetails struct {
@@ -529,7 +529,7 @@ func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfig
 	return copiedList
 }
 
-func serviceManagerRequestCreds(parameters ProvisioningParameters) *servicemanager.Credentials {
+func serviceManagerRequestCreds(parameters ProvisioningParameters) servicemanager.RequestContext {
 	var creds *servicemanager.Credentials
 	sm := parameters.ErsContext.ServiceManager
 	if sm != nil {
@@ -539,7 +539,10 @@ func serviceManagerRequestCreds(parameters ProvisioningParameters) *servicemanag
 			URL:      sm.URL,
 		}
 	}
-	return creds
+	return servicemanager.RequestContext{
+		SubaccountID: parameters.ErsContext.SubAccountID,
+		Credentials:  creds,
+	}
 }
 
 func (i *ServiceManagerInstanceInfo) ToProvisioningInput() *servicemanager.ProvisioningInput {

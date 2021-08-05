@@ -22,6 +22,11 @@ type Credentials struct {
 	URL      string
 }
 
+type RequestContext struct {
+	SubaccountID string
+	Credentials  *Credentials
+}
+
 func NewClientFactory(cfg Config) *ClientFactory {
 	return &ClientFactory{
 		config: cfg,
@@ -43,8 +48,8 @@ func (c Credentials) WithNormalizedURL() Credentials {
 
 // ForCustomerCredentials provides a client with request Credentials (see internal.ProvisioningParameters.ErsContext).
 // Those Credentials could be overridden based on KEB configuration (OverrideMode).
-func (f *ClientFactory) ForCustomerCredentials(reqCredentials *Credentials, log logrus.FieldLogger) (Client, error) {
-	credentials, err := f.ProvideCredentials(reqCredentials, log)
+func (f *ClientFactory) ForCustomerCredentials(request RequestContext, log logrus.FieldLogger) (Client, error) {
+	credentials, err := f.ProvideCredentials(request, log)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create Service Manager client")
 	}
@@ -63,8 +68,8 @@ func (f *ClientFactory) ForCredentials(credentials *Credentials) Client {
 	}
 }
 
-func (f *ClientFactory) ProvideCredentials(reqCredentials *Credentials, log logrus.FieldLogger) (*Credentials, error) {
-	if f.shouldOverride(reqCredentials) {
+func (f *ClientFactory) ProvideCredentials(request RequestContext, log logrus.FieldLogger) (*Credentials, error) {
+	if f.shouldOverride(request) {
 		log.Infof("Overrides ServiceManager credentials")
 		return &Credentials{
 			Username: f.config.Username,
@@ -72,20 +77,24 @@ func (f *ClientFactory) ProvideCredentials(reqCredentials *Credentials, log logr
 			URL:      f.config.URL,
 		}, nil
 	}
-	if reqCredentials == nil {
+	if request.Credentials == nil {
 		log.Warnf("Service Manager Credentials are required to be send in provisioning request (override_mode: %q)", f.config.OverrideMode)
 		return nil, errors.New("Service Manager Credentials are required to be send in provisioning request.")
 	}
 	log.Infof("Provides customer ServiceManager credentials")
-	return reqCredentials, nil
+	return request.Credentials, nil
 }
 
-func (f *ClientFactory) shouldOverride(reqCredentials *Credentials) bool {
+func (f *ClientFactory) shouldOverride(request RequestContext) bool {
+	if f.config.SubaccountWithRequestCredentials != "" && request.SubaccountID == f.config.SubaccountWithRequestCredentials {
+		return false
+	}
+
 	if f.config.OverrideMode == SMOverrideModeAlways {
 		return true
 	}
 
-	if f.config.OverrideMode == SMOverrideModeWhenNotSentInRequest && reqCredentials == nil {
+	if f.config.OverrideMode == SMOverrideModeWhenNotSentInRequest && request.Credentials == nil {
 		return true
 	}
 
